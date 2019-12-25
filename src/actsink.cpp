@@ -31,6 +31,7 @@
 -------------------------------------------------------------------------------*/
 
 #define SINK_AMBIENCE my->skill[7]
+#define SINK_DISABLE_POLYMORPH_WASHING my->skill[8]
 
 void actSink(Entity* my)
 {
@@ -94,14 +95,24 @@ void actSink(Entity* my)
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
-					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] )
+					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] && (SINK_DISABLE_POLYMORPH_WASHING == 0) )
 					{
-						players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
-						players[i]->entity->effectPolymorph = 0;
-						serverUpdateEntitySkill(players[i]->entity, 50);
-
-						messagePlayer(i, language[3192]);
-						messagePlayer(i, language[3185]);
+						if ( stats[i]->EFFECTS[EFF_POLYMORPH] )
+						{
+							players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
+							players[i]->entity->effectPolymorph = 0;
+							serverUpdateEntitySkill(players[i]->entity, 50);
+							messagePlayer(i, language[3192]);
+							messagePlayer(i, language[3185]);
+						}
+						/*if ( stats[i]->EFFECTS[EFF_SHAPESHIFT] )
+						{
+							players[i]->entity->setEffect(EFF_SHAPESHIFT, false, 0, true);
+							players[i]->entity->effectShapeshift = 0;
+							serverUpdateEntitySkill(players[i]->entity, 53);
+							messagePlayer(i, language[3418]);
+							messagePlayer(i, language[3417]);
+						}*/
 
 						playSoundEntity(players[i]->entity, 400, 92);
 						createParticleDropRising(players[i]->entity, 593, 1.f);
@@ -172,7 +183,16 @@ void actSink(Entity* my)
 						}
 						case 2:
 						{
-							if ( stats[i]->type != VAMPIRE )
+							if ( stats[i]->type == AUTOMATON )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+								messagePlayerColor(i, color, language[3700]);
+								playSoundEntity(players[i]->entity, 52, 64);
+								stats[i]->HUNGER -= 200; //Lose boiler
+								players[i]->entity->modMP(5 + rand() % 6); //Raise temperature because steam.
+								serverUpdateHunger(i);
+							}
+							else if ( stats[i]->type != VAMPIRE )
 							{
 								messagePlayer(i, language[583]);
 								playSoundEntity(players[i]->entity, 52, 64);
@@ -208,35 +228,48 @@ void actSink(Entity* my)
 						}
 						case 3:
 						{
-							if ( stats[i]->type != VAMPIRE )
+							if ( stats[i]->type == AUTOMATON )
 							{
-								players[i]->entity->modHP(-2);
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+								messagePlayerColor(i, color, language[3701]);
+								playSoundEntity(players[i]->entity, 52, 64);
+								stats[i]->HUNGER += 200; //Gain boiler
+								players[i]->entity->modMP(2);
+								serverUpdateHunger(i);
+								break;
 							}
 							else
 							{
-								players[i]->entity->modHP(-2);
-								playSoundEntity(players[i]->entity, 249, 128);
-							}
-							playSoundEntity(players[i]->entity, 28, 64);
-							players[i]->entity->setObituary(language[1533]);
+								if ( stats[i]->type != VAMPIRE )
+								{
+									players[i]->entity->modHP(-2);
+								}
+								else
+								{
+									players[i]->entity->modHP(-2);
+									playSoundEntity(players[i]->entity, 249, 128);
+								}
+								playSoundEntity(players[i]->entity, 28, 64);
+								players[i]->entity->setObituary(language[1533]);
 
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							messagePlayerColor(i, color, language[584]);
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								messagePlayerColor(i, color, language[584]);
 
-							if ( i == 0 )
-							{
-								camera_shakex += .1;
-								camera_shakey += 10;
-							}
-							else if ( multiplayer == SERVER && i > 0 )
-							{
-								strcpy((char*)net_packet->data, "SHAK");
-								net_packet->data[4] = 10; // turns into .1
-								net_packet->data[5] = 10;
-								net_packet->address.host = net_clients[i - 1].host;
-								net_packet->address.port = net_clients[i - 1].port;
-								net_packet->len = 6;
-								sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								if ( i == 0 )
+								{
+									camera_shakex += .1;
+									camera_shakey += 10;
+								}
+								else if ( multiplayer == SERVER && i > 0 )
+								{
+									strcpy((char*)net_packet->data, "SHAK");
+									net_packet->data[4] = 10; // turns into .1
+									net_packet->data[5] = 10;
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
 							}
 							break;
 						}

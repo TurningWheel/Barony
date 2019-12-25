@@ -48,7 +48,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 			if ( !strncmp(myStats->name, "damaged automaton", strlen("damaged automaton")) )
 			{
 				lesserMonster = true;
-				myStats->HP = 60;
+				myStats->HP = 80;
 				myStats->MAXHP = 115;
 				myStats->RANDOM_MAXHP = 0;
 				myStats->RANDOM_HP = 30;
@@ -209,24 +209,31 @@ void initAutomaton(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				if ( greaterMonster )
+				if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
 				{
-					switch ( rand() % 4 )
+					my->monsterGenerateQuiverItem(myStats);
+				}
+				else
+				{
+					if ( greaterMonster )
 					{
-						case 0:
-							myStats->shield = newItem(CRYSTAL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
-							break;
-						case 1:
-							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
-							break;
-						case 2:
-							myStats->shield = newItem(STEEL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
-							break;
-						case 3:
-							myStats->shield = newItem(MIRROR_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
-							break;
-						default:
-							break;
+						switch ( rand() % 4 )
+						{
+							case 0:
+								myStats->shield = newItem(CRYSTAL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								break;
+							case 1:
+								myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								break;
+							case 2:
+								myStats->shield = newItem(STEEL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								break;
+							case 3:
+								myStats->shield = newItem(MIRROR_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								break;
+							default:
+								break;
+						}
 					}
 				}
 			}
@@ -669,7 +676,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	Entity* shieldarm = nullptr;
-
+	Entity* helmet = nullptr;
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
 	{
@@ -1091,6 +1098,10 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
+						if ( itemTypeIsQuiver(myStats->shield->type) )
+						{
+							entity->handleQuiverThirdPersonModel(*myStats);
+						}
 					}
 					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
@@ -1169,6 +1180,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// helm
 			case LIMB_HUMANOID_HELMET:
+				helmet = entity;
 				entity->focalx = limbs[AUTOMATON][9][0]; // 0
 				entity->focaly = limbs[AUTOMATON][9][1]; // 0
 				entity->focalz = limbs[AUTOMATON][9][2]; // -2
@@ -1222,7 +1234,17 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					bool hasSteelHelm = false;
+					if ( myStats->helmet )
+					{
+						if ( myStats->helmet->type == STEEL_HELM
+							|| myStats->helmet->type == CRYSTAL_HELM
+							|| myStats->helmet->type == ARTIFACT_HELM )
+						{
+							hasSteelHelm = true;
+						}
+					}
+					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1269,9 +1291,18 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( entity->sprite != 165 )
 				{
-					entity->focalx = limbs[AUTOMATON][10][0] + .35; // .35
-					entity->focaly = limbs[AUTOMATON][10][1] - 2; // -2
-					entity->focalz = limbs[AUTOMATON][10][2]; // .5
+					if ( entity->sprite == items[MASK_SHAMAN].index )
+					{
+						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else
+					{
+						entity->focalx = limbs[AUTOMATON][10][0] + .35; // .35
+						entity->focaly = limbs[AUTOMATON][10][1] - 2; // -2
+						entity->focalz = limbs[AUTOMATON][10][2]; // .5
+					}
 				}
 				else
 				{
@@ -1334,6 +1365,12 @@ bool Entity::automatonCanWieldItem(const Item& item) const
 			}
 		case THROWN:
 			return true;
+		case TOOL:
+			if ( itemTypeIsQuiver(item.type) )
+			{
+				return true;
+			}
+			break;
 		case MAGICSTAFF:
 			return true;
 		default:

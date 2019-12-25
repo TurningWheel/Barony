@@ -57,13 +57,34 @@ void initShadow(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
+			if ( my->monsterStoreType == 1 && !my->flags[USERFLAG2] )
+			{
+				strcpy(myStats->name, "Artemisia");
+				myStats->sex = FEMALE;
+				my->monsterShadowDontChangeName = 1;
+				myStats->weapon = newItem(ARTIFACT_BOW, WORN, 0, 1, rand(), false, nullptr);
+
+				ItemType type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
+				int amount = 10 + rand() % 11;
+				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
+
+				type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
+				amount = 10 + rand() % 11;
+				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
+			}
+			else if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
 			{
 				strcpy(myStats->name, "Baratheon"); //Long live the king, who commands his grue army.
 				my->monsterShadowDontChangeName = 1; //Special monsters don't change their name either.
 				myStats->GOLD = 1000;
 				myStats->RANDOM_GOLD = 500;
 				myStats->LVL = 50; // >:U
+			}
+			else if ( my->monsterStoreType == 2 )
+			{
+				myStats->HP = std::min(myStats->HP, 120);
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
 			}
 
 			// random effects
@@ -1182,7 +1203,17 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					bool hasSteelHelm = false;
+					if ( myStats->helmet )
+					{
+						if ( myStats->helmet->type == STEEL_HELM
+							|| myStats->helmet->type == CRYSTAL_HELM
+							|| myStats->helmet->type == ARTIFACT_HELM )
+						{
+							hasSteelHelm = true;
+						}
+					}
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1348,15 +1379,19 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		//messagePlayer(clientnum, "[DEBUG: Entity::shadowSpecialAbility() ] Initial mimic.");
 		//TODO: On initial mimic, need to reset some the tracking info on what's already been mimic'ed.
 		//Such as dropping already equipped items.
-		if ( itemCategory(myStats->weapon) == SPELLBOOK )
+		bool shadowAlreadyStartedWithWeapon = (myStats->weapon != nullptr);
+		if ( !shadowAlreadyStartedWithWeapon )
 		{
-			//Don't want to drop spellbooks, though. Then the shadow would lose the spell.
-			addItemToMonsterInventory(myStats->weapon);
-			myStats->weapon = nullptr;
-		}
-		else
-		{
-			dropItemMonster(myStats->weapon, this, myStats);
+			if ( itemCategory(myStats->weapon) == SPELLBOOK )
+			{
+				//Don't want to drop spellbooks, though. Then the shadow would lose the spell.
+				addItemToMonsterInventory(myStats->weapon);
+				myStats->weapon = nullptr;
+			}
+			else
+			{
+				dropItemMonster(myStats->weapon, this, myStats);
+			}
 		}
 		dropItemMonster(myStats->shield, this, myStats);
 
@@ -1368,7 +1403,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		Item *bestMeleeWeapon = target->getBestMeleeWeaponIHave();
 		Item *bestShield = target->getBestShieldIHave();
 
-		if ( bestMeleeWeapon )
+		if ( bestMeleeWeapon && !shadowAlreadyStartedWithWeapon )
 		{
 			Item* wieldedCopy = new Item();
 			copyItem(wieldedCopy, bestMeleeWeapon);
@@ -1458,7 +1493,12 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 				continue;
 			}
 
-			Item* spellbook = getSpellbookFromSpellID(spell->ID);
+			int spellbookType = getSpellbookFromSpellID(spell->ID);
+			if ( spellbookType == WOODEN_SHIELD )
+			{
+				continue;
+			}
+			Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
 			if ( !spellbook )
 			{
 				continue;
@@ -1492,7 +1532,16 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	{
 		int choosen = rand()%spellsCanMimic.size();
 
-		Item* spellbook = getSpellbookFromSpellID(spellsCanMimic[choosen]);
+		int spellbookType = getSpellbookFromSpellID(spellsCanMimic[choosen]);
+		if ( spellbookType == WOODEN_SHIELD )
+		{
+			continue;
+		}
+		Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
+		if ( !spellbook )
+		{
+			continue;
+		}
 
 		if ( spellbook )
 		{

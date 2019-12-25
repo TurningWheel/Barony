@@ -212,7 +212,7 @@ void initGoatman(Entity* my, Stat* myStats)
 			{
 				if ( !isShaman && rand() % 3 > 0 )
 				{
-					newItem(STEEL_CHAKRAM, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+					newItem(STEEL_CHAKRAM, SERVICABLE, 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
 				}
 				int numpotions = rand() % NUM_GOATMAN_POTIONS + 2;
 				if ( rand() % 3 == 0 )
@@ -803,6 +803,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	Entity* shieldarm = nullptr;
+	Entity* helmet = nullptr;
 
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
@@ -1119,6 +1120,10 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
+						if ( itemTypeIsQuiver(myStats->shield->type) )
+						{
+							entity->handleQuiverThirdPersonModel(*myStats);
+						}
 					}
 					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
@@ -1197,6 +1202,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// helm
 			case LIMB_HUMANOID_HELMET:
+				helmet = entity;
 				entity->focalx = limbs[GOATMAN][9][0]; // 0
 				entity->focaly = limbs[GOATMAN][9][1]; // 0
 				entity->focalz = limbs[GOATMAN][9][2]; // -2
@@ -1250,7 +1256,17 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					bool hasSteelHelm = false;
+					if ( myStats->helmet )
+					{
+						if ( myStats->helmet->type == STEEL_HELM
+							|| myStats->helmet->type == CRYSTAL_HELM
+							|| myStats->helmet->type == ARTIFACT_HELM )
+						{
+							hasSteelHelm = true;
+						}
+					}
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1297,9 +1313,18 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( entity->sprite != 165 )
 				{
-					entity->focalx = limbs[GOATMAN][10][0] + .35; // .35
-					entity->focaly = limbs[GOATMAN][10][1] - 2; // -2
-					entity->focalz = limbs[GOATMAN][10][2]; // .25
+					if ( entity->sprite == items[MASK_SHAMAN].index )
+					{
+						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else
+					{
+						entity->focalx = limbs[GOATMAN][10][0] + .35; // .35
+						entity->focaly = limbs[GOATMAN][10][1] - 2; // -2
+						entity->focalz = limbs[GOATMAN][10][2]; // .25
+					}
 				}
 				else
 				{
@@ -1580,6 +1605,13 @@ bool Entity::goatmanCanWieldItem(const Item& item) const
 				default:
 					return false;
 			}
+			break;
+		case TOOL:
+			if ( itemTypeIsQuiver(item.type) )
+			{
+				return true;
+			}
+			break;
 		case THROWN:
 			return true;
 		case ARMOR:

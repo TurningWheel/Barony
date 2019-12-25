@@ -20,6 +20,7 @@
 #include "items.hpp"
 #include "interface/interface.hpp"
 #include <SDL_thread.h>
+#include "player.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include <steam/steam_gameserver.h>
@@ -692,12 +693,18 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
+#ifdef DEBUG_ACHIEVEMENTS
+	messagePlayer(clientnum, "%s", achName);
+#endif
+
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
 		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow achievements.
+#ifndef DEBUG_ACHIEVEMENTS
 		return;
+#endif
 	}
 
 	if ( !strcmp(achName, "BARONY_ACH_BOOTS_OF_SPEED") )
@@ -720,6 +727,17 @@ void steamAchievement(const char* achName)
 		node->deconstructor = &defaultDeconstructor;
 	}
 
+#endif
+}
+
+void steamUnsetAchievement(const char* achName)
+{
+#ifndef STEAMWORKS
+	return;
+#else
+#ifdef DEBUG_ACHIEVEMENTS
+	SteamUserStats()->ClearAchievement(achName);
+#endif // DEBUG_ACHIEVEMENTS
 #endif
 }
 
@@ -784,7 +802,9 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
+#ifndef DEBUG_ACHIEVEMENTS
 		return;
+#endif
 	}
 
 	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
@@ -815,6 +835,24 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_VOLATILE:
 				case STEAM_STAT_SURROGATES:
 				case STEAM_STAT_KILL_COMMAND:
+				case STEAM_STAT_SPICY:
+				case STEAM_STAT_TRADITION:
+				case STEAM_STAT_POP_QUIZ:
+				case STEAM_STAT_DYSLEXIA:
+				case STEAM_STAT_BOOKWORM:
+				case STEAM_STAT_MONARCH:
+				case STEAM_STAT_MANY_PEDI_PALP:
+				case STEAM_STAT_5000_SECOND_RULE:
+				case STEAM_STAT_SOCIAL_BUTTERFLY:
+				case STEAM_STAT_ROLL_THE_BONES:
+				case STEAM_STAT_COWBOY_FROM_HELL:
+				case STEAM_STAT_SELF_FLAGELLATION:
+				case STEAM_STAT_CHOPPING_BLOCK:
+				case STEAM_STAT_IF_YOU_LOVE_SOMETHING:
+				case STEAM_STAT_RAGE_AGAINST:
+				case STEAM_STAT_GUERILLA_RADIO:
+				case STEAM_STAT_ITS_A_LIVING:
+				case STEAM_STAT_FASCIST:
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
 					break;
@@ -860,6 +898,72 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 						indicateProgress = true;
 					}
 					break;
+				case STEAM_STAT_SUPER_SHREDDER:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == 0 && g_SteamStats[statisticNum].m_iValue > 0 )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue < 25 && ((oldValue / 25) < (g_SteamStats[statisticNum].m_iValue / 25)) )
+					{
+						indicateProgress = true;
+					}
+					else if ( ((oldValue / 50) < (g_SteamStats[statisticNum].m_iValue / 50)) ) // show every 50.
+					{
+						indicateProgress = true;
+					}
+					break;
+				case STEAM_STAT_OVERCLOCKED:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == 0 && g_SteamStats[statisticNum].m_iValue > 0 )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue < 30 && ((oldValue / 30) < (g_SteamStats[statisticNum].m_iValue / 30)) )
+					{
+						indicateProgress = true;
+					}
+					else if ( ((oldValue / 60) < (g_SteamStats[statisticNum].m_iValue / 60)) ) // show every 60.
+					{
+						indicateProgress = true;
+					}
+					break;
+				case STEAM_STAT_SERIAL_THRILLA:
+				case STEAM_STAT_TRASH_COMPACTOR:
+				case STEAM_STAT_TORCHERER:
+				case STEAM_STAT_FIXER_UPPER:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == 0 && g_SteamStats[statisticNum].m_iValue > 0 )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue < 10 && ((oldValue / 10) < (g_SteamStats[statisticNum].m_iValue / 10)) )
+					{
+						indicateProgress = true;
+					}
+					else if ( ((oldValue / 25) < (g_SteamStats[statisticNum].m_iValue / 25)) ) // show every 25.
+					{
+						indicateProgress = true;
+					}
+					break;
 				default:
 					break;
 			}
@@ -888,7 +992,9 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
+#ifndef DEBUG_ACHIEVEMENTS
 		return;
+#endif
 	}
 
 	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
@@ -946,6 +1052,7 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 	{
 		switch ( statisticNum )
 		{
+			// below are 30-50 max value
 			case STEAM_STAT_RHINESTONE_COWBOY:
 			case STEAM_STAT_TOUGH_AS_NAILS:
 			case STEAM_STAT_UNSTOPPABLE_FORCE:
@@ -956,6 +1063,17 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_BARFIGHT_CHAMP:
 			case STEAM_STAT_SURROGATES:
 			case STEAM_STAT_KILL_COMMAND:
+			case STEAM_STAT_DYSLEXIA:
+			case STEAM_STAT_BOOKWORM:
+			case STEAM_STAT_5000_SECOND_RULE:
+			case STEAM_STAT_SOCIAL_BUTTERFLY:
+			case STEAM_STAT_ROLL_THE_BONES:
+			case STEAM_STAT_COWBOY_FROM_HELL:
+			case STEAM_STAT_SELF_FLAGELLATION:
+			case STEAM_STAT_FASCIST:
+			case STEAM_STAT_ITS_A_LIVING:
+			case STEAM_STAT_CHOPPING_BLOCK:
+			case STEAM_STAT_MANY_PEDI_PALP:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 5 == 0) )
@@ -969,9 +1087,15 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 					}
 				}
 				break;
+			// below are 20 max value
 			case STEAM_STAT_IRON_GUT:
 			case STEAM_STAT_BOTTLE_NOSED:
 			case STEAM_STAT_VOLATILE:
+			case STEAM_STAT_TRADITION:
+			case STEAM_STAT_POP_QUIZ:
+			case STEAM_STAT_MONARCH:
+			case STEAM_STAT_RAGE_AGAINST:
+			case STEAM_STAT_GUERILLA_RADIO:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 4 == 0) )
@@ -997,7 +1121,53 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 					}
 				}
 				break;
+			// below is 100 max value
+			case STEAM_STAT_SERIAL_THRILLA:
+			case STEAM_STAT_TRASH_COMPACTOR:
+			case STEAM_STAT_TORCHERER:
+			case STEAM_STAT_FIXER_UPPER:
+			// below are 1000 max value
+			case STEAM_STAT_SUPER_SHREDDER:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
+				{
+					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
+					}
+				}
+				break;
+			// below is 600 max value
+			case STEAM_STAT_OVERCLOCKED:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
+				{
+					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
+					}
+				}
+				break;
+			// below are 100 max value
+			case STEAM_STAT_IF_YOU_LOVE_SOMETHING:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
+				{
+					if ( iVal == 1 || iVal == 5 || (iVal > 0 && iVal % 10 == 0) || (iVal > 0 && iVal % 25 == 0) )
+					{
+						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
+						{
+							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
+						}
+					}
+				}
+				break;
+			// below are 10 max value
 			case STEAM_STAT_TAKE_THIS_OUTSIDE:
+			case STEAM_STAT_SPICY:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 2 == 0) )
@@ -1014,8 +1184,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			default:
 				break;
 		}
-		//messagePlayer(clientnum, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(), 
-			//iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#ifdef DEBUG_ACHIEVEMENTS
+		messagePlayer(clientnum, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(), 
+			iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 	}
 #endif // !STEAMWORKS
 }
@@ -1285,12 +1457,39 @@ void processLobbyInvite()
 		}
 		else
 		{
-			printlog("warning: received invitation to lobby with which you have an incompatible save game.\n");
-			if ( lobbyToConnectTo )
+			// try reload from your other savefiles since this didn't match the default savegameIndex.
+			if ( savegamesList.empty() )
 			{
-				cpp_Free_CSteamID(lobbyToConnectTo);    //TODO: Bodge this bodge!
+				reloadSavegamesList(false);
 			}
-			lobbyToConnectTo = NULL;
+			bool foundSave = false;
+			for ( auto it = savegamesList.begin(); it != savegamesList.end(); ++it )
+			{
+				auto entry = *it;
+				savegameCurrentFileIndex = std::get<2>(entry);
+				gameKey = getSaveGameUniqueGameKey(false, savegameCurrentFileIndex);
+				if ( std::get<1>(entry) != SINGLE && temp32 == gameKey )
+				{
+					foundSave = true;
+					break;
+				}
+			}
+
+			if ( !foundSave )
+			{
+				savegameCurrentFileIndex = 0;
+				printlog("warning: received invitation to lobby with which you have an incompatible save game.\n");
+				if ( lobbyToConnectTo )
+				{
+					cpp_Free_CSteamID(lobbyToConnectTo);    //TODO: Bodge this bodge!
+				}
+				lobbyToConnectTo = NULL;
+			}
+			else
+			{
+				loadingsavegame = temp32;
+				buttonLoadMultiplayerGame(NULL);
+			}
 		}
 		stillConnectingToLobby = false;
 	}

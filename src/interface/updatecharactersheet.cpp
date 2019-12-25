@@ -460,6 +460,7 @@ void drawSkillsSheet()
 		{
 			skillTooltipRect.w = (longestline(language[3255 + i]) * fontWidth) + 8;
 			skillTooltip = language[3255 + i];
+
 			size_t n = std::count(skillTooltip.begin(), skillTooltip.end(), '\n'); // count newlines
 			skillTooltipRect.h = fontHeight * (n + 2) + 8;
 			skillTooltipRect.x = mousex - 16 - skillTooltipRect.w;
@@ -474,7 +475,7 @@ void drawSkillsSheet()
 			switch ( i )
 			{
 				case PRO_LOCKPICKING:
-					skillTooltipRect.h += 2 * fontHeight;
+					skillTooltipRect.h += 4 * fontHeight;
 					drawTooltip(&skillTooltipRect);
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
 						capstoneTextColor, language[3270], CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT);
@@ -586,23 +587,79 @@ void drawSkillsSheet()
 					headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
 			}
 
-			real_t skillDetails[5] = { 0.f };
+			real_t skillDetails[6] = { 0.f };
 
 			switch ( i )
 			{
 				case PRO_LOCKPICKING:
+				{
+					Sint32 PER = 0;
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						PER = statGetPER(stats[clientnum], players[clientnum]->entity);
+					}
+					statGetPER(stats[clientnum], players[clientnum]->entity);
 					skillDetails[0] = stats[clientnum]->PROFICIENCIES[i] / 2.f; // lockpick chests/doors
 					if ( stats[clientnum]->PROFICIENCIES[i] == SKILL_LEVEL_LEGENDARY )
 					{
 						skillDetails[0] = 100.f;
 					}
-					skillDetails[1] = (100 - 100 / (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
-					skillDetails[2] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 5); // beartrap dmg
+					skillDetails[1] = std::min(100.f, stats[clientnum]->PROFICIENCIES[i] + 50.f);
+					if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT )
+					{
+						skillDetails[2] = 100.f; // lockpick automatons
+					}
+					else
+					{
+						skillDetails[2] = (100 - 100 / (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
+					}
+					skillDetails[3] = (100 - 100 / (std::max(1, static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10)))); // disarm arrow traps
+					if ( stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
+					{
+						skillDetails[3] = 0.f;
+					}
+					std::string canRepairItems = "none";
+					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_LEGENDARY )
+					{
+						canRepairItems = "all";
+					}
+					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_MASTER )
+					{
+						canRepairItems = "2/0";
+					}
+					else if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_EXPERT )
+					{
+						canRepairItems = "1/0";
+					}
+					skillDetails[4] = maximumTinkeringBotsCanBeDeployed(stats[clientnum]);
+
+					// bonus scrapping chances.
+					switch ( std::min(5, static_cast<int>((stats[clientnum]->PROFICIENCIES[i] + PER) / 20)) )
+					{
+						case 5:
+							skillDetails[5] = 150.f;
+							break;
+						case 4:
+							skillDetails[5] = 125.f;
+							break;
+						case 3:
+							skillDetails[5] = 50.f;
+							break;
+						case 2:
+							skillDetails[5] = 25.f;
+							break;
+						case 1:
+							skillDetails[5] = 12.5;
+							break;
+						default:
+							skillDetails[5] = 0.f;
+							break;
+					}
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
-						skillDetails[0], skillDetails[1], skillDetails[2]
-					);
+						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3], skillDetails[5], canRepairItems.c_str(), skillDetails[4], getInputName(impulses[IN_FOLLOWERMENU]));
 					break;
+				}
 				case PRO_STEALTH:
 					if ( players[clientnum] && players[clientnum]->entity )
 					{
@@ -775,6 +832,14 @@ void drawSkillsSheet()
 				{
 					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[PRO_RANGED]) / 2.f; // lowest damage roll
 					skillDetails[1] = 50 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
+					if ( stats[clientnum]->type == GOBLIN )
+					{
+						skillDetails[1] += 20;
+						if ( stats[clientnum]->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_LEGENDARY )
+						{
+							skillDetails[1] = std::min(skillDetails[1], 90.0);
+						}
+					}
 					if ( players[clientnum] && players[clientnum]->entity )
 					{
 						skillDetails[2] = std::min(std::max(players[clientnum]->entity->getPER() / 2, 0), 50);
@@ -815,8 +880,8 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 50; // chance to degrade on > 0 dmg
-						skillDetails[2] = 4; // chance to degrade on 0 dmg
+						skillDetails[1] = 50 + (stats[clientnum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+						skillDetails[2] = 4 + (stats[clientnum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
 						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
 						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
 						if ( svFlags & SV_FLAG_HARDCORE )
@@ -841,8 +906,8 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 100; // chance to degrade on > 0 dmg
-						skillDetails[2] = 8; // chance to degrade on 0 dmg
+						skillDetails[1] = 100 + (stats[clientnum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+						skillDetails[2] = 8 + (stats[clientnum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
 						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
 						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
 						if ( svFlags & SV_FLAG_HARDCORE )
@@ -865,13 +930,13 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 25; // degrade > 0 dmg taken
-						skillDetails[2] = 10; // degrade on 0 dmg
+						skillDetails[1] = 25 + (stats[clientnum]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
+						skillDetails[2] = 10 + (stats[clientnum]->type == GOBLIN ? 10 : 0); // degrade on 0 dmg
 						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
 						skillDetails[2] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
 						if ( svFlags & SV_FLAG_HARDCORE )
 						{
-							skillDetails[2] = 40;
+							skillDetails[2] = 40 + (stats[clientnum]->type == GOBLIN ? 10 : 0);
 						}
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -914,6 +979,7 @@ void drawSkillsSheet()
 					skillDetails[3] = std::min(80, (60 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10));
 					skillDetails[4] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
 
+					skillTooltipRect.h = fontHeight * (5 + 2) + 8;
 					skillTooltipRect.h += 4 + (6 + lines) * (fontHeight + lines / 6);
 					drawTooltip(&skillTooltipRect);
 					// legendary text
@@ -1093,7 +1159,18 @@ void drawPartySheet()
 		{
 			if ( !client_disconnected[i] && stats[i] )
 			{
-				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
+				
+				if ( strlen(stats[i]->name) > 16 )
+				{
+					char shortname[32] = "";
+					strncpy(shortname, stats[i]->name, 14);
+					strcat(shortname, "..");
+					ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, shortname);
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
+				}
 
 				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i], i));
 				ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
@@ -1406,7 +1483,7 @@ void statsHoverText(Stat* tmpStat)
 		"charisma: "
 	};
 
-	char tooltipText[6][4][128] =
+	char tooltipText[6][5][128] =
 	{
 		{
 			"base:  %2d ",
@@ -1428,6 +1505,7 @@ void statsHoverText(Stat* tmpStat)
 			"base:  %2d ",
 			"bonus: %2d ",
 			"MP regen rate: 1 / %2.1fs",
+			"magic damage:     %3d%%",
 			"magic resistance: %2.1f%% "
 		},
 		{
@@ -1481,7 +1559,7 @@ void statsHoverText(Stat* tmpStat)
 					statBonus = statGetCON(tmpStat, playerEntity) - statBase;
 					break;
 				case 3:
-					numInfoLines = 4;
+					numInfoLines = 5;
 					tmp_bmp = int_bmp64;
 					statBase = tmpStat->INT;
 					statBonus = statGetINT(tmpStat, playerEntity) - statBase;
@@ -1558,11 +1636,66 @@ void statsHoverText(Stat* tmpStat)
 							{
 								tmp = players[clientnum]->entity;
 								real_t regen = (static_cast<real_t>(tmp->getManaRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
-								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
-								if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND)
+								if ( stats[clientnum]->type == AUTOMATON )
+								{
+									if ( stats[clientnum]->HUNGER <= 300 )
+									{
+										regen /= 6; // degrade faster
+									}
+									else if ( stats[clientnum]->HUNGER > 1200 )
+									{
+										if ( stats[clientnum]->MP / static_cast<real_t>(std::max(1, stats[clientnum]->MAXMP)) <= 0.5 )
+										{
+											regen /= 4; // increase faster at < 50% mana
+										}
+										else
+										{
+											regen /= 2; // increase less faster at > 50% mana
+										}
+									}
+									else if ( stats[clientnum]->HUNGER > 300 )
+									{
+										// normal manaRegenInterval 300-1200 hunger.
+									}
+								}
+
+								if ( regen < 0.f /*stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0*/ )
+								{
+									regen = 0.f;
+									snprintf(buf, longestline("MP regen rate: 0 / %2.1fs"), "MP regen rate: 0 / %2.1fs", (static_cast<real_t>(MAGIC_REGEN_TIME) / TICKS_PER_SECOND));
+								}
+								else
+								{
+									snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
+								}
+
+								if ( stats[clientnum]->type == AUTOMATON )
+								{
+									if ( stats[clientnum]->HUNGER <= 300 )
+									{
+										color = uint32ColorRed(*mainsurface);
+									}
+									else if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND )
+									{
+										color = uint32ColorGreen(*mainsurface);
+									}
+								}
+								else if ( stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0 )
+								{
+									if ( !(svFlags & SV_FLAG_HUNGER) )
+									{
+										color = uint32ColorWhite(*mainsurface);
+									}
+									else
+									{
+										color = uint32ColorRed(*mainsurface);
+									}
+								}
+								else if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND)
 								{
 									color = uint32ColorGreen(*mainsurface);
 								}
+								
 							}
 							else
 							{
@@ -1586,7 +1719,14 @@ void statsHoverText(Stat* tmpStat)
 								if ( regen < 0 )
 								{
 									regen = 0.f;
-									color = uint32ColorRed(*mainsurface);
+									if ( !(svFlags & SV_FLAG_HUNGER) )
+									{
+										color = uint32ColorWhite(*mainsurface);
+									}
+									else
+									{
+										color = uint32ColorRed(*mainsurface);
+									}
 									snprintf(buf, longestline("HP regen rate: 0 / %2.1fs"), "HP regen rate: 0 / %2.1fs", (static_cast<real_t>(HEAL_TIME) / TICKS_PER_SECOND));
 								}
 								else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
@@ -1605,6 +1745,18 @@ void statsHoverText(Stat* tmpStat)
 						}
 					}
 					else if ( j == 3 )
+					{
+						if ( i == 3 )
+						{
+							int bonusDamage = 100;
+							if ( players[clientnum] && players[clientnum]->entity )
+							{
+								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[clientnum]->entity, nullptr));
+							}
+							snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], bonusDamage);
+						}
+					}
+					else if ( j == 4 )
 					{
 						if ( i == 3 )
 						{
@@ -1643,7 +1795,18 @@ Sint32 displayAttackPower(Sint32 output[6])
 	{
 		if ( stats[clientnum] )
 		{
-			if ( !stats[clientnum]->weapon )
+			bool shapeshiftUseMeleeAttack = false;
+			if ( entity->effectShapeshift != NOTHING )
+			{
+				shapeshiftUseMeleeAttack = true;
+				if ( entity->effectShapeshift == CREATURE_IMP
+					&& stats[clientnum]->weapon && itemCategory(stats[clientnum]->weapon) == MAGICSTAFF )
+				{
+					shapeshiftUseMeleeAttack = false;
+				}
+			}
+
+			if ( !stats[clientnum]->weapon || shapeshiftUseMeleeAttack )
 			{
 				// fists
 				attack += entity->getAttack();
@@ -1670,7 +1833,30 @@ Sint32 displayAttackPower(Sint32 output[6])
 						output[0] = 1; // ranged
 						output[1] = attack;
 						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+						output[5] = 0;
+						if ( stats[clientnum]->shield && rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+						{
+							int quiverATK = stats[clientnum]->shield->weaponGetAttack(stats[clientnum]);
+							output[5] += quiverATK;
+							attack += quiverATK;
+						}
 						output[3] = entity->getDEX(); // bonus from main attribute
+						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
+
+						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						attack -= (output[4] / 2);
+						output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
+						output[1] = attack;
+					}
+					else if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP )
+					{
+						attack += entity->getAttack();
+						output[0] = 6; // ranged
+						output[1] = attack;
+						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+						int atk = entity->getSTR() + entity->getDEX();
+						atk = std::min(atk / 2, atk);
+						output[3] = atk; // bonus from main attribute
 						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
 
 						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
@@ -1794,7 +1980,7 @@ void attackHoverText(Sint32 input[6])
 					break;
 				case 1: // ranged
 					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
-					numInfoLines = 3;
+					numInfoLines = 4;
 					break;
 				case 2: // thrown
 					snprintf(tooltipHeader, strlen(language[2531]), language[2531]);
@@ -1812,6 +1998,10 @@ void attackHoverText(Sint32 input[6])
 					snprintf(tooltipHeader, strlen(language[2541]), language[2541]);
 					numInfoLines = 0;
 					break;
+				case 6: // whip
+					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
+					numInfoLines = 3;
+					break;
 				default:
 					break;
 			}
@@ -1821,6 +2011,10 @@ void attackHoverText(Sint32 input[6])
 			src.y = mousey + tooltip_offset_y;
 			src.h = std::max(tooltip_base_h * (numInfoLines + 1) + tooltip_pad_h, tooltip_base_h * (2) + tooltip_pad_h);
 			src.w = 256;
+			if ( input[0] == 6 ) // whip tooltip wider
+			{
+				src.w += 32;
+			}
 			drawTooltip(&src);
 
 			// draw header
@@ -1876,6 +2070,9 @@ void attackHoverText(Sint32 input[6])
 							break;
 						case 2:
 							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							break;
+						case 3:
+							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
 							break;
 						default:
 							break;
@@ -1934,6 +2131,23 @@ void attackHoverText(Sint32 input[6])
 				else if ( input[0] == 5 ) // staff
 				{
 					
+				}
+				else if ( input[0] == 6 ) // whip
+				{
+					switch ( j )
+					{
+						case 0:
+							snprintf(buf, 127, language[2538], input[2]);
+							break;
+						case 1:
+							snprintf(buf, longestline(language[3458]), language[3458], input[3]);
+							break;
+						case 2:
+							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							break;
+						default:
+							break;
+					}
 				}
 				ttfPrintTextColor(ttf12, infoText_x, infoText_y, color, false, buf);
 			}

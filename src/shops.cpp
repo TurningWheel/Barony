@@ -33,6 +33,12 @@ char* shopkeepername = NULL;
 char shopkeepername_client[64];
 
 int selectedShopSlot = -1;
+std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
+{
+	{ ARTIFACT_ORB_GREEN, { ARTIFACT_BOW, QUIVER_HUNTING, QUIVER_PIERCE } },
+	{ ARTIFACT_ORB_BLUE, { ARTIFACT_MACE, ENCHANTED_FEATHER } },
+	{ ARTIFACT_ORB_RED, { CRYSTAL_SWORD, CRYSTAL_BATTLEAXE, CRYSTAL_SPEAR, CRYSTAL_MACE } }
+});
 
 /*-------------------------------------------------------------------------------
 
@@ -163,6 +169,10 @@ void buyItemFromShop(Item* item)
 		}
 		shoptimer = ticks - 1;
 		Item* itemToPickup = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr);
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			itemToPickup->count = item->count;
+		}
 		itemPickup(clientnum, itemToPickup);
 
 		stats[clientnum]->GOLD -= item->buyValue(clientnum);
@@ -174,7 +184,10 @@ void buyItemFromShop(Item* item)
 		
 		playSound(89, 64);
 		int ocount = item->count;
-		item->count = 1;
+		if ( !itemTypeIsQuiver(item->type) )
+		{
+			item->count = 1;
+		}
 		messagePlayer(clientnum, language[1123], item->description(), item->buyValue(clientnum));
 		item->count = ocount;
 		if ( multiplayer != CLIENT )
@@ -218,19 +231,35 @@ void buyItemFromShop(Item* item)
 			SDLNet_Write32(item->status, &net_packet->data[12]);
 			SDLNet_Write32(item->beatitude, &net_packet->data[16]);
 			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-			if ( item->identified )
+			if ( itemTypeIsQuiver(item->type) )
 			{
-				net_packet->data[24] = 1;
+				SDLNet_Write32((Uint32)item->count, &net_packet->data[24]);
 			}
 			else
 			{
-				net_packet->data[24] = 0;
+				SDLNet_Write32((Uint32)(1), &net_packet->data[24]);
 			}
-			net_packet->data[25] = clientnum;
+			if ( item->identified )
+			{
+				net_packet->data[28] = 1;
+			}
+			else
+			{
+				net_packet->data[28] = 0;
+			}
+			net_packet->data[29] = clientnum;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 26;
+			net_packet->len = 30;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper)) )
+		{
+			buyItemFromMysteriousShopkeepConsumeOrb(*(uidToEntity(shopkeeper)), *item);
+		}
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			item->count = 1; // so we consume it all up.
 		}
 		consumeItem(item, clientnum);
 	}
@@ -276,6 +305,10 @@ void sellItemToShop(Item* item)
 	if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] >= CAPSTONE_UNLOCK_LEVEL[PRO_TRADING] )
 	{
 		//Skill capstone: Can sell anything to any shop.
+		if (shopkeepertype == 10)
+		{
+			deal = false;
+		}
 	}
 	else
 	{
@@ -324,11 +357,24 @@ void sellItemToShop(Item* item)
 				}
 				break;
 			case 7: // tools
-			case 8: // lights
 				if ( itemCategory(item) != TOOL && itemCategory(item) != THROWN )
 				{
 					deal = false;
 				}
+				break;
+			case 8: // hunting
+				if ( itemCategory(item) != WEAPON 
+					&& itemCategory(item) != THROWN
+					&& !itemTypeIsQuiver(item->type)
+					&& item->type != BRASS_KNUCKLES
+					&& item->type != IRON_KNUCKLES
+					&& item->type != SPIKED_GAUNTLETS )
+				{
+					deal = false;
+				}
+				break;
+			case 10:
+				deal = false;
 				break;
 			default:
 				break;
@@ -351,7 +397,11 @@ void sellItemToShop(Item* item)
 		shopspeech = language[206 + rand() % 3];
 	}
 	shoptimer = ticks - 1;
-	newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, shopInv);
+	Item* sold = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, shopInv);
+	if ( itemTypeIsQuiver(item->type) )
+	{
+		sold->count = item->count;
+	}
 	stats[clientnum]->GOLD += item->sellValue(clientnum);
 
 	if ( stats[clientnum]->playerRace > 0 && players[clientnum] && players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
@@ -361,7 +411,10 @@ void sellItemToShop(Item* item)
 
 	playSound(89, 64);
 	int ocount = item->count;
-	item->count = 1;
+	if ( !itemTypeIsQuiver(item->type) )
+	{
+		item->count = 1;
+	}
 	messagePlayer(clientnum, language[1125], item->description(), item->sellValue(clientnum));
 	item->count = ocount;
 	if ( multiplayer != CLIENT )
@@ -392,20 +445,83 @@ void sellItemToShop(Item* item)
 		SDLNet_Write32(item->status, &net_packet->data[12]);
 		SDLNet_Write32(item->beatitude, &net_packet->data[16]);
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-		if ( item->identified )
+		if ( itemTypeIsQuiver(item->type) )
 		{
-			net_packet->data[24] = 1;
+			SDLNet_Write32((Uint32)item->count, &net_packet->data[24]);
 		}
 		else
 		{
-			net_packet->data[24] = 0;
+			SDLNet_Write32((Uint32)(1), &net_packet->data[24]);
 		}
-		net_packet->data[25] = clientnum;
+		if ( item->identified )
+		{
+			net_packet->data[28] = 1;
+		}
+		else
+		{
+			net_packet->data[28] = 0;
+		}
+		net_packet->data[29] = clientnum;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 26;
+		net_packet->len = 30;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	if ( itemTypeIsQuiver(item->type) )
+	{
+		item->count = 1; // so we consume it all up.
 	}
 	consumeItem(item, clientnum);
 	sellitem = NULL;
+}
+
+bool shopIsMysteriousShopkeeper(Entity* entity)
+{
+	if ( !entity )
+	{
+		return false;
+	}
+	if ( entity->monsterStoreType == 10 )
+	{
+		return true;
+	}
+	return false;
+}
+
+void buyItemFromMysteriousShopkeepConsumeOrb(Entity& entity, Item& boughtItem)
+{
+	list_t* inventory = nullptr;
+	if ( multiplayer == CLIENT )
+	{
+		inventory = shopInv;
+	}
+	else
+	{
+		if ( entity.getStats() )
+		{
+			inventory = &entity.getStats()->inventory;
+		}
+	}
+	if ( inventory )
+	{
+		for ( auto orbCategories : shopkeeperMysteriousItems )
+		{
+			if ( orbCategories.second.find(boughtItem.type) != orbCategories.second.end() )
+			{
+				// item is part of an orb set. need to consume the orb.
+				node_t* nextnode = nullptr;
+				for ( node_t* node = inventory->first; node; node = nextnode )
+				{
+					nextnode = node->next;
+					Item* orb = (Item*)node->element;
+					if ( orb && orb->type == orbCategories.first )
+					{
+						consumeItem(orb, -1);
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
 }

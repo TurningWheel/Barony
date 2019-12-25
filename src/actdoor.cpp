@@ -18,6 +18,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "interface/interface.hpp"
+#include "items.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -44,9 +45,11 @@ void actDoor(Entity* my)
 		my->doorStartAng = my->yaw;
 		my->doorHealth = 15 + rand() % 5;
 		my->doorMaxHealth = my->doorHealth;
+		my->doorPreventLockpickExploit = 1;
 		if ( rand() % 20 == 0 || (!strncmp(map.name, "The Great Castle", 16) && rand() % 2 == 0) )   // 5% chance
 		{
 			my->doorLocked = 1;
+			my->doorPreventLockpickExploit = 0;
 		}
 		my->doorOldStatus = my->doorStatus;
 		my->scalex = 1.01;
@@ -285,11 +288,25 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 		{
 			if ( doorHealth <= 0 )
 			{
-				messagePlayer(caster->skill[2], language[387]);
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], language[3617], items[magicProjectile.skill[21]].name_identified, language[674]);
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], language[387]);
+				}
 			}
 			else
 			{
-				messagePlayer(caster->skill[2], language[378], language[674]);
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], language[3618], items[magicProjectile.skill[21]].name_identified, language[674]);
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], language[378], language[674]);
+				}
 			}
 			updateEnemyBar(caster, this, language[674], doorHealth, doorMaxHealth);
 		}

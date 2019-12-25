@@ -121,10 +121,21 @@ void Entity::actChest()
 				chesttype = rand() % 8;
 				if ( chesttype == 1 )
 				{
-					if ( rand() % 2 == 0 )
+					if ( currentlevel > 10 )
 					{
 						// re-roll the garbage chest.
-						chesttype = rand() % 8;
+						while ( chesttype == 1 )
+						{
+							chesttype = rand() % 8;
+						}
+					}
+					else
+					{
+						// re-roll the garbage chest 50% chance
+						if ( rand() % 2 == 0 )
+						{
+							chesttype = rand() % 8;
+						}
 					}
 				}
 			}
@@ -166,7 +177,15 @@ void Entity::actChest()
 					//}
 					//newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 					int cat = rand() % (NUMCATEGORIES - 1); // exclude spell_cat
-					newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					Item* currentItem = newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					if ( currentItem )
+					{
+						if ( currentItem->type >= BRONZE_TOMAHAWK && currentItem->type <= CRYSTAL_SHURIKEN )
+						{
+							// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+							currentItem->status = std::min(static_cast<Status>(DECREPIT + (currentItem->type - BRONZE_TOMAHAWK)), EXCELLENT);
+						}
+					}
 				}
 				break;
 			case 1:
@@ -351,8 +370,15 @@ void Entity::actChest()
 						itemcount = 0 + rand() % 2;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							Status durability = static_cast<Status>(WORN + rand() % 3);
-							newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+							Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), WORN, 0, 3 + rand() % 3, rand(), false, inventory);
+							if ( thrown )
+							{
+								if ( thrown->type >= BRONZE_TOMAHAWK && thrown->type <= CRYSTAL_SHURIKEN )
+								{
+									// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+									thrown->status = std::min(static_cast<Status>(DECREPIT + (thrown->type - BRONZE_TOMAHAWK)), EXCELLENT);
+								}
+							}
 						}
 					}
 					break;
@@ -384,12 +410,26 @@ void Entity::actChest()
 						{
 							newItem(CLOAK_BACKPACK, durability, 0, 1, rand(), false, inventory);
 						}
+						if ( rand() % 5 == 0 )
+						{
+							newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, rand(), false, inventory);
+							newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 10 + rand() % 11, 0, false, inventory);
+							newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 10 + rand() % 11, 0, false, inventory);
+						}
 						break;
 					case 2:
 						itemcount = 1 + rand() % 2;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+							Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), WORN, 0, 3 + rand() % 3, rand(), false, inventory);
+							if ( thrown )
+							{
+								if ( thrown->type >= BRONZE_TOMAHAWK && thrown->type <= CRYSTAL_SHURIKEN )
+								{
+									// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+									thrown->status = std::min(static_cast<Status>(DECREPIT + (thrown->type - BRONZE_TOMAHAWK)), EXCELLENT);
+								}
+							}
 						}
 						break;
 					default:
@@ -419,6 +459,21 @@ void Entity::actChest()
 						{
 							//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 							newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						}
+						if ( rand() % 10 == 0 )
+						{
+							if ( rand() % 5 == 0 )
+							{
+								newItem(ENCHANTED_FEATHER, EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, false, inventory);
+							}
+							else
+							{
+								newItem(ENCHANTED_FEATHER, SERVICABLE, 0, 1, (3 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, inventory);
+							}
+							if ( rand() % 2 == 0 )
+							{
+								newItem(SCROLL_BLANK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, inventory);
+							}
 						}
 						break;
 					case 1:
@@ -450,7 +505,7 @@ void Entity::actChest()
 						newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						switch (rand() % 6)
+						switch (rand() % 7)
 						{
 							case 0:
 								//A cloak. Item 24.
@@ -482,6 +537,13 @@ void Entity::actChest()
 							case 5:
 								//A wizard's hat. Item 39.
 								newItem(HAT_WIZARD, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+								break;
+							case 6:
+								newItem(ENCHANTED_FEATHER, EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, false, inventory);
+								if ( rand() % 2 == 0 )
+								{
+									newItem(SCROLL_BLANK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, inventory);
+								}
 								break;
 						}
 						break;
@@ -1277,11 +1339,25 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 		{
 			if ( chestHealth <= 0 )
 			{
-				messagePlayer(caster->skill[2], language[2520]);
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], language[3617], items[magicProjectile.skill[21]].name_identified, language[675]);
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], language[2520]);
+				}
 			}
 			else
 			{
-				messagePlayer(caster->skill[2], language[378], language[675]);
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], language[3618], items[magicProjectile.skill[21]].name_identified, language[675]);
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], language[378], language[675]);
+				}
 			}
 		}
 		updateEnemyBar(caster, this, language[675], chestHealth, chestMaxHealth);

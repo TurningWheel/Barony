@@ -114,7 +114,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 						{
 							if ( rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
 							{
-								newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
+								newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
 							}
 							else // pick 1 of 4 normal weapons.
 							{
@@ -131,7 +131,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 					{
 						if ( rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
 						}
 						else // pick 1 of 4 normal weapons.
 						{

@@ -141,6 +141,7 @@ bool gamemods_modPreload = false;
 
 sex_t lastSex = MALE;
 PlayerRaces lastRace = RACE_HUMAN;
+int lastAppearance = 0;
 bool enabledDLCPack1 = false;
 bool enabledDLCPack2 = false;
 bool showRaceInfo = false;
@@ -214,6 +215,7 @@ bool settings_hide_statusbar = false;
 bool settings_hide_playertags = false;
 bool settings_show_skill_values = false;
 bool settings_disableMultithreadedSteamNetworking = false;
+bool settings_disableFPSLimitOnNetworkMessages = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -261,6 +263,25 @@ real_t drunkextend = 0;
 bool losingConnection[4] = { false };
 bool subtitleVisible = false;
 int subtitleCurrent = 0;
+
+// new text crawls...
+int DLCendmoviealpha[8][30] = { 0 };
+int DLCendmovieStageAndTime[8][2] = { 0 };
+
+int DLCendmovieNumLines[8] = 
+{
+	7,	// MOVIE_MIDGAME_HERX_MONSTERS,
+	8,	// MOVIE_MIDGAME_BAPHOMET_MONSTERS,
+	8,	// MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON,
+	5,	// MOVIE_CLASSIC_WIN_MONSTERS,
+	7,	// MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS,
+	13,	// MOVIE_WIN_AUTOMATON,
+	13,	// MOVIE_WIN_DEMONS_UNDEAD,
+	13	// MOVIE_WIN_BEASTS
+};
+char epilogueHostName[128] = "";
+int epilogueHostRace = 0;
+int epilogueMultiplayerType = SINGLE;
 
 //Confirm resolution window stuff.
 bool resolutionChanged = false;
@@ -503,6 +524,10 @@ void handleMainMenu(bool mode)
 	{
 		enabledDLCPack1 = true;
 	}
+	if ( SteamApps()->BIsDlcInstalled(1010821) )
+	{
+		enabledDLCPack2 = true;
+	}
 #else
 #endif // STEAMWORKS
 
@@ -667,6 +692,7 @@ void handleMainMenu(bool mode)
 				{
 					steamOnlinePlayers = NumberOfCurrentPlayers.m_cPlayers;
 				}
+				uint64 id = SteamUser()->GetSteamID().ConvertToUint64();
 			}
 #else
 			if ( intro && introstage == 1 )
@@ -722,6 +748,7 @@ void handleMainMenu(bool mode)
 				client_classes[clientnum] = CLASS_BARBARIAN;
 				stats[0]->appearance = 0;
 				stats[0]->playerRace = RACE_HUMAN;
+				initClass(0);
 				strcpy(stats[0]->name, "The Server");
 				keystatus[SDL_SCANCODE_L] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
@@ -740,6 +767,7 @@ void handleMainMenu(bool mode)
 				client_classes[clientnum] = CLASS_BARBARIAN;
 				stats[0]->appearance = 0;
 				stats[0]->playerRace = RACE_HUMAN;
+				initClass(0);
 				strcpy(stats[0]->name, "The Client");
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
@@ -1915,7 +1943,7 @@ void handleMainMenu(bool mode)
 				snprintf(raceOptionBuffer, 63, language[3177], language[3161 + stats[0]->playerRace]);
 				if ( stats[0]->appearance > 1 )
 				{
-					stats[0]->appearance = 0;
+					stats[0]->appearance = lastAppearance;
 				}
 				if ( stats[0]->appearance == 0 )
 				{
@@ -1947,6 +1975,12 @@ void handleMainMenu(bool mode)
 							if ( enabledDLCPack2 )
 							{
 								stats[0]->playerRace = RACE_INCUBUS;
+								if ( client_classes[0] == CLASS_MESMER && stats[0]->appearance == 0 )
+								{
+									client_classes[0] = CLASS_PUNISHER;
+									stats[0]->clearStats();
+									initClass(0);
+								}
 							}
 							else
 							{
@@ -1968,6 +2002,12 @@ void handleMainMenu(bool mode)
 							if ( enabledDLCPack1 )
 							{
 								stats[0]->playerRace = RACE_SUCCUBUS;
+								if ( client_classes[0] == CLASS_PUNISHER && stats[0]->appearance == 0 )
+								{
+									client_classes[0] = CLASS_MESMER;
+									stats[0]->clearStats();
+									initClass(0);
+								}
 							}
 							else
 							{
@@ -2045,13 +2085,15 @@ void handleMainMenu(bool mode)
 										stats[0]->sex = lastSex;
 									}
 									// convert human class to monster special classes on reselect.
-									if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
+									if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK
+										&& stats[0]->appearance == 0 )
 									{
 										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 										stats[0]->clearStats();
 										initClass(0);
 									}
-									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK )
+									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK
+										&& lastAppearance == 0 )
 									{
 										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 										stats[0]->clearStats();
@@ -2069,7 +2111,7 @@ void handleMainMenu(bool mode)
 									}
 									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
 									{
-										stats[0]->appearance = 0;
+										stats[0]->appearance = lastAppearance;
 									}
 								}
 								break;
@@ -2147,12 +2189,21 @@ void handleMainMenu(bool mode)
 						{
 							if ( omousey < pady + (NUMPLAYABLERACES * 17) + 64 ) // first option
 							{
+								if ( stats[0]->appearance != 0 )
+								{
+									// convert human class to monster special classes on reselect.
+									if ( client_classes[0] > CLASS_MONK )
+									{
+										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+									}
+								}
 								stats[0]->appearance = 0; // use racial passives
 							}
 							else
 							{
 								stats[0]->appearance = 1; // act as human
 							}
+							lastAppearance = stats[0]->appearance;
 							stats[0]->clearStats();
 							initClass(0);
 							raceSelect = 2;
@@ -2212,13 +2263,15 @@ void handleMainMenu(bool mode)
 						stats[0]->sex = lastSex;
 					}
 					// convert human class to monster special classes on reselect.
-					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
+					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK
+						&& stats[0]->appearance == 0 )
 					{
 						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
 						initClass(0);
 					}
-					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK )
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK
+						&& lastAppearance == 0 )
 					{
 						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
@@ -2236,7 +2289,7 @@ void handleMainMenu(bool mode)
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
 					{
-						stats[0]->appearance = 0;
+						stats[0]->appearance = lastAppearance;
 					}
 				}
 				else if ( raceSelect == 0 )
@@ -2257,11 +2310,19 @@ void handleMainMenu(bool mode)
 					if ( stats[0]->appearance != 0 )
 					{
 						stats[0]->appearance = 0;
+						// convert human class to monster special classes on reselect.
+						if ( stats[0]->playerRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+							stats[0]->clearStats();
+							initClass(0);
+						}
 					}
 					else
 					{
 						stats[0]->appearance = 1;
 					}
+					lastAppearance = stats[0]->appearance;
 					stats[0]->clearStats();
 					initClass(0);
 				}
@@ -2332,13 +2393,15 @@ void handleMainMenu(bool mode)
 						stats[0]->sex = lastSex;
 					}
 					// convert human class to monster special classes on reselect.
-					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
+					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK
+						&& stats[0]->appearance == 0 )
 					{
 						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
 						initClass(0);
 					}
-					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK )
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK 
+						&& lastAppearance == 0 )
 					{
 						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
@@ -2356,7 +2419,7 @@ void handleMainMenu(bool mode)
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
 					{
-						stats[0]->appearance = 0;
+						stats[0]->appearance = lastAppearance;
 					}
 				}
 				else if ( raceSelect == 0 )
@@ -2377,11 +2440,19 @@ void handleMainMenu(bool mode)
 					if ( stats[0]->appearance != 0 )
 					{
 						stats[0]->appearance = 0;
+						// convert human class to monster special classes on reselect.
+						if ( stats[0]->playerRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+							stats[0]->clearStats();
+							initClass(0);
+						}
 					}
 					else
 					{
 						stats[0]->appearance = 1;
 					}
+					lastAppearance = stats[0]->appearance;
 					stats[0]->clearStats();
 					initClass(0);
 				}
@@ -2441,12 +2512,12 @@ void handleMainMenu(bool mode)
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1323]);
 			int entriesToDisplay = NUMCLASSES;
 			int lastClassInList = NUMCLASSES - 1;
-			if ( stats[0]->playerRace != RACE_HUMAN && (enabledDLCPack1 || enabledDLCPack2) )
+			if ( stats[0]->playerRace != RACE_HUMAN && (enabledDLCPack1 || enabledDLCPack2) && stats[0]->appearance == 0 )
 			{
 				entriesToDisplay = CLASS_MONK + 2;
 				lastClassInList = CLASS_MONK + stats[0]->playerRace;
 			}
-			else if ( stats[0]->playerRace == RACE_HUMAN )
+			else if ( stats[0]->playerRace == RACE_HUMAN || stats[0]->appearance == 1 )
 			{
 				if ( enabledDLCPack1 && enabledDLCPack2 )
 				{
@@ -2457,7 +2528,7 @@ void handleMainMenu(bool mode)
 					entriesToDisplay = NUMCLASSES - 4;
 					if ( skipFirstDLC )
 					{
-						lastClassInList = CLASS_UNDEF4;
+						lastClassInList = CLASS_HUNTER;
 					}
 					else if ( skipSecondDLC )
 					{
@@ -2474,13 +2545,13 @@ void handleMainMenu(bool mode)
 			for ( c = 0; c < entriesToDisplay; c++ )
 			{
 				int classToPick = c;
-				if ( stats[0]->playerRace != RACE_HUMAN && c == entriesToDisplay - 1 )
+				if ( stats[0]->playerRace != RACE_HUMAN && c == entriesToDisplay - 1 && stats[0]->appearance == 0 )
 				{
 					// monsters only get to choose their particular class, while humans can choose all new classes.
 					// so the 'last' entry is the monster's class, advance to the appropriate index.
 					classToPick = CLASS_MONK + stats[0]->playerRace;
 				}
-				else if ( stats[0]->playerRace == RACE_HUMAN && (enabledDLCPack1 || enabledDLCPack2) )
+				else if ( (stats[0]->playerRace == RACE_HUMAN || stats[0]->appearance == 1) && (enabledDLCPack1 || enabledDLCPack2) )
 				{
 					if ( skipFirstDLC )
 					{
@@ -2527,7 +2598,7 @@ void handleMainMenu(bool mode)
 					client_classes[0]--;
 					if (client_classes[0] < 0)
 					{
-						if ( stats[0]->playerRace != RACE_HUMAN )
+						if ( stats[0]->playerRace != RACE_HUMAN && stats[0]->appearance == 0 )
 						{
 							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						}
@@ -2536,14 +2607,14 @@ void handleMainMenu(bool mode)
 							client_classes[0] = lastClassInList;
 						}
 					}
-					else if ( stats[0]->playerRace == RACE_HUMAN )
+					else if ( stats[0]->playerRace == RACE_HUMAN || stats[0]->appearance == 1 )
 					{
 						if ( client_classes[0] == CLASS_BREWER && skipFirstDLC )
 						{
 							client_classes[0] = CLASS_MONK;
 						}
 					}
-					else if ( stats[0]->playerRace != RACE_HUMAN )
+					else if ( stats[0]->playerRace != RACE_HUMAN && stats[0]->appearance == 0 )
 					{
 						if ( client_classes[0] > CLASS_MONK )
 						{
@@ -2568,14 +2639,14 @@ void handleMainMenu(bool mode)
 					{
 						client_classes[0] = 0;
 					}
-					else if ( stats[0]->playerRace == RACE_HUMAN )
+					else if ( stats[0]->playerRace == RACE_HUMAN || stats[0]->appearance == 1 )
 					{
 						if ( client_classes[0] == CLASS_MONK + 1 && skipFirstDLC )
 						{
-							client_classes[0] = CLASS_UNDEF1;
+							client_classes[0] = CLASS_MACHINIST;
 						}
 					}
-					else if ( stats[0]->playerRace != RACE_HUMAN )
+					else if ( stats[0]->playerRace != RACE_HUMAN && stats[0]->appearance == 0 )
 					{
 						if ( client_classes[0] == CLASS_MONK + 1 )
 						{
@@ -3943,13 +4014,20 @@ void handleMainMenu(bool mode)
 			}
 
 			// network options
-#ifdef STEAMWORKS
 			current_y += 32;
 			ttfPrintText(ttf12, subx1 + 24, current_y, language[3146]);
 			current_y += 24;
-
 			int networking_options_start_y = current_y;
-
+			if ( settings_disableFPSLimitOnNetworkMessages )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", "disable netcode FPS optimization");
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", "disable netcode FPS optimization");
+			}
+			current_y += 16;
+#ifdef STEAMWORKS
 			if ( settings_disableMultithreadedSteamNetworking )
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[3147]);
@@ -4131,10 +4209,22 @@ void handleMainMenu(bool mode)
 				tooltip_box.y = omousey + 8;
 				tooltip_box.h = TTF12_HEIGHT + 8;
 
-#ifdef STEAMWORKS
 				// networking hover text and mouse selection
 				current_y = networking_options_start_y;
-
+				if ( omousey >= current_y && omousey < current_y + 12 )
+				{
+					//tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
+					//tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					//drawTooltip(&tooltip_box);
+					//ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_disableFPSLimitOnNetworkMessages = (settings_disableFPSLimitOnNetworkMessages == false);
+					}
+				}
+				current_y += 16;
+#ifdef STEAMWORKS
 				if ( omousey >= current_y && omousey < current_y + 12 )
 				{
 					tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
@@ -4148,6 +4238,7 @@ void handleMainMenu(bool mode)
 					}
 				}
 #endif // STEAMWORKS
+
 
 				current_y = options_start_y;
 
@@ -4469,16 +4560,16 @@ void handleMainMenu(bool mode)
 						net_packet->data[11] = stats[c]->sex; // sex
 						net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
 						net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
-						char shortname[16] = "";
-						strncpy(shortname, stats[c]->name, 15);
+						char shortname[32] = "";
+						strncpy(shortname, stats[c]->name, 22);
 						strcpy((char*)(&net_packet->data[14]), shortname);  // name
 						net_packet->address.host = net_clients[x - 1].host;
 						net_packet->address.port = net_clients[x - 1].port;
 						net_packet->len = 14 + strlen(stats[c]->name) + 1;
 						sendPacketSafe(net_sock, -1, net_packet, x - 1);
 					}
-					char shortname[11] = { 0 };
-					strncpy(shortname, stats[c]->name, 10);
+					char shortname[32] = { 0 };
+					strncpy(shortname, stats[c]->name, 22);
 
 					newString(&lobbyChatboxMessages, 0xFFFFFFFF, "\n***   %s has joined the game   ***\n", shortname);
 
@@ -4486,18 +4577,18 @@ void handleMainMenu(bool mode)
 					SDLNet_Write32(c, &net_packet->data[0]);
 					for ( x = 0; x < MAXPLAYERS; x++ )
 					{
-						net_packet->data[4 + x * (5 + 16)] = client_classes[x]; // class
-						net_packet->data[5 + x * (5 + 16)] = stats[x]->sex; // sex
-						net_packet->data[6 + x * (5 + 16)] = client_disconnected[x]; // connectedness :p
-						net_packet->data[7 + x * (5 + 16)] = (Uint8)stats[x]->appearance; // appearance
-						net_packet->data[8 + x * (5 + 16)] = (Uint8)stats[x]->playerRace; // player race
-						char shortname[16] = "";
-						strncpy(shortname, stats[x]->name, 15);
-						strcpy((char*)(&net_packet->data[9 + x * (5 + 16)]), shortname);  // name
+						net_packet->data[4 + x * (5 + 23)] = client_classes[x]; // class
+						net_packet->data[5 + x * (5 + 23)] = stats[x]->sex; // sex
+						net_packet->data[6 + x * (5 + 23)] = client_disconnected[x]; // connectedness :p
+						net_packet->data[7 + x * (5 + 23)] = (Uint8)stats[x]->appearance; // appearance
+						net_packet->data[8 + x * (5 + 23)] = (Uint8)stats[x]->playerRace; // player race
+						char shortname[32] = "";
+						strncpy(shortname, stats[x]->name, 22);
+						strcpy((char*)(&net_packet->data[9 + x * (5 + 23)]), shortname);  // name
 					}
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 4 + MAXPLAYERS * (5 + 16);
+					net_packet->len = 4 + MAXPLAYERS * (5 + 23);
 					if ( directConnect )
 					{
 						SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
@@ -4561,8 +4652,8 @@ void handleMainMenu(bool mode)
 					net_packet->len = 17;
 					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 				}
-				char shortname[11] = { 0 };
-				strncpy(shortname, stats[net_packet->data[16]]->name, 10);
+				char shortname[32] = { 0 };
+				strncpy(shortname, stats[net_packet->data[16]]->name, 22);
 				newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
 				continue;
 			}
@@ -4611,7 +4702,7 @@ void handleMainMenu(bool mode)
 			bool gotPacket = false;
 			if ( directConnect )
 			{
-				if ( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (5 + 16)) )
+				if ( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (5 + 23)) )
 				{
 					gotPacket = true;
 				}
@@ -4629,7 +4720,7 @@ void handleMainMenu(bool mode)
 					}
 					packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					Uint32 bytesRead = 0;
-					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (5 + 16) )
+					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (5 + 23) )
 					{
 						continue;
 					}
@@ -4764,12 +4855,12 @@ void handleMainMenu(bool mode)
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
 						client_disconnected[c] = false;
-						client_classes[c] = net_packet->data[4 + c * (5 + 16)]; // class
-						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (5 + 16)]); // sex
-						client_disconnected[c] = net_packet->data[6 + c * (5 + 16)]; // connectedness :p
-						stats[c]->appearance = net_packet->data[7 + c * (5 + 16)]; // appearance
-						stats[c]->playerRace = net_packet->data[8 + c * (5 + 16)]; // player race
-						strcpy(stats[c]->name, (char*)(&net_packet->data[9 + c * (5 + 16)]));  // name
+						client_classes[c] = net_packet->data[4 + c * (5 + 23)]; // class
+						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (5 + 23)]); // sex
+						client_disconnected[c] = net_packet->data[6 + c * (5 + 23)]; // connectedness :p
+						stats[c]->appearance = net_packet->data[7 + c * (5 + 23)]; // appearance
+						stats[c]->playerRace = net_packet->data[8 + c * (5 + 23)]; // player race
+						strcpy(stats[c]->name, (char*)(&net_packet->data[9 + c * (5 + 23)]));  // name
 					}
 
 					// request svFlags
@@ -4928,8 +5019,8 @@ void handleMainMenu(bool mode)
 					stats[net_packet->data[9]]->playerRace = net_packet->data[13];
 					strcpy(stats[net_packet->data[9]]->name, (char*)(&net_packet->data[14]));
 
-					char shortname[11] = { 0 };
-					strncpy(shortname, stats[net_packet->data[9]]->name, 10);
+					char shortname[32] = { 0 };
+					strncpy(shortname, stats[net_packet->data[9]]->name, 22);
 					newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1388], shortname);
 					continue;
 				}
@@ -6168,6 +6259,7 @@ void handleMainMenu(bool mode)
 				&& !conductGameChallenges[CONDUCT_LIFESAVING]
 				&& !conductGameChallenges[CONDUCT_KEEPINVENTORY]
 				&& !conductGameChallenges[CONDUCT_BRAWLER]
+				&& !conductGameChallenges[CONDUCT_RANGED_ONLY]
 				&& !conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED]
 				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED]
 				&& !conductGameChallenges[CONDUCT_ACCURSED]
@@ -7529,6 +7621,13 @@ void handleMainMenu(bool mode)
 			loading = true;
 			darkmap = false;
 			selected_spell = NULL;
+			selected_spell_last_appearance = -1;
+			deinitShapeshiftHotbar();
+			for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+			{
+				selected_spell_alternate[c] = NULL;
+				hotbarShapeshiftInit[c] = false;
+			}
 			shootmode = true;
 			currentlevel = startfloor;
 			secretlevel = false;
@@ -7536,8 +7635,13 @@ void handleMainMenu(bool mode)
 			completionTime = 0;
 
 			setDefaultPlayerConducts(); // penniless, foodless etc.
+			if ( startfloor != 0 )
+			{
+				conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
+			}
 
 			minimapPings.clear(); // clear minimap pings
+			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 			// clear follower menu entities.
 			FollowerMenu.closeFollowerMenuGUI(true);
@@ -7650,6 +7754,8 @@ void handleMainMenu(bool mode)
 				assignActions(&map);
 				generatePathMaps();
 
+				achievementObserver.updateData();
+
 				if ( loadingsavegame )
 				{
 					for ( c = 0; c < MAXPLAYERS; c++ )
@@ -7660,6 +7766,12 @@ void handleMainMenu(bool mode)
 							{
 								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
 								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
+								serverUpdateEffects(c);
+							}
+							if ( stats[c] && stats[c]->EFFECTS[EFF_SHAPESHIFT] && stats[c]->playerShapeshiftStorage != NOTHING )
+							{
+								players[c]->entity->effectShapeshift = stats[c]->playerShapeshiftStorage;
+								serverUpdateEntitySkill(players[c]->entity, 53); // update visual shapeshift effect for clients.
 								serverUpdateEffects(c);
 							}
 							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
@@ -7683,12 +7795,39 @@ void handleMainMenu(bool mode)
 								if (players[c] && players[c]->entity && !client_disconnected[c])
 								{
 									node_t* node;
+									node_t* gyrobotNode = nullptr;
+									Entity* gyrobotEntity = nullptr;
+									std::vector<node_t*> allyRobotNodes;
 									for ( node = tempFollowers->first; node != NULL; node = node->next )
 									{
 										Stat* tempStats = (Stat*)node->element;
+										if ( tempStats && tempStats->type == GYROBOT )
+										{
+											gyrobotNode = node;
+											break;
+										}
+									}
+									for ( node = tempFollowers->first; node != NULL; node = node->next )
+									{
+										Stat* tempStats = (Stat*)node->element;
+										if ( tempStats && (tempStats->type == DUMMYBOT
+											|| tempStats->type == SENTRYBOT
+											|| tempStats->type == SPELLBOT) )
+										{
+											// gyrobot will pick up these guys into it's inventory, otherwise leave them behind.
+											if ( gyrobotNode )
+											{
+												allyRobotNodes.push_back(node);
+											}
+											continue;
+										}
 										Entity* monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
 										if ( monster )
 										{
+											if ( node == gyrobotNode )
+											{
+												gyrobotEntity = monster;
+											}
 											monster->skill[3] = 1; // to mark this monster partially initialized
 											list_RemoveNode(monster->children.last);
 
@@ -7749,6 +7888,40 @@ void handleMainMenu(bool mode)
 											if ( !FollowerMenu.recentEntity && c == clientnum )
 											{
 												FollowerMenu.recentEntity = monster;
+											}
+										}
+									}
+									if ( gyrobotEntity && !allyRobotNodes.empty() )
+									{
+										Stat* gyroStats = gyrobotEntity->getStats();
+										for ( auto it = allyRobotNodes.begin(); gyroStats && it != allyRobotNodes.end(); ++it )
+										{
+											node_t* botNode = *it;
+											if ( botNode )
+											{
+												Stat* tempStats = (Stat*)botNode->element;
+												if ( tempStats )
+												{
+													ItemType type = WOODEN_SHIELD;
+													if ( tempStats->type == SENTRYBOT )
+													{
+														type = TOOL_SENTRYBOT;
+													}
+													else if ( tempStats->type == SPELLBOT )
+													{
+														type = TOOL_SPELLBOT;
+													}
+													else if ( tempStats->type == DUMMYBOT )
+													{
+														type = TOOL_DUMMYBOT;
+													}
+													int appearance = monsterTinkeringConvertHPToAppearance(tempStats);
+													if ( type != WOODEN_SHIELD )
+													{
+														Item* item = newItem(type, static_cast<Status>(tempStats->monsterTinkeringStatus), 
+															0, 1, appearance, true, &gyroStats->inventory);
+													}
+												}
 											}
 										}
 									}
@@ -7847,14 +8020,42 @@ void handleMainMenu(bool mode)
 			// spice of life achievement
 			usedClass[client_classes[clientnum]] = true;
 			bool usedAllClasses = true;
-			for ( c = 0; c < NUMCLASSES; c++ )
+			for ( c = 0; c <= CLASS_MONK; c++ )
+			{
 				if ( !usedClass[c] )
 				{
 					usedAllClasses = false;
 				}
+			}
 			if ( usedAllClasses )
 			{
 				steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
+			}
+
+			if ( stats[clientnum]->playerRace >= 0 && stats[clientnum]->playerRace <= RACE_INSECTOID )
+			{
+				usedRace[stats[clientnum]->playerRace] = true;
+			}
+			// new achievement
+			usedAllClasses = true;
+			for ( c = 0; c <= CLASS_HUNTER; ++c )
+			{
+				if ( !usedClass[c] )
+				{
+					usedAllClasses = false;
+				}
+			}
+			bool usedAllRaces = true;
+			for ( c = RACE_HUMAN; c < RACE_INSECTOID; ++c )
+			{
+				if ( !usedRace[c] )
+				{
+					usedAllRaces = false;
+				}
+			}
+			if ( usedAllClasses && usedAllRaces )
+			{
+				steamAchievement("BARONY_ACH_I_WANT_IT_ALL");
 			}
 
 			steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
@@ -7879,6 +8080,15 @@ void handleMainMenu(bool mode)
 			if ( loadingsavegame && multiplayer != CLIENT )
 			{
 				loadingsavegame = 0;
+			}
+
+			enchantedFeatherScrollSeed.seed(uniqueGameKey);
+			enchantedFeatherScrollsShuffled.clear();
+			enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
+			std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
+			for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
+			{
+				//printlog("Sequence: %d", *it);
 			}
 
 			list_FreeAll(&removedEntities);
@@ -7958,6 +8168,56 @@ void handleMainMenu(bool mode)
 					if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
 					{
 						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
+					}
+				}
+			}
+
+			// figure out the victory crawl texts...
+			int movieCrawlType = -1;
+			if ( victory )
+			{
+				if ( stats[0] )
+				{
+					strcpy(epilogueHostName, stats[0]->name);
+					epilogueHostRace = RACE_HUMAN;
+					if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
+					{
+						epilogueHostRace = stats[0]->playerRace;
+					}
+					epilogueMultiplayerType = multiplayer;
+					if ( victory == 1 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
+					{
+						// herx defeat by monsters.
+						movieCrawlType = MOVIE_CLASSIC_WIN_MONSTERS;
+					}
+					else if ( victory == 2 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
+					{
+						// baphomet defeat by monsters.
+						movieCrawlType = MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS;
+					}
+					else if ( victory == 3 )
+					{
+						switch ( epilogueHostRace )
+						{
+							case RACE_AUTOMATON:
+								movieCrawlType = MOVIE_WIN_AUTOMATON;
+								break;
+							case RACE_SKELETON:
+							case RACE_VAMPIRE:
+							case RACE_SUCCUBUS:
+							case RACE_INCUBUS:
+								movieCrawlType = MOVIE_WIN_DEMONS_UNDEAD;
+								break;
+							case RACE_GOATMAN:
+							case RACE_GOBLIN:
+							case RACE_INSECTOID:
+								movieCrawlType = MOVIE_WIN_BEASTS;
+								break;
+							case RACE_HUMAN:
+								break;
+							default:
+								break;
+						}
 					}
 				}
 			}
@@ -8123,6 +8383,13 @@ void handleMainMenu(bool mode)
 								}
 							}
 						}
+						else if ( client_classes[clientnum] == CLASS_HUNTER )
+						{
+							if ( conductGameChallenges[CONDUCT_RANGED_ONLY] )
+							{
+								steamAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
+							}
+						}
 						else if ( client_classes[clientnum] == CLASS_CONJURER )
 						{
 							steamAchievement("BARONY_ACH_TURN_UNDEAD");
@@ -8145,9 +8412,16 @@ void handleMainMenu(bool mode)
 									steamAchievement("BARONY_ACH_BUCKTOOTH_BARON");
 									break;
 								case RACE_INCUBUS:
+									steamAchievement("BARONY_ACH_BAD_BOY_BARON");
+									break;
 								case RACE_INSECTOID:
+									steamAchievement("BARONY_ACH_BUGGAR_BARON");
+									break;
 								case RACE_AUTOMATON:
+									steamAchievement("BARONY_ACH_BOILERPLATE_BARON");
+									break;
 								case RACE_GOBLIN:
+									steamAchievement("BARONY_ACH_BAYOU_BARON");
 									break;
 								default:
 									break;
@@ -8168,7 +8442,14 @@ void handleMainMenu(bool mode)
 			clientnum = 0;
 			introstage = 1;
 			intro = true;
+			deinitShapeshiftHotbar();
+			for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+			{
+				selected_spell_alternate[c] = NULL;
+				hotbarShapeshiftInit[c] = false;
+			}
 			selected_spell = NULL; //So you don't start off with a spell when the game restarts.
+			selected_spell_last_appearance = -1;
 			client_classes[0] = 0;
 			spellcastingAnimationManager_deactivate(&cast_animation);
 			SDL_StopTextInput();
@@ -8276,6 +8557,11 @@ void handleMainMenu(bool mode)
 				else if ( victory == 3 )
 				{
 					introstage = 10;
+				}
+
+				if ( movieCrawlType >= 0 ) // overrides the introstage 7,8,10 sequences for DLC monsters.
+				{
+					introstage = 11 + movieCrawlType;
 				}
 			}
 
@@ -8434,6 +8720,126 @@ void handleMainMenu(bool mode)
 				fadefinished = false;
 				fadeout = false;
 				fourthendmovietime = 0;
+				movie = true;
+			}
+		}
+		else if ( introstage >= 11 && introstage <= 15 )     // new mid and classic end sequences.
+		{
+			int movieType = introstage - 11;
+			for ( int i = 0; i < 8; ++i )
+			{
+				if ( i != movieType )
+				{
+					// clean the other end stage credits.
+					DLCendmovieStageAndTime[i][MOVIE_STAGE] = 0;
+					DLCendmovieStageAndTime[i][MOVIE_TIME] = 0;
+				}
+			}
+#ifdef MUSIC
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
+			{
+				playmusic(endgamemusic, true, true, false);
+			}
+#endif
+			DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+			if ( movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS || movieType == MOVIE_CLASSIC_WIN_MONSTERS )
+			{
+				// win crawls.
+				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+				{
+					introstage = 4;
+					DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+					DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
+					int c;
+					for ( c = 0; c < 30; c++ )
+					{
+						DLCendmoviealpha[movieType][c] = 0;
+					}
+					fadeout = true;
+				}
+				else
+				{
+					fadefinished = false;
+					fadeout = false;
+					DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+					movie = true;
+				}
+			}
+			else
+			{
+				// mid-game sequences
+				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+				{
+					int c;
+					for ( c = 0; c < 30; c++ )
+					{
+						DLCendmoviealpha[movieType][c] = 0;
+					}
+					fadefinished = false;
+					fadeout = false;
+					if ( multiplayer != CLIENT )
+					{
+						movie = false; // allow normal pause screen.
+						DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
+						DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+						introstage = 1; // return to normal game functionality
+						if ( movieType == MOVIE_MIDGAME_HERX_MONSTERS )
+						{
+							skipLevelsOnLoad = 5;
+						}
+						else
+						{
+							skipLevelsOnLoad = 0;
+						}
+						loadnextlevel = true; // load the next level.
+						pauseGame(1, false); // unpause game
+					}
+				}
+				else
+				{
+					fadefinished = false;
+					fadeout = false;
+					DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+					movie = true;
+				}
+			}
+		}
+		else if ( introstage >= 16 && introstage <= 18 )     // expansion end game sequence DLC
+		{
+			int movieType = introstage - 11;
+			for ( int i = 0; i < 8; ++i )
+			{
+				if ( i != movieType )
+				{
+					// clean the other end stage credits.
+					DLCendmovieStageAndTime[i][MOVIE_STAGE] = 0;
+					DLCendmovieStageAndTime[i][MOVIE_TIME] = 0;
+				}
+			}
+#ifdef MUSIC
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
+			{
+				playmusic(endgamemusic, true, true, false);
+			}
+#endif
+			DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+			{
+				int c;
+				for ( c = 0; c < 30; c++ )
+				{
+					DLCendmoviealpha[movieType][c] = 0;
+				}
+				introstage = 4;
+				DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+				DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
+				fadeout = true;
+			}
+			else
+			{
+				fadefinished = false;
+				fadeout = false;
+				DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
 				movie = true;
 			}
 		}
@@ -8686,6 +9092,21 @@ void handleMainMenu(bool mode)
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
+
+			int titlex = 16;
+			int titley = 12;
+			// epilogues
+			if ( epilogueMultiplayerType == CLIENT )
+			{
+				if ( strcmp(epilogueHostName, "") )
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+				}
+			}
+			else
+			{
+				ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // says who's story type it is
+			}
 		}
 		if ( firstendmoviestage >= 2 )
 		{
@@ -8749,6 +9170,21 @@ void handleMainMenu(bool mode)
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
+
+			int titlex = 16;
+			int titley = 12;
+			// epilogues
+			if ( epilogueMultiplayerType == CLIENT )
+			{
+				if ( strcmp(epilogueHostName, "") )
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+				}
+			}
+			else
+			{
+				ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // says who's story type it is
+			}
 		}
 		if ( secondendmoviestage >= 2 )
 		{
@@ -8826,10 +9262,54 @@ void handleMainMenu(bool mode)
 		Uint32 color = 0x00FFFFFF;
 		if ( thirdendmoviestage >= 1 )
 		{
-			thirdendmoviealpha[8] = std::min(thirdendmoviealpha[8] + 2, 255);
+			if ( thirdendmoviestage >= 6 )
+			{
+				thirdendmoviealpha[8] = std::max(thirdendmoviealpha[8] - 4, 0); // click to continue decrease alpha
+				if ( thirdendmoviealpha[8] == 0 )
+				{
+					thirdendmoviealpha[10] = std::min(thirdendmoviealpha[10] + 4, 255);
+					color = 0x00FFFFFF;
+					color += std::min(std::max(0, thirdendmoviealpha[10]), 255) << 24;
+					if ( multiplayer == CLIENT )
+					{
+						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3833]);
+					}
+					else
+					{
+						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3832]);
+					}
+				}
+			}
+			else
+			{
+				thirdendmoviealpha[8] = std::min(thirdendmoviealpha[8] + 2, 255); // click to continue increase alpha
+			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+
+			if ( stats[0] )
+			{
+				int titlex = 16;
+				int titley = 12;
+				int race = RACE_HUMAN;
+				if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
+				{
+					race = stats[0]->playerRace;
+				}
+				// interludes
+				if ( multiplayer == CLIENT )
+				{
+					if ( strcmp(stats[0]->name, "") )
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + race]); // says who's story type it is.
+					}
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + race]); // says who's story type it is.
+				}
+			}
 		}
 		if ( thirdendmoviestage >= 2 )
 		{
@@ -8858,20 +9338,6 @@ void handleMainMenu(bool mode)
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[3]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2603]);
-		}
-		if ( thirdendmoviestage >= 6 )
-		{
-			thirdendmoviealpha[4] = std::min(thirdendmoviealpha[4] + 2, 255);
-			color = 0x00FFFFFF;
-			color += std::min(std::max(0, thirdendmoviealpha[4]), 255) << 24;
-			if ( multiplayer == CLIENT )
-			{
-				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2605]);
-			}
-			else
-			{
-				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2604]);
-			}
 		}
 	}
 	// fourth (expansion) end movie stage
@@ -8914,10 +9380,44 @@ void handleMainMenu(bool mode)
 		Uint32 color = 0x00FFFFFF;
 		if ( fourthendmoviestage >= 1 )
 		{
-			fourthendmoviealpha[8] = std::min(fourthendmoviealpha[8] + 2, 255);
+			if ( fourthendmoviestage >= 10 )
+			{
+				fourthendmoviealpha[8] = std::max(fourthendmoviealpha[8] - 2, 0);
+			}
+			else
+			{
+				fourthendmoviealpha[8] = std::min(fourthendmoviealpha[8] + 2, 255);
+			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+
+			if ( stats[0] )
+			{
+				color = 0x00FFFFFF;
+				if ( fourthendmoviestage >= 10 )
+				{
+					fourthendmoviealpha[9] = std::max(fourthendmoviealpha[9] - 2, 0);
+				}
+				else
+				{
+					fourthendmoviealpha[9] = std::min(fourthendmoviealpha[9] + 2, 255);
+				}
+				color += std::min(std::max(0, fourthendmoviealpha[9]), 255) << 24;
+				int titlex = 16;
+				int titley = 12;
+				if ( epilogueMultiplayerType == CLIENT )
+				{
+					if ( strcmp(epilogueHostName, "") )
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+					}
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // singleplayer story
+				}
+			}
 		}
 		if ( fourthendmoviestage >= 2 )
 		{
@@ -9014,6 +9514,414 @@ void handleMainMenu(bool mode)
 			}
 		}
 		if ( fourthendmoviestage >= 13 )
+		{
+			fadealpha = std::min(fadealpha + 2, 255);
+		}
+	}
+
+	// new end movie stage
+	int movieType = -1;
+	for ( int i = 0; i < 8; ++i )
+	{
+		if ( DLCendmovieStageAndTime[i][MOVIE_STAGE] > 0 )
+		{
+			movieType = i;
+			break;
+		}
+	}
+	if ( movieType >= MOVIE_MIDGAME_HERX_MONSTERS && movieType <= MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS )
+	{
+		SDL_Rect pos;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		drawRect(&pos, 0, 255);
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
+			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 120 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 1) )
+		{
+			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < DLCendmovieNumLines[movieType] )
+			{
+				DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+			}
+			else if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == DLCendmovieNumLines[movieType] )
+			{
+				if ( movieType == MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
+					|| movieType == MOVIE_MIDGAME_BAPHOMET_MONSTERS
+					|| movieType == MOVIE_MIDGAME_HERX_MONSTERS )
+				{
+					// midgame - clients pause until host continues.
+					if ( multiplayer != CLIENT )
+					{
+						fadeout = true;
+						++DLCendmovieStageAndTime[movieType][MOVIE_STAGE];
+					}
+				}
+				else
+				{
+					// endgame - fade and return to credits.
+					if ( movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS
+						|| movieType == MOVIE_CLASSIC_WIN_MONSTERS )
+					{
+						// classic mode end.
+						introstage = 11 + movieType;
+					}
+					fadeout = true;
+				}
+			}
+		}
+
+		std::vector<char*> langEntries;
+		switch ( movieType )
+		{
+			case MOVIE_MIDGAME_HERX_MONSTERS:
+				langEntries.push_back(language[3771]);
+				langEntries.push_back(language[3772]);
+				langEntries.push_back(language[3773]);
+				langEntries.push_back(language[3774]);
+				langEntries.push_back(language[3775]);
+				break;
+			case MOVIE_MIDGAME_BAPHOMET_MONSTERS:
+				langEntries.push_back(language[3776]);
+				langEntries.push_back(language[3777]);
+				langEntries.push_back(language[3778]);
+				langEntries.push_back(language[3779]);
+				langEntries.push_back(language[3780]);
+				langEntries.push_back(language[3781]);
+				break;
+			case MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON:
+				langEntries.push_back(language[3782]);
+				langEntries.push_back(language[3783]);
+				langEntries.push_back(language[3784]);
+				langEntries.push_back(language[3785]);
+				langEntries.push_back(language[3786]);
+				langEntries.push_back(language[3787]);
+				break;
+			case MOVIE_CLASSIC_WIN_MONSTERS:
+				langEntries.push_back(language[3788]);
+				langEntries.push_back(language[3789]);
+				langEntries.push_back(language[3790]);
+				langEntries.push_back(language[3791]);
+				break;
+			case MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS:
+				langEntries.push_back(language[3792]);
+				langEntries.push_back(language[3793]);
+				langEntries.push_back(language[3794]);
+				langEntries.push_back(language[3795]);
+				langEntries.push_back(language[3796]);
+				langEntries.push_back(language[3797]);
+				break;
+			default:
+				break;
+		}
+
+		Uint32 color = 0x00FFFFFF;
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 1 )
+		{
+			if ( !(movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS
+				|| movieType == MOVIE_CLASSIC_WIN_MONSTERS) )
+			{
+				// only do this on interludes, not intermission.
+				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+				{
+					DLCendmoviealpha[movieType][8] = std::max(DLCendmoviealpha[movieType][8] - 4, 0); // click to continue decrease alpha
+					if ( DLCendmoviealpha[movieType][8] == 0 )
+					{
+						DLCendmoviealpha[movieType][10] = std::min(DLCendmoviealpha[movieType][10] + 4, 255);
+						color = 0x00FFFFFF;
+						color += std::min(std::max(0, DLCendmoviealpha[movieType][10]), 255) << 24;
+						if ( multiplayer == CLIENT )
+						{
+							ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3833]);
+						}
+						else
+						{
+							ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3832]);
+						}
+					}
+				}
+				else
+				{
+					DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255); // click to continue increase alpha
+				}
+			}
+			else
+			{
+				DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255); // click to continue increase alpha
+			}
+
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][8]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]); // click to continue
+
+			if ( stats[0] )
+			{
+				int titlex = 16;
+				int titley = 12;
+
+				if ( movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS
+					|| movieType == MOVIE_CLASSIC_WIN_MONSTERS )
+				{
+					// epilogues
+					if ( epilogueMultiplayerType == CLIENT )
+					{
+						if ( strcmp(epilogueHostName, "") )
+						{
+							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+						}
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // says who's story type it is
+					}
+				}
+				else
+				{
+					int race = RACE_HUMAN;
+					if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
+					{
+						race = stats[0]->playerRace;
+					}
+					// interludes
+					if ( multiplayer == CLIENT )
+					{
+						if ( strcmp(stats[0]->name, "") )
+						{
+							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + race]); // says who's story type it is.
+						}
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + race]); // says who's story type it is.
+					}
+				}
+			}
+		}
+
+		int index = 0;
+		for ( index = 0; index < DLCendmovieNumLines[movieType]; ++index )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= index + 2 && langEntries.size() > index )
+			{
+				DLCendmoviealpha[movieType][index] = std::min(DLCendmoviealpha[movieType][index] + 2, 255);
+				color = 0x00FFFFFF;
+				color += std::min(std::max(0, DLCendmoviealpha[movieType][index]), 255) << 24;
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(index));
+			}
+		}
+	}
+	else if ( movieType > MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS )
+	{
+		SDL_Rect pos;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((real_t)xres) / backdrop_blessed_bmp->w) * backdrop_blessed_bmp->h;
+		drawRect(&pos, 0, 255);
+		drawImageScaled(backdrop_blessed_bmp, NULL, &pos);
+
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600
+			|| (mousestatus[SDL_BUTTON_LEFT]
+				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10
+				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] != 10
+				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] != 5
+				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] != 1)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 120 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 1)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 60 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 5)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 240 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 10)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 200 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 11)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 60 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 12)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 400 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 13)
+			)
+		{
+			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < DLCendmovieNumLines[movieType] )
+			{
+				DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+			}
+			else if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == DLCendmovieNumLines[movieType] )
+			{
+				fadeout = true;
+				introstage = 11 + movieType;
+			}
+		}
+
+		std::vector<char*> langEntries;
+		switch ( movieType )
+		{
+			case MOVIE_WIN_AUTOMATON:
+				langEntries.push_back(language[3798]);
+				langEntries.push_back(language[3799]);
+				langEntries.push_back(language[3800]);
+				langEntries.push_back(language[3801]);
+				langEntries.push_back(language[3802]);
+				langEntries.push_back(language[3803]);
+				langEntries.push_back(language[3804]);
+				break;
+			case MOVIE_WIN_DEMONS_UNDEAD:
+				langEntries.push_back(language[3805]);
+				langEntries.push_back(language[3806]);
+				langEntries.push_back(language[3807]);
+				langEntries.push_back(language[3808]);
+				langEntries.push_back(language[3809]);
+				langEntries.push_back(language[3810]);
+				langEntries.push_back(language[3811]);
+				break;
+			case MOVIE_WIN_BEASTS:
+				langEntries.push_back(language[3812]);
+				langEntries.push_back(language[3813]);
+				langEntries.push_back(language[3814]);
+				langEntries.push_back(language[3815]);
+				langEntries.push_back(language[3816]);
+				langEntries.push_back(language[3817]);
+				langEntries.push_back(language[3818]);
+				break;
+			default:
+				break;
+		}
+
+		Uint32 color = 0x00FFFFFF;
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 1 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 10 )
+			{
+				DLCendmoviealpha[movieType][8] = std::max(DLCendmoviealpha[movieType][8] - 2, 0);
+			}
+			else
+			{
+				DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][8]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]); // click to continue.
+
+			if ( stats[0] )
+			{
+				color = 0x00FFFFFF;
+				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 10 )
+				{
+					DLCendmoviealpha[movieType][9] = std::max(DLCendmoviealpha[movieType][9] - 2, 0);
+				}
+				else
+				{
+					DLCendmoviealpha[movieType][9] = std::min(DLCendmoviealpha[movieType][9] + 2, 255);
+				}
+				color += std::min(std::max(0, DLCendmoviealpha[movieType][9]), 255) << 24;
+				int titlex = 16;
+				int titley = 12;
+				if ( epilogueMultiplayerType == CLIENT )
+				{
+					if ( strcmp(epilogueHostName, "") )
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+					}
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // singleplayer story
+				}
+			}
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 2 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 5 )
+			{
+				DLCendmoviealpha[movieType][0] = std::min(DLCendmoviealpha[movieType][0] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][0]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(0));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 3 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 5 )
+			{
+				DLCendmoviealpha[movieType][1] = std::min(DLCendmoviealpha[movieType][1] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][1]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(1));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 4 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 5 )
+			{
+				DLCendmoviealpha[movieType][2] = std::min(DLCendmoviealpha[movieType][2] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][2]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(2));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 5 )
+		{
+			DLCendmoviealpha[movieType][0] = std::max(DLCendmoviealpha[movieType][2] - 2, 0);
+			DLCendmoviealpha[movieType][1] = std::max(DLCendmoviealpha[movieType][2] - 2, 0);
+			DLCendmoviealpha[movieType][2] = std::max(DLCendmoviealpha[movieType][2] - 2, 0);
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 6 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10 )
+			{
+				DLCendmoviealpha[movieType][3] = std::min(DLCendmoviealpha[movieType][3] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][3]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(3));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 7 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10 )
+			{
+				DLCendmoviealpha[movieType][4] = std::min(DLCendmoviealpha[movieType][4] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][4]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(4));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 8 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10 )
+			{
+				DLCendmoviealpha[movieType][5] = std::min(DLCendmoviealpha[movieType][5] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][5]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(5));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 9 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10 )
+			{
+				DLCendmoviealpha[movieType][6] = std::min(DLCendmoviealpha[movieType][6] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][6]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(6));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 10 )
+		{
+			DLCendmoviealpha[movieType][3] = std::max(DLCendmoviealpha[movieType][3] - 2, 0);
+			DLCendmoviealpha[movieType][4] = std::max(DLCendmoviealpha[movieType][4] - 2, 0);
+			DLCendmoviealpha[movieType][5] = std::max(DLCendmoviealpha[movieType][5] - 2, 0);
+			DLCendmoviealpha[movieType][6] = std::max(DLCendmoviealpha[movieType][6] - 2, 0);
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 11 )
+		{
+			DLCendmoviealpha[movieType][7] = std::min(DLCendmoviealpha[movieType][7] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][7]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres / 2) - 256, (yres / 2) - 64, color, true, language[2614]);
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] % 50 == 0 )
+			{
+				steamAchievement("BARONY_ACH_ALWAYS_WAITING");
+			}
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 13 )
 		{
 			fadealpha = std::min(fadealpha + 2, 255);
 		}
@@ -9252,6 +10160,7 @@ void openSettingsWindow()
 	settings_hide_playertags = hide_playertags;
 	settings_show_skill_values = show_skill_values;
 	settings_disableMultithreadedSteamNetworking = disableMultithreadedSteamNetworking;
+	settings_disableFPSLimitOnNetworkMessages = disableFPSLimitOnNetworkMessages;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
 		settings_impulses[c] = impulses[c];
@@ -9961,6 +10870,27 @@ void buttonContinue(button_t* my)
 		{
 			charcreation_step = 0;
 
+			// since we skip step 6 we never set the correct free slot.
+			reloadSavegamesList(false);
+			if ( multiplayerSavegameFreeSlot == -1 )
+			{
+				savegameCurrentFileIndex = 0;
+				std::vector<std::tuple<int, int, int, std::string>>::reverse_iterator it = savegamesList.rbegin();
+				for ( ; it != savegamesList.rend(); ++it )
+				{
+					std::tuple<int, int, int, std::string> entry = *it;
+					if ( std::get<1>(entry) != SINGLE )
+					{
+						savegameCurrentFileIndex = std::get<2>(entry);
+						break;
+					}
+				}
+			}
+			else
+			{
+				savegameCurrentFileIndex = multiplayerSavegameFreeSlot;
+			}
+
 			// close current window
 			int temp1 = connectingToLobby;
 			int temp2 = connectingToLobbyWindow;
@@ -10530,6 +11460,7 @@ void buttonJoinLobby(button_t* my)
 		if ( *portnumbererr != '\0' || portnumber < 1024 )
 		{
 			printlog("warning: invalid port number %d.\n", portnumber);
+			SDLNet_SetError("Invalid address %s.\nExample: 192.168.0.100:12345", connectaddress);
 			openFailedConnectionWindow(CLIENT);
 			return;
 		}
@@ -10940,6 +11871,7 @@ void applySettings()
 		net_handler->toggleMultithreading(settings_disableMultithreadedSteamNetworking);
 	}
 	disableMultithreadedSteamNetworking = settings_disableMultithreadedSteamNetworking;
+	disableFPSLimitOnNetworkMessages = settings_disableFPSLimitOnNetworkMessages;
 	saveConfig("default.cfg");
 }
 
@@ -11590,6 +12522,89 @@ void openLoadGameWindow(button_t* my)
 	}
 }
 
+void reloadSavegamesList(bool showWindow)
+{
+	savegamesList.clear();
+
+	// load single player files
+	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+	{
+		if ( saveGameExists(true, fileNumber) )
+		{
+			time_t timeNow = std::time(nullptr);
+			struct tm *tm = nullptr;
+			char path[PATH_MAX] = "";
+			char savefile[PATH_MAX] = "";
+			strncpy(savefile, setSaveGameFileName(true, false, fileNumber).c_str(), PATH_MAX - 1);
+			completePath(path, savefile, outputdir);
+#ifdef WINDOWS
+			struct _stat result;
+			if ( _stat(path, &result) == 0 )
+			{
+				tm = localtime(&result.st_mtime);
+			}
+#else
+			struct stat result;
+			if ( stat(path, &result) == 0 )
+			{
+				tm = localtime(&result.st_mtime);
+			}
+#endif
+			if ( tm )
+			{
+				int timeDifference = std::difftime(timeNow, mktime(tm));
+				char* saveGameName = getSaveGameName(true, fileNumber);
+				if ( saveGameName )
+				{
+					savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(true, fileNumber), fileNumber, saveGameName));
+					free(saveGameName);
+				}
+			}
+		}
+	}
+	// load multiplayer files
+	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+	{
+		if ( saveGameExists(false, fileNumber) )
+		{
+			time_t timeNow = std::time(nullptr);
+			struct tm *tm = nullptr;
+			char path[PATH_MAX] = "";
+			char savefile[PATH_MAX] = "";
+			strncpy(savefile, setSaveGameFileName(false, false, fileNumber).c_str(), PATH_MAX - 1);
+			completePath(path, savefile, outputdir);
+#ifdef WINDOWS
+			struct _stat result;
+			if ( _stat(path, &result) == 0 )
+			{
+				tm = localtime(&result.st_mtime);
+			}
+#else
+			struct stat result;
+			if ( stat(path, &result) == 0 )
+			{
+				tm = localtime(&result.st_mtime);
+			}
+#endif
+			if ( tm )
+			{
+				int timeDifference = std::difftime(timeNow, mktime(tm));
+				char* saveGameName = getSaveGameName(false, fileNumber);
+				if ( saveGameName )
+				{
+					savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(false, fileNumber), fileNumber, saveGameName));
+					free(saveGameName);
+				}
+			}
+		}
+	}
+	if ( showWindow )
+	{
+		savegames_window = 1;
+	}
+	std::sort(savegamesList.begin(), savegamesList.end());
+}
+
 void openNewLoadGameWindow(button_t* my)
 {
 	// close current window
@@ -11630,71 +12645,7 @@ void openNewLoadGameWindow(button_t* my)
 	button->key = SDL_SCANCODE_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
 
-	savegamesList.clear();
-	// load single player files
-	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
-	{
-		if ( saveGameExists(true, fileNumber) )
-		{
-			time_t timeNow = std::time(nullptr);
-			struct tm *tm = nullptr;
-			char path[PATH_MAX] = "";
-			char savefile[PATH_MAX] = "";
-			strncpy(savefile, setSaveGameFileName(true, false, fileNumber).c_str(), PATH_MAX - 1);
-			completePath(path, savefile, outputdir);
-#ifdef WINDOWS
-			struct _stat result;
-			if ( _stat(path, &result) == 0 )
-			{
-				tm = localtime(&result.st_mtime);
-			}
-#else
-			struct stat result;
-			if ( stat(path, &result) == 0 )
-			{
-				tm = localtime(&result.st_mtime);
-			}
-#endif
-			if ( tm )
-			{
-				int timeDifference = std::difftime(timeNow, mktime(tm));
-				savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(true, fileNumber), fileNumber, getSaveGameName(true, fileNumber)));
-			}
-		}
-	}
-	// load multiplayer files
-	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
-	{
-		if ( saveGameExists(false, fileNumber) )
-		{
-			time_t timeNow = std::time(nullptr);
-			struct tm *tm = nullptr;
-			char path[PATH_MAX] = "";
-			char savefile[PATH_MAX] = "";
-			strncpy(savefile, setSaveGameFileName(false, false, fileNumber).c_str(), PATH_MAX - 1);
-			completePath(path, savefile, outputdir);
-#ifdef WINDOWS
-			struct _stat result;
-			if ( _stat(path, &result) == 0 )
-			{
-				tm = localtime(&result.st_mtime);
-			}
-#else
-			struct stat result;
-			if ( stat(path, &result) == 0 )
-			{
-				tm = localtime(&result.st_mtime);
-			}
-#endif
-			if ( tm )
-			{
-				int timeDifference = std::difftime(timeNow, mktime(tm));
-				savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(false, fileNumber), fileNumber, getSaveGameName(false, fileNumber)));
-			}
-		}
-	}
-	savegames_window = 1;
-	std::sort(savegamesList.begin(), savegamesList.end());
+	reloadSavegamesList();
 }
 
 void buttonDeleteSavedSoloGame(button_t* my)
@@ -12233,8 +13184,71 @@ void buttonRandomCharacter(button_t* my)
 	stats[0]->sex = static_cast<sex_t>(rand() % 2);
 	client_classes[0] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
 	stats[0]->clearStats();
+	if ( enabledDLCPack1 || enabledDLCPack2 )
+	{
+		stats[0]->playerRace = rand() % NUMPLAYABLERACES;
+		if ( !enabledDLCPack1 )
+		{
+			while ( stats[0]->playerRace == RACE_SKELETON || stats[0]->playerRace == RACE_VAMPIRE
+				|| stats[0]->playerRace == RACE_SUCCUBUS || stats[0]->playerRace == RACE_GOATMAN )
+			{
+				stats[0]->playerRace = rand() % NUMPLAYABLERACES;
+			}
+		}
+		else if ( !enabledDLCPack2 )
+		{
+			while ( stats[0]->playerRace == RACE_AUTOMATON || stats[0]->playerRace == RACE_GOBLIN
+				|| stats[0]->playerRace == RACE_INCUBUS || stats[0]->playerRace == RACE_INSECTOID )
+			{
+				stats[0]->playerRace = rand() % NUMPLAYABLERACES;
+			}
+		}
+		if ( stats[0]->playerRace == RACE_INCUBUS )
+		{
+			stats[0]->sex = MALE;
+		}
+		else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+		{
+			stats[0]->sex = FEMALE;
+		}
+
+		if ( stats[0]->playerRace == RACE_HUMAN )
+		{
+			client_classes[0] = rand() % (NUMCLASSES);
+			if ( !enabledDLCPack1 )
+			{
+				while ( client_classes[0] == CLASS_CONJURER || client_classes[0] == CLASS_ACCURSED
+					|| client_classes[0] == CLASS_MESMER || client_classes[0] == CLASS_BREWER )
+				{
+					client_classes[0] = rand() % (NUMCLASSES);
+				}
+			}
+			else if ( !enabledDLCPack2 )
+			{
+				while ( client_classes[0] == CLASS_HUNTER || client_classes[0] == CLASS_SHAMAN
+					|| client_classes[0] == CLASS_PUNISHER || client_classes[0] == CLASS_MACHINIST )
+				{
+					client_classes[0] = rand() % (NUMCLASSES);
+				}
+			}
+			stats[0]->appearance = rand() % NUMAPPEARANCES;
+		}
+		else
+		{
+			client_classes[0] = rand() % (CLASS_MONK + 2);
+			if ( client_classes[0] > CLASS_MONK )
+			{
+				client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
+			}
+			stats[0]->appearance = 0;
+		}
+	}
+	else
+	{
+		stats[0]->playerRace = RACE_HUMAN;
+		stats[0]->appearance = rand() % NUMAPPEARANCES;
+	}
 	initClass(0);
-	stats[0]->appearance = rand() % NUMAPPEARANCES;
 }
 
 void buttonReplayLastCharacter(button_t* my)

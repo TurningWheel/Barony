@@ -88,6 +88,11 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		modelindex = 0;
 	}
 
+	if ( model == models[0] )
+	{
+		return; // don't draw green balls
+	}
+
 	// model array indexes
 	indexdown[0] = model->sizez * model->sizey;
 	indexdown[1] = model->sizez;
@@ -150,7 +155,10 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		{
 			if ( entity->monsterEntityRenderAsTelepath == 1 )
 			{
-				s = 32 / 255.f;
+				if ( globalLightModifierActive )
+				{
+					s = globalLightTelepathyModifier;
+				}
 			}
 			else
 			{
@@ -162,6 +170,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 			s = getLightForEntity(camera->x, camera->y);
 		}
 	}
+
+	if ( globalLightModifierActive && entity->monsterEntityRenderAsTelepath == 0 )
+	{
+		s *= globalLightModifier;
+	}
+
 	// Moved glBeign / glEnd outside the loops, to limit the number of calls (helps gl4es on Pandora)
 	if ( wholevoxels )
 	{
@@ -327,7 +341,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				{
 					if ( entity->flags[USERFLAG2] )
 					{
-						if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() || entity->sprite == 467) )
+						if ( entity->behavior == &actMonster 
+							&& (entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 						{
 							// dont invert human heads, or automaton heads.
 							glColor3f((polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s, (polymodels[modelindex].faces[index].b / 255.f)*s );
@@ -369,7 +384,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				glEnableClientState(GL_COLOR_ARRAY); // enable the color array on the client side
 				if ( entity->flags[USERFLAG2] )
 				{
-					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() || entity->sprite == 467) )
+					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() 
+						|| entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 					{
 						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
 					}
@@ -519,11 +535,24 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 			{
 				s = getLightForEntity(camera->x, camera->y);
 			}
+
+			if ( globalLightModifierActive )
+			{
+				s *= globalLightModifier;
+			}
+
 			glColor4f(s, s, s, 1);
 		}
 		else
 		{
-			glColor4f(1.f, 1.f, 1.f, 1);
+			if ( globalLightModifierActive )
+			{
+				glColor4f(globalLightModifier, globalLightModifier, globalLightModifier, 1);
+			}
+			else
+			{
+				glColor4f(1.f, 1.f, 1.f, 1);
+			}
 		}
 	}
 	else
@@ -560,8 +589,8 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		return;
 	}
 
-	strncpy(textToRetrieve, text.c_str(), std::min(static_cast<int>(strlen(text.c_str())), 16));
-	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 16)] = '\0';
+	strncpy(textToRetrieve, text.c_str(), std::min(static_cast<int>(strlen(text.c_str())), 22));
+	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 22)] = '\0';
 	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
 	{
 		textureId = texid[image->refcount];
@@ -727,6 +756,12 @@ real_t getLightAt(int x, int y)
 			}
 		}
 	}
+
+	if ( globalLightModifierActive )
+	{
+		l *= globalLightModifier;
+	}
+
 	return l / 4.f;
 }
 
@@ -952,6 +987,10 @@ void glDrawWorld(view_t* camera, int mode)
 									if ( x < map.width - 1 )
 									{
 										s = std::min(std::max(0, lightmap[y + (x + 1) * map.height]), 255) / 255.0;
+										if ( globalLightModifierActive )
+										{
+											s *= globalLightModifier;
+										}
 									}
 									else
 									{
@@ -1026,6 +1065,10 @@ void glDrawWorld(view_t* camera, int mode)
 									if ( y < map.height - 1 )
 									{
 										s = std::min(std::max(0, lightmap[(y + 1) + x * map.height]), 255) / 255.0;
+										if ( globalLightModifierActive )
+										{
+											s *= globalLightModifier;
+										}
 									}
 									else
 									{
@@ -1096,6 +1139,10 @@ void glDrawWorld(view_t* camera, int mode)
 									if ( x > 0 )
 									{
 										s = std::min(std::max(0, lightmap[y + (x - 1) * map.height]), 255) / 255.0;
+										if ( globalLightModifierActive )
+										{
+											s *= globalLightModifier;
+										}
 									}
 									else
 									{
@@ -1166,6 +1213,10 @@ void glDrawWorld(view_t* camera, int mode)
 									if ( y > 0 )
 									{
 										s = std::min(std::max(0, lightmap[(y - 1) + x * map.height]), 255) / 255.0;
+										if ( globalLightModifierActive )
+										{
+											s *= globalLightModifier;
+										}
 									}
 									else
 									{

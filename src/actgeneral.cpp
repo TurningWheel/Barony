@@ -557,6 +557,27 @@ void Entity::actTextSource()
 				output.erase(foundPlayerRef, 2);
 				output.insert(foundPlayerRef, "%s");
 			}
+
+			size_t foundDistanceRequirement = output.find("@d");
+			int distanceRequirement = -1;
+			if ( foundDistanceRequirement != std::string::npos )
+			{
+				output.erase(foundDistanceRequirement, 2);
+				std::string distance;
+				while ( foundDistanceRequirement < output.length() 
+					&& output.at(foundDistanceRequirement) != ' '
+					&& output.at(foundDistanceRequirement) != '\0'
+					)
+				{
+					distance = distance + output.at(foundDistanceRequirement);
+					//messagePlayer(clientnum, "%c", output.at(foundDistanceRequirement));
+					++foundDistanceRequirement;
+				}
+				distanceRequirement = std::stoi(distance);
+				output.erase(output.find(distance), distance.length());
+				//messagePlayer(clientnum, "%d", distanceRequirement);
+			}
+
 			size_t found = output.find("\\n");
 			while ( found != std::string::npos )
 			{
@@ -570,13 +591,20 @@ void Entity::actTextSource()
 			{
 				if ( !client_disconnected[c] )
 				{
-					if ( foundPlayerRef != std::string::npos && stats[c] )
+					if ( distanceRequirement != -1 && !(players[c] && players[c]->entity && entityDist(this, players[c]->entity) <= distanceRequirement) )
 					{
-						messagePlayerColor(c, color, buf, stats[c]->name);
+						// not in range.
 					}
 					else
 					{
-						messagePlayerColor(c, color, buf);
+						if ( foundPlayerRef != std::string::npos && stats[c] )
+						{
+							messagePlayerColor(c, color, buf, stats[c]->name);
+						}
+						else
+						{
+							messagePlayerColor(c, color, buf);
+						}
 					}
 				}
 			}

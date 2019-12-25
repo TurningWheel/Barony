@@ -263,7 +263,9 @@ void initSkeleton(Entity* my, Stat* myStats)
 					myStats->HP = 100;
 					myStats->MAXHP = 100;
 					strcpy(myStats->name, "Funny Bones");
-					myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
+					myStats->STR += 6;
+					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
+					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, rand(), true, nullptr);
 					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
 				}
 
@@ -347,25 +349,32 @@ void initSkeleton(Entity* my, Stat* myStats)
 				//give shield
 				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
-					switch ( rand() % 10 )
+					if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
 					{
-						case 0:
-						case 1:
-						case 2:
-						case 3:
-						case 4:
-						case 5:
-							break;
-						case 6:
-						case 7:
-							myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 8:
-							myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 9:
-							myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
+						my->monsterGenerateQuiverItem(myStats);
+					}
+					else
+					{
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+							case 4:
+							case 5:
+								break;
+							case 6:
+							case 7:
+								myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+							case 8:
+								myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+							case 9:
+								myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+						}
 					}
 				}
 			}
@@ -770,7 +779,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	Entity* shieldarm = nullptr;
-
+	Entity* helmet = nullptr;
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
 	{
@@ -1156,6 +1165,10 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
+						if ( itemTypeIsQuiver(myStats->shield->type) )
+						{
+							entity->handleQuiverThirdPersonModel(*myStats);
+						}
 					}
 					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
@@ -1234,6 +1247,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// helm
 			case LIMB_HUMANOID_HELMET:
+				helmet = entity;
 				entity->focalx = limbs[SKELETON][9][0]; // 0
 				entity->focaly = limbs[SKELETON][9][1]; // 0
 				entity->focalz = limbs[SKELETON][9][2]; // -2
@@ -1287,7 +1301,17 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					bool hasSteelHelm = false;
+					if ( myStats->helmet )
+					{
+						if ( myStats->helmet->type == STEEL_HELM
+							|| myStats->helmet->type == CRYSTAL_HELM
+							|| myStats->helmet->type == ARTIFACT_HELM )
+						{
+							hasSteelHelm = true;
+						}
+					}
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1334,9 +1358,18 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( entity->sprite != 165 )
 				{
-					entity->focalx = limbs[SKELETON][10][0] + .35; // .35
-					entity->focaly = limbs[SKELETON][10][1] - 2; // -2
-					entity->focalz = limbs[SKELETON][10][2]; // .5
+					if ( entity->sprite == items[MASK_SHAMAN].index )
+					{
+						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else
+					{
+						entity->focalx = limbs[SKELETON][10][0] + .35; // .35
+						entity->focaly = limbs[SKELETON][10][1] - 2; // -2
+						entity->focalz = limbs[SKELETON][10][2]; // .5
+					}
 				}
 				else
 				{

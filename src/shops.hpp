@@ -32,9 +32,10 @@ extern char shopkeepername_client[64];
 void startTradingServer(Entity* entity, int player);
 void buyItemFromShop(Item* item);
 void sellItemToShop(Item* item);
-
+bool shopIsMysteriousShopkeeper(Entity* entity);
 extern int selectedShopSlot;
-
+extern std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems;
+void buyItemFromMysteriousShopkeepConsumeOrb(Entity& entity, Item& boughtItem);
 void selectShopSlot(int slot);
 void warpMouseToSelectedShopSlot();
 

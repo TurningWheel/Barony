@@ -28,6 +28,7 @@
 #include "../net.hpp"
 #include "../draw.hpp"
 #include "../scores.hpp"
+#include "../scrolls.hpp"
 
 Uint32 svFlags = 30;
 SDL_Surface* backdrop_minotaur_bmp = nullptr;
@@ -37,6 +38,9 @@ SDL_Surface* status_bmp = nullptr;
 SDL_Surface* character_bmp = nullptr;
 SDL_Surface* hunger_bmp = nullptr;
 SDL_Surface* hunger_blood_bmp = nullptr;
+SDL_Surface* hunger_boiler_bmp = nullptr;
+SDL_Surface* hunger_boiler_hotflame_bmp = nullptr;
+SDL_Surface* hunger_boiler_flame_bmp = nullptr;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
@@ -109,6 +113,7 @@ SDL_Surface* inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoption
 SDL_Surface* itembroken_bmp = nullptr;
 //SDL_Surface *category_bmp[NUMCATEGORIES];
 SDL_Surface* shopkeeper_bmp = NULL;
+SDL_Surface* shopkeeper2_bmp = NULL;
 SDL_Surface* damage_bmp = NULL;
 SDL_Surface *str_bmp64u = NULL;
 SDL_Surface *dex_bmp64u = NULL;
@@ -140,6 +145,9 @@ int buttonclick = 0;
 bool draw_cursor = true;
 
 hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
+hotbar_slot_t hotbar_alternate[NUM_HOTBAR_ALTERNATES][NUM_HOTBAR_SLOTS];
+int swapHotbarOnShapeshift = 0;
+bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
 int current_hotbar = 0;
 SDL_Surface* hotbar_img = NULL;
 SDL_Surface* hotbar_spell_img = NULL;
@@ -199,6 +207,9 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&character_bmp, "images/system/CharacterSheet.png"),
 	std::make_pair(&hunger_bmp, "images/system/Hunger.png"),
 	std::make_pair(&hunger_blood_bmp, "images/system/Hunger_blood.png"),
+	std::make_pair(&hunger_boiler_bmp, "images/system/Hunger_boiler.png"),
+	std::make_pair(&hunger_boiler_hotflame_bmp, "images/system/Hunger_boiler_hotfire.png"),
+	std::make_pair(&hunger_boiler_flame_bmp, "images/system/Hunger_boiler_fire.png"),
 	std::make_pair(&minotaur_bmp, "images/system/minotaur.png"),
 	std::make_pair(&attributesleft_bmp, "images/system/AttributesLeftHighlighted.png"),
 	std::make_pair(&attributesright_bmp, "images/system/AttributesRightHighlighted.png"),
@@ -207,6 +218,7 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&attributesleftunclicked_bmp, "images/system/AttributesLeft.png"),
 	std::make_pair(&attributesrightunclicked_bmp, "images/system/AttributesRight.png"),
 	std::make_pair(&shopkeeper_bmp, "images/system/shopkeeper.png"),
+	std::make_pair(&shopkeeper2_bmp, "images/system/shopkeeper2.png"),
 	std::make_pair(&damage_bmp, "images/system/damage.png"),
 
 	//Magic GUI images.
@@ -280,6 +292,9 @@ bool loadInterfaceResources()
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
 	hunger_blood_bmp = loadImage("images/system/Hunger_blood.png");
+	hunger_boiler_bmp = loadImage("images/system/Hunger_boiler.png");
+	hunger_boiler_hotflame_bmp = loadImage("images/system/Hunger_boiler_hotfire.png");
+	hunger_boiler_flame_bmp = loadImage("images/system/Hunger_boiler_fire.png");
 	minotaur_bmp = loadImage("images/system/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
 	//textup_bmp = loadImage("images/system/TextBoxUpHighlighted.png");
 	//textdown_bmp = loadImage("images/system/TextBoxDownHighlighted.png");
@@ -288,6 +303,7 @@ bool loadInterfaceResources()
 	attributesleftunclicked_bmp = loadImage("images/system/AttributesLeft.png");
 	attributesrightunclicked_bmp = loadImage("images/system/AttributesRight.png");
 	shopkeeper_bmp = loadImage("images/system/shopkeeper.png");
+	shopkeeper2_bmp = loadImage("images/system/shopkeeper2.png");
 	damage_bmp = loadImage("images/system/damage.png");
 
 	//Magic GUI images.
@@ -381,6 +397,10 @@ bool loadInterfaceResources()
 	for (i = 0; i < NUM_HOTBAR_SLOTS; ++i)
 	{
 		hotbar[i].item = 0;
+		for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+		{
+			hotbar_alternate[j][i].item = 0;
+		}
 	}
 
 	damageIndicators.first = nullptr;
@@ -424,6 +444,18 @@ void freeInterfaceResources()
 	if ( hunger_blood_bmp )
 	{
 		SDL_FreeSurface(hunger_blood_bmp);
+	}
+	if ( hunger_boiler_bmp )
+	{
+		SDL_FreeSurface(hunger_boiler_bmp);
+	}
+	if ( hunger_boiler_hotflame_bmp )
+	{
+		SDL_FreeSurface(hunger_boiler_hotflame_bmp);
+	}
+	if ( hunger_boiler_flame_bmp )
+	{
+		SDL_FreeSurface(hunger_boiler_flame_bmp);
 	}
 	if ( minotaur_bmp )
 	{
@@ -536,6 +568,10 @@ void freeInterfaceResources()
 	if (shopkeeper_bmp != NULL)
 	{
 		SDL_FreeSurface(shopkeeper_bmp);
+	}
+	if ( shopkeeper2_bmp != NULL )
+	{
+		SDL_FreeSurface(shopkeeper2_bmp);
 	}
 	if (damage_bmp != NULL)
 	{
@@ -1262,6 +1298,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/disablenetworkmultithreading\n");
 	}
+	if ( disableFPSLimitOnNetworkMessages )
+	{
+		fprintf(fp, "/disablenetcodefpslimit\n");
+	}
 	if ( !gamemods_mountedFilepaths.empty() )
 	{
 		std::vector<std::pair<std::string, std::string>>::iterator it;
@@ -1568,12 +1608,40 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			return;
 		}
+		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
 		int skillLVL = 0;
 		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
-			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_ATTACK_CONFIRM )
+			if ( (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD])) && optionPrevious != -1 )
+			{
+				if ( optionPrevious == ALLY_CMD_ATTACK_CONFIRM )
+				{
+					optionPrevious = ALLY_CMD_ATTACK_SELECT;
+				}
+				else if ( optionPrevious == ALLY_CMD_MOVETO_CONFIRM )
+				{
+					optionPrevious = ALLY_CMD_MOVETO_SELECT;
+				}
+				else if ( optionPrevious == ALLY_CMD_FOLLOW || optionPrevious == ALLY_CMD_DEFEND )
+				{
+					if ( followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO )
+					{
+						optionPrevious = ALLY_CMD_FOLLOW;
+					}
+					else
+					{
+						optionPrevious = ALLY_CMD_DEFEND;
+					}
+				}
+				optionSelected = optionPrevious;
+			}
+			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_END && optionSelected != ALLY_CMD_ATTACK_CONFIRM )
 			{
 				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+				if ( tinkeringFollower )
+				{
+					skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
+				}
 				if ( followerToCommand->monsterAllySummonRank != 0 )
 				{
 					skillLVL = SKILL_LEVEL_LEGENDARY;
@@ -1614,40 +1682,33 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 			}
 
+			bool usingLastCmd = false;
 			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) )
 			{
-				if ( optionPrevious != -1 )
-				{
-					if ( optionPrevious == ALLY_CMD_ATTACK_CONFIRM )
-					{
-						optionPrevious = ALLY_CMD_ATTACK_SELECT;
-					}
-					else if ( optionPrevious == ALLY_CMD_MOVETO_CONFIRM )
-					{
-						optionPrevious = ALLY_CMD_MOVETO_SELECT;
-					}
-					else if ( optionPrevious == ALLY_CMD_FOLLOW || optionPrevious == ALLY_CMD_DEFEND )
-					{
-						if ( followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO )
-						{
-							optionPrevious = ALLY_CMD_FOLLOW;
-						}
-						else
-						{
-							optionPrevious = ALLY_CMD_DEFEND;
-						}
-					}
-					optionSelected = optionPrevious;
-				}
+				usingLastCmd = true;
 			}
 
-			if ( followerToCommand->monsterAllySummonRank != 0 && optionSelected == ALLY_CMD_CLASS_TOGGLE )
+			if ( followerStats->type == GYROBOT )
+			{
+				monsterGyroBotConvertCommand(&optionSelected);
+			}
+			else if ( followerStats->type == DUMMYBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+			{
+				if ( optionSelected == ALLY_CMD_SPECIAL )
+				{
+					optionSelected = ALLY_CMD_DUMMYBOT_RETURN;
+				}
+			}
+			else if ( followerToCommand->monsterAllySummonRank != 0 && optionSelected == ALLY_CMD_CLASS_TOGGLE )
 			{
 				optionSelected = ALLY_CMD_RETURN_SOUL;
 			}
 
-			keepWheelOpen = (optionSelected == ALLY_CMD_CLASS_TOGGLE || optionSelected == ALLY_CMD_PICKUP_TOGGLE);
-			if ( disableOption != 0 )
+			keepWheelOpen = (optionSelected == ALLY_CMD_CLASS_TOGGLE 
+				|| optionSelected == ALLY_CMD_PICKUP_TOGGLE
+				|| optionSelected == ALLY_CMD_GYRO_LIGHT_TOGGLE
+				|| optionSelected == ALLY_CMD_GYRO_DETECT_TOGGLE);
+			if ( disableOption != 0 && !usingLastCmd )
 			{
 				keepWheelOpen = true;
 			}
@@ -1730,6 +1791,40 @@ void FollowerRadialMenu::drawFollowerMenu()
 							followerToCommand->monsterAllySendCommand(optionSelected, moveToX, moveToY, followerToCommand->monsterAllyInteractTarget);
 						}
 					}
+					else if ( usingLastCmd )
+					{
+						// tell player current monster can't do what you asked (e.g using last command & swapping between monsters with different requirements)
+						if ( followerStats->type < KOBOLD ) // Original monster count
+						{
+							if ( disableOption < 0 )
+							{
+								messagePlayer(clientnum, language[3640], language[90 + followerStats->type]);
+							}
+							else if ( tinkeringFollower )
+							{
+								messagePlayer(clientnum, language[3639], language[90 + followerStats->type]);
+							}
+							else
+							{
+								messagePlayer(clientnum, language[3638], language[90 + followerStats->type]);
+							}
+						}
+						else if ( followerStats->type >= KOBOLD ) //New monsters
+						{
+							if ( disableOption < 0 )
+							{
+								messagePlayer(clientnum, language[3640], language[2000 + (followerStats->type - KOBOLD)]);
+							}
+							else if ( tinkeringFollower )
+							{
+								messagePlayer(clientnum, language[3639], language[2000 + (followerStats->type - KOBOLD)]);
+							}
+							else
+							{
+								messagePlayer(clientnum, language[3638], language[2000 + (followerStats->type - KOBOLD)]);
+							}
+						}
+					}
 
 					if ( optionSelected != ALLY_CMD_CANCEL && disableOption == 0 )
 					{
@@ -1758,10 +1853,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			return;
 		}
+		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
 		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
 			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
-			if ( followerToCommand->monsterAllySummonRank != 0 )
+			if ( tinkeringFollower )
+			{
+				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
+			}
+			else if ( followerToCommand->monsterAllySummonRank != 0 )
 			{
 				skillLVL = SKILL_LEVEL_LEGENDARY;
 			}
@@ -1883,15 +1983,38 @@ void FollowerRadialMenu::drawFollowerMenu()
 			else if ( i == ALLY_CMD_DEFEND
 				&& (followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
 			{
-				TTF_SizeUTF8(ttf12, language[3037 + i + 8], &width, nullptr);
-				ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
+				if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+				{
+					TTF_SizeUTF8(ttf12, language[3675], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3675]);
+				}
+				else
+				{
+					TTF_SizeUTF8(ttf12, language[3037 + i + 8], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
+				}
 			}
 			else
 			{
 				TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-				if ( i == ALLY_CMD_CLASS_TOGGLE )
+				if ( i == ALLY_CMD_DEFEND 
+					&& followerToCommand->monsterAllyState == ALLY_STATE_DEFAULT
+					&& (followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT) )
 				{
-					if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+					TTF_SizeUTF8(ttf12, language[3674], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3674]);
+				}
+				else if ( i == ALLY_CMD_CLASS_TOGGLE )
+				{
+					if ( followerStats->type == GYROBOT )
+					{
+						// draw higher.
+						TTF_SizeUTF8(ttf12, language[3619], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3619]);
+						TTF_SizeUTF8(ttf12, language[3620 + followerToCommand->monsterAllyClass], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3620 + followerToCommand->monsterAllyClass]);
+					}
+					else if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
 					{
 						TTF_SizeUTF8(ttf12, "Relinquish ", &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3196]);
@@ -1906,35 +2029,87 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 				else if ( i == ALLY_CMD_PICKUP_TOGGLE )
 				{
-					// draw higher.
-					TTF_SizeUTF8(ttf12, "Pickup", &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
-					TTF_SizeUTF8(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]);
-				}
-				else if ( i == ALLY_CMD_DROP_EQUIP )
-				{
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
-					if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
+					if ( followerStats->type == GYROBOT )
 					{
-						TTF_SizeUTF8(ttf12, language[3061], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]);
-					}
-					else if ( skillLVL >= SKILL_LEVEL_MASTER )
-					{
-						TTF_SizeUTF8(ttf12, language[3060], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]);
+						if ( followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_METAL
+							|| followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_MAGIC
+							|| followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE )
+						{
+							TTF_SizeUTF8(ttf12, "Detect", &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3636]);
+							TTF_SizeUTF8(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3624 + followerToCommand->monsterAllyPickupItems]);
+						}
+						else
+						{
+							TTF_SizeUTF8(ttf12, language[3623], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3623]);
+							TTF_SizeUTF8(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3624 + followerToCommand->monsterAllyPickupItems]);
+						}
 					}
 					else
 					{
-						TTF_SizeUTF8(ttf12, language[3059], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
+						// draw higher.
+						TTF_SizeUTF8(ttf12, "Pickup", &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
+						TTF_SizeUTF8(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]);
+					}
+				}
+				else if ( i == ALLY_CMD_DROP_EQUIP )
+				{
+					if ( followerStats->type == GYROBOT )
+					{
+						TTF_SizeUTF8(ttf12, language[3633], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3633]);
+						TTF_SizeUTF8(ttf12, language[3634], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3634]);
+					}
+					else
+					{
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+						if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
+						{
+							TTF_SizeUTF8(ttf12, language[3061], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]);
+						}
+						else if ( skillLVL >= SKILL_LEVEL_MASTER )
+						{
+							TTF_SizeUTF8(ttf12, language[3060], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]);
+						}
+						else
+						{
+							TTF_SizeUTF8(ttf12, language[3059], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_SPECIAL )
 				{
-					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					if ( followerStats->type == GYROBOT )
+					{
+						TTF_SizeUTF8(ttf12, "Return &", &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3635]);
+					}
+					else if ( followerStats->type == DUMMYBOT )
+					{
+						TTF_SizeUTF8(ttf12, language[3641], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3641]);
+						TTF_SizeUTF8(ttf12, language[3642], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3642]);
+					}
+					else if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+					{
+						TTF_SizeUTF8(ttf12, language[3649], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3649]);
+					}
+					else
+					{
+						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					}
 				}
 				else if ( i == ALLY_CMD_ATTACK_SELECT )
 				{
@@ -1948,7 +2123,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						else
 						{
 							TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3037 + i]);
 						}
 					}
 					else
@@ -1959,8 +2134,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 				else if ( i == ALLY_CMD_MOVETO_SELECT )
 				{
-					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+					{
+						TTF_SizeUTF8(ttf12, language[3650], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3650]);
+					}
+					else
+					{
+						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					}
 				}
 				else
 				{
@@ -2009,7 +2192,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			SDL_Rect tooltip;
 			tooltip.x = omousex + 16;
 			tooltip.y = omousey + 16;
-			tooltip.w = longestline(language[3062]) * TTF12_WIDTH + 8;
+			char* lowSkillLVLTooltip = language[3062];
+			if ( tinkeringFollower )
+			{
+				lowSkillLVLTooltip = language[3672];
+			}
+			tooltip.w = longestline(lowSkillLVLTooltip) * TTF12_WIDTH + 8;
 			tooltip.h = TTF12_HEIGHT * 2 + 8;
 
 			if ( disableOption == -2 ) // disabled due to cooldown
@@ -2036,6 +2224,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 					drawTooltip(&tooltip);
 					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
 						uint32ColorOrange(*mainsurface), language[3103], language[2000 + followerStats->type - KOBOLD]);
+				}
+			}
+			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
+			{
+				tooltip.h = TTF12_HEIGHT + 8;
+				tooltip.w = longestline(language[3673]) * TTF12_WIDTH + 8;
+				drawTooltip(&tooltip);
+				if ( followerStats->type >= KOBOLD ) //New monsters
+				{
+					tooltip.w += strlen(language[2000 + followerStats->type - KOBOLD]) * TTF12_WIDTH;
+					drawTooltip(&tooltip);
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+						uint32ColorOrange(*mainsurface), language[3673], language[2000 + followerStats->type - KOBOLD]);
 				}
 			}
 			else
@@ -2104,7 +2305,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 					current.erase(std::remove(current.begin(), current.end(), ' '), current.end()); // trim whitespace
 				}
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
-					uint32ColorOrange(*mainsurface), language[3062], requirement.c_str(), current.c_str());
+					uint32ColorOrange(*mainsurface), lowSkillLVLTooltip, requirement.c_str(), current.c_str());
 			}
 		}
 
@@ -2268,6 +2469,16 @@ void FollowerRadialMenu::updateScrollPartySheet()
 	}
 }
 
+bool FollowerRadialMenu::isTinkeringFollower(int type)
+{
+	if ( type == GYROBOT || type == SENTRYBOT
+		|| type == SPELLBOT || type == DUMMYBOT )
+	{
+		return true;
+	}
+	return false;
+}
+
 bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 {
 	if ( optionSelected != ALLY_CMD_ATTACK_SELECT )
@@ -2297,12 +2508,17 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 
 	bool interactItems = allowedInteractItems(followerStats->type) || allowedInteractFood(followerStats->type);
 	bool interactWorld = allowedInteractWorld(followerStats->type);
-
+	bool tinkeringFollower = isTinkeringFollower(followerStats->type);
 	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+	if ( tinkeringFollower )
+	{
+		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
+	}
 	if ( followerToCommand->monsterAllySummonRank != 0 )
 	{
 		skillLVL = SKILL_LEVEL_LEGENDARY;
 	}
+
 	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0);
 	
 	if ( !interactItems && !interactWorld && enableAttack )
@@ -2320,6 +2536,11 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	else if ( (selectedEntity.behavior == &actSwitch || selectedEntity.sprite == 184) && interactWorld )
 	{
 		strcat(FollowerMenu.interactText, "switch");
+	}
+	else if ( selectedEntity.behavior == &actBomb && interactWorld && followerStats->type == GYROBOT )
+	{
+		strcpy(FollowerMenu.interactText, language[3093]);
+		strcat(FollowerMenu.interactText, "trap");
 	}
 	else if ( selectedEntity.behavior == &actItem && interactItems )
 	{
@@ -2372,6 +2593,9 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case SPIDER:
 		case SKELETON:
 		case SCORPION:
+		case GYROBOT:
+		case SENTRYBOT:
+		case SPELLBOT:
 			creatureTier = 0;
 			break;
 		case GOBLIN:
@@ -2397,9 +2621,127 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case SHADOW:
 			creatureTier = 3;
 			break;
+		default:
+			break;
+	}
+
+	Stat* followerStats = nullptr;
+	if ( followerToCommand )
+	{
+		followerStats = followerToCommand->getStats();
 	}
 
 	int requirement = AllyNPCSkillRequirements[option];
+
+	if ( monsterType == GYROBOT )
+	{
+		monsterGyroBotConvertCommand(&option);
+		if ( followerStats )
+		{
+			if ( option == ALLY_CMD_GYRO_DETECT_TOGGLE )
+			{
+				if ( playerSkillLVL < SKILL_LEVEL_BASIC )
+				{
+					return SKILL_LEVEL_BASIC;
+				}
+				else if ( followerStats->LVL < 5 )
+				{
+					return -3;
+				}
+				else
+				{
+					return 0;
+				}
+			}
+			else if ( option == ALLY_CMD_GYRO_LIGHT_TOGGLE )
+			{
+				if ( playerSkillLVL < SKILL_LEVEL_BASIC )
+				{
+					return SKILL_LEVEL_BASIC;
+				}
+				if ( followerStats->LVL < 5 )
+				{
+					return -3;
+				}
+			}
+			else if ( option == ALLY_CMD_MOVETO_CONFIRM || option == ALLY_CMD_MOVETO_SELECT )
+			{
+				if ( playerSkillLVL < SKILL_LEVEL_BASIC )
+				{
+					return SKILL_LEVEL_BASIC;
+				}
+				if ( followerStats->LVL < 5 )
+				{
+					return -3;
+				}
+			}
+			else if ( option == ALLY_CMD_ATTACK_SELECT || option == ALLY_CMD_ATTACK_CONFIRM 
+				|| option == ALLY_CMD_DROP_EQUIP )
+			{
+				if ( playerSkillLVL < SKILL_LEVEL_SKILLED )
+				{
+					return SKILL_LEVEL_SKILLED;
+				}
+				if ( followerStats->LVL < 10 )
+				{
+					return -3;
+				}
+			}
+		}
+
+	}
+	else
+	{
+		if ( monsterGyroBotOnlyCommand(option) )
+		{
+			return -1; // disabled due to monster.
+		}
+	}
+
+	if ( monsterType == DUMMYBOT )
+	{
+		if ( option != ALLY_CMD_SPECIAL && option != ALLY_CMD_DUMMYBOT_RETURN )
+		{
+			return -1; // disabled due to monster.
+		}
+		else
+		{
+			option = ALLY_CMD_DUMMYBOT_RETURN;
+		}
+	}
+	else if ( monsterType == SENTRYBOT || monsterType == SPELLBOT )
+	{
+		if ( option != ALLY_CMD_SPECIAL && option != ALLY_CMD_DUMMYBOT_RETURN )
+		{
+			if ( option != ALLY_CMD_MOVETO_CONFIRM && option != ALLY_CMD_MOVETO_SELECT
+				&&  option != ALLY_CMD_ATTACK_SELECT && option != ALLY_CMD_ATTACK_CONFIRM
+				&&  option != ALLY_CMD_CANCEL && option != ALLY_CMD_DEFEND && option != ALLY_CMD_FOLLOW )
+			{
+				return -1; // disabled due to monster.
+			}
+			else
+			{
+				if ( followerStats && (option != ALLY_CMD_CANCEL && option != ALLY_CMD_DEFEND && option != ALLY_CMD_FOLLOW ) )
+				{
+					if ( followerStats->LVL < 5 )
+					{
+						return -3; // disable all due to LVL
+					}
+					else if ( followerStats->LVL < 10 )
+					{
+						if ( option == ALLY_CMD_ATTACK_SELECT || option == ALLY_CMD_ATTACK_CONFIRM )
+						{
+							return -3; // disabled attack commands due to LVL
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			option = ALLY_CMD_DUMMYBOT_RETURN;
+		}
+	}
 
 	if ( option == ALLY_CMD_SPECIAL
 		&& followerToCommand->monsterAllySpecialCooldown != 0 )
@@ -2410,6 +2752,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 	switch ( option )
 	{
 		case ALLY_CMD_MOVEASIDE:
+			if ( monsterType == SENTRYBOT || monsterType == SPELLBOT )
+			{
+				return -1; // can't use.
+			}
 		case ALLY_CMD_CANCEL:
 			if ( playerSkillLVL < requirement )
 			{
@@ -2420,6 +2766,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 
 		case ALLY_CMD_FOLLOW:
 		case ALLY_CMD_DEFEND:
+			if ( monsterType == SENTRYBOT || monsterType == SPELLBOT )
+			{
+				return 0;
+			}
 			if ( creatureTier > 0 )
 			{
 				requirement = 20 * creatureTier; // 20, 40, 60.
@@ -2453,6 +2803,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			{
 				return -1; // disabled due to creature.
 			}
+			else if ( monsterType == GYROBOT )
+			{
+				requirement = SKILL_LEVEL_SKILLED;
+			}
 			else if ( creatureTier > 0 )
 			{
 				requirement += 20 * creatureTier; // 60, 80, 100
@@ -2484,6 +2838,13 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			}
 			else
 			{
+				if ( monsterType == GYROBOT )
+				{
+					if ( playerSkillLVL < SKILL_LEVEL_SKILLED )
+					{
+						return SKILL_LEVEL_SKILLED;
+					}
+				}
 				if ( playerSkillLVL < AllyNPCSkillRequirements[ALLY_CMD_ATTACK_SELECT] )
 				{
 					return AllyNPCSkillRequirements[ALLY_CMD_ATTACK_SELECT];
@@ -2493,7 +2854,12 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_ATTACK_CONFIRM:
-			if ( creatureTier == 3 && playerSkillLVL < SKILL_LEVEL_LEGENDARY )
+			if ( monsterType == GYROBOT )
+			{
+				return -1; // disabled due to creature.
+				break;
+			}
+			else if ( creatureTier == 3 && playerSkillLVL < SKILL_LEVEL_LEGENDARY )
 			{
 				return SKILL_LEVEL_LEGENDARY; // disabled due to advanced skill requirements.
 			}
@@ -2513,6 +2879,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			{
 				return 0;
 			}
+			if ( monsterType == GYROBOT )
+			{
+				return 0;
+			}
 			if ( !allowedClassToggle(monsterType) )
 			{
 				return -1; // disabled due to creature.
@@ -2529,6 +2899,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			{
 				return -1; // disabled due to creature.
 			}
+			if ( monsterType == GYROBOT )
+			{
+				return 0;
+			}
 			if ( playerSkillLVL < requirement )
 			{
 				return requirement; // disabled due to basic skill requirements.
@@ -2544,6 +2918,38 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			if ( playerSkillLVL < requirement )
 			{
 				return requirement; // disabled due to basic skill requirements.
+			}
+			break;
+		case ALLY_CMD_DUMMYBOT_RETURN:
+			if ( monsterType != DUMMYBOT && monsterType != SENTRYBOT && monsterType != SPELLBOT )
+			{
+				return -1;
+			}
+			else
+			{
+				return 0;
+			}
+			break;
+		case ALLY_CMD_GYRO_DETECT_TOGGLE:
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to basic skill requirements.
+			}
+			break;
+		case ALLY_CMD_GYRO_LIGHT_TOGGLE:
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to basic skill requirements.
+			}
+			break;
+		case ALLY_CMD_GYRO_RETURN:
+			if ( monsterType == GYROBOT )
+			{
+				return 0;
+			}
+			else
+			{
+				return -1;
 			}
 			break;
 		default:
@@ -2624,6 +3030,7 @@ bool FollowerRadialMenu::allowedInteractWorld(int monsterType)
 		case KOBOLD:
 		case GOATMAN:
 		case SKELETON:
+		case GYROBOT:
 			return true;
 			break;
 		default:
@@ -2647,6 +3054,7 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 		case SKELETON:
 		case VAMPIRE:
 		case SLIME:
+		case GYROBOT:
 			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
 			{
 				return false;
@@ -2664,7 +3072,62 @@ bool FollowerRadialMenu::attackCommandOnly(int monsterType)
 	return !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractFood(monsterType));
 }
 
-bool GenericGUIMenu::isItemRepairable(const Item* item)
+void FollowerRadialMenu::monsterGyroBotConvertCommand(int* option)
+{
+	if ( !option )
+	{
+		return;
+	}
+	switch ( *option )
+	{
+		case ALLY_CMD_PICKUP_TOGGLE:
+			*option = ALLY_CMD_GYRO_DETECT_TOGGLE;
+			break;
+		case ALLY_CMD_SPECIAL:
+		case ALLY_CMD_RETURN_SOUL:
+			*option = ALLY_CMD_GYRO_RETURN;
+			break;
+		case ALLY_CMD_CLASS_TOGGLE:
+			*option = ALLY_CMD_GYRO_LIGHT_TOGGLE;
+			break;
+		default:
+			break;
+	}
+}
+
+
+bool FollowerRadialMenu::monsterGyroBotOnlyCommand(int option)
+{
+	switch ( option )
+	{
+		case ALLY_CMD_GYRO_DEPLOY:
+		case ALLY_CMD_GYRO_PATROL:
+		case ALLY_CMD_GYRO_LIGHT_TOGGLE:
+		case ALLY_CMD_GYRO_RETURN:
+		case ALLY_CMD_GYRO_DETECT_TOGGLE:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool FollowerRadialMenu::monsterGyroBotDisallowedCommands(int option)
+{
+	switch ( option )
+	{
+		case ALLY_CMD_CLASS_TOGGLE:
+		case ALLY_CMD_PICKUP_TOGGLE:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 {
 	if ( !item )
 	{
@@ -2674,11 +3137,35 @@ bool GenericGUIMenu::isItemRepairable(const Item* item)
 	{
 		return false;
 	}
-	if ( item->status == EXCELLENT )
+	Category cat = itemCategory(item);
+	if ( repairScroll == SCROLL_CHARGING )
 	{
+		if ( item->type == ENCHANTED_FEATHER )
+		{
+			if ( item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY < 100 )
+			{
+				return true;
+			}
+			return false;
+		}
+		else if ( cat == MAGICSTAFF )
+		{
+			if ( item->status == EXCELLENT )
+			{
+				return false;
+			}
+			return true;
+		}
+
 		return false;
 	}
-	Category cat = itemCategory(item);
+	else if ( repairScroll == SCROLL_REPAIR )
+	{
+		if ( item->status == EXCELLENT )
+		{
+			return false;
+		}
+	}
 	switch ( cat )
 	{
 		case WEAPON:
@@ -2686,9 +3173,13 @@ bool GenericGUIMenu::isItemRepairable(const Item* item)
 		case ARMOR:
 			return true;
 		case MAGICSTAFF:
-			return true;
+			return false;
 		case THROWN:
-			return true;
+			if ( item->type == BOOMERANG )
+			{
+				return true;
+			}
+			return false;
 		case TOOL:
 			switch ( item->type )
 			{
@@ -2696,9 +3187,27 @@ bool GenericGUIMenu::isItemRepairable(const Item* item)
 				case TOOL_MIRROR:
 				case TOOL_SKELETONKEY:
 				case TOOL_TINOPENER:
+				case TOOL_METAL_SCRAP:
+				case TOOL_MAGIC_SCRAP:
+				case TOOL_TINKERING_KIT:
+				case TOOL_SENTRYBOT:
+				case TOOL_DETONATOR_CHARGE:
+				case TOOL_BOMB:
+				case TOOL_SLEEP_BOMB:
+				case TOOL_FREEZE_BOMB:
+				case TOOL_TELEPORT_BOMB:
+				case TOOL_GYROBOT:
+				case TOOL_SPELLBOT:
+				case TOOL_DECOY:
+				case TOOL_DUMMYBOT:
+				case ENCHANTED_FEATHER:
 					return false;
 					break;
 				default:
+					if ( itemTypeIsQuiver(item->type) )
+					{
+						return false;
+					}
 					return true;
 					break;
 			}
@@ -2716,15 +3225,51 @@ void GenericGUIMenu::rebuildGUIInventory()
 	Item* item = nullptr;
 	int c = 0;
 
+	if ( guiType == GUI_TYPE_TINKERING )
+	{
+		player_inventory = &tinkeringTotalItems;
+		tinkeringTotalLastCraftableNode = tinkeringTotalItems.last;
+		if ( tinkeringTotalLastCraftableNode )
+		{
+			tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+		}
+	}
+	else if ( guiType == GUI_TYPE_SCRIBING )
+	{
+		player_inventory = &scribingTotalItems;
+		scribingTotalLastCraftableNode = scribingTotalItems.last;
+		if ( scribingTotalLastCraftableNode )
+		{
+			scribingTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+		}
+	}
+
 	if ( player_inventory )
 	{
 		//Count the number of items in the GUI "inventory".
 		for ( node = player_inventory->first; node != nullptr; node = node->next )
 		{
 			item = (Item*)node->element;
-			if ( shouldDisplayItemInGUI(item) )
+			if ( item )
 			{
-				++c;
+				if ( shouldDisplayItemInGUI(item) )
+				{
+					++c;
+				}
+				if ( guiType == GUI_TYPE_TINKERING )
+				{
+					if ( item->node && item->node->list == &stats[clientnum]->inventory )
+					{
+						if ( item->type == TOOL_METAL_SCRAP )
+						{
+							tinkeringMetalScrap.insert(item->uid);
+						}
+						else if ( item->type == TOOL_MAGIC_SCRAP )
+						{
+							tinkeringMagicScrap.insert(item->uid);
+						}
+					}
+				}
 			}
 		}
 		if ( c == 0 && guiType == GUI_TYPE_ALCHEMY )
@@ -2801,6 +3346,60 @@ void GenericGUIMenu::updateGUI()
 				return;
 			}
 		}
+		else if ( guiType == GUI_TYPE_TINKERING )
+		{
+			if ( !tinkeringKitItem )
+			{
+				closeGUI();
+				return;
+			}
+			if ( !tinkeringKitItem->node )
+			{
+				closeGUI();
+				return;
+			}
+			if ( tinkeringKitItem->node->list != &stats[clientnum]->inventory )
+			{
+				// dropped out of inventory or something.
+				closeGUI();
+				return;
+			}
+		}
+		else if ( guiType == GUI_TYPE_SCRIBING )
+		{
+			if ( !scribingToolItem )
+			{
+				closeGUI();
+				return;
+			}
+			if ( !scribingToolItem->node )
+			{
+				closeGUI();
+				return;
+			}
+			if ( scribingToolItem->node->list != &stats[clientnum]->inventory )
+			{
+				// dropped out of inventory or something.
+				closeGUI();
+				return;
+			}
+			if ( scribingBlankScrollTarget && scribingFilter != SCRIBING_FILTER_CRAFTABLE )
+			{
+				scribingBlankScrollTarget = nullptr;
+			}
+			if ( scribingLastUsageDisplayTimer > 0 )
+			{
+				if ( ticks % 2 == 0 )
+				{
+					--scribingLastUsageDisplayTimer;
+				}
+			}
+			else
+			{
+				scribingLastUsageDisplayTimer = 0;
+				scribingLastUsageAmount = 0;
+			}
+		}
 
 		gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
 		gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
@@ -2808,6 +3407,267 @@ void GenericGUIMenu::updateGUI()
 		//Center the GUI.
 		pos.x = gui_starty;
 		pos.y = gui_startx;
+		int windowX1 = pos.x - 20;
+		int windowX2 = pos.x + identifyGUI_img->w + 20;
+		int windowY1 = pos.y - 40;
+		int windowY2 = pos.y + identifyGUI_img->h + 40;
+		if ( guiType == GUI_TYPE_TINKERING )
+		{
+			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
+			int numMetalScrap = 0;
+			int numMagicScrap = 0;
+			if ( !tinkeringMetalScrap.empty() )
+			{
+				for ( auto uid : tinkeringMetalScrap )
+				{
+					if ( uidToItem(uid) )
+					{
+						numMetalScrap += (uidToItem(uid))->count;
+					}
+				}
+			}
+			if ( !tinkeringMagicScrap.empty() )
+			{
+				for ( auto uid : tinkeringMagicScrap )
+				{
+					if ( uidToItem(uid) )
+					{
+						numMagicScrap += (uidToItem(uid))->count;
+					}
+				}
+			}
+
+			// title
+			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
+				language[3690]);
+			char kitStatusText[64] = "";
+			if ( tinkeringKitItem )
+			{
+				snprintf(kitStatusText, 63, language[3691], language[3691 + std::max(1, static_cast<int>(tinkeringKitItem->status))]);
+			}
+			ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(kitStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
+				kitStatusText);
+
+			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - TTF12_HEIGHT - 8,
+				language[3647], numMetalScrap, numMagicScrap);
+			SDL_Rect smallIcon;
+			smallIcon.x = windowX1 + 16 + (strlen(language[3647]) - 5) * TTF12_WIDTH;
+			smallIcon.y = windowY2 - TTF12_HEIGHT - 12;
+			smallIcon.h = 16;
+			smallIcon.w = 16;
+			node_t* imageNode = items[TOOL_METAL_SCRAP].surfaces.first;
+			if ( imageNode )
+			{
+				drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+			}
+			smallIcon.x += TTF12_WIDTH * 6;
+			imageNode = items[TOOL_MAGIC_SCRAP].surfaces.first;
+			if ( imageNode )
+			{
+				drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+			}
+
+			// draw filter labels.
+			int txtWidth = 0;
+			int txtHeight = 0;
+			int charWidth = 0;
+			TTF_Font* font = ttf8;
+			TTF_SizeUTF8(font, "a", &charWidth, nullptr); // get 1 character width.
+			int textstartx = pos.x + 2 * charWidth + 4;
+
+			SDL_Rect highlightBtn;
+			// Craft
+			TTF_SizeUTF8(ttf8, language[3644], &txtWidth, &txtHeight);
+			highlightBtn.x = textstartx;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				tinkeringFilter = TINKER_FILTER_CRAFTABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+			}
+			if ( tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3644]);
+
+			// Salvage
+			TTF_SizeUTF8(font, language[3645], &txtWidth, &txtHeight);
+			highlightBtn.x += highlightBtn.w;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				tinkeringFilter = TINKER_FILTER_SALVAGEABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+			}
+			if ( tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3645]);
+
+			// Repair
+			TTF_SizeUTF8(font, language[3646], &txtWidth, &txtHeight);
+			highlightBtn.x += highlightBtn.w;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				tinkeringFilter = TINKER_FILTER_REPAIRABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+			}
+			if ( tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3646]);
+
+			// Filter include all (*)
+			TTF_SizeUTF8(font, language[356], &txtWidth, &txtHeight);
+			highlightBtn.x += highlightBtn.w;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				tinkeringFilter = TINKER_FILTER_ALL;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+			}
+			if ( tinkeringFilter == TINKER_FILTER_ALL )
+			{
+				drawImageScaled(smallbutton_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + (highlightBtn.w - txtWidth) / 2, pos.y - (8 - txtHeight), language[356]);
+		}
+		else if ( guiType == GUI_TYPE_SCRIBING )
+		{
+			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
+
+			// title
+			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
+				language[3716]);
+			char toolStatusText[64] = "";
+			if ( scribingToolItem && scribingToolItem->identified )
+			{
+				snprintf(toolStatusText, 63, language[3717], scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
+			}
+			ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(toolStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
+				toolStatusText);
+			/*if ( scribingLastUsageDisplayTimer > 0 )
+			{
+				ttfPrintTextFormattedColor(ttf12, windowX2 - 16 - 11 * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8, uint32ColorRed(*mainsurface),
+						"(%3d)", -scribingLastUsageAmount);
+			}*/
+
+			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+			{
+				if ( scribingBlankScrollTarget )
+				{
+					snprintf(tempstr, 1024, language[3722], scribingBlankScrollTarget->beatitude, items[SCROLL_BLANK].name_identified);
+					ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8, tempstr);
+
+					SDL_Rect smallIcon;
+					smallIcon.x = windowX1 + 16 + (longestline(tempstr) - 5) * TTF12_WIDTH;
+					smallIcon.y = windowY2 - TTF12_HEIGHT - 12 - 4;
+					smallIcon.h = 16;
+					smallIcon.w = 16;
+					node_t* imageNode = items[SCROLL_BLANK].surfaces.first;
+					if ( imageNode )
+					{
+						drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+					}
+					smallIcon.x += smallIcon.w + 4;
+					smallIcon.w = longestline(language[3723]) * TTF12_WIDTH + 8;
+					smallIcon.y -= 2;
+					smallIcon.h += 2;
+					if ( mouseInBounds(smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
+					{
+						drawDepressed(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
+						if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+						{
+							*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+							scribingBlankScrollTarget = nullptr;
+						}
+					}
+					else
+					{
+						drawWindow(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
+					}
+					ttfPrintTextFormatted(ttf12, smallIcon.x + 6, windowY2 - 2 * TTF12_HEIGHT + 2, language[3723]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
+						language[3720]);
+				}
+			}
+			else if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+			{
+				ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
+					language[3726]);
+			}
+
+			// draw filter labels.
+			int txtWidth = 0;
+			int txtHeight = 0;
+			int charWidth = 0;
+			TTF_Font* font = ttf8;
+			TTF_SizeUTF8(font, "a", &charWidth, nullptr); // get 1 character width.
+			int textstartx = pos.x + 2 * charWidth + 4;
+
+			SDL_Rect highlightBtn;
+			// Inscribe
+			TTF_SizeUTF8(ttf8, language[3718], &txtWidth, &txtHeight);
+			highlightBtn.x = textstartx;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				scribingFilter = SCRIBING_FILTER_CRAFTABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+			}
+			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3718]);
+
+			// Repair
+			TTF_SizeUTF8(font, language[3719], &txtWidth, &txtHeight);
+			highlightBtn.x += highlightBtn.w;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				scribingFilter = SCRIBING_FILTER_REPAIRABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+			}
+			if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3719]);
+		}
 		drawImage(identifyGUI_img, NULL, &pos);
 
 		//Buttons
@@ -2900,6 +3760,24 @@ void GenericGUIMenu::updateGUI()
 		}
 
 		list_t* player_inventory = &stats[clientnum]->inventory;
+		if ( guiType == GUI_TYPE_TINKERING )
+		{
+			player_inventory = &tinkeringTotalItems;
+			tinkeringTotalLastCraftableNode = tinkeringTotalItems.last;
+			if ( tinkeringTotalLastCraftableNode )
+			{
+				tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+			}
+		}
+		else if ( guiType == GUI_TYPE_SCRIBING )
+		{
+			player_inventory = &scribingTotalItems;
+			scribingTotalLastCraftableNode = scribingTotalItems.last;
+			if ( scribingTotalLastCraftableNode )
+			{
+				scribingTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+			}
+		}
 
 		if ( !player_inventory )
 		{
@@ -2911,7 +3789,14 @@ void GenericGUIMenu::updateGUI()
 			char* window_name;
 			if ( guiType == GUI_TYPE_REPAIR )
 			{
-				window_name = language[3286];
+				if ( repairItemType == SCROLL_REPAIR )
+				{
+					window_name = language[3286];
+				}
+				else if ( repairItemType == SCROLL_CHARGING )
+				{
+					window_name = language[3732];
+				}
 				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
 			}
 			else if ( guiType == GUI_TYPE_ALCHEMY )
@@ -3059,17 +3944,161 @@ void GenericGUIMenu::updateGUI()
 								continue;
 							}
 							char tempstr[256] = { 0 };
-							strncpy(tempstr, item->description(), 46);
-							if ( strlen(tempstr) == 46 )
+							int showTinkeringBotHealthPercentage = false;
+							Uint32 color = uint32ColorWhite(*mainsurface);
+							if ( guiType == GUI_TYPE_TINKERING )
+							{
+								if ( isNodeTinkeringCraftableItem(item->node) )
+								{
+									strncpy(tempstr, language[3644], strlen(language[3644])); // craft
+									strncat(tempstr, item->description(), 46 - strlen(language[3644]));
+									if ( !tinkeringPlayerCanAffordCraft(item) || (tinkeringPlayerHasSkillLVLToCraft(item) == -1) )
+									{
+										color = uint32ColorGray(*mainsurface);
+									}
+								}
+								else if ( isItemSalvageable(item, clientnum) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
+								{
+									strncpy(tempstr, language[3645], strlen(language[3645])); // salvage
+									strncat(tempstr, item->description(), 46 - strlen(language[3645]));
+								}
+								else if ( tinkeringIsItemRepairable(item, clientnum) )
+								{
+									if ( tinkeringIsItemUpgradeable(item) )
+									{
+										if ( tinkeringUpgradeMaxStatus(item) <= item->status )
+										{
+											color = uint32ColorGray(*mainsurface); // can't upgrade since it's higher status than we can craft.
+										}
+										else if ( !tinkeringPlayerCanAffordRepair(item) )
+										{
+											color = uint32ColorGray(*mainsurface); // can't upgrade since no materials
+										}
+										strncpy(tempstr, language[3684], strlen(language[3684])); // upgrade
+										strncat(tempstr, item->description(), 46 - strlen(language[3684]));
+									}
+									else
+									{
+										if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 && itemCategory(item) == TOOL )
+										{
+											color = uint32ColorGray(*mainsurface); // can't repair since no we can't craft it.
+										}
+										else if ( !tinkeringPlayerCanAffordRepair(item) )
+										{
+											color = uint32ColorGray(*mainsurface); // can't repair since no materials
+										}
+										strncpy(tempstr, language[3646], strlen(language[3646])); // repair
+										strncat(tempstr, item->description(), 46 - strlen(language[3646]));
+									}
+									if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT )
+									{
+										showTinkeringBotHealthPercentage = true;
+									}
+								}
+								else
+								{
+									messagePlayer(0, "%d", item->type);
+									strncat(tempstr, "invalid item", 12);
+								}
+							}
+							else if ( guiType == GUI_TYPE_SCRIBING )
+							{
+								if ( isNodeScribingCraftableItem(item->node) )
+								{
+									snprintf(tempstr, sizeof(tempstr), language[3721], item->getScrollLabel());
+								}
+								else
+								{
+									if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+									{
+										strncpy(tempstr, language[3719], strlen(language[3719])); // repair
+										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
+									}
+									else
+									{
+										strncpy(tempstr, language[3718], strlen(language[3718])); // inscribe
+										int oldcount = item->count;
+										item->count = 1;
+										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
+										item->count = oldcount;
+									}
+								}
+							}
+							else
+							{
+								strncpy(tempstr, item->description(), 46);
+							}
+
+							if ( showTinkeringBotHealthPercentage )
+							{
+								int health = 100;
+								if ( item->appearance >= 0 && item->appearance <= 4 )
+								{
+									health = 25 * item->appearance;
+									if ( health == 0 && item->status != BROKEN )
+									{
+										health = 5;
+									}
+								}
+								char healthstr[32] = "";
+								snprintf(healthstr, 16, " (%d%%)", health);
+								strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
+							}
+							else if ( item->type == ENCHANTED_FEATHER && item->identified )
+							{
+								char healthstr[32] = "";
+								snprintf(healthstr, 16, " (%d%%)", item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
+								strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
+							}
+							
+
+							if ( strlen(tempstr) >= 46 )
 							{
 								strcat(tempstr, " ...");
 							}
-							ttfPrintText(ttf8, gui_starty + 36, y, tempstr);
+							ttfPrintTextColor(ttf8, gui_starty + 36, y, color, true, tempstr);
 							pos.x = gui_starty + 16;
 							pos.y = gui_startx + 17 + 18 * (c - scroll - 1);
 							pos.w = 16;
 							pos.h = 16;
 							drawImageScaled(itemSprite(item), NULL, &pos);
+							if ( guiType == GUI_TYPE_TINKERING )
+							{
+								int metal = 0;
+								int magic = 0;
+								if ( isNodeTinkeringCraftableItem(item->node) )
+								{
+									tinkeringGetCraftingCost(item, &metal, &magic);
+								}
+								else if ( isItemSalvageable(item, clientnum) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
+								{
+									tinkeringGetItemValue(item, &metal, &magic);
+								}
+								else if ( tinkeringIsItemRepairable(item, clientnum) )
+								{
+									tinkeringGetRepairCost(item, &metal, &magic);
+								}
+								pos.x = windowX2 - 20 - TTF8_WIDTH * 12;
+								if ( !item->identified )
+								{
+									ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "  ?    ?");
+								}
+								else
+								{
+									ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "%3d  %3d", metal, magic);
+								}
+								node_t* imageNode = items[TOOL_METAL_SCRAP].surfaces.first;
+								if ( imageNode )
+								{
+									drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &pos);
+								}
+								pos.x += TTF12_WIDTH * 4;
+								imageNode = items[TOOL_MAGIC_SCRAP].surfaces.first;
+								if ( imageNode )
+								{
+									drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &pos);
+								}
+							}
 							y += 18;
 							if ( c > 3 + scroll )
 							{
@@ -3091,11 +4120,60 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 	}
 	if ( guiType == GUI_TYPE_REPAIR )
 	{
-		return isItemRepairable(item);
+		return isItemRepairable(item, repairItemType);
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )
 	{
 		return isItemMixable(item);
+	}
+	else if ( guiType == GUI_TYPE_TINKERING )
+	{
+		if ( isNodeTinkeringCraftableItem(item->node) )
+		{
+			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+			{
+				return true;
+			}
+		}
+		else if ( tinkeringIsItemRepairable(item, clientnum) && tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+		{
+			return true;
+		}
+		else if ( isItemSalvageable(item, clientnum) )
+		{
+			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+			{
+				return true;
+			}
+		}
+	}
+	else if ( guiType == GUI_TYPE_SCRIBING )
+	{
+		if ( scribingFilter != SCRIBING_FILTER_REPAIRABLE )
+		{
+			if ( isNodeScribingCraftableItem(item->node) )
+			{
+				if ( scribingBlankScrollTarget )
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			else if ( !scribingBlankScrollTarget && item->identified && item->type == SCROLL_BLANK )
+			{
+				return true;
+			}
+		}
+		else if ( scribingFilter != SCRIBING_FILTER_CRAFTABLE )
+		{
+			if ( itemCategory(item) == SPELLBOOK && item->identified && item->status < EXCELLENT )
+			{
+				return true;
+			}
+		}
 	}
 	return false;
 }
@@ -3114,15 +4192,61 @@ void GenericGUIMenu::repairItem(Item* item)
 
 	bool isEquipped = itemIsEquipped(item, clientnum);
 
-	if ( item->status == BROKEN )
+	if ( repairItemType == SCROLL_CHARGING )
 	{
-		item->status = DECREPIT;
+		if ( itemCategory(item) == MAGICSTAFF )
+		{
+			if ( item->status == BROKEN )
+			{
+				if ( usingScrollBeatitude > 0 )
+				{
+					item->status = EXCELLENT;
+				}
+				else
+				{
+					item->status = WORN;
+				}
+			}
+			else
+			{
+				item->status = EXCELLENT;
+			}
+		}
+		else if ( item->type == ENCHANTED_FEATHER )
+		{
+			int durability = item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
+			int repairAmount = 100 - durability;
+			if ( repairAmount > (ENCHANTED_FEATHER_MAX_DURABILITY / 2) )
+			{
+				if ( usingScrollBeatitude == 0 )
+				{
+					repairAmount = ENCHANTED_FEATHER_MAX_DURABILITY / 2;
+				}
+			}
+			item->appearance += repairAmount;
+			item->status = EXCELLENT;
+		}
+		messagePlayer(clientnum, language[3730], item->getName());
 	}
 	else
 	{
-		item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
+		if ( item->status == BROKEN )
+		{
+			item->status = DECREPIT;
+		}
+		else
+		{
+			if ( (item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES) || item->type == BOOMERANG )
+			{
+				item->status = static_cast<Status>(std::min(item->status + 1, static_cast<int>(EXCELLENT)));
+			}
+			else
+			{
+				item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
+			}
+		}
+		messagePlayer(clientnum, language[872], item->getName());
 	}
-	messagePlayer(clientnum, language[872], item->getName());
 	closeGUI();
 	if ( multiplayer == CLIENT && isEquipped )
 	{
@@ -3173,12 +4297,15 @@ void GenericGUIMenu::repairItem(Item* item)
 
 void GenericGUIMenu::closeGUI()
 {
+	tinkeringFreeLists();
+	scribingFreeLists();
 	guiActive = false;
 	selectedSlot = -1;
 	guiType = GUI_TYPE_NONE;
 	basePotion = nullptr;
 	secondaryPotion = nullptr;
 	alembicItem = nullptr;
+	repairItemType = 0;
 }
 
 inline Item* GenericGUIMenu::getItemInfo(int slot)
@@ -3301,13 +4428,14 @@ void GenericGUIMenu::initGUIControllerCode()
 	}
 }
 
-void GenericGUIMenu::openGUI(int type, int scrollBeatitude)
+void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 {
 	this->closeGUI();
 	shootmode = false;
 	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
 	guiActive = true;
 	usingScrollBeatitude = scrollBeatitude;
+	repairItemType = scrollType;
 	guiType = static_cast<GUICurrentType>(type);
 
 	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
@@ -3343,6 +4471,47 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 
 	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+
+	if ( removecursegui_active )
+	{
+		closeRemoveCurseGUI();
+	}
+	if ( identifygui_active )
+	{
+		CloseIdentifyGUI();
+	}
+	FollowerMenu.closeFollowerMenuGUI();
+
+	if ( openedChest[clientnum] )
+	{
+		openedChest[clientnum]->closeChest();
+	}
+	rebuildGUIInventory();
+	this->initGUIControllerCode();
+}
+
+void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
+{
+	this->closeGUI();
+	shootmode = false;
+	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	guiActive = true;
+	guiType = static_cast<GUICurrentType>(type);
+
+	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
+	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+
+	// build the craftables list.
+	if ( guiType == GUI_TYPE_TINKERING )
+	{
+		tinkeringKitItem = itemOpenedWith;
+		tinkeringCreateCraftableItemList();
+	}
+	else if ( guiType == GUI_TYPE_SCRIBING )
+	{
+		scribingToolItem = itemOpenedWith;
+		scribingCreateCraftableItemList();
+	}
 
 	if ( removecursegui_active )
 	{
@@ -3422,6 +4591,44 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 		}
 		return true;
 	}
+	else if ( guiType == GUI_TYPE_TINKERING )
+	{
+		if ( isNodeTinkeringCraftableItem(item->node) )
+		{
+			tinkeringCraftItem(item);
+		}
+		else if ( isNodeFromPlayerInventory(item->node) )
+		{
+			if ( tinkeringIsItemRepairable(item, clientnum) && tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+			{
+				tinkeringRepairItem(item);
+			}
+			else
+			{
+				tinkeringSalvageItem(item, false, clientnum);
+			}
+		}
+		return true;
+	}
+	else if ( guiType == GUI_TYPE_SCRIBING )
+	{
+		if ( isNodeScribingCraftableItem(item->node) )
+		{
+			scribingWriteItem(item);
+		}
+		else if ( isNodeFromPlayerInventory(item->node) )
+		{
+			if ( item->identified && item->type == SCROLL_BLANK )
+			{
+				scribingBlankScrollTarget = item;
+			}
+			else if ( item->identified && itemCategory(item) == SPELLBOOK )
+			{
+				scribingWriteItem(item);
+			}
+		}
+		return true;
+	}
 
 	return false;
 }
@@ -3465,7 +4672,6 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		}
 		return false;
 	}
-
 
 	if ( itemIsEquipped(item, clientnum) )
 	{
@@ -3847,7 +5053,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	Status status = SERVICABLE;
 	bool duplicateSucceed = false;
-	if ( tryDuplicatePotion && !explodeSelf )
+	if ( tryDuplicatePotion && !explodeSelf && !randomResult )
 	{
 		// do duplicate.
 		if ( rand() % 100 < (50 + skillLVL * 10) ) // 50 - 100% chance
@@ -4306,4 +5512,2201 @@ void GenericGUIMenu::alchemyLearnRecipeOnLevelUp(int skill)
 		ItemType potion = itemLevelCurve(POTION, 0, currentlevel);
 		GenericGUI.alchemyLearnRecipe(potion, false);
 	}
+}
+
+void GenericGUIMenu::tinkeringCreateCraftableItemList()
+{
+	tinkeringFreeLists();
+	/*Item* tempItem = newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
+	if ( tinkeringPlayerCanAffordCraft(tempItem) )
+	{
+	}*/
+	std::vector<Item*> items;
+	items.push_back(newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_DECOY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(POTION_EMPTY, SERVICABLE, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	for ( auto it = items.begin(); it != items.end(); ++it )
+	{
+		Item* item = *it;
+		if ( item )
+		{
+			int skillLVL = 0;
+			int requiredSkill = tinkeringPlayerHasSkillLVLToCraft(item);
+			if ( stats[clientnum] && players[clientnum] )
+			{
+				skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+				skillLVL = std::min(skillLVL, 5);
+			}
+			if ( item->type == TOOL_DUMMYBOT || item->type == TOOL_SENTRYBOT
+				|| item->type == TOOL_SPELLBOT || item->type == TOOL_GYROBOT )
+			{
+				if ( skillLVL >= 5 ) // maximum
+				{
+					item->status = EXCELLENT;
+				}
+				else if ( requiredSkill >= skillLVL || requiredSkill == -1 )
+				{
+					item->status = DECREPIT;
+				}
+				else
+				{
+					if ( skillLVL - requiredSkill == 1 )
+					{
+						item->status = WORN;
+					}
+					else if ( skillLVL - requiredSkill == 2 )
+					{
+						item->status = SERVICABLE;
+					}
+					else if ( skillLVL - requiredSkill >= 3 )
+					{
+						item->status = EXCELLENT;
+					}
+				}
+			}
+		}
+	}
+	//newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	//newItem(TOOL_DETONATOR_CHARGE, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+
+	//messagePlayer(clientnum, "asserting craftable num items: %d", list_Size(&tinkeringTotalItems));
+	if ( stats[clientnum] )
+	{
+		// make the last node jump to the player's actual items, 
+		// so consuming the items in this list will actually update the player's inventory.
+		node_t* tinkeringTotalLastCraftableNode = tinkeringTotalItems.last;
+		if ( tinkeringTotalLastCraftableNode )
+		{
+			tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+		}
+		//messagePlayer(clientnum, "asserting total list size: %d", list_Size(&tinkeringTotalItems));
+	}
+}
+
+void GenericGUIMenu::tinkeringFreeLists()
+{
+	node_t* nextnode = nullptr;
+	int itemcnt = 0;
+
+	// totalItems is a unique list, contains unique craftable data, 
+	// as well as a pointer to continue to the player's inventory
+	for ( node_t* node = tinkeringTotalItems.first; node; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( node->list == &tinkeringTotalItems )
+		{
+			list_RemoveNode(node);
+			++itemcnt;
+		}
+		else if ( node->list == &stats[clientnum]->inventory )
+		{
+			//messagePlayer(clientnum, "reached inventory after clearing %d items", itemcnt);
+			break;
+		}
+	}
+	tinkeringMetalScrap.clear();
+	tinkeringMagicScrap.clear();
+	tinkeringTotalItems.first = nullptr;
+	tinkeringTotalItems.last = nullptr;
+	tinkeringTotalLastCraftableNode = nullptr;
+}
+
+bool GenericGUIMenu::tinkeringCraftItem(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	// add checks/consuming of items here.
+	if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 )
+	{
+		playSound(90, 64);
+		messagePlayer(clientnum, language[3652], items[item->type].name_identified);
+		return false;
+	}
+	if ( !tinkeringPlayerCanAffordCraft(item) )
+	{
+		playSound(90, 64);
+		messagePlayer(clientnum, language[3648], items[item->type].name_identified);
+		return false;
+	}
+
+	Item* crafted = tinkeringCraftItemAndConsumeMaterials(item);
+	if ( crafted )
+	{
+		Item* pickedUp = itemPickup(clientnum, crafted);
+		messagePlayer(clientnum, language[3668], crafted->description());
+		free(crafted);
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int player)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( !outsideInventory && itemIsEquipped(item, player) )
+	{
+		messagePlayer(player, language[3669]);
+		return false; // don't want to deal with client/server desync problems here.
+	}
+
+	// add checks/consuming of items here.
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetItemValue(item, &metal, &magic);
+	bool didCraft = false;
+	int skillLVL = 0;
+	int bonusMetalScrap = 0;
+	int bonusMagicScrap = 0;
+	if ( stats[player] && players[player] && item->status > BROKEN )
+	{
+   		skillLVL = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[player], players[player]->entity)) / 20;
+		skillLVL = std::min(skillLVL, 5);
+		switch ( skillLVL )
+		{
+			case 5:
+				bonusMetalScrap = (1 + (rand() % 2 == 0) ? 1 : 0) * metal; // 2x or 50% 3x extra scrap
+				bonusMagicScrap = (1 + (rand() % 2 == 0) ? 1 : 0) * magic; // 2x or 50% 3x extra scrap
+				break;
+			case 4:
+				bonusMetalScrap = (1 + (rand() % 4 == 0) ? 1 : 0) * metal; // 2x or 25% 3x extra scrap
+				bonusMagicScrap = (1 + (rand() % 4 == 0) ? 1 : 0) * magic; // 2x or 25% 3x extra scrap
+				break;
+			case 3:
+				bonusMetalScrap = ((rand() % 2 == 0) ? 1 : 0) * metal; // 50% 2x scrap value
+				bonusMagicScrap = ((rand() % 2 == 0) ? 1 : 0) * magic; // 50% 2x scrap value
+				break;
+			case 2:
+				bonusMetalScrap = ((rand() % 4 == 0) ? 1 : 0) * metal; // 25% 2x scrap value
+				bonusMagicScrap = ((rand() % 4 == 0) ? 1 : 0) * magic; // 25% 2x scrap value
+				break;
+			case 1:
+				bonusMetalScrap = ((rand() % 8 == 0) ? 1 : 0) * metal; // 12.5% 2x scrap value
+				bonusMagicScrap = ((rand() % 8 == 0) ? 1 : 0) * magic; // 12.5% 2x scrap value
+				break;
+			default:
+				break;
+		}
+	}
+	if ( metal > 0 )
+	{
+		metal += bonusMetalScrap;
+	}
+	if ( magic > 0 )
+	{
+		magic += bonusMagicScrap;
+	}
+	if ( metal > 0 )
+	{
+		Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, metal, 0, true, nullptr);
+		if ( crafted )
+		{
+			Item* pickedUp = itemPickup(player, crafted);
+			if ( bonusMetalScrap > 0 )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				messagePlayerColor(player, color, language[3665], metal, items[pickedUp->type].name_identified);
+			}
+			else
+			{
+				messagePlayer(player, language[3665], metal, items[pickedUp->type].name_identified);
+			}
+			free(crafted); // if player != clientnum, then crafted == pickedUp
+			didCraft = true;
+		}
+	}
+	if ( magic > 0 )
+	{
+		Item* crafted = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, magic, 0, true, nullptr);
+		if ( crafted )
+		{
+			Item* pickedUp = itemPickup(player, crafted);
+			if ( bonusMagicScrap > 0 )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				messagePlayerColor(player, color, language[3665], magic, items[pickedUp->type].name_identified);
+			}
+			else
+			{
+				messagePlayer(player, language[3665], magic, items[pickedUp->type].name_identified);
+			}
+			free(crafted); // if player != clientnum, then crafted == pickedUp
+			didCraft = true;
+		}
+	}
+
+	bool increaseSkill = false;
+	if ( stats[player] && didCraft )
+	{
+		if ( metal >= 4 || magic >= 4 )
+		{
+			if ( rand() % 2 == 0 ) // 50%
+			{
+				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+				{
+					increaseSkill = true;
+				}
+				else if ( rand() % 20 == 0 )
+				{
+					messagePlayer(player, language[3666]); // nothing left to learn from salvaging.
+				}
+			}
+		}
+		else if ( metal >= 2 || magic >= 2 )
+		{
+			if ( rand() % 5 == 0 ) // 20%
+			{
+				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+				{
+					increaseSkill = true;
+				}
+				else if ( rand() % 20 == 0 )
+				{
+					messagePlayer(player, language[3666]); // nothing left to learn from salvaging.
+				}
+			}
+		}
+
+		if ( item->type == TOOL_TORCH || item->type == TOOL_CRYSTALSHARD )
+		{
+			achievementObserver.playerAchievements[player].torchererScrap += (magic + metal);
+		}
+		else if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
+			|| item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT 
+			|| item->type == TOOL_DETONATOR_CHARGE )
+		{
+			if ( item->status == BROKEN )
+			{
+				achievementObserver.playerAchievements[player].fixerUpper += 1;
+			}
+		}
+
+		achievementObserver.playerAchievements[player].superShredder += (magic + metal);
+
+		if ( players[player] && players[player]->entity )
+		{
+			if ( (ticks - tinkeringSfxLastTicks) > 200 && ((metal >= 4 || magic >= 4) || rand() % 5 == 0) )
+			{
+				tinkeringSfxLastTicks = ticks;
+				playSoundEntity(players[player]->entity, 421 + (rand() % 2) * 3, 64);
+			}
+			else
+			{
+				if ( rand() % 4 == 0 )
+				{
+					playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+				}
+				else
+				{
+					playSoundEntity(players[clientnum]->entity, 462 + rand() % 2, 64);
+				}
+			}
+		}
+	}
+
+	if ( increaseSkill )
+	{
+		if ( player != clientnum ) // server initiated craft for client.
+		{
+			if ( players[player] && players[player]->entity )
+			{
+				players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+			}
+		}
+		else if ( player == clientnum ) // client/server initiated craft for self.
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_LOCKPICKING;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+				}
+			}
+		}
+	}
+
+	if ( !outsideInventory && didCraft )
+	{
+		consumeItem(item, player);
+	}
+	return true;
+}
+
+bool GenericGUIMenu::isNodeFromPlayerInventory(node_t* node)
+{
+	if ( stats[clientnum] && node )
+	{
+		return (node->list == &stats[clientnum]->inventory);
+	}
+	return false;
+};
+
+bool GenericGUIMenu::isItemSalvageable(const Item* item, int player)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	/*if ( itemIsConsumableByAutomaton(*item) )
+	{
+		return false;
+	}*/
+	if ( player == clientnum && itemIsEquipped(item, clientnum) )
+	{
+		return false;
+	}
+	if ( item == tinkeringKitItem )
+	{
+		return false;
+	}
+	if ( item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP )
+	{
+		return false;
+	}
+
+	int metal = 0;
+	int magic = 0;
+	if ( tinkeringGetItemValue(item, &metal, &magic) )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringIsItemRepairable(Item* item, int player)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	/*if ( player == clientnum && itemIsEquipped(item, clientnum) )
+	{
+		return false;
+	}*/
+	/*if ( item == tinkeringKitItem )
+	{
+		return false;
+	}*/
+
+	int metal = 0;
+	int magic = 0;
+	if ( tinkeringGetRepairCost(item, &metal, &magic) )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringPlayerCanAffordRepair(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetRepairCost(item, &metal, &magic);
+	if ( metal == 0 && magic == 0 )
+	{
+		return false;
+	}
+
+	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringPlayerCanAffordCraft(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetCraftingCost(item, &metal, &magic);
+	if ( metal == 0 && magic == 0 )
+	{
+		return false;
+	}
+
+	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
+	{
+		return true;
+	}
+	
+	return false;
+}
+
+Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
+{
+	if ( !item )
+	{
+		return nullptr;
+	}
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetCraftingCost(item, &metal, &magic);
+	if ( metal == 0 && magic == 0 )
+	{
+		return nullptr;
+	}
+	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
+	{
+		bool increaseSkill = false;
+		if ( stats[clientnum] )
+		{
+			if ( metal > 4 || magic > 4 )
+			{
+				if ( rand() % 10 == 0 )
+				{
+					increaseSkill = true;
+				}
+			}
+			else
+			{
+				if ( metal > 2 || magic > 2 )
+				{
+					if ( rand() % 20 == 0 )
+					{
+						increaseSkill = true;
+					}
+				}
+				else
+				{
+					if ( stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+					{
+						if ( rand() % 10 == 0 )
+						{
+							increaseSkill = true;
+						}
+					}
+					else if ( rand() % 20 == 0 )
+					{
+						messagePlayer(clientnum, language[3667], items[item->type].name_identified);
+					}
+				}
+			}
+		}
+			
+		if ( increaseSkill )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_LOCKPICKING;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+				}
+			}
+		}
+
+		if ( (ticks - tinkeringSfxLastTicks) > 100 )
+		{
+			tinkeringSfxLastTicks = ticks;
+			if ( itemIsThrowableTinkerTool(item) )
+			{
+				playSoundEntity(players[clientnum]->entity, 459 + (rand() % 3), 92);
+			}
+			else
+			{
+				if ( rand() % 3 == 0 )
+				{
+					playSoundEntity(players[clientnum]->entity, 422 + (rand() % 2), 92);
+				}
+				else
+				{
+					playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+				}
+			}
+		}
+		else
+		{
+			playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+		}
+
+		for ( int c = 0; c < metal; ++c )
+		{
+			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_METAL_SCRAP));
+			if ( item )
+			{
+				consumeItem(item, clientnum);
+			}
+		}
+		for ( int c = 0; c < magic; ++c )
+		{
+			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_MAGIC_SCRAP));
+			if ( item )
+			{
+				consumeItem(item, clientnum);
+			}
+		}
+		if ( tinkeringKitRollIfShouldBreak() )
+		{
+			tinkeringKitDegradeOnUse(clientnum);
+		}
+		return newItem(item->type, item->status, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
+	}
+	return nullptr;
+}
+
+Uint32 GenericGUIMenu::tinkeringRetrieveLeastScrapStack(int type)
+{
+	if ( type == TOOL_METAL_SCRAP )
+	{
+		if ( !tinkeringMetalScrap.empty() )
+		{
+			int lowestCount = 9999;
+			Uint32 lowestUid = 0;
+			for ( auto it : tinkeringMetalScrap )
+			{
+				Item* item = uidToItem(it);
+				if ( item && item->count > 0 && item->count < lowestCount )
+				{
+					lowestCount = item->count;
+					lowestUid = it;
+				}
+			}
+			return lowestUid;
+		}
+	}
+	else if ( type == TOOL_MAGIC_SCRAP )
+	{
+		if ( !tinkeringMagicScrap.empty() )
+		{
+			int lowestCount = 9999;
+			Uint32 lowestUid = 0;
+			for ( auto it : tinkeringMagicScrap )
+			{
+				Item* item = uidToItem(it);
+				if ( item && item->count > 0 && item->count < lowestCount )
+				{
+					lowestCount = item->count;
+					lowestUid = it;
+				}
+			}
+			return lowestUid;
+		}
+	}
+	return 0;
+}
+
+int GenericGUIMenu::tinkeringCountScrapTotal(int type)
+{
+	int count = 0;
+	if ( type == TOOL_METAL_SCRAP )
+	{
+		if ( !tinkeringMetalScrap.empty() )
+		{
+			for ( auto it : tinkeringMetalScrap )
+			{
+				Item* item = uidToItem(it);
+				if ( item )
+				{
+					count += item->count;
+				}
+			}
+		}
+	}
+	else if ( type == TOOL_MAGIC_SCRAP )
+	{
+		if ( !tinkeringMagicScrap.empty() )
+		{
+			for ( auto it : tinkeringMagicScrap )
+			{
+				Item* item = uidToItem(it);
+				if ( item )
+				{
+					count += item->count;
+				}
+			}
+		}
+	}
+	return count;
+}
+
+bool GenericGUIMenu::tinkeringPlayerHasMaterialsInventory(int metal, int magic)
+{
+	bool hasMaterials = false;
+	if ( metal > 0 && magic > 0 )
+	{
+		if ( tinkeringCountScrapTotal(TOOL_METAL_SCRAP) >= metal && tinkeringCountScrapTotal(TOOL_MAGIC_SCRAP) >= magic )
+		{
+			hasMaterials = true;
+		}
+		else
+		{
+			hasMaterials = false;
+		}
+	}
+	else if ( metal > 0 )
+	{
+		if ( tinkeringCountScrapTotal(TOOL_METAL_SCRAP) >= metal )
+		{
+			hasMaterials = true;
+		}
+		else
+		{
+			hasMaterials = false;
+		}
+	}
+	else if ( magic > 0 )
+	{
+		if ( tinkeringCountScrapTotal(TOOL_MAGIC_SCRAP) >= magic )
+		{
+			hasMaterials = true;
+		}
+		else
+		{
+			hasMaterials = false;
+		}
+	}
+	return hasMaterials;
+}
+
+bool GenericGUIMenu::tinkeringGetCraftingCost(const Item* item, int* metal, int* magic)
+{
+	if ( !item || !metal || !magic )
+	{
+		return false;
+	}
+
+	switch ( item->type )
+	{
+		case TOOL_BOMB:
+		case TOOL_FREEZE_BOMB:
+			*metal = 8;
+			*magic = 12;
+			break;
+		case TOOL_SLEEP_BOMB:
+		case TOOL_TELEPORT_BOMB:
+			*metal = 4;
+			*magic = 8;
+			break;
+		case CLOAK_BACKPACK:
+			*metal = 20;
+			*magic = 4;
+			break;
+		case TOOL_DUMMYBOT:
+			*metal = 8;
+			*magic = 4;
+			break;
+		case TOOL_GYROBOT:
+			*metal = 16;
+			*magic = 12;
+			break;
+		case TOOL_SENTRYBOT:
+			*metal = 16;
+			*magic = 8;
+			break;
+		case TOOL_SPELLBOT:
+			*metal = 8;
+			*magic = 16;
+			break;
+		case TOOL_ALEMBIC:
+			*metal = 16;
+			*magic = 16;
+			break;
+		case TOOL_DECOY:
+			*metal = 8;
+			*magic = 1;
+			break;
+		case TOOL_BEARTRAP:
+			*metal = 12;
+			*magic = 0;
+			break;
+		case TOOL_LOCKPICK:
+			*metal = 2;
+			*magic = 0;
+			break;
+		case TOOL_GLASSES:
+		case TOOL_LANTERN:
+			*metal = 8;
+			*magic = 4;
+			break;
+		case POTION_EMPTY:
+			*metal = 2;
+			*magic = 2;
+			break;
+		default:
+			*metal = 0;
+			*magic = 0;
+			return false;
+			break;
+	}
+
+	return true;
+}
+
+bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* magic)
+{
+	if ( !item || !metal || !magic )
+	{
+		return false;
+	}
+
+	switch ( item->type )
+	{
+		case WOODEN_SHIELD:
+		case QUARTERSTAFF:
+		case BRONZE_SWORD:
+		case BRONZE_MACE:
+		case BRONZE_AXE:
+		case BRONZE_SHIELD:
+		case SLING:
+		case GLOVES:
+		case CLOAK:
+		case LEATHER_BOOTS:
+		case HAT_PHRYGIAN:
+		case HAT_HOOD:
+		case LEATHER_HELM:
+		case TOOL_TINOPENER:
+		case TOOL_MIRROR:
+		case TOOL_TORCH:
+		case TOOL_BLINDFOLD:
+		case TOOL_TOWEL:
+		case FOOD_TIN:
+		case WIZARD_DOUBLET:
+		case HEALER_DOUBLET:
+		case BRASS_KNUCKLES:
+		case BRONZE_TOMAHAWK:
+		case CLOAK_BLACK:
+		case POTION_EMPTY:
+		case TUNIC:
+		case SUEDE_BOOTS:
+		case SUEDE_GLOVES:
+		case HAT_HOOD_RED:
+		case HAT_HOOD_SILVER:
+		case SILVER_DOUBLET:
+		case CLOAK_SILVER:
+		case TOOL_LOCKPICK:
+			*metal = 1;
+			*magic = 0;
+			break;
+
+		case CLOAK_MAGICREFLECTION:
+		case CLOAK_PROTECTION:
+		case HAT_WIZARD:
+		case HAT_JESTER:
+		case AMULET_WATERBREATHING:
+		case AMULET_STRANGULATION:
+		case AMULET_POISONRESISTANCE:
+		case MAGICSTAFF_LIGHT:
+		case MAGICSTAFF_LOCKING:
+		case MAGICSTAFF_SLOW:
+		case RING_ADORNMENT:
+		case RING_PROTECTION:
+		case RING_TELEPORTATION:
+		case GEM_GARNET:
+		case GEM_JADE:
+		case GEM_JETSTONE:
+		case GEM_OBSIDIAN:
+		case GEM_GLASS:
+		case TOOL_CRYSTALSHARD:
+		case HAT_FEZ:
+			*metal = 1;
+			*magic = 1;
+			break;
+
+		case GLOVES_DEXTERITY:
+		case LEATHER_BOOTS_SPEED:
+		case AMULET_SEXCHANGE:
+		case MAGICSTAFF_OPENING:
+		case MAGICSTAFF_COLD:
+		case MAGICSTAFF_FIRE:
+		case MAGICSTAFF_LIGHTNING:
+		case MAGICSTAFF_SLEEP:
+		case MAGICSTAFF_POISON:
+		case RING_STRENGTH:
+		case RING_CONSTITUTION:
+		case RING_CONFLICT:
+		case GEM_AMBER:
+		case GEM_EMERALD:
+		case GEM_AMETHYST:
+		case GEM_FLUORITE:
+			*metal = 1;
+			*magic = 2;
+			break;
+
+		case AMULET_MAGICREFLECTION:
+		case MAGICSTAFF_DIGGING:
+		case MAGICSTAFF_MAGICMISSILE:
+		case RING_WARNING:
+		case RING_MAGICRESISTANCE:
+		case GEM_RUBY:
+		case GEM_JACINTH:
+		case GEM_CITRINE:
+		case GEM_SAPPHIRE:
+		case GEM_AQUAMARINE:
+		case GEM_OPAL:
+		case TOOL_BLINDFOLD_FOCUS:
+			*metal = 1;
+			*magic = 3;
+			break;
+
+		case CLOAK_INVISIBILITY:
+		case AMULET_LIFESAVING:
+		case RING_SLOWDIGESTION:
+		case RING_INVISIBILITY:
+		case RING_LEVITATION:
+		case RING_REGENERATION:
+		case GEM_DIAMOND:
+		case TOOL_SKELETONKEY:
+		case VAMPIRE_DOUBLET:
+		case MAGICSTAFF_CHARM:
+		case MAGICSTAFF_BLEED:
+		case MAGICSTAFF_STONEBLOOD:
+		case MAGICSTAFF_SUMMON:
+		case MASK_SHAMAN:
+			*metal = 1;
+			*magic = 4;
+			break;
+
+		case SCROLL_LIGHT:
+		case SCROLL_FIRE:
+		case SCROLL_MAGICMAPPING:
+		case SCROLL_REPAIR:
+		case SCROLL_DESTROYARMOR:
+		case SCROLL_TELEPORTATION:
+			*metal = 0;
+			*magic = 2;
+			break;
+
+		case SCROLL_IDENTIFY:
+		case SCROLL_REMOVECURSE:
+		case SCROLL_FOOD:
+		case SCROLL_SUMMON:
+		case SPELLBOOK_FORCEBOLT:
+		case SPELLBOOK_LIGHT:
+		case SPELLBOOK_SLOW:
+		case SPELLBOOK_LOCKING:
+		case SPELLBOOK_TELEPORTATION:
+		case SPELLBOOK_REVERT_FORM:
+		case SPELLBOOK_RAT_FORM:
+		case SPELLBOOK_SPRAY_WEB:
+		case SPELLBOOK_POISON:
+		case SPELLBOOK_SPEED:
+		case SPELLBOOK_DETECT_FOOD:
+		case SPELLBOOK_SHADOW_TAG:
+		case SPELLBOOK_SALVAGE:
+		case SPELLBOOK_DASH:
+		case SPELLBOOK_9:
+		case SPELLBOOK_10:
+			*metal = 0;
+			*magic = 4;
+			break;
+
+		case TOOL_BLINDFOLD_TELEPATHY:
+			*metal = 1;
+			*magic = 6;
+			break;
+
+		case SCROLL_ENCHANTWEAPON:
+		case SCROLL_ENCHANTARMOR:
+		case SPELLBOOK_COLD:
+		case SPELLBOOK_FIREBALL:
+		case SPELLBOOK_REMOVECURSE:
+		case SPELLBOOK_LIGHTNING:
+		case SPELLBOOK_IDENTIFY:
+		case SPELLBOOK_MAGICMAPPING:
+		case SPELLBOOK_SLEEP:
+		case SPELLBOOK_CONFUSE:
+		case SPELLBOOK_OPENING:
+		case SPELLBOOK_HEALING:
+		case SPELLBOOK_CUREAILMENT:
+		case SPELLBOOK_ACID_SPRAY:
+		case SPELLBOOK_CHARM_MONSTER:
+		case SPELLBOOK_SPIDER_FORM:
+		case SPELLBOOK_TROLL_FORM:
+		case SPELLBOOK_FEAR:
+		case SPELLBOOK_STRIKE:
+		case SPELLBOOK_TELEPULL:
+		case SPELLBOOK_FLUTTER:
+		case SCROLL_CHARGING:
+		case SCROLL_CONJUREARROW:
+			*metal = 0;
+			*magic = 6;
+			break;
+
+		case SPELLBOOK_MAGICMISSILE:
+		case SPELLBOOK_LEVITATION:
+		case SPELLBOOK_INVISIBILITY:
+		case SPELLBOOK_EXTRAHEALING:
+		case SPELLBOOK_DIG:
+		case SPELLBOOK_SUMMON:
+		case SPELLBOOK_BLEED:
+		case SPELLBOOK_REFLECT_MAGIC:
+		case SPELLBOOK_STONEBLOOD:
+		case SPELLBOOK_STEAL_WEAPON:
+		case SPELLBOOK_DRAIN_SOUL:
+		case SPELLBOOK_VAMPIRIC_AURA:
+		case SPELLBOOK_IMP_FORM:
+		case SPELLBOOK_TROLLS_BLOOD:
+		case SPELLBOOK_WEAKNESS:
+		case SPELLBOOK_AMPLIFY_MAGIC:
+		case SPELLBOOK_DEMON_ILLU:
+		case SPELLBOOK_SELF_POLYMORPH:
+		case GEM_LUCK:
+		case ENCHANTED_FEATHER:
+			*metal = 0;
+			*magic = 8;
+
+		case IRON_SPEAR:
+		case IRON_SWORD:
+		case IRON_MACE:
+		case IRON_AXE:
+		case IRON_SHIELD:
+		case SHORTBOW:
+		case BRACERS:
+		case IRON_BOOTS:
+		case LEATHER_BREASTPIECE:
+		case IRON_HELM:
+		case TOOL_PICKAXE:
+		case TOOL_LANTERN:
+		case TOOL_GLASSES:
+		case IRON_KNUCKLES:
+		case TOOL_BEARTRAP:
+		case IRON_DAGGER:
+			*metal = 2;
+			*magic = 0;
+			break;
+
+		case BRACERS_CONSTITUTION:
+		case TOOL_ALEMBIC:
+		case PUNISHER_HOOD:
+			*metal = 2;
+			*magic = 2;
+			break;
+
+		case IRON_BOOTS_WATERWALKING:
+			*metal = 2;
+			*magic = 3;
+			break;
+
+		case MIRROR_SHIELD:
+			*metal = 2;
+			*magic = 4;
+			break;
+
+		case STEEL_HALBERD:
+		case STEEL_SWORD:
+		case STEEL_MACE:
+		case STEEL_AXE:
+		case STEEL_SHIELD:
+		case CROSSBOW:
+		case GAUNTLETS:
+		case STEEL_BOOTS:
+		case IRON_BREASTPIECE:
+		case STEEL_HELM:
+		case SPIKED_GAUNTLETS:
+		case STEEL_CHAKRAM:
+		case TOOL_WHIP:
+		case MACHINIST_APRON:
+		case LONGBOW:
+			*metal = 3;
+			*magic = 0;
+			break;
+
+		case GAUNTLETS_STRENGTH:
+			*metal = 3;
+			*magic = 2;
+			break;
+
+		case STEEL_SHIELD_RESISTANCE:
+			*metal = 3;
+			*magic = 4;
+			break;
+
+		case STEEL_BREASTPIECE:
+		case CRYSTAL_SHURIKEN:
+		case HEAVY_CROSSBOW:
+			*metal = 4;
+			*magic = 0;
+			break;
+
+		case CRYSTAL_HELM:
+		case CRYSTAL_BOOTS:
+		case CRYSTAL_SHIELD:
+		case CRYSTAL_GLOVES:
+		case CRYSTAL_SWORD:
+		case CRYSTAL_SPEAR:
+		case CRYSTAL_BATTLEAXE:
+		case CRYSTAL_MACE:
+		case CLOAK_BACKPACK:
+		case COMPOUND_BOW:
+			*metal = 4;
+			*magic = 2;
+			break;
+
+		case STEEL_BOOTS_FEATHER:
+			*metal = 4;
+			*magic = 3;
+			break;
+
+		case STEEL_BOOTS_LEVITATION:
+			*metal = 4;
+			*magic = 4;
+			break;
+
+		case ARTIFACT_BOW:
+		case BOOMERANG:
+			*metal = 4;
+			*magic = 16;
+			break;
+		case ARTIFACT_CLOAK:
+			*metal = 4;
+			*magic = 24;
+			break;
+
+		case CRYSTAL_BREASTPIECE:
+			*metal = 8;
+			*magic = 2;
+			break;
+
+		case ARTIFACT_SWORD:
+		case ARTIFACT_MACE:
+		case ARTIFACT_SPEAR:
+		case ARTIFACT_AXE:
+		case ARTIFACT_HELM:
+		case ARTIFACT_BOOTS:
+		case ARTIFACT_GLOVES:
+			*metal = 8;
+			*magic = 16;
+			break;
+
+		case ARTIFACT_BREASTPIECE:
+			*metal = 16;
+			*magic = 16;
+			break;
+
+		case TOOL_SENTRYBOT:
+		case TOOL_SPELLBOT:
+		case TOOL_DUMMYBOT:
+		case TOOL_GYROBOT:
+			if ( item->status == BROKEN )
+			{
+				tinkeringGetCraftingCost(item, &(*metal), &(*magic));
+				*metal /= 2;
+				*magic /= 2;
+			}
+			else
+			{
+				*metal = 0;
+				*magic = 0;
+			}
+			break;
+		case TOOL_DECOY:
+			*metal = 2;
+			*magic = 0;
+			break;
+		case TOOL_DETONATOR_CHARGE:
+			*metal = 2;
+			*magic = 4;
+			break;
+		default:
+			*metal = 0;
+			*magic = 0;
+			break;
+	}
+
+
+	if ( *metal > 0 || *magic > 0 )
+	{
+		if ( item->beatitude != 0 )
+		{
+			*magic += (abs(item->beatitude) * 1);
+		}
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
+{
+	if ( !item || !metal || !magic )
+	{
+		return false;
+	}
+
+	switch ( item->type )
+	{
+		case TOOL_SENTRYBOT:
+		case TOOL_SPELLBOT:
+		case TOOL_DUMMYBOT:
+		case TOOL_GYROBOT:
+			if ( item->status != BROKEN )
+			{
+				tinkeringGetCraftingCost(item, &(*metal), &(*magic));
+				if ( *metal > 0 )
+				{
+					*metal = std::max(1, (*metal) / 4);
+				}
+				if ( *magic > 0 )
+				{
+					*magic = std::max(0, (*magic) / 4);
+				}
+
+				if ( item->tinkeringBotIsMaxHealth() && item->status == EXCELLENT )
+				{
+					// can't repair/upgrade.
+					*metal = 0;
+					*magic = 0;
+				}
+			}
+			else
+			{
+				*metal = 0;
+				*magic = 0;
+			}
+			break;
+		case TOOL_TINKERING_KIT:
+			if ( item->status < EXCELLENT )
+			{
+				*metal = 16;
+				*magic = 0;
+			}
+			break;
+		default:
+			*metal = 0;
+			*magic = 0;
+			if ( item->status < EXCELLENT )
+			{
+				int requirement = tinkeringRepairGeneralItemSkillRequirement(item);
+				if ( requirement >= 0 && stats[clientnum] 
+					&& (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) >= requirement )
+				{
+					int metalSalvage = 0;
+					int magicSalvage = 0;
+					tinkeringGetItemValue(item, &metalSalvage, &magicSalvage);
+					*metal = metalSalvage * 8;
+					*magic = magicSalvage * 8;
+					int blessingOrCurse = abs(item->beatitude);
+					*magic += blessingOrCurse * 4;
+				}
+			}
+			break;
+	}
+	// clamp repair cost limits to 99 since GUI overlaps 3 digits...
+	*metal = std::min(99, *metal);
+	*magic = std::min(99, *magic);
+
+	if ( *metal > 0 || *magic > 0 )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+int GenericGUIMenu::tinkeringRepairGeneralItemSkillRequirement(Item* item)
+{
+	if ( !item )
+	{
+		return -1;
+	}
+	if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+	{
+		if ( item->type == BOOMERANG )
+		{
+			// exception, allowed to repair.
+		}
+		else
+		{
+			return -1;
+		}
+	}
+	int metal = 0;
+	int magic = 0;
+	int requirement = 0;
+	int blessing = item->beatitude;
+	item->beatitude = 0;
+	tinkeringGetItemValue(item, &metal, &magic);
+	item->beatitude = blessing;
+
+	if ( metal == 0 && magic == 0 )
+	{
+		return -1;
+	}
+	if ( magic > 0 || metal >= 3 )
+	{
+		requirement = SKILL_LEVEL_LEGENDARY;
+	}
+	else if ( metal >= 2 )
+	{
+		requirement = SKILL_LEVEL_MASTER;
+	}
+	else if ( metal >= 1 )
+	{
+		requirement = SKILL_LEVEL_EXPERT;
+	}
+
+	if ( requirement > 0 )
+	{
+		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON )
+		{
+			requirement -= 20;
+		}
+		return requirement;
+	}
+	return -1;
+}
+
+bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	switch ( item->type )
+	{
+		case TOOL_SENTRYBOT:
+		case TOOL_SPELLBOT:
+		case TOOL_DUMMYBOT:
+		case TOOL_GYROBOT:
+			if ( item->tinkeringBotIsMaxHealth() && (tinkeringPlayerHasSkillLVLToCraft(item) != -1) )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+
+int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
+{
+	if ( !item )
+	{
+		return -1;
+	}
+	int skillLVL = 0;
+	if ( stats[clientnum] && players[clientnum] )
+	{
+		skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+	}
+
+	switch ( item->type )
+	{
+		case TOOL_LOCKPICK:
+		case TOOL_GLASSES:
+		case POTION_EMPTY:
+		case TOOL_DECOY:
+			if ( stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity) >= 10 ) // 10 requirement
+			{
+				return 0;
+			}
+			break;
+		case TOOL_BEARTRAP:
+		case TOOL_GYROBOT:
+		case TOOL_SLEEP_BOMB:
+		case TOOL_FREEZE_BOMB:
+		case TOOL_DUMMYBOT:
+		case TOOL_LANTERN:
+			if ( skillLVL >= 1 ) // 20 requirement
+			{
+				return 1;
+			}
+			break;
+		case TOOL_BOMB:
+		case TOOL_TELEPORT_BOMB:
+		case TOOL_SENTRYBOT:
+			if ( skillLVL >= 2 ) // 40 requirement
+			{
+				return 2;
+			}
+			break;
+		case TOOL_SPELLBOT:
+		case TOOL_ALEMBIC:
+			if ( skillLVL >= 3 ) // 60 requirement
+			{
+				return 3;
+			}
+			break;
+		case CLOAK_BACKPACK:
+			if ( skillLVL >= 4 ) // 80 requirement
+			{
+				return 4;
+			}
+			break;
+		case TOOL_TINKERING_KIT:
+			return 0;
+			break;
+		default:
+			break;
+	}
+	return -1;
+}
+
+bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
+{
+	if ( player == clientnum )
+	{
+		Item* toDegrade = tinkeringKitItem;
+		if ( !toDegrade && player == clientnum )
+		{
+			// look for tinkeringKit in inventory.
+			toDegrade = tinkeringKitFindInInventory();
+			if ( !toDegrade )
+			{
+				return false;
+			}
+		}
+
+		bool isEquipped = itemIsEquipped(toDegrade, clientnum);
+
+		toDegrade->status = std::max(BROKEN, static_cast<Status>(toDegrade->status - 1));
+		if ( toDegrade->status > BROKEN )
+		{
+			messagePlayer(clientnum, language[681], toDegrade->getName());
+		}
+		else
+		{
+			messagePlayer(clientnum, language[662], toDegrade->getName());
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				playSoundEntityLocal(players[clientnum]->entity, 76, 64);
+			}
+			tinkeringKitItem = nullptr;
+		}
+		if ( multiplayer == CLIENT && isEquipped )
+		{
+			// the client needs to inform the server that their equipment was damaged.
+			int armornum = 5;
+			strcpy((char*)net_packet->data, "REPA");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = armornum;
+			net_packet->data[6] = toDegrade->status;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 7;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		return true;
+	}
+	return false;
+}
+
+Item* GenericGUIMenu::tinkeringKitFindInInventory()
+{
+	if ( tinkeringKitItem )
+	{
+		return tinkeringKitItem;
+	}
+	else
+	{
+		for ( node_t* invnode = stats[clientnum]->inventory.first; invnode != NULL; invnode = invnode->next )
+		{
+			Item* tinkerItem = (Item*)invnode->element;
+			if ( tinkerItem && tinkerItem->type == TOOL_TINKERING_KIT && tinkerItem->status > BROKEN )
+			{
+				return tinkerItem;
+			}
+		}
+	}
+	return nullptr;
+}
+
+bool GenericGUIMenu::tinkeringKitRollIfShouldBreak()
+{
+	if ( rand() % 20 == 10 )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringRepairItem(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	//if ( itemIsEquipped(item, clientnum) && item->type != TOOL_TINKERING_KIT )
+	//{
+	//	messagePlayer(clientnum, language[3681]);
+	//	return false; // don't want to deal with client/server desync problems here.
+	//}
+
+	if ( stats[clientnum] && players[clientnum] )
+	{
+		if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_GYROBOT )
+		{
+			if ( item->tinkeringBotIsMaxHealth() )
+			{
+				// try upgrade item?
+				int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
+				if ( craftRequirement == -1 ) // can't craft, can't upgrade!
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3685], items[item->type].name_identified);
+					return false;
+				}
+				else if ( !tinkeringPlayerCanAffordRepair(item) )
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3687], items[item->type].name_identified);
+					return false;
+				}
+				
+				Status newStatus = DECREPIT;
+				Status maxStatus = static_cast<Status>(tinkeringUpgradeMaxStatus(item));
+
+				if ( maxStatus <= item->status )
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3685], items[item->type].name_identified);
+					return false;
+				}
+
+				if ( tinkeringConsumeMaterialsForRepair(item, true) )
+				{
+					newStatus = std::min(static_cast<Status>(item->status + 1), maxStatus);
+					Item* upgradedItem = newItem(item->type, newStatus, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
+					if ( upgradedItem )
+					{
+						achievementObserver.playerAchievements[clientnum].fixerUpper += 1;
+						Item* pickedUp = itemPickup(clientnum, upgradedItem);
+						if ( pickedUp && item->count == 1 )
+						{
+							// item* will be consumed, so pickedUp can take the inventory slot of it.
+							pickedUp->x = item->x;
+							pickedUp->y = item->y;
+							for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+							{
+								if ( hotbar[c].item == item->uid )
+								{
+									hotbar[c].item = pickedUp->uid;
+								}
+								else if ( hotbar[c].item == pickedUp->uid )
+								{
+									// this was auto placed by itemPickup just above, undo it.
+									hotbar[c].item = 0;
+								}
+							}
+						}
+						free(upgradedItem);
+					}
+					messagePlayer(clientnum, language[3683], items[item->type].name_identified);
+					consumeItem(item, clientnum);
+					return true;
+				}
+			}
+			else
+			{
+				int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
+				if ( craftRequirement == -1 ) // can't craft, can't repair!
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3688], items[item->type].name_identified);
+					return false;
+				}
+				else if ( !tinkeringPlayerCanAffordRepair(item) )
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3686], items[item->type].name_identified);
+					return false;
+				}
+
+				if ( tinkeringConsumeMaterialsForRepair(item, false) )
+				{
+					Uint32 repairedAppearance = std::min((item->appearance % 10) + 1, static_cast<Uint32>(4));
+					if ( repairedAppearance == 4 )
+					{
+						repairedAppearance = ITEM_TINKERING_APPEARANCE;
+					}
+					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, repairedAppearance, true, nullptr);
+					if ( repairedItem )
+					{
+						achievementObserver.playerAchievements[clientnum].fixerUpper += 1;
+						Item* pickedUp = itemPickup(clientnum, repairedItem);
+						if ( pickedUp && item->count == 1 )
+						{
+							// item* will be consumed, so pickedUp can take the inventory slot of it.
+							pickedUp->x = item->x;
+							pickedUp->y = item->y;
+							for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+							{
+								if ( hotbar[c].item == item->uid )
+								{
+									hotbar[c].item = pickedUp->uid;
+								}
+								else if ( hotbar[c].item == pickedUp->uid )
+								{
+									// this was auto placed by itemPickup just above, undo it.
+									hotbar[c].item = 0;
+								}
+							}
+						}
+						free(repairedItem);
+					}
+					messagePlayer(clientnum, language[3682], items[item->type].name_identified);
+					consumeItem(item, clientnum);
+					return true;
+				}
+			}
+		}
+		else
+		{
+			// normal items.
+			int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
+			if ( craftRequirement == -1 && itemCategory(item) == TOOL ) // can't craft, can't repair!
+			{
+				playSound(90, 64);
+				messagePlayer(clientnum, language[3688], items[item->type].name_identified);
+				return false;
+			}
+			if ( !tinkeringPlayerCanAffordRepair(item) )
+			{
+				playSound(90, 64);
+				messagePlayer(clientnum, language[3686], items[item->type].name_identified);
+				return false;
+			}
+
+			if ( tinkeringConsumeMaterialsForRepair(item, false) )
+			{
+				int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
+				bool isEquipped = itemIsEquipped(item, clientnum);
+				item->status = static_cast<Status>(repairedStatus);
+				messagePlayer(clientnum, language[872], item->getName());
+				if ( !isEquipped )
+				{
+					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
+					if ( repairedItem )
+					{
+						Item* pickedUp = itemPickup(clientnum, repairedItem);
+						if ( pickedUp && item->count == 1 )
+						{
+							// item* will be consumed, so pickedUp can take the inventory slot of it.
+							pickedUp->x = item->x;
+							pickedUp->y = item->y;
+							for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+							{
+								if ( hotbar[c].item == item->uid )
+								{
+									hotbar[c].item = pickedUp->uid;
+								}
+								else if ( hotbar[c].item == pickedUp->uid )
+								{
+									// this was auto placed by itemPickup just above, undo it.
+									hotbar[c].item = 0;
+								}
+							}
+						}
+						free(repairedItem);
+					}
+					consumeItem(item, clientnum);
+				}
+				else if ( multiplayer == CLIENT && isEquipped )
+				{
+					// the client needs to inform the server that their equipment was repaired.
+					int armornum = 0;
+					if ( item == stats[clientnum]->weapon )
+					{
+						armornum = 0;
+					}
+					else if ( item == stats[clientnum]->helmet )
+					{
+						armornum = 1;
+					}
+					else if ( item == stats[clientnum]->breastplate )
+					{
+						armornum = 2;
+					}
+					else if ( item == stats[clientnum]->gloves )
+					{
+						armornum = 3;
+					}
+					else if ( item == stats[clientnum]->shoes )
+					{
+						armornum = 4;
+					}
+					else if ( item == stats[clientnum]->shield )
+					{
+						armornum = 5;
+					}
+					else if ( item == stats[clientnum]->cloak )
+					{
+						armornum = 6;
+					}
+					else if ( item == stats[clientnum]->mask )
+					{
+						armornum = 7;
+					}
+
+					strcpy((char*)net_packet->data, "REPA");
+					net_packet->data[4] = clientnum;
+					net_packet->data[5] = armornum;
+					net_packet->data[6] = item->status;
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 7;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+int GenericGUIMenu::tinkeringUpgradeMaxStatus(Item* item)
+{
+	if ( !item )
+	{
+		return BROKEN;
+	}
+	int skillLVL = 0;
+	if ( stats[clientnum] && players[clientnum] )
+	{
+		skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+		int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
+		if ( skillLVL >= 5 )
+		{
+			return EXCELLENT;
+		}
+		else
+		{
+			if ( skillLVL - craftRequirement == 1 )
+			{
+				return WORN;
+			}
+			else if ( skillLVL - craftRequirement == 2 )
+			{
+				return SERVICABLE;
+			}
+			else if ( skillLVL - craftRequirement >= 3 )
+			{
+				return EXCELLENT;
+			}
+		}
+	}
+	return BROKEN;
+}
+
+bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradingItem)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetRepairCost(item, &metal, &magic);
+	if ( metal == 0 && magic == 0 )
+	{
+		return false;
+	}
+	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
+	{
+		bool increaseSkill = false;
+		if ( stats[clientnum] )
+		{
+			if ( !upgradingItem )
+			{
+				if ( rand() % 40 == 0 )
+				{
+					increaseSkill = true;
+				}
+			}
+			else
+			{
+				if ( rand() % 10 == 0 )
+				{
+					increaseSkill = true;
+				}
+			}
+		}
+
+		if ( increaseSkill )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_LOCKPICKING;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+				}
+			}
+		}
+
+		for ( int c = 0; c < metal; ++c )
+		{
+			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_METAL_SCRAP));
+			if ( item )
+			{
+				consumeItem(item, clientnum);
+			}
+		}
+		for ( int c = 0; c < magic; ++c )
+		{
+			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_MAGIC_SCRAP));
+			if ( item )
+			{
+				consumeItem(item, clientnum);
+			}
+		}
+		if ( tinkeringKitRollIfShouldBreak() && item != tinkeringKitItem )
+		{
+			tinkeringKitDegradeOnUse(clientnum);
+		}
+		return true;
+	}
+	return false;
+}
+
+void GenericGUIMenu::scribingCreateCraftableItemList()
+{
+	scribingFreeLists();
+	std::vector<Item*> items;
+	std::unordered_map<int, int> scrollAppearanceMap;
+	for ( int i = 0; i < (NUMLABELS) && i < enchantedFeatherScrollsShuffled.size(); ++i )
+	{
+		int itemType = enchantedFeatherScrollsShuffled.at(i);
+		if ( itemType != SCROLL_BLANK )
+		{
+			auto find = scrollAppearanceMap.find(itemType);
+			if ( find != scrollAppearanceMap.end() )
+			{
+				// found ItemType in map.
+				scrollAppearanceMap[itemType] = (*find).second + 1;
+			}
+			else
+			{
+				// new element.
+				scrollAppearanceMap.insert({ itemType, 0 });
+			}
+			items.push_back(newItem(static_cast<ItemType>(itemType),
+				EXCELLENT, 0, 1, scrollAppearanceMap[itemType], false, &scribingTotalItems));
+		}
+	}
+
+	if ( stats[clientnum] )
+	{
+		// make the last node jump to the player's actual items, 
+		// so consuming the items in this list will actually update the player's inventory.
+		node_t* scribingTotalLastCraftableNode = scribingTotalItems.last;
+		if ( scribingTotalLastCraftableNode )
+		{
+			scribingTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+		}
+	}
+}
+
+void GenericGUIMenu::scribingFreeLists()
+{
+	node_t* nextnode = nullptr;
+	int itemcnt = 0;
+
+	// totalItems is a unique list, contains unique craftable data, 
+	// as well as a pointer to continue to the player's inventory
+	for ( node_t* node = scribingTotalItems.first; node; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( node->list == &scribingTotalItems )
+		{
+			list_RemoveNode(node);
+			++itemcnt;
+		}
+		else if ( node->list == &stats[clientnum]->inventory )
+		{
+			//messagePlayer(clientnum, "reached inventory after clearing %d items", itemcnt);
+			break;
+		}
+	}
+	scribingTotalItems.first = nullptr;
+	scribingTotalItems.last = nullptr;
+	scribingTotalLastCraftableNode = nullptr;
+	scribingBlankScrollTarget = nullptr;
+	scribingLastUsageDisplayTimer = 0;
+	scribingLastUsageAmount = 0;
+}
+
+int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
+{
+	if ( !itemUsedWith )
+	{
+		return -1;
+	}
+	Item* toDegrade = scribingToolItem;
+	if ( !toDegrade )
+	{
+		// look for scribing tool in inventory.
+		toDegrade = scribingToolFindInInventory();
+		if ( !toDegrade )
+		{
+			return -1;
+		}
+	}
+
+	int durability = toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
+	int usageCost = 0;
+	if ( itemCategory(itemUsedWith) == SCROLL )
+	{
+		switch ( itemUsedWith->type )
+		{
+			case SCROLL_MAIL:
+				usageCost = 2;
+				break;
+			case SCROLL_DESTROYARMOR:
+			case SCROLL_FIRE:
+			case SCROLL_LIGHT:
+				usageCost = 4;
+				break;
+				break;
+			case SCROLL_SUMMON:
+			case SCROLL_IDENTIFY:
+			case SCROLL_REMOVECURSE:
+				usageCost = 6;
+				break;
+			case SCROLL_FOOD:
+			case SCROLL_TELEPORTATION:
+				usageCost = 8;
+				break;
+			case SCROLL_REPAIR:
+			case SCROLL_MAGICMAPPING:
+				usageCost = 12;
+				break;
+			case SCROLL_ENCHANTWEAPON:
+			case SCROLL_ENCHANTARMOR:
+				usageCost = 16;
+				break;
+			default:
+				usageCost = 8;
+				break;
+		}
+	}
+	else if ( itemCategory(itemUsedWith) == SPELLBOOK )
+	{
+		usageCost = 16;
+	}
+	int randomValue = 0;
+	if ( stats[clientnum] )
+	{
+		int skillLVL = 0;
+		if ( stats[clientnum] && players[clientnum] )
+		{
+			skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+		}
+		if ( toDegrade->beatitude > 0 )
+		{
+			skillLVL = 5; // blessed feather.
+		}
+		else if ( toDegrade->beatitude < 0 )
+		{
+			skillLVL = 0; // cursed feather.
+		}
+
+		if ( skillLVL >= 4 )
+		{
+			randomValue = rand() % 5;
+			usageCost = std::max(2, usageCost - randomValue);
+		}
+		else if ( skillLVL < 2 )
+		{
+			randomValue = rand() % 7;
+			usageCost += randomValue;
+		}
+		else if ( skillLVL == 2 )
+		{
+			randomValue = rand() % 5;
+			usageCost += randomValue;
+		}
+		else if ( skillLVL == 3 )
+		{
+			randomValue = rand() % 3;
+			usageCost += randomValue;
+		}
+	}
+
+	if ( durability - usageCost < 0 )
+	{
+		toDegrade->status = BROKEN;
+		toDegrade->appearance = 0;
+	}
+	else
+	{
+		scribingLastUsageDisplayTimer = 200;
+		scribingLastUsageAmount = usageCost;
+		toDegrade->appearance -= usageCost;
+		if ( toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY == 0 )
+		{
+			toDegrade->status = BROKEN;
+			messagePlayer(clientnum, language[3727], toDegrade->getName());
+			scribingToolItem = nullptr;
+			return usageCost;
+		}
+		else
+		{
+			if ( durability > 25 && (toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY) <= 25 )
+			{
+				// notify we're at less than 25%.
+				messagePlayer(clientnum, language[3729], toDegrade->getName());
+			}
+		}
+	}
+	if ( toDegrade->status > BROKEN )
+	{
+		//messagePlayer(clientnum, language[681], toDegrade->getName());
+		return usageCost;
+	}
+	else
+	{
+		if ( (usageCost / 2) < durability && itemCategory(itemUsedWith) == SCROLL )
+		{
+			// if scroll cost is a little more than the durability, then let it succeed.
+			messagePlayer(clientnum, language[3727], toDegrade->getName());
+			scribingToolItem = nullptr;
+			return usageCost;
+		}
+		else
+		{
+			messagePlayer(clientnum, language[3728], toDegrade->getName());
+			scribingToolItem = nullptr;
+			return 0;
+		}
+	}
+	return -1;
+}
+
+Item* GenericGUIMenu::scribingToolFindInInventory()
+{
+	if ( scribingToolItem )
+	{
+		return scribingToolItem;
+	}
+	else
+	{
+		for ( node_t* invnode = stats[clientnum]->inventory.first; invnode != NULL; invnode = invnode->next )
+		{
+			Item* scribeItem = (Item*)invnode->element;
+			if ( scribeItem && scribeItem->type == ENCHANTED_FEATHER && scribeItem->status > BROKEN )
+			{
+				return scribeItem;
+			}
+		}
+	}
+	return nullptr;
+}
+
+bool GenericGUIMenu::scribingWriteItem(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( itemCategory(item) == SCROLL )
+	{
+		if ( !scribingBlankScrollTarget )
+		{
+			return false;
+		}
+
+		int result = scribingToolDegradeOnUse(item);
+		if ( result == 0 )
+		{
+			// item broken before completion.
+			return false;
+		}
+		else if ( result < 0 )
+		{
+			// failure - invalid variables.
+			return false;
+		}
+
+		bool increaseSkill = false;
+		if ( stats[clientnum] )
+		{
+			if ( rand() % 5 == 0 )
+			{
+				increaseSkill = true;
+			}
+		}
+
+		if ( increaseSkill )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_MAGIC;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_MAGIC);
+				}
+			}
+		}
+
+		Item* crafted = newItem(item->type, scribingBlankScrollTarget->status, 
+			scribingBlankScrollTarget->beatitude, 1, item->appearance, false, nullptr);
+		if ( crafted )
+		{
+			if ( crafted->type == SCROLL_MAIL )
+			{
+				// mail uses the appearance to generate the text, so randomise it here.
+				crafted->appearance = rand(); 
+			}
+			Item* pickedUp = itemPickup(clientnum, crafted);
+			//messagePlayerColor(clientnum, uint32ColorGreen(*mainsurface), language[3724]);
+			int oldcount = pickedUp->count;
+			pickedUp->count = 1;
+			messagePlayerColor(clientnum, uint32ColorGreen(*mainsurface), language[3724], pickedUp->description());
+			pickedUp->count = oldcount;
+			consumeItem(scribingBlankScrollTarget, clientnum);
+			//scribingBlankScrollTarget = nullptr;
+			if ( client_classes[clientnum] == CLASS_SHAMAN )
+			{
+				steamStatisticUpdate(STEAM_STAT_ROLL_THE_BONES, STEAM_STAT_INT, 1);
+			}
+			free(crafted);
+			return true;
+		}
+	}
+	else if ( itemCategory(item) == SPELLBOOK )
+	{
+		if ( item->status == EXCELLENT )
+		{
+			return false;
+		}
+		int result = scribingToolDegradeOnUse(item);
+		if ( result == 0 )
+		{
+			// item broken before completion.
+			return false;
+		}
+		else if ( result < 0 )
+		{
+			// failure - invalid variables.
+			return false;
+		}
+
+		bool increaseSkill = false;
+		if ( stats[clientnum] )
+		{
+			if ( rand() % 10 == 0 )
+			{
+				increaseSkill = true;
+			}
+		}
+
+		if ( increaseSkill )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_MAGIC;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_MAGIC);
+				}
+			}
+		}
+		int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
+		bool isEquipped = itemIsEquipped(item, clientnum);
+		item->status = static_cast<Status>(repairedStatus);
+		messagePlayer(clientnum, language[3725]);
+		messagePlayer(clientnum, language[872], item->getName());
+		if ( !isEquipped )
+		{
+			Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
+			if ( repairedItem )
+			{
+				itemPickup(clientnum, repairedItem);
+				free(repairedItem);
+			}
+			consumeItem(item, clientnum);
+		}
+		else if ( multiplayer == CLIENT && isEquipped )
+		{
+			// the client needs to inform the server that their equipment was repaired.
+			int armornum = 0;
+			if ( item == stats[clientnum]->shield )
+			{
+				armornum = 5;
+			}
+
+			strcpy((char*)net_packet->data, "REPA");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = armornum;
+			net_packet->data[6] = item->status;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 7;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		return true;
+	}
+	return false;
 }

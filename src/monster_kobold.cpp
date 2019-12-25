@@ -161,7 +161,11 @@ void initKobold(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
-					if ( rand() % 5 == 0 ) // 20% chance
+					if ( rand() % 20 == 0 )
+					{
+						newItem(ENCHANTED_FEATHER, SERVICABLE, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
+					}
+					else if ( rand() % 5 == 0 ) // 20% chance
 					{
 						if ( rand() % 2 )
 						{
@@ -188,41 +192,48 @@ void initKobold(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				if ( cultist > 0 )
+				if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
 				{
-					if ( cultist == 1 )
-					{
-						myStats->shield = newItem(TOOL_CRYSTALSHARD, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
-					}
-					else
-					{
-						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
-					}
+					my->monsterGenerateQuiverItem(myStats);
 				}
 				else
 				{
-					switch ( rand() % 10 )
+					if ( cultist > 0 )
 					{
-						case 0:
-						case 1:
-							myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -2 + rand() % 5, 1, rand(), false, nullptr);
-							break;
-						case 2:
-						case 3:
-						case 4:
-						case 5:
-							myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 6:
-						case 7:
+						if ( cultist == 1 )
+						{
+							myStats->shield = newItem(TOOL_CRYSTALSHARD, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+						}
+						else
+						{
 							myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 8:
-							myStats->shield = newItem(TOOL_CRYSTALSHARD, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 9:
-							// nothing
-							break;
+						}
+					}
+					else
+					{
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -2 + rand() % 5, 1, rand(), false, nullptr);
+								break;
+							case 2:
+							case 3:
+							case 4:
+							case 5:
+								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 6:
+							case 7:
+								myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 8:
+								myStats->shield = newItem(TOOL_CRYSTALSHARD, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 9:
+								// nothing
+								break;
+						}
 					}
 				}
 			}
@@ -835,6 +846,10 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
+						if ( itemTypeIsQuiver(myStats->shield->type) )
+						{
+							entity->handleQuiverThirdPersonModel(*myStats);
+						}
 					}
 					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
@@ -914,6 +929,15 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity2->y += 0.75 * sin(shieldarm->yaw);
 						}
 					}
+				}
+				if ( itemSpriteIsQuiverThirdPersonModel(entity->sprite) )
+				{
+					/*shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.25 * cos(this->yaw);
+					shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.25 * sin(this->yaw);*/
+					entity->x -= 0.25 * cos(my->yaw + PI / 2);
+					entity->y -= 0.25 * sin(my->yaw + PI / 2);
+					entity->z += 1;
+					entity->yaw += PI / 6;
 				}
 				break;
 			// cloak

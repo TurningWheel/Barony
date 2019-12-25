@@ -55,7 +55,7 @@ void initImp(Entity* my, Stat* myStats)
 			myStats->EFFECTS[EFF_LEVITATING] = true;
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			if ( rand() % 4 == 0 )
+			if ( rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;

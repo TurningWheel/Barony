@@ -222,7 +222,7 @@ void lichDie(Entity* my)
 		{
 			continue;
 		}
-		if ( entity->behavior == &actMonster )
+		if ( entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
 		{
 			spawnExplosion(entity->x, entity->y, entity->z);
 			Stat* stats = entity->getStats();

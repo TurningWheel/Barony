@@ -43,11 +43,16 @@
 #define THROWN_IDENTIFIED my->skill[15]
 #define THROWN_LIFE my->skill[16]
 #define THROWN_BOUNCES my->skill[17]
+#define THROWN_LINGER my->skill[18]
+#define THROWN_BOOMERANG_STOP_Z my->skill[21]
+
+#define BOOMERANG_PARTICLE 977
 
 void actThrown(Entity* my)
 {
 	Item* item = nullptr;
 	Category cat = GEM;
+	ItemType type = WOODEN_SHIELD;
 	char* itemname = nullptr;
 	node_t* node;
 
@@ -55,6 +60,7 @@ void actThrown(Entity* my)
 	if ( item )
 	{
 		cat = itemCategory(item);
+		type = item->type;
 		free(item);
 	}
 
@@ -103,6 +109,16 @@ void actThrown(Entity* my)
 				}
 			}
 		}
+		if ( my->sprite == BOOMERANG_PARTICLE )
+		{
+			my->focalx = 2;
+			my->focaly = 0;
+			my->focalz = 0.5;
+			if ( my->ticks > 0 && my->ticks % 7 == 0 )
+			{
+				playSoundEntityLocal(my, 434 + rand() % 10, 64);
+			}
+		}
 	}
 	else
 	{
@@ -113,8 +129,34 @@ void actThrown(Entity* my)
 		if ( item )
 		{
 			my->sprite = itemModel(item);
+			if ( item->type == BOOMERANG )
+			{
+				my->sprite = BOOMERANG_PARTICLE;
+				if ( my->ticks > 0 && my->ticks % 7 == 0 )
+				{
+					playSoundEntityLocal(my, 434 + rand() % 10, 64);
+				}
+			}
 			free(item);
 		}
+	}
+
+	++THROWN_LIFE;
+
+	if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
+		|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index )
+	{
+		my->focalz = 0.5;
+	}
+
+	if ( THROWN_LINGER != 0 )
+	{
+		if ( my->ticks > (THROWN_LINGER + 1) )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		return;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -130,38 +172,103 @@ void actThrown(Entity* my)
 	}
 
 	// gravity
-	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
+	real_t groundHeight = 7.5 - models[my->sprite]->sizey * .25;
+	if ( type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
+	{
+		groundHeight = 3;
+	}
+	else if ( type == BOOMERANG )
+	{
+		groundHeight = 10.0 - models[my->sprite]->sizey * .25;
+	}
+	bool processXYCollision = true;
+	if ( my->z < groundHeight )
 	{
 		// fall
 		if ( cat == THROWN )
 		{
 			// todo: adjust falling rates for thrown items if need be
-			if ( specialMonster )
+			if ( type == BOOMERANG )
+			{
+				if ( !THROWN_BOOMERANG_STOP_Z )
+				{
+					if ( THROWN_VELZ > 0.001 )
+					{
+						THROWN_VELZ += 0.005;
+						if ( THROWN_VELZ > 0.05 )
+						{
+							THROWN_VELZ = -0.001;
+						}
+					}
+					else
+					{
+						THROWN_VELZ -= 0.005;
+						if ( THROWN_VELZ < -0.05 )
+						{
+							THROWN_BOOMERANG_STOP_Z = 1;
+							THROWN_VELZ = 0.f;
+						}
+					}
+					my->z += THROWN_VELZ;
+				}
+			}
+			else if ( specialMonster )
 			{
 				THROWN_VELZ += 0.01;
+				my->z += THROWN_VELZ;
 			}
 			else
 			{
 				THROWN_VELZ += 0.03;
+				my->z += THROWN_VELZ;
 			}
-			my->z += THROWN_VELZ;
-			if ( item->type == BRONZE_TOMAHAWK || item->type == IRON_DAGGER )
+			/*THROWN_VELX = 0.f;
+			THROWN_VELY = 0.f;
+			THROWN_VELZ = 0.f;*/
+			if ( type == BRONZE_TOMAHAWK || type == IRON_DAGGER )
 			{
 				// axe and dagger spin vertically
 				my->pitch += 0.2;
 			}
 			else
 			{
-				if ( specialMonster )
+				if ( type == BOOMERANG )
+				{
+					my->pitch = std::max(my->pitch - 0.03, 0.0);
+					my->roll -= 0.5;
+					my->focalx = 2;
+					my->focaly = 0;
+					my->focalz = 0.5;
+				}
+				else if ( specialMonster )
 				{
 					my->roll += 0.003;
+					my->yaw += 0.5;
 				}
 				else
 				{
 					my->roll += 0.01;
+					my->yaw += 0.5;
 				}
-				my->yaw += 0.5;
 			}
+		}
+		else if ( itemIsThrowableTinkerTool(item) )
+		{
+			if ( type >= TOOL_BOMB && type <= TOOL_TELEPORT_BOMB )
+			{
+				my->yaw += 0.2;
+			}
+			else if ( type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
+			{
+				my->roll += 0.07;
+				my->roll = std::min(my->roll, 0.0);
+			}
+			else
+			{
+				my->roll += 0.05;
+			}
+			THROWN_VELZ += 0.04;
+			my->z += THROWN_VELZ;
 		}
 		else
 		{
@@ -174,9 +281,28 @@ void actThrown(Entity* my)
 	{
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
-			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] )
+			// landing on the ground.
+			int index = (int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height;
+			if ( map.tiles[index] )
 			{
 				item = newItemFromEntity(my);
+				bool tinkeringItemCanBePlaced = true;
+				if ( item && item->isTinkeringItemWithThrownLimit() )
+				{
+					if ( !parent )
+					{
+						tinkeringItemCanBePlaced = true;
+					}
+					else if ( parent->behavior == &actMonster )
+					{
+						tinkeringItemCanBePlaced = true;
+					}
+					else if ( parent->behavior == &actPlayer )
+					{
+						tinkeringItemCanBePlaced = playerCanSpawnMoreTinkeringBots(stats[parent->skill[2]]);
+					}
+				}
+				
 				if ( itemCategory(item) == POTION )
 				{
 					switch ( item->type )
@@ -204,8 +330,71 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
+				else if ( item->type == BOOMERANG && uidToEntity(my->parent) )
+				{
+					Entity* parent = uidToEntity(my->parent);
+					Entity* spellEntity = createParticleSapCenter(parent, my, 0, my->sprite, -1);
+					if ( spellEntity )
+					{
+						spellEntity->skill[0] = 150; // 3 second lifetime.
+						// store weapon data
+						spellEntity->skill[10] = item->type;
+						spellEntity->skill[11] = item->status;
+						spellEntity->skill[12] = item->beatitude;
+						spellEntity->skill[13] = 1;
+						spellEntity->skill[14] = item->appearance;
+						spellEntity->skill[15] = item->identified;
+					}
+				}
+				else if ( item && (item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
+					&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
+				{
+					// don't deploy on swimming/lava tiles.
+					if ( parent )
+					{
+						item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_FLOOR, Item::ItemBombFacingDirection::BOMB_UP, my, nullptr);
+					}
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( item && itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
+					&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+					&& tinkeringItemCanBePlaced )
+				{
+					// don't deploy on swimming/lava tiles.
+					if ( parent )
+					{
+						item->applyTinkeringCreation(parent, my);
+					}
+					if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT )
+					{
+						// have the thrown particle hang out for a sec to avoid temporary flashing of nothingness.
+						THROWN_LINGER = my->ticks;
+						THROWN_VELX = 0.0;
+						THROWN_VELY = 0.0;
+						THROWN_VELZ = 0.0;
+						my->z = groundHeight;
+						free(item);
+						return;
+					}
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
 				else
 				{
+					if ( item && item->isTinkeringItemWithThrownLimit() && tinkeringItemCanBePlaced )
+					{
+						if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
+						{
+							messagePlayer(clientnum, language[3884]);
+						}
+						else
+						{
+							messagePlayer(clientnum, language[3883]);
+						}
+					}
 					Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 					entity->flags[INVISIBLE] = true;
 					entity->flags[UPDATENEEDED] = true;
@@ -253,6 +442,11 @@ void actThrown(Entity* my)
 					THROWN_VELZ += 0.04;
 					my->z += THROWN_VELZ;
 					my->roll += 0.04;
+				}
+
+				if ( my->z > groundHeight + 4 ) // if entity is 4 height below the ground, then fall straight down.
+				{
+					processXYCollision = false;
 				}
 			}
 		}
@@ -322,6 +516,27 @@ void actThrown(Entity* my)
 	// falling out of the map
 	if ( my->z > 128 )
 	{
+		if ( my->sprite == BOOMERANG_PARTICLE ) // boomerang
+		{
+			item = newItemFromEntity(my);
+			Entity* parent = uidToEntity(my->parent);
+			if ( parent && item )
+			{
+				Entity* spellEntity = createParticleSapCenter(parent, my, 0, my->sprite, -1);
+				if ( spellEntity )
+				{
+					spellEntity->skill[0] = 150; // 3 second lifetime.
+					// store weapon data
+					spellEntity->skill[10] = item->type;
+					spellEntity->skill[11] = item->status;
+					spellEntity->skill[12] = item->beatitude;
+					spellEntity->skill[13] = 1;
+					spellEntity->skill[14] = item->appearance;
+					spellEntity->skill[15] = item->identified;
+				}
+			}
+			free(item);
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -330,13 +545,17 @@ void actThrown(Entity* my)
 	double ox = my->x;
 	double oy = my->y;
 	double oz = my->z;
-	double result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
-
 	bool usedpotion = false;
-	if ( result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
+	if ( !processXYCollision )
+	{
+		return;
+	}
+	double result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
+	if ( processXYCollision && result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
 		item = newItemFromEntity(my);
-		if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
+		if ( itemCategory(item) == THROWN 
+			&& (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
 		{
 			real_t bouncePenalty = 0.85;
 			// shurikens and chakrams bounce off walls.
@@ -356,10 +575,41 @@ void actThrown(Entity* my)
 			++THROWN_BOUNCES;
 		}
 
+		if ( item->type == BOOMERANG )
+		{
+			Entity* parent = uidToEntity(my->parent);
+			if ( parent )
+			{
+				Entity* spellEntity = createParticleSapCenter(parent, my, 0, my->sprite, -1);
+				if ( spellEntity )
+				{
+					spellEntity->skill[0] = 150; // 3 second lifetime.
+					// store weapon data
+					spellEntity->skill[10] = item->type;
+					spellEntity->skill[11] = item->status;
+					spellEntity->skill[12] = item->beatitude;
+					spellEntity->skill[13] = 1;
+					spellEntity->skill[14] = item->appearance;
+					spellEntity->skill[15] = item->identified;
+				}
+			}
+		}
+
 		cat = itemCategory(item);
 		itemname = item->getName();
 		item->count = 1;
-		if ( hit.entity != nullptr )
+
+		if ( itemCategory(item) == THROWN || itemCategory(item) == GEM || itemCategory(item) == POTION )
+		{
+			my->entityCheckIfTriggeredBomb(true);
+		}
+		bool tryHitEntity = true;
+		if ( itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB) )
+		{
+			tryHitEntity = false;
+		}
+
+		if ( hit.entity != nullptr && tryHitEntity )
 		{
 			Entity* parent = uidToEntity(my->parent);
 			Stat* parentStats = nullptr;
@@ -377,11 +627,28 @@ void actThrown(Entity* my)
 					friendlyHit = true;
 				}
 			}
-			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+			if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
+			{
+				if ( hit.entity->behavior == &actChest )
+				{
+					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_CHEST, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( hit.entity->behavior == &actDoor )
+				{
+					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_DOOR, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+			else if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
-				int damage = (BASE_THROWN_DAMAGE + item->beatitude); // thrown takes half of armor into account.
+				int damage = (BASE_THROWN_DAMAGE + item->beatitude);
 				if ( parentStats )
 				{
 					if ( itemCategory(item) == POTION )
@@ -396,17 +663,34 @@ void actThrown(Entity* my)
 					{
 						if ( itemCategory(item) == THROWN )
 						{
-							int skillLVL = parentStats->PROFICIENCIES[PRO_RANGED] / 20;
-							int dex = parent->getDEX() / 4;
-							damage = (damage + dex) * thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
-							damage -= (AC(hit.entity->getStats()) / 4);
+							damage = my->thrownProjectilePower;
+							if ( my->thrownProjectileCharge >= 1 )
+							{
+								damage += my->thrownProjectileCharge / 5; //0-3 base +damage
+								real_t bypassArmor = 1 - my->thrownProjectileCharge * 0.05; //100-35% of armor taken into account
+								if ( item->type == BOOMERANG )
+								{
+									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
+								}
+								damage -= (AC(hit.entity->getStats()) * bypassArmor);
+							}
+							else
+							{
+								if ( item->type == BOOMERANG )
+								{
+									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
+								}
+								damage -= (AC(hit.entity->getStats()) * .5);
+							}
 						}
 						else
 						{
-							int dex = parent->getDEX() / 4;
-							damage += dex;
-							damage += parentStats->PROFICIENCIES[PRO_RANGED] / 10; // 0 to 10 bonus attack.
-							damage -= (AC(hit.entity->getStats()) / 2);
+							damage = my->thrownProjectilePower;
+							if ( my->thrownProjectileCharge >= 1 )
+							{
+								damage += my->thrownProjectileCharge / 5;
+							}
+							damage -= (AC(hit.entity->getStats()) * .5);
 						}
 					}
 				}
@@ -417,16 +701,22 @@ void actThrown(Entity* my)
 				}
 				switch ( item->type )
 				{
-					// thrown weapons do damage if absorbed by armor.
+					// thrown weapons do some base damage if absorbed by armor.
 					case BRONZE_TOMAHAWK:
 					case IRON_DAGGER:
 					case STEEL_CHAKRAM:
 					case CRYSTAL_SHURIKEN:
+					case BOOMERANG:
 					{
-						int skillLVL = parentStats->PROFICIENCIES[PRO_RANGED] / 20;
-						damage += (thrownDamageSkillMultipliers[std::min(skillLVL, 5)] * item->weaponGetAttack(parentStats));
+						if ( damage <= 0 && hit.entity->behavior == &actPlayer )
+						{
+							damage += item->weaponGetAttack(parentStats);
+						}
 						break;
 					}
+					case FOOD_CREAMPIE:
+						damage = 0;
+						break;
 					default:
 						break;
 				}
@@ -466,6 +756,8 @@ void actThrown(Entity* my)
 				bool disableAlertBlindStatus = false;
 				bool ignorePotion = false;
 				bool wasPotion = itemCategory(item) == POTION;
+				bool wasBoomerang = item->type == BOOMERANG;
+				bool wasConfused = (hitstats && hitstats->EFFECTS[EFF_CONFUSED]);
 
 				if ( hitstats )
 				{
@@ -497,6 +789,7 @@ void actThrown(Entity* my)
 							case POTION_LEVITATION:
 							case POTION_STRENGTH:
 							case POTION_PARALYSIS:
+							case FOOD_CREAMPIE:
 								ignorePotion = true;
 								break;
 							default:
@@ -556,7 +849,7 @@ void actThrown(Entity* my)
 												// change the color of the hit entity.
 												hit.entity->flags[USERFLAG2] = true;
 												serverUpdateEntityFlag(hit.entity, USERFLAG2);
-												if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
+												if ( monsterChangesColorWhenAlly(hitstats) )
 												{
 													int bodypart = 0;
 													for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
@@ -677,6 +970,47 @@ void actThrown(Entity* my)
 								item_PotionParalysis(item, hit.entity, parent);
 								usedpotion = true;
 								break;
+							case FOOD_CREAMPIE:
+							{
+								skipMessage = true;
+								playSoundEntity(hit.entity, 28, 64);
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3875], language[3876], MSG_COMBAT);
+								}
+								if ( hit.entity->behavior == &actMonster )
+								{
+									bool wasBlind = hit.entity->isBlind();
+									if ( hit.entity->setEffect(EFF_BLIND, true, 250, false) )
+									{
+										if ( parent && parent->behavior == &actPlayer )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3878], language[3879], MSG_COMBAT);
+										}
+									}
+									if ( hit.entity->isBlind() && !wasBlind )
+									{
+										disableAlertBlindStatus = true; // don't aggro target.
+									}
+
+								}
+								else if ( hit.entity->behavior == &actPlayer )
+								{
+									hit.entity->setEffect(EFF_MESSY, true, 250, false);
+									serverUpdateEffects(hit.entity->skill[2]);
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									messagePlayerColor(hit.entity->skill[2], color, language[3877]);
+									messagePlayer(hit.entity->skill[2], language[910]);
+								}
+								for ( int i = 0; i < 5; ++i )
+								{
+									Entity* gib = spawnGib(hit.entity, 863);
+									serverSpawnGibForClient(gib);
+								}
+								usedpotion = true;
+								break;
+							}
 							case POTION_POLYMORPH:
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
@@ -731,6 +1065,13 @@ void actThrown(Entity* my)
 								steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
 							}
 							steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
+						}
+					}
+					if ( wasBoomerang )
+					{
+						if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )
+						{
+							achievementObserver.addEntityAchievementTimer(parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING, 6 * TICKS_PER_SECOND, true, 0);
 						}
 					}
 				}
@@ -818,8 +1159,19 @@ void actThrown(Entity* my)
 					parent->awardXP(hit.entity, true, true);
 				}
 
+				bool doAlert = true;
+				// fix for confuse potion aggro'ing monsters on impact.
+				if ( !wasConfused && hitstats && hitstats->EFFECTS[EFF_CONFUSED] && hit.entity->behavior == &actMonster && parent )
+				{
+					doAlert = false;
+					if ( hit.entity->monsterTarget == parent->getUID() )
+					{
+						hit.entity->monsterReleaseAttackTarget();
+					}
+				}
+
 				// alert the monster
-				if ( hit.entity->behavior == &actMonster && hitstats && parent != nullptr )
+				if ( hit.entity->behavior == &actMonster && hitstats && parent != nullptr && doAlert )
 				{
 					bool alertTarget = true;
 					bool targetHealed = false;
@@ -835,6 +1187,10 @@ void actThrown(Entity* my)
 					if ( disableAlertBlindStatus )
 					{
 						alertTarget = false;
+						if ( hitstats->EFFECTS[EFF_BLIND] )
+						{
+							hit.entity->monsterReleaseAttackTarget();
+						}
 					}
 
 					if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
@@ -893,24 +1249,46 @@ void actThrown(Entity* my)
 					{
 						if ( !strcmp(hitstats->name, "") )
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
-							if ( damage == 0 )
+							if ( hitstats->HP <= 0 )
 							{
-								messagePlayer(parent->skill[2], language[447]);
+								// HP <= 0
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
+								}
+							}
+							else
+							{
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
+								if ( damage == 0 )
+								{
+									messagePlayer(parent->skill[2], language[447]);
+								}
 							}
 						}
 						else
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
-							if ( damage == 0 )
+							if ( hitstats->HP <= 0 )
 							{
-								if ( hitstats->sex )
+								// HP <= 0
+								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[449]);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
 								}
-								else
+							}
+							else
+							{
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
+								if ( damage == 0 )
 								{
-									messagePlayer(parent->skill[2], language[450]);
+									if ( hitstats->sex )
+									{
+										messagePlayer(parent->skill[2], language[449]);
+									}
+									else
+									{
+										messagePlayer(parent->skill[2], language[450]);
+									}
 								}
 							}
 						}
@@ -933,7 +1311,14 @@ void actThrown(Entity* my)
 					case POTION_FIRESTORM:
 						if ( hit.entity->behavior == &actBoulder )
 						{
-							magicDig(parent, my, 2);
+							if ( hit.entity->sprite == 989 || hit.entity->sprite == 990 )
+							{
+								magicDig(parent, my, 0, 1);
+							}
+							else
+							{
+								magicDig(parent, my, 2, 4);
+							}
 						}
 						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, hit.entity);
 						break;
@@ -956,7 +1341,7 @@ void actThrown(Entity* my)
 				case POTION_FIRESTORM:
 					if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 					{
-						magicDig(parent, my, 2);
+						magicDig(parent, my, 2, 4);
 					}
 					spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, nullptr);
 					break;
@@ -965,6 +1350,49 @@ void actThrown(Entity* my)
 					break;
 				case POTION_THUNDERSTORM:
 					spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING, nullptr);
+					break;
+				case TOOL_BOMB:
+				case TOOL_SLEEP_BOMB:
+				case TOOL_TELEPORT_BOMB:
+				case TOOL_FREEZE_BOMB:
+					if ( hit.side == 0 )
+					{
+						// pick a random side to be on.
+						if ( rand() % 2 == 0 )
+						{
+							hit.side = HORIZONTAL;
+						}
+						else
+						{
+							hit.side = VERTICAL;
+						}
+					}
+
+					if ( hit.side == HORIZONTAL )
+					{
+						if ( THROWN_VELX > 0 )
+						{
+							item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_WALL, Item::ItemBombFacingDirection::BOMB_WEST, my, nullptr);
+						}
+						else
+						{
+							item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_WALL, Item::ItemBombFacingDirection::BOMB_EAST, my, nullptr);
+						}
+					}
+					else if ( hit.side == VERTICAL )
+					{
+						if ( THROWN_VELY > 0 )
+						{
+							item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_WALL, Item::ItemBombFacingDirection::BOMB_NORTH, my, nullptr);
+						}
+						else
+						{
+							item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_WALL, Item::ItemBombFacingDirection::BOMB_SOUTH, my, nullptr);
+						}
+					}
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
 					break;
 				default:
 					break;
@@ -981,10 +1409,45 @@ void actThrown(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
-		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) && hit.entity == NULL )
+		else if ( item->type == FOOD_CREAMPIE )
+		{
+			if ( !usedpotion )
+			{
+				for ( int i = 0; i < 5; ++i )
+				{
+					Entity* gib = spawnGib(my, 863);
+					serverSpawnGibForClient(gib);
+				}
+			}
+			free(item);
+			item = nullptr;
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM 
+			|| item->type == CRYSTAL_SHURIKEN || (item->type == BOOMERANG && uidToEntity(my->parent))) 
+				&& hit.entity == NULL )
 		{
 			// chakram, shurikens bounce off walls until entity or floor is hit.
 			playSoundEntity(my, 66, 64);
+			if ( item->type == BOOMERANG )
+			{
+				// boomerang always tink and return to owner.
+				free(item);
+				list_RemoveNode(my->mynode);
+				return;
+			}
+		}
+		else if ( item->type == BOOMERANG && hit.entity && uidToEntity(my->parent) )
+		{
+			// boomerang always return to owner.
+			free(item);
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		else if ( item && itemIsThrowableTinkerTool(item) /*&& !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)*/ )
+		{
+			// non-bomb tools will fall to the ground and get placed.
 		}
 		else
 		{
@@ -1028,14 +1491,38 @@ void actThrown(Entity* my)
 
 	if ( cat == THROWN )
 	{
-		THROWN_VELX = THROWN_VELX * .99;
-		THROWN_VELY = THROWN_VELY * .99;
+		if ( my->sprite == BOOMERANG_PARTICLE )
+		{
+			if ( (THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) > 2.0 )
+			{
+				THROWN_VELX = THROWN_VELX * .99;
+				THROWN_VELY = THROWN_VELY * .99;
+			}
+		}
+		else
+		{
+			THROWN_VELX = THROWN_VELX * .99;
+			THROWN_VELY = THROWN_VELY * .99;
+		}
 		//my->pitch += result * .01;
+		//messagePlayer(0, "%.4f, %.4f", THROWN_VELX, THROWN_VELY);
+		/*if ( my->sprite == BOOMERANG_PARTICLE )
+		{
+			THROWN_VELX = std::max(0.05, THROWN_VELX);
+			THROWN_VELY = std::max(0.05, THROWN_VELY);
+		}*/
 	}
 	else
 	{
 		THROWN_VELX = THROWN_VELX * .99;
 		THROWN_VELY = THROWN_VELY * .99;
-		my->pitch += result * .01;
+		if ( my->sprite == 897 ) // sentrybot head item
+		{
+			my->pitch = 0.0;
+		}
+		else
+		{
+			my->pitch += result * .01;
+		}
 	}
 }

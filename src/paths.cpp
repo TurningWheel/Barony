@@ -226,6 +226,8 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	// for boulders falling and checking if a player can reach the ladder.
 	bool playerCheckPathToExit = (my && my->behavior == &actPlayer
 		&& target && (target->behavior == &actLadder || target->behavior == &actPortal));
+	bool playerCheckAchievement = (my && my->behavior == &actPlayer
+		&& target && (target->behavior == &actBomb || target->behavior == &actPlayerLimb || target->behavior == &actItem || target->behavior == &actSwitch));
 
 	if ( !loading )
 	{
@@ -265,6 +267,8 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		}
 	}
 
+	bool standingOnTrap = 0; // 0 - not checked.
+
 	for ( entityNode = map.entities->first; entityNode != nullptr; entityNode = entityNode->next )
 	{
 		Entity* entity = (Entity*)entityNode->element;
@@ -274,6 +278,36 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 				&& (my->getRace() == HUMAN || my->monsterAllyGetPlayerLeader() ) )
 			{
 				// humans/followers know better than that!
+
+				// unless they're standing on a trap...
+				if ( standingOnTrap == 0 )
+				{
+					std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 0);
+					for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !standingOnTrap; ++it )
+					{
+						list_t* currentList = *it;
+						node_t* node;
+						if ( currentList )
+						{
+							for ( node = currentList->first; node != nullptr && !standingOnTrap; node = node->next )
+							{
+								Entity* entity = (Entity*)node->element;
+								if ( entity && entity->behavior == &actSpearTrap )
+								{
+									standingOnTrap = 1; // 1 - standing on the trap.
+								}
+							}
+						}
+					}
+					if ( standingOnTrap == 0 )
+					{
+						standingOnTrap = 2; // 2 - have run the check but failed.
+					}
+				}
+				if ( standingOnTrap == 1 )
+				{
+					continue;
+				}
 			}
 			else
 			{
@@ -308,6 +342,11 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			)
 		{
 			//Fix to make ladders generate in hell.
+			continue;
+		}
+		if ( playerCheckAchievement &&
+			(entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+		{
 			continue;
 		}
 		int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?

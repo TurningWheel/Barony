@@ -42,6 +42,7 @@ char last_port[64] = "";
 char lobbyChatbox[LOBBY_CHATBOX_LENGTH];
 list_t lobbyChatboxMessages;
 bool disableMultithreadedSteamNetworking = false;
+bool disableFPSLimitOnNetworkMessages = false;
 
 // uncomment this to have the game log packet info
 //#define PACKETINFO
@@ -674,7 +675,7 @@ Spawns misc particle effects for all clients
 
 -------------------------------------------------------------------------------*/
 
-void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite)
+void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite, Uint32 optionalUid)
 {
 	int c;
 	if ( multiplayer != SERVER )
@@ -689,9 +690,10 @@ void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSpri
 			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
 			net_packet->data[8] = particleType;
 			SDLNet_Write16(particleSprite, &net_packet->data[9]);
+			SDLNet_Write32(optionalUid, &net_packet->data[11]);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 12;
+			net_packet->len = 16;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
@@ -796,6 +798,8 @@ void serverUpdateEffects(int player)
 	net_packet->data[9] = 0;
 	net_packet->data[10] = 0;
 	net_packet->data[11] = 0;
+	net_packet->data[12] = 0;
+	net_packet->data[13] = 0;
 	for (j = 0; j < NUMEFFECTS; j++)
 	{
 		if ( stats[player]->EFFECTS[j] == true )
@@ -805,12 +809,12 @@ void serverUpdateEffects(int player)
 		if ( stats[player]->EFFECTS_TIMERS[j] < TICKS_PER_SECOND * 5 && stats[player]->EFFECTS_TIMERS[j] > 0 )
 		{
 			// use these bits to denote if duration is low.
-			net_packet->data[8 + j / 8] |= power(2, j - (j / 8) * 8);
+			net_packet->data[9 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
 	}
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = 12;
+	net_packet->len = 14;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
@@ -926,6 +930,45 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 				}
 			}
 		}
+		else if ( gameplayStat == STATISTICS_FORUM_TROLL )
+		{
+			if ( changeval == AchievementObserver::FORUM_TROLL_BREAK_WALL )
+			{
+				int walls = gameStatistics[gameplayStat] & 0xFF;
+				walls = std::min(walls + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFFFFFF00;
+				gameStatistics[gameplayStat] |= walls;
+			}
+			else if ( changeval == AchievementObserver::FORUM_TROLL_RECRUIT_TROLL )
+			{
+				int trolls = (gameStatistics[gameplayStat] >> 8) & 0xFF;
+				trolls = std::min(trolls + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFFFF00FF;
+				gameStatistics[gameplayStat] |= (trolls << 8);
+			}
+			else if ( changeval == AchievementObserver::FORUM_TROLL_FEAR )
+			{
+				int fears = (gameStatistics[gameplayStat] >> 16) & 0xFF;
+				fears = std::min(fears + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFF00FFFF;
+				gameStatistics[gameplayStat] |= (fears << 16);
+			}
+		}
+		else if ( gameplayStat == STATISTICS_POP_QUIZ_1 || gameplayStat == STATISTICS_POP_QUIZ_2 )
+		{
+			int spellID = changeval;
+			if ( spellID >= 30 )
+			{
+				spellID -= 30;
+				int shifted = (1 << spellID);
+				gameStatistics[gameplayStat] |= shifted;
+			}
+			else
+			{
+				int shifted = (1 << spellID);
+				gameStatistics[gameplayStat] |= shifted;
+			}
+		}
 		else
 		{
 			gameStatistics[gameplayStat] += changeval;
@@ -941,7 +984,7 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 		net_packet->len = 12;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
-	//messagePlayer(clientnum, "sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
+	//messagePlayer(clientnum, "[DEBUG]: sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1366,6 +1409,10 @@ void clientActions(Entity* entity)
 					break;
 				case -7:
 					entity->behavior = &actEmpty;
+					if ( entity->sprite == 989 ) // boulder_lava.vox
+					{
+						entity->flags[BURNABLE] = true;
+					}
 					break;
 				case -8:
 					entity->behavior = &actThrown;
@@ -1385,7 +1432,18 @@ void clientActions(Entity* entity)
 				case -13:
 					entity->behavior = &actParticleSapCenter;
 					break;
+				case -14:
+					entity->behavior = &actDecoyBox;
+					break;
+				case -15:
+					entity->behavior = &actBomb;
+					break;
 				default:
+					if ( c < -1000 && c > -2000 )
+					{
+						entity->arrowShotByWeapon = -(c + 1000);
+						entity->behavior = &actArrow;
+					}
 					break;
 			}
 		}
@@ -1453,6 +1511,21 @@ void clientHandlePacket()
 	if (!strncmp((char*)net_packet->data, "KPAL", 4))
 	{
 		client_keepalive[0] = ticks;
+		return;
+	}
+
+	// server sent item details.
+	else if ( !strncmp((char*)net_packet->data, "ITMU", 4) )
+	{
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
+		{
+			entity->skill[10] = SDLNet_Read32(&net_packet->data[8]); // item type
+			entity->skill[11] = SDLNet_Read32(&net_packet->data[12]); // status
+			entity->skill[12] = SDLNet_Read32(&net_packet->data[16]); // beatitude
+			entity->itemReceivedDetailsFromServer = 1;
+		}
 		return;
 	}
 
@@ -1577,6 +1650,8 @@ void clientHandlePacket()
 		}
 		int tele_x = net_packet->data[4];
 		int tele_y = net_packet->data[5];
+		Sint16 degrees = (Sint16)SDLNet_Read16(&net_packet->data[6]);
+		players[clientnum]->entity->yaw = degrees * PI / 180;
 		players[clientnum]->entity->x = (tele_x << 4) + 8;
 		players[clientnum]->entity->y = (tele_y << 4) + 8;
 		return;
@@ -1735,6 +1810,12 @@ void clientHandlePacket()
 			else
 			{
 				item->status = static_cast<Status>(net_packet->data[5]);
+			}
+
+			// spellbooks in hand crumble to nothing.
+			if ( item->status == BROKEN && net_packet->data[4] == 4 && itemCategory(item) == SPELLBOOK )
+			{
+				consumeItem(item, clientnum);
 			}
 		}
 		return;
@@ -1932,8 +2013,26 @@ void clientHandlePacket()
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[28], NULL);
 		item->ownerUid = SDLNet_Read32(&net_packet->data[24]);
-		itemPickup(clientnum, item);
+		Item* pickedUp = itemPickup(clientnum, item);
 		free(item);
+		if ( players[clientnum] && players[clientnum]->entity )
+		{
+			if ( pickedUp && pickedUp->type == BOOMERANG && !stats[clientnum]->weapon && item->ownerUid == players[clientnum]->entity->getUID() )
+			{
+				useItem(pickedUp, clientnum);
+				if ( magicBoomerangHotbarSlot >= 0 )
+				{
+					hotbar[magicBoomerangHotbarSlot].item = pickedUp->uid;
+					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+					{
+						if ( i != magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+						{
+							hotbar[i].item = 0;
+						}
+					}
+				}
+			}
+		}
 		return;
 	}
 
@@ -2082,16 +2181,23 @@ void clientHandlePacket()
 		if ( !strcmp((char*)(&net_packet->data[8]), language[577]) )    //TODO: Replace with a UDIE packet.
 		{
 			// this is how the client knows it died...
-			Entity* entity = newEntity(-1, 1, map.entities, nullptr);
-			entity->x = camera.x * 16;
-			entity->y = camera.y * 16;
-			entity->z = -2;
-			entity->flags[NOUPDATE] = true;
-			entity->flags[PASSABLE] = true;
-			entity->flags[INVISIBLE] = true;
-			entity->behavior = &actDeathCam;
-			entity->yaw = camera.ang;
-			entity->pitch = PI / 8;
+			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->playerCreatedDeathCam != 0 )
+			{
+				// don't spawn deathcam
+			}
+			else
+			{
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr);
+				entity->x = camera.x * 16;
+				entity->y = camera.y * 16;
+				entity->z = -2;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->behavior = &actDeathCam;
+				entity->yaw = camera.ang;
+				entity->pitch = PI / 8;
+			}
 
 			//deleteSaveGame(multiplayer); // stops save scumming c: //Not here, because it'll make the game unresumable if the game crashes but not all players have died.
 
@@ -2202,7 +2308,7 @@ void clientHandlePacket()
 			for ( c = 0; c < NUMEFFECTS; c++ )
 			{
 				if ( !(c == EFF_VAMPIRICAURA && stats[clientnum]->EFFECTS_TIMERS[c] == -2)
-					&& c != EFF_WITHDRAWAL )
+					&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 				{
 					stats[clientnum]->EFFECTS[c] = false;
 					stats[clientnum]->EFFECTS_TIMERS[c] = 0;
@@ -2271,7 +2377,7 @@ void clientHandlePacket()
 			if ( net_packet->data[4 + c / 8]&power(2, c - (c / 8) * 8) )
 			{
 				stats[clientnum]->EFFECTS[c] = true;
-				if ( net_packet->data[8 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
+				if ( net_packet->data[9 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
 				{
 					stats[clientnum]->EFFECTS_TIMERS[c] = 1;
 				}
@@ -2412,6 +2518,45 @@ void clientHandlePacket()
 				}
 			}
 		}
+		else if ( gameplayStat == STATISTICS_FORUM_TROLL )
+		{
+			if ( changeval == AchievementObserver::FORUM_TROLL_BREAK_WALL )
+			{
+				int walls = gameStatistics[gameplayStat] & 0xFF;
+				walls = std::min(walls + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFFFFFF00;
+				gameStatistics[gameplayStat] |= walls;
+			}
+			else if ( changeval == AchievementObserver::FORUM_TROLL_RECRUIT_TROLL )
+			{
+				int trolls = (gameStatistics[gameplayStat] >> 8) & 0xFF;
+				trolls = std::min(trolls + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFFFF00FF;
+				gameStatistics[gameplayStat] |= (trolls << 8);
+			}
+			else if ( changeval == AchievementObserver::FORUM_TROLL_FEAR )
+			{
+				int fears = (gameStatistics[gameplayStat] >> 16) & 0xFF;
+				fears = std::min(fears + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFF00FFFF;
+				gameStatistics[gameplayStat] |= (fears << 16);
+			}
+		}
+		else if ( gameplayStat == STATISTICS_POP_QUIZ_1 || gameplayStat == STATISTICS_POP_QUIZ_2 )
+		{
+			int spellID = changeval;
+			if ( spellID >= 32 )
+			{
+				spellID -= 32;
+				int shifted = (1 << spellID);
+				gameStatistics[gameplayStat] |= shifted;
+			}
+			else
+			{
+				int shifted = (1 << spellID);
+				gameStatistics[gameplayStat] |= shifted;
+			}
+		}
 		else
 		{
 			gameStatistics[gameplayStat] += changeval;
@@ -2438,11 +2583,21 @@ void clientHandlePacket()
 			return;
 		}
 
-		if ( introstage == 9 )
+		if ( introstage == 9
+			|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
+			|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
+			|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS )
 		{
 			thirdendmovietime = 0;
-			movie = false; // allow normal pause screen.
 			thirdendmoviestage = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_HERX_MONSTERS][MOVIE_STAGE] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_HERX_MONSTERS][MOVIE_TIME] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_MONSTERS][MOVIE_STAGE] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_MONSTERS][MOVIE_TIME] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON][MOVIE_STAGE] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON][MOVIE_TIME] = 0;
+
+			movie = false; // allow normal pause screen.
 			introstage = 1; // return to normal game functionality
 			pauseGame(1, false); // unpause game
 		}
@@ -2556,6 +2711,7 @@ void clientHandlePacket()
 		}
 
 		minimapPings.clear(); // clear minimap pings
+		globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 		// clear follower menu entities.
 		FollowerMenu.closeFollowerMenuGUI(true);
@@ -2696,7 +2852,14 @@ void clientHandlePacket()
 					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 					spellTimer->particleTimerCountdownSprite = sprite;
 				}
-				break;
+					break;
+				case PARTICLE_EFFECT_TELEPORT_PULL:
+				{
+					Entity* spellTimer = createParticleTimer(entity, 40, sprite);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+					spellTimer->particleTimerCountdownSprite = sprite;
+				}
+					break;
 				case PARTICLE_EFFECT_ERUPT:
 					createParticleErupt(entity, sprite);
 					break;
@@ -2708,6 +2871,15 @@ void clientHandlePacket()
 					break;
 				case PARTICLE_EFFECT_CHARM_MONSTER:
 					createParticleCharmMonster(entity);
+					break;
+				case PARTICLE_EFFECT_SHADOW_TAG:
+				{
+					Uint32 uid = SDLNet_Read32(&net_packet->data[11]);
+					createParticleShadowTag(entity, uid, 60 * TICKS_PER_SECOND);
+					break;
+				}
+				case PARTICLE_EFFECT_SPELL_WEB_ORBIT:
+					createParticleAestheticOrbit(entity, 863, 400, PARTICLE_EFFECT_SPELL_WEB_ORBIT);
 					break;
 				case PARTICLE_EFFECT_PORTAL_SPAWN:
 				{
@@ -2725,6 +2897,31 @@ void clientHandlePacket()
 					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 					spellTimer->particleTimerCountdownSprite = sprite;
 				}
+					break;
+				case PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH:
+					createParticleExplosionCharge(entity, 174, 100, 0.25);
+					if ( entity && entity->behavior == &actPlayer )
+					{
+						if ( entity->getMonsterTypeFromSprite() == AUTOMATON )
+						{
+							entity->playerAutomatonDeathCounter = 1;
+							if ( entity->skill[2] == clientnum )
+							{
+								// this is me dying, setup the deathcam.
+								entity->playerCreatedDeathCam = 1;
+								Entity* entity = newEntity(-1, 1, map.entities, nullptr);
+								entity->x = camera.x * 16;
+								entity->y = camera.y * 16;
+								entity->z = -2;
+								entity->flags[NOUPDATE] = true;
+								entity->flags[PASSABLE] = true;
+								entity->flags[INVISIBLE] = true;
+								entity->behavior = &actDeathCam;
+								entity->yaw = camera.ang;
+								entity->pitch = PI / 8;
+							}
+						}
+					}
 					break;
 				default:
 					break;
@@ -2755,6 +2952,17 @@ void clientHandlePacket()
 				spellTimer->z = particle_z;
 			}
 				break;
+			case PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER:
+			{
+				Entity* spellTimer = createParticleTimer(nullptr, 70, sprite);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_DEVIL_SUMMON_MONSTER;
+				spellTimer->particleTimerCountdownSprite = 174;
+				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SUMMON_MONSTER;
+				spellTimer->x = particle_x * 16.0 + 8;
+				spellTimer->y = particle_y * 16.0 + 8;
+				spellTimer->z = particle_z;
+			}
+			break;
 			case PARTICLE_EFFECT_SPELL_SUMMON:
 			{
 				Entity* spellTimer = createParticleTimer(nullptr, 55, sprite);
@@ -2765,6 +2973,19 @@ void clientHandlePacket()
 				spellTimer->x = particle_x * 16.0 + 8;
 				spellTimer->y = particle_y * 16.0 + 8;
 				spellTimer->z = particle_z;
+			}
+				break;
+			case PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION:
+			{
+				Entity* spellTimer = createParticleTimer(nullptr, 40, 593);
+				spellTimer->particleTimerCountdownAction = PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION;
+				spellTimer->particleTimerCountdownSprite = 593;
+				spellTimer->x = particle_x * 16.0 + 8;
+				spellTimer->y = particle_y * 16.0 + 8;
+				spellTimer->z = particle_z;
+				spellTimer->flags[PASSABLE] = false;
+				spellTimer->sizex = 4;
+				spellTimer->sizey = 4;
 			}
 				break;
 			default:
@@ -2780,6 +3001,17 @@ void clientHandlePacket()
 		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
 		Sint16 z = (Sint16)SDLNet_Read16(&net_packet->data[8]);
 		spawnExplosion( x, y, z );
+		return;
+	}
+
+	// spawn an explosion, custom sprite
+	else if ( !strncmp((char*)net_packet->data, "EXPS", 4) )
+	{
+		Uint16 sprite = (Uint16)SDLNet_Read16(&net_packet->data[4]);
+		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[6]);
+		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[8]);
+		Sint16 z = (Sint16)SDLNet_Read16(&net_packet->data[10]);
+		spawnExplosionFromSprite(sprite, x, y, z);
 		return;
 	}
 
@@ -2816,6 +3048,17 @@ void clientHandlePacket()
 		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
 		Sint16 z = (Sint16)SDLNet_Read16(&net_packet->data[8]);
 		spawnSleepZ( x, y, z );
+		return;
+	}
+
+	// spawn a misc sprite like the sleep Z
+	else if ( !strncmp((char*)net_packet->data, "SLEM", 4) )
+	{
+		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
+		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
+		Sint16 z = (Sint16)SDLNet_Read16(&net_packet->data[8]);
+		Sint16 sprite = (Sint16)SDLNet_Read16(&net_packet->data[10]);
+		spawnFloatingSpriteMisc(sprite, x, y, z);
 		return;
 	}
 
@@ -2876,7 +3119,7 @@ void clientHandlePacket()
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		Entity* monster = uidToEntity(uidnum);
-		if ( monster && monster->monsterAllyIndex == clientnum )
+		if ( monster )
 		{
 			if ( !monster->clientsHaveItsStats )
 			{
@@ -2897,7 +3140,7 @@ void clientHandlePacket()
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		Entity* monster = uidToEntity(uidnum);
-		if ( monster && monster->monsterAllyIndex == clientnum )
+		if ( monster )
 		{
 			if ( !monster->clientsHaveItsStats )
 			{
@@ -3144,7 +3387,7 @@ void clientHandlePacket()
 			if ( entity->behavior == &actMonster && net_packet->data[8] == USERFLAG2 )
 			{
 				// we should update the flags for all bodyparts (except for human and automaton heads, don't update the other bodyparts).
-				if ( !(entity->isPlayerHeadSprite() || entity->sprite == 467) )
+				if ( !(entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 				{
 					int bodypart = 0;
 					for ( node_t* node = entity->children.first; node != nullptr; node = node->next )
@@ -3366,6 +3609,18 @@ void clientHandlePacket()
 		return;
 	}
 
+	else if ( !strncmp((char*)net_packet->data, "MFOD", 4) )
+	{
+		mapFoodOnLevel(clientnum);
+		return;
+	}
+
+	else if ( !strncmp((char*)net_packet->data, "TKIT", 4) )
+	{
+		GenericGUI.tinkeringKitDegradeOnUse(clientnum);
+		return;
+	}
+
 	// boss death
 	else if ( !strncmp((char*)net_packet->data, "BDTH", 4) )
 	{
@@ -3376,7 +3631,7 @@ void clientHandlePacket()
 			{
 				if ( entity->behavior == &actWinningPortal )
 				{
-					entity->flags[INVISIBLE] = false;
+					//entity->flags[INVISIBLE] = false;
 				}
 			}
 			else if ( strstr(map.name, "Boss") )
@@ -3489,20 +3744,7 @@ void clientHandlePacket()
 		{
 			pauseGame(2, false);
 		}
-		introstage = 9; // prepares mid game sequence
-		return;
-	}
-
-	// mid game jump level
-	else if ( !strncmp((char*)net_packet->data, "MIDJ", 4) )
-	{
-		subwindow = 0;
-		fadeout = true;
-		if ( !intro )
-		{
-			pauseGame(2, false);
-		}
-		introstage = 9; // prepares mid game sequence
+		introstage = net_packet->data[4]; // prepares mid game sequence
 		return;
 	}
 
@@ -3556,6 +3798,19 @@ void clientHandlePacket()
 	{
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		minimapPingAdd(newPing);
+	}
+	else if ( !strncmp((char*)net_packet->data, "DASH", 4) )
+	{
+		if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] )
+		{
+			real_t vel = sqrt(pow(players[clientnum]->entity->vel_y, 2) + pow(players[clientnum]->entity->vel_x, 2));
+			players[clientnum]->entity->monsterKnockbackVelocity = std::max(1.0, vel);
+			players[clientnum]->entity->monsterKnockbackTangentDir = atan2(players[clientnum]->entity->vel_y, players[clientnum]->entity->vel_x);
+			if ( vel < 0.01 )
+			{
+				players[clientnum]->entity->monsterKnockbackTangentDir = players[clientnum]->entity->yaw + PI;
+			}
+		}
 	}
 
 	// game restart
@@ -3630,7 +3885,7 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 			}
 			delete packet;
 
-			if ( !frameRateLimit(framerateBreakInterval, false) )
+			if ( !disableFPSLimitOnNetworkMessages && !frameRateLimit(framerateBreakInterval, false) )
 			{
 				if ( logCheckMainLoopTimers )
 				{
@@ -3750,6 +4005,27 @@ void serverHandlePacket()
 		return;
 	}
 
+	// client request item details.
+	else if ( !strncmp((char*)net_packet->data, "ITMU", 4) )
+	{
+		int x = net_packet->data[4];
+		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
+		{
+			strcpy((char*)net_packet->data, "ITMU");
+			SDLNet_Write32(uid, &net_packet->data[4]);
+			SDLNet_Write32(entity->skill[10], &net_packet->data[8]); // item type
+			SDLNet_Write32(entity->skill[11], &net_packet->data[12]); // status
+			SDLNet_Write32(entity->skill[12], &net_packet->data[16]); // beatitude
+			net_packet->address.host = net_clients[x - 1].host;
+			net_packet->address.port = net_clients[x - 1].port;
+			net_packet->len = 20;
+			sendPacketSafe(net_sock, -1, net_packet, x - 1);
+			return; // found entity.
+		}
+	}
+
 	// player move
 	else if (!strncmp((char*)net_packet->data, "PMOV", 4))
 	{
@@ -3831,13 +4107,27 @@ void serverHandlePacket()
 	}
 
 	// clicked entity in range
-	else if (!strncmp((char*)net_packet->data, "CKIR", 4))
+	else if (!strncmp((char*)net_packet->data, "CKIR", 4) 
+		|| !strncmp((char*)net_packet->data, "SALV", 4)
+		|| !strncmp((char*)net_packet->data, "RATF", 4) )
 	{
 		client_keepalive[net_packet->data[4]] = ticks;
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
 		{
+			if ( entity->behavior == &actItem && !strncmp((char*)net_packet->data, "SALV", 4) )
+			{
+				// auto salvage this item.
+				if ( players[net_packet->data[4]] && players[net_packet->data[4]]->entity )
+				{
+					entity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[net_packet->data[4]]->entity->getUID());
+				}
+			}
+			else if ( entity->behavior == &actItem && !strncmp((char*)net_packet->data, "RATF", 4) )
+			{
+				achievementObserver.playerAchievements[net_packet->data[4]].rat5000secondRule.insert(uid);
+			}
 			client_selected[net_packet->data[4]] = entity;
 			inrange[net_packet->data[4]] = true;
 		}
@@ -3954,7 +4244,18 @@ void serverHandlePacket()
 		entity->flags[INVISIBLE] = true;
 		for ( c = item->count; c > 0; c-- )
 		{
-			dropItemMonster(item, entity, stats[net_packet->data[25]]);
+			int qtyToDrop = 1;
+			if ( c >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+			{
+				qtyToDrop = 10;
+				c -= 9;
+			}
+			else if ( itemTypeIsQuiver(item->type) )
+			{
+				qtyToDrop = item->count;
+				c -= item->count;
+			}
+			dropItemMonster(item, entity, stats[net_packet->data[25]], qtyToDrop);
 		}
 		list_RemoveNode(entity->mynode);
 		return;
@@ -3991,7 +4292,7 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "SHPB", 4))
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
-		int client = net_packet->data[25];
+		int client = net_packet->data[29];
 		Entity* entity = uidToEntity(uidnum);
 		if ( !entity )
 		{
@@ -4008,9 +4309,9 @@ void serverHandlePacket()
 		item->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8]));
 		item->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[12]));
 		item->beatitude = SDLNet_Read32(&net_packet->data[16]);
-		item->count = 1;
 		item->appearance = SDLNet_Read32(&net_packet->data[20]);
-		if ( net_packet->data[24] )
+		item->count = SDLNet_Read32(&net_packet->data[24]);
+		if ( net_packet->data[28] )
 		{
 			item->identified = true;
 		}
@@ -4026,15 +4327,37 @@ void serverHandlePacket()
 			if (!itemCompare(item, item2, false))
 			{
 				printlog("client %d bought item from shop (uid=%d)\n", client, uidnum);
+				if ( shopIsMysteriousShopkeeper(entity) )
+				{
+					buyItemFromMysteriousShopkeepConsumeOrb(*entity, *item2);
+				}
 				consumeItem(item2, client);
 				break;
 			}
 		}
 		entitystats->GOLD += item->buyValue(client);
 		stats[client]->GOLD -= item->buyValue(client);
-		if (rand() % 2 && item->type != GEM_GLASS )
+		if ( rand() % 2 )
 		{
-			players[client]->entity->increaseSkill(PRO_TRADING);
+			if ( item->buyValue(client) <= 1 )
+			{
+				// buying cheap items does not increase trading past basic
+				if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+				{
+					players[client]->entity->increaseSkill(PRO_TRADING);
+				}
+			}
+			else
+			{
+				players[client]->entity->increaseSkill(PRO_TRADING);
+			}
+		}
+		else if ( item->buyValue(client) >= 150 )
+		{
+			if ( item->buyValue(client) >= 300 || rand() % 2 )
+			{
+				players[client]->entity->increaseSkill(PRO_TRADING);
+			}
 		}
 		free(item);
 		return;
@@ -4064,7 +4387,7 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "SHPS", 4))
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
-		int client = net_packet->data[25];
+		int client = net_packet->data[29];
 		Entity* entity = uidToEntity(uidnum);
 		if ( !entity )
 		{
@@ -4079,11 +4402,13 @@ void serverHandlePacket()
 		}
 		if ( net_packet->data[24] )
 		{
-			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]), 1, SDLNet_Read32(&net_packet->data[20]), true, &entitystats->inventory);
+			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), 
+				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), true, &entitystats->inventory);
 		}
 		else
 		{
-			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]), 1, SDLNet_Read32(&net_packet->data[20]), false, &entitystats->inventory);
+			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), 
+				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), false, &entitystats->inventory);
 		}
 		printlog("client %d sold item to shop (uid=%d)\n", client, uidnum);
 		stats[client]->GOLD += item->sellValue(client);
@@ -4110,6 +4435,14 @@ void serverHandlePacket()
 		return;
 	}
 
+	// equip item (as a shield)
+	else if ( !strncmp((char*)net_packet->data, "EQUS", 4) )
+	{
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
+		equipItem(item, &stats[net_packet->data[25]]->shield, net_packet->data[25]);
+		return;
+	}
+
 	// apply item to entity
 	else if (!strncmp((char*)net_packet->data, "APIT", 4))
 	{
@@ -4123,6 +4456,17 @@ void serverHandlePacket()
 		{
 			printlog("warning: client applied item to entity that does not exist\n");
 		}
+		free(item);
+		return;
+	}
+
+	// apply item to entity
+	else if ( !strncmp((char*)net_packet->data, "APIW", 4) )
+	{
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
+		int wallx = (SDLNet_Read16(&net_packet->data[26]));
+		int wally = (SDLNet_Read16(&net_packet->data[28]));
+		item->applyLockpickToWall(net_packet->data[25], wallx, wally);
 		free(item);
 		return;
 	}
@@ -4165,7 +4509,14 @@ void serverHandlePacket()
 		int the_client = net_packet->data[4];
 
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
-		castSpell(players[the_client]->entity->getUID(), thespell, false, false);
+		if ( net_packet->data[9] == 1 )
+		{
+			castSpell(players[the_client]->entity->getUID(), thespell, false, false, true);
+		}
+		else
+		{
+			castSpell(players[the_client]->entity->getUID(), thespell, false, false);
+		}
 		return;
 	}
 
@@ -4290,7 +4641,6 @@ void serverHandlePacket()
 	{
 		int player = net_packet->data[4];
 		Item* equipment = nullptr;
-		//messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
 
 		switch ( net_packet->data[5] )
 		{
@@ -4327,7 +4677,7 @@ void serverHandlePacket()
 		{
 			return;
 		}
-
+		
 		if ( static_cast<int>(net_packet->data[6]) > EXCELLENT )
 		{
 			equipment->status = EXCELLENT;
@@ -4540,6 +4890,14 @@ void serverHandlePacket()
 			}
 		}
 	}
+
+	// use automaton food item
+	else if ( !strncmp((char*)net_packet->data, "FODA", 4) )
+	{
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
+		item_FoodAutomaton(item, net_packet->data[25]);
+		return;
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -4592,7 +4950,7 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 			}
 			delete packet;
 
-			if ( !frameRateLimit(framerateBreakInterval, false) )
+			if ( !disableFPSLimitOnNetworkMessages && !frameRateLimit(framerateBreakInterval, false) )
 			{
 				if ( logCheckMainLoopTimers )
 				{

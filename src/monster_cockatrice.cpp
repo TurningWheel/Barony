@@ -105,7 +105,14 @@ void initCockatrice(Entity* my, Stat* myStats)
 				case 3:
 					if ( rand() % 5 == 0 ) // 20% for gemstone, luckstone to obsidian. qty 1-2.
 					{
-						newItem(static_cast<ItemType>(GEM_LUCK + rand() % 16), static_cast<Status>(EXCELLENT), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
+						if ( rand() % 3 == 0 )
+						{
+							newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
+						}
+						else
+						{
+							newItem(static_cast<ItemType>(GEM_LUCK + rand() % 16), static_cast<Status>(EXCELLENT), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
+						}
 					}
 				case 2:
 					if ( rand() % 10 < 3 ) // 30% drop stoneblood magicstaff

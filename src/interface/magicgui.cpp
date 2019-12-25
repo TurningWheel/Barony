@@ -21,7 +21,7 @@
 
 /*-------------------------------------------------------------------------------
 
-	renderMagicGUI
+	renderMagicGUI - DEPRECATED, called from updateRightSidebar()
 
 	draws all the magic related gui stuff
 
@@ -121,7 +121,7 @@ void renderMagicGUI(int winx, int winy, int winw, int winh)
 
 /*-------------------------------------------------------------------------------
 
-	updateMagicGUI
+	updateMagicGUI - DEPRECATED, called from updateRightSidebar()
 
 	Handles all buttons and such.
 	If the spell list is open, it "equips" spells the player clicks on.
@@ -181,7 +181,7 @@ void updateMagicGUI()
 						spell_t* spell = (spell_t*)node->element;
 						if (spell)
 						{
-							equipSpell(spell, clientnum);
+							//equipSpell(spell, clientnum);
 							//selected_spell = spell;
 						}
 					}
@@ -231,12 +231,49 @@ void drawSustainedSpells()
 		fontWidth = TTF16_WIDTH;
 	}
 
-	for ( int i = 0; showStatusEffectIcons && i < NUMEFFECTS && stats[clientnum]; ++i )
+	for ( int i = 0; showStatusEffectIcons && i <= NUMEFFECTS && stats[clientnum]; ++i )
 	{
 		node_t* effectImageNode = nullptr;
 		sprite = nullptr;
 		tooltipText = nullptr;
-		if ( stats[clientnum]->EFFECTS[i] )
+
+		if ( i == NUMEFFECTS )
+		{
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				if ( players[clientnum]->entity->creatureShadowTaggedThisUid != 0
+					&& uidToEntity(players[clientnum]->entity->creatureShadowTaggedThisUid) )
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SHADOW_TAG);
+					Entity* tagged = uidToEntity(players[clientnum]->entity->creatureShadowTaggedThisUid);
+					if ( tagged->behavior == &actMonster )
+					{
+						int type = tagged->getMonsterTypeFromSprite();
+						if ( type != NOTHING )
+						{
+							if ( type >= KOBOLD )
+							{
+								snprintf(tempstr, 1023, language[3858], language[2000 + type - KOBOLD]);
+							}
+							else
+							{
+								snprintf(tempstr, 1023, language[3858], language[90 + type]);
+							}
+						}
+						else
+						{
+							strcpy(tempstr, "");
+						}
+					}
+					else if ( tagged->behavior == &actPlayer )
+					{
+						snprintf(tempstr, 1023, language[3858], stats[tagged->skill[2]]->name);
+					}
+					tooltipText = tempstr;
+				}
+			}
+		}
+		else if ( stats[clientnum]->EFFECTS[i] )
 		{
 			switch ( i )
 			{
@@ -259,6 +296,68 @@ void drawSustainedSpells()
 				case EFF_PACIFY:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
 					tooltipText = language[3388];
+					break;
+				case EFF_FEAR:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FEAR);
+					tooltipText = language[3861];
+					break;
+				case EFF_WEBBED:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPRAY_WEB);
+					tooltipText = language[3859];
+					break;
+				case EFF_MAGICAMPLIFY:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_AMPLIFY_MAGIC);
+					node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_AMPLIFY_MAGIC )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}
+					tooltipText = language[3860];
+					break;
+				}
+				case EFF_TROLLS_BLOOD:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLLS_BLOOD);
+					tooltipText = language[3492];
+					break;
+				case EFF_FLUTTER:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FLUTTER);
+					tooltipText = language[3766];
+					break;
+				case EFF_FAST:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPEED);
+					tooltipText = language[3493];
+					break;
+				case EFF_SHAPESHIFT:
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						switch ( players[clientnum]->entity->effectShapeshift )
+						{
+							case RAT:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_RAT_FORM);
+								tooltipText = language[3854];
+								break;
+							case TROLL:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLL_FORM);
+								tooltipText = language[3855];
+								break;
+							case SPIDER:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPIDER_FORM);
+								tooltipText = language[3856];
+								break;
+							case CREATURE_IMP:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_IMP_FORM);
+								tooltipText = language[3857];
+								break;
+							default:
+								break;
+						}
+					}
 					break;
 				case EFF_VAMPIRICAURA:
 				{
@@ -392,7 +491,7 @@ void drawSustainedSpells()
 		}
 	}
 
-	if (!channeledSpells[clientnum].first)
+	if ( !channeledSpells[clientnum].first )
 	{
 		if ( currentTooltip )
 		{

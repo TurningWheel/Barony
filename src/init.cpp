@@ -841,7 +841,13 @@ int loadLanguage(char* lang)
 	// update item internal language entries.
 	for ( int c = 0; c < NUMITEMS; ++c )
 	{
-		if ( c > ARTIFACT_BOW )
+		if ( c > SPELLBOOK_DETECT_FOOD )
+		{
+			int newItems = c - SPELLBOOK_DETECT_FOOD - 1;
+			items[c].name_identified = language[3500 + newItems * 2];
+			items[c].name_unidentified = language[3501 + newItems * 2];
+		}
+		else if ( c > ARTIFACT_BOW )
 		{
 			int newItems = c - ARTIFACT_BOW - 1;
 			items[c].name_identified = language[2200 + newItems * 2];
@@ -952,12 +958,15 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		// print a loading message
 		if ( start == 0 && end == nummodels )
 		{
-			drawClearBuffers();
-			int w, h;
-			TTF_SizeUTF8(ttf16, loadText, &w, &h);
-			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
+			if ( c % 50 == 0 )
+			{
+				drawClearBuffers();
+				int w, h;
+				TTF_SizeUTF8(ttf16, loadText, &w, &h);
+				ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
 
-			GO_SwapBuffers(screen);
+				GO_SwapBuffers(screen);
+			}
 		}
 		numquads = 0;
 		polymodels[c].numfaces = 0;
@@ -2135,7 +2144,7 @@ int deinitApp()
 	printlog("freeing sounds...\n");
 	if ( sounds != NULL )
 	{
-		for ( c = 0; c < numsounds; c++ )
+		for ( c = 0; c < numsounds && !no_sound; c++ )
 		{
 			if (sounds[c] != NULL)
 			{

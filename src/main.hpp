@@ -25,6 +25,7 @@ typedef double real_t;
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
 #include "Config.hpp"
 #include "physfs.h"
 
@@ -37,6 +38,7 @@ extern bool showfirst;
 extern bool logCheckObstacle;
 extern int logCheckObstacleCount;
 extern bool logCheckMainLoopTimers;
+extern bool autoLimbReload;
 
 #include <dirent.h>
 #include <stdlib.h>
@@ -509,7 +511,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 3450
+#define NUMLANGENTRIES 3950
 extern char languageCode[32];
 extern char** language;
 
@@ -578,6 +580,15 @@ extern char tempstr[1024];
 extern Sint8 minimap[64][64];
 extern Uint32 mapseed;
 extern bool* shoparea;
+extern real_t globalLightModifier;
+extern real_t globalLightTelepathyModifier;
+extern int globalLightModifierActive;
+enum LightModifierValues : int
+{
+	GLOBAL_LIGHT_MODIFIER_STOPPED,
+	GLOBAL_LIGHT_MODIFIER_INUSE,
+	GLOBAL_LIGHT_MODIFIER_DISSIPATING
+};
 
 // function prototypes for main.c:
 int sgn(real_t x);
@@ -664,7 +675,7 @@ static const Uint32 cacheLimit = 8096;
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
-static const int NUM_STEAM_STATISTICS = 19;
+static const int NUM_STEAM_STATISTICS = 43;
 extern CSteamLeaderboards* g_SteamLeaderboards;
 extern CSteamWorkshop* g_SteamWorkshop;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];

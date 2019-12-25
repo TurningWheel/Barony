@@ -76,7 +76,32 @@ SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 	{ 16, STEAM_STAT_INT, "STAT_BARFIGHT_CHAMP" },
 	{ 17, STEAM_STAT_INT, "STAT_VOLATILE" },
 	{ 18, STEAM_STAT_INT, "STAT_SURROGATES" },
-	{ 19, STEAM_STAT_INT, "STAT_KILL_COMMAND" }
+	{ 19, STEAM_STAT_INT, "STAT_KILL_COMMAND" },
+	{ 20, STEAM_STAT_INT, "STAT_TRASH_COMPACTOR" },
+	{ 21, STEAM_STAT_INT, "STAT_SPICY" },
+	{ 22, STEAM_STAT_INT, "STAT_SERIAL_THRILLA" },
+	{ 23, STEAM_STAT_INT, "STAT_TRADITION" },
+	{ 24, STEAM_STAT_INT, "STAT_POP_QUIZ" },
+	{ 25, STEAM_STAT_INT, "STAT_DYSLEXIA" },
+	{ 26, STEAM_STAT_INT, "STAT_BOOKWORM" },
+	{ 27, STEAM_STAT_INT, "STAT_MONARCH" },
+	{ 28, STEAM_STAT_INT, "STAT_SUPER_SHREDDER" },
+	{ 29, STEAM_STAT_INT, "STAT_FIXER_UPPER" },
+	{ 30, STEAM_STAT_INT, "STAT_TORCHERER" },
+	{ 31, STEAM_STAT_INT, "STAT_MANY_PEDI_PALP" },
+	{ 32, STEAM_STAT_INT, "STAT_5000_SECOND_RULE" },
+	{ 33, STEAM_STAT_INT, "STAT_SOCIAL_BUTTERFLY" },
+	{ 34, STEAM_STAT_INT, "STAT_ROLL_THE_BONES" },
+	{ 35, STEAM_STAT_INT, "STAT_COWBOY_FROM_HELL" },
+	{ 36, STEAM_STAT_INT, "STAT_SELF_FLAGELLATION" },
+	{ 37, STEAM_STAT_INT, "STAT_CHOPPING_BLOCK" },
+	{ 38, STEAM_STAT_INT, "STAT_IF_YOU_LOVE_SOMETHING" },
+	{ 39, STEAM_STAT_INT, "STAT_RAGE_AGAINST" },
+	{ 40, STEAM_STAT_INT, "STAT_GUERILLA_RADIO" },
+	{ 41, STEAM_STAT_INT, "STAT_FASCIST" },
+	{ 42, STEAM_STAT_INT, "STAT_ITS_A_LIVING" },
+	{ 43, STEAM_STAT_INT, "STAT_OVERCLOCKED" }
+
 };
 SteamGlobalStat_t g_SteamGlobalStats[2] =
 {
@@ -140,12 +165,16 @@ list_t button_l;
 list_t light_l;
 Uint32 mapseed;
 bool* shoparea = nullptr;
+real_t globalLightModifier = 0.f;
+real_t globalLightTelepathyModifier = 0.f;
+int globalLightModifierActive = 0;
 
 // game variables
 bool shootmode = false;
 Sint8 minimap[64][64];
 bool loadnextlevel = false;
 int skipLevelsOnLoad = 0;
+Uint32 forceMapSeed = 0;
 bool loading = false;
 int currentlevel = 0, minotaurlevel = 0;
 bool secretlevel = false;

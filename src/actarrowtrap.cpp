@@ -15,6 +15,8 @@
 #include "entity.hpp"
 #include "sound.hpp"
 #include "collision.hpp"
+#include "items.hpp"
+#include "net.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -26,7 +28,10 @@
 -------------------------------------------------------------------------------*/
 
 #define ARROWTRAP_FIRED my->skill[0]
+#define ARROWTRAP_TYPE my->skill[1]
+#define ARROWTRAP_REFIRE my->skill[3]
 #define ARROWTRAP_AMBIENCE my->skill[6]
+#define ARROWTRAP_DISABLED my->skill[4]
 
 void actArrowTrap(Entity* my)
 {
@@ -42,8 +47,66 @@ void actArrowTrap(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	if ( ARROWTRAP_FIRED == 1 ) // shot my piece, time to die.
+	if ( ARROWTRAP_FIRED >= 10 ) // shot my piece, time to die.
 	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	if ( ARROWTRAP_DISABLED > 0 )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			ItemType quiver = static_cast<ItemType>(ARROWTRAP_TYPE);
+			int qty = 2 + (5 - ARROWTRAP_FIRED / 2); // 2 to 7
+			Entity* dropped = dropItemMonster(newItem(quiver, EXCELLENT, 0, qty, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr), my, nullptr, qty);
+			std::vector<std::pair<int, int>> freeTiles;
+			int x = my->x / 16;
+			int y = my->y / 16;
+			if ( (x + 1) >= 0 && (x + 1) < map.width && y >= 0 && y < map.height )
+			{
+				if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x + 1) * MAPLAYERS * map.height] )
+				{
+					freeTiles.push_back(std::make_pair(x + 1, y));
+				}
+			}
+			if ( (x - 1) >= 0 && (x - 1) < map.width && y >= 0 && y < map.height )
+			{
+				if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x - 1) * MAPLAYERS * map.height] )
+				{
+					freeTiles.push_back(std::make_pair(x - 1, y));
+				}
+			}
+			if ( x >= 0 && x < map.width && (y + 1) >= 0 && (y + 1) < map.height )
+			{
+				if ( !map.tiles[OBSTACLELAYER + (y + 1) * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					freeTiles.push_back(std::make_pair(x, y + 1));
+				}
+			}
+			if ( x >= 0 && x < map.width && (y - 1) >= 0 && (y - 1) < map.height )
+			{
+				if ( !map.tiles[OBSTACLELAYER + (y - 1) * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					freeTiles.push_back(std::make_pair(x, y - 1));
+				}
+			}
+			if ( !freeTiles.empty() )
+			{
+				std::pair<int, int> chosenTile = freeTiles[rand() % freeTiles.size()];
+				dropped->x += (chosenTile.first - x) * 8;
+				dropped->y += (chosenTile.second - y) * 8;
+				dropped->vel_x = (chosenTile.first - x);
+				if ( abs(dropped->vel_x) > 0.01 )
+				{
+					dropped->vel_x *= (5 + rand() % 11) / 10.0; //50% to 150%
+				}
+				dropped->vel_y = (chosenTile.second - y);
+				if ( abs(dropped->vel_y) > 0.01 )
+				{
+					dropped->vel_y *= (5 + rand() % 11) / 10.0; //50% to 150%
+				}
+			}
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -60,12 +123,49 @@ void actArrowTrap(Entity* my)
 		return;
 	}
 
+	Entity* targetToAutoHit = nullptr;
+
 	// received on signal
-	if ( my->skill[28] == 2)
+	if ( my->skill[28] == 2 || ARROWTRAP_DISABLED == -1 )
 	{
-		if ( !ARROWTRAP_FIRED )
+		if ( ARROWTRAP_FIRED % 2 == 1 ) // not ready to fire.
 		{
-			ARROWTRAP_FIRED = 1;
+			if ( ARROWTRAP_TYPE == QUIVER_LIGHTWEIGHT )
+			{
+				if ( ARROWTRAP_REFIRE > 0 )
+				{
+					--ARROWTRAP_REFIRE;
+					if ( ARROWTRAP_REFIRE == 0 )
+					{
+						++ARROWTRAP_FIRED;
+					}
+				}
+			}
+		}
+		if ( ARROWTRAP_DISABLED == -1 )
+		{
+			ARROWTRAP_DISABLED = 0;
+			if ( ARROWTRAP_FIRED % 2 == 1 )
+			{
+				ARROWTRAP_FIRED++;
+			}
+			ARROWTRAP_REFIRE = 0;
+			// misfire from a lockpick, try to find a nearby target.
+			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity && entity->behavior == &actPlayer && entityDist(my, entity) < TOUCHRANGE )
+				{
+					targetToAutoHit = entity;
+					break;
+				}
+			}
+		}
+
+		if ( ARROWTRAP_FIRED % 2 == 0 && ARROWTRAP_REFIRE <= 0 )
+		{
+			ARROWTRAP_FIRED++;
+			ARROWTRAP_REFIRE = 5;
 			for ( c = 0; c < 4; c++ )
 			{
 				switch ( c )
@@ -87,7 +187,15 @@ void actArrowTrap(Entity* my)
 						y = -12;
 						break;
 				}
-				if ( !checkObstacle(my->x + x, my->y + y, my, NULL) )
+				int checkx = (my->x + x) / 16;
+				int checky = (my->y + y) / 16;
+				if ( !(checkx >= 0 && checkx < map.width && checky >= 0 && checky < map.height) )
+				{
+					// out of bounds.
+					continue;
+				}
+				int index = checky * MAPLAYERS + checkx * MAPLAYERS * map.height;
+				if ( !map.tiles[OBSTACLELAYER + index] )
 				{
 					Entity* entity = newEntity(166, 1, map.entities, nullptr); // arrow
 					playSoundEntity(my, 239 + rand() % 3, 96);
@@ -103,12 +211,84 @@ void actArrowTrap(Entity* my)
 					entity->flags[PASSABLE] = true;
 
 					// arrow power
-					entity->skill[3] = 17;
-
-					// causes poison for six seconds
-					entity->skill[4] = 360;
+					entity->arrowPower = 17;
+					if ( currentlevel >= 10 )
+					{
+						entity->arrowPower += currentlevel - 10;
+					}
+					switch ( ARROWTRAP_TYPE )
+					{
+						case QUIVER_SILVER:
+							entity->sprite = 924;
+							break;
+						case QUIVER_PIERCE:
+							entity->arrowArmorPierce = 2;
+							entity->sprite = 925;
+							break;
+						case QUIVER_LIGHTWEIGHT:
+							entity->sprite = 926;
+							ARROWTRAP_REFIRE = 50;
+							break;
+						case QUIVER_FIRE:
+							entity->sprite = 927;
+							break;
+						case QUIVER_KNOCKBACK:
+							entity->sprite = 928;
+							break;
+						case QUIVER_CRYSTAL:
+							entity->sprite = 929;
+							break;
+						case QUIVER_HUNTING:
+							entity->sprite = 930;
+							// causes poison for six seconds
+							entity->arrowPoisonTime = 360;
+							break;
+						default:
+							break;
+					}
+					entity->arrowQuiverType = ARROWTRAP_TYPE;
+					entity->arrowSpeed = 7;
+					entity->vel_x = cos(entity->yaw) * entity->arrowSpeed;
+					entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
+					if ( multiplayer == SERVER )
+					{
+						entity->skill[2] = -(1000 + TOOL_SENTRYBOT); // invokes actArrow for clients.
+						entity->arrowShotByWeapon = TOOL_SENTRYBOT;
+					}
+					if ( targetToAutoHit )
+					{
+						/*entity->x = targetToAutoHit->x;
+						entity->y = targetToAutoHit->y;*/
+						if ( rand() % 2 == 0 )
+						{
+							double tangent = atan2(entity->y - targetToAutoHit->y, entity->x - targetToAutoHit->x);
+							entity->yaw = tangent + PI;
+							entity->vel_x = cos(entity->yaw) * entity->arrowSpeed;
+							entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
+							targetToAutoHit = nullptr;
+						}
+						else if ( rand() % 2 == 0 )
+						{
+							entity->yaw = entity->yaw - PI / 12 + (0.1 * (rand() % 11) * (PI / 6)); // -/+ PI/12 range
+							entity->vel_x = cos(entity->yaw) * entity->arrowSpeed;
+							entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
+							targetToAutoHit = nullptr;
+						}
+					}
 				}
 			}
+		}
+	}
+	else
+	{
+		if ( ARROWTRAP_REFIRE > 0 )
+		{
+			--ARROWTRAP_REFIRE;
+		}
+		else if ( ARROWTRAP_FIRED % 2 == 1 )
+		{
+			// fired, time to reload.
+			ARROWTRAP_FIRED++;
 		}
 	}
 }

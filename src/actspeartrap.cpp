@@ -123,7 +123,7 @@ void actSpearTrap(Entity* my)
 						Stat* stats = entity->getStats();
 						if ( stats )
 						{
-							if ( entityInsideEntity(my, entity) )
+							if ( !entity->flags[PASSABLE] && entityInsideEntity(my, entity) )
 							{
 								// do damage!
 								if ( entity->behavior == &actPlayer )
@@ -149,7 +149,13 @@ void actSpearTrap(Entity* my)
 								playSoundEntity(entity, 28, 64);
 								spawnGib(entity);
 								entity->modHP(-50);
-
+								if ( stats->HP <= 0 )
+								{
+									if ( stats->type == AUTOMATON )
+									{
+										entity->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
+									}
+								}
 								// set obituary
 								entity->setObituary(language[1507]);
 							}

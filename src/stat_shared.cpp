@@ -30,7 +30,10 @@ Stat::Stat(Sint32 sprite) :
 	playerSummon2LVLHP(MISC_FLAGS[9]),
 	playerSummon2STRDEXCONINT(MISC_FLAGS[10]),
 	playerSummon2PERCHR(MISC_FLAGS[11]),
-	monsterIsCharmed(MISC_FLAGS[12])
+	monsterIsCharmed(MISC_FLAGS[12]),
+	playerShapeshiftStorage(MISC_FLAGS[13]),
+	monsterTinkeringStatus(MISC_FLAGS[14]),
+	monsterDemonHasBeenExorcised(MISC_FLAGS[15])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");
@@ -690,8 +693,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EXP = 0;
 			stats->LVL = 25;
 			stats->HUNGER = 900;
-			stats->GOLD = 100;
-			stats->RANDOM_GOLD = 50;
+			stats->GOLD = 0;
+			stats->RANDOM_GOLD = 0;
 			stats->PROFICIENCIES[PRO_SWORD] = 90;
 			stats->PROFICIENCIES[PRO_MACE] = 90;
 			stats->PROFICIENCIES[PRO_AXE] = 90;
@@ -1204,6 +1207,57 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 10; //Random Items
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 25; //Random Items
+			break;
+		case (1000 + SENTRYBOT):
+		case (1000 + SPELLBOT):
+			if ( sprite == 1000 + SENTRYBOT )
+			{
+				stats->type = SENTRYBOT;
+			}
+			else if ( sprite == 1000 + SPELLBOT )
+			{
+				stats->type = SPELLBOT;
+			}
+			stats->MAXHP = 50;
+			stats->HP = stats->MAXHP;
+			stats->MAXMP = 50;
+			stats->MP = stats->MAXMP;
+			stats->OLDHP = stats->HP;
+			stats->PROFICIENCIES[PRO_RANGED] = 80;
+			stats->STR = 0;
+			stats->DEX = 0;
+			stats->CON = 0;
+			stats->PER = 0;
+			stats->CHR = 0;
+			stats->EXP = 0;
+			stats->LVL = 1;
+			break;
+		case (1000 + DUMMYBOT):
+			stats->type = DUMMYBOT;
+			stats->MAXHP = 50;
+			stats->HP = stats->MAXHP;
+			stats->MAXMP = 10;
+			stats->MP = stats->MAXMP;
+			stats->OLDHP = stats->HP;
+			stats->STR = 0;
+			stats->DEX = 0;
+			stats->CON = 3;
+			stats->PER = 0;
+			stats->CHR = 0;
+			stats->EXP = 0;
+			stats->LVL = 1;
+			break;
+		case (1000 + GYROBOT):
+			stats->HP = 10;
+			stats->HP = stats->MAXHP;
+			stats->OLDHP = stats->HP;
+			stats->STR = 0;
+			stats->DEX = 5;
+			stats->CON = 0;
+			stats->PER = 0;
+			stats->CHR = 0;
+			stats->EXP = 0;
+			stats->LVL = 1;
 			break;
 		case 10:
 		default:

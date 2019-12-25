@@ -498,6 +498,10 @@ void physfsReloadBooks()
 			{
 				if ( books[c] )
 				{
+					if ( books[c]->name )
+					{
+						free(books[c]->name);
+					}
 					if ( books[c]->text )
 					{
 						free(books[c]->text);

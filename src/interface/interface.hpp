@@ -42,6 +42,7 @@ extern char enemy_name[128];
 extern Sint32 enemy_hp, enemy_maxhp, enemy_oldhp;
 extern Uint32 enemy_timer, enemy_lastuid;
 extern Uint32 enemy_bar_color[MAXPLAYERS];
+extern int magicBoomerangHotbarSlot;
 
 #ifndef SHOPWINDOW_SIZE
 #define SHOPWINDOW_SIZE
@@ -70,6 +71,9 @@ extern SDL_Surface* status_bmp;
 extern SDL_Surface* character_bmp;
 extern SDL_Surface* hunger_bmp;
 extern SDL_Surface* hunger_blood_bmp;
+extern SDL_Surface* hunger_boiler_bmp;
+extern SDL_Surface* hunger_boiler_hotflame_bmp;
+extern SDL_Surface* hunger_boiler_flame_bmp;
 extern SDL_Surface* minotaur_bmp;
 extern SDL_Surface* textup_bmp;
 extern SDL_Surface* textdown_bmp;
@@ -80,6 +84,7 @@ extern SDL_Surface* inventory_bmp, *inventoryoption_bmp, *inventoryoptionChest_b
 extern SDL_Surface* itembroken_bmp;
 //extern SDL_Surface *category_bmp[NUMCATEGORIES];
 extern SDL_Surface* shopkeeper_bmp;
+extern SDL_Surface* shopkeeper2_bmp;
 extern SDL_Surface* damage_bmp;
 extern int textscroll;
 extern int attributespage;
@@ -138,6 +143,7 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft); // sort in
 void autosortInventory();
 bool mouseInsidePlayerInventory();
 bool mouseInsidePlayerHotbar();
+bool playerLearnedSpellbook(Item* current_item);
 extern Uint32 itemMenuItem;
 extern bool itemMenuOpen;
 extern int itemMenuSelected;
@@ -270,7 +276,9 @@ enum GUICurrentType
 {
 	GUI_TYPE_NONE,
 	GUI_TYPE_REPAIR,
-	GUI_TYPE_ALCHEMY
+	GUI_TYPE_ALCHEMY,
+	GUI_TYPE_TINKERING,
+	GUI_TYPE_SCRIBING
 };
 
 // Generic GUI Stuff (repair/alchemy)
@@ -290,11 +298,44 @@ public:
 	bool guiActive;
 	int selectedSlot;
 
+	// Repair
+	int repairItemType;
+	
 	// Alchemy
 	Item* basePotion;
 	Item* secondaryPotion;
 	Item* alembicItem;
 	bool experimentingAlchemy;
+
+	// Tinkering
+	enum TinkeringFilter
+	{
+		TINKER_FILTER_ALL,
+		TINKER_FILTER_CRAFTABLE,
+		TINKER_FILTER_SALVAGEABLE,
+		TINKER_FILTER_REPAIRABLE
+	};
+	Item* tinkeringKitItem;
+	list_t tinkeringTotalItems;
+	node_t* tinkeringTotalLastCraftableNode;
+	TinkeringFilter tinkeringFilter;
+	std::unordered_set<Uint32> tinkeringMetalScrap;
+	std::unordered_set<Uint32> tinkeringMagicScrap;
+	Item* tinkeringAutoSalvageKitItem;
+	Item* tinkeringAutoSalvageThisItem;
+	Uint32 tinkeringSfxLastTicks = 0;
+
+	// Scribing
+	Item* scribingToolItem;
+	list_t scribingTotalItems;
+	node_t* scribingTotalLastCraftableNode;
+	Item* scribingBlankScrollTarget;
+	enum ScribingFilter
+	{
+		SCRIBING_FILTER_CRAFTABLE,
+		SCRIBING_FILTER_REPAIRABLE
+	};
+	ScribingFilter scribingFilter;
 
 	GenericGUIMenu() :
 		guiActive(false),
@@ -306,19 +347,36 @@ public:
 		basePotion(nullptr),
 		secondaryPotion(nullptr),
 		alembicItem(nullptr),
-		experimentingAlchemy(false)
+		experimentingAlchemy(nullptr),
+		tinkeringKitItem(nullptr),
+		tinkeringTotalLastCraftableNode(nullptr),
+		tinkeringFilter(TINKER_FILTER_ALL),
+		tinkeringAutoSalvageKitItem(nullptr),
+		tinkeringAutoSalvageThisItem(nullptr),
+		scribingFilter(SCRIBING_FILTER_CRAFTABLE),
+		scribingToolItem(nullptr),
+		scribingTotalLastCraftableNode(nullptr),
+		scribingBlankScrollTarget(nullptr),
+		scribingLastUsageAmount(0),
+		scribingLastUsageDisplayTimer(0),
+		repairItemType(0)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
 			itemsDisplayed[i] = nullptr;
 		}
+		tinkeringTotalItems.first = nullptr;
+		tinkeringTotalItems.last = nullptr;
+		scribingTotalItems.first = nullptr;
+		scribingTotalItems.last = nullptr;
 	};
 
 	void warpMouseToSelectedSlot();
 	void selectSlot(int slot);
 	void closeGUI();
-	void openGUI(int type, int scrollBeatitude);
+	void openGUI(int type, int scrollBeatitude, int scrollType);
 	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
+	void openGUI(int type, Item* itemOpenedWith);
 	inline Item* getItemInfo(int slot);
 	void updateGUI();
 	void rebuildGUIInventory();
@@ -328,7 +386,7 @@ public:
 
 	// repair menu funcs
 	void repairItem(Item* item);
-	bool isItemRepairable(const Item* item);
+	bool isItemRepairable(const Item* item, int repairScroll);
 
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
@@ -338,10 +396,61 @@ public:
 	bool isItemSecondaryIngredient(int type);
 	void alchemyLearnRecipeOnLevelUp(int skill);
 
+	// tinkering menu foncs
+	bool tinkeringSalvageItem(Item* item, bool outsideInventory, int player);
+	bool tinkeringCraftItem(Item* item);
+	void tinkeringCreateCraftableItemList();
+	void tinkeringFreeLists();
+	bool isItemSalvageable(const Item* item, int player);
+	bool tinkeringGetItemValue(const Item* item, int* metal, int* magic);
+	bool tinkeringGetCraftingCost(const Item* item, int* metal, int* magic);
+	bool tinkeringPlayerCanAffordCraft(const Item* item);
+	Item* tinkeringCraftItemAndConsumeMaterials(const Item* item);
+	int tinkeringPlayerHasSkillLVLToCraft(const Item* item);
+	bool tinkeringKitDegradeOnUse(int player);
+	Item* tinkeringKitFindInInventory();
+	bool tinkeringKitRollIfShouldBreak();
+	bool tinkeringGetRepairCost(Item* item, int* metal, int* magic);
+	bool tinkeringIsItemRepairable(Item* item, int player);
+	bool tinkeringIsItemUpgradeable(const Item* item);
+	bool tinkeringRepairItem(Item* item);
+	int tinkeringUpgradeMaxStatus(Item* item);
+	bool tinkeringConsumeMaterialsForRepair(Item* item, bool upgradingItem);
+	bool tinkeringPlayerCanAffordRepair(Item* item);
+	int tinkeringRepairGeneralItemSkillRequirement(Item* item);
+	bool tinkeringPlayerHasMaterialsInventory(int metal, int magic);
+	Uint32 tinkeringRetrieveLeastScrapStack(int type);
+	int tinkeringCountScrapTotal(int type);
+
+	void scribingCreateCraftableItemList();
+	void scribingFreeLists();
+	int scribingToolDegradeOnUse(Item* itemUsedWith);
+	Item* scribingToolFindInInventory();
+	bool scribingWriteItem(Item* item);
+	int scribingLastUsageAmount;
+	int scribingLastUsageDisplayTimer;
+
 	inline bool isGUIOpen()
 	{
 		return guiActive;
 	};
+	inline bool isNodeTinkeringCraftableItem(node_t* node)
+	{
+		if ( !node )
+		{
+			return false;
+		}
+		return (node->list == &tinkeringTotalItems);
+	};
+	inline bool isNodeScribingCraftableItem(node_t* node)
+	{
+		if ( !node )
+		{
+			return false;
+		}
+		return (node->list == &scribingTotalItems);
+	};
+	bool isNodeFromPlayerInventory(node_t* node);
 };
 extern GenericGUIMenu GenericGUI;
 
@@ -432,8 +541,20 @@ typedef struct hotbar_slot_t
 #define HOTBAR_SPELL 2
 
 static const unsigned NUM_HOTBAR_SLOTS = 10; //NOTE: If you change this, you must dive into drawstatus.c and update the hotbar code. It expects 10.
+static const unsigned NUM_HOTBAR_ALTERNATES = 5;
 extern hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
+extern hotbar_slot_t hotbar_alternate[NUM_HOTBAR_ALTERNATES][NUM_HOTBAR_SLOTS];
+extern int swapHotbarOnShapeshift;
+extern bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES];
 extern int current_hotbar; //For use with gamepads and stuff because no hotkeys like a keyboard.
+enum HotbarLoadouts : int
+{
+	HOTBAR_DEFAULT,
+	HOTBAR_RAT,
+	HOTBAR_SPIDER,
+	HOTBAR_TROLL,
+	HOTBAR_IMP
+};
 
 extern SDL_Surface* hotbar_img; //A 64x64 slot.
 extern SDL_Surface* hotbar_spell_img; //Drawn when a spell is in the hotbar. TODO: Replace with unique images for every spell. (Or draw this by default if none found?)
@@ -519,11 +640,20 @@ public:
 	Uint8 player;
 	Uint8 x;
 	Uint8 y;
+	bool radiusPing;
 	MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y) :
 		tickStart(tickStart),
 		player(player),
 		x(x),
-		y(y) {}
+		y(y),
+		radiusPing(false) {}
+
+	MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y, bool radiusPing) :
+		tickStart(tickStart),
+		player(player),
+		x(x),
+		y(y),
+		radiusPing(radiusPing) {}
 };
 
 extern std::vector<MinimapPing> minimapPings;
@@ -591,6 +721,10 @@ public:
 	bool allowedInteractWorld(int monsterType);
 	bool allowedInteractItems(int monsterType);
 	bool attackCommandOnly(int monsterType);
+	void monsterGyroBotConvertCommand(int* option);
+	bool monsterGyroBotOnlyCommand(int option);
+	bool monsterGyroBotDisallowedCommands(int option);
+	bool isTinkeringFollower(int type);
 };
 extern FollowerRadialMenu FollowerMenu;
 extern SDL_Rect interfaceSkillsSheet;

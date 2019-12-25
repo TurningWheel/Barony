@@ -84,7 +84,7 @@ void actWallBuilder(Entity* my)
 			for ( node_t* node = currentList->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1 || entity->behavior != &actMonster || entity->behavior != &actPlayer )
+				if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1 || (entity->behavior != &actMonster && entity->behavior != &actPlayer) )
 				{
 					continue;
 				}
@@ -97,7 +97,19 @@ void actWallBuilder(Entity* my)
 							if ( my->y - 8 < entity->y + entity->sizey )
 							{
 								somebodyinside = true;
-								break;
+								if ( entity->behavior == &actMonster )
+								{
+									if ( !strncmp(map.name, "Sanctum", 7)
+										|| !strncmp(map.name, "Boss", 4) )
+									{
+										// on boss maps let monsters get stuck
+										somebodyinside = false;
+									}
+								}
+								if ( somebodyinside )
+								{
+									break;
+								}
 							}
 						}
 					}

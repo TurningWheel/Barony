@@ -23,6 +23,7 @@
 #include "monster.hpp"
 #include "player.hpp"
 #include "collision.hpp"
+#include "scores.hpp"
 
 bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {
@@ -97,10 +98,13 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			}
 			else
 			{
-				entity->modHP(5 * item->beatitude);
+				if ( stats->type != AUTOMATON )
+				{
+					entity->modHP(5 * item->beatitude);
+					playSoundEntity(entity, 168, 128);
+					spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+				}
 				playSoundEntity(entity, 52, 64);
-				playSoundEntity(entity, 168, 128);
-				spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 			}
 		}
 		else
@@ -121,16 +125,40 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			if ( stats && stats->EFFECTS[EFF_POLYMORPH] )
 			{
-				entity->setEffect(EFF_POLYMORPH, false, 0, true);
-				entity->effectPolymorph = 0;
-				serverUpdateEntitySkill(entity, 50);
+				if ( stats->EFFECTS[EFF_POLYMORPH] )
+				{
+					entity->setEffect(EFF_POLYMORPH, false, 0, true);
+					entity->effectPolymorph = 0;
+					serverUpdateEntitySkill(entity, 50);
 
-				messagePlayer(player, language[3192]);
-				messagePlayer(player, language[3185]);
+					messagePlayer(player, language[3192]);
+					messagePlayer(player, language[3185]);
+				}
+				/*if ( stats->EFFECTS[EFF_SHAPESHIFT] )
+				{
+					entity->setEffect(EFF_SHAPESHIFT, false, 0, true);
+					entity->effectShapeshift = 0;
+					serverUpdateEntitySkill(entity, 53);
 
+					messagePlayer(player, language[3418]);
+					messagePlayer(player, language[3417]);
+				}*/
 				playSoundEntity(entity, 400, 92);
 				createParticleDropRising(entity, 593, 1.f);
 				serverSpawnMiscParticles(entity, PARTICLE_EFFECT_RISING_DROP, 593);
+			}
+			if ( stats->type == AUTOMATON )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+				messagePlayerColor(player, color, language[3700]);
+				stats->HUNGER -= 200; //Lose boiler
+				int mpAmount = 3 + rand() % 6;
+				if ( item->beatitude > 0 )
+				{
+					mpAmount += 2 + rand() % 4;
+				}
+				players[player]->entity->modMP(mpAmount); //Raise temperature because steam.
+				serverUpdateHunger(player);
 			}
 		}
 		if ( player != clientnum )
@@ -152,7 +180,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			camera_shakex += .1;
 			camera_shakey += 10;
 		}
-		else
+		else if ( stats->type != AUTOMATON )
 		{
 			messagePlayer(player, language[752]);
 		}
@@ -178,7 +206,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			camera_shakex += .1;
 			camera_shakey += 10;
 		}
-		else
+		else if ( stats->type != AUTOMATON )
 		{
 			messagePlayer(player, language[753]);
 		}
@@ -453,8 +481,29 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	{
 		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
 	}
-	stats->HUNGER += 100;
+
+	if ( svFlags & SV_FLAG_HUNGER )
+	{
+		stats->HUNGER += 100;
+		if ( entity->behavior == &actPlayer )
+		{
+			if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			{
+				stats->HUNGER += 250;
+			}
+		}
+	}
+	else
+	{
+		// hunger off.
+		if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+		{
+			entity->modMP(5 * (1 + item->beatitude));
+		}
+	}
 	entity->modHP(5 * (1 + item->beatitude));
+	// results of eating
+	updateHungerMessages(entity, stats, item);
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -567,16 +616,58 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			stats->EFFECTS_TIMERS[EFF_DRUNK] = 1000 + rand() % 300;
 		}
-		stats->HUNGER += 50;
 		entity->modHP(5);
+
+		if ( svFlags & SV_FLAG_HUNGER )
+		{
+			stats->HUNGER += 50;
+			if ( entity->behavior == &actPlayer )
+			{
+				if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+				{
+					stats->HUNGER += 200;
+				}
+			}
+		}
+		else
+		{
+			// hunger off.
+			if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			{
+				entity->modMP(5);
+			}
+		}
+
 		serverUpdateEffects(player);
 	}
 	else
 	{
 		messagePlayer(player, language[760]);
-		stats->HUNGER += 50;
 		entity->modHP(5 * (1 + item->beatitude));
+
+		if ( svFlags & SV_FLAG_HUNGER )
+		{
+			stats->HUNGER += 50;
+			if ( entity->behavior == &actPlayer )
+			{
+				if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+				{
+					stats->HUNGER += 200;
+				}
+			}
+		}
+		else
+		{
+			// hunger off.
+			if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			{
+				entity->modMP(5 * (1 + item->beatitude));
+			}
+		}
 	}
+
+	// results of eating
+	updateHungerMessages(entity, stats, item);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -827,7 +918,8 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	messagePlayerColor(player, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 	{
-		if ( !(c == EFF_VAMPIRICAURA && stats->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+		if ( !(c == EFF_VAMPIRICAURA && stats->EFFECTS_TIMERS[c] == -2) 
+			&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 		{
 			stats->EFFECTS[c] = false;
 			stats->EFFECTS_TIMERS[c] = 0;
@@ -917,7 +1009,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 		return true;
 	}
 
-	if ( entity->behavior == &actMonster && !entity->isBossMonsterOrBossMap() )
+	if ( entity->behavior == &actMonster && !entity->isBossMonster() )
 	{
 		entity->monsterReleaseAttackTarget();
 	}
@@ -1004,7 +1096,7 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 			Entity* creature = (Entity*)node->element;
 			if ( creature && creature->behavior == &actMonster && creature->monsterTarget == entity->getUID() )
 			{
-				if ( !creature->isBossMonsterOrBossMap() )
+				if ( !creature->isBossMonster() )
 				{
 					//Abort if invalid creature (boss, shopkeep, etc).
 					real_t dist = entityDist(entity, creature);
@@ -1178,7 +1270,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[2902]);
 			stats->EFFECTS[EFF_SLOW] = true;
-			stats->EFFECTS_TIMERS[EFF_SLOW] = 600;
+			stats->EFFECTS_TIMERS[EFF_SLOW] = 1800;
 		}
 	}
 	else
@@ -1187,10 +1279,10 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[768]);
 			stats->EFFECTS[EFF_FAST] = true;
-			stats->EFFECTS_TIMERS[EFF_FAST] = 600;
+			stats->EFFECTS_TIMERS[EFF_FAST] += 3000;
 			if ( item->beatitude > 0 )
 			{
-				stats->EFFECTS_TIMERS[EFF_FAST] += 600 * item->beatitude;
+				stats->EFFECTS_TIMERS[EFF_FAST] += 3000 * item->beatitude;
 			}
 		}
 		else
@@ -1287,7 +1379,7 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 		stats->EFFECTS_TIMERS[EFF_POTION_STR] = 3000; // 60 seconds
 		if ( item->beatitude > 0 )
 		{
-			stats->EFFECTS_TIMERS[EFF_POTION_STR] += 1500 * item->beatitude; // 30 seconds each blessing
+			stats->EFFECTS_TIMERS[EFF_POTION_STR] += 3000 * item->beatitude; // 60 seconds each blessing
 		}
 	}
 	serverUpdateEffects(player);
@@ -1440,13 +1532,23 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	}
 	if ( multiplayer == CLIENT || player == 0 )
 	{
-		camera_shakex += .1;
-		camera_shakey += 10;
+		if ( player == clientnum )
+		{
+			camera_shakex += .1;
+			camera_shakey += 10;
+		}
 		if ( multiplayer == CLIENT )
 		{
 			consumeItem(item, player);
 			return true;
 		}
+	}
+
+	bool playerAutomatonDrink = false;
+	if ( item->type == POTION_FIRESTORM && !thrownPotion && usedBy && usedBy == entity
+		&& usedBy->behavior == &actPlayer && stats->type == AUTOMATON )
+	{
+		playerAutomatonDrink = true;
 	}
 
 	int damage = (10 + 5 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
@@ -1459,9 +1561,16 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	{
 		damage -= (rand() % (1 + chance));
 	}
-	messagePlayer(player, language[770]);
-	entity->modHP(-damage);
-	playSoundEntity(entity, 28, 64);
+	if ( playerAutomatonDrink )
+	{
+		damage = 0;
+	}
+	else
+	{
+		messagePlayer(player, language[770]);
+		entity->modHP(-damage);
+		playSoundEntity(entity, 28, 64);
+	}
 
 	// set obituary
 	entity->setObituary(language[1535]);
@@ -1476,7 +1585,29 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	}
 	if ( item->type == POTION_FIRESTORM )
 	{
-		spawnMagicTower(usedBy, x, y, SPELL_FIREBALL, entity);
+		if ( playerAutomatonDrink )
+		{
+			spawnMagicTower(usedBy, x, y, SPELL_FIREBALL, nullptr);
+			stats->HUNGER = std::min(stats->HUNGER + 1500, 1500);
+			players[player]->entity->modMP(stats->MAXMP);
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+			messagePlayerColor(player, color, language[3699]); // superheats
+			serverUpdateHunger(player);
+			for ( int c = 0; c < 100; c++ )
+			{
+				Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
+				entity->sprite = 16;
+				double vel = rand() % 10;
+				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_z = vel * sin(entity->pitch) * .2;
+				entity->skill[0] = 5 + rand() % 10;
+			}
+		}
+		else
+		{
+			spawnMagicTower(usedBy, x, y, SPELL_FIREBALL, entity);
+		}
 	}
 	else if ( item->type == POTION_ICESTORM )
 	{
@@ -1962,6 +2093,22 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	entity->modMP(amount);
 
+	if ( svFlags & SV_FLAG_HUNGER )
+	{
+		if ( player >= 0 && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+		{
+			Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
+			Sint32 oldHunger = stats->HUNGER;
+			stats->HUNGER += amount * hungerPointPerMana;
+			stats->HUNGER = std::min(999, stats->HUNGER);
+			updateHungerMessages(entity, stats, item);
+			if ( player > 0 )
+			{
+				serverUpdateHunger(player);
+			}
+		}
+	}
+
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 
@@ -2037,7 +2184,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
 	{
-		transformedEntity = spellEffectPolymorph(entity, stats, usedBy);
+		transformedEntity = spellEffectPolymorph(entity, stats, usedBy, false);
 	}
 
 	consumeItem(item, player);
@@ -2713,22 +2860,22 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	consumeItem(item, player);
 }
 
-void item_ScrollFire(Item* item, int player)
+bool item_ScrollFire(Item* item, int player)
 {
 	if (multiplayer == CLIENT)
 	{
-		return;
+		return false;
 	}
 
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
-		return;
+		return false;
 	}
 
 	if (players[player]->entity->isBlind())
 	{
 		messagePlayer(player, language[775]);
-		return;
+		return false;
 	}
 
 	if (player == clientnum)
@@ -2736,12 +2883,16 @@ void item_ScrollFire(Item* item, int player)
 		conductIlliterate = false;
 	}
 
-	serverUpdatePlayerGameplayStats(player, STATISTICS_FIRE_MAYBE_DIFFERENT, 1);
+	if ( stats[player]->type != AUTOMATON )
+	{
+		serverUpdatePlayerGameplayStats(player, STATISTICS_FIRE_MAYBE_DIFFERENT, 1);
+	}
 
 	item->identified = 1;
 	if (item->beatitude < 0)
 	{
 		messagePlayer(player, language[863]);
+		return false;
 	}
 	else
 	{
@@ -2762,7 +2913,9 @@ void item_ScrollFire(Item* item, int player)
 			entity->vel_z = vel * sin(entity->pitch) * .2;
 			entity->skill[0] = 5 + rand() % 10;
 		}
+		return true;
 	}
+	return false;
 }
 
 void item_ScrollFood(Item* item, int player)
@@ -2827,6 +2980,53 @@ void item_ScrollFood(Item* item, int player)
 	else
 	{
 		messagePlayer(player, language[867]);
+	}
+}
+
+void item_ScrollConjureArrow(Item* item, int player)
+{
+	if ( players[player] == nullptr || players[player]->entity == nullptr )
+	{
+		return;
+	}
+
+	// this is a CLIENT function
+	if ( player != clientnum )
+	{
+		return;
+	}
+
+	if ( players[player]->entity->isBlind() )
+	{
+		messagePlayer(player, language[775]);
+		return;
+	}
+
+	if ( player == clientnum )
+	{
+		conductIlliterate = false;
+	}
+	item->identified = 1;
+	messagePlayer(player, language[848]);
+	messagePlayer(player, language[3762]);
+	ItemType type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
+
+	int amount = 20 + rand() % 6;
+	if ( item->beatitude < 0 )
+	{
+		amount -= (15  + rand() % 6);
+	}
+	else if ( item->beatitude > 0 )
+	{
+		amount += 20 + rand() % 6;
+	}
+	dropItem(newItem(type, SERVICABLE, item->beatitude, amount, ITEM_GENERATED_QUIVER_APPEARANCE, false, &stats[player]->inventory), player, false);
+	if ( item->beatitude >= 2 )
+	{
+		// re-roll!
+		type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
+		amount = 40 + rand() % 11;
+		dropItem(newItem(type, SERVICABLE, item->beatitude, amount, ITEM_GENERATED_QUIVER_APPEARANCE, false, &stats[player]->inventory), player, false);
 	}
 }
 
@@ -2904,7 +3104,7 @@ void item_ScrollRepair(Item* item, int player)
 		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
 			Item* inventoryItem = (Item*)node->element;
-			if ( GenericGUI.isItemRepairable(inventoryItem) )
+			if ( GenericGUI.isItemRepairable(inventoryItem, item->type) )
 			{
 				foundRepairableItem = true;
 				break;
@@ -2912,7 +3112,14 @@ void item_ScrollRepair(Item* item, int player)
 		}
 		if ( !foundRepairableItem )
 		{
-			messagePlayer(player, language[3288]);
+			if ( item->type == SCROLL_REPAIR )
+			{
+				messagePlayer(player, language[3288]);
+			}
+			else if ( item->type == SCROLL_CHARGING )
+			{
+				messagePlayer(player, language[3731]);
+			}
 			return;
 		}
 	}
@@ -3004,7 +3211,14 @@ void item_ScrollRepair(Item* item, int player)
 		else if ( armor != nullptr )
 		{
 			messagePlayer(player, language[871], armor->getName());
-			armor->status = static_cast<Status>(std::max(armor->status - 2, static_cast<int>(BROKEN)));
+			if ( item->type == SCROLL_CHARGING )
+			{
+				armor->status = BROKEN;
+			}
+			else
+			{
+				armor->status = static_cast<Status>(std::max(armor->status - 2, static_cast<int>(BROKEN)));
+			}
 			if ( multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "REPA");
@@ -3047,7 +3261,7 @@ void item_ScrollRepair(Item* item, int player)
 	else
 	{
 		// Repair an item
-		GenericGUI.openGUI(GUI_TYPE_REPAIR, item->beatitude);
+		GenericGUI.openGUI(GUI_TYPE_REPAIR, item->beatitude, item->type);
 	}
 	consumeItem(item, player);
 }
@@ -3200,6 +3414,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 			}
 		}
 	}
+	consumeItem(item, player);
 }
 
 void item_ScrollTeleportation(Item* item, int player)
@@ -3555,6 +3770,10 @@ void item_ToolMirror(Item*& item, int player)
 		}
 		return;
 	}
+	else if ( stats[player] && stats[player]->type == AUTOMATON )
+	{
+		messagePlayer(player, language[3698]);
+	}
 
 	if (item->beatitude > 0 && !stats[player]->EFFECTS[EFF_GREASY])
 	{
@@ -3747,6 +3966,7 @@ void item_ToolBeartrap(Item*& item, int player)
 	entity->skill[12] = item->beatitude;
 	entity->skill[14] = item->appearance;
 	entity->skill[15] = item->identified;
+	entity->skill[17] = players[player]->entity->skill[2];
 	messagePlayer(player, language[906]);
 	consumeItem(item, player);
 	return;
@@ -3759,6 +3979,15 @@ void item_Food(Item*& item, int player)
 
 	if ( !stats[player] )
 	{
+		return;
+	}
+
+	if ( player >= 0 && stats[player]->type == AUTOMATON )
+	{
+		if ( players[player] && players[player]->entity )
+		{
+			item_FoodAutomaton(item, player);
+		}
 		return;
 	}
 
@@ -3875,6 +4104,15 @@ void item_Food(Item*& item, int player)
 		pukeChance = 1;
 	}
 
+	if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+	{
+		pukeChance = 100; // shapeshifted players don't puke
+	}
+	if ( player >= 0 && stats[player]->type == INSECTOID )
+	{
+		pukeChance = 100; // insectoids can eat anything.
+	}
+
 	if (((item->beatitude < 0 && item->type != FOOD_CREAMPIE) || (rand() % pukeChance == 0)) && pukeChance < 100)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
@@ -3894,9 +4132,14 @@ void item_Food(Item*& item, int player)
 		{
 			messagePlayer(player, language[908]);
 		}
-		if ( stats[player] && stats[player]->type != SKELETON )
+		if ( stats[player] && players[player] && players[player]->entity )
 		{
-			players[player]->entity->skill[26] = 40 + rand() % 10;
+			if ( stats[player]->type != SKELETON
+				&& players[player]->entity->effectShapeshift == NOTHING
+				&& stats[player]->type != AUTOMATON )
+			{
+				players[player]->entity->skill[26] = 40 + rand() % 10;
+			}
 		}
 		consumeItem(item, player);
 		return;
@@ -3915,52 +4158,95 @@ void item_Food(Item*& item, int player)
 	// replenish nutrition points
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
+		int hungerIncrease = 10;
 		switch ( item->type )
 		{
 			case FOOD_BREAD:
-				stats[player]->HUNGER += 400;
+				hungerIncrease = 400;
 				break;
 			case FOOD_CREAMPIE:
-				stats[player]->HUNGER += 200;
+				hungerIncrease = 200;
 				break;
 			case FOOD_CHEESE:
-				stats[player]->HUNGER += 100;
+				hungerIncrease = 100;
 				break;
 			case FOOD_APPLE:
-				stats[player]->HUNGER += 200;
+				hungerIncrease = 200;
 				break;
 			case FOOD_MEAT:
-				stats[player]->HUNGER += 600;
+				hungerIncrease = 600;
 				break;
 			case FOOD_FISH:
-				stats[player]->HUNGER += 500;
+				hungerIncrease = 500;
 				break;
 			case FOOD_TOMALLEY:
-				stats[player]->HUNGER += 400;
+				hungerIncrease = 400;
 				break;
 			case FOOD_BLOOD:
 				if ( players[player] && players[player]->entity 
 					&& players[player]->entity->playerRequiresBloodToSustain() )
 				{
-					stats[player]->HUNGER += 250;
+					hungerIncrease = 250;
 				}
 				else
 				{
-					stats[player]->HUNGER += 10;
+					hungerIncrease = 10;
 				}
 				break;
 			default:
-				stats[player]->HUNGER += 10;
+				hungerIncrease = 10;
 				break;
 		}
+		stats[player]->HUNGER += hungerIncrease;
 	}
 	else
 	{
 		if (players[player] && players[player]->entity)
 		{
 			players[player]->entity->modHP(5);
+			messagePlayer(player, language[911]);
+
+
+			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+			{
+				real_t manaRegenPercent = 0.f;
+				switch ( item->type )
+				{
+					case FOOD_BREAD:
+					case FOOD_TOMALLEY:
+						manaRegenPercent = 0.4;
+						break;
+					case FOOD_CREAMPIE:
+						manaRegenPercent = 0.2;
+						break;
+					case FOOD_CHEESE:
+						manaRegenPercent = 0.1;
+						break;
+					case FOOD_APPLE:
+						manaRegenPercent = 0.2;
+						break;
+					case FOOD_MEAT:
+					case FOOD_FISH:
+						manaRegenPercent = 0.5;
+						break;
+					case FOOD_BLOOD:
+						if ( players[player] && players[player]->entity
+							&& players[player]->entity->playerRequiresBloodToSustain() )
+						{
+							manaRegenPercent = 0.25;
+						}
+						else
+						{
+							manaRegenPercent = 0.1;
+						}
+						break;
+					default:
+						break;
+				}
+				int manaAmount = stats[player]->MAXMP * manaRegenPercent;
+				players[player]->entity->modMP(manaAmount);
+			}
 		}
-		messagePlayer(player, language[911]);
 	}
 
 	if ( item->type == FOOD_TOMALLEY )
@@ -3969,45 +4255,10 @@ void item_Food(Item*& item, int player)
 	}
 
 	// results of eating
-	if ( (svFlags & SV_FLAG_HUNGER) )
+	if ( players[player] )
 	{
-		if ( stats[player]->HUNGER <= 250 )
-		{
-			messagePlayer(player, language[912]);
-		}
-		else if ( stats[player]->HUNGER < 500 )
-		{
-			messagePlayer(player, language[913]);
-		}
-		else if ( stats[player]->HUNGER < 1000 )
-		{
-			messagePlayer(player, language[914], item->getName());
-		}
-		else if ( stats[player]->HUNGER < 1500 )
-		{
-			messagePlayer(player, language[915]);
-		}
-		else if ( stats[player]->HUNGER < 2000 )
-		{
-			if (rand() % 3)
-			{
-				messagePlayer(player, language[916]);
-			}
-			else
-			{
-				messagePlayer(player, language[917]);
-				players[player]->entity->skill[26] = 40 + rand() % 10;
-			}
-		}
-		else
-		{
-			messagePlayer(player, language[917]);
-			players[player]->entity->skill[26] = 40 + rand() % 10;
-		}
+		updateHungerMessages(players[player]->entity, stats[player], item);
 	}
-
-	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 2000);
-	serverUpdateHunger(player);
 	consumeItem(item, player);
 }
 
@@ -4016,6 +4267,15 @@ void item_FoodTin(Item*& item, int player)
 	int oldcount;
 	int pukeChance;
 	bool slippery = false;
+
+	if ( player >= 0 && stats[player]->type == AUTOMATON )
+	{
+		if ( players[player] && players[player]->entity )
+		{
+			item_FoodAutomaton(item, player);
+		}
+		return;
+	}
 
 	if ( player >= 0 && stats[player]->type != HUMAN && (svFlags & SV_FLAG_HUNGER) ) // hunger on
 	{
@@ -4158,6 +4418,10 @@ void item_FoodTin(Item*& item, int player)
 	{
 		pukeChance = 1;
 	}
+	else if ( stats[player]->type == INSECTOID )
+	{
+		pukeChance = 100; // insectoids can eat anything.
+	}
 
 	if ((item->beatitude < 0 || rand() % pukeChance == 0) && pukeChance < 100)
 	{
@@ -4173,9 +4437,15 @@ void item_FoodTin(Item*& item, int player)
 		{
 			messagePlayer(player, language[908]);
 		}
-		if ( stats[player] && stats[player]->type != SKELETON )
+
+		if ( stats[player] && players[player] && players[player]->entity )
 		{
-			players[player]->entity->skill[26] = 40 + rand() % 10;
+			if ( stats[player]->type != SKELETON
+				&& players[player]->entity->effectShapeshift == NOTHING
+				&& stats[player]->type != AUTOMATON )
+			{
+				players[player]->entity->skill[26] = 40 + rand() % 10;
+			}
 		}
 		consumeItem(item, player);
 		return;
@@ -4207,6 +4477,12 @@ void item_FoodTin(Item*& item, int player)
 			players[player]->entity->modHP(5);
 		}
 		messagePlayer(player, language[911]);
+		if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		{
+			real_t manaRegenPercent = 0.6;
+			int manaAmount = stats[player]->MAXMP * manaRegenPercent;
+			players[player]->entity->modMP(manaAmount);
+		}
 	}
 
 	// greasy fingers
@@ -4219,51 +4495,16 @@ void item_FoodTin(Item*& item, int player)
 	}
 
 	// results of eating
-	if ( svFlags & SV_FLAG_HUNGER )
+	if ( players[player] )
 	{
-		if ( stats[player]->HUNGER <= 250 )
-		{
-			messagePlayer(player, language[912]);
-		}
-		else if ( stats[player]->HUNGER < 500 )
-		{
-			messagePlayer(player, language[913]);
-		}
-		else if ( stats[player]->HUNGER < 1000 )
-		{
-			messagePlayer(player, language[914], item->getName());
-		}
-		else if ( stats[player]->HUNGER < 1500 )
-		{
-			messagePlayer(player, language[915]);
-		}
-		else if ( stats[player]->HUNGER < 2000 )
-		{
-			if (rand() % 3)
-			{
-				messagePlayer(player, language[916]);
-			}
-			else
-			{
-				messagePlayer(player, language[917]);
-				players[player]->entity->skill[26] = 40 + rand() % 10;
-			}
-		}
-		else
-		{
-			messagePlayer(player, language[917]);
-			players[player]->entity->skill[26] = 40 + rand() % 10;
-		}
+		updateHungerMessages(players[player]->entity, stats[player], item);
 	}
-
-	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 2000);
 
 	if ( (hpBuff || mpBuff) && (svFlags & SV_FLAG_HUNGER) )
 	{
 		messagePlayer(player, language[911]);
 	}
 
-	serverUpdateHunger(player);
 	consumeItem(item, player);
 }
 
@@ -4320,39 +4561,141 @@ void item_Spellbook(Item*& item, int player)
 		messagePlayer(player, language[970]);
 		return;
 	}
+	if ( itemIsEquipped(item, clientnum) )
+	{
+		messagePlayer(player, language[3460]);
+		return;
+	}
+
+	if ( players[player] && players[player]->entity )
+	{
+		if ( players[player]->entity->effectShapeshift != NOTHING )
+		{
+			messagePlayer(player, language[3445]);
+			return;
+		}
+		else if ( stats[player] && (stats[player]->type == GOBLIN || stats[player]->playerRace == RACE_GOBLIN) )
+		{
+			messagePlayer(player, language[3444]);
+			return;
+		}
+	}
 
 	conductIlliterate = false;
 
 	if ( item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]) )
 	{
 		messagePlayer(clientnum, language[971]);
-		if ( list_Size(&spellList) > 0 )
+		if ( list_Size(&spellList) > 0 && stats[player]->type != AUTOMATON )
 		{
-			messagePlayer(clientnum, language[972]);
-
 			// randomly delete a spell
 			int spellToDelete = rand() % list_Size(&spellList);
 			node = list_Node(&spellList, spellToDelete);
 			spell_t* spell = (spell_t*)node->element;
-			if ( spell == selected_spell )
-			{
-				selected_spell = NULL;
-			}
 			int spellID = spell->ID;
-			list_RemoveNode(node);
+			bool deleted = false;
+			bool rerollSpell = false;
 
 			// delete its accompanying spell item(s)
-			for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
+
+			if ( client_classes[clientnum] == CLASS_SHAMAN )
 			{
-				nextnode = node->next;
-				Item* item = (Item*)node->element;
-				if ( item->type == SPELL_ITEM )
+				// don't forget your racial spells otherwise borked.
+				// special roll checking.
+				if ( list_Size(&spellList) <= CLASS_SHAMAN_NUM_STARTING_SPELLS )
 				{
-					if ( item->appearance == spellID )
+					// no spells to delete. return early.
+					messagePlayer(clientnum, language[973]);
+					consumeItem(item, player);
+					return;
+				}
+				spellToDelete = rand() % (list_Size(&spellList) - CLASS_SHAMAN_NUM_STARTING_SPELLS);
+				spellToDelete += CLASS_SHAMAN_NUM_STARTING_SPELLS; // e.g 16 spells is 0 + 15, 15th index.
+				node = list_Node(&spellList, spellToDelete);
+				spell = (spell_t*)node->element;
+				spellID = spell->ID;
+			}
+
+			for ( node_t* node2 = stats[player]->inventory.first; node2 != NULL; node2 = nextnode )
+			{
+				nextnode = node2->next;
+				Item* itemInventory = (Item*)node2->element;
+				if ( itemInventory && itemInventory->type == SPELL_ITEM )
+				{
+					if ( rerollSpell )
 					{
-						list_RemoveNode(node);
+						// Unused. But if ever shapeshift form spells get added to general classes then will need this checking.
+						//if ( itemInventory->appearance < 1000 )
+						//{
+						//	// can delete non-shapeshift spells. let's delete this one.
+						//	spell = getSpellFromItem(itemInventory);
+						//	if ( spell )
+						//	{
+						//		spellID = spell->ID;
+						//		if ( spellID == SPELL_RAT_FORM || spellID == SPELL_SPIDER_FORM
+						//			|| spellID == SPELL_TROLL_FORM || spellID == SPELL_IMP_FORM
+						//			|| spellID == SPELL_REVERT_FORM )
+						//		{
+						//			continue;
+						//		}
+						//		// find the node in spellList for the ID
+						//		spellToDelete = 0;
+						//		for ( node_t* tmpNode = spellList.first; tmpNode != nullptr; tmpNode = tmpNode->next )
+						//		{
+						//			if ( tmpNode->element )
+						//			{
+						//				spell_t* tmpSpell = (spell_t*)tmpNode->element;
+						//				if ( tmpSpell && tmpSpell->ID == spellID )
+						//				{
+						//					// found the node in the list, delete this one.
+						//					node = list_Node(&spellList, spellToDelete);
+						//					list_RemoveNode(node2); // delete inventory spell.
+						//					deleted = true;
+						//					break;
+						//				}
+						//			}
+						//			++spellToDelete;
+						//		}
+						//		if ( deleted )
+						//		{
+						//			break;
+						//		}
+						//	}
+						//}
+					}
+					else if ( itemInventory->appearance == spellID )
+					{
+						list_RemoveNode(node2); // delete inventory spell.
+						deleted = true;
+						break;
 					}
 				}
+			}
+
+			//messagePlayer(0, "%d, %d %d", rerollSpell, spellToDelete, deleted);
+
+			if ( !deleted )
+			{
+				// maybe we've got an inventory full of shapeshift spells?
+				messagePlayer(clientnum, language[973]);
+				consumeItem(item, player);
+				return;
+			}
+			else if ( deleted )
+			{
+				messagePlayer(clientnum, language[972]);
+				if ( spell == selected_spell )
+				{
+					selected_spell = nullptr;
+				}
+				for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+				{
+					if ( selected_spell_alternate[i] == spell )
+					{
+						selected_spell_alternate[i] = nullptr;
+					}
+				}
+				list_RemoveNode(node);
 			}
 		}
 		else
@@ -4457,6 +4800,75 @@ void item_Spellbook(Item*& item, int player)
 			case SPELLBOOK_CHARM_MONSTER:
 				learned = addSpell(SPELL_CHARM_MONSTER, player);
 				break;
+			case SPELLBOOK_REVERT_FORM:
+				learned = addSpell(SPELL_REVERT_FORM, player);
+				break;
+			case SPELLBOOK_RAT_FORM:
+				learned = addSpell(SPELL_RAT_FORM, player);
+				break;
+			case SPELLBOOK_SPIDER_FORM:
+				learned = addSpell(SPELL_SPIDER_FORM, player);
+				break;
+			case SPELLBOOK_TROLL_FORM:
+				learned = addSpell(SPELL_TROLL_FORM, player);
+				break;
+			case SPELLBOOK_IMP_FORM:
+				learned = addSpell(SPELL_IMP_FORM, player);
+				break;
+			case SPELLBOOK_SPRAY_WEB:
+				learned = addSpell(SPELL_SPRAY_WEB, player);
+				break;
+			case SPELLBOOK_POISON:
+				learned = addSpell(SPELL_POISON, player);
+				break;
+			case SPELLBOOK_SPEED:
+				learned = addSpell(SPELL_SPEED, player);
+				break;
+			case SPELLBOOK_FEAR:
+				learned = addSpell(SPELL_FEAR, player);
+				break;
+			case SPELLBOOK_STRIKE:
+				learned = addSpell(SPELL_STRIKE, player);
+				break;
+			case SPELLBOOK_DETECT_FOOD:
+				learned = addSpell(SPELL_DETECT_FOOD, player);
+				break;
+			case SPELLBOOK_WEAKNESS:
+				learned = addSpell(SPELL_WEAKNESS, player);
+				break;
+			case SPELLBOOK_AMPLIFY_MAGIC:
+				learned = addSpell(SPELL_AMPLIFY_MAGIC, player);
+				break;
+			case SPELLBOOK_SHADOW_TAG:
+				learned = addSpell(SPELL_SHADOW_TAG, player);
+				break;
+			case SPELLBOOK_TELEPULL:
+				learned = addSpell(SPELL_TELEPULL, player);
+				break;
+			case SPELLBOOK_DEMON_ILLU:
+				learned = addSpell(SPELL_DEMON_ILLUSION, player);
+				break;
+			case SPELLBOOK_TROLLS_BLOOD:
+				learned = addSpell(SPELL_TROLLS_BLOOD, player);
+				break;
+			case SPELLBOOK_SALVAGE:
+				learned = addSpell(SPELL_SALVAGE, player);
+				break;
+			case SPELLBOOK_FLUTTER:
+				learned = addSpell(SPELL_FLUTTER, player);
+				break;
+			case SPELLBOOK_DASH:
+				learned = addSpell(SPELL_DASH, player);
+				break;
+			case SPELLBOOK_SELF_POLYMORPH:
+				learned = addSpell(SPELL_SELF_POLYMORPH, player);
+				break;
+			case SPELLBOOK_9:
+				learned = addSpell(SPELL_9, player);
+				break;
+			case SPELLBOOK_10:
+				learned = addSpell(SPELL_10, player);
+				break;
 			default:
 				learned = addSpell(SPELL_FORCEBOLT, player);
 				break;
@@ -4464,6 +4876,16 @@ void item_Spellbook(Item*& item, int player)
 
 		if ( learned )
 		{
+			if ( item->type >= SPELLBOOK_RAT_FORM && item->type <= SPELLBOOK_IMP_FORM )
+			{
+				ItemType originalSpellbook = item->type;
+				item->type = SPELLBOOK_REVERT_FORM;
+				if ( !playerLearnedSpellbook(item) ) // have we learnt "revert form"?
+				{
+					addSpell(SPELL_REVERT_FORM, player, true); // add it.
+				}
+				item->type = originalSpellbook;
+			}
 			item->status = static_cast<Status>(item->status - 1);
 			if ( item->status != BROKEN )
 			{
@@ -4475,10 +4897,394 @@ void item_Spellbook(Item*& item, int player)
 				consumeItem(item, player);
 			}
 
+			if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+			{
+				steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
+			}
 			if ( list_Size(&spellList) >= 20 )
 			{
 				steamAchievement("BARONY_ACH_MAGIC_MASTERY");
 			}
 		}
 	}
+}
+
+void item_FoodAutomaton(Item*& item, int player)
+{
+	if ( !stats[player] || !players[player] || !players[player]->entity )
+	{
+		return;
+	}
+
+	if ( player >= 0 && stats[player]->type != AUTOMATON )
+	{
+		//messagePlayer(player, "Err: You are not an Automaton!");
+		return;
+	}
+
+	if ( !itemIsConsumableByAutomaton(*item) 
+		&& item->type != POTION_FIRESTORM )
+	{
+		return;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		consumeItem(item, player);
+		return;
+	}
+
+	// consumption message
+	if ( item->type != TOOL_MAGIC_SCRAP && item->type != TOOL_METAL_SCRAP )
+	{
+		int oldcount = item->count;
+		item->count = 1;
+		messagePlayer(player, language[907], item->description());
+		item->count = oldcount;
+	}
+
+	// eating sound
+	if ( item->type == FOOD_BLOOD || item->type == POTION_FIRESTORM )
+	{
+		// play drink sound
+		playSoundEntity(players[player]->entity, 52, 64);
+	}
+	else
+	{
+		playSoundEntity(players[player]->entity, 50 + rand() % 2, 64);
+	}
+
+	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
+	{
+		messagePlayer(player, language[909]);
+		messagePlayer(player, language[910]);
+		stats[player]->EFFECTS[EFF_MESSY] = true;
+		stats[player]->EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
+		serverUpdateEffects(player);
+		consumeItem(item, player);
+		return;
+	}
+
+	// automaton hunger/combustion tick is every 0.6 seconds.
+	// 600 hunger = 6 minutes
+	// 200 hunger = 2 minutes
+	// 100 hunger = 60 seconds.
+	// 80 hunger = 48 seconds
+	// 50 hunger = 30 seconds
+	// 40 hunger = 24 seconds
+	// 20 hunger = 12 seconds
+	int oldHunger = stats[player]->HUNGER;
+	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+
+	// replenish nutrition points
+	// automaton hunger is always in effect
+	// hunger disabled will simply add 5 HP and still add fuel to the fire.
+	switch ( item->type )
+	{
+		case FOOD_BREAD:
+		case FOOD_CREAMPIE:
+		case FOOD_BLOOD:
+		case FOOD_CHEESE:
+		case FOOD_APPLE:
+		case FOOD_TOMALLEY:
+		case FOOD_MEAT:
+		case FOOD_FISH:
+		case FOOD_TIN:
+			if ( svFlags & SV_FLAG_HUNGER )
+			{
+				messagePlayer(player, language[3697]); // no effect.
+				consumeItem(item, player);
+				return;
+			}
+			break;
+		case GEM_ROCK:
+		case GEM_GLASS:
+			stats[player]->HUNGER += 50;
+			break;
+		case GEM_LUCK:
+		case GEM_GARNET:
+		case GEM_RUBY:
+		case GEM_JACINTH:
+		case GEM_AMBER:
+		case GEM_CITRINE:
+		case GEM_JADE:
+		case GEM_EMERALD:
+		case GEM_SAPPHIRE:
+		case GEM_AQUAMARINE:
+		case GEM_AMETHYST:
+		case GEM_FLUORITE:
+		case GEM_OPAL:
+		case GEM_DIAMOND:
+		case GEM_JETSTONE:
+		case GEM_OBSIDIAN:
+			stats[player]->HUNGER += 1000;
+			players[player]->entity->modMP(10);
+			break;
+		case READABLE_BOOK:
+			stats[player]->HUNGER += 400;
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_FASCIST, STEAM_STAT_INT, 1);
+			}
+			break;
+		case SCROLL_MAIL:
+		case SCROLL_BLANK:
+			stats[player]->HUNGER += 200;
+			break;
+		case SCROLL_IDENTIFY:
+		case SCROLL_LIGHT:
+		case SCROLL_REMOVECURSE:
+		case SCROLL_FOOD:
+		case SCROLL_MAGICMAPPING:
+		case SCROLL_REPAIR:
+		case SCROLL_DESTROYARMOR:
+		case SCROLL_TELEPORTATION:
+		case SCROLL_SUMMON:
+		case SCROLL_CONJUREARROW:
+			players[player]->entity->modMP(20);
+			stats[player]->HUNGER += 600;
+			break;
+		case SCROLL_ENCHANTWEAPON:
+		case SCROLL_ENCHANTARMOR:
+			players[player]->entity->modMP(40);
+			stats[player]->HUNGER += 600;
+			break;
+		case SCROLL_FIRE:
+		{
+			stats[player]->HUNGER += 1500;
+			players[player]->entity->modMP(stats[player]->MAXMP);
+			messagePlayerColor(player, color, language[3699]); // superheats
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_SPICY, STEAM_STAT_INT, 1);
+			}
+
+			playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
+			for ( int c = 0; c < 100; c++ )
+			{
+				Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
+				entity->sprite = 16;
+				double vel = rand() % 10;
+				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_z = vel * sin(entity->pitch) * .2;
+				entity->skill[0] = 5 + rand() % 10;
+			}
+			break;
+		}
+		case TOOL_METAL_SCRAP:
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			{
+				achievementObserver.playerAchievements[player].trashCompactor += 1;
+			}
+			if ( stats[player]->HUNGER > 500 )
+			{
+				messagePlayer(player, language[3707]); // fails to add any more heat.
+				consumeItem(item, player);
+				return;
+			}
+			else
+			{
+				stats[player]->HUNGER += 50;
+				stats[player]->HUNGER = std::min(stats[player]->HUNGER, 550);
+			}
+			break;
+		case TOOL_MAGIC_SCRAP:
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			{
+				achievementObserver.playerAchievements[player].trashCompactor += 1;
+			}
+			if ( stats[player]->HUNGER > 1100 )
+			{
+				messagePlayer(player, language[3707]); // fails to add any more heat.
+				consumeItem(item, player);
+				return;
+			}
+			else
+			{
+				stats[player]->HUNGER += 100;
+				stats[player]->HUNGER = std::min(stats[player]->HUNGER, 1199);
+			}
+			break;
+		default:
+			messagePlayer(player, "Unknown food?");
+			break;
+	}
+
+	if ( itemCategory(item) == SCROLL )
+	{
+		if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+		{
+			steamStatisticUpdateClient(player, STEAM_STAT_FASCIST, STEAM_STAT_INT, 1);
+		}
+	}
+
+	if ( !(svFlags & SV_FLAG_HUNGER) && oldHunger == stats[player]->HUNGER ) // ate food, hunger is disabled and did not gain heat (normal food items)
+	{
+		if ( players[player] && players[player]->entity )
+		{
+			if ( item->beatitude < 0 )
+			{
+				playSoundEntity(players[player]->entity, 28, 64);
+				players[player]->entity->modHP(-5);
+				messagePlayer(player, language[908]); // blecch! rotten food!
+				consumeItem(item, player);
+				return;
+			}
+
+			players[player]->entity->modHP(5);
+		}
+		messagePlayer(player, language[911]); // mmm, tasty!
+	}
+
+	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 1500);
+	// results of eating
+	if ( stats[player]->HUNGER >= 1500 )
+	{
+		messagePlayerColor(player, color, language[3483]); // at capacity
+	}
+	else if ( stats[player]->HUNGER >= 1200 && oldHunger < 1200 )
+	{
+		messagePlayerColor(player, color, language[3484]);
+	}
+	else if ( stats[player]->HUNGER >= 600 && oldHunger < 600 )
+	{
+		messagePlayerColor(player, color, language[3696]);
+	}
+	else if ( stats[player]->HUNGER >= 300 && oldHunger < 300 )
+	{
+		messagePlayerColor(player, color, language[3485]);
+	}
+	else if ( stats[player]->HUNGER <= 300 )
+	{
+		messagePlayerColor(player, color, language[3486]);
+	}
+	else if ( oldHunger < stats[player]->HUNGER )
+	{
+		messagePlayer(player, language[3704]);
+	}
+
+	serverUpdateHunger(player);
+	consumeItem(item, player);
+}
+
+bool itemIsConsumableByAutomaton(const Item& item)
+{
+	switch ( item.type )
+	{
+		case FOOD_BREAD:
+		case FOOD_CREAMPIE:
+		case FOOD_BLOOD:
+		case FOOD_CHEESE:
+		case FOOD_APPLE:
+		case FOOD_TOMALLEY:
+		case FOOD_MEAT:
+		case FOOD_FISH:
+		case FOOD_TIN:
+
+		case GEM_ROCK:
+		case GEM_GLASS:
+		case GEM_LUCK:
+		case GEM_GARNET:
+		case GEM_RUBY:
+		case GEM_JACINTH:
+		case GEM_AMBER:
+		case GEM_CITRINE:
+		case GEM_JADE:
+		case GEM_EMERALD:
+		case GEM_SAPPHIRE:
+		case GEM_AQUAMARINE:
+		case GEM_AMETHYST:
+		case GEM_FLUORITE:
+		case GEM_OPAL:
+		case GEM_DIAMOND:
+		case GEM_JETSTONE:
+		case GEM_OBSIDIAN:
+
+		case READABLE_BOOK:
+
+		case SCROLL_MAIL:
+		case SCROLL_BLANK:
+		case SCROLL_IDENTIFY:
+		case SCROLL_LIGHT:
+		case SCROLL_ENCHANTWEAPON:
+		case SCROLL_ENCHANTARMOR:
+		case SCROLL_REMOVECURSE:
+		case SCROLL_FOOD:
+		case SCROLL_MAGICMAPPING:
+		case SCROLL_REPAIR:
+		case SCROLL_DESTROYARMOR:
+		case SCROLL_TELEPORTATION:
+		case SCROLL_SUMMON:
+		case SCROLL_FIRE:
+		case SCROLL_CONJUREARROW:
+		case TOOL_MAGIC_SCRAP:
+		case TOOL_METAL_SCRAP:
+			return true;
+			break;
+		default:
+			return false;
+			break;
+	}
+	return false;
+}
+
+void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
+{
+	if ( !myStats || !eaten || !my)
+	{
+		return;
+	}
+	if ( my->behavior != &actPlayer )
+	{
+		return;
+	}
+	if ( (svFlags & SV_FLAG_HUNGER) )
+	{
+		if ( myStats->HUNGER <= 250 )
+		{
+			messagePlayer(my->skill[2], language[912]);
+		}
+		else if ( myStats->HUNGER < 500 )
+		{
+			messagePlayer(my->skill[2], language[913]);
+		}
+		else if ( myStats->HUNGER < 1000 )
+		{
+			messagePlayer(my->skill[2], language[914], eaten->getName());
+		}
+		else if ( myStats->HUNGER < 1500 )
+		{
+			messagePlayer(my->skill[2], language[915]);
+		}
+		else if ( myStats->HUNGER >= 1500 )
+		{
+			if ( my->effectShapeshift != NOTHING )
+			{
+				messagePlayer(my->skill[2], language[916]); // shapeshifted players don't puke
+			}
+			else if ( rand() % 3 )
+			{
+				messagePlayer(my->skill[2], language[916]);
+			}
+			else
+			{
+				messagePlayer(my->skill[2], language[917]);
+				if ( myStats->type != SKELETON && myStats->type != AUTOMATON )
+				{
+					my->skill[26] = 40 + rand() % 10;
+				}
+			}
+		}
+	}
+
+	if ( myStats->type == INSECTOID )
+	{
+		myStats->HUNGER = std::min(myStats->HUNGER, 1000); // smaller hunger range.
+	}
+	else
+	{
+		myStats->HUNGER = std::min(myStats->HUNGER, 2000);
+	}
+	serverUpdateHunger(my->skill[2]);
 }

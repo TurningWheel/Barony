@@ -67,7 +67,7 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "mine32.lmp", 10381 },
 	{ "minetoswamp.lmp", 35867 },
 	{ "minesecret.lmp", 10316 },
-	{ "gnomishmines.lmp", 483571 },
+	{ "gnomishmines.lmp", 571896 },
 	{ "minetown.lmp", 1401309 },
 	{ "swamp.lmp", 13542615 },
 	{ "swamp00.lmp", 14498 },
@@ -143,7 +143,7 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "labyrinth32.lmp", 23002 },
 	{ "labyrinthtoruins.lmp", 36433 },
 	{ "labyrinthsecret.lmp", 26508 },
-	{ "sokoban.lmp", 137092 },
+	{ "sokoban.lmp", 137949 },
 	{ "minotaur.lmp", 484073 },
 	{ "ruins.lmp", 11472 },
 	{ "ruins00.lmp", 6373 },
@@ -244,8 +244,8 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "hell27.lmp", 2333 },
 	{ "hell28.lmp", 1329 },
 	{ "hell29.lmp", 36832 },
-	{ "hellboss.lmp", 1115424 },
-	{ "hamlet.lmp", 5638661 },
+	{ "hellboss.lmp", 835271 },
+	{ "hamlet.lmp", 5653326 },
 	{ "caves.lmp", 1065461 },
 	{ "caves00.lmp", 70935 },
 	{ "caves01.lmp", 13350 },
@@ -298,7 +298,7 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "caves24d.lmp", 391561 },
 	{ "cavestocitadel.lmp", 215724 },
 	{ "cavessecret.lmp", 198959 },
-	{ "caveslair.lmp", 4625772 },
+	{ "caveslair.lmp", 4860899 },
 	{ "citadel.lmp", 729069 },
 	{ "citadel00.lmp", 23997 },
 	{ "citadel01.lmp", 30094 },
@@ -939,6 +939,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
 							}
 							fread(&dummyStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
+							delete dummyStats;
 						}
 						break;
 					case 2:
@@ -1750,7 +1751,7 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 {
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 	char modelName[128];
-	int startnum = 1;
+	int startnum = 0;
 	int endnum = nummodels;
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 	FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
@@ -1804,7 +1805,7 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 
 			// this index is not found in the normal models folder.
 			// store the lowest found model number inside startnum.
-			if ( startnum == 1 || c < startnum )
+			if ( startnum == 0 || c < startnum )
 			{
 				startnum = c;
 			}

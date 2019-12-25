@@ -158,7 +158,13 @@ int initGame()
 	fp = openDataFile(itemsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); ++c )
 	{
-		if ( c > ARTIFACT_BOW )
+		if ( c > SPELLBOOK_DETECT_FOOD )
+		{
+			newItems = c - SPELLBOOK_DETECT_FOOD - 1;
+			items[c].name_identified = language[3500 + newItems * 2];
+			items[c].name_unidentified = language[3501 + newItems * 2];
+		}
+		else if ( c > ARTIFACT_BOW )
 		{
 			newItems = c - ARTIFACT_BOW - 1;
 			items[c].name_identified = language[2200 + newItems * 2];
@@ -618,7 +624,7 @@ void deinitGame()
 	int c, x;
 
 	// send disconnect messages
-	if (multiplayer == CLIENT)
+	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "DISCONNECT");
 		net_packet->data[10] = clientnum;
@@ -628,9 +634,9 @@ void deinitGame()
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		printlog("disconnected from server.\n");
 	}
-	else if (multiplayer == SERVER)
+	else if ( multiplayer == SERVER )
 	{
-		for (x = 1; x < MAXPLAYERS; x++)
+		for ( x = 1; x < MAXPLAYERS; x++ )
 		{
 			if ( client_disconnected[x] == true )
 			{
@@ -691,19 +697,19 @@ void deinitGame()
 	list_FreeAll(&topscoresMultiplayer);
 	deleteAllNotificationMessages();
 	list_FreeAll(&removedEntities);
-	if (title_bmp != NULL)
+	if ( title_bmp != NULL )
 	{
 		SDL_FreeSurface(title_bmp);
 	}
-	if (logo_bmp != NULL)
+	if ( logo_bmp != NULL )
 	{
 		SDL_FreeSurface(logo_bmp);
 	}
-	if (cursor_bmp != NULL)
+	if ( cursor_bmp != NULL )
 	{
 		SDL_FreeSurface(cursor_bmp);
 	}
-	if (cross_bmp != NULL)
+	if ( cross_bmp != NULL )
 	{
 		SDL_FreeSurface(cross_bmp);
 	}
@@ -717,23 +723,27 @@ void deinitGame()
 		{
 			if ( books[c] )
 			{
+				if ( books[c]->name )
+				{
+					free(books[c]->name);
+				}
 				if ( books[c]->text )
 				{
-					free( books[c]->text );
+					free(books[c]->text);
 				}
 				if ( books[c]->bookgui_render_title )
 				{
-					free( books[c]->bookgui_render_title );
+					free(books[c]->bookgui_render_title);
 				}
-				list_FreeAll( &books[c]->pages );
-				free( books[c] );
+				list_FreeAll(&books[c]->pages);
+				free(books[c]);
 			}
 		}
-		free( books );
+		free(books);
 	}
 	appraisal_timer = 0;
 	appraisal_item = 0;
-	for (c = 0; c < MAXPLAYERS; c++)
+	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		list_FreeAll(&stats[c]->inventory);
 	}
@@ -752,17 +762,17 @@ void deinitGame()
 		list_FreeAll(map.creatures); //TODO: Need to do this?
 	}
 	list_FreeAll(&messages);
-	if (multiplayer == SINGLE)
+	if ( multiplayer == SINGLE )
 	{
 		list_FreeAll(&channeledSpells[0]);
 	}
-	else if (multiplayer == CLIENT)
+	else if ( multiplayer == CLIENT )
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
-	else if (multiplayer == SERVER)
+	else if ( multiplayer == SERVER )
 	{
-		for (c = 0; c < numplayers; ++c)
+		for ( c = 0; c < numplayers; ++c )
 		{
 			list_FreeAll(&channeledSpells[c]);
 		}
@@ -780,105 +790,108 @@ void deinitGame()
 #define FMOD_Channel_Stop OPENAL_Channel_Stop
 #define FMOD_Sound_Release OPENAL_Sound_Release
 #endif
-	FMOD_Channel_Stop(music_channel);
-	FMOD_Channel_Stop(music_channel2);
-	FMOD_Sound_Release(introductionmusic);
-	FMOD_Sound_Release(intermissionmusic);
-	FMOD_Sound_Release(minetownmusic);
-	FMOD_Sound_Release(splashmusic);
-	FMOD_Sound_Release(librarymusic);
-	FMOD_Sound_Release(shopmusic);
-	FMOD_Sound_Release(herxmusic);
-	FMOD_Sound_Release(templemusic);
-	FMOD_Sound_Release(endgamemusic);
-	FMOD_Sound_Release(escapemusic);
-	FMOD_Sound_Release(devilmusic);
-	FMOD_Sound_Release(sanctummusic);
-	FMOD_Sound_Release(gnomishminesmusic);
-	FMOD_Sound_Release(greatcastlemusic);
-	FMOD_Sound_Release(sokobanmusic);
-	FMOD_Sound_Release(caveslairmusic);
-	FMOD_Sound_Release(bramscastlemusic);
-	FMOD_Sound_Release(hamletmusic);
-	for ( c = 0; c < NUMMINESMUSIC; c++ )
+	if ( !no_sound )
 	{
-		FMOD_Sound_Release(minesmusic[c]);
-	}
-	if ( minesmusic )
-	{
-		free(minesmusic);
-	}
-	for ( c = 0; c < NUMSWAMPMUSIC; c++ )
-	{
-		FMOD_Sound_Release(swampmusic[c]);
-	}
-	if ( swampmusic )
-	{
-		free(swampmusic);
-	}
-	for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
-	{
-		FMOD_Sound_Release(labyrinthmusic[c]);
-	}
-	if ( labyrinthmusic )
-	{
-		free(labyrinthmusic);
-	}
-	for ( c = 0; c < NUMRUINSMUSIC; c++ )
-	{
-		FMOD_Sound_Release(ruinsmusic[c]);
-	}
-	if ( ruinsmusic )
-	{
-		free(ruinsmusic);
-	}
-	for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
-	{
-		FMOD_Sound_Release(underworldmusic[c]);
-	}
-	if ( underworldmusic )
-	{
-		free(underworldmusic);
-	}
-	for ( c = 0; c < NUMHELLMUSIC; c++ )
-	{
-		FMOD_Sound_Release(hellmusic[c]);
-	}
-	if ( hellmusic )
-	{
-		free(hellmusic);
-	}
-	for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
-	{
-		FMOD_Sound_Release(minotaurmusic[c]);
-	}
-	if ( minotaurmusic )
-	{
-		free(minotaurmusic);
-	}
-	for ( c = 0; c < NUMCAVESMUSIC; c++ )
-	{
-		FMOD_Sound_Release(cavesmusic[c]);
-	}
-	if ( cavesmusic )
-	{
-		free(cavesmusic);
-	}
-	for ( c = 0; c < NUMCITADELMUSIC; c++ )
-	{
-		FMOD_Sound_Release(citadelmusic[c]);
-	}
-	if ( citadelmusic )
-	{
-		free(citadelmusic);
-	}
-	for ( c = 0; c < NUMINTROMUSIC; c++ )
-	{
-		FMOD_Sound_Release(intromusic[c]);
-	}
-	if ( intromusic )
-	{
-		free(intromusic);
+		FMOD_Channel_Stop(music_channel);
+		FMOD_Channel_Stop(music_channel2);
+		FMOD_Sound_Release(introductionmusic);
+		FMOD_Sound_Release(intermissionmusic);
+		FMOD_Sound_Release(minetownmusic);
+		FMOD_Sound_Release(splashmusic);
+		FMOD_Sound_Release(librarymusic);
+		FMOD_Sound_Release(shopmusic);
+		FMOD_Sound_Release(herxmusic);
+		FMOD_Sound_Release(templemusic);
+		FMOD_Sound_Release(endgamemusic);
+		FMOD_Sound_Release(escapemusic);
+		FMOD_Sound_Release(devilmusic);
+		FMOD_Sound_Release(sanctummusic);
+		FMOD_Sound_Release(gnomishminesmusic);
+		FMOD_Sound_Release(greatcastlemusic);
+		FMOD_Sound_Release(sokobanmusic);
+		FMOD_Sound_Release(caveslairmusic);
+		FMOD_Sound_Release(bramscastlemusic);
+		FMOD_Sound_Release(hamletmusic);
+		for ( c = 0; c < NUMMINESMUSIC; c++ )
+		{
+			FMOD_Sound_Release(minesmusic[c]);
+		}
+		if ( minesmusic )
+		{
+			free(minesmusic);
+		}
+		for ( c = 0; c < NUMSWAMPMUSIC; c++ )
+		{
+			FMOD_Sound_Release(swampmusic[c]);
+		}
+		if ( swampmusic )
+		{
+			free(swampmusic);
+		}
+		for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
+		{
+			FMOD_Sound_Release(labyrinthmusic[c]);
+		}
+		if ( labyrinthmusic )
+		{
+			free(labyrinthmusic);
+		}
+		for ( c = 0; c < NUMRUINSMUSIC; c++ )
+		{
+			FMOD_Sound_Release(ruinsmusic[c]);
+		}
+		if ( ruinsmusic )
+		{
+			free(ruinsmusic);
+		}
+		for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
+		{
+			FMOD_Sound_Release(underworldmusic[c]);
+		}
+		if ( underworldmusic )
+		{
+			free(underworldmusic);
+		}
+		for ( c = 0; c < NUMHELLMUSIC; c++ )
+		{
+			FMOD_Sound_Release(hellmusic[c]);
+		}
+		if ( hellmusic )
+		{
+			free(hellmusic);
+		}
+		for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
+		{
+			FMOD_Sound_Release(minotaurmusic[c]);
+		}
+		if ( minotaurmusic )
+		{
+			free(minotaurmusic);
+		}
+		for ( c = 0; c < NUMCAVESMUSIC; c++ )
+		{
+			FMOD_Sound_Release(cavesmusic[c]);
+		}
+		if ( cavesmusic )
+		{
+			free(cavesmusic);
+		}
+		for ( c = 0; c < NUMCITADELMUSIC; c++ )
+		{
+			FMOD_Sound_Release(citadelmusic[c]);
+		}
+		if ( citadelmusic )
+		{
+			free(citadelmusic);
+		}
+		for ( c = 0; c < NUMINTROMUSIC; c++ )
+		{
+			FMOD_Sound_Release(intromusic[c]);
+		}
+		if ( intromusic )
+		{
+			free(intromusic);
+		}
 	}
 #ifdef USE_OPENAL
 #undef FMOD_Channel_Stop
@@ -968,6 +981,11 @@ void deinitGame()
 	if (game_controller)
 	{
 		delete game_controller;
+	}
+
+	if ( shoparea )
+	{
+		free(shoparea);
 	}
 
 	for (int i = 0; i < MAXPLAYERS; ++i)

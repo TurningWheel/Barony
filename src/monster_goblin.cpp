@@ -60,7 +60,9 @@ void initGoblin(Entity* my, Stat* myStats)
 				myStats->MAXHP = 120;
 				myStats->OLDHP = myStats->HP;
 				strcpy(myStats->name, "The Potato King");
-				myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), true, nullptr);
+				myStats->STR += 6;
+				int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
+				myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, rand(), true, nullptr);
 				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rand() % 3, 1, rand(), false, nullptr);
 
 				int c;
@@ -109,33 +111,6 @@ void initGoblin(Entity* my, Stat* myStats)
 					break;
 			}
 
-			//give shield
-			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				// give shield
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-						myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 7:
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-				}
-			}
 
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
@@ -162,6 +137,46 @@ void initGoblin(Entity* my, Stat* myStats)
 					case 9:
 						myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
+				}
+			}
+
+			if ( myStats->weapon && isMeleeWeapon(*myStats->weapon) )
+			{
+				myStats->CHR = -3; // don't retreat
+			}
+
+			//give shield
+			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			{
+				if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
+				{
+					my->monsterGenerateQuiverItem(myStats);
+				}
+				else
+				{
+					// give shield
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+							myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 7:
+						case 8:
+							myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
 				}
 			}
 
@@ -560,6 +575,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	Entity* shieldarm = nullptr;
+	Entity* helmet = nullptr;
 
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
@@ -823,6 +839,10 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
+						if ( itemTypeIsQuiver(myStats->shield->type) )
+						{
+							entity->handleQuiverThirdPersonModel(*myStats);
+						}
 					}
 					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
@@ -901,6 +921,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// helm
 			case LIMB_HUMANOID_HELMET:
+				helmet = entity;
 				entity->focalx = limbs[GOBLIN][9][0]; // 0
 				entity->focaly = limbs[GOBLIN][9][1]; // 0
 				entity->focalz = limbs[GOBLIN][9][2]; // -2
@@ -954,7 +975,17 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					bool hasSteelHelm = false;
+					if ( myStats->helmet )
+					{
+						if ( myStats->helmet->type == STEEL_HELM
+							|| myStats->helmet->type == CRYSTAL_HELM
+							|| myStats->helmet->type == ARTIFACT_HELM )
+						{
+							hasSteelHelm = true;
+						}
+					}
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1002,9 +1033,18 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 				if ( entity->sprite != 165 )
 				{
-					entity->focalx = limbs[GOBLIN][10][0] + .35; // .35
-					entity->focaly = limbs[GOBLIN][10][1] - 2; // -2
-					entity->focalz = limbs[GOBLIN][10][2]; // .25
+					if ( entity->sprite == items[MASK_SHAMAN].index )
+					{
+						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else
+					{
+						entity->focalx = limbs[GOBLIN][10][0] + .35; // .35
+						entity->focaly = limbs[GOBLIN][10][1] - 2; // -2
+						entity->focalz = limbs[GOBLIN][10][2]; // .25
+					}
 				}
 				else
 				{
@@ -1062,6 +1102,12 @@ bool Entity::goblinCanWieldItem(const Item& item) const
 			return true;
 		case THROWN:
 			return true;
+		case TOOL:
+			if ( itemTypeIsQuiver(item.type) )
+			{
+				return true;
+			}
+			break;
 		default:
 			return false;
 	}

@@ -31,6 +31,7 @@ bool showfirst = false;
 bool logCheckObstacle = false;
 int logCheckObstacleCount = 0;
 bool logCheckMainLoopTimers = false;
+bool autoLimbReload = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -1424,7 +1425,8 @@ void consoleCommand(char* command_str)
 
 		for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 		{
-			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) 
+				&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 			{
 				players[clientnum]->entity->getStats()->EFFECTS[c] = false;
 				players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
@@ -1944,7 +1946,7 @@ void consoleCommand(char* command_str)
 			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = 0;
 		}
 	}
-	else if ( !strncmp(command_str, "/maxskill ", 9) )
+	else if ( !strncmp(command_str, "/maxskill ", 10) )
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
@@ -1957,10 +1959,10 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		int skill = atoi(&command_str[12]);
+		int skill = atoi(&command_str[10]);
 		if ( skill >= NUMPROFICIENCIES )
 		{
-			messagePlayer(clientnum, language[2451]); //Skill out of range.
+			messagePlayer(clientnum, "Invalid skill ID"); //Skill out of range.
 		}
 		else
 		{
@@ -1976,7 +1978,10 @@ void consoleCommand(char* command_str)
 		FILE* fp;
 		bool success = true;
 
-		messagePlayer(clientnum, "Reloading limb offsets from limbs.txt files...");
+		if ( !autoLimbReload )
+		{
+			messagePlayer(clientnum, "Reloading limb offsets from limbs.txt files...");
+		}
 
 		for ( c = 1; c < NUMMONSTERS; c++ )
 		{
@@ -2035,7 +2040,7 @@ void consoleCommand(char* command_str)
 			// close file
 			fclose(fp);
 		}
-		if ( success )
+		if ( success && !autoLimbReload )
 		{
 			messagePlayer(clientnum, "Successfully reloaded all limbs.txt!");
 		}
@@ -2191,6 +2196,10 @@ void consoleCommand(char* command_str)
 		else if ( !strncmp(command_str, "/disablenetworkmultithreading", 29) )
 		{
 			disableMultithreadedSteamNetworking = !disableMultithreadedSteamNetworking;
+		}
+		else if ( !strncmp(command_str, "/autolimbreload", 15) )
+		{
+			autoLimbReload = !autoLimbReload;
 		}
 		else if ( !strncmp(command_str, "/togglesecretlevel", 18) )
 		{
@@ -2349,6 +2358,10 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, "Set tickrate to %d, network processing allowed %3.0f percent of frame limit interval. Default value 2.", 
 				networkTickrate, 100.f / networkTickrate);
 		}
+		else if ( !strncmp(command_str, "/disablenetcodefpslimit", 23) )
+		{
+			disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
+		}
 		else if ( !strncmp(command_str, "/allspells", 10) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -2357,37 +2370,228 @@ void consoleCommand(char* command_str)
 				return;
 			}
 
-			bool learned = addSpell(SPELL_FORCEBOLT, clientnum, true);
-			learned = addSpell(SPELL_MAGICMISSILE, clientnum, true);
-			learned = addSpell(SPELL_COLD, clientnum, true);
-			learned = addSpell(SPELL_FIREBALL, clientnum, true);
-			learned = addSpell(SPELL_LIGHTNING, clientnum, true);
-			learned = addSpell(SPELL_REMOVECURSE, clientnum, true);
-			learned = addSpell(SPELL_LIGHT, clientnum, true);
-			learned = addSpell(SPELL_IDENTIFY, clientnum, true);
-			learned = addSpell(SPELL_MAGICMAPPING, clientnum, true);
-			learned = addSpell(SPELL_SLEEP, clientnum, true);
-			learned = addSpell(SPELL_CONFUSE, clientnum, true);
-			learned = addSpell(SPELL_SLOW, clientnum, true);
-			learned = addSpell(SPELL_OPENING, clientnum, true);
-			learned = addSpell(SPELL_LOCKING, clientnum, true);
-			learned = addSpell(SPELL_LEVITATION, clientnum, true);
-			learned = addSpell(SPELL_INVISIBILITY, clientnum, true);
-			learned = addSpell(SPELL_TELEPORTATION, clientnum, true);
-			learned = addSpell(SPELL_HEALING, clientnum, true);
-			learned = addSpell(SPELL_EXTRAHEALING, clientnum, true);
-			learned = addSpell(SPELL_CUREAILMENT, clientnum, true);
-			learned = addSpell(SPELL_DIG, clientnum, true);
-			learned = addSpell(SPELL_SUMMON, clientnum, true);
-			learned = addSpell(SPELL_STONEBLOOD, clientnum, true);
-			learned = addSpell(SPELL_BLEED, clientnum, true);
-			learned = addSpell(SPELL_REFLECT_MAGIC, clientnum, true);
-			learned = addSpell(SPELL_ACID_SPRAY, clientnum, true);
-			learned = addSpell(SPELL_STEAL_WEAPON, clientnum, true);
-			learned = addSpell(SPELL_DRAIN_SOUL, clientnum, true);
-			learned = addSpell(SPELL_VAMPIRIC_AURA, clientnum, true);
-			learned = addSpell(SPELL_CHARM_MONSTER, clientnum, true);
+			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+			{
+				spell_t* spell = *it;
+				bool learned = addSpell(spell->ID, clientnum, true);
+			}
 			return;
+		}
+		else if ( !strncmp(command_str, "/setmapseed ", 12) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( multiplayer == CLIENT )
+			{
+				messagePlayer(clientnum, language[284]);
+				return;
+			}
+			
+			Uint32 newseed = atoi(&command_str[12]);
+			forceMapSeed = newseed;
+			messagePlayer(clientnum, "Set next map seed to: %d", forceMapSeed);
+			return;
+		}
+		else if ( !strncmp(command_str, "/greaseme", 9) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( multiplayer == CLIENT )
+			{
+				messagePlayer(clientnum, language[284]);
+				return;
+			}
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				players[clientnum]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * 20, false);
+			}
+		}
+		else if ( !strncmp(command_str, "/gimmearrows", 12) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
+			{
+				dropItem(newItem(static_cast<ItemType>(i), EXCELLENT, 0, 25 + rand() % 26, rand(), true, &stats[clientnum]->inventory), 0);
+			}
+		}
+		else if ( !strncmp(command_str, "/gimmescrap", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			dropItem(newItem(TOOL_METAL_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_MAGIC_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+		}
+		else if ( !strncmp(command_str, "/gimmerobots", 12) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			dropItem(newItem(TOOL_GYROBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		}
+		else if ( !strncmp(command_str, "/toggletinkeringlimits", 22) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			overrideTinkeringLimit = !overrideTinkeringLimit;
+			if ( overrideTinkeringLimit )
+			{
+				messagePlayer(clientnum, "Disabled tinkering bot limit");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Re-enabled tinkering bot limit");
+			}
+		}
+		else if ( !strncmp(command_str, "/setdecoyrange ", 15) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( multiplayer == CLIENT )
+			{
+				messagePlayer(clientnum, language[284]);
+				return;
+			}
+			decoyBoxRange = atoi(&command_str[15]);
+			messagePlayer(clientnum, "Set decoy range to %d", decoyBoxRange);
+		}
+		else if ( !strncmp(command_str, "/gimmegoblinbooks", 17) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			for ( int i = 0; i < NUM_SPELLS; ++i )
+			{
+				int spellbook = getSpellbookFromSpellID(i);
+				dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, -1, 1, rand(), true, &stats[clientnum]->inventory), 0);
+			}
+		}
+		else if ( !strncmp(command_str, "/unsetdlc2achievements", 22) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+#ifdef STEAMWORKS
+			steamUnsetAchievement("BARONY_ACH_TAKING_WITH");
+			steamUnsetAchievement("BARONY_ACH_TELEFRAG");
+			steamUnsetAchievement("BARONY_ACH_FASCIST");
+			steamUnsetAchievement("BARONY_ACH_REAL_BOY");
+			steamUnsetAchievement("BARONY_ACH_OVERCLOCKED");
+			steamUnsetAchievement("BARONY_ACH_TRASH_COMPACTOR");
+			steamUnsetAchievement("BARONY_ACH_BOILERPLATE_BARON");
+			steamUnsetAchievement("BARONY_ACH_PIMPIN");
+			steamUnsetAchievement("BARONY_ACH_BAD_BEAUTIFUL");
+			steamUnsetAchievement("BARONY_ACH_SERIAL_THRILLA");
+			steamUnsetAchievement("BARONY_ACH_TRADITION");
+			steamUnsetAchievement("BARONY_ACH_BAD_BOY_BARON");
+			steamUnsetAchievement("BARONY_ACH_POP_QUIZ");
+			steamUnsetAchievement("BARONY_ACH_DYSLEXIA");
+			steamUnsetAchievement("BARONY_ACH_SAVAGE");
+			steamUnsetAchievement("BARONY_ACH_TRIBE_SUBSCRIBE");
+			steamUnsetAchievement("BARONY_ACH_BAYOU_BARON");
+			steamUnsetAchievement("BARONY_ACH_GASTRIC_BYPASS");
+			steamUnsetAchievement("BARONY_ACH_BOOKWORM");
+			steamUnsetAchievement("BARONY_ACH_FLUTTERSHY");
+			steamUnsetAchievement("BARONY_ACH_MONARCH");
+			steamUnsetAchievement("BARONY_ACH_BUGGAR_BARON");
+			steamUnsetAchievement("BARONY_ACH_TIME_TO_PLAN");
+			steamUnsetAchievement("BARONY_ACH_WONDERFUL_TOYS");
+			steamUnsetAchievement("BARONY_ACH_SUPER_SHREDDER");
+			steamUnsetAchievement("BARONY_ACH_UTILITY_BELT");
+			steamUnsetAchievement("BARONY_ACH_FIXER_UPPER");
+			steamUnsetAchievement("BARONY_ACH_TORCHERER");
+			steamUnsetAchievement("BARONY_ACH_LEVITANT_LACKEY");
+			steamUnsetAchievement("BARONY_ACH_GOODNIGHT_SWEET_PRINCE");
+			steamUnsetAchievement("BARONY_ACH_MANY_PEDI_PALP");
+			steamUnsetAchievement("BARONY_ACH_5000_SECOND_RULE");
+			steamUnsetAchievement("BARONY_ACH_FORUM_TROLL");
+			steamUnsetAchievement("BARONY_ACH_SOCIAL_BUTTERFLY");
+			steamUnsetAchievement("BARONY_ACH_ROLL_THE_BONES");
+			steamUnsetAchievement("BARONY_ACH_COWBOY_FROM_HELL");
+			steamUnsetAchievement("BARONY_ACH_IRONIC_PUNISHMENT");
+			steamUnsetAchievement("BARONY_ACH_SELF_FLAGELLATION");
+			steamUnsetAchievement("BARONY_ACH_OHAI_MARK");
+			steamUnsetAchievement("BARONY_ACH_CHOPPING_BLOCK");
+			steamUnsetAchievement("BARONY_ACH_ITS_A_LIVING");
+			steamUnsetAchievement("BARONY_ACH_ARSENAL");
+			steamUnsetAchievement("BARONY_ACH_IF_YOU_LOVE_SOMETHING");
+			steamUnsetAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
+			steamUnsetAchievement("BARONY_ACH_STRUNG_OUT");
+			steamUnsetAchievement("BARONY_ACH_FELL_BEAST");
+			steamUnsetAchievement("BARONY_ACH_PLEASE_HOLD");
+			steamUnsetAchievement("BARONY_ACH_SWINGERS");
+			steamUnsetAchievement("BARONY_ACH_COLD_BLOODED");
+			steamUnsetAchievement("BARONY_ACH_SOULLESS");
+			steamUnsetAchievement("BARONY_ACH_TRIBAL");
+			steamUnsetAchievement("BARONY_ACH_MANAGEMENT_TEAM");
+			steamUnsetAchievement("BARONY_ACH_SOCIOPATHS");
+			steamUnsetAchievement("BARONY_ACH_FACES_OF_DEATH");
+			steamUnsetAchievement("BARONY_ACH_SURVIVALISTS");
+			steamUnsetAchievement("BARONY_ACH_I_WANT_IT_ALL");
+			steamUnsetAchievement("BARONY_ACH_RUST_IN_PEACE");
+			steamUnsetAchievement("BARONY_ACH_MACHINE_HEAD");
+			steamUnsetAchievement("BARONY_ACH_RAGE_AGAINST");
+			steamUnsetAchievement("BARONY_ACH_GUERILLA_RADIO");
+			steamUnsetAchievement("BARONY_ACH_BOMBTRACK");
+			steamUnsetAchievement("BARONY_ACH_CALM_LIKE_A_BOMB");
+			steamUnsetAchievement("BARONY_ACH_CAUGHT_IN_A_MOSH");
+			steamUnsetAchievement("BARONY_ACH_SPICY");
+			for ( int i = STEAM_STAT_TRASH_COMPACTOR; i < 43; ++i )
+			{
+				g_SteamStats[i].m_iValue = 0;
+				SteamUserStats()->SetStat(g_SteamStats[i].m_pchStatName, 0);
+			}
+			SteamUserStats()->StoreStats();
+#endif // STEAMWORKS
+		}
+		else if ( !strncmp(command_str, "/gimmebombs", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			dropItem(newItem(TOOL_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		}
+		else if ( !strncmp(command_str, "/showhunger", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			messagePlayer(clientnum, "Hunger value: %d", stats[clientnum]->HUNGER);
 		}
 		else
 		{

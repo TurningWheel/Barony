@@ -19,6 +19,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "menu.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -258,6 +259,14 @@ void actPortal(Entity* my)
 					{
 						skipLevelsOnLoad = -1; // don't skip a regular level anymore. still skip if in underworld.
 					}
+					else
+					{
+						// underworld - don't skip on the early sections.
+						if ( currentlevel == 6 || currentlevel == 7 )
+						{
+							skipLevelsOnLoad = -1;
+						}
+					}
 				}
 				if ( !my->portalNotSecret )
 				{
@@ -279,7 +288,7 @@ void actWinningPortal(Entity* my)
 	{
 		if ( my->flags[INVISIBLE] )
 		{
-			if ( !strncmp(map.name, "Boss", 4) )
+			if ( !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9) )
 			{
 				if ( !(svFlags & SV_FLAG_CLASSIC) )
 				{
@@ -318,15 +327,10 @@ void actWinningPortal(Entity* my)
 					}
 				}
 			}
-			else
-			{
-				// hell map doesn't need signal.
-				my->flags[INVISIBLE] = false;
-			}
 		}
 		else
 		{
-			if ( !strncmp(map.name, "Boss", 4) )
+			if ( !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9) )
 			{
 				if ( !(svFlags & SV_FLAG_CLASSIC) )
 				{
@@ -580,7 +584,7 @@ void Entity::actMidGamePortal()
 	{
 		if ( flags[INVISIBLE] )
 		{
-			if ( !strncmp(map.name, "Boss", 4) )
+			if ( !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9) )
 			{
 				if ( (svFlags & SV_FLAG_CLASSIC) )
 				{
@@ -598,7 +602,7 @@ void Entity::actMidGamePortal()
 						Stat* stats = entity->getStats();
 						if ( stats )
 						{
-							if ( stats->type == LICH )
+							if ( stats->type == LICH || stats->type == DEVIL )
 							{
 								return;
 							}
@@ -625,7 +629,7 @@ void Entity::actMidGamePortal()
 		}
 		else
 		{
-			if ( !strncmp(map.name, "Boss", 4) )
+			if ( !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9) )
 			{
 				if ( (svFlags & SV_FLAG_CLASSIC) )
 				{
@@ -690,6 +694,28 @@ void Entity::actMidGamePortal()
 					}
 				}
 				//victory = portalVictoryType;
+				int movieCrawlType = -1;
+				if ( !strncmp(map.name, "Hell Boss", 9) )
+				{
+					movieCrawlType = MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON;
+					if ( stats[0] && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
+					{
+						movieCrawlType = MOVIE_MIDGAME_BAPHOMET_MONSTERS;
+					}
+				}
+				else if ( !strncmp(map.name, "Boss", 4) )
+				{
+					if ( stats[0] && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
+					{
+						movieCrawlType = MOVIE_MIDGAME_HERX_MONSTERS;
+					}
+				}
+				int introstageToChangeTo = 9;
+				if ( movieCrawlType >= 0 )
+				{
+					introstageToChangeTo = 11 + movieCrawlType;
+				}
+
 				if ( multiplayer == SERVER )
 				{
 					for ( c = 0; c < MAXPLAYERS; c++ )
@@ -699,9 +725,10 @@ void Entity::actMidGamePortal()
 							continue;
 						}
 						strcpy((char*)net_packet->data, "MIDG");
+						net_packet->data[4] = introstageToChangeTo;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 7;
+						net_packet->len = 8;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
@@ -711,7 +738,7 @@ void Entity::actMidGamePortal()
 				{
 					pauseGame(2, false);
 				}
-				introstage = 9; // prepares mid game sequence
+				introstage = introstageToChangeTo; // prepares mid game sequence
 				return;
 			}
 		}

@@ -45,9 +45,13 @@ enum Monster : int
 	GOATMAN,
 	AUTOMATON,
 	LICH_ICE,
-	LICH_FIRE
+	LICH_FIRE,
+	SENTRYBOT,
+	SPELLBOT,
+	GYROBOT,
+	DUMMYBOT
 };
-const int NUMMONSTERS = 33;
+const int NUMMONSTERS = 37;
 extern int kills[NUMMONSTERS];
 
 static char monstertypename[][15] =
@@ -84,7 +88,11 @@ static char monstertypename[][15] =
 	"goatman",
 	"automaton",
 	"lichice",
-	"lichfire"
+	"lichfire",
+	"sentrybot",
+	"spellbot",
+	"gyrobot",
+	"dummybot"
 };
 
 static char monstertypenamecapitalized[][15] =
@@ -121,7 +129,11 @@ static char monstertypenamecapitalized[][15] =
 	"Goatman",
 	"Automaton",
 	"Lichice",
-	"Lichfire"
+	"Lichfire",
+	"Sentrybot",
+	"Spellbot",
+	"Gyrobot",
+	"Dummybot"
 };
 
 // body part focal points
@@ -165,8 +177,11 @@ static char gibtype[NUMMONSTERS] =
 	1,	//GOATMAN,
 	0,	//AUTOMATON,
 	2,	//LICH_ICE,
-	2	//LICH_FIRE
-
+	2,	//LICH_FIRE
+	0,	//SENTRYBOT
+	0,	//SPELLBOT
+	0,  //GYROBOT
+	0	//DUMMYBOT
 };
 
 // columns go like this:
@@ -191,24 +206,39 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.9, 0.8, 1.f, 0.8, 0.9, 1.1, 0.8 }, // demon
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8, 1.f }, // succubus
 	{ 0.8, 1.1, 1.3, 1.f, 0.7, 1.2, 1.f }, // mimic
-	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f, 1.8 }, // lich
+	{ 2.5, 2.5, 2.5, 2.5, 1.3, 1.f, 1.8 }, // lich
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f, 1.f }, // devil
-	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.f }, // shopkeeper
+	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
 	{ 0.9, 1.2, 1.2, 0.9, 1.1, 0.2, 0.8 }, // kobold
 	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2, 1.4 }, // scarab
 	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6, 0.6 }, // crystal golem
-	{ 1.2, 1.f, 1.f, 0.9, 1.3, 0.8, 1.f }, // incubus
+	{ 1.2, 1.f, 1.f, 0.7, 1.3, 0.8, 1.f }, // incubus
 	{ 0.8, 1.2, 0.8, 1.1, 0.5, 0.8, 1.f }, // vampire
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 2.0, 0.5 }, // shadow
 	{ 1.6, 1.1, 1.3, 1.8, 0.5, 0.5, 0.8 }, // cockatrice
-	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f, 0.8 }, // insectoid
+	{ 1.f, 0.7, 1.3, 1.3, 1.1, 1.f, 0.8 }, // insectoid
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.4, 1.f }, // goatman
-	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 0.7 }, // automaton
-	{ 1.5, 1.5, 1.5, 1.5, 1.f, 0.7, 1.2 }, // lich ice
-	{ 1.8, 1.8, 1.8, 1.8, 1.f, 1.f, 1.4 }  // lich fire
-
+	{ 1.f, 1.4, 1.3, 1.f, 0.8, 1.2, 0.8 }, // automaton
+	{ 1.5, 1.5, 1.5, 1.5, 1.5, 0.7, 1.2 }, // lich ice
+	{ 1.8, 1.8, 1.8, 1.8, 1.5, 1.f, 1.4 }, // lich fire
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // gyrobot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 1.2, 0.5 }  // dummybot
 };
+
+enum DamageTableType : int
+{
+	DAMAGE_TABLE_SWORD,
+	DAMAGE_TABLE_MACE,
+	DAMAGE_TABLE_AXE,
+	DAMAGE_TABLE_POLEARM,
+	DAMAGE_TABLE_RANGED,
+	DAMAGE_TABLE_MAGIC,
+	DAMAGE_TABLE_UNARMED
+};
+static const int numDamageTableTypes = 7;
 
 static std::vector<std::vector<int>> classStatGrowth =
 {
@@ -231,10 +261,10 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	3,	3,	1,	6,	6,	3 }, // ACCURSED 14
 	{	3,	3,	1,	6,	4,	7 }, // MESMER 15
 	{	4,	4,	3,	5,	3,	5 }, // BREWER 16
-	{	4,	4,	4,	4,	4,	4 }, // RESERVED 17
-	{	4,	4,	4,	4,	4,	4 }, // RESERVED 18
-	{	4,	4,	4,	4,	4,	4 }, // RESERVED 19
-	{	4,	4,	4,	4,	4,	4 } // RESERVED 20
+	{	2,	5,	2,	4,	7,	4 }, // MACHINIST 17
+	{	4,	3,	2,	3,	4,	4 }, // PUNISHER 18
+	{	4,	4,	4,	4,	4,	4 }, // SHAMAN 19
+	{	1,	7,	1,	4,	7,	4 }  // HUNTER 20
 };
 
 enum AllyNPCCommand : int
@@ -252,10 +282,16 @@ enum AllyNPCCommand : int
 	ALLY_CMD_CANCEL,
 	ALLY_CMD_ATTACK_CONFIRM,
 	ALLY_CMD_RETURN_SOUL,
+	ALLY_CMD_GYRO_DEPLOY,
+	ALLY_CMD_GYRO_PATROL,
+	ALLY_CMD_GYRO_LIGHT_TOGGLE,
+	ALLY_CMD_GYRO_RETURN,
+	ALLY_CMD_GYRO_DETECT_TOGGLE,
+	ALLY_CMD_DUMMYBOT_RETURN,
 	ALLY_CMD_END
 };
 
-static const int AllyNPCSkillRequirements[13] =
+static const int AllyNPCSkillRequirements[19] =
 {
 	SKILL_LEVEL_NOVICE,	// ALLY_CMD_DEFEND,
 	SKILL_LEVEL_SKILLED,// ALLY_CMD_CLASS_TOGGLE,
@@ -269,6 +305,12 @@ static const int AllyNPCSkillRequirements[13] =
 	SKILL_LEVEL_BASIC,	// ALLY_CMD_MOVETO_CONFIRM,
 	0,					// ALLY_CMD_CANCEL
 	SKILL_LEVEL_EXPERT, // ALLY_CMD_ATTACK_CONFIRM
+	0,					// ALLY_CMD_RETURN_SOUL
+	0,					// ALLY_CMD_GYRO_DEPLOY,
+	0,					// ALLY_CMD_GYRO_PATROL,
+	0,					// ALLY_CMD_GYRO_LIGHT_TOGGLE,
+	0,					// ALLY_CMD_GYRO_RETURN,
+	SKILL_LEVEL_SKILLED,// ALLY_CMD_GYRO_DETECT_TOGGLE,
 	0					// ALLY_CMD_END
 };
 
@@ -292,6 +334,26 @@ enum AllyNPCClass : int
 	ALLY_CLASS_MIXED,
 	ALLY_CLASS_MELEE,
 	ALLY_CLASS_RANGED
+};
+
+enum AllyNPCGyroLight : int
+{
+	ALLY_GYRO_LIGHT_NONE,
+	ALLY_GYRO_LIGHT_FAINT,
+	ALLY_GYRO_LIGHT_BRIGHT,
+	ALLY_GYRO_LIGHT_END
+};
+
+enum AllyNPCGyroDetection : int
+{
+	ALLY_GYRO_DETECT_NONE,
+	ALLY_GYRO_DETECT_ITEMS_METAL,
+	ALLY_GYRO_DETECT_ITEMS_MAGIC,
+	ALLY_GYRO_DETECT_TRAPS,
+	ALLY_GYRO_DETECT_EXITS,
+	ALLY_GYRO_DETECT_MONSTERS,
+	ALLY_GYRO_DETECT_ITEMS_VALUABLE,
+	ALLY_GYRO_DETECT_END
 };
 
 enum AllyNPCChatter : int
@@ -396,6 +458,9 @@ void initInsectoid(Entity* my, Stat* myStats);
 void initGoatman(Entity* my, Stat* myStats);
 void initLichFire(Entity* my, Stat* myStats);
 void initLichIce(Entity* my, Stat* myStats);
+void initSentryBot(Entity* my, Stat* myStats);
+void initGyroBot(Entity* my, Stat* myStats);
+void initDummyBot(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -425,6 +490,9 @@ void actGoatmanLimb(Entity* my);
 void actScarabLimb(Entity* my);
 void actLichFireLimb(Entity* my);
 void actLichIceLimb(Entity* my);
+void actSentryBotLimb(Entity* my);
+void actGyroBotLimb(Entity* my);
+void actDummyBotLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -456,6 +524,9 @@ void insectoidDie(Entity* my);
 void goatmanDie(Entity* my);
 void lichFireDie(Entity* my);
 void lichIceDie(Entity* my);
+void sentryBotDie(Entity* my);
+void gyroBotDie(Entity* my);
+void dummyBotDie(Entity* my);
 
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -487,6 +558,9 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void lichFireAnimate(Entity* my, Stat* myStats, double dist);
 void lichIceAnimate(Entity* my, Stat* myStats, double dist);
+void sentryBotAnimate(Entity* my, Stat* myStats, double dist);
+void gyroBotAnimate(Entity* my, Stat* myStats, double dist);
+void dummyBotAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
@@ -558,6 +632,8 @@ static const int MONSTER_POSE_VAMPIRE_DRAIN = 29;
 static const int MONSTER_POSE_VAMPIRE_AURA_CAST = 30;
 static const int MONSTER_POSE_AUTOMATON_MALFUNCTION = 31;
 static const int MONSTER_POSE_LICH_FIRE_SWORD = 32;
+static const int PLAYER_POSE_GOLEM_SMASH = 33;
+static const int MONSTER_POSE_INCUBUS_TAUNT = 34;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -648,7 +724,7 @@ extern int monsterGlobalAnimationMultiplier;
 // change attacktime for debugging, default value 1.
 extern int monsterGlobalAttackTimeMultiplier;
 // monster custom NPC chatter
-bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats);
+bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats);
 // check qty of a certain creature race alive on a map
 int numMonsterTypeAliveOnMap(Monster creature, Entity*& lastMonster);
 
@@ -710,3 +786,12 @@ static const int LICH_ALLY_DEAD = 1;
 //--Lich Battle States--
 static const int LICH_BATTLE_IMMOBILE = -1;
 static const int LICH_BATTLE_READY = 0;
+
+//--Gyrobot--
+static const int GYRO_RETURN_PATHING = 1;
+static const int GYRO_RETURN_LANDING = 2;
+static const int GYRO_INTERACT_LANDING = 3;
+static const int GYRO_START_FLYING = 4;
+
+//--Dummybot--
+static const int DUMMYBOT_RETURN_FORM = 1;

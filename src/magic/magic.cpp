@@ -21,6 +21,7 @@
 #include "magic.hpp"
 #include "../collision.hpp"
 #include "../classdescriptions.hpp"
+#include "../scores.hpp"
 
 void freeSpells()
 {
@@ -55,6 +56,27 @@ void freeSpells()
 	list_FreeAll(&spell_drainSoul.elements);
 	list_FreeAll(&spell_vampiricAura.elements);
 	list_FreeAll(&spell_charmMonster.elements);
+	list_FreeAll(&spell_revertForm.elements);
+	list_FreeAll(&spell_ratForm.elements);
+	list_FreeAll(&spell_spiderForm.elements);
+	list_FreeAll(&spell_trollForm.elements);
+	list_FreeAll(&spell_impForm.elements);
+	list_FreeAll(&spell_sprayWeb.elements);
+	list_FreeAll(&spell_poison.elements);
+	list_FreeAll(&spell_speed.elements);
+	list_FreeAll(&spell_fear.elements);
+	list_FreeAll(&spell_strike.elements);
+	list_FreeAll(&spell_detectFood.elements);
+	list_FreeAll(&spell_weakness.elements);
+	list_FreeAll(&spell_amplifyMagic.elements);
+	list_FreeAll(&spell_shadowTag.elements);
+	list_FreeAll(&spell_telePull.elements);
+	list_FreeAll(&spell_demonIllusion.elements);
+	list_FreeAll(&spell_trollsBlood.elements);
+	list_FreeAll(&spell_salvageItem.elements);
+	list_FreeAll(&spell_flutter.elements);
+	list_FreeAll(&spell_dash.elements);
+	list_FreeAll(&spell_polymorph.elements);
 }
 
 void spell_magicMap(int player)
@@ -77,6 +99,27 @@ void spell_magicMap(int player)
 
 	messagePlayer(player, language[412]);
 	mapLevel(player);
+}
+
+void spell_detectFoodEffectOnMap(int player)
+{
+	if ( players[player] == nullptr || players[player]->entity == nullptr )
+	{
+		return;
+	}
+
+	if ( multiplayer == SERVER && player > 0 )
+	{
+		//Tell the client to map the food.
+		strcpy((char*)net_packet->data, "MFOD");
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 4;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return;
+	}
+
+	mapFoodOnLevel(player);
 }
 
 void spell_summonFamiliar(int player)
@@ -320,7 +363,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 
 		hit.entity->flags[USERFLAG2] = true;
 		serverUpdateEntityFlag(hit.entity, USERFLAG2);
-		if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
+		if ( monsterChangesColorWhenAlly(hitstats) )
 		{
 			int bodypart = 0;
 			for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
@@ -358,9 +401,11 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance)
 {
 	playSoundEntity(&my, 173, 128);
+		
 	if ( hit.entity )
 	{
 		int damage = element.damage;
+		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, &element));
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
@@ -384,13 +429,14 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				return;
 			}
 			bool hasamulet = false;
-			if ( hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE )
+			if ( (hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE) || hitstats->type == INSECTOID )
 			{
 				resistance += 2;
 				hasamulet = true;
 			}
+			int oldHP = hitstats->HP;
 			damage /= (1 + (int)resistance);
-			damage *= damagetables[hitstats->type][5];
+			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
 			hit.entity->modHP(-damage);
 
 			// write the obituary
@@ -439,7 +485,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 			}
 
-			if ( hitstats->HP <= 0 && parent )
+			if ( oldHP > 0 && hitstats->HP <= 0 && parent )
 			{
 				parent->awardXP(hit.entity, true, true);
 			}
@@ -489,6 +535,323 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 	}
 }
 
+void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+{
+	playSoundEntity(&my, 173, 128);
+	if ( hit.entity )
+	{
+		int damage = element.damage;
+		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, &element));
+		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
+		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		{
+			Entity* parent = uidToEntity(my.parent);
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				// test for friendly fire
+				if ( parent && parent->checkFriend(hit.entity) )
+				{
+					return;
+				}
+			}
+			playSoundEntity(hit.entity, 249, 64);
+
+			Stat* hitstats = hit.entity->getStats();
+			if ( !hitstats )
+			{
+				return;
+			}
+			bool hasamulet = false;
+			if ( (hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE) || hitstats->type == INSECTOID )
+			{
+				resistance += 2;
+				hasamulet = true;
+			}
+			damage /= (1 + (int)resistance);
+			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+			hit.entity->modHP(-damage);
+
+			// write the obituary
+			if ( parent )
+			{
+				parent->killedByMonsterObituary(hit.entity);
+			}
+
+			if ( !hasamulet )
+			{
+				if ( my.actmagicCastByMagicstaff == 1 )
+				{
+					hit.entity->setEffect(EFF_POISONED, true, 320, true); // 6 seconds.
+				}
+				else
+				{
+					hit.entity->setEffect(EFF_POISONED, true, std::max(200, 350 - hit.entity->getCON() * 5), true); // 4-7 seconds.
+				}
+				hitstats->poisonKiller = my.parent;
+			}
+
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				serverUpdateEffects(hit.entity->skill[2]);
+			}
+			// hit messages
+			if ( parent )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3427], language[3426], MSG_COMBAT);
+				}
+			}
+
+			// update enemy bar for attacker
+			if ( !strcmp(hitstats->name, "") )
+			{
+				if ( hitstats->type < KOBOLD ) //Original monster count
+				{
+					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+				}
+				else if ( hitstats->type >= KOBOLD ) //New monsters
+				{
+					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+				}
+			}
+			else
+			{
+				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+			}
+
+			if ( hitstats->HP <= 0 && parent )
+			{
+				parent->awardXP(hit.entity, true, true);
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+			int player = -1;
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				player = hit.entity->skill[2];
+			}
+			if ( player >= 0 )
+			{
+				messagePlayerColor(player, color, language[3428]);
+			}
+		}
+		else if ( hit.entity->behavior == &actDoor )
+		{
+			hit.entity->doorHandleDamageMagic(damage, my, parent);
+		}
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	}
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
+}
+
+bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance)
+{
+	if ( !target )
+	{
+		//spawnMagicEffectParticles(my.x, my.y, my.z, 863);
+		return false;
+	}
+
+	if ( target->behavior == &actMonster || target->behavior == &actPlayer )
+	{
+		Entity* parent = forceParent;
+		if ( my && !parent )
+		{
+			parent = uidToEntity(my->parent);
+		}
+		if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+		{
+			// test for friendly fire
+			if ( parent && parent->checkFriend(target) )
+			{
+				return false;
+			}
+		}
+
+		Stat* hitstats = target->getStats();
+		if ( !hitstats )
+		{
+			return false;
+		}
+
+		int duration = 400; // 8 seconds
+		duration = std::max(150, duration - TICKS_PER_SECOND * (hitstats->CON / 5)); // 3-8 seconds, depending on CON.
+		duration /= (1 + resistance);
+		if ( target->setEffect(EFF_FEAR, true, duration, true) )
+		{
+			playSoundEntity(target, 168, 128); // Healing.ogg
+			Uint32 color = 0;
+			if ( parent )
+			{
+				// update enemy bar for attacker
+				if ( !strcmp(hitstats->name, "") )
+				{
+					if ( hitstats->type < KOBOLD ) //Original monster count
+					{
+						updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+					}
+					else if ( hitstats->type >= KOBOLD ) //New monsters
+					{
+						updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+					}
+				}
+				else
+				{
+					updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
+				}
+				target->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+				target->monsterFearfulOfUid = parent->getUID();
+
+				if ( parent->behavior == &actPlayer && parent->getStats() && parent->getStats()->type == TROLL )
+				{
+					serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_FORUM_TROLL, AchievementObserver::FORUM_TROLL_FEAR);
+				}
+			}
+		}
+		else
+		{
+			// no effect.
+			if ( parent )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+				}
+			}
+			return false;
+		}
+
+		// hit messages
+		if ( parent )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			if ( parent->behavior == &actPlayer )
+			{
+				messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3434], language[3435], MSG_COMBAT);
+			}
+		}
+
+		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+		int player = -1;
+		if ( target->behavior == &actPlayer )
+		{
+			player = target->skill[2];
+		}
+		if ( player >= 0 )
+		{
+			messagePlayerColor(player, color, language[3436]);
+		}
+	}
+	spawnMagicEffectParticles(target->x, target->y, target->z, 863);
+	return true;
+}
+
+void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+{
+	if ( hit.entity )
+	{
+		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		{
+			Entity* parent = uidToEntity(my.parent);
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				// test for friendly fire
+				if ( parent && parent->checkFriend(hit.entity) )
+				{
+					return;
+				}
+			}
+
+			Stat* hitstats = hit.entity->getStats();
+			if ( !hitstats )
+			{
+				return;
+			}		
+
+			bool spawnParticles = true;
+			if ( hitstats->EFFECTS[EFF_WEBBED] )
+			{
+				spawnParticles = false;
+			}
+			int previousDuration = hitstats->EFFECTS_TIMERS[EFF_WEBBED];
+			int duration = 400;
+			duration /= (1 + resistance);
+			if ( hit.entity->setEffect(EFF_WEBBED, true, 400, true) ) // 8 seconds.
+			{
+				if ( duration - previousDuration > 10 )
+				{
+					playSoundEntity(hit.entity, 396 + rand() % 3, 64); // play sound only if not recently webbed. (triple shot makes many noise)
+				}
+				hit.entity->creatureWebbedSlowCount = std::min(3, hit.entity->creatureWebbedSlowCount + 1);
+				if ( hit.entity->behavior == &actPlayer )
+				{
+					serverUpdateEntitySkill(hit.entity, 52); // update player.
+				}
+				if ( spawnParticles )
+				{
+					createParticleAestheticOrbit(hit.entity, 863, 400, PARTICLE_EFFECT_SPELL_WEB_ORBIT);
+					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SPELL_WEB_ORBIT, 863);
+				}
+			}
+			else
+			{
+				// no effect.
+				if ( parent )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+					if ( parent->behavior == &actPlayer )
+					{
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+					}
+				}
+				return;
+			}
+
+			// hit messages
+			if ( parent )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					if ( duration - previousDuration > 10 ) // message if not recently webbed
+					{
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3430], language[3429], MSG_COMBAT);
+					}
+				}
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+			int player = -1;
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				player = hit.entity->skill[2];
+			}
+			if ( player >= 0 )
+			{
+				if ( duration - previousDuration > 10 ) // message if not recently webbed
+				{
+					messagePlayerColor(player, color, language[3431]);
+				}
+			}
+		}
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 863);
+	}
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, 863);
+	}
+}
+
 void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance)
 {
 	if ( hit.entity )
@@ -516,7 +879,10 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				return;
 			}
 
-			if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllySummonRank != 0 )
+			if ( hit.entity->behavior == &actMonster 
+				&& (hit.entity->monsterAllySummonRank != 0 
+					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))))
+				)
 			{
 				return;
 			}
@@ -671,9 +1037,10 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			}
 
 			int damage = element.damage;
+			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, &element));
 			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 			damage /= (1 + (int)resistance);
-			damage *= damagetables[hitstats->type][5];
+			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
 
 			if ( parent )
 			{
@@ -690,6 +1057,10 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			if ( damage > hitstats->MP )
 			{
 				damage = hitstats->MP;
+			}
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				damage /= 4; // reduced mana steal
 			}
 			hit.entity->drainMP(damage);
 
@@ -1009,7 +1380,10 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			{
 				chance = 0;
 			}
-			else if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllySummonRank != 0 )
+			else if ( hit.entity->behavior == &actMonster 
+				&& (hit.entity->monsterAllySummonRank != 0
+					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon")))) 
+				)
 			{
 				chance = 0; // not allowed to control summons
 			}
@@ -1107,7 +1481,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					hit.entity->flags[USERFLAG2] = true;
 					serverUpdateEntityFlag(hit.entity, USERFLAG2);
 					hitstats->monsterIsCharmed = 1;
-					if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
+					if ( monsterChangesColorWhenAlly(hitstats) )
 					{
 						int bodypart = 0;
 						for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
@@ -1221,11 +1595,14 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 	return;
 }
 
-Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
+Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent, bool fromMagicSpell, int customDuration)
 {
 	int effectDuration = 0;
 	effectDuration = TICKS_PER_SECOND * 60 * (4 + rand() % 3); // 4-6 minutes
-
+	if ( customDuration > 0 )
+	{
+		effectDuration = customDuration;
+	}
 	if ( !target || !targetStats )
 	{
 		if ( parent && parent->behavior == &actPlayer )
@@ -1237,7 +1614,9 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 
 	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
 		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
-		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0) )
+		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
+		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
+		)
 	{
 		if ( parent && parent->behavior == &actPlayer )
 		{
@@ -1255,7 +1634,8 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			|| monsterSummonType == MIMIC || monsterSummonType == BUGBEAR || monsterSummonType == OCTOPUS
 			|| monsterSummonType == MINOTAUR || monsterSummonType == LICH_FIRE || monsterSummonType == LICH_ICE
 			|| monsterSummonType == NOTHING || monsterSummonType == targetStats->type || monsterSummonType == HUMAN
-			|| (targetStats->leader_uid != 0 && monsterSummonType == SHADOW) )
+			|| (targetStats->leader_uid != 0 && monsterSummonType == SHADOW) || monsterSummonType == SENTRYBOT
+			|| monsterSummonType == SPELLBOT || monsterSummonType == GYROBOT || monsterSummonType == DUMMYBOT )
 		{
 			monsterSummonType = static_cast<Monster>(rand() % NUMMONSTERS);
 		}
@@ -1424,7 +1804,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 		summonedStats->CON = targetStats->CON;
 		summonedStats->INT = targetStats->INT;
 		summonedStats->PER = targetStats->PER;
-		summonedStats->CHR = targetStats->CHR;
+		//summonedStats->CHR = targetStats->CHR;
 		summonedStats->LVL = targetStats->LVL;
 		summonedStats->GOLD = targetStats->GOLD;
 
@@ -1502,7 +1882,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 					// change the color of the hit entity.
 					summonedEntity->flags[USERFLAG2] = true;
 					serverUpdateEntityFlag(summonedEntity, USERFLAG2);
-					if ( summonedStats->type != HUMAN && summonedStats->type != AUTOMATON )
+					if ( monsterChangesColorWhenAlly(summonedStats) )
 					{
 						int bodypart = 0;
 						for ( node_t* node = summonedEntity->children.first; node != nullptr; node = node->next )
@@ -1694,6 +2074,25 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			}
 		}
 
+		node_t* nextnode = nullptr;
+		for ( node_t* node = targetStats->inventory.first; node; node = nextnode )
+		{
+			nextnode = node->next;
+			Item* item = (Item*)node->element;
+			if ( item && item->appearance != MONSTER_ITEM_UNDROPPABLE_APPEARANCE && itemSlot(targetStats, item) == nullptr )
+			{
+				Item* copiedItem = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &summonedStats->inventory);
+				if ( item->node )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
+			}
+		}
+
 		if ( parent && parent->behavior == &actPlayer )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
@@ -1859,4 +2258,526 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 	}
 
 	return nullptr;
+}
+
+bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance)
+{
+	if ( !parent )
+	{
+		return false;
+	}
+	if ( target )
+	{
+		playSoundEntity(target, 173, 128);
+		//int damage = element.damage;
+		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
+		if ( target->behavior == &actMonster || target->behavior == &actPlayer 
+			/*|| target->behavior == &actDoor || target->behavior == &actChest*/ )
+		{
+			Stat* hitstats = target->getStats();
+			if ( hitstats )
+			{
+				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+				{
+					// test for friendly fire
+					if ( parent && parent->checkFriend(target) )
+					{
+						return false;
+					}
+				}
+			}
+			//playSoundEntity(target, 249, 64);
+
+			if ( parent )
+			{
+				if ( target->behavior == &actPlayer )
+				{
+					if ( MFLAG_DISABLETELEPORT )
+					{
+						// can't teleport here.
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+						messagePlayerColor(target->skill[2], color, language[2381]);
+						if ( parent->behavior == &actPlayer )
+						{
+							messagePlayerColor(parent->skill[2], color, language[3452]);
+						}
+						return false;
+					}
+				}
+				if ( target->behavior == &actMonster && target->isBossMonster() )
+				{
+					if ( parent->behavior == &actPlayer )
+					{
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						if ( hitstats )
+						{
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+						}
+					}
+					return false;
+				}
+
+				// try find a teleport location in front of the caster.
+				int tx = static_cast<int>(std::floor(parent->x + 32 * cos(parent->yaw))) >> 4;
+				int ty = static_cast<int>(std::floor(parent->y + 32 * sin(parent->yaw))) >> 4;
+				int dist = 2;
+				bool foundLocation = false;
+				int numlocations = 0;
+				std::vector<std::pair<int, int>> goodspots;
+				std::vector<std::pair<int, int>> spotsWithLineOfSight;
+				if ( !checkObstacle((tx << 4) + 8, (ty << 4) + 8, target, NULL) ) // try find directly infront of caster.
+				{
+					Entity* ohitentity = hit.entity;
+					real_t ox = target->x;
+					real_t oy = target->y;
+					target->x = (tx << 4) + 8;
+					target->y = (ty << 4) + 8;
+					TileEntityList.updateEntity(*target); // important - lineTrace needs the TileEntityListUpdated.
+
+					// pretend the target is in the supposed spawn locations and try linetrace from each position.
+					real_t tangent = atan2(target->y - parent->y, target->x - parent->x);
+					lineTraceTarget(parent, parent->x, parent->y, tangent, 92, 0, true, target);
+					if ( hit.entity == target )
+					{
+						foundLocation = true;
+					}
+					
+					// reset the coordinates we messed with
+					target->x = ox;
+					target->y = oy;
+					TileEntityList.updateEntity(*target); // important - lineTrace needs the TileEntityListUpdated.
+					hit.entity = ohitentity;
+				}
+				if ( !foundLocation )
+				{
+					// otherwise, let's search in an area
+					for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+					{
+						for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+						{
+							if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, target, NULL) )
+							{
+								Entity* ohitentity = hit.entity;
+								real_t ox = target->x;
+								real_t oy = target->y;
+								target->x = (ix << 4) + 8;
+								target->y = (iy << 4) + 8;
+								TileEntityList.updateEntity(*target); // important - lineTrace needs the TileEntityListUpdated.
+
+								// pretend the target is in the supposed spawn locations and try linetrace from each position.
+								real_t tangent = atan2(target->y - parent->y, target->x - parent->x);
+								lineTraceTarget(parent, parent->x, parent->y, tangent, 92, 0, false, target);
+								if ( hit.entity == target )
+								{
+									spotsWithLineOfSight.push_back(std::make_pair(ix, iy));
+								}
+								goodspots.push_back(std::make_pair(ix, iy));
+								numlocations++;
+								// reset the coordinates we messed with
+								target->x = ox;
+								target->y = oy;
+								TileEntityList.updateEntity(*target); // important - lineTrace needs the TileEntityListUpdated.
+								hit.entity = ohitentity;
+							}
+						}
+					}
+					if ( numlocations == 0 )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							// no room to teleport!
+							messagePlayer(parent->skill[2], language[3453]);
+						}
+						return false;
+					}
+
+					if ( !spotsWithLineOfSight.empty() )
+					{
+						std::pair<int, int> tmpPair = spotsWithLineOfSight[rand() % spotsWithLineOfSight.size()];
+						tx = tmpPair.first;
+						ty = tmpPair.second;
+					}
+					else if ( !goodspots.empty() )
+					{
+						std::pair<int, int> tmpPair = goodspots[rand() % goodspots.size()];
+						tx = tmpPair.first;
+						ty = tmpPair.second;
+					}
+					else
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							// no room to teleport!
+							messagePlayer(parent->skill[2], language[3453]);
+						}
+						return false;
+					}
+				}
+
+				// this timer is the entity spawn location.
+				Entity* locationTimer = createParticleTimer(parent, 40, 593); 
+				locationTimer->x = tx * 16.0 + 8;
+				locationTimer->y = ty * 16.0 + 8;
+				locationTimer->z = 0;
+				locationTimer->particleTimerCountdownAction = PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION;
+				locationTimer->particleTimerCountdownSprite = 593;
+				locationTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
+				locationTimer->particleTimerEndAction = PARTICLE_EFFECT_TELEPORT_PULL; // teleport behavior of timer.
+				locationTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
+				locationTimer->flags[PASSABLE] = false; // so this location is reserved for teleporting the entity.
+				locationTimer->sizex = 4;
+				locationTimer->sizey = 4;
+				if ( !locationTimer->myTileListNode )
+				{
+					locationTimer->setUID(-2);
+					TileEntityList.addEntity(*locationTimer);
+					locationTimer->setUID(-3);
+				}
+
+				// set a coundown to spawn particles on the monster.
+				Entity* spellTimer = createParticleTimer(target, 40, 593);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+				spellTimer->particleTimerCountdownSprite = 593;
+				spellTimer->particleTimerTarget = static_cast<Sint32>(parent->getUID()); // get the target to teleport around.
+
+
+				if ( multiplayer == SERVER )
+				{
+					serverSpawnMiscParticles(target, PARTICLE_EFFECT_TELEPORT_PULL, 593);
+					serverSpawnMiscParticlesAtLocation(tx, ty, 0, PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION, 593);
+				}
+
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					// play a sound for the player to confirm the hit.
+					playSoundPlayer(parent->skill[2], 251, 128);
+				}
+
+				// update enemy bar for attacker
+				if ( hitstats )
+				{
+					if ( !strcmp(hitstats->name, "") )
+					{
+						if ( hitstats->type < KOBOLD ) //Original monster count
+						{
+							updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+						}
+						else if ( hitstats->type >= KOBOLD ) //New monsters
+						{
+							updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+						}
+					}
+					else
+					{
+						updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
+					}
+				}
+			}
+			return true;
+		}
+		if ( my )
+		{
+			spawnMagicEffectParticles(target->x, target->y, target->z, my->sprite);
+		}
+	}
+	else if ( my )
+	{
+		spawnMagicEffectParticles(my->x, my->y, my->z, my->sprite);
+	}
+	return false;
+}
+
+void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+{
+	if ( hit.entity )
+	{
+		//int damage = element.damage;
+		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
+		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		{
+			playSoundEntity(&my, 174, 128);
+			Stat* hitstats = hit.entity->getStats();
+			if ( !hitstats )
+			{
+				return;
+			}
+
+			if ( parent )
+			{
+				bool sameAsPrevious = false;
+				if ( parent->creatureShadowTaggedThisUid != 0 )
+				{
+					Entity* oldTarget = nullptr;
+					if ( oldTarget = uidToEntity(parent->creatureShadowTaggedThisUid) )
+					{
+						if ( oldTarget != hit.entity )
+						{
+							oldTarget->setEffect(EFF_SHADOW_TAGGED, false, 0, true);
+						}
+						else
+						{
+							sameAsPrevious = true;
+						}
+					}
+				}
+				if ( parent->checkFriend(hit.entity) )
+				{
+					hit.entity->setEffect(EFF_SHADOW_TAGGED, true, 60 * TICKS_PER_SECOND, true);
+				}
+				else
+				{
+					hit.entity->setEffect(EFF_SHADOW_TAGGED, true, 10 * TICKS_PER_SECOND, true);
+				}
+				parent->creatureShadowTaggedThisUid = hit.entity->getUID();
+				serverUpdateEntitySkill(parent, 54);
+				if ( !sameAsPrevious )
+				{
+					createParticleShadowTag(hit.entity, parent->getUID(), 60 * TICKS_PER_SECOND);
+					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SHADOW_TAG, 870, parent->getUID());
+				}
+			}
+
+			// hit messages
+			if ( parent )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3463], language[3464], MSG_COMBAT);
+				}
+			}
+
+			// update enemy bar for attacker
+			if ( !strcmp(hitstats->name, "") )
+			{
+				if ( hitstats->type < KOBOLD ) //Original monster count
+				{
+					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+				}
+				else if ( hitstats->type >= KOBOLD ) //New monsters
+				{
+					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+				}
+			}
+			else
+			{
+				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			int player = -1;
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				player = hit.entity->skill[2];
+				if ( player >= 0 )
+				{
+					messagePlayerColor(player, color, language[3465]);
+				}
+			}
+		}
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	}
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
+}
+
+bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance)
+{
+	if ( target )
+	{
+		//int damage = element.damage;
+		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
+		if ( target->behavior == &actMonster || target->behavior == &actPlayer )
+		{
+			Stat* hitstats = target->getStats();
+			if ( !hitstats )
+			{
+				return false;
+			}
+
+			if ( hitstats->type == INCUBUS || hitstats->type == SUCCUBUS 
+				|| hitstats->type == AUTOMATON || hitstats->type == DEVIL || hitstats->type == DEMON || hitstats->type == CREATURE_IMP
+				|| hitstats->type == SHADOW
+				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
+			{
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					// unable to taunt!
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3472], language[3473], MSG_COMBAT);
+				}
+				return false;
+			}
+			else if ( hitstats->monsterDemonHasBeenExorcised != 0 
+				&& target->behavior != &actPlayer )
+			{
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					// already exorcised!
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3735], language[3736], MSG_COMBAT);
+				}
+				return false;
+			}
+
+			if ( parent )
+			{
+				// try find a summon location around the entity.
+				int tx = static_cast<int>(std::floor(target->x)) >> 4;
+				int ty = static_cast<int>(std::floor(target->y)) >> 4;
+				int dist = 3;
+				int numlocations = 0;
+				std::vector<std::pair<int, int>> goodspots;
+				for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+				{
+					for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+					{
+						if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, target, NULL) )
+						{
+							Entity* ohitentity = hit.entity;
+							real_t ox = parent->x;
+							real_t oy = parent->y;
+							parent->x = (ix << 4) + 8;
+							parent->y = (iy << 4) + 8;
+							TileEntityList.updateEntity(*parent); // important - lineTrace needs the TileEntityListUpdated.
+
+							// pretend the parent is in the supposed spawn locations and try linetrace from each position.
+							real_t tangent = atan2(parent->y - target->y, parent->x - target->x);
+							lineTraceTarget(target, target->x, target->y, tangent, 64, 0, false, parent);
+							if ( hit.entity == parent )
+							{
+								goodspots.push_back(std::make_pair(ix, iy));
+								numlocations++;
+							}
+							// reset the coordinates we messed with
+							parent->x = ox;
+							parent->y = oy;
+							TileEntityList.updateEntity(*parent); // important - lineTrace needs the TileEntityListUpdated.
+							hit.entity = ohitentity;
+						}
+					}
+				}
+				if ( numlocations == 0 )
+				{
+					if ( parent->behavior == &actPlayer )
+					{
+						// no room to spawn!
+						messagePlayer(parent->skill[2], language[3471]);
+					}
+					return false;
+				}
+				std::pair<int, int> tmpPair = goodspots[rand() % goodspots.size()];
+				tx = tmpPair.first;
+				ty = tmpPair.second;
+
+				Entity* monster = summonMonster(INCUBUS, tx * 16.0 + 8, ty * 16.0 + 8, true);
+				if ( monster )
+				{
+					spawnExplosion(monster->x, monster->y, -1);
+					playSoundEntity(monster, 171, 128);
+					//playSoundEntity(&my, 178, 128);
+					createParticleErupt(monster, 983);
+					serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 983);
+
+					monster->parent = parent->getUID();
+					monster->monsterIllusionTauntingThisUid = static_cast<Sint32>(target->getUID());
+					switch ( target->getRace() )
+					{
+						case LICH:
+						case LICH_FIRE:
+						case LICH_ICE:
+						case MINOTAUR:
+							break;
+						default:
+							target->monsterAcquireAttackTarget(*monster, MONSTER_STATE_PATH);
+							break;
+					}
+					monster->lookAtEntity(*target);
+					Stat* monsterStats = monster->getStats();
+					if ( monsterStats )
+					{
+						monsterStats->leader_uid = 0;
+						strcpy(monsterStats->name, "inner demon");
+						monster->setEffect(EFF_STUNNED, true, 20, false);
+						monster->flags[USERFLAG2] = true;
+						serverUpdateEntityFlag(monster, USERFLAG2);
+						if ( monsterChangesColorWhenAlly(monsterStats) )
+						{
+							int bodypart = 0;
+							for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
+							{
+								if ( bodypart >= LIMB_HUMANOID_TORSO )
+								{
+									Entity* tmp = (Entity*)node->element;
+									if ( tmp )
+									{
+										tmp->flags[USERFLAG2] = true;
+										serverUpdateEntityFlag(tmp, USERFLAG2);
+									}
+								}
+								++bodypart;
+							}
+						}
+					}
+					Stat* parentStats = parent->getStats();
+					if ( parentStats )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							messagePlayerColor(parent->skill[2], color, language[621]);
+						}
+						parent->modHP(-(parentStats->MAXHP / 10));
+						if ( parentStats->sex == MALE )
+						{
+							parent->setObituary(language[1528]);
+						}
+						else
+						{
+							parent->setObituary(language[1529]);
+						}
+					}
+
+					hitstats->monsterDemonHasBeenExorcised++;
+
+					// hit messages
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					if ( parent->behavior == &actPlayer )
+					{
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3469], language[3470], MSG_COMBAT);
+					}
+				}
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			int player = -1;
+			if ( target->behavior == &actPlayer )
+			{
+				player = target->skill[2];
+				if ( player >= 0 )
+				{
+					messagePlayerColor(player, color, language[3468]);
+					if ( hitstats->monsterDemonHasBeenExorcised == 3 )
+					{
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						messagePlayerColor(player, color, language[3468]);
+					}
+				}
+			}
+			spawnMagicEffectParticles(target->x, target->y, target->z, my.sprite);
+			return true;
+		}
+		spawnMagicEffectParticles(target->x, target->y, target->z, my.sprite);
+	}
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
+	return false;
 }

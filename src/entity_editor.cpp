@@ -64,6 +64,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	playerLevelEntrySpeech(skill[18]),
 	playerAliveTime(skill[12]),
 	playerVampireCurse(skill[51]),
+	playerAutomatonDeathCounter(skill[15]),
+	playerCreatedDeathCam(skill[16]),
 	monsterAttack(skill[8]),
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
@@ -98,7 +100,18 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterAllySummonRank(skill[50]),
 	monsterKnockbackVelocity(fskill[9]),
 	monsterKnockbackUID(skill[51]),
+	creatureWebbedSlowCount(skill[52]),
+	monsterFearfulOfUid(skill[53]),
+	creatureShadowTaggedThisUid(skill[54]),
+	monsterIllusionTauntingThisUid(skill[55]),
+	monsterLastDistractedByNoisemaker(skill[55]),
+	monsterSentrybotLookDir(fskill[10]),
+	monsterKnockbackTangentDir(fskill[11]),
+	playerStrafeVelocity(fskill[12]),
+	playerStrafeDir(fskill[13]),
+	entityShowOnMap(skill[59]),
 	effectPolymorph(skill[50]),
+	effectShapeshift(skill[53]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -107,6 +120,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemSokobanReward(skill[20]),
 	itemOriginalOwner(skill[21]),
 	itemStolen(skill[22]),
+	itemShowOnMap(skill[23]),
+	itemDelayMonsterPickingUp(skill[24]),
+	itemReceivedDetailsFromServer(skill[25]),
+	itemAutoSalvageByPlayer(skill[26]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -132,6 +149,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	doorOldStatus(skill[8]),
 	doorMaxHealth(skill[9]),
 	doorStartAng(fskill[0]),
+	doorPreventLockpickExploit(skill[10]),
 	particleTimerDuration(skill[0]),
 	particleTimerEndAction(skill[1]),
 	particleTimerEndSprite(skill[3]),
@@ -140,6 +158,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	particleTimerTarget(skill[6]),
 	particleTimerPreDelay(skill[7]),
 	particleTimerVariable1(skill[8]),
+	particleTimerVariable2(skill[9]),
 	pedestalHasOrb(skill[0]),
 	pedestalOrbType(skill[1]),
 	pedestalInvertedPower(skill[3]),
@@ -187,12 +206,18 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	arrowPower(skill[3]),
 	arrowPoisonTime(skill[4]),
 	arrowArmorPierce(skill[5]),
+	arrowSpeed(fskill[4]),
+	arrowFallSpeed(fskill[5]),
+	arrowBoltDropOffRange(skill[6]),
+	arrowShotByWeapon(skill[7]),
+	arrowQuiverType(skill[8]),
+	arrowShotByParent(skill[9]),
 	actmagicIsVertical(skill[6]),
 	actmagicIsOrbiting(skill[7]),
 	actmagicOrbitDist(skill[8]),
 	actmagicOrbitVerticalDirection(skill[9]),
 	actmagicOrbitLifetime(skill[10]),
-	actmagicMirrorReflected(skill[11]),
+	actmagicMirrorReflected(skill[24]),
 	actmagicMirrorReflectedCaster(skill[12]),
 	actmagicCastByMagicstaff(skill[13]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
@@ -205,6 +230,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitHitTargetUID2(skill[16]),
 	actmagicOrbitHitTargetUID3(skill[17]),
 	actmagicOrbitHitTargetUID4(skill[18]),
+	actmagicProjectileArc(skill[19]),
+	actmagicOrbitCastFromSpell(skill[20]),
+	actmagicSpellbookBonus(skill[21]),
+	actmagicCastByTinkerTrap(skill[22]),
+	actmagicTinkerTrapFriendlyFire(skill[23]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -233,7 +263,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	signalTimerInterval(skill[2]),
 	signalTimerRepeatCount(skill[3]),
 	signalTimerLatchInput(skill[4]),
-	signalInputDirection(skill[5])
+	signalInputDirection(skill[5]),
+	thrownProjectilePower(skill[19]),
+	thrownProjectileCharge(skill[20])
 {
 	int c;
 	// add the entity to the entity list
@@ -379,6 +411,12 @@ int playerEntityMatchesUid(Uint32 uid)
 }
 
 bool Entity::isPlayerHeadSprite()
+{
+	// dummy function
+	return false;
+}
+
+bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 {
 	// dummy function
 	return false;

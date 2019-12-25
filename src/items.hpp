@@ -254,9 +254,64 @@ typedef enum ItemType
 	CLOAK_SILVER,
 	HAT_HOOD_SILVER,
 	HAT_HOOD_RED,
-	SILVER_DOUBLET
+	SILVER_DOUBLET,
+	SPELLBOOK_REVERT_FORM,
+	SPELLBOOK_RAT_FORM,
+	SPELLBOOK_SPIDER_FORM,
+	SPELLBOOK_TROLL_FORM,
+	SPELLBOOK_IMP_FORM,
+	SPELLBOOK_SPRAY_WEB,
+	SPELLBOOK_POISON,
+	SPELLBOOK_SPEED,
+	SPELLBOOK_FEAR,
+	SPELLBOOK_STRIKE,
+	SPELLBOOK_DETECT_FOOD,
+	SPELLBOOK_WEAKNESS,
+	MASK_SHAMAN,
+	SPELLBOOK_AMPLIFY_MAGIC,
+	SPELLBOOK_SHADOW_TAG,
+	SPELLBOOK_TELEPULL,
+	SPELLBOOK_DEMON_ILLU,
+	SPELLBOOK_TROLLS_BLOOD,
+	SPELLBOOK_SALVAGE,
+	TOOL_WHIP,
+	SPELLBOOK_FLUTTER,
+	SPELLBOOK_DASH,
+	SPELLBOOK_SELF_POLYMORPH,
+	SPELLBOOK_9,
+	SPELLBOOK_10,
+	MAGICSTAFF_POISON,
+	TOOL_METAL_SCRAP,
+	TOOL_MAGIC_SCRAP,
+	TOOL_TINKERING_KIT,
+	TOOL_SENTRYBOT,
+	TOOL_DETONATOR_CHARGE,
+	TOOL_BOMB,
+	TOOL_SLEEP_BOMB,
+	TOOL_FREEZE_BOMB,
+	TOOL_TELEPORT_BOMB,
+	TOOL_GYROBOT,
+	TOOL_SPELLBOT,
+	TOOL_DECOY,
+	TOOL_DUMMYBOT,
+	MACHINIST_APRON,
+	ENCHANTED_FEATHER,
+	PUNISHER_HOOD,
+	SCROLL_CHARGING,
+	QUIVER_SILVER,
+	QUIVER_PIERCE,
+	QUIVER_LIGHTWEIGHT,
+	QUIVER_FIRE,
+	QUIVER_KNOCKBACK,
+	QUIVER_CRYSTAL,
+	QUIVER_HUNTING,
+	LONGBOW,
+	COMPOUND_BOW,
+	HEAVY_CROSSBOW,
+	BOOMERANG,
+	SCROLL_CONJUREARROW
 } ItemType;
-const int NUMITEMS = 232;
+const int NUMITEMS = 287;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -354,15 +409,17 @@ public:
 	bool canUnequip(Stat* wielder = nullptr); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
 	int buyValue(int player);
 	int sellValue(int player);
+	bool usableWhileShapeshifted(Stat* wielder = nullptr) const;
+	char* getScrollLabel() const;
 
 	void apply(int player, Entity* entity);
+	void applyLockpickToWall(int player, int x, int y);
 
 	//Item usage functions.
 	void applySkeletonKey(int player, Entity& entity);
 	void applyLockpick(int player, Entity& entity);
 	void applyOrb(int player, ItemType type, Entity& entity);
 	void applyEmptyPotion(int player, Entity& entity);
-
 	//-----ITEM COMPARISON FUNCTIONS-----
 	/*
 	 * Returns which weapon hits harder.
@@ -373,6 +430,32 @@ public:
 
 	bool isShield() const;
 
+	enum ItemBombPlacement : int
+	{
+		BOMB_FLOOR,
+		BOMB_WALL,
+		BOMB_CHEST,
+		BOMB_DOOR
+	};
+	enum ItemBombFacingDirection : int
+	{
+		BOMB_UP,
+		BOMB_NORTH,
+		BOMB_EAST,
+		BOMB_SOUTH,
+		BOMB_WEST
+	};
+	enum ItemBombTriggerType : int
+	{
+		BOMB_TRIGGER_ENEMIES,
+		BOMB_TELEPORT_RECEIVER,
+		BOMB_TRIGGER_ALL
+	};
+	void applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity);
+	void applyTinkeringCreation(Entity* parent, Entity* thrown);
+	bool unableToEquipDueToSwapWeaponTimer();
+	bool tinkeringBotIsMaxHealth() const;
+	bool isTinkeringItemWithThrownLimit() const;
 };
 extern Uint32 itemuids;
 
@@ -428,8 +511,9 @@ void item_ScrollBlank(Item* item, int player);
 void item_ScrollEnchantWeapon(Item* item, int player);
 void item_ScrollEnchantArmor(Item* item, int player);
 void item_ScrollRemoveCurse(Item* item, int player);
-void item_ScrollFire(Item* item, int player);
+bool item_ScrollFire(Item* item, int player); // return true if exploded into fire.
 void item_ScrollFood(Item* item, int player);
+void item_ScrollConjureArrow(Item* item, int player);
 void item_ScrollMagicMapping(Item* item, int player);
 void item_ScrollRepair(Item* item, int player);
 void item_ScrollDestroyArmor(Item* item, int player);
@@ -442,6 +526,7 @@ void item_ToolMirror(Item*& item, int player);
 void item_ToolBeartrap(Item*& item, int player);
 void item_Food(Item*& item, int player);
 void item_FoodTin(Item*& item, int player);
+void item_FoodAutomaton(Item*& item, int player);
 void item_Gem(Item* item, int player);
 void item_Spellbook(Item*& item, int player);
 
@@ -460,15 +545,50 @@ Sint32 itemModel(Item* item);
 Sint32 itemModelFirstperson(Item* item);
 SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
-void dropItem(Item* item, int player);
+bool dropItem(Item* item, int player, bool notifyMessage = true); // return true on free'd item
 void useItem(Item* item, int player, Entity* usedBy = nullptr);
 void equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(Stat* wielder);
+bool isItemEquippableInShieldSlot(Item* item);
+bool itemIsConsumableByAutomaton(const Item& item);
 
 extern const real_t potionDamageSkillMultipliers[6];
 extern const real_t thrownDamageSkillMultipliers[6];
+extern std::mt19937 enchantedFeatherScrollSeed;
+extern std::vector<int> enchantedFeatherScrollsShuffled;
+static const std::vector<int> enchantedFeatherScrollsFixedList =
+{
+	SCROLL_BLANK,
+	SCROLL_MAIL,
+	SCROLL_DESTROYARMOR,
+	SCROLL_DESTROYARMOR,
+	SCROLL_DESTROYARMOR,
+	SCROLL_FIRE,
+	SCROLL_FIRE,
+	SCROLL_FIRE,
+	SCROLL_LIGHT,
+	SCROLL_LIGHT,
+	SCROLL_SUMMON,
+	SCROLL_SUMMON,
+	SCROLL_IDENTIFY,
+	SCROLL_IDENTIFY,
+	SCROLL_REMOVECURSE,
+	SCROLL_CONJUREARROW,
+	SCROLL_FOOD,
+	SCROLL_FOOD,
+	SCROLL_TELEPORTATION,
+	SCROLL_TELEPORTATION,
+	SCROLL_CHARGING,
+	SCROLL_REPAIR,
+	SCROLL_MAGICMAPPING,
+	SCROLL_ENCHANTWEAPON,
+	SCROLL_ENCHANTARMOR
+};
+static const int ENCHANTED_FEATHER_MAX_DURABILITY = 101;
+static const int QUIVER_MAX_AMMO_QTY = 51;
+static const int SCRAP_MAX_STACK_QTY = 101;
 
 //-----ITEM COMPARISON FUNCS-----
 /*
@@ -482,6 +602,7 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance);
 bool isPotionBad(const Item& potion);
 bool isRangedWeapon(const Item& item);
 bool isMeleeWeapon(const Item& item);
+bool itemIsThrowableTinkerTool(const Item* item);
 
 void createCustomInventory(Stat* stats, int itemLimit);
 void copyItem(Item* itemToSet, Item* itemToCopy);
@@ -492,9 +613,23 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
 node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFInd);
 node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
-ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
+ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue);
+bool itemSpriteIsQuiverThirdPersonModel(int sprite);
+bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
+bool itemTypeIsQuiver(ItemType type);
+bool itemSpriteIsBreastpiece(int sprite);
+real_t rangedAttackGetSpeedModifier(Stat* myStats);
+bool rangedWeaponUseQuiverOnAttack(Stat* myStats);
+real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount);
+void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten);
+bool playerCanSpawnMoreTinkeringBots(Stat* myStats);
+int maximumTinkeringBotsCanBeDeployed(Stat* myStats);
+extern bool overrideTinkeringLimit;
+extern int decoyBoxRange;
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;
+static const int ITEM_TINKERING_APPEARANCE = 987654320;
+static const int ITEM_GENERATED_QUIVER_APPEARANCE = 1122334455;
 
 bool loadItemLists();
