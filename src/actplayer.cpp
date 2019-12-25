@@ -1772,12 +1772,20 @@ void actPlayer(Entity* my)
 					{
 						my->setObituary(language[3010]); // fell to their death.
 						stats[PLAYER_NUM]->HP = 0; // kill me instantly
+						if (stats[PLAYER_NUM]->type == AUTOMATON)
+						{
+							my->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
+						}
 					}
 				}
 				else if ( safeTiles.empty() )
 				{
 					my->setObituary(language[3010]); // fell to their death.
 					stats[PLAYER_NUM]->HP = 0; // kill me instantly
+					if (stats[PLAYER_NUM]->type == AUTOMATON)
+					{
+						my->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
+					}
 				}
 			}
 
