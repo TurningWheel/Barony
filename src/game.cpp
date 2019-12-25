@@ -3306,7 +3306,7 @@ int main(int argc, char** argv)
 				{
 					if (strcmp(classtoquickstart, ""))
 					{
-						for ( c = 0; c < NUMCLASSES; c++ )
+						for ( c = 0; c <= CLASS_MONK; c++ )
 						{
 							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) )
 							{
