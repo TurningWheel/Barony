@@ -699,7 +699,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							{
 								if (itemInCategory == ENCHANTED_FEATHER)
 								{
-									newItem(static_cast<ItemType>(itemInCategory), EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY, true, &myStats->inventory);
+									newItem(static_cast<ItemType>(itemInCategory), EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, true, &myStats->inventory);
 								}
 								else if (itemTypeIsQuiver(static_cast<ItemType>(itemInCategory)))
 								{
