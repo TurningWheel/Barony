@@ -35,9 +35,9 @@ char shopkeepername_client[64];
 int selectedShopSlot = -1;
 std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
 {
-	{ ARTIFACT_ORB_GREEN, { QUIVER_CRYSTAL, QUIVER_LIGHTWEIGHT, QUIVER_HUNTING, HEAVY_CROSSBOW, BOOMERANG, ARTIFACT_BOW } },
+	{ ARTIFACT_ORB_GREEN, { ARTIFACT_BOW, QUIVER_HUNTING, QUIVER_PIERCE } },
 	{ ARTIFACT_ORB_BLUE, { ARTIFACT_MACE, ENCHANTED_FEATHER } },
-	{ ARTIFACT_ORB_RED, { ARTIFACT_AXE, ARTIFACT_SWORD, ARTIFACT_SPEAR } }
+	{ ARTIFACT_ORB_RED, { CRYSTAL_SWORD, CRYSTAL_BATTLEAXE, CRYSTAL_SPEAR, CRYSTAL_MACE } }
 });
 
 /*-------------------------------------------------------------------------------
@@ -305,6 +305,10 @@ void sellItemToShop(Item* item)
 	if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] >= CAPSTONE_UNLOCK_LEVEL[PRO_TRADING] )
 	{
 		//Skill capstone: Can sell anything to any shop.
+		if (shopkeepertype == 10)
+		{
+			deal = false;
+		}
 	}
 	else
 	{

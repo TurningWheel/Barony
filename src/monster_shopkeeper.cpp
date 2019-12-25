@@ -697,7 +697,29 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						{
 							for (auto itemInCategory : orbCategories.second)
 							{
-								newItem(static_cast<ItemType>(itemInCategory), EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+								if (itemInCategory == ENCHANTED_FEATHER)
+								{
+									newItem(static_cast<ItemType>(itemInCategory), EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, true, &myStats->inventory);
+								}
+								else if (itemTypeIsQuiver(static_cast<ItemType>(itemInCategory)))
+								{
+									newItem(static_cast<ItemType>(itemInCategory), SERVICABLE, 0, 50, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
+								}
+								else
+								{
+									int bless = 0;
+									Status status = SERVICABLE;
+									if (itemInCategory >= CRYSTAL_SWORD && itemInCategory <= CRYSTAL_MACE)
+									{
+										bless = 3;
+										status = EXCELLENT;
+									}
+									else if (itemInCategory >= ARTIFACT_SWORD && itemInCategory <= ARTIFACT_BOW)
+									{
+										status = SERVICABLE;
+									}
+									newItem(static_cast<ItemType>(itemInCategory), status, bless, 1, rand(), true, &myStats->inventory);
+								}
 								--numitems;
 							}
 						}
