@@ -1389,7 +1389,11 @@ void updatePlayerInventory()
 					{
 						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 						{
-							dropItem(item, clientnum); // Quick item drop
+							printlog("Quick dropped an item: %s", item->getName());
+							if ( dropItem(item, clientnum) ) // Quick item drop
+							{
+								item = nullptr;
+							}
 						}
 						else
 						{
