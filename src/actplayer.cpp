@@ -1566,7 +1566,11 @@ void actPlayer(Entity* my)
 								if ( i == 1 )
 								{
 									// only unhide the body.
-									entity->flags[INVISIBLE] = false;
+									if ( entity->flags[INVISIBLE] )
+									{
+										entity->flags[INVISIBLE] = false;
+										serverUpdateEntityBodypart(my, i);
+									}
 								}
 							}
 							else if ( stats[PLAYER_NUM]->type == SPIDER )
@@ -1575,9 +1579,12 @@ void actPlayer(Entity* my)
 							}
 							else
 							{
-								entity->flags[INVISIBLE] = false;
+								if ( entity->flags[INVISIBLE] )
+								{
+									entity->flags[INVISIBLE] = false;
+									serverUpdateEntityBodypart(my, i);
+								}
 							}
-							serverUpdateEntityBodypart(my, i);
 						}
 					}
 				}
