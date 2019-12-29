@@ -1438,7 +1438,7 @@ void updatePlayerInventory()
 							// force equip potion/spellbook
 							if ( multiplayer == CLIENT )
 							{
-								if ( swapWeaponGimpTimer > 0 )
+								if ( item->unableToEquipDueToSwapWeaponTimer() )
 								{
 									// don't send to host as we're not allowed to "use" or equip these items. 
 									// will return false in equipItem.

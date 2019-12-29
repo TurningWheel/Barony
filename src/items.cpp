@@ -4714,11 +4714,15 @@ real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effec
 
 bool Item::unableToEquipDueToSwapWeaponTimer()
 {
-	if ( swapWeaponGimpTimer <= 0 )
+	if ( pickaxeGimpTimer > 0 && !intro )
 	{
-		return false;
+		return true;
 	}
-	return true;
+	if ( swapWeaponGimpTimer > 0 )
+	{
+		return true;
+	}
+	return false;
 
 	// not needed, block all items?
 	/*if ( itemCategory(this) == POTION || itemCategory(this) == GEM || itemCategory(this) == THROWN
