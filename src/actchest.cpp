@@ -1005,18 +1005,23 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 		return;
 	}
 
-	if ( itemIsEquipped(item, player) == true && !item->canUnequip(stats[player]) )
+	bool isEquipped = itemIsEquipped(item, player);
+
+	if ( isEquipped )
 	{
-		if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+		if ( !item->canUnequip(stats[player]) )
 		{
-			messagePlayer(player, language[3218]);
+			if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+			{
+				messagePlayer(player, language[3218]);
+			}
+			else
+			{
+				messagePlayer(player, language[1087]);
+			}
+			item->identified = true;
+			return;
 		}
-		else
-		{
-			messagePlayer(player, language[1087]);
-		}
-		item->identified = true;
-		return;
 	}
 	playSoundPlayer(player, 47 + rand() % 3, 64);
 
@@ -1034,10 +1039,65 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 	newitem->appearance = item->appearance;
 	newitem->identified = item->identified;
 
+	Item** slot = itemSlot(stats[player], item);
+	if ( multiplayer == CLIENT )
+	{
+		// tell the server to unequip.
+		if ( slot != nullptr )
+		{
+			if ( slot == &stats[clientnum]->weapon )
+			{
+				playerTryEquipItemAndUpdateServer(item);
+			}
+			else if ( slot == &stats[clientnum]->shield && itemCategory(newitem) == SPELLBOOK )
+			{
+				playerTryEquipItemAndUpdateServer(item);
+			}
+			else
+			{
+				if ( slot == &stats[clientnum]->helmet )
+				{
+					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_HELM, item);
+				}
+				else if ( slot == &stats[clientnum]->breastplate )
+				{
+					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_BREASTPLATE, item);
+				}
+				else if ( slot == &stats[clientnum]->gloves )
+				{
+					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_GLOVES, item);
+				}
+				else if ( slot == &stats[clientnum]->shoes )
+				{
+					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_BOOTS, item);
+				}
+				else if ( slot == &stats[clientnum]->shield )
+				{
+					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_SHIELD, item);
+				}
+				else if ( slot == &stats[clientnum]->cloak )
+				{
+					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_CLOAK, item);
+				}
+				else if ( slot == &stats[clientnum]->amulet )
+				{
+					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_AMULET, item);
+				}
+				else if ( slot == &stats[clientnum]->ring )
+				{
+					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_RING, item);
+				}
+				else if ( slot == &stats[clientnum]->mask )
+				{
+					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_MASK, item);
+				}
+			}
+		}
+	}
+
 	// unequip the item
 	if ( item->count <= 1 || all)
 	{
-		Item** slot = itemSlot(stats[player], item);
 		if ( slot != NULL )
 		{
 			*slot = NULL;

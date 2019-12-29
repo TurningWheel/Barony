@@ -1119,61 +1119,7 @@ void drawStatus()
 							{
 								if ( !disableItemUsage )
 								{
-									if ( multiplayer == CLIENT )
-									{
-										if ( item->unableToEquipDueToSwapWeaponTimer() )
-										{
-											// don't send to host as we're not allowed to "use" or equip these items. 
-											// will return false in equipItem.
-										}
-										else
-										{
-											if ( itemCategory(item) == SPELLBOOK )
-											{
-												if ( !cast_animation.active_spellbook )
-												{
-													strcpy((char*)net_packet->data, "EQUS");
-													SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-													SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-													SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-													SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-													SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-													net_packet->data[24] = item->identified;
-													net_packet->data[25] = clientnum;
-													net_packet->address.host = net_server.host;
-													net_packet->address.port = net_server.port;
-													net_packet->len = 26;
-													sendPacketSafe(net_sock, -1, net_packet, 0);
-												}
-											}
-											else
-											{
-												strcpy((char*)net_packet->data, "EQUI");
-												SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-												SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-												SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-												SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-												SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-												net_packet->data[24] = item->identified;
-												net_packet->data[25] = clientnum;
-												net_packet->address.host = net_server.host;
-												net_packet->address.port = net_server.port;
-												net_packet->len = 26;
-												sendPacketSafe(net_sock, -1, net_packet, 0);
-											}
-										}
-									}
-									if ( itemCategory(item) == SPELLBOOK )
-									{
-										if ( !cast_animation.active_spellbook )
-										{
-											equipItem(item, &stats[clientnum]->shield, clientnum);
-										}
-									}
-									else
-									{
-										equipItem(item, &stats[clientnum]->weapon, clientnum);
-									}
+									playerTryEquipItemAndUpdateServer(item);
 								}
 								else
 								{
@@ -1838,61 +1784,7 @@ void drawStatus()
 				}
 				else
 				{
-					if ( multiplayer == CLIENT )
-					{
-						if ( item->unableToEquipDueToSwapWeaponTimer() )
-						{
-							// don't send to host as we're not allowed to "use" or equip these items. 
-							// will return false in equipItem.
-						}
-						else
-						{
-							if ( itemCategory(item) == SPELLBOOK )
-							{
-								if ( !cast_animation.active_spellbook )
-								{
-									strcpy((char*)net_packet->data, "EQUS");
-									SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-									SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-									SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-									SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-									SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-									net_packet->data[24] = item->identified;
-									net_packet->data[25] = clientnum;
-									net_packet->address.host = net_server.host;
-									net_packet->address.port = net_server.port;
-									net_packet->len = 26;
-									sendPacketSafe(net_sock, -1, net_packet, 0);
-								}
-							}
-							else
-							{
-								strcpy((char*)net_packet->data, "EQUI");
-								SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-								SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-								SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-								SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-								SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-								net_packet->data[24] = item->identified;
-								net_packet->data[25] = clientnum;
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 26;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-							}
-						}
-					}
-					if ( itemCategory(item) == SPELLBOOK )
-					{
-						if ( !cast_animation.active_spellbook )
-						{
-							equipItem(item, &stats[clientnum]->shield, clientnum);
-						}
-					}
-					else
-					{
-						equipItem(item, &stats[clientnum]->weapon, clientnum);
-					}
+					playerTryEquipItemAndUpdateServer(item);
 				}
 			}
 			else
