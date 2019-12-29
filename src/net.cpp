@@ -4370,13 +4370,14 @@ void serverHandlePacket()
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
 		if (spellInList(&channeledSpells[client], thespell))
 		{
-			for (node = channeledSpells[client].first; node; node = node->next)
+			node_t* nextnode;
+			for (node = channeledSpells[client].first; node; node = nextnode )
 			{
+				nextnode = node->next;
 				spell_t* spell_search = (spell_t*)node->element;
 				if (spell_search->ID == thespell->ID)
 				{
 					spell_search->sustain = false;
-					break; //Found it!
 				}
 			}
 		}
