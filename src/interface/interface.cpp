@@ -7113,6 +7113,11 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				bool isEquipped = itemIsEquipped(item, clientnum);
 				item->status = static_cast<Status>(repairedStatus);
 				messagePlayer(clientnum, language[872], item->getName());
+				bool replaceTinkeringKit = false;
+				if ( item == tinkeringKitItem )
+				{
+					replaceTinkeringKit = true;
+				}
 				if ( !isEquipped )
 				{
 					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
@@ -7135,6 +7140,10 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 									// this was auto placed by itemPickup just above, undo it.
 									hotbar[c].item = 0;
 								}
+							}
+							if ( replaceTinkeringKit )
+							{
+								tinkeringKitItem = pickedUp;
 							}
 						}
 						free(repairedItem);
