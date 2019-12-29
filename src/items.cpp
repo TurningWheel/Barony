@@ -4718,13 +4718,15 @@ bool Item::unableToEquipDueToSwapWeaponTimer()
 	{
 		return false;
 	}
+	return true;
 
-	if ( itemCategory(this) == POTION || itemCategory(this) == GEM || itemCategory(this) == THROWN
+	// not needed, block all items?
+	/*if ( itemCategory(this) == POTION || itemCategory(this) == GEM || itemCategory(this) == THROWN
 		|| itemTypeIsQuiver(this->type) || this->type == FOOD_CREAMPIE )
 	{
 		return true;
 	}
-	return false;
+	return false;*/
 }
 
 bool Item::tinkeringBotIsMaxHealth() const
