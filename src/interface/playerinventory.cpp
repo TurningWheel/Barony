@@ -1990,7 +1990,7 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 	{
 		itemMenuSelected = -1; //For canceling out.
 	}
-	if ( mousex < itemMenuX - 10 || (mousex < itemMenuX && settings_right_click_protect) )   //Check if out of bounds to the left.
+	if ( mousex < itemMenuX - 10 || (mousex < itemMenuX && right_click_protect) )   //Check if out of bounds to the left.
 	{
 		itemMenuSelected = -1; //For canceling out.
 	}

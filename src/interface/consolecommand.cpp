@@ -1645,7 +1645,7 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/right_click_protect", 19))
 	{
-		right_click_protect = true;
+		right_click_protect = (right_click_protect == false);
 	}
 	else if (!strncmp(command_str, "/autoappraisenewitems", 21))
 	{
