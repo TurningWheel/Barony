@@ -2446,38 +2446,38 @@ void assignActions(map_t* map)
 							}
 						}
 					}
-				}
-				entity->behavior = &actPlayer;
-				entity->addToCreatureList(map->creatures);
-				entity->x += 8;
-				entity->y += 8;
-				entity->z = -1;
-				entity->focalx = limbs[HUMAN][0][0]; // 0
-				entity->focaly = limbs[HUMAN][0][1]; // 0
-				entity->focalz = limbs[HUMAN][0][2]; // -1.5
-				entity->sprite = 113; // head model
-				entity->sizex = 4;
-				entity->sizey = 4;
-				entity->flags[GENIUS] = true;
-				if ( numplayers == clientnum && multiplayer == CLIENT )
-				{
-					entity->flags[UPDATENEEDED] = false;
-				}
-				else
-				{
-					entity->flags[UPDATENEEDED] = true;
-				}
-				entity->flags[BLOCKSIGHT] = true;
-				entity->skill[2] = numplayers; // skill[2] == PLAYER_NUM
-				players[numplayers]->entity = entity;
-				if ( multiplayer != CLIENT )
-				{
-					if ( numplayers == 0 && minotaurlevel )
+					entity->behavior = &actPlayer;
+					entity->addToCreatureList(map->creatures);
+					entity->x += 8;
+					entity->y += 8;
+					entity->z = -1;
+					entity->focalx = limbs[HUMAN][0][0]; // 0
+					entity->focaly = limbs[HUMAN][0][1]; // 0
+					entity->focalz = limbs[HUMAN][0][2]; // -1.5
+					entity->sprite = 113; // head model
+					entity->sizex = 4;
+					entity->sizey = 4;
+					entity->flags[GENIUS] = true;
+					if ( numplayers == clientnum && multiplayer == CLIENT )
 					{
-						createMinotaurTimer(entity, map);
+						entity->flags[UPDATENEEDED] = false;
 					}
+					else
+					{
+						entity->flags[UPDATENEEDED] = true;
+					}
+					entity->flags[BLOCKSIGHT] = true;
+					entity->skill[2] = numplayers; // skill[2] == PLAYER_NUM
+					players[numplayers]->entity = entity;
+					if ( multiplayer != CLIENT )
+					{
+						if ( numplayers == 0 && minotaurlevel )
+						{
+							createMinotaurTimer(entity, map);
+						}
+					}
+					++numplayers;
 				}
-				++numplayers;
 				if ( numplayers > MAXPLAYERS )
 				{
 					printlog("warning: too many player objects in level!\n");

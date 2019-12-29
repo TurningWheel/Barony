@@ -69,6 +69,11 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	GLfloat rotx, roty, rotz;
 	//GLuint uidcolor;
 
+	if (!entity)
+	{
+		return;
+	}
+
 	// assign model
 	if ( entity->sprite >= 0 && entity->sprite < nummodels )
 	{
