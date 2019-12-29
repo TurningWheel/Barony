@@ -741,9 +741,13 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				if ( stats[player]->shield )
 				{
-					if ( itemCategory(stats[player]->shield) == ARMOR )
+					if ( stats[player]->shield->type == TOOL_TORCH || stats[player]->shield->type == TOOL_CRYSTALSHARD
+						|| stats[player]->shield->type == TOOL_LANTERN )
 					{
-						light -= 95;
+					}
+					else
+					{
+						light -= 95; // shields, quivers, spellbooks etc 
 					}
 				}
 				else
