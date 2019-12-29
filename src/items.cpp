@@ -2885,7 +2885,7 @@ Item* itemPickup(int player, Item* item)
 				|| item->type == TOOL_DUMMYBOT )
 			{
 				robot = true;
-				item->appearance += (rand() % 1000000) * 10;
+				item->appearance += (rand() % 100000) * 10;
 			}
 			else
 			{
@@ -2896,7 +2896,7 @@ Item* itemPickup(int player, Item* item)
 			{
 				if ( robot )
 				{
-					item->appearance += (rand() % 1000000) * 10;
+					item->appearance += (rand() % 100000) * 10;
 				}
 				else
 				{
