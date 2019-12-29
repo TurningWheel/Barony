@@ -4116,7 +4116,8 @@ void serverHandlePacket()
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
 		{
-			if ( entity->behavior == &actItem && !strncmp((char*)net_packet->data, "SALV", 4) )
+			if ( (entity->behavior == &actItem || entity->behavior == &actTorch || entity->behavior == &actCrystalShard) 
+				&& !strncmp((char*)net_packet->data, "SALV", 4) )
 			{
 				// auto salvage this item.
 				if ( players[net_packet->data[4]] && players[net_packet->data[4]]->entity )
