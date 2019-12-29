@@ -41,7 +41,7 @@ char last_ip[64] = "";
 char last_port[64] = "";
 char lobbyChatbox[LOBBY_CHATBOX_LENGTH];
 list_t lobbyChatboxMessages;
-bool disableMultithreadedSteamNetworking = false;
+bool disableMultithreadedSteamNetworking = true;
 bool disableFPSLimitOnNetworkMessages = false;
 
 // uncomment this to have the game log packet info

@@ -214,7 +214,7 @@ real_t settings_uiscale_inventory = 1.f;
 bool settings_hide_statusbar = false;
 bool settings_hide_playertags = false;
 bool settings_show_skill_values = false;
-bool settings_disableMultithreadedSteamNetworking = false;
+bool settings_disableMultithreadedSteamNetworking = true;
 bool settings_disableFPSLimitOnNetworkMessages = false;
 Sint32 oslidery = 0;
 
@@ -4234,7 +4234,7 @@ void handleMainMenu(bool mode)
 					if ( mousestatus[SDL_BUTTON_LEFT] )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_disableMultithreadedSteamNetworking = (settings_disableMultithreadedSteamNetworking == false);
+						settings_disableMultithreadedSteamNetworking = true;// (settings_disableMultithreadedSteamNetworking == false);
 					}
 				}
 #endif // STEAMWORKS

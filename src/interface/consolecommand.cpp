@@ -2195,7 +2195,7 @@ void consoleCommand(char* command_str)
 		}
 		else if ( !strncmp(command_str, "/disablenetworkmultithreading", 29) )
 		{
-			disableMultithreadedSteamNetworking = !disableMultithreadedSteamNetworking;
+			disableMultithreadedSteamNetworking = true;// !disableMultithreadedSteamNetworking;
 		}
 		else if ( !strncmp(command_str, "/autolimbreload", 15) )
 		{
