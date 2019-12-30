@@ -3254,8 +3254,15 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 )
 		{
 			// oversatiation
-			messagePlayer(player, language[634]);
-			this->char_gonnavomit = 140 + rand() % 60;
+			if ( !(svFlags & SV_FLAG_HUNGER) )
+			{
+				myStats->HUNGER = std::min(myStats->HUNGER, 1000); // reset hunger to safe level.
+			}
+			else
+			{
+				messagePlayer(player, language[634]);
+				this->char_gonnavomit = 140 + rand() % 60;
+			}
 		}
 		else if ( ticks % 60 == 0 && rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] && myStats->type != GOATMAN )
 		{
