@@ -380,6 +380,48 @@ void sellItemToShop(Item* item)
 				break;
 		}
 	}
+
+	if ( itemIsEquipped(item, clientnum) )
+	{
+		if ( itemCategory(item) == GEM
+			|| itemCategory(item) == RING
+			|| itemCategory(item) == AMULET )
+		{
+			shopspeech = language[3914];
+		}
+		else if ( itemCategory(item) == SPELLBOOK 
+			|| itemCategory(item) == BOOK
+			|| itemCategory(item) == SCROLL )
+		{
+			shopspeech = language[3915];
+		}
+		else if ( itemCategory(item) == WEAPON 
+			|| itemCategory(item) == MAGICSTAFF
+			|| itemCategory(item) == THROWN )
+		{
+			shopspeech = language[3911];
+		}
+		else if ( itemCategory(item) == ARMOR )
+		{
+			shopspeech = language[3910];
+		}
+		else if ( itemCategory(item) == TOOL )
+		{
+			shopspeech = language[3912];
+		}
+		else if ( itemCategory(item) == POTION )
+		{
+			shopspeech = language[3913];
+		}
+		else if ( itemCategory(item) == FOOD )
+		{
+			shopspeech = language[3916];
+		}
+		shoptimer = ticks - 1;
+		playSound(90, 64);
+		return;
+	}
+
 	if ( !deal )
 	{
 		shopspeech = language[212 + rand() % 3];
