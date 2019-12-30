@@ -187,6 +187,7 @@ extern std::unordered_set<int> clientLearnedAlchemyIngredients;
 extern bool achievementStatusThankTheTank[MAXPLAYERS];
 extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
 extern bool achievementStatusStrobe[MAXPLAYERS];
+extern bool playerFailedRangedOnlyConduct[MAXPLAYERS];
 extern bool achievementBrawlerMode;
 
 score_t* scoreConstructor();

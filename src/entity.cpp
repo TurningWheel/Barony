@@ -7078,9 +7078,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 				// hit chance
 				//int hitskill=5; // for unarmed combat
 
-				if ( behavior == &actPlayer && client_classes[skill[2]] == CLASS_HUNTER )
+				if ( behavior == &actPlayer )
 				{
-					conductGameChallenges[CONDUCT_RANGED_ONLY] = 0;
+					if ( skill[2] != clientnum )
+					{
+						if ( !playerFailedRangedOnlyConduct[skill[2]] )
+						{
+							playerFailedRangedOnlyConduct[skill[2]] = true;
+							serverUpdatePlayerConduct(skill[2], CONDUCT_RANGED_ONLY, 0);
+						}
+					}
+					else if ( skill[2] == clientnum )
+					{
+						conductGameChallenges[CONDUCT_RANGED_ONLY] = 0;
+					}
 				}
 
 				weaponskill = getWeaponSkill(myStats->weapon);

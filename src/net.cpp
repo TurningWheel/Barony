@@ -987,6 +987,25 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 	//messagePlayer(clientnum, "[DEBUG]: sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
 }
 
+void serverUpdatePlayerConduct(int player, int conduct, int value)
+{
+	if ( player <= 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( client_disconnected[player] )
+	{
+		return;
+	}
+	strcpy((char*)net_packet->data, "COND");
+	SDLNet_Write16(conduct, &net_packet->data[4]);
+	SDLNet_Write16(value, &net_packet->data[6]);
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 8;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
 /*-------------------------------------------------------------------------------
 
 serverUpdatePlayerLVL
@@ -2493,6 +2512,15 @@ void clientHandlePacket()
 			stats[i]->MAXMP = buffer & 0xFFFF;
 			stats[i]->MP = (buffer >> 16) & 0xFFFF;
 		}
+	}
+
+	else if ( !strncmp((char*)net_packet->data, "COND", 4) )
+	{
+		int conduct = SDLNet_Read16(&net_packet->data[4]);
+		int value = SDLNet_Read16(&net_packet->data[6]);
+		conductGameChallenges[conduct] = value;
+		//messagePlayer(clientnum, "received %d %d, set to %d", conduct, value, conductGameChallenges[conduct]);
+		return;
 	}
 
 	// update player statistics
