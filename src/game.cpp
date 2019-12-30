@@ -2538,12 +2538,12 @@ void handleEvents(void)
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
-					lastkeypressed = 287;
+					lastkeypressed = 286;
 				}
 				else if ( event.wheel.y < 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 1;
-					lastkeypressed = 288;
+					lastkeypressed = 287;
 				}
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...

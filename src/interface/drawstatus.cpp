@@ -27,6 +27,7 @@ Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
 Uint32 enemy_timer = 0, enemy_lastuid = 0;
 Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
 int magicBoomerangHotbarSlot = -1;
+Uint32 hotbarTooltipLastGameTick = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -523,23 +524,26 @@ void drawStatus()
 		}
 
 		// mouse wheel
-		if ( mousex >= STATUS_X && mousex < STATUS_X + status_bmp->w * uiscale_chatlog )
+		if ( !shootmode )
 		{
-			if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
+			if ( mousex >= STATUS_X && mousex < STATUS_X + status_bmp->w * uiscale_chatlog )
 			{
-				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
 				{
-					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					textscroll--;
-					if ( textscroll < 0 )
+					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
 					{
-						textscroll = 0;
+						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+						textscroll--;
+						if ( textscroll < 0 )
+						{
+							textscroll = 0;
+						}
 					}
-				}
-				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
-				{
-					mousestatus[SDL_BUTTON_WHEELUP] = 0;
-					textscroll++;
+					else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+					{
+						mousestatus[SDL_BUTTON_WHEELUP] = 0;
+						textscroll++;
+					}
 				}
 			}
 		}
@@ -1200,7 +1204,13 @@ void drawStatus()
 		}
 	}
 
-	if ( !shootmode )
+	bool drawHotBarTooltipOnCycle = false;
+	if ( !intro && hotbarTooltipLastGameTick != 0 && (ticks - hotbarTooltipLastGameTick) < TICKS_PER_SECOND * 2 )
+	{
+		drawHotBarTooltipOnCycle = true;
+	}
+
+	if ( !shootmode || drawHotBarTooltipOnCycle )
 	{
 		pos.x = initial_position.x;
 		//Go back through all of the hotbar slots and draw the tooltips.
@@ -1209,12 +1219,44 @@ void drawStatus()
 			item = uidToItem(hotbar[num].item);
 			if ( item )
 			{
-				if ( mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+				bool drawTooltipOnSlot = !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar);
+				if ( !drawTooltipOnSlot )
+				{
+					if ( drawHotBarTooltipOnCycle && current_hotbar == num )
+					{
+						drawTooltipOnSlot = true;
+					}
+				}
+				else
+				{
+					if ( !shootmode )
+					{
+						// reset timer.
+						hotbarTooltipLastGameTick = 0;
+						drawHotBarTooltipOnCycle = false;
+					}
+					else
+					{
+						if ( drawHotBarTooltipOnCycle )
+						{
+							drawTooltipOnSlot = false;
+						}
+					}
+				}
+
+				if ( drawTooltipOnSlot )
 				{
 					//Tooltip
 					SDL_Rect src;
 					src.x = mousex + 16;
 					src.y = mousey + 8;
+
+					if ( drawHotBarTooltipOnCycle )
+					{
+						src.x = pos.x + hotbar_img->w * uiscale_hotbar;
+						src.y = pos.y + hotbar_img->h * uiscale_hotbar;
+					}
+
 					if ( itemCategory(item) == SPELL_CAT )
 					{
 						spell_t* spell = getSpellFromItem(item);
@@ -1259,6 +1301,12 @@ void drawStatus()
 								src.w += 7 * TTF12_WIDTH;
 							}
 						}
+
+						if ( drawHotBarTooltipOnCycle )
+						{
+							src.y -= 16;// src.h;
+						}
+
 						int furthestX = xres;
 						if ( proficienciesPage == 0 )
 						{
@@ -1282,7 +1330,15 @@ void drawStatus()
 						{
 							src.y -= (src.y + src.h + 16 - yres);
 						}
-						drawTooltip(&src);
+
+						if ( drawHotBarTooltipOnCycle )
+						{
+							drawTooltip(&src);
+						}
+						else
+						{
+							drawTooltip(&src);
+						}
 
 						Uint32 color = 0xFFFFFFFF;
 						if ( !item->identified )
@@ -1413,7 +1469,7 @@ void drawStatus()
 							}
 						}
 					}
-					if ( hotbar_numkey_quick_add )
+					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add )
 					{
 						Uint32 swapItem = 0;
 						if ( keystatus[SDL_SCANCODE_1] )
@@ -1607,25 +1663,61 @@ void drawStatus()
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) 
-			&& !itemMenuOpen && !openedChest[clientnum] 
-			&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-			&& !identifygui_active && !removecursegui_active
-			&& !GenericGUI.isGUIOpen() )
+		if ( (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT])) )
 		{
-			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
-			selectHotbarSlot(current_hotbar + 1);
-			bumper_moved = true;
+			if ( shootmode && !itemMenuOpen && !openedChest[clientnum] 
+				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+				&& !identifygui_active && !removecursegui_active
+				&& !GenericGUI.isGUIOpen() )
+			{
+				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+				{
+					*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					hotbarTooltipLastGameTick = ticks;
+				}
+				else
+				{
+					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
+					bumper_moved = true;
+				}
+				selectHotbarSlot(current_hotbar + 1);
+			}
+			else
+			{
+				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+				{
+					*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					hotbarTooltipLastGameTick = 0;
+				}
+			}
 		}
-		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) 
-			&& !itemMenuOpen && !openedChest[clientnum] 
-			&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-			&& !identifygui_active && !removecursegui_active
-			&& !GenericGUI.isGUIOpen() )
+		if ( *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
 		{
-			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
-			selectHotbarSlot(current_hotbar - 1);
-			bumper_moved = true;
+			if ( shootmode && !itemMenuOpen && !openedChest[clientnum] 
+				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+				&& !identifygui_active && !removecursegui_active
+				&& !GenericGUI.isGUIOpen() )
+			{
+				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+				{
+					*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					hotbarTooltipLastGameTick = ticks;
+				}
+				else
+				{
+					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
+					bumper_moved = true;
+				}
+				selectHotbarSlot(current_hotbar - 1);
+			}
+			else
+			{
+				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+				{
+					*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					hotbarTooltipLastGameTick = 0;
+				}
+			}
 		}
 
 		if ( bumper_moved && !itemMenuOpen 
@@ -1638,13 +1730,21 @@ void drawStatus()
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) 
+			if ( shootmode && (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
 				&& !book_open && !identifygui_active 
 				&& !removecursegui_active && !GenericGUI.isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
-				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
+				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]) )
+				{
+					hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbarTooltipLastGameTick);
+					*inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
+				}
+				else
+				{
+					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
+				}
 				item = uidToItem(hotbar[current_hotbar].item);
 			}
 

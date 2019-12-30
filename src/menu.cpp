@@ -3486,7 +3486,6 @@ void handleMainMenu(bool mode)
 				}
 				else if ( c < 25 )
 				{
-					continue;
 					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[3901 + (c - 22)]);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingkey )

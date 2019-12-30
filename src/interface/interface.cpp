@@ -728,9 +728,9 @@ void defaultImpulses()
 	impulses[IN_FOLLOWERMENU] = 6;
 	impulses[IN_FOLLOWERMENU_LASTCMD] = 20;
 	impulses[IN_FOLLOWERMENU_CYCLENEXT] = 8;
-	impulses[IN_HOTBAR_SCROLL_LEFT] = SCANCODE_UNASSIGNED_BINDING;
-	impulses[IN_HOTBAR_SCROLL_RIGHT] = SCANCODE_UNASSIGNED_BINDING;
-	impulses[IN_HOTBAR_SCROLL_SELECT] = SCANCODE_UNASSIGNED_BINDING;
+	impulses[IN_HOTBAR_SCROLL_LEFT] = 286;
+	impulses[IN_HOTBAR_SCROLL_RIGHT] = 287;
+	impulses[IN_HOTBAR_SCROLL_SELECT] = 284;
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
@@ -827,7 +827,7 @@ void defaultConfig()
 	consoleCommand("/bind 6 IN_FOLLOWERMENU");
 	consoleCommand("/bind 20 IN_FOLLOWERMENU_LASTCMD");
 	consoleCommand("/bind 8 IN_FOLLOWERMENU_CYCLENEXT");
-	consoleCommand("/bind 288 IN_HOTBAR_SCROLL_LEFT");
+	consoleCommand("/bind 286 IN_HOTBAR_SCROLL_LEFT");
 	consoleCommand("/bind 287 IN_HOTBAR_SCROLL_RIGHT");
 	consoleCommand("/bind 284 IN_HOTBAR_SCROLL_SELECT");
 
@@ -1395,11 +1395,11 @@ const char* getInputName(Uint32 scancode)
 			case 285:
 				return "Mouse 2";
 			case 286:
-				return "Mouse 3";
-			case 287:
 				return "Wheel up";
-			case 288:
+			case 287:
 				return "Wheel down";
+			case 288:
+				return "Mouse 3";
 			case 289:
 				return "Mouse 6";
 			case 290:
