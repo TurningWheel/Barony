@@ -1714,6 +1714,17 @@ void clientHandlePacket()
 				{
 					if (entity == players[j]->entity )
 					{
+						if ( stats[j] )
+						{
+							for ( int effect = 0; effect < NUMEFFECTS; ++effect )
+							{
+								if ( effect != EFF_VAMPIRICAURA && effect != EFF_WITHDRAWAL && effect != EFF_SHAPESHIFT )
+								{
+									stats[j]->EFFECTS[effect] = false;
+									stats[j]->EFFECTS_TIMERS[effect] = 0;
+								}
+							}
+						}
 						players[j]->entity = nullptr;
 					}
 				}
