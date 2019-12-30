@@ -11,6 +11,7 @@
 
 #include "main.hpp"
 #include "entity.hpp"
+#include "items.hpp"
 /*-------------------------------------------------------------------------------
 
 	list_FreeAll
@@ -50,6 +51,15 @@ void list_RemoveNode(node_t* node)
 	if (node->list && node->list == map.entities)
 	{
 		map.entities_map.erase(((Entity*)node->element)->getUID());
+	}
+	if ( stats[clientnum] && node->list && node->list == &stats[clientnum]->inventory )
+	{
+		Item* tmp = ((Item*)node->element);
+		if ( tmp == selectedItem )
+		{
+			selectedItem = nullptr; // important! crashes occur when deleting items you've selected...
+			// printlog("Reset selectedItem");
+		}
 	}
 	if ( node->list && node->list->first )
 	{

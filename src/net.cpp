@@ -2100,6 +2100,12 @@ void clientHandlePacket()
 		{
 			return;
 		}
+
+		if ( *armor == selectedItem )
+		{
+			selectedItem = nullptr;
+		}
+
 		if ( (*armor)->count > 1 )
 		{
 			(*armor)->count--;

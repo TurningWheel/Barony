@@ -1181,6 +1181,12 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 	{
 		return false;
 	}
+
+	if ( player == clientnum && item == selectedItem )
+	{
+		selectedItem = nullptr;
+	}
+
 	if ( itemIsEquipped(item, player) )
 	{
 		if (!item->canUnequip(stats[player]))
@@ -1345,6 +1351,14 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	if ( !item || !monster )
 	{
 		return nullptr;
+	}
+
+	if ( monster->behavior == &actPlayer && monster->skill[2] == clientnum )
+	{
+		if ( item == selectedItem )
+		{
+			selectedItem = nullptr;
+		}
 	}
 
 	/*if ( monsterStats->type == SHADOW && itemCategory(item) == SPELLBOOK )
