@@ -5890,7 +5890,7 @@ bool GenericGUIMenu::isItemSalvageable(const Item* item, int player)
 	{
 		return false;
 	}*/
-	if ( player == clientnum && itemIsEquipped(item, clientnum) )
+	if ( player == clientnum && isNodeFromPlayerInventory(item->node) && itemIsEquipped(item, clientnum) )
 	{
 		return false;
 	}
