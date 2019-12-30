@@ -1534,6 +1534,15 @@ void updatePlayerInventory()
 	itemContextMenu();
 }
 
+inline bool itemMenuSkipRow1ForChests(const Item& item)
+{
+	if ( openedChest[clientnum] && (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC || item.type == TOOL_TINKERING_KIT) )
+	{
+		return true;
+	}
+	return false;
+}
+
 /*
  * Helper function to drawItemMenuSlots. Draws the empty window for an individual item context menu slot.
  */
@@ -1560,6 +1569,16 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 	drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 0); //Option 0 => Store in chest, sell, use.
 	if (itemCategory(&item) != SPELL_CAT)
 	{
+		if ( itemMenuSkipRow1ForChests(item) )
+		{
+			current_y += slot_height;
+			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 1 => appraise
+
+			current_y += slot_height;
+			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 2 => drop
+			return; // only draw 3 lines.
+		}
+
 		current_y += slot_height;
 		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 1); //Option 1 => wield, unwield, use, appraise
 
@@ -1710,32 +1729,39 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	y += height;
 
 	//Option 1.
-	if (!is_potion_bad)
+	if ( itemMenuSkipRow1ForChests(item) )
 	{
-		if ( item.type == TOOL_ALEMBIC )
-		{
-			TTF_SizeUTF8(ttf12, language[3341], &width, nullptr);
-			ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3341]);
-		}
-		else if ( item.type == TOOL_TINKERING_KIT )
-		{
-			TTF_SizeUTF8(ttf12, language[3670], &width, nullptr);
-			ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3670]);
-		}
-		else if (itemIsEquipped(&item, clientnum))
-		{
-			drawOptionUnwield(x, y);
-		}
-		else
-		{
-			drawOptionWield(x, y);
-		}
+		// skip this row.
 	}
 	else
 	{
-		drawOptionUse(item, x, y);
+		if (!is_potion_bad)
+		{
+			if ( item.type == TOOL_ALEMBIC )
+			{
+				TTF_SizeUTF8(ttf12, language[3341], &width, nullptr);
+				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3341]);
+			}
+			else if ( item.type == TOOL_TINKERING_KIT )
+			{
+				TTF_SizeUTF8(ttf12, language[3670], &width, nullptr);
+				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3670]);
+			}
+			else if (itemIsEquipped(&item, clientnum))
+			{
+				drawOptionUnwield(x, y);
+			}
+			else
+			{
+				drawOptionWield(x, y);
+			}
+		}
+		else
+		{
+			drawOptionUse(item, x, y);
+		}
+		y += height;
 	}
-	y += height;
 
 	//Option 1.
 	drawOptionAppraise(x, y);
@@ -1958,26 +1984,42 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 	}
 	if (itemCategory(&item) != SPELL_CAT)
 	{
-		current_y += slot_height;
-		if (mousey >= current_y && mousey < current_y + slot_height)
+		if ( itemMenuSkipRow1ForChests(item) )
 		{
-			itemMenuSelected = 1;
-		}
-		current_y += slot_height;
-		if (mousey >= current_y && mousey < current_y + slot_height)
-		{
-			itemMenuSelected = 2;
-		}
-		current_y += slot_height;
-		if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK || item.type == FOOD_CREAMPIE
-			|| (stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) 
-				&& itemCategory(&item) != FOOD) )
-		{
-			if (mousey >= current_y && mousey < current_y + slot_height)
+			current_y += slot_height;
+			if ( mousey >= current_y && mousey < current_y + slot_height )
+			{
+				itemMenuSelected = 2;
+			}
+			current_y += slot_height;
+			if ( mousey >= current_y && mousey < current_y + slot_height )
 			{
 				itemMenuSelected = 3;
 			}
+		}
+		else
+		{
 			current_y += slot_height;
+			if (mousey >= current_y && mousey < current_y + slot_height)
+			{
+				itemMenuSelected = 1;
+			}
+			current_y += slot_height;
+			if (mousey >= current_y && mousey < current_y + slot_height)
+			{
+				itemMenuSelected = 2;
+			}
+			current_y += slot_height;
+			if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK || item.type == FOOD_CREAMPIE
+				|| (stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) 
+					&& itemCategory(&item) != FOOD) )
+			{
+				if (mousey >= current_y && mousey < current_y + slot_height)
+				{
+					itemMenuSelected = 3;
+				}
+				current_y += slot_height;
+			}
 		}
 	}
 
