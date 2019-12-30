@@ -4476,7 +4476,7 @@ void serverHandlePacket()
 			printlog("warning: client %d sold item to a \"shop\" that has no stats! (uid=%d)\n", client, uidnum);
 			return;
 		}
-		if ( net_packet->data[24] )
+		if ( net_packet->data[28] )
 		{
 			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), 
 				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), true, &entitystats->inventory);
