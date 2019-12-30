@@ -3615,6 +3615,16 @@ void actPlayer(Entity* my)
 		// move (dead reckoning)
 		if ( noclip == false )
 		{
+			// from PMOV in serverHandlePacket - new_x and new_y are accumulated positions
+			if ( my->new_x > 0.001 )
+			{
+				my->x = my->new_x;
+			}
+			if ( my->new_y > 0.001 )
+			{
+				my->y = my->new_y;
+			}
+
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
 			// bumping into monsters disturbs them

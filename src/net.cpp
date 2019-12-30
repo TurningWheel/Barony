@@ -4029,8 +4029,13 @@ void serverHandlePacket()
 	// player move
 	else if (!strncmp((char*)net_packet->data, "PMOV", 4))
 	{
-		client_keepalive[net_packet->data[4]] = ticks;
-		if (players[net_packet->data[4]] == nullptr || players[net_packet->data[4]]->entity == nullptr)
+		int player = net_packet->data[4];
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			return;
+		}
+		client_keepalive[player] = ticks;
+		if (players[player] == nullptr || players[player]->entity == nullptr)
 		{
 			return;
 		}
@@ -4050,20 +4055,28 @@ void serverHandlePacket()
 		pitch = ((Sint16)SDLNet_Read16(&net_packet->data[16])) / 128.0;
 
 		// update rotation
-		players[net_packet->data[4]]->entity->yaw = yaw;
-		players[net_packet->data[4]]->entity->pitch = pitch;
+		players[player]->entity->yaw = yaw;
+		players[player]->entity->pitch = pitch;
 
 		// update player's internal velocity variables
-		players[net_packet->data[4]]->entity->vel_x = velx; // PLAYER_VELX
-		players[net_packet->data[4]]->entity->vel_y = vely; // PLAYER_VELY
+		players[player]->entity->vel_x = velx; // PLAYER_VELX
+		players[player]->entity->vel_y = vely; // PLAYER_VELY
+
+		// store old coordinates
+		// since this function runs more often than actPlayer runs, we need to keep track of the accumulated position in new_x/new_y
+		real_t ox = players[player]->entity->x;
+		real_t oy = players[player]->entity->y;
+		players[player]->entity->x = players[player]->entity->new_x;
+		players[player]->entity->y = players[player]->entity->new_y;
 
 		// calculate distance
-		dx -= players[net_packet->data[4]]->entity->x;
-		dy -= players[net_packet->data[4]]->entity->y;
+		dx -= players[player]->entity->x;
+		dy -= players[player]->entity->y;
 		dist = sqrt( dx * dx + dy * dy );
 
 		// move player with collision detection
-		if (clipMove(&players[net_packet->data[4]]->entity->x, &players[net_packet->data[4]]->entity->y, dx, dy, players[net_packet->data[4]]->entity) < dist - .025 )
+		real_t result = clipMove(&players[player]->entity->x, &players[player]->entity->y, dx, dy, players[player]->entity);
+		if ( result < dist - .025 )
 		{
 			// player encountered obstacle on path
 			// stop updating position on server side and send client corrected position
@@ -4076,6 +4089,39 @@ void serverHandlePacket()
 			net_packet->len = 8;
 			sendPacket(net_sock, -1, net_packet, j - 1);
 		}
+
+		// clipMove sent any corrections to the client, now let's save the updated coordinates.
+		players[player]->entity->new_x = players[player]->entity->x;
+		players[player]->entity->new_y = players[player]->entity->y;
+		// return x/y to their original state as this can update more than actPlayer and causes stuttering. use new_x/new_y in actPlayer.
+		players[player]->entity->x = ox;
+		players[player]->entity->y = oy;
+
+		// update the players' head and mask as these will otherwise wait until actPlayer to update their rotation. stops clipping.
+		node_t* tmpNode = nullptr;
+		int bodypartNum = 0;
+		for ( bodypartNum = 0, tmpNode = players[player]->entity->children.first; tmpNode; tmpNode = tmpNode->next, bodypartNum++ )
+		{
+			if ( bodypartNum == 0 )
+			{
+				// hudweapon case
+				continue;
+			}
+
+			Entity* limb = (Entity*)tmpNode->element;
+			if ( limb )
+			{
+				// adjust headgear/mask yaw/pitch variations as these do not update always.
+				if ( bodypartNum == 9 || bodypartNum == 10 )
+				{
+					limb->x = players[player]->entity->x;
+					limb->y = players[player]->entity->y;
+					limb->pitch = players[player]->entity->pitch;
+					limb->yaw = players[player]->entity->yaw;
+				}
+			}
+		}
+
 		return;
 	}
 

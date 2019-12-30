@@ -1929,16 +1929,16 @@ void gameLogic(void)
 									}
 
 									// rotate to new angles
-									double dir = entity->new_yaw - entity->yaw;
-									while ( dir >= PI )
+									double dirYaw = entity->new_yaw - entity->yaw;
+									while ( dirYaw >= PI )
 									{
-										dir -= PI * 2;
+										dirYaw -= PI * 2;
 									}
-									while ( dir < -PI )
+									while ( dirYaw < -PI )
 									{
-										dir += PI * 2;
+										dirYaw += PI * 2;
 									}
-									entity->yaw += dir / 3;
+									entity->yaw += dirYaw / 3;
 									while ( entity->yaw < 0 )
 									{
 										entity->yaw += 2 * PI;
@@ -1947,19 +1947,19 @@ void gameLogic(void)
 									{
 										entity->yaw -= 2 * PI;
 									}
+									double dirPitch = entity->new_pitch - entity->pitch;
 									if ( entity->behavior != &actArrow )
 									{
 										// client handles pitch in actArrow.
-										dir = entity->new_pitch - entity->pitch;
-										while ( dir >= PI )
+										while ( dirPitch >= PI )
 										{
-											dir -= PI * 2;
+											dirPitch -= PI * 2;
 										}
-										while ( dir < -PI )
+										while ( dirPitch < -PI )
 										{
-											dir += PI * 2;
+											dirPitch += PI * 2;
 										}
-										entity->pitch += dir / 3;
+										entity->pitch += dirPitch / 3;
 										while ( entity->pitch < 0 )
 										{
 											entity->pitch += 2 * PI;
@@ -1969,16 +1969,16 @@ void gameLogic(void)
 											entity->pitch -= 2 * PI;
 										}
 									}
-									dir = entity->new_roll - entity->roll;
-									while ( dir >= PI )
+									double dirRoll = entity->new_roll - entity->roll;
+									while ( dirRoll >= PI )
 									{
-										dir -= PI * 2;
+										dirRoll -= PI * 2;
 									}
-									while ( dir < -PI )
+									while ( dirRoll < -PI )
 									{
-										dir += PI * 2;
+										dirRoll += PI * 2;
 									}
-									entity->roll += dir / 3;
+									entity->roll += dirRoll / 3;
 									while ( entity->roll < 0 )
 									{
 										entity->roll += 2 * PI;
@@ -1986,6 +1986,33 @@ void gameLogic(void)
 									while ( entity->roll >= 2 * PI )
 									{
 										entity->roll -= 2 * PI;
+									}
+
+									if ( entity->behavior == &actPlayer && entity->skill[2] != clientnum )
+									{
+										node_t* tmpNode = nullptr;
+										int bodypartNum = 0;
+										for ( bodypartNum = 0, tmpNode = entity->children.first; tmpNode; tmpNode = tmpNode->next, bodypartNum++ )
+										{
+											if ( bodypartNum < 9 )
+											{
+												continue;
+											}
+											if ( bodypartNum > 10 )
+											{
+												break;
+											}
+											// update the players' head and mask as these will otherwise wait until actPlayer to update their rotation. stops clipping.
+											if ( bodypartNum == 9 || bodypartNum == 10 )
+											{
+												Entity* limb = (Entity*)tmpNode->element;
+												if ( limb )
+												{
+													limb->pitch = entity->pitch;
+													limb->yaw = entity->yaw;
+												}
+											}
+										}
 									}
 								}
 							}
