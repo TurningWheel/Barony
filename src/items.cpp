@@ -1182,11 +1182,6 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 		return false;
 	}
 
-	if ( player == clientnum && item == selectedItem )
-	{
-		selectedItem = nullptr;
-	}
-
 	if ( itemIsEquipped(item, player) )
 	{
 		if (!item->canUnequip(stats[player]))
@@ -1237,6 +1232,14 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 				messagePlayer(player, language[1088], item->description());
 			}
 			item->count = 0;
+			/*if ( oldcount >= 10 )
+			{
+				item->count = oldcount - 10;
+			}
+			else
+			{
+				item->count = 0;
+			}*/
 		}
 		else
 		{
@@ -1279,6 +1282,14 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 		else if ( itemTypeIsQuiver(item->type) )
 		{
 			qtyToDrop = item->count;
+			/*if ( item->count >= 10 )
+			{
+				qtyToDrop = 10;
+			}
+			else
+			{
+				qtyToDrop = item->count;
+			}*/
 		}
 
 		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
