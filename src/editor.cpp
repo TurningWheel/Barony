@@ -56,6 +56,8 @@ std::string physfs_openDirectory = BASE_DATA_DIR;
 float limbs[NUMMONSTERS][20][3]; // dummy variable for files.cpp limbs reloading in Barony.
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages; // dummy variable for files.cpp system resource reloading in Barony.
 
+Item* selectedItem = nullptr; //Because it won't compile without this.
+
 map_t copymap;
 
 int errorMessage = 0;
