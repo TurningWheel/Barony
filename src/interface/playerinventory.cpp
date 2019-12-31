@@ -1167,7 +1167,7 @@ void updatePlayerInventory()
 									int height = 1;
 									char effectType[32] = "";
 									int spellID = getSpellIDFromSpellbook(item->type);
-									int damage = drawSpellTooltip(getSpellFromID(spellID), item, false);
+									int damage = drawSpellTooltip(getSpellFromID(spellID), item, nullptr);
 									real_t dummy = 0.f;
 									getSpellEffectString(spellID, spellEffectText, effectType, damage, &height, &dummy);
 									int width = longestline(spellEffectText) * TTF12_WIDTH + 8;
