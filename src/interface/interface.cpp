@@ -728,6 +728,9 @@ void defaultImpulses()
 	impulses[IN_FOLLOWERMENU] = 6;
 	impulses[IN_FOLLOWERMENU_LASTCMD] = 20;
 	impulses[IN_FOLLOWERMENU_CYCLENEXT] = 8;
+	impulses[IN_HOTBAR_SCROLL_LEFT] = 286;
+	impulses[IN_HOTBAR_SCROLL_RIGHT] = 287;
+	impulses[IN_HOTBAR_SCROLL_SELECT] = 284;
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
@@ -824,6 +827,9 @@ void defaultConfig()
 	consoleCommand("/bind 6 IN_FOLLOWERMENU");
 	consoleCommand("/bind 20 IN_FOLLOWERMENU_LASTCMD");
 	consoleCommand("/bind 8 IN_FOLLOWERMENU_CYCLENEXT");
+	consoleCommand("/bind 286 IN_HOTBAR_SCROLL_LEFT");
+	consoleCommand("/bind 287 IN_HOTBAR_SCROLL_RIGHT");
+	consoleCommand("/bind 284 IN_HOTBAR_SCROLL_SELECT");
 
 	consoleCommand("/joybind 307 INJOY_STATUS");
 	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
@@ -899,7 +905,10 @@ static char impulsenames[NUMIMPULSES][23] =
 	"TOGGLECHATLOG",
 	"FOLLOWERMENU_OPEN",
 	"FOLLOWERMENU_LASTCMD",
-	"FOLLOWERMENU_CYCLENEXT"
+	"FOLLOWERMENU_CYCLENEXT",
+	"HOTBAR_SCROLL_LEFT",
+	"HOTBAR_SCROLL_RIGHT",
+	"HOTBAR_SCROLL_SELECT"
 };
 
 static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
@@ -1386,11 +1395,11 @@ const char* getInputName(Uint32 scancode)
 			case 285:
 				return "Mouse 2";
 			case 286:
-				return "Mouse 3";
-			case 287:
 				return "Wheel up";
-			case 288:
+			case 287:
 				return "Wheel down";
+			case 288:
+				return "Mouse 3";
 			case 289:
 				return "Mouse 6";
 			case 290:
@@ -5881,7 +5890,7 @@ bool GenericGUIMenu::isItemSalvageable(const Item* item, int player)
 	{
 		return false;
 	}*/
-	if ( player == clientnum && itemIsEquipped(item, clientnum) )
+	if ( player == clientnum && isNodeFromPlayerInventory(item->node) && itemIsEquipped(item, clientnum) )
 	{
 		return false;
 	}
@@ -7113,6 +7122,11 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				bool isEquipped = itemIsEquipped(item, clientnum);
 				item->status = static_cast<Status>(repairedStatus);
 				messagePlayer(clientnum, language[872], item->getName());
+				bool replaceTinkeringKit = false;
+				if ( item == tinkeringKitItem )
+				{
+					replaceTinkeringKit = true;
+				}
 				if ( !isEquipped )
 				{
 					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
@@ -7135,6 +7149,10 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 									// this was auto placed by itemPickup just above, undo it.
 									hotbar[c].item = 0;
 								}
+							}
+							if ( replaceTinkeringKit )
+							{
+								tinkeringKitItem = pickedUp;
 							}
 						}
 						free(repairedItem);

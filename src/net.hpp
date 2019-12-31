@@ -42,6 +42,7 @@ void serverUpdateEffects(int player);
 void serverUpdateHunger(int player);
 void serverUpdatePlayerStats();
 void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval);
+void serverUpdatePlayerConduct(int player, int conduct, int value);
 void serverUpdatePlayerLVL();
 void serverRemoveClientFollower(int player, Uint32 uidToRemove);
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type);

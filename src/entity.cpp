@@ -741,9 +741,13 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				if ( stats[player]->shield )
 				{
-					if ( itemCategory(stats[player]->shield) == ARMOR )
+					if ( stats[player]->shield->type == TOOL_TORCH || stats[player]->shield->type == TOOL_CRYSTALSHARD
+						|| stats[player]->shield->type == TOOL_LANTERN )
 					{
-						light -= 95;
+					}
+					else
+					{
+						light -= 95; // shields, quivers, spellbooks etc 
 					}
 				}
 				else
@@ -3250,8 +3254,15 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 )
 		{
 			// oversatiation
-			messagePlayer(player, language[634]);
-			this->char_gonnavomit = 140 + rand() % 60;
+			if ( !(svFlags & SV_FLAG_HUNGER) )
+			{
+				myStats->HUNGER = std::min(myStats->HUNGER, 1000); // reset hunger to safe level.
+			}
+			else
+			{
+				messagePlayer(player, language[634]);
+				this->char_gonnavomit = 140 + rand() % 60;
+			}
 		}
 		else if ( ticks % 60 == 0 && rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] && myStats->type != GOATMAN )
 		{
@@ -7067,9 +7078,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 				// hit chance
 				//int hitskill=5; // for unarmed combat
 
-				if ( behavior == &actPlayer && client_classes[skill[2]] == CLASS_HUNTER )
+				if ( behavior == &actPlayer )
 				{
-					conductGameChallenges[CONDUCT_RANGED_ONLY] = 0;
+					if ( skill[2] != clientnum )
+					{
+						if ( !playerFailedRangedOnlyConduct[skill[2]] )
+						{
+							playerFailedRangedOnlyConduct[skill[2]] = true;
+							serverUpdatePlayerConduct(skill[2], CONDUCT_RANGED_ONLY, 0);
+						}
+					}
+					else if ( skill[2] == clientnum )
+					{
+						conductGameChallenges[CONDUCT_RANGED_ONLY] = 0;
+					}
 				}
 
 				weaponskill = getWeaponSkill(myStats->weapon);

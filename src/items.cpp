@@ -1181,6 +1181,7 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 	{
 		return false;
 	}
+
 	if ( itemIsEquipped(item, player) )
 	{
 		if (!item->canUnequip(stats[player]))
@@ -1231,6 +1232,14 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 				messagePlayer(player, language[1088], item->description());
 			}
 			item->count = 0;
+			/*if ( oldcount >= 10 )
+			{
+				item->count = oldcount - 10;
+			}
+			else
+			{
+				item->count = 0;
+			}*/
 		}
 		else
 		{
@@ -1273,6 +1282,14 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 		else if ( itemTypeIsQuiver(item->type) )
 		{
 			qtyToDrop = item->count;
+			/*if ( item->count >= 10 )
+			{
+				qtyToDrop = 10;
+			}
+			else
+			{
+				qtyToDrop = item->count;
+			}*/
 		}
 
 		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
@@ -1345,6 +1362,14 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	if ( !item || !monster )
 	{
 		return nullptr;
+	}
+
+	if ( monster->behavior == &actPlayer && monster->skill[2] == clientnum )
+	{
+		if ( item == selectedItem )
+		{
+			selectedItem = nullptr;
+		}
 	}
 
 	/*if ( monsterStats->type == SHADOW && itemCategory(item) == SPELLBOOK )
@@ -1588,24 +1613,24 @@ void consumeItem(Item*& item, int player)
 
 -------------------------------------------------------------------------------*/
 
-void equipItem(Item* item, Item** slot, int player)
+EquipItemResult equipItem(Item* item, Item** slot, int player)
 {
 	int oldcount;
 
 	if ( pickaxeGimpTimer > 0 && !intro )
 	{
-		return;
+		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}
 
 	if (!item)   // needs "|| !slot " ?
 	{
-		return;
+		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}
 
 	if ( player == clientnum && multiplayer != SINGLE 
 		&& item->unableToEquipDueToSwapWeaponTimer() )
 	{
-		return;
+		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}
 
 	if ( itemCompare(*slot, item, true) )
@@ -1633,7 +1658,7 @@ void equipItem(Item* item, Item** slot, int player)
 						}
 					}
 					(*slot)->identified = true;
-					return;
+					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 				}
 			}
 		}
@@ -1703,6 +1728,7 @@ void equipItem(Item* item, Item** slot, int player)
 				shieldSwitch = true;
 			}
 		}
+		return EQUIP_ITEM_SUCCESS_NEWITEM;
 	}
 	else
 	{
@@ -1725,7 +1751,7 @@ void equipItem(Item* item, Item** slot, int player)
 						}
 					}
 					(*slot)->identified = true;
-					return;
+					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 				}
 			}
 			else
@@ -1736,7 +1762,7 @@ void equipItem(Item* item, Item** slot, int player)
 				// the server as empty handed, while the client holds 2 rocks, and when thrown on client end, the server never sees the item
 				// and the client "throws" nothing, but actually loses their thrown items into nothingness. This fixes that issue.
 				(*slot)->count = item->count; // update quantity. 
-				return;
+				return EQUIP_ITEM_SUCCESS_UPDATE_QTY;
 			}
 		}
 		if (multiplayer != CLIENT && !intro && !fadeout)
@@ -1785,6 +1811,7 @@ void equipItem(Item* item, Item** slot, int player)
 			item->count = oldcount;
 		}
 		*slot = NULL;
+		return EQUIP_ITEM_SUCCESS_UNEQUIP;
 	}
 }
 
@@ -2817,7 +2844,7 @@ Item* itemPickup(int player, Item* item)
 						net_packet->data[25] = clientnum;
 						net_packet->address.host = net_server.host;
 						net_packet->address.port = net_server.port;
-						net_packet->len = 26;
+						net_packet->len = 27;
 						sendPacketSafe(net_sock, -1, net_packet, 0);
 					}
 					item2->ownerUid = item->ownerUid;
@@ -2854,23 +2881,14 @@ Item* itemPickup(int player, Item* item)
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
 						if ( itemTypeIsQuiver(item2->type) )
 						{
-							strcpy((char*)net_packet->data, "EQUS");
+							clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
+								item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
 						}
 						else
 						{
-							strcpy((char*)net_packet->data, "EQUI"); 
+							clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
+								item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
 						}
-						SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
-						SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
-						SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
-						SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
-						SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
-						net_packet->data[24] = item2->identified;
-						net_packet->data[25] = clientnum;
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 26;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
 					}
 					item2->ownerUid = item->ownerUid;
 					return item2;
@@ -2892,7 +2910,7 @@ Item* itemPickup(int player, Item* item)
 				|| item->type == TOOL_DUMMYBOT )
 			{
 				robot = true;
-				item->appearance += (rand() % 1000000) * 10;
+				item->appearance += (rand() % 100000) * 10;
 			}
 			else
 			{
@@ -2903,7 +2921,7 @@ Item* itemPickup(int player, Item* item)
 			{
 				if ( robot )
 				{
-					item->appearance += (rand() % 1000000) * 10;
+					item->appearance += (rand() % 100000) * 10;
 				}
 				else
 				{
@@ -4818,4 +4836,148 @@ bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 		return true;
 	}
 	return false;
+}
+
+void playerTryEquipItemAndUpdateServer(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( multiplayer == CLIENT )
+	{
+		// store these to send to server.
+		ItemType type = item->type;
+		Status status = item->status;
+		Sint16 beatitude = item->beatitude;
+		int count = item->count;
+		Uint32 appearance = item->appearance;
+		bool identified = item->identified;
+
+		Category cat = itemCategory(item);
+
+		EquipItemResult equipResult = EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+		if ( cat == SPELLBOOK )
+		{
+			if ( !cast_animation.active_spellbook )
+			{
+				equipResult = equipItem(item, &stats[clientnum]->shield, clientnum);
+			}
+		}
+		else
+		{
+			equipResult = equipItem(item, &stats[clientnum]->weapon, clientnum);
+		}
+		if ( equipResult != EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			if ( cat == SPELLBOOK )
+			{
+				if ( !cast_animation.active_spellbook )
+				{
+					clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, equipResult, clientnum, 
+						type, status, beatitude, count, appearance, identified);
+				}
+			}
+			else
+			{
+				clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, equipResult, clientnum,
+					type, status, beatitude, count, appearance, identified);
+			}
+		}
+	}
+	else
+	{
+		// server/singleplayer
+		EquipItemResult equipResult = EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+		if ( itemCategory(item) == SPELLBOOK )
+		{
+			if ( !cast_animation.active_spellbook )
+			{
+				equipResult = equipItem(item, &stats[clientnum]->shield, clientnum);
+			}
+		}
+		else
+		{
+			equipResult = equipItem(item, &stats[clientnum]->weapon, clientnum);
+		}
+	}
+}
+
+void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
+	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified)
+{
+	if ( slot == EQUIP_ITEM_SLOT_SHIELD )
+	{
+		strcpy((char*)net_packet->data, "EQUS");
+	}
+	else if ( slot == EQUIP_ITEM_SLOT_WEAPON )
+	{
+		strcpy((char*)net_packet->data, "EQUI");
+	}
+	else
+	{
+		strcpy((char*)net_packet->data, "EQUM");
+	}
+	SDLNet_Write32((Uint32)type, &net_packet->data[4]);
+	SDLNet_Write32((Uint32)status, &net_packet->data[8]);
+	SDLNet_Write32((Uint32)beatitude, &net_packet->data[12]);
+	SDLNet_Write32((Uint32)count, &net_packet->data[16]);
+	SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
+	net_packet->data[24] = identified;
+	net_packet->data[25] = player;
+	net_packet->data[26] = equipType;
+	net_packet->data[27] = slot;
+	net_packet->address.host = net_server.host;
+	net_packet->address.port = net_server.port;
+	net_packet->len = 28;
+	sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
+void clientUnequipSlotAndUpdateServer(EquipItemSendToServerSlot slot, Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	EquipItemResult equipType = EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+
+	if ( slot == EQUIP_ITEM_SLOT_HELM )
+	{
+		equipType = equipItem(item, &stats[clientnum]->helmet, clientnum);
+	}
+	else if ( slot == EQUIP_ITEM_SLOT_BREASTPLATE )
+	{
+		equipType = equipItem(item, &stats[clientnum]->breastplate, clientnum);
+	}
+	else if ( slot == EQUIP_ITEM_SLOT_GLOVES )
+	{
+		equipType = equipItem(item, &stats[clientnum]->gloves, clientnum);
+	}
+	else if ( slot == EQUIP_ITEM_SLOT_BOOTS )
+	{
+		equipType = equipItem(item, &stats[clientnum]->shoes, clientnum);
+	}
+	else if ( slot == EQUIP_ITEM_SLOT_SHIELD )
+	{
+		equipType = equipItem(item, &stats[clientnum]->shield, clientnum);
+	}
+	else if ( slot == EQUIP_ITEM_SLOT_CLOAK )
+	{
+		equipType = equipItem(item, &stats[clientnum]->cloak, clientnum);
+	}
+	else if ( slot == EQUIP_ITEM_SLOT_AMULET )
+	{
+		equipType = equipItem(item, &stats[clientnum]->amulet, clientnum);
+	}
+	else if ( slot == EQUIP_ITEM_SLOT_RING )
+	{
+		equipType = equipItem(item, &stats[clientnum]->ring, clientnum);
+	}
+	else if ( slot == EQUIP_ITEM_SLOT_MASK )
+	{
+		equipType = equipItem(item, &stats[clientnum]->mask, clientnum);
+	}
+
+	clientSendEquipUpdateToServer(slot, equipType, clientnum,
+		item->type, item->status, item->beatitude, item->count, item->appearance, item->identified);
 }

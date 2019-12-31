@@ -547,7 +547,31 @@ SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 bool dropItem(Item* item, int player, bool notifyMessage = true); // return true on free'd item
 void useItem(Item* item, int player, Entity* usedBy = nullptr);
-void equipItem(Item* item, Item** slot, int player);
+enum EquipItemResult : int
+{
+	EQUIP_ITEM_FAIL_CANT_UNEQUIP,
+	EQUIP_ITEM_SUCCESS_NEWITEM,
+	EQUIP_ITEM_SUCCESS_UPDATE_QTY,
+	EQUIP_ITEM_SUCCESS_UNEQUIP
+};
+enum EquipItemSendToServerSlot : int
+{
+	EQUIP_ITEM_SLOT_WEAPON,
+	EQUIP_ITEM_SLOT_SHIELD,
+	EQUIP_ITEM_SLOT_MASK,
+	EQUIP_ITEM_SLOT_HELM,
+	EQUIP_ITEM_SLOT_GLOVES,
+	EQUIP_ITEM_SLOT_BOOTS,
+	EQUIP_ITEM_SLOT_BREASTPLATE,
+	EQUIP_ITEM_SLOT_CLOAK,
+	EQUIP_ITEM_SLOT_AMULET,
+	EQUIP_ITEM_SLOT_RING
+};
+void playerTryEquipItemAndUpdateServer(Item* item);
+void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
+	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
+void clientUnequipSlotAndUpdateServer(EquipItemSendToServerSlot slot, Item* item);
+EquipItemResult equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(Stat* wielder);

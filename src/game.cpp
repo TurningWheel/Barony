@@ -1929,16 +1929,16 @@ void gameLogic(void)
 									}
 
 									// rotate to new angles
-									double dir = entity->new_yaw - entity->yaw;
-									while ( dir >= PI )
+									double dirYaw = entity->new_yaw - entity->yaw;
+									while ( dirYaw >= PI )
 									{
-										dir -= PI * 2;
+										dirYaw -= PI * 2;
 									}
-									while ( dir < -PI )
+									while ( dirYaw < -PI )
 									{
-										dir += PI * 2;
+										dirYaw += PI * 2;
 									}
-									entity->yaw += dir / 3;
+									entity->yaw += dirYaw / 3;
 									while ( entity->yaw < 0 )
 									{
 										entity->yaw += 2 * PI;
@@ -1947,19 +1947,19 @@ void gameLogic(void)
 									{
 										entity->yaw -= 2 * PI;
 									}
+									double dirPitch = entity->new_pitch - entity->pitch;
 									if ( entity->behavior != &actArrow )
 									{
 										// client handles pitch in actArrow.
-										dir = entity->new_pitch - entity->pitch;
-										while ( dir >= PI )
+										while ( dirPitch >= PI )
 										{
-											dir -= PI * 2;
+											dirPitch -= PI * 2;
 										}
-										while ( dir < -PI )
+										while ( dirPitch < -PI )
 										{
-											dir += PI * 2;
+											dirPitch += PI * 2;
 										}
-										entity->pitch += dir / 3;
+										entity->pitch += dirPitch / 3;
 										while ( entity->pitch < 0 )
 										{
 											entity->pitch += 2 * PI;
@@ -1969,16 +1969,16 @@ void gameLogic(void)
 											entity->pitch -= 2 * PI;
 										}
 									}
-									dir = entity->new_roll - entity->roll;
-									while ( dir >= PI )
+									double dirRoll = entity->new_roll - entity->roll;
+									while ( dirRoll >= PI )
 									{
-										dir -= PI * 2;
+										dirRoll -= PI * 2;
 									}
-									while ( dir < -PI )
+									while ( dirRoll < -PI )
 									{
-										dir += PI * 2;
+										dirRoll += PI * 2;
 									}
-									entity->roll += dir / 3;
+									entity->roll += dirRoll / 3;
 									while ( entity->roll < 0 )
 									{
 										entity->roll += 2 * PI;
@@ -1986,6 +1986,33 @@ void gameLogic(void)
 									while ( entity->roll >= 2 * PI )
 									{
 										entity->roll -= 2 * PI;
+									}
+
+									if ( entity->behavior == &actPlayer && entity->skill[2] != clientnum )
+									{
+										node_t* tmpNode = nullptr;
+										int bodypartNum = 0;
+										for ( bodypartNum = 0, tmpNode = entity->children.first; tmpNode; tmpNode = tmpNode->next, bodypartNum++ )
+										{
+											if ( bodypartNum < 9 )
+											{
+												continue;
+											}
+											if ( bodypartNum > 10 )
+											{
+												break;
+											}
+											// update the players' head and mask as these will otherwise wait until actPlayer to update their rotation. stops clipping.
+											if ( bodypartNum == 9 || bodypartNum == 10 )
+											{
+												Entity* limb = (Entity*)tmpNode->element;
+												if ( limb )
+												{
+													limb->pitch = entity->pitch;
+													limb->yaw = entity->yaw;
+												}
+											}
+										}
 									}
 								}
 							}
@@ -2511,12 +2538,12 @@ void handleEvents(void)
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
-					lastkeypressed = 287;
+					lastkeypressed = 286;
 				}
 				else if ( event.wheel.y < 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 1;
-					lastkeypressed = 288;
+					lastkeypressed = 287;
 				}
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...
@@ -3755,12 +3782,20 @@ int main(int argc, char** argv)
 									allowCasting = false;
 								}
 							}
-							if ( stats[clientnum]->EFFECTS[EFF_BLIND] )
+
+							if ( impulses[IN_DEFEND] == 285 && itemMenuOpen ) // bound to right click, has context menu open.
 							{
-								messagePlayer(clientnum, language[3863]); // prevent casting of spell.
 								allowCasting = false;
-								*inputPressed(impulses[IN_DEFEND]) = 0;
-								*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
+							}
+							else
+							{
+								if ( allowCasting && stats[clientnum]->EFFECTS[EFF_BLIND] )
+								{
+									messagePlayer(clientnum, language[3863]); // prevent casting of spell.
+									allowCasting = false;
+									*inputPressed(impulses[IN_DEFEND]) = 0;
+									*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
+								}
 							}
 						}
 
@@ -4313,6 +4348,18 @@ int main(int argc, char** argv)
 					pos.w = 0;
 					pos.h = 0;
 					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				}
+
+				if ( !shootmode )
+				{
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					}
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					}
 				}
 			}
 

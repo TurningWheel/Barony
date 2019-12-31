@@ -1221,18 +1221,8 @@ void actPlayer(Entity* my)
 							if ( multiplayer == CLIENT && itemIsEquipped(item2, clientnum) )
 							{
 								// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-								strcpy((char*)net_packet->data, "EQUI");
-								SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
-								SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
-								SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
-								SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
-								SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
-								net_packet->data[24] = item2->identified;
-								net_packet->data[25] = PLAYER_NUM;
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 26;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
+								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
 							}
 							if ( tempItem->node )
 							{
@@ -1373,7 +1363,7 @@ void actPlayer(Entity* my)
 										net_packet->data[25] = clientnum;
 										net_packet->address.host = net_server.host;
 										net_packet->address.port = net_server.port;
-										net_packet->len = 26;
+										net_packet->len = 27;
 										sendPacketSafe(net_sock, -1, net_packet, 0);
 									}
 									if ( tempItem->count <= 0 )
@@ -1397,18 +1387,8 @@ void actPlayer(Entity* my)
 									if ( multiplayer == CLIENT && itemIsEquipped(item2, clientnum) )
 									{
 										// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-										strcpy((char*)net_packet->data, "EQUI");
-										SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
-										SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
-										SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
-										SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
-										SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
-										net_packet->data[24] = item2->identified;
-										net_packet->data[25] = PLAYER_NUM;
-										net_packet->address.host = net_server.host;
-										net_packet->address.port = net_server.port;
-										net_packet->len = 26;
-										sendPacketSafe(net_sock, -1, net_packet, 0);
+										clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
+											item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
 									}
 									if ( tempItem->node )
 									{
@@ -3635,6 +3615,16 @@ void actPlayer(Entity* my)
 		// move (dead reckoning)
 		if ( noclip == false )
 		{
+			// from PMOV in serverHandlePacket - new_x and new_y are accumulated positions
+			if ( my->new_x > 0.001 )
+			{
+				my->x = my->new_x;
+			}
+			if ( my->new_y > 0.001 )
+			{
+				my->y = my->new_y;
+			}
+
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
 			// bumping into monsters disturbs them

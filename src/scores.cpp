@@ -45,6 +45,7 @@ std::unordered_set<int> clientLearnedAlchemyIngredients;
 bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
 std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
 bool achievementStatusStrobe[MAXPLAYERS] = { false };
+bool playerFailedRangedOnlyConduct[MAXPLAYERS] = { false };
 list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
 bool usedRace[NUMRACES] = { 0 };
@@ -3325,6 +3326,7 @@ void setDefaultPlayerConducts()
 		achievementStrobeVec[c].clear();
 		achievementStatusBaitAndSwitch[c] = false;
 		achievementBaitAndSwitchTimer[c] = 0;
+		playerFailedRangedOnlyConduct[c] = false;
 	}
 	clientLearnedAlchemyIngredients.clear();
 	achievementObserver.clearPlayerAchievementData();

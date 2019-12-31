@@ -27,6 +27,7 @@ Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
 Uint32 enemy_timer = 0, enemy_lastuid = 0;
 Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
 int magicBoomerangHotbarSlot = -1;
+Uint32 hotbarTooltipLastGameTick = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -523,23 +524,26 @@ void drawStatus()
 		}
 
 		// mouse wheel
-		if ( mousex >= STATUS_X && mousex < STATUS_X + status_bmp->w * uiscale_chatlog )
+		if ( !shootmode )
 		{
-			if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
+			if ( mousex >= STATUS_X && mousex < STATUS_X + status_bmp->w * uiscale_chatlog )
 			{
-				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
 				{
-					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					textscroll--;
-					if ( textscroll < 0 )
+					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
 					{
-						textscroll = 0;
+						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+						textscroll--;
+						if ( textscroll < 0 )
+						{
+							textscroll = 0;
+						}
 					}
-				}
-				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
-				{
-					mousestatus[SDL_BUTTON_WHEELUP] = 0;
-					textscroll++;
+					else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+					{
+						mousestatus[SDL_BUTTON_WHEELUP] = 0;
+						textscroll++;
+					}
 				}
 			}
 		}
@@ -1119,61 +1123,7 @@ void drawStatus()
 							{
 								if ( !disableItemUsage )
 								{
-									if ( multiplayer == CLIENT )
-									{
-										if ( item->unableToEquipDueToSwapWeaponTimer() )
-										{
-											// don't send to host as we're not allowed to "use" or equip these items. 
-											// will return false in equipItem.
-										}
-										else
-										{
-											if ( itemCategory(item) == SPELLBOOK )
-											{
-												if ( !cast_animation.active_spellbook )
-												{
-													strcpy((char*)net_packet->data, "EQUS");
-													SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-													SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-													SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-													SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-													SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-													net_packet->data[24] = item->identified;
-													net_packet->data[25] = clientnum;
-													net_packet->address.host = net_server.host;
-													net_packet->address.port = net_server.port;
-													net_packet->len = 26;
-													sendPacketSafe(net_sock, -1, net_packet, 0);
-												}
-											}
-											else
-											{
-												strcpy((char*)net_packet->data, "EQUI");
-												SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-												SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-												SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-												SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-												SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-												net_packet->data[24] = item->identified;
-												net_packet->data[25] = clientnum;
-												net_packet->address.host = net_server.host;
-												net_packet->address.port = net_server.port;
-												net_packet->len = 26;
-												sendPacketSafe(net_sock, -1, net_packet, 0);
-											}
-										}
-									}
-									if ( itemCategory(item) == SPELLBOOK )
-									{
-										if ( !cast_animation.active_spellbook )
-										{
-											equipItem(item, &stats[clientnum]->shield, clientnum);
-										}
-									}
-									else
-									{
-										equipItem(item, &stats[clientnum]->weapon, clientnum);
-									}
+									playerTryEquipItemAndUpdateServer(item);
 								}
 								else
 								{
@@ -1254,7 +1204,13 @@ void drawStatus()
 		}
 	}
 
-	if ( !shootmode )
+	bool drawHotBarTooltipOnCycle = false;
+	if ( !intro && hotbarTooltipLastGameTick != 0 && (ticks - hotbarTooltipLastGameTick) < TICKS_PER_SECOND * 2 )
+	{
+		drawHotBarTooltipOnCycle = true;
+	}
+
+	if ( !shootmode || drawHotBarTooltipOnCycle )
 	{
 		pos.x = initial_position.x;
 		//Go back through all of the hotbar slots and draw the tooltips.
@@ -1263,16 +1219,56 @@ void drawStatus()
 			item = uidToItem(hotbar[num].item);
 			if ( item )
 			{
-				if ( mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+				bool drawTooltipOnSlot = !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar);
+				if ( !drawTooltipOnSlot )
+				{
+					if ( drawHotBarTooltipOnCycle && current_hotbar == num )
+					{
+						drawTooltipOnSlot = true;
+					}
+				}
+				else
+				{
+					if ( !shootmode )
+					{
+						// reset timer.
+						hotbarTooltipLastGameTick = 0;
+						drawHotBarTooltipOnCycle = false;
+					}
+					else
+					{
+						if ( drawHotBarTooltipOnCycle )
+						{
+							drawTooltipOnSlot = false;
+						}
+					}
+				}
+
+				if ( drawTooltipOnSlot )
 				{
 					//Tooltip
 					SDL_Rect src;
 					src.x = mousex + 16;
 					src.y = mousey + 8;
+
+					if ( drawHotBarTooltipOnCycle )
+					{
+						src.x = pos.x + hotbar_img->w * uiscale_hotbar;
+						src.y = pos.y + hotbar_img->h * uiscale_hotbar;
+						src.y -= 16;
+					}
+
 					if ( itemCategory(item) == SPELL_CAT )
 					{
 						spell_t* spell = getSpellFromItem(item);
-						drawSpellTooltip(spell, item);
+						if ( drawHotBarTooltipOnCycle )
+						{
+							drawSpellTooltip(spell, item, &src);
+						}
+						else
+						{
+							drawSpellTooltip(spell, item, nullptr);
+						}
 					}
 					else
 					{
@@ -1296,7 +1292,7 @@ void drawStatus()
 								int height = 1;
 								char effectType[32] = "";
 								int spellID = getSpellIDFromSpellbook(item->type);
-								int damage = drawSpellTooltip(getSpellFromID(spellID), item);
+								int damage = drawSpellTooltip(getSpellFromID(spellID), item, nullptr);
 								real_t dummy = 0.f;
 								getSpellEffectString(spellID, spellEffectText, effectType, damage, &height, &dummy);
 								int width = longestline(spellEffectText) * TTF12_WIDTH + 8;
@@ -1313,6 +1309,7 @@ void drawStatus()
 								src.w += 7 * TTF12_WIDTH;
 							}
 						}
+
 						int furthestX = xres;
 						if ( proficienciesPage == 0 )
 						{
@@ -1336,7 +1333,15 @@ void drawStatus()
 						{
 							src.y -= (src.y + src.h + 16 - yres);
 						}
-						drawTooltip(&src);
+
+						if ( drawHotBarTooltipOnCycle )
+						{
+							drawTooltip(&src);
+						}
+						else
+						{
+							drawTooltip(&src);
+						}
 
 						Uint32 color = 0xFFFFFFFF;
 						if ( !item->identified )
@@ -1467,7 +1472,7 @@ void drawStatus()
 							}
 						}
 					}
-					if ( hotbar_numkey_quick_add )
+					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add )
 					{
 						Uint32 swapItem = 0;
 						if ( keystatus[SDL_SCANCODE_1] )
@@ -1661,25 +1666,67 @@ void drawStatus()
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) 
-			&& !itemMenuOpen && !openedChest[clientnum] 
-			&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-			&& !identifygui_active && !removecursegui_active
-			&& !GenericGUI.isGUIOpen() )
+		if ( (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT])) )
 		{
-			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
-			selectHotbarSlot(current_hotbar + 1);
-			bumper_moved = true;
+			if ( shootmode && !itemMenuOpen && !openedChest[clientnum] 
+				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+				&& !identifygui_active && !removecursegui_active
+				&& !GenericGUI.isGUIOpen() )
+			{
+				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+				{
+					*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					hotbarTooltipLastGameTick = ticks;
+				}
+				else
+				{
+					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
+					bumper_moved = true;
+				}
+				selectHotbarSlot(current_hotbar + 1);
+			}
+			else
+			{
+				hotbarTooltipLastGameTick = 0;
+				/*if ( intro || shootmode )
+				{
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					}
+				}*/
+			}
 		}
-		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) 
-			&& !itemMenuOpen && !openedChest[clientnum] 
-			&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-			&& !identifygui_active && !removecursegui_active
-			&& !GenericGUI.isGUIOpen() )
+		if ( *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
 		{
-			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
-			selectHotbarSlot(current_hotbar - 1);
-			bumper_moved = true;
+			if ( shootmode && !itemMenuOpen && !openedChest[clientnum] 
+				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+				&& !identifygui_active && !removecursegui_active
+				&& !GenericGUI.isGUIOpen() )
+			{
+				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+				{
+					*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					hotbarTooltipLastGameTick = ticks;
+				}
+				else
+				{
+					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
+					bumper_moved = true;
+				}
+				selectHotbarSlot(current_hotbar - 1);
+			}
+			else
+			{
+				hotbarTooltipLastGameTick = 0;
+				/*if ( intro || shootmode )
+				{
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					}
+				}*/
+			}
 		}
 
 		if ( bumper_moved && !itemMenuOpen 
@@ -1692,13 +1739,21 @@ void drawStatus()
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) 
+			if ( shootmode && (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
 				&& !book_open && !identifygui_active 
 				&& !removecursegui_active && !GenericGUI.isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
-				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
+				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]) )
+				{
+					hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbarTooltipLastGameTick);
+					*inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
+				}
+				else
+				{
+					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
+				}
 				item = uidToItem(hotbar[current_hotbar].item);
 			}
 
@@ -1838,61 +1893,7 @@ void drawStatus()
 				}
 				else
 				{
-					if ( multiplayer == CLIENT )
-					{
-						if ( item->unableToEquipDueToSwapWeaponTimer() )
-						{
-							// don't send to host as we're not allowed to "use" or equip these items. 
-							// will return false in equipItem.
-						}
-						else
-						{
-							if ( itemCategory(item) == SPELLBOOK )
-							{
-								if ( !cast_animation.active_spellbook )
-								{
-									strcpy((char*)net_packet->data, "EQUS");
-									SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-									SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-									SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-									SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-									SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-									net_packet->data[24] = item->identified;
-									net_packet->data[25] = clientnum;
-									net_packet->address.host = net_server.host;
-									net_packet->address.port = net_server.port;
-									net_packet->len = 26;
-									sendPacketSafe(net_sock, -1, net_packet, 0);
-								}
-							}
-							else
-							{
-								strcpy((char*)net_packet->data, "EQUI");
-								SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-								SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-								SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-								SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-								SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-								net_packet->data[24] = item->identified;
-								net_packet->data[25] = clientnum;
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 26;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-							}
-						}
-					}
-					if ( itemCategory(item) == SPELLBOOK )
-					{
-						if ( !cast_animation.active_spellbook )
-						{
-							equipItem(item, &stats[clientnum]->shield, clientnum);
-						}
-					}
-					else
-					{
-						equipItem(item, &stats[clientnum]->weapon, clientnum);
-					}
+					playerTryEquipItemAndUpdateServer(item);
 				}
 			}
 			else
@@ -1975,11 +1976,19 @@ void drawStatus()
 	}
 }
 
-int drawSpellTooltip(spell_t* spell, Item* item)
+int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 {
-	SDL_Rect src;
-	src.x = mousex + 16;
-	src.y = mousey + 8;
+	SDL_Rect pos;
+	if ( src )
+	{
+		pos.x = src->x;
+		pos.y = src->y;
+	}
+	else
+	{
+		pos.x = mousex + 16;
+		pos.y = mousey + 8;
+	}
 	bool spellbook = false;
 	if ( item && itemCategory(item) == SPELLBOOK )
 	{
@@ -2106,64 +2115,64 @@ int drawSpellTooltip(spell_t* spell, Item* item)
 		}
 		if ( strcmp(spellEffectText, "") )
 		{
-			src.w = (longestline(spellEffectText) + 1) * TTF12_WIDTH + 8;
+			pos.w = (longestline(spellEffectText) + 1) * TTF12_WIDTH + 8;
 		}
 		else
 		{
-			src.w = std::max(longestline(spellNameString), longestline(tempstr)) * TTF12_WIDTH + 8;
+			pos.w = std::max(longestline(spellNameString), longestline(tempstr)) * TTF12_WIDTH + 8;
 		}
 
 		int furthestX = xres;
 		if ( proficienciesPage == 0 )
 		{
-			if ( src.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+			if ( pos.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
 			{
 				furthestX = xres - interfaceSkillsSheet.w;
 			}
 		}
 		else
 		{
-			if ( src.y < interfacePartySheet.y + interfacePartySheet.h )
+			if ( pos.y < interfacePartySheet.y + interfacePartySheet.h )
 			{
 				furthestX = xres - interfacePartySheet.w;
 			}
 		}
 
-		if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
+		if ( pos.x + pos.w + 16 > furthestX ) // overflow right side of screen
 		{
-			src.x -= (src.w + 32);
+			pos.x -= (pos.w + 32);
 		}
-		src.h = TTF12_HEIGHT * (2 + spellInfoLines + 1) + 8;
+		pos.h = TTF12_HEIGHT * (2 + spellInfoLines + 1) + 8;
 		if ( spellInfoLines >= 4 )
 		{
-			src.h += 4;
+			pos.h += 4;
 		}
 		else if ( spellInfoLines == 3 )
 		{
-			src.h += 2;
+			pos.h += 2;
 		}
-		if ( src.y + src.h + 16 > yres ) // overflow bottom of screen
+		if ( pos.y + pos.h + 16 > yres ) // overflow bottom of screen
 		{
-			src.y -= (src.y + src.h + 16 - yres);
+			pos.y -= (pos.y + pos.h + 16 - yres);
 		}
 		if ( spellbook )
 		{
 			return damage;
 		}
 
-		drawTooltip(&src);
-		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s\n%s\n%s",
+		drawTooltip(&pos);
+		ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 4, "%s\n%s\n%s",
 			spellNameString, tempstr, spellType);
 		Uint32 effectColor = uint32ColorLightBlue(*mainsurface);
-		ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, effectColor,
+		ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y + 4, effectColor,
 			"\n\n\n%s", spellEffectText);
 	}
 	else
 	{
-		src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
-		src.h = TTF12_HEIGHT + 8;
-		drawTooltip(&src);
-		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s", "Error: Spell doesn't exist!");
+		pos.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
+		pos.h = TTF12_HEIGHT + 8;
+		drawTooltip(&pos);
+		ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 4, "%s", "Error: Spell doesn't exist!");
 	}
 	return 0;
 }

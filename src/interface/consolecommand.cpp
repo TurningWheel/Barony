@@ -610,6 +610,21 @@ void consoleCommand(char* command_str)
 			impulses[IN_FOLLOWERMENU_CYCLENEXT] = atoi(&command_str[6]);
 			printlog("Bound IN_FOLLOWERMENU_CYCLENEXT: %d\n", impulses[IN_FOLLOWERMENU_CYCLENEXT]);
 		}
+		else if ( strstr(command_str, "IN_HOTBAR_SCROLL_LEFT") )
+		{
+			impulses[IN_HOTBAR_SCROLL_LEFT] = atoi(&command_str[6]);
+			printlog("Bound IN_HOTBAR_SCROLL_LEFT: %d\n", impulses[IN_HOTBAR_SCROLL_LEFT]);
+		}
+		else if ( strstr(command_str, "IN_HOTBAR_SCROLL_RIGHT") )
+		{
+			impulses[IN_HOTBAR_SCROLL_RIGHT] = atoi(&command_str[6]);
+			printlog("Bound IN_HOTBAR_SCROLL_RIGHT: %d\n", impulses[IN_HOTBAR_SCROLL_RIGHT]);
+		}
+		else if ( strstr(command_str, "IN_HOTBAR_SCROLL_SELECT") )
+		{
+			impulses[IN_HOTBAR_SCROLL_SELECT] = atoi(&command_str[6]);
+			printlog("Bound IN_HOTBAR_SCROLL_SELECT: %d\n", impulses[IN_HOTBAR_SCROLL_SELECT]);
+		}
 		else
 		{
 			messagePlayer(clientnum, "Invalid binding.");
@@ -1645,7 +1660,7 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/right_click_protect", 19))
 	{
-		right_click_protect = true;
+		right_click_protect = (right_click_protect == false);
 	}
 	else if (!strncmp(command_str, "/autoappraisenewitems", 21))
 	{

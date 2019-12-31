@@ -303,7 +303,17 @@ void actThrown(Entity* my)
 					}
 				}
 				
-				if ( itemCategory(item) == POTION )
+				if ( item && item->type == TOOL_GYROBOT && tinkeringItemCanBePlaced )
+				{
+					if ( parent )
+					{
+						item->applyTinkeringCreation(parent, my);
+					}
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( itemCategory(item) == POTION )
 				{
 					switch ( item->type )
 					{
@@ -384,15 +394,23 @@ void actThrown(Entity* my)
 				}
 				else
 				{
-					if ( item && item->isTinkeringItemWithThrownLimit() && tinkeringItemCanBePlaced )
+					if ( item && parent && parent->behavior == &actPlayer )
 					{
-						if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
+						if ( itemIsThrowableTinkerTool(item) && tinkeringItemCanBePlaced )
 						{
-							messagePlayer(clientnum, language[3884]);
+							// we can place it, just not on water/lava.
+							messagePlayer(parent->skill[2], language[3900]);
 						}
-						else
+						else if ( item->isTinkeringItemWithThrownLimit() && !tinkeringItemCanBePlaced )
 						{
-							messagePlayer(clientnum, language[3883]);
+							if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
+							{
+								messagePlayer(parent->skill[2], language[3884]);
+							}
+							else
+							{
+								messagePlayer(parent->skill[2], language[3883]);
+							}
 						}
 					}
 					Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
@@ -429,6 +447,34 @@ void actThrown(Entity* my)
 			}
 			else
 			{
+				if ( my->skill[10] == TOOL_GYROBOT )
+				{
+					item = newItemFromEntity(my);
+					bool tinkeringItemCanBePlaced = true;
+					if ( item && item->isTinkeringItemWithThrownLimit() )
+					{
+						if ( !parent )
+						{
+							tinkeringItemCanBePlaced = true;
+						}
+						else if ( parent->behavior == &actMonster )
+						{
+							tinkeringItemCanBePlaced = true;
+						}
+						else if ( parent->behavior == &actPlayer )
+						{
+							tinkeringItemCanBePlaced = playerCanSpawnMoreTinkeringBots(stats[parent->skill[2]]);
+						}
+					}
+					if ( parent )
+					{
+						item->applyTinkeringCreation(parent, my);
+					}
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+
 				// fall
 				if ( cat == THROWN )
 				{

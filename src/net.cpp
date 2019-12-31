@@ -987,6 +987,25 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 	//messagePlayer(clientnum, "[DEBUG]: sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
 }
 
+void serverUpdatePlayerConduct(int player, int conduct, int value)
+{
+	if ( player <= 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( client_disconnected[player] )
+	{
+		return;
+	}
+	strcpy((char*)net_packet->data, "COND");
+	SDLNet_Write16(conduct, &net_packet->data[4]);
+	SDLNet_Write16(value, &net_packet->data[6]);
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 8;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
 /*-------------------------------------------------------------------------------
 
 serverUpdatePlayerLVL
@@ -1695,6 +1714,17 @@ void clientHandlePacket()
 				{
 					if (entity == players[j]->entity )
 					{
+						if ( stats[j] )
+						{
+							for ( int effect = 0; effect < NUMEFFECTS; ++effect )
+							{
+								if ( effect != EFF_VAMPIRICAURA && effect != EFF_WITHDRAWAL && effect != EFF_SHAPESHIFT )
+								{
+									stats[j]->EFFECTS[effect] = false;
+									stats[j]->EFFECTS_TIMERS[effect] = 0;
+								}
+							}
+						}
 						players[j]->entity = nullptr;
 					}
 				}
@@ -2081,6 +2111,12 @@ void clientHandlePacket()
 		{
 			return;
 		}
+
+		if ( *armor == selectedItem )
+		{
+			selectedItem = nullptr;
+		}
+
 		if ( (*armor)->count > 1 )
 		{
 			(*armor)->count--;
@@ -2493,6 +2529,15 @@ void clientHandlePacket()
 			stats[i]->MAXMP = buffer & 0xFFFF;
 			stats[i]->MP = (buffer >> 16) & 0xFFFF;
 		}
+	}
+
+	else if ( !strncmp((char*)net_packet->data, "COND", 4) )
+	{
+		int conduct = SDLNet_Read16(&net_packet->data[4]);
+		int value = SDLNet_Read16(&net_packet->data[6]);
+		conductGameChallenges[conduct] = value;
+		//messagePlayer(clientnum, "received %d %d, set to %d", conduct, value, conductGameChallenges[conduct]);
+		return;
 	}
 
 	// update player statistics
@@ -4029,8 +4074,13 @@ void serverHandlePacket()
 	// player move
 	else if (!strncmp((char*)net_packet->data, "PMOV", 4))
 	{
-		client_keepalive[net_packet->data[4]] = ticks;
-		if (players[net_packet->data[4]] == nullptr || players[net_packet->data[4]]->entity == nullptr)
+		int player = net_packet->data[4];
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			return;
+		}
+		client_keepalive[player] = ticks;
+		if (players[player] == nullptr || players[player]->entity == nullptr)
 		{
 			return;
 		}
@@ -4050,20 +4100,28 @@ void serverHandlePacket()
 		pitch = ((Sint16)SDLNet_Read16(&net_packet->data[16])) / 128.0;
 
 		// update rotation
-		players[net_packet->data[4]]->entity->yaw = yaw;
-		players[net_packet->data[4]]->entity->pitch = pitch;
+		players[player]->entity->yaw = yaw;
+		players[player]->entity->pitch = pitch;
 
 		// update player's internal velocity variables
-		players[net_packet->data[4]]->entity->vel_x = velx; // PLAYER_VELX
-		players[net_packet->data[4]]->entity->vel_y = vely; // PLAYER_VELY
+		players[player]->entity->vel_x = velx; // PLAYER_VELX
+		players[player]->entity->vel_y = vely; // PLAYER_VELY
+
+		// store old coordinates
+		// since this function runs more often than actPlayer runs, we need to keep track of the accumulated position in new_x/new_y
+		real_t ox = players[player]->entity->x;
+		real_t oy = players[player]->entity->y;
+		players[player]->entity->x = players[player]->entity->new_x;
+		players[player]->entity->y = players[player]->entity->new_y;
 
 		// calculate distance
-		dx -= players[net_packet->data[4]]->entity->x;
-		dy -= players[net_packet->data[4]]->entity->y;
+		dx -= players[player]->entity->x;
+		dy -= players[player]->entity->y;
 		dist = sqrt( dx * dx + dy * dy );
 
 		// move player with collision detection
-		if (clipMove(&players[net_packet->data[4]]->entity->x, &players[net_packet->data[4]]->entity->y, dx, dy, players[net_packet->data[4]]->entity) < dist - .025 )
+		real_t result = clipMove(&players[player]->entity->x, &players[player]->entity->y, dx, dy, players[player]->entity);
+		if ( result < dist - .025 )
 		{
 			// player encountered obstacle on path
 			// stop updating position on server side and send client corrected position
@@ -4076,6 +4134,39 @@ void serverHandlePacket()
 			net_packet->len = 8;
 			sendPacket(net_sock, -1, net_packet, j - 1);
 		}
+
+		// clipMove sent any corrections to the client, now let's save the updated coordinates.
+		players[player]->entity->new_x = players[player]->entity->x;
+		players[player]->entity->new_y = players[player]->entity->y;
+		// return x/y to their original state as this can update more than actPlayer and causes stuttering. use new_x/new_y in actPlayer.
+		players[player]->entity->x = ox;
+		players[player]->entity->y = oy;
+
+		// update the players' head and mask as these will otherwise wait until actPlayer to update their rotation. stops clipping.
+		node_t* tmpNode = nullptr;
+		int bodypartNum = 0;
+		for ( bodypartNum = 0, tmpNode = players[player]->entity->children.first; tmpNode; tmpNode = tmpNode->next, bodypartNum++ )
+		{
+			if ( bodypartNum == 0 )
+			{
+				// hudweapon case
+				continue;
+			}
+
+			Entity* limb = (Entity*)tmpNode->element;
+			if ( limb )
+			{
+				// adjust headgear/mask yaw/pitch variations as these do not update always.
+				if ( bodypartNum == 9 || bodypartNum == 10 )
+				{
+					limb->x = players[player]->entity->x;
+					limb->y = players[player]->entity->y;
+					limb->pitch = players[player]->entity->pitch;
+					limb->yaw = players[player]->entity->yaw;
+				}
+			}
+		}
+
 		return;
 	}
 
@@ -4116,7 +4207,8 @@ void serverHandlePacket()
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
 		{
-			if ( entity->behavior == &actItem && !strncmp((char*)net_packet->data, "SALV", 4) )
+			if ( (entity->behavior == &actItem || entity->behavior == &actTorch || entity->behavior == &actCrystalShard) 
+				&& !strncmp((char*)net_packet->data, "SALV", 4) )
 			{
 				// auto salvage this item.
 				if ( players[net_packet->data[4]] && players[net_packet->data[4]]->entity )
@@ -4370,13 +4462,14 @@ void serverHandlePacket()
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
 		if (spellInList(&channeledSpells[client], thespell))
 		{
-			for (node = channeledSpells[client].first; node; node = node->next)
+			node_t* nextnode;
+			for (node = channeledSpells[client].first; node; node = nextnode )
 			{
+				nextnode = node->next;
 				spell_t* spell_search = (spell_t*)node->element;
 				if (spell_search->ID == thespell->ID)
 				{
 					spell_search->sustain = false;
-					break; //Found it!
 				}
 			}
 		}
@@ -4400,7 +4493,7 @@ void serverHandlePacket()
 			printlog("warning: client %d sold item to a \"shop\" that has no stats! (uid=%d)\n", client, uidnum);
 			return;
 		}
-		if ( net_packet->data[24] )
+		if ( net_packet->data[28] )
 		{
 			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), 
 				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), true, &entitystats->inventory);
@@ -4440,6 +4533,49 @@ void serverHandlePacket()
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		equipItem(item, &stats[net_packet->data[25]]->shield, net_packet->data[25]);
+		return;
+	}
+
+	// equip item (any other slot)
+	else if ( !strncmp((char*)net_packet->data, "EQUM", 4) )
+	{
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
+		
+		switch ( net_packet->data[27] )
+		{
+			case EQUIP_ITEM_SLOT_WEAPON:
+				equipItem(item, &stats[net_packet->data[25]]->weapon, net_packet->data[25]);
+				break;
+			case EQUIP_ITEM_SLOT_SHIELD:
+				equipItem(item, &stats[net_packet->data[25]]->shield, net_packet->data[25]);
+				break;
+			case EQUIP_ITEM_SLOT_MASK:
+				equipItem(item, &stats[net_packet->data[25]]->mask, net_packet->data[25]);
+				break;
+			case EQUIP_ITEM_SLOT_HELM:
+				equipItem(item, &stats[net_packet->data[25]]->helmet, net_packet->data[25]);
+				break;
+			case EQUIP_ITEM_SLOT_GLOVES:
+				equipItem(item, &stats[net_packet->data[25]]->gloves, net_packet->data[25]);
+				break;
+			case EQUIP_ITEM_SLOT_BOOTS:
+				equipItem(item, &stats[net_packet->data[25]]->shoes, net_packet->data[25]);
+				break;
+			case EQUIP_ITEM_SLOT_BREASTPLATE:
+				equipItem(item, &stats[net_packet->data[25]]->breastplate, net_packet->data[25]);
+				break;
+			case EQUIP_ITEM_SLOT_CLOAK:
+				equipItem(item, &stats[net_packet->data[25]]->cloak, net_packet->data[25]);
+				break;
+			case EQUIP_ITEM_SLOT_AMULET:
+				equipItem(item, &stats[net_packet->data[25]]->amulet, net_packet->data[25]);
+				break;
+			case EQUIP_ITEM_SLOT_RING:
+				equipItem(item, &stats[net_packet->data[25]]->ring, net_packet->data[25]);
+				break;
+			default:
+				break;
+		}
 		return;
 	}
 

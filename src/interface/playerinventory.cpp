@@ -1143,7 +1143,7 @@ void updatePlayerInventory()
 						if (itemCategory(item) == SPELL_CAT)
 						{
 							spell_t* spell = getSpellFromItem(item);
-							drawSpellTooltip(spell, item);
+							drawSpellTooltip(spell, item, nullptr);
 						}
 						else
 						{
@@ -1167,7 +1167,7 @@ void updatePlayerInventory()
 									int height = 1;
 									char effectType[32] = "";
 									int spellID = getSpellIDFromSpellbook(item->type);
-									int damage = drawSpellTooltip(getSpellFromID(spellID), item);
+									int damage = drawSpellTooltip(getSpellFromID(spellID), item, false);
 									real_t dummy = 0.f;
 									getSpellEffectString(spellID, spellEffectText, effectType, damage, &height, &dummy);
 									int width = longestline(spellEffectText) * TTF12_WIDTH + 8;
@@ -1436,61 +1436,7 @@ void updatePlayerInventory()
 						{
 							mousestatus[SDL_BUTTON_RIGHT] = 0;
 							// force equip potion/spellbook
-							if ( multiplayer == CLIENT )
-							{
-								if ( item->unableToEquipDueToSwapWeaponTimer() )
-								{
-									// don't send to host as we're not allowed to "use" or equip these items. 
-									// will return false in equipItem.
-								}
-								else
-								{
-									if ( itemCategory(item) == SPELLBOOK )
-									{
-										if ( !cast_animation.active_spellbook )
-										{
-											strcpy((char*)net_packet->data, "EQUS");
-											SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-											SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-											SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-											SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-											SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-											net_packet->data[24] = item->identified;
-											net_packet->data[25] = clientnum;
-											net_packet->address.host = net_server.host;
-											net_packet->address.port = net_server.port;
-											net_packet->len = 26;
-											sendPacketSafe(net_sock, -1, net_packet, 0);
-										}
-									}
-									else
-									{
-										strcpy((char*)net_packet->data, "EQUI");
-										SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-										SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-										SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-										SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-										SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-										net_packet->data[24] = item->identified;
-										net_packet->data[25] = clientnum;
-										net_packet->address.host = net_server.host;
-										net_packet->address.port = net_server.port;
-										net_packet->len = 26;
-										sendPacketSafe(net_sock, -1, net_packet, 0);
-									}
-								}
-							}
-							if ( itemCategory(item) == SPELLBOOK )
-							{
-								if ( !cast_animation.active_spellbook )
-								{
-									equipItem(item, &stats[clientnum]->shield, clientnum);
-								}
-							}
-							else
-							{
-								equipItem(item, &stats[clientnum]->weapon, clientnum);
-							}
+							playerTryEquipItemAndUpdateServer(item);
 						}
 						else
 						{
@@ -1588,6 +1534,15 @@ void updatePlayerInventory()
 	itemContextMenu();
 }
 
+inline bool itemMenuSkipRow1ForChests(const Item& item)
+{
+	if ( openedChest[clientnum] && (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC || item.type == TOOL_TINKERING_KIT) )
+	{
+		return true;
+	}
+	return false;
+}
+
 /*
  * Helper function to drawItemMenuSlots. Draws the empty window for an individual item context menu slot.
  */
@@ -1614,6 +1569,16 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 	drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 0); //Option 0 => Store in chest, sell, use.
 	if (itemCategory(&item) != SPELL_CAT)
 	{
+		if ( itemMenuSkipRow1ForChests(item) )
+		{
+			current_y += slot_height;
+			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 1 => appraise
+
+			current_y += slot_height;
+			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 2 => drop
+			return; // only draw 3 lines.
+		}
+
 		current_y += slot_height;
 		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 1); //Option 1 => wield, unwield, use, appraise
 
@@ -1764,32 +1729,39 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	y += height;
 
 	//Option 1.
-	if (!is_potion_bad)
+	if ( itemMenuSkipRow1ForChests(item) )
 	{
-		if ( item.type == TOOL_ALEMBIC )
-		{
-			TTF_SizeUTF8(ttf12, language[3341], &width, nullptr);
-			ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3341]);
-		}
-		else if ( item.type == TOOL_TINKERING_KIT )
-		{
-			TTF_SizeUTF8(ttf12, language[3670], &width, nullptr);
-			ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3670]);
-		}
-		else if (itemIsEquipped(&item, clientnum))
-		{
-			drawOptionUnwield(x, y);
-		}
-		else
-		{
-			drawOptionWield(x, y);
-		}
+		// skip this row.
 	}
 	else
 	{
-		drawOptionUse(item, x, y);
+		if (!is_potion_bad)
+		{
+			if ( item.type == TOOL_ALEMBIC )
+			{
+				TTF_SizeUTF8(ttf12, language[3341], &width, nullptr);
+				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3341]);
+			}
+			else if ( item.type == TOOL_TINKERING_KIT )
+			{
+				TTF_SizeUTF8(ttf12, language[3670], &width, nullptr);
+				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3670]);
+			}
+			else if (itemIsEquipped(&item, clientnum))
+			{
+				drawOptionUnwield(x, y);
+			}
+			else
+			{
+				drawOptionWield(x, y);
+			}
+		}
+		else
+		{
+			drawOptionUse(item, x, y);
+		}
+		y += height;
 	}
-	y += height;
 
 	//Option 1.
 	drawOptionAppraise(x, y);
@@ -2012,26 +1984,42 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 	}
 	if (itemCategory(&item) != SPELL_CAT)
 	{
-		current_y += slot_height;
-		if (mousey >= current_y && mousey < current_y + slot_height)
+		if ( itemMenuSkipRow1ForChests(item) )
 		{
-			itemMenuSelected = 1;
-		}
-		current_y += slot_height;
-		if (mousey >= current_y && mousey < current_y + slot_height)
-		{
-			itemMenuSelected = 2;
-		}
-		current_y += slot_height;
-		if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK || item.type == FOOD_CREAMPIE
-			|| (stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) 
-				&& itemCategory(&item) != FOOD) )
-		{
-			if (mousey >= current_y && mousey < current_y + slot_height)
+			current_y += slot_height;
+			if ( mousey >= current_y && mousey < current_y + slot_height )
+			{
+				itemMenuSelected = 2;
+			}
+			current_y += slot_height;
+			if ( mousey >= current_y && mousey < current_y + slot_height )
 			{
 				itemMenuSelected = 3;
 			}
+		}
+		else
+		{
 			current_y += slot_height;
+			if (mousey >= current_y && mousey < current_y + slot_height)
+			{
+				itemMenuSelected = 1;
+			}
+			current_y += slot_height;
+			if (mousey >= current_y && mousey < current_y + slot_height)
+			{
+				itemMenuSelected = 2;
+			}
+			current_y += slot_height;
+			if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK || item.type == FOOD_CREAMPIE
+				|| (stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) 
+					&& itemCategory(&item) != FOOD) )
+			{
+				if (mousey >= current_y && mousey < current_y + slot_height)
+				{
+					itemMenuSelected = 3;
+				}
+				current_y += slot_height;
+			}
 		}
 	}
 
@@ -2044,7 +2032,7 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 	{
 		itemMenuSelected = -1; //For canceling out.
 	}
-	if ( mousex < itemMenuX - 10 || (mousex < itemMenuX && settings_right_click_protect) )   //Check if out of bounds to the left.
+	if ( mousex < itemMenuX - 10 || (mousex < itemMenuX && right_click_protect) )   //Check if out of bounds to the left.
 	{
 		itemMenuSelected = -1; //For canceling out.
 	}
@@ -2154,61 +2142,7 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 			if ( !disableItemUsage )
 			{
 				//Option 0 = equip.
-				if (multiplayer == CLIENT)
-				{
-					if ( item->unableToEquipDueToSwapWeaponTimer() )
-					{
-						// don't send to host as we're not allowed to "use" or equip these items. 
-						// will return false in equipItem.
-					}
-					else
-					{
-						if ( itemCategory(item) == SPELLBOOK )
-						{
-							if ( !cast_animation.active_spellbook )
-							{
-								strcpy((char*)net_packet->data, "EQUS");
-								SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-								SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-								SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-								SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-								SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-								net_packet->data[24] = item->identified;
-								net_packet->data[25] = clientnum;
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 26;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-							}
-						}
-						else
-						{
-							strcpy((char*)net_packet->data, "EQUI");
-							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-							SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-							SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-							net_packet->data[24] = item->identified;
-							net_packet->data[25] = clientnum;
-							net_packet->address.host = net_server.host;
-							net_packet->address.port = net_server.port;
-							net_packet->len = 26;
-							sendPacketSafe(net_sock, -1, net_packet, 0);
-						}
-					}
-				}
-				if ( itemCategory(item) == SPELLBOOK )
-				{
-					if ( !cast_animation.active_spellbook )
-					{
-						equipItem(item, &stats[clientnum]->shield, clientnum);
-					}
-				}
-				else
-				{
-					equipItem(item, &stats[clientnum]->weapon, clientnum);
-				}
+				playerTryEquipItemAndUpdateServer(item);
 			}
 			else
 			{
@@ -2323,62 +2257,7 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 			if (!is_potion_bad && !learnedSpell)
 			{
 				//Option 1 = equip.
-				if (multiplayer == CLIENT)
-				{
-					if ( item->unableToEquipDueToSwapWeaponTimer() )
-					{
-						// don't send to host as we're not allowed to "use" or equip these items. 
-						// will return false in equipItem.
-					}
-					else
-					{
-						if ( itemCategory(item) == SPELLBOOK )
-						{
-							if ( !cast_animation.active_spellbook )
-							{
-								strcpy((char*)net_packet->data, "EQUS");
-								SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-								SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-								SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-								SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-								SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-								net_packet->data[24] = item->identified;
-								net_packet->data[25] = clientnum;
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 26;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-							}
-						}
-						else
-						{
-							strcpy((char*)net_packet->data, "EQUI");
-							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-							SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-							SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-							net_packet->data[24] = item->identified;
-							net_packet->data[25] = clientnum;
-							net_packet->address.host = net_server.host;
-							net_packet->address.port = net_server.port;
-							net_packet->len = 26;
-							sendPacketSafe(net_sock, -1, net_packet, 0);
-						}
-					}
-				}
-
-				if ( itemCategory(item) == SPELLBOOK )
-				{
-					if ( !cast_animation.active_spellbook )
-					{
-						equipItem(item, &stats[clientnum]->shield, clientnum);
-					}
-				}
-				else
-				{
-					equipItem(item, &stats[clientnum]->weapon, clientnum);
-				}
+				playerTryEquipItemAndUpdateServer(item);
 			}
 			else
 			{
@@ -2747,18 +2626,8 @@ void quickStackItems()
 					if ( multiplayer == CLIENT && itemIsEquipped(itemToStack, clientnum) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						strcpy((char*)net_packet->data, "EQUI");
-						SDLNet_Write32((Uint32)itemToStack->type, &net_packet->data[4]);
-						SDLNet_Write32((Uint32)itemToStack->status, &net_packet->data[8]);
-						SDLNet_Write32((Uint32)itemToStack->beatitude, &net_packet->data[12]);
-						SDLNet_Write32((Uint32)itemToStack->count, &net_packet->data[16]);
-						SDLNet_Write32((Uint32)itemToStack->appearance, &net_packet->data[20]);
-						net_packet->data[24] = itemToStack->identified;
-						net_packet->data[25] = clientnum;
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 26;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
+						clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
+							itemToStack->type, itemToStack->status,	itemToStack->beatitude, itemToStack->count, itemToStack->appearance, itemToStack->identified);
 					}
 					if ( item2->node )
 					{
