@@ -1255,12 +1255,20 @@ void drawStatus()
 					{
 						src.x = pos.x + hotbar_img->w * uiscale_hotbar;
 						src.y = pos.y + hotbar_img->h * uiscale_hotbar;
+						src.y -= 16;
 					}
 
 					if ( itemCategory(item) == SPELL_CAT )
 					{
 						spell_t* spell = getSpellFromItem(item);
-						drawSpellTooltip(spell, item);
+						if ( drawHotBarTooltipOnCycle )
+						{
+							drawSpellTooltip(spell, item, &src);
+						}
+						else
+						{
+							drawSpellTooltip(spell, item, nullptr);
+						}
 					}
 					else
 					{
@@ -1284,7 +1292,7 @@ void drawStatus()
 								int height = 1;
 								char effectType[32] = "";
 								int spellID = getSpellIDFromSpellbook(item->type);
-								int damage = drawSpellTooltip(getSpellFromID(spellID), item);
+								int damage = drawSpellTooltip(getSpellFromID(spellID), item, nullptr);
 								real_t dummy = 0.f;
 								getSpellEffectString(spellID, spellEffectText, effectType, damage, &height, &dummy);
 								int width = longestline(spellEffectText) * TTF12_WIDTH + 8;
@@ -1300,11 +1308,6 @@ void drawStatus()
 							{
 								src.w += 7 * TTF12_WIDTH;
 							}
-						}
-
-						if ( drawHotBarTooltipOnCycle )
-						{
-							src.y -= 16;// src.h;
 						}
 
 						int furthestX = xres;
@@ -1684,11 +1687,14 @@ void drawStatus()
 			}
 			else
 			{
-				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+				hotbarTooltipLastGameTick = 0;
+				/*if ( intro || shootmode )
 				{
-					*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-					hotbarTooltipLastGameTick = 0;
-				}
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					}
+				}*/
 			}
 		}
 		if ( *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
@@ -1712,11 +1718,14 @@ void drawStatus()
 			}
 			else
 			{
-				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+				hotbarTooltipLastGameTick = 0;
+				/*if ( intro || shootmode )
 				{
-					*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-					hotbarTooltipLastGameTick = 0;
-				}
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					}
+				}*/
 			}
 		}
 
@@ -1967,11 +1976,19 @@ void drawStatus()
 	}
 }
 
-int drawSpellTooltip(spell_t* spell, Item* item)
+int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 {
-	SDL_Rect src;
-	src.x = mousex + 16;
-	src.y = mousey + 8;
+	SDL_Rect pos;
+	if ( src )
+	{
+		pos.x = src->x;
+		pos.y = src->y;
+	}
+	else
+	{
+		pos.x = mousex + 16;
+		pos.y = mousey + 8;
+	}
 	bool spellbook = false;
 	if ( item && itemCategory(item) == SPELLBOOK )
 	{
@@ -2098,64 +2115,64 @@ int drawSpellTooltip(spell_t* spell, Item* item)
 		}
 		if ( strcmp(spellEffectText, "") )
 		{
-			src.w = (longestline(spellEffectText) + 1) * TTF12_WIDTH + 8;
+			pos.w = (longestline(spellEffectText) + 1) * TTF12_WIDTH + 8;
 		}
 		else
 		{
-			src.w = std::max(longestline(spellNameString), longestline(tempstr)) * TTF12_WIDTH + 8;
+			pos.w = std::max(longestline(spellNameString), longestline(tempstr)) * TTF12_WIDTH + 8;
 		}
 
 		int furthestX = xres;
 		if ( proficienciesPage == 0 )
 		{
-			if ( src.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+			if ( pos.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
 			{
 				furthestX = xres - interfaceSkillsSheet.w;
 			}
 		}
 		else
 		{
-			if ( src.y < interfacePartySheet.y + interfacePartySheet.h )
+			if ( pos.y < interfacePartySheet.y + interfacePartySheet.h )
 			{
 				furthestX = xres - interfacePartySheet.w;
 			}
 		}
 
-		if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
+		if ( pos.x + pos.w + 16 > furthestX ) // overflow right side of screen
 		{
-			src.x -= (src.w + 32);
+			pos.x -= (pos.w + 32);
 		}
-		src.h = TTF12_HEIGHT * (2 + spellInfoLines + 1) + 8;
+		pos.h = TTF12_HEIGHT * (2 + spellInfoLines + 1) + 8;
 		if ( spellInfoLines >= 4 )
 		{
-			src.h += 4;
+			pos.h += 4;
 		}
 		else if ( spellInfoLines == 3 )
 		{
-			src.h += 2;
+			pos.h += 2;
 		}
-		if ( src.y + src.h + 16 > yres ) // overflow bottom of screen
+		if ( pos.y + pos.h + 16 > yres ) // overflow bottom of screen
 		{
-			src.y -= (src.y + src.h + 16 - yres);
+			pos.y -= (pos.y + pos.h + 16 - yres);
 		}
 		if ( spellbook )
 		{
 			return damage;
 		}
 
-		drawTooltip(&src);
-		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s\n%s\n%s",
+		drawTooltip(&pos);
+		ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 4, "%s\n%s\n%s",
 			spellNameString, tempstr, spellType);
 		Uint32 effectColor = uint32ColorLightBlue(*mainsurface);
-		ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, effectColor,
+		ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y + 4, effectColor,
 			"\n\n\n%s", spellEffectText);
 	}
 	else
 	{
-		src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
-		src.h = TTF12_HEIGHT + 8;
-		drawTooltip(&src);
-		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s", "Error: Spell doesn't exist!");
+		pos.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
+		pos.h = TTF12_HEIGHT + 8;
+		drawTooltip(&pos);
+		ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 4, "%s", "Error: Spell doesn't exist!");
 	}
 	return 0;
 }

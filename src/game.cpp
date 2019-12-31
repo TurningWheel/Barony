@@ -4349,6 +4349,18 @@ int main(int argc, char** argv)
 					pos.h = 0;
 					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 				}
+
+				if ( !shootmode )
+				{
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					}
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					}
+				}
 			}
 
 			// fade in/out effect

@@ -1143,7 +1143,7 @@ void updatePlayerInventory()
 						if (itemCategory(item) == SPELL_CAT)
 						{
 							spell_t* spell = getSpellFromItem(item);
-							drawSpellTooltip(spell, item);
+							drawSpellTooltip(spell, item, nullptr);
 						}
 						else
 						{
@@ -1167,7 +1167,7 @@ void updatePlayerInventory()
 									int height = 1;
 									char effectType[32] = "";
 									int spellID = getSpellIDFromSpellbook(item->type);
-									int damage = drawSpellTooltip(getSpellFromID(spellID), item);
+									int damage = drawSpellTooltip(getSpellFromID(spellID), item, false);
 									real_t dummy = 0.f;
 									getSpellEffectString(spellID, spellEffectText, effectType, damage, &height, &dummy);
 									int width = longestline(spellEffectText) * TTF12_WIDTH + 8;

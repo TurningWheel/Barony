@@ -622,5 +622,5 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 
 void freeSpells();
-int drawSpellTooltip(spell_t* spell, Item* item);
+int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src);
 void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellType[32], int value, int* spellInfoLines, real_t* sustainCostPerSecond);
