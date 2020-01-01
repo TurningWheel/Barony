@@ -2125,9 +2125,9 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID )
 								{
-									tooltip.w = longestline(language[3372]) * TTF12_WIDTH + 8;
+									tooltip.w = longestline(language[3917]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3372]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3917]);
 								}
 								else
 								{
