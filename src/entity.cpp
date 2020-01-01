@@ -27,6 +27,7 @@ See LICENSE for details.
 #endif
 #include "player.hpp"
 #include "scores.hpp"
+#include "menu.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
@@ -5540,6 +5541,14 @@ bool Entity::isMobile()
 		)
 	{
 		return false;
+	}
+
+	if ( introstage == 9 
+		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
+		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
+		|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS )
+	{
+		return false; // mid-game crawls.
 	}
 
 	// paralyzed
