@@ -3077,12 +3077,18 @@ void handleMainMenu(bool mode)
 					// compute hash
 					if ( !serial.empty() )
 					{
-						std::size_t DLC1Hash = serialHash(serial);
-						if ( DLC1Hash == 144425 )
+						std::size_t DLCHash = serialHash(serial);
+						if ( DLCHash == 144425 )
 						{
 							printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
 							enabledDLCPack1 = true;
 							windowSerialResult(1);
+						}
+						else if ( DLCHash == 135398 )
+						{
+							printlog("[LICENSE]: Legends and Pariahs DLC license key found.");
+							enabledDLCPack2 = true;
+							windowSerialResult(2);
 						}
 						else
 						{
@@ -14811,10 +14817,17 @@ void buttonConfirmSerial(button_t* my)
 void windowSerialResult(int success)
 {
 	// close current window
-	if ( success == 1 )
+	if ( success > 0 )
 	{
 		char path[PATH_MAX] = "";
-		completePath(path, "mythsandoutcasts.key", outputdir);
+		if ( success == 2 )
+		{
+			completePath(path, "legendsandpariahs.key", outputdir);
+		}
+		else if ( success == 1 )
+		{
+			completePath(path, "mythsandoutcasts.key", outputdir);
+		}
 
 		// open the serial file
 		FILE* fp = nullptr;
@@ -14862,9 +14875,16 @@ void windowSerialResult(int success)
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
-	if ( success )
+	if ( success > 0 )
 	{
-		strcpy(subtext, language[3404]);
+		if ( success == 2 )
+		{
+			strcpy(subtext, language[3405]);
+		}
+		else if ( success == 1 )
+		{
+			strcpy(subtext, language[3404]);
+		}
 		playSound(402, 92);
 	}
 	else
