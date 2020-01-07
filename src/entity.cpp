@@ -6258,6 +6258,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( myStats->weapon->type == HEAVY_CROSSBOW )
 					{
 						playSoundEntity(this, 411 + rand() % 3, 128);
+						if ( this->behavior == &actPlayer && this->skill[2] > 0 )
+						{
+							this->setEffect(EFF_KNOCKBACK, true, 30, false);
+						}
 					}
 					else
 					{

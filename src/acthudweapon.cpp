@@ -1177,10 +1177,11 @@ void actHudWeapon(Entity* my)
 
 									if ( heavyCrossbow )
 									{
-										if ( players[clientnum]->entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+										players[clientnum]->entity->playerStrafeVelocity = 0.3;
+										players[clientnum]->entity->playerStrafeDir = players[clientnum]->entity->yaw + PI;
+										if ( multiplayer != CLIENT )
 										{
-											players[clientnum]->entity->playerStrafeVelocity = 0.3;
-											players[clientnum]->entity->playerStrafeDir = players[clientnum]->entity->yaw + PI;
+											players[clientnum]->entity->setEffect(EFF_KNOCKBACK, true, 30, false);
 										}
 										if ( players[clientnum]->entity->skill[3] == 0 )   // debug cam OFF
 										{
