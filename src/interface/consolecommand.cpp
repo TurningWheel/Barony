@@ -2608,6 +2608,10 @@ void consoleCommand(char* command_str)
 			}
 			messagePlayer(clientnum, "Hunger value: %d", stats[clientnum]->HUNGER);
 		}
+		else if ( !strncmp(command_str, "/disablemouserotationlimit", 26) )
+		{
+			disablemouserotationlimit = (disablemouserotationlimit == false);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

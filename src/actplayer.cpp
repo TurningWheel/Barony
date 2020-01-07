@@ -29,6 +29,8 @@
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
+bool disablemouserotationlimit = false;
+bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
 int monsterEmoteGimpTimer = 0;
 int selectedEntityGimpTimer = 0;
@@ -3401,14 +3403,24 @@ void actPlayer(Entity* my)
 					{
 						PLAYER_ROTX += mousexrel * .006 * (mousespeed / 128.f);
 					}
-					PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
+					if ( !disablemouserotationlimit )
+					{
+						PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
+					}
 					PLAYER_ROTX *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						if ( disablemouserotationlimit )
+						{
+							PLAYER_ROTX = mousexrel * .01f * (mousespeed / 128.f);
+						}
+						else
+						{
+							PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						}
 					}
 					else
 					{
@@ -3424,14 +3436,24 @@ void actPlayer(Entity* my)
 					{
 						PLAYER_ROTX -= mousexrel * .006f * (mousespeed / 128.f);
 					}
-					PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
+					if ( !disablemouserotationlimit )
+					{
+						PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
+					}
 					PLAYER_ROTX *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						if ( disablemouserotationlimit )
+						{
+							PLAYER_ROTX = -mousexrel * .01f * (mousespeed / 128.f);
+						}
+						else
+						{
+							PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						}
 					}
 					else
 					{

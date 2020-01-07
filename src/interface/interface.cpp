@@ -1145,6 +1145,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/smoothmouse\n");
 	}
+	if ( disablemouserotationlimit )
+	{
+		fprintf(fp, "/disablemouserotationlimit\n");
+	}
 	if (last_ip[0])
 	{
 		fprintf(fp, "/ip %s\n", last_ip);

@@ -3571,6 +3571,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 132, "[ ] %s", language[1367]);
 			}
+			if ( settings_disablemouserotationlimit )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 156, "[x] %s", language[3918]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 156, "[ ] %s", language[3918]);
+			}
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
@@ -3584,6 +3592,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_smoothmouse = (settings_smoothmouse == 0);
+					}
+					if ( omousey >= suby1 + 156 && omousey < suby1 + 168 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_disablemouserotationlimit = (settings_disablemouserotationlimit == 0);
 					}
 				}
 			}
@@ -10183,6 +10196,7 @@ void openSettingsWindow()
 	}
 	settings_reversemouse = reversemouse;
 	settings_smoothmouse = smoothmouse;
+	settings_disablemouserotationlimit = disablemouserotationlimit;
 	settings_mousespeed = mousespeed;
 	settings_broadcast = broadcast;
 	settings_nohud = nohud;
@@ -11833,6 +11847,7 @@ void applySettings()
 	// set mouse options
 	reversemouse = settings_reversemouse;
 	smoothmouse = settings_smoothmouse;
+	disablemouserotationlimit = settings_disablemouserotationlimit;
 	mousespeed = settings_mousespeed;
 
 	// set misc options
