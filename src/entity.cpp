@@ -5550,10 +5550,11 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	if ( introstage == 9 
+	if ( behavior == &actMonster && 
+		(introstage == 9
 		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
 		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
-		|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS )
+		|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS) )
 	{
 		return false; // mid-game crawls.
 	}
