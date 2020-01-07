@@ -2123,7 +2123,7 @@ void Entity::setHP(int amount)
 	{
 		for ( i = 1; i < numplayers; i++ )
 		{
-			if ( this == players[i]->entity )
+			if ( players[i] && this == players[i]->entity )
 			{
 				// tell the client its HP changed
 				strcpy((char*)net_packet->data, "UPHP");
@@ -2133,6 +2133,13 @@ void Entity::setHP(int amount)
 				net_packet->address.port = net_clients[i - 1].port;
 				net_packet->len = 12;
 				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+			if ( this->behavior == &actPlayer && abs(healthDiff) > 0 )
+			{
+				if ( serverSchedulePlayerHealthUpdate == 0 )
+				{
+					serverSchedulePlayerHealthUpdate = ticks;
+				}
 			}
 		}
 		if ( this->behavior == &actMonster )

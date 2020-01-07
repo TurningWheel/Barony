@@ -90,6 +90,8 @@ list_t steamAchievements;
 DebugStatsClass DebugStats;
 Uint32 networkTickrate = 0;
 bool gameloopFreezeEntities = false;
+Uint32 serverSchedulePlayerHealthUpdate = 0;
+Uint32 serverLastPlayerHealthUpdate = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -1338,9 +1340,26 @@ void gameLogic(void)
 					}
 				}
 
-				if ( ticks % (TICKS_PER_SECOND * 2) == 0 )
+				bool updatePlayerHealth = false;
+				if ( serverSchedulePlayerHealthUpdate != 0 && (ticks - serverSchedulePlayerHealthUpdate) >= TICKS_PER_SECOND * 0.5 )
+				{
+					// update if 0.5s have passed since request of health update.
+					// the scheduled update needs to be reset to 0 to be set again.
+					updatePlayerHealth = true;
+				}
+				else if ( (ticks % (TICKS_PER_SECOND * 3) == 0) 
+					&& (serverLastPlayerHealthUpdate == 0 || ((ticks - serverLastPlayerHealthUpdate) >= 2 * TICKS_PER_SECOND)) 
+				)
+				{
+					// regularly update every 3 seconds, only if the last update was more than 2 seconds ago.
+					updatePlayerHealth = true;
+				}
+
+				if ( updatePlayerHealth )
 				{
 					// send update to all clients for global stats[NUMPLAYERS] struct
+					serverLastPlayerHealthUpdate = ticks;
+					serverSchedulePlayerHealthUpdate = 0;
 					serverUpdatePlayerStats();
 				}
 

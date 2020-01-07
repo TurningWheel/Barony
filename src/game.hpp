@@ -298,6 +298,7 @@ void startMessages();
 bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true);
 extern Uint32 networkTickrate;
 extern bool gameloopFreezeEntities;
+extern Uint32 serverSchedulePlayerHealthUpdate;
 
 #define TOUCHRANGE 32
 #define STRIKERANGE 24
