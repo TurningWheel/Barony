@@ -10704,7 +10704,6 @@ bool Entity::checkEnemy(Entity* your)
 			if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = swornenemies[HUMAN][yourStats->type];
-
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) && myStats->type != AUTOMATON )
 				{
 					// enemies.
@@ -10780,6 +10779,10 @@ bool Entity::checkEnemy(Entity* your)
 							if ( yourStats->type == INCUBUS || yourStats->type == SUCCUBUS )
 							{
 								result = false;
+							}
+							if ( yourStats->type == SHOPKEEPER )
+							{
+								result = swornenemies[SHOPKEEPER][AUTOMATON];
 							}
 							break;
 						default:
@@ -10866,6 +10869,10 @@ bool Entity::checkEnemy(Entity* your)
 							if ( myStats->type == INCUBUS || myStats->type == SUCCUBUS )
 							{
 								result = false;
+							}
+							if ( myStats->type == SHOPKEEPER )
+							{
+								result = swornenemies[SHOPKEEPER][AUTOMATON];
 							}
 							break;
 						default:
@@ -11136,7 +11143,11 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case AUTOMATON:
-							if ( yourStats->type == HUMAN || yourStats->type == SHOPKEEPER )
+							if ( yourStats->type == SHOPKEEPER )
+							{
+								result = monsterally[SHOPKEEPER][AUTOMATON];
+							}
+							else if ( yourStats->type == HUMAN )
 							{
 								result = true;
 							}
@@ -11221,7 +11232,11 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case AUTOMATON:
-							if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
+							if ( myStats->type == SHOPKEEPER )
+							{
+								result = monsterally[SHOPKEEPER][AUTOMATON];
+							}
+							else if ( myStats->type == HUMAN )
 							{
 								result = true;
 							}
