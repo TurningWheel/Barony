@@ -2395,7 +2395,8 @@ void itemContextMenu()
 	}
 	else
 	{
-		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*current_item) )
+		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*current_item)
+			&& current_item->type != FOOD_CREAMPIE )
 		{
 			drawItemMenuOptionAutomaton(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
 		}
