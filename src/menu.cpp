@@ -7625,6 +7625,8 @@ void handleMainMenu(bool mode)
 			// undo shopkeeper grudge
 			swornenemies[SHOPKEEPER][HUMAN] = false;
 			monsterally[SHOPKEEPER][HUMAN] = true;
+			swornenemies[SHOPKEEPER][AUTOMATON] = false;
+			monsterally[SHOPKEEPER][AUTOMATON] = true;
 
 			// setup game //TODO: Move into a function startGameStuff() or something.
 			entity_uids = 1;
