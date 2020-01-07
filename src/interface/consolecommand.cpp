@@ -2612,6 +2612,20 @@ void consoleCommand(char* command_str)
 		{
 			disablemouserotationlimit = (disablemouserotationlimit == false);
 		}
+		else if ( !strncmp(command_str, "/dumpnetworkdata", 16) )
+		{
+			for ( auto element : DebugStats.networkPackets )
+			{
+				printlog("Packet: %s | %d", element.second.first.c_str(), element.second.second);
+			}
+		}
+		else if ( !strncmp(command_str, "/dumpentudata", 13) )
+		{
+			for ( auto element : DebugStats.entityUpdatePackets )
+			{
+				printlog("Sprite: %d | %d", element.first, element.second);
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

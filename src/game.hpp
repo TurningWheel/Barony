@@ -449,6 +449,9 @@ public:
 	std::chrono::high_resolution_clock::time_point messagesT2WhileLoop;
 	bool handlePacketStartLoop = false;
 
+	std::unordered_map<unsigned long, std::pair<std::string, int>> networkPackets;
+	std::unordered_map<int, int> entityUpdatePackets;
+
 	bool displayStats = false;
 	char debugOutput[1024];
 	char debugEventOutput[1024];
