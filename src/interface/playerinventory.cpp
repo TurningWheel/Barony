@@ -1359,7 +1359,10 @@ void updatePlayerInventory()
 						&& GenericGUI.selectedSlot < 0 )
 					{
 						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
-						dropItem(item, clientnum);
+						if ( dropItem(item, clientnum) )
+						{
+							item = nullptr;
+						}
 					}
 
 					bool disableItemUsage = false;
