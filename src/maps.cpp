@@ -412,7 +412,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 	// determine whether minotaur level or not
 	if ( std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) != -1 )
 	{
-		if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) && (svFlags & SV_FLAG_MINOTAURS) )
+		if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) && (svFlags & SV_FLAG_MINOTAURS) )
 		{
 			minotaurlevel = 1;
 		}
