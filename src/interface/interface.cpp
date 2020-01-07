@@ -1299,6 +1299,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/hideplayertags\n");
 	}
+	if ( hide_statusbar )
+	{
+		fprintf(fp, "/hidestatusbar\n");
+	}
 	if ( show_skill_values )
 	{
 		fprintf(fp, "/showskillvalues\n");
