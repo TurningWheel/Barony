@@ -3876,18 +3876,20 @@ void GenericGUIMenu::updateGUI()
 
 			bool selectingSlot = false;
 			SDL_Rect slotPos;
-			slotPos.x = gui_starty;
+			slotPos.x = gui_starty + 12;
 			slotPos.w = inventoryoptionChest_bmp->w;
 			slotPos.y = gui_startx + 16;
 			slotPos.h = inventoryoptionChest_bmp->h;
+			bool mouseWithinBoundaryX = (mousex >= slotPos.x && mousex < slotPos.x + slotPos.w);
 
 			for ( int i = 0; i < kNumShownItems; ++i, slotPos.y += slotPos.h )
 			{
-				pos.x = slotPos.x + 12;
+				pos.x = slotPos.x;
 				pos.w = 0;
 				pos.h = 0;
 
-				if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
+
+				if ( mouseWithinBoundaryX && omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
 				{
 					pos.y = slotPos.y;
 					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
