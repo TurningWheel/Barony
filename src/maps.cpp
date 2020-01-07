@@ -5223,6 +5223,18 @@ void assignActions(map_t* map)
 					}
 				}
 			}
+			else if ( postProcessEntity->sprite == 586 || postProcessEntity->sprite == 585
+				|| postProcessEntity->sprite == 184 || postProcessEntity->sprite == 185 )
+			{
+				int findx = static_cast<int>(postProcessEntity->x) >> 4;
+				int findy = static_cast<int>(postProcessEntity->y) >> 4;
+				if ( !map->tiles[findy * MAPLAYERS + findx * MAPLAYERS * map->height] )
+				{
+					// remove the lever as it is over a pit.
+					printlog("[MAP GENERATOR] Removed switch over a pit at x:%d y:%d.", findx, findy);
+					list_RemoveNode(postProcessEntity->mynode);
+				}
+			}
 		}
 	}
 	if ( vampireQuestChest )
