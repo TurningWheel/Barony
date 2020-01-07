@@ -1356,6 +1356,7 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count)
 {
+	// WARNING - dropItemMonster is used on playerDeaths, modifying this here neet to edit in actPlayer.cpp and net.cpp
 	Entity* entity = nullptr;
 	bool itemDroppable = true;
 

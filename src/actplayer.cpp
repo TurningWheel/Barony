@@ -3034,10 +3034,17 @@ void actPlayer(Entity* my)
 								item = stats[PLAYER_NUM]->shield;
 								if ( item )
 								{
-									int c = item->count;
-									for ( c = item->count; c > 0; c-- )
+									if ( itemTypeIsQuiver(item->type) )
 									{
-										dropItemMonster(item, my, stats[PLAYER_NUM]);
+										dropItemMonster(item, my, stats[PLAYER_NUM], item->count);
+									}
+									else
+									{
+										int c = item->count;
+										for ( c = item->count; c > 0; c-- )
+										{
+											dropItemMonster(item, my, stats[PLAYER_NUM]);
+										}
 									}
 								}
 								item = stats[PLAYER_NUM]->weapon;
