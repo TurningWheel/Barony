@@ -1144,7 +1144,7 @@ void actThrown(Entity* my)
 
 				if ( friendlyHit && !usedpotion )
 				{
-					if ( itemCategory(item) != POTION )
+					if ( item && itemCategory(item) != POTION && item->type != BOOMERANG )
 					{
 						Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 						entity->flags[INVISIBLE] = true;
