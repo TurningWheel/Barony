@@ -214,8 +214,15 @@ void drawSustainedSpells()
 		}
 		SDL_Surface** surface = (SDL_Surface**)node->element;
 		pos.x = camera.winw - (*surface)->w - SUST_SPELLS_X;
+
 		//Draw under the skills sheet if inventory open or the sidebar lock has been enabled.
-		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) : 0); 
+		int iconHeightOffset = interfaceSkillsSheet.y + interfaceSkillsSheet.h;
+		if ( proficienciesPage == 1 )
+		{
+			iconHeightOffset = std::max(iconHeightOffset, interfacePartySheet.y + interfacePartySheet.h);
+		}
+
+		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (iconHeightOffset) : 0);
 	}
 
 	bool isChanneled = false;
