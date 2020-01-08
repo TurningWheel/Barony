@@ -1214,9 +1214,27 @@ void handleMainMenu(bool mode)
 					ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
 				}
 				char* endgameText = NULL;
+				bool singleplayerAliveEndGameAndSave = false;
 				if ( multiplayer == SINGLE )
 				{
-					endgameText = language[1310];
+					if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] && stats[clientnum]->HP > 0 )
+					{
+						endgameText = language[3919];
+						singleplayerAliveEndGameAndSave = true;
+						if ( !strncmp(map.name, "Boss", 4)
+							|| !strncmp(map.name, "Hell Boss", 9)
+							|| !strncmp(map.name, "Sanctum", 7) )
+						{
+							// boss floor, no save scumming easily!
+							singleplayerAliveEndGameAndSave = false;
+							endgameText = language[1310];
+						}
+					}
+					else
+					{
+						endgameText = language[1310];
+						singleplayerAliveEndGameAndSave = false;
+					}
 				}
 				else
 				{
@@ -1244,7 +1262,29 @@ void handleMainMenu(bool mode)
 							subx2 = xres / 2 + 144;
 							suby1 = yres / 2 - 64;
 							suby2 = yres / 2 + 64;
-							strcpy(subtext, language[1129]);
+							if ( singleplayerAliveEndGameAndSave )
+							{
+								strcpy(subtext, language[3920]);
+								subx1 = xres / 2 - 188;
+								subx2 = xres / 2 + 188;
+								suby1 = yres / 2 - 92;
+								suby2 = yres / 2 + 92;
+
+								// add a cancel button
+								button = newButton();
+								strcpy(button->label, language[1316]);
+								button->x = subx2 - strlen(language[1316]) * 12 - 16;
+								button->y = suby2 - 28;
+								button->sizex = strlen(language[1316]) * 12 + 8;
+								button->sizey = 20;
+								button->action = &buttonCloseSubwindow;
+								button->visible = 1;
+								button->focused = 1;
+							}
+							else
+							{
+								strcpy(subtext, language[1129]);
+							}
 						}
 						else
 						{
@@ -1286,7 +1326,14 @@ void handleMainMenu(bool mode)
 						button->sizey = 20;
 						if ( multiplayer == SINGLE )
 						{
-							button->action = &buttonEndGameConfirm;
+							if ( singleplayerAliveEndGameAndSave )
+							{
+								button->action = &buttonCloseAndEndGameConfirm;
+							}
+							else
+							{
+								button->action = &buttonEndGameConfirm;
+							}
 						}
 						else
 						{
@@ -1304,7 +1351,15 @@ void handleMainMenu(bool mode)
 						button->y = suby2 - 28;
 						button->sizex = strlen(language[1315]) * 12 + 8;
 						button->sizey = 20;
-						button->action = &buttonCloseSubwindow;
+						if ( multiplayer == SINGLE && singleplayerAliveEndGameAndSave )
+						{
+							button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+							button->action = &buttonEndGameConfirm;
+						}
+						else
+						{
+							button->action = &buttonCloseSubwindow;
+						}
 						button->visible = 1;
 						button->focused = 1;
 					}
