@@ -1123,24 +1123,57 @@ void actThrown(Entity* my)
 				}
 
 				// update enemy bar for attacker
-				if ( !strcmp(hitstats->name, "") )
+				if ( !friendlyHit )
 				{
-					if ( hitstats->type < KOBOLD ) //Original monster count
+					if ( !strcmp(hitstats->name, "") )
 					{
-						updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+						if ( hitstats->type < KOBOLD ) //Original monster count
+						{
+							updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+						}
+						else if ( hitstats->type >= KOBOLD ) //New monsters
+						{
+							updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+						}
 					}
-					else if ( hitstats->type >= KOBOLD ) //New monsters
+					else
 					{
-						updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+						updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 					}
-				}
-				else
-				{
-					updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 				}
 
 				if ( friendlyHit && !usedpotion )
 				{
+					if ( itemCategory(item) != POTION )
+					{
+						Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+						entity->flags[INVISIBLE] = true;
+						entity->flags[UPDATENEEDED] = true;
+						entity->flags[PASSABLE] = true;
+						entity->x = ox;
+						entity->y = oy;
+						entity->z = oz;
+						entity->sizex = my->sizex;
+						entity->sizey = my->sizey;
+						entity->yaw = my->yaw;
+						entity->pitch = my->pitch;
+						entity->roll = my->roll;
+						entity->vel_x = THROWN_VELX / 2;
+						entity->vel_y = THROWN_VELY / 2;
+						entity->vel_z = my->vel_z;
+						entity->behavior = &actItem;
+						entity->skill[10] = item->type;
+						entity->skill[11] = item->status;
+						entity->skill[12] = item->beatitude;
+						entity->skill[13] = item->count;
+						entity->skill[14] = item->appearance;
+						entity->skill[15] = item->identified;
+						if ( itemCategory(item) == THROWN )
+						{
+							//Hack to make monsters stop catching your shurikens and chakrams.
+							entity->parent = my->parent;
+						}
+					}
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;
