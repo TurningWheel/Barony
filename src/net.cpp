@@ -3909,7 +3909,7 @@ void clientHandlePacket()
 		introstage = 3;
 		if ( net_packet->data[25] == 0 )
 		{
-			loadingsavegame = 0;
+			loadingsavegame = 0; // the server said we're not loading a saved game.
 		}
 		fadeout = true;
 		return;
