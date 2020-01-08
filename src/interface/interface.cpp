@@ -1397,37 +1397,37 @@ const char* getInputName(Uint32 scancode)
 		switch ( scancode )
 		{
 			case 283:
-				return "Mouse 0";
+				return "Left Click";
 			case 284:
-				return "Mouse 1";
+				return "Middle Click";
 			case 285:
-				return "Mouse 2";
+				return "Right Click";
 			case 286:
 				return "Wheel up";
 			case 287:
 				return "Wheel down";
 			case 288:
-				return "Mouse 3";
+				return "Mouse 4";
 			case 289:
-				return "Mouse 6";
+				return "Mouse 5";
 			case 290:
-				return "Mouse 7";
+				return "Mouse 6";
 			case 291:
-				return "Mouse 8";
+				return "Mouse 7";
 			case 292:
-				return "Mouse 9";
+				return "Mouse 8";
 			case 293:
-				return "Mouse 10";
-			case 294:
 				return "Mouse 11";
-			case 295:
+			case 294:
 				return "Mouse 12";
-			case 296:
+			case 295:
 				return "Mouse 13";
-			case 297:
+			case 296:
 				return "Mouse 14";
-			case 298:
+			case 297:
 				return "Mouse 15";
+			case 298:
+				return "Mouse 16";
 			default:
 				return "Unknown key";
 		}
