@@ -5029,6 +5029,10 @@ void handleMainMenu(bool mode)
 					numplayers = MAXPLAYERS;
 					introstage = 3;
 					fadeout = true;
+					if ( net_packet->data[25] == 0 )
+					{
+						loadingsavegame = 0;
+					}
 					continue;
 				}
 
@@ -11645,9 +11649,17 @@ void buttonStartServer(button_t* my)
 		strcpy((char*)net_packet->data, "BARONY_GAME_START");
 		SDLNet_Write32(svFlags, &net_packet->data[17]);
 		SDLNet_Write32(uniqueGameKey, &net_packet->data[21]);
+		if ( loadingsavegame == 0 )
+		{
+			net_packet->data[25] = 0;
+		}
+		else
+		{
+			net_packet->data[25] = 1;
+		}
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
-		net_packet->len = 25;
+		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }

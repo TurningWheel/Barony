@@ -3907,6 +3907,10 @@ void clientHandlePacket()
 		buttonCloseSubwindow(NULL);
 		numplayers = 0;
 		introstage = 3;
+		if ( net_packet->data[25] == 0 )
+		{
+			loadingsavegame = 0;
+		}
 		fadeout = true;
 		return;
 	}
