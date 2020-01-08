@@ -1277,6 +1277,22 @@ void drawStatus()
 						char spellEffectText[256] = "";
 						if ( item->identified )
 						{
+							bool learnedSpellbook = false;
+							if ( itemCategory(item) == SPELLBOOK )
+							{
+								learnedSpellbook = playerLearnedSpellbook(item);
+								if ( !learnedSpellbook && stats[clientnum] && players[clientnum] && players[clientnum]->entity )
+								{
+									// spellbook tooltip shows if you have the magic requirement as well (for goblins)
+									int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity);
+									spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+									if ( spell && skillLVL >= spell->difficulty )
+									{
+										learnedSpellbook = true;
+									}
+								}
+							}
+
 							if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == THROWN
 								|| itemTypeIsQuiver(item->type) )
 							{
@@ -1287,7 +1303,7 @@ void drawStatus()
 								src.h += TTF12_HEIGHT;
 								src.w = std::max((2 + longestline(language[3862]) + longestline(item->getScrollLabel())) * TTF12_WIDTH + 8, src.w);
 							}
-							else if ( itemCategory(item) == SPELLBOOK && playerLearnedSpellbook(item) )
+							else if ( itemCategory(item) == SPELLBOOK && learnedSpellbook )
 							{
 								int height = 1;
 								char effectType[32] = "";
