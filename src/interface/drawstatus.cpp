@@ -2024,14 +2024,25 @@ int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 				int bonus = 0;
 				if ( spellbook )
 				{
-					bonus = (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(item->beatitude) : item->beatitude);
+					bonus = 25 * ((shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(item->beatitude) : item->beatitude));
+					if ( stats[clientnum] )
+					{
+						if ( players[clientnum] && players[clientnum]->entity )
+						{
+							bonus += players[clientnum]->entity->getINT() * 0.5;
+						}
+						else
+						{
+							bonus += statGetINT(stats[clientnum], nullptr);
+						}
+					}
 					if ( bonus < 0 )
 					{
 						bonus = 0;
 					}
 				}
-				damage += (damage * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
-				heal += (heal * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
 			}
 			if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
 			{
