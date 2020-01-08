@@ -2033,7 +2033,7 @@ int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 						}
 						else
 						{
-							bonus += statGetINT(stats[clientnum], nullptr);
+							bonus += statGetINT(stats[clientnum], nullptr) * 0.5;
 						}
 					}
 					if ( bonus < 0 )
