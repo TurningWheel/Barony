@@ -7573,6 +7573,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								degradeWeapon = false;
 							}
+							else if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+							{
+								degradeWeapon = false;
+							}
 
 							if ( degradeWeapon )
 							{
