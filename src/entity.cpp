@@ -6627,7 +6627,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								entity->skill[12] = 0;           // beatitude
 								entity->skill[13] = 1;           // count
 								entity->skill[14] = 0;           // appearance
-								entity->skill[15] = false;       // identified
+								entity->skill[15] = 1;			 // identified
 							}
 						}
 
@@ -9570,7 +9570,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									entity->skill[12] = 0;           // beatitude
 									entity->skill[13] = 1;           // count
 									entity->skill[14] = 0;           // appearance
-									entity->skill[15] = false;       // identified
+									entity->skill[15] = 1;			 // identified
 								}
 
 								if ( map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] >= 41

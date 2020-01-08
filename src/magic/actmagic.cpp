@@ -5452,7 +5452,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 					rock->skill[12] = 0;           // beatitude
 					rock->skill[13] = 1;           // count
 					rock->skill[14] = 0;           // appearance
-					rock->skill[15] = false;       // identified
+					rock->skill[15] = 1;		   // identified
 				}
 
 				if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] >= 41
