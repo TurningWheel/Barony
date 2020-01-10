@@ -117,6 +117,7 @@ int initApp(char* title, int fullscreen)
 		if ( PHYSFS_setWriteDir(outputdir) )
 		{
 			PHYSFS_mkdir("savegames");
+			PHYSFS_mkdir("crashlogs");
 			if ( PHYSFS_mkdir("mods") )
 			{
 				std::string path = outputdir;
