@@ -2408,7 +2408,7 @@ void handleButtons(void)
 				button->pressed = true;
 				button->needclick = false;
 			}
-			if (button->joykey != -1 && *inputPressed(button->joykey))
+			if (button->joykey != -1 && *inputPressed(button->joykey) && rebindaction == -1 )
 			{
 				button->pressed = true;
 				button->needclick = false;
