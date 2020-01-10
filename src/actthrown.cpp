@@ -1021,6 +1021,7 @@ void actThrown(Entity* my)
 								skipMessage = true;
 								playSoundEntity(hit.entity, 28, 64);
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								friendlyHit = false;
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3875], language[3876], MSG_COMBAT);
