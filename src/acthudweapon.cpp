@@ -581,7 +581,9 @@ void actHudWeapon(Entity* my)
 						HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
 						if ( stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
 						{
+#ifdef SOUND
 							bowDrawingSoundChannel = playSound(410, 64);
+#endif
 						}
 						HUDWEAPON_MOVEX = -1;
 					}
@@ -700,7 +702,9 @@ void actHudWeapon(Entity* my)
 				{
 					if ( stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
 					{
+#ifdef SOUND
 						bowDrawingSoundChannel = playSound(410, 64);
+#endif
 					}
 					HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_SWAPPED_WEAPON;
 					if ( swingweapon )
@@ -724,7 +728,9 @@ void actHudWeapon(Entity* my)
 					HUDWEAPON_MOVEX = -1;
 					if ( stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
 					{
+#ifdef SOUND
 						bowDrawingSoundChannel = playSound(410, 64);
+#endif
 					}
 				}
 			}
@@ -1070,7 +1076,9 @@ void actHudWeapon(Entity* my)
 									{
 										bowStartDrawingTick = my->ticks;
 										bowIsBeingDrawn = true;
+#ifdef SOUND
 										bowDrawingSoundChannel = playSound(246, 64);
+#endif
 									}
 								}
 
@@ -2585,7 +2593,9 @@ void actHudWeapon(Entity* my)
 				if ( HUDWEAPON_CROSSBOW_RELOAD_ANIMATION == CROSSBOW_ANIM_SHOOT
 					&& stats[clientnum]->weapon && stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
 				{
+#ifdef SOUND
 					bowDrawingSoundChannel = playSound(410, 64);
+#endif
 				}
 
 				HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_START;
