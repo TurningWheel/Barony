@@ -4453,7 +4453,7 @@ Learnt alchemy ingredients:
 3370 Buggar#
 
 3371 mute player monster sounds#
-3372 Locked - DLC Coming Soon!#
+3372 Locked - Legends & Pariahs DLC Required!#
 3373 Show Race Info#
 3374 Hide Race Info#
 3375 Human
@@ -4573,7 +4573,7 @@ Traits:
 - Neutral to Incubi and Succubi
 - Immune to burning
 - Bonus +20 Tinkering to repairs
-- Starts with Salvage spell learnt# 
+- Starts with Salvage spell learnt#
 
 3381 Incubus
 
@@ -5756,5 +5756,43 @@ my fine wares.#
 3897 You spot a hidden compartment inside the chest!#
 3898 fails to dodge the incoming flaming boulder.#
 3899 fails to dodge the incoming arcane boulder.#
+3900 You can't place that there!#
+
+# More keybinds
+3901 Hotbar Scroll Left#
+3902 Hotbar Scroll Right#
+3903 Hotbar Select#
+3904 #
+3905 #
+3906 #
+3907 #
+3908 #
+3909 #
+
+3910 Remove thy garment
+before we deal!#
+3911 Sheathe thy weapon
+before we deal!#
+3912 Stow away thy tool
+before we deal!#
+3913 Unhand thy potion
+before we deal!#
+3914 Unwield thy jewels
+before we deal!#
+3915 Set down thy parchment
+before we deal!#
+3916 Unhand thy lunch
+before we deal!#
+3917 Locked - Legends & Pariahs DLC Required! Left click to view on the store page in Steam overlay.#
+3918 disable mouse rotation speed limit#
+3919 Return To Main Menu#
+3920
+       Do you wish to save before
+       returning to the main menu? 
+      Progress will be saved up to
+          the last checkpoint.
+
+        Selecting No will delete
+      your singleplayer save file!#
 
 3949 end#
