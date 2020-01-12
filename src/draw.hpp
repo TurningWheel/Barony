@@ -60,4 +60,49 @@ void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 void printText( SDL_Surface* font_bmp, int x, int y, const char* str );
 void drawSprite(view_t* camera, Entity* entity);
 void drawTooltip(SDL_Rect* src, Uint32 optionalColor = 0);
+Uint32 getPixel(SDL_Surface* surface, int x, int y);
+void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel);
 
+class TempTexture {
+public:
+	TempTexture() {
+	}
+
+	~TempTexture() {
+		if( texid ) {
+			glDeleteTextures(1,&texid);
+			texid = 0;
+		}
+	}
+
+	void load(SDL_Surface* surf, bool clamp, bool point) {
+		SDL_LockSurface(surf);
+		glGenTextures(1,&texid);
+		glBindTexture(GL_TEXTURE_2D, texid);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+		if (clamp) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		} else {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
+		if (point) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		} else {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
+			//glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		SDL_UnlockSurface(surf);
+	}
+
+	void bind() {
+		glBindTexture(GL_TEXTURE_2D, texid);
+	}
+
+private:
+	GLuint texid = 0;
+};

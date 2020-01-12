@@ -2148,8 +2148,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 		}
 	}
 
-	Uint32 cacheLimit = 9000;
-	if ( imgref > cacheLimit )
+	if ( imgref > ttfTextCacheLimit )
 	{
 		// time to flush the cache.
 		imgref -= 6144;
