@@ -1915,8 +1915,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 	}
 	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) 
 	{
-		char modelCacheHeader[32] = "";
-		strcpy(modelCacheHeader, "BARONY");
+		char modelCacheHeader[32] = "BARONY";
 		strcat(modelCacheHeader, VERSION);
 		fwrite(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader), model_cache);
 		for (size_t model_index = 0; model_index < nummodels; model_index++)
