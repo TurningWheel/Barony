@@ -28,6 +28,8 @@
 #include "player.hpp"
 #include "items.hpp"
 #include "cppfuncs.hpp"
+#include <ctime>
+#include "sys/stat.h"
 
 #ifdef USE_FMOD
 #include "fmod.h"
@@ -118,6 +120,7 @@ int initApp(char* title, int fullscreen)
 		{
 			PHYSFS_mkdir("savegames");
 			PHYSFS_mkdir("crashlogs");
+			PHYSFS_mkdir("logfiles");
 			if ( PHYSFS_mkdir("mods") )
 			{
 				std::string path = outputdir;
@@ -2250,6 +2253,74 @@ int deinitApp()
 	}
 #endif
 
+	int numLogFilesToKeepInArchive = 30;
+	// archive logfiles.
+#ifdef WINDOWS
+	char lognamewithTimestamp[128];
+	std::time_t timeNow = std::time(nullptr);
+	struct tm *localTimeNow = nullptr;
+	localTimeNow = std::localtime(&timeNow);
+
+	snprintf(lognamewithTimestamp, 127, "log_%4d%02d%02d_%02d%02d%02d.txt", 
+		localTimeNow->tm_year + 1900, localTimeNow->tm_mon + 1, localTimeNow->tm_mday, localTimeNow->tm_hour, localTimeNow->tm_min, localTimeNow->tm_sec);
+
+	std::string logarchivePath = outputdir;
+	logarchivePath.append(PHYSFS_getDirSeparator()).append("logfiles").append(PHYSFS_getDirSeparator());
+	std::string logarchiveFilePath = logarchivePath + lognamewithTimestamp;
+
+	
+	// prune any old logfiles if qty >= numLogFilesToKeepInArchive 
+	std::vector<std::pair<int, std::string>> sortedLogFiles;
+	auto archivedFiles = directoryContents(logarchivePath.c_str(), false, true);
+	if ( !archivedFiles.empty() && archivedFiles.size() >= numLogFilesToKeepInArchive )
+	{
+		// first find the date modified of log files.
+		for ( auto file : archivedFiles )
+		{
+			struct tm *tm = nullptr;
+//#ifdef WINDOWS
+			std::string filePath = logarchivePath + file;
+			struct _stat fileDateModified;
+			if ( _stat(filePath.c_str(), &fileDateModified) == 0 )
+			{
+				tm = localtime(&fileDateModified.st_mtime);
+			}
+//#else
+			// UNIX/MAC
+			/*struct stat fileDateModified;
+			if ( stat(filePath.c_str(), &fileDateModified) == 0 )
+			{
+			tm = localtime(&fileDateModified.st_mtime);
+			}*/
+//#endif
+			if ( tm )
+			{
+				int timeDifference = std::difftime(timeNow, mktime(tm));
+				sortedLogFiles.push_back(std::make_pair(timeDifference, file));
+			}
+		}
+	}
+	std::sort(sortedLogFiles.begin(), sortedLogFiles.end()); // sort most recent to oldest.
+	while ( sortedLogFiles.size() >= numLogFilesToKeepInArchive )
+	{
+		std::string logToRemove = logarchivePath + sortedLogFiles.back().second;
+		printlog("notice: Deleting archived log file %s due to number of old log files (%d) exceeds limit of %d.", logToRemove.c_str(), sortedLogFiles.size(), numLogFilesToKeepInArchive);
+		if ( access(logToRemove.c_str(), F_OK) != -1 )
+		{
+			int result = remove(logToRemove.c_str());
+			if ( result )
+			{
+				printlog("warning: failed to delete logfile %s", logToRemove.c_str());
+			}
+		}
+		else
+		{
+			printlog("warning: could not access logfile %s", logToRemove.c_str());
+		}
+		sortedLogFiles.pop_back();
+	}
+#endif // WINDOWS
+
 	if ( PHYSFS_isInit() )
 	{
 		PHYSFS_deinit();
@@ -2258,9 +2329,16 @@ int deinitApp()
 
 	// free currently loaded language if any
 	freeLanguages();
-
+	printlog("notice: archiving log file as %s...\n", logarchiveFilePath.c_str());
 	printlog("success\n");
 	fclose(logfile);
+
+#ifdef WINDOWS
+	// copy the log file into the archives.
+	char logToArchive[PATH_MAX];
+	completePath(logToArchive, "log.txt", outputdir);
+	CopyFileA(logToArchive, logarchiveFilePath.c_str(), false);
+#endif // WINDOWS
 	return 0;
 }
 
