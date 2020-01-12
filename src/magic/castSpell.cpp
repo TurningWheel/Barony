@@ -1134,7 +1134,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						real_t vel = sqrt(pow(caster->vel_y, 2) + pow(caster->vel_x, 2));
-						caster->monsterKnockbackVelocity = std::max(1.0, vel);
+						caster->monsterKnockbackVelocity = std::min(2.25, std::max(1.0, vel));
 						caster->monsterKnockbackTangentDir = atan2(caster->vel_y, caster->vel_x);
 						if ( vel < 0.01 )
 						{

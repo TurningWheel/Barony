@@ -56,6 +56,7 @@ extern bool autoLimbReload;
 #define GL_GLEXT_PROTOTYPES
 #define PATH_MAX 1024
 #include <windows.h>
+#include <Dbghelp.h>
 #undef min
 #undef max
 #endif

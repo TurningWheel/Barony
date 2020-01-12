@@ -27,6 +27,7 @@ See LICENSE for details.
 #endif
 #include "player.hpp"
 #include "scores.hpp"
+#include "menu.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
@@ -2122,7 +2123,7 @@ void Entity::setHP(int amount)
 	{
 		for ( i = 1; i < numplayers; i++ )
 		{
-			if ( this == players[i]->entity )
+			if ( players[i] && this == players[i]->entity )
 			{
 				// tell the client its HP changed
 				strcpy((char*)net_packet->data, "UPHP");
@@ -2132,6 +2133,13 @@ void Entity::setHP(int amount)
 				net_packet->address.port = net_clients[i - 1].port;
 				net_packet->len = 12;
 				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+			if ( this->behavior == &actPlayer && abs(healthDiff) > 0 )
+			{
+				if ( serverSchedulePlayerHealthUpdate == 0 )
+				{
+					serverSchedulePlayerHealthUpdate = ticks;
+				}
 			}
 		}
 		if ( this->behavior == &actMonster )
@@ -5542,6 +5550,15 @@ bool Entity::isMobile()
 		return false;
 	}
 
+	if ( behavior == &actMonster && 
+		(introstage == 9
+		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
+		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
+		|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS) )
+	{
+		return false; // mid-game crawls.
+	}
+
 	// paralyzed
 	if ( entitystats->EFFECTS[EFF_PARALYZED] )
 	{
@@ -6249,6 +6266,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( myStats->weapon->type == HEAVY_CROSSBOW )
 					{
 						playSoundEntity(this, 411 + rand() % 3, 128);
+						if ( this->behavior == &actPlayer && this->skill[2] > 0 )
+						{
+							this->setEffect(EFF_KNOCKBACK, true, 30, false);
+						}
 					}
 					else
 					{
@@ -6606,7 +6627,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								entity->skill[12] = 0;           // beatitude
 								entity->skill[13] = 1;           // count
 								entity->skill[14] = 0;           // appearance
-								entity->skill[15] = false;       // identified
+								entity->skill[15] = 1;			 // identified
 							}
 						}
 
@@ -7549,6 +7570,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = false;
 							}
 							else if ( isIllusion )
+							{
+								degradeWeapon = false;
+							}
+							else if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
 							{
 								degradeWeapon = false;
 							}
@@ -9549,7 +9574,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									entity->skill[12] = 0;           // beatitude
 									entity->skill[13] = 1;           // count
 									entity->skill[14] = 0;           // appearance
-									entity->skill[15] = false;       // identified
+									entity->skill[15] = 1;			 // identified
 								}
 
 								if ( map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] >= 41
@@ -10684,7 +10709,6 @@ bool Entity::checkEnemy(Entity* your)
 			if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = swornenemies[HUMAN][yourStats->type];
-
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) && myStats->type != AUTOMATON )
 				{
 					// enemies.
@@ -10760,6 +10784,10 @@ bool Entity::checkEnemy(Entity* your)
 							if ( yourStats->type == INCUBUS || yourStats->type == SUCCUBUS )
 							{
 								result = false;
+							}
+							if ( yourStats->type == SHOPKEEPER )
+							{
+								result = swornenemies[SHOPKEEPER][AUTOMATON];
 							}
 							break;
 						default:
@@ -10846,6 +10874,10 @@ bool Entity::checkEnemy(Entity* your)
 							if ( myStats->type == INCUBUS || myStats->type == SUCCUBUS )
 							{
 								result = false;
+							}
+							if ( myStats->type == SHOPKEEPER )
+							{
+								result = swornenemies[SHOPKEEPER][AUTOMATON];
 							}
 							break;
 						default:
@@ -11116,7 +11148,11 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case AUTOMATON:
-							if ( yourStats->type == HUMAN || yourStats->type == SHOPKEEPER )
+							if ( yourStats->type == SHOPKEEPER )
+							{
+								result = monsterally[SHOPKEEPER][AUTOMATON];
+							}
+							else if ( yourStats->type == HUMAN )
 							{
 								result = true;
 							}
@@ -11201,7 +11237,11 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case AUTOMATON:
-							if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
+							if ( myStats->type == SHOPKEEPER )
+							{
+								result = monsterally[SHOPKEEPER][AUTOMATON];
+							}
+							else if ( myStats->type == HUMAN )
 							{
 								result = true;
 							}

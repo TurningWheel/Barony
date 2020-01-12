@@ -298,6 +298,7 @@ void startMessages();
 bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true);
 extern Uint32 networkTickrate;
 extern bool gameloopFreezeEntities;
+extern Uint32 serverSchedulePlayerHealthUpdate;
 
 #define TOUCHRANGE 32
 #define STRIKERANGE 24
@@ -447,6 +448,9 @@ public:
 
 	std::chrono::high_resolution_clock::time_point messagesT2WhileLoop;
 	bool handlePacketStartLoop = false;
+
+	std::unordered_map<unsigned long, std::pair<std::string, int>> networkPackets;
+	std::unordered_map<int, int> entityUpdatePackets;
 
 	bool displayStats = false;
 	char debugOutput[1024];

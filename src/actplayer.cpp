@@ -29,6 +29,8 @@
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
+bool disablemouserotationlimit = false;
+bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
 int monsterEmoteGimpTimer = 0;
 int selectedEntityGimpTimer = 0;
@@ -1209,10 +1211,19 @@ void actPlayer(Entity* my)
 				appraisal_timer = 0;
 
 				// update inventory by trying to stack the newly identified item.
+				std::unordered_set<Uint32> appearancesOfSimilarItems;
 				for ( node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
 				{
 					Item* item2 = (Item*)node->element;
-					if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, false) )
+					if ( item2 == tempItem )
+					{
+						continue;
+					}
+					if ( !item2 )
+					{
+						continue;
+					}
+					if ( !itemCompare(tempItem, item2, false) )
 					{
 						// if items are the same, check to see if they should stack
 						if ( item2->shouldItemStack(PLAYER_NUM) )
@@ -1227,6 +1238,7 @@ void actPlayer(Entity* my)
 							if ( tempItem->node )
 							{
 								list_RemoveNode(tempItem->node);
+								tempItem = nullptr;
 							}
 							else
 							{
@@ -1235,6 +1247,25 @@ void actPlayer(Entity* my)
 							}
 							break;
 						}
+						else if ( !itemCompare(tempItem, item2, true) )
+						{
+							// items are the same (incl. appearance!)
+							// if they shouldn't stack, we need to change appearance of the new item.
+							appearancesOfSimilarItems.insert(item2->appearance);
+						}
+					}
+				}
+				if ( tempItem && !appearancesOfSimilarItems.empty() )
+				{
+					int tries = 100;
+					// we need to find a unique appearance within the list.
+					tempItem->appearance = rand();
+					auto it = appearancesOfSimilarItems.find(tempItem->appearance);
+					while ( it != appearancesOfSimilarItems.end() && tries > 0 )
+					{
+						tempItem->appearance = rand();
+						it = appearancesOfSimilarItems.find(tempItem->appearance);
+						--tries;
 					}
 				}
 			}
@@ -1328,6 +1359,7 @@ void actPlayer(Entity* my)
 					if ( success )
 					{
 						// update inventory by trying to stack the newly identified item.
+						std::unordered_set<Uint32> appearancesOfSimilarItems;
 						for ( node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
 						{
 							Item* item2 = (Item*)node->element;
@@ -1345,6 +1377,13 @@ void actPlayer(Entity* my)
 									if ( item2->count >= (maxStack - 1) )
 									{
 										// if we're at max count then skip this check.
+
+										if ( tempItem->appearance == item2->appearance )
+										{
+											// items are the same (incl. appearance!)
+											// if they shouldn't stack, we need to change appearance of the new item.
+											appearancesOfSimilarItems.insert(item2->appearance);
+										}
 										continue;
 									}
 									int total = tempItem->count + item2->count;
@@ -1371,14 +1410,26 @@ void actPlayer(Entity* my)
 										if ( tempItem->node )
 										{
 											list_RemoveNode(tempItem->node);
+											tempItem = nullptr;
 										}
 										else
 										{
 											free(tempItem);
 											tempItem = nullptr;
 										}
+										break;
 									}
-									break;
+									else
+									{
+										// we have to search other items to stack with, otherwise this search ends after 1 full stack.
+										if ( tempItem->appearance == item2->appearance )
+										{
+											// items are the same (incl. appearance!)
+											// if they shouldn't stack, we need to change appearance of the new item.
+											appearancesOfSimilarItems.insert(item2->appearance);
+										}
+										continue;
+									}
 								}
 								// if items are the same, check to see if they should stack
 								else if ( item2->shouldItemStack(PLAYER_NUM) )
@@ -1387,12 +1438,25 @@ void actPlayer(Entity* my)
 									if ( multiplayer == CLIENT && itemIsEquipped(item2, clientnum) )
 									{
 										// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-										clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
-											item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+										Item** slot = itemSlot(stats[PLAYER_NUM], item2);
+										if ( slot )
+										{
+											if ( slot == &stats[clientnum]->weapon )
+											{
+												clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
+													item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+											}
+											else if ( slot == &stats[clientnum]->shield )
+											{
+												clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
+													item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+											}
+										}
 									}
 									if ( tempItem->node )
 									{
 										list_RemoveNode(tempItem->node);
+										tempItem = nullptr;
 									}
 									else
 									{
@@ -1400,6 +1464,45 @@ void actPlayer(Entity* my)
 										tempItem = nullptr;
 									}
 									break;
+								}
+								else if ( !itemCompare(tempItem, item2, true) )
+								{
+									// items are the same (incl. appearance!)
+									// if they shouldn't stack, we need to change appearance of the new item.
+									appearancesOfSimilarItems.insert(item2->appearance);
+								}
+							}
+						}
+						if ( tempItem )
+						{
+							if ( !appearancesOfSimilarItems.empty() )
+							{
+								int tries = 100;
+								bool robot = false;
+								// we need to find a unique appearance within the list.
+								if ( tempItem->type == TOOL_SENTRYBOT || tempItem->type == TOOL_SPELLBOT || tempItem->type == TOOL_GYROBOT
+									|| tempItem->type == TOOL_DUMMYBOT )
+								{
+									robot = true;
+									tempItem->appearance += (rand() % 100000) * 10;
+								}
+								else
+								{
+									tempItem->appearance = rand();
+								}
+								auto it = appearancesOfSimilarItems.find(tempItem->appearance);
+								while ( it != appearancesOfSimilarItems.end() && tries > 0 )
+								{
+									if ( robot )
+									{
+										tempItem->appearance += (rand() % 100000) * 10;
+									}
+									else
+									{
+										tempItem->appearance = rand();
+									}
+									it = appearancesOfSimilarItems.find(tempItem->appearance);
+									--tries;
 								}
 							}
 						}
@@ -3039,10 +3142,17 @@ void actPlayer(Entity* my)
 								item = stats[PLAYER_NUM]->shield;
 								if ( item )
 								{
-									int c = item->count;
-									for ( c = item->count; c > 0; c-- )
+									if ( itemTypeIsQuiver(item->type) )
 									{
-										dropItemMonster(item, my, stats[PLAYER_NUM]);
+										dropItemMonster(item, my, stats[PLAYER_NUM], item->count);
+									}
+									else
+									{
+										int c = item->count;
+										for ( c = item->count; c > 0; c-- )
+										{
+											dropItemMonster(item, my, stats[PLAYER_NUM]);
+										}
 									}
 								}
 								item = stats[PLAYER_NUM]->weapon;
@@ -3399,14 +3509,24 @@ void actPlayer(Entity* my)
 					{
 						PLAYER_ROTX += mousexrel * .006 * (mousespeed / 128.f);
 					}
-					PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
+					if ( !disablemouserotationlimit )
+					{
+						PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
+					}
 					PLAYER_ROTX *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						if ( disablemouserotationlimit )
+						{
+							PLAYER_ROTX = mousexrel * .01f * (mousespeed / 128.f);
+						}
+						else
+						{
+							PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						}
 					}
 					else
 					{
@@ -3422,14 +3542,24 @@ void actPlayer(Entity* my)
 					{
 						PLAYER_ROTX -= mousexrel * .006f * (mousespeed / 128.f);
 					}
-					PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
+					if ( !disablemouserotationlimit )
+					{
+						PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
+					}
 					PLAYER_ROTX *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						if ( disablemouserotationlimit )
+						{
+							PLAYER_ROTX = -mousexrel * .01f * (mousespeed / 128.f);
+						}
+						else
+						{
+							PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						}
 					}
 					else
 					{

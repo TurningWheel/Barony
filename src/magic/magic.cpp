@@ -1566,7 +1566,9 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					{
 						// reverses shop keeper grudges.
 						swornenemies[SHOPKEEPER][HUMAN] = false;
+						swornenemies[SHOPKEEPER][AUTOMATON] = false;
 						monsterally[SHOPKEEPER][HUMAN] = true;
+						monsterally[SHOPKEEPER][AUTOMATON] = true;
 						hit.entity->monsterReleaseAttackTarget();
 					}
 				}

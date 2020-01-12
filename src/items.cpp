@@ -1356,6 +1356,7 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count)
 {
+	// WARNING - dropItemMonster is used on playerDeaths, modifying this here neet to edit in actPlayer.cpp and net.cpp
 	Entity* entity = nullptr;
 	bool itemDroppable = true;
 
@@ -2804,7 +2805,7 @@ Item* itemPickup(int player, Item* item)
 	}
 	else
 	{
-		std::unordered_set<int> appearancesOfSimilarItems;
+		std::unordered_set<Uint32> appearancesOfSimilarItems;
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
@@ -2820,9 +2821,16 @@ Item* itemPickup(int player, Item* item)
 						maxStack = SCRAP_MAX_STACK_QTY;
 					}
 
-					if ( item->count == maxStack - 1 )
+					if ( item2->count == maxStack - 1 )
 					{
 						// can't add anymore to this stack, let's skip over this.
+
+						if ( item->appearance == item2->appearance )
+						{
+							// items are the same (incl. appearance!)
+							// if they shouldn't stack, we need to change appearance of the new item.
+							appearancesOfSimilarItems.insert(item2->appearance);
+						}
 						continue;
 					}
 
@@ -2855,21 +2863,13 @@ Item* itemPickup(int player, Item* item)
 					else
 					{
 						// we have to search other items to stack with, otherwise this search ends after 1 full stack.
-						continue; 
-						
-						//if ( !itemCompare(item, item2, true) )
-						//{
-						//	// items are the same (incl. appearance!)
-						//	// if they shouldn't stack, we need to change appearance of the new item.
-						//	while ( item2->appearance == item->appearance )
-						//	{
-						//		item->appearance = rand();
-						//	}
-						//}
-						//// add the remaining arrows to a new quiver.
-						//item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
-						//item2->ownerUid = item->ownerUid;
-						//return item2;
+						if ( item->appearance == item2->appearance )
+						{
+							// items are the same (incl. appearance!)
+							// if they shouldn't stack, we need to change appearance of the new item.
+							appearancesOfSimilarItems.insert(item2->appearance);
+						}
+						continue;
 					}
 				}
 				// if items are the same, check to see if they should stack
@@ -2879,15 +2879,19 @@ Item* itemPickup(int player, Item* item)
 					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						if ( itemTypeIsQuiver(item2->type) )
+						Item** slot = itemSlot(stats[clientnum], item2);
+						if ( slot )
 						{
-							clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
-								item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
-						}
-						else
-						{
-							clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
-								item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+							if ( slot == &stats[clientnum]->weapon )
+							{
+								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+							}
+							else if ( slot == &stats[clientnum]->shield )
+							{
+								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+							}
 						}
 					}
 					item2->ownerUid = item->ownerUid;
