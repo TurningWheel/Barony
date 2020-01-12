@@ -938,18 +938,48 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 	if ( generateAll )
 	{
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
-		if ( useModelCache && !forceCacheRebuild )
+		if ( useModelCache )
 		{
 			model_cache = openDataFile("models.cache", "rb");
-			if (model_cache) {
-				for (size_t model_index = 0; model_index < nummodels; model_index++) {
-					polymodel_t *cur = &polymodels[model_index];
-					fread(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
-					cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
-					fread(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+			if ( model_cache ) 
+			{
+				char polymodelsVersionStr[7] = "v0.0.0";
+				char modelsCacheHeader[7] = "000000";
+				fread(&modelsCacheHeader, sizeof(char), strlen("BARONY"), model_cache);
+
+				if ( !strcmp(modelsCacheHeader, "BARONY") )
+				{
+					// we're using the new polymodels file.
+					fread(&polymodelsVersionStr, sizeof(char), strlen(VERSION), model_cache);
+					printlog("[MODEL CACHE]: Using updated version format %s.", polymodelsVersionStr);
+					if ( strncmp(polymodelsVersionStr, VERSION, strlen(VERSION)) )
+					{
+						// different version.
+						forceCacheRebuild = true;
+						printlog("[MODEL CACHE]: Detected outdated version number %s - current is %s. Upgrading cache...", polymodelsVersionStr, VERSION);
+					}
 				}
-				fclose(model_cache);
-				return generateVBOs(start, end);
+				else
+				{
+					printlog("[MODEL CACHE]: Detected legacy cache without embedded version data, upgrading cache to %s...", VERSION);
+					rewind(model_cache);
+					forceCacheRebuild = true; // upgrade from legacy cache
+				}
+				if ( !forceCacheRebuild )
+				{
+					for (size_t model_index = 0; model_index < nummodels; model_index++) {
+						polymodel_t *cur = &polymodels[model_index];
+						fread(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
+						cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
+						fread(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+					}
+					fclose(model_cache);
+					return generateVBOs(start, end);
+				}
+				else
+				{
+					fclose(model_cache);
+				}
 			}
 		}
 	}
@@ -1883,8 +1913,14 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		// free up quads for the next model
 		list_FreeAll(&quads);
 	}
-	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) {
-		for (size_t model_index = 0; model_index < nummodels; model_index++) {
+	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) 
+	{
+		char modelCacheHeader[32] = "";
+		strcpy(modelCacheHeader, "BARONY");
+		strcat(modelCacheHeader, VERSION);
+		fwrite(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader), model_cache);
+		for (size_t model_index = 0; model_index < nummodels; model_index++)
+		{
 			polymodel_t *cur = &polymodels[model_index];
 			fwrite(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
 			fwrite(cur->faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
