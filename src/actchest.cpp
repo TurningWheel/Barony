@@ -410,11 +410,11 @@ void Entity::actChest()
 						{
 							newItem(CLOAK_BACKPACK, durability, 0, 1, rand(), false, inventory);
 						}
-						if ( rand() % 5 == 0 )
+						if ( rand() % 20 == 0 )
 						{
 							newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, rand(), false, inventory);
-							newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 10 + rand() % 11, 0, false, inventory);
-							newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 10 + rand() % 11, 0, false, inventory);
+							newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 10 + rand() % 11, 0, true, inventory);
+							newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 10 + rand() % 11, 0, true, inventory);
 						}
 						break;
 					case 2:
