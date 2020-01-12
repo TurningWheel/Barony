@@ -2045,6 +2045,9 @@ void actPlayer(Entity* my)
 		if (PLAYER_INWATER)
 		{
 			PLAYER_INWATER = 0;
+			PLAYER_BOBMOVE = 0;
+			PLAYER_BOB = 0;
+			PLAYER_BOBMODE = 0;
 		}
 
 	if (PLAYER_NUM == clientnum)
@@ -2065,7 +2068,7 @@ void actPlayer(Entity* my)
 					PLAYER_BOBMOVE -= .03;
 				}
 			}
-			if ( ((*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) && !command && !swimming)
+			else if ( ((*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) && !command && !swimming)
 			{
 				if ( !(stats[clientnum]->defending || stats[clientnum]->sneaking == 0) )
 				{
@@ -2195,7 +2198,9 @@ void actPlayer(Entity* my)
 		}
 		else
 		{
+			PLAYER_BOBMOVE = 0;
 			PLAYER_BOB = 0;
+			PLAYER_BOBMODE = 0;
 		}
 
 		// object interaction

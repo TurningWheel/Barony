@@ -291,6 +291,13 @@ void gameLogic(void)
 			camera_shakey += 1;
 		}
 	}
+	else
+	{
+		camera_shakex = 0;
+		camera_shakey = 0;
+		camera_shakex2 = 0;
+		camera_shakey2 = 0;
+	}
 
 	// drunkenness
 	if ( !intro )
@@ -2900,7 +2907,7 @@ void startMessages()
 {
 	newString(&messages, 0xFFFFFFFF, language[734], stats[clientnum]->name);
 	newString(&messages, 0xFFFFFFFF, language[735], getInputName(impulses[IN_STATUS]));
-	newString(&messages, 0xFFFFFFFF, language[736]);
+	newString(&messages, 0xFFFFFFFF, language[736], getInputName(impulses[IN_USE]));
 	newString(&messages, 0xFFFFFFFF, language[737]);
 }
 

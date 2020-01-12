@@ -122,14 +122,7 @@ void drawMinimap()
 				{
 					if ( ticks % 40 - ticks % 20 )
 					{
-						if ( !colorblind )
-						{
-							glColor4f( 1, 0, 0, 1 );
-						}
-						else
-						{
-							glColor4f( 0, 1, 1, 1 );
-						}
+						glColor4f( 0, 1, 1, 1 );
 						//glBegin(GL_QUADS);
 						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
 						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
