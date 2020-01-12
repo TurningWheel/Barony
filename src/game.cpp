@@ -94,7 +94,7 @@ void make_minidump(EXCEPTION_POINTERS* e)
 		strcpy(name, "barony_crash");
 		auto nameEnd = name + strlen("barony_crash");
 		SYSTEMTIME t;
-		GetSystemTime(&t);
+		GetLocalTime(&t);
 		wsprintfA(nameEnd,
 			"_%4d%02d%02d_%02d%02d%02d.dmp",
 			t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
