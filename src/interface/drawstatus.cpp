@@ -1277,6 +1277,22 @@ void drawStatus()
 						char spellEffectText[256] = "";
 						if ( item->identified )
 						{
+							bool learnedSpellbook = false;
+							if ( itemCategory(item) == SPELLBOOK )
+							{
+								learnedSpellbook = playerLearnedSpellbook(item);
+								if ( !learnedSpellbook && stats[clientnum] && players[clientnum] && players[clientnum]->entity )
+								{
+									// spellbook tooltip shows if you have the magic requirement as well (for goblins)
+									int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity);
+									spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+									if ( spell && skillLVL >= spell->difficulty )
+									{
+										learnedSpellbook = true;
+									}
+								}
+							}
+
 							if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == THROWN
 								|| itemTypeIsQuiver(item->type) )
 							{
@@ -1287,7 +1303,7 @@ void drawStatus()
 								src.h += TTF12_HEIGHT;
 								src.w = std::max((2 + longestline(language[3862]) + longestline(item->getScrollLabel())) * TTF12_WIDTH + 8, src.w);
 							}
-							else if ( itemCategory(item) == SPELLBOOK && playerLearnedSpellbook(item) )
+							else if ( itemCategory(item) == SPELLBOOK && learnedSpellbook )
 							{
 								int height = 1;
 								char effectType[32] = "";
@@ -2024,14 +2040,25 @@ int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 				int bonus = 0;
 				if ( spellbook )
 				{
-					bonus = (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(item->beatitude) : item->beatitude);
+					bonus = 25 * ((shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(item->beatitude) : item->beatitude));
+					if ( stats[clientnum] )
+					{
+						if ( players[clientnum] && players[clientnum]->entity )
+						{
+							bonus += players[clientnum]->entity->getINT() * 0.5;
+						}
+						else
+						{
+							bonus += statGetINT(stats[clientnum], nullptr) * 0.5;
+						}
+					}
 					if ( bonus < 0 )
 					{
 						bonus = 0;
 					}
 				}
-				damage += (damage * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
-				heal += (heal * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
 			}
 			if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
 			{

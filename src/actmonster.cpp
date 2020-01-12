@@ -4001,6 +4001,11 @@ void actMonster(Entity* my)
 								swornenemies[SHOPKEEPER][HUMAN] = true;
 								monsterally[SHOPKEEPER][HUMAN] = false;
 							}
+							else if ( stats[c] && stats[c]->type == AUTOMATON && !stats[c]->EFFECTS[EFF_POLYMORPH] )
+							{
+								swornenemies[SHOPKEEPER][AUTOMATON] = true;
+								monsterally[SHOPKEEPER][AUTOMATON] = false;
+							}
 							break;
 						}
 					}

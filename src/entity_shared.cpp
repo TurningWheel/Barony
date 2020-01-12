@@ -1112,9 +1112,18 @@ char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
 	"Sky.png",
 	"SkyCrackle.png",
 	"SkyCrackle_B.png",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", ""
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Replace Me", "Replace Me", "Replace Me"
 };
 
 int canWearEquip(Entity* entity, int category)

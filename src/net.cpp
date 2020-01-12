@@ -546,6 +546,10 @@ void serverUpdateBodypartIDs(Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
+//int numPlayerBodypartUpdates = 0;
+//int numMonsterBodypartUpdates = 0;
+//Uint32 lastbodypartTick = 0;
+
 void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 {
 	int c;
@@ -573,6 +577,25 @@ void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 			}
 		}
 	}
+	//if ( entity->behavior == &actPlayer )
+	//{
+	//	++numPlayerBodypartUpdates;
+	//}
+	//else if ( entity->behavior == &actMonster )
+	//{
+	//	++numMonsterBodypartUpdates;
+	//}
+	//if ( lastbodypartTick == 0 )
+	//{
+	//	lastbodypartTick = ticks;
+	//}
+	//if ( ticks - lastbodypartTick >= 250 )
+	//{
+	//	messagePlayer(0, "Bodypart updates (%ds) players: %d, monster: %d", (ticks - lastbodypartTick) / 50, numPlayerBodypartUpdates, numMonsterBodypartUpdates);
+	//	lastbodypartTick = 0;
+	//	numMonsterBodypartUpdates = 0;
+	//	numPlayerBodypartUpdates = 0;
+	//}
 }
 
 /*-------------------------------------------------------------------------------
@@ -1500,31 +1523,47 @@ void clientHandlePacket()
 	printlog("info: client packet: %s\n", packetinfo);
 #endif
 
-	//if ( logCheckMainLoopTimers )
-	//{
-	//	char packetinfo[NET_PACKET_SIZE];
-	//	strncpy(packetinfo, (char*)net_packet->data, net_packet->len);
-	//	packetinfo[net_packet->len] = 0;
-	//	Uint32 uidpacket = 0;
-	//	int sprite = 0;
-	//	double lastPacketHandleTime = 0.f;
-	//	if ( !strcmp(packetinfo, "ENTU") )
-	//	{
-	//		uidpacket = static_cast<Uint32>(SDLNet_Read32(&net_packet->data[4]));
-	//		if ( uidToEntity(uidpacket) )
-	//		{
-	//			sprite = uidToEntity(uidpacket)->sprite;
-	//		}
-	//	}
-	//	lastPacketHandleTime = 1000 * 
-	//		std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - DebugStats.messagesT3WhileLoop).count();
-	//	if ( DebugStats.handlePacketStartLoop )
-	//	{
-	//		lastPacketHandleTime = 0.f;
-	//	}
-	//	printlog("info: client packet: %s, lastpacked %4.5fms, uid, %d, sprite %d\n", packetinfo, lastPacketHandleTime, uidpacket, sprite);
-	//	//DebugStats.networkPacketStored.push_back(packetinfo);
-	//}
+	if ( logCheckMainLoopTimers )
+	{
+		char packetinfo[NET_PACKET_SIZE];
+		strncpy(packetinfo, (char*)net_packet->data, net_packet->len);
+		packetinfo[net_packet->len] = 0;
+
+		char packetHeader[5];
+		strncpy(packetHeader, packetinfo, 4);
+		packetHeader[4] = 0;
+
+		std::string tmp = packetHeader;
+		unsigned long hash = djb2Hash(packetHeader);
+		auto find = DebugStats.networkPackets.find(hash);
+		if ( find != DebugStats.networkPackets.end() )
+		{
+			++DebugStats.networkPackets[hash].second;
+		}
+		else
+		{
+			DebugStats.networkPackets.insert(std::make_pair(hash, std::make_pair(tmp, 0)));
+			messagePlayer(clientnum, "%s", tmp.c_str());
+		}
+		if ( !strcmp(packetinfo, "ENTU") )
+		{
+			int sprite = 0;
+			Uint32 uidpacket = static_cast<Uint32>(SDLNet_Read32(&net_packet->data[4]));
+			if ( uidToEntity(uidpacket) )
+			{
+				sprite = uidToEntity(uidpacket)->sprite;
+				auto find = DebugStats.entityUpdatePackets.find(sprite);
+				if ( find != DebugStats.entityUpdatePackets.end() )
+				{
+					++DebugStats.entityUpdatePackets[sprite];
+				}
+				else
+				{
+					DebugStats.entityUpdatePackets.insert(std::make_pair(sprite, 1));
+				}
+			}
+		}
+	}
 
 	// keep alive
 	if (!strncmp((char*)net_packet->data, "KPAL", 4))
@@ -3849,7 +3888,7 @@ void clientHandlePacket()
 		if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] )
 		{
 			real_t vel = sqrt(pow(players[clientnum]->entity->vel_y, 2) + pow(players[clientnum]->entity->vel_x, 2));
-			players[clientnum]->entity->monsterKnockbackVelocity = std::max(1.0, vel);
+			players[clientnum]->entity->monsterKnockbackVelocity = std::min(2.25, std::max(1.0, vel));
 			players[clientnum]->entity->monsterKnockbackTangentDir = atan2(players[clientnum]->entity->vel_y, players[clientnum]->entity->vel_x);
 			if ( vel < 0.01 )
 			{
@@ -3868,6 +3907,10 @@ void clientHandlePacket()
 		buttonCloseSubwindow(NULL);
 		numplayers = 0;
 		introstage = 3;
+		if ( net_packet->data[25] == 0 )
+		{
+			loadingsavegame = 0; // the server said we're not loading a saved game.
+		}
 		fadeout = true;
 		return;
 	}

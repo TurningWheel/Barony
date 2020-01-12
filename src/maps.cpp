@@ -412,7 +412,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 	// determine whether minotaur level or not
 	if ( std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) != -1 )
 	{
-		if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) && (svFlags & SV_FLAG_MINOTAURS) )
+		if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) && (svFlags & SV_FLAG_MINOTAURS) )
 		{
 			minotaurlevel = 1;
 		}
@@ -5221,6 +5221,18 @@ void assignActions(map_t* map)
 							break;
 						}
 					}
+				}
+			}
+			else if ( postProcessEntity->sprite == 586 || postProcessEntity->sprite == 585
+				|| postProcessEntity->sprite == 184 || postProcessEntity->sprite == 185 )
+			{
+				int findx = static_cast<int>(postProcessEntity->x) >> 4;
+				int findy = static_cast<int>(postProcessEntity->y) >> 4;
+				if ( !map->tiles[findy * MAPLAYERS + findx * MAPLAYERS * map->height] )
+				{
+					// remove the lever as it is over a pit.
+					printlog("[MAP GENERATOR] Removed switch over a pit at x:%d y:%d.", findx, findy);
+					list_RemoveNode(postProcessEntity->mynode);
 				}
 			}
 		}

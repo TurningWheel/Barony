@@ -345,11 +345,37 @@ int initGame()
 			buf[len] = '\0';
 			serial = buf;
 			// compute hash
-			size_t DLC1Hash = serialHash(serial);
-			if ( DLC1Hash == 144425 )
+			size_t DLCHash = serialHash(serial);
+			if ( DLCHash == 144425 )
 			{
 				printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
 				enabledDLCPack1 = true;
+			}
+			else
+			{
+				printlog("[LICENSE]: DLC license key invalid.");
+			}
+			fclose(fp);
+		}
+	}
+	if ( PHYSFS_getRealDir("legendsandpariahs.key") != NULL )
+	{
+		std::string serial = PHYSFS_getRealDir("legendsandpariahs.key");
+		serial.append(PHYSFS_getDirSeparator()).append("legendsandpariahs.key");
+		// open the serial file
+		FILE* fp = nullptr;
+		if ( (fp = fopen(serial.c_str(), "rb")) != NULL )
+		{
+			char buf[64];
+			size_t len = fread(&buf, sizeof(char), 32, fp);
+			buf[len] = '\0';
+			serial = buf;
+			// compute hash
+			size_t DLCHash = serialHash(serial);
+			if ( DLCHash == 135398 )
+			{
+				printlog("[LICENSE]: Legends and Pariahs DLC license key found.");
+				enabledDLCPack2 = true;
 			}
 			else
 			{

@@ -1214,9 +1214,27 @@ void handleMainMenu(bool mode)
 					ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
 				}
 				char* endgameText = NULL;
+				bool singleplayerAliveEndGameAndSave = false;
 				if ( multiplayer == SINGLE )
 				{
-					endgameText = language[1310];
+					if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] && stats[clientnum]->HP > 0 )
+					{
+						endgameText = language[3919];
+						singleplayerAliveEndGameAndSave = true;
+						if ( !strncmp(map.name, "Boss", 4)
+							|| !strncmp(map.name, "Hell Boss", 9)
+							|| !strncmp(map.name, "Sanctum", 7) )
+						{
+							// boss floor, no save scumming easily!
+							singleplayerAliveEndGameAndSave = false;
+							endgameText = language[1310];
+						}
+					}
+					else
+					{
+						endgameText = language[1310];
+						singleplayerAliveEndGameAndSave = false;
+					}
 				}
 				else
 				{
@@ -1244,7 +1262,29 @@ void handleMainMenu(bool mode)
 							subx2 = xres / 2 + 144;
 							suby1 = yres / 2 - 64;
 							suby2 = yres / 2 + 64;
-							strcpy(subtext, language[1129]);
+							if ( singleplayerAliveEndGameAndSave )
+							{
+								strcpy(subtext, language[3920]);
+								subx1 = xres / 2 - 188;
+								subx2 = xres / 2 + 188;
+								suby1 = yres / 2 - 92;
+								suby2 = yres / 2 + 92;
+
+								// add a cancel button
+								button = newButton();
+								strcpy(button->label, language[1316]);
+								button->x = subx2 - strlen(language[1316]) * 12 - 16;
+								button->y = suby2 - 28;
+								button->sizex = strlen(language[1316]) * 12 + 8;
+								button->sizey = 20;
+								button->action = &buttonCloseSubwindow;
+								button->visible = 1;
+								button->focused = 1;
+							}
+							else
+							{
+								strcpy(subtext, language[1129]);
+							}
 						}
 						else
 						{
@@ -1286,7 +1326,14 @@ void handleMainMenu(bool mode)
 						button->sizey = 20;
 						if ( multiplayer == SINGLE )
 						{
-							button->action = &buttonEndGameConfirm;
+							if ( singleplayerAliveEndGameAndSave )
+							{
+								button->action = &buttonCloseAndEndGameConfirm;
+							}
+							else
+							{
+								button->action = &buttonEndGameConfirm;
+							}
 						}
 						else
 						{
@@ -1304,7 +1351,15 @@ void handleMainMenu(bool mode)
 						button->y = suby2 - 28;
 						button->sizex = strlen(language[1315]) * 12 + 8;
 						button->sizey = 20;
-						button->action = &buttonCloseSubwindow;
+						if ( multiplayer == SINGLE && singleplayerAliveEndGameAndSave )
+						{
+							button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+							button->action = &buttonEndGameConfirm;
+						}
+						else
+						{
+							button->action = &buttonCloseSubwindow;
+						}
 						button->visible = 1;
 						button->focused = 1;
 					}
@@ -2125,9 +2180,9 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID )
 								{
-									tooltip.w = longestline(language[3372]) * TTF12_WIDTH + 8;
+									tooltip.w = longestline(language[3917]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3372]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3917]);
 								}
 								else
 								{
@@ -3077,12 +3132,18 @@ void handleMainMenu(bool mode)
 					// compute hash
 					if ( !serial.empty() )
 					{
-						std::size_t DLC1Hash = serialHash(serial);
-						if ( DLC1Hash == 144425 )
+						std::size_t DLCHash = serialHash(serial);
+						if ( DLCHash == 144425 )
 						{
 							printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
 							enabledDLCPack1 = true;
 							windowSerialResult(1);
+						}
+						else if ( DLCHash == 135398 )
+						{
+							printlog("[LICENSE]: Legends and Pariahs DLC license key found.");
+							enabledDLCPack2 = true;
+							windowSerialResult(2);
 						}
 						else
 						{
@@ -3565,6 +3626,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 132, "[ ] %s", language[1367]);
 			}
+			if ( settings_disablemouserotationlimit )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 156, "[x] %s", language[3918]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 156, "[ ] %s", language[3918]);
+			}
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
@@ -3578,6 +3647,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_smoothmouse = (settings_smoothmouse == 0);
+					}
+					if ( omousey >= suby1 + 156 && omousey < suby1 + 168 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_disablemouserotationlimit = (settings_disablemouserotationlimit == 0);
 					}
 				}
 			}
@@ -5010,6 +5084,10 @@ void handleMainMenu(bool mode)
 					numplayers = MAXPLAYERS;
 					introstage = 3;
 					fadeout = true;
+					if ( net_packet->data[25] == 0 )
+					{
+						loadingsavegame = 0;
+					}
 					continue;
 				}
 
@@ -7619,6 +7697,8 @@ void handleMainMenu(bool mode)
 			// undo shopkeeper grudge
 			swornenemies[SHOPKEEPER][HUMAN] = false;
 			monsterally[SHOPKEEPER][HUMAN] = true;
+			swornenemies[SHOPKEEPER][AUTOMATON] = false;
+			monsterally[SHOPKEEPER][AUTOMATON] = true;
 
 			// setup game //TODO: Move into a function startGameStuff() or something.
 			entity_uids = 1;
@@ -10175,6 +10255,7 @@ void openSettingsWindow()
 	}
 	settings_reversemouse = reversemouse;
 	settings_smoothmouse = smoothmouse;
+	settings_disablemouserotationlimit = disablemouserotationlimit;
 	settings_mousespeed = mousespeed;
 	settings_broadcast = broadcast;
 	settings_nohud = nohud;
@@ -11623,9 +11704,17 @@ void buttonStartServer(button_t* my)
 		strcpy((char*)net_packet->data, "BARONY_GAME_START");
 		SDLNet_Write32(svFlags, &net_packet->data[17]);
 		SDLNet_Write32(uniqueGameKey, &net_packet->data[21]);
+		if ( loadingsavegame == 0 )
+		{
+			net_packet->data[25] = 0;
+		}
+		else
+		{
+			net_packet->data[25] = 1;
+		}
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
-		net_packet->len = 25;
+		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
@@ -11825,6 +11914,7 @@ void applySettings()
 	// set mouse options
 	reversemouse = settings_reversemouse;
 	smoothmouse = settings_smoothmouse;
+	disablemouserotationlimit = settings_disablemouserotationlimit;
 	mousespeed = settings_mousespeed;
 
 	// set misc options
@@ -14811,10 +14901,17 @@ void buttonConfirmSerial(button_t* my)
 void windowSerialResult(int success)
 {
 	// close current window
-	if ( success == 1 )
+	if ( success > 0 )
 	{
 		char path[PATH_MAX] = "";
-		completePath(path, "mythsandoutcasts.key", outputdir);
+		if ( success == 2 )
+		{
+			completePath(path, "legendsandpariahs.key", outputdir);
+		}
+		else if ( success == 1 )
+		{
+			completePath(path, "mythsandoutcasts.key", outputdir);
+		}
 
 		// open the serial file
 		FILE* fp = nullptr;
@@ -14862,9 +14959,16 @@ void windowSerialResult(int success)
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
-	if ( success )
+	if ( success > 0 )
 	{
-		strcpy(subtext, language[3404]);
+		if ( success == 2 )
+		{
+			strcpy(subtext, language[3405]);
+		}
+		else if ( success == 1 )
+		{
+			strcpy(subtext, language[3404]);
+		}
 		playSound(402, 92);
 	}
 	else

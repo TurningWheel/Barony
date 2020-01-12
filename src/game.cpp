@@ -75,6 +75,107 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 #endif
 
+#ifdef WINDOWS
+void make_minidump(EXCEPTION_POINTERS* e)
+{
+	auto hDbgHelp = LoadLibraryA("dbghelp");
+	if ( hDbgHelp == nullptr )
+	{
+		return;
+	}
+	auto pMiniDumpWriteDump = (decltype(&MiniDumpWriteDump))GetProcAddress(hDbgHelp, "MiniDumpWriteDump");
+	if ( pMiniDumpWriteDump == nullptr )
+	{
+		return;
+	}
+
+	char name[PATH_MAX];
+	{
+		strcpy(name, "barony_crash");
+		auto nameEnd = name + strlen("barony_crash");
+		SYSTEMTIME t;
+		GetSystemTime(&t);
+		wsprintfA(nameEnd,
+			"_%4d%02d%02d_%02d%02d%02d.dmp",
+			t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+	}
+	std::string crashlogDir = outputdir;
+	crashlogDir.append(PHYSFS_getDirSeparator()).append("crashlogs");
+	if ( access(crashlogDir.c_str(), F_OK) == -1 )
+	{
+		// crashlog folder does not exist to write to.
+		printlog("Error accessing crashlogs folder, cannot create crash dump file.");
+		return;
+	}
+
+	// make a new crash folder.
+	char newCrashlogFolder[PATH_MAX] = "";
+	strncpy(newCrashlogFolder, name, strlen(name) - strlen(".dmp")); // folder name is the dmp file without .dmp
+	if ( PHYSFS_setWriteDir(crashlogDir.c_str()) ) // write to the crashlogs/ directory
+	{
+		if ( PHYSFS_mkdir(newCrashlogFolder) ) // make the folder to hold the .dmp file
+		{
+			// the full path of the .dmp file to create.
+			crashlogDir.append(PHYSFS_getDirSeparator()).append(newCrashlogFolder).append(PHYSFS_getDirSeparator());
+		}
+		else
+		{
+			printlog("[PhysFS]: unsuccessfully created %s folder. Error code: %d", newCrashlogFolder, PHYSFS_getLastErrorCode());
+			return;
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", outputdir, PHYSFS_getLastErrorCode());
+		return;
+	}
+
+	std::string crashDumpFile = crashlogDir + name;
+
+	auto hFile = CreateFileA(crashDumpFile.c_str(), GENERIC_ALL, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if ( hFile == INVALID_HANDLE_VALUE )
+	{
+		printlog("Error in file handle for %s, cannot create crash dump file.", crashDumpFile.c_str());
+		return;
+	}
+
+	MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
+	exceptionInfo.ThreadId = GetCurrentThreadId();
+	exceptionInfo.ExceptionPointers = e;
+	exceptionInfo.ClientPointers = FALSE;
+
+	auto dumped = pMiniDumpWriteDump(
+		GetCurrentProcess(),
+		GetCurrentProcessId(),
+		hFile,
+		MINIDUMP_TYPE(MiniDumpWithIndirectlyReferencedMemory | MiniDumpScanMemory),
+		e ? &exceptionInfo : nullptr,
+		nullptr,
+		nullptr);
+
+	CloseHandle(hFile);
+
+	printlog("CRITICAL ERROR: Barony has encountered a crash. Submit the crashlog folder in a .zip to the developers: %s", crashlogDir.c_str());
+	if ( logfile )
+	{
+		fclose(logfile);
+	}
+
+	// now copy the logfile into the crash folder.
+	char logfilePath[PATH_MAX];
+	completePath(logfilePath, "log.txt", outputdir);
+	std::string crashLogFile = crashlogDir + "log.txt";
+	CopyFileA(logfilePath, crashLogFile.c_str(), false);
+	return;
+}
+
+LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
+{
+	make_minidump(e);
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
 std::vector<std::string> physFSFilesInDirectory;
@@ -90,6 +191,8 @@ list_t steamAchievements;
 DebugStatsClass DebugStats;
 Uint32 networkTickrate = 0;
 bool gameloopFreezeEntities = false;
+Uint32 serverSchedulePlayerHealthUpdate = 0;
+Uint32 serverLastPlayerHealthUpdate = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -275,9 +378,17 @@ void gameLogic(void)
 				strcpy((char*)net_packet->data, "BARONY_GAME_START");
 				SDLNet_Write32(svFlags, &net_packet->data[17]);
 				SDLNet_Write32(uniqueGameKey, &net_packet->data[21]);
+				if ( loadingsavegame == 0 )
+				{
+					net_packet->data[25] = 0;
+				}
+				else
+				{
+					net_packet->data[25] = 1;
+				}
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 25;
+				net_packet->len = 26;
 				sendPacket(net_sock, -1, net_packet, c - 1);
 			}
 		}
@@ -1081,6 +1192,8 @@ void gameLogic(void)
 						// undo shopkeeper grudge
 						swornenemies[SHOPKEEPER][HUMAN] = false;
 						monsterally[SHOPKEEPER][HUMAN] = true;
+						swornenemies[SHOPKEEPER][AUTOMATON] = false;
+						monsterally[SHOPKEEPER][AUTOMATON] = true;
 					}
 
 					// (special) unlock temple achievement
@@ -1345,9 +1458,26 @@ void gameLogic(void)
 					}
 				}
 
-				if ( ticks % (TICKS_PER_SECOND * 2) == 0 )
+				bool updatePlayerHealth = false;
+				if ( serverSchedulePlayerHealthUpdate != 0 && (ticks - serverSchedulePlayerHealthUpdate) >= TICKS_PER_SECOND * 0.5 )
+				{
+					// update if 0.5s have passed since request of health update.
+					// the scheduled update needs to be reset to 0 to be set again.
+					updatePlayerHealth = true;
+				}
+				else if ( (ticks % (TICKS_PER_SECOND * 3) == 0) 
+					&& (serverLastPlayerHealthUpdate == 0 || ((ticks - serverLastPlayerHealthUpdate) >= 2 * TICKS_PER_SECOND)) 
+				)
+				{
+					// regularly update every 3 seconds, only if the last update was more than 2 seconds ago.
+					updatePlayerHealth = true;
+				}
+
+				if ( updatePlayerHealth )
 				{
 					// send update to all clients for global stats[NUMPLAYERS] struct
+					serverLastPlayerHealthUpdate = ticks;
+					serverSchedulePlayerHealthUpdate = 0;
 					serverUpdatePlayerStats();
 				}
 
@@ -2285,7 +2415,7 @@ void handleButtons(void)
 				button->pressed = true;
 				button->needclick = false;
 			}
-			if (button->joykey != -1 && *inputPressed(button->joykey))
+			if (button->joykey != -1 && *inputPressed(button->joykey) && rebindaction == -1 )
 			{
 				button->pressed = true;
 				button->needclick = false;
@@ -2938,6 +3068,9 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator)
 
 int main(int argc, char** argv)
 {
+#ifdef WINDOWS
+	SetUnhandledExceptionFilter(unhandled_handler);
+#endif // WINDOWS
 
 #ifdef LINUX
 	//Catch segfault stuff.

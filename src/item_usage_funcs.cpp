@@ -4574,7 +4574,7 @@ void item_Spellbook(Item*& item, int player)
 			messagePlayer(player, language[3445]);
 			return;
 		}
-		else if ( stats[player] && (stats[player]->type == GOBLIN || stats[player]->playerRace == RACE_GOBLIN) )
+		else if ( stats[player] && (stats[player]->type == GOBLIN || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)) )
 		{
 			messagePlayer(player, language[3444]);
 			return;
