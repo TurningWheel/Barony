@@ -618,7 +618,7 @@ void drawSkillsSheet()
 					{
 						skillDetails[3] = 0.f;
 					}
-					std::string canRepairItems = "none";
+					std::string canRepairItems = "  no";
 					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_LEGENDARY )
 					{
 						canRepairItems = "all";
