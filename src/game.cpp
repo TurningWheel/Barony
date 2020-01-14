@@ -4202,7 +4202,11 @@ int main(int argc, char** argv)
 					// Draw the static HUD elements
 					if ( !nohud )
 					{
+						//auto tStartMinimapDraw = std::chrono::high_resolution_clock::now();
 						drawMinimap(); // Draw the Minimap
+						/*auto tEndMinimapDraw = std::chrono::high_resolution_clock::now();
+						double timeTaken = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(tEndMinimapDraw - tStartMinimapDraw).count();
+						printlog("Minimap draw time: %.5f", timeTaken);*/
 						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
 
