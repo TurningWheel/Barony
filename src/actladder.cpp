@@ -31,7 +31,7 @@
 -------------------------------------------------------------------------------*/
 
 #define LADDER_AMBIENCE my->skill[1]
-#define LADDER_SECRET my->skill[3]
+#define LADDER_SECRET_ENTRANCE my->skill[3]
 
 void actLadder(Entity* my)
 {
@@ -92,12 +92,12 @@ void actLadder(Entity* my)
 								}
 								break;
 						}
-						if ( strncmp(map.name, "Underworld", 10) )
+						if ( LADDER_SECRET_ENTRANCE )
 						{
 							skipLevelsOnLoad = -1; // don't skip a regular level anymore. still skip if in underworld.
 						}
 					}
-					if (LADDER_SECRET)
+					if ( LADDER_SECRET_ENTRANCE )
 					{
 						secretlevel = (secretlevel == false);    // toggle level lists
 					}
