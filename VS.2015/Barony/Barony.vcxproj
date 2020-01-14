@@ -150,6 +150,7 @@
     <ClCompile Include="..\..\src\items.cpp" />
     <ClCompile Include="..\..\src\item_tool.cpp" />
     <ClCompile Include="..\..\src\item_usage_funcs.cpp" />
+    <ClCompile Include="..\..\src\json.cpp" />
     <ClCompile Include="..\..\src\light.cpp" />
     <ClCompile Include="..\..\src\list.cpp" />
     <ClCompile Include="..\..\src\magic\actmagic.cpp" />
@@ -212,6 +213,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\book.hpp" />
+    <ClInclude Include="..\..\src\charclass.hpp" />
     <ClInclude Include="..\..\src\classdescriptions.hpp" />
     <ClInclude Include="..\..\src\cppfuncs.hpp" />
     <ClInclude Include="..\..\src\credits.hpp" />
@@ -219,6 +221,7 @@
     <ClInclude Include="..\..\src\game.hpp" />
     <ClInclude Include="..\..\src\interface\interface.hpp" />
     <ClInclude Include="..\..\src\items.hpp" />
+    <ClInclude Include="..\..\src\json.hpp" />
     <ClInclude Include="..\..\src\magic\magic.hpp" />
     <ClInclude Include="..\..\src\main.hpp" />
     <ClInclude Include="..\..\src\menu.hpp" />
