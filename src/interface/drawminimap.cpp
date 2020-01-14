@@ -33,6 +33,15 @@ std::vector<MinimapPing> minimapPings;
 int minimapPingGimpTimer = -1;
 Uint32 lastMapTick = 0;
 
+Uint32 minimapColorFunc(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+	Uint32 result = 0u;
+	result |= (Uint32)a << 24;
+	result |= (Uint32)b << 16;
+	result |= (Uint32)g <<  8;
+	result |= (Uint32)r;
+	return result;
+}
+
 void drawMinimap()
 {
 	node_t* node;
@@ -55,6 +64,11 @@ void drawMinimap()
 		playSound(139, 32);
 	}
 
+	// create a new minimap texture
+	SDL_Surface* minimapSurface = SDL_CreateRGBSurface(0, map.width, map.height, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	TempTexture* minimapTexture = new TempTexture();
+	SDL_LockSurface(minimapSurface);
+
 	// draw level
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
@@ -63,41 +77,57 @@ void drawMinimap()
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
 	for ( x = 0; x < map.width; x++ )
 	{
 		for ( y = 0; y < map.height; y++ )
 		{
+			Uint32 color = 0;
 			if ( minimap[y][x] == 0 )
 			{
-				glColor4f( 32 / 255.f,  12 / 255.f, 0 / 255.f, 1.f - (minimapTransparencyBackground / 100.f) );
+				color = minimapColorFunc(32, 12, 0, 255 * ((100 - minimapTransparencyBackground) / 100.f));
 			}
 			else if ( minimap[y][x] == 1 )
 			{
-				glColor4f( 96 / 255.f,  24 / 255.f, 0 / 255.f, 1.f - (minimapTransparencyForeground / 100.f) );
+				color = minimapColorFunc(96, 24, 0, 255 * ((100 - minimapTransparencyForeground) / 100.f));
 			}
 			else if ( minimap[y][x] == 2 )
 			{
-				glColor4f( 192 / 255.f, 64 / 255.f, 0 / 255.f, 1.f - (minimapTransparencyForeground / 100.f));
+				color = minimapColorFunc(192, 64, 0, 255 * ((100 - minimapTransparencyForeground) / 100.f));
 			}
 			else if ( minimap[y][x] == 3 )
 			{
-				glColor4f( 32 / 255.f, 32 / 255.f, 32 / 255.f, 1.f - (minimapTransparencyForeground / 100.f));
+				color = minimapColorFunc(32, 32, 32, 255 * ((100 - minimapTransparencyForeground) / 100.f));
 			}
 			else if ( minimap[y][x] == 4 )
 			{
-				glColor4f( 64 / 255.f, 64 / 255.f, 64 / 255.f, 1.f - (minimapTransparencyForeground / 100.f));
+				color = minimapColorFunc(64, 64, 64, 255 * ((100 - minimapTransparencyForeground) / 100.f));
 			}
-			//glBegin(GL_QUADS);
-			glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-			glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-			glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-			glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-			//glEnd();
+			putPixel(minimapSurface, x, y, color);
 		}
 	}
+	SDL_UnlockSurface(minimapSurface);
+	minimapTexture->load(minimapSurface, false, true);
+	minimapTexture->bind();
+	glColor4f(1, 1, 1, 1);
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0);
+	glVertex2f(xres - map.width * minimapTotalScale, map.height * minimapTotalScale);
+	glTexCoord2f(0, 1);
+	glVertex2f(xres - map.width * minimapTotalScale, 0);
+	glTexCoord2f(1, 1);
+	glVertex2f(xres, 0);
+	glTexCoord2f(1, 0);
+	glVertex2f(xres, map.height * minimapTotalScale);
 	glEnd();
+	glBindTexture(GL_TEXTURE_2D, 0);
+	if (minimapTexture) {
+		delete minimapTexture;
+		minimapTexture = nullptr;
+	}
+	if (minimapSurface) {
+		SDL_FreeSurface(minimapSurface);
+		minimapSurface = nullptr;
+	}
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);

@@ -337,6 +337,9 @@ int initApp(char* title, int fullscreen)
 #endif
 #endif
 
+	drawClearBuffers();
+	GO_SwapBuffers(screen);
+
 	// load resources
 	printlog("loading engine resources...\n");
 	if ((fancyWindow_bmp = loadImage("images/system/fancyWindow.png")) == NULL)
@@ -358,6 +361,25 @@ int initApp(char* title, int fullscreen)
 	{
 		printlog("failed to load font16x16.png\n");
 		return 5;
+	}
+
+	// cache language entries
+	bool cacheText = false;
+	if (cacheText) {
+		for (int c = 0; c < NUMLANGENTRIES; ++c) {
+			bool foundSpecialChar = false;
+			for (int i = 0; language[c][i] != '\0'; ++i) {
+				if (language[c][i] == '\\' || language[c][i] == '%') {
+					foundSpecialChar = true;
+				}
+			}
+			if (foundSpecialChar) {
+				continue;
+			}
+			ttfPrintText(ttf8, 0, -200, language[c]);
+			ttfPrintText(ttf12, 0, -200, language[c]);
+			ttfPrintText(ttf16, 0, -200, language[c]);
+		}
 	}
 
 	// print a loading message
@@ -863,6 +885,7 @@ int loadLanguage(char* lang)
 			items[c].name_unidentified = language[1546 + c * 2];
 		}
 	}
+
 	return 0;
 }
 

@@ -567,6 +567,7 @@ extern voxel_t** models;
 extern polymodel_t* polymodels;
 extern bool useModelCache;
 extern Uint32 imgref, vboref;
+extern const Uint32 ttfTextCacheLimit;
 extern GLuint* texid;
 extern bool disablevbos;
 extern Uint32 fov;
@@ -674,7 +675,6 @@ extern GLuint fbo_ren;
 #endif
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y);
-static const Uint32 cacheLimit = 8096;
 
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
