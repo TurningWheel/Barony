@@ -381,6 +381,9 @@
     <ClCompile Include="..\..\src\monster_sentrybot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\json.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\book.hpp">
@@ -454,6 +457,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\cppfuncs.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\json.hpp">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
