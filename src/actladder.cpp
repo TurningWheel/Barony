@@ -174,6 +174,73 @@ void actPortal(Entity* my)
 		return;
 	}
 
+	if ( my->flags[INVISIBLE] && ticks % 50 == 0 && !strncmp(map.name, "Cockatrice Lair", 15) )
+	{
+		node_t* node = nullptr;
+		Entity* entity = nullptr;
+		bool bossAlive = false;
+		for ( node = map.entities->first; node != nullptr; )
+		{
+			entity = (Entity*)node->element;
+			node = node->next;
+			if ( entity && entity->behavior == &actMonster 
+				&& entity->getMonsterTypeFromSprite() == COCKATRICE
+				&& !entity->monsterAllyGetPlayerLeader() )
+			{
+				bossAlive = true;
+			}
+		}
+		if ( !bossAlive )
+		{
+			for ( node = map.entities->first; node != nullptr; )
+			{
+				entity = (Entity*)node->element;
+				node = node->next;
+				if ( entity->behavior == &actMagicTrap )
+				{
+					list_RemoveNode(entity->mynode);
+				}
+			}
+			my->flags[INVISIBLE] = false;
+			serverUpdateEntityFlag(my, INVISIBLE);
+		}
+	}
+	else if ( my->flags[INVISIBLE] && ticks % 50 == 0 && !strncmp(map.name, "Bram's Castle", 13) )
+	{
+		node_t* node = nullptr;
+		Entity* entity = nullptr;
+		bool bossAlive = false;
+		for ( node = map.entities->first; node != nullptr; )
+		{
+			entity = (Entity*)node->element;
+			node = node->next;
+			if ( entity && entity->behavior == &actMonster
+				&& entity->getMonsterTypeFromSprite() == VAMPIRE
+				&& !entity->monsterAllyGetPlayerLeader() )
+			{
+				Stat* stats = entity->getStats();
+				if ( stats && !strncmp(stats->name, "Bram Kindly", 11) )
+				{
+					bossAlive = true;
+				}
+			}
+		}
+		if ( !bossAlive )
+		{
+			for ( node = map.entities->first; node != nullptr; )
+			{
+				entity = (Entity*)node->element;
+				node = node->next;
+				if ( entity->behavior == &actMagicTrap )
+				{
+					list_RemoveNode(entity->mynode);
+				}
+			}
+			my->flags[INVISIBLE] = false;
+			serverUpdateEntityFlag(my, INVISIBLE);
+		}
+	}
+
 	// step through portal
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

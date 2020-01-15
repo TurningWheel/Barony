@@ -441,24 +441,6 @@ void vampireDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	node_t* node;
-	Entity* entity = nullptr;
-	if ( multiplayer != CLIENT && !strncmp(map.name, "Bram's Castle", 13) )
-	{
-		for ( node = map.entities->first; node != nullptr; node = node->next )
-		{
-			entity = (Entity*)node->element;
-			if ( entity )
-			{
-				if ( entity->behavior == &actPortal )
-				{
-					entity->flags[INVISIBLE] = false;
-					serverUpdateEntityFlag(entity, INVISIBLE);
-				}
-			}
-		}
-	}
-
 	list_RemoveNode(my->mynode);
 	return;
 }

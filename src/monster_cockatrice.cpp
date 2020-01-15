@@ -302,29 +302,6 @@ void cockatriceDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	node_t* node;
-	Entity* entity = nullptr;
-	if ( multiplayer != CLIENT && !strncmp(map.name, "Cockatrice Lair", 15) )
-	{
-		for ( node = map.entities->first; node != nullptr; )
-		{
-			entity = (Entity*)node->element;
-			node = node->next;
-			if ( entity )
-			{
-				if ( entity->behavior == &actMagicTrap )
-				{
-					list_RemoveNode(entity->mynode);
-				}
-				else if ( entity->behavior == &actPortal )
-				{
-					entity->flags[INVISIBLE] = false;
-					serverUpdateEntityFlag(entity, INVISIBLE);
-				}
-			}
-		}
-	}
-
 	list_RemoveNode(my->mynode);
 	return;
 }
