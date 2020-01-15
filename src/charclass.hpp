@@ -18,14 +18,20 @@ See LICENSE for details.
 class PlayerCharacterClassManager
 {
 	Stat* classStats = nullptr;
-	int charClass = CLASS_BARBARIAN;
+	int characterClass = CLASS_BARBARIAN;
 public:
-	PlayerCharacterClassManager(Stat* stat)
+	PlayerCharacterClassManager(Stat* myStats, int charClass)
 	{
-		classStats = stat;
+		classStats = myStats;
+		characterClass = charClass;
+		proficiencies.numProficiencies = NUMPROFICIENCIES;
+		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+		{
+			proficiencies.list.push_back(classStats->PROFICIENCIES[i]);
+		}
 	};
 	void serialize(FileInterface* file) {
-		
+		file->property("CLASS", characterClass);
 		file->property("MAXHP", static_cast<Sint32>(classStats->MAXHP));
 		file->property("MAXMP", static_cast<Sint32>(classStats->MAXMP));
 		file->property("STR", static_cast<Sint32>(classStats->STR));
@@ -35,16 +41,24 @@ public:
 		file->property("PER", static_cast<Sint32>(classStats->PER));
 		file->property("CHR", static_cast<Sint32>(classStats->CHR));
 		file->property("GOLD", static_cast<Sint32>(classStats->GOLD));
-		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
-		{
-			char prof[64];
-			snprintf(prof, 64, "Proficiency::%s", getSkillLangEntry(i));
-			file->property(prof, static_cast<Sint32>(classStats->PROFICIENCIES[i]));
-		}
-		classStats->HP = classStats->MAXHP;
-		classStats->OLDHP = classStats->HP;
-		classStats->MP = classStats->MAXMP;
+		file->property("Proficiencies", proficiencies);
 	}
+
+	struct Proficiencies
+	{
+		int numProficiencies = NUMPROFICIENCIES;
+		std::vector<Sint32> list;
+		void serialize(FileInterface* file)
+		{
+			file->property("NumProficiencies", numProficiencies);
+			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+			{
+				char str[64];
+				snprintf(str, 64, "%s", getSkillLangEntry(i));
+				file->property(str, static_cast<Sint32>(list[i]));
+			}
+		}
+	} proficiencies;
 
 	void writeToFile()
 	{
@@ -58,14 +72,27 @@ public:
 
 	void readFromFile()
 	{
-		if ( PHYSFS_getRealDir("data/characterclasses.json") )
+		if ( PHYSFS_getRealDir("/data/characterclasses.json") )
 		{
-			std::string inputPath = PHYSFS_getRealDir("data/characterclasses.json");
-			inputPath.append("data/characterclasses.json");
+			std::string inputPath = PHYSFS_getRealDir("/data/characterclasses.json");
+			inputPath.append("/data/characterclasses.json");
 			if ( FileHelper::readObject(inputPath.c_str(), *this) )
 			{
 				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+				setCharacterStatsAfterSerialization();
 			}
 		}
+	}
+
+	void setCharacterStatsAfterSerialization()
+	{
+		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+		{
+			classStats->PROFICIENCIES[i] = proficiencies.list[i];
+		}
+		classStats->HP = classStats->MAXHP;
+		classStats->OLDHP = classStats->HP;
+		classStats->MP = classStats->MAXMP;
+
 	}
 };

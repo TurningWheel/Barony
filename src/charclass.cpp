@@ -2529,7 +2529,8 @@ void initClass(int player)
 		}
 	}
 	//stats[clientnum]->printStats();
-	PlayerCharacterClassManager playerCharacterClassManager(stats[player]);
+	PlayerCharacterClassManager playerCharacterClassManager(stats[player], client_classes[player]);
+	//playerCharacterClassManager.writeToFile();
 	playerCharacterClassManager.readFromFile();
 }
 
