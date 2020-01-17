@@ -841,18 +841,7 @@ void drawStatus()
 	}
 
 	// Display the actual Magic bar's faint background
-	if ( uiscale_playerbars < 1.5 )
-	{
-		pos.x = 16;
-	}
-	else if ( uiscale_playerbars == 1.5 )
-	{
-		pos.x = 16 * uiscale_playerbars - 2;
-	}
-	else
-	{
-		pos.x = 16 * uiscale_playerbars - 4;
-	}
+	pos.x = 4 + 12 * uiscale_playerbars;
 	pos.w = playerStatusBarWidth - 5;
 	pos.h = playerStatusBarHeight - 27;
 	pos.y = yres - 15 - pos.h;
