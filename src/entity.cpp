@@ -17342,6 +17342,10 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 	{
 		return;
 	}
+	if ( limbType == LIMB_HUMANOID_TORSO )
+	{
+		limb->scalez = 1.f; // reset this scale incase something modifies this.
+	}
 	switch ( race )
 	{
 		case CREATURE_IMP:
