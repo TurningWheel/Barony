@@ -5041,6 +5041,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		case SCROLL_TELEPORTATION:
 		case SCROLL_SUMMON:
 		case SCROLL_CONJUREARROW:
+		case SCROLL_CHARGING:
 			players[player]->entity->modMP(20);
 			stats[player]->HUNGER += 600;
 			break;
