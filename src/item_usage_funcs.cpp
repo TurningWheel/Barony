@@ -5219,6 +5219,7 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case SCROLL_SUMMON:
 		case SCROLL_FIRE:
 		case SCROLL_CONJUREARROW:
+		case SCROLL_CHARGING:
 		case TOOL_MAGIC_SCRAP:
 		case TOOL_METAL_SCRAP:
 			return true;
