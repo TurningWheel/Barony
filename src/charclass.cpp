@@ -2529,9 +2529,9 @@ void initClass(int player)
 		}
 	}
 	//stats[clientnum]->printStats();
-	PlayerCharacterClassManager playerCharacterClassManager(stats[player], client_classes[player]);
+	//PlayerCharacterClassManager playerCharacterClassManager(stats[player], client_classes[player]);
 	//playerCharacterClassManager.writeToFile();
-	playerCharacterClassManager.readFromFile();
+	//playerCharacterClassManager.readFromFile();
 }
 
 void initShapeshiftHotbar()
