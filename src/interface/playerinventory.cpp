@@ -1382,19 +1382,22 @@ void updatePlayerInventory()
 					}
 
 					bool disableItemUsage = false;
-					if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+					if ( item )
 					{
-						// shape shifted, disable some items
-						if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+						if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
 						{
-							disableItemUsage = true;
+							// shape shifted, disable some items
+							if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+							{
+								disableItemUsage = true;
+							}
 						}
-					}
-					if ( client_classes[clientnum] == CLASS_SHAMAN )
-					{
-						if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+						if ( client_classes[clientnum] == CLASS_SHAMAN )
 						{
-							disableItemUsage = true;
+							if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+							{
+								disableItemUsage = true;
+							}
 						}
 					}
 
