@@ -128,9 +128,9 @@ void actBeartrap(Entity* my)
 					entity->setEffect(EFF_PARALYZED, true, 200, false);
 					entity->setEffect(EFF_BLEEDING, true, 300, false);
 					int damage = 10 + 3 * (BEARTRAP_STATUS + BEARTRAP_BEATITUDE);
-					Stat* trapperStat = nullptr;
-					if ( parent && (trapperStat = parent->getStats()) )
+					if ( parent )
 					{
+						stat->bleedInflictedBy = static_cast<Sint32>(parent->getUID());
 						//damage += trapperStat->PROFICIENCIES[PRO_LOCKPICKING] / 20;
 					}
 					//messagePlayer(0, "dmg: %d", damage);

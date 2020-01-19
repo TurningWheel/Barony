@@ -33,13 +33,17 @@ Stat::Stat(Sint32 sprite) :
 	monsterIsCharmed(MISC_FLAGS[12]),
 	playerShapeshiftStorage(MISC_FLAGS[13]),
 	monsterTinkeringStatus(MISC_FLAGS[14]),
-	monsterDemonHasBeenExorcised(MISC_FLAGS[15])
+	monsterDemonHasBeenExorcised(MISC_FLAGS[15]),
+	burningInflictedBy(MISC_FLAGS[16]),
+	bleedInflictedBy(MISC_FLAGS[17])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");
 	strcpy(this->obituary, language[1500]);
 	this->defending = false;
 	this->poisonKiller = 0;
+	this->burningInflictedBy = 0;
+	this->bleedInflictedBy = 0;
 	this->sex = static_cast<sex_t>(rand() % 2);
 	this->appearance = 0;
 	this->HP = 10;
