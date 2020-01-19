@@ -1829,9 +1829,12 @@ void drawStatus()
 				}
 			}
 
-			if ( itemCategory(item) == SPELLBOOK && stats[clientnum] && stats[clientnum]->type == GOBLIN )
+			if ( itemCategory(item) == SPELLBOOK && stats[clientnum] )
 			{
-				learnedSpell = true; // goblinos can't learn spells but always equip books.
+				if ( stats[clientnum]->type == GOBLIN || stats[clientnum]->type == CREATURE_IMP )
+				{
+					learnedSpell = true; // goblinos can't learn spells but always equip books.
+				}
 			}
 
 			bool disableItemUsage = false;
