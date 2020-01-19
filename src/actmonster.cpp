@@ -5800,8 +5800,7 @@ timeToGoAgain:
 					}
 					if ( player == 0 )
 					{
-						shootmode = false;
-						gui_mode = GUI_MODE_INVENTORY;
+						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 					}
 					else
 					{

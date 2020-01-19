@@ -2185,20 +2185,17 @@ void clientHandlePacket()
 	// open shop
 	else if (!strncmp((char*)net_packet->data, "SHOP", 4))
 	{
+		closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
 		shopkeeper = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		shopkeepertype = net_packet->data[8];
 		strcpy( shopkeepername_client, (char*)(&net_packet->data[9]) );
 		shopkeepername = shopkeepername_client;
-		shootmode = false;
-		gui_mode = GUI_MODE_SHOP;
 		shoptimer = ticks - 1;
 		shopspeech = language[194 + rand() % 3];
 		shopinventorycategory = 7;
 		sellitem = NULL;
 		shopitemscroll = 0;
-		identifygui_active = false; //Really need a centralized function to open up whatever screen/inventory.
-		closeRemoveCurseGUI();
-		GenericGUI.closeGUI();
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )
 		{
@@ -2209,7 +2206,6 @@ void clientHandlePacket()
 		{
 			selectedShopSlot = -1;
 		}
-
 		return;
 	}
 
@@ -2226,9 +2222,8 @@ void clientHandlePacket()
 	// close shop
 	else if (!strncmp((char*)net_packet->data, "SHPC", 4))
 	{
-		gui_mode = GUI_MODE_INVENTORY;
-		shootmode = true;
 		shopkeeper = 0;
+		closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 		list_FreeAll(shopInv);
 		//Clean up shop gamepad code here.
 		selectedShopSlot = -1;
@@ -3612,7 +3607,7 @@ void clientHandlePacket()
 		identifygui_active = true;
 		identifygui_appraising = false;
 		shootmode = false;
-		gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
+		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 		if ( removecursegui_active )
 		{
 			closeRemoveCurseGUI();
@@ -3634,7 +3629,7 @@ void clientHandlePacket()
 	{
 		removecursegui_active = true;
 		shootmode = false;
-		gui_mode = GUI_MODE_INVENTORY;
+		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
 		if ( identifygui_active )
 		{

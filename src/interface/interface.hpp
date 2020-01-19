@@ -597,6 +597,20 @@ Sint8* inputPressed(Uint32 scancode);
 
 //All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
 void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
+enum CloseGUIShootmode : int
+{
+	DONT_CHANGE_SHOOTMODE,
+	CLOSEGUI_ENABLE_SHOOTMODE
+};
+enum CloseGUIIgnore : int
+{
+	CLOSEGUI_CLOSE_ALL,
+	CLOSEGUI_DONT_CLOSE_FOLLOWERGUI,
+	CLOSEGUI_DONT_CLOSE_CHEST,
+	CLOSEGUI_DONT_CLOSE_SHOP
+};
+
+void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose);
 
 static const int SCANCODE_UNASSIGNED_BINDING = 399;
 

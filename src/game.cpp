@@ -3640,46 +3640,10 @@ int main(int argc, char** argv)
 					*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
 					if ( !shootmode )
 					{
-						shootmode = true;
+						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 						gui_mode = GUI_MODE_INVENTORY;
-						CloseIdentifyGUI();
-						closeRemoveCurseGUI();
-						GenericGUI.closeGUI();
-						FollowerMenu.closeFollowerMenuGUI();
-						if ( shopkeeper != 0 )
-						{
-							if ( multiplayer != CLIENT )
-							{
-								Entity* entity = uidToEntity(shopkeeper);
-								entity->skill[0] = 0;
-								if ( uidToEntity(entity->skill[1]) )
-								{
-									monsterMoveAside(entity, uidToEntity(entity->skill[1]));
-								}
-								entity->skill[1] = 0;
-							}
-							else
-							{
-								// inform server that we're done talking to shopkeeper
-								strcpy((char*)net_packet->data, "SHPC");
-								SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 8;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-								list_FreeAll(shopInv);
-							}
-							shopkeeper = 0;
-
-							//Clean up shopkeeper gamepad code here.
-							selectedShopSlot = -1;
-						}
 						attributespage = 0;
 						//proficienciesPage = 0;
-						if (openedChest[clientnum])
-						{
-							openedChest[clientnum]->closeChest();
-						}
 					}
 					else
 					{
@@ -3819,54 +3783,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							shootmode = true;
-							gui_mode = GUI_MODE_INVENTORY;
-							CloseIdentifyGUI();
-							closeRemoveCurseGUI();
-							GenericGUI.closeGUI();
-							FollowerMenu.closeFollowerMenuGUI();
-						}
-
-						//What even is this code? When should it be run? (it's cancelling a trade by closing the inventory.)
-						if ( shopkeeper != 0 )
-						{
-							if ( multiplayer != CLIENT )
-							{
-								Entity* entity = uidToEntity(shopkeeper);
-								if ( entity )
-								{
-									entity->skill[0] = 0;
-									if ( uidToEntity(entity->skill[1]) )
-									{
-										monsterMoveAside(entity, uidToEntity(entity->skill[1]));
-									}
-									entity->skill[1] = 0;
-								}
-							}
-							else
-							{
-								// inform server that we're done talking to shopkeeper
-								strcpy((char*)net_packet->data, "SHPC");
-								SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 8;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-								list_FreeAll(shopInv);
-							}
-
-							shopkeeper = 0;
-
-							//Clean up shopkeeper gamepad code here.
-							selectedShopSlot = -1;
-						}
-						if ( shootmode )
-						{
-							if (openedChest[clientnum])
-							{
-								openedChest[clientnum]->closeChest();
-							}
-							gui_mode = GUI_MODE_NONE;
+							closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 						}
 					}
 					if (!command && (*inputPressed(impulses[IN_SPELL_LIST]) || *inputPressed(joyimpulses[INJOY_SPELL_LIST])))   //TODO: Move to function in interface or something?

@@ -1526,8 +1526,66 @@ void openStatusScreen(int whichGUIMode, int whichInventoryMode)
 	SDL_WarpMouseInWindow(screen, xres / 2, yres / 2);
 	mousex = xres / 2;
 	mousey = yres / 2;
+	omousex = mousex;
+	omousey = mousey;
 	attributespage = 0;
 	//proficienciesPage = 0;
+}
+
+void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
+{
+	CloseIdentifyGUI();
+	closeRemoveCurseGUI();
+	GenericGUI.closeGUI();
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
+	{
+		FollowerMenu.closeFollowerMenuGUI();
+	}
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_CHEST )
+	{
+		if ( openedChest[clientnum] )
+		{
+			openedChest[clientnum]->closeChest();
+		}
+	}
+
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_SHOP && shopkeeper != 0 )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			Entity* entity = uidToEntity(shopkeeper);
+			if ( entity )
+			{
+				entity->skill[0] = 0;
+				if ( uidToEntity(entity->skill[1]) )
+				{
+					monsterMoveAside(entity, uidToEntity(entity->skill[1]));
+				}
+				entity->skill[1] = 0;
+			}
+		}
+		else
+		{
+			// inform server that we're done talking to shopkeeper
+			strcpy((char*)net_packet->data, "SHPC");
+			SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 8;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			list_FreeAll(shopInv);
+		}
+
+		shopkeeper = 0;
+
+		//Clean up shopkeeper gamepad code here.
+		selectedShopSlot = -1;
+	}
+	gui_mode = GUI_MODE_NONE;
+	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
+	{
+		shootmode = true;
+	}
 }
 
 void FollowerRadialMenu::initFollowerMenuGUICursor(bool openInventory)
@@ -1607,16 +1665,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		if ( players[clientnum] && players[clientnum]->entity
 			&& followerToCommand->monsterTarget == players[clientnum]->entity->getUID() )
 		{
-			shootmode = true;
-			CloseIdentifyGUI();
-			closeRemoveCurseGUI();
-			GenericGUI.closeGUI();
-			if ( openedChest[clientnum] )
-			{
-				openedChest[clientnum]->closeChest();
-			}
-			gui_mode = GUI_MODE_NONE;
-			closeFollowerMenuGUI();
+			closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 			return;
 		}
 
@@ -1760,15 +1809,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						|| optionSelected == ALLY_CMD_ATTACK_SELECT
 						|| optionSelected == ALLY_CMD_CANCEL )
 					{
-						shootmode = true;
-						CloseIdentifyGUI();
-						closeRemoveCurseGUI();
-						if ( openedChest[clientnum] )
-						{
-							openedChest[clientnum]->closeChest();
-						}
-						GenericGUI.closeGUI();
-						gui_mode = GUI_MODE_NONE;
+						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 					}
 				}
 
@@ -4451,12 +4492,11 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 {
 	this->closeGUI();
 	shootmode = false;
-	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	usingScrollBeatitude = scrollBeatitude;
 	repairItemType = scrollType;
 	guiType = static_cast<GUICurrentType>(type);
-
 	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
 
@@ -4482,7 +4522,7 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 {
 	this->closeGUI();
 	shootmode = false;
-	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	alembicItem = itemOpenedWith;
 	experimentingAlchemy = experimenting;
@@ -4513,7 +4553,7 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 {
 	this->closeGUI();
 	shootmode = false;
-	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	guiType = static_cast<GUICurrentType>(type);
 

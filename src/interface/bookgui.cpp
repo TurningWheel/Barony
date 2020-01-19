@@ -206,7 +206,7 @@ void openBook(book_t* book, Item* item)
 		return;
 	}
 
-	gui_mode = GUI_MODE_INVENTORY; //Yes, this is pretty much the main GUI screen.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	shootmode = false;
 	book_page = book->pages.first;
 	book_open = true;

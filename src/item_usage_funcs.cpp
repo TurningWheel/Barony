@@ -2314,7 +2314,7 @@ void item_ScrollIdentify(Item* item, int player)
 	identifygui_active = true;
 	identifygui_appraising = false;
 	shootmode = false;
-	gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
 	if ( removecursegui_active )
 	{
@@ -2720,7 +2720,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	{
 		// Uncurse an item
 		shootmode = false;
-		gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 		removecursegui_active = true;
 		if ( identifygui_active )
 		{

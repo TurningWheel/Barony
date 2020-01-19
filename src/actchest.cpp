@@ -705,12 +705,7 @@ void Entity::actChest()
 				chestOpener = chestclicked;
 				if ( chestclicked == clientnum ) // i.e host opened the chest, close GUIs
 				{
-					if ( removecursegui_active )
-					{
-						closeRemoveCurseGUI();
-					}
-					GenericGUI.closeGUI();
-					identifygui_active = false;
+					closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CHEST);
 				}
 				if (chestclicked != 0 && multiplayer == SERVER)
 				{
@@ -739,8 +734,7 @@ void Entity::actChest()
 				}
 				else
 				{
-					shootmode = false;
-					gui_mode = GUI_MODE_INVENTORY; //Set it to the inventory screen so that the player can see the chest.
+					openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 					if ( numItemsInChest() > 0 )   //Warp mouse to first item in chest only if there are any items!
 					{
 						selectedChestSlot = 0;
