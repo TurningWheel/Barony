@@ -7725,6 +7725,7 @@ void handleMainMenu(bool mode)
 			{
 				conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 			}
+			enemyHPDamageBarHandler.HPBars.clear();
 
 			minimapPings.clear(); // clear minimap pings
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;

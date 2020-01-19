@@ -22,10 +22,10 @@
 #include "interface.hpp"
 #include "../colors.hpp"
 
-char enemy_name[128];
-Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
-Uint32 enemy_timer = 0, enemy_lastuid = 0;
-Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
+//char enemy_name[128];
+//Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
+//Uint32 enemy_timer = 0, enemy_lastuid = 0;
+//Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
 int magicBoomerangHotbarSlot = -1;
 Uint32 hotbarTooltipLastGameTick = 0;
 
@@ -133,32 +133,32 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 	{
 		if ( colorblind )
 		{
-			enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 0, 0, 64); // Display blue
+			enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 0, 0, 64); // Display blue
 		}
 		else
 		{
-			enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 0, 64, 0); // Display green
+			enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 0, 64, 0); // Display green
 		}
 	}
 	else if ( targetStats.EFFECTS[EFF_PARALYZED] )
 	{
-		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 112, 112, 0);
+		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 112, 112, 0);
 	}
 	else if ( targetStats.EFFECTS[EFF_CONFUSED] || targetStats.EFFECTS[EFF_DISORIENTED] )
 	{
-		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 92, 0, 92);
+		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 92, 0, 92);
 	}
 	else if ( targetStats.EFFECTS[EFF_PACIFY] )
 	{
-		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 128, 32, 80);
+		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 128, 32, 80);
 	}
 	else if ( targetStats.EFFECTS[EFF_BLIND] )
 	{
-		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 64, 64, 64);
+		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 64, 64, 64);
 	}
 	else
 	{
-		enemy_bar_color[player] = 0;
+		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = 0;
 	}
 }
 
@@ -254,42 +254,53 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 			updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
 		}
 	}
-	else
+	else if ( player >= 0 )
 	{
-		enemy_bar_color[player] = 0;
+		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = 0;
 	}
 
-	if ( player >= 0 )
-	{
-		if ( enemy_lastuid != target->getUID() || enemy_timer == 0 )
-		{
-			// if new target or timer expired, get new OLDHP value.
-			if ( stats )
-			{
-				enemy_oldhp = stats->OLDHP;
-			}
-		}
-		if ( !stats )
-		{
-			enemy_oldhp = hp; // chairs/tables and things.
-		}
-		enemy_lastuid = target->getUID();
-	}
+	//if ( player >= 0 )
+	//{
+	//	if ( enemy_lastuid != target->getUID() || enemy_timer == 0 )
+	//	{
+	//		// if new target or timer expired, get new OLDHP value.
+	//		if ( stats )
+	//		{
+	//			enemy_oldhp = stats->OLDHP;
+	//		}
+	//	}
+	//	if ( !stats )
+	//	{
+	//		enemy_oldhp = hp; // chairs/tables and things.
+	//	}
+	//	enemy_lastuid = target->getUID();
+	//}
 	if ( player == clientnum )
 	{
-		enemy_timer = ticks;
-		enemy_hp = hp;
-		enemy_maxhp = maxhp;
-		strcpy( enemy_name, name );
+		if ( stats )
+		{
+			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, stats->OLDHP, enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name);
+		}
+		else
+		{
+			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, hp, enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name);
+		}
 	}
 	else if ( player > 0 && multiplayer == SERVER )
 	{
 		strcpy((char*)net_packet->data, "ENHP");
 		SDLNet_Write32(hp, &net_packet->data[4]);
 		SDLNet_Write32(maxhp, &net_packet->data[8]);
-		SDLNet_Write32(enemy_bar_color[player], &net_packet->data[12]);
-		SDLNet_Write32(enemy_oldhp, &net_packet->data[16]);
-		SDLNet_Write32(enemy_lastuid, &net_packet->data[20]);
+		SDLNet_Write32(enemyHPDamageBarHandler.enemy_bar_client_colors[player], &net_packet->data[12]);
+		if ( stats )
+		{
+			SDLNet_Write32(stats->OLDHP, &net_packet->data[16]);
+		}
+		else
+		{
+			SDLNet_Write32(hp, &net_packet->data[16]);
+		}
+		SDLNet_Write32(target->getUID(), &net_packet->data[20]);
 		strcpy((char*)(&net_packet->data[24]), name);
 		net_packet->data[24 + strlen(name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
@@ -347,60 +358,7 @@ void drawStatus()
 	}
 
 	// enemy health
-	if ( ticks - enemy_timer < 120 && enemy_timer )
-	{
-		enemy_hp = std::max(0, enemy_hp);
-
-		// bar
-		pos.x = xres / 2 - 256;
-		pos.y = yres - 224;
-		pos.w = 512;
-		pos.h = 38;
-		drawTooltip(&pos);
-		pos.x = xres / 2 - 253;
-		pos.y = yres - 221;
-		pos.w = 506;
-		pos.h = 32;
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
-		if ( enemy_oldhp > enemy_hp )
-		{
-			int timeDiff = ticks - enemy_timer;
-			if ( timeDiff > 30 || enemy_hp == 0 )
-			{
-				// delay 30 ticks before background hp drop animation, or if health 0 start immediately.
-				// we want to complete animation with x ticks to go
-				int depletionTicks = (80 - timeDiff) / 2;
-				int healthDiff = enemy_oldhp - enemy_hp;
-				if ( ticks % 2 == 0 )
-				{
-					enemy_oldhp -= std::max((healthDiff) / std::max(depletionTicks, 1), 1);
-				}
-			}
-			pos.w = 506 * ((double)enemy_oldhp / enemy_maxhp);
-			if ( enemy_bar_color[clientnum] > 0 )
-			{
-				drawRect(&pos, enemy_bar_color[clientnum], 128);
-			}
-			else
-			{
-				drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 128);
-			}
-		}
-		if ( enemy_hp > 0 )
-		{
-			pos.w = 506 * ((double)enemy_hp / enemy_maxhp);
-			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
-			if ( enemy_bar_color[clientnum] > 0 )
-			{
-				drawRect(&pos, enemy_bar_color[clientnum], 224);
-			}
-		}
-
-		// name
-		int x = xres / 2 - longestline(enemy_name) * TTF12_WIDTH / 2 + 2;
-		int y = yres - 221 + 16 - TTF12_HEIGHT / 2 + 2;
-		ttfPrintText(ttf12, x, y, enemy_name);
-	}
+	enemyHPDamageBarHandler.displayCurrentHPBar();
 
 	// messages
 	if ( !hide_statusbar )
@@ -886,7 +844,6 @@ void drawStatus()
 		pos.w = hotbar_img->w * uiscale_hotbar;
 		pos.h = hotbar_img->h * uiscale_hotbar;
 		drawImageScaledColor(hotbar_img, NULL, &pos, color);
-
 		item = uidToItem(hotbar[num].item);
 		if ( item )
 		{

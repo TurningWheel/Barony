@@ -178,6 +178,7 @@ real_t uiscale_inventory = 1.f;
 bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
+EnemyHPDamageBarHandler enemyHPDamageBarHandler;
 FollowerRadialMenu FollowerMenu;
 GenericGUIMenu GenericGUI;
 SDL_Rect interfaceSkillsSheet;
@@ -7777,4 +7778,86 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		return true;
 	}
 	return false;
+}
+
+void EnemyHPDamageBarHandler::displayCurrentHPBar()
+{
+	if ( HPBars.empty() )
+	{
+		return;
+	}
+	Uint32 mostRecentTicks = 0;
+	auto mostRecentEntry = HPBars.begin();
+	for ( auto it = HPBars.begin(); it != HPBars.end(); )
+	{
+		if ( ticks - (*it).second.enemy_timer >= k_maxTickLifetime )
+		{
+			it = HPBars.erase(it); // no need to show this bar.
+		}
+		else
+		{
+			if ( (*it).second.enemy_timer > mostRecentTicks )
+			{
+				mostRecentEntry = it;
+				mostRecentTicks = (*it).second.enemy_timer;
+			}
+			++it;
+		}
+	}
+	if ( mostRecentTicks > 0 )
+	{
+
+		(*mostRecentEntry).second.enemy_hp = std::max(0, (*mostRecentEntry).second.enemy_hp);
+
+		// bar
+		SDL_Rect pos;
+		pos.x = xres / 2 - 256;
+		pos.y = yres - 224;
+		pos.w = 512;
+		pos.h = 38;
+		drawTooltip(&pos);
+		pos.x = xres / 2 - 253;
+		pos.y = yres - 221;
+		pos.w = 506;
+		pos.h = 32;
+		drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
+		if ( (*mostRecentEntry).second.enemy_oldhp > (*mostRecentEntry).second.enemy_hp )
+		{
+			int timeDiff = ticks - (*mostRecentEntry).second.enemy_timer;
+			if ( timeDiff > 30 || (*mostRecentEntry).second.enemy_hp == 0 )
+			{
+				// delay 30 ticks before background hp drop animation, or if health 0 start immediately.
+				// we want to complete animation with x ticks to go
+				int depletionTicks = (80 - timeDiff) / 2;
+				int healthDiff = (*mostRecentEntry).second.enemy_oldhp - (*mostRecentEntry).second.enemy_hp;
+				if ( ticks % 2 == 0 )
+				{
+					(*mostRecentEntry).second.enemy_oldhp -= std::max((healthDiff) / std::max(depletionTicks, 1), 1);
+				}
+			}
+			pos.w = 506 * ((double)(*mostRecentEntry).second.enemy_oldhp / (*mostRecentEntry).second.enemy_maxhp);
+			if ( (*mostRecentEntry).second.enemy_bar_color > 0 )
+			{
+				drawRect(&pos, (*mostRecentEntry).second.enemy_bar_color, 128);
+			}
+			else
+			{
+				drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 128);
+			}
+		}
+		if ( (*mostRecentEntry).second.enemy_hp > 0 )
+		{
+			pos.w = 506 * ((double)(*mostRecentEntry).second.enemy_hp / (*mostRecentEntry).second.enemy_maxhp);
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+			if ( (*mostRecentEntry).second.enemy_bar_color > 0 )
+			{
+				drawRect(&pos, (*mostRecentEntry).second.enemy_bar_color, 224);
+			}
+		}
+
+		// name
+		int x = xres / 2 - longestline((*mostRecentEntry).second.enemy_name) * TTF12_WIDTH / 2 + 2;
+		int y = yres - 221 + 16 - TTF12_HEIGHT / 2 + 2;
+		ttfPrintText(ttf12, x, y, (*mostRecentEntry).second.enemy_name);
+	}
 }

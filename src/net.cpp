@@ -1944,18 +1944,14 @@ void clientHandlePacket()
 	// enemy hp bar
 	else if (!strncmp((char*)net_packet->data, "ENHP", 4))
 	{
-		enemy_hp = SDLNet_Read32(&net_packet->data[4]);
-		enemy_maxhp = SDLNet_Read32(&net_packet->data[8]);
-		enemy_bar_color[clientnum] = SDLNet_Read32(&net_packet->data[12]); // receive color enemy bar data for my client.
+		Sint32 enemy_hp = SDLNet_Read32(&net_packet->data[4]);
+		Sint32 enemy_maxhp = SDLNet_Read32(&net_packet->data[8]);
+		Uint32 enemy_bar_color = SDLNet_Read32(&net_packet->data[12]); // receive color enemy bar data for my client.
 		Sint32 oldhp = SDLNet_Read32(&net_packet->data[16]);
 		Uint32 uid = SDLNet_Read32(&net_packet->data[20]);
-		if ( enemy_lastuid != uid || enemy_timer == 0 )
-		{
-			enemy_oldhp = oldhp;
-		}
-		enemy_lastuid = uid;
-		enemy_timer = ticks;
+		char enemy_name[128] = "";
 		strcpy(enemy_name, (char*)(&net_packet->data[24]));
+		enemyHPDamageBarHandler.addEnemyToList(enemy_hp, enemy_maxhp, oldhp, enemy_bar_color, uid, enemy_name);
 		return;
 	}
 

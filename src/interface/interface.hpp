@@ -38,10 +38,55 @@ extern bool uiscale_skillspage;
 extern real_t uiscale_hotbar;
 extern real_t uiscale_inventory;
 
-extern char enemy_name[128];
-extern Sint32 enemy_hp, enemy_maxhp, enemy_oldhp;
-extern Uint32 enemy_timer, enemy_lastuid;
-extern Uint32 enemy_bar_color[MAXPLAYERS];
+class EnemyHPDamageBarHandler
+{
+	const int k_maxTickLifetime = 120;
+public:
+
+	struct EnemyHPDetails
+	{
+		char enemy_name[128] = "";
+		Sint32 enemy_hp = 0;
+		Sint32 enemy_maxhp = 0;
+		Sint32 enemy_oldhp = 0;
+		Uint32 enemy_timer = 0;
+		Uint32 enemy_lastuid = 0;
+		Uint32 enemy_bar_color = 0;
+		EnemyHPDetails(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name)
+		{
+			memset(enemy_name, 0, 128);
+			enemy_hp = HP;
+			enemy_maxhp = maxHP;
+			enemy_oldhp = oldHP;
+			enemy_timer = ticks;
+			enemy_bar_color = color;
+			strcpy(enemy_name, name);
+		}
+	};
+
+	Uint32 enemy_bar_client_colors[MAXPLAYERS];
+	std::unordered_map<Uint32, EnemyHPDetails> HPBars;
+	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name)
+	{
+		auto find = HPBars.find(uid);
+		if ( find != HPBars.end() )
+		{
+			// uid exists in list.
+			(*find).second.enemy_hp = HP;
+			(*find).second.enemy_maxhp = maxHP;
+			(*find).second.enemy_bar_color = color;
+			(*find).second.enemy_timer = ticks;
+		}
+		else
+		{
+			HPBars.insert(std::make_pair(uid, EnemyHPDetails(HP, maxHP, oldHP, color, name)));
+		}
+	}
+
+	void displayCurrentHPBar();
+};
+extern EnemyHPDamageBarHandler enemyHPDamageBarHandler;
+
 extern int magicBoomerangHotbarSlot;
 
 #ifndef SHOPWINDOW_SIZE
