@@ -10026,6 +10026,9 @@ void handleMainMenu(bool mode)
 void openGameoverWindow()
 {
 	node_t* node;
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
 
 	subwindow = 1;
 	subx1 = xres / 2 - 288;
