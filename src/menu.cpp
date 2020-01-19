@@ -7684,6 +7684,8 @@ void handleMainMenu(bool mode)
 			gamePaused = false;
 			multiplayerselect = 0;
 			intro = true; //Fix items auto-adding to the hotbar on game restart.
+			swapWeaponGimpTimer = 0;
+			pickaxeGimpTimer = 0;
 
 			if ( !mode )
 			{

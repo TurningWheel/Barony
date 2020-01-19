@@ -4740,7 +4740,7 @@ bool Item::unableToEquipDueToSwapWeaponTimer()
 	{
 		return true;
 	}
-	if ( swapWeaponGimpTimer > 0 )
+	if ( swapWeaponGimpTimer > 0 && !intro )
 	{
 		return true;
 	}
