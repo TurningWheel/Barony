@@ -1217,7 +1217,7 @@ void handleMainMenu(bool mode)
 				bool singleplayerAliveEndGameAndSave = false;
 				if ( multiplayer == SINGLE )
 				{
-					if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] && stats[clientnum]->HP > 0 )
+					if ( stats[clientnum] && stats[clientnum]->HP > 0 )
 					{
 						endgameText = language[3919];
 						singleplayerAliveEndGameAndSave = true;
