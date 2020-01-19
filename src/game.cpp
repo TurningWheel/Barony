@@ -3840,7 +3840,7 @@ int main(int argc, char** argv)
 								}
 							}
 
-							if ( impulses[IN_DEFEND] == 285 && itemMenuOpen ) // bound to right click, has context menu open.
+							if ( *inputPressed(impulses[IN_DEFEND]) && impulses[IN_DEFEND] == 285 && itemMenuOpen ) // bound to right click, has context menu open.
 							{
 								allowCasting = false;
 							}
@@ -3862,7 +3862,6 @@ int main(int argc, char** argv)
 							if ( shootmode )
 							{
 								*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
-								*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
 							}
 							if (players[clientnum] && players[clientnum]->entity)
 							{
@@ -3878,7 +3877,7 @@ int main(int argc, char** argv)
 										{
 											messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still cast.
 										}
-										if ( hasSpellbook && *inputPressed(impulses[IN_DEFEND]) )
+										if ( hasSpellbook && (*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
 										{
 											castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
 										}
@@ -3894,7 +3893,7 @@ int main(int argc, char** argv)
 								}
 								else
 								{
-									if ( hasSpellbook && *inputPressed(impulses[IN_DEFEND]) )
+									if ( hasSpellbook && (*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
 									{
 										castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
 									}
@@ -3905,6 +3904,7 @@ int main(int argc, char** argv)
 								}
 							}
 							*inputPressed(impulses[IN_DEFEND]) = 0;
+							*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
 						}
 					}
 					if ( !command && *inputPressed(impulses[IN_TOGGLECHATLOG]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG])) )
