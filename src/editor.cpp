@@ -200,7 +200,7 @@ char furniturePropertyNames[1][19] =
 
 char floorDecorationPropertyNames[3][59] =
 {
-	"Model texture to use (0-999)",
+	"Model texture to use (0-9999)",
 	"Direction (-1 - 7)",
 	"Height Offset (Qtrs of a voxel, +ive is higher)"
 };
@@ -4221,6 +4221,10 @@ int main(int argc, char** argv)
 							{
 								inputlen = 3;
 							}
+							else if ( editproperty == 6 && newwindow == 5 )
+							{
+								inputlen = 3;
+							}
 							else
 							{
 								inputlen = 1;
@@ -5504,7 +5508,7 @@ int main(int argc, char** argv)
 							{
 								if ( i == 0 )
 								{
-									if ( propertyInt > 999 || propertyInt < 0 )
+									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
 									}
