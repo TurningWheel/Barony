@@ -298,7 +298,7 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "caves24d.lmp", 391561 },
 	{ "cavestocitadel.lmp", 215724 },
 	{ "cavessecret.lmp", 198959 },
-	{ "caveslair.lmp", 4860899 },
+	{ "caveslair.lmp", 4602584 },
 	{ "citadel.lmp", 729069 },
 	{ "citadel00.lmp", 23997 },
 	{ "citadel01.lmp", 30094 },
