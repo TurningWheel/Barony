@@ -1949,9 +1949,14 @@ void clientHandlePacket()
 		Uint32 enemy_bar_color = SDLNet_Read32(&net_packet->data[12]); // receive color enemy bar data for my client.
 		Sint32 oldhp = SDLNet_Read32(&net_packet->data[16]);
 		Uint32 uid = SDLNet_Read32(&net_packet->data[20]);
+		bool lowPriorityTick = false;
+		if ( net_packet->data[24] == 1 )
+		{
+			lowPriorityTick = true;
+		}
 		char enemy_name[128] = "";
-		strcpy(enemy_name, (char*)(&net_packet->data[24]));
-		enemyHPDamageBarHandler.addEnemyToList(enemy_hp, enemy_maxhp, oldhp, enemy_bar_color, uid, enemy_name);
+		strcpy(enemy_name, (char*)(&net_packet->data[25]));
+		enemyHPDamageBarHandler.addEnemyToList(enemy_hp, enemy_maxhp, oldhp, enemy_bar_color, uid, enemy_name, lowPriorityTick);
 		return;
 	}
 

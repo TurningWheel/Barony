@@ -3683,21 +3683,22 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			if ( killer && killer->behavior == &actPlayer )
 			{
+				bool lowPriority = true;
 				// update enemy bar for attacker
 				if ( !strcmp(myStats->name, "") )
 				{
 					if ( myStats->type < KOBOLD ) //Original monster count
 					{
-						updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP);
+						updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP, lowPriority);
 					}
 					else if ( myStats->type >= KOBOLD ) //New monsters
 					{
-						updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP);
+						updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP, lowPriority);
 					}
 				}
 				else
 				{
-					updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP);
+					updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
 				}
 			}
 			this->setObituary(language[1531]);
@@ -3820,21 +3821,22 @@ void Entity::handleEffects(Stat* myStats)
 				Entity* killer = uidToEntity(static_cast<Uint32>(myStats->bleedInflictedBy));
 				if ( killer && killer->behavior == &actPlayer )
 				{
+					bool lowPriority = true;
 					// update enemy bar for attacker
 					if ( !strcmp(myStats->name, "") )
 					{
 						if ( myStats->type < KOBOLD ) //Original monster count
 						{
-							updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP);
+							updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP, lowPriority);
 						}
 						else if ( myStats->type >= KOBOLD ) //New monsters
 						{
-							updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP);
+							updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP, lowPriority);
 						}
 					}
 					else
 					{
-						updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP);
+						updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
 					}
 				}
 			}
@@ -4006,21 +4008,22 @@ void Entity::handleEffects(Stat* myStats)
 
 					if ( killer && killer->behavior == &actPlayer )
 					{
+						bool lowPriority = true;
 						// update enemy bar for attacker
 						if ( !strcmp(myStats->name, "") )
 						{
 							if ( myStats->type < KOBOLD ) //Original monster count
 							{
-								updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP);
+								updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP, lowPriority);
 							}
 							else if ( myStats->type >= KOBOLD ) //New monsters
 							{
-								updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP);
+								updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP, lowPriority);
 							}
 						}
 						else
 						{
-							updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP);
+							updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
 						}
 					}
 				}

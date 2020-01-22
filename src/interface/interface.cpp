@@ -7787,26 +7787,56 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar()
 		return;
 	}
 	Uint32 mostRecentTicks = 0;
-	auto mostRecentEntry = HPBars.begin();
+	auto mostRecentEntry = HPBars.end();
+	auto highPriorityMostRecentEntry = HPBars.end();
+	bool foundHighPriorityEntry = false;
 	for ( auto it = HPBars.begin(); it != HPBars.end(); )
 	{
 		if ( ticks - (*it).second.enemy_timer >= k_maxTickLifetime )
 		{
-			it = HPBars.erase(it); // no need to show this bar.
+			it = HPBars.erase(it); // no need to show this bar, delete it
 		}
 		else
 		{
-			if ( (*it).second.enemy_timer > mostRecentTicks )
+			if ( (*it).second.enemy_timer > mostRecentTicks && (*it).second.shouldDisplay )
 			{
+				if ( mostRecentEntry != HPBars.end() )
+				{
+					// previous most recent tick should not display until updated by high priority.
+					// since we've found a new one to display.
+					(*mostRecentEntry).second.shouldDisplay = false;
+				}
+				if ( !(*it).second.lowPriorityTick )
+				{
+					// this is a normal priority damage update (not burn/poison etc)
+					// if a newer tick is low priority, then defer to this one.
+					highPriorityMostRecentEntry = it;
+					foundHighPriorityEntry = true;
+				}
 				mostRecentEntry = it;
 				mostRecentTicks = (*it).second.enemy_timer;
+			}
+			else
+			{
+				(*it).second.shouldDisplay = false;
 			}
 			++it;
 		}
 	}
 	if ( mostRecentTicks > 0 )
 	{
-
+		if ( !foundHighPriorityEntry )
+		{
+			// all low priority, just display the last added.
+		}
+		else
+		{
+			if ( (mostRecentEntry != highPriorityMostRecentEntry) && foundHighPriorityEntry )
+			{
+				// the most recent was low priority, so defer to the most recent high priority.
+				mostRecentEntry = highPriorityMostRecentEntry;
+			}
+		}
 		(*mostRecentEntry).second.enemy_hp = std::max(0, (*mostRecentEntry).second.enemy_hp);
 
 		// bar
@@ -7859,5 +7889,27 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar()
 		int x = xres / 2 - longestline((*mostRecentEntry).second.enemy_name) * TTF12_WIDTH / 2 + 2;
 		int y = yres - 221 + 16 - TTF12_HEIGHT / 2 + 2;
 		ttfPrintText(ttf12, x, y, (*mostRecentEntry).second.enemy_name);
+	}
+}
+
+void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority)
+{
+	auto find = HPBars.find(uid);
+	if ( find != HPBars.end() )
+	{
+		// uid exists in list.
+		(*find).second.enemy_hp = HP;
+		(*find).second.enemy_maxhp = maxHP;
+		(*find).second.enemy_bar_color = color;
+		(*find).second.lowPriorityTick = isLowPriority;
+		if ( !isLowPriority )
+		{
+			(*find).second.shouldDisplay = true;
+		}
+		(*find).second.enemy_timer = ticks;
+	}
+	else
+	{
+		HPBars.insert(std::make_pair(uid, EnemyHPDetails(HP, maxHP, oldHP, color, name, isLowPriority)));
 	}
 }

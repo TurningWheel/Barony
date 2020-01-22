@@ -170,7 +170,7 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 
 -------------------------------------------------------------------------------*/
 
-void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp)
+void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick)
 {
 	// server/singleplayer only function.
 	int player = -1;
@@ -279,11 +279,13 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 	{
 		if ( stats )
 		{
-			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, stats->OLDHP, enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name);
+			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, stats->OLDHP, 
+				enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name, lowPriorityTick);
 		}
 		else
 		{
-			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, hp, enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name);
+			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, hp, 
+				enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name, lowPriorityTick);
 		}
 	}
 	else if ( player > 0 && multiplayer == SERVER )
@@ -301,11 +303,12 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 			SDLNet_Write32(hp, &net_packet->data[16]);
 		}
 		SDLNet_Write32(target->getUID(), &net_packet->data[20]);
-		strcpy((char*)(&net_packet->data[24]), name);
-		net_packet->data[24 + strlen(name)] = 0;
+		net_packet->data[24] = lowPriorityTick ? 1 : 0; // 1 == true
+		strcpy((char*)(&net_packet->data[25]), name);
+		net_packet->data[25 + strlen(name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 24 + strlen(name) + 1;
+		net_packet->len = 25 + strlen(name) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 }
