@@ -7706,14 +7706,14 @@ void handleMainMenu(bool mode)
 			entity_uids = 1;
 			loading = true;
 			darkmap = false;
-			selected_spell = NULL;
-			selected_spell_last_appearance = -1;
 			deinitShapeshiftHotbar();
 			for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 			{
 				selected_spell_alternate[c] = NULL;
 				hotbarShapeshiftInit[c] = false;
 			}
+			selected_spell = NULL;
+			selected_spell_last_appearance = -1;
 			shootmode = true;
 			currentlevel = startfloor;
 			secretlevel = false;
