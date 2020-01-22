@@ -619,15 +619,15 @@ void drawSkillsSheet()
 						skillDetails[3] = 0.f;
 					}
 					std::string canRepairItems = "  no";
-					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_LEGENDARY )
+					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + (stats[clientnum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
 					{
 						canRepairItems = "all";
 					}
-					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_MASTER )
+					else if ( (stats[clientnum]->PROFICIENCIES[i] + PER + (stats[clientnum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
 					{
 						canRepairItems = "2/0";
 					}
-					else if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_EXPERT )
+					else if ( (stats[clientnum]->PROFICIENCIES[i] + PER + (stats[clientnum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
 					{
 						canRepairItems = "1/0";
 					}

@@ -6776,7 +6776,7 @@ bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 			{
 				int requirement = tinkeringRepairGeneralItemSkillRequirement(item);
 				if ( requirement >= 0 && stats[clientnum] 
-					&& (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) >= requirement )
+					&& ((stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) >= requirement) )
 				{
 					int metalSalvage = 0;
 					int magicSalvage = 0;
