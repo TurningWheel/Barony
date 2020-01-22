@@ -4549,22 +4549,24 @@ Sint32 Entity::getAttack()
 		}
 		if ( entitystats->gloves )
 		{
+			int beatitude = entitystats->gloves->beatitude;
 			if ( entitystats->gloves->type == BRASS_KNUCKLES )
 			{
-				attack += 1 + entitystats->gloves->beatitude;
+				attack += 1 + (shouldInvertEquipmentBeatitude(entitystats) ? beatitude : abs(beatitude));
 			}
 			else if ( entitystats->gloves->type == IRON_KNUCKLES )
 			{
-				attack += 2 + entitystats->gloves->beatitude;
+				attack += 2 + (shouldInvertEquipmentBeatitude(entitystats) ? beatitude : abs(beatitude));
 			}
 			else if ( entitystats->gloves->type == SPIKED_GAUNTLETS )
 			{
-				attack += 3 + entitystats->gloves->beatitude;
+				attack += 3 + (shouldInvertEquipmentBeatitude(entitystats) ? beatitude : abs(beatitude));
 			}
 		}
 		if ( entitystats->ring )
 		{
-			attack += 1 + entitystats->ring->beatitude;
+			int beatitude = entitystats->ring->beatitude;
+			attack += 1 + (shouldInvertEquipmentBeatitude(entitystats) ? beatitude : abs(beatitude));
 		}
 	}
 	if ( entitystats->weapon && entitystats->weapon->type == TOOL_WHIP )
