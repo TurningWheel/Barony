@@ -2387,7 +2387,9 @@ int deinitApp()
 
 	// free currently loaded language if any
 	freeLanguages();
+#ifdef WINDOWS
 	printlog("notice: archiving log file as %s...\n", logarchiveFilePath.c_str());
+#endif // WINDOWS
 	printlog("success\n");
 	fclose(logfile);
 
