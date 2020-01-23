@@ -38,10 +38,42 @@ extern bool uiscale_skillspage;
 extern real_t uiscale_hotbar;
 extern real_t uiscale_inventory;
 
-extern char enemy_name[128];
-extern Sint32 enemy_hp, enemy_maxhp, enemy_oldhp;
-extern Uint32 enemy_timer, enemy_lastuid;
-extern Uint32 enemy_bar_color[MAXPLAYERS];
+class EnemyHPDamageBarHandler
+{
+	const int k_maxTickLifetime = 120;
+public:
+
+	struct EnemyHPDetails
+	{
+		char enemy_name[128] = "";
+		Sint32 enemy_hp = 0;
+		Sint32 enemy_maxhp = 0;
+		Sint32 enemy_oldhp = 0;
+		Uint32 enemy_timer = 0;
+		Uint32 enemy_bar_color = 0;
+		bool lowPriorityTick = false;
+		bool shouldDisplay = true;
+		EnemyHPDetails(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name, bool isLowPriority)
+		{
+			memset(enemy_name, 0, 128);
+			enemy_hp = HP;
+			enemy_maxhp = maxHP;
+			enemy_oldhp = oldHP;
+			enemy_timer = ticks;
+			enemy_bar_color = color;
+			lowPriorityTick = isLowPriority;
+			shouldDisplay = true;
+			strcpy(enemy_name, name);
+		}
+	};
+
+	Uint32 enemy_bar_client_colors[MAXPLAYERS];
+	std::unordered_map<Uint32, EnemyHPDetails> HPBars;
+	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority);
+	void displayCurrentHPBar();
+};
+extern EnemyHPDamageBarHandler enemyHPDamageBarHandler;
+
 extern int magicBoomerangHotbarSlot;
 
 #ifndef SHOPWINDOW_SIZE
@@ -133,7 +165,7 @@ void updateChestInventory();
 void updateAppraisalItemBox();
 void updatePlayerInventory();
 void updateShopWindow();
-void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp);
+void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
 damageIndicator_t* newDamageIndicator(double x, double y);
 
 void selectItemMenuSlot(const Item& item, int entry);
@@ -597,6 +629,20 @@ Sint8* inputPressed(Uint32 scancode);
 
 //All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
 void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
+enum CloseGUIShootmode : int
+{
+	DONT_CHANGE_SHOOTMODE,
+	CLOSEGUI_ENABLE_SHOOTMODE
+};
+enum CloseGUIIgnore : int
+{
+	CLOSEGUI_CLOSE_ALL,
+	CLOSEGUI_DONT_CLOSE_FOLLOWERGUI,
+	CLOSEGUI_DONT_CLOSE_CHEST,
+	CLOSEGUI_DONT_CLOSE_SHOP
+};
+
+void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose);
 
 static const int SCANCODE_UNASSIGNED_BINDING = 399;
 

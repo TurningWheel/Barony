@@ -358,6 +358,10 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 
 Item* uidToItem(Uint32 uid)
 {
+	if ( uid == 0 )
+	{
+		return nullptr;
+	}
 	node_t* node;
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
@@ -367,7 +371,7 @@ Item* uidToItem(Uint32 uid)
 			return item;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -4740,7 +4744,7 @@ bool Item::unableToEquipDueToSwapWeaponTimer()
 	{
 		return true;
 	}
-	if ( swapWeaponGimpTimer > 0 )
+	if ( swapWeaponGimpTimer > 0 && !intro )
 	{
 		return true;
 	}

@@ -178,6 +178,7 @@ real_t uiscale_inventory = 1.f;
 bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
+EnemyHPDamageBarHandler enemyHPDamageBarHandler;
 FollowerRadialMenu FollowerMenu;
 GenericGUIMenu GenericGUI;
 SDL_Rect interfaceSkillsSheet;
@@ -1526,8 +1527,66 @@ void openStatusScreen(int whichGUIMode, int whichInventoryMode)
 	SDL_WarpMouseInWindow(screen, xres / 2, yres / 2);
 	mousex = xres / 2;
 	mousey = yres / 2;
+	omousex = mousex;
+	omousey = mousey;
 	attributespage = 0;
 	//proficienciesPage = 0;
+}
+
+void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
+{
+	CloseIdentifyGUI();
+	closeRemoveCurseGUI();
+	GenericGUI.closeGUI();
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
+	{
+		FollowerMenu.closeFollowerMenuGUI();
+	}
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_CHEST )
+	{
+		if ( openedChest[clientnum] )
+		{
+			openedChest[clientnum]->closeChest();
+		}
+	}
+
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_SHOP && shopkeeper != 0 )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			Entity* entity = uidToEntity(shopkeeper);
+			if ( entity )
+			{
+				entity->skill[0] = 0;
+				if ( uidToEntity(entity->skill[1]) )
+				{
+					monsterMoveAside(entity, uidToEntity(entity->skill[1]));
+				}
+				entity->skill[1] = 0;
+			}
+		}
+		else
+		{
+			// inform server that we're done talking to shopkeeper
+			strcpy((char*)net_packet->data, "SHPC");
+			SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 8;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			list_FreeAll(shopInv);
+		}
+
+		shopkeeper = 0;
+
+		//Clean up shopkeeper gamepad code here.
+		selectedShopSlot = -1;
+	}
+	gui_mode = GUI_MODE_NONE;
+	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
+	{
+		shootmode = true;
+	}
 }
 
 void FollowerRadialMenu::initFollowerMenuGUICursor(bool openInventory)
@@ -1607,16 +1666,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		if ( players[clientnum] && players[clientnum]->entity
 			&& followerToCommand->monsterTarget == players[clientnum]->entity->getUID() )
 		{
-			shootmode = true;
-			CloseIdentifyGUI();
-			closeRemoveCurseGUI();
-			GenericGUI.closeGUI();
-			if ( openedChest[clientnum] )
-			{
-				openedChest[clientnum]->closeChest();
-			}
-			gui_mode = GUI_MODE_NONE;
-			closeFollowerMenuGUI();
+			closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 			return;
 		}
 
@@ -1760,15 +1810,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						|| optionSelected == ALLY_CMD_ATTACK_SELECT
 						|| optionSelected == ALLY_CMD_CANCEL )
 					{
-						shootmode = true;
-						CloseIdentifyGUI();
-						closeRemoveCurseGUI();
-						if ( openedChest[clientnum] )
-						{
-							openedChest[clientnum]->closeChest();
-						}
-						GenericGUI.closeGUI();
-						gui_mode = GUI_MODE_NONE;
+						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 					}
 				}
 
@@ -4451,12 +4493,11 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 {
 	this->closeGUI();
 	shootmode = false;
-	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	usingScrollBeatitude = scrollBeatitude;
 	repairItemType = scrollType;
 	guiType = static_cast<GUICurrentType>(type);
-
 	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
 
@@ -4482,7 +4523,7 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 {
 	this->closeGUI();
 	shootmode = false;
-	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	alembicItem = itemOpenedWith;
 	experimentingAlchemy = experimenting;
@@ -4513,7 +4554,7 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 {
 	this->closeGUI();
 	shootmode = false;
-	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	guiType = static_cast<GUICurrentType>(type);
 
@@ -6735,7 +6776,7 @@ bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 			{
 				int requirement = tinkeringRepairGeneralItemSkillRequirement(item);
 				if ( requirement >= 0 && stats[clientnum] 
-					&& (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) >= requirement )
+					&& ((stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) >= requirement) )
 				{
 					int metalSalvage = 0;
 					int magicSalvage = 0;
@@ -7737,4 +7778,138 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		return true;
 	}
 	return false;
+}
+
+void EnemyHPDamageBarHandler::displayCurrentHPBar()
+{
+	if ( HPBars.empty() )
+	{
+		return;
+	}
+	Uint32 mostRecentTicks = 0;
+	auto mostRecentEntry = HPBars.end();
+	auto highPriorityMostRecentEntry = HPBars.end();
+	bool foundHighPriorityEntry = false;
+	for ( auto it = HPBars.begin(); it != HPBars.end(); )
+	{
+		if ( ticks - (*it).second.enemy_timer >= k_maxTickLifetime )
+		{
+			it = HPBars.erase(it); // no need to show this bar, delete it
+		}
+		else
+		{
+			if ( (*it).second.enemy_timer > mostRecentTicks && (*it).second.shouldDisplay )
+			{
+				if ( mostRecentEntry != HPBars.end() )
+				{
+					// previous most recent tick should not display until updated by high priority.
+					// since we've found a new one to display.
+					(*mostRecentEntry).second.shouldDisplay = false;
+				}
+				if ( !(*it).second.lowPriorityTick )
+				{
+					// this is a normal priority damage update (not burn/poison etc)
+					// if a newer tick is low priority, then defer to this one.
+					highPriorityMostRecentEntry = it;
+					foundHighPriorityEntry = true;
+				}
+				mostRecentEntry = it;
+				mostRecentTicks = (*it).second.enemy_timer;
+			}
+			else
+			{
+				(*it).second.shouldDisplay = false;
+			}
+			++it;
+		}
+	}
+	if ( mostRecentTicks > 0 )
+	{
+		if ( !foundHighPriorityEntry )
+		{
+			// all low priority, just display the last added.
+		}
+		else
+		{
+			if ( (mostRecentEntry != highPriorityMostRecentEntry) && foundHighPriorityEntry )
+			{
+				// the most recent was low priority, so defer to the most recent high priority.
+				mostRecentEntry = highPriorityMostRecentEntry;
+			}
+		}
+		(*mostRecentEntry).second.enemy_hp = std::max(0, (*mostRecentEntry).second.enemy_hp);
+
+		// bar
+		SDL_Rect pos;
+		pos.x = xres / 2 - 256;
+		pos.y = yres - 224;
+		pos.w = 512;
+		pos.h = 38;
+		drawTooltip(&pos);
+		pos.x = xres / 2 - 253;
+		pos.y = yres - 221;
+		pos.w = 506;
+		pos.h = 32;
+		drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
+		if ( (*mostRecentEntry).second.enemy_oldhp > (*mostRecentEntry).second.enemy_hp )
+		{
+			int timeDiff = ticks - (*mostRecentEntry).second.enemy_timer;
+			if ( timeDiff > 30 || (*mostRecentEntry).second.enemy_hp == 0 )
+			{
+				// delay 30 ticks before background hp drop animation, or if health 0 start immediately.
+				// we want to complete animation with x ticks to go
+				int depletionTicks = (80 - timeDiff) / 2;
+				int healthDiff = (*mostRecentEntry).second.enemy_oldhp - (*mostRecentEntry).second.enemy_hp;
+				if ( ticks % 2 == 0 )
+				{
+					(*mostRecentEntry).second.enemy_oldhp -= std::max((healthDiff) / std::max(depletionTicks, 1), 1);
+				}
+			}
+			pos.w = 506 * ((double)(*mostRecentEntry).second.enemy_oldhp / (*mostRecentEntry).second.enemy_maxhp);
+			if ( (*mostRecentEntry).second.enemy_bar_color > 0 )
+			{
+				drawRect(&pos, (*mostRecentEntry).second.enemy_bar_color, 128);
+			}
+			else
+			{
+				drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 128);
+			}
+		}
+		if ( (*mostRecentEntry).second.enemy_hp > 0 )
+		{
+			pos.w = 506 * ((double)(*mostRecentEntry).second.enemy_hp / (*mostRecentEntry).second.enemy_maxhp);
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+			if ( (*mostRecentEntry).second.enemy_bar_color > 0 )
+			{
+				drawRect(&pos, (*mostRecentEntry).second.enemy_bar_color, 224);
+			}
+		}
+
+		// name
+		int x = xres / 2 - longestline((*mostRecentEntry).second.enemy_name) * TTF12_WIDTH / 2 + 2;
+		int y = yres - 221 + 16 - TTF12_HEIGHT / 2 + 2;
+		ttfPrintText(ttf12, x, y, (*mostRecentEntry).second.enemy_name);
+	}
+}
+
+void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority)
+{
+	auto find = HPBars.find(uid);
+	if ( find != HPBars.end() )
+	{
+		// uid exists in list.
+		(*find).second.enemy_hp = HP;
+		(*find).second.enemy_maxhp = maxHP;
+		(*find).second.enemy_bar_color = color;
+		(*find).second.lowPriorityTick = isLowPriority;
+		if ( !isLowPriority )
+		{
+			(*find).second.shouldDisplay = true;
+		}
+		(*find).second.enemy_timer = ticks;
+	}
+	else
+	{
+		HPBars.insert(std::make_pair(uid, EnemyHPDetails(HP, maxHP, oldHP, color, name, isLowPriority)));
+	}
 }

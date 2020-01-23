@@ -17,6 +17,7 @@
 #include "items.hpp"
 #include "book.hpp"
 #include "net.hpp"
+#include "charclass.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -2528,6 +2529,9 @@ void initClass(int player)
 		}
 	}
 	//stats[clientnum]->printStats();
+	//PlayerCharacterClassManager playerCharacterClassManager(stats[player], client_classes[player]);
+	//playerCharacterClassManager.writeToFile();
+	//playerCharacterClassManager.readFromFile();
 }
 
 void initShapeshiftHotbar()

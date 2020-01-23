@@ -2314,7 +2314,7 @@ void item_ScrollIdentify(Item* item, int player)
 	identifygui_active = true;
 	identifygui_appraising = false;
 	shootmode = false;
-	gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
 	if ( removecursegui_active )
 	{
@@ -2720,7 +2720,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	{
 		// Uncurse an item
 		shootmode = false;
-		gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 		removecursegui_active = true;
 		if ( identifygui_active )
 		{
@@ -5041,6 +5041,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		case SCROLL_TELEPORTATION:
 		case SCROLL_SUMMON:
 		case SCROLL_CONJUREARROW:
+		case SCROLL_CHARGING:
 			players[player]->entity->modMP(20);
 			stats[player]->HUNGER += 600;
 			break;
@@ -5218,6 +5219,7 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case SCROLL_SUMMON:
 		case SCROLL_FIRE:
 		case SCROLL_CONJUREARROW:
+		case SCROLL_CHARGING:
 		case TOOL_MAGIC_SCRAP:
 		case TOOL_METAL_SCRAP:
 			return true;

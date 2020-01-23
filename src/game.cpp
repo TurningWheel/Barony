@@ -94,7 +94,7 @@ void make_minidump(EXCEPTION_POINTERS* e)
 		strcpy(name, "barony_crash");
 		auto nameEnd = name + strlen("barony_crash");
 		SYSTEMTIME t;
-		GetSystemTime(&t);
+		GetLocalTime(&t);
 		wsprintfA(nameEnd,
 			"_%4d%02d%02d_%02d%02d%02d.dmp",
 			t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
@@ -3640,46 +3640,10 @@ int main(int argc, char** argv)
 					*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
 					if ( !shootmode )
 					{
-						shootmode = true;
+						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 						gui_mode = GUI_MODE_INVENTORY;
-						CloseIdentifyGUI();
-						closeRemoveCurseGUI();
-						GenericGUI.closeGUI();
-						FollowerMenu.closeFollowerMenuGUI();
-						if ( shopkeeper != 0 )
-						{
-							if ( multiplayer != CLIENT )
-							{
-								Entity* entity = uidToEntity(shopkeeper);
-								entity->skill[0] = 0;
-								if ( uidToEntity(entity->skill[1]) )
-								{
-									monsterMoveAside(entity, uidToEntity(entity->skill[1]));
-								}
-								entity->skill[1] = 0;
-							}
-							else
-							{
-								// inform server that we're done talking to shopkeeper
-								strcpy((char*)net_packet->data, "SHPC");
-								SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 8;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-								list_FreeAll(shopInv);
-							}
-							shopkeeper = 0;
-
-							//Clean up shopkeeper gamepad code here.
-							selectedShopSlot = -1;
-						}
 						attributespage = 0;
 						//proficienciesPage = 0;
-						if (openedChest[clientnum])
-						{
-							openedChest[clientnum]->closeChest();
-						}
 					}
 					else
 					{
@@ -3819,54 +3783,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							shootmode = true;
-							gui_mode = GUI_MODE_INVENTORY;
-							CloseIdentifyGUI();
-							closeRemoveCurseGUI();
-							GenericGUI.closeGUI();
-							FollowerMenu.closeFollowerMenuGUI();
-						}
-
-						//What even is this code? When should it be run? (it's cancelling a trade by closing the inventory.)
-						if ( shopkeeper != 0 )
-						{
-							if ( multiplayer != CLIENT )
-							{
-								Entity* entity = uidToEntity(shopkeeper);
-								if ( entity )
-								{
-									entity->skill[0] = 0;
-									if ( uidToEntity(entity->skill[1]) )
-									{
-										monsterMoveAside(entity, uidToEntity(entity->skill[1]));
-									}
-									entity->skill[1] = 0;
-								}
-							}
-							else
-							{
-								// inform server that we're done talking to shopkeeper
-								strcpy((char*)net_packet->data, "SHPC");
-								SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 8;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-								list_FreeAll(shopInv);
-							}
-
-							shopkeeper = 0;
-
-							//Clean up shopkeeper gamepad code here.
-							selectedShopSlot = -1;
-						}
-						if ( shootmode )
-						{
-							if (openedChest[clientnum])
-							{
-								openedChest[clientnum]->closeChest();
-							}
-							gui_mode = GUI_MODE_NONE;
+							closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 						}
 					}
 					if (!command && (*inputPressed(impulses[IN_SPELL_LIST]) || *inputPressed(joyimpulses[INJOY_SPELL_LIST])))   //TODO: Move to function in interface or something?
@@ -3923,7 +3840,7 @@ int main(int argc, char** argv)
 								}
 							}
 
-							if ( impulses[IN_DEFEND] == 285 && itemMenuOpen ) // bound to right click, has context menu open.
+							if ( *inputPressed(impulses[IN_DEFEND]) && impulses[IN_DEFEND] == 285 && itemMenuOpen ) // bound to right click, has context menu open.
 							{
 								allowCasting = false;
 							}
@@ -3945,7 +3862,6 @@ int main(int argc, char** argv)
 							if ( shootmode )
 							{
 								*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
-								*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
 							}
 							if (players[clientnum] && players[clientnum]->entity)
 							{
@@ -3961,7 +3877,7 @@ int main(int argc, char** argv)
 										{
 											messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still cast.
 										}
-										if ( hasSpellbook && *inputPressed(impulses[IN_DEFEND]) )
+										if ( hasSpellbook && (*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
 										{
 											castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
 										}
@@ -3977,7 +3893,7 @@ int main(int argc, char** argv)
 								}
 								else
 								{
-									if ( hasSpellbook && *inputPressed(impulses[IN_DEFEND]) )
+									if ( hasSpellbook && (*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
 									{
 										castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
 									}
@@ -3988,6 +3904,7 @@ int main(int argc, char** argv)
 								}
 							}
 							*inputPressed(impulses[IN_DEFEND]) = 0;
+							*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
 						}
 					}
 					if ( !command && *inputPressed(impulses[IN_TOGGLECHATLOG]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG])) )
@@ -4202,7 +4119,11 @@ int main(int argc, char** argv)
 					// Draw the static HUD elements
 					if ( !nohud )
 					{
+						//auto tStartMinimapDraw = std::chrono::high_resolution_clock::now();
 						drawMinimap(); // Draw the Minimap
+						/*auto tEndMinimapDraw = std::chrono::high_resolution_clock::now();
+						double timeTaken = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(tEndMinimapDraw - tStartMinimapDraw).count();
+						printlog("Minimap draw time: %.5f", timeTaken);*/
 						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
 

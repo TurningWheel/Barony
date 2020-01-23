@@ -64,7 +64,7 @@ void updateRightSidebar()
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			identifygui_active = true;
 			identifygui_appraising = true;
-			gui_mode = GUI_MODE_INVENTORY;
+			openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 			if ( removecursegui_active )
 			{
 				closeRemoveCurseGUI();

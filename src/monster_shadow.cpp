@@ -424,28 +424,18 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 		}
 
-		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( multiplayer != CLIENT )
 		{
-			my->z = 2.5;
-			my->pitch = PI / 4;
-		}
-		else
-		{
-			if ( multiplayer != CLIENT )
+			if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
 			{
-				if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
-				{
-					my->z = -1.2;
-					my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
-				}
-				if ( dist < 0.1 )
-				{
-					// not moving, float.
-					limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -2, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
-				}
+				my->z = -1.2;
+				my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 			}
-			//my->z = -2;
+			if ( dist < 0.1 )
+			{
+				// not moving, float.
+				limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -2, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
+			}
 		}
 	}
 
@@ -471,9 +461,22 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
 			if ( multiplayer != CLIENT && bodypart == 1 )
 			{
+				// sleeping
+				if ( myStats->EFFECTS[EFF_ASLEEP] )
+				{
+					//my->z = 2.5;
+					my->pitch = PI / 4;
+				}
 				if ( my->monsterAttack != MONSTER_POSE_MAGIC_WINDUP3 )
 				{
-					limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+					if ( my->pitch >= 0 && my->pitch < PI )
+					{
+						limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 0, false, 0.0);
+					}
+					else
+					{
+						limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+					}
 				}
 			}
 			continue;

@@ -3683,21 +3683,22 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			if ( killer && killer->behavior == &actPlayer )
 			{
+				bool lowPriority = true;
 				// update enemy bar for attacker
 				if ( !strcmp(myStats->name, "") )
 				{
 					if ( myStats->type < KOBOLD ) //Original monster count
 					{
-						updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP);
+						updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP, lowPriority);
 					}
 					else if ( myStats->type >= KOBOLD ) //New monsters
 					{
-						updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP);
+						updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP, lowPriority);
 					}
 				}
 				else
 				{
-					updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP);
+					updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
 				}
 			}
 			this->setObituary(language[1531]);
@@ -3729,6 +3730,7 @@ void Entity::handleEffects(Stat* myStats)
 	else
 	{
 		this->char_poison = 0;
+		myStats->poisonKiller = 0;
 	}
 
 	if ( !myStats->EFFECTS[EFF_WEBBED] )
@@ -3815,6 +3817,28 @@ void Entity::handleEffects(Stat* myStats)
 						entity->flags[PASSABLE] = true;
 					}
 				}
+
+				Entity* killer = uidToEntity(static_cast<Uint32>(myStats->bleedInflictedBy));
+				if ( killer && killer->behavior == &actPlayer )
+				{
+					bool lowPriority = true;
+					// update enemy bar for attacker
+					if ( !strcmp(myStats->name, "") )
+					{
+						if ( myStats->type < KOBOLD ) //Original monster count
+						{
+							updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP, lowPriority);
+						}
+						else if ( myStats->type >= KOBOLD ) //New monsters
+						{
+							updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP, lowPriority);
+						}
+					}
+					else
+					{
+						updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
+					}
+				}
 			}
 			else
 			{
@@ -3824,6 +3848,10 @@ void Entity::handleEffects(Stat* myStats)
 				serverUpdateEffects(player);
 			}
 		}
+	}
+	else
+	{
+		myStats->bleedInflictedBy = 0;
 	}
 	
 	// webbed
@@ -3959,22 +3987,43 @@ void Entity::handleEffects(Stat* myStats)
 					// Player is not Buddha, process fire damage normally
 					this->modHP(-2 - rand() % 3); // Deal between -2 to -5 damage
 
+					Entity* killer = uidToEntity(static_cast<Uint32>(myStats->burningInflictedBy));
 					// If the Entity died, handle experience
 					if ( myStats->HP <= 0 )
 					{
 						this->setObituary(language[1533]); // "burns to a crisp."
 
-						Entity* killer = uidToEntity(myStats->poisonKiller);
 						if ( killer != nullptr )
 						{
 							killer->awardXP(this, true, true);
 						}
 						else 
 						{
-							if ( achievementObserver.checkUidIsFromPlayer(myStats->poisonKiller) >= 0 )
+							if ( achievementObserver.checkUidIsFromPlayer(static_cast<Uint32>(myStats->burningInflictedBy)) >= 0 )
 							{
 								steamAchievementClient(achievementObserver.checkUidIsFromPlayer(myStats->poisonKiller), "BARONY_ACH_TAKING_WITH");
 							}
+						}
+					}
+
+					if ( killer && killer->behavior == &actPlayer )
+					{
+						bool lowPriority = true;
+						// update enemy bar for attacker
+						if ( !strcmp(myStats->name, "") )
+						{
+							if ( myStats->type < KOBOLD ) //Original monster count
+							{
+								updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP, lowPriority);
+							}
+							else if ( myStats->type >= KOBOLD ) //New monsters
+							{
+								updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP, lowPriority);
+							}
+						}
+						else
+						{
+							updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
 						}
 					}
 				}
@@ -4048,6 +4097,7 @@ void Entity::handleEffects(Stat* myStats)
 	else
 	{
 		this->char_fire = 0; // If not on fire, then reset fire counter TODOR: This seems unecessary, but is what poison does, this is happening every tick
+		myStats->burningInflictedBy = 0;
 	}
 
 	if ( player >= 0 && (stats[player]->type == SKELETON || (stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0)) )
@@ -4499,22 +4549,24 @@ Sint32 Entity::getAttack()
 		}
 		if ( entitystats->gloves )
 		{
+			int beatitude = entitystats->gloves->beatitude;
 			if ( entitystats->gloves->type == BRASS_KNUCKLES )
 			{
-				attack += 1 + entitystats->gloves->beatitude;
+				attack += 1 + (shouldInvertEquipmentBeatitude(entitystats) ? beatitude : abs(beatitude));
 			}
 			else if ( entitystats->gloves->type == IRON_KNUCKLES )
 			{
-				attack += 2 + entitystats->gloves->beatitude;
+				attack += 2 + (shouldInvertEquipmentBeatitude(entitystats) ? beatitude : abs(beatitude));
 			}
 			else if ( entitystats->gloves->type == SPIKED_GAUNTLETS )
 			{
-				attack += 3 + entitystats->gloves->beatitude;
+				attack += 3 + (shouldInvertEquipmentBeatitude(entitystats) ? beatitude : abs(beatitude));
 			}
 		}
 		if ( entitystats->ring )
 		{
-			attack += 1 + entitystats->ring->beatitude;
+			int beatitude = entitystats->ring->beatitude;
+			attack += 1 + (shouldInvertEquipmentBeatitude(entitystats) ? beatitude : abs(beatitude));
 		}
 	}
 	if ( entitystats->weapon && entitystats->weapon->type == TOOL_WHIP )
@@ -7846,7 +7898,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									if ( hitstats )
 									{
-										hitstats->poisonKiller = uid;
+										hitstats->burningInflictedBy = static_cast<Sint32>(uid);
 									}
 
 									bool wasBurning = hit.entity->flags[BURNING];
@@ -9150,6 +9202,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// message player of effect, skip if hit entity was already bleeding.
 								if ( hitstats->EFFECTS[EFF_BLEEDING] && (!wasBleeding || heavyBleedEffect) )
 								{
+									hitstats->bleedInflictedBy = static_cast<Sint32>(this->getUID());
 									if ( heavyBleedEffect )
 									{
 										hitstats->EFFECTS[EFF_SLOW] = true;
@@ -17341,6 +17394,10 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 	if ( !limb )
 	{
 		return;
+	}
+	if ( limbType == LIMB_HUMANOID_TORSO )
+	{
+		limb->scalez = 1.f; // reset this scale incase something modifies this.
 	}
 	switch ( race )
 	{

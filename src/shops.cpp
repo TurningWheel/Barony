@@ -71,8 +71,8 @@ void startTradingServer(Entity* entity, int player)
 
 	if ( player == 0 )
 	{
-		shootmode = false;
-		gui_mode = GUI_MODE_SHOP;
+		closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
 		shopInv = &stats->inventory;
 		shopkeeper = entity->getUID();
 		shoptimer = ticks - 1;
@@ -83,9 +83,6 @@ void startTradingServer(Entity* entity, int player)
 		shopkeepertype = entity->monsterStoreType;
 		shopkeepername = stats->name;
 		shopitemscroll = 0;
-		identifygui_active = false;
-		closeRemoveCurseGUI();
-		GenericGUI.closeGUI();
 
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )

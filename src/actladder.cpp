@@ -31,7 +31,7 @@
 -------------------------------------------------------------------------------*/
 
 #define LADDER_AMBIENCE my->skill[1]
-#define LADDER_SECRET my->skill[3]
+#define LADDER_SECRET_ENTRANCE my->skill[3]
 
 void actLadder(Entity* my)
 {
@@ -92,12 +92,12 @@ void actLadder(Entity* my)
 								}
 								break;
 						}
-						if ( strncmp(map.name, "Underworld", 10) )
+						if ( LADDER_SECRET_ENTRANCE )
 						{
 							skipLevelsOnLoad = -1; // don't skip a regular level anymore. still skip if in underworld.
 						}
 					}
-					if (LADDER_SECRET)
+					if ( LADDER_SECRET_ENTRANCE )
 					{
 						secretlevel = (secretlevel == false);    // toggle level lists
 					}
@@ -172,6 +172,73 @@ void actPortal(Entity* my)
 	if ( multiplayer == CLIENT )
 	{
 		return;
+	}
+
+	if ( my->flags[INVISIBLE] && ticks % 50 == 0 && !strncmp(map.name, "Cockatrice Lair", 15) )
+	{
+		node_t* node = nullptr;
+		Entity* entity = nullptr;
+		bool bossAlive = false;
+		for ( node = map.entities->first; node != nullptr; )
+		{
+			entity = (Entity*)node->element;
+			node = node->next;
+			if ( entity && entity->behavior == &actMonster 
+				&& entity->getMonsterTypeFromSprite() == COCKATRICE
+				&& !entity->monsterAllyGetPlayerLeader() )
+			{
+				bossAlive = true;
+			}
+		}
+		if ( !bossAlive )
+		{
+			for ( node = map.entities->first; node != nullptr; )
+			{
+				entity = (Entity*)node->element;
+				node = node->next;
+				if ( entity->behavior == &actMagicTrap )
+				{
+					list_RemoveNode(entity->mynode);
+				}
+			}
+			my->flags[INVISIBLE] = false;
+			serverUpdateEntityFlag(my, INVISIBLE);
+		}
+	}
+	else if ( my->flags[INVISIBLE] && ticks % 50 == 0 && !strncmp(map.name, "Bram's Castle", 13) )
+	{
+		node_t* node = nullptr;
+		Entity* entity = nullptr;
+		bool bossAlive = false;
+		for ( node = map.entities->first; node != nullptr; )
+		{
+			entity = (Entity*)node->element;
+			node = node->next;
+			if ( entity && entity->behavior == &actMonster
+				&& entity->getMonsterTypeFromSprite() == VAMPIRE
+				&& !entity->monsterAllyGetPlayerLeader() )
+			{
+				Stat* stats = entity->getStats();
+				if ( stats && !strncmp(stats->name, "Bram Kindly", 11) )
+				{
+					bossAlive = true;
+				}
+			}
+		}
+		if ( !bossAlive )
+		{
+			for ( node = map.entities->first; node != nullptr; )
+			{
+				entity = (Entity*)node->element;
+				node = node->next;
+				if ( entity->behavior == &actMagicTrap )
+				{
+					list_RemoveNode(entity->mynode);
+				}
+			}
+			my->flags[INVISIBLE] = false;
+			serverUpdateEntityFlag(my, INVISIBLE);
+		}
 	}
 
 	// step through portal

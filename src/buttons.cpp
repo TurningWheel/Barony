@@ -1912,7 +1912,7 @@ void buttonSpriteProperties(button_t* my)
 			strcpy(subtext, "Furniture Properties:");
 			break;
 		case 13:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->floorDecorationModel));
+			snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity->floorDecorationModel));
 			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->floorDecorationRotation));
 			snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->floorDecorationHeightOffset));
 			inputstr = spriteProperties[0];

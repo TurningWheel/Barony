@@ -1217,7 +1217,7 @@ void handleMainMenu(bool mode)
 				bool singleplayerAliveEndGameAndSave = false;
 				if ( multiplayer == SINGLE )
 				{
-					if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] && stats[clientnum]->HP > 0 )
+					if ( stats[clientnum] && stats[clientnum]->HP > 0 )
 					{
 						endgameText = language[3919];
 						singleplayerAliveEndGameAndSave = true;
@@ -7684,6 +7684,8 @@ void handleMainMenu(bool mode)
 			gamePaused = false;
 			multiplayerselect = 0;
 			intro = true; //Fix items auto-adding to the hotbar on game restart.
+			swapWeaponGimpTimer = 0;
+			pickaxeGimpTimer = 0;
 
 			if ( !mode )
 			{
@@ -7704,14 +7706,14 @@ void handleMainMenu(bool mode)
 			entity_uids = 1;
 			loading = true;
 			darkmap = false;
-			selected_spell = NULL;
-			selected_spell_last_appearance = -1;
 			deinitShapeshiftHotbar();
 			for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 			{
 				selected_spell_alternate[c] = NULL;
 				hotbarShapeshiftInit[c] = false;
 			}
+			selected_spell = NULL;
+			selected_spell_last_appearance = -1;
 			shootmode = true;
 			currentlevel = startfloor;
 			secretlevel = false;
@@ -7723,6 +7725,7 @@ void handleMainMenu(bool mode)
 			{
 				conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 			}
+			enemyHPDamageBarHandler.HPBars.clear();
 
 			minimapPings.clear(); // clear minimap pings
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
@@ -10024,6 +10027,9 @@ void handleMainMenu(bool mode)
 void openGameoverWindow()
 {
 	node_t* node;
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
 
 	subwindow = 1;
 	subx1 = xres / 2 - 288;

@@ -1500,7 +1500,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							if ( hitstats )
 							{
-								hitstats->poisonKiller = my->parent;
+								hitstats->burningInflictedBy = static_cast<Sint32>(my->parent);
 							}
 
 							// update enemy bar for attacker
@@ -2423,7 +2423,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							int bleedDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							bleedDuration /= (1 + (int)resistance);
-							hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, true);
+							if ( hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, true) )
+							{
+								if ( parent )
+								{
+									hitstats->bleedInflictedBy = static_cast<Sint32>(my->parent);
+								}
+							}
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= 4;

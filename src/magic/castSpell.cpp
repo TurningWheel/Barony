@@ -844,21 +844,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						//Identify an item.
-						shootmode = false;
-						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
+						closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+						openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+
 						identifygui_active = true;
 						identifygui_appraising = false;
-						if ( removecursegui_active )
-						{
-							closeRemoveCurseGUI();
-						}
-						GenericGUI.closeGUI();
-						if ( openedChest[i] )
-						{
-							openedChest[i]->closeChest();
-						}
-						//identifygui_mode = true;
-
 						//Initialize Identify GUI game controller code here.
 						initIdentifyGUIControllerCode();
 					}
@@ -886,23 +876,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						//Uncurse an item
-						shootmode = false;
-						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
+						closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+						openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+
 						removecursegui_active = true;
 						identifygui_active = false;
-
-						if ( identifygui_active )
-						{
-							CloseIdentifyGUI();
-						}
-
-						GenericGUI.closeGUI();
-
-						if ( openedChest[i] )
-						{
-							openedChest[i]->closeChest();
-						}
-
 						initRemoveCurseGUIControllerCode();
 					}
 				}
