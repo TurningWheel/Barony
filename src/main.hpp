@@ -501,6 +501,7 @@ extern int minimapScaleQuickToggle;
 extern bool softwaremode;
 extern real_t* zbuffer;
 extern Sint32* lightmap;
+extern Sint32* lightmapSmoothed;
 extern bool* vismap;
 extern Entity** clickmap;
 extern list_t entitiesdeleted;
@@ -588,6 +589,7 @@ extern bool* shoparea;
 extern real_t globalLightModifier;
 extern real_t globalLightTelepathyModifier;
 extern int globalLightModifierActive;
+extern int globalLightSmoothingRate;
 enum LightModifierValues : int
 {
 	GLOBAL_LIGHT_MODIFIER_STOPPED,

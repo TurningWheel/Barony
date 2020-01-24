@@ -1090,13 +1090,19 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		{
 			free(lightmap);
 		}
+		if ( lightmapSmoothed )
+		{
+			free(lightmapSmoothed);
+		}
 
 		lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
+		lightmapSmoothed = (int*)malloc(sizeof(Sint32) * destmap->width * destmap->height);
 		if ( strncmp(map.name, "Hell", 4) )
 		{
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
 				lightmap[c] = 0;
+				lightmapSmoothed[c] = 0;
 			}
 		}
 		else
@@ -1104,6 +1110,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
 				lightmap[c] = 32;
+				lightmapSmoothed[c] = 32;
 			}
 		}
 

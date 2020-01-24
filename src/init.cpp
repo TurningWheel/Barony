@@ -2101,6 +2101,10 @@ int deinitApp()
 	{
 		free(lightmap);
 	}
+	if ( lightmapSmoothed )
+	{
+		free(lightmapSmoothed);
+	}
 	if ( vismap != NULL )
 	{
 		free(vismap);

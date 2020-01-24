@@ -167,6 +167,7 @@ Uint32 mapseed;
 bool* shoparea = nullptr;
 real_t globalLightModifier = 0.f;
 real_t globalLightTelepathyModifier = 0.f;
+int globalLightSmoothingRate = 4;
 int globalLightModifierActive = 0;
 
 // game variables
@@ -270,6 +271,7 @@ int rscale = 1;
 real_t vidgamma = 1.0f;
 real_t* zbuffer = nullptr;
 Sint32* lightmap = nullptr;
+Sint32* lightmapSmoothed = nullptr;
 bool* vismap = nullptr;
 bool mode3d = false;
 bool verticalSync = false;

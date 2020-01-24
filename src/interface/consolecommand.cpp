@@ -2612,6 +2612,10 @@ void consoleCommand(char* command_str)
 		{
 			disablemouserotationlimit = (disablemouserotationlimit == false);
 		}
+		else if ( !strncmp(command_str, "/lightupdate ", 13) )
+		{
+			globalLightSmoothingRate = atoi(&command_str[13]);
+		}
 		else if ( !strncmp(command_str, "/dumpnetworkdata", 16) )
 		{
 			for ( auto element : DebugStats.networkPackets )
