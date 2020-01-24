@@ -218,8 +218,8 @@ public:
 	Sint32& playerShapeshiftStorage; // MISC_FLAGS[13]
 	Sint32& monsterTinkeringStatus; // MISC_FLAGS[14]
 	Sint32& monsterDemonHasBeenExorcised; // MISC_FLAGS[15]
-	Sint32& burningInflictedBy; // MISC_FLAGS[16]
 	Sint32& bleedInflictedBy; // MISC_FLAGS[17]
+	Sint32& burningInflictedBy; // MISC_FLAGS[18]
 
 	// group think
 	Uint32 leader_uid;
