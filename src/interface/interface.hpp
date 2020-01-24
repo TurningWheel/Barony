@@ -137,7 +137,7 @@ extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
 extern SDL_Surface* invgraball_bmp;
 extern int chestitemscroll; //Same as itemscroll, but for the chest inventory GUI.
-extern Entity* openedChest[4]; //One for each client. //TODO: Clientside, [0] will always point to something other than NULL when a chest is open and it will be NULL when a chest is closed.
+extern Entity* openedChest[MAXPLAYERS]; //One for each client. //TODO: Clientside, [0] will always point to something other than NULL when a chest is open and it will be NULL when a chest is closed.
 extern list_t chestInv; //This is just for the client, so that it can populate the chest inventory on its end.
 
 extern bool gui_clickdrag; //True as long as an interface element is being dragged.

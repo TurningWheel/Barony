@@ -53,7 +53,7 @@ enum NewMovieCrawlTypes : int
 	MOVIE_WIN_BEASTS
 };
 extern real_t drunkextend;
-extern bool losingConnection[4];
+extern bool losingConnection[MAXPLAYERS];
 extern int rebindaction;
 
 // button definitions

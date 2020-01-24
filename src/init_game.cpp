@@ -417,7 +417,7 @@ int initGame()
 	chestInv.last = NULL;
 	command_history.first = NULL;
 	command_history.last = NULL;
-	for ( c = 0; c < 4; c++ )
+	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		invitems[c] = NULL;
 		invitemschest[c] = NULL;
