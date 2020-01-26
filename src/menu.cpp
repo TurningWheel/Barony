@@ -13358,6 +13358,17 @@ void buttonReplayLastCharacter(button_t* my)
 		playing_random_char = false;
 		camera_charsheet_offsetyaw = (330) * PI / 180;
 		stats[0]->sex = static_cast<sex_t>(lastCreatedCharacterSex);
+		/*if ( lastCreatedCharacterClass >= CLASS_CONJURER && lastCreatedCharacterAppearance <= CLASS_BREWER && enabledDLCPack1 )
+		{
+			client_classes[0] = lastCreatedCharacterClass;
+		}
+		else if ( lastCreatedCharacterClass >= CLASS_MACHINIST && lastCreatedCharacterAppearance <= CLASS_HUNTER && enabledDLCPack2 )
+		{
+			client_classes[0] = lastCreatedCharacterClass;
+		}
+		else
+		{
+		}*/
 		client_classes[0] = std::min(lastCreatedCharacterClass, static_cast<int>(CLASS_MONK));
 		stats[0]->clearStats();
 		initClass(0);
