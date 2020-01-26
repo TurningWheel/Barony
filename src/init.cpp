@@ -10,6 +10,9 @@
 -------------------------------------------------------------------------------*/
 
 #include <memory>
+#include <ctime>
+#include <sys/stat.h>
+#include <sstream>
 
 #include "main.hpp"
 #include "draw.hpp"
@@ -28,8 +31,6 @@
 #include "player.hpp"
 #include "items.hpp"
 #include "cppfuncs.hpp"
-#include <ctime>
-#include "sys/stat.h"
 
 #ifdef USE_FMOD
 #include "fmod.h"
@@ -2313,7 +2314,6 @@ int deinitApp()
 
 	int numLogFilesToKeepInArchive = 30;
 	// archive logfiles.
-#ifdef WINDOWS
 	char lognamewithTimestamp[128];
 	std::time_t timeNow = std::time(nullptr);
 	struct tm *localTimeNow = nullptr;
@@ -2338,8 +2338,13 @@ int deinitApp()
 			struct tm *tm = nullptr;
 //#ifdef WINDOWS
 			std::string filePath = logarchivePath + file;
+#ifdef WINDOWS
 			struct _stat fileDateModified;
 			if ( _stat(filePath.c_str(), &fileDateModified) == 0 )
+#else
+			struct stat fileDateModified;
+			if ( stat(filePath.c_str(), &fileDateModified) == 0 )
+#endif
 			{
 				tm = localtime(&fileDateModified.st_mtime);
 			}
@@ -2377,7 +2382,6 @@ int deinitApp()
 		}
 		sortedLogFiles.pop_back();
 	}
-#endif // WINDOWS
 
 	if ( PHYSFS_isInit() )
 	{
@@ -2387,17 +2391,19 @@ int deinitApp()
 
 	// free currently loaded language if any
 	freeLanguages();
-#ifdef WINDOWS
 	printlog("notice: archiving log file as %s...\n", logarchiveFilePath.c_str());
-#endif // WINDOWS
 	printlog("success\n");
 	fclose(logfile);
 
-#ifdef WINDOWS
 	// copy the log file into the archives.
 	char logToArchive[PATH_MAX];
 	completePath(logToArchive, "log.txt", outputdir);
+#ifdef WINDOWS
 	CopyFileA(logToArchive, logarchiveFilePath.c_str(), false);
+#else //LINUX & APPLE
+	std::stringstream ss;
+	ss << "cp " << logToArchive << " " << logarchiveFilePath.c_str();
+	system(ss.str().c_str());
 #endif // WINDOWS
 	return 0;
 }
