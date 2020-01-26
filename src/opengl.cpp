@@ -809,13 +809,23 @@ void glDrawWorld(view_t* camera, int mode)
 	{
 		for ( int u = 0; u < map.width; u++ )
 		{
+			int smoothingRate = globalLightSmoothingRate;
+			int difference = abs(lightmapSmoothed[v + u * map.height] - lightmap[v + u * map.height]);
+			if ( difference > 64 )
+			{
+				smoothingRate *= 4;
+			}
+			else if ( difference > 32 )
+			{
+				smoothingRate *= 2;
+			}
 			if ( lightmapSmoothed[v + u * map.height] < lightmap[v + u * map.height] )
 			{
-				lightmapSmoothed[v + u * map.height] = std::min(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] + globalLightSmoothingRate);
+				lightmapSmoothed[v + u * map.height] = std::min(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] + smoothingRate);
 			}
 			else if ( lightmapSmoothed[v + u * map.height] > lightmap[v + u * map.height] )
 			{
-				lightmapSmoothed[v + u * map.height] = std::max(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] - globalLightSmoothingRate);
+				lightmapSmoothed[v + u * map.height] = std::max(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] - smoothingRate);
 			}
 		}
 	}
