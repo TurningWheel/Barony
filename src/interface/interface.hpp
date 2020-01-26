@@ -45,7 +45,7 @@ public:
 
 	struct EnemyHPDetails
 	{
-		char enemy_name[128] = "";
+		char enemy_name[128] = {'\0'};
 		Sint32 enemy_hp = 0;
 		Sint32 enemy_maxhp = 0;
 		Sint32 enemy_oldhp = 0;
