@@ -19,6 +19,7 @@
 #pragma once
 
 #include <functional>
+#include <assert.h>
 
 enum class EFileFormat {
 	Json,

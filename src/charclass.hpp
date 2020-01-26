@@ -32,15 +32,15 @@ public:
 	};
 	void serialize(FileInterface* file) {
 		file->property("CLASS", characterClass);
-		file->property("MAXHP", static_cast<Sint32>(classStats->MAXHP));
-		file->property("MAXMP", static_cast<Sint32>(classStats->MAXMP));
-		file->property("STR", static_cast<Sint32>(classStats->STR));
-		file->property("DEX", static_cast<Sint32>(classStats->DEX));
-		file->property("CON", static_cast<Sint32>(classStats->CON));
-		file->property("INT", static_cast<Sint32>(classStats->INT));
-		file->property("PER", static_cast<Sint32>(classStats->PER));
-		file->property("CHR", static_cast<Sint32>(classStats->CHR));
-		file->property("GOLD", static_cast<Sint32>(classStats->GOLD));
+		file->property("MAXHP", classStats->MAXHP);
+		file->property("MAXMP", classStats->MAXMP);
+		file->property("STR", classStats->STR);
+		file->property("DEX", classStats->DEX);
+		file->property("CON", classStats->CON);
+		file->property("INT", classStats->INT);
+		file->property("PER", classStats->PER);
+		file->property("CHR", classStats->CHR);
+		file->property("GOLD", classStats->GOLD);
 		file->property("Proficiencies", proficiencies);
 	}
 
@@ -55,7 +55,7 @@ public:
 			{
 				char str[64];
 				snprintf(str, 64, "%s", getSkillLangEntry(i));
-				file->property(str, static_cast<Sint32>(list[i]));
+				file->property(str, list[i]);
 			}
 		}
 	} proficiencies;
