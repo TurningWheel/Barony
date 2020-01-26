@@ -1424,7 +1424,10 @@ void clientActions(Entity* entity)
 				playernum = SDLNet_Read32(&net_packet->data[30]);
 				if ( playernum >= 0 && playernum < MAXPLAYERS )
 				{
-					players[playernum]->entity = entity;
+					if ( players[playernum] && players[playernum]->entity )
+					{
+						players[playernum]->entity = entity;
+					}
 					entity->skill[2] = playernum;
 					entity->behavior = &actPlayer;
 				}
@@ -4470,26 +4473,29 @@ void serverHandlePacket()
 		}
 		entitystats->GOLD += item->buyValue(client);
 		stats[client]->GOLD -= item->buyValue(client);
-		if ( rand() % 2 )
+		if ( players[client] && players[client]->entity )
 		{
-			if ( item->buyValue(client) <= 1 )
+			if ( rand() % 2 )
 			{
-				// buying cheap items does not increase trading past basic
-				if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+				if ( item->buyValue(client) <= 1 )
+				{
+					// buying cheap items does not increase trading past basic
+					if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+					{
+						players[client]->entity->increaseSkill(PRO_TRADING);
+					}
+				}
+				else
 				{
 					players[client]->entity->increaseSkill(PRO_TRADING);
 				}
 			}
-			else
+			else if ( item->buyValue(client) >= 150 )
 			{
-				players[client]->entity->increaseSkill(PRO_TRADING);
-			}
-		}
-		else if ( item->buyValue(client) >= 150 )
-		{
-			if ( item->buyValue(client) >= 300 || rand() % 2 )
-			{
-				players[client]->entity->increaseSkill(PRO_TRADING);
+				if ( item->buyValue(client) >= 300 || rand() % 2 )
+				{
+					players[client]->entity->increaseSkill(PRO_TRADING);
+				}
 			}
 		}
 		free(item);
@@ -4548,7 +4554,10 @@ void serverHandlePacket()
 		stats[client]->GOLD += item->sellValue(client);
 		if (rand() % 2 && item->type != GEM_GLASS )
 		{
-			players[client]->entity->increaseSkill(PRO_TRADING);
+			if ( players[client] && players[client]->entity )
+			{
+				players[client]->entity->increaseSkill(PRO_TRADING);
+			}
 		}
 		return;
 	}
@@ -4686,13 +4695,16 @@ void serverHandlePacket()
 		int the_client = net_packet->data[4];
 
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
-		if ( net_packet->data[9] == 1 )
+		if ( players[the_client] && players[the_client]->entity )
 		{
-			castSpell(players[the_client]->entity->getUID(), thespell, false, false, true);
-		}
-		else
-		{
-			castSpell(players[the_client]->entity->getUID(), thespell, false, false);
+			if ( net_packet->data[9] == 1 )
+			{
+				castSpell(players[the_client]->entity->getUID(), thespell, false, false, true);
+			}
+			else
+			{
+				castSpell(players[the_client]->entity->getUID(), thespell, false, false);
+			}
 		}
 		return;
 	}
