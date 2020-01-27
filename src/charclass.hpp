@@ -19,16 +19,30 @@ class PlayerCharacterClassManager
 {
 	Stat* classStats = nullptr;
 	int characterClass = CLASS_BARBARIAN;
+	const std::vector<std::string> kProficiencyNames =
+	{
+		"Tinkering",
+		"Stealth",
+		"Trading",
+		"Appraise",
+		"Swimming",
+		"Leader",
+		"Casting",
+		"Magic",
+		"Ranged",
+		"Sword",
+		"Mace",
+		"Axe",
+		"Polearm",
+		"Shield",
+		"Unarmed",
+		"Alchemy"
+	};
 public:
 	PlayerCharacterClassManager(Stat* myStats, int charClass)
 	{
 		classStats = myStats;
 		characterClass = charClass;
-		proficiencies.numProficiencies = NUMPROFICIENCIES;
-		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
-		{
-			proficiencies.list.push_back(classStats->PROFICIENCIES[i]);
-		}
 	};
 	void serialize(FileInterface* file) {
 		file->property("CLASS", characterClass);
@@ -41,24 +55,34 @@ public:
 		file->property("PER", classStats->PER);
 		file->property("CHR", classStats->CHR);
 		file->property("GOLD", classStats->GOLD);
-		file->property("Proficiencies", proficiencies);
-	}
 
-	struct Proficiencies
-	{
-		int numProficiencies = NUMPROFICIENCIES;
-		std::vector<Sint32> list;
-		void serialize(FileInterface* file)
-		{
-			file->property("NumProficiencies", numProficiencies);
-			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
-			{
-				char str[64];
-				snprintf(str, 64, "%s", getSkillLangEntry(i));
-				file->property(str, list[i]);
-			}
-		}
-	} proficiencies;
+		file->propertyName("Proficiencies");
+		//if ( file->isReading() )
+		//{
+		//	for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+		//	{
+		//		classStats->PROFICIENCIES[i] = 0;
+		//	}
+
+		//	file->beginObject();
+		//	for ( int i = 0; i < kProficiencyNames.size() && i < NUMPROFICIENCIES; ++i )
+		//	{
+		//		file->property(kProficiencyNames[i].c_str(), classStats->PROFICIENCIES[i]);
+		//	}
+		//	file->endObject();
+		//}
+		//else
+		//{
+		//	// writing out proficiencies to file
+		//	Uint32 numProficiencies = NUMPROFICIENCIES;
+		//	file->beginObject();
+		//	for ( int i = 0; i < kProficiencyNames.size() && i < numProficiencies; ++i )
+		//	{
+		//		file->property(kProficiencyNames[i].c_str(), classStats->PROFICIENCIES[i]);
+		//	}
+		//	file->endObject();
+		//}
+	}
 
 	void writeToFile()
 	{
@@ -86,10 +110,6 @@ public:
 
 	void setCharacterStatsAfterSerialization()
 	{
-		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
-		{
-			classStats->PROFICIENCIES[i] = proficiencies.list[i];
-		}
 		classStats->HP = classStats->MAXHP;
 		classStats->OLDHP = classStats->HP;
 		classStats->MP = classStats->MAXMP;
