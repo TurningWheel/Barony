@@ -907,6 +907,13 @@ void Entity::closeChest()
 		}
 		else
 		{
+			if ( chestOpener == clientnum )
+			{
+				for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
+				{
+					invitemschest[c] = nullptr;
+				}
+			}
 			chestitemscroll = 0;
 			//Reset chest-gamepad related stuff here.
 			selectedChestSlot = -1;
@@ -920,6 +927,13 @@ void Entity::closeChestServer()
 	{
 		chestStatus = 0;
 		openedChest[chestOpener] = NULL;
+		if ( chestOpener == clientnum )
+		{
+			for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
+			{
+				invitemschest[c] = nullptr;
+			}
+		}
 	}
 }
 
@@ -1258,6 +1272,11 @@ void closeChestClientside()
 	openedChest[clientnum] = NULL;
 
 	chestitemscroll = 0;
+
+	for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
+	{
+		invitemschest[c] = nullptr;
+	}
 
 	//Reset chest-gamepad related stuff here.
 	selectedChestSlot = -1;

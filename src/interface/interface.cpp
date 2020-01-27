@@ -45,8 +45,7 @@ SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
 int proficienciesPage = 0;
-Item* invitems[4];
-Item* invitemschest[4];
+Item* invitemschest[kNumChestItemsToDisplay];
 int inventorycategory = 7; // inventory window defaults to wildcard
 int itemscroll = 0;
 view_t camera_charsheet;
