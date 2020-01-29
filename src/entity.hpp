@@ -322,6 +322,19 @@ public:
 	Sint32& portalNotSecret; //skill[3]
 	Sint32& portalVictoryType; //skill[4]
 	Sint32& portalFireAnimation; //skill[5]
+	Sint32& portalCustomLevelsToJump; //skill[6]
+	Sint32& portalCustomRequiresPower; //skill[7]
+	Sint32& portalCustomSprite; //skill[8]
+	Sint32& portalCustomSpriteAnimationFrames; //skill[9]
+	Sint32& portalCustomZOffset; //skill[10]
+	Sint32& portalCustomLevelText1; //skill[11]
+	Sint32& portalCustomLevelText2; //skill[12]
+	Sint32& portalCustomLevelText3; //skill[13]
+	Sint32& portalCustomLevelText4; //skill[14]
+	Sint32& portalCustomLevelText5; //skill[15]
+	Sint32& portalCustomLevelText6; //skill[16]
+	Sint32& portalCustomLevelText7; //skill[17]
+	Sint32& portalCustomLevelText8; //skill[18]
 
 	//--PUBLIC TELEPORTER SKILLS--
 	Sint32& teleporterX; //skill[0]
@@ -980,7 +993,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 290;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 134;
+static const int NUM_EDITOR_SPRITES = 162;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

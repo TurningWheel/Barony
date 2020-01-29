@@ -1165,7 +1165,7 @@ void actPlayer(Entity* my)
 	{
 		messagePlayer(clientnum, "%d", stats[clientnum]->HUNGER);
 	}*/
-	/*if ( keystatus[SDL_SCANCODE_F1] )
+	if ( keystatus[SDL_SCANCODE_F1] )
 	{
 		gameloopFreezeEntities = !gameloopFreezeEntities;
 		keystatus[SDL_SCANCODE_F1] = 0;
@@ -1185,12 +1185,12 @@ void actPlayer(Entity* my)
 			players[clientnum]->entity->skill[3] = (players[clientnum]->entity->skill[3] == 0);
 		}
 		keystatus[SDL_SCANCODE_F3] = 0;
-	}*/
-	/*if ( keystatus[SDL_SCANCODE_F4] )
+	}
+	if ( keystatus[SDL_SCANCODE_F4] )
 	{
 		buttonStartSingleplayer(nullptr);
 		keystatus[SDL_SCANCODE_F4] = 0;
-	}*/
+	}
 
 	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
 	{

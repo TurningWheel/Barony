@@ -5156,6 +5156,30 @@ void assignActions(map_t* map)
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				break;
+			//custom teleporter
+			case 161:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = entity->portalCustomSprite;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->yaw = PI / 2;
+				entity->behavior = &actCustomPortal;
+				entity->flags[PASSABLE] = true;
+				if ( entity->portalCustomSpriteAnimationFrames > 0 )
+				{
+					entity->flags[BRIGHT] = true;
+				}
+				if ( entity->portalCustomRequiresPower )
+				{
+					entity->flags[INVISIBLE] = true;
+				}
+				entity->z = 7.5 - entity->portalCustomZOffset * 0.25;
+				if ( entity->portalCustomRequiresPower == 1 )
+				{
+					entity->skill[28] = 1; // is a mechanism
+				}
+				break;
 			default:
 				break;
 		}

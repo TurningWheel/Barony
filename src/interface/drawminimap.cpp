@@ -142,6 +142,10 @@ void drawMinimap()
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
+		if ( entity->skill[28] > 0 ) // mechanism
+		{
+			continue;
+		}
 		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258) )   // ladder or portal models
 		{
 			if ( entity->x >= 0 && entity->y >= 0 && entity->x < map.width << 4 && entity->y < map.height << 4 )

@@ -118,6 +118,9 @@ int checkSpriteType(Sint32 sprite)
 	case 133:
 		// signal modifier
 		return 17;
+	case 161:
+		// custom exit
+		return 18;
 	default:
 		return 0;
 		break;
@@ -830,7 +833,35 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"SOUND SOURCE",
 	"LIGHT SOURCE",
 	"TEXT SOURCE",
-	"SIGNAL TIMER"
+	"SIGNAL TIMER",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"CUSTOM EXIT"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1590,6 +1621,37 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->signalTimerInterval = 0;
 			entityNew->signalTimerRepeatCount = 0;
 			entityNew->signalTimerLatchInput = 0;
+		}
+	}
+	else if ( spriteType == 18 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->portalCustomSprite = entityToCopy->portalCustomSprite;
+			entityNew->portalCustomSpriteAnimationFrames = entityToCopy->portalCustomSpriteAnimationFrames;
+			entityNew->portalCustomZOffset = entityToCopy->portalCustomZOffset;
+			entityNew->portalCustomLevelsToJump = entityToCopy->portalCustomLevelsToJump;
+			entityNew->portalNotSecret = entityToCopy->portalNotSecret;
+			entityNew->portalCustomRequiresPower = entityToCopy->portalCustomRequiresPower;
+			for ( int i = 11; i <= 18; ++i )
+			{
+				entityNew->skill[i] = entityToCopy->skill[i];
+			}
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->portalCustomSprite = 161;
+			entityNew->portalCustomSpriteAnimationFrames = 0;
+			entityNew->portalCustomZOffset = 8;
+			entityNew->portalCustomLevelsToJump = 1;
+			entityNew->portalNotSecret = 1;
+			entityNew->portalCustomRequiresPower = 0;
+			for ( int i = 11; i <= 18; ++i )
+			{
+				entityNew->skill[i] = 0;
+			}
 		}
 	}
 

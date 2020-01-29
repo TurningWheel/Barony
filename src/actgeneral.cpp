@@ -535,6 +535,10 @@ void Entity::actTextSource()
 			int totalChars = 0;
 			for ( int i = 4; i < 60; ++i )
 			{
+				if ( i == 28 ) // circuit_status
+				{
+					continue;
+				}
 				if ( skill[i] != 0 )
 				{
 					for ( int c = 0; c < 4; ++c )
@@ -569,6 +573,7 @@ void Entity::actTextSource()
 					&& output.at(foundDistanceRequirement) != '\0'
 					)
 				{
+					// usage: Hello @p @d 123 will send to distance 123 units away and send message "Hello player "
 					distance = distance + output.at(foundDistanceRequirement);
 					//messagePlayer(clientnum, "%c", output.at(foundDistanceRequirement));
 					++foundDistanceRequirement;

@@ -1052,6 +1052,17 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fread(&entity->signalTimerRepeatCount, sizeof(Sint32), 1, fp);
 						fread(&entity->signalTimerLatchInput, sizeof(Sint32), 1, fp);
 						break;
+					case 18:
+						fread(&entity->portalCustomSprite, sizeof(Sint32), 1, fp);
+						fread(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1, fp);
+						fread(&entity->portalCustomZOffset, sizeof(Sint32), 1, fp);
+						fread(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1, fp);
+						fread(&entity->portalNotSecret, sizeof(Sint32), 1, fp);
+						fread(&entity->portalCustomRequiresPower, sizeof(Sint32), 1, fp);
+						for ( int i = 11; i <= 18; ++i )
+						{
+							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+						}
 					default:
 						break;
 				}
@@ -1410,6 +1421,18 @@ int saveMap(const char* filename2)
 					fwrite(&entity->signalTimerInterval, sizeof(Sint32), 1, fp);
 					fwrite(&entity->signalTimerRepeatCount, sizeof(Sint32), 1, fp);
 					fwrite(&entity->signalTimerLatchInput, sizeof(Sint32), 1, fp);
+					break;
+				case 18:
+					fwrite(&entity->portalCustomSprite, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalCustomZOffset, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalNotSecret, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalCustomRequiresPower, sizeof(Sint32), 1, fp);
+					for ( int i = 11; i <= 18; ++i )
+					{
+						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+					}
 					break;
 				default:
 					break;
