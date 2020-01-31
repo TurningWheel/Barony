@@ -492,6 +492,61 @@ void actFloorDecoration(Entity* my)
 	{
 		my->flags[PASSABLE] = true;
 	}
+
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	if ( my->floorDecorationInteractText1 == 0 )
+	{
+		// no text.
+		return;
+	}
+
+	// using
+	int i;
+	for ( i = 0; i < MAXPLAYERS; i++ )
+	{
+		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+		{
+			if ( inrange[i] )
+			{
+				// assemble the string.
+				char buf[256] = "";
+				int totalChars = 0;
+				for ( int i = 8; i < 60; ++i )
+				{
+					if ( i == 28 ) // circuit_status
+					{
+						continue;
+					}
+					if ( my->skill[i] != 0 )
+					{
+						for ( int c = 0; c < 4; ++c )
+						{
+							buf[totalChars] = static_cast<char>((my->skill[i] >> (c * 8)) & 0xFF);
+							++totalChars;
+						}
+					}
+				}
+				if ( buf[totalChars] != '\0' )
+				{
+					buf[totalChars] = '\0';
+				}
+				std::string output = buf;
+				size_t found = output.find("\\n");
+				while ( found != std::string::npos )
+				{
+					output.erase(found, 2);
+					output.insert(found, 1, '\n');
+					found = output.find("\\n");
+				}
+				strcpy(buf, output.c_str());
+				messagePlayer(i, buf);
+			}
+		}
+	}
 }
 
 void actTextSource(Entity* my)

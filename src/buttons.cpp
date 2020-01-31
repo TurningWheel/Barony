@@ -1912,9 +1912,41 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Furniture Properties:");
 				break;
 			case 13:
+			{
 				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity->floorDecorationModel));
 				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->floorDecorationRotation));
 				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->floorDecorationHeightOffset));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->floorDecorationXOffset));
+				snprintf(spriteProperties[4], 5, "%d", static_cast<int>(selectedEntity->floorDecorationYOffset));
+				char buf[256] = "";
+				int totalChars = 0;
+				for ( int i = 8; i < 60; ++i )
+				{
+					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+					{
+						for ( int c = 0; c < 4; ++c )
+						{
+							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 59 && selectedEntity->skill[i + 1] != 0 )
+							{
+								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
+							}
+							else
+							{
+								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								++totalChars;
+							}
+						}
+					}
+				}
+				if ( buf[totalChars] != '\0' )
+				{
+					buf[totalChars] = '\0';
+				}
+				strncpy(spriteProperties[5], buf, 48);
+				strncpy(spriteProperties[6], buf + 48, 48);
+				strncpy(spriteProperties[7], buf + 96, 48);
+				strncpy(spriteProperties[8], buf + 144, 48);
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1922,10 +1954,11 @@ void buttonSpriteProperties(button_t* my)
 				newwindow = 15;
 				subx1 = xres / 2 - 200;
 				subx2 = xres / 2 + 200;
-				suby1 = yres / 2 - 85;
-				suby2 = yres / 2 + 85;
-				strcpy(subtext, "Floor Decoration Model Properties:");
+				suby1 = yres / 2 - 180;
+				suby2 = yres / 2 + 180;
+				strcpy(subtext, "Decoration Model Properties:");
 				break;
+			}
 			case 14:
 				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->soundSourceToPlay));
 				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->soundSourceVolume));
@@ -2078,10 +2111,25 @@ void buttonSpriteProperties(button_t* my)
 				suby2 = yres / 2 + 140;
 				strcpy(subtext, "Custom Exit Properties:");
 				break;
-		}
-		default:
-			strcpy(message, "No properties available for current sprite.");
-			messagetime = 60;
+			}
+			case 19: // tables
+				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity->furnitureDir));
+				snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity->furnitureTableSpawnChairs));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->furnitureTableRandomItemChance));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 23;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
+				strcpy(subtext, "Table Properties:");
+				break;
+			default:
+				strcpy(message, "No properties available for current sprite.");
+				messagetime = 60;
 			break;
 		}
 
@@ -2923,9 +2971,59 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
 				break;
 			case 13: //floor decoration
+			{
 				selectedEntity->floorDecorationModel = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity->floorDecorationRotation = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->floorDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->floorDecorationXOffset = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->floorDecorationYOffset = (Sint32)atoi(spriteProperties[4]);
+
+				int totalChars = 0;
+				char checkChr = 'a';
+				const int kMaxCharacters = 192; // 4x48 char fields.
+				for ( int i = 8; i < 60 && totalChars < kMaxCharacters; ++i )
+				{
+					selectedEntity->skill[i] = 0;
+				}
+				for ( int i = 8; i < 60 && totalChars < kMaxCharacters; ++i )
+				{
+					if ( i == 28 ) // circuit_status
+					{
+						continue;
+					}
+					for ( int c = 0; c < 4; ++c )
+					{
+						if ( totalChars >= 144 )
+						{
+							selectedEntity->skill[i] |= (spriteProperties[8][totalChars - 144]) << (c * 8);
+							checkChr = spriteProperties[8][totalChars - 144];
+						}
+						else if ( totalChars >= 96 )
+						{
+							selectedEntity->skill[i] |= (spriteProperties[7][totalChars - 96]) << (c * 8);
+							checkChr = spriteProperties[7][totalChars - 96];
+						}
+						else if ( totalChars >= 48 )
+						{
+							selectedEntity->skill[i] |= (spriteProperties[6][totalChars - 48]) << (c * 8);
+							checkChr = spriteProperties[6][totalChars - 48];
+						}
+						else
+						{
+							selectedEntity->skill[i] |= (spriteProperties[5][totalChars]) << (c * 8);
+							checkChr = spriteProperties[5][totalChars];
+						}
+						if ( checkChr == '\0' )
+						{
+							totalChars += (48 - (totalChars % 48));
+						}
+						else
+						{
+							++totalChars;
+						}
+					}
+				}
+			}
 				break;
 			case 14: //sound source
 				selectedEntity->soundSourceToPlay = (Sint32)atoi(spriteProperties[0]);
@@ -3045,6 +3143,11 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					}
 				}
 			}
+				break;
+			case 19: // tables
+				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->furnitureTableSpawnChairs = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->furnitureTableRandomItemChance = (Sint32)atoi(spriteProperties[2]);
 				break;
 			default:
 				break;

@@ -2138,6 +2138,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								break; //Tomb
 							case 5:
 								entity = newEntity(59, 1, map.entities, nullptr); //Table.
+								setSpriteAttributes(entity, nullptr, nullptr);
 								break; //Table
 							case 6:
 								entity = newEntity(60, 1, map.entities, nullptr); //Chair.
@@ -2282,6 +2283,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								break; //Tomb
 							case 5:
 								entity = newEntity(59, 1, map.entities, nullptr); //Table entity.
+								setSpriteAttributes(entity, nullptr, nullptr);
 								break; //Table
 							case 6:
 								entity = newEntity(60, 1, map.entities, nullptr); //Chair entity.
@@ -4025,7 +4027,41 @@ void assignActions(map_t* map)
 				entity->behavior = &actFurniture;
 				entity->flags[BURNABLE] = true;
 				entity->furnitureType = FURNITURE_TABLE;
-				if ( prng_get_uint() % 4 == 0 || !strcmp(map->name, "Start Map") )
+				if ( entity->furnitureDir != -1 )
+				{
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
+					if ( entity->furnitureDir == 0 || entity->furnitureDir == 4 )
+					{
+						entity->sizex = 5;
+						entity->sizey = 4;
+					}
+					else if ( entity->furnitureDir == 2 || entity->furnitureDir == 6 )
+					{
+						entity->sizex = 4;
+						entity->sizey = 5;
+					}
+					else
+					{
+						entity->sizex = 6;
+						entity->sizey = 6;
+					}
+				}
+				bool doItem = false;
+				if ( entity->furnitureTableRandomItemChance == -1 )
+				{
+					if ( prng_get_uint() % 4 == 0 || !strcmp(map->name, "Start Map") )
+					{
+						doItem = true;
+					}
+				}
+				else if ( entity->furnitureTableRandomItemChance > 1 )
+				{
+					if ( prng_get_uint() % 100 < entity->furnitureTableRandomItemChance )
+					{
+						doItem = true;
+					}
+				}
+				if ( doItem )
 				{
 					// put an item on the table
 					childEntity = newEntity(8, 1, map->entities, nullptr);
@@ -4039,12 +4075,33 @@ void assignActions(map_t* map)
 					childEntity->itemNotMovingClient = 1; // so the item retains its position for clients
 					entity->parent = childEntity->getUID();
 				}
-				if ( prng_get_uint() % 2 == 0 )
+
+				bool doChairs = false;
+				int numChairs = 0;
+				if ( entity->furnitureTableSpawnChairs == -1 )
+				{
+					if ( prng_get_uint() % 2 == 0 )
+					{
+						doChairs = true;
+					}
+				}
+				else if ( entity->furnitureTableSpawnChairs > 0 )
+				{
+					doChairs = true;
+				}
+				if ( doChairs )
 				{
 					// surround the table with chairs
-					int c, j;
-					j = prng_get_uint() % 4 + 1;
-					for ( c = 0; c < j; c++ )
+					int c;
+					if ( entity->furnitureTableSpawnChairs == -1 )
+					{
+						numChairs = prng_get_uint() % 4 + 1;
+					}
+					else
+					{
+						numChairs = entity->furnitureTableSpawnChairs;
+					}
+					for ( c = 0; c < numChairs; c++ )
 					{
 						childEntity = newEntity(60, 1, map->entities, nullptr);
 						childEntity->x = entity->x - 8;
@@ -5070,6 +5127,8 @@ void assignActions(map_t* map)
 				entity->sizex = 0.01;
 				entity->sizey = 0.01;
 				entity->z = 7.5 - entity->floorDecorationHeightOffset * 0.25;
+				entity->x += entity->floorDecorationXOffset * 0.25;
+				entity->y += entity->floorDecorationYOffset * 0.25;
 				if ( entity->floorDecorationRotation == -1 )
 				{
 					entity->yaw = (prng_get_uint() % 8) * (PI / 4);
@@ -5080,7 +5139,10 @@ void assignActions(map_t* map)
 				}
 				entity->flags[BLOCKSIGHT] = false;
 				entity->flags[PASSABLE] = true;
-				entity->flags[UNCLICKABLE] = true;
+				if ( entity->floorDecorationInteractText1 == 0 )
+				{
+					entity->flags[UNCLICKABLE] = true;
+				}
 				entity->behavior = &actFloorDecoration;
 				/*if ( multiplayer != CLIENT )
 				{

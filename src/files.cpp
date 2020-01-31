@@ -705,7 +705,12 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	// read map version number
 	fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
-	if ( strncmp(valid_data, "BARONY LMPV2.4", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV2.5", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.4 version of editor - boulder trap properties
+		editorVersion = 25;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.4", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// V2.4 version of editor - boulder trap properties
 		editorVersion = 24;
@@ -834,6 +839,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			case 22:
 			case 23:
 			case 24:
+			case 25:
 				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
@@ -1016,6 +1022,15 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fread(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
 						fread(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
 						fread(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
+						if ( editorVersion >= 25 )
+						{
+							fread(&entity->floorDecorationXOffset, sizeof(Sint32), 1, fp);
+							fread(&entity->floorDecorationYOffset, sizeof(Sint32), 1, fp);
+							for ( int i = 8; i < 60; ++i )
+							{
+								fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+							}
+						}
 						break;
 					case 14:
 						fread(&entity->soundSourceToPlay, sizeof(Sint32), 1, fp);
@@ -1063,6 +1078,20 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						{
 							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
 						}
+						break;
+					case 19:
+						if ( editorVersion >= 25 )
+						{
+							fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+							fread(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1, fp);
+							fread(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1, fp);
+						}
+						else
+						{
+							// don't read data, set default.
+							setSpriteAttributes(entity, nullptr, nullptr);
+						}
+						break;
 					default:
 						break;
 				}
@@ -1265,7 +1294,7 @@ int saveMap(const char* filename2)
 			return 1;
 		}
 
-		fwrite("BARONY LMPV2.4", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
+		fwrite("BARONY LMPV2.5", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
 		fwrite(map.name, sizeof(char), 32, fp); // map filename
 		fwrite(map.author, sizeof(char), 32, fp); // map author
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
@@ -1386,6 +1415,12 @@ int saveMap(const char* filename2)
 					fwrite(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
 					fwrite(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
 					fwrite(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
+					fwrite(&entity->floorDecorationXOffset, sizeof(Sint32), 1, fp);
+					fwrite(&entity->floorDecorationYOffset, sizeof(Sint32), 1, fp);
+					for ( int i = 8; i < 60; ++i )
+					{
+						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+					}
 					break;
 				case 14:
 					fwrite(&entity->soundSourceToPlay, sizeof(Sint32), 1, fp);
@@ -1433,6 +1468,11 @@ int saveMap(const char* filename2)
 					{
 						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
 					}
+					break;
+				case 19:
+					fwrite(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+					fwrite(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1, fp);
+					fwrite(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;
@@ -1596,31 +1636,40 @@ std::vector<std::string> getLinesFromDataFile(std::string filename)
 int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* checkMapHash)
 {
 	std::string mapsDirectory; // store the full file path here.
-	if ( !secretlevel )
+	std::string line = "";
+	if ( loadCustomNextMap.compare("") != 0 )
 	{
-		mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
-		mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
+		line = "map: " + loadCustomNextMap;
+		loadCustomNextMap = "";
 	}
 	else
 	{
-		mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
-		mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
-	}
-	printlog("Maps directory: %s", mapsDirectory.c_str());
-	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
-	std::string line = levelsList.front();
-	int levelsCounted = 0;
-	if ( levelToLoad > 0 ) // if level == 0, then load up the first map.
-	{
-		for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end() && levelsCounted <= levelToLoad; ++i )
+		if ( !secretlevel )
 		{
-			// process i, iterate through all the map levels until currentlevel.
-			line = *i;
-			if ( line[0] == '\n' )
+			mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
+			mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
+		}
+		else
+		{
+			mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
+			mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
+		}
+		printlog("Maps directory: %s", mapsDirectory.c_str());
+		std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
+		line = levelsList.front();
+		int levelsCounted = 0;
+		if ( levelToLoad > 0 ) // if level == 0, then load up the first map.
+		{
+			for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end() && levelsCounted <= levelToLoad; ++i )
 			{
-				continue;
+				// process i, iterate through all the map levels until currentlevel.
+				line = *i;
+				if ( line[0] == '\n' )
+				{
+					continue;
+				}
+				++levelsCounted;
 			}
-			++levelsCounted;
 		}
 	}
 	std::size_t found = line.find(' ');

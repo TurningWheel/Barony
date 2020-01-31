@@ -349,6 +349,16 @@ public:
 	Sint32& floorDecorationModel; //skill[0]
 	Sint32& floorDecorationRotation; //skill[1]
 	Sint32& floorDecorationHeightOffset; //skill[3] positive numbers will lift the model higher
+	Sint32& floorDecorationXOffset; //skill[4]
+	Sint32& floorDecorationYOffset; //skill[5]
+	Sint32& floorDecorationInteractText1; //skill[8]
+	Sint32& floorDecorationInteractText2; //skill[9]
+	Sint32& floorDecorationInteractText3; //skill[10]
+	Sint32& floorDecorationInteractText4; //skill[11]
+	Sint32& floorDecorationInteractText5; //skill[12]
+	Sint32& floorDecorationInteractText6; //skill[13]
+	Sint32& floorDecorationInteractText7; //skill[14]
+	Sint32& floorDecorationInteractText8; //skill[15]
 
 	//--PUBLIC SPELL TRAP SKILLS--
 	Sint32& spellTrapType; //skill[0]
@@ -367,6 +377,8 @@ public:
 	Sint32& furnitureDir; //skill[3]
 	Sint32& furnitureHealth; //skill[4]
 	Sint32& furnitureMaxHealth; //skill[9]
+	Sint32& furnitureTableRandomItemChance; //skill[10]
+	Sint32& furnitureTableSpawnChairs; //skill[11]
 
 	//--PUBLIC PISTON SKILLS--
 	Sint32& pistonCamDir; //skill[0]

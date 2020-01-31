@@ -109,6 +109,7 @@ extern bool shootmode;
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;
+extern std::string loadCustomNextMap;
 extern Uint32 forceMapSeed;
 extern int currentlevel;
 extern bool secretlevel;

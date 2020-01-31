@@ -879,8 +879,8 @@ int customPortalLookForMapWithName(char* mapToSearch, bool isSecretLevel, int le
 	
 	if ( eligibleLevels.empty() )
 	{
-		printlog("Warning: Custom teleporter could not find eligible %s levels to teleport to", mapToSearch);
-		return 0;
+		loadCustomNextMap = mapToSearch;
+		return -999;
 	}
 
 	int min = eligibleLevels.front();
@@ -1122,6 +1122,16 @@ void actCustomPortal(Entity* my)
 					{
 						// error.
 						printlog("Warning: Error in map teleport!");
+						return;
+					}
+					else if ( levelToJumpTo == -999 )
+					{
+						// custom level not in the levels list, but was found in the maps folder.
+						// we've set the next map to warp to.
+						if ( my->portalCustomLevelsToJump != 0 )
+						{
+							skipLevelsOnLoad = my->portalCustomLevelsToJump - currentlevel;
+						}
 						return;
 					}
 					int levelDifference = currentlevel - levelToJumpTo;

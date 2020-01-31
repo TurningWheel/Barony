@@ -175,6 +175,7 @@ bool shootmode = false;
 Sint8 minimap[64][64];
 bool loadnextlevel = false;
 int skipLevelsOnLoad = 0;
+std::string loadCustomNextMap = "";
 Uint32 forceMapSeed = 0;
 bool loading = false;
 int currentlevel = 0, minotaurlevel = 0;

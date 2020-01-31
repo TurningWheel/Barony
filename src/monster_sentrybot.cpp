@@ -1046,7 +1046,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				continue;
 			}
-			if ( entity->skill[28] > 0 ) // mechanism
+			if ( ent->skill[28] > 0 ) // mechanism
 			{
 				continue;
 			}
