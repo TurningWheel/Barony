@@ -259,7 +259,12 @@ void updateCharacterSheet()
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
 		item = (Item*)node->element;
-		weight += items[item->type].weight * item->count;
+		int itemWeight = items[item->type].weight * item->count;
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			itemWeight = std::max(1, itemWeight / 5);
+		}
+		weight += itemWeight;
 	}
 	weight += stats[clientnum]->GOLD / 100;
 	text_y += pad_y;
