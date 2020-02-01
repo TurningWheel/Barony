@@ -2127,6 +2127,71 @@ void buttonSpriteProperties(button_t* my)
 				suby2 = yres / 2 + 100;
 				strcpy(subtext, "Table Properties:");
 				break;
+			case 20: // readablebook
+			{
+				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity->skill[11])); // status
+				if ( (int)selectedEntity->skill[12] == 10 )
+				{
+					strcpy(spriteProperties[1], "00"); //bless random
+				}
+				else
+				{
+					snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity->skill[12])); //bless
+				}
+				snprintf(spriteProperties[2], 3, "%d", static_cast<int>(selectedEntity->skill[15])); // identified
+				char buf[64] = "";
+				int totalChars = 0;
+				for ( int i = 40; i <= 52; ++i )
+				{
+					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+					{
+						for ( int c = 0; c < 4; ++c )
+						{
+							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 52 && selectedEntity->skill[i + 1] != 0 )
+							{
+								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
+							}
+							else
+							{
+								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								++totalChars;
+							}
+						}
+					}
+				}
+				if ( buf[totalChars] != '\0' )
+				{
+					buf[totalChars] = '\0';
+				}
+				strncpy(spriteProperties[3], buf, 32);
+
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 24;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
+				suby1 = yres / 2 - 110;
+				suby2 = yres / 2 + 110;
+				strcpy(subtext, "Readable Book Properties:");
+			}
+				break;
+			case 21: // class setter
+				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity->skill[0]));
+				snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity->skill[1]));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 25;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 80;
+				suby2 = yres / 2 + 80;
+				strcpy(subtext, "Class Setter Properties:");
+				break;
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3148,6 +3213,44 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity->furnitureTableSpawnChairs = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->furnitureTableRandomItemChance = (Sint32)atoi(spriteProperties[2]);
+				break;
+			case 20: // readablebook
+			{
+				selectedEntity->skill[11] = (Sint32)atoi(spriteProperties[0]); // status
+				if ( strcmp(spriteProperties[1], "00") == 0 )
+				{
+					selectedEntity->skill[12] = 10; //bless random
+				}
+				else
+				{
+					selectedEntity->skill[12] = (Sint32)atoi(spriteProperties[1]); //bless
+				}
+				selectedEntity->skill[15] = (Sint32)atoi(spriteProperties[2]); // identified
+				int totalChars = 0;
+				char checkChr = 'a';
+				const int kMaxCharacters = 48;
+				for ( int i = 40; i <= 52 && totalChars < kMaxCharacters; ++i )
+				{
+					selectedEntity->skill[i] = 0;
+				}
+				for ( int i = 40; i <= 52 && totalChars < kMaxCharacters; ++i )
+				{
+					if ( i == 28 ) // circuit_status
+					{
+						continue;
+					}
+					for ( int c = 0; c < 4; ++c )
+					{
+						selectedEntity->skill[i] |= (spriteProperties[3][totalChars]) << (c * 8);
+						checkChr = spriteProperties[3][totalChars];
+						++totalChars;
+					}
+				}
+			}
+				break;
+			case 21: // class setter
+				selectedEntity->skill[0] = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->skill[1] = (Sint32)atoi(spriteProperties[1]);
 				break;
 			default:
 				break;

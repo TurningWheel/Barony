@@ -295,6 +295,7 @@ void actExpansionEndGamePortal(Entity* my);
 void actSoundSource(Entity* my);
 void actLightSource(Entity* my);
 void actSignalTimer(Entity* my);
+void actClassPlayerSetter(Entity* my);
 
 void startMessages();
 bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true);

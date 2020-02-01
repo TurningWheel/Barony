@@ -49,6 +49,10 @@ int checkSpriteType(Sint32 sprite)
 	case 80:
 	case 81:
 	case 82:
+	case 163:
+	case 164:
+	case 165:
+	case 166:
 		//monsters
 		return 1;
 		break;
@@ -125,6 +129,12 @@ int checkSpriteType(Sint32 sprite)
 	case 59:
 		// table
 		return 19;
+	case 162: 
+		// readablebook
+		return 20;
+	case 167:
+		// class setter
+		return 21;
 	default:
 		return 0;
 		break;
@@ -865,7 +875,13 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"NOT USED",
 	"NOT USED",
 	"NOT USED",
-	"CUSTOM EXIT"
+	"CUSTOM EXIT",
+	"READABLE BOOK",
+	"SENTRYBOT",
+	"SPELLBOT",
+	"DUMMYBOT",
+	"GYROBOT",
+	"CLASS SETTER"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1692,6 +1708,46 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->furnitureDir = -1;
 			entityNew->furnitureTableSpawnChairs = -1;
 			entityNew->furnitureTableRandomItemChance = -1;
+		}
+	}
+	else if ( spriteType == 20 ) // readable book
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->skill[11] = entityToCopy->skill[11];
+			entityNew->skill[12] = entityToCopy->skill[12];
+			entityNew->skill[15] = entityToCopy->skill[15];
+			for ( int i = 40; i <= 52; ++i )
+			{
+				entityNew->skill[i] = entityToCopy->skill[i];
+			}
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->skill[11] = 0;
+			entityNew->skill[12] = 10;
+			entityNew->skill[15] = 0;
+			for ( int i = 40; i <= 52; ++i )
+			{
+				entityNew->skill[i] = 0;
+			}
+		}
+	}
+	else if ( spriteType == 21 ) // class setter
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->skill[0] = entityToCopy->skill[0];
+			entityNew->skill[1] = entityToCopy->skill[1];
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->skill[0] = 0;
+			entityNew->skill[1] = 0;
 		}
 	}
 

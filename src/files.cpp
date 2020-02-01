@@ -1107,6 +1107,19 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 							setSpriteAttributes(entity, nullptr, nullptr);
 						}
 						break;
+					case 20:
+						fread(&entity->skill[11], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[12], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[15], sizeof(Sint32), 1, fp);
+						for ( int i = 40; i <= 52; ++i )
+						{
+							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+						}
+						break;
+					case 21:
+						fread(&entity->skill[0], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[1], sizeof(Sint32), 1, fp);
+						break;
 					default:
 						break;
 				}
@@ -1488,6 +1501,19 @@ int saveMap(const char* filename2)
 					fwrite(&entity->furnitureDir, sizeof(Sint32), 1, fp);
 					fwrite(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1, fp);
 					fwrite(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1, fp);
+					break;
+				case 20:
+					fwrite(&entity->skill[11], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[12], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[15], sizeof(Sint32), 1, fp);
+					for ( int i = 40; i <= 52; ++i )
+					{
+						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+					}
+					break;
+				case 21:
+					fwrite(&entity->skill[0], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[1], sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;

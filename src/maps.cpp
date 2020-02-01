@@ -5251,6 +5251,115 @@ void assignActions(map_t* map)
 					entity->skill[28] = 1; // is a mechanism
 				}
 				break;
+			case 162:
+			{
+				// readable book
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->roll = PI / 2.0;
+				entity->yaw = (prng_get_uint() % 360) * PI / 180.0;
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actItem;
+				entity->skill[10] = READABLE_BOOK;
+				if ( entity->skill[11] == 0 ) //random
+				{
+					entity->skill[11] = 1 + prng_get_uint() % 4; // status
+				}
+				else
+				{
+					entity->skill[11]--; //editor set number, sets this value to 0-5, with 1 being BROKEN, 5 being EXCELLENT
+				}
+				if ( entity->skill[12] == 10 ) //random, else the value of this variable is the curse/bless
+				{
+					if ( prng_get_uint() % 2 == 0 )   // 50% chance of curse/bless
+					{
+						entity->skill[12] = -2 + prng_get_uint() % 5;
+					}
+					else
+					{
+						entity->skill[12] = 0;
+					}
+				}
+				entity->skill[13] = 1; // qty
+
+				// assemble the book string.
+				char buf[256] = "";
+				int totalChars = 0;
+				for ( int i = 40; i <= 52; ++i )
+				{
+					if ( i == 28 ) // circuit_status
+					{
+						continue;
+					}
+					if ( entity->skill[i] != 0 )
+					{
+						for ( int c = 0; c < 4; ++c )
+						{
+							buf[totalChars] = static_cast<char>((entity->skill[i] >> (c * 8)) & 0xFF);
+							++totalChars;
+						}
+					}
+				}
+				if ( buf[totalChars] != '\0' )
+				{
+					buf[totalChars] = '\0';
+				}
+				std::string output = buf;
+				size_t found = output.find("\\n");
+				while ( found != std::string::npos )
+				{
+					output.erase(found, 2);
+					output.insert(found, 1, '\n');
+					found = output.find("\\n");
+				}
+				strcpy(buf, output.c_str());
+
+				entity->skill[14] = getBook(buf);
+					
+				if ( entity->skill[15] == 1 ) // editor set as identified
+				{
+					entity->skill[15] = 1;
+				}
+				else if ( entity->skill[15] == 0 ) // unidentified (default)
+				{
+					entity->skill[15] = 0;
+				}
+				else  if ( entity->skill[15] == 2 ) // editor set as random
+				{
+					entity->skill[15] = prng_get_uint() % 2;
+				}
+				else
+				{
+					entity->skill[15] = 0; // unidentified.
+				}
+
+				item = newItemFromEntity(entity);
+				entity->sprite = itemModel(item);
+				if ( !entity->itemNotMoving )
+				{
+					entity->z = 7.5 - models[entity->sprite]->sizey * .25;
+				}
+				entity->itemNotMoving = 1; // so the item retains its position
+				entity->itemNotMovingClient = 1; // so the item retains its position for clients
+				free(item);
+				item = nullptr;
+			}
+				break;
+			case 167:
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actClassPlayerSetter;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+				break;
+				break;
 			default:
 				break;
 		}
