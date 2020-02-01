@@ -2142,6 +2142,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								break; //Table
 							case 6:
 								entity = newEntity(60, 1, map.entities, nullptr); //Chair.
+								setSpriteAttributes(entity, nullptr, nullptr);
 								break; //Chair
 						}
 					}
@@ -2287,6 +2288,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								break; //Table
 							case 6:
 								entity = newEntity(60, 1, map.entities, nullptr); //Chair entity.
+								setSpriteAttributes(entity, nullptr, nullptr);
 								break; //Chair
 						}
 					}
@@ -4135,9 +4137,16 @@ void assignActions(map_t* map)
 				entity->sprite = 272;
 				entity->behavior = &actFurniture;
 				entity->flags[BURNABLE] = true;
-				if ( !entity->yaw )
+				if ( entity->furnitureDir == -1 )
 				{
-					entity->yaw = (prng_get_uint() % 360) * (PI / 180.f);
+					if ( !entity->yaw )
+					{
+						entity->yaw = (prng_get_uint() % 360) * (PI / 180.f);
+					}
+				}
+				else
+				{
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
 				}
 				break;
 			// MC easter egg:

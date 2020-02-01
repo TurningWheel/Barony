@@ -99,6 +99,7 @@ int checkSpriteType(Sint32 sprite)
 	case 123:
 	case 124:
 	case 125:
+	case 60:
 		// general furniture/misc.
 		return 12;
 		break;
@@ -830,7 +831,7 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"COLUMN DECO",
 	"PODIUM",
 	"PISTONS",
-	"FLOOR DECORATION",
+	"DECORATION",
 	"TELEPORT LOCATION",
 	"ENDEND PORTAL",
 	"SOUND SOURCE",
@@ -1511,7 +1512,14 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 		else
 		{
 			// set default new entity attributes.
-			entityNew->furnitureDir = 0;
+			if ( entityNew->sprite == 60 ) // chair
+			{
+				entityNew->furnitureDir = -1;
+			}
+			else
+			{
+				entityNew->furnitureDir = 0;
+			}
 		}
 	}
 	// floor decoration

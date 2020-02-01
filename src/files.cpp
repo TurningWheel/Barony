@@ -1016,7 +1016,22 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fread(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
 						break;
 					case 12:
-						fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+						if ( entity->sprite == 60 ) // chair
+						{
+							if ( editorVersion >= 25 )
+							{
+								fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+							}
+							else
+							{
+								// don't read data, set default.
+								setSpriteAttributes(entity, nullptr, nullptr);
+							}
+						}
+						else
+						{
+							fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+						}
 						break;
 					case 13:
 						fread(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
