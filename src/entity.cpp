@@ -5672,6 +5672,11 @@ bool Entity::isMobile()
 	{
 		return false;
 	}
+	
+	if ( entitystats->MISC_FLAGS[STAT_FLAG_NPC] != 0 && !strcmp(entitystats->name, "scriptNPC") )
+	{
+		return false;
+	}
 
 	return true;
 }

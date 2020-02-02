@@ -643,7 +643,7 @@ void handleTextSourceScript(std::string input)
 				{
 					for ( int c = 1; c < MAXPLAYERS; ++c )
 					{
-						if ( stats[c] && !client_disconnected[c] )
+						if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
 						{
 							stats[c]->freePlayerEquipment();
 							stats[c]->clearStats();
@@ -668,10 +668,13 @@ void handleTextSourceScript(std::string input)
 				}
 				for ( int c = 0; c < MAXPLAYERS; ++c )
 				{
-					if ( stats[c] && !client_disconnected[c] )
+					if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
 					{
 						client_classes[c] = result;
+						bool oldIntro = intro;
+						intro = true;
 						initClass(c);
+						intro = oldIntro;
 					}
 				}
 				for ( int c = 1; c < MAXPLAYERS; ++c )
@@ -687,7 +690,7 @@ void handleTextSourceScript(std::string input)
 			{
 				for ( int c = 0; c < MAXPLAYERS; ++c )
 				{
-					if ( stats[c] && !client_disconnected[c] )
+					if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
 					{
 						stats[c]->HP = DEFAULT_HP;
 						stats[c]->MAXHP = DEFAULT_HP;
@@ -708,6 +711,24 @@ void handleTextSourceScript(std::string input)
 				statOnlyUpdateNeeded = true;
 			}
 		}
+		else if ( (*it).find("@hunger=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@hunger=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+					{
+						stats[c]->HUNGER = std::min(result, 2000);
+						if ( c != clientnum )
+						{
+							textSourceScript.updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_HUNGER);
+						}
+					}
+				}
+			}
+		}
 		else if ( (*it).find("@copyNPC=") != std::string::npos )
 		{
 			std::string profTag = "@copyNPC=";
@@ -723,7 +744,7 @@ void handleTextSourceScript(std::string input)
 						if ( scriptStats && !strcmp(scriptStats->name, "scriptNPC") && (scriptStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFF) == result )
 						{
 							// copy stats.
-							for ( int c = 0; c < MAXPLAYERS && !client_disconnected[c]; ++c )
+							for ( int c = 0; c < MAXPLAYERS && !client_disconnected[c] && players[c] && players[c]->entity; ++c )
 							{
 								stats[c]->copyNPCStatsAndInventoryFrom(*scriptStats);
 							}
@@ -1126,6 +1147,10 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 5 + MAXPLAYERS;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+	else if ( updateType == CLIENT_UPDATE_HUNGER )
+	{
+		serverUpdateHunger(player);
 	}
 }
 

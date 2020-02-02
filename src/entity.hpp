@@ -1081,7 +1081,8 @@ public:
 	enum ClientInformationType : int
 	{
 		CLIENT_UPDATE_ALL,
-		CLIENT_UPDATE_CLASS
+		CLIENT_UPDATE_CLASS,
+		CLIENT_UPDATE_HUNGER
 	};
 	bool containsOperator(char c)
 	{

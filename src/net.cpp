@@ -3930,10 +3930,10 @@ void clientHandlePacket()
 		item->ownerUid = SDLNet_Read32(&net_packet->data[24]);
 		Item* pickedUp = itemPickup(clientnum, item);
 		free(item);
-		if ( players[clientnum] && players[clientnum]->entity )
+		if ( players[clientnum] && players[clientnum]->entity && pickedUp )
 		{
 			bool oldIntro = intro;
-			intro = false;
+			intro = true;
 			useItem(pickedUp, clientnum);
 			intro = oldIntro;
 		}
@@ -3980,7 +3980,10 @@ void clientHandlePacket()
 			client_classes[c] = net_packet->data[4 + c];
 			if ( c == clientnum )
 			{
+				bool oldIntro = intro;
+				intro = true;
 				initClass(clientnum);
+				intro = oldIntro;
 			}
 		}
 		return;
