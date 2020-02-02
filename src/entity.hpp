@@ -1073,3 +1073,39 @@ bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's na
 extern const std::vector<int> fountainPotionDropChances;
 extern const std::vector<std::pair<int, int>> potionStandardAppearanceMap;
 extern std::mt19937 fountainSeed;
+
+class TextSourceScript
+{
+public:
+	const int k_ScriptError = -1;
+	enum ClientInformationType : int
+	{
+		CLIENT_UPDATE_ALL,
+		CLIENT_UPDATE_CLASS
+	};
+	bool containsOperator(char c)
+	{
+		if ( c == '+' || c == '-' || c == '=' || c == '~' )
+		{
+			return true;
+		}
+		return false;
+	}
+	void eraseTag(std::string& script, std::string& scriptTag, size_t tagIndex)
+	{
+		if ( tagIndex + scriptTag.length() < script.length()
+			&& script.at(tagIndex + scriptTag.length()) == ' ' )
+		{
+			script.erase(tagIndex, strlen(scriptTag.c_str()) + 1);
+		}
+		else
+		{
+			script.erase(tagIndex, strlen(scriptTag.c_str()));
+		}
+	}
+	void updateClientInformation(int player, bool clearInventory, bool clearStats, ClientInformationType updateType);
+	void playerClearInventory(bool clearStats);
+
+	bool hasClearedInventory = false;
+};
+extern TextSourceScript textSourceScript;

@@ -17,6 +17,9 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "menu.hpp"
+#include "magic/magic.hpp"
+#include "interface/interface.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -558,6 +561,363 @@ void actTextSource(Entity* my)
 	my->actTextSource();
 }
 
+TextSourceScript textSourceScript;
+
+int textSourceProcessScriptTag(std::string& input, std::string findTag)
+{
+	size_t foundScriptTag = input.find(findTag);
+	if ( foundScriptTag != std::string::npos )
+	{
+		if ( !textSourceScript.containsOperator(findTag.back()) )
+		{
+			textSourceScript.eraseTag(input, findTag, foundScriptTag);
+			// end the function here, return non-error as we found the tag.
+			return 0;
+		}
+		input.erase(foundScriptTag, strlen(findTag.c_str()));
+		if ( input.empty() )
+		{
+			return 0;
+		}
+
+		std::string tagValue;
+
+		while ( foundScriptTag < input.length()
+			&& input.at(foundScriptTag) != ' '
+			&& input.at(foundScriptTag) != '@'
+			&& input.at(foundScriptTag) != '\0'
+			)
+		{
+			// usage: Hello @p @d 123 will send to distance 123 units away and send message "Hello player "
+			tagValue = tagValue + input.at(foundScriptTag);
+			//messagePlayer(clientnum, "%c", output.at(foundDistanceRequirement));
+			++foundScriptTag;
+		}
+		if ( foundScriptTag < input.length() && input.at(foundScriptTag) == ' ' )
+		{
+			input.erase(input.find(tagValue), tagValue.length() + 1); // clear trailing space
+		}
+		else
+		{
+			input.erase(input.find(tagValue), tagValue.length());
+		}
+		return std::stoi(tagValue);
+	}
+	return textSourceScript.k_ScriptError;
+}
+
+void handleTextSourceScript(std::string input)
+{
+	bool statOnlyUpdateNeeded = false;
+
+	std::vector<std::string> tokens;
+	std::string searchString = input;
+	size_t findToken = searchString.find("@");
+	while ( findToken != std::string::npos )
+	{
+		std::string token = "@";
+		++findToken;
+		while ( findToken < searchString.length()
+			&& searchString.at(findToken) != ' '
+			&& searchString.at(findToken) != '@'
+			&& searchString.at(findToken) != '\0'
+			)
+		{
+			token = token + searchString.at(findToken);
+			++findToken;
+		}
+		searchString.erase(searchString.find(token), token.length());
+		tokens.push_back(token);
+		findToken = searchString.find("@");
+	}
+
+	for ( auto it = tokens.begin(); it != tokens.end(); ++it )
+	{
+		if ( (*it).find("@clrplayer") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@clrplayer");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				textSourceScript.playerClearInventory(true);
+				if ( multiplayer == SERVER )
+				{
+					for ( int c = 1; c < MAXPLAYERS; ++c )
+					{
+						if ( stats[c] && !client_disconnected[c] )
+						{
+							stats[c]->freePlayerEquipment();
+							stats[c]->clearStats();
+							textSourceScript.updateClientInformation(c, true, true, TextSourceScript::CLIENT_UPDATE_ALL);
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@class=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@class=");
+			if ( result != textSourceScript.k_ScriptError && result >= CLASS_BARBARIAN && result < NUMCLASSES )
+			{
+				if ( !enabledDLCPack1 && result >= CLASS_CONJURER && result <= CLASS_BREWER )
+				{
+					result = CLASS_BARBARIAN;
+				}
+				if ( !enabledDLCPack2 && result >= CLASS_MACHINIST && result <= CLASS_HUNTER )
+				{
+					result = CLASS_BARBARIAN;
+				}
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					if ( stats[c] && !client_disconnected[c] )
+					{
+						client_classes[c] = result;
+						initClass(c);
+					}
+				}
+				for ( int c = 1; c < MAXPLAYERS; ++c )
+				{
+					textSourceScript.updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_CLASS);
+				}
+			}
+		}
+		else if ( (*it).find("@clrstats") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@clrstats");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					if ( stats[c] && !client_disconnected[c] )
+					{
+						stats[c]->HP = DEFAULT_HP;
+						stats[c]->MAXHP = DEFAULT_HP;
+						stats[c]->OLDHP = stats[c]->HP;
+						stats[c]->MP = DEFAULT_MP;
+						stats[c]->MAXMP = DEFAULT_MP;
+						stats[c]->STR = 0;
+						stats[c]->DEX = 0;
+						stats[c]->CON = 0;
+						stats[c]->INT = 0;
+						stats[c]->PER = 0;
+						stats[c]->CHR = 0;
+						stats[c]->LVL = 1;
+						stats[c]->GOLD = 0;
+						stats[c]->EXP = 0;
+					}
+				}
+				statOnlyUpdateNeeded = true;
+			}
+		}
+		else if ( (*it).find("@copyNPC=") != std::string::npos )
+		{
+			std::string profTag = "@copyNPC=";
+			int result = textSourceProcessScriptTag(input, profTag);
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					Entity* scriptEntity = (Entity*)node->element;
+					if ( scriptEntity && scriptEntity->behavior == &actMonster )
+					{
+						Stat* scriptStats = scriptEntity->getStats();
+						if ( scriptStats && !strcmp(scriptStats->name, "scriptNPC") && (scriptStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFF) == result )
+						{
+							// copy stats.
+							for ( int c = 0; c < MAXPLAYERS && !client_disconnected[c]; ++c )
+							{
+								stats[c]->copyNPCStatsAndInventoryFrom(*scriptStats);
+							}
+							statOnlyUpdateNeeded = true;
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			for ( int i = 0; i < NUMSTATS; ++i )
+			{
+				std::string profTag = "@st";
+				switch ( i )
+				{
+					case STAT_STR:
+						profTag.append("STR");
+						break;
+					case STAT_DEX:
+						profTag.append("DEX");
+						break;
+					case STAT_CON:
+						profTag.append("INT");
+						break;
+					case STAT_INT:
+						profTag.append("CON");
+						break;
+					case STAT_PER:
+						profTag.append("PER");
+						break;
+					case STAT_CHR:
+						profTag.append("CHR");
+						break;
+					default:
+						break;
+				}
+				profTag.append("=");
+				if ( (*it).find(profTag) != std::string::npos )
+				{
+					int result = textSourceProcessScriptTag(input, profTag);
+					if ( result != textSourceScript.k_ScriptError )
+					{
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( stats[c] && !client_disconnected[c] )
+							{
+								switch ( i )
+								{
+									case STAT_STR:
+										stats[c]->STR = result;
+										break;
+									case STAT_DEX:
+										stats[c]->DEX = result;
+										break;
+									case STAT_CON:
+										stats[c]->CON = result;
+										break;
+									case STAT_INT:
+										stats[c]->INT = result;
+										break;
+									case STAT_PER:
+										stats[c]->PER = result;
+										break;
+									case STAT_CHR:
+										stats[c]->CHR = result;
+										break;
+									default:
+										break;
+								}
+							}
+						}
+						statOnlyUpdateNeeded = true;
+					}
+				}
+			}
+			for ( int i = 0; i < NUMSTATS; ++i )
+			{
+				std::string profTag = "@st";
+				switch ( i )
+				{
+					case STAT_STR:
+						profTag.append("STR");
+						break;
+					case STAT_DEX:
+						profTag.append("DEX");
+						break;
+					case STAT_CON:
+						profTag.append("INT");
+						break;
+					case STAT_INT:
+						profTag.append("CON");
+						break;
+					case STAT_PER:
+						profTag.append("PER");
+						break;
+					case STAT_CHR:
+						profTag.append("CHR");
+						break;
+					default:
+						break;
+				}
+				profTag.append("+");
+				if ( (*it).find(profTag) != std::string::npos )
+				{
+					int result = textSourceProcessScriptTag(input, profTag);
+					if ( result != textSourceScript.k_ScriptError )
+					{
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( stats[c] && !client_disconnected[c] )
+							{
+								switch ( i )
+								{
+									case STAT_STR:
+										stats[c]->STR += result;
+										break;
+									case STAT_DEX:
+										stats[c]->DEX += result;
+										break;
+									case STAT_CON:
+										stats[c]->CON += result;
+										break;
+									case STAT_INT:
+										stats[c]->INT += result;
+										break;
+									case STAT_PER:
+										stats[c]->PER += result;
+										break;
+									case STAT_CHR:
+										stats[c]->CHR += result;
+										break;
+									default:
+										break;
+								}
+							}
+						}
+						statOnlyUpdateNeeded = true;
+					}
+				}
+			}
+
+			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+			{
+				std::string profTag = "@pro";
+				profTag.append(std::to_string(i).append("="));
+				if ( (*it).find(profTag) != std::string::npos )
+				{
+					int result = textSourceProcessScriptTag(input, profTag);
+					if ( result != textSourceScript.k_ScriptError )
+					{
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( stats[c] && !client_disconnected[c] )
+							{
+								stats[c]->PROFICIENCIES[i] = result;
+							}
+						}
+						statOnlyUpdateNeeded = true;
+					}
+				}
+			}
+			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+			{
+				std::string profTag = "@pro";
+				profTag.append(std::to_string(i).append("+"));
+				if ( (*it).find(profTag) != std::string::npos )
+				{
+					int result = textSourceProcessScriptTag(input, profTag);
+					if ( result != textSourceScript.k_ScriptError )
+					{
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( stats[c] && !client_disconnected[c] )
+							{
+								stats[c]->PROFICIENCIES[i] += result;
+							}
+						}
+						statOnlyUpdateNeeded = true;
+					}
+				}
+			}
+		}
+	}
+
+	if ( statOnlyUpdateNeeded )
+	{
+		for ( int c = 1; c < MAXPLAYERS; ++c )
+		{
+			textSourceScript.updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_ALL);
+		}
+	}
+}
+
 void Entity::actTextSource()
 {
 	if ( multiplayer == CLIENT )
@@ -610,6 +970,24 @@ void Entity::actTextSource()
 			Uint32 color = SDL_MapRGB(mainsurface->format, (textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
 				(textSourceColorRGB >> 0) & 0xFF);
 			std::string output = buf;
+
+			size_t foundScriptTag = output.find("@script");
+			if ( foundScriptTag != std::string::npos )
+			{
+				if ( (foundScriptTag + strlen("@script")) < output.length()
+					&& output.at(foundScriptTag + strlen("@script")) == ' ' )
+				{
+					output.erase(foundScriptTag, strlen("@script") + 1); // trailing space.
+				}
+				else
+				{
+					output.erase(foundScriptTag, strlen("@script"));
+				}
+
+				handleTextSourceScript(output);
+				return;
+			}
+
 			size_t foundPlayerRef = output.find("@p");
 			if ( foundPlayerRef != std::string::npos )
 			{
@@ -678,4 +1056,100 @@ void Entity::actTextSource()
 			textSourceVariables4W -= 1;
 		}
 	}
+}
+
+void TextSourceScript::updateClientInformation(int player, bool clearInventory, bool clearStats, ClientInformationType updateType)
+{
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	if ( !stats[player] || client_disconnected[player] )
+	{
+		return;
+	}
+
+	if ( updateType == CLIENT_UPDATE_ALL )
+	{
+		// update client attributes
+		strcpy((char*)net_packet->data, "SCRU");
+		net_packet->data[4] = clientnum;
+		net_packet->data[5] = (Sint8)stats[player]->STR;
+		net_packet->data[6] = (Sint8)stats[player]->DEX;
+		net_packet->data[7] = (Sint8)stats[player]->CON;
+		net_packet->data[8] = (Sint8)stats[player]->INT;
+		net_packet->data[9] = (Sint8)stats[player]->PER;
+		net_packet->data[10] = (Sint8)stats[player]->CHR;
+		net_packet->data[11] = (Sint8)stats[player]->EXP;
+		net_packet->data[12] = (Sint8)stats[player]->LVL;
+		SDLNet_Write16((Sint16)stats[player]->HP, &net_packet->data[13]);
+		SDLNet_Write16((Sint16)stats[player]->MAXHP, &net_packet->data[15]);
+		SDLNet_Write16((Sint16)stats[player]->MP, &net_packet->data[17]);
+		SDLNet_Write16((Sint16)stats[player]->MAXMP, &net_packet->data[19]);
+		SDLNet_Write32((Sint32)stats[player]->GOLD, &net_packet->data[21]);
+		if ( clearInventory )
+		{
+			net_packet->data[25] = 1;
+		}
+		else
+		{
+			net_packet->data[25] = 0;
+		}
+		if ( clearStats )
+		{
+			net_packet->data[26] = 1;
+		}
+		else
+		{
+			net_packet->data[26] = 0;
+		}
+
+		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+		{
+			net_packet->data[27 + i] = (Uint8)stats[player]->PROFICIENCIES[i];
+		}
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 27 + NUMPROFICIENCIES;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+
+		serverUpdatePlayerLVL();
+	}
+	else if ( updateType == CLIENT_UPDATE_CLASS )
+	{
+		strcpy((char*)net_packet->data, "SCRC");
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			net_packet->data[4 + i] = client_classes[i];
+		}
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 5 + MAXPLAYERS;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
+void TextSourceScript::playerClearInventory(bool clearStats)
+{
+	deinitShapeshiftHotbar();
+	for ( int c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+	{
+		selected_spell_alternate[c] = NULL;
+		hotbarShapeshiftInit[c] = false;
+	}
+	selected_spell = NULL; //So you don't start off with a spell when the game restarts.
+	selected_spell_last_appearance = -1;
+	spellcastingAnimationManager_deactivate(&cast_animation);
+	stats[clientnum]->freePlayerEquipment();
+	list_FreeAll(&stats[clientnum]->inventory);
+	shootmode = true;
+	appraisal_timer = 0;
+	appraisal_item = 0;
+
+	if ( clearStats )
+	{
+		stats[clientnum]->clearStats();
+	}
+
+	this->hasClearedInventory = true;
 }

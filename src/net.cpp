@@ -1084,6 +1084,31 @@ void serverRemoveClientFollower(int player, Uint32 uidToRemove)
 	}
 }
 
+void serverSendItemToPickupAndEquip(int player, Item* item)
+{
+	if ( multiplayer != SERVER || player == 0 )
+	{
+		return;
+	}
+
+	if ( !client_disconnected[player] )
+	{
+		// send the client info on the item it just picked up
+		strcpy((char*)net_packet->data, "ITEQ");
+		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+		SDLNet_Write32((Uint32)item->ownerUid, &net_packet->data[24]);
+		net_packet->data[28] = item->identified;
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 29;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type)
 {
 	if ( multiplayer != SERVER || player == 0 )
@@ -3896,6 +3921,69 @@ void clientHandlePacket()
 				players[clientnum]->entity->monsterKnockbackTangentDir = players[clientnum]->entity->yaw + PI;
 			}
 		}
+	}
+
+	// get item
+	else if ( !strncmp((char*)net_packet->data, "ITEQ", 4) )
+	{
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[28], NULL);
+		item->ownerUid = SDLNet_Read32(&net_packet->data[24]);
+		Item* pickedUp = itemPickup(clientnum, item);
+		free(item);
+		if ( players[clientnum] && players[clientnum]->entity )
+		{
+			bool oldIntro = intro;
+			intro = false;
+			useItem(pickedUp, clientnum);
+			intro = oldIntro;
+		}
+		return;
+	}
+
+	// update attributes from script
+	else if ( !strncmp((char*)net_packet->data, "SCRU", 4) )
+	{
+		if ( net_packet->data[25] )
+		{
+			bool clearStats = false;
+			if ( net_packet->data[26] )
+			{
+				clearStats = true;
+			}
+			textSourceScript.playerClearInventory(clearStats);
+		}
+		stats[clientnum]->STR = (Sint8)net_packet->data[5];
+		stats[clientnum]->DEX = (Sint8)net_packet->data[6];
+		stats[clientnum]->CON = (Sint8)net_packet->data[7];
+		stats[clientnum]->INT = (Sint8)net_packet->data[8];
+		stats[clientnum]->PER = (Sint8)net_packet->data[9];
+		stats[clientnum]->CHR = (Sint8)net_packet->data[10];
+		stats[clientnum]->EXP = (Sint8)net_packet->data[11];
+		stats[clientnum]->LVL = (Sint8)net_packet->data[12];
+		stats[clientnum]->HP = (Sint16)SDLNet_Read16(&net_packet->data[13]);
+		stats[clientnum]->MAXHP = (Sint16)SDLNet_Read16(&net_packet->data[15]);
+		stats[clientnum]->MP = (Sint16)SDLNet_Read16(&net_packet->data[17]);
+		stats[clientnum]->MAXMP = (Sint16)SDLNet_Read16(&net_packet->data[19]);
+		stats[clientnum]->GOLD = (Sint32)SDLNet_Read32(&net_packet->data[21]);
+		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+		{
+			stats[clientnum]->PROFICIENCIES[i] = (Sint8)net_packet->data[27 + i];
+		}
+		return;
+	}
+
+	// update class from script
+	else if ( !strncmp((char*)net_packet->data, "SCRC", 4) )
+	{
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			client_classes[c] = net_packet->data[4 + c];
+			if ( c == clientnum )
+			{
+				initClass(clientnum);
+			}
+		}
+		return;
 	}
 
 	// game restart
