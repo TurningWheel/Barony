@@ -163,6 +163,7 @@ static const int STAT_FLAG_ALLY_SUMMON2_LVLHP = 9;
 static const int STAT_FLAG_ALLY_SUMMON2_STRDEXCONINT = 10;
 static const int STAT_FLAG_ALLY_SUMMON2_PERCHR = 11;
 static const int STAT_FLAG_MYSTERIOUS_SHOPKEEP = 16;
+static const int STAT_FLAG_NO_DROP_ITEMS = 19;
 
 typedef enum
 {
@@ -220,6 +221,7 @@ public:
 	Sint32& monsterDemonHasBeenExorcised; // MISC_FLAGS[15]
 	Sint32& bleedInflictedBy; // MISC_FLAGS[17]
 	Sint32& burningInflictedBy; // MISC_FLAGS[18]
+	Sint32& monsterNoDropItems; // MISC_FLAGS[19]
 
 	// group think
 	Uint32 leader_uid;

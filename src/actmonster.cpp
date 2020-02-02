@@ -2479,7 +2479,7 @@ void actMonster(Entity* my)
 		}
 
 		// drop gold
-		if ( myStats->GOLD > 0 )
+		if ( myStats->GOLD > 0 && myStats->monsterNoDropItems == 0 )
 		{
 			int x = std::min<int>(std::max(0, (int)(my->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max(0, (int)(my->y / 16)), map.height - 1);

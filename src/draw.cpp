@@ -1871,6 +1871,86 @@ void drawEntities2D(long camx, long camy)
 							}
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 							break;
+						case 16:
+						{
+							char buf[256] = "";
+							int totalChars = 0;
+							for ( int i = 4; i < 60; ++i )
+							{
+								if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+								{
+									for ( int c = 0; c < 4; ++c )
+									{
+										if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
+											&& i != 59 && selectedEntity->skill[i + 1] != 0 )
+										{
+											// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
+										}
+										else
+										{
+											buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+											++totalChars;
+										}
+									}
+								}
+							}
+							if ( buf[totalChars] != '\0' )
+							{
+								buf[totalChars] = '\0';
+							}
+							int numLines = 0;
+							std::vector<std::string> lines;
+							lines.push_back(spriteEditorNameStrings[selectedEntity->sprite]);
+
+							strncpy(tmpStr, buf, 48);
+							if ( strcmp(tmpStr, "") )
+							{
+								lines.push_back(tmpStr);
+							}
+							strncpy(tmpStr, buf + 48, 48);
+							if ( strcmp(tmpStr, "") )
+							{
+								lines.push_back(tmpStr);
+							}
+							strncpy(tmpStr, buf + 96, 48);
+							if ( strcmp(tmpStr, "") )
+							{
+								lines.push_back(tmpStr);
+							}
+							strncpy(tmpStr, buf + 144, 48);
+							if ( strcmp(tmpStr, "") )
+							{
+								lines.push_back(tmpStr);
+							}
+							strncpy(tmpStr, buf + 192, 48);
+							if ( strcmp(tmpStr, "") )
+							{
+								lines.push_back(tmpStr);
+							}
+							if ( lines.size() > 3 )
+							{
+								offsety -= (lines.size() - 2) * 5;
+							}
+
+							size_t longestLine = 0;
+							for ( auto it : lines )
+							{
+								longestLine = std::max(longestLine, strlen(it.c_str()));
+							}
+
+							SDL_Rect tooltip;
+							tooltip.x = padx + offsetx - 4;
+							tooltip.w = TTF8_WIDTH * longestLine + 8;
+							tooltip.y = pady + offsety - 4;
+							tooltip.h = lines.size() * TTF8_HEIGHT + 8;
+							drawTooltip(&tooltip);
+							for ( auto it : lines )
+							{
+								ttfPrintText(ttf8, padx + offsetx, pady + offsety, it.c_str());
+								offsety += 10;
+							}
+						}
+							break;
 						default:
 							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
 							ttfPrintText(ttf8, padx, pady + 20, tmpStr);

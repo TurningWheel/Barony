@@ -6274,16 +6274,30 @@ int main(int argc, char** argv)
 						if ( showTextSourceTooltip )
 						{
 							SDL_Rect src;
-							src.w = 69 * 8 + 4;
-							src.h = 72;
+							src.w = 74 * 8 + 4;
+							src.h = 240;
 							src.x = omousex - src.w / 2;
-							src.y = omousey + 16;
+							src.y = omousey + 16 - src.h / 2;
 							drawTooltip(&src);
 							printText(font8x8_bmp, src.x + 4, src.y + 4, "This sprite sends a message to all players in the specified color.");
 							printText(font8x8_bmp, src.x + 4, src.y + 16, "Text will appear as one line unless a new line symbol is entered.");
 							printText(font8x8_bmp, src.x + 4, src.y + 28, "To insert text onto a new line, enter \\n in the text field.");
 							printText(font8x8_bmp, src.x + 4, src.y + 40, "To address the player's name in the text, enter @p in the text field.");
 							printText(font8x8_bmp, src.x + 4, src.y + 52, "E.g \"Hello, \\n@p\"");
+							printText(font8x8_bmp, src.x + 4, src.y + 64, "Adding @script to the text allows some basic scripting instead of text.");
+							printText(font8x8_bmp, src.x + 4, src.y + 76, "Separate all tags with a space. Some tags allow a range of values.");
+							printText(font8x8_bmp, src.x + 4, src.y + 88, "@clrplayer clears player data. @class=1 sets class to warrior");
+							printText(font8x8_bmp, src.x + 4, src.y + 100, "@clrstats resets stats and HP/MP. @hunger=250 sets player hungry.");
+							printText(font8x8_bmp, src.x + 4, src.y + 112, "@nextlevel=2 triggers a 2 level change.");
+							printText(font8x8_bmp, src.x + 4, src.y + 124, "@copyNPC=2 player stats set to monster named \"scriptNPC\" that is NPC: 2");
+							printText(font8x8_bmp, src.x + 4, src.y + 136, "");
+							printText(font8x8_bmp, src.x + 4, src.y + 148, "Tags that take a map reference or range: (i.e tag=1-3,4-6 tag=8,10)");
+							printText(font8x8_bmp, src.x + 4, src.y + 160, "@power=11,15 powers tile x=11,y=15");
+							printText(font8x8_bmp, src.x + 4, src.y + 172, "@power=11-13,15-17 powers 3x3 grid from x=11,y=15 to x=13,y=17.");
+							printText(font8x8_bmp, src.x + 4, src.y + 184, "@unpower= unpower tile(s). @freezemonsters= freeze monster on tile(s)");
+							printText(font8x8_bmp, src.x + 4, src.y + 196, "@unfreezemonsters= unfreeze on tile(s). @killall= kill npcs on tile(s)");
+							printText(font8x8_bmp, src.x + 4, src.y + 208, "@killenemies= kill non- ally npcs on tile(s).");
+							printText(font8x8_bmp, src.x + 4, src.y + 220, "@nodropitems= npc will be marked to not drop items on death within tile(s)");
 						}
 					}
 				}
@@ -8152,7 +8166,7 @@ void reselectEntityGroup()
 	}
 }
 
-int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapParameters)
+int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> mapParameters)
 {
 	return 0; // dummy function
 }

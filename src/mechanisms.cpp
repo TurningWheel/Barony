@@ -484,6 +484,11 @@ void actTrapPermanent(Entity* my)
 	}
 	else
 	{
+		if ( my->skill[1] == 1 )
+		{
+			// skip checking for entities.
+			return;
+		}
 		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{

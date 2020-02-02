@@ -601,6 +601,50 @@ int textSourceProcessScriptTag(std::string& input, std::string findTag)
 		{
 			input.erase(input.find(tagValue), tagValue.length());
 		}
+
+		size_t foundMapReference = tagValue.find(",");
+		// look for comma or - symbol, e.g @power=15,16 or @power=15-20,16-21
+		if ( foundMapReference != std::string::npos )
+		{
+			std::string x_str = tagValue.substr(0, foundMapReference);
+			std::string y_str = tagValue.substr(foundMapReference + 1, tagValue.length() - foundMapReference);
+			int x1 = 0;
+			int x2 = 0;
+			int y1 = 0;
+			int y2 = 0;
+			size_t foundMapRange = x_str.find("-");
+			if ( foundMapRange != std::string::npos )
+			{
+				// found map range reference.
+				x1 = std::stoi(x_str.substr(0, foundMapRange));
+				x2 = std::stoi(x_str.substr(foundMapRange + 1, x_str.length() - foundMapRange));
+			}
+			else
+			{
+				x1 = std::stoi(x_str);
+				x2 = x1;
+			}
+			foundMapRange = y_str.find("-");
+			if ( foundMapRange != std::string::npos )
+			{
+				// found map range reference.
+				y1 = std::stoi(y_str.substr(0, foundMapRange));
+				y2 = std::stoi(y_str.substr(foundMapRange + 1, y_str.length() - foundMapRange));
+			}
+			else
+			{
+				y1 = std::stoi(y_str);
+				y2 = x1;
+			}
+
+			x1 = std::min(std::max(0, x1), (int)map.width - 1);
+			y1 = std::min(std::max(0, y1), (int)map.height - 1);
+			x2 = std::min(std::max(x1, x2), (int)map.width - 1);
+			y2 = std::min(std::max(y1, y2), (int)map.height - 1);
+
+			return (x1 & 0xFF) + ((x2 & 0xFF) << 8) + ((y1 & 0xFF) << 16) + ((y2 & 0xFF) << 24);
+		}
+
 		return std::stoi(tagValue);
 	}
 	return textSourceScript.k_ScriptError;
@@ -631,8 +675,11 @@ void handleTextSourceScript(std::string input)
 		findToken = searchString.find("@");
 	}
 
+	printlog("[SCRIPT]: Starting Execution...");
+	std::string executionLog = "[SCRIPT]: Processed tokens:";
 	for ( auto it = tokens.begin(); it != tokens.end(); ++it )
 	{
+		executionLog.append(" ").append(*it);
 		if ( (*it).find("@clrplayer") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@clrplayer");
@@ -724,6 +771,218 @@ void handleTextSourceScript(std::string input)
 						if ( c != clientnum )
 						{
 							textSourceScript.updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_HUNGER);
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@nextlevel=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@nextlevel=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				loadnextlevel = true;
+				skipLevelsOnLoad = result;
+			}
+		}
+		else if ( (*it).find("@power=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@power=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				bool foundExisting = false;
+				std::unordered_set<int> plateSpots;
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					Entity* pressurePlate = (Entity*)node->element;
+					if ( pressurePlate && pressurePlate->behavior == &actTrapPermanent )
+					{
+						int findx = static_cast<int>(pressurePlate->x) >> 4;
+						int findy = static_cast<int>(pressurePlate->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							if ( pressurePlate->skill[0] == 0 )
+							{
+								pressurePlate->toggleSwitch();
+							}
+							plateSpots.insert(static_cast<int>(pressurePlate->x / 16) + map.width * static_cast<int>(pressurePlate->y / 16));
+						}
+					}
+				}
+				for ( int x = x1; x <= x2; ++x )
+				{
+					for ( int y = y1; y <= y2; ++y )
+					{
+						if ( plateSpots.find(x + map.width * y) == plateSpots.end() )
+						{
+							Entity* pressurePlate = newEntity(-1, 1, map.entities, nullptr);
+							pressurePlate->sizex = 2;
+							pressurePlate->sizey = 2;
+							pressurePlate->x = x * 16 + 8;
+							pressurePlate->y = y * 16 + 8;
+							pressurePlate->behavior = &actTrapPermanent;
+							pressurePlate->skill[1] = 1;
+							pressurePlate->flags[SPRITE] = true;
+							pressurePlate->flags[INVISIBLE] = true;
+							pressurePlate->flags[PASSABLE] = true;
+							pressurePlate->flags[NOUPDATE] = true;
+							TileEntityList.addEntity(*pressurePlate); // make sure new nodes are added to the tile list to properly update neighbors.
+							pressurePlate->toggleSwitch();
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@unpower=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@unpower=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					Entity* pressurePlate = (Entity*)node->element;
+					if ( pressurePlate && pressurePlate->behavior == &actTrapPermanent )
+					{
+						int findx = static_cast<int>(pressurePlate->x) >> 4;
+						int findy = static_cast<int>(pressurePlate->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							if ( pressurePlate->skill[0] != 0 )
+							{
+								pressurePlate->toggleSwitch();
+								pressurePlate->skill[1] = 1; // can't be interacted.
+							}
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@freezemonsters=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@freezemonsters=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				for ( node_t* node = map.creatures->first; node; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity && entity->behavior == &actMonster )
+					{
+						int findx = static_cast<int>(entity->x) >> 4;
+						int findy = static_cast<int>(entity->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							entity->setEffect(EFF_STUNNED, true, -1, false);
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@unfreezemonsters=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@unfreezemonsters=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				for ( node_t* node = map.creatures->first; node; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity && entity->behavior == &actMonster )
+					{
+						int findx = static_cast<int>(entity->x) >> 4;
+						int findy = static_cast<int>(entity->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							entity->setEffect(EFF_STUNNED, false, 0, false);
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@killall=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@killall=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				for ( node_t* node = map.creatures->first; node; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity && entity->behavior == &actMonster )
+					{
+						int findx = static_cast<int>(entity->x) >> 4;
+						int findy = static_cast<int>(entity->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							entity->setHP(0);
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@killenemies=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@killenemies=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				for ( node_t* node = map.creatures->first; node; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity && entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+					{
+						int findx = static_cast<int>(entity->x) >> 4;
+						int findy = static_cast<int>(entity->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							entity->setHP(0);
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@nodropitems=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@nodropitems=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				for ( node_t* node = map.creatures->first; node; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity && entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+					{
+						int findx = static_cast<int>(entity->x) >> 4;
+						int findy = static_cast<int>(entity->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							if ( entity->getStats() )
+							{
+								entity->getStats()->monsterNoDropItems = 1;
+							}
 						}
 					}
 				}
@@ -929,7 +1188,7 @@ void handleTextSourceScript(std::string input)
 			}
 		}
 	}
-
+	printlog("%s", executionLog.c_str());
 	if ( statOnlyUpdateNeeded )
 	{
 		for ( int c = 1; c < MAXPLAYERS; ++c )
@@ -937,6 +1196,7 @@ void handleTextSourceScript(std::string input)
 			textSourceScript.updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_ALL);
 		}
 	}
+	printlog("[SCRIPT]: Finished running.");
 }
 
 void Entity::actTextSource()
