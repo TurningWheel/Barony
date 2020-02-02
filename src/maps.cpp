@@ -327,7 +327,7 @@ int monsterCurve(int level)
 
 -------------------------------------------------------------------------------*/
 
-int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapParameters)
+int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> mapParameters)
 {
 	char* sublevelname, *subRoomName;
 	char sublevelnum[3];
@@ -356,7 +356,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 
 	if ( std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) == -1
 		&& std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) == -1
-		&& std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) == -1 )
+		&& std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) == -1
+		&& std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) == 0 )
 	{
 		printlog("generating a dungeon from level set '%s' (seed %d)...\n", levelset, seed);
 	}
@@ -377,6 +378,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 		if ( std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) != -1 )
 		{
 			snprintf(tmpBuffer, 31, ", minotaur chance %d%%%%", std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters));
+			strcat(generationLog, tmpBuffer);
+		}
+		if ( std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) != 0 )
+		{
+			snprintf(tmpBuffer, 31, ", disabled normal exit", std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters));
 			strcat(generationLog, tmpBuffer);
 		}
 		strcat(generationLog, ", (seed %d)...\n");
@@ -1973,7 +1979,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 
 		// create entity
 		entity = nullptr;
-		if ( (c == 0 || (minotaurlevel && c < 2)) && (!secretlevel || currentlevel != 7) && (!secretlevel || currentlevel != 20) )
+		if ( (c == 0 || (minotaurlevel && c < 2)) && (!secretlevel || currentlevel != 7) && (!secretlevel || currentlevel != 20)
+			&& std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) == 0 )
 		{
 			if ( strcmp(map.name, "Hell") )
 			{

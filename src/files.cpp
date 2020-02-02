@@ -1745,8 +1745,9 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 			std::size_t secretChanceFound = mapName.find(" secret%: ");
 			std::size_t darkmapChanceFound = mapName.find(" darkmap%: ");
 			std::size_t minotaurChanceFound = mapName.find(" minotaur%: ");
+			std::size_t disableNormalExitFound = mapName.find(" noexit");
 			std::string parameterStr = "";
-			std::tuple<int, int, int> mapParameters = std::make_tuple(-1, -1, -1);
+			std::tuple<int, int, int, int> mapParameters = std::make_tuple(-1, -1, -1, 0);
 			if ( secretChanceFound != std::string::npos )
 			{
 				// found a percentage for secret levels to spawn.
@@ -1779,6 +1780,10 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 				{
 					std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) = -1;
 				}
+			}
+			if ( disableNormalExitFound != std::string::npos )
+			{
+				std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) = 1;
 			}
 			mapName = mapName.substr(0, mapName.find_first_of(" \0"));
 
