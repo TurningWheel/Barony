@@ -2178,20 +2178,6 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Readable Book Properties:");
 			}
 				break;
-			case 21: // class setter
-				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity->skill[0]));
-				snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity->skill[1]));
-				inputstr = spriteProperties[0];
-				cursorflash = ticks;
-				menuVisible = 0;
-				subwindow = 1;
-				newwindow = 25;
-				subx1 = xres / 2 - 170;
-				subx2 = xres / 2 + 170;
-				suby1 = yres / 2 - 80;
-				suby2 = yres / 2 + 80;
-				strcpy(subtext, "Class Setter Properties:");
-				break;
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3247,10 +3233,6 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					}
 				}
 			}
-				break;
-			case 21: // class setter
-				selectedEntity->skill[0] = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->skill[1] = (Sint32)atoi(spriteProperties[1]);
 				break;
 			default:
 				break;

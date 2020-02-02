@@ -1116,10 +1116,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
 						}
 						break;
-					case 21:
-						fread(&entity->skill[0], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[1], sizeof(Sint32), 1, fp);
-						break;
 					default:
 						break;
 				}
@@ -1510,10 +1506,6 @@ int saveMap(const char* filename2)
 					{
 						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
 					}
-					break;
-				case 21:
-					fwrite(&entity->skill[0], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[1], sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;

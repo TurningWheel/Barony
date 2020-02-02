@@ -132,9 +132,6 @@ int checkSpriteType(Sint32 sprite)
 	case 162: 
 		// readablebook
 		return 20;
-	case 167:
-		// class setter
-		return 21;
 	default:
 		return 0;
 		break;
@@ -881,7 +878,7 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"SPELLBOT",
 	"DUMMYBOT",
 	"GYROBOT",
-	"CLASS SETTER"
+	"UNUSED"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -921,7 +918,8 @@ char monsterEditorNameStrings[NUMMONSTERS][16] =
 	"lich_fire",
 	"sentrybot",
 	"spellbot",
-	"gyrobot"
+	"gyrobot",
+	"dummybot"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
@@ -1733,21 +1731,6 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			{
 				entityNew->skill[i] = 0;
 			}
-		}
-	}
-	else if ( spriteType == 21 ) // class setter
-	{
-		if ( entityToCopy != nullptr )
-		{
-			// copy old entity attributes to newly created.
-			entityNew->skill[0] = entityToCopy->skill[0];
-			entityNew->skill[1] = entityToCopy->skill[1];
-		}
-		else
-		{
-			// set default new entity attributes.
-			entityNew->skill[0] = 0;
-			entityNew->skill[1] = 0;
 		}
 	}
 
