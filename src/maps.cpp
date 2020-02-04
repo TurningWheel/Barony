@@ -3013,6 +3013,10 @@ void assignActions(map_t* map)
 			case 93:
 			case 94:
 			case 95:
+			case 163:
+			case 164:
+			case 165:
+			case 166:
 			{
 				entity->sizex = 4;
 				entity->sizey = 4;
@@ -3148,6 +3152,22 @@ void assignActions(map_t* map)
 				else if ( entity->sprite == 82 )     // devil.png
 				{
 					monsterType = GHOUL;
+				}
+				else if ( entity->sprite == 163 )
+				{
+					monsterType = SENTRYBOT;
+				}
+				else if ( entity->sprite == 164 )
+				{
+					monsterType = SPELLBOT;
+				}
+				else if ( entity->sprite == 165 )
+				{
+					monsterType = DUMMYBOT;
+				}
+				else if ( entity->sprite == 166 )
+				{
+					monsterType = GYROBOT;
 				}
 				else
 				{
@@ -5443,6 +5463,19 @@ void assignActions(map_t* map)
 			{
 				vampireQuestChest->chestHasVampireBook = 1;
 				break;
+			}
+		}
+	}
+
+	for ( node = map->entities->first; node != nullptr; )
+	{
+		Entity* postProcessEntity = (Entity*)node->element;
+		node = node->next;
+		if ( postProcessEntity )
+		{
+			if ( postProcessEntity->behavior == &actTextSource )
+			{
+				textSourceScript.parseScriptInMapGeneration(*postProcessEntity);
 			}
 		}
 	}
