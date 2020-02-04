@@ -282,7 +282,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	textSourceColorRGB(skill[0]),
 	textSourceVariables4W(skill[1]),
 	textSourceDelay(skill[2]),
-	textSource3(skill[3]),
+	textSourceIsScript(skill[3]),
 	textSourceBegin(skill[4]),
 	signalActivateDelay(skill[1]),
 	signalTimerInterval(skill[2]),

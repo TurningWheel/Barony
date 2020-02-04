@@ -466,7 +466,7 @@ public:
 	Sint32& textSourceColorRGB; //skill[0]
 	Sint32& textSourceVariables4W; //skill[1]
 	Sint32& textSourceDelay; //skill[2]
-	Sint32& textSource3; //skill[3]
+	Sint32& textSourceIsScript; //skill[3]
 	Sint32& textSourceBegin; //skill[4]
 
 	//--PUBLIC SIGNAL SKILLS--
@@ -1084,6 +1084,20 @@ public:
 		CLIENT_UPDATE_CLASS,
 		CLIENT_UPDATE_HUNGER
 	};
+	enum AttachToEntity : int
+	{
+		TO_NONE,
+		TO_MONSTERS,
+		TO_ITEMS,
+		TO_PLAYERS
+	};
+	enum ScriptType : int
+	{
+		NO_SCRIPT,
+		SCRIPT_NORMAL,
+		SCRIPT_ATTACHED,
+		SCRIPT_ATTACHED_FIRED
+	};
 	bool containsOperator(char c)
 	{
 		if ( c == '+' || c == '-' || c == '=' )
@@ -1106,7 +1120,9 @@ public:
 	}
 	void updateClientInformation(int player, bool clearInventory, bool clearStats, ClientInformationType updateType);
 	void playerClearInventory(bool clearStats);
-
+	std::string getScriptFromEntity(Entity& src);
+	void parseScriptInMapGeneration(Entity& src);
+	
 	bool hasClearedInventory = false;
 };
 extern TextSourceScript textSourceScript;

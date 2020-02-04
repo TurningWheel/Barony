@@ -1620,7 +1620,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->textSourceColorRGB = entityToCopy->textSourceColorRGB;
 			entityNew->textSourceVariables4W = entityToCopy->textSourceVariables4W;
 			entityNew->textSourceDelay = entityToCopy->textSourceDelay;
-			entityNew->textSource3 = entityToCopy->textSource3;
+			entityNew->textSourceIsScript = entityToCopy->textSourceIsScript;
 			for ( int i = 4; i < 60; ++i )
 			{
 				entityNew->skill[i] = entityToCopy->skill[i];
@@ -1632,7 +1632,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->textSourceColorRGB = 0xFFFFFFFF;
 			entityNew->textSourceVariables4W = 0;
 			entityNew->textSourceDelay = 0;
-			entityNew->textSource3 = 0;
+			entityNew->textSourceIsScript = 0;
 			for ( int i = 4; i < 60; ++i )
 			{
 				entityNew->skill[i] = 0;

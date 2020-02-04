@@ -645,6 +645,26 @@ int textSourceProcessScriptTag(std::string& input, std::string findTag)
 			return (x1 & 0xFF) + ((x2 & 0xFF) << 8) + ((y1 & 0xFF) << 16) + ((y2 & 0xFF) << 24);
 		}
 
+		if ( findTag.compare("@attachto=") == 0 )
+		{
+			if ( !tagValue.compare("monsters") )
+			{
+				return textSourceScript.TO_MONSTERS;
+			}
+			else if ( !tagValue.compare("items") )
+			{
+				return textSourceScript.TO_ITEMS;
+			}
+			else if ( !tagValue.compare("players") )
+			{
+				return textSourceScript.TO_PLAYERS;
+			}
+			else
+			{
+				return textSourceScript.k_ScriptError;
+			}
+		}
+
 		return std::stoi(tagValue);
 	}
 	return textSourceScript.k_ScriptError;
@@ -1211,7 +1231,36 @@ void Entity::actTextSource()
 		textSourceVariables4W |= (textSourceDelay << 16);
 	}
 
-	if ( circuit_status == CIRCUIT_ON )
+	bool powered = false;
+	if ( textSourceIsScript == textSourceScript.NO_SCRIPT || textSourceIsScript == textSourceScript.SCRIPT_NORMAL )
+	{
+		powered = (circuit_status == CIRCUIT_ON);
+	}
+	else if ( textSourceIsScript == textSourceScript.SCRIPT_ATTACHED )
+	{
+		int entitiesExisting = 0;
+		// check if our attached entities still exist.
+		for ( node_t* node = children.first; node; node = node->next )
+		{
+			Uint32 entityUid = *((Uint32*)node->element);
+			Entity* child = uidToEntity(entityUid);
+			if ( child )
+			{
+				++entitiesExisting;
+			}
+		}
+		if ( entitiesExisting == 0 )
+		{
+			textSourceIsScript = textSourceScript.SCRIPT_ATTACHED_FIRED;
+			powered = true;
+		}
+	}
+	else if ( textSourceIsScript == textSourceScript.SCRIPT_ATTACHED_FIRED )
+	{
+		powered = true;
+	}
+
+	if ( powered )
 	{
 		// received power
 		if ( textSourceDelay > 0 )
@@ -1226,45 +1275,14 @@ void Entity::actTextSource()
 		if ( (textSourceVariables4W & 0xFF) == 0 )
 		{
 			textSourceVariables4W |= 1;
-			// assemble the string.
-			char buf[256] = "";
-			int totalChars = 0;
-			for ( int i = 4; i < 60; ++i )
-			{
-				if ( i == 28 ) // circuit_status
-				{
-					continue;
-				}
-				if ( skill[i] != 0 )
-				{
-					for ( int c = 0; c < 4; ++c )
-					{
-						buf[totalChars] = static_cast<char>((skill[i] >> (c * 8)) & 0xFF);
-						++totalChars;
-					}
-				}
-			}
-			if ( buf[totalChars] != '\0' )
-			{
-				buf[totalChars] = '\0';
-			}
+
+			std::string output = textSourceScript.getScriptFromEntity(*this);
+
 			Uint32 color = SDL_MapRGB(mainsurface->format, (textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
 				(textSourceColorRGB >> 0) & 0xFF);
-			std::string output = buf;
 
-			size_t foundScriptTag = output.find("@script");
-			if ( foundScriptTag != std::string::npos )
+			if ( textSourceIsScript != 0 )
 			{
-				if ( (foundScriptTag + strlen("@script")) < output.length()
-					&& output.at(foundScriptTag + strlen("@script")) == ' ' )
-				{
-					output.erase(foundScriptTag, strlen("@script") + 1); // trailing space.
-				}
-				else
-				{
-					output.erase(foundScriptTag, strlen("@script"));
-				}
-
 				handleTextSourceScript(output);
 				return;
 			}
@@ -1304,6 +1322,8 @@ void Entity::actTextSource()
 				output.insert(found, 1, '\n');
 				found = output.find("\\n");
 			}
+
+			char buf[256] = "";
 			strcpy(buf, output.c_str());
 
 			for ( int c = 0; c < MAXPLAYERS; ++c )
@@ -1329,7 +1349,7 @@ void Entity::actTextSource()
 			}
 		}
 	}
-	else if ( circuit_status == CIRCUIT_OFF )
+	else if ( !powered )
 	{
 		textSourceDelay = (textSourceVariables4W >> 16) & 0xFFFF;
 		if ( (textSourceVariables4W & 0xFF) == 1 && ((textSourceVariables4W >> 8) & 0xFF) == 0 )
@@ -1437,4 +1457,107 @@ void TextSourceScript::playerClearInventory(bool clearStats)
 	}
 
 	this->hasClearedInventory = true;
+}
+
+std::string TextSourceScript::getScriptFromEntity(Entity& src)
+{
+	// assemble the string.
+	char buf[256] = "";
+	int totalChars = 0;
+	for ( int i = 4; i < 60; ++i )
+	{
+		if ( i == 28 ) // circuit_status
+		{
+			continue;
+		}
+		if ( src.skill[i] != 0 )
+		{
+			for ( int c = 0; c < 4; ++c )
+			{
+				buf[totalChars] = static_cast<char>((src.skill[i] >> (c * 8)) & 0xFF);
+				++totalChars;
+			}
+		}
+	}
+	if ( buf[totalChars] != '\0' )
+	{
+		buf[totalChars] = '\0';
+	}
+	return buf;
+}
+
+void TextSourceScript::parseScriptInMapGeneration(Entity& src)
+{
+	std::string script = getScriptFromEntity(src);
+	size_t foundScriptTag = script.find("@script");
+	if ( foundScriptTag != std::string::npos )
+	{
+		if ( (foundScriptTag + strlen("@script")) < script.length()
+			&& script.at(foundScriptTag + strlen("@script")) == ' ' )
+		{
+			script.erase(foundScriptTag, strlen("@script") + 1); // trailing space.
+		}
+		else
+		{
+			script.erase(foundScriptTag, strlen("@script"));
+		}
+		src.textSourceIsScript = SCRIPT_NORMAL;
+	}
+	if ( src.textSourceIsScript == 0 )
+	{
+		return;
+	}
+
+	if ( script.find("@attachto=") != std::string::npos )
+	{
+		int attachTo = textSourceProcessScriptTag(script, "@attachto=");
+		if ( attachTo == textSourceScript.k_ScriptError )
+		{
+			return;
+		}
+		src.textSourceIsScript = SCRIPT_ATTACHED;
+		int x1 = static_cast<int>(src.x / 16); // default to just whatever this script is sitting on.
+		int x2 = static_cast<int>(src.x / 16);
+		int y1 = static_cast<int>(src.y / 16);
+		int y2 = static_cast<int>(src.y / 16);
+		if ( script.find("@attachrange=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(script, "@attachrange=");
+			if ( result != textSourceScript.k_ScriptError )
+			{
+				x1 = result & 0xFF;
+				x2 = (result >> 8) & 0xFF;
+				y1 = (result >> 16) & 0xFF;
+				y2 = (result >> 24) & 0xFF;
+			}
+		}
+		for ( node_t* node = map.entities->first; node; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity )
+			{
+				if ( (entity->behavior == &actMonster && attachTo == TO_MONSTERS)
+					|| (entity->behavior == &actPlayer && attachTo == TO_PLAYERS)
+					|| (entity->behavior == &actItem && attachTo == TO_ITEMS) )
+				{
+					// found our entity.
+				}
+				else
+				{
+					continue;
+				}
+				int findx = static_cast<int>(entity->x) >> 4;
+				int findy = static_cast<int>(entity->y) >> 4;
+				if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+				{
+					node_t* node = list_AddNodeLast(&src.children);
+					node->deconstructor = &defaultDeconstructor;
+					Uint32* entityUid = (Uint32*)(malloc(sizeof(Uint32)));
+					node->element = entityUid;
+					node->size = sizeof(Uint32);
+					*entityUid = entity->getUID();
+				}
+			}
+		}
+	}
 }

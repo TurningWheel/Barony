@@ -1068,7 +1068,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fread(&entity->textSourceColorRGB, sizeof(Sint32), 1, fp);
 						fread(&entity->textSourceVariables4W, sizeof(Sint32), 1, fp);
 						fread(&entity->textSourceDelay, sizeof(Sint32), 1, fp);
-						fread(&entity->textSource3, sizeof(Sint32), 1, fp);
+						fread(&entity->textSourceIsScript, sizeof(Sint32), 1, fp);
 						for ( int i = 4; i < 60; ++i )
 						{
 							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
@@ -1467,7 +1467,7 @@ int saveMap(const char* filename2)
 					fwrite(&entity->textSourceColorRGB, sizeof(Sint32), 1, fp);
 					fwrite(&entity->textSourceVariables4W, sizeof(Sint32), 1, fp);
 					fwrite(&entity->textSourceDelay, sizeof(Sint32), 1, fp);
-					fwrite(&entity->textSource3, sizeof(Sint32), 1, fp);
+					fwrite(&entity->textSourceIsScript, sizeof(Sint32), 1, fp);
 					for ( int i = 4; i < 60; ++i )
 					{
 						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
