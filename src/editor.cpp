@@ -55,6 +55,7 @@ std::string physfs_saveDirectory = BASE_DATA_DIR;
 std::string physfs_openDirectory = BASE_DATA_DIR;
 float limbs[NUMMONSTERS][20][3]; // dummy variable for files.cpp limbs reloading in Barony.
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages; // dummy variable for files.cpp system resource reloading in Barony.
+int textInsertCaratPosition = -1;
 
 Item* selectedItem = nullptr; //Because it won't compile without this.
 
@@ -681,12 +682,38 @@ void handleEvents(void)
 #else
 					if ( event.key.keysym.sym == SDLK_BACKSPACE && strlen(inputstr) > 0 )
 					{
-						inputstr[strlen(inputstr) - 1] = 0;
+						if ( textInsertCaratPosition >= 0 && newwindow == 20 && textInsertCaratPosition != strlen(inputstr) )
+						{
+							if ( textInsertCaratPosition != 0 )
+							{
+								std::string tmp = inputstr;
+								tmp.erase(textInsertCaratPosition - 1, 1);
+								strcpy(inputstr, tmp.c_str());
+								textInsertCaratPosition = std::max(textInsertCaratPosition - 1, 0);
+							}
+						}
+						else
+						{
+							inputstr[strlen(inputstr) - 1] = 0;
+						}
 						cursorflash = ticks;
 					}
 					else if ( event.key.keysym.sym == SDLK_BACKQUOTE && strlen(inputstr) > 0 )
 					{
-						inputstr[strlen(inputstr) - 1] = 0;
+						if ( textInsertCaratPosition >= 0 && newwindow == 20 && textInsertCaratPosition != strlen(inputstr) )
+						{
+							if ( textInsertCaratPosition != 0 )
+							{
+								std::string tmp = inputstr;
+								tmp.erase(textInsertCaratPosition - 1, 1);
+								strcpy(inputstr, tmp.c_str());
+								textInsertCaratPosition = std::max(textInsertCaratPosition - 1, 0);
+							}
+						}
+						else
+						{
+							inputstr[strlen(inputstr) - 1] = 0;
+						}
 						cursorflash = ticks;
 					}
 #endif
@@ -714,7 +741,25 @@ void handleEvents(void)
 					{
 						if ( event.text.text[0] != '`' )
 						{
-							strncat(inputstr, event.text.text, std::max<size_t>(0, inputlen - strlen(inputstr)));
+							if ( textInsertCaratPosition >= 0 && newwindow == 20 )
+							{
+								if ( textInsertCaratPosition == strlen(inputstr) )
+								{
+									strncat(inputstr, event.text.text, std::max<size_t>(0, inputlen - strlen(inputstr)));
+									textInsertCaratPosition = std::min((int)strlen(inputstr), textInsertCaratPosition + 1);
+								}
+								else if ( inputlen - ((int)strlen(inputstr) + 1) >= 0)
+								{
+									std::string tmp = inputstr;
+									tmp.insert(textInsertCaratPosition, event.text.text);
+									strcpy(inputstr, tmp.c_str());
+									textInsertCaratPosition = std::min((int)strlen(inputstr), textInsertCaratPosition + 1);
+								}
+							}
+							else
+							{
+								strncat(inputstr, event.text.text, std::max<size_t>(0, inputlen - strlen(inputstr)));
+							}
 							cursorflash = ticks;
 						}
 					}
@@ -1906,6 +1951,12 @@ int main(int argc, char** argv)
 		butBrush->x = xres - 96;
 		butSelect->x = xres - 96;
 		butFill->x = xres - 96;
+
+		bool wasTextEditable = SDL_IsTextInputActive();
+		if ( !wasTextEditable )
+		{
+			textInsertCaratPosition = -1;
+		}
 
 		if ( !spritepalette && !tilepalette )
 		{
@@ -6212,6 +6263,60 @@ int main(int argc, char** argv)
 								SDL_StartTextInput();
 								inputstr = spriteProperties[0];
 							}
+							if ( SDL_IsTextInputActive() )
+							{
+								if ( textInsertCaratPosition >= 0 )
+								{
+									textInsertCaratPosition = std::min(textInsertCaratPosition, (int)strlen(inputstr));
+									if ( editproperty < 3 || editproperty > 8 )
+									{
+										textInsertCaratPosition = -1;
+									}
+								}
+								if ( keystatus[SDL_SCANCODE_LEFT] )
+								{
+									keystatus[SDL_SCANCODE_LEFT] = 0;
+									if ( textInsertCaratPosition > 0 )
+									{
+										--textInsertCaratPosition;
+									}
+									else if ( textInsertCaratPosition == 0 )
+									{
+										// do nothing
+									}
+									else
+									{
+										textInsertCaratPosition = strlen(inputstr);
+									}
+									cursorflash = ticks;
+								}
+								else if ( keystatus[SDL_SCANCODE_RIGHT] )
+								{
+									keystatus[SDL_SCANCODE_RIGHT] = 0;
+									if ( textInsertCaratPosition == -1 )
+									{
+										textInsertCaratPosition = strlen(inputstr);
+									}
+									else
+									{
+										++textInsertCaratPosition;
+										textInsertCaratPosition = std::min((int)strlen(inputstr), textInsertCaratPosition);
+									}
+									cursorflash = ticks;
+								}
+								if ( keystatus[SDL_SCANCODE_RETURN] )
+								{
+									if ( textInsertCaratPosition >= 0 )
+									{
+										textInsertCaratPosition = -1;
+									}
+									else
+									{
+										textInsertCaratPosition = strlen(inputstr);
+									}
+									keystatus[SDL_SCANCODE_RETURN] = 0;
+								}
+							}
 
 							// set the maximum length allowed for user input
 							if ( editproperty >= 3 && editproperty < 8 )
@@ -6241,7 +6346,14 @@ int main(int argc, char** argv)
 								if ( editproperty > 3 && editproperty < 8 )
 								{
 									spacing = 18;
-									printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + (editproperty - 1) * spacing, "\26");
+									if ( textInsertCaratPosition >= 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, subx1 + 8 + textInsertCaratPosition * 8, suby1 + 44 + (editproperty - 1) * spacing, color, "\26");
+									}
+									else
+									{
+										printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + (editproperty - 1) * spacing, "\26");
+									}
 								}
 								else
 								{
@@ -6254,7 +6366,14 @@ int main(int argc, char** argv)
 									}
 									else if ( editproperty == 3 )
 									{
-										printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + spacing, "\26");
+										if ( textInsertCaratPosition >= 0 )
+										{
+											printTextFormattedColor(font8x8_bmp, subx1 + 8 + textInsertCaratPosition * 8, suby1 + 44 + spacing, color, "\26");
+										}
+										else
+										{
+											printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + spacing, "\26");
+										}
 									}
 									else
 									{
