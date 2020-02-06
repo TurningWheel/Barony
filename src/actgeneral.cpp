@@ -1851,12 +1851,37 @@ void Entity::actTextSource()
 				{
 					// usage: Hello @p @d 123 will send to distance 123 units away and send message "Hello player "
 					distance = distance + output.at(foundDistanceRequirement);
-					//messagePlayer(clientnum, "%c", output.at(foundDistanceRequirement));
 					++foundDistanceRequirement;
 				}
 				distanceRequirement = std::stoi(distance);
 				output.erase(output.find(distance), distance.length());
-				//messagePlayer(clientnum, "%d", distanceRequirement);
+			}
+
+			size_t foundInputTag = output.find("@in=");
+			while ( foundInputTag != std::string::npos )
+			{
+				output.erase(foundInputTag, strlen("@in="));
+				std::string impulseStr;
+				size_t inputTagStrIndex = foundInputTag;
+				while ( inputTagStrIndex < output.length()
+					&& output.at(inputTagStrIndex) != ' '
+					&& output.at(inputTagStrIndex) != '\0'
+					)
+				{
+					// usage: @in=IN_USE will get the input key for use
+					impulseStr = impulseStr + output.at(inputTagStrIndex);
+					++inputTagStrIndex;
+				}
+				for ( int i = 0; i < NUMIMPULSES; ++i )
+				{
+					if ( impulseStrings[i].compare(impulseStr) == 0 )
+					{
+						output.erase(output.find(impulseStr), impulseStr.length());
+						output.insert(foundInputTag, getInputName(impulses[i]));
+						break;
+					}
+				}
+				foundInputTag = output.find("@in=");
 			}
 
 			size_t found = output.find("\\n");

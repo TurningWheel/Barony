@@ -182,6 +182,34 @@ extern bool stop;
 #define IN_HOTBAR_SCROLL_RIGHT 23
 #define IN_HOTBAR_SCROLL_SELECT 24
 #define NUMIMPULSES 25
+static const std::vector<std::string> impulseStrings =
+{
+	"IN_FORWARD",
+	"IN_LEFT",
+	"IN_BACK",
+	"IN_RIGHT",
+	"IN_TURNL",
+	"IN_TURNR",
+	"IN_UP",
+	"IN_DOWN",
+	"IN_CHAT",
+	"IN_COMMAND",
+	"IN_STATUS",
+	"IN_SPELL_LIST",
+	"IN_CAST_SPELL",
+	"IN_DEFEND",
+	"IN_ATTACK",
+	"IN_USE",
+	"IN_AUTOSORT",
+	"IN_MINIMAPSCALE",
+	"IN_TOGGLECHATLOG",
+	"IN_FOLLOWERMENU",
+	"IN_FOLLOWERMENU_LASTCMD",
+	"IN_FOLLOWERMENU_CYCLENEXT",
+	"IN_HOTBAR_SCROLL_LEFT",
+	"IN_HOTBAR_SCROLL_RIGHT",
+	"IN_HOTBAR_SCROLL_SELECT"
+};
 
 //Joystick/gamepad impulses
 //TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
