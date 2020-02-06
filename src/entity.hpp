@@ -1078,6 +1078,7 @@ class TextSourceScript
 {
 public:
 	const int k_ScriptError = -1;
+	const int k_ScriptRangeEntireMap = -2;
 	enum ClientInformationType : int
 	{
 		CLIENT_UPDATE_ALL,
@@ -1098,6 +1099,23 @@ public:
 		SCRIPT_ATTACHED,
 		SCRIPT_ATTACHED_FIRED
 	};
+	enum ScriptTriggeredBy : int
+	{
+		TRIGGER_POWER,
+		TRIGGER_ATTACHED_ISREMOVED,
+		TRIGGER_ATTACHED_EXISTS,
+		TRIGGER_ATTACHED_INVIS,
+		TRIGGER_ATTACHED_VISIBLE,
+		TRIGGER_ATTACHED_ALWAYS
+	};
+	/*enum TagAvailableToEntity : int
+	{
+		AVAILABLE_ALL,
+		CREATURES_ALL,
+		CREATURES_MONSTERS,
+		CREATURES_PLAYERS,
+		ITEMS
+	};*/
 	bool containsOperator(char c)
 	{
 		if ( c == '+' || c == '-' || c == '=' )
@@ -1122,7 +1140,49 @@ public:
 	void playerClearInventory(bool clearStats);
 	std::string getScriptFromEntity(Entity& src);
 	void parseScriptInMapGeneration(Entity& src);
-	
+	void handleTextSourceScript(Entity& src, std::string input);
+	int textSourceProcessScriptTag(std::string& input, std::string findTag);
 	bool hasClearedInventory = false;
+	int getScriptType(Sint32 skill)
+	{
+		return (skill & 0xF);
+	}
+	int getAttachedToEntityType(Sint32 skill)
+	{
+		return (skill & 0xF0);
+	}
+	int getTriggerType(Sint32 skill)
+	{
+		return (skill & 0xF00);
+	}
+	void setScriptType(Sint32& skill, int setValue)
+	{
+		skill &= 0xFFFFFFF0;
+		skill |= (setValue & 0xF);
+	}
+	void setAttachedToEntityType(Sint32& skill, int setValue)
+	{
+		skill &= 0xFFFFFF0F;
+		skill |= ((setValue << 4) & 0xF0);
+	}
+	void setTriggerType(Sint32& skill, int setValue)
+	{
+		skill &= 0xFFFFF0FF;
+		skill |= ((setValue << 8) & 0xF00);
+	}
+	std::vector<Entity*> getScriptAttachedEntities(Entity& script)
+	{
+		std::vector<Entity*> entities;
+		for ( node_t* node = script.children.first; node; node = node->next )
+		{
+			Uint32 entityUid = *((Uint32*)node->element);
+			Entity* child = uidToEntity(entityUid);
+			if ( child )
+			{
+				entities.push_back(child);
+			}
+		}
+		return entities;
+	}
 };
 extern TextSourceScript textSourceScript;

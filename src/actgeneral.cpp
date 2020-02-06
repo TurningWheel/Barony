@@ -538,6 +538,16 @@ void actFloorDecoration(Entity* my)
 					buf[totalChars] = '\0';
 				}
 				std::string output = buf;
+
+
+				size_t foundSignpostCharacter = output.find("#");
+				if ( foundSignpostCharacter == 0 )
+				{
+					output.erase(0, 1);
+					output.insert(0, "The sign says:\n \"");
+					output += "\"";
+				}
+
 				size_t found = output.find("\\n");
 				while ( found != std::string::npos )
 				{
@@ -563,14 +573,14 @@ void actTextSource(Entity* my)
 
 TextSourceScript textSourceScript;
 
-int textSourceProcessScriptTag(std::string& input, std::string findTag)
+int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string findTag)
 {
 	size_t foundScriptTag = input.find(findTag);
 	if ( foundScriptTag != std::string::npos )
 	{
-		if ( !textSourceScript.containsOperator(findTag.back()) )
+		if ( !containsOperator(findTag.back()) )
 		{
-			textSourceScript.eraseTag(input, findTag, foundScriptTag);
+			eraseTag(input, findTag, foundScriptTag);
 			// end the function here, return non-error as we found the tag.
 			return 0;
 		}
@@ -644,34 +654,72 @@ int textSourceProcessScriptTag(std::string& input, std::string findTag)
 
 			return (x1 & 0xFF) + ((x2 & 0xFF) << 8) + ((y1 & 0xFF) << 16) + ((y2 & 0xFF) << 24);
 		}
-
-		if ( findTag.compare("@attachto=") == 0 )
+		if ( !tagValue.compare("all") )
+		{
+			int x1 = 0;
+			int x2 = map.width - 1;
+			int y1 = 0;
+			int y2 = map.height - 1;
+			return (x1 & 0xFF) + ((x2 & 0xFF) << 8) + ((y1 & 0xFF) << 16) + ((y2 & 0xFF) << 24);
+		}
+		else if ( findTag.compare("@attachto=") == 0 )
 		{
 			if ( !tagValue.compare("monsters") )
 			{
-				return textSourceScript.TO_MONSTERS;
+				return TO_MONSTERS;
 			}
 			else if ( !tagValue.compare("items") )
 			{
-				return textSourceScript.TO_ITEMS;
+				return TO_ITEMS;
 			}
 			else if ( !tagValue.compare("players") )
 			{
-				return textSourceScript.TO_PLAYERS;
+				return TO_PLAYERS;
 			}
 			else
 			{
-				return textSourceScript.k_ScriptError;
+				return k_ScriptError;
+			}
+		}
+		else if ( findTag.compare("@triggerif=") == 0 )
+		{
+			if ( !tagValue.compare("attached#dies") )
+			{
+				return TRIGGER_ATTACHED_ISREMOVED;
+			}
+			else if ( !tagValue.compare("attached#exists") )
+			{
+				return TRIGGER_ATTACHED_EXISTS;
+			}
+			else if ( !tagValue.compare("attached#invisible") )
+			{
+				return TRIGGER_ATTACHED_INVIS;
+			}
+			else if ( !tagValue.compare("attached#visible") )
+			{
+				return TRIGGER_ATTACHED_VISIBLE;
+			}
+			else if ( !tagValue.compare("always") )
+			{
+				return TRIGGER_ATTACHED_ALWAYS;
+			}
+			else
+			{
+				return k_ScriptError;
 			}
 		}
 
 		return std::stoi(tagValue);
 	}
-	return textSourceScript.k_ScriptError;
+	return k_ScriptError;
 }
 
-void handleTextSourceScript(std::string input)
+void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 {
+	if ( src.ticks == 0 )
+	{
+		return; // wait for first round of entity actions.
+	}
 	bool statOnlyUpdateNeeded = false;
 
 	std::vector<std::string> tokens;
@@ -697,25 +745,67 @@ void handleTextSourceScript(std::string input)
 
 	printlog("[SCRIPT]: Starting Execution...");
 	std::string executionLog = "[SCRIPT]: Processed tokens:";
+	std::vector<Entity*> attachedEntities = textSourceScript.getScriptAttachedEntities(src);
+
 	for ( auto it = tokens.begin(); it != tokens.end(); ++it )
 	{
 		executionLog.append(" ").append(*it);
+
+		bool processOnAttachedEntity = false;
+		size_t foundAttachedTag = (*it).find("@attached.");
+		if ( foundAttachedTag != std::string::npos )
+		{
+			processOnAttachedEntity = true;
+			// erase "attached." in token, pass the information on to the tag contents.
+			(*it).erase(foundAttachedTag + 1, strlen("attached."));
+			size_t foundAttachedTag = input.find("@attached.");
+			if ( foundAttachedTag != std::string::npos )
+			{
+				input.erase(foundAttachedTag + 1, strlen("attached."));
+			}
+		}
+
 		if ( (*it).find("@clrplayer") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@clrplayer");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
-				textSourceScript.playerClearInventory(true);
-				if ( multiplayer == SERVER )
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
 				{
-					for ( int c = 1; c < MAXPLAYERS; ++c )
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actPlayer && stats[entity->skill[2]] && !client_disconnected[entity->skill[2]] )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+				}
+				else
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
 						if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
 						{
-							stats[c]->freePlayerEquipment();
-							stats[c]->clearStats();
-							textSourceScript.updateClientInformation(c, true, true, TextSourceScript::CLIENT_UPDATE_ALL);
+							applyToEntities.push_back(players[c]->entity);
 						}
+					}
+				}
+
+				for ( auto entity : applyToEntities )
+				{
+					Stat* stats = entity->getStats();
+					int player = entity->skill[2];
+					if ( player == 0 )
+					{
+						playerClearInventory(true);
+					}
+					else
+					{
+						// other players
+						stats->freePlayerEquipment();
+						stats->clearStats();
+						updateClientInformation(player, true, true, TextSourceScript::CLIENT_UPDATE_ALL);
 					}
 				}
 			}
@@ -723,7 +813,7 @@ void handleTextSourceScript(std::string input)
 		else if ( (*it).find("@class=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@class=");
-			if ( result != textSourceScript.k_ScriptError && result >= CLASS_BARBARIAN && result < NUMCLASSES )
+			if ( result != k_ScriptError && result >= CLASS_BARBARIAN && result < NUMCLASSES )
 			{
 				if ( !enabledDLCPack1 && result >= CLASS_CONJURER && result <= CLASS_BREWER )
 				{
@@ -733,64 +823,149 @@ void handleTextSourceScript(std::string input)
 				{
 					result = CLASS_BARBARIAN;
 				}
-				for ( int c = 0; c < MAXPLAYERS; ++c )
+
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
 				{
-					if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+					for ( auto entity : attachedEntities )
 					{
-						client_classes[c] = result;
-						bool oldIntro = intro;
-						intro = true;
-						initClass(c);
-						intro = oldIntro;
+						if ( entity->behavior == &actPlayer && stats[entity->skill[2]] && !client_disconnected[entity->skill[2]] )
+						{
+							applyToEntities.push_back(entity);
+						}
 					}
 				}
-				for ( int c = 1; c < MAXPLAYERS; ++c )
+				else
 				{
-					textSourceScript.updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_CLASS);
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+						{
+							applyToEntities.push_back(players[c]->entity);
+						}
+					}
+				}
+
+				for ( auto entity : applyToEntities )
+				{
+					int player = entity->skill[2];
+					client_classes[player] = result;
+					bool oldIntro = intro;
+					intro = true;
+					initClass(player);
+					intro = oldIntro;
+				}
+
+				if ( !applyToEntities.empty() )
+				{
+					for ( int c = 1; c < MAXPLAYERS; ++c )
+					{
+						updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_CLASS);
+					}
 				}
 			}
 		}
 		else if ( (*it).find("@clrstats") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@clrstats");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
-				for ( int c = 0; c < MAXPLAYERS; ++c )
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
 				{
-					if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+					for ( auto entity : attachedEntities )
 					{
-						stats[c]->HP = DEFAULT_HP;
-						stats[c]->MAXHP = DEFAULT_HP;
-						stats[c]->OLDHP = stats[c]->HP;
-						stats[c]->MP = DEFAULT_MP;
-						stats[c]->MAXMP = DEFAULT_MP;
-						stats[c]->STR = 0;
-						stats[c]->DEX = 0;
-						stats[c]->CON = 0;
-						stats[c]->INT = 0;
-						stats[c]->PER = 0;
-						stats[c]->CHR = 0;
-						stats[c]->LVL = 1;
-						stats[c]->GOLD = 0;
-						stats[c]->EXP = 0;
+						if ( entity->behavior != &actPlayer && entity->behavior != actMonster )
+						{
+							continue;
+						}
+						if ( entity->behavior == &actPlayer && !client_disconnected[entity->skill[2]] )
+						{
+							statOnlyUpdateNeeded = true;
+						}
+						applyToEntities.push_back(entity);
 					}
 				}
-				statOnlyUpdateNeeded = true;
+				else
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+						{
+							applyToEntities.push_back(players[c]->entity);
+						}
+					}
+				}
+
+				for ( auto entity : applyToEntities )
+				{
+					if ( entity->behavior == &actPlayer )
+					{
+						statOnlyUpdateNeeded = true;
+					}
+					Stat* stats = entity->getStats();
+					if ( stats )
+					{
+						stats->HP = DEFAULT_HP;
+						stats->MAXHP = DEFAULT_HP;
+						stats->OLDHP = stats->HP;
+						stats->MP = DEFAULT_MP;
+						stats->MAXMP = DEFAULT_MP;
+						stats->STR = 0;
+						stats->DEX = 0;
+						stats->CON = 0;
+						stats->INT = 0;
+						stats->PER = 0;
+						stats->CHR = 0;
+						stats->LVL = 1;
+						stats->GOLD = 0;
+						stats->EXP = 0;
+					}
+				}
 			}
 		}
 		else if ( (*it).find("@hunger=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@hunger=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
-				for ( int c = 0; c < MAXPLAYERS; ++c )
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
 				{
-					if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+					for ( auto entity : attachedEntities )
 					{
-						stats[c]->HUNGER = std::min(result, 2000);
-						if ( c != clientnum )
+						if ( entity->behavior != &actPlayer )
 						{
-							textSourceScript.updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_HUNGER);
+							continue;
+						}
+						applyToEntities.push_back(entity);
+					}
+				}
+				else
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+						{
+							applyToEntities.push_back(players[c]->entity);
+						}
+					}
+				}
+
+				for ( auto entity : applyToEntities )
+				{
+					int player = -1;
+					if ( entity->behavior != &actPlayer )
+					{
+						continue;
+					}
+					player = entity->skill[2];
+					if ( stats[player] && !client_disconnected[player] )
+					{
+						stats[player]->HUNGER = std::min(result, 2000);
+						if ( player != clientnum )
+						{
+							updateClientInformation(player, false, false, TextSourceScript::CLIENT_UPDATE_HUNGER);
 						}
 					}
 				}
@@ -799,7 +974,7 @@ void handleTextSourceScript(std::string input)
 		else if ( (*it).find("@nextlevel=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@nextlevel=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
 				loadnextlevel = true;
 				skipLevelsOnLoad = result;
@@ -808,7 +983,7 @@ void handleTextSourceScript(std::string input)
 		else if ( (*it).find("@power=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@power=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
 				int x2 = (result >> 8) & 0xFF;
@@ -860,7 +1035,7 @@ void handleTextSourceScript(std::string input)
 		else if ( (*it).find("@unpower=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@unpower=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
 				int x2 = (result >> 8) & 0xFF;
@@ -888,17 +1063,20 @@ void handleTextSourceScript(std::string input)
 		else if ( (*it).find("@freezemonsters=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@freezemonsters=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
 				int x2 = (result >> 8) & 0xFF;
 				int y1 = (result >> 16) & 0xFF;
 				int y2 = (result >> 24) & 0xFF;
-				for ( node_t* node = map.creatures->first; node; node = node->next )
+				if ( processOnAttachedEntity )
 				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity && entity->behavior == &actMonster )
+					for ( auto entity : attachedEntities )
 					{
+						if ( entity->behavior != &actMonster )
+						{
+							continue;
+						}
 						int findx = static_cast<int>(entity->x) >> 4;
 						int findy = static_cast<int>(entity->y) >> 4;
 						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
@@ -907,22 +1085,41 @@ void handleTextSourceScript(std::string input)
 						}
 					}
 				}
+				else
+				{
+					for ( node_t* node = map.creatures->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actMonster )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								entity->setEffect(EFF_STUNNED, true, -1, false);
+							}
+						}
+					}
+				}
 			}
 		}
 		else if ( (*it).find("@unfreezemonsters=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@unfreezemonsters=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
 				int x2 = (result >> 8) & 0xFF;
 				int y1 = (result >> 16) & 0xFF;
 				int y2 = (result >> 24) & 0xFF;
-				for ( node_t* node = map.creatures->first; node; node = node->next )
+				if ( processOnAttachedEntity )
 				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity && entity->behavior == &actMonster )
+					for ( auto entity : attachedEntities )
 					{
+						if ( entity->behavior != &actMonster )
+						{
+							continue;
+						}
 						int findx = static_cast<int>(entity->x) >> 4;
 						int findy = static_cast<int>(entity->y) >> 4;
 						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
@@ -931,27 +1128,62 @@ void handleTextSourceScript(std::string input)
 						}
 					}
 				}
+				else
+				{
+					for ( node_t* node = map.creatures->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actMonster )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								entity->setEffect(EFF_STUNNED, false, 0, false);
+							}
+						}
+					}
+				}
 			}
 		}
 		else if ( (*it).find("@killall=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@killall=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
 				int x2 = (result >> 8) & 0xFF;
 				int y1 = (result >> 16) & 0xFF;
 				int y2 = (result >> 24) & 0xFF;
-				for ( node_t* node = map.creatures->first; node; node = node->next )
+				if ( processOnAttachedEntity )
 				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity && entity->behavior == &actMonster )
+					for ( auto entity : attachedEntities )
 					{
+						if ( entity->behavior != &actMonster )
+						{
+							continue;
+						}
 						int findx = static_cast<int>(entity->x) >> 4;
 						int findy = static_cast<int>(entity->y) >> 4;
 						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
 						{
 							entity->setHP(0);
+						}
+					}
+				}
+				else
+				{
+					for ( node_t* node = map.creatures->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actMonster )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								entity->setHP(0);
+							}
 						}
 					}
 				}
@@ -960,17 +1192,20 @@ void handleTextSourceScript(std::string input)
 		else if ( (*it).find("@killenemies=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@killenemies=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
 				int x2 = (result >> 8) & 0xFF;
 				int y1 = (result >> 16) & 0xFF;
 				int y2 = (result >> 24) & 0xFF;
-				for ( node_t* node = map.creatures->first; node; node = node->next )
+				if ( processOnAttachedEntity )
 				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity && entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+					for ( auto entity : attachedEntities )
 					{
+						if ( entity->behavior != &actMonster || !entity->monsterAllyGetPlayerLeader() )
+						{
+							continue;
+						}
 						int findx = static_cast<int>(entity->x) >> 4;
 						int findy = static_cast<int>(entity->y) >> 4;
 						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
@@ -979,22 +1214,41 @@ void handleTextSourceScript(std::string input)
 						}
 					}
 				}
+				else
+				{
+					for ( node_t* node = map.creatures->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								entity->setHP(0);
+							}
+						}
+					}
+				}
 			}
 		}
 		else if ( (*it).find("@nodropitems=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@nodropitems=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
 				int x2 = (result >> 8) & 0xFF;
 				int y1 = (result >> 16) & 0xFF;
 				int y2 = (result >> 24) & 0xFF;
-				for ( node_t* node = map.creatures->first; node; node = node->next )
+				if ( processOnAttachedEntity )
 				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity && entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+					for ( auto entity : attachedEntities )
 					{
+						if ( entity->behavior != &actMonster )
+						{
+							continue;
+						}
 						int findx = static_cast<int>(entity->x) >> 4;
 						int findy = static_cast<int>(entity->y) >> 4;
 						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
@@ -1006,14 +1260,50 @@ void handleTextSourceScript(std::string input)
 						}
 					}
 				}
+				else
+				{
+					for ( node_t* node = map.creatures->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								if ( entity->getStats() )
+								{
+									entity->getStats()->monsterNoDropItems = 1;
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 		else if ( (*it).find("@copyNPC=") != std::string::npos )
 		{
 			std::string profTag = "@copyNPC=";
 			int result = textSourceProcessScriptTag(input, profTag);
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior != &actMonster && entity->behavior != &actPlayer )
+						{
+							continue;
+						}
+						if ( entity->behavior == &actPlayer && client_disconnected[entity->skill[2]] )
+						{
+							continue;
+						}
+						applyToEntities.push_back(entity);
+					}
+				}
+				
 				for ( node_t* node = map.entities->first; node; node = node->next )
 				{
 					Entity* scriptEntity = (Entity*)node->element;
@@ -1023,11 +1313,129 @@ void handleTextSourceScript(std::string input)
 						if ( scriptStats && !strcmp(scriptStats->name, "scriptNPC") && (scriptStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFF) == result )
 						{
 							// copy stats.
-							for ( int c = 0; c < MAXPLAYERS && !client_disconnected[c] && players[c] && players[c]->entity; ++c )
+							if ( processOnAttachedEntity )
 							{
-								stats[c]->copyNPCStatsAndInventoryFrom(*scriptStats);
+								for ( auto entity : applyToEntities )
+								{
+									Stat* stats = entity->getStats();
+									if ( stats )
+									{
+										stats->copyNPCStatsAndInventoryFrom(*scriptStats);
+										if ( entity->behavior == &actPlayer )
+										{
+											statOnlyUpdateNeeded = true;
+										}
+									}
+								}
 							}
-							statOnlyUpdateNeeded = true;
+							else
+							{
+								for ( int c = 0; c < MAXPLAYERS && !client_disconnected[c] && players[c] && players[c]->entity; ++c )
+								{
+									stats[c]->copyNPCStatsAndInventoryFrom(*scriptStats);
+								}
+								statOnlyUpdateNeeded = true;
+							}
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@setenemy=") != std::string::npos )
+		{
+			std::string profTag = "@setenemy=";
+			int result = textSourceProcessScriptTag(input, profTag);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								if ( entity->getStats() )
+								{
+									entity->getStats()->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					for ( node_t* node = map.creatures->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								if ( entity->getStats() )
+								{
+									entity->getStats()->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@setally=") != std::string::npos )
+		{
+			std::string profTag = "@setally=";
+			int result = textSourceProcessScriptTag(input, profTag);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF; 
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								if ( entity->getStats() )
+								{
+									entity->getStats()->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ALLY;
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					for ( node_t* node = map.creatures->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								if ( entity->getStats() )
+								{
+									entity->getStats()->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ALLY;
+								}
+							}
 						}
 					}
 				}
@@ -1065,31 +1473,56 @@ void handleTextSourceScript(std::string input)
 				if ( (*it).find(profTag) != std::string::npos )
 				{
 					int result = textSourceProcessScriptTag(input, profTag);
-					if ( result != textSourceScript.k_ScriptError )
+					if ( result != k_ScriptError )
 					{
-						for ( int c = 0; c < MAXPLAYERS; ++c )
+						std::vector<Entity*> applyToEntities;
+						if ( processOnAttachedEntity )
 						{
-							if ( stats[c] && !client_disconnected[c] )
+							for ( auto entity : attachedEntities )
+							{
+								if ( entity->behavior == &actMonster 
+									|| (entity->behavior == &actPlayer && stats[entity->skill[2]] && !client_disconnected[entity->skill[2]]) )
+								{
+									applyToEntities.push_back(entity);
+									statOnlyUpdateNeeded = (entity->behavior == &actPlayer);
+								}
+							}
+						}
+						else
+						{
+							for ( int c = 0; c < MAXPLAYERS; ++c )
+							{
+								if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+								{
+									applyToEntities.push_back(players[c]->entity);
+									statOnlyUpdateNeeded = true;
+								}
+							}
+						}
+						for ( auto entity : applyToEntities )
+						{
+							Stat* stats = entity->getStats();
+							if ( stats )
 							{
 								switch ( i )
 								{
 									case STAT_STR:
-										stats[c]->STR = result;
+										stats->STR = result;
 										break;
 									case STAT_DEX:
-										stats[c]->DEX = result;
+										stats->DEX = result;
 										break;
 									case STAT_CON:
-										stats[c]->CON = result;
+										stats->CON = result;
 										break;
 									case STAT_INT:
-										stats[c]->INT = result;
+										stats->INT = result;
 										break;
 									case STAT_PER:
-										stats[c]->PER = result;
+										stats->PER = result;
 										break;
 									case STAT_CHR:
-										stats[c]->CHR = result;
+										stats->CHR = result;
 										break;
 									default:
 										break;
@@ -1130,38 +1563,62 @@ void handleTextSourceScript(std::string input)
 				if ( (*it).find(profTag) != std::string::npos )
 				{
 					int result = textSourceProcessScriptTag(input, profTag);
-					if ( result != textSourceScript.k_ScriptError )
+					if ( result != k_ScriptError )
 					{
-						for ( int c = 0; c < MAXPLAYERS; ++c )
+						std::vector<Entity*> applyToEntities;
+						if ( processOnAttachedEntity )
 						{
-							if ( stats[c] && !client_disconnected[c] )
+							for ( auto entity : attachedEntities )
+							{
+								if ( entity->behavior == &actMonster
+									|| (entity->behavior == &actPlayer && stats[entity->skill[2]] && !client_disconnected[entity->skill[2]]) )
+								{
+									applyToEntities.push_back(entity);
+									statOnlyUpdateNeeded = (entity->behavior == &actPlayer);
+								}
+							}
+						}
+						else
+						{
+							for ( int c = 0; c < MAXPLAYERS; ++c )
+							{
+								if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+								{
+									applyToEntities.push_back(players[c]->entity);
+									statOnlyUpdateNeeded = true;
+								}
+							}
+						}
+						for ( auto entity : applyToEntities )
+						{
+							Stat* stats = entity->getStats();
+							if ( stats )
 							{
 								switch ( i )
 								{
 									case STAT_STR:
-										stats[c]->STR += result;
+										stats->STR += result;
 										break;
 									case STAT_DEX:
-										stats[c]->DEX += result;
+										stats->DEX += result;
 										break;
 									case STAT_CON:
-										stats[c]->CON += result;
+										stats->CON += result;
 										break;
 									case STAT_INT:
-										stats[c]->INT += result;
+										stats->INT += result;
 										break;
 									case STAT_PER:
-										stats[c]->PER += result;
+										stats->PER += result;
 										break;
 									case STAT_CHR:
-										stats[c]->CHR += result;
+										stats->CHR += result;
 										break;
 									default:
 										break;
 								}
 							}
 						}
-						statOnlyUpdateNeeded = true;
 					}
 				}
 			}
@@ -1173,16 +1630,41 @@ void handleTextSourceScript(std::string input)
 				if ( (*it).find(profTag) != std::string::npos )
 				{
 					int result = textSourceProcessScriptTag(input, profTag);
-					if ( result != textSourceScript.k_ScriptError )
+					if ( result != k_ScriptError )
 					{
-						for ( int c = 0; c < MAXPLAYERS; ++c )
+						std::vector<Entity*> applyToEntities;
+						if ( processOnAttachedEntity )
 						{
-							if ( stats[c] && !client_disconnected[c] )
+							for ( auto entity : attachedEntities )
 							{
-								stats[c]->PROFICIENCIES[i] = result;
+								if ( entity->behavior == &actMonster
+									|| (entity->behavior == &actPlayer && stats[entity->skill[2]] && !client_disconnected[entity->skill[2]]) )
+								{
+									applyToEntities.push_back(entity);
+									statOnlyUpdateNeeded = (entity->behavior == &actPlayer);
+								}
 							}
 						}
-						statOnlyUpdateNeeded = true;
+						else
+						{
+							for ( int c = 0; c < MAXPLAYERS; ++c )
+							{
+								if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+								{
+									applyToEntities.push_back(players[c]->entity);
+									statOnlyUpdateNeeded = true;
+								}
+							}
+						}
+
+						for ( auto entity : applyToEntities )
+						{
+							Stat* stats = entity->getStats();
+							if ( stats )
+							{
+								stats->PROFICIENCIES[i] = result;
+							}
+						}
 					}
 				}
 			}
@@ -1193,16 +1675,41 @@ void handleTextSourceScript(std::string input)
 				if ( (*it).find(profTag) != std::string::npos )
 				{
 					int result = textSourceProcessScriptTag(input, profTag);
-					if ( result != textSourceScript.k_ScriptError )
+					if ( result != k_ScriptError )
 					{
-						for ( int c = 0; c < MAXPLAYERS; ++c )
+						std::vector<Entity*> applyToEntities;
+						if ( processOnAttachedEntity )
 						{
-							if ( stats[c] && !client_disconnected[c] )
+							for ( auto entity : attachedEntities )
 							{
-								stats[c]->PROFICIENCIES[i] += result;
+								if ( entity->behavior == &actMonster
+									|| (entity->behavior == &actPlayer && stats[entity->skill[2]] && !client_disconnected[entity->skill[2]]) )
+								{
+									applyToEntities.push_back(entity);
+									statOnlyUpdateNeeded = (entity->behavior == &actPlayer);
+								}
 							}
 						}
-						statOnlyUpdateNeeded = true;
+						else
+						{
+							for ( int c = 0; c < MAXPLAYERS; ++c )
+							{
+								if ( stats[c] && !client_disconnected[c] && players[c] && players[c]->entity )
+								{
+									applyToEntities.push_back(players[c]->entity);
+									statOnlyUpdateNeeded = true;
+								}
+							}
+						}
+
+						for ( auto entity : applyToEntities )
+						{
+							Stat* stats = entity->getStats();
+							if ( stats )
+							{
+								stats->PROFICIENCIES[i] += result;
+							}
+						}
 					}
 				}
 			}
@@ -1213,7 +1720,7 @@ void handleTextSourceScript(std::string input)
 	{
 		for ( int c = 1; c < MAXPLAYERS; ++c )
 		{
-			textSourceScript.updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_ALL);
+			updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_ALL);
 		}
 	}
 	printlog("[SCRIPT]: Finished running.");
@@ -1232,13 +1739,21 @@ void Entity::actTextSource()
 	}
 
 	bool powered = false;
-	if ( textSourceIsScript == textSourceScript.NO_SCRIPT || textSourceIsScript == textSourceScript.SCRIPT_NORMAL )
+	if ( textSourceScript.getScriptType(textSourceIsScript) == textSourceScript.NO_SCRIPT 
+		|| textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_POWER )
 	{
 		powered = (circuit_status == CIRCUIT_ON);
 	}
-	else if ( textSourceIsScript == textSourceScript.SCRIPT_ATTACHED )
+	else if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_ALWAYS )
+	{
+		textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
+		powered = true;
+	}
+	else if ( textSourceScript.getScriptType(textSourceIsScript) == textSourceScript.SCRIPT_ATTACHED )
 	{
 		int entitiesExisting = 0;
+		int entitiesVisible = 0;
+		int entitiesInvisible = 0;
 		// check if our attached entities still exist.
 		for ( node_t* node = children.first; node; node = node->next )
 		{
@@ -1247,15 +1762,44 @@ void Entity::actTextSource()
 			if ( child )
 			{
 				++entitiesExisting;
+				if ( child->flags[INVISIBLE] )
+				{
+					++entitiesInvisible;
+				}
+				else
+				{
+					++entitiesVisible;
+				}
 			}
 		}
 		if ( entitiesExisting == 0 )
 		{
-			textSourceIsScript = textSourceScript.SCRIPT_ATTACHED_FIRED;
-			powered = true;
+			textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
+			if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_ISREMOVED )
+			{
+				powered = true;
+			}
+		}
+		else
+		{
+			textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
+			if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_EXISTS )
+			{
+				powered = true;
+			}
+			else if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_INVIS
+				&& entitiesInvisible == entitiesExisting )
+			{
+				powered = true;
+			}
+			else if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_VISIBLE
+				&& entitiesVisible == entitiesExisting )
+			{
+				powered = true;
+			}
 		}
 	}
-	else if ( textSourceIsScript == textSourceScript.SCRIPT_ATTACHED_FIRED )
+	else if ( textSourceScript.getScriptType(textSourceIsScript) == textSourceScript.SCRIPT_ATTACHED_FIRED )
 	{
 		powered = true;
 	}
@@ -1281,9 +1825,9 @@ void Entity::actTextSource()
 			Uint32 color = SDL_MapRGB(mainsurface->format, (textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
 				(textSourceColorRGB >> 0) & 0xFF);
 
-			if ( textSourceIsScript != 0 )
+			if ( textSourceIsScript != textSourceScript.NO_SCRIPT )
 			{
-				handleTextSourceScript(output);
+				textSourceScript.handleTextSourceScript(*this, output);
 				return;
 			}
 
@@ -1501,9 +2045,10 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 		{
 			script.erase(foundScriptTag, strlen("@script"));
 		}
-		src.textSourceIsScript = SCRIPT_NORMAL;
+		textSourceScript.setScriptType(src.textSourceIsScript, textSourceScript.SCRIPT_NORMAL);
+		textSourceScript.setTriggerType(src.textSourceIsScript, textSourceScript.TRIGGER_POWER);
 	}
-	if ( src.textSourceIsScript == 0 )
+	if ( src.textSourceIsScript == NO_SCRIPT )
 	{
 		return;
 	}
@@ -1511,11 +2056,11 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 	if ( script.find("@attachto=") != std::string::npos )
 	{
 		int attachTo = textSourceProcessScriptTag(script, "@attachto=");
-		if ( attachTo == textSourceScript.k_ScriptError )
+		if ( attachTo == k_ScriptError )
 		{
 			return;
 		}
-		src.textSourceIsScript = SCRIPT_ATTACHED;
+		textSourceScript.setScriptType(src.textSourceIsScript, textSourceScript.SCRIPT_ATTACHED);
 		int x1 = static_cast<int>(src.x / 16); // default to just whatever this script is sitting on.
 		int x2 = static_cast<int>(src.x / 16);
 		int y1 = static_cast<int>(src.y / 16);
@@ -1523,7 +2068,7 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 		if ( script.find("@attachrange=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(script, "@attachrange=");
-			if ( result != textSourceScript.k_ScriptError )
+			if ( result != k_ScriptError )
 			{
 				x1 = result & 0xFF;
 				x2 = (result >> 8) & 0xFF;
@@ -1531,6 +2076,16 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 				y2 = (result >> 24) & 0xFF;
 			}
 		}
+
+		if ( script.find("@triggerif=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(script, "@triggerif=");
+			if ( result != k_ScriptError )
+			{
+				textSourceScript.setTriggerType(src.textSourceIsScript, static_cast<ScriptTriggeredBy>(result));
+			}
+		}
+
 		for ( node_t* node = map.entities->first; node; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;

@@ -825,12 +825,8 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			break;
 		}
 	}
-	if ( player == -1 )
-	{
-		return;
-	}
 
-	this->type = src.type;
+	//this->type = src.type;
 
 	this->HP = src.HP;
 	this->MAXHP = src.MAXHP;
@@ -855,19 +851,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.helmet )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.helmet);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.helmet);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->helmet )
+			{
+				this->helmet = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->helmet, src.helmet);
 		}
 	}
 	else
@@ -876,19 +883,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.breastplate )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.breastplate);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.breastplate);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->breastplate )
+			{
+				this->breastplate = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->breastplate, src.breastplate);
 		}
 	}
 	else
@@ -897,19 +915,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.gloves )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.gloves);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.gloves);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->gloves )
+			{
+				this->gloves = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->gloves, src.gloves);
 		}
 	}
 	else
@@ -918,19 +947,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.shoes )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.shoes);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.shoes);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->shoes )
+			{
+				this->shoes = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->shoes, src.shoes);
 		}
 	}
 	else
@@ -939,19 +979,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.shield )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.shield);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.shield);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->shield )
+			{
+				this->shield = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->shield, src.shield);
 		}
 	}
 	else
@@ -960,19 +1011,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.weapon )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.weapon);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.weapon);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->weapon )
+			{
+				this->weapon = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->weapon, src.weapon);
 		}
 	}
 	else
@@ -981,19 +1043,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.cloak )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.cloak);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.cloak);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->cloak )
+			{
+				this->cloak = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->cloak, src.cloak);
 		}
 	}
 	else
@@ -1002,19 +1075,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.amulet )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.amulet);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.amulet);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->amulet )
+			{
+				this->amulet = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->amulet, src.amulet);
 		}
 	}
 	else
@@ -1023,19 +1107,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.ring )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.ring);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.ring);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->ring )
+			{
+				this->ring = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->ring, src.ring);
 		}
 	}
 	else
@@ -1044,19 +1139,30 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	if ( src.mask )
 	{
-		Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-		copyItem(item, src.mask);
-		item->identified = true;
-		if ( player == clientnum )
+		if ( player >= 0 )
 		{
-			Item* pickedUp = itemPickup(player, item);
-			useItem(pickedUp, player);
-			free(item);
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.mask);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
 		}
 		else
 		{
-			serverSendItemToPickupAndEquip(player, item);
-			useItem(item, player);
+			if ( !this->mask )
+			{
+				this->mask = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->mask, src.mask);
 		}
 	}
 	else
@@ -1069,20 +1175,28 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 		Item* invItem = (Item*)node->element;
 		if ( invItem )
 		{
-			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
-			copyItem(item, invItem);
-			item->identified = true;
-			Item* pickedUp = itemPickup(player, item);
-			if ( pickedUp )
+			if ( player >= 0 )
 			{
-				if ( player == clientnum )
+				Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+				copyItem(item, invItem);
+				item->identified = true;
+				Item* pickedUp = itemPickup(player, item);
+				if ( pickedUp )
 				{
-					free(item);
+					if ( player == clientnum )
+					{
+						free(item);
+					}
+					else
+					{
+						free(pickedUp);
+					}
 				}
-				else
-				{
-					free(pickedUp);
-				}
+			}
+			else
+			{
+				Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, &inventory);
+				copyItem(item, invItem);
 			}
 		}
 	}

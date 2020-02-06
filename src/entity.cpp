@@ -10651,6 +10651,29 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
+	if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
+	{
+		if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		{
+			return false;
+		}
+		else if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+		{
+			return true;
+		}
+	}
+	else if ( your->behavior == &actPlayer && behavior == &actMonster && myStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
+	{
+		if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		{
+			return false;
+		}
+		else if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+		{
+			return true;
+		}
+	}
+
 	if ( myStats->type == GYROBOT )
 	{
 		return false;
@@ -11017,6 +11040,30 @@ bool Entity::checkFriend(Entity* your)
 	{
 		return true;
 	}
+
+	if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
+	{
+		if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		{
+			return true;
+		}
+		else if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+		{
+			return false;
+		}
+	}
+	else if ( your->behavior == &actPlayer && behavior == &actMonster && myStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
+	{
+		if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		{
+			return true;
+		}
+		else if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+		{
+			return false;
+		}
+	}
+
 
 	if ( (myStats->type == SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0)
 		|| (yourStats->type == SHOPKEEPER && yourStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0) )
@@ -17309,6 +17356,8 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "sentinel")
 		|| strstr(monsterStats.name, "mage")
 		|| strstr(monsterStats.name, "inner")
+		|| strstr(monsterStats.name, "training")
+		|| strstr(monsterStats.name, "Training")
 		|| strstr(monsterStats.name, "Mysterious") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"

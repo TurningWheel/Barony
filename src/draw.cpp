@@ -1872,10 +1872,11 @@ void drawEntities2D(long camx, long camy)
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 							break;
 						case 16:
+						case 13:
 						{
 							char buf[256] = "";
 							int totalChars = 0;
-							for ( int i = 4; i < 60; ++i )
+							for ( int i = (spriteType == 16 ? 4 : 8); i < 60; ++i )
 							{
 								if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
 								{
@@ -1943,7 +1944,10 @@ void drawEntities2D(long camx, long camy)
 							tooltip.w = TTF8_WIDTH * longestLine + 8;
 							tooltip.y = pady + offsety - 4;
 							tooltip.h = lines.size() * TTF8_HEIGHT + 8;
-							drawTooltip(&tooltip);
+							if ( lines.size() > 1 )
+							{
+								drawTooltip(&tooltip);
+							}
 							for ( auto it : lines )
 							{
 								ttfPrintText(ttf8, padx + offsetx, pady + offsety, it.c_str());
