@@ -4421,7 +4421,7 @@ void serverHandlePacket()
 		{
 			if ( c == pnum || client_disconnected[c] == true )
 			{
-				return;
+				continue;
 			}
 			strcpy((char*)net_packet->data, "MSGS");
 			SDLNet_Write32(color, &net_packet->data[4]);
