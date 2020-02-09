@@ -879,8 +879,22 @@ int customPortalLookForMapWithName(char* mapToSearch, bool isSecretLevel, int le
 	
 	if ( eligibleLevels.empty() )
 	{
-		loadCustomNextMap = mapToSearch;
-		return -999;
+		std::string mapPath = "maps/";
+		mapPath.append(mapToSearch);
+		if ( mapPath.find(".lmp") == std::string::npos )
+		{
+			mapPath.append(".lmp");
+		}
+		if ( !PHYSFS_getRealDir(mapPath.c_str()) )
+		{
+			// could not find the map.
+			return -998;
+		}
+		else
+		{
+			loadCustomNextMap = mapToSearch;
+			return -999;
+		}
 	}
 
 	int min = eligibleLevels.front();
@@ -1134,13 +1148,21 @@ void actCustomPortal(Entity* my)
 						}
 						return;
 					}
+					else if ( levelToJumpTo == -998 )
+					{
+						// could not find the map name anywhere.
+						loadnextlevel = false;
+						skipLevelsOnLoad = 0;
+						messagePlayer(i, "Error: Map %s was not found in the maps folder!", mapName);
+						return;
+					}
 					int levelDifference = currentlevel - levelToJumpTo;
 					if ( levelDifference == 0 && ((my->portalNotSecret && !secretlevel) || (!my->portalNotSecret && secretlevel)) )
 					{
 						// error, we're reloading the same position, will glitch out clients.
 						loadnextlevel = false;
 						skipLevelsOnLoad = 0;
-						printlog("Warning: Map to teleport to is the same as current!");
+						messagePlayer(i, "Error: Map to teleport to (%s) is the same position as current!", mapName);
 						return;
 					}
 
