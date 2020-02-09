@@ -847,7 +847,7 @@ void actPlayer(Entity* my)
 			}
 			else
 			{
-				if ( PLAYER_ALIVETIME == 300 )
+				if ( PLAYER_ALIVETIME == 300 && !MFLAG_DISABLEMESSAGES )
 				{
 					// five seconds in, herx chimes in (maybe)
 					my->playerLevelEntrySpeech = 0;
@@ -1023,7 +1023,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				else if ( PLAYER_ALIVETIME == 480 )
+				else if ( PLAYER_ALIVETIME == 480 && !MFLAG_DISABLEMESSAGES )
 				{
 					// 8 seconds in, herx chimes in again (maybe)
 					if ( currentlevel == 1 && !secretlevel )
