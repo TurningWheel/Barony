@@ -24,13 +24,12 @@ public:
 	{
 		classStats = myStats;
 		characterClass = charClass;
-		proficiencies.numProficiencies = NUMPROFICIENCIES;
-		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
-		{
-			proficiencies.list.push_back(classStats->PROFICIENCIES[i]);
-		}
 	};
 	void serialize(FileInterface* file) {
+		// recommend you start with this because it makes versioning way easier down the road
+		int version = 0;
+		file->property("version", version);
+
 		file->property("CLASS", characterClass);
 		file->property("MAXHP", classStats->MAXHP);
 		file->property("MAXMP", classStats->MAXMP);
@@ -41,24 +40,35 @@ public:
 		file->property("PER", classStats->PER);
 		file->property("CHR", classStats->CHR);
 		file->property("GOLD", classStats->GOLD);
-		file->property("Proficiencies", proficiencies);
-	}
 
-	struct Proficiencies
-	{
-		int numProficiencies = NUMPROFICIENCIES;
-		std::vector<Sint32> list;
-		void serialize(FileInterface* file)
-		{
-			file->property("NumProficiencies", numProficiencies);
-			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
-			{
-				char str[64];
-				snprintf(str, 64, "%s", getSkillLangEntry(i));
-				file->property(str, list[i]);
-			}
+		// doing a vector is automatic:
+		/*std::vector<Uint32> pros;
+		file->property("Proficiencies", pros);
+		}*/
+
+		// how to do an raw array:
+		/*file->propertyName("Proficiencies");
+		Uint32 arrSize = NUMPROFICIENCIES;
+		file->beginArray(arrSize);
+		assert(arrSize == NUMPROFICIENCIES); // error out if the array size in json is not correct!
+		for (Uint32 c = 0; c < arrSize; ++c) {
+			file->value(classStats->PROFICIENCIES[c]);
 		}
-	} proficiencies;
+		file->endArray();*/
+
+		// how to do an inline object:
+		file->propertyName("Proficiencies");
+		file->beginObject();
+		int numProficiencies = NUMPROFICIENCIES;
+		file->property("NumProficiencies", numProficiencies);
+		for ( int i = 0; i < numProficiencies; ++i )
+		{
+			char str[64];
+			snprintf(str, 64, "%s", getSkillLangEntry(i));
+			file->property(str, classStats->PROFICIENCIES[i]);
+		}
+		file->endObject();
+	}
 
 	void writeToFile()
 	{
@@ -86,13 +96,8 @@ public:
 
 	void setCharacterStatsAfterSerialization()
 	{
-		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
-		{
-			classStats->PROFICIENCIES[i] = proficiencies.list[i];
-		}
 		classStats->HP = classStats->MAXHP;
 		classStats->OLDHP = classStats->HP;
 		classStats->MP = classStats->MAXMP;
-
 	}
 };

@@ -67,7 +67,7 @@ public:
 	// @param maxLength maximum number of items, 0 is no limit
 	template<typename T, typename... Args>
 	void value(std::vector<T>& v, Uint32 maxLength = 0, Args ... args) {
-		Uint32 size = (Uint32)v.getSize();
+		Uint32 size = (Uint32)v.size();
 		beginArray(size);
 		assert(maxLength == 0 || size <= maxLength);
 		v.resize(size);

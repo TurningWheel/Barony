@@ -168,7 +168,7 @@ protected:
 			return &doc;
 		}
 
-		DocIterator& di = stack.at(0);
+		DocIterator& di = stack.back();
 		if (di.it->IsArray()) {
 			assert(di.index >= 0);
 			return &di.it->GetArray()[di.index++];
