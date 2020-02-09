@@ -1538,10 +1538,12 @@ int main(int argc, char** argv)
 		}
 	}
 	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
-	lightmap = (int*) malloc(sizeof(Sint32) * map.width * map.height);
-	for (c = 0; c < map.width * map.height; c++ )
+	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
+	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
+	for ( c = 0; c < map.width * map.height; c++ )
 	{
 		lightmap[c] = 0;
+		lightmapSmoothed[c] = 0;
 	}
 
 	// initialize camera position
