@@ -662,7 +662,15 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					}
 					else
 					{
-						continue;
+						if ( my->behavior == &actPlayer && yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY
+							|| entity->behavior == &actPlayer && myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+						{
+							// forced enemies.
+						}
+						else
+						{
+							continue;
+						}
 					}
 				}
 				else if ( my->behavior == &actPlayer )
