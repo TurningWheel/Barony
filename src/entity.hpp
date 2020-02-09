@@ -1149,11 +1149,11 @@ public:
 	}
 	int getAttachedToEntityType(Sint32 skill)
 	{
-		return (skill & 0xF0);
+		return ((skill & 0xF0) >> 4);
 	}
 	int getTriggerType(Sint32 skill)
 	{
-		return (skill & 0xF00);
+		return ((skill & 0xF00) >> 8);
 	}
 	void setScriptType(Sint32& skill, int setValue)
 	{

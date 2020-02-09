@@ -661,6 +661,41 @@ void serverUpdateEntitySkill(Entity* entity, int skill)
 
 /*-------------------------------------------------------------------------------
 
+serverUpdateEntitySkill
+
+Updates a specific entity skill for all clients
+
+-------------------------------------------------------------------------------*/
+
+void serverUpdateEntityStatFlag(Entity* entity, int flag)
+{
+	int c;
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	if ( !entity->getStats() )
+	{
+		return;
+	}
+	for ( c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( !client_disconnected[c] )
+		{
+			strcpy((char*)net_packet->data, "ENSF");
+			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+			net_packet->data[8] = flag;
+			SDLNet_Write32(entity->getStats()->MISC_FLAGS[flag], &net_packet->data[9]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 13;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 serverUpdateEntityFSkill
 
 Updates a specific entity fskill for all clients
@@ -2947,6 +2982,20 @@ void clientHandlePacket()
 				{
 					stats[clientnum]->EFFECTS_TIMERS[c] = 0;
 				}
+			}
+		}
+		return;
+	}
+
+	// update entity stat flag
+	else if ( !strncmp((char*)net_packet->data, "ENSF", 4) )
+	{
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
+		{
+			if ( entity->getStats() )
+			{
+				entity->getStats()->MISC_FLAGS[net_packet->data[8]] = SDLNet_Read32(&net_packet->data[9]);
 			}
 		}
 		return;
