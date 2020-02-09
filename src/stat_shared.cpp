@@ -34,8 +34,8 @@ Stat::Stat(Sint32 sprite) :
 	playerShapeshiftStorage(MISC_FLAGS[13]),
 	monsterTinkeringStatus(MISC_FLAGS[14]),
 	monsterDemonHasBeenExorcised(MISC_FLAGS[15]),
-	burningInflictedBy(MISC_FLAGS[16]),
-	bleedInflictedBy(MISC_FLAGS[17])
+	bleedInflictedBy(MISC_FLAGS[17]),
+	burningInflictedBy(MISC_FLAGS[18])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");
