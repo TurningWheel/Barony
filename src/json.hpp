@@ -1,6 +1,6 @@
 /**
 	A simple interface for reading and writing objects to files, has support for both json and binary.
-	Basic types, enums and ArrayLists are supported by default, other class and struct types need to
+	Basic types, enums and vectors are supported by default, other class and struct types need to
 	implement the "void serialize(FileInterface * file)" function.
 	The interface is symmetric, meaning that there is only a single function for both saving and loading.
 
@@ -62,7 +62,7 @@ public:
 	// @param maxLength maximum length of the string allowed, 0 is no limit
 	virtual void value(std::string& v, Uint32 maxLength = 0) = 0;
 
-	// Serialize an ArrayList with a max length
+	// Serialize a vector with a max length
 	// @param v the value to serialize
 	// @param maxLength maximum number of items, 0 is no limit
 	template<typename T, typename... Args>
