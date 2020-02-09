@@ -1203,7 +1203,7 @@ void actMonster(Entity* my)
 	// however, there is a small part for clients:
 	if ( multiplayer == CLIENT )
 	{
-		if ( !MONSTER_INIT && my->sprite >= 100 )
+		if ( !MONSTER_INIT && my->sprite >= 100 && !(my->sprite >= 163 && my->sprite <= 166) )
 		{
 			MONSTER_INIT = 1;
 
@@ -10048,7 +10048,7 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 			// angry at owner.
 			if ( leader )
 			{
-				monsterAcquireAttackTarget(*leader, MONSTER_STATE_ATTACK);
+				//monsterAcquireAttackTarget(*leader, MONSTER_STATE_ATTACK);
 			}
 		}
 	}
