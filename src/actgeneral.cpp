@@ -20,6 +20,7 @@
 #include "menu.hpp"
 #include "magic/magic.hpp"
 #include "interface/interface.hpp"
+#include "items.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -675,7 +676,7 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			else
 			{
 				y1 = std::stoi(y_str);
-				y2 = x1;
+				y2 = y1;
 			}
 
 			x1 = std::min(std::max(0, x1), (int)map.width - 1);
@@ -747,10 +748,6 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 
 void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 {
-	if ( src.ticks == 0 )
-	{
-		return; // wait for first round of entity actions.
-	}
 	bool statOnlyUpdateNeeded = false;
 
 	std::vector<std::string> tokens;
@@ -1438,7 +1435,6 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				int x2 = (result >> 8) & 0xFF;
 				int y1 = (result >> 16) & 0xFF;
 				int y2 = (result >> 24) & 0xFF;
-				std::vector<Entity*> applyToEntities;
 				if ( processOnAttachedEntity )
 				{
 					for ( auto entity : attachedEntities )
@@ -1490,7 +1486,6 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				int x2 = (result >> 8) & 0xFF;
 				int y1 = (result >> 16) & 0xFF; 
 				int y2 = (result >> 24) & 0xFF;
-				std::vector<Entity*> applyToEntities;
 				if ( processOnAttachedEntity )
 				{
 					for ( auto entity : attachedEntities )
@@ -1527,6 +1522,59 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							}
 						}
 					}
+				}
+			}
+		}
+		else if ( (*it).find("@addtochest=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@addtochest=");
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity && textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_ITEMS )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actItem )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+					Entity* chest = nullptr;
+					for ( node_t* node = map.entities->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actChest )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								chest = entity;
+							}
+						}
+					}
+					if ( chest )
+					{
+						for ( auto entity : applyToEntities )
+						{
+							Item* item = newItemFromEntity(entity);
+							if ( item )
+							{
+								chest->addItemToChest(item);
+							}
+							list_RemoveNode(entity->mynode);
+							entity = nullptr;
+						}
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to items.
 				}
 			}
 		}
@@ -1863,27 +1911,29 @@ void Entity::actTextSource()
 		}
 		if ( entitiesExisting == 0 )
 		{
-			textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
 			if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_ISREMOVED )
 			{
+				textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
 				powered = true;
 			}
 		}
 		else
 		{
-			textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
 			if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_EXISTS )
 			{
+				textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
 				powered = true;
 			}
 			else if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_INVIS
 				&& entitiesInvisible == entitiesExisting )
 			{
+				textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
 				powered = true;
 			}
 			else if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_VISIBLE
 				&& entitiesVisible == entitiesExisting )
 			{
+				textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
 				powered = true;
 			}
 		}
@@ -1891,6 +1941,14 @@ void Entity::actTextSource()
 	else if ( textSourceScript.getScriptType(textSourceIsScript) == textSourceScript.SCRIPT_ATTACHED_FIRED )
 	{
 		powered = true;
+	}
+
+	if ( textSourceScript.getScriptType(textSourceIsScript) != textSourceScript.NO_SCRIPT )
+	{
+		if ( ticks <= 1 )
+		{
+			return;
+		}
 	}
 
 	if ( powered )
@@ -2203,7 +2261,7 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 				y2 = (result >> 24) & 0xFF;
 			}
 		}
-
+		textSourceScript.setAttachedToEntityType(src.textSourceIsScript, attachTo);
 		for ( node_t* node = map.entities->first; node; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
