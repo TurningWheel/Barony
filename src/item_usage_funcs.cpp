@@ -620,9 +620,15 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 
 		if ( svFlags & SV_FLAG_HUNGER )
 		{
-			stats->HUNGER += 50;
 			if ( entity->behavior == &actPlayer )
 			{
+				if ( stats->type != SKELETON && stats->type != AUTOMATON )
+				{
+					if ( stats->HUNGER < 1500 )
+					{
+						stats->HUNGER = std::min(1499, stats->HUNGER + 50);
+					}
+				}
 				if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
 				{
 					stats->HUNGER += 200;
