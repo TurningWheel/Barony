@@ -258,7 +258,7 @@ void drawMessages()
 			size_t highlightedIndex = 0;
 			while ( findHighlight != std::string::npos )
 			{
-				size_t findHighlightEnd = data.find("]");
+				size_t findHighlightEnd = data.find("]", findHighlight);
 				if ( findHighlightEnd != std::string::npos )
 				{
 					doHighlight = true;
