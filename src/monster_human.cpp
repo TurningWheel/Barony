@@ -62,7 +62,7 @@ void initHuman(Entity* my, Stat* myStats)
 			// generate special loadout
 			if ( my->monsterSpecialTimer == 0 )
 			{
-				if ( rand() % 25 == 0 )
+				if ( rand() % 25 == 0 && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 				{
 					specialMonsterVariant = 1;
 					int specialMonsterType = rand() % 10;

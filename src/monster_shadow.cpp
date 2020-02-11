@@ -72,7 +72,7 @@ void initShadow(Entity* my, Stat* myStats)
 				amount = 10 + rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 			}
-			else if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
+			else if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				strcpy(myStats->name, "Baratheon"); //Long live the king, who commands his grue army.
 				my->monsterShadowDontChangeName = 1; //Special monsters don't change their name either.

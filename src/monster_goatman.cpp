@@ -87,7 +87,7 @@ void initGoatman(Entity* my, Stat* myStats)
 
 
 			// boss variants
-			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
+			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				strcpy(myStats->name, "Gharbad");
 				myStats->STR += 10;

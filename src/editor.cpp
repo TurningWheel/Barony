@@ -67,7 +67,7 @@ int errorArr[12] =
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-char monsterPropertyNames[14][11] = 
+char monsterPropertyNames[14][16] = 
 {
 	"Name:",
 	"MAX HP:",
@@ -3631,6 +3631,32 @@ int main(int argc, char** argv)
 							pad_y2 += 32 + spacing * 2;
 							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Inventory");
 
+							pad_y2 += spacing * 3 + 8;
+							if ( !strcmp(spriteProperties[31], "disable") )
+							{
+								printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Disable Miniboss: [x]");
+							}
+							else
+							{
+								printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Disable Miniboss: [ ]");
+							}
+							if ( mousestatus[SDL_BUTTON_LEFT] )
+							{
+								int checkbox_x1 = pad_x4 - 8 + strlen("Disable Miniboss: ") * 8;
+								int checkbox_x2 = checkbox_x1 + strlen("[ ]") * 8;
+								if ( omousex >= checkbox_x1 && omousey >= pad_y2 && omousex < checkbox_x2 && omousey < pad_y2 + 8 )
+								{
+									mousestatus[SDL_BUTTON_LEFT] = 0;
+									if ( !strcmp(spriteProperties[31], "disable") )
+									{
+										strcpy(spriteProperties[31], "");
+									}
+									else
+									{
+										strcpy(spriteProperties[31], "disable");
+									}
+								}
+							}
 
 							if ( editproperty < numProperties * 2 - 2 )   // edit property values
 							{

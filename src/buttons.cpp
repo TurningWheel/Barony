@@ -2924,6 +2924,14 @@ void buttonSpritePropertiesConfirm(button_t* my)
 							tmpSpriteStats->RANDOM_CHR = 0;
 						}
 						tmpSpriteStats->MISC_FLAGS[STAT_FLAG_NPC] = (Sint32)atoi(spriteProperties[25]);
+						if ( !strcmp(spriteProperties[31], "disable") )
+						{
+							tmpSpriteStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+						}
+						else
+						{
+							tmpSpriteStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 0;
+						}
 					}
 				}
 				break;
@@ -3609,6 +3617,14 @@ void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats)
 		snprintf(spriteProperties[23], 4, "%d", tmpSpriteStats->RANDOM_PER + tmpSpriteStats->PER);
 		snprintf(spriteProperties[24], 4, "%d", tmpSpriteStats->RANDOM_CHR + tmpSpriteStats->CHR);
 		snprintf(spriteProperties[25], 4, "%d", tmpSpriteStats->MISC_FLAGS[STAT_FLAG_NPC]);
+		if ( tmpSpriteStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] == 0 )
+		{
+			strcpy(spriteProperties[31], "");
+		}
+		else
+		{
+			strcpy(spriteProperties[31], "disable");
+		}
 	}
 	return;
 }
