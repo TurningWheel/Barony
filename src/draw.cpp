@@ -1646,6 +1646,9 @@ void drawEntities2D(long camx, long camy)
 								case 7:
 									strcpy(tmpStr, "Type: Potions");
 									break;
+								case 8:
+									strcpy(tmpStr, "Type: Empty");
+									break;
 								default:
 									strcpy(tmpStr, "Type: Random");
 									break;

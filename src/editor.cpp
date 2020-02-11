@@ -3790,7 +3790,7 @@ int main(int argc, char** argv)
 								} 
 								else if ( i == 1 )
 								{
-									if ( propertyInt > 7 || propertyInt < 0 )
+									if ( propertyInt > 8 || propertyInt < 0 )
 									{
 										errorMessage = 60;
 										errorArr[i] = 1;
@@ -3847,24 +3847,26 @@ int main(int argc, char** argv)
 						spacing = 14;
 						pad_y1 = suby1 + 14 + 14 * spacing;
 						pad_x1 = subx1 + 8 + 192;
-						pad_y1 = suby1 + 14 + 1 * spacing;
+						pad_y1 = suby1 + 4 + 1 * spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "Chest Types");
-						pad_y1 = suby1 + 14 + 2 * spacing;
+						pad_y1 += spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "0 - Random");
-						pad_y1 = suby1 + 14 + 3 * spacing;
+						pad_y1 += spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "1 - Garbage");
-						pad_y1 = suby1 + 14 + 4 * spacing;
+						pad_y1 += spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "2 - Food");
-						pad_y1 = suby1 + 14 + 5 * spacing;
+						pad_y1 += spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "3 - Jewelry");
-						pad_y1 = suby1 + 14 + 6 * spacing;
+						pad_y1 += spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "4 - Equipment");
-						pad_y1 = suby1 + 14 + 7 * spacing;
+						pad_y1 += spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "5 - Tools");
-						pad_y1 = suby1 + 14 + 8 * spacing;
+						pad_y1 += spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "6 - Magical");
-						pad_y1 = suby1 + 14 + 9 * spacing;
+						pad_y1 += spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "7 - Potions");
+						pad_y1 += spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "8 - Empty");
 
 						pad_x1 = subx1 + 8;
 						pad_y1 = suby1 + 28;

@@ -570,6 +570,8 @@ void Entity::actChest()
 					newItem(POTION_EMPTY, SERVICABLE, 0, 0 + rand() % 3, 0, true, inventory);
 				}
 				break;
+			case 8:
+				break;
 			default:
 				//Default case. Should never be reached.
 				newItem(static_cast<ItemType>(0), BROKEN, 0, 1, rand(), false, inventory);
