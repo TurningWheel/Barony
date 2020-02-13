@@ -1198,7 +1198,8 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 						for ( node_t* node = map.creatures->first; node; node = node->next )
 						{
 							Entity* target = (Entity*)node->element;
-							if ( (target->behavior == &actMonster || target->behavior == &actPlayer) && entity->checkEnemy(target) )
+							if ( (target->behavior == &actMonster || target->behavior == &actPlayer) && target != entity
+								&& entity->checkEnemy(target) )
 							{
 								int findx = static_cast<int>(target->x) >> 4;
 								int findy = static_cast<int>(target->y) >> 4;
@@ -1209,15 +1210,18 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 									if ( dist < sightrange && dist <= oldDist )
 									{
 										double tangent = atan2(target->y - entity->y, target->x - entity->x);
-										lineTrace(entity, entity->x, entity->y, tangent, sightrange, 0, false);
-										if ( hit.entity == target )
-										{
+										//lineTrace(entity, entity->x, entity->y, tangent, sightrange, 0, false);
+										//if ( hit.entity == target )
+										//{
 											//my->monsterLookTime = 1;
 											//my->monsterMoveTime = rand() % 10 + 1;
 											entity->monsterLookDir = tangent;
 											toAttack = target;
-											break;
-										}
+										//}
+									}
+									else
+									{
+										dist = oldDist;
 									}
 								}
 							}
