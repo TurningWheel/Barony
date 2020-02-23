@@ -75,6 +75,13 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 #endif
 
+#ifdef BSD
+
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+#endif
+
 #ifdef WINDOWS
 void make_minidump(EXCEPTION_POINTERS* e)
 {
@@ -3086,10 +3093,17 @@ int main(int argc, char** argv)
 
 	try
 	{
+#if defined(APPLE) || defined(BSD)
 #ifdef APPLE
 		uint32_t buffsize = 4096;
 		char binarypath[buffsize];
 		int result = _NSGetExecutablePath(binarypath, &buffsize);
+#elif defined(BSD)
+		int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
+		size_t buffsize = PATH_MAX;
+		char binarypath[buffsize];
+		int result = sysctl(mib, 4, binarypath, &buffsize, NULL, 0);
+#endif
 		if (result == 0)   //It worked.
 		{
 			printlog("Binary path: %s\n", binarypath);

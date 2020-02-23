@@ -379,7 +379,7 @@ public:
 		basePotion(nullptr),
 		secondaryPotion(nullptr),
 		alembicItem(nullptr),
-		experimentingAlchemy(nullptr),
+		experimentingAlchemy(false),
 		tinkeringKitItem(nullptr),
 		tinkeringTotalLastCraftableNode(nullptr),
 		tinkeringFilter(TINKER_FILTER_ALL),
