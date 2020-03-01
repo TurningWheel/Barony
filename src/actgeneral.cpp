@@ -1949,7 +1949,7 @@ void Entity::actTextSource()
 
 	if ( textSourceScript.getScriptType(textSourceIsScript) != textSourceScript.NO_SCRIPT )
 	{
-		if ( ticks <= 1 )
+		if ( ticks <= 2 )
 		{
 			return;
 		}
