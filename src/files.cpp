@@ -1124,22 +1124,25 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			}
 		}
 
-		// reset camera
-		if ( game )
-		{
-			camera.x = -32;
-			camera.y = -32;
-			camera.z = 0;
-			camera.ang = 3 * PI / 2;
-			camera.vang = 0;
-		}
-		else
-		{
-			camera.x = 2;
-			camera.y = 2;
-			camera.z = 0;
-			camera.ang = 0;
-			camera.vang = 0;
+		// reset cameras
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			auto& camera = cameras[c];
+			if ( game )
+			{
+				camera.x = -32;
+				camera.y = -32;
+				camera.z = 0;
+				camera.ang = 3 * PI / 2;
+				camera.vang = 0;
+			}
+			else
+			{
+				camera.x = 2;
+				camera.y = 2;
+				camera.z = 0;
+				camera.ang = 0;
+				camera.vang = 0;
+			}
 		}
 
 		// shoparea

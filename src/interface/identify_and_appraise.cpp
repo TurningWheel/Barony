@@ -169,21 +169,21 @@ void updateIdentifyGUI()
 			{
 				identifygui_offset_x = (omousex - dragoffset_x) - (IDENTIFY_GUI_X - identifygui_offset_x);
 				identifygui_offset_y = (omousey - dragoffset_y) - (IDENTIFY_GUI_Y - identifygui_offset_y);
-				if (IDENTIFY_GUI_X <= camera.winx)
+				if (IDENTIFY_GUI_X <= 0)
 				{
-					identifygui_offset_x = camera.winx - (IDENTIFY_GUI_X - identifygui_offset_x);
+					identifygui_offset_x = 0 - (IDENTIFY_GUI_X - identifygui_offset_x);
 				}
-				if (IDENTIFY_GUI_X > camera.winx + camera.winw - identifyGUI_img->w)
+				if (IDENTIFY_GUI_X > 0 + xres - identifyGUI_img->w)
 				{
-					identifygui_offset_x = (camera.winx + camera.winw - identifyGUI_img->w) - (IDENTIFY_GUI_X - identifygui_offset_x);
+					identifygui_offset_x = (0 + xres - identifyGUI_img->w) - (IDENTIFY_GUI_X - identifygui_offset_x);
 				}
-				if (IDENTIFY_GUI_Y <= camera.winy)
+				if (IDENTIFY_GUI_Y <= 0)
 				{
-					identifygui_offset_y = camera.winy - (IDENTIFY_GUI_Y - identifygui_offset_y);
+					identifygui_offset_y = 0 - (IDENTIFY_GUI_Y - identifygui_offset_y);
 				}
-				if (IDENTIFY_GUI_Y > camera.winy + camera.winh - identifyGUI_img->h)
+				if (IDENTIFY_GUI_Y > 0 + yres - identifyGUI_img->h)
 				{
-					identifygui_offset_y = (camera.winy + camera.winh - identifyGUI_img->h) - (IDENTIFY_GUI_Y - identifygui_offset_y);
+					identifygui_offset_y = (0 + yres - identifyGUI_img->h) - (IDENTIFY_GUI_Y - identifygui_offset_y);
 				}
 			}
 			else

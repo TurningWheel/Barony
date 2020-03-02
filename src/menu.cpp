@@ -8611,7 +8611,9 @@ void handleMainMenu(bool mode)
 						break;
 				}
 			}
-			camera.vang = 0;
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				cameras[c].vang = 0;
+			}
 			numplayers = 0;
 			assignActions(&map);
 			generatePathMaps();
@@ -11869,10 +11871,10 @@ void applySettings()
 	minimapScale = settings_minimap_scale;
 	minimapObjectZoom = settings_minimap_object_zoom;
 
-	camera.winx = 0;
-	camera.winy = 0;
-	camera.winw = std::min(camera.winw, xres);
-	camera.winh = std::min(camera.winh, yres);
+	cameras[0].winx = 0;
+	cameras[0].winy = 0;
+	cameras[0].winw = std::min(cameras[0].winw, xres);
+	cameras[0].winh = std::min(cameras[0].winh, yres);
 	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen || oldGamma!=vidgamma
 		|| oldVerticalSync != verticalSync )
 	{

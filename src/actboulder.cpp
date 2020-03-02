@@ -179,10 +179,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 					messagePlayerColor(entity->skill[2], color, language[455]);
-					if ( entity->skill[2] == clientnum )
+					if ( entity->skill[2] == clientnum || splitscreen )
 					{
-						camera_shakex += .1;
-						camera_shakey += 10;
+						cameravars[entity->skill[2]].shakex += .1;
+						cameravars[entity->skill[2]].shakey += 10;
 					}
 					else
 					{

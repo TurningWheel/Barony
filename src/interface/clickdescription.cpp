@@ -40,7 +40,7 @@ void clickDescription(int player, Entity* entity)
 			return;
 		}
 		//One of either IN_ATTACK or INJOY_MENU_LEFT_CLICK is true, && shootmode == false;
-		if ( omousex < camera.winx || omousex >= camera.winx + camera.winw || omousey < camera.winy || omousey >= camera.winy + camera.winh )
+		if ( omousex < 0 || omousex >= 0 + xres || omousey < 0 || omousey >= 0 + yres )
 		{
 			return;
 		}
@@ -100,10 +100,10 @@ void clickDescription(int player, Entity* entity)
 				{
 					numspells++;
 				}
-				int maxSpellsOnscreen = camera.winh / spell_list_gui_slot_bmp->h;
+				int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
 				numspells = std::min(numspells, maxSpellsOnscreen);
 				height += numspells * spell_list_gui_slot_bmp->h;
-				int spelllist_y = camera.winy + ((camera.winh / 2) - (height / 2)) + magicspell_list_offset_x;
+				int spelllist_y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
 
 				if (mouseInBounds(MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
 				{
@@ -158,7 +158,7 @@ void clickDescription(int player, Entity* entity)
 		}
 		else
 		{
-			uidnum = GO_GetPixelU32(omousex, yres - omousey);
+			uidnum = GO_GetPixelU32(omousex, yres - omousey, cameras[player]);
 			entity = uidToEntity(uidnum);
 		}
 	}

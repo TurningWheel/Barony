@@ -293,6 +293,7 @@ Uint32 bowDrawBaseTicks = 50;
 #define HUDWEAPON_CROSSBOW_RELOAD_ANIMATION my->skill[8]
 #define HUDWEAPON_BOW_HAS_QUIVER my->skill[9]
 #define HUDWEAPON_BOW_FORCE_RELOAD my->skill[10]
+#define HUDWEAPON_PLAYERNUM my->skill[11]
 #define HUDWEAPON_MOVEX my->fskill[0]
 #define HUDWEAPON_MOVEY my->fskill[1]
 #define HUDWEAPON_MOVEZ my->fskill[2]
@@ -334,6 +335,11 @@ void actHudWeapon(Entity* my)
 	bool wearingring = false;
 	Entity* entity;
 	Entity* parent = hudarm;
+
+	auto& camera_shakex = cameravars[HUDWEAPON_PLAYERNUM].shakex;
+	auto& camera_shakey = cameravars[HUDWEAPON_PLAYERNUM].shakey;
+	auto& camera_shakex2 = cameravars[HUDWEAPON_PLAYERNUM].shakex2;
+	auto& camera_shakey2 = cameravars[HUDWEAPON_PLAYERNUM].shakey2;
 
 	// isn't active during intro/menu sequence
 	if ( intro == true )
@@ -1320,7 +1326,7 @@ void actHudWeapon(Entity* my)
 								int tmpmousey = omousey;
 								omousex = xres / 2; // pretend move the mouse to the centre of screen.
 								omousey = yres / 2;
-								Entity* clickedOn = entityClicked(&clickedOnGUI, true); // using objects
+								Entity* clickedOn = entityClicked(&clickedOnGUI, true, HUDWEAPON_PLAYERNUM); // using objects
 								omousex = tmpmousex;
 								omousey = tmpmousey;
 								if ( clickedOn && clickedOn->behavior == &actBomb && entityDist(clickedOn, players[clientnum]->entity) < STRIKERANGE )
@@ -2824,7 +2830,7 @@ void actHudWeapon(Entity* my)
 		{
 			my->x = 6 + HUDWEAPON_MOVEX / 3;
 			my->y = 3;// +HUDWEAPON_MOVEY;
-			my->z = (camera.z * .1 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ / 10;
+			my->z = (cameras[HUDWEAPON_PLAYERNUM].z * .1 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ / 10;
 			my->yaw = 0.f - camera_shakex2;
 			my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 			my->roll = HUDWEAPON_ROLL;
@@ -2838,7 +2844,7 @@ void actHudWeapon(Entity* my)
 		{
 			my->x = 6 + HUDWEAPON_MOVEX;
 			my->y = 3;// +HUDWEAPON_MOVEY;
-			my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
+			my->z = (cameras[HUDWEAPON_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
 			my->yaw = 0.f - camera_shakex2;
 			my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 			my->roll = HUDWEAPON_ROLL;
@@ -2847,7 +2853,7 @@ void actHudWeapon(Entity* my)
 		{
 			my->x = 6 + HUDWEAPON_MOVEX;
 			my->y = 3 + HUDWEAPON_MOVEY;
-			my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
+			my->z = (cameras[HUDWEAPON_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
 			my->yaw = HUDWEAPON_YAW - camera_shakex2;
 			my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 			my->roll = HUDWEAPON_ROLL;
@@ -2881,7 +2887,7 @@ void actHudWeapon(Entity* my)
 			{
 				my->x = 6 + HUDWEAPON_MOVEX;
 				my->y = 1.5 + HUDWEAPON_MOVEY;
-				my->z = (camera.z * .5 - players[clientnum]->entity->z) + 8 + HUDWEAPON_MOVEZ;
+				my->z = (cameras[HUDWEAPON_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 8 + HUDWEAPON_MOVEZ;
 				my->yaw = -.05 - camera_shakex2;
 				my->pitch = HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 				my->roll = HUDWEAPON_ROLL;
@@ -2894,7 +2900,7 @@ void actHudWeapon(Entity* my)
 			{
 				my->x = 6 + HUDWEAPON_MOVEX;
 				my->y = 3 + HUDWEAPON_MOVEY;
-				my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
+				my->z = (cameras[HUDWEAPON_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
 				my->yaw = HUDWEAPON_YAW - camera_shakex2;
 				my->pitch = HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 				my->roll = HUDWEAPON_ROLL;
@@ -2904,7 +2910,7 @@ void actHudWeapon(Entity* my)
 				my->x = 6 + HUDWEAPON_MOVEX + 5;
 				my->y = 3 + HUDWEAPON_MOVEY - 0.5 + 1;
 				//my->flags[OVERDRAW] = false;
-				my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
+				my->z = (cameras[HUDWEAPON_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
 				my->yaw = HUDWEAPON_YAW - camera_shakex2;
 				my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 				if ( my->sprite == items[TOOL_WHIP].fpindex + 1 )
@@ -2928,7 +2934,7 @@ void actHudWeapon(Entity* my)
 			{
 				my->x = 6 + HUDWEAPON_MOVEX + 3 * (itemCategory(item) == POTION);
 				my->y = 3 + HUDWEAPON_MOVEY - 3 * (itemCategory(item) == POTION);
-				my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ - 3 * (itemCategory(item) == POTION);
+				my->z = (cameras[HUDWEAPON_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ - 3 * (itemCategory(item) == POTION);
 				my->yaw = HUDWEAPON_YAW - camera_shakex2;
 				my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 				my->roll = HUDWEAPON_ROLL + (PI / 2) * (itemCategory(item) == POTION);
@@ -2961,6 +2967,7 @@ void actHudWeapon(Entity* my)
 
 #define HUDSHIELD_DEFEND my->skill[0]
 #define HUDSHIELD_SNEAKING my->skill[1]
+#define HUDSHIELD_PLAYERNUM my->skill[2]
 #define HUDSHIELD_MOVEX my->fskill[0]
 #define HUDSHIELD_MOVEY my->fskill[1]
 #define HUDSHIELD_MOVEZ my->fskill[2]
@@ -2971,6 +2978,11 @@ void actHudWeapon(Entity* my)
 void actHudShield(Entity* my)
 {
 	my->flags[UNCLICKABLE] = true;
+
+	auto& camera_shakex = cameravars[HUDSHIELD_PLAYERNUM].shakex;
+	auto& camera_shakey = cameravars[HUDSHIELD_PLAYERNUM].shakey;
+	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
+	auto& camera_shakey2 = cameravars[HUDSHIELD_PLAYERNUM].shakey2;
 
 	// isn't active during intro/menu sequence
 	if (intro == true)
@@ -3557,7 +3569,7 @@ void actHudShield(Entity* my)
 	// set entity position
 	my->x = 7 + HUDSHIELD_MOVEX;
 	my->y = -3.5 + HUDSHIELD_MOVEY;
-	my->z = 6 + HUDSHIELD_MOVEZ + (camera.z * .5 - players[clientnum]->entity->z);
+	my->z = 6 + HUDSHIELD_MOVEZ + (cameras[HUDSHIELD_PLAYERNUM].z * .5 - players[clientnum]->entity->z);
 	if ( !my->flags[OVERDRAW] )
 	{
 		my->x += 32;
@@ -3681,6 +3693,11 @@ void actHudAdditional(Entity* my)
 	}
 
 	my->flags[UNCLICKABLE] = true;
+
+	auto& camera_shakex = cameravars[HUDSHIELD_PLAYERNUM].shakex;
+	auto& camera_shakey = cameravars[HUDSHIELD_PLAYERNUM].shakey;
+	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
+	auto& camera_shakey2 = cameravars[HUDSHIELD_PLAYERNUM].shakey2;
 
 	// isn't active during intro/menu sequence
 	if ( intro == true )
@@ -3868,7 +3885,7 @@ void actHudAdditional(Entity* my)
 	// set entity position
 	my->x = 7 + HUDSHIELD_MOVEX;
 	my->y = -3.5 + HUDSHIELD_MOVEY;
-	my->z = 6 + HUDSHIELD_MOVEZ + (camera.z * .5 - players[clientnum]->entity->z);
+	my->z = 6 + HUDSHIELD_MOVEZ + (cameras[HUDSHIELD_PLAYERNUM].z * .5 - players[clientnum]->entity->z);
 	my->yaw = HUDSHIELD_YAW - camera_shakex2 - PI / 3;
 	my->pitch = HUDSHIELD_PITCH - camera_shakey2 / 200.f;
 	my->roll = HUDSHIELD_ROLL;

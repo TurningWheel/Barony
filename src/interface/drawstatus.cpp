@@ -37,7 +37,7 @@ Uint32 hotbarTooltipLastGameTick = 0;
 
 -------------------------------------------------------------------------------*/
 
-void handleDamageIndicators()
+void handleDamageIndicators(int player)
 {
 	node_t* node, *nextnode;
 	for ( node = damageIndicators.first; node != NULL; node = nextnode )
@@ -45,8 +45,8 @@ void handleDamageIndicators()
 		nextnode = node->next;
 		damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
 
-		double tangent = atan2( damageIndicator->y / 16 - camera.y, damageIndicator->x / 16 - camera.x );
-		double angle = tangent - camera.ang;
+		double tangent = atan2( damageIndicator->y / 16 - cameras[player].y, damageIndicator->x / 16 - cameras[player].x );
+		double angle = tangent - cameras[player].ang;
 		angle += 3 * PI / 2;
 		while ( angle >= PI )
 		{

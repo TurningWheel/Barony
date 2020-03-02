@@ -154,7 +154,7 @@ void freeInterfaceResources();
 void clickDescription(int player, Entity* entity);
 void consoleCommand(char* command);
 void drawMinimap();
-void handleDamageIndicators();
+void handleDamageIndicators(int player);
 void handleDamageIndicatorTicks();
 void drawStatus();
 void saveCommand(char* content);

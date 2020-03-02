@@ -1791,13 +1791,13 @@ void clientHandlePacket()
 		{
 			if ( SDLNet_Read32(&net_packet->data[4]) < stats[clientnum]->HP )
 			{
-				camera_shakex += .1;
-				camera_shakey += 10;
+				cameravars[clientnum].shakex += .1;
+				cameravars[clientnum].shakey += 10;
 			}
 			else
 			{
-				camera_shakex += .05;
-				camera_shakey += 5;
+				cameravars[clientnum].shakex += .05;
+				cameravars[clientnum].shakey += 5;
 			}
 		}
 		stats[clientnum]->HP = SDLNet_Read32(&net_packet->data[4]);
@@ -1997,14 +1997,15 @@ void clientHandlePacket()
 								// this is me dying, setup the deathcam.
 								entity->playerCreatedDeathCam = 1;
 								Entity* entity = newEntity(-1, 1, map.entities, nullptr);
-								entity->x = camera.x * 16;
-								entity->y = camera.y * 16;
+								entity->x = cameras[clientnum].x * 16;
+								entity->y = cameras[clientnum].y * 16;
 								entity->z = -2;
 								entity->flags[NOUPDATE] = true;
 								entity->flags[PASSABLE] = true;
 								entity->flags[INVISIBLE] = true;
 								entity->behavior = &actDeathCam;
-								entity->yaw = camera.ang;
+								entity->skill[2] = clientnum;
+								entity->yaw = cameras[clientnum].ang;
 								entity->pitch = PI / 8;
 							}
 						}
@@ -2291,8 +2292,8 @@ void clientHandlePacket()
 	// shake screen
 	else if (!strncmp((char*)net_packet->data, "SHAK", 4))
 	{
-		camera_shakex += ((char)(net_packet->data[4])) / 100.f;
-		camera_shakey += ((char)(net_packet->data[5]));
+		cameravars[clientnum].shakex += ((char)(net_packet->data[4])) / 100.f;
+		cameravars[clientnum].shakey += ((char)(net_packet->data[5]));
 		return;
 	}
 
@@ -2741,14 +2742,15 @@ void clientHandlePacket()
 			else
 			{
 				Entity* entity = newEntity(-1, 1, map.entities, nullptr);
-				entity->x = camera.x * 16;
-				entity->y = camera.y * 16;
+				entity->x = cameras[clientnum].x * 16;
+				entity->y = cameras[clientnum].y * 16;
 				entity->z = -2;
 				entity->flags[NOUPDATE] = true;
 				entity->flags[PASSABLE] = true;
 				entity->flags[INVISIBLE] = true;
 				entity->behavior = &actDeathCam;
-				entity->yaw = camera.ang;
+				entity->skill[2] = clientnum;
+				entity->yaw = cameras[clientnum].ang;
 				entity->pitch = PI / 8;
 			}
 
@@ -2795,8 +2797,8 @@ void clientHandlePacket()
 					SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 					net_packet->data[24] = item->identified;
 					net_packet->data[25] = clientnum;
-					net_packet->data[26] = (Uint8)camera.x;
-					net_packet->data[27] = (Uint8)camera.y;
+					net_packet->data[26] = (Uint8)cameras[clientnum].x;
+					net_packet->data[27] = (Uint8)cameras[clientnum].y;
 					net_packet->address.host = net_server.host;
 					net_packet->address.port = net_server.port;
 					net_packet->len = 28;
@@ -2831,8 +2833,8 @@ void clientHandlePacket()
 						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 						net_packet->data[24] = item->identified;
 						net_packet->data[25] = clientnum;
-						net_packet->data[26] = (Uint8)camera.x;
-						net_packet->data[27] = (Uint8)camera.y;
+						net_packet->data[26] = (Uint8)cameras[clientnum].x;
+						net_packet->data[27] = (Uint8)cameras[clientnum].y;
 						net_packet->address.host = net_server.host;
 						net_packet->address.port = net_server.port;
 						net_packet->len = 28;

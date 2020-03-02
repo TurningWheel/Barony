@@ -261,8 +261,6 @@ typedef struct view_t
 	Sint32 winx, winy, winw, winh;
 } view_t;
 
-extern view_t camera;
-
 class Entity; //TODO: Bugger?
 
 // node structure
@@ -446,6 +444,15 @@ typedef struct door_t
 #define TEXTUREPOWER 5 // power of 2 that texture size is, ie pow(2,TEXTUREPOWER) = TEXTURESIZE
 #define MAXPLAYERS 4
 
+// shaking/bobbing, that sort of thing
+struct cameravars_t {
+	real_t shakex;
+	real_t shakex2;
+	int shakey;
+	int shakey2;
+};
+extern cameravars_t cameravars[MAXPLAYERS];
+
 extern int game;
 extern bool loading;
 extern SDL_TimerID timer;
@@ -507,6 +514,8 @@ extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
 extern bool directConnect;
 extern bool client_disconnected[MAXPLAYERS];
+extern view_t cameras[MAXPLAYERS];
+extern view_t menucam;
 extern int minotaurlevel;
 #define SINGLE 0
 #define SERVER 1
@@ -674,7 +683,7 @@ extern GLuint fbo_tex;
 extern GLuint fbo_ren;
 #endif
 void GO_SwapBuffers(SDL_Window* screen);
-unsigned int GO_GetPixelU32(int x, int y);
+unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
