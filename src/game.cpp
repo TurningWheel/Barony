@@ -1570,19 +1570,21 @@ void gameLogic(void)
 			}
 
 			// update clients on assailant status
-			for ( c = 1; c < MAXPLAYERS; c++ )
-			{
-				if ( !client_disconnected[c] )
+			if (multiplayer != SINGLE) {
+				for ( c = 1; c < MAXPLAYERS; c++ )
 				{
-					if ( oassailant[c] != assailant[c] )
+					if ( !client_disconnected[c] )
 					{
-						oassailant[c] = assailant[c];
-						strcpy((char*)net_packet->data, "MUSM");
-						net_packet->address.host = net_clients[c - 1].host;
-						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->data[3] = assailant[c];
-						net_packet->len = 4;
-						sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						if ( oassailant[c] != assailant[c] )
+						{
+							oassailant[c] = assailant[c];
+							strcpy((char*)net_packet->data, "MUSM");
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->data[3] = assailant[c];
+							net_packet->len = 4;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						}
 					}
 				}
 			}
