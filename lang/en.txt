@@ -377,9 +377,9 @@ is very strong.#
 off over time.#
 
 224 Beware of picture books. I
-knew someone who touched one: the
-next thing they knew, they were
-all alone on a tiny island.#
+knew someone who touched one:
+thenext thing they knew, they
+were all alone on a tiny island.#
 
 225 Thy skills shall improve as
 thou makest use of them.#
@@ -1163,7 +1163,7 @@ Press 'Okay' to return to the main menu.#
 733 Random Character#
 734 Welcome to Barony, %s.#
 735 Press <%s> to review your inventory.#
-736 Press <%s> to use objects.
+736 Click the right mouse button to use objects.
 #
 737 You have entered the dungeon.#
 738 Please do not pirate this game!
@@ -5794,5 +5794,11 @@ before we deal!#
 
         Selecting No will delete
       your singleplayer save file!#
+3921 Ranger-mode active, only non-melee weapons are allowed to attack!#
+3922 Ranger-mode deactivated, all weapons permitted.#
+3923 This weapon is disabled in Ranger-mode!#
+3924 Player savefile is not eligible for Ranger Achievement. Restart game to reset.#
+3925 Ranger-mode disabled for client %d.#
+3926 Ranger-mode enabled for client %d.#
 
 3949 end#
