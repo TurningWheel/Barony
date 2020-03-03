@@ -1676,7 +1676,7 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/splitscreen", 12))
 	{
-		splitscreen = true;
+		splitscreen = !splitscreen;
 		client_disconnected[1] = false;
 		client_disconnected[2] = false;
 		client_disconnected[3] = false;

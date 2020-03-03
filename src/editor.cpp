@@ -340,6 +340,7 @@ void closeNetworkInterfaces()
 -------------------------------------------------------------------------------*/
 
 view_t camera_vel;
+view_t camera;
 
 void mainLogic(void)
 {

@@ -3818,13 +3818,18 @@ int main(int argc, char** argv)
 				updateMessages();
 				if ( !nohud )
 				{
-					if (splitscreen) {
-						for (int c = 0; c < MAXPLAYERS; ++c) {
-							if (!client_disconnected[c]) {
+					if (splitscreen) 
+					{
+						for (int c = 0; c < MAXPLAYERS; ++c)
+						{
+							if (!client_disconnected[c]) 
+							{
 								handleDamageIndicators(c);
 							}
 						}
-					} else {
+					} 
+					else 
+					{
 						handleDamageIndicators(0);
 					}
 					drawMessages();
