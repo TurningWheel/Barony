@@ -5874,11 +5874,11 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			{
 				if ( rand() % 4 == 0 )
 				{
-					playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+					playSoundEntity(players[player]->entity, 35 + rand() % 3, 64);
 				}
 				else
 				{
-					playSoundEntity(players[clientnum]->entity, 462 + rand() % 2, 64);
+					playSoundEntity(players[player]->entity, 462 + rand() % 2, 64);
 				}
 			}
 		}
