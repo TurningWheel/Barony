@@ -7739,6 +7739,25 @@ void handleMainMenu(bool mode)
 				kills[c] = 0;
 			}
 
+			// close chests
+			for ( c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( c > 0 && !client_disconnected[c] )
+				{
+					if ( openedChest[c] )
+					{
+						openedChest[c]->closeChestServer();
+					}
+				}
+				else if ( c == 0 )
+				{
+					if ( openedChest[c] )
+					{
+						openedChest[c]->closeChest();
+					}
+				}
+			}
+
 			// disable cheats
 			noclip = false;
 			godmode = false;
