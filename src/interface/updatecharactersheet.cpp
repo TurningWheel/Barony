@@ -63,9 +63,15 @@ void updateCharacterSheet()
 		statWindowY2 = 554;
 	}
 
+
 	drawWindowFancy(0, 0, pos.w + 16, pos.h + 16);
 	drawRect(&pos, 0, 255);
 	drawWindowFancy(0, pos.h + 16, pos.w + 16, statWindowY2);
+
+	interfaceCharacterSheet.x = pos.x - 8;
+	interfaceCharacterSheet.y = pos.y - 8;
+	interfaceCharacterSheet.w = pos.w + 16;
+	interfaceCharacterSheet.h = statWindowY2;
 
 	// character sheet
 	double ofov = fov;

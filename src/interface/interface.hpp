@@ -775,3 +775,5 @@ public:
 extern FollowerRadialMenu FollowerMenu;
 extern SDL_Rect interfaceSkillsSheet;
 extern SDL_Rect interfacePartySheet;
+extern SDL_Rect interfaceCharacterSheet;
+extern SDL_Rect interfaceMessageStatusBar;

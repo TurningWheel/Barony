@@ -168,7 +168,8 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				}
 			}
 		}
-		if (mouseInBounds(0, 224, 0, 420))   // character sheet
+		if ( mouseInBounds(interfaceCharacterSheet.x, interfaceCharacterSheet.x + interfaceCharacterSheet.w,
+			interfaceCharacterSheet.y, interfaceCharacterSheet.y + interfaceCharacterSheet.h) )   // character sheet
 		{
 			if ( clickedOnGUI )
 			{
@@ -176,8 +177,10 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 			}
 			return NULL;
 		}
-		int x = xres / 2 - (status_bmp->w / 2);
-		if (mouseInBounds(x, x + status_bmp->w, yres - status_bmp->h, yres))
+
+		if ( !hide_statusbar &&
+			mouseInBounds(interfaceMessageStatusBar.x, interfaceMessageStatusBar.x + interfaceMessageStatusBar.w,
+				interfaceMessageStatusBar.y, interfaceMessageStatusBar.y + interfaceMessageStatusBar.h) ) // bottom message log
 		{
 			if ( clickedOnGUI )
 			{

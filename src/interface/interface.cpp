@@ -182,6 +182,8 @@ FollowerRadialMenu FollowerMenu;
 GenericGUIMenu GenericGUI;
 SDL_Rect interfaceSkillsSheet;
 SDL_Rect interfacePartySheet;
+SDL_Rect interfaceCharacterSheet;
+SDL_Rect interfaceMessageStatusBar;
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
