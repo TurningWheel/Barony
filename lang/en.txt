@@ -1163,7 +1163,7 @@ Press 'Okay' to return to the main menu.#
 733 Random Character#
 734 Welcome to Barony, %s.#
 735 Press <%s> to review your inventory.#
-736 Click the right mouse button to use objects.
+736 Press <%s> to use objects.
 #
 737 You have entered the dungeon.#
 738 Please do not pirate this game!
