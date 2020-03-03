@@ -7190,6 +7190,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( skill[2] != clientnum )
 					{
+						if ( achievementRangedMode[skill[2]] && !playerFailedRangedOnlyConduct[skill[2]] )
+						{
+							messagePlayer(skill[2], language[3923]); // prevent attack.
+							return;
+						}
+						if ( achievementRangedMode[skill[2]] )
+						{
+							messagePlayer(skill[2], language[3924]); // notify no longer eligible for achievement but still atk.
+						}
 						if ( !playerFailedRangedOnlyConduct[skill[2]] )
 						{
 							playerFailedRangedOnlyConduct[skill[2]] = true;
@@ -7198,6 +7207,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( skill[2] == clientnum )
 					{
+						if ( achievementRangedMode[skill[2]] && conductGameChallenges[CONDUCT_RANGED_ONLY] )
+						{
+							messagePlayer(skill[2], language[3923]); // prevent attack.
+							return;
+						}
+						if ( achievementRangedMode[skill[2]] )
+						{
+							messagePlayer(skill[2], language[3924]); // notify no longer eligible for achievement but still atk.
+						}
 						conductGameChallenges[CONDUCT_RANGED_ONLY] = 0;
 					}
 				}
@@ -8935,12 +8953,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							strcpy((char*)net_packet->data, "UPHP");
-							SDLNet_Write32((Uint32)hitstats->HP, &net_packet->data[4]);
-							SDLNet_Write32((Uint32)myStats->type, &net_packet->data[8]);
+							strcpy((char*)net_packet->data, "SHAK");
+							net_packet->data[4] = 10; // turns into .1
+							net_packet->data[5] = 10;
 							net_packet->address.host = net_clients[playerhit - 1].host;
 							net_packet->address.port = net_clients[playerhit - 1].port;
-							net_packet->len = 12;
+							net_packet->len = 6;
 							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 						}
 					}

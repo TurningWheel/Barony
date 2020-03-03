@@ -2293,6 +2293,52 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[2996]);
 			}
 		}
+		else if ( !strncmp(command_str, "/rangermode", 11) )
+		{
+			int player = -1;
+			if ( !strncmp(command_str, "/rangermode ", 12) )
+			{
+				player = std::min(std::max(0, atoi(&command_str[12])), MAXPLAYERS);
+			}
+			else
+			{
+				player = 0;
+			}
+
+			if ( multiplayer == CLIENT )
+			{
+				messagePlayer(clientnum, language[284]);
+				return;
+			}
+
+			achievementRangedMode[player] = !achievementRangedMode[player];
+			if ( multiplayer == SERVER )
+			{
+				if ( player != clientnum )
+				{
+					if ( achievementRangedMode[player] )
+					{
+						messagePlayer(clientnum, language[3926], player);
+					}
+					else
+					{
+						messagePlayer(clientnum, language[3925], player);
+					}
+				}
+			}
+			if ( achievementRangedMode[player] && !playerFailedRangedOnlyConduct[player] )
+			{
+				messagePlayer(player, language[3921]);
+			}
+			else if ( achievementRangedMode[player] && playerFailedRangedOnlyConduct[player] )
+			{
+				messagePlayer(player, language[3924]);
+			}
+			else if ( !achievementRangedMode[player] )
+			{
+				messagePlayer(player, language[3922]);
+			}
+		}
 		else if ( !strncmp(command_str, "/gimmepotions", 13) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
