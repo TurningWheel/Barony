@@ -1489,7 +1489,7 @@ void updatePlayerInventory()
 						}
 					}
 
-					if ( numkey_quick_add )
+					if ( numkey_quick_add && !command )
 					{
 						if ( keystatus[SDL_SCANCODE_1] )
 						{
