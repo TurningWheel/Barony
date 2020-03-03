@@ -45,7 +45,7 @@ public:
 
 	struct EnemyHPDetails
 	{
-		char enemy_name[128] = {'\0'};
+		char enemy_name[128] = "";
 		Sint32 enemy_hp = 0;
 		Sint32 enemy_maxhp = 0;
 		Sint32 enemy_oldhp = 0;
@@ -154,7 +154,7 @@ void freeInterfaceResources();
 void clickDescription(int player, Entity* entity);
 void consoleCommand(char* command);
 void drawMinimap();
-void handleDamageIndicators();
+void handleDamageIndicators(int player);
 void handleDamageIndicatorTicks();
 void drawStatus();
 void saveCommand(char* content);
@@ -379,7 +379,7 @@ public:
 		basePotion(nullptr),
 		secondaryPotion(nullptr),
 		alembicItem(nullptr),
-		experimentingAlchemy(nullptr),
+		experimentingAlchemy(false),
 		tinkeringKitItem(nullptr),
 		tinkeringTotalLastCraftableNode(nullptr),
 		tinkeringFilter(TINKER_FILTER_ALL),

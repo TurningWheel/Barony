@@ -2520,6 +2520,11 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	auto& camera_shakex = cameravars[player >= 0 ? player : 0].shakex;
+	auto& camera_shakey = cameravars[player >= 0 ? player : 0].shakey;
+	auto& camera_shakex2 = cameravars[player >= 0 ? player : 0].shakex2;
+	auto& camera_shakey2 = cameravars[player >= 0 ? player : 0].shakey2;
+
 	// sleep Zs
 	if ( myStats->EFFECTS[EFF_ASLEEP] && ticks % 30 == 0 )
 	{
@@ -5965,10 +5970,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									net_packet->len = 6;
 									sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 								}
-								else if ( playerhit == 0 )
+								else if ( playerhit == 0 || splitscreen )
 								{
-									camera_shakex += 0.2;
-									camera_shakey += 20;
+									cameravars[playerhit].shakex += 0.2;
+									cameravars[playerhit].shakey += 20;
 								}
 								if ( playerhit >= 0 )
 								{
@@ -8939,32 +8944,32 @@ void Entity::attack(int pose, int charge, Entity* target)
 							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 						}
 					}
-					else if ( playerhit == 0 )
+					else if ( playerhit == 0 || splitscreen )
 					{
 						if ( pose == MONSTER_POSE_GOLEM_SMASH || pose == PLAYER_POSE_GOLEM_SMASH )
 						{
 							if ( target == nullptr )
 							{
 								// primary target
-								camera_shakex += .2;
-								camera_shakey += 20;
+								cameravars[playerhit].shakex += .2;
+								cameravars[playerhit].shakey += 20;
 							}
 							else
 							{
 								// secondary target
-								camera_shakex += .1;
-								camera_shakey += 10;
+								cameravars[playerhit].shakex += .1;
+								cameravars[playerhit].shakey += 10;
 							}
 						}
 						else if ( damage > 0 )
 						{
-							camera_shakex += .1;
-							camera_shakey += 10;
+							cameravars[playerhit].shakex += .1;
+							cameravars[playerhit].shakey += 10;
 						}
 						else
 						{
-							camera_shakex += .05;
-							camera_shakey += 5;
+							cameravars[playerhit].shakex += .05;
+							cameravars[playerhit].shakey += 5;
 						}
 					}
 
@@ -9087,10 +9092,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								net_packet->len = 6;
 								sendPacketSafe(net_sock, -1, net_packet, player - 1);
 							}
-							else if ( player == 0 )
+							else if ( player == 0 || splitscreen )
 							{
-								camera_shakex += 0.1;
-								camera_shakey += 10;
+								cameravars[player].shakex += 0.1;
+								cameravars[player].shakey += 10;
 							}
 
 							spawnMagicEffectParticles(this->x, this->y, this->z, 983);
@@ -9319,8 +9324,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								else if ( playerhit == 0 )
 								{
-									camera_shakex += 0.1;
-									camera_shakey += 10;
+									cameravars[playerhit].shakex += 0.1;
+									cameravars[playerhit].shakey += 10;
 								}
 							}
 							//Free the list.
@@ -9358,8 +9363,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 										}
 										else if ( playerhit == 0 )
 										{
-											camera_shakex += 0.2;
-											camera_shakey += 20;
+											cameravars[playerhit].shakex += 0.2;
+											cameravars[playerhit].shakey += 20;
 										}
 										tmpEntity->modHP(-explodeDmg);
 										if ( playerhit >= 0 )
@@ -9759,8 +9764,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else if ( playerhit == 0 )
 						{
-							camera_shakex += .1;
-							camera_shakey += 10;
+							cameravars[playerhit].shakex += .1;
+							cameravars[playerhit].shakey += 10;
 						}
 					}
 					//Free the list.

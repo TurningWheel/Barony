@@ -313,21 +313,21 @@ void updateChestInventory()
 		{
 			chestgui_offset_x = (omousex - dragoffset_x) - (CHEST_INVENTORY_X - chestgui_offset_x);
 			chestgui_offset_y = (omousey - dragoffset_y) - (CHEST_INVENTORY_Y - chestgui_offset_y);
-			if (CHEST_INVENTORY_X <= camera.winx)
+			if (CHEST_INVENTORY_X <= 0)
 			{
-				chestgui_offset_x = camera.winx - (CHEST_INVENTORY_X - chestgui_offset_x);
+				chestgui_offset_x = 0 - (CHEST_INVENTORY_X - chestgui_offset_x);
 			}
-			if (CHEST_INVENTORY_X > camera.winx + camera.winw - inventoryChest_bmp->w)
+			if (CHEST_INVENTORY_X > 0 + xres - inventoryChest_bmp->w)
 			{
-				chestgui_offset_x = (camera.winx + camera.winw - inventoryChest_bmp->w) - (CHEST_INVENTORY_X - chestgui_offset_x);
+				chestgui_offset_x = (0 + xres - inventoryChest_bmp->w) - (CHEST_INVENTORY_X - chestgui_offset_x);
 			}
-			if (CHEST_INVENTORY_Y <= camera.winy)
+			if (CHEST_INVENTORY_Y <= 0)
 			{
-				chestgui_offset_y = camera.winy - (CHEST_INVENTORY_Y - chestgui_offset_y);
+				chestgui_offset_y = 0 - (CHEST_INVENTORY_Y - chestgui_offset_y);
 			}
-			if (CHEST_INVENTORY_Y > camera.winy + camera.winh - inventoryChest_bmp->h)
+			if (CHEST_INVENTORY_Y > 0 + yres - inventoryChest_bmp->h)
 			{
-				chestgui_offset_y = (camera.winy + camera.winh - inventoryChest_bmp->h) - (CHEST_INVENTORY_Y - chestgui_offset_y);
+				chestgui_offset_y = (0 + yres - inventoryChest_bmp->h) - (CHEST_INVENTORY_Y - chestgui_offset_y);
 			}
 		}
 		else

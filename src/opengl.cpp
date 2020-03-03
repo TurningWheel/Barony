@@ -835,6 +835,9 @@ void glDrawWorld(view_t* camera, int mode)
 		mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
 	}
 
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+
 	if ( clouds && mode == REALCOLORS )
 	{
 		// draw sky "box"
@@ -1394,6 +1397,9 @@ void glDrawWorld(view_t* camera, int mode)
 		}
 	}
 	glEnd();
+
+	glDisable(GL_SCISSOR_TEST);
+	glScissor(0, 0, xres, yres);
 }
 
 /*GLuint create_shader(const char* filename, GLenum type)
@@ -1439,7 +1445,7 @@ static int dirty = 1;
 static int oldx = 0, oldy = 0;
 static unsigned int oldpix = 0;
 
-unsigned int GO_GetPixelU32(int x, int y)
+unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 {
 	if(!dirty && (oldx==x) && (oldy==y))
 		return oldpix;

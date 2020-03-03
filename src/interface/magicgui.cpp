@@ -137,7 +137,7 @@ void updateMagicGUI()
 	}*/
 	SDL_Rect pos;
 
-	renderMagicGUI(camera.winx, camera.winy, camera.winw, camera.winh);
+	renderMagicGUI(0, 0, xres, yres);
 	if (magic_GUI_state == 0)   //TODO: use defines, not numbers.
 	{
 		if (mousestatus[SDL_BUTTON_LEFT])
@@ -151,12 +151,12 @@ void updateMagicGUI()
 			{
 				numspells++;
 			}
-			int maxSpellsOnscreen = camera.winh / spell_list_gui_slot_bmp->h;
+			int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
 			numspells = std::min(numspells, maxSpellsOnscreen);
 			height += numspells * spell_list_gui_slot_bmp->h;
 			//Now calculate the position.
-			pos.x = camera.winx + (camera.winw / 2) - (spell_list_gui_slot_bmp->w / 2) + magicspell_list_offset_x;
-			pos.y = camera.winy + ((camera.winh / 2) - (height / 2)) + magicspell_list_offset_x;
+			pos.x = 0 + (xres / 2) - (spell_list_gui_slot_bmp->w / 2) + magicspell_list_offset_x;
+			pos.y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
 			magic_gui_pos.x = pos.x;
 			magic_gui_pos.y = pos.y;
 
@@ -213,7 +213,7 @@ void drawSustainedSpells()
 			return;
 		}
 		SDL_Surface** surface = (SDL_Surface**)node->element;
-		pos.x = camera.winw - (*surface)->w - SUST_SPELLS_X;
+		pos.x = xres - (*surface)->w - SUST_SPELLS_X;
 
 		//Draw under the skills sheet if inventory open or the sidebar lock has been enabled.
 		int iconHeightOffset = interfaceSkillsSheet.y + interfaceSkillsSheet.h;

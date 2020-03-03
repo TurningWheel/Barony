@@ -158,7 +158,8 @@ Sint32 camx = 0, camy = 0;
 Sint32 ocamx = 0, ocamy = 0;
 Sint32 newcamx, newcamy;
 Uint32 entity_uids = 1, lastEntityUIDs = 1;
-view_t camera;
+view_t cameras[MAXPLAYERS];
+view_t menucam;
 map_t map;
 voxel_t** models = nullptr;
 list_t button_l;
@@ -302,10 +303,7 @@ SDL_Surface* cross_bmp = nullptr;
 int shaking = 0, bobbing = 0;
 bool fadeout = false, fadefinished = false;
 int fadealpha = 0;
-real_t camera_shakex;
-real_t camera_shakex2;
-int camera_shakey;
-int camera_shakey2;
+cameravars_t cameravars[MAXPLAYERS];
 
 // misc definitions
 char tempstr[1024];

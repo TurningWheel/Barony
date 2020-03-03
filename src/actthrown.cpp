@@ -1179,10 +1179,10 @@ void actThrown(Entity* my)
 					playSoundEntity(hit.entity, 28, 64);
 					if ( hit.entity->behavior == &actPlayer )
 					{
-						if ( hit.entity->skill[2] == clientnum )
+						if ( hit.entity->skill[2] == clientnum || splitscreen )
 						{
-							camera_shakex += .1;
-							camera_shakey += 10;
+							cameravars[hit.entity->skill[2]].shakex += .1;
+							cameravars[hit.entity->skill[2]].shakey += 10;
 						}
 						else
 						{
@@ -1210,8 +1210,8 @@ void actThrown(Entity* my)
 					{
 						if ( hit.entity->skill[2] == clientnum )
 						{
-							camera_shakex += .05;
-							camera_shakey += 5;
+							cameravars[hit.entity->skill[2]].shakex += .05;
+							cameravars[hit.entity->skill[2]].shakey += 5;
 						}
 						else
 						{

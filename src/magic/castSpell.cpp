@@ -333,10 +333,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						playSoundPlayer(player, 28, 92);
 					}
-					else if ( player == 0 )
+					else if ( player == 0 || splitscreen )
 					{
-						camera_shakex += 0.1;
-						camera_shakey += 10;
+						cameravars[player].shakex += 0.1;
+						cameravars[player].shakey += 10;
 						playSoundPlayer(player, 28, 92);
 					}
 				}

@@ -46,7 +46,8 @@ bool insectoidLevitating[MAXPLAYERS] = { false, false, false, false };
 -------------------------------------------------------------------------------*/
 
 #define DEATHCAM_TIME my->skill[0]
-#define DEATHCAM_PLAYER my->skill[1]
+#define DEATHCAM_PLAYERTARGET my->skill[1]
+#define DEATHCAM_PLAYERNUM my->skill[2]
 #define DEATHCAM_ROTX my->fskill[0]
 #define DEATHCAM_ROTY my->fskill[1]
 
@@ -60,7 +61,7 @@ void actDeathCam(Entity* my)
 	DEATHCAM_TIME++;
 	if ( DEATHCAM_TIME == 1 )
 	{
-		DEATHCAM_PLAYER = -1;
+		DEATHCAM_PLAYERTARGET = -1;
 	}
 	else if ( DEATHCAM_TIME == TICKS_PER_SECOND * 6 )
 	{
@@ -117,7 +118,7 @@ void actDeathCam(Entity* my)
 		DEATHCAM_ROTY = 0;
 	}
 
-	if ( players[clientnum] && players[clientnum]->entity )
+	if ( players[DEATHCAM_PLAYERNUM] && players[DEATHCAM_PLAYERNUM]->entity )
 	{
 		// do nothing if still alive
 	}
@@ -128,48 +129,48 @@ void actDeathCam(Entity* my)
 		{
 			*inputPressed(joyimpulses[INJOY_GAME_ATTACK]) = 0;
 		}
-		DEATHCAM_PLAYER++;
-		if (DEATHCAM_PLAYER >= MAXPLAYERS)
+		DEATHCAM_PLAYERTARGET++;
+		if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)
 		{
-			DEATHCAM_PLAYER = 0;
+			DEATHCAM_PLAYERTARGET = 0;
 		}
 		int c = 0;
-		while (!players[DEATHCAM_PLAYER] || !players[DEATHCAM_PLAYER]->entity)   //TODO: PLAYERSWAP VERIFY. I'm not sure if the loop's condition should look like this. I think it should be fine...
+		while (!players[DEATHCAM_PLAYERTARGET] || !players[DEATHCAM_PLAYERTARGET]->entity)   //TODO: PLAYERSWAP VERIFY. I'm not sure if the loop's condition should look like this. I think it should be fine...
 		{
 			if (c > MAXPLAYERS)
 			{
 				break;
 			}
-			DEATHCAM_PLAYER++;
-			if (DEATHCAM_PLAYER >= MAXPLAYERS)
+			DEATHCAM_PLAYERTARGET++;
+			if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)
 			{
-				DEATHCAM_PLAYER = 0;
+				DEATHCAM_PLAYERTARGET = 0;
 			}
 			c++;
 		}
 	}
 
-	if (DEATHCAM_PLAYER >= 0)
+	if (DEATHCAM_PLAYERTARGET >= 0)
 	{
-		if (players[DEATHCAM_PLAYER] && players[DEATHCAM_PLAYER]->entity)
+		if (players[DEATHCAM_PLAYERTARGET] && players[DEATHCAM_PLAYERTARGET]->entity)
 		{
-			my->x = players[DEATHCAM_PLAYER]->entity->x;
-			my->y = players[DEATHCAM_PLAYER]->entity->y;
+			my->x = players[DEATHCAM_PLAYERTARGET]->entity->x;
+			my->y = players[DEATHCAM_PLAYERTARGET]->entity->y;
 		}
 	}
 
 	my->removeLightField();
 	my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 128);
 
-	camera.x = my->x / 16.f;
-	camera.y = my->y / 16.f;
-	camera.z = my->z * 2.f;
-	camera.ang = my->yaw;
-	camera.vang = my->pitch;
+	cameras[DEATHCAM_PLAYERNUM].x = my->x / 16.f;
+	cameras[DEATHCAM_PLAYERNUM].y = my->y / 16.f;
+	cameras[DEATHCAM_PLAYERNUM].z = my->z * 2.f;
+	cameras[DEATHCAM_PLAYERNUM].ang = my->yaw;
+	cameras[DEATHCAM_PLAYERNUM].vang = my->pitch;
 
-	camera.x -= cos(my->yaw) * cos(my->pitch) * 1.5;
-	camera.y -= sin(my->yaw) * cos(my->pitch) * 1.5;
-	camera.z -= sin(my->pitch) * 16;
+	cameras[DEATHCAM_PLAYERNUM].x -= cos(my->yaw) * cos(my->pitch) * 1.5;
+	cameras[DEATHCAM_PLAYERNUM].y -= sin(my->yaw) * cos(my->pitch) * 1.5;
+	cameras[DEATHCAM_PLAYERNUM].z -= sin(my->pitch) * 16;
 }
 
 #define PLAYER_INIT my->skill[0]
@@ -233,7 +234,7 @@ void actPlayer(Entity* my)
 			//messagePlayer(0, "Lorem ipsum dolor sit amet, dico accusam reprehendunt ne mea, ea est illum tincidunt voluptatibus. Ne labore voluptua eos, nostro fierent mnesarchum an mei, cu mea dolor verear epicuri. Est id iriure principes, unum cotidieque qui te. An sit tractatos complectitur.");
 		}
 	}
-	if ( autoLimbReload && ticks % 20 == 0 && PLAYER_NUM == clientnum )
+	if ( autoLimbReload && ticks % 20 == 0 && (PLAYER_NUM == clientnum || splitscreen) )
 	{
 		consoleCommand("/reloadlimbs");
 	}
@@ -340,22 +341,22 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM == clientnum )
+	if ( PLAYER_NUM == clientnum || splitscreen )
 	{
-		if ( stats[clientnum]->type != HUMAN && stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] )
+		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
 		{
 			if ( swapHotbarOnShapeshift == 0 )
 			{
 				initShapeshiftHotbar();
 			}
-			else if ( swapHotbarOnShapeshift != stats[clientnum]->type )
+			else if ( swapHotbarOnShapeshift != stats[PLAYER_NUM]->type )
 			{
 				// we likely transformed while still shapeshifted, fully init the hotbar code again.
 				deinitShapeshiftHotbar();
 				initShapeshiftHotbar();
 			}
 		}
-		else if ( !stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] && swapHotbarOnShapeshift > 0 )
+		else if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] && swapHotbarOnShapeshift > 0 )
 		{
 			deinitShapeshiftHotbar();
 		}
@@ -434,7 +435,7 @@ void actPlayer(Entity* my)
 		nametag->setUID(-3);
 
 		// hud weapon
-		if ( PLAYER_NUM == clientnum )
+		if ( PLAYER_NUM == clientnum || splitscreen )
 		{
 			if ( multiplayer == CLIENT )
 			{
@@ -446,6 +447,7 @@ void actPlayer(Entity* my)
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[INVISIBLE] = true;
+			entity->skill[11] = PLAYER_NUM;
 			entity->behavior = &actHudWeapon;
 			entity->focalz = -4;
 			node = list_AddNodeLast(&my->children);
@@ -462,6 +464,7 @@ void actPlayer(Entity* my)
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[INVISIBLE] = true;
+			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actLeftHandMagic;
 			entity->focalz = -4;
 			magicLeftHand = entity;
@@ -471,6 +474,7 @@ void actPlayer(Entity* my)
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[INVISIBLE] = true;
+			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actRightHandMagic;
 			entity->focalz = -4;
 			magicRightHand = entity;
@@ -482,6 +486,7 @@ void actPlayer(Entity* my)
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[INVISIBLE] = true;
+			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actHudShield;
 			my->bodyparts.push_back(entity);
 
@@ -491,6 +496,7 @@ void actPlayer(Entity* my)
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[INVISIBLE] = true;
+			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actHudAdditional;
 			my->bodyparts.push_back(entity);
 
@@ -500,6 +506,7 @@ void actPlayer(Entity* my)
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[INVISIBLE] = true;
+			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actHudArrowModel;
 			my->bodyparts.push_back(entity);
 		}
@@ -815,7 +822,7 @@ void actPlayer(Entity* my)
 	if ( !intro )
 	{
 		PLAYER_ALIVETIME++;
-		if ( PLAYER_NUM == clientnum )
+		if ( PLAYER_NUM == clientnum || splitscreen )
 		{
 			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
@@ -1192,6 +1199,7 @@ void actPlayer(Entity* my)
 		keystatus[SDL_SCANCODE_F4] = 0;
 	}
 
+	// SPLITSCREEN TODO
 	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
 	{
 		Item* tempItem = uidToItem(appraisal_item);
@@ -1579,7 +1587,7 @@ void actPlayer(Entity* my)
 	// invisibility
 	if ( !intro )
 	{
-		if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
+		if ( PLAYER_NUM == clientnum || multiplayer == SERVER || splitscreen )
 		{
 			if ( stats[PLAYER_NUM]->ring != NULL )
 				if ( stats[PLAYER_NUM]->ring->type == RING_INVISIBILITY )
@@ -1679,7 +1687,7 @@ void actPlayer(Entity* my)
 	bool oldInsectoidLevitate = insectoidLevitating[PLAYER_NUM];
 	insectoidLevitating[PLAYER_NUM] = false;
 
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
+	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || splitscreen )
 	{
 		switch ( stats[PLAYER_NUM]->type )
 		{
@@ -1842,10 +1850,10 @@ void actPlayer(Entity* my)
 						}
 						clipMove(&my->x, &my->y, velx, vely, my);
 						messagePlayer(PLAYER_NUM, language[3869]);
-						if ( PLAYER_NUM == clientnum )
+						if ( PLAYER_NUM == clientnum || splitscreen )
 						{
-							camera_shakex += .1;
-							camera_shakey += 10;
+							cameravars[PLAYER_NUM].shakex += .1;
+							cameravars[PLAYER_NUM].shakey += 10;
 						}
 						else if ( PLAYER_NUM != clientnum && multiplayer == SERVER )
 						{
@@ -1897,7 +1905,7 @@ void actPlayer(Entity* my)
 			waterwalkingboots = true;
 		}
 	bool swimming = false;
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
+	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || splitscreen )
 	{
 		if ( !levitating && !waterwalkingboots && !noclip && !skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) )
 		{
@@ -1917,7 +1925,7 @@ void actPlayer(Entity* my)
 				{
 					my->z += 1;
 				}
-				if ( !PLAYER_INWATER && PLAYER_NUM == clientnum )
+				if ( !PLAYER_INWATER && (PLAYER_NUM == clientnum || splitscreen) )
 				{
 					PLAYER_INWATER = 1;
 					if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
@@ -1927,16 +1935,16 @@ void actPlayer(Entity* my)
 						{
 							messagePlayer(PLAYER_NUM, language[3703]);
 						}
-						camera_shakex += .1;
-						camera_shakey += 10;
+						cameravars[PLAYER_NUM].shakex += .1;
+						cameravars[PLAYER_NUM].shakey += 10;
 					}
 					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == VAMPIRE )
 					{
 						messagePlayerColor(PLAYER_NUM, SDL_MapRGB(mainsurface->format, 255, 0, 0), language[3183]);
 						playSoundPlayer(PLAYER_NUM, 28, 128);
 						playSoundPlayer(PLAYER_NUM, 249, 128);
-						camera_shakex += .1;
-						camera_shakey += 10;
+						cameravars[PLAYER_NUM].shakex += .1;
+						cameravars[PLAYER_NUM].shakey += 10;
 					}
 					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == AUTOMATON )
 					{
@@ -2050,7 +2058,7 @@ void actPlayer(Entity* my)
 			PLAYER_BOBMODE = 0;
 		}
 
-	if (PLAYER_NUM == clientnum)
+	if (PLAYER_NUM == clientnum || splitscreen)
 	{
 		players[PLAYER_NUM]->entity = my;
 
@@ -2070,7 +2078,7 @@ void actPlayer(Entity* my)
 			}
 			else if ( ((*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) && !command && !swimming)
 			{
-				if ( !(stats[clientnum]->defending || stats[clientnum]->sneaking == 0) )
+				if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
 				{
 					if (PLAYER_BOBMODE)
 					{
@@ -2151,7 +2159,7 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			if ( !swimming && !(stats[clientnum]->defending || stats[clientnum]->sneaking == 0) )
+			if ( !swimming && !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
 			{
 				if ( PLAYER_BOBMOVE > .1 )
 				{
@@ -2215,7 +2223,7 @@ void actPlayer(Entity* my)
 				{
 					if ( !shootmode )
 					{
-						Uint32 uidnum = GO_GetPixelU32(omousex, yres - omousey);
+						Uint32 uidnum = GO_GetPixelU32(omousex, yres - omousey, cameras[PLAYER_NUM]);
 						if ( uidnum > 0 )
 						{
 							underMouse = uidToEntity(uidnum);
@@ -2223,7 +2231,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						Uint32 uidnum = GO_GetPixelU32(xres / 2, yres / 2);
+						Uint32 uidnum = GO_GetPixelU32(xres / 2, yres / 2, cameras[PLAYER_NUM]);
 						if ( uidnum > 0 )
 						{
 							underMouse = uidToEntity(uidnum);
@@ -2253,7 +2261,7 @@ void actPlayer(Entity* my)
 			if ( FollowerMenu.followerToCommand == nullptr && FollowerMenu.selectMoveTo == false )
 			{
 				bool clickedOnGUI = false;
-				selectedEntity = entityClicked(&clickedOnGUI, false); // using objects
+				selectedEntity = entityClicked(&clickedOnGUI, false, PLAYER_NUM); // using objects
 				if ( !selectedEntity && !clickedOnGUI )
 				{
 					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
@@ -2327,7 +2335,7 @@ void actPlayer(Entity* my)
 						else if ( FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 						{
 							// we're selecting a target for the ally.
-							Entity* target = entityClicked(nullptr, false);
+							Entity* target = entityClicked(nullptr, false, PLAYER_NUM);
 							*inputPressed(impulses[IN_USE]) = 0;
 							*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
 							if ( target )
@@ -2464,9 +2472,9 @@ void actPlayer(Entity* my)
 						{
 							foundTinkeringKit = true;
 						}
-						if ( foundTinkeringKit && clientnum == 0 )
+						if ( foundTinkeringKit && (clientnum == 0 || splitscreen) )
 						{
-							selectedEntity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[clientnum]->entity->getUID());
+							selectedEntity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[PLAYER_NUM]->entity->getUID());
 						}
 					}
 					else
@@ -2555,11 +2563,11 @@ void actPlayer(Entity* my)
 	// torch light
 	if ( !intro )
 	{
-		if ( multiplayer == SERVER || PLAYER_NUM == clientnum )
+		if ( multiplayer == SERVER || PLAYER_NUM == clientnum || splitscreen )
 		{
 			if ( stats[PLAYER_NUM]->shield != NULL && (showEquipment && isHumanoid) && !itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
 			{
-				if ( PLAYER_NUM == clientnum )
+				if ( PLAYER_NUM == clientnum || splitscreen)
 				{
 					if ( stats[PLAYER_NUM]->shield->type == TOOL_TORCH )
 					{
@@ -2604,7 +2612,7 @@ void actPlayer(Entity* my)
 			}
 			else
 			{
-				if ( PLAYER_NUM == clientnum && !PLAYER_DEBUGCAM )
+				if ( (PLAYER_NUM == clientnum || splitscreen) && !PLAYER_DEBUGCAM )
 				{
 					PLAYER_TORCH = 3 + (my->getPER() / 3);
 					if ( playerRace == RAT )
@@ -2638,7 +2646,7 @@ void actPlayer(Entity* my)
 	}
 
 	// server controls players primarily
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
+	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || splitscreen )
 	{
 		// set head model
 		if ( playerRace != HUMAN )
@@ -2769,7 +2777,7 @@ void actPlayer(Entity* my)
 					{
 						my->flags[PASSABLE] = true;
 						serverUpdateEntityFlag(my, PASSABLE);
-						if ( clientnum == PLAYER_NUM )
+						if ( clientnum == PLAYER_NUM || splitscreen )
 						{
 							// deathcam
 							entity = newEntity(-1, 1, map.entities, nullptr); //Deathcam entity.
@@ -2780,6 +2788,7 @@ void actPlayer(Entity* my)
 							entity->flags[PASSABLE] = true;
 							entity->flags[INVISIBLE] = true;
 							entity->behavior = &actDeathCam;
+							entity->skill[2] = PLAYER_NUM;
 							entity->yaw = my->yaw;
 							entity->pitch = PI / 8;
 							my->playerCreatedDeathCam = 1;
@@ -2919,7 +2928,7 @@ void actPlayer(Entity* my)
 										followerStats->leader_uid = 0;
 									}
 									list_RemoveNode(node);
-									if ( PLAYER_NUM != clientnum )
+									if ( PLAYER_NUM != clientnum && !splitscreen )
 									{
 										serverRemoveClientFollower(PLAYER_NUM, myFollower->getUID());
 									}
@@ -2936,7 +2945,7 @@ void actPlayer(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, player-1);
 						}
 						*/
-						if ( clientnum == PLAYER_NUM )
+						if ( clientnum == PLAYER_NUM || splitscreen )
 						{
 							if ( (stats[PLAYER_NUM]->type != AUTOMATON) 
 								|| (stats[PLAYER_NUM]->type == AUTOMATON && my->playerCreatedDeathCam == 0) )
@@ -2950,6 +2959,7 @@ void actPlayer(Entity* my)
 								entity->flags[PASSABLE] = true;
 								entity->flags[INVISIBLE] = true;
 								entity->behavior = &actDeathCam;
+								entity->skill[2] = PLAYER_NUM;
 								entity->yaw = my->yaw;
 								entity->pitch = PI / 8;
 							}
@@ -3227,7 +3237,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM == clientnum && intro == false )
+	if ( (PLAYER_NUM == clientnum || splitscreen) && intro == false )
 	{
 		// effects of drunkenness
 		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN))
@@ -3251,8 +3261,8 @@ void actPlayer(Entity* my)
 			{
 				CHAR_DRUNK = 0;
 				messagePlayer(PLAYER_NUM, language[579]);
-				camera_shakex -= .04;
-				camera_shakey -= 5;
+				cameravars[PLAYER_NUM].shakex -= .04;
+				cameravars[PLAYER_NUM].shakey -= 5;
 			}
 		}
 
@@ -3299,9 +3309,9 @@ void actPlayer(Entity* my)
 
 		if ( !allowMovement )
 		{
-			if ( clientnum == PLAYER_NUM && openedChest[clientnum] )
+			if ( (clientnum == PLAYER_NUM || splitscreen) && openedChest[PLAYER_NUM] )
 			{
-				openedChest[clientnum]->closeChest();
+				openedChest[PLAYER_NUM]->closeChest();
 			}
 		}
 
@@ -3712,7 +3722,7 @@ void actPlayer(Entity* my)
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
 			// bumping into monsters disturbs them
-			if ( hit.entity && !everybodyfriendly && clientnum == 0 )
+			if ( hit.entity && !everybodyfriendly && multiplayer != CLIENT )
 			{
 				if ( hit.entity->behavior == &actMonster )
 				{
@@ -3798,7 +3808,7 @@ void actPlayer(Entity* my)
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 	}
 
-	if ( PLAYER_NUM == clientnum && ticks % 65 == 0 )
+	if ( (PLAYER_NUM == clientnum || splitscreen) && ticks % 65 == 0 )
 	{
 		for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 		{
@@ -4069,7 +4079,7 @@ void actPlayer(Entity* my)
 							}
 						}
 
-						if ( PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH && PLAYER_NUM == clientnum )
+						if ( PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH && (PLAYER_NUM == clientnum || splitscreen) )
 						{
 							if ( my->pitch < PI / 32 )
 							{
@@ -4180,7 +4190,7 @@ void actPlayer(Entity* my)
 						{
 							// move the head.
 							//limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.1);
-							if ( PLAYER_NUM == clientnum && PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
+							if ( (PLAYER_NUM == clientnum || splitscreen) && PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
 							{
 								if ( my->pitch > -PI / 12 )
 								{
@@ -4246,12 +4256,12 @@ void actPlayer(Entity* my)
 								{
 									if ( playerRace == TROLL && rand() % 4 == 0 )
 									{
-										playSoundEntityLocal(players[clientnum]->entity, 79, 128);
+										playSoundEntityLocal(players[PLAYER_NUM]->entity, 79, 128);
 									}
 								}
 								else if ( PLAYER_ATTACKTIME == 35 )
 								{
-									playSoundEntityLocal(players[clientnum]->entity, 164, 128);
+									playSoundEntityLocal(players[PLAYER_NUM]->entity, 164, 128);
 								}
 							}
 						}
@@ -5340,31 +5350,28 @@ void actPlayer(Entity* my)
 		PLAYER_ATTACKTIME = 0;
 	}
 
-	if ( PLAYER_NUM == clientnum && intro == false )
+	// camera
+	if ( !PLAYER_DEBUGCAM && stats[PLAYER_NUM] && stats[PLAYER_NUM]->HP > 0 )
 	{
-		// camera
-		if ( !PLAYER_DEBUGCAM && stats[PLAYER_NUM] && stats[PLAYER_NUM]->HP > 0 )
+		cameras[PLAYER_NUM].x = my->x / 16.0;
+		cameras[PLAYER_NUM].y = my->y / 16.0;
+		cameras[PLAYER_NUM].z = (my->z * 2) + PLAYER_BOB - 2.5;
+		if ( playerRace == CREATURE_IMP && my->z == -4.5 )
 		{
-			camera.x = my->x / 16.0;
-			camera.y = my->y / 16.0;
-			camera.z = (my->z * 2) + PLAYER_BOB - 2.5;
-			if ( playerRace == CREATURE_IMP && my->z == -4.5 )
-			{
-				camera.z += 1;
-			}
-			else if ( playerRace == TROLL && my->z <= -1.5 )
-			{
-				camera.z -= 2;
-			}
-			camera.ang = my->yaw;
-			if ( softwaremode )
-			{
-				camera.vang = (my->pitch / (PI / 4)) * camera.winh;
-			}
-			else
-			{
-				camera.vang = my->pitch;
-			}
+			cameras[PLAYER_NUM].z += 1;
+		}
+		else if ( playerRace == TROLL && my->z <= -1.5 )
+		{
+			cameras[PLAYER_NUM].z -= 2;
+		}
+		cameras[PLAYER_NUM].ang = my->yaw;
+		if ( softwaremode )
+		{
+			cameras[PLAYER_NUM].vang = (my->pitch / (PI / 4)) * cameras[PLAYER_NUM].winh;
+		}
+		else
+		{
+			cameras[PLAYER_NUM].vang = my->pitch;
 		}
 	}
 }

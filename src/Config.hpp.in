@@ -11,6 +11,10 @@
 	#define LINUX
 #endif
 
+#if @Bsd@
+	#define BSD
+#endif
+
 #if @STEAMWORKS_ENABLED@
 	#define STEAMWORKS
 #endif

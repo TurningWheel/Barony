@@ -3794,21 +3794,21 @@ void GenericGUIMenu::updateGUI()
 			{
 				offsetx = (omousex - dragoffset_x) - (gui_starty - offsetx);
 				offsety = (omousey - dragoffset_y) - (gui_startx - offsety);
-				if ( gui_starty <= camera.winx )
+				if ( gui_starty <= 0 )
 				{
-					offsetx = camera.winx - (gui_starty - offsetx);
+					offsetx = 0 - (gui_starty - offsetx);
 				}
-				if ( gui_starty > camera.winx + camera.winw - identifyGUI_img->w )
+				if ( gui_starty > 0 + xres - identifyGUI_img->w )
 				{
-					offsetx = (camera.winx + camera.winw - identifyGUI_img->w) - (gui_starty - offsetx);
+					offsetx = (0 + xres - identifyGUI_img->w) - (gui_starty - offsetx);
 				}
-				if ( gui_startx <= camera.winy )
+				if ( gui_startx <= 0 )
 				{
-					offsety = camera.winy - (gui_startx - offsety);
+					offsety = 0 - (gui_startx - offsety);
 				}
-				if ( gui_startx > camera.winy + camera.winh - identifyGUI_img->h )
+				if ( gui_startx > 0 + yres - identifyGUI_img->h )
 				{
-					offsety = (camera.winy + camera.winh - identifyGUI_img->h) - (gui_startx - offsety);
+					offsety = (0 + yres - identifyGUI_img->h) - (gui_startx - offsety);
 				}
 			}
 			else

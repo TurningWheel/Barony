@@ -168,6 +168,9 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 
+	auto& camera_shakex = cameravars[player >= 0 ? player : 0].shakex;
+	auto& camera_shakey = cameravars[player >= 0 ? player : 0].shakey;
+
 	// code below is only run by the player that drank the potion.
 	// if it was thrown, then the function returns in the above code as processed by the server.
 
@@ -724,6 +727,9 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		return false;
 	}
+
+	auto& camera_shakex = cameravars[player >= 0 ? player : 0].shakex;
+	auto& camera_shakey = cameravars[player >= 0 ? player : 0].shakey;
 
 	if ( entity == NULL )
 	{
@@ -1438,6 +1444,9 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		return false;
 	}
 
+	auto& camera_shakex = cameravars[player >= 0 ? player : 0].shakex;
+	auto& camera_shakey = cameravars[player >= 0 ? player : 0].shakey;
+
 	if ( entity == NULL )
 	{
 		return false;
@@ -1524,6 +1533,9 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	{
 		return false;
 	}
+
+	auto& camera_shakex = cameravars[player >= 0 ? player : 0].shakex;
+	auto& camera_shakey = cameravars[player >= 0 ? player : 0].shakey;
 
 	if ( entity == NULL )
 	{

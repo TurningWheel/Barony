@@ -42,11 +42,6 @@ extern real_t mousespeed;
 void handleEvents(void);
 void startMessages();
 
-extern real_t camera_shakex;
-extern real_t camera_shakex2;
-extern int camera_shakey;
-extern int camera_shakey2;
-
 // net packet send
 typedef struct packetsend_t
 {

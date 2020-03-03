@@ -5581,10 +5581,10 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 	{
 		fullMapName = physfsFormatMapName("mainmenu9");
 		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-		camera.x = 34.3;
-		camera.y = 15;
-		camera.z = -20;
-		camera.ang = 5.84;
+		menucam.x = 34.3;
+		menucam.y = 15;
+		menucam.z = -20;
+		menucam.ang = 5.84;
 		return 1;
 	}
 	else if ( blessedAdditionMaps )
@@ -5594,34 +5594,34 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 			case 0:
 				fullMapName = physfsFormatMapName("mainmenu5");
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				camera.x = 30.8;
-				camera.y = 24.3;
-				camera.z = 0;
-				camera.ang = 2.76;
+				menucam.x = 30.8;
+				menucam.y = 24.3;
+				menucam.z = 0;
+				menucam.ang = 2.76;
 				break;
 			case 1:
 				fullMapName = physfsFormatMapName("mainmenu6");
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				camera.x = 11;
-				camera.y = 4;
-				camera.z = 0;
-				camera.ang = 2.4;
+				menucam.x = 11;
+				menucam.y = 4;
+				menucam.z = 0;
+				menucam.ang = 2.4;
 				break;
 			case 2:
 				fullMapName = physfsFormatMapName("mainmenu7");
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				camera.x = 8.7;
-				camera.y = 9.3;
-				camera.z = 0;
-				camera.ang = 5.8;
+				menucam.x = 8.7;
+				menucam.y = 9.3;
+				menucam.z = 0;
+				menucam.ang = 5.8;
 				break;
 			case 3:
 				fullMapName = physfsFormatMapName("mainmenu8");
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				camera.x = 3.31;
-				camera.y = 5.34;
-				camera.z = 0;
-				camera.ang = 0.96;
+				menucam.x = 3.31;
+				menucam.y = 5.34;
+				menucam.z = 0;
+				menucam.ang = 0.96;
 				break;
 			default:
 				break;
@@ -5634,34 +5634,34 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 			case 0:
 				fullMapName = physfsFormatMapName("mainmenu1");
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				camera.x = 8;
-				camera.y = 4.5;
-				camera.z = 0;
-				camera.ang = 0.6;
+				menucam.x = 8;
+				menucam.y = 4.5;
+				menucam.z = 0;
+				menucam.ang = 0.6;
 				break;
 			case 1:
 				fullMapName = physfsFormatMapName("mainmenu2");
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				camera.x = 7;
-				camera.y = 4;
-				camera.z = -4;
-				camera.ang = 1.0;
+				menucam.x = 7;
+				menucam.y = 4;
+				menucam.z = -4;
+				menucam.ang = 1.0;
 				break;
 			case 2:
 				fullMapName = physfsFormatMapName("mainmenu3");
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				camera.x = 5;
-				camera.y = 3;
-				camera.z = 0;
-				camera.ang = 1.0;
+				menucam.x = 5;
+				menucam.y = 3;
+				menucam.z = 0;
+				menucam.ang = 1.0;
 				break;
 			case 3:
 				fullMapName = physfsFormatMapName("mainmenu4");
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				camera.x = 6;
-				camera.y = 14.5;
-				camera.z = -24;
-				camera.ang = 5.0;
+				menucam.x = 6;
+				menucam.y = 14.5;
+				menucam.z = -24;
+				menucam.ang = 5.0;
 				break;
 		}
 	}

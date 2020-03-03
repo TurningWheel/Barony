@@ -32,6 +32,7 @@ Entity* magicRightHand = NULL;
 
 #define HANDMAGIC_INIT my->skill[0]
 #define HANDMAGIC_TESTVAR my->skill[1]
+#define HANDMAGIC_PLAYERNUM my->skill[2]
 #define HANDMAGIC_YAW my->fskill[3]
 #define HANDMAGIC_PITCH my->fskill[4]
 #define HANDMAGIC_ROLL my->fskill[5]
@@ -202,11 +203,11 @@ void actLeftHandMagic(Entity* my)
 	//Set the initial values. (For the particle spray)
 	my->x = 8;
 	my->y = -3;
-	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
+	my->z = (cameras[HANDMAGIC_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
-	my->yaw = HANDMAGIC_YAW - camera_shakex2;
+	my->yaw = HANDMAGIC_YAW - cameravars[HANDMAGIC_PLAYERNUM].shakex2;
 	double defaultpitch = (0 - 2.2);
-	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
+	my->pitch = defaultpitch + HANDMAGIC_PITCH - cameravars[HANDMAGIC_PLAYERNUM].shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
 	my->scalex = 0.5f;
 	my->scaley = 0.5f;
@@ -450,8 +451,8 @@ void actLeftHandMagic(Entity* my)
 						if ( (HP > stats[clientnum]->HP) && !overDrawDamageNotify )
 						{
 							overDrawDamageNotify = true;
-							camera_shakex += 0.1;
-							camera_shakey += 10;
+							cameravars[HANDMAGIC_PLAYERNUM].shakex += 0.1;
+							cameravars[HANDMAGIC_PLAYERNUM].shakey += 10;
 							playSoundPlayer(clientnum, 28, 92);
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 							messagePlayerColor(clientnum, color, language[621]);
@@ -517,10 +518,10 @@ void actLeftHandMagic(Entity* my)
 	else
 	{
 		my->y = -3;
-		my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
+		my->z = (cameras[HANDMAGIC_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 7;
 		my->z -= 4;
-		my->yaw = HANDMAGIC_YAW - camera_shakex2;
-		my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
+		my->yaw = HANDMAGIC_YAW - cameravars[HANDMAGIC_PLAYERNUM].shakex2;
+		my->pitch = defaultpitch + HANDMAGIC_PITCH - cameravars[HANDMAGIC_PLAYERNUM].shakey2 / 200.f;
 		my->roll = HANDMAGIC_ROLL;
 		my->focalz = -1.5;
 	}
@@ -556,11 +557,11 @@ void actRightHandMagic(Entity* my)
 
 	my->x = 8;
 	my->y = 3;
-	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
+	my->z = (cameras[HANDMAGIC_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
-	my->yaw = HANDMAGIC_YAW - camera_shakex2;
+	my->yaw = HANDMAGIC_YAW - cameravars[HANDMAGIC_PLAYERNUM].shakex2;
 	double defaultpitch = (0 - 2.2);
-	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
+	my->pitch = defaultpitch + HANDMAGIC_PITCH - cameravars[HANDMAGIC_PLAYERNUM].shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
 	my->scalex = 0.5f;
 	my->scaley = 0.5f;
@@ -818,10 +819,10 @@ void actRightHandMagic(Entity* my)
 	{
 		my->x = 8;
 		my->y = 3;
-		my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
+		my->z = (cameras[HANDMAGIC_PLAYERNUM].z * .5 - players[clientnum]->entity->z) + 7;
 		my->z -= 4;
-		my->yaw = HANDMAGIC_YAW - camera_shakex2;
-		my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
+		my->yaw = HANDMAGIC_YAW - cameravars[HANDMAGIC_PLAYERNUM].shakex2;
+		my->pitch = defaultpitch + HANDMAGIC_PITCH - cameravars[HANDMAGIC_PLAYERNUM].shakey2 / 200.f;
 		my->roll = HANDMAGIC_ROLL;
 		my->focalz = -1.5;
 	}

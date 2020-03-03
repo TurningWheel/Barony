@@ -296,7 +296,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		messagePlayer(clientnum, language[286], (int)camera.x, (int)camera.y, (int)camera.z, camera.ang, camera.vang);
+		messagePlayer(clientnum, language[286], (int)cameras[0].x, (int)cameras[0].y, (int)cameras[0].z, cameras[0].ang, cameras[0].vang);
 	}
 	else if ( !strncmp(command_str, "/pathmap", 4) )
 	{
@@ -1677,6 +1677,9 @@ void consoleCommand(char* command_str)
 	else if (!strncmp(command_str, "/splitscreen", 12))
 	{
 		splitscreen = true;
+		client_disconnected[1] = false;
+		client_disconnected[2] = false;
+		client_disconnected[3] = false;
 	}
 	else if (!strncmp(command_str, "/gamepad_deadzone ", 18))
 	{

@@ -321,10 +321,10 @@ void actFountain(Entity* my)
 
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								messagePlayerColor(i, color, language[3183]);
-								if ( i == 0 )
+								if ( i == 0 || splitscreen )
 								{
-									camera_shakex += .1;
-									camera_shakey += 10;
+									cameravars[i].shakex += .1;
+									cameravars[i].shakey += 10;
 								}
 								else if ( multiplayer == SERVER && i > 0 )
 								{

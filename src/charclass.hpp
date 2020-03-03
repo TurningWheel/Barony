@@ -19,25 +19,6 @@ class PlayerCharacterClassManager
 {
 	Stat* classStats = nullptr;
 	int characterClass = CLASS_BARBARIAN;
-	const std::vector<std::string> kProficiencyNames =
-	{
-		"Tinkering",
-		"Stealth",
-		"Trading",
-		"Appraise",
-		"Swimming",
-		"Leader",
-		"Casting",
-		"Magic",
-		"Ranged",
-		"Sword",
-		"Mace",
-		"Axe",
-		"Polearm",
-		"Shield",
-		"Unarmed",
-		"Alchemy"
-	};
 public:
 	PlayerCharacterClassManager(Stat* myStats, int charClass)
 	{
@@ -45,6 +26,10 @@ public:
 		characterClass = charClass;
 	};
 	void serialize(FileInterface* file) {
+		// recommend you start with this because it makes versioning way easier down the road
+		int version = 0;
+		file->property("version", version);
+
 		file->property("CLASS", characterClass);
 		file->property("MAXHP", classStats->MAXHP);
 		file->property("MAXMP", classStats->MAXMP);
@@ -56,32 +41,33 @@ public:
 		file->property("CHR", classStats->CHR);
 		file->property("GOLD", classStats->GOLD);
 
-		file->propertyName("Proficiencies");
-		//if ( file->isReading() )
-		//{
-		//	for ( int i = 0; i < NUMPROFICIENCIES; ++i )
-		//	{
-		//		classStats->PROFICIENCIES[i] = 0;
-		//	}
+		// doing a vector is automatic:
+		/*std::vector<Uint32> pros;
+		file->property("Proficiencies", pros);
+		}*/
 
-		//	file->beginObject();
-		//	for ( int i = 0; i < kProficiencyNames.size() && i < NUMPROFICIENCIES; ++i )
-		//	{
-		//		file->property(kProficiencyNames[i].c_str(), classStats->PROFICIENCIES[i]);
-		//	}
-		//	file->endObject();
-		//}
-		//else
-		//{
-		//	// writing out proficiencies to file
-		//	Uint32 numProficiencies = NUMPROFICIENCIES;
-		//	file->beginObject();
-		//	for ( int i = 0; i < kProficiencyNames.size() && i < numProficiencies; ++i )
-		//	{
-		//		file->property(kProficiencyNames[i].c_str(), classStats->PROFICIENCIES[i]);
-		//	}
-		//	file->endObject();
-		//}
+		// how to do an raw array:
+		/*file->propertyName("Proficiencies");
+		Uint32 arrSize = NUMPROFICIENCIES;
+		file->beginArray(arrSize);
+		assert(arrSize == NUMPROFICIENCIES); // error out if the array size in json is not correct!
+		for (Uint32 c = 0; c < arrSize; ++c) {
+			file->value(classStats->PROFICIENCIES[c]);
+		}
+		file->endArray();*/
+
+		// how to do an inline object:
+		file->propertyName("Proficiencies");
+		file->beginObject();
+		int numProficiencies = NUMPROFICIENCIES;
+		file->property("NumProficiencies", numProficiencies);
+		for ( int i = 0; i < numProficiencies; ++i )
+		{
+			char str[64];
+			snprintf(str, 64, "%s", getSkillLangEntry(i));
+			file->property(str, classStats->PROFICIENCIES[i]);
+		}
+		file->endObject();
 	}
 
 	void writeToFile()
@@ -113,6 +99,5 @@ public:
 		classStats->HP = classStats->MAXHP;
 		classStats->OLDHP = classStats->HP;
 		classStats->MP = classStats->MAXMP;
-
 	}
 };

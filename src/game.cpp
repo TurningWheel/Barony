@@ -75,6 +75,13 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 #endif
 
+#ifdef BSD
+
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+#endif
+
 #ifdef WINDOWS
 void make_minidump(EXCEPTION_POINTERS* e)
 {
@@ -254,49 +261,55 @@ void gameLogic(void)
 #endif
 
 	// camera shaking
-	if ( shaking )
-	{
-		camera_shakex2 = (camera_shakex2 + camera_shakex) * .8;
-		camera_shakey2 = (camera_shakey2 + camera_shakey) * .9;
-		if ( camera_shakex2 > 0 )
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+		auto& camera_shakex = cameravars[c].shakex;
+		auto& camera_shakey = cameravars[c].shakey;
+		auto& camera_shakex2 = cameravars[c].shakex2;
+		auto& camera_shakey2 = cameravars[c].shakey2;
+		if ( shaking )
 		{
-			if ( camera_shakex2 < .02 && camera_shakex >= -.01 )
+			camera_shakex2 = (camera_shakex2 + camera_shakex) * .8;
+			camera_shakey2 = (camera_shakey2 + camera_shakey) * .9;
+			if ( camera_shakex2 > 0 )
 			{
-				camera_shakex2 = 0;
-				camera_shakex = 0;
+				if ( camera_shakex2 < .02 && camera_shakex >= -.01 )
+				{
+					camera_shakex2 = 0;
+					camera_shakex = 0;
+				}
+				else
+				{
+					camera_shakex -= .01;
+				}
 			}
-			else
+			else if ( camera_shakex2 < 0 )
 			{
-				camera_shakex -= .01;
+				if ( camera_shakex2 > -.02 && camera_shakex <= .01 )
+				{
+					camera_shakex2 = 0;
+					camera_shakex = 0;
+				}
+				else
+				{
+					camera_shakex += .01;
+				}
+			}
+			if ( camera_shakey2 > 0 )
+			{
+				camera_shakey -= 1;
+			}
+			else if ( camera_shakey2 < 0 )
+			{
+				camera_shakey += 1;
 			}
 		}
-		else if ( camera_shakex2 < 0 )
+		else
 		{
-			if ( camera_shakex2 > -.02 && camera_shakex <= .01 )
-			{
-				camera_shakex2 = 0;
-				camera_shakex = 0;
-			}
-			else
-			{
-				camera_shakex += .01;
-			}
+			camera_shakex = 0;
+			camera_shakey = 0;
+			camera_shakex2 = 0;
+			camera_shakey2 = 0;
 		}
-		if ( camera_shakey2 > 0 )
-		{
-			camera_shakey -= 1;
-		}
-		else if ( camera_shakey2 < 0 )
-		{
-			camera_shakey += 1;
-		}
-	}
-	else
-	{
-		camera_shakex = 0;
-		camera_shakey = 0;
-		camera_shakex2 = 0;
-		camera_shakey2 = 0;
 	}
 
 	// drunkenness
@@ -1564,19 +1577,21 @@ void gameLogic(void)
 			}
 
 			// update clients on assailant status
-			for ( c = 1; c < MAXPLAYERS; c++ )
-			{
-				if ( !client_disconnected[c] )
+			if (multiplayer != SINGLE) {
+				for ( c = 1; c < MAXPLAYERS; c++ )
 				{
-					if ( oassailant[c] != assailant[c] )
+					if ( !client_disconnected[c] )
 					{
-						oassailant[c] = assailant[c];
-						strcpy((char*)net_packet->data, "MUSM");
-						net_packet->address.host = net_clients[c - 1].host;
-						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->data[3] = assailant[c];
-						net_packet->len = 4;
-						sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						if ( oassailant[c] != assailant[c] )
+						{
+							oassailant[c] = assailant[c];
+							strcpy((char*)net_packet->data, "MUSM");
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->data[3] = assailant[c];
+							net_packet->len = 4;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						}
 					}
 				}
 			}
@@ -3086,10 +3101,17 @@ int main(int argc, char** argv)
 
 	try
 	{
+#if defined(APPLE) || defined(BSD)
 #ifdef APPLE
 		uint32_t buffsize = 4096;
 		char binarypath[buffsize];
 		int result = _NSGetExecutablePath(binarypath, &buffsize);
+#elif defined(BSD)
+		int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
+		size_t buffsize = PATH_MAX;
+		char binarypath[buffsize];
+		int result = sysctl(mib, 4, binarypath, &buffsize, NULL, 0);
+#endif
 		if (result == 0)   //It worked.
 		{
 			printlog("Binary path: %s\n", binarypath);
@@ -3590,15 +3612,15 @@ int main(int argc, char** argv)
 						drawClearBuffers();
 						if ( movie == false )
 						{
-							camera.winx = 0;
-							camera.winy = 0;
-							camera.winw = xres;
-							camera.winh = yres;
-							light = lightSphere(camera.x, camera.y, 16, 64);
-							raycast(&camera, REALCOLORS);
-							glDrawWorld(&camera, REALCOLORS);
-							//drawFloors(&camera);
-							drawEntities3D(&camera, REALCOLORS);
+							menucam.winx = 0;
+							menucam.winy = 0;
+							menucam.winw = xres;
+							menucam.winh = yres;
+							light = lightSphere(menucam.x, menucam.y, 16, 64);
+							raycast(&menucam, REALCOLORS);
+							glDrawWorld(&menucam, REALCOLORS);
+							//drawFloors(&menucam);
+							drawEntities3D(&menucam, REALCOLORS);
 							list_RemoveNode(light->node);
 						}
 
@@ -3653,117 +3675,158 @@ int main(int argc, char** argv)
 
 				// main drawing
 				drawClearBuffers();
-				camera.ang += camera_shakex2;
-				camera.vang += camera_shakey2 / 200.0;
+				for (int c = 0; c < MAXPLAYERS; ++c) {
+					auto& camera = cameras[c];
+					auto& cvars = cameravars[c];
+					camera.ang += cvars.shakex2;
+					camera.vang += cvars.shakey2 / 200.0;
+				}
 				if ( true/*players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind()*/ )
 				{
 					// drunkenness spinning
 					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
 					double sinspin = sin(ticks % 360 * PI / 180.f) * 0.25;
 
-					//drawSky3D(&camera,sky_bmp);
-					camera.winx = 0;
-					camera.winy = 0;
-					camera.winw = xres;
-					camera.winh = yres;
-					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
-					{
-						camera.ang += cosspin * drunkextend;
-						camera.vang += sinspin * drunkextend;
+					int playercount = 0;
+					for (int c = 0; c < MAXPLAYERS; ++c) {
+						if (!client_disconnected[c]) {
+							++playercount;
+						}
 					}
 
-					if ( players[clientnum] && players[clientnum]->entity )
-					{
-						if ( players[clientnum]->entity->isBlind() )
-						{
-							if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_STOPPED 
-								|| (globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_DISSIPATING && globalLightModifier < 1.f) )
+					if (playercount >= 1) {
+						int maximum = splitscreen ? MAXPLAYERS : 1;
+						for (int c = 0; c < maximum; ++c) {
+							if (client_disconnected[c]) {
+								continue;
+							}
+							auto& camera = cameras[c];
+							if (playercount == 1) {
+								camera.winx = 0;
+								camera.winy = 0;
+								camera.winw = xres;
+								camera.winh = yres;
+							} else if (playercount == 2) {
+								// divide screen horizontally
+								camera.winx = 0;
+								camera.winy = c * yres / 2;
+								camera.winw = xres;
+								camera.winh = yres / 2;
+							} else if (playercount >= 3) {
+								// divide screen into quadrants
+								camera.winx = (c % 2) * xres / 2;
+								camera.winy = (c / 2) * yres / 2;
+								camera.winw = xres / 2;
+								camera.winh = yres / 2;
+							}
+							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{
-								globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
-								globalLightModifier = 0.f;
-								globalLightTelepathyModifier = 0.f;
-								if ( stats[clientnum]->mask && stats[clientnum]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+								camera.ang += cosspin * drunkextend;
+								camera.vang += sinspin * drunkextend;
+							}
+
+							if ( players[clientnum] && players[clientnum]->entity )
+							{
+								if ( players[clientnum]->entity->isBlind() )
 								{
-									for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+									if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_STOPPED 
+										|| (globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_DISSIPATING && globalLightModifier < 1.f) )
 									{
-										Entity* mapCreature = (Entity*)mapNode->element;
-										if ( mapCreature )
+										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
+										globalLightModifier = 0.f;
+										globalLightTelepathyModifier = 0.f;
+										if ( stats[clientnum]->mask && stats[clientnum]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
 										{
-											mapCreature->monsterEntityRenderAsTelepath = 1;
+											for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+											{
+												Entity* mapCreature = (Entity*)mapNode->element;
+												if ( mapCreature )
+												{
+													mapCreature->monsterEntityRenderAsTelepath = 1;
+												}
+											}
 										}
 									}
-								}
-							}
 
-							int PERModifier = 0;
-							if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_BLIND]
-								&& !stats[clientnum]->EFFECTS[EFF_ASLEEP] && !stats[clientnum]->EFFECTS[EFF_MESSY] )
-							{
-								// blind but not messy or asleep = allow PER to let you see the world a little.
-								PERModifier = players[clientnum]->entity->getPER() / 5;
-								if ( PERModifier < 0 )
-								{
-									PERModifier = 0;
-								}
-							}
-
-							real_t limit = PERModifier * 0.01;
-							globalLightModifier = std::min(limit, globalLightModifier + 0.0005);
-
-							int telepathyLimit = std::min(64, 48 + players[clientnum]->entity->getPER());
-							globalLightTelepathyModifier = std::min(telepathyLimit / 255.0, globalLightTelepathyModifier + (0.2 / 255.0));
-						}
-						else
-						{
-							if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_INUSE )
-							{
-								for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
-								{
-									Entity* mapCreature = (Entity*)mapNode->element;
-									if ( mapCreature )
+									int PERModifier = 0;
+									if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_BLIND]
+										&& !stats[clientnum]->EFFECTS[EFF_ASLEEP] && !stats[clientnum]->EFFECTS[EFF_MESSY] )
 									{
-										mapCreature->monsterEntityRenderAsTelepath = 0;
+										// blind but not messy or asleep = allow PER to let you see the world a little.
+										PERModifier = players[clientnum]->entity->getPER() / 5;
+										if ( PERModifier < 0 )
+										{
+											PERModifier = 0;
+										}
+									}
+
+									real_t limit = PERModifier * 0.01;
+									globalLightModifier = std::min(limit, globalLightModifier + 0.0005);
+
+									int telepathyLimit = std::min(64, 48 + players[clientnum]->entity->getPER());
+									globalLightTelepathyModifier = std::min(telepathyLimit / 255.0, globalLightTelepathyModifier + (0.2 / 255.0));
+								}
+								else
+								{
+									if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_INUSE )
+									{
+										for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+										{
+											Entity* mapCreature = (Entity*)mapNode->element;
+											if ( mapCreature )
+											{
+												mapCreature->monsterEntityRenderAsTelepath = 0;
+											}
+										}
+									}
+									globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
+									globalLightTelepathyModifier = 0.f;
+									if ( globalLightModifier < 1.f )
+									{
+										globalLightModifier += 0.01;
+									}
+									else
+									{
+										globalLightModifier = 1.01;
+										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 									}
 								}
-							}
-							globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
-							globalLightTelepathyModifier = 0.f;
-							if ( globalLightModifier < 1.f )
-							{
-								globalLightModifier += 0.01;
+								raycast(&camera, REALCOLORS);
+								glDrawWorld(&camera, REALCOLORS);
 							}
 							else
 							{
-								globalLightModifier = 1.01;
-								globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+								raycast(&camera, REALCOLORS);
+								glDrawWorld(&camera, REALCOLORS);
 							}
-						}
-						raycast(&camera, REALCOLORS);
-						glDrawWorld(&camera, REALCOLORS);
-					}
-					else
-					{
-						raycast(&camera, REALCOLORS);
-						glDrawWorld(&camera, REALCOLORS);
-					}
 
-					//drawFloors(&camera);
-					drawEntities3D(&camera, REALCOLORS);
-					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
-					{
-						camera.ang -= cosspin * drunkextend;
-						camera.vang -= sinspin * drunkextend;
+							//drawFloors(&camera);
+							drawEntities3D(&camera, REALCOLORS);
+							if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
+							{
+								camera.ang -= cosspin * drunkextend;
+								camera.vang -= sinspin * drunkextend;
+							}
+							camera.ang -= cameravars[c].shakex2;
+							camera.vang -= cameravars[c].shakey2 / 200.0;
+						}
 					}
 				}
-				camera.ang -= camera_shakex2;
-				camera.vang -= camera_shakey2 / 200.0;
 
 				DebugStats.t5MainDraw = std::chrono::high_resolution_clock::now();
 
 				updateMessages();
 				if ( !nohud )
 				{
-					handleDamageIndicators();
+					if (splitscreen) {
+						for (int c = 0; c < MAXPLAYERS; ++c) {
+							if (!client_disconnected[c]) {
+								handleDamageIndicators(c);
+							}
+						}
+					} else {
+						handleDamageIndicators(0);
+					}
 					drawMessages();
 				}
 

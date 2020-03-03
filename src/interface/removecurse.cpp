@@ -161,21 +161,21 @@ void updateRemoveCurseGUI()
 			{
 				removecursegui_offset_x = (omousex - dragoffset_x) - (REMOVECURSE_GUI_X - removecursegui_offset_x);
 				removecursegui_offset_y = (omousey - dragoffset_y) - (REMOVECURSE_GUI_Y - removecursegui_offset_y);
-				if (REMOVECURSE_GUI_X <= camera.winx)
+				if (REMOVECURSE_GUI_X <= 0)
 				{
-					removecursegui_offset_x = camera.winx - (REMOVECURSE_GUI_X - removecursegui_offset_x);
+					removecursegui_offset_x = 0 - (REMOVECURSE_GUI_X - removecursegui_offset_x);
 				}
-				if (REMOVECURSE_GUI_X > camera.winx + camera.winw - identifyGUI_img->w)
+				if (REMOVECURSE_GUI_X > 0 + xres - identifyGUI_img->w)
 				{
-					removecursegui_offset_x = (camera.winx + camera.winw - identifyGUI_img->w) - (REMOVECURSE_GUI_X - removecursegui_offset_x);
+					removecursegui_offset_x = (0 + xres - identifyGUI_img->w) - (REMOVECURSE_GUI_X - removecursegui_offset_x);
 				}
-				if (REMOVECURSE_GUI_Y <= camera.winy)
+				if (REMOVECURSE_GUI_Y <= 0)
 				{
-					removecursegui_offset_y = camera.winy - (REMOVECURSE_GUI_Y - removecursegui_offset_y);
+					removecursegui_offset_y = 0 - (REMOVECURSE_GUI_Y - removecursegui_offset_y);
 				}
-				if (REMOVECURSE_GUI_Y > camera.winy + camera.winh - identifyGUI_img->h)
+				if (REMOVECURSE_GUI_Y > 0 + yres - identifyGUI_img->h)
 				{
-					removecursegui_offset_y = (camera.winy + camera.winh - identifyGUI_img->h) - (REMOVECURSE_GUI_Y - removecursegui_offset_y);
+					removecursegui_offset_y = (0 + yres - identifyGUI_img->h) - (REMOVECURSE_GUI_Y - removecursegui_offset_y);
 				}
 			}
 			else

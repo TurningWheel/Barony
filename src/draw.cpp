@@ -1362,6 +1362,9 @@ void drawEntities3D(view_t* camera, int mode)
 		return;
 	}
 
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+
 	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
@@ -1421,6 +1424,9 @@ void drawEntities3D(view_t* camera, int mode)
 			}
 		}
 	}
+
+	glDisable(GL_SCISSOR_TEST);
+	glScissor(0, 0, xres, yres);
 }
 
 /*-------------------------------------------------------------------------------

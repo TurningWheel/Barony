@@ -2509,10 +2509,6 @@ bool initVideo()
 #else
 	int screen_width = xres;
 #endif
-	if (splitscreen)
-	{
-		screen_width *= 2;
-	}
 	if ( !screen )
 	{
 #ifdef PANDORA
