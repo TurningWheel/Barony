@@ -91,8 +91,8 @@ extern FMOD_CHANNELGROUP* sound_group, *music_group;
  */
 bool FMODErrorCheck();
 
-//Updates FMOD and whatnot.
 void sound_update();
+int initSoundEngine();
 
 FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol);
 FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol);
@@ -100,7 +100,7 @@ FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol);
 FMOD_CHANNEL* playSoundEntity(Entity* entity, Uint32 snd, int vol);
 FMOD_CHANNEL* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol);
 FMOD_CHANNEL* playSound(Uint32 snd, int vol);
-FMOD_CHANNEL* playSoundVelocity(); //TODO: Write.
+FMOD_CHANNEL* playSoundVelocity();
 
 void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defualts every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
 

@@ -1542,3 +1542,85 @@ void gamemodsUnloadCustomThemeMusic()
 #endif
 #endif // !SOUND
 }
+
+int initSoundEngine()
+{
+	FILE* fp;
+	Uint32 c;
+	char name[128];
+
+	// load sound effects
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
+#ifdef USE_FMOD
+	printlog("loading sounds...\n");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
+	for ( numsounds = 0; !feof(fp); numsounds++ )
+	{
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+	}
+	fclose(fp);
+	if ( numsounds == 0 )
+	{
+		printlog("failed to identify any sounds in sounds.txt\n");
+		return 10;
+	}
+	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
+	fp = openDataFile(soundsDirectory.c_str(), "r");
+	for ( c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+		//TODO: Might need to malloc the sounds[c]->sound
+		fmod_result = FMOD_System_CreateSound(fmod_system, name, (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
+		if (FMODErrorCheck())
+		{
+			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
+		}
+		//TODO: set sound volume? Or otherwise handle sound volume.
+	}
+	fclose(fp);
+	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
+#elif defined USE_OPENAL
+	printlog("loading sounds...\n");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
+	for ( numsounds = 0; !feof(fp); numsounds++ )
+	{
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+	}
+	fclose(fp);
+	if ( numsounds == 0 )
+	{
+		printlog("failed to identify any sounds in sounds.txt\n");
+		return 10;
+	}
+	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
+	fp = openDataFile(soundsDirectory.c_str(), "r");
+	for ( c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+		//TODO: Might need to malloc the sounds[c]->sound
+		OPENAL_CreateSound(name, true, &sounds[c]);
+		//TODO: set sound volume? Or otherwise handle sound volume.
+	}
+	fclose(fp);
+	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
+#endif
+
+	return 0;
+}
