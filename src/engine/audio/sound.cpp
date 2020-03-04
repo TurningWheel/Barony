@@ -15,7 +15,9 @@
 #include "sound.hpp"
 #include "../../player.hpp"
 
-#ifdef defined USE_OPENAL
+#ifdef USE_FMOD
+#include "fmod_errors.h"
+#elif defined USE_OPENAL
 #ifdef USE_TREMOR
 #include <tremor/ivorbisfile.h>
 #else
@@ -26,6 +28,21 @@
 #endif
 
 #ifdef USE_FMOD
+
+bool FMODErrorCheck()
+{
+	if (no_sound)
+	{
+		return false;
+	}
+	if (fmod_result != FMOD_OK)
+	{
+		printlog("[FMOD Error] Error Code (%d): \"%s\"\n", fmod_result, FMOD_ErrorString(fmod_result)); //Report the FMOD error.
+		return true;
+	}
+
+	return false;
+}
 
 void sound_update()
 {
@@ -60,7 +77,7 @@ void sound_update()
 	up.z = 0;
 
 	//FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, &velocity, &forward, &up);
-	fmod_system->set3DListenerAttributes(0, &position, 0, &forward, &up);
+	fmod_system->set3DListenerAttributes(0, &position, 0, &forward, &up); //TODO: For splitscreen, change the listener number to the current player...
 
 	//Fade in the currently playing music.
 	if (music_channel)
@@ -292,50 +309,50 @@ static int openal_streamupdate(OPENAL_SOUND* self) {
 	return active;
 }
 
-ALCcontext *openal_context = NULL;
-ALCdevice  *openal_device = NULL;
+ALCcontext *openal_context = nullptr;
+ALCdevice  *openal_device = nullptr;
 
 //#define openal_maxchannels 100
 
-OPENAL_BUFFER** sounds = NULL;
+OPENAL_BUFFER** sounds = nullptr;
 Uint32 numsounds = 0;
-OPENAL_BUFFER** minesmusic = NULL;
-OPENAL_BUFFER** swampmusic = NULL;
-OPENAL_BUFFER** labyrinthmusic = NULL;
-OPENAL_BUFFER** ruinsmusic = NULL;
-OPENAL_BUFFER** underworldmusic = NULL;
-OPENAL_BUFFER** hellmusic = NULL;
-OPENAL_BUFFER** intromusic = NULL;
-OPENAL_BUFFER* intermissionmusic = NULL;
-OPENAL_BUFFER* minetownmusic = NULL;
-OPENAL_BUFFER* splashmusic = NULL;
-OPENAL_BUFFER* librarymusic = NULL;
-OPENAL_BUFFER* shopmusic = NULL;
-OPENAL_BUFFER* storymusic = NULL;
-OPENAL_BUFFER** minotaurmusic = NULL;
-OPENAL_BUFFER* herxmusic = NULL;
-OPENAL_BUFFER* templemusic = NULL;
-OPENAL_BUFFER* endgamemusic = NULL;
-OPENAL_BUFFER* devilmusic = NULL;
-OPENAL_BUFFER* escapemusic = NULL;
-OPENAL_BUFFER* sanctummusic = NULL;
-OPENAL_BUFFER* introductionmusic = NULL;
-OPENAL_BUFFER** cavesmusic = NULL;
-OPENAL_BUFFER** citadelmusic = NULL;
-OPENAL_BUFFER* gnomishminesmusic = NULL;
-OPENAL_BUFFER* greatcastlemusic = NULL;
-OPENAL_BUFFER* sokobanmusic = NULL;
-OPENAL_BUFFER* caveslairmusic = NULL;
-OPENAL_BUFFER* bramscastlemusic = NULL;
-OPENAL_BUFFER* hamletmusic = NULL;
+OPENAL_BUFFER** minesmusic = nullptr;
+OPENAL_BUFFER** swampmusic = nullptr;
+OPENAL_BUFFER** labyrinthmusic = nullptr;
+OPENAL_BUFFER** ruinsmusic = nullptr;
+OPENAL_BUFFER** underworldmusic = nullptr;
+OPENAL_BUFFER** hellmusic = nullptr;
+OPENAL_BUFFER** intromusic = nullptr;
+OPENAL_BUFFER* intermissionmusic = nullptr;
+OPENAL_BUFFER* minetownmusic = nullptr;
+OPENAL_BUFFER* splashmusic = nullptr;
+OPENAL_BUFFER* librarymusic = nullptr;
+OPENAL_BUFFER* shopmusic = nullptr;
+OPENAL_BUFFER* storymusic = nullptr;
+OPENAL_BUFFER** minotaurmusic = nullptr;
+OPENAL_BUFFER* herxmusic = nullptr;
+OPENAL_BUFFER* templemusic = nullptr;
+OPENAL_BUFFER* endgamemusic = nullptr;
+OPENAL_BUFFER* devilmusic = nullptr;
+OPENAL_BUFFER* escapemusic = nullptr;
+OPENAL_BUFFER* sanctummusic = nullptr;
+OPENAL_BUFFER* introductionmusic = nullptr;
+OPENAL_BUFFER** cavesmusic = nullptr;
+OPENAL_BUFFER** citadelmusic = nullptr;
+OPENAL_BUFFER* gnomishminesmusic = nullptr;
+OPENAL_BUFFER* greatcastlemusic = nullptr;
+OPENAL_BUFFER* sokobanmusic = nullptr;
+OPENAL_BUFFER* caveslairmusic = nullptr;
+OPENAL_BUFFER* bramscastlemusic = nullptr;
+OPENAL_BUFFER* hamletmusic = nullptr;
 bool levelmusicplaying = false;
 
-OPENAL_SOUND* music_channel = NULL;
-OPENAL_SOUND* music_channel2 = NULL;
-OPENAL_SOUND* music_resume = NULL;
+OPENAL_SOUND* music_channel = nullptr;
+OPENAL_SOUND* music_channel2 = nullptr;
+OPENAL_SOUND* music_resume = nullptr;
 
-OPENAL_CHANNELGROUP *sound_group = NULL;
-OPENAL_CHANNELGROUP *music_group = NULL;
+OPENAL_CHANNELGROUP *sound_group = nullptr;
+OPENAL_CHANNELGROUP *music_group = nullptr;
 
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;
@@ -860,7 +877,7 @@ bool physfsSearchMusicToUpdate()
 	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
 		std::string filename = *it;
-		if ( PHYSFS_getRealDir(filename.c_str()) != NULL )
+		if ( PHYSFS_getRealDir(filename.c_str()) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(filename.c_str());
 			if ( musicDir.compare("./") != 0 )
@@ -876,7 +893,7 @@ bool physfsSearchMusicToUpdate()
 	for ( c = 0; c < NUMMINESMUSIC; c++ )
 	{
 		snprintf(tempstr, 1000, "music/mines%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -886,10 +903,10 @@ bool physfsSearchMusicToUpdate()
 			}
 		}
 	}
-	for ( c = 0; c < NUMSWAMPMUSIC; c++ )
+	for ( c = 0; c < NUMSWAMPMUSIC; c++ ) //TODO: Refactor this into a parameterized helper function that does the duplicated code.
 	{
 		snprintf(tempstr, 1000, "music/swamp%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -902,7 +919,7 @@ bool physfsSearchMusicToUpdate()
 	for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
 	{
 		snprintf(tempstr, 1000, "music/labyrinth%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -915,7 +932,7 @@ bool physfsSearchMusicToUpdate()
 	for ( c = 0; c < NUMRUINSMUSIC; c++ )
 	{
 		snprintf(tempstr, 1000, "music/ruins%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -928,7 +945,7 @@ bool physfsSearchMusicToUpdate()
 	for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
 	{
 		snprintf(tempstr, 1000, "music/underworld%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -941,7 +958,7 @@ bool physfsSearchMusicToUpdate()
 	for ( c = 0; c < NUMHELLMUSIC; c++ )
 	{
 		snprintf(tempstr, 1000, "music/hell%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -954,7 +971,7 @@ bool physfsSearchMusicToUpdate()
 	for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
 	{
 		snprintf(tempstr, 1000, "music/minotaur%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -967,7 +984,7 @@ bool physfsSearchMusicToUpdate()
 	for ( c = 0; c < NUMCAVESMUSIC; c++ )
 	{
 		snprintf(tempstr, 1000, "music/caves%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -980,7 +997,7 @@ bool physfsSearchMusicToUpdate()
 	for ( c = 0; c < NUMCITADELMUSIC; c++ )
 	{
 		snprintf(tempstr, 1000, "music/citadel%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -1000,7 +1017,7 @@ bool physfsSearchMusicToUpdate()
 		{
 			snprintf(tempstr, 1000, "music/intro%02d.ogg", c);
 		}
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 )
@@ -1014,7 +1031,36 @@ bool physfsSearchMusicToUpdate()
 	return false;
 }
 
-void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
+FMOD_RESULT physfsReloadMusic_helper_reloadMusicArray(uint32 numMusic, const char* filenameTemplate, FMOD::Sound** musicArray, bool reloadAll)
+{
+	for ( int c = 0; c < numMusic; c++ )
+	{
+		snprintf(tempstr, 1000, filenameTemplate, c);
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 || reloadAll )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				if ( musicArray )
+				{
+					musicArray[c]->release();
+					fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &musicArray[c]); //TODO: Any other FMOD_MODEs should be used here? FMOD_SOFTWARE -> what now? FMOD_2D? LOOP?
+					if (fmod_result != FMOD_OK)
+					{
+						printlog("[PhysFS]: ERROR: Failed reloading music file \"%s\".");
+						return fmod_result;
+					}
+				}
+			}
+		}
+	}
+
+	return FMOD_OK;
+}
+
+void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This should probably return an error.
 {
 #ifdef SOUND
 
@@ -1050,7 +1096,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
 		std::string filename = *it;
-		if ( PHYSFS_getRealDir(filename.c_str()) != NULL )
+		if ( PHYSFS_getRealDir(filename.c_str()) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(filename.c_str());
 			if ( musicDir.compare("./") != 0 || reloadAll )
@@ -1062,131 +1108,136 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 					case 0:
 						if ( introductionmusic )
 						{
-							FMOD_Sound_Release(introductionmusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &introductionmusic);
+							introductionmusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &introductionmusic); //TODO: FMOD_SOFTWARE -> what now? FMOD_2D? FMOD_LOOP_NORMAL? More things? Something else?
 						}
 						break;
 					case 1:
 						if ( intermissionmusic )
 						{
-							FMOD_Sound_Release(intermissionmusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &intermissionmusic);
+							intermissionmusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &intermissionmusic);
 						}
 						break;
 					case 2:
 						if ( minetownmusic )
 						{
-							FMOD_Sound_Release(minetownmusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &minetownmusic);
+							minetownmusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &minetownmusic);
 						}
 						break;
 					case 3:
 						if ( splashmusic )
 						{
-							FMOD_Sound_Release(splashmusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &splashmusic);
+							splashmusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &splashmusic);
 						}
 						break;
 					case 4:
 						if ( librarymusic )
 						{
-							FMOD_Sound_Release(librarymusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &librarymusic);
+							librarymusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &librarymusic);
 						}
 						break;
 					case 5:
 						if ( shopmusic )
 						{
-							FMOD_Sound_Release(shopmusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &shopmusic);
+							shopmusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &shopmusic);
 						}
 						break;
 					case 6:
 						if ( herxmusic )
 						{
-							FMOD_Sound_Release(herxmusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &herxmusic);
+							herxmusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &herxmusic);
 						}
 						break;
 					case 7:
 						if ( templemusic )
 						{
-							FMOD_Sound_Release(templemusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &templemusic);
+							templemusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &templemusic);
 						}
 						break;
 					case 8:
 						if ( endgamemusic )
 						{
-							FMOD_Sound_Release(endgamemusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &endgamemusic);
+							endgamemusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &endgamemusic);
 						}
 						break;
 					case 9:
 						if ( escapemusic )
 						{
-							FMOD_Sound_Release(escapemusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &escapemusic);
+							escapemusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &escapemusic);
 						}
 						break;
 					case 10:
 						if ( devilmusic )
 						{
-							FMOD_Sound_Release(devilmusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &devilmusic);
+							devilmusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &devilmusic);
 						}
 						break;
 					case 11:
 						if ( sanctummusic )
 						{
-							FMOD_Sound_Release(sanctummusic);
-							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &sanctummusic);
+							sanctummusic->release();
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &sanctummusic);
 						}
 						break;
 					case 12:
 						if ( gnomishminesmusic )
 						{
-							FMOD_Sound_Release(gnomishminesmusic);
+							gnomishminesmusic->release();
 						}
-						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &gnomishminesmusic);
+						fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &gnomishminesmusic);
 						break;
 					case 13:
 						if ( greatcastlemusic )
 						{
-							FMOD_Sound_Release(greatcastlemusic);
+							greatcastlemusic->release();
 						}
-						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &greatcastlemusic);
+						fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &greatcastlemusic);
 						break;
 					case 14:
 						if ( sokobanmusic )
 						{
-							FMOD_Sound_Release(sokobanmusic);
+							sokobanmusic->release();
 						}
-						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &sokobanmusic);
+						fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &sokobanmusic);
 						break;
 					case 15:
 						if ( caveslairmusic )
 						{
-							FMOD_Sound_Release(caveslairmusic);
+							caveslairmusic->release();
 						}
-						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &caveslairmusic);
+						fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &caveslairmusic);
 						break;
 					case 16:
 						if ( bramscastlemusic )
 						{
-							FMOD_Sound_Release(bramscastlemusic);
+							bramscastlemusic->release();
 						}
-						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &bramscastlemusic);
+						fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &bramscastlemusic);
 						break;
 					case 17:
 						if ( hamletmusic )
 						{
-							FMOD_Sound_Release(hamletmusic);
+							hamletmusic->release();
 						}
-						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &hamletmusic);
+						fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &hamletmusic);
 						break;
 					default:
 						break;
+				}
+				if ( FMODErrorCheck() )
+				{
+					printlog("[PhysFS]: ERROR: Failed reloading music file \"%s\".", filename.c_str());
+					//TODO: Handle error? Abort? Fling pies at people?
 				}
 			}
 		}
@@ -1194,178 +1245,44 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 	}
 
 	int c;
-	FMOD_SOUND** music = NULL;
+	FMOD::Sound** music = nullptr;
 
-	for ( c = 0; c < NUMMINESMUSIC; c++ )
+	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMMINESMUSIC, "music/mines%02d.ogg", minesmusic, reloadAll)) )
 	{
-		snprintf(tempstr, 1000, "music/mines%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 || reloadAll )
-			{
-				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
-				music = minesmusic;
-				if ( music )
-				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
-				}
-			}
-		}
+		printlog("[PhysFS]: Failed to reload mines music array.");
+		//TODO: Handle error? Abort? Fling pies at people?
 	}
-	for ( c = 0; c < NUMSWAMPMUSIC; c++ )
+	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMSWAMPMUSIC, "music/swamp%02d.ogg", swampmusic, reloadAll)) )
 	{
-		snprintf(tempstr, 1000, "music/swamp%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 || reloadAll )
-			{
-				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
-				music = swampmusic;
-				if ( music )
-				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
-				}
-			}
-		}
+		printlog("[PhysFS]: Failed to reload swamp music array.");
 	}
-	for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
+	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMLABYRINTHMUSIC, "music/labyrinth%02d.ogg", labyrinthmusic, reloadAll)) )
 	{
-		snprintf(tempstr, 1000, "music/labyrinth%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 || reloadAll )
-			{
-				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
-				music = labyrinthmusic;
-				if ( music )
-				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
-				}
-			}
-		}
+		printlog("[PhysFS]: Failed to reload labyrinth music array.");
 	}
-	for ( c = 0; c < NUMRUINSMUSIC; c++ )
+	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMRUINSMUSIC, "music/ruins%02d.ogg", ruinsmusic, reloadAll)) )
 	{
-		snprintf(tempstr, 1000, "music/ruins%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 || reloadAll )
-			{
-				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
-				music = ruinsmusic;
-				if ( music )
-				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
-				}
-			}
-		}
+		printlog("[PhysFS]: Failed to reload ruins music array.");
 	}
-	for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
+	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMUNDERWORLDMUSIC, "music/underworld%02d.ogg", underworldmusic, reloadAll)) )
 	{
-		snprintf(tempstr, 1000, "music/underworld%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 || reloadAll )
-			{
-				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
-				music = underworldmusic;
-				if ( music )
-				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
-				}
-			}
-		}
+		printlog("[PhysFS]: Failed to reload underworld music array.");
 	}
-	for ( c = 0; c < NUMHELLMUSIC; c++ )
+	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMHELLMUSIC, "music/hell%02d.ogg", hellmusic, reloadAll)) )
 	{
-		snprintf(tempstr, 1000, "music/hell%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 || reloadAll )
-			{
-				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
-				music = hellmusic;
-				if ( music )
-				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
-				}
-			}
-		}
+		printlog("[PhysFS]: Failed to reload hell music array.");
 	}
-	for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
+	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMMINOTAURMUSIC, "music/minotaur%02d.ogg", minotaurmusic, reloadAll)) )
 	{
-		snprintf(tempstr, 1000, "music/minotaur%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 || reloadAll )
-			{
-				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
-				music = minotaurmusic;
-				if ( music )
-				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
-				}
-			}
-		}
+		printlog("[PhysFS]: Failed to reload minotaur music array.");
 	}
-	for ( c = 0; c < NUMCAVESMUSIC; c++ )
+	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMCAVESMUSIC, "music/caves%02d.ogg", cavesmusic, reloadAll)) )
 	{
-		snprintf(tempstr, 1000, "music/caves%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 || reloadAll )
-			{
-				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
-				music = cavesmusic;
-				if ( music )
-				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
-				}
-			}
-		}
+		printlog("[PhysFS]: Failed to reload caves music array.");
 	}
-	for ( c = 0; c < NUMCITADELMUSIC; c++ )
+	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMCITADELMUSIC, "music/citadel%02d.ogg", citadelmusic, reloadAll)) )
 	{
-		snprintf(tempstr, 1000, "music/citadel%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 || reloadAll )
-			{
-				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
-				music = citadelmusic;
-				if ( music )
-				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
-				}
-			}
-		}
+		printlog("[PhysFS]: Failed to reload citadel music array.");
 	}
 
 	bool introChanged = false;
@@ -1380,7 +1297,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 		{
 			snprintf(tempstr, 1000, "music/intro%02d.ogg", c);
 		}
-		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
 		{
 			std::string musicDir = PHYSFS_getRealDir(tempstr);
 			if ( musicDir.compare("./") != 0 || reloadAll )
@@ -1390,9 +1307,14 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 				music = intromusic;
 				if ( music )
 				{
-					FMOD_Sound_Release(music[c]);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+					music[c]->release();
+					fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &music[c]);
 					introChanged = true;
+					if (fmod_result != FMOD_OK)
+					{
+						printlog("[PhysFS]: ERROR: Failed reloading music file \"%s\".");
+						break; //TODO: Handle the error?
+					}
 				}
 			}
 		}
