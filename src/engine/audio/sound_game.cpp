@@ -14,7 +14,7 @@
 #include "../../main.hpp"
 #include "../../game.hpp"
 #include "../../stat.hpp"
-#include "engine/audio/sound.hpp"
+#include "sound.hpp"
 #include "../../entity.hpp"
 #include "../../net.hpp"
 #include "../../player.hpp"

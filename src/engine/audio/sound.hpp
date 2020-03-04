@@ -26,7 +26,6 @@
 #endif
 #endif
 
-
 //Pointer to the FMOD system.
 #ifdef USE_FMOD
 
