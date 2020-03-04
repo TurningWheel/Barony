@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------------
 
 	BARONY
-	File: sound.cpp
-	Desc: various sound functions
+	File: init.cpp
+	Desc: init, load, exit audio engine stuff.
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
@@ -18,39 +18,36 @@ bool initSoundEngine()
 {
 #ifdef USE_FMOD
 	printlog("initializing FMOD...\n");
-	fmod_result = FMOD_System_Create(&fmod_system);
+	fmod_result = FMOD::System_Create(&fmod_system);
 	if (FMODErrorCheck())
 	{
 		printlog("Failed to create FMOD. DISABLING AUDIO.\n");
 		no_sound = true;
+		return false;
 	}
-	if (!no_sound)
+
+	fmod_result = fmod_system->init(fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED, fmod_extraDriverData);
+	if (FMODErrorCheck())
 	{
-		//FMOD_System_SetOutput(fmod_system, FMOD_OUTPUTTYPE_DSOUND);
-		fmod_result = FMOD_System_Init(fmod_system, fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED, 0);
-		if (FMODErrorCheck())
-		{
-			printlog("Failed to initialize FMOD. DISABLING AUDIO.\n");
-			no_sound = true;
-		}
-		if (!no_sound)
-		{
-			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, nullptr, &sound_group);
-			if (FMODErrorCheck())
-			{
-				printlog("Failed to create sound channel group. DISABLING AUDIO.\n");
-				no_sound = true;
-			}
-			if (!no_sound)
-			{
-				fmod_result = FMOD_System_CreateChannelGroup(fmod_system, nullptr, &music_group);
-				if (FMODErrorCheck())
-				{
-					printlog("Failed to create music channel group. DISABLING AUDIO.\n");
-					no_sound = true;
-				}
-			}
-		}
+		printlog("Failed to initialize FMOD. DISABLING AUDIO.\n");
+		no_sound = true;
+		return false;
+	}
+
+	fmod_result = fmod_system->createChannelGroup(nullptr, &sound_group);
+	if (FMODErrorCheck())
+	{
+		printlog("Failed to create sound channel group. DISABLING AUDIO.\n");
+		no_sound = true;
+		return false;
+	}
+	
+	fmod_result = fmod_system->createChannelGroup(nullptr, &music_group);
+	if (FMODErrorCheck())
+	{
+		printlog("Failed to create music channel group. DISABLING AUDIO.\n");
+		no_sound = true;
+		return false;
 	}
 #elif defined USE_OPENAL
 	if (!no_sound)
@@ -77,9 +74,9 @@ int loadSoundResources()
 	for ( numsounds = 0; !feof(fp); numsounds++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
+		{
+			break;
+		}
 	}
 	fclose(fp);
 	if ( numsounds == 0 )
@@ -87,26 +84,24 @@ int loadSoundResources()
 		printlog("failed to identify any sounds in sounds.txt\n");
 		return 10;
 	}
-	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
+	sounds = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*numsounds);
 	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-		//TODO: Might need to malloc the sounds[c]->sound
-		fmod_result = FMOD_System_CreateSound(fmod_system, name, (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), nullptr, &sounds[c]);
+		{
+			break;
+		}
+		fmod_result = fmod_system->createSound(name, (FMOD_DEFAULT | FMOD_3D), nullptr, &sounds[c]);
 		if (FMODErrorCheck())
 		{
 			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
 		}
-		//TODO: set sound volume? Or otherwise handle sound volume.
 	}
 	fclose(fp);
-	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
+	sound_group->setVolume(sfxvolume / 128.f);
+	fmod_system->set3DSettings(1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
 	printlog("loading sounds...\n");
 	fp = openDataFile(soundsDirectory.c_str(), "r");
@@ -158,7 +153,7 @@ void freeSoundResources()
 			{
 				if (sounds[c] != nullptr)
 				{
-					FMOD_Sound_Release(sounds[c]);    //Free the sound's FMOD sound.
+					sounds[c]->release(); //Free the sound's FMOD sound.
 				}
 			}
 		}
@@ -172,8 +167,8 @@ void exitSoundEngine()
 #ifdef USE_FMOD
 	if ( fmod_system )
 	{
-		FMOD_System_Close(fmod_system);
-		FMOD_System_Release(fmod_system);
+		fmod_system->close();
+		fmod_system->release();
 		fmod_system = nullptr;
 	}
 #endif

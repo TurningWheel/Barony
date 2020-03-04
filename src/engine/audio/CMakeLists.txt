@@ -1,10 +1,12 @@
 
 list(APPEND GAME_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/defines.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/init.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/sound_game.cpp"
 )
 list(APPEND EDITOR_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/defines.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/init.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp"
 )
