@@ -851,6 +851,25 @@ void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
 
 #endif
 
+bool physfsSearchMusicToUpdate_helper_findModifiedMusic(uint32 numMusic, const char* filenameTemplate)
+{
+	for ( int c = 0; c < numMusic; c++ )
+	{
+		snprintf(tempstr, 1000, filenameTemplate, c);
+		if ( PHYSFS_getRealDir(tempstr) != nullptr )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 bool physfsSearchMusicToUpdate()
 {
 #ifdef SOUND
@@ -890,123 +909,19 @@ bool physfsSearchMusicToUpdate()
 
 	int c;
 
-	for ( c = 0; c < NUMMINESMUSIC; c++ )
+	if ( physfsSearchMusicToUpdate_helper_findModifiedMusic(NUMMINESMUSIC, "music/mines%02d.ogg")
+		|| physfsSearchMusicToUpdate_helper_findModifiedMusic(NUMSWAMPMUSIC, "music/swamp%02d.ogg")
+		|| physfsSearchMusicToUpdate_helper_findModifiedMusic(NUMLABYRINTHMUSIC, "music/labyrinth%02d.ogg")
+		|| physfsSearchMusicToUpdate_helper_findModifiedMusic(NUMRUINSMUSIC, "music/ruins%02d.ogg")
+		|| physfsSearchMusicToUpdate_helper_findModifiedMusic(NUMUNDERWORLDMUSIC, "music/underworld%02d.ogg")
+		|| physfsSearchMusicToUpdate_helper_findModifiedMusic(NUMHELLMUSIC, "music/hell%02d.ogg")
+		|| physfsSearchMusicToUpdate_helper_findModifiedMusic(NUMMINOTAURMUSIC, "music/minotaur%02d.ogg")
+		|| physfsSearchMusicToUpdate_helper_findModifiedMusic(NUMCAVESMUSIC, "music/caves%02d.ogg")
+		|| physfsSearchMusicToUpdate_helper_findModifiedMusic(NUMCITADELMUSIC, "music/citadel%02d.ogg") )
 	{
-		snprintf(tempstr, 1000, "music/mines%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != nullptr )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 )
-			{
-				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
-				return true;
-			}
-		}
+		return true;
 	}
-	for ( c = 0; c < NUMSWAMPMUSIC; c++ ) //TODO: Refactor this into a parameterized helper function that does the duplicated code.
-	{
-		snprintf(tempstr, 1000, "music/swamp%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != nullptr )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 )
-			{
-				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
-				return true;
-			}
-		}
-	}
-	for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
-	{
-		snprintf(tempstr, 1000, "music/labyrinth%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != nullptr )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 )
-			{
-				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
-				return true;
-			}
-		}
-	}
-	for ( c = 0; c < NUMRUINSMUSIC; c++ )
-	{
-		snprintf(tempstr, 1000, "music/ruins%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != nullptr )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 )
-			{
-				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
-				return true;
-			}
-		}
-	}
-	for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
-	{
-		snprintf(tempstr, 1000, "music/underworld%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != nullptr )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 )
-			{
-				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
-				return true;
-			}
-		}
-	}
-	for ( c = 0; c < NUMHELLMUSIC; c++ )
-	{
-		snprintf(tempstr, 1000, "music/hell%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != nullptr )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 )
-			{
-				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
-				return true;
-			}
-		}
-	}
-	for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
-	{
-		snprintf(tempstr, 1000, "music/minotaur%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != nullptr )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 )
-			{
-				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
-				return true;
-			}
-		}
-	}
-	for ( c = 0; c < NUMCAVESMUSIC; c++ )
-	{
-		snprintf(tempstr, 1000, "music/caves%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != nullptr )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 )
-			{
-				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
-				return true;
-			}
-		}
-	}
-	for ( c = 0; c < NUMCITADELMUSIC; c++ )
-	{
-		snprintf(tempstr, 1000, "music/citadel%02d.ogg", c);
-		if ( PHYSFS_getRealDir(tempstr) != nullptr )
-		{
-			std::string musicDir = PHYSFS_getRealDir(tempstr);
-			if ( musicDir.compare("./") != 0 )
-			{
-				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
-				return true;
-			}
-		}
-	}
+
 	for ( c = 0; c < NUMINTROMUSIC; c++ )
 	{
 		if ( c == 0 )
