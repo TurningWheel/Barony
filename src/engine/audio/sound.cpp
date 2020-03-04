@@ -9,14 +9,14 @@
 
 -------------------------------------------------------------------------------*/
 
-#include "main.hpp"
-#include "files.hpp"
+#include "../../main.hpp"
+#include "../../files.hpp"
 //#include "game.hpp"
 #include "sound.hpp"
-#include "player.hpp"
+#include "../../player.hpp"
 
 #ifdef USE_FMOD
-#include <fmod_errors.h>
+//#include <fmod_errors.h>
 #elif defined USE_OPENAL
 #ifdef USE_TREMOR
 #include <tremor/ivorbisfile.h>
@@ -28,7 +28,7 @@
 #endif
 
 #ifdef USE_FMOD
-FMOD_SYSTEM* fmod_system = NULL;
+FMOD::System* fmod_system = nullptr;
 
 FMOD_RESULT fmod_result;
 
@@ -1675,6 +1675,7 @@ int loadSoundResources()
 
 void freeSoundResources()
 {
+	uint32 c;
 	// free sounds
 #ifdef USE_FMOD
 	printlog("freeing sounds...\n");

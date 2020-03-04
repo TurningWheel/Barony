@@ -15,7 +15,7 @@
 #include "messages.hpp"
 #include "entity.hpp"
 #include "interface/interface.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "magic/magic.hpp"
 #include "menu.hpp"

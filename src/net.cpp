@@ -20,7 +20,7 @@
 #include "monster.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "shops.hpp"
 #include "menu.hpp"

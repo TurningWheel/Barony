@@ -19,7 +19,7 @@
 
 #include "main.hpp"
 #include "files.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "entity.hpp"
 #include "book.hpp"
 #include "menu.hpp"

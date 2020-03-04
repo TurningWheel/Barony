@@ -18,7 +18,7 @@
 #include "interface/interface.hpp"
 #include "messages.hpp"
 #include "book.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "shops.hpp"
 #include "scores.hpp"
 #include "magic/magic.hpp"

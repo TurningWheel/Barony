@@ -3,11 +3,12 @@ if( WIN32 )
 		"${CMAKE_CURRENT_SOURCE_DIR}/wingameicon.o"
 	)
 endif()
+
+add_subdirectory(engine)
+
 list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/init.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/sound_game.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/collision.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/light.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/maps.cpp"
@@ -123,7 +124,6 @@ list(APPEND EDITOR_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/hash.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/files.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/entity_shared.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_editor.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_shared.cpp"

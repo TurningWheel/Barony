@@ -17,7 +17,7 @@
 #include "main.hpp"
 #include "draw.hpp"
 #include "files.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "prng.hpp"
 #include "hash.hpp"
 #include "init.hpp"
