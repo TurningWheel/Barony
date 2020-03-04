@@ -39,6 +39,7 @@ void sound_update()
 	}
 
 	FMOD_VECTOR position, forward, up;
+	bool playing = false;
 
 	auto& camera = cameras[clientnum];
 	if ( splitscreen )
@@ -59,17 +60,17 @@ void sound_update()
 	up.z = 0;
 
 	//FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, &velocity, &forward, &up);
-	FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, 0, &forward, &up);
+	fmod_system->set3DListenerAttributes(0, &position, 0, &forward, &up);
 
 	//Fade in the currently playing music.
 	if (music_channel)
 	{
-		FMOD_BOOL playing = false;
-		FMOD_Channel_IsPlaying(music_channel, &playing);
+		playing = false;
+		music_channel->isPlaying(&playing);
 		if (playing)
 		{
 			float volume = 1.0f;
-			FMOD_Channel_GetVolume(music_channel, &volume);
+			music_channel->getVolume(&volume);
 
 			if (volume < 1.0f)
 			{
@@ -78,19 +79,20 @@ void sound_update()
 				{
 					volume = 1.0f;
 				}
-				FMOD_Channel_SetVolume(music_channel, volume);
+				music_channel->setVolume(volume);
 			}
 		}
 	}
+
 	//The following makes crossfading possible. Fade out the last playing music. //TODO: Support for saving music so that it can be resumed (for stuff interrupting like combat music).
 	if (music_channel2)
 	{
-		FMOD_BOOL playing = false;
-		FMOD_Channel_IsPlaying(music_channel2, &playing);
+		playing = false;
+		music_channel2->isPlaying(&playing);
 		if (playing)
 		{
 			float volume = 0.0f;
-			FMOD_Channel_GetVolume(music_channel2, &volume);
+			music_channel2->getVolume(&volume);
 
 			if (volume > 0.0f)
 			{
@@ -99,14 +101,14 @@ void sound_update()
 				{
 					volume = 0.0f;
 				}
-				FMOD_Channel_SetVolume(music_channel2, volume);
+				music_channel2->setVolume(volume);
 			}
 		}
 	}
 
-	FMOD_System_Update(fmod_system);
+	fmod_system->update();
 
-	//TODO: Mute sound if focus lost?
+	//TODO: Mute sound if program focus lost?
 }
 #define SOUND
 
