@@ -15,9 +15,7 @@
 #include "sound.hpp"
 #include "../../player.hpp"
 
-#ifdef USE_FMOD
-//#include <fmod_errors.h>
-#elif defined USE_OPENAL
+#ifdef defined USE_OPENAL
 #ifdef USE_TREMOR
 #include <tremor/ivorbisfile.h>
 #else
@@ -52,34 +50,13 @@ void sound_update()
 	position.y = -camera.z / 32;
 	position.z = -camera.x;
 
-	/*double cosroll = cos(0);
-	double cosyaw = cos(camera.ang);
-	double cospitch = cos(camera.vang);
-	double sinroll = sin(0);
-	double sinyaw = sin(camera.ang);
-	double sinpitch = sin(camera.vang);
-
-	double rx = sinroll*sinyaw - cosroll*sinpitch*cosyaw;
-	double ry = sinroll*cosyaw + cosroll*sinpitch*sinyaw;
-	double rz = cosroll*cospitch;*/
-
 	forward.x = 1 * sin(camera.ang);
 	forward.y = 0;
 	forward.z = 1 * cos(camera.ang);
-	/*forward.x = rx;
-	forward.y = ry;
-	forward.z = rz;*/
-
-	/*rx = sinroll*sinyaw - cosroll*cospitch*cosyaw;
-	ry = sinroll*cosyaw + cosroll*cospitch*sinyaw;
-	rz = cosroll*sinpitch;*/
 
 	up.x = 0;
 	up.y = 1;
 	up.z = 0;
-	/*up.x = rx;
-	up.y = ry;
-	up.z = rz;*/
 
 	//FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, &velocity, &forward, &up);
 	FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, 0, &forward, &up);
@@ -117,8 +94,6 @@ void sound_update()
 
 			if (volume > 0.0f)
 			{
-				//volume -= 0.001f;
-				//volume -= 0.005f;
 				volume -= fadeout_increment * 2;
 				if (volume < 0.0f)
 				{
@@ -131,7 +106,7 @@ void sound_update()
 
 	FMOD_System_Update(fmod_system);
 
-	//TODO: Mute sound if focus lost.
+	//TODO: Mute sound if focus lost?
 }
 #define SOUND
 
