@@ -13,35 +13,30 @@ ENDIF(FMOD_LIBRARY AND FMOD_INCLUDE_DIR)
 
 
 FIND_PATH(FMOD_INCLUDE_DIR
-  fmod.h
+  fmod.hpp
   PATHS
-  $ENV{FMOD_DIR}/include
-  /usr/local/include
-  /usr/local/include/fmodex/
-  /usr/include
-  /usr/include/fmodex/
-  /sw/include
-  /sw/include/fmodex/
-  /opt/local/include
-  /opt/local/include/fmodex/
-  /opt/csw/include
-  /opt/csw/include/fmodex/
-  /opt/include
-  /opt/include/fmodex/
-  PATH_SUFFIXES fmod fmod3
+  $ENV{FMOD_DIR}/api/core/inc/
+  /usr/local/include/
+  /usr/local/include/fmodstudio/
+  /usr/include/
+  /usr/include/fmodstudio/
+  /opt/local/include/
+  /opt/local/include/fmodstudio/
+  /opt/include/
+  /opt/include/fmodstudio/
 )
 
 FIND_LIBRARY(FMOD_LIBRARY
-  NAMES fmod fmodex fmodvc libfmod libfmodex
+  NAMES fmod libfmod
   PATHS
-  $ENV{FMOD_DIR}/lib
+  $ENV{FMOD_DIR}/api/core/lib/x86_64/
+  /usr/local/lib64
   /usr/local/lib
+  /usr/lib64
   /usr/lib
-  /usr/local/X11R6/lib
-  /usr/X11R6/lib
-  /sw/lib
+  /opt/local/lib64
   /opt/local/lib
-  /opt/csw/lib
+  /opt/lib64
   /opt/lib
   /usr/freeware/lib64
 )
