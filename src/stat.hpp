@@ -12,7 +12,7 @@
 #pragma once
 
 #ifdef USE_FMOD
-#include "fmod.h"
+#include <fmod.hpp>
 #endif
 
 class Item;
