@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #ifdef USE_FMOD
-#include "fmod.h"
+#include <fmod.hpp>
 #endif
 #ifdef USE_OPENAL
 #ifdef APPLE
@@ -92,7 +92,10 @@ extern FMOD_CHANNELGROUP* sound_group, *music_group;
 bool FMODErrorCheck();
 
 void sound_update();
-int initSoundEngine();
+bool initSoundEngine(); //If it fails to initialize the sound engine, it'll just disable audio.
+void exitSoundEngine();
+int loadSoundResources();
+void freeSoundResources();
 
 FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol);
 FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol);
