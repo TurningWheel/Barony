@@ -670,7 +670,7 @@ void actMinotaurTimer(Entity* my)
 #ifdef MUSIC
 			fadein_increment = default_fadein_increment * 20;
 			fadeout_increment = default_fadeout_increment * 5;
-			playmusic( sounds[175], false, true, false);
+			playMusic( sounds[175], false, true, false);
 #endif
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
