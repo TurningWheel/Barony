@@ -767,6 +767,13 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			}
 			else
 			{
+				for ( int i = 0; i < NUMMONSTERS; ++i )
+				{
+					if ( !tagValue.compare(monstertypename[i]) )
+					{
+						return TO_NOTHING + i;
+					}
+				}
 				return k_ScriptError;
 			}
 		}
@@ -1251,7 +1258,11 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 						}
 						for ( int i = effect; i <= effectEndRange && i < NUMEFFECTS && i >= 0; ++i )
 						{
-							entity->setEffect(i, true, duration * TICKS_PER_SECOND, true);
+							entity->setEffect(i, true, duration * TICKS_PER_SECOND, false);
+						}
+						if ( multiplayer == SERVER )
+						{
+							entity->serverUpdateEffectsForEntity(true);
 						}
 					}
 				}
@@ -1274,7 +1285,11 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 						}
 						for ( int i = effect; i <= effectEndRange && i < NUMEFFECTS && i >= 0; ++i )
 						{
-							entity->setEffect(i, false, 0, true);
+							entity->setEffect(i, false, 0, false);
+						}
+						if ( multiplayer == SERVER )
+						{
+							entity->serverUpdateEffectsForEntity(true);
 						}
 					}
 				}
@@ -2379,7 +2394,10 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 			{
 				if ( (entity->behavior == &actMonster && attachTo == TO_MONSTERS)
 					|| (entity->behavior == &actPlayer && attachTo == TO_PLAYERS)
-					|| (entity->behavior == &actItem && attachTo == TO_ITEMS) )
+					|| (entity->behavior == &actItem && attachTo == TO_ITEMS)
+					|| (entity->behavior == &actMonster 
+						&& attachTo >= TO_NOTHING && attachTo <= TO_DUMMYBOT 
+						&& entity->getRace() == (attachTo - TO_NOTHING)) )
 				{
 					// found our entity.
 				}
