@@ -659,7 +659,7 @@ void deinitGame()
 		list_FreeAll(&safePacketsReceived[c]);
 	}
 #ifdef SOUND
-#ifdef USE_OPENAL
+#ifdef USE_OPENAL //TODO: OpenAL is now all of the broken...
 #define FMOD_Channel_Stop OPENAL_Channel_Stop
 #define FMOD_Sound_Release OPENAL_Sound_Release
 #endif
