@@ -2025,18 +2025,19 @@ void physfsReloadSounds(bool reloadAll)
 	if ( reloadAll )
 	{
 #ifdef SOUND
-		if ( sounds != NULL )
+		if ( sounds != nullptr )
 		{
 			for ( int c = 0; c < numsounds; c++ )
 			{
-				if ( sounds[c] != NULL )
+				if ( sounds[c] != nullptr )
 				{
 #ifdef USE_FMOD
-					FMOD_Sound_Release(sounds[c]);    //Free the sound in FMOD
+					sounds[c]->release();    //Free the sound in FMOD
 #endif
 #ifdef USE_OPENAL
 					OPENAL_Sound_Release(sounds[c]); //Free the sound in OPENAL
 #endif
+					sounds[c] = nullptr;
 				}
 			}
 		}
@@ -2061,9 +2062,10 @@ void physfsReloadSounds(bool reloadAll)
 #ifdef USE_FMOD
 				if ( !reloadAll )
 				{
-					FMOD_Sound_Release(sounds[c]);
+					sounds[c]->release();
+					sounds[c] = nullptr;
 				}
-				fmod_result = FMOD_System_CreateSound(fmod_system, soundFile.c_str(), (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
+				fmod_result = fmod_system->createSound(soundFile.c_str(), FMOD_DEFAULT | FMOD_3D, nullptr, &sounds[c]); //TODO: FMOD_SOFTWARE -> FMOD_DEFAULT?
 				if ( FMODErrorCheck() )
 				{
 					printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
