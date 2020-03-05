@@ -16,7 +16,7 @@
 #include "../items.hpp"
 #include "../init.hpp"
 #include "../book.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 #include "../menu.hpp"
 #include "../monster.hpp"
 #include "../net.hpp"
