@@ -1256,33 +1256,33 @@ void gamemodsUnloadCustomThemeMusic()
 	// free custom music slots, not used by official music assets.
 	if ( gnomishminesmusic )
 	{
-		FMOD_Sound_Release(gnomishminesmusic);
-		gnomishminesmusic = NULL;
+		gnomishminesmusic->release();
+		gnomishminesmusic = nullptr;
 	}
 	if ( greatcastlemusic )
 	{
-		FMOD_Sound_Release(greatcastlemusic);
-		greatcastlemusic = NULL;
+		greatcastlemusic->release();
+		greatcastlemusic = nullptr;
 	}
 	if ( sokobanmusic )
 	{
-		FMOD_Sound_Release(sokobanmusic);
-		sokobanmusic = NULL;
+		sokobanmusic->release();
+		sokobanmusic = nullptr;
 	}
 	if ( caveslairmusic )
 	{
-		FMOD_Sound_Release(caveslairmusic);
-		caveslairmusic = NULL;
+		caveslairmusic->release();
+		caveslairmusic = nullptr;
 	}
 	if ( bramscastlemusic )
 	{
-		FMOD_Sound_Release(bramscastlemusic);
-		bramscastlemusic = NULL;
+		bramscastlemusic->release();
+		bramscastlemusic = nullptr;
 	}
 	if ( hamletmusic )
 	{
-		FMOD_Sound_Release(hamletmusic);
-		hamletmusic = NULL;
+		hamletmusic->release();
+		hamletmusic = nullptr;
 	}
 #ifdef USE_OPENAL
 #undef FMOD_Sound_Release
