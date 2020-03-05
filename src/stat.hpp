@@ -247,7 +247,7 @@ public:
 
 	// misc
 #ifdef USE_FMOD
-	FMOD_CHANNEL* monster_sound; //TODO: Do?
+	FMOD::Channel* monster_sound;
 #else
 	void* monster_sound;
 #endif
