@@ -665,29 +665,29 @@ void deinitGame()
 #endif
 	if ( !no_sound )
 	{
-		FMOD_Channel_Stop(music_channel);
-		FMOD_Channel_Stop(music_channel2);
-		FMOD_Sound_Release(introductionmusic);
-		FMOD_Sound_Release(intermissionmusic);
-		FMOD_Sound_Release(minetownmusic);
-		FMOD_Sound_Release(splashmusic);
-		FMOD_Sound_Release(librarymusic);
-		FMOD_Sound_Release(shopmusic);
-		FMOD_Sound_Release(herxmusic);
-		FMOD_Sound_Release(templemusic);
-		FMOD_Sound_Release(endgamemusic);
-		FMOD_Sound_Release(escapemusic);
-		FMOD_Sound_Release(devilmusic);
-		FMOD_Sound_Release(sanctummusic);
-		FMOD_Sound_Release(gnomishminesmusic);
-		FMOD_Sound_Release(greatcastlemusic);
-		FMOD_Sound_Release(sokobanmusic);
-		FMOD_Sound_Release(caveslairmusic);
-		FMOD_Sound_Release(bramscastlemusic);
-		FMOD_Sound_Release(hamletmusic);
+		music_channel->stop();
+		music_channel2->stop();
+		introductionmusic->release();
+		intermissionmusic->release();
+		minetownmusic->release();
+		splashmusic->release();
+		librarymusic->release();
+		shopmusic->release();
+		herxmusic->release();
+		templemusic->release();
+		endgamemusic->release();
+		escapemusic->release();
+		devilmusic->release();
+		sanctummusic->release();
+		gnomishminesmusic->release();
+		greatcastlemusic->release();
+		sokobanmusic->release();
+		caveslairmusic->release();
+		bramscastlemusic->release();
+		hamletmusic->release();
 		for ( c = 0; c < NUMMINESMUSIC; c++ )
 		{
-			FMOD_Sound_Release(minesmusic[c]);
+			minesmusic[c]->release();
 		}
 		if ( minesmusic )
 		{
@@ -695,7 +695,7 @@ void deinitGame()
 		}
 		for ( c = 0; c < NUMSWAMPMUSIC; c++ )
 		{
-			FMOD_Sound_Release(swampmusic[c]);
+			swampmusic[c]->release();
 		}
 		if ( swampmusic )
 		{
@@ -703,7 +703,7 @@ void deinitGame()
 		}
 		for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
 		{
-			FMOD_Sound_Release(labyrinthmusic[c]);
+			labyrinthmusic[c]->release();
 		}
 		if ( labyrinthmusic )
 		{
@@ -711,7 +711,7 @@ void deinitGame()
 		}
 		for ( c = 0; c < NUMRUINSMUSIC; c++ )
 		{
-			FMOD_Sound_Release(ruinsmusic[c]);
+			ruinsmusic[c]->release();
 		}
 		if ( ruinsmusic )
 		{
@@ -719,7 +719,7 @@ void deinitGame()
 		}
 		for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
 		{
-			FMOD_Sound_Release(underworldmusic[c]);
+			underworldmusic[c]->release();
 		}
 		if ( underworldmusic )
 		{
@@ -727,7 +727,7 @@ void deinitGame()
 		}
 		for ( c = 0; c < NUMHELLMUSIC; c++ )
 		{
-			FMOD_Sound_Release(hellmusic[c]);
+			hellmusic[c]->release();
 		}
 		if ( hellmusic )
 		{
@@ -735,7 +735,7 @@ void deinitGame()
 		}
 		for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
 		{
-			FMOD_Sound_Release(minotaurmusic[c]);
+			minotaurmusic[c]->release();
 		}
 		if ( minotaurmusic )
 		{
@@ -743,7 +743,7 @@ void deinitGame()
 		}
 		for ( c = 0; c < NUMCAVESMUSIC; c++ )
 		{
-			FMOD_Sound_Release(cavesmusic[c]);
+			cavesmusic[c]->release();
 		}
 		if ( cavesmusic )
 		{
@@ -751,7 +751,7 @@ void deinitGame()
 		}
 		for ( c = 0; c < NUMCITADELMUSIC; c++ )
 		{
-			FMOD_Sound_Release(citadelmusic[c]);
+			citadelmusic[c]->release();
 		}
 		if ( citadelmusic )
 		{
@@ -759,7 +759,7 @@ void deinitGame()
 		}
 		for ( c = 0; c < NUMINTROMUSIC; c++ )
 		{
-			FMOD_Sound_Release(intromusic[c]);
+			intromusic[c]->release();
 		}
 		if ( intromusic )
 		{
