@@ -1020,7 +1020,7 @@ void gameLogic(void)
 #ifdef USE_FMOD
 					if ( sound_group )
 					{
-						FMOD_ChannelGroup_Stop(sound_group);
+						sound_group->stop();
 					}
 #elif defined USE_OPENAL
 					if ( sound_group )
@@ -2776,11 +2776,11 @@ void handleEvents(void)
 #ifdef USE_FMOD
 					if ( music_group )
 					{
-						FMOD_ChannelGroup_SetVolume(music_group, 0.f);
+						music_group->setVolume(0.f);
 					}
 					if ( sound_group )
 					{
-						FMOD_ChannelGroup_SetVolume(sound_group, 0.f);
+						sound_group->setVolume(0.f);
 					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
@@ -2799,11 +2799,11 @@ void handleEvents(void)
 #ifdef USE_FMOD
 					if ( music_group )
 					{
-						FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+						music_group->setVolume(musvolume / 128.f);
 					}
 					if ( sound_group )
 					{
-						FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+						sound_group->setVolume(sfxvolume / 128.f);
 					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
@@ -3300,7 +3300,7 @@ int main(int argc, char** argv)
 
 		// play splash sound
 #ifdef MUSIC
-		playmusic(splashmusic, false, false, false);
+		playMusic(splashmusic, false, false, false);
 #endif
 
 		int old_sdl_ticks = 0;
@@ -3400,7 +3400,7 @@ int main(int argc, char** argv)
 						{
 							introstage = 6;
 #if defined(USE_FMOD) || defined(USE_OPENAL)
-							playmusic(introductionmusic, true, false, false);
+							playMusic(introductionmusic, true, false, false);
 #endif
 						}
 						else
@@ -3411,11 +3411,11 @@ int main(int argc, char** argv)
 #if defined(USE_FMOD) || defined(USE_OPENAL)
 							if ( menuMapType == 1 )
 							{
-								playmusic(intromusic[2], true, false, false);
+								playMusic(intromusic[2], true, false, false);
 							}
 							else
 							{
-								playmusic(intromusic[1], true, false, false);
+								playMusic(intromusic[1], true, false, false);
 							}
 #endif
 						}
@@ -3476,7 +3476,7 @@ int main(int argc, char** argv)
 						{
 							introstage = 6;
 #ifdef MUSIC
-							playmusic(introductionmusic, true, false, false);
+							playMusic(introductionmusic, true, false, false);
 #endif
 						}
 						else
@@ -3487,11 +3487,11 @@ int main(int argc, char** argv)
 #ifdef MUSIC
 							if ( menuMapType == 1 )
 							{
-								playmusic(intromusic[2], true, false, false);
+								playMusic(intromusic[2], true, false, false);
 							}
 							else
 							{
-								playmusic(intromusic[1], true, false, false);
+								playMusic(intromusic[1], true, false, false);
 							}
 #endif
 						}
