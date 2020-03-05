@@ -686,6 +686,63 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 
 			return (x1 & 0xFF) + ((x2 & 0xFF) << 8) + ((y1 & 0xFF) << 16) + ((y2 & 0xFF) << 24);
 		}
+		else
+		{
+			size_t foundSeperator = tagValue.find(";");
+			if ( foundSeperator != std::string::npos )
+			{
+				std::pair<int, int> param1 = std::make_pair(0, 0);
+				std::pair<int, int> param2 = std::make_pair(0, 0);
+				std::string first_str = tagValue.substr(0, foundSeperator);
+				std::string second_str = tagValue.substr(foundSeperator + 1, tagValue.length() - foundSeperator);
+				size_t foundRange = first_str.find("-");
+				if ( foundRange != std::string::npos )
+				{
+					// found range reference.
+					param1.first = std::stoi(first_str.substr(0, foundRange));
+					param1.second = std::stoi(first_str.substr(foundRange + 1, first_str.length() - foundRange));
+				}
+				else
+				{
+					param1.first = std::stoi(first_str);
+					param1.second = param1.first;
+				}
+				foundRange = second_str.find("-");
+				if ( foundRange != std::string::npos )
+				{
+					// found range reference.
+					param2.first = std::stoi(second_str.substr(0, foundRange));
+					param2.second = std::stoi(second_str.substr(foundRange + 1, second_str.length() - foundRange));
+				}
+				else
+				{
+					param2.first = std::stoi(second_str);
+					param2.second = param2.first;
+				}
+
+				param1.second = std::max(param1.first, param1.second);
+				param2.second = std::max(param2.first, param2.second);
+
+				return (param1.first & 0xFF) + ((param1.second & 0xFF) << 8) + ((param2.first & 0xFF) << 16) + ((param2.second & 0xFF) << 24);
+			}
+			else
+			{
+				size_t foundRange = tagValue.find("-");
+				if ( foundRange != std::string::npos )
+				{
+					std::pair<int, int> param1 = std::make_pair(0, 0);
+					// found range reference.
+					std::string first_str = tagValue.substr(0, foundRange);
+					std::string second_str = tagValue.substr(foundRange + 1, tagValue.length() - foundRange);
+
+					param1.first = std::stoi(first_str.substr(0, foundRange));
+					param1.second = std::stoi(first_str.substr(foundRange + 1, first_str.length() - foundRange));
+					param1.second = std::max(param1.first, param1.second);
+					return (param1.first & 0xFF) + ((param1.second & 0xFF) << 8);
+				}
+			}
+		}
+
 		if ( !tagValue.compare("all") )
 		{
 			int x1 = 0;
@@ -1169,6 +1226,55 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							{
 								entity->setEffect(EFF_STUNNED, false, 0, false);
 							}
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@seteffect=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@seteffect=");
+			if ( result != k_ScriptError )
+			{
+				int effect = result & 0xFF;
+				int effectEndRange = (result >> 8) & 0xFF;
+				int duration = (result >> 16) & 0xFF;
+				int durationEndRange = (result >> 24) & 0xFF;
+				duration = duration + rand() % (std::max(1, (durationEndRange - duration)));
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior != &actMonster && entity->behavior != &actPlayer )
+						{
+							continue;
+						}
+						for ( int i = effect; i <= effectEndRange && i < NUMEFFECTS && i >= 0; ++i )
+						{
+							entity->setEffect(i, true, duration * TICKS_PER_SECOND, true);
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@clreffect=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@clreffect=");
+			if ( result != k_ScriptError )
+			{
+				int effect = result & 0xFF;
+				int effectEndRange = (result >> 8) & 0xFF;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior != &actMonster && entity->behavior != &actPlayer )
+						{
+							continue;
+						}
+						for ( int i = effect; i <= effectEndRange && i < NUMEFFECTS && i >= 0; ++i )
+						{
+							entity->setEffect(i, false, 0, true);
 						}
 					}
 				}
