@@ -154,6 +154,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	gateStartHeight(fskill[0]),
 	gateVelZ(vel_z),
 	gateInverted(skill[5]),
+	gateDisableOpening(skill[6]),
 	leverStatus(skill[1]),
 	leverTimerTicks(skill[3]),
 	boulderTrapRefireAmount(skill[1]),
@@ -174,6 +175,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	doorMaxHealth(skill[9]),
 	doorStartAng(fskill[0]),
 	doorPreventLockpickExploit(skill[10]),
+	doorForceLockedUnlocked(skill[11]),
+	doorDisableLockpicks(skill[12]),
+	doorDisableOpening(skill[13]),
 	particleTimerDuration(skill[0]),
 	particleTimerEndAction(skill[1]),
 	particleTimerEndSprite(skill[3]),
@@ -317,7 +321,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	effectShapeshift(skill[53]),
 	entityShowOnMap(skill[59]),
 	thrownProjectilePower(skill[19]),
-	thrownProjectileCharge(skill[20])
+	thrownProjectileCharge(skill[20]),
+	playerStartDir(skill[1])
 {
 	int c;
 	// add the entity to the entity list

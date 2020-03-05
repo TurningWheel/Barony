@@ -46,7 +46,11 @@ void actDoor(Entity* my)
 		my->doorHealth = 15 + rand() % 5;
 		my->doorMaxHealth = my->doorHealth;
 		my->doorPreventLockpickExploit = 1;
-		if ( rand() % 20 == 0 || (!strncmp(map.name, "The Great Castle", 16) && rand() % 2 == 0) )   // 5% chance
+		if ( my->doorForceLockedUnlocked == 2 )
+		{
+			my->doorLocked = 0; // force unlocked.
+		}
+		else if ( rand() % 20 == 0 || (!strncmp(map.name, "The Great Castle", 16) && rand() % 2 == 0) || my->doorForceLockedUnlocked == 1 )   // 5% chance
 		{
 			my->doorLocked = 1;
 			my->doorPreventLockpickExploit = 0;

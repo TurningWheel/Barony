@@ -42,8 +42,16 @@ void Item::applySkeletonKey(int player, Entity& entity)
 		playSoundEntity(&entity, 91, 64);
 		if ( entity.skill[5] )
 		{
-			messagePlayer(player, language[1099]);
-			entity.skill[5] = 0;
+			if ( entity.doorDisableLockpicks == 1 )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				messagePlayerColor(player, color, language[3101]); // disabled.
+			}
+			else
+			{
+				messagePlayer(player, language[1099]);
+				entity.skill[5] = 0;
+			}
 		}
 		else
 		{
@@ -254,7 +262,12 @@ void Item::applyLockpick(int player, Entity& entity)
 	{
 		if ( entity.skill[5] )
 		{
-			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200 )
+			if ( entity.doorDisableLockpicks == 1 )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				messagePlayerColor(player, color, language[3101]); // disabled.
+			}
+			else if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200 )
 			{
 				//Unlock door.
 				playSoundEntity(&entity, 91, 64);

@@ -132,6 +132,17 @@ int checkSpriteType(Sint32 sprite)
 	case 162: 
 		// readablebook
 		return 20;
+	case 2:
+	case 3:
+		return 21;
+	case 19:
+	case 20:
+	case 113:
+	case 114:
+		return 22;
+	case 1:
+		return 23;
+		break;
 	default:
 		return 0;
 		break;
@@ -1731,6 +1742,49 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			{
 				entityNew->skill[i] = 0;
 			}
+		}
+	}
+	else if ( spriteType == 21 ) // doors
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->doorForceLockedUnlocked = entityToCopy->doorForceLockedUnlocked;
+			entityNew->doorDisableLockpicks = entityToCopy->doorDisableLockpicks;
+			entityNew->doorDisableOpening= entityToCopy->doorDisableOpening;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->doorForceLockedUnlocked = 0;
+			entityNew->doorDisableLockpicks = 0;
+			entityNew->doorDisableOpening = 0;
+		}
+	}
+	else if ( spriteType == 22 ) // gates
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->gateDisableOpening = entityToCopy->gateDisableOpening;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->gateDisableOpening = 0;
+		}
+	}
+	else if ( spriteType == 23 ) // player spawns
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->playerStartDir = entityToCopy->playerStartDir;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->playerStartDir = 0;
 		}
 	}
 

@@ -260,6 +260,7 @@ public:
 	real_t& gateStartHeight; //fskill[0]
 	real_t& gateVelZ; //vel_z
 	Sint32& gateInverted; //skill[5]
+	Sint32& gateDisableOpening; //skill[6]
 
 	//--PUBLIC LEVER SKILLS--
 	Sint32& leverTimerTicks;//skill[1]
@@ -301,6 +302,9 @@ public:
 	Sint32& doorMaxHealth; //skill[9]
 	real_t& doorStartAng; //fskill[0]
 	Sint32& doorPreventLockpickExploit; //skill[10]
+	Sint32& doorForceLockedUnlocked; //skill[11]
+	Sint32& doorDisableLockpicks; //skill[12]
+	Sint32& doorDisableOpening; //skill[13]
 
 	//--PUBLIC PEDESTAL SKILLS--
 	Sint32& pedestalHasOrb; //skill[0]
@@ -479,6 +483,9 @@ public:
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]
 	Sint32& thrownProjectileCharge; //skill[20]
+
+	//--PLAYER SPAWN POINT--
+	Sint32& playerStartDir; //skill[1]
 
 	void pedestalOrbInit(); // init orb properties
 

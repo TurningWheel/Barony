@@ -2239,6 +2239,47 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Readable Book Properties:");
 			}
 				break;
+			case 21:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->doorForceLockedUnlocked));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->doorDisableLockpicks));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->doorDisableOpening));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 26;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
+				strcpy(subtext, "Door Properties:");
+				break;
+			case 22:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->gateDisableOpening));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 27;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Gate Properties:");
+				break;
+			case 23: // player spawn
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->playerStartDir));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 28;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Player Spawn Properties:");
+				break;
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3302,6 +3343,17 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					}
 				}
 			}
+				break;
+			case 21: // doors
+				selectedEntity->doorForceLockedUnlocked = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->doorDisableLockpicks = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->doorDisableOpening = (Sint32)atoi(spriteProperties[2]);
+				break;
+			case 22: // gates
+				selectedEntity->gateDisableOpening = (Sint32)atoi(spriteProperties[0]);
+				break;
+			case 23: // player spawn
+				selectedEntity->playerStartDir = (Sint32)atoi(spriteProperties[0]);
 				break;
 			default:
 				break;

@@ -705,9 +705,14 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	// read map version number
 	fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
-	if ( strncmp(valid_data, "BARONY LMPV2.5", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV2.6", strlen("BARONY LMPV2.0")) == 0 )
 	{
-		// V2.4 version of editor - boulder trap properties
+		// V2.6 version of editor - player starts/doors/gates
+		editorVersion = 26;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.5", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.5 version of editor - scripting
 		editorVersion = 25;
 	}
 	else if ( strncmp(valid_data, "BARONY LMPV2.4", strlen("BARONY LMPV2.0")) == 0 )
@@ -840,6 +845,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			case 23:
 			case 24:
 			case 25:
+			case 26:
 				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
@@ -1116,6 +1122,26 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
 						}
 						break;
+					case 21:
+						if ( editorVersion >= 26 )
+						{
+							fread(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1, fp);
+							fread(&entity->doorDisableLockpicks, sizeof(Sint32), 1, fp);
+							fread(&entity->doorDisableOpening, sizeof(Sint32), 1, fp);
+						}
+						break;
+					case 22:
+						if ( editorVersion >= 26 )
+						{
+							fread(&entity->gateDisableOpening, sizeof(Sint32), 1, fp);
+						}
+						break;
+					case 23:
+						if ( editorVersion >= 26 )
+						{
+							fread(&entity->playerStartDir, sizeof(Sint32), 1, fp);
+						}
+						break;
 					default:
 						break;
 				}
@@ -1321,7 +1347,7 @@ int saveMap(const char* filename2)
 			return 1;
 		}
 
-		fwrite("BARONY LMPV2.5", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
+		fwrite("BARONY LMPV2.6", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
 		fwrite(map.name, sizeof(char), 32, fp); // map filename
 		fwrite(map.author, sizeof(char), 32, fp); // map author
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
@@ -1509,6 +1535,17 @@ int saveMap(const char* filename2)
 					{
 						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
 					}
+					break;
+				case 21:
+					fwrite(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1, fp);
+					fwrite(&entity->doorDisableLockpicks, sizeof(Sint32), 1, fp);
+					fwrite(&entity->doorDisableOpening, sizeof(Sint32), 1, fp);
+					break;
+				case 22:
+					fwrite(&entity->gateDisableOpening, sizeof(Sint32), 1, fp);
+					break;
+				case 23:
+					fwrite(&entity->playerStartDir, sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;

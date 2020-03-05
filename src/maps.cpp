@@ -2480,6 +2480,15 @@ void assignActions(map_t* map)
 					entity->flags[BLOCKSIGHT] = true;
 					entity->skill[2] = numplayers; // skill[2] == PLAYER_NUM
 					players[numplayers]->entity = entity;
+					if ( entity->playerStartDir == -1 )
+					{
+						entity->yaw = (prng_get_uint() % 8) * 45 * (PI / 180.f);
+					}
+					else
+					{
+						entity->yaw = entity->playerStartDir * 45 * (PI / 180.f);
+					}
+					entity->playerStartDir = 0;
 					if ( multiplayer != CLIENT )
 					{
 						if ( numplayers == 0 && minotaurlevel )
@@ -2513,12 +2522,19 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actDoor;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+
+				// copy editor options from frame to door itself.
+				childEntity->doorDisableLockpicks = entity->doorDisableLockpicks;
+				childEntity->doorForceLockedUnlocked = entity->doorForceLockedUnlocked;
+				childEntity->doorDisableOpening = entity->doorDisableOpening;
+
 				childEntity = newEntity(1, 0, map->entities, nullptr); //Door entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 7;
 				TileEntityList.addEntity(*childEntity);
+
 				//printlog("17 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -2555,16 +2571,24 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actDoor;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
+
+				// copy editor options from frame to door itself.
+				childEntity->doorDisableLockpicks = entity->doorDisableLockpicks;
+				childEntity->doorForceLockedUnlocked = entity->doorForceLockedUnlocked;
+				childEntity->doorDisableOpening = entity->doorDisableOpening;
+
 				childEntity = newEntity(1, 0, map->entities, nullptr); //Door entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
 				childEntity->y = entity->y;
+
 				TileEntityList.addEntity(*childEntity);
 				//printlog("20 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
+
 				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -3655,6 +3679,9 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
 
+				// copy editor options from frame to gate itself.
+				childEntity->gateDisableOpening = entity->gateDisableOpening;
+
 				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -3697,6 +3724,9 @@ void assignActions(map_t* map)
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+
+				// copy editor options from frame to gate itself.
+				childEntity->gateDisableOpening = entity->gateDisableOpening;
 
 				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
@@ -4696,6 +4726,9 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
 
+				// copy editor options from frame to gate itself.
+				childEntity->gateDisableOpening = entity->gateDisableOpening;
+
 				childEntity = newEntity(1, 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -4738,6 +4771,9 @@ void assignActions(map_t* map)
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+
+				// copy editor options from frame to gate itself.
+				childEntity->gateDisableOpening = entity->gateDisableOpening;
 
 				childEntity = newEntity(1, 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
