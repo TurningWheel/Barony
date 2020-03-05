@@ -2823,7 +2823,7 @@ void clientHandlePacket()
 			combatmusicplaying = false;
 			fadein_increment = default_fadein_increment * 4;
 			fadeout_increment = default_fadeout_increment * 4;
-			playmusic( sounds[209], false, true, false );
+			playMusic(sounds[209], false, true, false);
 #endif
 			combat = false;
 			assailant[clientnum] = false;
@@ -2935,7 +2935,7 @@ void clientHandlePacket()
 #ifdef MUSIC
 			fadein_increment = default_fadein_increment * 20;
 			fadeout_increment = default_fadeout_increment * 5;
-			playmusic( sounds[175], false, true, false );
+			playMusic( sounds[175], false, true, false );
 #endif
 		}
 		else if ( (strstr((char*)(&net_packet->data[8]), language[1160])) != NULL )
@@ -3230,7 +3230,7 @@ void clientHandlePacket()
 #ifdef USE_FMOD
 		if ( sound_group )
 		{
-			FMOD_ChannelGroup_Stop(sound_group);
+			sound_group->stop();
 		}
 #elif defined USE_OPENAL
 		if ( sound_group )
