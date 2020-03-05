@@ -276,8 +276,8 @@ bool bowIsBeingDrawn = false;
 Uint32 bowStartDrawingTick = 0;
 Uint32 bowDrawBaseTicks = 50;
 #ifdef USE_FMOD
-	FMOD_CHANNEL* bowDrawingSoundChannel = NULL;
-	FMOD_BOOL bowDrawingSoundPlaying = 0;
+	FMOD::Channel* bowDrawingSoundChannel = nullptr;
+	bool bowDrawingSoundPlaying = 0;
 #elif defined USE_OPENAL
 	OPENAL_SOUND* bowDrawingSoundChannel = NULL;
 	ALboolean bowDrawingSoundPlaying = 0;
@@ -625,7 +625,7 @@ void actHudWeapon(Entity* my)
 			if ( itemCategory(stats[clientnum]->weapon) == SPELLBOOK )
 			{
 				my->flags[INVISIBLE] = true;
-				if ( parent != NULL )
+				if ( parent != nullptr )
 				{
 					parent->flags[INVISIBLE] = false;
 				}
@@ -633,7 +633,7 @@ void actHudWeapon(Entity* my)
 			else
 			{
 				my->flags[INVISIBLE] = false;
-				if ( parent != NULL )
+				if ( parent != nullptr )
 				{
 					parent->flags[INVISIBLE] = true;
 				}
@@ -646,7 +646,7 @@ void actHudWeapon(Entity* my)
 		if ( playerRace != RAT )
 		{
 			my->flags[INVISIBLE] = true;
-			if (parent != NULL)
+			if (parent != nullptr)
 			{
 				parent->flags[INVISIBLE] = true;
 			}
@@ -882,7 +882,7 @@ void actHudWeapon(Entity* my)
 #else
 		if ( bowDrawingSoundChannel )
 		{
-			FMOD_Channel_IsPlaying(bowDrawingSoundChannel, &bowDrawingSoundPlaying);
+			bowDrawingSoundChannel->isPlaying(&bowDrawingSoundPlaying);
 		}
 #endif
 #endif // SOUND
@@ -904,7 +904,7 @@ void actHudWeapon(Entity* my)
 #else
 			if ( bowDrawingSoundChannel )
 			{
-				FMOD_Channel_IsPlaying(bowDrawingSoundChannel, &bowDrawingSoundPlaying);
+				bowDrawingSoundChannel->isPlaying(&bowDrawingSoundPlaying);
 			}
 #endif
 #endif // SOUND
@@ -924,10 +924,10 @@ void actHudWeapon(Entity* my)
 #ifdef USE_OPENAL
 				OPENAL_Channel_Stop(bowDrawingSoundChannel);
 #else
-				FMOD_Channel_Stop(bowDrawingSoundChannel);
+				bowDrawingSoundChannel->stop();
 #endif
 				bowDrawingSoundPlaying = 0;
-				bowDrawingSoundChannel = NULL;
+				bowDrawingSoundChannel = nullptr;
 			}
 #endif
 		}
@@ -974,7 +974,7 @@ void actHudWeapon(Entity* my)
 			{
 				HUDWEAPON_CHOP = 10; // special punch
 			}
-			else if ( stats[clientnum]->weapon == NULL || hideWeapon )
+			else if ( stats[clientnum]->weapon == nullptr || hideWeapon )
 			{
 				HUDWEAPON_CHOP = 7; // punch
 			}
@@ -1073,7 +1073,7 @@ void actHudWeapon(Entity* my)
 													{
 														free(quiver);
 													}
-													stats[clientnum]->shield = NULL;
+													stats[clientnum]->shield = nullptr;
 												}
 											}
 										}
@@ -1220,7 +1220,7 @@ void actHudWeapon(Entity* my)
 												{
 													free(quiver);
 												}
-												stats[clientnum]->shield = NULL;
+												stats[clientnum]->shield = nullptr;
 											}
 										}
 									}
@@ -1432,7 +1432,7 @@ void actHudWeapon(Entity* my)
 									{
 										free(item);
 									}
-									stats[clientnum]->weapon = NULL;
+									stats[clientnum]->weapon = nullptr;
 								}
 							}
 						}
@@ -1461,10 +1461,10 @@ void actHudWeapon(Entity* my)
 #ifdef USE_OPENAL
 							OPENAL_Channel_Stop(bowDrawingSoundChannel);
 #else
-							FMOD_Channel_Stop(bowDrawingSoundChannel);
+							bowDrawingSoundChannel->stop();
 #endif
 							bowDrawingSoundPlaying = 0;
-							bowDrawingSoundChannel = NULL;
+							bowDrawingSoundChannel = nullptr;
 						}
 #endif
 
@@ -1740,7 +1740,7 @@ void actHudWeapon(Entity* my)
 								{
 									free(item);
 								}
-								stats[clientnum]->weapon = NULL;
+								stats[clientnum]->weapon = nullptr;
 							}
 						}
 					}
@@ -2308,7 +2308,7 @@ void actHudWeapon(Entity* my)
 			if ( swingweapon )
 			{
 				// restart the combo...
-				if ( stats[clientnum]->weapon == NULL || hideWeapon )
+				if ( stats[clientnum]->weapon == nullptr || hideWeapon )
 				{
 					HUDWEAPON_CHOP = 7;
 				}
@@ -2522,7 +2522,7 @@ void actHudWeapon(Entity* my)
 								{
 									free(item);
 								}
-								stats[clientnum]->weapon = NULL;
+								stats[clientnum]->weapon = nullptr;
 							}
 						}
 						if ( !stats[clientnum]->weapon )
