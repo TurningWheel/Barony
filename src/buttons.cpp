@@ -385,6 +385,14 @@ void buttonNew(button_t* my)
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[ ]");
 	}
+	if ( (map.flags[MAP_FLAG_GENBYTES4] >> 8) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[ ]");
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
@@ -500,6 +508,10 @@ void buttonNewConfirm(button_t* my)
 			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[x]", 3) )
 			{
 				map.flags[z] |= (1 << 16) & 0xFF;
+			}
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]", 3) )
+			{
+				map.flags[z] |= (1 << 8) & 0xFF;
 			}
 		}
 		else
@@ -1237,6 +1249,14 @@ void buttonAttributes(button_t* my)
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[ ]");
 	}
+	if ( (map.flags[MAP_FLAG_GENBYTES4] >> 8) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[ ]");
+	}
 
 	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
 	{
@@ -1403,7 +1423,11 @@ void buttonAttributesConfirm(button_t* my)
 	}
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[x]", 3) )
 	{
-		map.flags[MAP_FLAG_GENBYTES4] |= (1 << 16); // store in first leftmost byte.
+		map.flags[MAP_FLAG_GENBYTES4] |= (1 << 16); // store in second leftmost byte.
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_GENBYTES4] |= (1 << 8); // store in third leftmost byte.
 	}
 
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )

@@ -3013,7 +3013,7 @@ void Entity::handleEffects(Stat* myStats)
 		hungerTickRate *= 1.5;
 	}
 
-	bool processHunger = (svFlags & SV_FLAG_HUNGER); // check server flags if hunger is enabled.
+	bool processHunger = (svFlags & SV_FLAG_HUNGER) && !MFLAG_DISABLEHUNGER; // check server flags if hunger is enabled.
 	if ( player >= 0 )
 	{
 		if ( myStats->type == SKELETON || myStats->type == AUTOMATON )
@@ -3292,7 +3292,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 )
 		{
 			// oversatiation
-			if ( !(svFlags & SV_FLAG_HUNGER) )
+			if ( !(svFlags & SV_FLAG_HUNGER) || MFLAG_DISABLEHUNGER )
 			{
 				myStats->HUNGER = std::min(myStats->HUNGER, 1000); // reset hunger to safe level.
 			}
@@ -3359,7 +3359,7 @@ void Entity::handleEffects(Stat* myStats)
 			entity->vel_x = vel * cos(entity->yaw);
 			entity->vel_y = vel * sin(entity->yaw);
 			entity->vel_z = -.5;
-			if ( svFlags & SV_FLAG_HUNGER )
+			if ( (svFlags & SV_FLAG_HUNGER) )
 			{
 				if ( myStats->type != INSECTOID && myStats->type != AUTOMATON
 					&& myStats->type != SKELETON && effectShapeshift == NOTHING )
@@ -3479,7 +3479,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 	else if ( this->behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
 	{
-		if ( svFlags & SV_FLAG_HUNGER )
+		if ( (svFlags & SV_FLAG_HUNGER) && !MFLAG_DISABLEHUNGER )
 		{
 			this->char_energize++;
 			if ( this->char_energize > 0 && this->char_energize % 5 == 0 ) // check every 5 ticks.

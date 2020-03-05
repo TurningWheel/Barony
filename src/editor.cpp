@@ -2884,6 +2884,10 @@ int main(int argc, char** argv)
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Herx Messages:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLEMESSAGES]);
 
+					pad_y1 += 24;
+					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Hunger Loss:");
+					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLEHUNGER]);
+
 					start_y = suby2 - 44;
 					pad_y1 = 0;
 					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map Width:");
@@ -3058,6 +3062,18 @@ int main(int argc, char** argv)
 							else
 							{
 								strcpy(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[x]");
+							}
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
+						if ( omousex >= start_x3 && omousey >= suby1 + 316 && omousex < start_x3 + 24 && omousey < suby1 + 332 )
+						{
+							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]", 3) )
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[ ]");
+							}
+							else
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]");
 							}
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}

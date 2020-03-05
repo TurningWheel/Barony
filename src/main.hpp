@@ -354,6 +354,7 @@ static const int MAP_FLAG_DISABLELEVITATION = 14;
 static const int MAP_FLAG_GENADJACENTROOMS = 15;
 static const int MAP_FLAG_DISABLEOPENING = 16;
 static const int MAP_FLAG_DISABLEMESSAGES = 17;
+static const int MAP_FLAG_DISABLEHUNGER = 18;
 
 #define MFLAG_DISABLEDIGGING ((map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF) // first leftmost byte
 #define MFLAG_DISABLETELEPORT ((map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF) // second leftmost byte
@@ -361,6 +362,7 @@ static const int MAP_FLAG_DISABLEMESSAGES = 17;
 #define MFLAG_GENADJACENTROOMS ((map.flags[MAP_FLAG_GENBYTES3] >> 0) & 0xFF) // fourth leftmost byte
 #define MFLAG_DISABLEOPENING ((map.flags[MAP_FLAG_GENBYTES4] >> 24) & 0xFF) // first leftmost byte
 #define MFLAG_DISABLEMESSAGES ((map.flags[MAP_FLAG_GENBYTES4] >> 16) & 0xFF) // second leftmost byte
+#define MFLAG_DISABLEHUNGER ((map.flags[MAP_FLAG_GENBYTES4] >> 8) & 0xFF) // third leftmost byte
 
 // delete entity structure
 typedef struct deleteent_t
