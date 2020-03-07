@@ -3391,14 +3391,14 @@ void actPlayer(Entity* my)
 				DEX = std::min(DEX - 3, -2);
 				slowSpeedPenalty = 2.0;
 			}
-			real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, 18.0);
+			real_t speedFactor = std::min(static_cast<real_t>((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio), 18.0);
 			if ( DEX <= 5 )
 			{
-				speedFactor = std::min((DEX + 10) * weightratio, 18.0);
+				speedFactor = std::min(static_cast<real_t>((DEX + 10) * weightratio), 18.0);
 			}
 			else if ( DEX <= 15 )
 			{
-				speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, 18.0);
+				speedFactor = std::min(static_cast<real_t>((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio), 18.0);
 			}
 			/*if ( ticks % 50 == 0 )
 			{
@@ -5183,11 +5183,11 @@ void actPlayer(Entity* my)
 							{
 								if ( insectoidLevitating[PLAYER_NUM] )
 								{
-									entity->fskill[0] += std::min(std::max(0.2, dist * PLAYERWALKSPEED), 2.f * PLAYERWALKSPEED); // move proportional to move speed
+									entity->fskill[0] += std::min(std::max(0.2, static_cast<real_t>(dist * PLAYERWALKSPEED)), static_cast<real_t>(2.0 * PLAYERWALKSPEED)); // move proportional to move speed
 								}
 								else
 								{
-									entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED); // move proportional to move speed
+									entity->fskill[0] += std::min(static_cast<real_t>(dist * PLAYERWALKSPEED), static_cast<real_t>(2.0 * PLAYERWALKSPEED)); // move proportional to move speed
 								}
 							}
 							else if ( PLAYER_ATTACK != 0 )
@@ -5213,11 +5213,11 @@ void actPlayer(Entity* my)
 							{
 								if ( insectoidLevitating[PLAYER_NUM] )
 								{
-									entity->fskill[0] -= std::min(std::max(0.15, dist * PLAYERWALKSPEED), 2.f * PLAYERWALKSPEED);
+									entity->fskill[0] -= std::min(std::max(0.15, static_cast<real_t>(dist * PLAYERWALKSPEED)), static_cast<real_t>(2.0 * PLAYERWALKSPEED)); // move proportional to move speed
 								}
 								else
 								{
-									entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
+									entity->fskill[0] -= std::min(static_cast<real_t>(dist * PLAYERWALKSPEED), static_cast<real_t>(2.0 * PLAYERWALKSPEED)); // move proportional to move speed
 								}
 							}
 							else if ( PLAYER_ATTACK != 0 )

@@ -287,6 +287,7 @@ void closeNetworkInterfaces()
 -------------------------------------------------------------------------------*/
 
 view_t camera_vel;
+view_t &camera = cameras[0];
 
 void mainLogic(void)
 {
@@ -4522,7 +4523,7 @@ int main(int argc, char** argv)
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 										char tmpStr[32] = "";
 										strcpy(tmpStr, spriteProperties[i]); //reset
-										strcat(tmpStr, " Tiles to power in facing direction");
+										strcat(tmpStr, " Tiles to power in facing dir.");
 										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
 									}
 								}
