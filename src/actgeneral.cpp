@@ -735,8 +735,8 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 					std::string first_str = tagValue.substr(0, foundRange);
 					std::string second_str = tagValue.substr(foundRange + 1, tagValue.length() - foundRange);
 
-					param1.first = std::stoi(first_str.substr(0, foundRange));
-					param1.second = std::stoi(first_str.substr(foundRange + 1, first_str.length() - foundRange));
+					param1.first = std::stoi(first_str);
+					param1.second = std::stoi(second_str);
 					param1.second = std::max(param1.first, param1.second);
 					return (param1.first & 0xFF) + ((param1.second & 0xFF) << 8);
 				}

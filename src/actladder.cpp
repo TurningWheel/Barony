@@ -1035,7 +1035,10 @@ void actCustomPortal(Entity* my)
 	if ( !my->portalInit )
 	{
 		my->portalInit = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+		if ( my->portalCustomSpriteAnimationFrames > 0 )
+		{
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+		}
 	}
 
 	my->portalAmbience--;
