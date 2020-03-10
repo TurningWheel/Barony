@@ -4043,6 +4043,16 @@ void clientHandlePacket()
 	// game restart
 	if (!strncmp((char*)net_packet->data, "BARONY_GAME_START", 17))
 	{
+		if ( !intro )
+		{
+			// intro is true if starting from main menu, otherwise we're restarting the game.
+			// set the main menu camera to the player camera coordinates if restarting midgame.
+			menucam.x = cameras[clientnum].x;
+			menucam.y = cameras[clientnum].y;
+			menucam.z = cameras[clientnum].z;
+			menucam.ang = cameras[clientnum].ang;
+			menucam.vang = cameras[clientnum].vang;
+		}
 		intro = true;
 		client_disconnected[0] = true;
 		svFlags = SDLNet_Read32(&net_packet->data[17]);

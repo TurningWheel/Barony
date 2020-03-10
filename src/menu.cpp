@@ -11184,6 +11184,7 @@ void buttonStartSingleplayer(button_t* my)
 	fadeout = true;
 	if ( !intro )
 	{
+		// intro is true if starting from main menu, otherwise we're restarting the game.
 		pauseGame(2, false);
 	}
 }
@@ -11697,6 +11698,18 @@ void buttonStartServer(button_t* my)
 	buttonCloseSubwindow(my);
 
 	multiplayer = SERVER;
+
+	if ( !intro )
+	{
+		// intro is true if starting from main menu, otherwise we're restarting the game.
+		// set the main menu camera to the player camera coordinates if restarting midgame.
+		menucam.x = cameras[clientnum].x;
+		menucam.y = cameras[clientnum].y;
+		menucam.z = cameras[clientnum].z;
+		menucam.ang = cameras[clientnum].ang;
+		menucam.vang = cameras[clientnum].vang;
+	}
+
 	intro = true;
 	introstage = 3;
 	numplayers = 0;
