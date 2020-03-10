@@ -133,6 +133,7 @@ void actBeartrap(Entity* my)
 						stat->bleedInflictedBy = static_cast<Sint32>(parent->getUID());
 						//damage += trapperStat->PROFICIENCIES[PRO_LOCKPICKING] / 20;
 					}
+					int oldHP = stat->HP;
 					//messagePlayer(0, "dmg: %d", damage);
 					entity->modHP(-damage);
 					//// alert the monster! DOES NOT WORK DURING PARALYZE.
@@ -147,7 +148,7 @@ void actBeartrap(Entity* my)
 					// set obituary
 					entity->setObituary(language[1504]);
 
-					if ( stat->HP <= 0 )
+					if ( stat->HP <= 0 && oldHP > 0 )
 					{
 						if ( parent )
 						{
@@ -184,21 +185,24 @@ void actBeartrap(Entity* my)
 						int player = parent->skill[2];
 						if ( player >= 0 )
 						{
-							if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
+							if ( oldHP > 0 )
 							{
-								messagePlayer(player, language[2521]);
-							}
-							else
-							{
-								messagePlayer(player, language[2522]);
-							}
-							if ( rand() % 10 == 0 )
-							{
-								parent->increaseSkill(PRO_LOCKPICKING);
-							}
-							if ( rand() % 5 == 0 )
-							{
-								parent->increaseSkill(PRO_RANGED);
+								if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
+								{
+									messagePlayer(player, language[2521]);
+								}
+								else
+								{
+									messagePlayer(player, language[2522]);
+								}
+								if ( rand() % 10 == 0 )
+								{
+									parent->increaseSkill(PRO_LOCKPICKING);
+								}
+								if ( rand() % 5 == 0 )
+								{
+									parent->increaseSkill(PRO_RANGED);
+								}
 							}
 							// update enemy bar for attacker
 							if ( !strcmp(stat->name, "") )

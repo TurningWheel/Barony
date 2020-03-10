@@ -154,6 +154,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	gateStartHeight(fskill[0]),
 	gateVelZ(vel_z),
 	gateInverted(skill[5]),
+	gateDisableOpening(skill[6]),
 	leverStatus(skill[1]),
 	leverTimerTicks(skill[3]),
 	boulderTrapRefireAmount(skill[1]),
@@ -174,6 +175,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	doorMaxHealth(skill[9]),
 	doorStartAng(fskill[0]),
 	doorPreventLockpickExploit(skill[10]),
+	doorForceLockedUnlocked(skill[11]),
+	doorDisableLockpicks(skill[12]),
+	doorDisableOpening(skill[13]),
 	particleTimerDuration(skill[0]),
 	particleTimerEndAction(skill[1]),
 	particleTimerEndSprite(skill[3]),
@@ -202,6 +206,19 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	portalNotSecret(skill[3]),
 	portalVictoryType(skill[4]),
 	portalFireAnimation(skill[5]),
+	portalCustomLevelsToJump(skill[6]),
+	portalCustomRequiresPower(skill[7]),
+	portalCustomSprite(skill[8]),
+	portalCustomSpriteAnimationFrames(skill[9]),
+	portalCustomZOffset(skill[10]),
+	portalCustomLevelText1(skill[11]),
+	portalCustomLevelText2(skill[12]),
+	portalCustomLevelText3(skill[13]),
+	portalCustomLevelText4(skill[14]),
+	portalCustomLevelText5(skill[15]),
+	portalCustomLevelText6(skill[16]),
+	portalCustomLevelText7(skill[17]),
+	portalCustomLevelText8(skill[18]),
 	teleporterX(skill[0]),
 	teleporterY(skill[1]),
 	teleporterType(skill[3]),
@@ -219,11 +236,23 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	floorDecorationModel(skill[0]),
 	floorDecorationRotation(skill[1]),
 	floorDecorationHeightOffset(skill[3]),
+	floorDecorationXOffset(skill[4]),
+	floorDecorationYOffset(skill[5]),
+	floorDecorationInteractText1(skill[8]),
+	floorDecorationInteractText2(skill[9]),
+	floorDecorationInteractText3(skill[10]),
+	floorDecorationInteractText4(skill[11]),
+	floorDecorationInteractText5(skill[12]),
+	floorDecorationInteractText6(skill[13]),
+	floorDecorationInteractText7(skill[14]),
+	floorDecorationInteractText8(skill[15]),
 	furnitureType(skill[0]),
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),
 	furnitureHealth(skill[4]),
 	furnitureMaxHealth(skill[9]),
+	furnitureTableRandomItemChance(skill[10]),
+	furnitureTableSpawnChairs(skill[11]),
 	pistonCamDir(skill[0]),
 	pistonCamTimer(skill[1]),
 	pistonCamRotateSpeed(fskill[0]),
@@ -281,7 +310,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	textSourceColorRGB(skill[0]),
 	textSourceVariables4W(skill[1]),
 	textSourceDelay(skill[2]),
-	textSource3(skill[3]),
+	textSourceIsScript(skill[3]),
 	textSourceBegin(skill[4]),
 	signalActivateDelay(skill[1]),
 	signalTimerInterval(skill[2]),
@@ -292,7 +321,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	effectShapeshift(skill[53]),
 	entityShowOnMap(skill[59]),
 	thrownProjectilePower(skill[19]),
-	thrownProjectileCharge(skill[20])
+	thrownProjectileCharge(skill[20]),
+	playerStartDir(skill[1])
 {
 	int c;
 	// add the entity to the entity list
@@ -2988,7 +3018,7 @@ void Entity::handleEffects(Stat* myStats)
 		hungerTickRate *= 1.5;
 	}
 
-	bool processHunger = (svFlags & SV_FLAG_HUNGER); // check server flags if hunger is enabled.
+	bool processHunger = (svFlags & SV_FLAG_HUNGER) && !MFLAG_DISABLEHUNGER; // check server flags if hunger is enabled.
 	if ( player >= 0 )
 	{
 		if ( myStats->type == SKELETON || myStats->type == AUTOMATON )
@@ -3267,7 +3297,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 )
 		{
 			// oversatiation
-			if ( !(svFlags & SV_FLAG_HUNGER) )
+			if ( !(svFlags & SV_FLAG_HUNGER) || MFLAG_DISABLEHUNGER )
 			{
 				myStats->HUNGER = std::min(myStats->HUNGER, 1000); // reset hunger to safe level.
 			}
@@ -3334,7 +3364,7 @@ void Entity::handleEffects(Stat* myStats)
 			entity->vel_x = vel * cos(entity->yaw);
 			entity->vel_y = vel * sin(entity->yaw);
 			entity->vel_z = -.5;
-			if ( svFlags & SV_FLAG_HUNGER )
+			if ( (svFlags & SV_FLAG_HUNGER) )
 			{
 				if ( myStats->type != INSECTOID && myStats->type != AUTOMATON
 					&& myStats->type != SKELETON && effectShapeshift == NOTHING )
@@ -3454,7 +3484,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 	else if ( this->behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
 	{
-		if ( svFlags & SV_FLAG_HUNGER )
+		if ( (svFlags & SV_FLAG_HUNGER) && !MFLAG_DISABLEHUNGER )
 		{
 			this->char_energize++;
 			if ( this->char_energize > 0 && this->char_energize % 5 == 0 ) // check every 5 ticks.
@@ -5652,6 +5682,11 @@ bool Entity::isMobile()
 	{
 		return false;
 	}
+	
+	if ( entitystats->MISC_FLAGS[STAT_FLAG_NPC] != 0 && !strcmp(entitystats->name, "scriptNPC") )
+	{
+		return false;
+	}
 
 	return true;
 }
@@ -7160,6 +7195,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( skill[2] != clientnum )
 					{
+						if ( achievementRangedMode[skill[2]] && !playerFailedRangedOnlyConduct[skill[2]] )
+						{
+							messagePlayer(skill[2], language[3923]); // prevent attack.
+							return;
+						}
+						if ( achievementRangedMode[skill[2]] )
+						{
+							messagePlayer(skill[2], language[3924]); // notify no longer eligible for achievement but still atk.
+						}
 						if ( !playerFailedRangedOnlyConduct[skill[2]] )
 						{
 							playerFailedRangedOnlyConduct[skill[2]] = true;
@@ -7168,6 +7212,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( skill[2] == clientnum )
 					{
+						if ( achievementRangedMode[skill[2]] && conductGameChallenges[CONDUCT_RANGED_ONLY] )
+						{
+							messagePlayer(skill[2], language[3923]); // prevent attack.
+							return;
+						}
+						if ( achievementRangedMode[skill[2]] )
+						{
+							messagePlayer(skill[2], language[3924]); // notify no longer eligible for achievement but still atk.
+						}
 						conductGameChallenges[CONDUCT_RANGED_ONLY] = 0;
 					}
 				}
@@ -8905,12 +8958,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							strcpy((char*)net_packet->data, "UPHP");
-							SDLNet_Write32((Uint32)hitstats->HP, &net_packet->data[4]);
-							SDLNet_Write32((Uint32)myStats->type, &net_packet->data[8]);
+							strcpy((char*)net_packet->data, "SHAK");
+							net_packet->data[4] = 10; // turns into .1
+							net_packet->data[5] = 10;
 							net_packet->address.host = net_clients[playerhit - 1].host;
 							net_packet->address.port = net_clients[playerhit - 1].port;
-							net_packet->len = 12;
+							net_packet->len = 6;
 							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 						}
 					}
@@ -10626,6 +10679,29 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
+	if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
+	{
+		if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		{
+			return false;
+		}
+		else if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+		{
+			return true;
+		}
+	}
+	else if ( your->behavior == &actPlayer && behavior == &actMonster && myStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
+	{
+		if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		{
+			return false;
+		}
+		else if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+		{
+			return true;
+		}
+	}
+
 	if ( myStats->type == GYROBOT )
 	{
 		return false;
@@ -10992,6 +11068,30 @@ bool Entity::checkFriend(Entity* your)
 	{
 		return true;
 	}
+
+	if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
+	{
+		if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		{
+			return true;
+		}
+		else if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+		{
+			return false;
+		}
+	}
+	else if ( your->behavior == &actPlayer && behavior == &actMonster && myStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
+	{
+		if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		{
+			return true;
+		}
+		else if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+		{
+			return false;
+		}
+	}
+
 
 	if ( (myStats->type == SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0)
 		|| (yourStats->type == SHOPKEEPER && yourStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0) )
@@ -17284,6 +17384,8 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "sentinel")
 		|| strstr(monsterStats.name, "mage")
 		|| strstr(monsterStats.name, "inner")
+		|| strstr(monsterStats.name, "training")
+		|| strstr(monsterStats.name, "Training")
 		|| strstr(monsterStats.name, "Mysterious") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"

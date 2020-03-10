@@ -705,7 +705,17 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	// read map version number
 	fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
-	if ( strncmp(valid_data, "BARONY LMPV2.4", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV2.6", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.6 version of editor - player starts/doors/gates
+		editorVersion = 26;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.5", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.5 version of editor - scripting
+		editorVersion = 25;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.4", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// V2.4 version of editor - boulder trap properties
 		editorVersion = 24;
@@ -834,6 +844,8 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			case 22:
 			case 23:
 			case 24:
+			case 25:
+			case 26:
 				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
@@ -1010,12 +1022,36 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fread(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
 						break;
 					case 12:
-						fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+						if ( entity->sprite == 60 ) // chair
+						{
+							if ( editorVersion >= 25 )
+							{
+								fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+							}
+							else
+							{
+								// don't read data, set default.
+								setSpriteAttributes(entity, nullptr, nullptr);
+							}
+						}
+						else
+						{
+							fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+						}
 						break;
 					case 13:
 						fread(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
 						fread(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
 						fread(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
+						if ( editorVersion >= 25 )
+						{
+							fread(&entity->floorDecorationXOffset, sizeof(Sint32), 1, fp);
+							fread(&entity->floorDecorationYOffset, sizeof(Sint32), 1, fp);
+							for ( int i = 8; i < 60; ++i )
+							{
+								fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+							}
+						}
 						break;
 					case 14:
 						fread(&entity->soundSourceToPlay, sizeof(Sint32), 1, fp);
@@ -1038,7 +1074,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fread(&entity->textSourceColorRGB, sizeof(Sint32), 1, fp);
 						fread(&entity->textSourceVariables4W, sizeof(Sint32), 1, fp);
 						fread(&entity->textSourceDelay, sizeof(Sint32), 1, fp);
-						fread(&entity->textSource3, sizeof(Sint32), 1, fp);
+						fread(&entity->textSourceIsScript, sizeof(Sint32), 1, fp);
 						for ( int i = 4; i < 60; ++i )
 						{
 							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
@@ -1051,6 +1087,60 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fread(&entity->signalTimerInterval, sizeof(Sint32), 1, fp);
 						fread(&entity->signalTimerRepeatCount, sizeof(Sint32), 1, fp);
 						fread(&entity->signalTimerLatchInput, sizeof(Sint32), 1, fp);
+						break;
+					case 18:
+						fread(&entity->portalCustomSprite, sizeof(Sint32), 1, fp);
+						fread(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1, fp);
+						fread(&entity->portalCustomZOffset, sizeof(Sint32), 1, fp);
+						fread(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1, fp);
+						fread(&entity->portalNotSecret, sizeof(Sint32), 1, fp);
+						fread(&entity->portalCustomRequiresPower, sizeof(Sint32), 1, fp);
+						for ( int i = 11; i <= 18; ++i )
+						{
+							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+						}
+						break;
+					case 19:
+						if ( editorVersion >= 25 )
+						{
+							fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+							fread(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1, fp);
+							fread(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1, fp);
+						}
+						else
+						{
+							// don't read data, set default.
+							setSpriteAttributes(entity, nullptr, nullptr);
+						}
+						break;
+					case 20:
+						fread(&entity->skill[11], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[12], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[15], sizeof(Sint32), 1, fp);
+						for ( int i = 40; i <= 52; ++i )
+						{
+							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+						}
+						break;
+					case 21:
+						if ( editorVersion >= 26 )
+						{
+							fread(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1, fp);
+							fread(&entity->doorDisableLockpicks, sizeof(Sint32), 1, fp);
+							fread(&entity->doorDisableOpening, sizeof(Sint32), 1, fp);
+						}
+						break;
+					case 22:
+						if ( editorVersion >= 26 )
+						{
+							fread(&entity->gateDisableOpening, sizeof(Sint32), 1, fp);
+						}
+						break;
+					case 23:
+						if ( editorVersion >= 26 )
+						{
+							fread(&entity->playerStartDir, sizeof(Sint32), 1, fp);
+						}
 						break;
 					default:
 						break;
@@ -1090,13 +1180,19 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		{
 			free(lightmap);
 		}
+		if ( lightmapSmoothed )
+		{
+			free(lightmapSmoothed);
+		}
 
 		lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
+		lightmapSmoothed = (int*)malloc(sizeof(Sint32) * destmap->width * destmap->height);
 		if ( strncmp(map.name, "Hell", 4) )
 		{
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
 				lightmap[c] = 0;
+				lightmapSmoothed[c] = 0;
 			}
 		}
 		else
@@ -1104,6 +1200,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
 				lightmap[c] = 32;
+				lightmapSmoothed[c] = 32;
 			}
 		}
 
@@ -1250,7 +1347,7 @@ int saveMap(const char* filename2)
 			return 1;
 		}
 
-		fwrite("BARONY LMPV2.4", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
+		fwrite("BARONY LMPV2.6", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
 		fwrite(map.name, sizeof(char), 32, fp); // map filename
 		fwrite(map.author, sizeof(char), 32, fp); // map author
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
@@ -1371,6 +1468,12 @@ int saveMap(const char* filename2)
 					fwrite(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
 					fwrite(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
 					fwrite(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
+					fwrite(&entity->floorDecorationXOffset, sizeof(Sint32), 1, fp);
+					fwrite(&entity->floorDecorationYOffset, sizeof(Sint32), 1, fp);
+					for ( int i = 8; i < 60; ++i )
+					{
+						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+					}
 					break;
 				case 14:
 					fwrite(&entity->soundSourceToPlay, sizeof(Sint32), 1, fp);
@@ -1393,7 +1496,7 @@ int saveMap(const char* filename2)
 					fwrite(&entity->textSourceColorRGB, sizeof(Sint32), 1, fp);
 					fwrite(&entity->textSourceVariables4W, sizeof(Sint32), 1, fp);
 					fwrite(&entity->textSourceDelay, sizeof(Sint32), 1, fp);
-					fwrite(&entity->textSource3, sizeof(Sint32), 1, fp);
+					fwrite(&entity->textSourceIsScript, sizeof(Sint32), 1, fp);
 					for ( int i = 4; i < 60; ++i )
 					{
 						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
@@ -1406,6 +1509,43 @@ int saveMap(const char* filename2)
 					fwrite(&entity->signalTimerInterval, sizeof(Sint32), 1, fp);
 					fwrite(&entity->signalTimerRepeatCount, sizeof(Sint32), 1, fp);
 					fwrite(&entity->signalTimerLatchInput, sizeof(Sint32), 1, fp);
+					break;
+				case 18:
+					fwrite(&entity->portalCustomSprite, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalCustomZOffset, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalNotSecret, sizeof(Sint32), 1, fp);
+					fwrite(&entity->portalCustomRequiresPower, sizeof(Sint32), 1, fp);
+					for ( int i = 11; i <= 18; ++i )
+					{
+						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+					}
+					break;
+				case 19:
+					fwrite(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+					fwrite(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1, fp);
+					fwrite(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1, fp);
+					break;
+				case 20:
+					fwrite(&entity->skill[11], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[12], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[15], sizeof(Sint32), 1, fp);
+					for ( int i = 40; i <= 52; ++i )
+					{
+						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+					}
+					break;
+				case 21:
+					fwrite(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1, fp);
+					fwrite(&entity->doorDisableLockpicks, sizeof(Sint32), 1, fp);
+					fwrite(&entity->doorDisableOpening, sizeof(Sint32), 1, fp);
+					break;
+				case 22:
+					fwrite(&entity->gateDisableOpening, sizeof(Sint32), 1, fp);
+					break;
+				case 23:
+					fwrite(&entity->playerStartDir, sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;
@@ -1569,31 +1709,40 @@ std::vector<std::string> getLinesFromDataFile(std::string filename)
 int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* checkMapHash)
 {
 	std::string mapsDirectory; // store the full file path here.
-	if ( !secretlevel )
+	std::string line = "";
+	if ( loadCustomNextMap.compare("") != 0 )
 	{
-		mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
-		mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
+		line = "map: " + loadCustomNextMap;
+		loadCustomNextMap = "";
 	}
 	else
 	{
-		mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
-		mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
-	}
-	printlog("Maps directory: %s", mapsDirectory.c_str());
-	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
-	std::string line = levelsList.front();
-	int levelsCounted = 0;
-	if ( levelToLoad > 0 ) // if level == 0, then load up the first map.
-	{
-		for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end() && levelsCounted <= levelToLoad; ++i )
+		if ( !secretlevel )
 		{
-			// process i, iterate through all the map levels until currentlevel.
-			line = *i;
-			if ( line[0] == '\n' )
+			mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
+			mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
+		}
+		else
+		{
+			mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
+			mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
+		}
+		printlog("Maps directory: %s", mapsDirectory.c_str());
+		std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
+		line = levelsList.front();
+		int levelsCounted = 0;
+		if ( levelToLoad > 0 ) // if level == 0, then load up the first map.
+		{
+			for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end() && levelsCounted <= levelToLoad; ++i )
 			{
-				continue;
+				// process i, iterate through all the map levels until currentlevel.
+				line = *i;
+				if ( line[0] == '\n' )
+				{
+					continue;
+				}
+				++levelsCounted;
 			}
-			++levelsCounted;
 		}
 	}
 	std::size_t found = line.find(' ');
@@ -1628,8 +1777,9 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 			std::size_t secretChanceFound = mapName.find(" secret%: ");
 			std::size_t darkmapChanceFound = mapName.find(" darkmap%: ");
 			std::size_t minotaurChanceFound = mapName.find(" minotaur%: ");
+			std::size_t disableNormalExitFound = mapName.find(" noexit");
 			std::string parameterStr = "";
-			std::tuple<int, int, int> mapParameters = std::make_tuple(-1, -1, -1);
+			std::tuple<int, int, int, int> mapParameters = std::make_tuple(-1, -1, -1, 0);
 			if ( secretChanceFound != std::string::npos )
 			{
 				// found a percentage for secret levels to spawn.
@@ -1662,6 +1812,10 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 				{
 					std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) = -1;
 				}
+			}
+			if ( disableNormalExitFound != std::string::npos )
+			{
+				std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) = 1;
 			}
 			mapName = mapName.substr(0, mapName.find_first_of(" \0"));
 

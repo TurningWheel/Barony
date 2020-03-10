@@ -51,7 +51,7 @@ void initSpider(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
+			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				strcpy(myStats->name, "Shelob");
 				myStats->HP = 150;

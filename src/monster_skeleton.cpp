@@ -224,7 +224,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
-				if ( rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, ""))
+				if ( rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, "") || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 				{
 					// not boss if a follower, or name has already been set to something other than blank.
 					if ( strncmp(map.name, "Underworld", 10) )

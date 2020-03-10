@@ -163,6 +163,9 @@ static const int STAT_FLAG_ALLY_SUMMON2_LVLHP = 9;
 static const int STAT_FLAG_ALLY_SUMMON2_STRDEXCONINT = 10;
 static const int STAT_FLAG_ALLY_SUMMON2_PERCHR = 11;
 static const int STAT_FLAG_MYSTERIOUS_SHOPKEEP = 16;
+static const int STAT_FLAG_NO_DROP_ITEMS = 19;
+static const int STAT_FLAG_FORCE_ALLEGIANCE_TO_PLAYER = 20;
+static const int STAT_FLAG_DISABLE_MINIBOSS = 21;
 
 typedef enum
 {
@@ -220,6 +223,8 @@ public:
 	Sint32& monsterDemonHasBeenExorcised; // MISC_FLAGS[15]
 	Sint32& bleedInflictedBy; // MISC_FLAGS[17]
 	Sint32& burningInflictedBy; // MISC_FLAGS[18]
+	Sint32& monsterNoDropItems; // MISC_FLAGS[19]
+	Sint32& monsterForceAllegiance; // MISC_FLAGS[20]
 
 	// group think
 	Uint32 leader_uid;
@@ -254,9 +259,16 @@ public:
 	void clearStats();
 	void freePlayerEquipment();
 	Stat* copyStats();
+	void copyNPCStatsAndInventoryFrom(Stat& src);
 	void printStats();
 	Sint32 EDITOR_ITEMS[ITEM_SLOT_NUM];
 	int pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry);
+	enum MonsterForceAllegiance : int
+	{
+		MONSTER_FORCE_ALLEGIANCE_NONE = 0,
+		MONSTER_FORCE_PLAYER_ALLY,
+		MONSTER_FORCE_PLAYER_ENEMY
+	};
 };
 extern Stat* stats[MAXPLAYERS];
 

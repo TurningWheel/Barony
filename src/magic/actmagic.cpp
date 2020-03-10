@@ -2173,11 +2173,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actDoor)
 						{
-							if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
+							if ( MFLAG_DISABLEOPENING || hit.entity->doorDisableOpening == 1 )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-								messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3097]);
-								messagePlayerColor(parent->skill[2], color, language[3101]); // disabled opening spell.
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3097]);
+									messagePlayerColor(parent->skill[2], color, language[3101]); // disabled opening spell.
+								}
 							}
 							else
 							{
@@ -2207,11 +2210,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actGate )
 						{
-							if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
+							if ( MFLAG_DISABLEOPENING || hit.entity->gateDisableOpening == 1 )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-								messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3098]);
-								messagePlayerColor(parent->skill[2], color, language[3102]); // disabled opening spell.
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3098]);
+									messagePlayerColor(parent->skill[2], color, language[3102]); // disabled opening spell.
+								}
 							}
 							else
 							{
@@ -2242,11 +2248,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// Unlock the Chest
 							if ( hit.entity->chestLocked )
 							{
-								if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
+								if ( MFLAG_DISABLEOPENING )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3099]);
-									messagePlayerColor(parent->skill[2], color, language[3100]); // disabled opening spell.
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+										messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3099]);
+										messagePlayerColor(parent->skill[2], color, language[3100]); // disabled opening spell.
+									}
 								}
 								else
 								{

@@ -146,6 +146,9 @@ void consoleCommand(char* command_str)
 					case 2:
 						lastCreatedCharacterAppearance = atoi(&command_str[c + 1]);
 						break;
+					case 3:
+						lastCreatedCharacterRace = atoi(&command_str[c + 1]);
+						break;
 					default:
 						break;
 				}
@@ -1676,7 +1679,7 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/splitscreen", 12))
 	{
-		splitscreen = true;
+		splitscreen = !splitscreen;
 		client_disconnected[1] = false;
 		client_disconnected[2] = false;
 		client_disconnected[3] = false;
@@ -2293,6 +2296,52 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[2996]);
 			}
 		}
+		else if ( !strncmp(command_str, "/rangermode", 11) )
+		{
+			int player = -1;
+			if ( !strncmp(command_str, "/rangermode ", 12) )
+			{
+				player = std::min(std::max(0, atoi(&command_str[12])), MAXPLAYERS);
+			}
+			else
+			{
+				player = 0;
+			}
+
+			if ( multiplayer == CLIENT )
+			{
+				messagePlayer(clientnum, language[284]);
+				return;
+			}
+
+			achievementRangedMode[player] = !achievementRangedMode[player];
+			if ( multiplayer == SERVER )
+			{
+				if ( player != clientnum )
+				{
+					if ( achievementRangedMode[player] )
+					{
+						messagePlayer(clientnum, language[3926], player);
+					}
+					else
+					{
+						messagePlayer(clientnum, language[3925], player);
+					}
+				}
+			}
+			if ( achievementRangedMode[player] && !playerFailedRangedOnlyConduct[player] )
+			{
+				messagePlayer(player, language[3921]);
+			}
+			else if ( achievementRangedMode[player] && playerFailedRangedOnlyConduct[player] )
+			{
+				messagePlayer(player, language[3924]);
+			}
+			else if ( !achievementRangedMode[player] )
+			{
+				messagePlayer(player, language[3922]);
+			}
+		}
 		else if ( !strncmp(command_str, "/gimmepotions", 13) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -2614,6 +2663,10 @@ void consoleCommand(char* command_str)
 		else if ( !strncmp(command_str, "/disablemouserotationlimit", 26) )
 		{
 			disablemouserotationlimit = (disablemouserotationlimit == false);
+		}
+		else if ( !strncmp(command_str, "/lightupdate ", 13) )
+		{
+			globalLightSmoothingRate = atoi(&command_str[13]);
 		}
 		else if ( !strncmp(command_str, "/dumpnetworkdata", 16) )
 		{

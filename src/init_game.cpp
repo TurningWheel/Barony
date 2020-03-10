@@ -419,7 +419,6 @@ int initGame()
 	command_history.last = NULL;
 	for ( c = 0; c < 4; c++ )
 	{
-		invitems[c] = NULL;
 		invitemschest[c] = NULL;
 		openedChest[c] = NULL;
 	}

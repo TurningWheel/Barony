@@ -360,6 +360,11 @@ void drawStatus()
 		drawImageScaled(status_bmp, NULL, &pos);
 	}
 
+	interfaceMessageStatusBar.x = pos.x;
+	interfaceMessageStatusBar.y = pos.y;
+	interfaceMessageStatusBar.w = pos.w;
+	interfaceMessageStatusBar.h = pos.h;
+
 	// enemy health
 	enemyHPDamageBarHandler.displayCurrentHPBar();
 

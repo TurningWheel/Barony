@@ -51,6 +51,7 @@ bool usedClass[NUMCLASSES] = {0};
 bool usedRace[NUMRACES] = { 0 };
 Uint32 loadingsavegame = 0;
 bool achievementBrawlerMode = false;
+bool achievementRangedMode[MAXPLAYERS] = { 0 };
 int savegameCurrentFileIndex = 0;
 score_t steamLeaderboardScore;
 AchievementObserver achievementObserver;

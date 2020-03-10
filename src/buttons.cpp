@@ -377,6 +377,22 @@ void buttonNew(button_t* my)
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEOPENING], "[ ]");
 	}
+	if ( (map.flags[MAP_FLAG_GENBYTES4] >> 16) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[ ]");
+	}
+	if ( (map.flags[MAP_FLAG_GENBYTES4] >> 8) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[ ]");
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
@@ -489,6 +505,14 @@ void buttonNewConfirm(button_t* my)
 			{
 				map.flags[z] |= (1 << 24) & 0xFF;
 			}
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[x]", 3) )
+			{
+				map.flags[z] |= (1 << 16) & 0xFF;
+			}
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]", 3) )
+			{
+				map.flags[z] |= (1 << 8) & 0xFF;
+			}
 		}
 		else
 		{
@@ -533,10 +557,16 @@ void buttonNewConfirm(button_t* my)
 	{
 		free(lightmap);
 	}
+	if ( lightmapSmoothed != NULL )
+	{
+		free(lightmapSmoothed);
+	}
 	lightmap = (int*) malloc(sizeof(Sint32) * map.width * map.height);
+	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
 	for (c = 0; c < map.width * map.height; c++ )
 	{
 		lightmap[c] = 0;
+		lightmapSmoothed[c] = 0;
 	}
 	strcpy(message, "                             Created a new map.");
 	filename[0] = 0;
@@ -1211,6 +1241,22 @@ void buttonAttributes(button_t* my)
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEOPENING], "[ ]");
 	}
+	if ( (map.flags[MAP_FLAG_GENBYTES4] >> 16) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[ ]");
+	}
+	if ( (map.flags[MAP_FLAG_GENBYTES4] >> 8) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[ ]");
+	}
 
 	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
 	{
@@ -1370,9 +1416,18 @@ void buttonAttributesConfirm(button_t* my)
 	{
 		map.flags[MAP_FLAG_GENBYTES3] |= (1 << 0); // store in fourth leftmost byte.
 	}
+	map.flags[MAP_FLAG_GENBYTES4] = 0; // clear the flag 4 slot.
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEOPENING], "[x]", 3) )
 	{
 		map.flags[MAP_FLAG_GENBYTES4] |= (1 << 24); // store in first leftmost byte.
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_GENBYTES4] |= (1 << 16); // store in second leftmost byte.
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_GENBYTES4] |= (1 << 8); // store in third leftmost byte.
 	}
 
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
@@ -1412,10 +1467,16 @@ void buttonAttributesConfirm(button_t* my)
 	{
 		free(lightmap);
 	}
-	lightmap = (int*) malloc(sizeof(Sint32) * map.width * map.height);
-	for (c = 0; c < map.width * map.height; c++ )
+	if ( lightmapSmoothed != NULL )
+	{
+		free(lightmapSmoothed);
+	}
+	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
+	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
+	for ( c = 0; c < map.width * map.height; c++ )
 	{
 		lightmap[c] = 0;
+		lightmapSmoothed[c] = 0;
 	}
 
 	// transfer data from the new map to the old map and fill extra space with empty data
@@ -1709,331 +1770,519 @@ void buttonSpriteProperties(button_t* my)
 		spriteType = checkSpriteType(selectedEntity->sprite);
 		switch ( spriteType )
 		{
-		case 1: //monsters
-			tmpSpriteStats = selectedEntity->getStats();
-			if ( tmpSpriteStats != nullptr )
-			{
-				if ( exitFromItemWindow == true )
+			case 1: //monsters
+				tmpSpriteStats = selectedEntity->getStats();
+				if ( tmpSpriteStats != nullptr )
 				{
-					exitFromItemWindow = false;
-					// retreives any modified monster stats, to be restored when window is closed.
-
-					for ( int i = 0; i < sizeof(spriteProperties) / sizeof(spriteProperties[0]); i++ )
+					if ( exitFromItemWindow == true )
 					{
-						strcpy(spriteProperties[i], tmpSpriteProperties[i]);
+						exitFromItemWindow = false;
+						// retreives any modified monster stats, to be restored when window is closed.
+
+						for ( int i = 0; i < sizeof(spriteProperties) / sizeof(spriteProperties[0]); i++ )
+						{
+							strcpy(spriteProperties[i], tmpSpriteProperties[i]);
+						}
 					}
+					else
+					{
+						copyMonsterStatToPropertyStrings(tmpSpriteStats);
+					}
+					inputstr = spriteProperties[0];
+					initMonsterPropertiesWindow();
+				}
+				tmpSpriteStats = NULL;
+				break;
+			case 2: //chests
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->yaw));
+				snprintf(spriteProperties[1], 4, "%d", selectedEntity->skill[9]);
+				snprintf(spriteProperties[2], 4, "%d", selectedEntity->chestLocked);
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 3;
+				subx1 = xres / 2 - 160;
+				subx2 = xres / 2 + 160;
+				suby1 = yres / 2 - 105;
+				suby2 = yres / 2 + 105;
+				strcpy(subtext, "Chest Properties:");
+				break;
+			case 3: //items
+				itemSelect = 1;
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->skill[10])); //ID
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->skill[11])); //status
+				if ( (int)selectedEntity->skill[12] == 10 )
+				{
+					strcpy(spriteProperties[2], "00"); //bless random
 				}
 				else
 				{
-					copyMonsterStatToPropertyStrings(tmpSpriteStats);
+					snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->skill[12])); //bless
 				}
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->skill[13])); //count
+				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->skill[15])); //identified
+				snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity->skill[16])); //category if random
 				inputstr = spriteProperties[0];
-				initMonsterPropertiesWindow();
-			}
-			tmpSpriteStats = NULL;
-			break;
-		case 2: //chests
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->yaw));
-			snprintf(spriteProperties[1], 4, "%d", selectedEntity->skill[9]);
-			snprintf(spriteProperties[2], 4, "%d", selectedEntity->chestLocked);
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 3;
-			subx1 = xres / 2 - 160;
-			subx2 = xres / 2 + 160;
-			suby1 = yres / 2 - 105;
-			suby2 = yres / 2 + 105;
-			strcpy(subtext, "Chest Properties:");
-			break;
-		case 3: //items
-			itemSelect = 1;
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->skill[10])); //ID
-			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->skill[11])); //status
-			if ( (int)selectedEntity->skill[12] == 10 )
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 4;
+				slidery = 0;
+				subx1 = xres / 2 - 200;
+				subx2 = xres / 2 + 200;
+				suby1 = yres / 2 - 140;
+				suby2 = yres / 2 + 140;
+				strcpy(subtext, "Item Properties:");
+				break;
+			case 4:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->skill[0])); //Monster to Spawn
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->skill[1])); //Qty
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->skill[2])); //Time Between Spawns
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->skill[3])); //Amount of Spawns 
+				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->skill[4])); //Requires Power
+				snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity->skill[5])); //Chance to Stop Working
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 6;
+				subx1 = xres / 2 - 210;
+				subx2 = xres / 2 + 210;
+				suby1 = yres / 2 - 140;
+				suby2 = yres / 2 + 140;
+				strcpy(subtext, "Summoning Trap Properties:");
+				break;
+			case 5:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->yaw)); //Orientation
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->crystalNumElectricityNodes)); //Powered Distance
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->crystalTurnReverse)); //Rotation direction
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->crystalSpellToActivate)); //Spell to activate
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 7;
+				subx1 = xres / 2 - 210;
+				subx2 = xres / 2 + 210;
+				suby1 = yres / 2 - 120;
+				suby2 = yres / 2 + 120;
+				strcpy(subtext, "Power Crystal Properties:");
+				break;
+			case 6:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->leverTimerTicks));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 8;
+				subx1 = xres / 2 - 120;
+				subx2 = xres / 2 + 120;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Lever Timer Properties:");
+				break;
+			case 7:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireAmount));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireDelay));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->boulderTrapPreDelay));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 9;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
+				strcpy(subtext, "Boulder Trap Properties:");
+				break;
+			case 8:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->pedestalOrbType));
+				snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity->pedestalHasOrb));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->pedestalInvertedPower));
+				snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->pedestalInGround));
+				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->pedestalLockOrb));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 10;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 110;
+				suby2 = yres / 2 + 110;
+				strcpy(subtext, "Pedestal Properties:");
+				break;
+			case 9:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->teleporterX));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->teleporterY));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->teleporterType));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 11;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
+				strcpy(subtext, "Teleporter Properties:");
+				break;
+			case 10:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->ceilingTileModel));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 12;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Ceiling Tile Properties:");
+				break;
+			case 11:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->spellTrapType));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefire));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->spellTrapLatchPower));
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->spellTrapFloorTile));
+				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefireRate));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 13;
+				subx1 = xres / 2 - 200;
+				subx2 = xres / 2 + 200;
+				suby1 = yres / 2 - 110;
+				suby2 = yres / 2 + 110;
+				strcpy(subtext, "Spell Trap Properties:");
+				break;
+			case 12:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->furnitureDir));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 14;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Furniture Properties:");
+				break;
+			case 13:
 			{
-				strcpy(spriteProperties[2], "00"); //bless random
-			}
-			else
-			{
-				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->skill[12])); //bless
-			}
-			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->skill[13])); //count
-			snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->skill[15])); //identified
-			snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity->skill[16])); //category if random
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 4;
-			slidery = 0;
-			subx1 = xres / 2 - 200;
-			subx2 = xres / 2 + 200;
-			suby1 = yres / 2 - 140;
-			suby2 = yres / 2 + 140;
-			strcpy(subtext, "Item Properties:");
-			break;
-		case 4:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->skill[0])); //Monster to Spawn
-			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->skill[1])); //Qty
-			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->skill[2])); //Time Between Spawns
-			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->skill[3])); //Amount of Spawns 
-			snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->skill[4])); //Requires Power
-			snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity->skill[5])); //Chance to Stop Working
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 6;
-			subx1 = xres / 2 - 210;
-			subx2 = xres / 2 + 210;
-			suby1 = yres / 2 - 140;
-			suby2 = yres / 2 + 140;
-			strcpy(subtext, "Summoning Trap Properties:");
-			break;
-		case 5:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->yaw)); //Orientation
-			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->crystalNumElectricityNodes)); //Powered Distance
-			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->crystalTurnReverse)); //Rotation direction
-			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->crystalSpellToActivate)); //Spell to activate
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 7;
-			subx1 = xres / 2 - 210;
-			subx2 = xres / 2 + 210;
-			suby1 = yres / 2 - 120;
-			suby2 = yres / 2 + 120;
-			strcpy(subtext, "Power Crystal Properties:");
-			break;
-		case 6:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->leverTimerTicks));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 8;
-			subx1 = xres / 2 - 120;
-			subx2 = xres / 2 + 120;
-			suby1 = yres / 2 - 60;
-			suby2 = yres / 2 + 60;
-			strcpy(subtext, "Lever Timer Properties:");
-			break;
-		case 7:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireAmount));
-			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireDelay));
-			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->boulderTrapPreDelay)); 
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 9;
-			subx1 = xres / 2 - 170;
-			subx2 = xres / 2 + 170;
-			suby1 = yres / 2 - 100;
-			suby2 = yres / 2 + 100;
-			strcpy(subtext, "Boulder Trap Properties:");
-			break;
-		case 8:
-			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->pedestalOrbType));
-			snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity->pedestalHasOrb));
-			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->pedestalInvertedPower));
-			snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->pedestalInGround));
-			snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->pedestalLockOrb));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 10;
-			subx1 = xres / 2 - 170;
-			subx2 = xres / 2 + 170;
-			suby1 = yres / 2 - 110;
-			suby2 = yres / 2 + 110;
-			strcpy(subtext, "Pedestal Properties:");
-			break;
-		case 9:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->teleporterX));
-			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->teleporterY));
-			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->teleporterType));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 11;
-			subx1 = xres / 2 - 170;
-			subx2 = xres / 2 + 170;
-			suby1 = yres / 2 - 100;
-			suby2 = yres / 2 + 100;
-			strcpy(subtext, "Teleporter Properties:");
-			break;
-		case 10:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->ceilingTileModel));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 12;
-			subx1 = xres / 2 - 170;
-			subx2 = xres / 2 + 170;
-			suby1 = yres / 2 - 60;
-			suby2 = yres / 2 + 60;
-			strcpy(subtext, "Ceiling Tile Properties:");
-			break;
-		case 11:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->spellTrapType));
-			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefire));
-			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->spellTrapLatchPower));
-			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->spellTrapFloorTile));
-			snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefireRate));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 13;
-			subx1 = xres / 2 - 200;
-			subx2 = xres / 2 + 200;
-			suby1 = yres / 2 - 110;
-			suby2 = yres / 2 + 110;
-			strcpy(subtext, "Spell Trap Properties:");
-			break;
-		case 12:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->furnitureDir));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 14;
-			subx1 = xres / 2 - 170;
-			subx2 = xres / 2 + 170;
-			suby1 = yres / 2 - 60;
-			suby2 = yres / 2 + 60;
-			strcpy(subtext, "Furniture Properties:");
-			break;
-		case 13:
-			snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity->floorDecorationModel));
-			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->floorDecorationRotation));
-			snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->floorDecorationHeightOffset));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 15;
-			subx1 = xres / 2 - 200;
-			subx2 = xres / 2 + 200;
-			suby1 = yres / 2 - 85;
-			suby2 = yres / 2 + 85;
-			strcpy(subtext, "Floor Decoration Model Properties:");
-			break;
-		case 14:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->soundSourceToPlay));
-			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->soundSourceVolume));
-			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->soundSourceLatchOn));
-			snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->soundSourceDelay));
-			snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->soundSourceOrigin));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 18;
-			subx1 = xres / 2 - 230;
-			subx2 = xres / 2 + 230;
-			suby1 = yres / 2 - 112;
-			suby2 = yres / 2 + 112;
-			strcpy(subtext, "Sound Source Properties:");
-			break;
-		case 15:
-			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->lightSourceAlwaysOn));
-			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->lightSourceBrightness));
-			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->lightSourceInvertPower));
-			snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->lightSourceLatchOn));
-			snprintf(spriteProperties[4], 3, "%d", static_cast<int>(selectedEntity->lightSourceRadius));
-			snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity->lightSourceFlicker));
-			snprintf(spriteProperties[6], 5, "%d", static_cast<int>(selectedEntity->lightSourceDelay));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 19;
-			subx1 = xres / 2 - 200;
-			subx2 = xres / 2 + 200;
-			suby1 = yres / 2 - 160;
-			suby2 = yres / 2 + 160;
-			strcpy(subtext, "Light Source Properties:");
-			break;
-		case 16:
-		{
-			Uint32 r = (Uint32)(selectedEntity->textSourceColorRGB >> 16) & 0xFF;
-			Uint32 g = (Uint32)(selectedEntity->textSourceColorRGB >> 8) & 0xFF;
-			Uint32 b = (Uint32)(selectedEntity->textSourceColorRGB >> 0) & 0xFF;
-			snprintf(spriteProperties[0], 4, "%d", r);
-			snprintf(spriteProperties[1], 4, "%d", g);
-			snprintf(spriteProperties[2], 4, "%d", b);
-			char buf[256] = "";
-			int totalChars = 0;
-			for ( int i = 4; i < 60; ++i )
-			{
-				if ( selectedEntity->skill[i] != 0 )
+				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity->floorDecorationModel));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->floorDecorationRotation));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->floorDecorationHeightOffset));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->floorDecorationXOffset));
+				snprintf(spriteProperties[4], 5, "%d", static_cast<int>(selectedEntity->floorDecorationYOffset));
+				char buf[256] = "";
+				int totalChars = 0;
+				for ( int i = 8; i < 60; ++i )
 				{
-					for ( int c = 0; c < 4; ++c )
+					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
 					{
-						if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
-							&& i != 59 && selectedEntity->skill[i + 1] != 0 )
+						for ( int c = 0; c < 4; ++c )
 						{
-							// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
-						}
-						else
-						{
-							buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
-							++totalChars;
+							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 59 && selectedEntity->skill[i + 1] != 0 )
+							{
+								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
+							}
+							else
+							{
+								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								++totalChars;
+							}
 						}
 					}
 				}
+				if ( buf[totalChars] != '\0' )
+				{
+					buf[totalChars] = '\0';
+				}
+				strncpy(spriteProperties[5], buf, 48);
+				strncpy(spriteProperties[6], buf + 48, 48);
+				strncpy(spriteProperties[7], buf + 96, 48);
+				strncpy(spriteProperties[8], buf + 144, 48);
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 15;
+				subx1 = xres / 2 - 200;
+				subx2 = xres / 2 + 200;
+				suby1 = yres / 2 - 180;
+				suby2 = yres / 2 + 180;
+				strcpy(subtext, "Decoration Model Properties:");
+				break;
 			}
-			if ( buf[totalChars] != '\0' )
+			case 14:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->soundSourceToPlay));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->soundSourceVolume));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->soundSourceLatchOn));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->soundSourceDelay));
+				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->soundSourceOrigin));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 18;
+				subx1 = xres / 2 - 230;
+				subx2 = xres / 2 + 230;
+				suby1 = yres / 2 - 112;
+				suby2 = yres / 2 + 112;
+				strcpy(subtext, "Sound Source Properties:");
+				break;
+			case 15:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->lightSourceAlwaysOn));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->lightSourceBrightness));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->lightSourceInvertPower));
+				snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->lightSourceLatchOn));
+				snprintf(spriteProperties[4], 3, "%d", static_cast<int>(selectedEntity->lightSourceRadius));
+				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity->lightSourceFlicker));
+				snprintf(spriteProperties[6], 5, "%d", static_cast<int>(selectedEntity->lightSourceDelay));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 19;
+				subx1 = xres / 2 - 200;
+				subx2 = xres / 2 + 200;
+				suby1 = yres / 2 - 160;
+				suby2 = yres / 2 + 160;
+				strcpy(subtext, "Light Source Properties:");
+				break;
+			case 16:
 			{
-				buf[totalChars] = '\0';
+				Uint32 r = (Uint32)(selectedEntity->textSourceColorRGB >> 16) & 0xFF;
+				Uint32 g = (Uint32)(selectedEntity->textSourceColorRGB >> 8) & 0xFF;
+				Uint32 b = (Uint32)(selectedEntity->textSourceColorRGB >> 0) & 0xFF;
+				snprintf(spriteProperties[0], 4, "%d", r);
+				snprintf(spriteProperties[1], 4, "%d", g);
+				snprintf(spriteProperties[2], 4, "%d", b);
+				char buf[256] = "";
+				int totalChars = 0;
+				for ( int i = 4; i < 60; ++i )
+				{
+					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+					{
+						for ( int c = 0; c < 4; ++c )
+						{
+							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 59 && selectedEntity->skill[i + 1] != 0 )
+							{
+								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
+							}
+							else
+							{
+								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								++totalChars;
+							}
+						}
+					}
+				}
+				if ( buf[totalChars] != '\0' )
+				{
+					buf[totalChars] = '\0';
+				}
+				strncpy(spriteProperties[3], buf, 48);
+				strncpy(spriteProperties[4], buf + 48, 48);
+				strncpy(spriteProperties[5], buf + 96, 48);
+				strncpy(spriteProperties[6], buf + 144, 48);
+				strncpy(spriteProperties[7], buf + 192, 48);
+				snprintf(spriteProperties[8], 5, "%d", static_cast<int>(selectedEntity->textSourceDelay));
+				snprintf(spriteProperties[9], 2, "%d", static_cast<int>((selectedEntity->textSourceVariables4W >> 8) & 0xFF));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 20;
+				subx1 = xres / 2 - 200;
+				subx2 = xres / 2 + 200;
+				suby1 = yres / 2 - 140;
+				suby2 = yres / 2 + 140;
+				strcpy(subtext, "Text Source Properties:");
+				break;
 			}
-			strncpy(spriteProperties[3], buf, 48);
-			strncpy(spriteProperties[4], buf + 48, 48);
-			strncpy(spriteProperties[5], buf + 96, 48);
-			strncpy(spriteProperties[6], buf + 144, 48);
-			strncpy(spriteProperties[7], buf + 192, 48);
-			snprintf(spriteProperties[8], 5, "%d", static_cast<int>(selectedEntity->textSourceDelay));
-			snprintf(spriteProperties[9], 2, "%d", static_cast<int>((selectedEntity->textSourceVariables4W >> 8) & 0xFF));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 20;
-			subx1 = xres / 2 - 200;
-			subx2 = xres / 2 + 200;
-			suby1 = yres / 2 - 140;
-			suby2 = yres / 2 + 140;
-			strcpy(subtext, "Text Source Properties:");
-			break;
-		}
-		case 17:
-			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->signalInputDirection));
-			snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity->signalActivateDelay));
-			snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->signalTimerInterval));
-			snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->signalTimerRepeatCount));
-			snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->signalTimerLatchInput));
-			inputstr = spriteProperties[0];
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 21;
-			subx1 = xres / 2 - 220;
-			subx2 = xres / 2 + 220;
-			suby1 = yres / 2 - 120;
-			suby2 = yres / 2 + 120;
-			strcpy(subtext, "Signal Timer Properties:");
-			break;
-		default:
-			strcpy(message, "No properties available for current sprite.");
-			messagetime = 60;
+			case 17:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->signalInputDirection));
+				snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity->signalActivateDelay));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->signalTimerInterval));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->signalTimerRepeatCount));
+				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->signalTimerLatchInput));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 21;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
+				suby1 = yres / 2 - 120;
+				suby2 = yres / 2 + 120;
+				strcpy(subtext, "Signal Timer Properties:");
+				break;
+			case 18: // custom portal
+			{
+				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity->portalCustomSprite));
+				snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity->portalCustomSpriteAnimationFrames));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->portalCustomZOffset));
+				snprintf(spriteProperties[3], 3, "%d", static_cast<int>(selectedEntity->portalCustomLevelsToJump));
+				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity->portalCustomRequiresPower));
+				snprintf(spriteProperties[6], 2, "%d", static_cast<int>((selectedEntity->portalNotSecret ? 0 : 1)));
+
+				char buf[64] = "";
+				int totalChars = 0;
+				for ( int i = 11; i <= 18; ++i )
+				{
+					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+					{
+						for ( int c = 0; c < 4; ++c )
+						{
+							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 18 && selectedEntity->skill[i + 1] != 0 )
+							{
+								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
+							}
+							else
+							{
+								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								++totalChars;
+							}
+						}
+					}
+				}
+				if ( buf[totalChars] != '\0' )
+				{
+					buf[totalChars] = '\0';
+				}
+				strncpy(spriteProperties[4], buf, 32);
+
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 22;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
+				suby1 = yres / 2 - 140;
+				suby2 = yres / 2 + 140;
+				strcpy(subtext, "Custom Exit Properties:");
+				break;
+			}
+			case 19: // tables
+				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity->furnitureDir));
+				snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity->furnitureTableSpawnChairs));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->furnitureTableRandomItemChance));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 23;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
+				strcpy(subtext, "Table Properties:");
+				break;
+			case 20: // readablebook
+			{
+				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity->skill[11])); // status
+				if ( (int)selectedEntity->skill[12] == 10 )
+				{
+					strcpy(spriteProperties[1], "00"); //bless random
+				}
+				else
+				{
+					snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity->skill[12])); //bless
+				}
+				snprintf(spriteProperties[2], 3, "%d", static_cast<int>(selectedEntity->skill[15])); // identified
+				char buf[64] = "";
+				int totalChars = 0;
+				for ( int i = 40; i <= 52; ++i )
+				{
+					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+					{
+						for ( int c = 0; c < 4; ++c )
+						{
+							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 52 && selectedEntity->skill[i + 1] != 0 )
+							{
+								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
+							}
+							else
+							{
+								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								++totalChars;
+							}
+						}
+					}
+				}
+				if ( buf[totalChars] != '\0' )
+				{
+					buf[totalChars] = '\0';
+				}
+				strncpy(spriteProperties[3], buf, 32);
+
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 24;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
+				suby1 = yres / 2 - 110;
+				suby2 = yres / 2 + 110;
+				strcpy(subtext, "Readable Book Properties:");
+			}
+				break;
+			case 21:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->doorForceLockedUnlocked));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->doorDisableLockpicks));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->doorDisableOpening));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 26;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
+				strcpy(subtext, "Door Properties:");
+				break;
+			case 22:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->gateDisableOpening));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 27;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Gate Properties:");
+				break;
+			case 23: // player spawn
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->playerStartDir));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 28;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Player Spawn Properties:");
+				break;
+			default:
+				strcpy(message, "No properties available for current sprite.");
+				messagetime = 60;
 			break;
 		}
 
@@ -2571,7 +2820,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 	if ( selectedEntity != NULL )
 	{
 		int spriteType = checkSpriteType(selectedEntity->sprite);
-		switch (spriteType)
+		switch ( spriteType )
 		{
 			case 1: //monsters
 				tmpSpriteStats = selectedEntity->getStats();
@@ -2583,33 +2832,33 @@ void buttonSpritePropertiesConfirm(button_t* my)
 						{
 							strcpy(spriteProperties[0], "1");
 						}
-						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES] = (Sint32)atoi(spriteProperties[0]);
-						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 1] = (Sint32)atoi(spriteProperties[1]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES] = (Sint32)atoi(spriteProperties[0]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 1] = (Sint32)atoi(spriteProperties[1]);
 						if ( strcmp(spriteProperties[2], "00") == 0 )
 						{
 							selectedEntity->skill[12] = 10; //bless random
 						}
 						else
 						{
-							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 2] = (Sint32)atoi(spriteProperties[2]); //bless
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 2] = (Sint32)atoi(spriteProperties[2]); //bless
 						}
 						if ( strcmp(spriteProperties[3], "0") == 0 )
 						{
-							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 2] = 1; //reset quantity to 1
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 2] = 1; //reset quantity to 1
 						}
 						if ( strcmp(spriteProperties[3], "0") == 0 )
 						{
-							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 3] = 1; //reset quantity to 1
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 3] = 1; //reset quantity to 1
 						}
 						else
 						{
-							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 3] = (Sint32)atoi(spriteProperties[3]); //quantity
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 3] = (Sint32)atoi(spriteProperties[3]); //quantity
 						}
-						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 4] = (Sint32)atoi(spriteProperties[4]);
-						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 5] = (Sint32)atoi(spriteProperties[5]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 4] = (Sint32)atoi(spriteProperties[4]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 5] = (Sint32)atoi(spriteProperties[5]);
 						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 6] = (Sint32)atoi(spriteProperties[6]);
 						newwindow = 2;
-						
+
 						/*button = newButton();
 						strcpy(button->label, "Cancel");
 						button->x = subx2 - 64;
@@ -2740,6 +2989,14 @@ void buttonSpritePropertiesConfirm(button_t* my)
 							tmpSpriteStats->RANDOM_CHR = 0;
 						}
 						tmpSpriteStats->MISC_FLAGS[STAT_FLAG_NPC] = (Sint32)atoi(spriteProperties[25]);
+						if ( !strcmp(spriteProperties[31], "disable") )
+						{
+							tmpSpriteStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+						}
+						else
+						{
+							tmpSpriteStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 0;
+						}
 					}
 				}
 				break;
@@ -2869,15 +3126,65 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->spellTrapRefire = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->spellTrapLatchPower = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity->spellTrapFloorTile = (Sint32)atoi(spriteProperties[3]);
-				selectedEntity->spellTrapRefireRate= (Sint32)atoi(spriteProperties[4]);
+				selectedEntity->spellTrapRefireRate = (Sint32)atoi(spriteProperties[4]);
 				break;
 			case 12: //furniture
 				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
 				break;
 			case 13: //floor decoration
+			{
 				selectedEntity->floorDecorationModel = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity->floorDecorationRotation = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->floorDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->floorDecorationXOffset = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->floorDecorationYOffset = (Sint32)atoi(spriteProperties[4]);
+
+				int totalChars = 0;
+				char checkChr = 'a';
+				const int kMaxCharacters = 192; // 4x48 char fields.
+				for ( int i = 8; i < 60 && totalChars < kMaxCharacters; ++i )
+				{
+					selectedEntity->skill[i] = 0;
+				}
+				for ( int i = 8; i < 60 && totalChars < kMaxCharacters; ++i )
+				{
+					if ( i == 28 ) // circuit_status
+					{
+						continue;
+					}
+					for ( int c = 0; c < 4; ++c )
+					{
+						if ( totalChars >= 144 )
+						{
+							selectedEntity->skill[i] |= (spriteProperties[8][totalChars - 144]) << (c * 8);
+							checkChr = spriteProperties[8][totalChars - 144];
+						}
+						else if ( totalChars >= 96 )
+						{
+							selectedEntity->skill[i] |= (spriteProperties[7][totalChars - 96]) << (c * 8);
+							checkChr = spriteProperties[7][totalChars - 96];
+						}
+						else if ( totalChars >= 48 )
+						{
+							selectedEntity->skill[i] |= (spriteProperties[6][totalChars - 48]) << (c * 8);
+							checkChr = spriteProperties[6][totalChars - 48];
+						}
+						else
+						{
+							selectedEntity->skill[i] |= (spriteProperties[5][totalChars]) << (c * 8);
+							checkChr = spriteProperties[5][totalChars];
+						}
+						if ( checkChr == '\0' )
+						{
+							totalChars += (48 - (totalChars % 48));
+						}
+						else
+						{
+							++totalChars;
+						}
+					}
+				}
+			}
 				break;
 			case 14: //sound source
 				selectedEntity->soundSourceToPlay = (Sint32)atoi(spriteProperties[0]);
@@ -2909,9 +3216,17 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->textSourceVariables4W |= ((Sint32)atoi(spriteProperties[9]) & 0xFF) << 8;
 				int totalChars = 0;
 				char checkChr = 'a';
-				for ( int i = 4; i < 60 && totalChars < 224; ++i )
+				const int kMaxCharacters = 220; //55 skills, starting at 4 ending at 59, skipping 28. storing 4 chars each.
+				for ( int i = 4; i < 60 && totalChars < kMaxCharacters; ++i )
 				{
 					selectedEntity->skill[i] = 0;
+				}
+				for ( int i = 4; i < 60 && totalChars < kMaxCharacters; ++i )
+				{
+					if ( i == 28 ) // circuit_status
+					{
+						continue;
+					}
 					for ( int c = 0; c < 4; ++c )
 					{
 						if ( totalChars >= 192 )
@@ -2957,6 +3272,88 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->signalTimerInterval = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity->signalTimerRepeatCount = (Sint32)atoi(spriteProperties[3]);
 				selectedEntity->signalTimerLatchInput = (Sint32)atoi(spriteProperties[4]);
+				break;
+			case 18: // custom portal
+			{
+				selectedEntity->portalCustomSprite = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->portalCustomSpriteAnimationFrames = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->portalCustomZOffset = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->portalCustomLevelsToJump = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->portalCustomRequiresPower = (Sint32)atoi(spriteProperties[5]);
+				int isSecret = (Sint32)atoi(spriteProperties[6]);
+				selectedEntity->portalNotSecret = isSecret ? 0 : 1;
+
+				int totalChars = 0;
+				char checkChr = 'a';
+				const int kMaxCharacters = 32;
+				for ( int i = 11; i <= 18 && totalChars < kMaxCharacters; ++i )
+				{
+					selectedEntity->skill[i] = 0;
+				}
+				for ( int i = 11; i <= 18 && totalChars < kMaxCharacters; ++i )
+				{
+					if ( i == 28 ) // circuit_status
+					{
+						continue;
+					}
+					for ( int c = 0; c < 4; ++c )
+					{
+						selectedEntity->skill[i] |= (spriteProperties[4][totalChars]) << (c * 8);
+						checkChr = spriteProperties[4][totalChars];
+						++totalChars;
+					}
+				}
+			}
+				break;
+			case 19: // tables
+				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->furnitureTableSpawnChairs = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->furnitureTableRandomItemChance = (Sint32)atoi(spriteProperties[2]);
+				break;
+			case 20: // readablebook
+			{
+				selectedEntity->skill[11] = (Sint32)atoi(spriteProperties[0]); // status
+				if ( strcmp(spriteProperties[1], "00") == 0 )
+				{
+					selectedEntity->skill[12] = 10; //bless random
+				}
+				else
+				{
+					selectedEntity->skill[12] = (Sint32)atoi(spriteProperties[1]); //bless
+				}
+				selectedEntity->skill[15] = (Sint32)atoi(spriteProperties[2]); // identified
+				int totalChars = 0;
+				char checkChr = 'a';
+				const int kMaxCharacters = 48;
+				for ( int i = 40; i <= 52 && totalChars < kMaxCharacters; ++i )
+				{
+					selectedEntity->skill[i] = 0;
+				}
+				for ( int i = 40; i <= 52 && totalChars < kMaxCharacters; ++i )
+				{
+					if ( i == 28 ) // circuit_status
+					{
+						continue;
+					}
+					for ( int c = 0; c < 4; ++c )
+					{
+						selectedEntity->skill[i] |= (spriteProperties[3][totalChars]) << (c * 8);
+						checkChr = spriteProperties[3][totalChars];
+						++totalChars;
+					}
+				}
+			}
+				break;
+			case 21: // doors
+				selectedEntity->doorForceLockedUnlocked = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->doorDisableLockpicks = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->doorDisableOpening = (Sint32)atoi(spriteProperties[2]);
+				break;
+			case 22: // gates
+				selectedEntity->gateDisableOpening = (Sint32)atoi(spriteProperties[0]);
+				break;
+			case 23: // player spawn
+				selectedEntity->playerStartDir = (Sint32)atoi(spriteProperties[0]);
 				break;
 			default:
 				break;
@@ -3296,6 +3693,14 @@ void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats)
 		snprintf(spriteProperties[23], 4, "%d", tmpSpriteStats->RANDOM_PER + tmpSpriteStats->PER);
 		snprintf(spriteProperties[24], 4, "%d", tmpSpriteStats->RANDOM_CHR + tmpSpriteStats->CHR);
 		snprintf(spriteProperties[25], 4, "%d", tmpSpriteStats->MISC_FLAGS[STAT_FLAG_NPC]);
+		if ( tmpSpriteStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] == 0 )
+		{
+			strcpy(spriteProperties[31], "");
+		}
+		else
+		{
+			strcpy(spriteProperties[31], "disable");
+		}
 	}
 	return;
 }

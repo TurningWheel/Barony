@@ -45,8 +45,7 @@ SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
 int proficienciesPage = 0;
-Item* invitems[4];
-Item* invitemschest[4];
+Item* invitemschest[kNumChestItemsToDisplay];
 int inventorycategory = 7; // inventory window defaults to wildcard
 int itemscroll = 0;
 view_t camera_charsheet;
@@ -183,6 +182,8 @@ FollowerRadialMenu FollowerMenu;
 GenericGUIMenu GenericGUI;
 SDL_Rect interfaceSkillsSheet;
 SDL_Rect interfacePartySheet;
+SDL_Rect interfaceCharacterSheet;
+SDL_Rect interfaceMessageStatusBar;
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
@@ -1250,7 +1251,7 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/usemodelcache\n");
 	}
-	fprintf(fp, "/lastcharacter %d %d %d\n", lastCreatedCharacterSex, lastCreatedCharacterClass, lastCreatedCharacterAppearance);
+	fprintf(fp, "/lastcharacter %d %d %d %d\n", lastCreatedCharacterSex, lastCreatedCharacterClass, lastCreatedCharacterAppearance, lastCreatedCharacterRace);
 	fprintf(fp, "/gamepad_deadzone %d\n", gamepad_deadzone);
 	fprintf(fp, "/gamepad_trigger_deadzone %d\n", gamepad_trigger_deadzone);
 	fprintf(fp, "/gamepad_leftx_sensitivity %d\n", gamepad_leftx_sensitivity);
@@ -5873,11 +5874,11 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			{
 				if ( rand() % 4 == 0 )
 				{
-					playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+					playSoundEntity(players[player]->entity, 35 + rand() % 3, 64);
 				}
 				else
 				{
-					playSoundEntity(players[clientnum]->entity, 462 + rand() % 2, 64);
+					playSoundEntity(players[player]->entity, 462 + rand() % 2, 64);
 				}
 			}
 		}

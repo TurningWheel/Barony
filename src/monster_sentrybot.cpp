@@ -405,6 +405,10 @@ void sentryBotDie(Entity* my)
 			type = TOOL_SPELLBOT;
 		}
 		bool dropBrokenShell = true;
+		if ( myStats && myStats->monsterNoDropItems == 1 && !my->monsterAllyGetPlayerLeader() )
+		{
+			dropBrokenShell = false;
+		}
 		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 90 )
 		{
 			dropBrokenShell = true;
@@ -1043,6 +1047,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			Entity* ent = (Entity*)searchNode->element;
 			if ( !ent || ent == my )
+			{
+				continue;
+			}
+			if ( ent->skill[28] > 0 ) // mechanism
 			{
 				continue;
 			}
@@ -1692,6 +1700,10 @@ void dummyBotDie(Entity* my)
 	{
 		Stat* myStats = my->getStats();
 		bool dropBrokenShell = true;
+		if ( myStats && myStats->monsterNoDropItems == 1 && !my->monsterAllyGetPlayerLeader() )
+		{
+			dropBrokenShell = false;
+		}
 		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 80 )
 		{
 			dropBrokenShell = true;

@@ -570,6 +570,8 @@ void Entity::actChest()
 					newItem(POTION_EMPTY, SERVICABLE, 0, 0 + rand() % 3, 0, true, inventory);
 				}
 				break;
+			case 8:
+				break;
 			default:
 				//Default case. Should never be reached.
 				newItem(static_cast<ItemType>(0), BROKEN, 0, 1, rand(), false, inventory);
@@ -907,6 +909,13 @@ void Entity::closeChest()
 		}
 		else
 		{
+			if ( chestOpener == clientnum )
+			{
+				for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
+				{
+					invitemschest[c] = nullptr;
+				}
+			}
 			chestitemscroll = 0;
 			//Reset chest-gamepad related stuff here.
 			selectedChestSlot = -1;
@@ -920,6 +929,13 @@ void Entity::closeChestServer()
 	{
 		chestStatus = 0;
 		openedChest[chestOpener] = NULL;
+		if ( chestOpener == clientnum )
+		{
+			for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
+			{
+				invitemschest[c] = nullptr;
+			}
+		}
 	}
 }
 
@@ -1258,6 +1274,11 @@ void closeChestClientside()
 	openedChest[clientnum] = NULL;
 
 	chestitemscroll = 0;
+
+	for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
+	{
+		invitemschest[c] = nullptr;
+	}
 
 	//Reset chest-gamepad related stuff here.
 	selectedChestSlot = -1;

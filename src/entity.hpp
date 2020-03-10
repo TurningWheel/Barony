@@ -260,6 +260,7 @@ public:
 	real_t& gateStartHeight; //fskill[0]
 	real_t& gateVelZ; //vel_z
 	Sint32& gateInverted; //skill[5]
+	Sint32& gateDisableOpening; //skill[6]
 
 	//--PUBLIC LEVER SKILLS--
 	Sint32& leverTimerTicks;//skill[1]
@@ -301,6 +302,9 @@ public:
 	Sint32& doorMaxHealth; //skill[9]
 	real_t& doorStartAng; //fskill[0]
 	Sint32& doorPreventLockpickExploit; //skill[10]
+	Sint32& doorForceLockedUnlocked; //skill[11]
+	Sint32& doorDisableLockpicks; //skill[12]
+	Sint32& doorDisableOpening; //skill[13]
 
 	//--PUBLIC PEDESTAL SKILLS--
 	Sint32& pedestalHasOrb; //skill[0]
@@ -322,6 +326,19 @@ public:
 	Sint32& portalNotSecret; //skill[3]
 	Sint32& portalVictoryType; //skill[4]
 	Sint32& portalFireAnimation; //skill[5]
+	Sint32& portalCustomLevelsToJump; //skill[6]
+	Sint32& portalCustomRequiresPower; //skill[7]
+	Sint32& portalCustomSprite; //skill[8]
+	Sint32& portalCustomSpriteAnimationFrames; //skill[9]
+	Sint32& portalCustomZOffset; //skill[10]
+	Sint32& portalCustomLevelText1; //skill[11]
+	Sint32& portalCustomLevelText2; //skill[12]
+	Sint32& portalCustomLevelText3; //skill[13]
+	Sint32& portalCustomLevelText4; //skill[14]
+	Sint32& portalCustomLevelText5; //skill[15]
+	Sint32& portalCustomLevelText6; //skill[16]
+	Sint32& portalCustomLevelText7; //skill[17]
+	Sint32& portalCustomLevelText8; //skill[18]
 
 	//--PUBLIC TELEPORTER SKILLS--
 	Sint32& teleporterX; //skill[0]
@@ -336,6 +353,16 @@ public:
 	Sint32& floorDecorationModel; //skill[0]
 	Sint32& floorDecorationRotation; //skill[1]
 	Sint32& floorDecorationHeightOffset; //skill[3] positive numbers will lift the model higher
+	Sint32& floorDecorationXOffset; //skill[4]
+	Sint32& floorDecorationYOffset; //skill[5]
+	Sint32& floorDecorationInteractText1; //skill[8]
+	Sint32& floorDecorationInteractText2; //skill[9]
+	Sint32& floorDecorationInteractText3; //skill[10]
+	Sint32& floorDecorationInteractText4; //skill[11]
+	Sint32& floorDecorationInteractText5; //skill[12]
+	Sint32& floorDecorationInteractText6; //skill[13]
+	Sint32& floorDecorationInteractText7; //skill[14]
+	Sint32& floorDecorationInteractText8; //skill[15]
 
 	//--PUBLIC SPELL TRAP SKILLS--
 	Sint32& spellTrapType; //skill[0]
@@ -354,6 +381,8 @@ public:
 	Sint32& furnitureDir; //skill[3]
 	Sint32& furnitureHealth; //skill[4]
 	Sint32& furnitureMaxHealth; //skill[9]
+	Sint32& furnitureTableRandomItemChance; //skill[10]
+	Sint32& furnitureTableSpawnChairs; //skill[11]
 
 	//--PUBLIC PISTON SKILLS--
 	Sint32& pistonCamDir; //skill[0]
@@ -441,7 +470,7 @@ public:
 	Sint32& textSourceColorRGB; //skill[0]
 	Sint32& textSourceVariables4W; //skill[1]
 	Sint32& textSourceDelay; //skill[2]
-	Sint32& textSource3; //skill[3]
+	Sint32& textSourceIsScript; //skill[3]
 	Sint32& textSourceBegin; //skill[4]
 
 	//--PUBLIC SIGNAL SKILLS--
@@ -454,6 +483,9 @@ public:
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]
 	Sint32& thrownProjectileCharge; //skill[20]
+
+	//--PLAYER SPAWN POINT--
+	Sint32& playerStartDir; //skill[1]
 
 	void pedestalOrbInit(); // init orb properties
 
@@ -980,7 +1012,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 290;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 134;
+static const int NUM_EDITOR_SPRITES = 168;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.
@@ -1048,3 +1080,153 @@ bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's na
 extern const std::vector<int> fountainPotionDropChances;
 extern const std::vector<std::pair<int, int>> potionStandardAppearanceMap;
 extern std::mt19937 fountainSeed;
+
+class TextSourceScript
+{
+public:
+	const int k_ScriptError = -1;
+	const int k_ScriptRangeEntireMap = -2;
+	enum ClientInformationType : int
+	{
+		CLIENT_UPDATE_ALL,
+		CLIENT_UPDATE_CLASS,
+		CLIENT_UPDATE_HUNGER
+	};
+	enum AttachToEntity : int
+	{
+		TO_NONE,
+		TO_MONSTERS,
+		TO_ITEMS,
+		TO_PLAYERS,
+		TO_NOTHING,
+		TO_HUMAN,
+		TO_RAT,
+		TO_GOBLIN,
+		TO_SLIME,
+		TO_TROLL,
+		TO_OCTOPUS,
+		TO_SPIDER,
+		TO_GHOUL,
+		TO_SKELETON,
+		TO_SCORPION,
+		TO_IMP,
+		TO_BUGBEAR,
+		TO_GNOME,
+		TO_DEMON,
+		TO_SUCCUBUS,
+		TO_MIMIC,
+		TO_LICH,
+		TO_MINOTAUR,
+		TO_DEVIL,
+		TO_SHOPKEEPER,
+		TO_KOBOLD,
+		TO_SCARAB,
+		TO_CRYSTALGOLEM,
+		TO_INCUBUS,
+		TO_VAMPIRE,
+		TO_SHADOW,
+		TO_COCKATRICE,
+		TO_INSECTOID,
+		TO_GOATMAN,
+		TO_AUTOMATON,
+		TO_LICHICE,
+		TO_LICHFIRE,
+		TO_SENTRYBOT,
+		TO_SPELLBOT,
+		TO_GYROBOT,
+		TO_DUMMYBOT
+	};
+	enum ScriptType : int
+	{
+		NO_SCRIPT,
+		SCRIPT_NORMAL,
+		SCRIPT_ATTACHED,
+		SCRIPT_ATTACHED_FIRED
+	};
+	enum ScriptTriggeredBy : int
+	{
+		TRIGGER_POWER,
+		TRIGGER_ATTACHED_ISREMOVED,
+		TRIGGER_ATTACHED_EXISTS,
+		TRIGGER_ATTACHED_INVIS,
+		TRIGGER_ATTACHED_VISIBLE,
+		TRIGGER_ATTACHED_ALWAYS
+	};
+	/*enum TagAvailableToEntity : int
+	{
+		AVAILABLE_ALL,
+		CREATURES_ALL,
+		CREATURES_MONSTERS,
+		CREATURES_PLAYERS,
+		ITEMS
+	};*/
+	bool containsOperator(char c)
+	{
+		if ( c == '+' || c == '-' || c == '=' )
+		{
+			return true;
+		}
+		return false;
+	}
+	void eraseTag(std::string& script, std::string& scriptTag, size_t tagIndex)
+	{
+		if ( tagIndex + scriptTag.length() < script.length()
+			&& script.at(tagIndex + scriptTag.length()) == ' ' )
+		{
+			script.erase(tagIndex, strlen(scriptTag.c_str()) + 1);
+		}
+		else
+		{
+			script.erase(tagIndex, strlen(scriptTag.c_str()));
+		}
+	}
+	void updateClientInformation(int player, bool clearInventory, bool clearStats, ClientInformationType updateType);
+	void playerClearInventory(bool clearStats);
+	std::string getScriptFromEntity(Entity& src);
+	void parseScriptInMapGeneration(Entity& src);
+	void handleTextSourceScript(Entity& src, std::string input);
+	int textSourceProcessScriptTag(std::string& input, std::string findTag);
+	bool hasClearedInventory = false;
+	int getScriptType(Sint32 skill)
+	{
+		return (skill & 0xF);
+	}
+	int getAttachedToEntityType(Sint32 skill)
+	{
+		return ((skill & 0xF0) >> 4);
+	}
+	int getTriggerType(Sint32 skill)
+	{
+		return ((skill & 0xF00) >> 8);
+	}
+	void setScriptType(Sint32& skill, int setValue)
+	{
+		skill &= 0xFFFFFFF0;
+		skill |= (setValue & 0xF);
+	}
+	void setAttachedToEntityType(Sint32& skill, int setValue)
+	{
+		skill &= 0xFFFFFF0F;
+		skill |= ((setValue << 4) & 0xF0);
+	}
+	void setTriggerType(Sint32& skill, int setValue)
+	{
+		skill &= 0xFFFFF0FF;
+		skill |= ((setValue << 8) & 0xF00);
+	}
+	std::vector<Entity*> getScriptAttachedEntities(Entity& script)
+	{
+		std::vector<Entity*> entities;
+		for ( node_t* node = script.children.first; node; node = node->next )
+		{
+			Uint32 entityUid = *((Uint32*)node->element);
+			Entity* child = uidToEntity(entityUid);
+			if ( child )
+			{
+				entities.push_back(child);
+			}
+		}
+		return entities;
+	}
+};
+extern TextSourceScript textSourceScript;

@@ -21,7 +21,7 @@
 #endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.3.2"
+#define VERSION "v3.3.3"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
@@ -104,6 +104,7 @@ extern bool shootmode;
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;
+extern std::string loadCustomNextMap;
 extern Uint32 forceMapSeed;
 extern int currentlevel;
 extern bool secretlevel;
@@ -282,6 +283,7 @@ void actPowerCrystalParticleIdle(Entity* my);
 void actPedestalBase(Entity* my);
 void actPedestalOrb(Entity* my);
 void actMidGamePortal(Entity* my);
+void actCustomPortal(Entity* my);
 void actTeleporter(Entity* my);
 void actMagicTrapCeiling(Entity* my);
 void actExpansionEndGamePortal(Entity* my);

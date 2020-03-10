@@ -121,8 +121,6 @@ extern SDL_Surface* damage_bmp;
 extern int textscroll;
 extern int attributespage;
 extern int proficienciesPage;
-extern Item* invitems[4];
-extern Item* invitemschest[4];
 extern int inventorycategory;
 extern int itemscroll;
 extern view_t camera_charsheet;
@@ -139,6 +137,8 @@ extern SDL_Surface* invgraball_bmp;
 extern int chestitemscroll; //Same as itemscroll, but for the chest inventory GUI.
 extern Entity* openedChest[4]; //One for each client. //TODO: Clientside, [0] will always point to something other than NULL when a chest is open and it will be NULL when a chest is closed.
 extern list_t chestInv; //This is just for the client, so that it can populate the chest inventory on its end.
+static const int kNumChestItemsToDisplay = 4;
+extern Item* invitemschest[kNumChestItemsToDisplay];
 
 extern bool gui_clickdrag; //True as long as an interface element is being dragged.
 extern int dragoffset_x;
@@ -775,3 +775,5 @@ public:
 extern FollowerRadialMenu FollowerMenu;
 extern SDL_Rect interfaceSkillsSheet;
 extern SDL_Rect interfacePartySheet;
+extern SDL_Rect interfaceCharacterSheet;
+extern SDL_Rect interfaceMessageStatusBar;

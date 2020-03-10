@@ -261,7 +261,13 @@ void gameLogic(void)
 #endif
 
 	// camera shaking
-	for (int c = 0; c < MAXPLAYERS; ++c) {
+	for (int c = 0; c < MAXPLAYERS; ++c) 
+	{
+		if ( !splitscreen && c != clientnum )
+		{
+			continue;
+		}
+
 		auto& camera_shakex = cameravars[c].shakex;
 		auto& camera_shakey = cameravars[c].shakey;
 		auto& camera_shakex2 = cameravars[c].shakex2;
@@ -3675,49 +3681,74 @@ int main(int argc, char** argv)
 
 				// main drawing
 				drawClearBuffers();
-				for (int c = 0; c < MAXPLAYERS; ++c) {
+				for (int c = 0; c < MAXPLAYERS; ++c) 
+				{
 					auto& camera = cameras[c];
 					auto& cvars = cameravars[c];
 					camera.ang += cvars.shakex2;
 					camera.vang += cvars.shakey2 / 200.0;
 				}
-				if ( true/*players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind()*/ )
+				if ( true )
 				{
 					// drunkenness spinning
 					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
 					double sinspin = sin(ticks % 360 * PI / 180.f) * 0.25;
 
 					int playercount = 0;
-					for (int c = 0; c < MAXPLAYERS; ++c) {
-						if (!client_disconnected[c]) {
+					for (int c = 0; c < MAXPLAYERS; ++c) 
+					{
+						if (!client_disconnected[c]) 
+						{
 							++playercount;
 						}
 					}
 
-					if (playercount >= 1) {
-						int maximum = splitscreen ? MAXPLAYERS : 1;
-						for (int c = 0; c < maximum; ++c) {
-							if (client_disconnected[c]) {
+					if (playercount >= 1) 
+					{
+						//int maximum = splitscreen ? MAXPLAYERS : 1;
+						for (int c = 0; c < MAXPLAYERS; ++c)
+						{
+							if (client_disconnected[c]) 
+							{
+								continue;
+							}
+							if ( !splitscreen && c != clientnum )
+							{
 								continue;
 							}
 							auto& camera = cameras[c];
-							if (playercount == 1) {
+							if ( !splitscreen )
+							{
 								camera.winx = 0;
 								camera.winy = 0;
 								camera.winw = xres;
 								camera.winh = yres;
-							} else if (playercount == 2) {
-								// divide screen horizontally
-								camera.winx = 0;
-								camera.winy = c * yres / 2;
-								camera.winw = xres;
-								camera.winh = yres / 2;
-							} else if (playercount >= 3) {
-								// divide screen into quadrants
-								camera.winx = (c % 2) * xres / 2;
-								camera.winy = (c / 2) * yres / 2;
-								camera.winw = xres / 2;
-								camera.winh = yres / 2;
+							}
+							else
+							{
+								if (playercount == 1)
+								{
+									camera.winx = 0;
+									camera.winy = 0;
+									camera.winw = xres;
+									camera.winh = yres;
+								} 
+								else if (playercount == 2)
+								{
+									// divide screen horizontally
+									camera.winx = 0;
+									camera.winy = c * yres / 2;
+									camera.winw = xres;
+									camera.winh = yres / 2;
+								} 
+								else if (playercount >= 3) 
+								{
+									// divide screen into quadrants
+									camera.winx = (c % 2) * xres / 2;
+									camera.winy = (c / 2) * yres / 2;
+									camera.winw = xres / 2;
+									camera.winh = yres / 2;
+								}
 							}
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{
@@ -3807,8 +3838,10 @@ int main(int argc, char** argv)
 								camera.ang -= cosspin * drunkextend;
 								camera.vang -= sinspin * drunkextend;
 							}
-							camera.ang -= cameravars[c].shakex2;
-							camera.vang -= cameravars[c].shakey2 / 200.0;
+
+							auto& cvars = cameravars[c];
+							camera.ang -= cvars.shakex2;
+							camera.vang -= cvars.shakey2 / 200.0;
 						}
 					}
 				}
@@ -3818,13 +3851,18 @@ int main(int argc, char** argv)
 				updateMessages();
 				if ( !nohud )
 				{
-					if (splitscreen) {
-						for (int c = 0; c < MAXPLAYERS; ++c) {
-							if (!client_disconnected[c]) {
+					if (splitscreen) 
+					{
+						for (int c = 0; c < MAXPLAYERS; ++c)
+						{
+							if (!client_disconnected[c]) 
+							{
 								handleDamageIndicators(c);
 							}
 						}
-					} else {
+					} 
+					else 
+					{
 						handleDamageIndicators(0);
 					}
 					drawMessages();

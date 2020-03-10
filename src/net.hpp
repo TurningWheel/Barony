@@ -33,6 +33,7 @@ void sendMapTCP(int c);
 void serverUpdateEntitySprite(Entity* entity);
 void serverUpdateEntitySkill(Entity* entity, int skill);
 void serverUpdateEntityFSkill(Entity* entity, int fskill);
+void serverUpdateEntityStatFlag(Entity* entity, int flag);
 void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite, Uint32 optionalUid = 0);
 void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite);
 void serverUpdateEntityFlag(Entity* entity, int flag);
@@ -45,6 +46,7 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 void serverUpdatePlayerConduct(int player, int conduct, int value);
 void serverUpdatePlayerLVL();
 void serverRemoveClientFollower(int player, Uint32 uidToRemove);
+void serverSendItemToPickupAndEquip(int player, Item* item);
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type);
 void serverUpdatePlayerSummonStrength(int player);
 void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool guarantee = false);

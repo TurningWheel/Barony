@@ -854,7 +854,7 @@ void actPlayer(Entity* my)
 			}
 			else
 			{
-				if ( PLAYER_ALIVETIME == 300 )
+				if ( PLAYER_ALIVETIME == 300 && !MFLAG_DISABLEMESSAGES )
 				{
 					// five seconds in, herx chimes in (maybe)
 					my->playerLevelEntrySpeech = 0;
@@ -1030,7 +1030,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				else if ( PLAYER_ALIVETIME == 480 )
+				else if ( PLAYER_ALIVETIME == 480 && !MFLAG_DISABLEMESSAGES )
 				{
 					// 8 seconds in, herx chimes in again (maybe)
 					if ( currentlevel == 1 && !secretlevel )
@@ -1192,8 +1192,8 @@ void actPlayer(Entity* my)
 			players[clientnum]->entity->skill[3] = (players[clientnum]->entity->skill[3] == 0);
 		}
 		keystatus[SDL_SCANCODE_F3] = 0;
-	}*/
-	/*if ( keystatus[SDL_SCANCODE_F4] )
+	}
+	if ( keystatus[SDL_SCANCODE_F4] )
 	{
 		buttonStartSingleplayer(nullptr);
 		keystatus[SDL_SCANCODE_F4] = 0;

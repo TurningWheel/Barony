@@ -63,9 +63,15 @@ void updateCharacterSheet()
 		statWindowY2 = 554;
 	}
 
+
 	drawWindowFancy(0, 0, pos.w + 16, pos.h + 16);
 	drawRect(&pos, 0, 255);
 	drawWindowFancy(0, pos.h + 16, pos.w + 16, statWindowY2);
+
+	interfaceCharacterSheet.x = pos.x - 8;
+	interfaceCharacterSheet.y = pos.y - 8;
+	interfaceCharacterSheet.w = pos.w + 16;
+	interfaceCharacterSheet.h = statWindowY2;
 
 	// character sheet
 	double ofov = fov;
@@ -259,7 +265,12 @@ void updateCharacterSheet()
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
 		item = (Item*)node->element;
-		weight += items[item->type].weight * item->count;
+		int itemWeight = items[item->type].weight * item->count;
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			itemWeight = std::max(1, itemWeight / 5);
+		}
+		weight += itemWeight;
 	}
 	weight += stats[clientnum]->GOLD / 100;
 	text_y += pad_y;

@@ -16,6 +16,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "paths.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -60,6 +61,7 @@ void actWallBuster(Entity* my)
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
+		generatePathMaps();
 		list_RemoveNode(my->mynode);
 	}
 }

@@ -1384,6 +1384,10 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	}*/
 	if ( monsterStats )
 	{
+		if ( monsterStats->monsterNoDropItems == 1 )
+		{
+			itemDroppable = false;
+		}
 		if ( monsterStats->type == SKELETON && monster->behavior == &actMonster && monster->monsterAllySummonRank != 0 )
 		{
 			itemDroppable = false;
@@ -1622,7 +1626,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 {
 	int oldcount;
 
-	if ( pickaxeGimpTimer > 0 && !intro )
+	if ( player == clientnum && pickaxeGimpTimer > 0 && !intro )
 	{
 		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}

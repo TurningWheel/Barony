@@ -929,6 +929,7 @@ void actThrown(Entity* my)
 								break;
 							case POTION_CONFUSION:
 								item_PotionConfusion(item, hit.entity, parent);
+								disableAlertBlindStatus = true; // don't aggro target.
 								usedpotion = true;
 								break;
 							case POTION_EXTRAHEALING:
@@ -973,12 +974,8 @@ void actThrown(Entity* my)
 								break;
 							case POTION_BLINDNESS:
 							{
-								bool wasBlind = hit.entity->isBlind();
 								item_PotionBlindness(item, hit.entity, parent);
-								if ( hit.entity->isBlind() && !wasBlind )
-								{
-									disableAlertBlindStatus = true; // don't aggro target.
-								}
+								disableAlertBlindStatus = true; // don't aggro target.
 								usedpotion = true;
 								break;
 							}
@@ -1028,7 +1025,6 @@ void actThrown(Entity* my)
 								}
 								if ( hit.entity->behavior == &actMonster )
 								{
-									bool wasBlind = hit.entity->isBlind();
 									if ( hit.entity->setEffect(EFF_BLIND, true, 250, false) )
 									{
 										if ( parent && parent->behavior == &actPlayer )
@@ -1036,11 +1032,7 @@ void actThrown(Entity* my)
 											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3878], language[3879], MSG_COMBAT);
 										}
 									}
-									if ( hit.entity->isBlind() && !wasBlind )
-									{
-										disableAlertBlindStatus = true; // don't aggro target.
-									}
-
+									disableAlertBlindStatus = true; // don't aggro target.
 								}
 								else if ( hit.entity->behavior == &actPlayer )
 								{

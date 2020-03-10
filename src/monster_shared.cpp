@@ -319,6 +319,14 @@ void Entity::actMonsterLimb(bool processLight)
 	Entity *parentEnt = nullptr;
 	if ( (parentEnt = uidToEntity(skill[2])) == nullptr )
 	{
+		if ( multiplayer == CLIENT )
+		{
+			if ( light )
+			{
+				list_RemoveNode(light->node);
+				light = nullptr;
+			}
+		}
 		list_RemoveNode(mynode);
 		return;
 	}

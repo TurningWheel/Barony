@@ -26,7 +26,7 @@ void repopulateInvItems(list_t* chestInventory)
 	int c = 0;
 
 	//Step 1: Clear.
-	for ( c = 0; c < 4; ++c )
+	for ( c = 0; c < kNumChestItemsToDisplay; ++c )
 	{
 		invitemschest[c] = nullptr;
 	}
@@ -50,7 +50,7 @@ void repopulateInvItems(list_t* chestInventory)
 					continue;
 				}
 				invitemschest[c - chestitemscroll - 1] = item;
-				if ( c > 3 + chestitemscroll )
+				if ( c > (kNumChestItemsToDisplay - 1) + chestitemscroll )
 				{
 					break;
 				}
@@ -103,6 +103,11 @@ void warpMouseToSelectedChestSlot()
 
 inline void drawChestSlots()
 {
+	if ( !openedChest[clientnum] )
+	{
+		return;
+	}
+
 	SDL_Rect pos;
 	Item* item = nullptr;
 
@@ -115,7 +120,7 @@ inline void drawChestSlots()
 		pos.h = 0;
 
 		int currentY = CHEST_INVENTORY_Y + 16;
-		for ( int i = 0; i < 4; ++i, currentY += inventoryoptionChest_bmp->h )
+		for ( int i = 0; i < kNumChestItemsToDisplay; ++i, currentY += inventoryoptionChest_bmp->h )
 		{
 			if ( omousey >= currentY && omousey < currentY + inventoryoptionChest_bmp->h )
 			{
@@ -129,7 +134,7 @@ inline void drawChestSlots()
 
 					bool grabbedItem = false;
 
-					if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE])) && openedChest[clientnum] )
+					if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE])) )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
@@ -139,7 +144,7 @@ inline void drawChestSlots()
 						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
 					}
-					else if ( mousestatus[SDL_BUTTON_RIGHT] && openedChest[clientnum] )
+					else if ( mousestatus[SDL_BUTTON_RIGHT] )
 					{
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
 						item = openedChest[clientnum]->getItemFromChest(invitemschest[i], true);
@@ -204,6 +209,10 @@ void updateChestInventory()
 {
 	if ( !openedChest[clientnum] )
 	{
+		for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
+		{
+			invitemschest[c] = nullptr;
+		}
 		return;
 	}
 
@@ -445,7 +454,7 @@ void updateChestInventory()
 						pos.h = 16;
 						drawImageScaled(itemSprite(item), NULL, &pos);
 						y += 18;
-						if (c > 3 + chestitemscroll)
+						if (c > (kNumChestItemsToDisplay - 1) + chestitemscroll)
 						{
 							break;
 						}
@@ -514,7 +523,7 @@ void selectChestSlot(int slot)
 
 		Item* item = nullptr;
 
-		if ( selectedChestSlot >= 3 )
+		if ( selectedChestSlot >= (kNumChestItemsToDisplay - 1) )
 		{
 			//Covers cases 2 & 3.
 

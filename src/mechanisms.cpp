@@ -389,7 +389,9 @@ void actTrap(Entity* my)
 		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )
+			if ( entity->behavior == &actPlayer || entity->behavior == &actItem 
+				|| entity->behavior == &actMonster || entity->behavior == &actBoulder
+				|| entity->behavior == &actBomb || entity->behavior == &actDecoyBox )
 			{
 				if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) )
 				{
@@ -484,6 +486,11 @@ void actTrapPermanent(Entity* my)
 	}
 	else
 	{
+		if ( my->skill[1] == 1 )
+		{
+			// skip checking for entities.
+			return;
+		}
 		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
@@ -491,7 +498,9 @@ void actTrapPermanent(Entity* my)
 			for ( node = currentList->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
-				if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )
+				if ( entity->behavior == &actPlayer || entity->behavior == &actItem 
+					|| entity->behavior == &actMonster || entity->behavior == &actBoulder
+					|| entity->behavior == &actBomb || entity->behavior == &actDecoyBox )
 				{
 					if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) )
 					{

@@ -46,6 +46,7 @@ string lastname;
 int lastCreatedCharacterClass = -1;
 int lastCreatedCharacterAppearance = -1;
 int lastCreatedCharacterSex = -1;
+int lastCreatedCharacterRace = -1;
 
 // net stuff
 Uint32 clientplayer = 0;
@@ -168,6 +169,7 @@ Uint32 mapseed;
 bool* shoparea = nullptr;
 real_t globalLightModifier = 0.f;
 real_t globalLightTelepathyModifier = 0.f;
+int globalLightSmoothingRate = 1;
 int globalLightModifierActive = 0;
 
 // game variables
@@ -175,6 +177,7 @@ bool shootmode = false;
 Sint8 minimap[64][64];
 bool loadnextlevel = false;
 int skipLevelsOnLoad = 0;
+std::string loadCustomNextMap = "";
 Uint32 forceMapSeed = 0;
 bool loading = false;
 int currentlevel = 0, minotaurlevel = 0;
@@ -271,6 +274,7 @@ int rscale = 1;
 real_t vidgamma = 1.0f;
 real_t* zbuffer = nullptr;
 Sint32* lightmap = nullptr;
+Sint32* lightmapSmoothed = nullptr;
 bool* vismap = nullptr;
 bool mode3d = false;
 bool verticalSync = false;

@@ -62,7 +62,8 @@ void initHuman(Entity* my, Stat* myStats)
 			// generate special loadout
 			if ( my->monsterSpecialTimer == 0 )
 			{
-				if ( rand() % 25 == 0 )
+				if ( rand() % 25 == 0 && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] 
+					&& strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 				{
 					specialMonsterVariant = 1;
 					int specialMonsterType = rand() % 10;
@@ -334,7 +335,7 @@ void initHuman(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			if ( rand() % 10 == 0 )
+			if ( rand() % 10 == 0 && strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;

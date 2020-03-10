@@ -13,6 +13,7 @@
 #include "files.hpp"
 //#include "game.hpp"
 #include "sound.hpp"
+#include "player.hpp"
 
 #ifdef USE_FMOD
 #include <fmod_errors.h>
@@ -107,9 +108,16 @@ void sound_update()
 	}
 
 	FMOD_VECTOR position, forward, up;
-	position.x = -cameras[0].y;
-	position.y = -cameras[0].z / 32;
-	position.z = -cameras[0].x;
+
+	auto& camera = cameras[clientnum];
+	if ( splitscreen )
+	{
+		camera = cameras[0];
+	}
+
+	position.x = -camera.y;
+	position.y = -camera.z / 32;
+	position.z = -camera.x;
 
 	/*double cosroll = cos(0);
 	double cosyaw = cos(camera.ang);
@@ -122,9 +130,9 @@ void sound_update()
 	double ry = sinroll*cosyaw + cosroll*sinpitch*sinyaw;
 	double rz = cosroll*cospitch;*/
 
-	forward.x = 1 * sin(cameras[0].ang);
+	forward.x = 1 * sin(camera.ang);
 	forward.y = 0;
-	forward.z = 1 * cos(cameras[0].ang);
+	forward.z = 1 * cos(camera.ang);
 	/*forward.x = rx;
 	forward.y = ry;
 	forward.z = rz;*/
@@ -587,6 +595,13 @@ void sound_update()
 	}
 
 	FMOD_VECTOR position;
+
+	auto& camera = cameras[clientnum];
+	if ( splitscreen )
+	{
+		camera = cameras[0];
+	}
+
 	position.x = -camera.y;
 	position.y = -camera.z / 32;
 	position.z = -camera.x;

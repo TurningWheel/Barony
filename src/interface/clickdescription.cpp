@@ -111,15 +111,22 @@ void clickDescription(int player, Entity* entity)
 				}
 			}
 		}
-		if (mouseInBounds(0, 224, 0, 420))   // character sheet
+
+		if ( mouseInBounds(interfaceCharacterSheet.x, interfaceCharacterSheet.x + interfaceCharacterSheet.w,
+			interfaceCharacterSheet.y, interfaceCharacterSheet.y + interfaceCharacterSheet.h) )
 		{
+			// character sheet
 			return;
 		}
-		int x = xres / 2 - (status_bmp->w / 2);
-		if (mouseInBounds(x, x + status_bmp->w, yres - status_bmp->h - hotbar_img->h, yres))
+
+		if (!hide_statusbar && 
+			mouseInBounds(interfaceMessageStatusBar.x, interfaceMessageStatusBar.x + interfaceMessageStatusBar.w,
+				interfaceMessageStatusBar.y, interfaceMessageStatusBar.y + interfaceMessageStatusBar.h) )
 		{
+			// bottom message log
 			return;
 		}
+
 		if ( selectedItem || itemMenuOpen )
 		{
 			//Will bugger up GUI item interaction if this function continues to run.

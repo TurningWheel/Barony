@@ -13,6 +13,7 @@
 #include "draw.hpp"
 #include "messages.hpp"
 #include "main.hpp"
+#include <regex>
 
 Uint32 old_sdl_ticks;
 std::list<Message*> notification_messages;
@@ -239,7 +240,58 @@ void drawMessages()
 	{
 		Uint32 color = current->text->color ^ mainsurface->format->Amask;
 		color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
-		ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, current->text->data);
+
+		// highlights in messages.
+		std::string data = current->text->data;
+		size_t findHighlight = data.find("[");
+		bool doHighlight = false;
+		if ( findHighlight != std::string::npos )
+		{
+			std::string highlightedWords = data;
+			for ( int i = 0; i < highlightedWords.size(); ++i )
+			{
+				if ( highlightedWords[i] != '\n' && highlightedWords[i] != '\0' )
+				{
+					highlightedWords[i] = ' '; // replace all characters with a space.
+				}
+			}
+			size_t highlightedIndex = 0;
+			while ( findHighlight != std::string::npos )
+			{
+				size_t findHighlightEnd = data.find("]", findHighlight);
+				if ( findHighlightEnd != std::string::npos )
+				{
+					doHighlight = true;
+					size_t numChars = findHighlightEnd - findHighlight + 1;
+
+					// add in the highlighed words.
+					highlightedWords.replace(findHighlight, numChars, data.substr(findHighlight, numChars));
+
+					std::string padding(numChars, ' ');
+					// replace the words in the old string with spacing.
+					data.replace(findHighlight, numChars, padding);
+					findHighlight += numChars;
+				}
+				else
+				{
+					break;
+				}
+				findHighlight = data.find("[", findHighlight);
+				highlightedIndex = findHighlight;
+			}
+			if ( doHighlight )
+			{
+				ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, "%s", data.c_str());
+
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 192, 255) ^ mainsurface->format->Amask;
+				color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
+				ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, "%s", highlightedWords.c_str());
+			}
+		}
+		if ( !doHighlight )
+		{
+			ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, current->text->data);
+		}
 	}
 }
 

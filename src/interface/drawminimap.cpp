@@ -142,13 +142,14 @@ void drawMinimap()
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258) )   // ladder or portal models
+		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258)
+			|| entity->behavior == &actCustomPortal )   // ladder or portal models
 		{
 			if ( entity->x >= 0 && entity->y >= 0 && entity->x < map.width << 4 && entity->y < map.height << 4 )
 			{
 				x = floor(entity->x / 16);
 				y = floor(entity->y / 16);
-				if ( minimap[y][x] || entity->entityShowOnMap > 0 )
+				if ( minimap[y][x] || (entity->entityShowOnMap > 0 && !(entity->behavior == &actCustomPortal)) )
 				{
 					if ( ticks % 40 - ticks % 20 )
 					{
@@ -165,6 +166,10 @@ void drawMinimap()
 		}
 		else
 		{
+			if ( entity->skill[28] > 0 ) // mechanism
+			{
+				continue;
+			}
 			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
 			{
 				bool warningEffect = false;

@@ -16,6 +16,7 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "magic/magic.hpp"
+#include "net.hpp"
 
 Stat* stats[MAXPLAYERS];
 
@@ -807,4 +808,397 @@ char* getSkillLangEntry(int skill)
 		langEntry = 3340;
 	}
 	return language[langEntry];
+}
+
+void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
+{
+	int player = -1;
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		if ( stats[c] == this )
+		{
+			player = c;
+			break;
+		}
+	}
+
+	//this->type = src.type;
+
+	this->HP = src.HP;
+	this->MAXHP = src.MAXHP;
+	this->OLDHP = src.HP;
+	this->MP = src.MP;
+	this->MAXMP = src.MAXMP;
+
+	this->STR = src.STR;
+	this->DEX = src.DEX;
+	this->CON = src.CON;
+	this->INT = src.INT;
+	this->PER = src.PER;
+	this->CHR = src.CHR;
+	this->EXP = src.EXP;
+	this->LVL = src.LVL;
+
+	this->GOLD = src.GOLD;
+	bool oldIntro = intro;
+	if ( player == clientnum )
+	{
+		intro = true;
+	}
+	if ( src.helmet )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.helmet);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->helmet )
+			{
+				this->helmet = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->helmet, src.helmet);
+		}
+	}
+	else
+	{
+		this->helmet = NULL;
+	}
+	if ( src.breastplate )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.breastplate);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->breastplate )
+			{
+				this->breastplate = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->breastplate, src.breastplate);
+		}
+	}
+	else
+	{
+		this->breastplate = NULL;
+	}
+	if ( src.gloves )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.gloves);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->gloves )
+			{
+				this->gloves = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->gloves, src.gloves);
+		}
+	}
+	else
+	{
+		this->gloves = NULL;
+	}
+	if ( src.shoes )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.shoes);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->shoes )
+			{
+				this->shoes = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->shoes, src.shoes);
+		}
+	}
+	else
+	{
+		this->shoes = NULL;
+	}
+	if ( src.shield )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.shield);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->shield )
+			{
+				this->shield = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->shield, src.shield);
+		}
+	}
+	else
+	{
+		this->shield = NULL;
+	}
+	if ( src.weapon )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.weapon);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->weapon )
+			{
+				this->weapon = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->weapon, src.weapon);
+		}
+	}
+	else
+	{
+		this->weapon = NULL;
+	}
+	if ( src.cloak )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.cloak);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->cloak )
+			{
+				this->cloak = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->cloak, src.cloak);
+		}
+	}
+	else
+	{
+		this->cloak = NULL;
+	}
+	if ( src.amulet )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.amulet);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->amulet )
+			{
+				this->amulet = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->amulet, src.amulet);
+		}
+	}
+	else
+	{
+		this->amulet = NULL;
+	}
+	if ( src.ring )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.ring);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->ring )
+			{
+				this->ring = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->ring, src.ring);
+		}
+	}
+	else
+	{
+		this->ring = NULL;
+	}
+	if ( src.mask )
+	{
+		if ( player >= 0 )
+		{
+			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			copyItem(item, src.mask);
+			item->identified = true;
+			if ( player == clientnum )
+			{
+				Item* pickedUp = itemPickup(player, item);
+				useItem(pickedUp, player);
+				free(item);
+			}
+			else
+			{
+				serverSendItemToPickupAndEquip(player, item);
+				useItem(item, player);
+			}
+		}
+		else
+		{
+			if ( !this->mask )
+			{
+				this->mask = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+			}
+			copyItem(this->mask, src.mask);
+		}
+	}
+	else
+	{
+		this->mask = NULL;
+	}
+
+	for ( node_t* node = src.inventory.first; node; node = node->next )
+	{
+		Item* invItem = (Item*)node->element;
+		if ( invItem )
+		{
+			if ( player >= 0 )
+			{
+				Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
+				copyItem(item, invItem);
+				item->identified = true;
+				Item* pickedUp = itemPickup(player, item);
+				if ( pickedUp )
+				{
+					if ( player == clientnum )
+					{
+						free(item);
+					}
+					else
+					{
+						free(pickedUp);
+					}
+				}
+			}
+			else
+			{
+				Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, &inventory);
+				copyItem(item, invItem);
+			}
+		}
+	}
+	intro = oldIntro;
 }
