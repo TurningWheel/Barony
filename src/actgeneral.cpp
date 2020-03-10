@@ -530,6 +530,7 @@ void actFloorDecoration(Entity* my)
 						for ( int c = 0; c < 4; ++c )
 						{
 							buf[totalChars] = static_cast<char>((my->skill[i] >> (c * 8)) & 0xFF);
+							//messagePlayer(0, "%d %d", i, c);
 							++totalChars;
 						}
 					}

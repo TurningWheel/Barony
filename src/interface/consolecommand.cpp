@@ -146,6 +146,9 @@ void consoleCommand(char* command_str)
 					case 2:
 						lastCreatedCharacterAppearance = atoi(&command_str[c + 1]);
 						break;
+					case 3:
+						lastCreatedCharacterRace = atoi(&command_str[c + 1]);
+						break;
 					default:
 						break;
 				}

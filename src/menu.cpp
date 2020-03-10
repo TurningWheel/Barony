@@ -11059,6 +11059,7 @@ void buttonContinue(button_t* my)
 		lastCreatedCharacterSex = stats[0]->sex;
 		lastCreatedCharacterClass = client_classes[0];
 		lastCreatedCharacterAppearance = stats[0]->appearance;
+		lastCreatedCharacterRace = stats[0]->playerRace;
 
 		if ( multiplayerselect != SINGLE )
 		{
@@ -13372,6 +13373,183 @@ void buttonRandomCharacter(button_t* my)
 	initClass(0);
 }
 
+enum CharacterDLCValidation : int
+{
+	INVALID_CHARACTER,
+	VALID_OK_CHARACTER,
+	INVALID_REQUIREDLC1,
+	INVALID_REQUIREDLC2,
+	INVALID_REQUIRE_ACHIEVEMENT
+};
+
+bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
+{
+#ifdef STEAMWORKS
+	bool unlocked = false;
+	if ( enabledDLCPack1 && race == RACE_SKELETON && SteamUserStats()->GetAchievement("BARONY_ACH_BONY_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack1 && race == RACE_VAMPIRE && SteamUserStats()->GetAchievement("BARONY_ACH_BUCKTOOTH_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack1 && race == RACE_SUCCUBUS && SteamUserStats()->GetAchievement("BARONY_ACH_BOMBSHELL_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack1 && race == RACE_GOATMAN && SteamUserStats()->GetAchievement("BARONY_ACH_BLEATING_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack2 && race == RACE_AUTOMATON && SteamUserStats()->GetAchievement("BARONY_ACH_BOILERPLATE_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack2 && race == RACE_INCUBUS && SteamUserStats()->GetAchievement("BARONY_ACH_BAD_BOY_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack2 && race == RACE_GOBLIN && SteamUserStats()->GetAchievement("BARONY_ACH_BAYOU_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack2 && race == RACE_INSECTOID && SteamUserStats()->GetAchievement("BARONY_ACH_BUGGAR_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+#endif // STEAMWORKS
+	return false;
+}
+
+int isCharacterValidFromDLC(Stat& myStats, int characterClass)
+{
+	switch ( characterClass )
+	{
+		case CLASS_CONJURER:
+		case CLASS_ACCURSED:
+		case CLASS_MESMER:
+		case CLASS_BREWER:
+			if ( !enabledDLCPack1 )
+			{
+				return INVALID_REQUIREDLC1;
+			}
+			break;
+		case CLASS_MACHINIST:
+		case CLASS_PUNISHER:
+		case CLASS_SHAMAN:
+		case CLASS_HUNTER:
+			if ( !enabledDLCPack2 )
+			{
+				return INVALID_REQUIREDLC2;
+			}
+			break;
+		default:
+			break;
+	}
+
+	switch ( myStats.playerRace )
+	{
+		case RACE_SKELETON:
+		case RACE_VAMPIRE:
+		case RACE_SUCCUBUS:
+		case RACE_GOATMAN:
+			if ( !enabledDLCPack1 )
+			{
+				return INVALID_REQUIREDLC1;
+			}
+			break;
+		case RACE_AUTOMATON:
+		case RACE_INCUBUS:
+		case RACE_GOBLIN:
+		case RACE_INSECTOID:
+			if ( !enabledDLCPack2 )
+			{
+				return INVALID_REQUIREDLC2;
+			}
+			break;
+		default:
+			break;
+	}
+
+	if ( myStats.playerRace == RACE_HUMAN )
+	{
+		return VALID_OK_CHARACTER;
+	}
+	else if ( myStats.playerRace > RACE_HUMAN && myStats.appearance == 1 )
+	{
+		return VALID_OK_CHARACTER; // aesthetic only option.
+	}
+	if ( characterClass <= CLASS_MONK )
+	{
+		return VALID_OK_CHARACTER;
+	}
+
+	switch ( characterClass )
+	{
+		case CLASS_CONJURER:
+			if ( myStats.playerRace == RACE_SKELETON )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_SKELETON) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_ACCURSED:
+			if ( myStats.playerRace == RACE_VAMPIRE )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_VAMPIRE) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_MESMER:
+			if ( myStats.playerRace == RACE_SUCCUBUS )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_SUCCUBUS) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_BREWER:
+			if ( myStats.playerRace == RACE_GOATMAN )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_GOATMAN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_MACHINIST:
+			if ( myStats.playerRace == RACE_AUTOMATON )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_AUTOMATON) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_PUNISHER:
+			if ( myStats.playerRace == RACE_INCUBUS )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_INCUBUS) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_SHAMAN:
+			if ( myStats.playerRace == RACE_GOBLIN )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_GOBLIN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_HUNTER:
+			if ( myStats.playerRace == RACE_INSECTOID )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		default:
+			break;
+	}
+
+	return INVALID_CHARACTER;
+}
+
 void buttonReplayLastCharacter(button_t* my)
 {
 	if ( lastCreatedCharacterClass >= 0 )
@@ -13379,18 +13557,42 @@ void buttonReplayLastCharacter(button_t* my)
 		playing_random_char = false;
 		camera_charsheet_offsetyaw = (330) * PI / 180;
 		stats[0]->sex = static_cast<sex_t>(lastCreatedCharacterSex);
-		/*if ( lastCreatedCharacterClass >= CLASS_CONJURER && lastCreatedCharacterAppearance <= CLASS_BREWER && enabledDLCPack1 )
+		stats[0]->playerRace = std::min(std::max(static_cast<int>(RACE_HUMAN), lastCreatedCharacterRace), static_cast<int>(RACE_INSECTOID));
+		client_classes[0] = std::min(std::max(0, lastCreatedCharacterClass), static_cast<int>(CLASS_HUNTER));
+
+		switch ( isCharacterValidFromDLC(*stats[0], lastCreatedCharacterClass) )
 		{
-			client_classes[0] = lastCreatedCharacterClass;
+			case VALID_OK_CHARACTER:
+				// do nothing.
+				break;
+			case INVALID_REQUIREDLC1:
+			case INVALID_REQUIREDLC2:
+				// class or race invalid.
+				if ( stats[0]->playerRace > RACE_HUMAN )
+				{
+					stats[0]->playerRace = RACE_HUMAN;
+				}
+				if ( client_classes[0] > CLASS_MONK )
+				{
+					client_classes[0] = CLASS_BARBARIAN;
+				}
+				break;
+			case INVALID_CHARACTER:
+				// invalid for whatever reason, reset.
+				stats[0]->playerRace = RACE_HUMAN;
+				client_classes[0] = CLASS_BARBARIAN;
+				break;
+			case INVALID_REQUIRE_ACHIEVEMENT:
+				// required achievement for class mixing among races, so race is valid.
+				client_classes[0] = CLASS_BARBARIAN;
+				break;
+			default:
+				// invalid for whatever reason, reset.
+				stats[0]->playerRace = RACE_HUMAN;
+				client_classes[0] = CLASS_BARBARIAN;
+				break;
 		}
-		else if ( lastCreatedCharacterClass >= CLASS_MACHINIST && lastCreatedCharacterAppearance <= CLASS_HUNTER && enabledDLCPack2 )
-		{
-			client_classes[0] = lastCreatedCharacterClass;
-		}
-		else
-		{
-		}*/
-		client_classes[0] = std::min(lastCreatedCharacterClass, static_cast<int>(CLASS_MONK));
+		
 		stats[0]->clearStats();
 		initClass(0);
 		stats[0]->appearance = lastCreatedCharacterAppearance;

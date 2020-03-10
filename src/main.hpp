@@ -513,6 +513,7 @@ extern string lastname;
 extern int lastCreatedCharacterClass;
 extern int lastCreatedCharacterAppearance;
 extern int lastCreatedCharacterSex;
+extern int lastCreatedCharacterRace;
 static const unsigned NUM_MOUSE_STATUS = 6;
 extern Sint8 mousestatus[NUM_MOUSE_STATUS];
 //extern Sint8 omousestatus[NUM_MOUSE_STATUS];
