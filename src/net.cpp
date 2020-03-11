@@ -3193,12 +3193,23 @@ void clientHandlePacket()
 	}
 
 	// current game level
-	else if (!strncmp((char*)net_packet->data, "LVLC", 4))
+	else if (!strncmp((char*)net_packet->data, "LVLC", 4) || !strncmp((char*)net_packet->data, "LVLR", 4) )
 	{
-		if ( currentlevel == net_packet->data[13] && secretlevel == net_packet->data[4] )
+		if ( strncmp((char*)net_packet->data, "LVLR", 4) )
 		{
-			// the server's just doing a routine check
-			return;
+			if ( currentlevel == net_packet->data[13] && secretlevel == net_packet->data[4] )
+			{
+				// the server's just doing a routine check
+				return;
+			}
+		}
+
+		if ( net_packet->data[14] != 0 )
+		{
+			// loading a custom map name.
+			char buf[128] = "";
+			strcpy(buf, (char*)&net_packet->data[14]);
+			loadCustomNextMap = buf;
 		}
 
 		if ( introstage == 9
@@ -3268,7 +3279,7 @@ void clientHandlePacket()
 
 		// setup level change
 		printlog("Received order to change level.\n");
-		currentlevel = net_packet->data[13];
+		currentlevel = static_cast<Sint8>(net_packet->data[13]);
 		
 		if ( !secretlevel )
 		{
