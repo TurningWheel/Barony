@@ -4163,6 +4163,7 @@ void assignActions(map_t* map)
 					for ( c = 0; c < numChairs; c++ )
 					{
 						childEntity = newEntity(60, 1, map->entities, nullptr);
+						setSpriteAttributes(childEntity, nullptr, nullptr);
 						childEntity->x = entity->x - 8;
 						childEntity->y = entity->y - 8;
 						//printlog("32 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
