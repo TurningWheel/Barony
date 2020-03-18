@@ -15,7 +15,7 @@
 #include "messages.hpp"
 #include "entity.hpp"
 #include "interface/interface.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "magic/magic.hpp"
 #include "menu.hpp"
@@ -2981,7 +2981,7 @@ void actPlayer(Entity* my)
 							combatmusicplaying = false;
 							fadein_increment = default_fadein_increment * 4;
 							fadeout_increment = default_fadeout_increment * 4;
-							playmusic(sounds[209], false, true, false);
+							playMusic(sounds[209], false, true, false);
 #endif
 							combat = false;
 							if ( multiplayer == SINGLE || !(svFlags & SV_FLAG_KEEPINVENTORY) )

@@ -17,7 +17,7 @@
 #include "main.hpp"
 #include "draw.hpp"
 #include "files.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "prng.hpp"
 #include "hash.hpp"
 #include "init.hpp"
@@ -32,10 +32,6 @@
 #include "items.hpp"
 #include "cppfuncs.hpp"
 
-#ifdef USE_FMOD
-#include "fmod.h"
-//#include <fmod_errors.h>
-#endif
 
 /*-------------------------------------------------------------------------------
 
@@ -173,48 +169,8 @@ int initApp(char* title, int fullscreen)
 		return 2;
 	}*/
 
-#ifdef USE_FMOD
-	printlog("initializing FMOD...\n");
-	fmod_result = FMOD_System_Create(&fmod_system);
-	if (FMODErrorCheck())
-	{
-		printlog("Failed to create FMOD.\n");
-		no_sound = true;
-	}
-	if (!no_sound)
-	{
-		//FMOD_System_SetOutput(fmod_system, FMOD_OUTPUTTYPE_DSOUND);
-		fmod_result = FMOD_System_Init(fmod_system, fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED, 0);
-		if (FMODErrorCheck())
-		{
-			printlog("Failed to initialize FMOD.\n");
-			no_sound = true;
-		}
-		if (!no_sound)
-		{
-			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &sound_group);
-			if (FMODErrorCheck())
-			{
-				printlog("Failed to create sound channel group.\n");
-				no_sound = true;
-			}
-			if (!no_sound)
-			{
-				fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &music_group);
-				if (FMODErrorCheck())
-				{
-					printlog("Failed to create music channel group.\n");
-					no_sound = true;
-				}
-			}
-		}
-	}
-#elif defined USE_OPENAL
-	if (!no_sound)
-	{
-		initOPENAL();
-	}
-#endif
+	initSoundEngine(); //Yes, this silently ignores the return value...(which is not good, but not important either)
+
 	printlog("initializing SDL_net...\n");
 	if ( SDLNet_Init() < 0 )
 	{
@@ -564,78 +520,12 @@ int initApp(char* title, int fullscreen)
 
 	GO_SwapBuffers(screen);
 
-	// load sound effects
-	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
-	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
-#ifdef USE_FMOD
-	printlog("loading sounds...\n");
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( numsounds = 0; !feof(fp); numsounds++ )
+	int soundStatus = loadSoundResources();
+	if ( 0 != soundStatus )
 	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
+		return soundStatus;
 	}
-	fclose(fp);
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		return 10;
-	}
-	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( c = 0; !feof(fp); c++ )
-	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-		//TODO: Might need to malloc the sounds[c]->sound
-		fmod_result = FMOD_System_CreateSound(fmod_system, name, (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
-		if (FMODErrorCheck())
-		{
-			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
-		}
-		//TODO: set sound volume? Or otherwise handle sound volume.
-	}
-	fclose(fp);
-	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-#elif defined USE_OPENAL
-	printlog("loading sounds...\n");
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( numsounds = 0; !feof(fp); numsounds++ )
-	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-	}
-	fclose(fp);
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		return 10;
-	}
-	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( c = 0; !feof(fp); c++ )
-	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-		//TODO: Might need to malloc the sounds[c]->sound
-		OPENAL_CreateSound(name, true, &sounds[c]);
-		//TODO: set sound volume? Or otherwise handle sound volume.
-	}
-	fclose(fp);
-	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
-#endif
+
 	return 0;
 }
 
@@ -2206,25 +2096,7 @@ int deinitApp()
 		free(polymodels);
 	}
 
-	// free sounds
-#ifdef USE_FMOD
-	printlog("freeing sounds...\n");
-	if ( sounds != NULL )
-	{
-		for ( c = 0; c < numsounds && !no_sound; c++ )
-		{
-			if (sounds[c] != NULL)
-			{
-				if (sounds[c] != NULL)
-				{
-					FMOD_Sound_Release(sounds[c]);    //Free the sound's FMOD sound.
-				}
-				//free(sounds[c]); //Then free the sound itself.
-			}
-		}
-		free(sounds); //Then free the sound array.
-	}
-#endif
+	freeSoundResources();
 
 	// delete opengl buffers
 	if ( allsurfaces != NULL )
@@ -2254,14 +2126,7 @@ int deinitApp()
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
-#ifdef USE_FMOD
-	if ( fmod_system )
-	{
-		FMOD_System_Close(fmod_system);
-		FMOD_System_Release(fmod_system);
-		fmod_system = NULL;
-	}
-#endif
+	exitSoundEngine();
 	if ( screen )
 	{
 		SDL_DestroyWindow(screen);

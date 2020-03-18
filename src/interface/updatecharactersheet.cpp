@@ -17,7 +17,7 @@
 #include "../player.hpp"
 #include "../colors.hpp"
 #include "interface.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 #include "../magic/magic.hpp"
 #include "../menu.hpp"
 #include "../net.hpp"

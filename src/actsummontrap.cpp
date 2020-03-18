@@ -18,7 +18,7 @@ See LICENSE for details.
 #include "net.hpp"
 #include "collision.hpp"
 #include "magic/magic.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "player.hpp"
 #include "prng.hpp"
 

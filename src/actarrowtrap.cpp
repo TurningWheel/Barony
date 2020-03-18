@@ -13,7 +13,7 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "entity.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "collision.hpp"
 #include "items.hpp"
 #include "net.hpp"

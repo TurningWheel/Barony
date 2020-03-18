@@ -15,7 +15,7 @@
 #include "../stat.hpp"
 #include "../items.hpp"
 #include "../shops.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 #include "../net.hpp"
 #include "../magic/magic.hpp"
 #include "../menu.hpp"
