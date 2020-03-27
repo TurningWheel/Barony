@@ -1157,6 +1157,14 @@ void actCustomPortal(Entity* my)
 						{
 							loadingSameLevelAsCurrent = true;
 						}
+						if ( my->portalNotSecret )
+						{
+							secretlevel = false;
+						}
+						else
+						{
+							secretlevel = true;
+						}
 						return;
 					}
 					else if ( levelToJumpTo == -998 )
