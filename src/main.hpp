@@ -475,7 +475,7 @@ typedef struct door_t
 #define CLIPFAR 1024
 #define TEXTURESIZE 32
 #define TEXTUREPOWER 5 // power of 2 that texture size is, ie pow(2,TEXTUREPOWER) = TEXTURESIZE
-#define MAXPLAYERS 4
+#define MAXPLAYERS 16
 
 // shaking/bobbing, that sort of thing
 struct cameravars_t {

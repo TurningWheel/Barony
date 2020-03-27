@@ -133,7 +133,7 @@ void actMagiclightBall(Entity* my)
 	{
 		int i = 0;
 		int player = -1;
-		for (i = 0; i < 4; ++i)
+		for (i = 0; i < MAXPLAYERS; ++i)
 		{
 			if (players[i]->entity == caster)
 			{
@@ -176,7 +176,7 @@ void actMagiclightBall(Entity* my)
 					{
 						int i = 0;
 						int player = -1;
-						for (i = 0; i < 4; ++i)
+						for (i = 0; i < MAXPLAYERS; ++i)
 						{
 							if (players[i]->entity == caster)
 							{

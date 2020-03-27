@@ -260,7 +260,7 @@ int fourthendmoviestage = 0;
 int fourthendmovietime = 0;
 int fourthEndNumLines = 13;
 real_t drunkextend = 0;
-bool losingConnection[4] = { false };
+bool losingConnection[MAXPLAYERS] = { false };
 bool subtitleVisible = false;
 int subtitleCurrent = 0;
 

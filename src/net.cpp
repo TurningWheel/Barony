@@ -945,7 +945,7 @@ void serverUpdatePlayerStats()
 			}
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 36;
+			net_packet->len = 4 + 8 * MAXPLAYERS;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
