@@ -11363,7 +11363,7 @@ void buttonHostLobby(button_t* my)
 			}
 		}
 		currentLobbyType = k_ELobbyTypePrivate;
-		cpp_SteamMatchmaking_CreateLobby(currentLobbyType, 4);
+		cpp_SteamMatchmaking_CreateLobby(currentLobbyType, MAXPLAYERS);
 #endif
 	}
 	else
@@ -11389,7 +11389,7 @@ void buttonHostLobby(button_t* my)
 			openFailedConnectionWindow(SERVER);
 			return;
 		}
-		tcpset = SDLNet_AllocSocketSet(4);
+		tcpset = SDLNet_AllocSocketSet(MAXPLAYERS);
 		SDLNet_TCP_AddSocket(tcpset, net_tcpsock);
 	}
 
@@ -11610,7 +11610,7 @@ void buttonJoinLobby(button_t* my)
 			openFailedConnectionWindow(CLIENT);
 			return;
 		}
-		tcpset = SDLNet_AllocSocketSet(4);
+		tcpset = SDLNet_AllocSocketSet(MAXPLAYERS);
 		SDLNet_TCP_AddSocket(tcpset, net_tcpsock);
 	}
 
