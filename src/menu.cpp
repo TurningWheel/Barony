@@ -496,6 +496,185 @@ void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebind
 	}
 }
 
+enum CharacterDLCValidation : int
+{
+	INVALID_CHARACTER,
+	VALID_OK_CHARACTER,
+	INVALID_REQUIREDLC1,
+	INVALID_REQUIREDLC2,
+	INVALID_REQUIRE_ACHIEVEMENT
+};
+
+bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
+{
+#ifdef STEAMWORKS
+	bool unlocked = false;
+	if ( enabledDLCPack1 && race == RACE_SKELETON && SteamUserStats()->GetAchievement("BARONY_ACH_BONY_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack1 && race == RACE_VAMPIRE && SteamUserStats()->GetAchievement("BARONY_ACH_BUCKTOOTH_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack1 && race == RACE_SUCCUBUS && SteamUserStats()->GetAchievement("BARONY_ACH_BOMBSHELL_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack1 && race == RACE_GOATMAN && SteamUserStats()->GetAchievement("BARONY_ACH_BLEATING_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack2 && race == RACE_AUTOMATON && SteamUserStats()->GetAchievement("BARONY_ACH_BOILERPLATE_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack2 && race == RACE_INCUBUS && SteamUserStats()->GetAchievement("BARONY_ACH_BAD_BOY_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack2 && race == RACE_GOBLIN && SteamUserStats()->GetAchievement("BARONY_ACH_BAYOU_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack2 && race == RACE_INSECTOID && SteamUserStats()->GetAchievement("BARONY_ACH_BUGGAR_BARON", &unlocked) )
+	{
+		return unlocked;
+	}
+#else
+	return false;
+#endif // STEAMWORKS
+	return false;
+}
+
+int isCharacterValidFromDLC(Stat& myStats, int characterClass)
+{
+	switch ( characterClass )
+	{
+		case CLASS_CONJURER:
+		case CLASS_ACCURSED:
+		case CLASS_MESMER:
+		case CLASS_BREWER:
+			if ( !enabledDLCPack1 )
+			{
+				return INVALID_REQUIREDLC1;
+			}
+			break;
+		case CLASS_MACHINIST:
+		case CLASS_PUNISHER:
+		case CLASS_SHAMAN:
+		case CLASS_HUNTER:
+			if ( !enabledDLCPack2 )
+			{
+				return INVALID_REQUIREDLC2;
+			}
+			break;
+		default:
+			break;
+	}
+
+	switch ( myStats.playerRace )
+	{
+		case RACE_SKELETON:
+		case RACE_VAMPIRE:
+		case RACE_SUCCUBUS:
+		case RACE_GOATMAN:
+			if ( !enabledDLCPack1 )
+			{
+				return INVALID_REQUIREDLC1;
+			}
+			break;
+		case RACE_AUTOMATON:
+		case RACE_INCUBUS:
+		case RACE_GOBLIN:
+		case RACE_INSECTOID:
+			if ( !enabledDLCPack2 )
+			{
+				return INVALID_REQUIREDLC2;
+			}
+			break;
+		default:
+			break;
+	}
+
+	if ( myStats.playerRace == RACE_HUMAN )
+	{
+		return VALID_OK_CHARACTER;
+	}
+	else if ( myStats.playerRace > RACE_HUMAN && myStats.appearance == 1 )
+	{
+		return VALID_OK_CHARACTER; // aesthetic only option.
+	}
+	if ( characterClass <= CLASS_MONK )
+	{
+		return VALID_OK_CHARACTER;
+	}
+
+	switch ( characterClass )
+	{
+		case CLASS_CONJURER:
+			if ( myStats.playerRace == RACE_SKELETON )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_SKELETON) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_ACCURSED:
+			if ( myStats.playerRace == RACE_VAMPIRE )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_VAMPIRE) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_MESMER:
+			if ( myStats.playerRace == RACE_SUCCUBUS )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_SUCCUBUS) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_BREWER:
+			if ( myStats.playerRace == RACE_GOATMAN )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_GOATMAN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_MACHINIST:
+			if ( myStats.playerRace == RACE_AUTOMATON )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_AUTOMATON) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_PUNISHER:
+			if ( myStats.playerRace == RACE_INCUBUS )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_INCUBUS) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_SHAMAN:
+			if ( myStats.playerRace == RACE_GOBLIN )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_GOBLIN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_HUNTER:
+			if ( myStats.playerRace == RACE_INSECTOID )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		default:
+			break;
+	}
+
+	return INVALID_CHARACTER;
+}
+
 /*-------------------------------------------------------------------------------
 
 	handleMainMenu
@@ -2032,7 +2211,10 @@ void handleMainMenu(bool mode)
 								stats[0]->playerRace = RACE_INCUBUS;
 								if ( client_classes[0] == CLASS_MESMER && stats[0]->appearance == 0 )
 								{
-									client_classes[0] = CLASS_PUNISHER;
+									if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+									{
+										client_classes[0] = CLASS_PUNISHER;
+									}
 									stats[0]->clearStats();
 									initClass(0);
 								}
@@ -2059,7 +2241,10 @@ void handleMainMenu(bool mode)
 								stats[0]->playerRace = RACE_SUCCUBUS;
 								if ( client_classes[0] == CLASS_PUNISHER && stats[0]->appearance == 0 )
 								{
-									client_classes[0] = CLASS_MESMER;
+									if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+									{
+										client_classes[0] = CLASS_MESMER;
+									}
 									stats[0]->clearStats();
 									initClass(0);
 								}
@@ -2143,14 +2328,20 @@ void handleMainMenu(bool mode)
 									if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK
 										&& stats[0]->appearance == 0 )
 									{
-										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+										if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+										{
+											client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+										}
 										stats[0]->clearStats();
 										initClass(0);
 									}
 									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK
 										&& lastAppearance == 0 )
 									{
-										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+										if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+										{
+											client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+										}
 										stats[0]->clearStats();
 										initClass(0);
 									}
@@ -2178,7 +2369,7 @@ void handleMainMenu(bool mode)
 								tooltip.y = omousey + 16;
 								tooltip.h = TTF12_HEIGHT + 8;
 #ifdef STEAMWORKS
-								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID )
+								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
 								{
 									tooltip.w = longestline(language[3917]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
@@ -2246,13 +2437,16 @@ void handleMainMenu(bool mode)
 							{
 								if ( stats[0]->appearance != 0 )
 								{
+									stats[0]->appearance = 0; // use racial passives
 									// convert human class to monster special classes on reselect.
 									if ( client_classes[0] > CLASS_MONK )
 									{
-										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+										if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+										{
+											client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+										}
 									}
 								}
-								stats[0]->appearance = 0; // use racial passives
 							}
 							else
 							{
@@ -2321,14 +2515,20 @@ void handleMainMenu(bool mode)
 					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK
 						&& stats[0]->appearance == 0 )
 					{
-						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						}
 						stats[0]->clearStats();
 						initClass(0);
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK
 						&& lastAppearance == 0 )
 					{
-						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						}
 						stats[0]->clearStats();
 						initClass(0);
 					}
@@ -2368,7 +2568,10 @@ void handleMainMenu(bool mode)
 						// convert human class to monster special classes on reselect.
 						if ( stats[0]->playerRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
 						{
-							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+							if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+							{
+								client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+							}
 							stats[0]->clearStats();
 							initClass(0);
 						}
@@ -2451,14 +2654,20 @@ void handleMainMenu(bool mode)
 					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK
 						&& stats[0]->appearance == 0 )
 					{
-						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						}
 						stats[0]->clearStats();
 						initClass(0);
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK 
 						&& lastAppearance == 0 )
 					{
-						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						}
 						stats[0]->clearStats();
 						initClass(0);
 					}
@@ -2498,7 +2707,10 @@ void handleMainMenu(bool mode)
 						// convert human class to monster special classes on reselect.
 						if ( stats[0]->playerRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
 						{
-							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+							if ( isCharacterValidFromDLC(*stats[0], client_classes[0]) != VALID_OK_CHARACTER )
+							{
+								client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+							}
 							stats[0]->clearStats();
 							initClass(0);
 						}
@@ -2566,80 +2778,112 @@ void handleMainMenu(bool mode)
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1323]);
 			int entriesToDisplay = NUMCLASSES;
-			int lastClassInList = NUMCLASSES - 1;
-			if ( stats[0]->playerRace != RACE_HUMAN && (enabledDLCPack1 || enabledDLCPack2) && stats[0]->appearance == 0 )
+			if ( enabledDLCPack1 && enabledDLCPack2 )
 			{
-				entriesToDisplay = CLASS_MONK + 2;
-				lastClassInList = CLASS_MONK + stats[0]->playerRace;
+				entriesToDisplay = NUMCLASSES;
 			}
-			else if ( stats[0]->playerRace == RACE_HUMAN || stats[0]->appearance == 1 )
+			else if ( enabledDLCPack1 || enabledDLCPack2 )
 			{
-				if ( enabledDLCPack1 && enabledDLCPack2 )
+				entriesToDisplay = NUMCLASSES - 4;
+			}
+			else
+			{
+				entriesToDisplay = CLASS_MONK + 1;
+			}
+
+			std::set<int> availableClasses;
+			std::set<int> lockedClasses;
+			std::vector<int> displayedClasses;
+			for ( c = 0; c < NUMCLASSES; ++c )
+			{
+				int result = isCharacterValidFromDLC(*stats[0], c);
+				if ( result == VALID_OK_CHARACTER )
 				{
-					entriesToDisplay = NUMCLASSES;
+					availableClasses.insert(c);
+					displayedClasses.push_back(c);
 				}
-				else if ( enabledDLCPack1 || enabledDLCPack2 )
+				else if ( result == INVALID_REQUIRE_ACHIEVEMENT )
 				{
-					entriesToDisplay = NUMCLASSES - 4;
-					if ( skipFirstDLC )
-					{
-						lastClassInList = CLASS_HUNTER;
-					}
-					else if ( skipSecondDLC )
-					{
-						lastClassInList = CLASS_BREWER;
-					}
-				}
-				else
-				{
-					entriesToDisplay = CLASS_MONK + 1;
-					lastClassInList = CLASS_MONK;
+					lockedClasses.insert(c);
 				}
 			}
 
+			for ( auto it = lockedClasses.begin(); it != lockedClasses.end(); ++it )
+			{
+				displayedClasses.push_back(*it);
+			}
+
+			int drawLockedTooltip = 0;
+			SDL_Rect tooltip;
 			for ( c = 0; c < entriesToDisplay; c++ )
 			{
-				int classToPick = c;
-				if ( stats[0]->playerRace != RACE_HUMAN && c == entriesToDisplay - 1 && stats[0]->appearance == 0 )
+				int classToPick = displayedClasses.at(c);
+				int pady = suby1 + 56 + 16 * c;
+				if ( lockedClasses.find(classToPick) != lockedClasses.end() )
 				{
-					// monsters only get to choose their particular class, while humans can choose all new classes.
-					// so the 'last' entry is the monster's class, advance to the appropriate index.
-					classToPick = CLASS_MONK + stats[0]->playerRace;
-				}
-				else if ( (stats[0]->playerRace == RACE_HUMAN || stats[0]->appearance == 1) && (enabledDLCPack1 || enabledDLCPack2) )
-				{
-					if ( skipFirstDLC )
-					{
-						if ( c > CLASS_MONK && (c < entriesToDisplay) )
-						{
-							classToPick = c + 4; // classToPick refers to the descriptions of the second half of the DLC classes.
-						}
-					}
+					pady += 8;
 				}
 
 				if ( mousestatus[SDL_BUTTON_LEFT] )
 				{
 					if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
 					{
-						if ( omousey >= suby1 + 56 + 16 * c && omousey < suby1 + 72 + 16 * c )
+						if ( omousey >= pady && omousey < pady + 16 )
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							client_classes[0] = classToPick;
-
-							// reset class loadout
-							stats[0]->clearStats();
-							initClass(0);
+							if ( isCharacterValidFromDLC(*stats[0], classToPick) == VALID_OK_CHARACTER )
+							{
+								int previousClassPicked = client_classes[0];
+								client_classes[0] = classToPick;
+								if ( previousClassPicked != client_classes[0] )
+								{
+									// reset class loadout
+									stats[0]->clearStats();
+									initClass(0);
+								}
+							}
 						}
 					}
 				}
 
+				bool classLocked = false;
+
 				if ( classToPick == client_classes[0] )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(classToPick, 0));
+					ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[o] %s", playerClassLangEntry(classToPick, 0));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(classToPick, 0));
+					if ( lockedClasses.find(classToPick) != lockedClasses.end() )
+					{
+						classLocked = true;
+						SDL_Rect img;
+						img.x = subx1 + 32 + 10;
+						img.y = pady - 2;
+						img.w = 22;
+						img.h = 20;
+						drawImageScaled(sidebar_unlock_bmp, nullptr, &img);
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, uint32ColorGray(*mainsurface), "[ ] %s", playerClassLangEntry(classToPick, 0));
+
+						if ( mouseInBounds(subx1 + 40, subx1 + 72, pady, pady + 16) )
+						{
+#ifdef STEAMWORKS
+							tooltip.x = omousex + 16;
+							tooltip.y = omousey + 16;
+							tooltip.h = TTF12_HEIGHT + 8;
+							if ( classToPick > CLASS_MONK )
+							{
+								int langline = 3927 + classToPick - CLASS_CONJURER;
+								tooltip.w = longestline(language[langline]) * TTF12_WIDTH + 8;
+								drawLockedTooltip = langline;
+							}
+#endif
+						}
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[ ] %s", playerClassLangEntry(classToPick, 0));
+					}
 				}
 
 				if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
@@ -2650,36 +2894,31 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					}
 					draw_cursor = false;
-					client_classes[0]--;
-					if (client_classes[0] < 0)
+
+					int previousClassPicked = client_classes[0];
+					if ( client_classes[0] == 0 )
 					{
-						if ( stats[0]->playerRace != RACE_HUMAN && stats[0]->appearance == 0 )
+						client_classes[0] = *(++availableClasses.rend());
+					}
+					else
+					{
+						auto it = availableClasses.find(client_classes[0]);
+						if ( it != availableClasses.end() )
 						{
-							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+							client_classes[0] = *(--it); // get previous element
 						}
 						else
 						{
-							client_classes[0] = lastClassInList;
-						}
-					}
-					else if ( stats[0]->playerRace == RACE_HUMAN || stats[0]->appearance == 1 )
-					{
-						if ( client_classes[0] == CLASS_BREWER && skipFirstDLC )
-						{
-							client_classes[0] = CLASS_MONK;
-						}
-					}
-					else if ( stats[0]->playerRace != RACE_HUMAN && stats[0]->appearance == 0 )
-					{
-						if ( client_classes[0] > CLASS_MONK )
-						{
-							client_classes[0] = CLASS_MONK;
+							client_classes[0] = 0;
 						}
 					}
 
-					// reset class loadout
-					stats[0]->clearStats();
-					initClass(0);
+					if ( previousClassPicked != client_classes[0] )
+					{
+						// reset class loadout
+						stats[0]->clearStats();
+						initClass(0);
+					}
 				}
 				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
 				{
@@ -2689,34 +2928,44 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					}
 					draw_cursor = false;
-					client_classes[0]++;
-					if ( client_classes[0] > lastClassInList )
+
+					auto it = availableClasses.find(client_classes[0]);
+					int previousClassPicked = client_classes[0];
+					if ( it != availableClasses.end() )
+					{
+						auto nextIt = std::next(it, 1);
+						if ( nextIt == availableClasses.end() )
+						{
+							client_classes[0] = 0;
+						}
+						else
+						{
+							client_classes[0] = *(++it); // get next element
+						}
+					}
+					else
 					{
 						client_classes[0] = 0;
 					}
-					else if ( stats[0]->playerRace == RACE_HUMAN || stats[0]->appearance == 1 )
-					{
-						if ( client_classes[0] == CLASS_MONK + 1 && skipFirstDLC )
-						{
-							client_classes[0] = CLASS_MACHINIST;
-						}
-					}
-					else if ( stats[0]->playerRace != RACE_HUMAN && stats[0]->appearance == 0 )
-					{
-						if ( client_classes[0] == CLASS_MONK + 1 )
-						{
-							client_classes[0] = CLASS_MONK + stats[0]->playerRace; // jump ahead to the monster specific class.
-						}
-					}
 
-					// reset class loadout
-					stats[0]->clearStats();
-					initClass(0);
+					if ( previousClassPicked != client_classes[0] )
+					{
+						// reset class loadout
+						stats[0]->clearStats();
+						initClass(0);
+					}
 				}
 			}
 
 			// class description
 			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, playerClassDescription(client_classes[0], 0));
+
+			if ( drawLockedTooltip > 0 )
+			{
+				drawTooltip(&tooltip);
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+					uint32ColorOrange(*mainsurface), language[drawLockedTooltip]);
+			}
 		}
 
 		// faces
@@ -13384,183 +13633,6 @@ void buttonRandomCharacter(button_t* my)
 		stats[0]->appearance = rand() % NUMAPPEARANCES;
 	}
 	initClass(0);
-}
-
-enum CharacterDLCValidation : int
-{
-	INVALID_CHARACTER,
-	VALID_OK_CHARACTER,
-	INVALID_REQUIREDLC1,
-	INVALID_REQUIREDLC2,
-	INVALID_REQUIRE_ACHIEVEMENT
-};
-
-bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
-{
-#ifdef STEAMWORKS
-	bool unlocked = false;
-	if ( enabledDLCPack1 && race == RACE_SKELETON && SteamUserStats()->GetAchievement("BARONY_ACH_BONY_BARON", &unlocked) )
-	{
-		return unlocked;
-	}
-	else if ( enabledDLCPack1 && race == RACE_VAMPIRE && SteamUserStats()->GetAchievement("BARONY_ACH_BUCKTOOTH_BARON", &unlocked) )
-	{
-		return unlocked;
-	}
-	else if ( enabledDLCPack1 && race == RACE_SUCCUBUS && SteamUserStats()->GetAchievement("BARONY_ACH_BOMBSHELL_BARON", &unlocked) )
-	{
-		return unlocked;
-	}
-	else if ( enabledDLCPack1 && race == RACE_GOATMAN && SteamUserStats()->GetAchievement("BARONY_ACH_BLEATING_BARON", &unlocked) )
-	{
-		return unlocked;
-	}
-	else if ( enabledDLCPack2 && race == RACE_AUTOMATON && SteamUserStats()->GetAchievement("BARONY_ACH_BOILERPLATE_BARON", &unlocked) )
-	{
-		return unlocked;
-	}
-	else if ( enabledDLCPack2 && race == RACE_INCUBUS && SteamUserStats()->GetAchievement("BARONY_ACH_BAD_BOY_BARON", &unlocked) )
-	{
-		return unlocked;
-	}
-	else if ( enabledDLCPack2 && race == RACE_GOBLIN && SteamUserStats()->GetAchievement("BARONY_ACH_BAYOU_BARON", &unlocked) )
-	{
-		return unlocked;
-	}
-	else if ( enabledDLCPack2 && race == RACE_INSECTOID && SteamUserStats()->GetAchievement("BARONY_ACH_BUGGAR_BARON", &unlocked) )
-	{
-		return unlocked;
-	}
-#endif // STEAMWORKS
-	return false;
-}
-
-int isCharacterValidFromDLC(Stat& myStats, int characterClass)
-{
-	switch ( characterClass )
-	{
-		case CLASS_CONJURER:
-		case CLASS_ACCURSED:
-		case CLASS_MESMER:
-		case CLASS_BREWER:
-			if ( !enabledDLCPack1 )
-			{
-				return INVALID_REQUIREDLC1;
-			}
-			break;
-		case CLASS_MACHINIST:
-		case CLASS_PUNISHER:
-		case CLASS_SHAMAN:
-		case CLASS_HUNTER:
-			if ( !enabledDLCPack2 )
-			{
-				return INVALID_REQUIREDLC2;
-			}
-			break;
-		default:
-			break;
-	}
-
-	switch ( myStats.playerRace )
-	{
-		case RACE_SKELETON:
-		case RACE_VAMPIRE:
-		case RACE_SUCCUBUS:
-		case RACE_GOATMAN:
-			if ( !enabledDLCPack1 )
-			{
-				return INVALID_REQUIREDLC1;
-			}
-			break;
-		case RACE_AUTOMATON:
-		case RACE_INCUBUS:
-		case RACE_GOBLIN:
-		case RACE_INSECTOID:
-			if ( !enabledDLCPack2 )
-			{
-				return INVALID_REQUIREDLC2;
-			}
-			break;
-		default:
-			break;
-	}
-
-	if ( myStats.playerRace == RACE_HUMAN )
-	{
-		return VALID_OK_CHARACTER;
-	}
-	else if ( myStats.playerRace > RACE_HUMAN && myStats.appearance == 1 )
-	{
-		return VALID_OK_CHARACTER; // aesthetic only option.
-	}
-	if ( characterClass <= CLASS_MONK )
-	{
-		return VALID_OK_CHARACTER;
-	}
-
-	switch ( characterClass )
-	{
-		case CLASS_CONJURER:
-			if ( myStats.playerRace == RACE_SKELETON )
-			{
-				return VALID_OK_CHARACTER;
-			}
-			return isAchievementUnlockedForClassUnlock(RACE_SKELETON) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
-			break;
-		case CLASS_ACCURSED:
-			if ( myStats.playerRace == RACE_VAMPIRE )
-			{
-				return VALID_OK_CHARACTER;
-			}
-			return isAchievementUnlockedForClassUnlock(RACE_VAMPIRE) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
-			break;
-		case CLASS_MESMER:
-			if ( myStats.playerRace == RACE_SUCCUBUS )
-			{
-				return VALID_OK_CHARACTER;
-			}
-			return isAchievementUnlockedForClassUnlock(RACE_SUCCUBUS) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
-			break;
-		case CLASS_BREWER:
-			if ( myStats.playerRace == RACE_GOATMAN )
-			{
-				return VALID_OK_CHARACTER;
-			}
-			return isAchievementUnlockedForClassUnlock(RACE_GOATMAN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
-			break;
-		case CLASS_MACHINIST:
-			if ( myStats.playerRace == RACE_AUTOMATON )
-			{
-				return VALID_OK_CHARACTER;
-			}
-			return isAchievementUnlockedForClassUnlock(RACE_AUTOMATON) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
-			break;
-		case CLASS_PUNISHER:
-			if ( myStats.playerRace == RACE_INCUBUS )
-			{
-				return VALID_OK_CHARACTER;
-			}
-			return isAchievementUnlockedForClassUnlock(RACE_INCUBUS) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
-			break;
-		case CLASS_SHAMAN:
-			if ( myStats.playerRace == RACE_GOBLIN )
-			{
-				return VALID_OK_CHARACTER;
-			}
-			return isAchievementUnlockedForClassUnlock(RACE_GOBLIN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
-			break;
-		case CLASS_HUNTER:
-			if ( myStats.playerRace == RACE_INSECTOID )
-			{
-				return VALID_OK_CHARACTER;
-			}
-			return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
-			break;
-		default:
-			break;
-	}
-
-	return INVALID_CHARACTER;
 }
 
 void buttonReplayLastCharacter(button_t* my)
