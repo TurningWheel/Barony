@@ -10,3 +10,11 @@
 #define BASE_DATA_DIR "./"
 
 //#define DEBUG_ACHIEVEMENTS
+
+#ifdef BARONY_DRM_FREE
+
+#ifdef STEAMWORKS
+#undef STEAMWORKS
+#endif // STEAMWORKS
+
+#endif

@@ -3253,7 +3253,7 @@ void handleMainMenu(bool mode)
 
 				flagsBox.x = mousex + 8;
 				flagsBox.y = mousey + 8;
-				flagsBox.w = strlen(language[1335]) * 12 + 4;
+				flagsBox.w = strlen(language[2919]) * 10 + 4;
 				flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
 				if ( serverNumModsLoaded > 0 )
 				{
