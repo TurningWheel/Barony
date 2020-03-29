@@ -1197,6 +1197,81 @@ void actPlayer(Entity* my)
 	{
 		buttonStartSingleplayer(nullptr);
 		keystatus[SDL_SCANCODE_F4] = 0;
+	}
+	if ( keystatus[SDL_SCANCODE_F4] )
+	{
+		keystatus[SDL_SCANCODE_F4] = 0;
+
+		SteamUserStats()->SetAchievement("BARONY_ACH_BONY_BARON");
+		SteamUserStats()->SetAchievement("BARONY_ACH_BUCKTOOTH_BARON");
+		SteamUserStats()->SetAchievement("BARONY_ACH_BOMBSHELL_BARON");
+		SteamUserStats()->SetAchievement("BARONY_ACH_BLEATING_BARON");
+		SteamUserStats()->SetAchievement("BARONY_ACH_BOILERPLATE_BARON");
+		SteamUserStats()->SetAchievement("BARONY_ACH_BAD_BOY_BARON");
+		SteamUserStats()->SetAchievement("BARONY_ACH_BAYOU_BARON");
+		SteamUserStats()->SetAchievement("BARONY_ACH_BUGGAR_BARON");
+		SteamUserStats()->StoreStats();
+	}
+	if ( keystatus[SDL_SCANCODE_F5] )
+	{
+		keystatus[SDL_SCANCODE_F5] = 0;
+		SteamUserStats()->ClearAchievement("BARONY_ACH_BONY_BARON");
+		SteamUserStats()->ClearAchievement("BARONY_ACH_BUCKTOOTH_BARON");
+		SteamUserStats()->ClearAchievement("BARONY_ACH_BOMBSHELL_BARON");
+		SteamUserStats()->ClearAchievement("BARONY_ACH_BLEATING_BARON");
+		SteamUserStats()->ClearAchievement("BARONY_ACH_BOILERPLATE_BARON");
+		SteamUserStats()->ClearAchievement("BARONY_ACH_BAD_BOY_BARON");
+		SteamUserStats()->ClearAchievement("BARONY_ACH_BAYOU_BARON");
+		SteamUserStats()->ClearAchievement("BARONY_ACH_BUGGAR_BARON");
+		SteamUserStats()->StoreStats();
+	}
+	if ( keystatus[SDL_SCANCODE_KP_1] )
+	{
+		keystatus[SDL_SCANCODE_KP_1] = 0;
+		SteamUserStats()->SetAchievement("BARONY_ACH_BONY_BARON");
+		SteamUserStats()->StoreStats();
+	}
+	if ( keystatus[SDL_SCANCODE_KP_2] )
+	{
+		keystatus[SDL_SCANCODE_KP_2] = 0;
+		SteamUserStats()->SetAchievement("BARONY_ACH_BUCKTOOTH_BARON");
+		SteamUserStats()->StoreStats();
+	}
+	if ( keystatus[SDL_SCANCODE_KP_3] )
+	{
+		keystatus[SDL_SCANCODE_KP_3] = 0;
+		SteamUserStats()->SetAchievement("BARONY_ACH_BOMBSHELL_BARON");
+		SteamUserStats()->StoreStats();
+	}
+	if ( keystatus[SDL_SCANCODE_KP_4] )
+	{
+		keystatus[SDL_SCANCODE_KP_4] = 0;
+		SteamUserStats()->SetAchievement("BARONY_ACH_BLEATING_BARON");
+		SteamUserStats()->StoreStats();
+	}
+	if ( keystatus[SDL_SCANCODE_KP_5] )
+	{
+		keystatus[SDL_SCANCODE_KP_5] = 0;
+		SteamUserStats()->SetAchievement("BARONY_ACH_BOILERPLATE_BARON");
+		SteamUserStats()->StoreStats();
+	}
+	if ( keystatus[SDL_SCANCODE_KP_6] )
+	{
+		keystatus[SDL_SCANCODE_KP_6] = 0;
+		SteamUserStats()->SetAchievement("BARONY_ACH_BAD_BOY_BARON");
+		SteamUserStats()->StoreStats();
+	}
+	if ( keystatus[SDL_SCANCODE_KP_7] )
+	{
+		keystatus[SDL_SCANCODE_KP_7] = 0;
+		SteamUserStats()->SetAchievement("BARONY_ACH_BAYOU_BARON");
+		SteamUserStats()->StoreStats();
+	}
+	if ( keystatus[SDL_SCANCODE_KP_8] )
+	{
+		keystatus[SDL_SCANCODE_KP_8] = 0;
+		SteamUserStats()->SetAchievement("BARONY_ACH_BUGGAR_BARON");
+		SteamUserStats()->StoreStats();
 	}*/
 
 	// SPLITSCREEN TODO

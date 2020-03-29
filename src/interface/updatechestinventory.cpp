@@ -19,7 +19,7 @@
 #include "../player.hpp"
 #include "interface.hpp"
 
-Entity* openedChest[4] = { nullptr };
+Entity* openedChest[MAXPLAYERS] = { nullptr };
 
 void repopulateInvItems(list_t* chestInventory)
 {

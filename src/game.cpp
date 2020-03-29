@@ -1108,6 +1108,8 @@ void gameLogic(void)
 						mapseed = forceMapSeed;
 						forceMapSeed = 0;
 					}
+
+					bool loadingTheSameFloorAsCurrent = false;
 					if ( skipLevelsOnLoad > 0 )
 					{
 						currentlevel += skipLevelsOnLoad;
@@ -1117,6 +1119,10 @@ void gameLogic(void)
 						if ( skipLevelsOnLoad < 0 )
 						{
 							currentlevel += skipLevelsOnLoad;
+							if ( skipLevelsOnLoad == -1 )
+							{
+								loadingTheSameFloorAsCurrent = true;
+							}
 						}
 						++currentlevel;
 					}
@@ -1160,17 +1166,36 @@ void gameLogic(void)
 							{
 								continue;
 							}
-							strcpy((char*)net_packet->data, "LVLC");
+							if ( loadingSameLevelAsCurrent )
+							{
+								strcpy((char*)net_packet->data, "LVLR");
+							}
+							else
+							{
+								strcpy((char*)net_packet->data, "LVLC");
+							}
 							net_packet->data[4] = secretlevel;
 							SDLNet_Write32(mapseed, &net_packet->data[5]);
 							SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
 							net_packet->data[13] = currentlevel;
+
+							if ( loadCustomNextMap.compare("") != 0 )
+							{
+								strcpy((char*)(&net_packet->data[14]), loadCustomNextMap.c_str());
+								net_packet->data[14 + loadCustomNextMap.length()] = 0;
+								net_packet->len = 14 + loadCustomNextMap.length() + 1;
+							}
+							else
+							{
+								net_packet->data[14] = 0;
+								net_packet->len = 15;
+							}
 							net_packet->address.host = net_clients[c - 1].host;
 							net_packet->address.port = net_clients[c - 1].port;
-							net_packet->len = 14;
 							sendPacketSafe(net_sock, -1, net_packet, c - 1);
 						}
 					}
+					loadingSameLevelAsCurrent = false;
 					darkmap = false;
 					numplayers = 0;
 					int checkMapHash = -1;

@@ -374,7 +374,7 @@ void Entity::actPedestalOrb()
 									if ( parent->pedestalHasOrb == parent->pedestalOrbType )
 									{
 										// only update power when right orb is in place.
-										if ( !pedestalInvertedPower )
+										if ( !parent->pedestalInvertedPower )
 										{
 											parent->mechanismPowerOff();
 										}
@@ -382,7 +382,7 @@ void Entity::actPedestalOrb()
 										{
 											parent->mechanismPowerOn();
 										}
-										updateCircuitNeighbors();
+										parent->updateCircuitNeighbors();
 									}
 									parent->pedestalHasOrb = 0;
 									serverUpdateEntitySkill(parent, 0); // update orb status 

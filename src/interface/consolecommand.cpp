@@ -1024,6 +1024,10 @@ void consoleCommand(char* command_str)
 			return;
 		}
 		skipLevelsOnLoad = atoi((char*)(command_str + 11));
+		if ( skipLevelsOnLoad == -1 )
+		{
+			loadingSameLevelAsCurrent = true;
+		}
 		consoleCommand("/nextlevel");
 	}
 	else if ( !strncmp(command_str, "/maxout3", 8) )

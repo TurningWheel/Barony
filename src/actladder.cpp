@@ -1145,9 +1145,25 @@ void actCustomPortal(Entity* my)
 					{
 						// custom level not in the levels list, but was found in the maps folder.
 						// we've set the next map to warp to.
-						if ( my->portalCustomLevelsToJump != 0 )
+						if ( my->portalCustomLevelsToJump - currentlevel > 0 )
 						{
 							skipLevelsOnLoad = my->portalCustomLevelsToJump - currentlevel;
+						}
+						else
+						{
+							skipLevelsOnLoad = my->portalCustomLevelsToJump - currentlevel - 1;
+						}
+						if ( skipLevelsOnLoad == -1 )
+						{
+							loadingSameLevelAsCurrent = true;
+						}
+						if ( my->portalNotSecret )
+						{
+							secretlevel = false;
+						}
+						else
+						{
+							secretlevel = true;
 						}
 						return;
 					}
@@ -1162,11 +1178,12 @@ void actCustomPortal(Entity* my)
 					int levelDifference = currentlevel - levelToJumpTo;
 					if ( levelDifference == 0 && ((my->portalNotSecret && !secretlevel) || (!my->portalNotSecret && secretlevel)) )
 					{
-						// error, we're reloading the same position, will glitch out clients.
-						loadnextlevel = false;
-						skipLevelsOnLoad = 0;
-						messagePlayer(i, "Error: Map to teleport to (%s) is the same position as current!", mapName);
-						return;
+						//// error, we're reloading the same position, will glitch out clients.
+						//loadnextlevel = false;
+						//skipLevelsOnLoad = 0;
+						//messagePlayer(i, "Error: Map to teleport to (%s) is the same position as current!", mapName);
+						//return;
+						loadingSameLevelAsCurrent = true; // update - can handle this now.
 					}
 
 					if ( levelToJumpTo - currentlevel > 0 )

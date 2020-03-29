@@ -2498,6 +2498,14 @@ void assignActions(map_t* map)
 					}
 					++numplayers;
 				}
+				if ( balance > 4 )
+				{
+					// if MAXPLAYERS > 4, then add some new player markers
+					--balance;
+					Entity* extraPlayer = newEntity(1, 1, map->entities, nullptr);
+					extraPlayer->x = entity->x - 8;
+					extraPlayer->y = entity->y - 8;
+				}
 				if ( numplayers > MAXPLAYERS )
 				{
 					printlog("warning: too many player objects in level!\n");
@@ -4163,6 +4171,7 @@ void assignActions(map_t* map)
 					for ( c = 0; c < numChairs; c++ )
 					{
 						childEntity = newEntity(60, 1, map->entities, nullptr);
+						setSpriteAttributes(childEntity, nullptr, nullptr);
 						childEntity->x = entity->x - 8;
 						childEntity->y = entity->y - 8;
 						//printlog("32 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
