@@ -5801,4 +5801,13 @@ before we deal!#
 3925 Ranger-mode disabled for client %d.#
 3926 Ranger-mode enabled for client %d.#
 
+3927 Unlock achievement "Bony Baron" to unlock this class for every race!#
+3928 Unlock achievement "Bucktooth Baron" to unlock this class for every race!#
+3929 Unlock achievement "Bombshell Baron" to unlock this class for every race!#
+3930 Unlock achievement "Bleating Baron" to unlock this class for every race!#
+3931 Unlock achievement "Boilerplate Baron" to unlock this class for every race!#
+3932 Unlock achievement "Bad Boy Baron" to unlock this class for every race!#
+3933 Unlock achievement "Bayou Baron" to unlock this class for every race!#
+3934 Unlock achievement "Buggar Baron" to unlock this class for every race!#
+
 3949 end#
