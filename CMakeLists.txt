@@ -244,7 +244,9 @@ endif()
 
 #add_subdirectory(books)
 
+if (NOT WIN32)
 configure_file ( "${PROJECT_SOURCE_DIR}/src/Config.hpp.in" "${PROJECT_SOURCE_DIR}/src/Config.hpp")
+endif()
 
 message("***************************")
 message("Debug flags: ")
