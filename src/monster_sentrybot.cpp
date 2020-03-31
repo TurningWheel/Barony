@@ -1052,7 +1052,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			}
 			if ( ent->skill[28] > 0 ) // mechanism
 			{
-				continue;
+				if ( my->monsterAllyPickupItems != ALLY_GYRO_DETECT_TRAPS )
+				{
+					continue;
+				}
 			}
 			if ( playerLeader )
 			{

@@ -168,7 +168,12 @@ void drawMinimap()
 		{
 			if ( entity->skill[28] > 0 ) // mechanism
 			{
-				continue;
+				if ( entity->behavior == &actCustomPortal
+					|| entity->behavior == &actTextSource
+					|| entity->behavior == &actFloorDecoration )
+				{
+					continue;
+				}
 			}
 			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
 			{
