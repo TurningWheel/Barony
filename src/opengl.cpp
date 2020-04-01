@@ -26,6 +26,29 @@ PFNGLENABLEVERTEXATTRIBARRAYPROC SDL_glEnableVertexAttribArray;
 PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
 #endif
 
+namespace {
+
+// Sets the frustum to perspective mode.
+// fovY     - Field of vision in degrees in the y direction
+// aspect   - Aspect ratio of the viewport
+// zNear    - The near clipping distance
+// zFar     - The far clipping distance
+//
+// See http://nehe.gamedev.net/article/replacement_for_perspectiveGL/21002/
+void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
+{
+    const GLdouble pi = 3.1415926535897932384626433832795;
+    GLdouble fW, fH;
+
+    //fH = tan( (fovY / 2) / 180 * pi ) * zNear;
+    fH = tan( fovY / 360 * pi ) * zNear;
+    fW = fH * aspect;
+
+    glFrustum( -fW, fW, -fH, fH, zNear, zFar );
+}
+
+} // namespace
+
 /*-------------------------------------------------------------------------------
 
 	getLightForEntity
@@ -109,7 +132,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
 	if ( !entity->flags[OVERDRAW] )
 	{
@@ -451,7 +474,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
 	if (!entity->flags[OVERDRAW])
 	{
@@ -636,7 +659,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable(GL_DEPTH_TEST);
 	if ( !entity->flags[OVERDRAW] )
 	{
@@ -844,7 +867,7 @@ void glDrawWorld(view_t* camera, int mode)
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
 		glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-		gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 16);
+		perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 16);
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 		GLfloat rotz = 0; // get z rotation
@@ -896,7 +919,7 @@ void glDrawWorld(view_t* camera, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	GLfloat rotz = 0; // get z rotation

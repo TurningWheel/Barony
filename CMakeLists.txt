@@ -227,9 +227,6 @@ elseif (APPLE)
     include_directories("${PROJECT_SOURCE_DIR}/libraries/fmod/inc")
     link_directories("${PROJECT_SOURCE_DIR}/libraries/fmod/lib")
   endif()
-
-  find_package(GLUT REQUIRED)
-  include_directories(${GLUT_INCLUDE_DIR})
 endif()
 
 # Add the source directory
@@ -318,7 +315,7 @@ else()
     #target_link_libraries(barony ${STEAMWORKS_CWRAPPER_LIBRARIES} -lstdc++)
   endif()
   if (APPLE)
-    target_link_libraries(barony ${GLUT_LIBRARIES} ${PROJECT_SOURCE_DIR}/libpng16.16.dylib)
+    target_link_libraries(barony ${PROJECT_SOURCE_DIR}/libpng16.16.dylib)
   endif()
   if (${CMAKE_SYSTEM_NAME} MATCHES "BSD")
     # For backtrace
