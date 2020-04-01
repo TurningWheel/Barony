@@ -934,6 +934,10 @@ void getItemsOnTile(int x, int y, list_t** list);
 //--- Entity act* functions ---
 void actMonster(Entity* my);
 void actPlayer(Entity* my);
+void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelta);
+void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta);
+void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDelta);
+bool isPlayerSwimming(Entity* my);
 void playerAnimateRat(Entity* my);
 void playerAnimateSpider(Entity* my);
 

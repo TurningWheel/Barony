@@ -217,6 +217,7 @@ extern char portnumber_char[6];
 extern char connectaddress[64];
 extern int multiplayerselect;
 extern bool smoothmouse;
+extern bool usecamerasmoothing;
 extern bool disablemouserotationlimit;
 extern bool broadcast;
 extern bool nohud;

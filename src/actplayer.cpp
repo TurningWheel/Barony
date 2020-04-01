@@ -29,6 +29,7 @@
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
+bool usecamerasmoothing = false;
 bool disablemouserotationlimit = false;
 bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
@@ -200,6 +201,640 @@ void actDeathCam(Entity* my)
 #define PLAYER_SIDEBOB my->fskill[10]
 #define PLAYERWALKSPEED .12
 
+bool isPlayerSwimming(Entity* my)
+{
+	// swimming
+	bool waterwalkingboots = false;
+	if ( stats[PLAYER_NUM]->shoes != NULL )
+	{
+		if ( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
+		{
+			waterwalkingboots = true;
+		}
+	}
+	bool swimming = false;
+	bool levitating = isLevitating(stats[PLAYER_NUM]);
+	if ( !levitating && !waterwalkingboots && !noclip && !skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) )
+	{
+		int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
+		int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
+		if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]]
+			|| lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+		{
+			// can swim in lavatiles or swimmingtiles only.
+			swimming = true;
+		}
+	}
+	return swimming;
+}
+
+void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelta)
+{
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / fps;
+	}
+
+	// rotate
+	if ( !command && my->isMobile() )
+	{
+		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		{
+			if ( noclip )
+			{
+				my->z -= (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .25 * refreshRateDelta;
+			}
+			else
+			{
+				my->yaw += (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .05 * refreshRateDelta;
+			}
+		}
+		else
+		{
+			my->yaw += (*inputPressed(impulses[IN_TURNL]) - *inputPressed(impulses[IN_TURNR])) * .05 * refreshRateDelta;
+		}
+	}
+	if ( shootmode && !gamePaused )
+	{
+		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		{
+			if ( smoothmouse )
+			{
+				if ( my->isMobile() )
+				{
+					PLAYER_ROTX += mousexrel * .006 * (mousespeed / 128.f);
+				}
+				if ( !disablemouserotationlimit )
+				{
+					PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
+				}
+				PLAYER_ROTX *= .5 / refreshRateDelta;
+			}
+			else
+			{
+				if ( my->isMobile() )
+				{
+					if ( disablemouserotationlimit )
+					{
+						PLAYER_ROTX = mousexrel * .01f * (mousespeed / 128.f);
+					}
+					else
+					{
+						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+					}
+				}
+				else
+				{
+					PLAYER_ROTX = 0;
+				}
+			}
+		}
+		else
+		{
+			if ( smoothmouse )
+			{
+				if ( my->isMobile() )
+				{
+					PLAYER_ROTX -= mousexrel * .006f * (mousespeed / 128.f);
+				}
+				if ( !disablemouserotationlimit )
+				{
+					PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
+				}
+				PLAYER_ROTX *= .5 / refreshRateDelta;
+			}
+			else
+			{
+				if ( my->isMobile() )
+				{
+					if ( disablemouserotationlimit )
+					{
+						PLAYER_ROTX = -mousexrel * .01f * (mousespeed / 128.f);
+					}
+					else
+					{
+						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+					}
+				}
+				else
+				{
+					PLAYER_ROTX = 0;
+				}
+			}
+		}
+	}
+	my->yaw += PLAYER_ROTX * refreshRateDelta;
+	while ( my->yaw >= PI * 2 )
+	{
+		my->yaw -= PI * 2;
+	}
+	while ( my->yaw < 0 )
+	{
+		my->yaw += PI * 2;
+	}
+	if ( smoothmouse )
+	{
+		PLAYER_ROTX *= .5 / refreshRateDelta;
+	}
+	else
+	{
+		PLAYER_ROTX = 0;
+	}
+
+	// look up and down
+	if ( !command && my->isMobile() )
+	{
+		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		{
+			my->pitch += (*inputPressed(impulses[IN_DOWN]) - *inputPressed(impulses[IN_UP])) * .05 * refreshRateDelta;
+		}
+		else
+		{
+			my->pitch += (*inputPressed(impulses[IN_UP]) - *inputPressed(impulses[IN_DOWN])) * .05 * refreshRateDelta;
+		}
+	}
+	if ( shootmode && !gamePaused )
+	{
+		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		{
+			if ( smoothmouse )
+			{
+				if ( my->isMobile() )
+				{
+					PLAYER_ROTY += mouseyrel * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+				}
+				PLAYER_ROTY = fmin(fmax(-0.35, PLAYER_ROTY), 0.35);
+				PLAYER_ROTY *= .5 / refreshRateDelta;
+			}
+			else
+			{
+				if ( my->isMobile() )
+				{
+					PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, 
+						mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+				}
+				else
+				{
+					PLAYER_ROTY = 0;
+				}
+			}
+		}
+		else
+		{
+			if ( smoothmouse )
+			{
+				if ( my->isMobile() )
+				{
+					PLAYER_ROTY -= mouseyrel * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+				}
+				PLAYER_ROTY = fmin(fmax(-0.35f, PLAYER_ROTY), 0.35f);
+				PLAYER_ROTY *= .5 / refreshRateDelta;
+			}
+			else
+			{
+				if ( my->isMobile() )
+				{
+					PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, 
+						mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+				}
+				else
+				{
+					PLAYER_ROTY = 0;
+				}
+			}
+		}
+	}
+	my->pitch -= PLAYER_ROTY * refreshRateDelta;
+
+	if ( softwaremode )
+	{
+		if ( my->pitch > PI / 6 )
+		{
+			my->pitch = PI / 6;
+		}
+		if ( my->pitch < -PI / 6 )
+		{
+			my->pitch = -PI / 6;
+		}
+	}
+	else
+	{
+		if ( my->pitch > PI / 3 )
+		{
+			my->pitch = PI / 3;
+		}
+		if ( my->pitch < -PI / 3 )
+		{
+			my->pitch = -PI / 3;
+		}
+	}
+	if ( !smoothmouse )
+	{
+		PLAYER_ROTY = 0;
+	}
+	else if ( !shootmode )
+	{
+		PLAYER_ROTY *= .5;
+	}
+}
+
+void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDelta)
+{
+	bool swimming = isPlayerSwimming(my);
+
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / fps;
+	}
+
+	// camera bobbing
+	if ( bobbing )
+	{
+		if ( swimming )
+		{
+			if ( PLAYER_BOBMODE )
+			{
+				PLAYER_BOBMOVE += .03 * refreshRateDelta;
+			}
+			else
+			{
+				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
+			}
+		}
+		else if ( ((*inputPressed(impulses[IN_FORWARD]) 
+				|| *inputPressed(impulses[IN_BACK])) 
+				|| (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) 
+				|| (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) 
+			&& !command && !swimming )
+		{
+			if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
+			{
+				if ( PLAYER_BOBMODE )
+				{
+					PLAYER_BOBMOVE += .0125 * refreshRateDelta;
+				}
+				else
+				{
+					PLAYER_BOBMOVE -= .0125 * refreshRateDelta;
+				}
+			}
+			else
+			{
+				if ( PLAYER_BOBMODE )
+				{
+					PLAYER_BOBMOVE += .025 * refreshRateDelta;
+				}
+				else
+				{
+					PLAYER_BOBMOVE -= .025 * refreshRateDelta;
+				}
+			}
+		}
+		else if ( !swimming )
+		{
+			PLAYER_BOBMOVE = 0;
+			PLAYER_BOB = 0;
+			PLAYER_BOBMODE = 0;
+		}
+
+		if ( !command && !swimming && (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) )
+		{
+			if ( (*inputPressed(impulses[IN_RIGHT]) && !(*inputPressed(impulses[IN_BACK])))
+				|| (*inputPressed(impulses[IN_LEFT]) && (*inputPressed(impulses[IN_BACK]))) )
+			{
+				PLAYER_SIDEBOB += 0.01 * refreshRateDelta;
+				real_t angle = PI / 32;
+				if ( *inputPressed(impulses[IN_BACK]) )
+				{
+					angle = PI / 64;
+				}
+				if ( PLAYER_SIDEBOB > angle )
+				{
+					PLAYER_SIDEBOB = angle;
+				}
+			}
+			else if ( (*inputPressed(impulses[IN_LEFT]) && !(*inputPressed(impulses[IN_BACK])))
+				|| (*inputPressed(impulses[IN_RIGHT]) && (*inputPressed(impulses[IN_BACK]))) )
+			{
+				PLAYER_SIDEBOB -= 0.01 * refreshRateDelta;
+				real_t angle = -PI / 32;
+				if ( *inputPressed(impulses[IN_BACK]) )
+				{
+					angle = -PI / 64;
+				}
+				if ( PLAYER_SIDEBOB < angle )
+				{
+					PLAYER_SIDEBOB = angle;
+				}
+			}
+		}
+		else
+		{
+			if ( PLAYER_SIDEBOB > 0.001 )
+			{
+				PLAYER_SIDEBOB -= 0.02 * refreshRateDelta;
+				if ( PLAYER_SIDEBOB < 0.f )
+				{
+					PLAYER_SIDEBOB = 0.f;
+				}
+			}
+			else
+			{
+				PLAYER_SIDEBOB += 0.02 * refreshRateDelta;
+				if ( PLAYER_SIDEBOB > 0.f )
+				{
+					PLAYER_SIDEBOB = 0.f;
+				}
+			}
+		}
+
+		if ( !swimming && !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
+		{
+			if ( PLAYER_BOBMOVE > .1 )
+			{
+				PLAYER_BOBMOVE = .1;
+				PLAYER_BOBMODE = 0;
+			}
+			else if ( PLAYER_BOBMOVE < -.1 )
+			{
+				PLAYER_BOBMOVE = -.1;
+				PLAYER_BOBMODE = 1;
+			}
+		}
+		else if ( swimming )
+		{
+			if ( PLAYER_BOBMOVE > .3 )
+			{
+				PLAYER_BOBMOVE = .3;
+				PLAYER_BOBMODE = 0;
+			}
+			else if ( PLAYER_BOBMOVE < -.3 )
+			{
+				PLAYER_BOBMOVE = -.3;
+				PLAYER_BOBMODE = 1;
+			}
+		}
+		else
+		{
+			if ( PLAYER_BOBMOVE > .1 )
+			{
+				PLAYER_BOBMOVE = .1;
+				PLAYER_BOBMODE = 0;
+			}
+			else if ( PLAYER_BOBMOVE < -.1 )
+			{
+				PLAYER_BOBMOVE = -.1;
+				PLAYER_BOBMODE = 1;
+			}
+		}
+		PLAYER_BOB += PLAYER_BOBMOVE * refreshRateDelta;
+		if ( static_cast<Monster>(my->effectShapeshift) == SPIDER || static_cast<Monster>(my->effectShapeshift) == RAT )
+		{
+			PLAYER_BOB = std::min(static_cast<real_t>(1), PLAYER_BOB);
+		}
+	}
+	else
+	{
+		PLAYER_BOBMOVE = 0;
+		PLAYER_BOB = 0;
+		PLAYER_BOBMODE = 0;
+	}
+}
+
+void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
+{
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / fps;
+	}
+
+	// calculate weight
+	double weightratio = 0.0;
+	int weight = 0;
+	for ( node_t* node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != NULL )
+		{
+			if ( item->type >= 0 && item->type < NUMITEMS )
+			{
+				if ( itemTypeIsQuiver(item->type) )
+				{
+					weight += std::max(1, items[item->type].weight * item->count / 5);
+				}
+				else
+				{
+					weight += items[item->type].weight * item->count;
+				}
+			}
+		}
+	}
+	weight += stats[PLAYER_NUM]->GOLD / 100;
+	if ( stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && !stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
+	{
+		weight = weight * 0.5;
+	}
+	weightratio = (1000 + my->getSTR() * 100 - weight) / (double)(1000 + my->getSTR() * 100);
+	weightratio = fmin(fmax(0, weightratio), 1);
+
+	// calculate movement forces
+
+	bool allowMovement = my->isMobile();
+	bool pacified = stats[PLAYER_NUM]->EFFECTS[EFF_PACIFY];
+	if ( !allowMovement && pacified )
+	{
+		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_PARALYZED] && !stats[PLAYER_NUM]->EFFECTS[EFF_STUNNED]
+			&& !stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
+		{
+			allowMovement = true;
+		}
+	}
+
+	if ( (!command || pacified) && allowMovement )
+	{
+		//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
+		float x_force = 0;
+		float y_force = 0;
+
+		if ( pacified )
+		{
+			x_force = 0.f;
+			y_force = -0.1;
+			if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+			{
+				y_force *= -1;
+			}
+		}
+		else
+		{
+			double backpedalMultiplier = 0.25;
+			if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+			{
+				backpedalMultiplier = 1.25;
+			}
+
+			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+			{
+				//Normal controls.
+				x_force = (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT]));
+				y_force = (*inputPressed(impulses[IN_FORWARD]) - (double)* inputPressed(impulses[IN_BACK]) * backpedalMultiplier);
+				if ( noclip )
+				{
+					if ( keystatus[SDL_SCANCODE_LSHIFT] )
+					{
+						x_force = x_force * 0.5;
+						y_force = y_force * 0.5;
+					}
+				}
+			}
+			else
+			{
+				//Confused controls.
+				x_force = (*inputPressed(impulses[IN_LEFT]) - *inputPressed(impulses[IN_RIGHT]));
+				y_force = (*inputPressed(impulses[IN_BACK]) - (double)* inputPressed(impulses[IN_FORWARD]) * backpedalMultiplier);
+			}
+
+			if ( game_controller && !*inputPressed(impulses[IN_LEFT]) && !*inputPressed(impulses[IN_RIGHT]) )
+			{
+				x_force = game_controller->getLeftXPercent();
+
+				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+				{
+					x_force *= -1;
+				}
+			}
+			if ( game_controller && !*inputPressed(impulses[IN_FORWARD]) && !*inputPressed(impulses[IN_BACK]) )
+			{
+				y_force = game_controller->getLeftYPercent();
+
+				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+				{
+					y_force *= -1;
+				}
+
+				if ( y_force < 0 )
+				{
+					y_force *= backpedalMultiplier;    //Move backwards more slowly.
+				}
+			}
+		}
+
+		int DEX = my->getDEX();
+		real_t slowSpeedPenalty = 0.0;
+		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
+		{
+			DEX = std::min(DEX - 3, -2);
+			slowSpeedPenalty = 2.0;
+		}
+		real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, 18.0);
+		if ( DEX <= 5 )
+		{
+			speedFactor = std::min((DEX + 10) * weightratio, 18.0);
+		}
+		else if ( DEX <= 15 )
+		{
+			speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, 18.0);
+		}
+		/*if ( ticks % 50 == 0 )
+		{
+		messagePlayer(0, "%f", speedFactor);
+		}*/
+		if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+		{
+			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
+			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
+			my->monsterKnockbackVelocity *= pow(0.95, 1 / refreshRateDelta);
+		}
+		else if ( stats[PLAYER_NUM]->EFFECTS[EFF_KNOCKBACK] )
+		{
+			speedFactor = std::min(speedFactor, 5.0);
+			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
+			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
+			my->monsterKnockbackVelocity *= pow(0.95, 1 / refreshRateDelta);
+		}
+		else
+		{
+			my->monsterKnockbackVelocity = 0.f;
+			my->monsterKnockbackTangentDir = 0.f;
+		}
+
+		if ( fabs(my->playerStrafeVelocity) > 0.1 )
+		{
+			//speedFactor = std::min(speedFactor, 5.0);
+			PLAYER_VELX += my->playerStrafeVelocity * cos(my->playerStrafeDir) * refreshRateDelta;
+			PLAYER_VELY += my->playerStrafeVelocity * sin(my->playerStrafeDir) * refreshRateDelta;
+			my->playerStrafeVelocity *= pow(0.95, 1 / refreshRateDelta);
+		}
+		else
+		{
+			my->playerStrafeDir = 0.0f;
+			my->playerStrafeVelocity = 0.0f;
+		}
+
+		PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+		PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+		PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+		PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+
+	}
+	PLAYER_VELX *= 0.75;
+	PLAYER_VELY *= 0.75;
+
+	if ( keystatus[SDL_SCANCODE_G] )
+	{
+		messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
+	}
+
+	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( entity == my )
+		{
+			continue;
+		}
+		if ( entity->behavior == &actPlayer )
+		{
+			if ( entityInsideEntity(my, entity) )
+			{
+				double tangent = atan2(my->y - entity->y, my->x - entity->x);
+				PLAYER_VELX += cos(tangent) * pow(0.075, 1 / refreshRateDelta);
+				PLAYER_VELY += sin(tangent) * pow(0.075, 1 / refreshRateDelta);
+			}
+		}
+	}
+
+	// swimming slows you down
+	bool amuletwaterbreathing = false;
+	if ( stats[PLAYER_NUM]->amulet != NULL )
+	{
+		if ( stats[PLAYER_NUM]->amulet->type == AMULET_WATERBREATHING )
+		{
+			amuletwaterbreathing = true;
+		}
+	}
+	bool swimming = isPlayerSwimming(my);
+	if ( swimming && !amuletwaterbreathing )
+	{
+		PLAYER_VELX *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
+		PLAYER_VELY *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
+
+		if ( stats[PLAYER_NUM]->type == SKELETON )
+		{
+			if ( !swimDebuffMessageHasPlayed )
+			{
+				messagePlayer(PLAYER_NUM, language[3182]);
+				swimDebuffMessageHasPlayed = true;
+			}
+			// no swim good
+			PLAYER_VELX *= 0.5;
+			PLAYER_VELY *= 0.5;
+		}
+	}
+}
+
 void actPlayer(Entity* my)
 {
 	if (!my)
@@ -250,8 +885,6 @@ void actPlayer(Entity* my)
 	Item* item;
 	int i, bodypart;
 	double dist = 0;
-	double weightratio;
-	int weight;
 	bool wearingring = false;
 	bool levitating = false;
 	bool isHumanoid = true;
@@ -1979,152 +2612,148 @@ void actPlayer(Entity* my)
 		{
 			waterwalkingboots = true;
 		}
-	bool swimming = false;
+	bool swimming = isPlayerSwimming(my);
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || splitscreen )
 	{
-		if ( !levitating && !waterwalkingboots && !noclip && !skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) )
+		if ( swimming )
 		{
 			int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
-			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]]
-				|| lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			if ( rand() % 400 == 0 && multiplayer != CLIENT )
 			{
-				// can swim in lavatiles or swimmingtiles only.
-				if ( rand() % 400 == 0 && multiplayer != CLIENT )
+				my->increaseSkill(PRO_SWIMMING);
+			}
+			my->z = 7;
+			if ( playerRace == SPIDER || playerRace == RAT )
+			{
+				my->z += 1;
+			}
+			if ( !PLAYER_INWATER && (PLAYER_NUM == clientnum || splitscreen) )
+			{
+				PLAYER_INWATER = 1;
+				if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 				{
-					my->increaseSkill(PRO_SWIMMING);
+					messagePlayer(PLAYER_NUM, language[573]);
+					if ( stats[PLAYER_NUM]->type == AUTOMATON )
+					{
+						messagePlayer(PLAYER_NUM, language[3703]);
+					}
+					cameravars[PLAYER_NUM].shakex += .1;
+					cameravars[PLAYER_NUM].shakey += 10;
 				}
-				swimming = true;
-				my->z = 7;
-				if ( playerRace == SPIDER || playerRace == RAT )
+				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == VAMPIRE )
 				{
-					my->z += 1;
+					messagePlayerColor(PLAYER_NUM, SDL_MapRGB(mainsurface->format, 255, 0, 0), language[3183]);
+					playSoundPlayer(PLAYER_NUM, 28, 128);
+					playSoundPlayer(PLAYER_NUM, 249, 128);
+					cameravars[PLAYER_NUM].shakex += .1;
+					cameravars[PLAYER_NUM].shakey += 10;
 				}
-				if ( !PLAYER_INWATER && (PLAYER_NUM == clientnum || splitscreen) )
+				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == AUTOMATON )
 				{
-					PLAYER_INWATER = 1;
-					if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
-					{
-						messagePlayer(PLAYER_NUM, language[573]);
-						if ( stats[PLAYER_NUM]->type == AUTOMATON )
-						{
-							messagePlayer(PLAYER_NUM, language[3703]);
-						}
-						cameravars[PLAYER_NUM].shakex += .1;
-						cameravars[PLAYER_NUM].shakey += 10;
-					}
-					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == VAMPIRE )
-					{
-						messagePlayerColor(PLAYER_NUM, SDL_MapRGB(mainsurface->format, 255, 0, 0), language[3183]);
-						playSoundPlayer(PLAYER_NUM, 28, 128);
-						playSoundPlayer(PLAYER_NUM, 249, 128);
-						cameravars[PLAYER_NUM].shakex += .1;
-						cameravars[PLAYER_NUM].shakey += 10;
-					}
-					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == AUTOMATON )
-					{
-						messagePlayer(PLAYER_NUM, language[3702]);
-						playSound(136, 128);
-					}
-					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
-					{
-						playSound(136, 128);
-					}
+					messagePlayer(PLAYER_NUM, language[3702]);
+					playSound(136, 128);
 				}
-				if ( multiplayer != CLIENT )
+				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 				{
-					// Check if the Player is in Water or Lava
-					if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+					playSound(136, 128);
+				}
+			}
+			if ( multiplayer != CLIENT )
+			{
+				// Check if the Player is in Water or Lava
+				if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+				{
+					if ( my->flags[BURNING] )
 					{
-						if ( my->flags[BURNING] )
-						{
-							my->flags[BURNING] = false;
-							messagePlayer(PLAYER_NUM, language[574]); // "The water extinguishes the flames!"
-							serverUpdateEntityFlag(my, BURNING);
-						}
+						my->flags[BURNING] = false;
+						messagePlayer(PLAYER_NUM, language[574]); // "The water extinguishes the flames!"
+						serverUpdateEntityFlag(my, BURNING);
+					}
+					if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+					{
 						if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
 						{
-							if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
-							{
-								my->setEffect(EFF_POLYMORPH, false, 0, true);
-								my->effectPolymorph = 0;
-								serverUpdateEntitySkill(my, 50);
+							my->setEffect(EFF_POLYMORPH, false, 0, true);
+							my->effectPolymorph = 0;
+							serverUpdateEntitySkill(my, 50);
 
-								messagePlayer(PLAYER_NUM, language[3192]);
-								messagePlayer(PLAYER_NUM, language[3185]);
-							}
-							/*if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
-							{
-								my->setEffect(EFF_SHAPESHIFT, false, 0, true);
-								my->effectShapeshift = 0;
-								serverUpdateEntitySkill(my, 53);
+							messagePlayer(PLAYER_NUM, language[3192]);
+							messagePlayer(PLAYER_NUM, language[3185]);
+						}
+						/*if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+						{
+							my->setEffect(EFF_SHAPESHIFT, false, 0, true);
+							my->effectShapeshift = 0;
+							serverUpdateEntitySkill(my, 53);
 
-								messagePlayer(PLAYER_NUM, language[3418]);
-								messagePlayer(PLAYER_NUM, language[3417]);
-							}*/
-							playSoundEntity(my, 400, 92);
-							createParticleDropRising(my, 593, 1.f);
-							serverSpawnMiscParticles(my, PARTICLE_EFFECT_RISING_DROP, 593);
-						}
-						if ( stats[PLAYER_NUM]->type == VAMPIRE )
-						{
-							if ( ticks % 10 == 0 ) // Water deals damage every 10 ticks
-							{
-								my->modHP(-2 - rand() % 2);
-								if ( ticks % 20 == 0 )
-								{
-									playSoundPlayer(PLAYER_NUM, 28, 92);
-								}
-								my->setObituary(language[3254]); // "goes for a swim in some water."
-								steamAchievementClient(PLAYER_NUM, "BARONY_ACH_BLOOD_BOIL");
-							}
-						}
-						else if ( stats[PLAYER_NUM]->type == AUTOMATON )
-						{
-							if ( ticks % 10 == 0 ) // Water deals heat damage every 10 ticks
-							{
-								my->safeConsumeMP(2);
-							}
-							if ( ticks % 50 == 0 )
-							{
-								messagePlayer(PLAYER_NUM, language[3702]);
-								stats[PLAYER_NUM]->HUNGER -= 25;
-								serverUpdateHunger(PLAYER_NUM);
-							}
-						}
+							messagePlayer(PLAYER_NUM, language[3418]);
+							messagePlayer(PLAYER_NUM, language[3417]);
+						}*/
+						playSoundEntity(my, 400, 92);
+						createParticleDropRising(my, 593, 1.f);
+						serverSpawnMiscParticles(my, PARTICLE_EFFECT_RISING_DROP, 593);
 					}
-					else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks
+					if ( stats[PLAYER_NUM]->type == VAMPIRE )
 					{
-						my->modHP(-2 - rand() % 2);
-						if ( stats[PLAYER_NUM]->type == AUTOMATON )
+						if ( ticks % 10 == 0 ) // Water deals damage every 10 ticks
 						{
-							my->modMP(2);
-							if ( ticks % 50 == 0 )
-							{
-								messagePlayer(PLAYER_NUM, language[3703]);
-								stats[PLAYER_NUM]->HUNGER += 50;
-								serverUpdateHunger(PLAYER_NUM);
-							}
-						}
-						my->setObituary(language[1506]); // "goes for a swim in some lava."
-						if ( !my->flags[BURNING] )
-						{
-							// Attempt to set the Entity on fire
-							my->SetEntityOnFire();
-						}
-						if ( stats[PLAYER_NUM]->type == AUTOMATON || stats[PLAYER_NUM]->type == SKELETON )
-						{
+							my->modHP(-2 - rand() % 2);
 							if ( ticks % 20 == 0 )
 							{
 								playSoundPlayer(PLAYER_NUM, 28, 92);
 							}
+							my->setObituary(language[3254]); // "goes for a swim in some water."
+							steamAchievementClient(PLAYER_NUM, "BARONY_ACH_BLOOD_BOIL");
+						}
+					}
+					else if ( stats[PLAYER_NUM]->type == AUTOMATON )
+					{
+						if ( ticks % 10 == 0 ) // Water deals heat damage every 10 ticks
+						{
+							my->safeConsumeMP(2);
+						}
+						if ( ticks % 50 == 0 )
+						{
+							messagePlayer(PLAYER_NUM, language[3702]);
+							stats[PLAYER_NUM]->HUNGER -= 25;
+							serverUpdateHunger(PLAYER_NUM);
+						}
+					}
+				}
+				else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks
+				{
+					my->modHP(-2 - rand() % 2);
+					if ( stats[PLAYER_NUM]->type == AUTOMATON )
+					{
+						my->modMP(2);
+						if ( ticks % 50 == 0 )
+						{
+							messagePlayer(PLAYER_NUM, language[3703]);
+							stats[PLAYER_NUM]->HUNGER += 50;
+							serverUpdateHunger(PLAYER_NUM);
+						}
+					}
+					my->setObituary(language[1506]); // "goes for a swim in some lava."
+					if ( !my->flags[BURNING] )
+					{
+						// Attempt to set the Entity on fire
+						my->SetEntityOnFire();
+					}
+					if ( stats[PLAYER_NUM]->type == AUTOMATON || stats[PLAYER_NUM]->type == SKELETON )
+					{
+						if ( ticks % 20 == 0 )
+						{
+							playSoundPlayer(PLAYER_NUM, 28, 92);
 						}
 					}
 				}
 			}
 		}
 	}
-	if (!swimming)
+
+	if ( !swimming )
+	{
 		if (PLAYER_INWATER)
 		{
 			PLAYER_INWATER = 0;
@@ -2132,158 +2761,15 @@ void actPlayer(Entity* my)
 			PLAYER_BOB = 0;
 			PLAYER_BOBMODE = 0;
 		}
+	}
 
 	if (PLAYER_NUM == clientnum || splitscreen)
 	{
 		players[PLAYER_NUM]->entity = my;
 
-		// camera bobbing
-		if (bobbing)
+		if ( !usecamerasmoothing )
 		{
-			if ( swimming )
-			{
-				if ( PLAYER_BOBMODE )
-				{
-					PLAYER_BOBMOVE += .03;
-				}
-				else
-				{
-					PLAYER_BOBMOVE -= .03;
-				}
-			}
-			else if ( ((*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) && !command && !swimming)
-			{
-				if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
-				{
-					if (PLAYER_BOBMODE)
-					{
-						PLAYER_BOBMOVE += .0125;
-					}
-					else
-					{
-						PLAYER_BOBMOVE -= .0125;
-					}
-				}
-				else
-				{
-					if (PLAYER_BOBMODE)
-					{
-						PLAYER_BOBMOVE += .025;
-					}
-					else
-					{
-						PLAYER_BOBMOVE -= .025;
-					}
-				}
-			}
-			else if ( !swimming )
-			{
-				PLAYER_BOBMOVE = 0;
-				PLAYER_BOB = 0;
-				PLAYER_BOBMODE = 0;
-			}
-
-			if ( !command && !swimming && (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) )
-			{
-				if ( (*inputPressed(impulses[IN_RIGHT]) && !(*inputPressed(impulses[IN_BACK]))) 
-					|| (*inputPressed(impulses[IN_LEFT]) && (*inputPressed(impulses[IN_BACK]))) )
-				{
-					PLAYER_SIDEBOB += 0.01;
-					real_t angle = PI / 32;
-					if ( *inputPressed(impulses[IN_BACK]) )
-					{
-						angle = PI / 64;
-					}
-					if ( PLAYER_SIDEBOB > angle )
-					{
-						PLAYER_SIDEBOB = angle;
-					}
-				}
-				else if ( (*inputPressed(impulses[IN_LEFT]) && !(*inputPressed(impulses[IN_BACK])))
-					|| (*inputPressed(impulses[IN_RIGHT]) && (*inputPressed(impulses[IN_BACK]))) )
-				{
-					PLAYER_SIDEBOB -= 0.01;
-					real_t angle = -PI / 32;
-					if ( *inputPressed(impulses[IN_BACK]) )
-					{
-						angle = -PI / 64;
-					}
-					if ( PLAYER_SIDEBOB < angle )
-					{
-						PLAYER_SIDEBOB = angle;
-					}
-				}
-			}
-			else
-			{
-				if ( PLAYER_SIDEBOB > 0.001 )
-				{
-					PLAYER_SIDEBOB -= 0.02;
-					if ( PLAYER_SIDEBOB < 0.f )
-					{
-						PLAYER_SIDEBOB = 0.f;
-					}
-				}
-				else
-				{
-					PLAYER_SIDEBOB += 0.02;
-					if ( PLAYER_SIDEBOB > 0.f )
-					{
-						PLAYER_SIDEBOB = 0.f;
-					}
-				}
-			}
-
-			if ( !swimming && !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
-			{
-				if ( PLAYER_BOBMOVE > .1 )
-				{
-					PLAYER_BOBMOVE = .1;
-					PLAYER_BOBMODE = 0;
-				}
-				else if ( PLAYER_BOBMOVE < -.1 )
-				{
-					PLAYER_BOBMOVE = -.1;
-					PLAYER_BOBMODE = 1;
-				}
-			}
-			else if ( swimming )
-			{
-				if ( PLAYER_BOBMOVE > .3 )
-				{
-					PLAYER_BOBMOVE = .3;
-					PLAYER_BOBMODE = 0;
-				}
-				else if ( PLAYER_BOBMOVE < -.3 )
-				{
-					PLAYER_BOBMOVE = -.3;
-					PLAYER_BOBMODE = 1;
-				}
-			}
-			else
-			{
-				if ( PLAYER_BOBMOVE > .1 )
-				{
-					PLAYER_BOBMOVE = .1;
-					PLAYER_BOBMODE = 0;
-				}
-				else if ( PLAYER_BOBMOVE < -.1 )
-				{
-					PLAYER_BOBMOVE = -.1;
-					PLAYER_BOBMODE = 1;
-				}
-			}
-			PLAYER_BOB += PLAYER_BOBMOVE;
-			if ( playerRace == SPIDER || playerRace == RAT )
-			{
-				PLAYER_BOB = std::min(static_cast<real_t>(1), PLAYER_BOB);
-			}
-		}
-		else
-		{
-			PLAYER_BOBMOVE = 0;
-			PLAYER_BOB = 0;
-			PLAYER_BOBMODE = 0;
+			handlePlayerCameraBobbing(my, PLAYER_NUM, false);
 		}
 
 		// object interaction
@@ -3341,48 +3827,7 @@ void actPlayer(Entity* my)
 			}
 		}
 
-		// calculate weight
-		weight = 0;
-		for ( node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
-		{
-			item = (Item*)node->element;
-			if ( item != NULL )
-			{
-				if ( item->type >= 0 && item->type < NUMITEMS )
-				{
-					if ( itemTypeIsQuiver(item->type) )
-					{
-						weight += std::max(1, items[item->type].weight * item->count / 5);
-					}
-					else
-					{
-						weight += items[item->type].weight * item->count;
-					}
-				}
-			}
-		}
-		weight += stats[PLAYER_NUM]->GOLD / 100;
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && !stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
-		{
-			weight = weight * 0.5;
-		}
-		weightratio = (1000 + my->getSTR() * 100 - weight) / (double)(1000 + my->getSTR() * 100);
-		weightratio = fmin(fmax(0, weightratio), 1);
-
-		// calculate movement forces
-
-		bool allowMovement = my->isMobile();
-		bool pacified = stats[PLAYER_NUM]->EFFECTS[EFF_PACIFY];
-		if ( !allowMovement && pacified )
-		{
-			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_PARALYZED] && !stats[PLAYER_NUM]->EFFECTS[EFF_STUNNED]
-				&& !stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
-			{
-				allowMovement = true;
-			}
-		}
-
-		if ( !allowMovement )
+		if ( !my->isMobile() )
 		{
 			if ( (clientnum == PLAYER_NUM || splitscreen) && openedChest[PLAYER_NUM] )
 			{
@@ -3390,349 +3835,6 @@ void actPlayer(Entity* my)
 			}
 		}
 
-		if ( (!command || pacified) && allowMovement )
-		{
-			//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
-			float x_force = 0;
-			float y_force = 0;
-
-			if ( pacified )
-			{
-				x_force = 0.f;
-				y_force = -0.1;
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
-				{
-					y_force *= -1;
-				}
-			}
-			else
-			{
-				double backpedalMultiplier = 0.25;
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
-				{
-					backpedalMultiplier = 1.25;
-				}
-
-				if (!stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
-				{
-					//Normal controls.
-					x_force = (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT]));
-					y_force = (*inputPressed(impulses[IN_FORWARD]) - (double) * inputPressed(impulses[IN_BACK]) * backpedalMultiplier);
-					if ( noclip )
-					{
-						if ( keystatus[SDL_SCANCODE_LSHIFT] )
-						{
-							x_force = x_force * 0.5;
-							y_force = y_force * 0.5;
-						}
-					}
-				}
-				else
-				{
-					//Confused controls.
-					x_force = (*inputPressed(impulses[IN_LEFT]) - *inputPressed(impulses[IN_RIGHT]));
-					y_force = (*inputPressed(impulses[IN_BACK]) - (double) * inputPressed(impulses[IN_FORWARD]) * backpedalMultiplier);
-				}
-
-				if (game_controller && !*inputPressed(impulses[IN_LEFT]) && !*inputPressed(impulses[IN_RIGHT]))
-				{
-					x_force = game_controller->getLeftXPercent();
-
-					if (stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
-					{
-						x_force *= -1;
-					}
-				}
-				if (game_controller && !*inputPressed(impulses[IN_FORWARD]) && !*inputPressed(impulses[IN_BACK]))
-				{
-					y_force = game_controller->getLeftYPercent();
-
-					if (stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
-					{
-						y_force *= -1;
-					}
-
-					if (y_force < 0)
-					{
-						y_force *= backpedalMultiplier;    //Move backwards more slowly.
-					}
-				}
-			}
-
-			int DEX = my->getDEX();
-			real_t slowSpeedPenalty = 0.0;
-			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
-			{
-				DEX = std::min(DEX - 3, -2);
-				slowSpeedPenalty = 2.0;
-			}
-			real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, 18.0);
-			if ( DEX <= 5 )
-			{
-				speedFactor = std::min((DEX + 10) * weightratio, 18.0);
-			}
-			else if ( DEX <= 15 )
-			{
-				speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, 18.0);
-			}
-			/*if ( ticks % 50 == 0 )
-			{
-				messagePlayer(0, "%f", speedFactor);
-			}*/
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
-			{
-				PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir);
-				PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir);
-				my->monsterKnockbackVelocity *= 0.95;
-			}
-			else if ( stats[PLAYER_NUM]->EFFECTS[EFF_KNOCKBACK] )
-			{
-				speedFactor = std::min(speedFactor, 5.0);
-				PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir);
-				PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir);
-				my->monsterKnockbackVelocity *= 0.95;
-			}
-			else
-			{
-				my->monsterKnockbackVelocity = 0.f;
-				my->monsterKnockbackTangentDir = 0.f;
-			}
-
-			if ( fabs(my->playerStrafeVelocity) > 0.1 )
-			{
-				//speedFactor = std::min(speedFactor, 5.0);
-				PLAYER_VELX += my->playerStrafeVelocity * cos(my->playerStrafeDir);
-				PLAYER_VELY += my->playerStrafeVelocity * sin(my->playerStrafeDir);
-				my->playerStrafeVelocity *= 0.95;
-			}
-			else
-			{
-				my->playerStrafeDir = 0.0f;
-				my->playerStrafeVelocity = 0.0f;
-			}
-
-			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-
-		}
-		PLAYER_VELX *= .75;
-		PLAYER_VELY *= .75;
-
-		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
-		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity == my )
-			{
-				continue;
-			}
-			if ( entity->behavior == &actPlayer )
-			{
-				if ( entityInsideEntity(my, entity) )
-				{
-					double tangent = atan2(my->y - entity->y, my->x - entity->x);
-					PLAYER_VELX += cos(tangent) * .075;
-					PLAYER_VELY += sin(tangent) * .075;
-				}
-			}
-		}
-
-		// swimming slows you down
-		bool amuletwaterbreathing = false;
-		if ( stats[PLAYER_NUM]->amulet != NULL )
-		{
-			if ( stats[PLAYER_NUM]->amulet->type == AMULET_WATERBREATHING )
-			{
-				amuletwaterbreathing = true;
-			}
-		}
-		if ( swimming && !amuletwaterbreathing )
-		{
-			PLAYER_VELX *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
-			PLAYER_VELY *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
-
-			if ( stats[PLAYER_NUM]->type == SKELETON )
-			{
-				if ( !swimDebuffMessageHasPlayed )
-				{
-					messagePlayer(PLAYER_NUM, language[3182]);
-					swimDebuffMessageHasPlayed = true;
-				}
-				// no swim good
-				PLAYER_VELX *= 0.5;
-				PLAYER_VELY *= 0.5;
-			}
-		}
-
-		// rotate
-		if ( !command && my->isMobile() )
-		{
-			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
-			{
-				if ( noclip )
-				{
-					my->z -= (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .25;
-				}
-				else
-				{
-					my->yaw += (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .05;
-				}
-			}
-			else
-			{
-				my->yaw += (*inputPressed(impulses[IN_TURNL]) - *inputPressed(impulses[IN_TURNR])) * .05;
-			}
-		}
-		if ( shootmode && !gamePaused )
-		{
-			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
-			{
-				if ( smoothmouse )
-				{
-					if ( my->isMobile() )
-					{
-						PLAYER_ROTX += mousexrel * .006 * (mousespeed / 128.f);
-					}
-					if ( !disablemouserotationlimit )
-					{
-						PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
-					}
-					PLAYER_ROTX *= .5;
-				}
-				else
-				{
-					if ( my->isMobile() )
-					{
-						if ( disablemouserotationlimit )
-						{
-							PLAYER_ROTX = mousexrel * .01f * (mousespeed / 128.f);
-						}
-						else
-						{
-							PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
-						}
-					}
-					else
-					{
-						PLAYER_ROTX = 0;
-					}
-				}
-			}
-			else
-			{
-				if ( smoothmouse )
-				{
-					if ( my->isMobile() )
-					{
-						PLAYER_ROTX -= mousexrel * .006f * (mousespeed / 128.f);
-					}
-					if ( !disablemouserotationlimit )
-					{
-						PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
-					}
-					PLAYER_ROTX *= .5;
-				}
-				else
-				{
-					if ( my->isMobile() )
-					{
-						if ( disablemouserotationlimit )
-						{
-							PLAYER_ROTX = -mousexrel * .01f * (mousespeed / 128.f);
-						}
-						else
-						{
-							PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
-						}
-					}
-					else
-					{
-						PLAYER_ROTX = 0;
-					}
-				}
-			}
-		}
-		my->yaw += PLAYER_ROTX;
-		while ( my->yaw >= PI * 2 )
-		{
-			my->yaw -= PI * 2;
-		}
-		while ( my->yaw < 0 )
-		{
-			my->yaw += PI * 2;
-		}
-		if ( smoothmouse )
-		{
-			PLAYER_ROTX *= .5;
-		}
-		else
-		{
-			PLAYER_ROTX = 0;
-		}
-
-		// look up and down
-		if ( !command && my->isMobile() )
-		{
-			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
-			{
-				my->pitch += (*inputPressed(impulses[IN_DOWN]) - *inputPressed(impulses[IN_UP])) * .05;
-			}
-			else
-			{
-				my->pitch += (*inputPressed(impulses[IN_UP]) - *inputPressed(impulses[IN_DOWN])) * .05;
-			}
-		}
-		if ( shootmode && !gamePaused )
-		{
-			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
-			{
-				if ( smoothmouse )
-				{
-					if ( my->isMobile() )
-					{
-						PLAYER_ROTY += mouseyrel * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
-					}
-					PLAYER_ROTY = fmin(fmax(-0.35, PLAYER_ROTY), 0.35);
-					PLAYER_ROTY *= .5;
-				}
-				else
-				{
-					if ( my->isMobile() )
-					{
-						PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
-					}
-					else
-					{
-						PLAYER_ROTY = 0;
-					}
-				}
-			}
-			else
-			{
-				if ( smoothmouse )
-				{
-					if ( my->isMobile() )
-					{
-						PLAYER_ROTY -= mouseyrel * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
-					}
-					PLAYER_ROTY = fmin(fmax(-0.35f, PLAYER_ROTY), 0.35f);
-					PLAYER_ROTY *= .5;
-				}
-				else
-				{
-					if ( my->isMobile() )
-					{
-						PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
-					}
-					else
-					{
-						PLAYER_ROTY = 0;
-					}
-				}
-			}
-		}
-		my->pitch -= PLAYER_ROTY;
 		if ( PLAYER_DEATH_AUTOMATON > 0 )
 		{
 			if ( my->pitch < PI / 3 || my->pitch > 5 * PI / 3 )
@@ -3740,35 +3842,11 @@ void actPlayer(Entity* my)
 				limbAnimateToLimit(my, ANIMATE_PITCH, 0.01, PI / 3, true, 0.005);
 			}
 		}
-		if ( softwaremode )
+
+		if ( !usecamerasmoothing )
 		{
-			if ( my->pitch > PI / 6 )
-			{
-				my->pitch = PI / 6;
-			}
-			if ( my->pitch < -PI / 6 )
-			{
-				my->pitch = -PI / 6;
-			}
-		}
-		else
-		{
-			if ( my->pitch > PI / 3 )
-			{
-				my->pitch = PI / 3;
-			}
-			if ( my->pitch < -PI / 3 )
-			{
-				my->pitch = -PI / 3;
-			}
-		}
-		if ( !smoothmouse )
-		{
-			PLAYER_ROTY = 0;
-		}
-		else if ( !shootmode )
-		{
-			PLAYER_ROTY *= .5;
+			handlePlayerMovement(my, PLAYER_NUM, false);
+			handlePlayerCameraUpdate(my, PLAYER_NUM, false);
 		}
 
 		// send movement updates to server
