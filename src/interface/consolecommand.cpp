@@ -87,7 +87,7 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/fps", 4) )
 	{
 		fpsLimit = atoi(&command_str[5]);
-		fpsLimit = std::min(std::max<Uint32>(60, fpsLimit), 144u);
+		fpsLimit = std::min(std::max<Uint32>(30, fpsLimit), 144u);
 	}
 	else if (!strncmp(command_str, "/svflags ", 9))
 	{
