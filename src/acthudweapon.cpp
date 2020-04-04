@@ -42,6 +42,9 @@ Sint32 bowGimpTimer = 0; // can't draw bow unless zero.
 
 -------------------------------------------------------------------------------*/
 
+#define HUD_SHAPESHIFT_HIDE my->skill[12]
+#define HUD_LASTSHAPESHIFT_FORM my->skill[13]
+
 void actHudArm(Entity* my)
 {
 	hudarm = my;
@@ -82,6 +85,10 @@ void actHudArm(Entity* my)
 	if ( players[clientnum]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[clientnum]->entity->effectShapeshift);
+		if ( playerRace == RAT || playerRace == SPIDER )
+		{
+			HUD_SHAPESHIFT_HIDE = 1;
+		}
 	}
 	else if ( players[clientnum]->entity->effectPolymorph != NOTHING )
 	{
@@ -95,6 +102,17 @@ void actHudArm(Entity* my)
 			playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
 		}
 	}
+
+	// when reverting form, render main limb as invisible for 1 tick as it's position needs to settle.
+	if ( HUD_LASTSHAPESHIFT_FORM != playerRace )
+	{
+		if ( HUD_SHAPESHIFT_HIDE > 0 )
+		{
+			my->flags[INVISIBLE] = true;
+			--HUD_SHAPESHIFT_HIDE;
+		}
+	}
+	HUD_LASTSHAPESHIFT_FORM = playerRace;
 
 	bool noGloves = false;
 	bool hideWeapon = false;
@@ -405,30 +423,17 @@ void actHudWeapon(Entity* my)
 	// check levitating value
 	bool levitating = isLevitating(stats[clientnum]);
 
-	// water walking boots
-	bool waterwalkingboots = false;
-	if (stats[clientnum]->shoes != nullptr)
-		if ( stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING )
-		{
-			waterwalkingboots = true;
-		}
-
 	// swimming
 	if (players[clientnum] && players[clientnum]->entity)
 	{
-		if (!levitating && !waterwalkingboots && !skillCapstoneUnlocked(clientnum, PRO_SWIMMING) )
+		if ( isPlayerSwimming(players[clientnum]->entity) || players[clientnum]->entity->skill[13] != 0 )  //skill[13] PLAYER_INWATER
 		{
-			int x = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
-			int y = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
-			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			my->flags[INVISIBLE] = true;
+			if (parent)
 			{
-				my->flags[INVISIBLE] = true;
-				if (parent)
-				{
-					parent->flags[INVISIBLE] = true;
-				}
-				return;
+				parent->flags[INVISIBLE] = true;
 			}
+			return;
 		}
 	}
 
@@ -451,6 +456,11 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
+	if ( playerRace == RAT || playerRace == SPIDER )
+	{
+		HUD_SHAPESHIFT_HIDE = std::min(2, HUD_SHAPESHIFT_HIDE + 1);
+	}
+
 	bool hideWeapon = false;
 	if ( playerRace == SPIDER
 		|| playerRace == RAT
@@ -461,6 +471,13 @@ void actHudWeapon(Entity* my)
 		if ( playerRace == CREATURE_IMP && stats[clientnum]->weapon && itemCategory(stats[clientnum]->weapon) == MAGICSTAFF )
 		{
 			hideWeapon = false;
+		}
+	}
+	else
+	{
+		if ( HUD_SHAPESHIFT_HIDE > 0 )
+		{
+			--HUD_SHAPESHIFT_HIDE;
 		}
 	}
 
@@ -638,6 +655,16 @@ void actHudWeapon(Entity* my)
 					parent->flags[INVISIBLE] = true;
 				}
 			}
+		}
+	}
+
+	// when transitioning from rat/spider to normal, need a tick to make invisible while camera/limb positions settle.
+	if ( HUD_SHAPESHIFT_HIDE > 0 && HUD_SHAPESHIFT_HIDE < 2 )
+	{
+		my->flags[INVISIBLE] = true;
+		if ( parent != NULL )
+		{
+			parent->flags[INVISIBLE] = true;
 		}
 	}
 
@@ -3010,14 +3037,6 @@ void actHudShield(Entity* my)
 	// check levitating value
 	bool levitating = isLevitating(stats[clientnum]);
 
-	// water walking boots
-	bool waterwalkingboots = false;
-	if (stats[clientnum]->shoes != nullptr)
-		if (stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING)
-		{
-			waterwalkingboots = true;
-		}
-
 	// select model
 	bool wearingring = false;
 	if ( stats[clientnum]->ring != nullptr )
@@ -3039,6 +3058,10 @@ void actHudShield(Entity* my)
 	if ( players[clientnum]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[clientnum]->entity->effectShapeshift);
+		if ( playerRace == RAT || playerRace == SPIDER )
+		{
+			HUD_SHAPESHIFT_HIDE = 1;
+		}
 	}
 	else if ( players[clientnum]->entity->effectPolymorph != NOTHING )
 	{
@@ -3074,6 +3097,17 @@ void actHudShield(Entity* my)
 	{
 		quiver = true;
 	}
+
+	// when reverting form, render shield as invisible for 2 ticks as it's position needs to settle.
+	if ( HUD_LASTSHAPESHIFT_FORM != playerRace )
+	{
+		if ( HUD_SHAPESHIFT_HIDE > 0 )
+		{
+			hideShield = true;
+			--HUD_SHAPESHIFT_HIDE;
+		}
+	}
+	HUD_LASTSHAPESHIFT_FORM = playerRace;
 
 	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
@@ -3126,20 +3160,15 @@ void actHudShield(Entity* my)
 	bool swimming = false;
 	if (players[clientnum] && players[clientnum]->entity)
 	{
-		if (!levitating && !waterwalkingboots && !skillCapstoneUnlocked(clientnum, PRO_SWIMMING) )
+		if ( isPlayerSwimming(players[clientnum]->entity) || players[clientnum]->entity->skill[13] != 0 ) //skill[13] PLAYER_INWATER
 		{
-			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
-			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			my->flags[INVISIBLE] = true;
+			Entity* parent = uidToEntity(my->parent);
+			if ( parent )
 			{
-				my->flags[INVISIBLE] = true;
-				Entity* parent = uidToEntity(my->parent);
-				if (parent)
-				{
-					parent->flags[INVISIBLE] = true;
-				}
-				swimming = true;
+				parent->flags[INVISIBLE] = true;
 			}
+			swimming = true;
 		}
 	}
 
