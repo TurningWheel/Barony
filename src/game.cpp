@@ -3781,6 +3781,20 @@ int main(int argc, char** argv)
 								camera.vang += sinspin * drunkextend;
 							}
 
+							if ( players[c] && players[c]->entity )
+							{
+								if ( usecamerasmoothing )
+								{
+									real_t oldYaw = players[c]->entity->yaw;
+									//printText(font8x8_bmp, 20, 20, "using smooth camera");
+									handlePlayerCameraBobbing(players[c]->entity, c, true);
+									handlePlayerMovement(players[c]->entity, c, true);
+									handlePlayerCameraUpdate(players[c]->entity, c, true);
+									handlePlayerCameraPosition(players[c]->entity, c, true);
+									//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
+								}
+							}
+
 							if ( players[clientnum] && players[clientnum]->entity )
 							{
 								if ( players[clientnum]->entity->isBlind() )
@@ -3867,29 +3881,6 @@ int main(int argc, char** argv)
 							auto& cvars = cameravars[c];
 							camera.ang -= cvars.shakex2;
 							camera.vang -= cvars.shakey2 / 200.0;
-
-							if ( players[c] && players[c]->entity )
-							{
-								if ( usecamerasmoothing )
-								{
-									//printText(font8x8_bmp, 20, 20, "using smooth camera");
-									handlePlayerCameraBobbing(players[c]->entity, c, true);
-									handlePlayerMovement(players[c]->entity, c, true);
-									handlePlayerCameraUpdate(players[c]->entity, c, true);
-									camera.x = players[c]->entity->x / 16.0;
-									camera.y = players[c]->entity->y / 16.0;
-									camera.z = (players[c]->entity->z * 2) + players[c]->entity->fskill[0] - 2.5;
-									camera.ang = players[c]->entity->yaw;
-									if ( softwaremode )
-									{
-										camera.vang = (players[c]->entity->pitch / (PI / 4)) * camera.winh;
-									}
-									else
-									{
-										camera.vang = players[c]->entity->pitch;
-									}
-								}
-							}
 						}
 					}
 				}

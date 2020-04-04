@@ -199,6 +199,7 @@ void actDeathCam(Entity* my)
 #define PLAYER_ROTY my->fskill[7]
 #define PLAYER_SHIELDYAW my->fskill[8]
 #define PLAYER_SIDEBOB my->fskill[10]
+#define PLAYER_CAMERAZ_ACCEL my->fskill[14]
 #define PLAYERWALKSPEED .12
 
 bool isPlayerSwimming(Entity* my)
@@ -230,6 +231,11 @@ bool isPlayerSwimming(Entity* my)
 
 void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelta)
 {
+	if ( !my )
+	{
+		return;
+	}
+
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
@@ -441,6 +447,10 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 
 void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDelta)
 {
+	if ( !my )
+	{
+		return;
+	}
 	bool swimming = isPlayerSwimming(my);
 
 	double refreshRateDelta = 1.0;
@@ -605,6 +615,11 @@ void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDel
 
 void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 {
+	if ( !my )
+	{
+		return;
+	}
+
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
@@ -746,14 +761,14 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 		{
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
-			my->monsterKnockbackVelocity *= pow(0.95, 1 / refreshRateDelta);
+			my->monsterKnockbackVelocity *= pow(0.95, refreshRateDelta);
 		}
 		else if ( stats[PLAYER_NUM]->EFFECTS[EFF_KNOCKBACK] )
 		{
 			speedFactor = std::min(speedFactor, 5.0);
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
-			my->monsterKnockbackVelocity *= pow(0.95, 1 / refreshRateDelta);
+			my->monsterKnockbackVelocity *= pow(0.95, refreshRateDelta);
 		}
 		else
 		{
@@ -766,7 +781,7 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			//speedFactor = std::min(speedFactor, 5.0);
 			PLAYER_VELX += my->playerStrafeVelocity * cos(my->playerStrafeDir) * refreshRateDelta;
 			PLAYER_VELY += my->playerStrafeVelocity * sin(my->playerStrafeDir) * refreshRateDelta;
-			my->playerStrafeVelocity *= pow(0.95, 1 / refreshRateDelta);
+			my->playerStrafeVelocity *= pow(0.95, refreshRateDelta);
 		}
 		else
 		{
@@ -774,14 +789,15 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			my->playerStrafeVelocity = 0.0f;
 		}
 
+		speedFactor *= refreshRateDelta;
 		PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 		PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 		PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 		PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 
 	}
-	PLAYER_VELX *= 0.75;
-	PLAYER_VELY *= 0.75;
+	PLAYER_VELX *= pow(0.75, refreshRateDelta);
+	PLAYER_VELY *= pow(0.75, refreshRateDelta);
 
 	if ( keystatus[SDL_SCANCODE_G] )
 	{
@@ -800,8 +816,8 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			if ( entityInsideEntity(my, entity) )
 			{
 				double tangent = atan2(my->y - entity->y, my->x - entity->x);
-				PLAYER_VELX += cos(tangent) * pow(0.075, 1 / refreshRateDelta);
-				PLAYER_VELY += sin(tangent) * pow(0.075, 1 / refreshRateDelta);
+				PLAYER_VELX += cos(tangent) * 0.075 * refreshRateDelta;
+				PLAYER_VELY += sin(tangent) * 0.075 * refreshRateDelta;
 			}
 		}
 	}
@@ -831,6 +847,86 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			// no swim good
 			PLAYER_VELX *= 0.5;
 			PLAYER_VELY *= 0.5;
+		}
+	}
+}
+
+void handlePlayerCameraPosition(Entity* my, int playernum, bool useRefreshRateDelta)
+{
+	if ( !my )
+	{
+		return;
+	}
+	int playerRace = my->getMonsterTypeFromSprite();
+	bool swimming = isPlayerSwimming(my);
+
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / fps;
+	}
+
+	// camera
+	if ( !PLAYER_DEBUGCAM && stats[PLAYER_NUM] && stats[PLAYER_NUM]->HP > 0 )
+	{
+		cameras[PLAYER_NUM].x = my->x / 16.0;
+		cameras[PLAYER_NUM].y = my->y / 16.0;
+		real_t cameraSetpointZ = (my->z * 2) - 2.5 + (swimming ? 1 : 0);
+		if ( swimming && (playerRace == RAT || playerRace == SPIDER) )
+		{
+			cameraSetpointZ -= 0.5; // float a little higher.
+		}
+
+		if ( playerRace == CREATURE_IMP && my->z == -4.5 )
+		{
+			cameraSetpointZ += 1;
+		}
+		else if ( playerRace == TROLL && my->z <= -1.5 )
+		{
+			cameraSetpointZ -= 2;
+		}
+
+		real_t diff = abs(PLAYER_CAMERAZ_ACCEL - cameraSetpointZ);
+		if ( diff > 0.01 )
+		{
+			real_t rateChange = std::min(2.0, std::max(0.3, diff * 0.5)) * refreshRateDelta;
+
+			if ( cameraSetpointZ >= 0.f )
+			{
+				PLAYER_CAMERAZ_ACCEL += rateChange;
+				PLAYER_CAMERAZ_ACCEL = std::min(cameraSetpointZ, PLAYER_CAMERAZ_ACCEL);
+			}
+			else if ( cameraSetpointZ < 0.f )
+			{
+				PLAYER_CAMERAZ_ACCEL += -rateChange;
+				PLAYER_CAMERAZ_ACCEL = std::max(cameraSetpointZ, PLAYER_CAMERAZ_ACCEL);
+			}
+			cameras[PLAYER_NUM].z = PLAYER_CAMERAZ_ACCEL;
+
+			// check updated value.
+			if ( abs(PLAYER_CAMERAZ_ACCEL - cameraSetpointZ) <= 0.01 )
+			{
+				PLAYER_BOBMOVE = 0;
+				PLAYER_BOB = 0;
+				PLAYER_BOBMODE = 0;
+			}
+		}
+		else
+		{
+			PLAYER_CAMERAZ_ACCEL = cameraSetpointZ;
+			cameras[PLAYER_NUM].z = PLAYER_CAMERAZ_ACCEL + PLAYER_BOB;
+		}
+
+		//messagePlayer(0, "Z: %.2f | %.2f | %.2f", my->z, PLAYER_CAMERAZ_ACCEL, cameraSetpointZ);
+
+		cameras[PLAYER_NUM].ang = my->yaw;
+		if ( softwaremode )
+		{
+			cameras[PLAYER_NUM].vang = (my->pitch / (PI / 4)) * cameras[PLAYER_NUM].winh;
+		}
+		else
+		{
+			cameras[PLAYER_NUM].vang = my->pitch;
 		}
 	}
 }
@@ -2754,7 +2850,7 @@ void actPlayer(Entity* my)
 
 	if ( !swimming )
 	{
-		if (PLAYER_INWATER)
+		if ( PLAYER_INWATER != 0 )
 		{
 			PLAYER_INWATER = 0;
 			PLAYER_BOBMOVE = 0;
@@ -5503,30 +5599,7 @@ void actPlayer(Entity* my)
 		PLAYER_ATTACKTIME = 0;
 	}
 
-	// camera
-	if ( !PLAYER_DEBUGCAM && stats[PLAYER_NUM] && stats[PLAYER_NUM]->HP > 0 )
-	{
-		cameras[PLAYER_NUM].x = my->x / 16.0;
-		cameras[PLAYER_NUM].y = my->y / 16.0;
-		cameras[PLAYER_NUM].z = (my->z * 2) + PLAYER_BOB - 2.5;
-		if ( playerRace == CREATURE_IMP && my->z == -4.5 )
-		{
-			cameras[PLAYER_NUM].z += 1;
-		}
-		else if ( playerRace == TROLL && my->z <= -1.5 )
-		{
-			cameras[PLAYER_NUM].z -= 2;
-		}
-		cameras[PLAYER_NUM].ang = my->yaw;
-		if ( softwaremode )
-		{
-			cameras[PLAYER_NUM].vang = (my->pitch / (PI / 4)) * cameras[PLAYER_NUM].winh;
-		}
-		else
-		{
-			cameras[PLAYER_NUM].vang = my->pitch;
-		}
-	}
+	handlePlayerCameraPosition(my, PLAYER_NUM, false);
 }
 
 // client function
