@@ -119,5 +119,6 @@ extern bool disableMultithreadedSteamNetworking;
 extern bool disableFPSLimitOnNetworkMessages;
 
 int steamPacketThread(void* data);
+int EOSPacketThread(void* data);
 
 void deleteMultiplayerSaveGames(); //Server function, deletes its own save and broadcasts delete packet to clients.

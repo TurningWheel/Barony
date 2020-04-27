@@ -1897,15 +1897,17 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	//if ( keystatus[SDL_SCANCODE_F1] )
+	//{
+	//	//gameloopFreezeEntities = !gameloopFreezeEntities;
+	//	cpp_SteamMatchmaking_RequestAppTicket();
+	//	keystatus[SDL_SCANCODE_F1] = 0;
+	//}
 	/*if ( my->ticks % 50 == 0 )
 	{
 		messagePlayer(clientnum, "%d", stats[clientnum]->HUNGER);
 	}*/
-	/*if ( keystatus[SDL_SCANCODE_F1] )
-	{
-		gameloopFreezeEntities = !gameloopFreezeEntities;
-		keystatus[SDL_SCANCODE_F1] = 0;
-	}
+	/*
 	if ( keystatus[SDL_SCANCODE_F2] )
 	{
 		if ( players[clientnum] != nullptr && players[clientnum]->entity != nullptr )
