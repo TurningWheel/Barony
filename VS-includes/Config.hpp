@@ -18,3 +18,9 @@
 #endif // STEAMWORKS
 
 #endif
+
+#ifdef USE_EOS
+#ifdef STEAMWORKS
+#undef STEAMWORKS
+#endif // STEAMWORKS
+#endif
