@@ -8401,7 +8401,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 			bool usedAllRaces = true;
-			for ( c = RACE_HUMAN; c < RACE_INSECTOID; ++c )
+			for ( c = RACE_HUMAN; c <= RACE_INSECTOID; ++c )
 			{
 				if ( !usedRace[c] )
 				{
