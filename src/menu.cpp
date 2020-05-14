@@ -873,6 +873,7 @@ void handleMainMenu(bool mode)
 				}
 				uint64 id = SteamUser()->GetSteamID().ConvertToUint64();
 			}
+#elif defined USE_EOS
 #else
 			if ( intro && introstage == 1 )
 			{
@@ -12081,7 +12082,7 @@ void buttonHostLobby(button_t* my)
 
 	if ( !directConnect )
 	{
-#if USE_EOS
+#ifdef USE_EOS
 		EOS.createLobby();
 #elif defined STEAMWORKS
 		for ( c = 0; c < MAXPLAYERS; c++ )

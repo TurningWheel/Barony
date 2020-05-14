@@ -1517,43 +1517,42 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 {
 	AuthHandle = EOS_Platform_GetAuthInterface(PlatformHandle);
 	ConnectHandle = EOS_Platform_GetConnectInterface(PlatformHandle);
-	return true;
 
-	//EOS_Auth_Credentials Credentials = {};
-	//Credentials.ApiVersion = EOS_AUTH_CREDENTIALS_API_LATEST;
-	//Credentials.Id = hostname.c_str();
-	//Credentials.Token = tokenName.c_str();
-	//Credentials.Type = EOS_ELoginCredentialType::EOS_LCT_Developer;
+	EOS_Auth_Credentials Credentials = {};
+	Credentials.ApiVersion = EOS_AUTH_CREDENTIALS_API_LATEST;
+	Credentials.Id = hostname.c_str();
+	Credentials.Token = tokenName.c_str();
+	Credentials.Type = EOS_ELoginCredentialType::EOS_LCT_Developer;
 
-	//EOS_Auth_LoginOptions LoginOptions;
-	//LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
-	//LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile | EOS_EAuthScopeFlags::EOS_AS_FriendsList | EOS_EAuthScopeFlags::EOS_AS_Presence);
-	//LoginOptions.Credentials = &Credentials;
+	EOS_Auth_LoginOptions LoginOptions;
+	LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
+	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile | EOS_EAuthScopeFlags::EOS_AS_FriendsList | EOS_EAuthScopeFlags::EOS_AS_Presence);
+	LoginOptions.Credentials = &Credentials;
 
-	//EOS_Auth_Login(AuthHandle, &LoginOptions, NULL, AuthLoginCompleteCallback);
+	EOS_Auth_Login(AuthHandle, &LoginOptions, NULL, AuthLoginCompleteCallback);
 
-	//AddConnectAuthExpirationNotification();
+	AddConnectAuthExpirationNotification();
 
-	//Uint32 startAuthTicks = SDL_GetTicks();
-	//Uint32 currentAuthTicks = startAuthTicks;
-	//while ( AccountAuthenticationCompleted == EOS_EResult::EOS_NotConfigured )
-	//{
-	//	EOS_Platform_Tick(PlatformHandle);
-	//	SDL_Delay(50);
-	//	currentAuthTicks = SDL_GetTicks();
-	//	if ( currentAuthTicks - startAuthTicks >= 30000 ) // 30 second timeout.
-	//	{
-	//		AccountAuthenticationCompleted = EOS_EResult::EOS_InvalidAuth;
-	//		logError("initAuth: timeout attempting to log in");
-	//		return false;
-	//	}
-	//}
-	//if ( AccountAuthenticationCompleted == EOS_EResult::EOS_Success )
-	//{
-	//	return true;
-	//}
-	//else
-	//{
-	//	return false;
-	//}
+	Uint32 startAuthTicks = SDL_GetTicks();
+	Uint32 currentAuthTicks = startAuthTicks;
+	while ( AccountAuthenticationCompleted == EOS_EResult::EOS_NotConfigured )
+	{
+		EOS_Platform_Tick(PlatformHandle);
+		SDL_Delay(50);
+		currentAuthTicks = SDL_GetTicks();
+		if ( currentAuthTicks - startAuthTicks >= 30000 ) // 30 second timeout.
+		{
+			AccountAuthenticationCompleted = EOS_EResult::EOS_InvalidAuth;
+			logError("initAuth: timeout attempting to log in");
+			return false;
+		}
+	}
+	if ( AccountAuthenticationCompleted == EOS_EResult::EOS_Success )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }

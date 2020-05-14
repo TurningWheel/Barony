@@ -332,7 +332,8 @@ int initGame()
 	randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
 	loadItemLists();
 
-#ifndef STEAMWORKS
+#if defined(USE_EOS) || defined(STEAMWORKS)
+#else
 	if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
 	{
 		std::string serial = PHYSFS_getRealDir("mythsandoutcasts.key");
@@ -385,7 +386,7 @@ int initGame()
 			fclose(fp);
 		}
 	}
-#endif // !STEAMWORKS
+#endif
 
 	// print a loading message
 	drawClearBuffers();
