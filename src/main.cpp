@@ -136,6 +136,7 @@ SDL_Surface* mainsurface = nullptr;
 SDL_Event event;
 bool firstmouseevent = true;
 int fullscreen = 0;
+bool borderless = false;
 bool smoothlighting = false;
 list_t removedEntities;
 list_t entitiesToDelete[MAXPLAYERS];

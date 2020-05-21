@@ -2488,6 +2488,10 @@ bool initVideo()
 	{
 		flags |= SDL_WINDOW_FULLSCREEN;
 	}
+	if ( borderless )
+	{
+		flags |= SDL_WINDOW_BORDERLESS;
+	}
 	if ( !game )
 	{
 		flags |= SDL_WINDOW_RESIZABLE;
@@ -2536,6 +2540,15 @@ bool initVideo()
 		{
 			SDL_SetWindowFullscreen(screen, 0);
 		}
+		if ( borderless )
+		{
+			SDL_SetWindowBordered(screen, SDL_bool::SDL_FALSE);
+		}
+		else
+		{
+			SDL_SetWindowBordered(screen, SDL_bool::SDL_TRUE);
+		}
+		SDL_SetWindowPosition(screen, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	}
 	if ( !renderer )
 	{
@@ -2664,6 +2677,7 @@ bool changeVideoMode()
 		xres = 960;
 		yres = 600;
 		fullscreen = 0;
+		borderless = false;
 		printlog("defaulting to safe video mode...\n");
 		if ( !initVideo() )
 		{

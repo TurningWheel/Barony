@@ -192,6 +192,7 @@ extern Uint32 settings_fps;
 extern int settings_xres, settings_yres;
 extern bool settings_smoothlighting;
 extern int settings_fullscreen, settings_shaking, settings_bobbing;
+extern bool settings_borderless;
 extern real_t settings_gamma;
 extern int settings_sfxvolume, settings_musvolume;
 extern int settings_impulses[NUMIMPULSES];

@@ -2690,6 +2690,10 @@ void consoleCommand(char* command_str)
 				printlog("Sprite: %d | %d", element.first, element.second);
 			}
 		}
+		else if ( !strncmp(command_str, "/borderless", 11) )
+		{
+			borderless = (!borderless);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

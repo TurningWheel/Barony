@@ -503,6 +503,7 @@ extern SDL_Event event;
 extern bool firstmouseevent;
 extern char* window_title;
 extern Sint32 fullscreen;
+extern bool borderless;
 extern bool smoothlighting;
 extern Sint32 xres;
 extern Sint32 yres;

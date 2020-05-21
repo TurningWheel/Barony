@@ -164,6 +164,7 @@ Uint32 settings_fov;
 Uint32 settings_fps;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
+bool settings_borderless = false;
 real_t settings_gamma;
 int settings_sfxvolume, settings_musvolume;
 int settings_impulses[NUMIMPULSES];
@@ -290,6 +291,7 @@ int resolutionConfirmationTimer = 0;
 Sint32 oldXres;
 Sint32 oldYres;
 Sint32 oldFullscreen;
+bool oldBorderless = false;
 real_t oldGamma;
 bool oldVerticalSync = false;
 button_t* revertResolutionButton = nullptr;
@@ -3543,6 +3545,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[ ] %s", language[3357]);
 			}
+			if ( settings_borderless )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 300, "[x] %s", language[3935]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 300, "[ ] %s", language[3935]);
+			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -3592,6 +3602,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_status_effect_icons = (settings_status_effect_icons == false);
+					}
+					else if ( omousey >= suby1 + 300 && omousey < suby1 + 300 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_borderless = (settings_borderless == false);
 					}
 				}
 			}
@@ -10492,6 +10507,7 @@ void openSettingsWindow()
 	settings_fov = fov;
 	settings_smoothlighting = smoothlighting;
 	settings_fullscreen = fullscreen;
+	settings_borderless = borderless;
 	settings_shaking = shaking;
 	settings_bobbing = bobbing;
 	settings_spawn_blood = spawn_blood;
@@ -12131,7 +12147,9 @@ void applySettings()
 	fov = settings_fov;
 	smoothlighting = settings_smoothlighting;
 	oldFullscreen = fullscreen;
+	oldBorderless = borderless;
 	fullscreen = settings_fullscreen;
+	borderless = settings_borderless;
 	shaking = settings_shaking;
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
@@ -12158,7 +12176,7 @@ void applySettings()
 	cameras[0].winw = std::min(cameras[0].winw, xres);
 	cameras[0].winh = std::min(cameras[0].winh, yres);
 	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen || oldGamma!=vidgamma
-		|| oldVerticalSync != verticalSync )
+		|| oldVerticalSync != verticalSync || oldBorderless != borderless )
 	{
 		if ( !changeVideoMode() )
 		{
