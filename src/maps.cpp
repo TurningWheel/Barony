@@ -5529,30 +5529,27 @@ void assignActions(map_t* map)
 void mapLevel(int player)
 {
 	int x, y;
-	for ( y = 0; y < 64; ++y )
+	for ( y = 0; y < map.height; ++y )
 	{
-		for ( x = 0; x < 64; ++x )
+		for ( x = 0; x < map.width; ++x )
 		{
-			if ( x < map.width && y < map.height )
+			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
-				if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				if ( !minimap[y][x] )
 				{
-					if ( !minimap[y][x] )
-					{
-						minimap[y][x] = 4;
-					}
+					minimap[y][x] = 4;
 				}
-				else if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			}
+			else if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				if ( !minimap[y][x] )
 				{
-					if ( !minimap[y][x] )
-					{
-						minimap[y][x] = 3;
-					}
+					minimap[y][x] = 3;
 				}
-				else
-				{
-					minimap[y][x] = 0;
-				}
+			}
+			else
+			{
+				minimap[y][x] = 0;
 			}
 		}
 	}

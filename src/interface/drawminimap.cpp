@@ -64,6 +64,19 @@ void drawMinimap()
 		playSound(139, 32);
 	}
 
+	if ( map.height > 64 || map.width > 64 )
+	{
+		int maxDimension = std::max(map.height, map.width);
+		maxDimension -= 64;
+		int numMinimapSizesToReduce = 0;
+		while ( maxDimension > 0 )
+		{
+			maxDimension -= 32;
+			++numMinimapSizesToReduce;
+		}
+		minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
+	}
+
 	// create a new minimap texture
 	SDL_Surface* minimapSurface = SDL_CreateRGBSurface(0, map.width, map.height, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
 	TempTexture* minimapTexture = new TempTexture();
