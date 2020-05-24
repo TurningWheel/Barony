@@ -182,6 +182,7 @@ public:
 
 	class StatEntry
 	{
+		std::mt19937 StatEntrySeed;
 	public:
 		char name[128] = "";
 		int type = NOTHING;
@@ -219,19 +220,47 @@ public:
 
 		std::vector<std::pair<ItemEntry, int>> equipped_items;
 		std::vector<ItemEntry> inventory_items;
-		std::vector<StatEntry> followers;
+		std::vector<std::pair<std::string, int>> followerVariants;
+		int numFollowers = 0;
+		bool useDefaultEquipment = true;
+		bool useDefaultInventoryItems = true;
+		bool disableMiniboss = true;
+		bool forceFriendlyToPlayer = false;
+		bool forceEnemyToPlayer = false;
+		bool disableItemDrops = false;
 
-		StatEntry(const Stat* myStats)
+		StatEntry(const Stat* myStats) :
+			StatEntrySeed(rand())
 		{
 			readFromStats(myStats);
 		}
-		StatEntry()
+		StatEntry() :
+			StatEntrySeed(rand())
 		{
 			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 			{
 				PROFICIENCIES[i] = 0;
 			}
 		};
+
+		std::string getFollowerVariant()
+		{
+			if ( followerVariants.size() > 0 )
+			{
+				std::vector<int> variantChances(followerVariants.size(), 0);
+				int index = 0;
+				for ( auto& pair : followerVariants )
+				{
+					variantChances.at(index) = pair.second;
+					++index;
+				}
+
+				std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
+				int result = variantWeightedDistribution(StatEntrySeed);
+				return followerVariants.at(result).first;
+			}
+			return "none";
+		}
 
 		void readFromStats(const Stat* myStats)
 		{
@@ -366,10 +395,21 @@ public:
 						break;
 				}
 			}
-			for ( int slots = 0; slots < 10; ++slots )
+			for ( int equipSlots = 0; equipSlots < 10; ++equipSlots )
 			{
-				// disable any default item slot spawning.
-				myStats->EDITOR_ITEMS[slots * ITEM_SLOT_NUMPROPERTIES] = 0;
+				if ( !useDefaultEquipment )
+				{
+					// disable any default item slot spawning.
+					myStats->EDITOR_ITEMS[equipSlots * ITEM_SLOT_NUMPROPERTIES] = 0;
+				}
+				else
+				{
+					if ( equippedSlots.find(equipSlots * ITEM_SLOT_NUMPROPERTIES) != equippedSlots.end() )
+					{
+						// disable item slots we (attempted) to fill in.
+						myStats->EDITOR_ITEMS[equipSlots * ITEM_SLOT_NUMPROPERTIES] = 0;
+					}
+				}
 			}
 			for ( auto& it : inventory_items )
 			{
@@ -382,17 +422,38 @@ public:
 				}
 				newItem(it.type, it.status, it.beatitude, it.count, it.appearance, it.identified, &myStats->inventory);
 			}
-			for ( int invSlots = ITEM_SLOT_INV_1; invSlots <= ITEM_SLOT_INV_6; invSlots = invSlots + ITEM_SLOT_NUMPROPERTIES )
+			if ( !useDefaultInventoryItems )
 			{
-				myStats->EDITOR_ITEMS[invSlots] = 0;
+				for ( int invSlots = ITEM_SLOT_INV_1; invSlots <= ITEM_SLOT_INV_6; invSlots = invSlots + ITEM_SLOT_NUMPROPERTIES )
+				{
+					myStats->EDITOR_ITEMS[invSlots] = 0;
+				}
 			}
 		}
 
 		void setStatsAndEquipmentToMonster(Stat* myStats)
 		{
-			myStats->clearStats();
+			//myStats->clearStats();
 			setStats(myStats);
 			setItems(myStats);
+			if ( disableMiniboss )
+			{
+				myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+			}
+			if ( forceFriendlyToPlayer )
+			{
+				myStats->MISC_FLAGS[STAT_FLAG_FORCE_ALLEGIANCE_TO_PLAYER] = 
+					Stat::MonsterForceAllegiance::MONSTER_FORCE_PLAYER_ALLY;
+			}
+			if ( forceEnemyToPlayer )
+			{
+				myStats->MISC_FLAGS[STAT_FLAG_FORCE_ALLEGIANCE_TO_PLAYER] =
+					Stat::MonsterForceAllegiance::MONSTER_FORCE_PLAYER_ENEMY;
+			}
+			if ( disableItemDrops )
+			{
+				myStats->MISC_FLAGS[STAT_FLAG_NO_DROP_ITEMS] = 1;
+			}
 		}
 
 		void setStatsAndEquipmentToPlayer(Stat* myStats, int player)
@@ -422,6 +483,27 @@ public:
 		addMemberToRoot(d, "version", version);
 		readAttributesFromStats(myStats, d);
 		readItemsFromStats(myStats, d);
+		
+		// misc properties
+		rapidjson::Value propsObject;
+		propsObject.SetObject();
+		addMemberToRoot(d, "properties", propsObject);
+		addMemberToSubkey(d, "properties", "populate_empty_equipped_items_with_default", rapidjson::Value(true));
+		addMemberToSubkey(d, "properties", "populate_default_inventory", rapidjson::Value(true));
+		addMemberToSubkey(d, "properties", "disable_miniboss_chance", rapidjson::Value(false));
+		addMemberToSubkey(d, "properties", "force_player_friendly", rapidjson::Value(false));
+		addMemberToSubkey(d, "properties", "force_player_enemy", rapidjson::Value(false));
+		addMemberToSubkey(d, "properties", "disable_item_drops", rapidjson::Value(false));
+
+		// follower details
+		rapidjson::Value followersObject;
+		followersObject.SetObject();
+		addMemberToRoot(d, "followers", followersObject);
+		addMemberToSubkey(d, "followers", "num_followers", rapidjson::Value(0));
+		rapidjson::Value followerVariantsObject;
+		followerVariantsObject.SetObject();
+		addMemberToSubkey(d, "followers", "follower_variants", followerVariantsObject);
+
 		writeToFile(d, monstertypename[myStats->type]);
 	}
 
@@ -804,22 +886,45 @@ public:
 				}
 				statEntry->inventory_items.push_back(item);
 			}
-			/*if ( d.HasMember("followers") )
+			if ( d.HasMember("followers") )
 			{
 				const rapidjson::Value& numFollowersVal = d["followers"]["num_followers"];
-				int numFollowers = numFollowersVal.GetInt();
+				statEntry->numFollowers = numFollowersVal.GetInt();
 				const rapidjson::Value& followers = d["followers"]["follower_variants"];
+
+				statEntry->followerVariants.clear();
 				for ( rapidjson::Value::ConstMemberIterator follower_itr = followers.MemberBegin(); follower_itr != followers.MemberEnd(); ++follower_itr )
 				{
-
-					ItemEntry item;
-					for ( rapidjson::Value::ConstMemberIterator item_itr = itemSlot_itr->MemberBegin(); item_itr != itemSlot_itr->MemberEnd(); ++item_itr )
-					{
-						item.readKeyToItemEntry(item_itr);
-					}
-					statEntry->inventory_items.push_back(item);
+					statEntry->followerVariants.push_back(std::make_pair(follower_itr->name.GetString(), follower_itr->value.GetInt()));
 				}
-			}*/
+			}
+			if ( d.HasMember("properties") )
+			{
+				if ( d["properties"].HasMember("populate_empty_equipped_items_with_default") )
+				{
+					statEntry->useDefaultEquipment = d["properties"]["populate_empty_equipped_items_with_default"].GetBool();
+				}
+				if ( d["properties"].HasMember("populate_default_inventory") )
+				{
+					statEntry->useDefaultInventoryItems = d["properties"]["populate_default_inventory"].GetBool();
+				}
+				if ( d["properties"].HasMember("disable_miniboss_chance") )
+				{
+					statEntry->disableMiniboss = d["properties"]["disable_miniboss_chance"].GetBool();
+				}
+				if ( d["properties"].HasMember("force_player_friendly") )
+				{
+					statEntry->forceFriendlyToPlayer = d["properties"]["force_player_friendly"].GetBool();
+				}
+				if ( d["properties"].HasMember("force_player_enemy") )
+				{
+					statEntry->forceEnemyToPlayer = d["properties"]["force_player_enemy"].GetBool();
+				}
+				if ( d["properties"].HasMember("disable_item_drops") )
+				{
+					statEntry->disableItemDrops = d["properties"]["disable_item_drops"].GetBool();
+				}
+			}
 			printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 			return statEntry;
 		}
@@ -840,15 +945,17 @@ public:
 	{
 	public:
 		int monsterType = NOTHING;
-		int level = 0;
+		int levelmin = 0;
+		int levelmax = 99;
 		int chance = 1;
 		int fallbackMonsterType = NOTHING;
 		std::vector<std::pair<std::string, int>> variants;
-		MonsterCurveEntry(std::string monsterStr, int levelNum, int chanceNum, std::string fallbackMonsterStr)
+		MonsterCurveEntry(std::string monsterStr, int levelNumMin, int levelNumMax, int chanceNum, std::string fallbackMonsterStr)
 		{
 			monsterType = getMonsterTypeFromString(monsterStr);
 			fallbackMonsterType = getMonsterTypeFromString(fallbackMonsterStr);
-			level = levelNum;
+			levelmin = levelNumMin;
+			levelmax = levelNumMax;
 			chance = chanceNum;
 		};
 		void addVariant(std::string variantName, int chance)
@@ -906,13 +1013,11 @@ public:
 						{
 							const rapidjson::Value& monster = *monsters_itr;
 
-							std::string fallback = "";
-							if ( monster.HasMember("fallback_monster") )
-							{
-								fallback = monster["fallback_monster"].GetString();
-							}
-
-							MonsterCurveEntry newMonster(monster["name"].GetString(), monster["dungeon_depth"].GetInt(), monster["chance"].GetInt(), fallback.c_str());
+							MonsterCurveEntry newMonster(monster["name"].GetString(), 
+								monster["dungeon_depth_minimum"].GetInt(), 
+								monster["dungeon_depth_maximum"].GetInt(),
+								monster["chance"].GetInt(), 
+								"");
 
 							if ( monster.HasMember("variants") )
 							{
@@ -950,13 +1055,14 @@ public:
 	}
 	void printCurve(std::vector<LevelCurve> toPrint)
 	{
+		return;
 		for ( LevelCurve curve : toPrint )
 		{
 			printlog("Map Name: %s", curve.mapName.c_str());
 			for ( MonsterCurveEntry monsters : curve.monsterCurve )
 			{
-				printlog("[MonsterCurveCustomManager]: Monster: %s | lvl: %d | chance: %d | fallback type: %s", monstertypename[monsters.monsterType],
-					monsters.level, monsters.chance, monstertypename[monsters.fallbackMonsterType]);
+				printlog("[MonsterCurveCustomManager]: Monster: %s | lvl: %d-%d | chance: %d | fallback type: %s", monstertypename[monsters.monsterType],
+					monsters.levelmin, monsters.levelmax, monsters.chance, monstertypename[monsters.fallbackMonsterType]);
 			}
 		}
 	}
@@ -986,7 +1092,7 @@ public:
 			{
 				for ( MonsterCurveEntry& monster : curve.monsterCurve )
 				{
-					if ( currentlevel >= monster.level )
+					if ( currentlevel >= monster.levelmin && currentlevel <= monster.levelmax )
 					{
 						if ( monster.monsterType != NOTHING )
 						{
