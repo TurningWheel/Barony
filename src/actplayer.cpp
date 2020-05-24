@@ -2940,6 +2940,18 @@ void actPlayer(Entity* my)
 							*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
 
 							int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+							if ( map.height > 64 || map.width > 64 )
+							{
+								int maxDimension = std::max(map.height, map.width);
+								maxDimension -= 64;
+								int numMinimapSizesToReduce = 0;
+								while ( maxDimension > 0 )
+								{
+									maxDimension -= 32;
+									++numMinimapSizesToReduce;
+								}
+								minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
+							}
 							if ( !shootmode && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 							{
 								MinimapPing newPing(ticks, -1, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
