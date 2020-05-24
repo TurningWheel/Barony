@@ -25,6 +25,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "custom_tools.hpp"
 
 int startfloor = 0;
 
@@ -408,6 +409,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	// store this map's seed
 	mapseed = seed;
 	prng_seed_bytes(&mapseed, sizeof(mapseed));
+
+	// generate a custom monster curve if file exists
+	monsterCurveCustom.readFromFile();
 
 	// determine whether shop level or not
 	if ( prng_get_uint() % 2 && currentlevel > 1 && strncmp(map.name, "Underworld", 10) && strncmp(map.name, "Hell", 4) )
@@ -3068,6 +3072,7 @@ void assignActions(map_t* map)
 				entity->addToCreatureList(map->creatures);
 
 				Monster monsterType = SKELETON;
+				bool customMonsterCurveExists = false;
 
 				if ( entity->sprite == 27 )   // human.png
 				{
@@ -3204,6 +3209,12 @@ void assignActions(map_t* map)
 				else
 				{
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
+
+					if ( monsterCurveCustomManager.curveExistsForCurrentMapName(map->name) )
+					{
+						customMonsterCurveExists = true;
+						monsterType = static_cast<Monster>(monsterCurveCustomManager.rollMonsterFromCurve(map->name));
+					}
 				}
 
 				if ( multiplayer != CLIENT )
@@ -3239,6 +3250,22 @@ void assignActions(map_t* map)
 						// stat struct is already created, need to set stats
 						setDefaultMonsterStats(myStats, monsterType + 1000);
 						setRandomMonsterStats(myStats);
+					}
+
+					if ( customMonsterCurveExists )
+					{
+						std::string variantName = monsterCurveCustom.rollMonsterVariant(map->name, monsterType);
+						if ( variantName.compare("default") != 0 )
+						{
+							// find a custom file name.
+							
+							MonsterStatCustomManager::StatEntry* statEntry = monsterStatCustomManager.readFromFile(variantName.c_str());
+							if ( statEntry )
+							{
+								statEntry->setStatsAndEquipmentToMonster(myStats);
+								delete statEntry;
+							}
+						}
 					}
 				}
 
@@ -5710,3 +5737,4 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 
 	return 0;
 }
+

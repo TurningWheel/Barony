@@ -25,6 +25,7 @@
 #include "interface.hpp"
 #include "../scores.hpp"
 #include "../magic/magic.hpp"
+#include "../custom_tools.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -2693,6 +2694,39 @@ void consoleCommand(char* command_str)
 		else if ( !strncmp(command_str, "/borderless", 11) )
 		{
 			borderless = (!borderless);
+		}
+		else if ( !strncmp(command_str, "/jsonexportmonster ", 19) )
+		{
+			strcpy(name, command_str + 19);
+			int creature = NOTHING;
+
+			for ( int i = 1; i < NUMMONSTERS; ++i )   //Start at 1 because 0 is a nothing.
+			{
+				if ( i < KOBOLD ) //Search original monsters
+				{
+					if ( strstr(language[90 + i], name) )
+					{
+						creature = i;
+						break;
+					}
+				}
+				else if ( i >= KOBOLD ) //Search additional monsters
+				{
+					if ( strstr(language[2000 + (i - KOBOLD)], name) )
+					{
+						creature = i;
+						break;
+					}
+				}
+
+			}
+
+			if ( creature != NOTHING )
+			{
+				Stat* monsterStats = new Stat(1000 + creature);
+				monsterStatCustomManager.writeAllFromStats(monsterStats);
+				delete monsterStats;
+			}
 		}
 		else
 		{
