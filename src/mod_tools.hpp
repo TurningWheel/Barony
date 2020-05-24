@@ -798,9 +798,15 @@ public:
 
 	void writeToFile(rapidjson::Document& d, std::string monsterFileName)
 	{
-		std::string outputPath = "./data/monster_";
-		outputPath.append(monsterFileName);
-		outputPath.append("_export.json");
+		int filenum = 0;
+		std::string testPath = "/data/monster_" + monsterFileName + "_export" + std::to_string(filenum) + ".json";
+		while ( PHYSFS_getRealDir(testPath.c_str()) != nullptr && filenum < 1000 )
+		{
+			++filenum;
+			testPath = "/data/monster_" + monsterFileName + "_export" + std::to_string(filenum) + ".json";
+		}
+		std::string outputPath = "." + testPath;
+
 		FILE* fp = fopen(outputPath.c_str(), "wb");
 		if ( !fp )
 		{
