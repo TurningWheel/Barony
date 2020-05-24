@@ -25,7 +25,7 @@
 #include "interface.hpp"
 #include "../scores.hpp"
 #include "../magic/magic.hpp"
-#include "../custom_tools.hpp"
+#include "../mod_tools.hpp"
 
 bool spamming = false;
 bool showfirst = false;

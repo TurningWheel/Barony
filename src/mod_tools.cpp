@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------
 
 BARONY
-File: custom_tools.cpp
+File: mod_tools.cpp
 Desc: misc modding tools
 
 Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
@@ -9,7 +9,7 @@ See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
 #include "items.hpp"
-#include "custom_tools.hpp"
+#include "mod_tools.hpp"
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;

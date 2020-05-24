@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------
 
 BARONY
-File: custom_tools.hpp
+File: mod_tools.hpp
 Desc: misc modding tools
 
 Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.

@@ -25,7 +25,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "scores.hpp"
-#include "custom_tools.hpp"
+#include "mod_tools.hpp"
 
 int startfloor = 0;
 
@@ -411,7 +411,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	prng_seed_bytes(&mapseed, sizeof(mapseed));
 
 	// generate a custom monster curve if file exists
-	monsterCurveCustom.readFromFile();
+	monsterCurveCustomManager.readFromFile();
 
 	// determine whether shop level or not
 	if ( prng_get_uint() % 2 && currentlevel > 1 && strncmp(map.name, "Underworld", 10) && strncmp(map.name, "Hell", 4) )
@@ -3254,7 +3254,7 @@ void assignActions(map_t* map)
 
 					if ( customMonsterCurveExists )
 					{
-						std::string variantName = monsterCurveCustom.rollMonsterVariant(map->name, monsterType);
+						std::string variantName = monsterCurveCustomManager.rollMonsterVariant(map->name, monsterType);
 						if ( variantName.compare("default") != 0 )
 						{
 							// find a custom file name.
