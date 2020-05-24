@@ -26,6 +26,7 @@
 #include "../scores.hpp"
 #include "../magic/magic.hpp"
 #include "../mod_tools.hpp"
+#include "../collision.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -2726,6 +2727,23 @@ void consoleCommand(char* command_str)
 				Stat* monsterStats = new Stat(1000 + creature);
 				monsterStatCustomManager.writeAllFromStats(monsterStats);
 				delete monsterStats;
+			}
+		}
+		else if ( !strncmp(command_str, "/jsonexportfromcursor", 21) )
+		{
+			Entity* target = entityClicked(nullptr, true, clientnum);
+			if ( target )
+			{
+				Entity* parent = uidToEntity(target->skill[2]);
+				if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+				{
+					// see if we selected a limb
+					if ( parent )
+					{
+						target = parent;
+					}
+				}
+				monsterStatCustomManager.writeAllFromStats(target->getStats());
 			}
 		}
 		else
