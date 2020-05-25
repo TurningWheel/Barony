@@ -1,3 +1,8 @@
+
+#include "Config.hpp"
+
+#ifdef USE_EOS
+
 #include "main.hpp"
 #include "game.hpp"
 #include "eos.hpp"
@@ -1558,3 +1563,5 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 		return false;
 	}
 }
+
+#endif //USE_EOS

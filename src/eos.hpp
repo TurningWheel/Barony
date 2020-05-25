@@ -1,4 +1,8 @@
 #pragma once
+
+#include "Config.hpp"
+
+#ifdef USE_EOS
 #include "eos_sdk.h"
 #include "eos_logging.h"
 #include "eos_auth.h"
@@ -810,3 +814,5 @@ public:
 };
 
 extern EOSFuncs EOS;
+
+#endif //USE_EOS

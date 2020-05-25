@@ -1432,6 +1432,7 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 	}
 }
 
+#ifdef USE_EOS
 void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure)
 {
 	if ( bIOFailure )
@@ -1488,6 +1489,7 @@ void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure)
 			break;
 	}
 }
+#endif //USE_EOS
 
 void processLobbyInvite()
 {
