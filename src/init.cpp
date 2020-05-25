@@ -122,6 +122,8 @@ int initApp(char* title, int fullscreen)
 			PHYSFS_mkdir("savegames");
 			PHYSFS_mkdir("crashlogs");
 			PHYSFS_mkdir("logfiles");
+			PHYSFS_mkdir("data");
+			PHYSFS_mkdir("data/custom-monsters");
 			if ( PHYSFS_mkdir("mods") )
 			{
 				std::string path = outputdir;

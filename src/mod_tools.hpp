@@ -78,12 +78,15 @@ public:
 	{
 	public:
 		ItemType type = WOODEN_SHIELD;
-		Status status = BROKEN;
+		Status status = DECREPIT;
 		Sint16 beatitude = 0;
 		Sint16 count = 1;
 		Uint32 appearance = 0;
 		bool identified = 0;
 		int percentChance = 100;
+		int weightedChance = 1;
+		int dropChance = 100;
+		bool emptyItemEntry = false;
 		ItemEntry() {};
 		ItemEntry(const Item& itemToRead)
 		{
@@ -130,6 +133,11 @@ public:
 			if ( name.compare("type") == 0 )
 			{
 				std::string itemName = itr->value.GetString();
+				if ( itemName.compare("empty") == 0 )
+				{
+					emptyItemEntry = true;
+					return true;
+				}
 				for ( int i = 0; i < NUMITEMS; ++i )
 				{
 					if ( itemName.compare(itemNameStrings[i + 2]) == 0 )
@@ -359,6 +367,10 @@ public:
 						continue;
 					}
 				}
+				if ( it.first.emptyItemEntry )
+				{
+					continue;
+				}
 				switch ( it.second )
 				{
 					case ITEM_SLOT_WEAPON:
@@ -413,6 +425,10 @@ public:
 			}
 			for ( auto& it : inventory_items )
 			{
+				if ( it.emptyItemEntry )
+				{
+					continue;
+				}
 				if ( it.percentChance < 100 )
 				{
 					if ( rand() % 100 <= it.percentChance )
@@ -799,11 +815,11 @@ public:
 	void writeToFile(rapidjson::Document& d, std::string monsterFileName)
 	{
 		int filenum = 0;
-		std::string testPath = "/data/monster_" + monsterFileName + "_export" + std::to_string(filenum) + ".json";
+		std::string testPath = "/data/custom-monsters/monster_" + monsterFileName + "_export" + std::to_string(filenum) + ".json";
 		while ( PHYSFS_getRealDir(testPath.c_str()) != nullptr && filenum < 1000 )
 		{
 			++filenum;
-			testPath = "/data/monster_" + monsterFileName + "_export" + std::to_string(filenum) + ".json";
+			testPath = "/data/custom-monsters/monster_" + monsterFileName + "_export" + std::to_string(filenum) + ".json";
 		}
 		std::string outputPath = "." + testPath;
 
@@ -822,7 +838,7 @@ public:
 
 	StatEntry* readFromFile(std::string monsterFileName)
 	{
-		std::string filePath = "/data/";
+		std::string filePath = "/data/custom-monsters/";
 		filePath.append(monsterFileName);
 		if ( filePath.find(".json") == std::string::npos )
 		{
@@ -836,6 +852,7 @@ public:
 			FILE* fp = fopen(inputPath.c_str(), "rb");
 			if ( !fp )
 			{
+				printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 				return nullptr;
 			}
 			char buf[65536];
@@ -849,7 +866,7 @@ public:
 
 			if ( !d.HasMember("version") )
 			{
-				printlog("[JSON]: Error no versioning value in json file %s", inputPath.c_str());
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
 				return nullptr;
 			}
 			int version = d["version"].GetInt();
@@ -874,23 +891,85 @@ public:
 				std::string slotName = itemSlot_itr->name.GetString();
 				if ( itemSlot_itr->value.MemberCount() > 0 )
 				{
-					ItemEntry item;
-					for ( rapidjson::Value::ConstMemberIterator item_itr = itemSlot_itr->value.MemberBegin(); item_itr != itemSlot_itr->value.MemberEnd(); ++item_itr )
+					if ( itemSlot_itr->value.IsArray() )
 					{
-						item.readKeyToItemEntry(item_itr);
+						std::vector<std::pair<ItemEntry, int>> itemsToChoose;
+						// a selection of items in the slot. need to choose 1.
+						for ( rapidjson::Value::ConstValueIterator itemArray_itr = itemSlot_itr->value.Begin(); itemArray_itr != itemSlot_itr->value.End(); ++itemArray_itr )
+						{
+							ItemEntry item;
+							for ( rapidjson::Value::ConstMemberIterator item_itr = itemArray_itr->MemberBegin(); item_itr != itemArray_itr->MemberEnd(); ++item_itr )
+							{
+								item.readKeyToItemEntry(item_itr);
+							}
+							itemsToChoose.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
+						}
+						if ( itemsToChoose.size() > 0 )
+						{
+							std::vector<int> itemChances(itemsToChoose.size(), 0);
+							int index = 0;
+							for ( auto& pair : itemsToChoose )
+							{
+								itemChances.at(index) = pair.first.weightedChance;
+								++index;
+							}
+
+							std::discrete_distribution<> itemWeightedDistribution(itemChances.begin(), itemChances.end());
+							int result = itemWeightedDistribution(monsterStatSeed);
+							statEntry->equipped_items.push_back(std::make_pair(itemsToChoose.at(result).first, itemsToChoose.at(result).second));
+						}
 					}
-					statEntry->equipped_items.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
+					else
+					{
+						ItemEntry item;
+						for ( rapidjson::Value::ConstMemberIterator item_itr = itemSlot_itr->value.MemberBegin(); item_itr != itemSlot_itr->value.MemberEnd(); ++item_itr )
+						{
+							item.readKeyToItemEntry(item_itr);
+						}
+						statEntry->equipped_items.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
+					}
 				}
 			}
 			const rapidjson::Value& inventory_items = d["inventory_items"];
 			for ( rapidjson::Value::ConstValueIterator itemSlot_itr = inventory_items.Begin(); itemSlot_itr != inventory_items.End(); ++itemSlot_itr )
 			{
-				ItemEntry item;
-				for ( rapidjson::Value::ConstMemberIterator item_itr = itemSlot_itr->MemberBegin(); item_itr != itemSlot_itr->MemberEnd(); ++item_itr )
+				if ( itemSlot_itr->IsArray() )
 				{
-					item.readKeyToItemEntry(item_itr);
+					std::vector<ItemEntry> itemsToChoose;
+					// a selection of items in the slot. need to choose 1.
+					for ( rapidjson::Value::ConstValueIterator itemArray_itr = itemSlot_itr->Begin(); itemArray_itr != itemSlot_itr->End(); ++itemArray_itr )
+					{
+						ItemEntry item;
+						for ( rapidjson::Value::ConstMemberIterator item_itr = itemArray_itr->MemberBegin(); item_itr != itemArray_itr->MemberEnd(); ++item_itr )
+						{
+							item.readKeyToItemEntry(item_itr);
+						}
+						itemsToChoose.push_back(item);
+					}
+					if ( itemsToChoose.size() > 0 )
+					{
+						std::vector<int> itemChances(itemsToChoose.size(), 0);
+						int index = 0;
+						for ( auto& i : itemsToChoose )
+						{
+							itemChances.at(index) = i.weightedChance;
+							++index;
+						}
+
+						std::discrete_distribution<> itemWeightedDistribution(itemChances.begin(), itemChances.end());
+						int result = itemWeightedDistribution(monsterStatSeed);
+						statEntry->inventory_items.push_back(itemsToChoose.at(result));
+					}
 				}
-				statEntry->inventory_items.push_back(item);
+				else
+				{
+					ItemEntry item;
+					for ( rapidjson::Value::ConstMemberIterator item_itr = itemSlot_itr->MemberBegin(); item_itr != itemSlot_itr->MemberEnd(); ++item_itr )
+					{
+						item.readKeyToItemEntry(item_itr);
+					}
+					statEntry->inventory_items.push_back(item);
+				}
 			}
 			if ( d.HasMember("followers") )
 			{
@@ -990,6 +1069,7 @@ public:
 			FILE* fp = fopen(inputPath.c_str(), "rb");
 			if ( !fp )
 			{
+				printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 				return;
 			}
 			char buf[65536];
@@ -1000,7 +1080,7 @@ public:
 			d.ParseStream(is);
 			if ( !d.HasMember("version") )
 			{
-				printlog("[JSON]: Error no versioning value in json file %s", inputPath.c_str());
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
 				return;
 			}
 			int version = d["version"].GetInt();
