@@ -10335,7 +10335,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	}
 
 	// calculate XP gain
-	int xpGain = 10 + rand() % 10 + std::max(0, srcStats->LVL - destStats->LVL) * 10;
+	int baseXp = 10;
+	int xpGain = baseXp + rand() % std::max(1, baseXp) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
+	if ( srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] > 0 )
+	{
+		int value = srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] - 1; // offset by 1 since 0 is nothing
+		double percent = value / 100.f;
+		xpGain = percent * xpGain;
+	}
 
 	// save hit struct
 	hit_t tempHit;

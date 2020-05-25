@@ -236,6 +236,7 @@ public:
 		bool forceFriendlyToPlayer = false;
 		bool forceEnemyToPlayer = false;
 		bool disableItemDrops = false;
+		int xpAwardPercent = 100;
 
 		StatEntry(const Stat* myStats) :
 			StatEntrySeed(rand())
@@ -470,6 +471,10 @@ public:
 			{
 				myStats->MISC_FLAGS[STAT_FLAG_NO_DROP_ITEMS] = 1;
 			}
+			if ( xpAwardPercent != 100 )
+			{
+				myStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1 + std::min(std::max(0, xpAwardPercent), 100);
+			}
 		}
 
 		void setStatsAndEquipmentToPlayer(Stat* myStats, int player)
@@ -510,6 +515,7 @@ public:
 		addMemberToSubkey(d, "properties", "force_player_friendly", rapidjson::Value(false));
 		addMemberToSubkey(d, "properties", "force_player_enemy", rapidjson::Value(false));
 		addMemberToSubkey(d, "properties", "disable_item_drops", rapidjson::Value(false));
+		addMemberToSubkey(d, "properties", "xp_award_percent", rapidjson::Value(100));
 
 		// follower details
 		rapidjson::Value followersObject;
@@ -1009,6 +1015,10 @@ public:
 				{
 					statEntry->disableItemDrops = d["properties"]["disable_item_drops"].GetBool();
 				}
+				if ( d["properties"].HasMember("xp_award_percent") )
+				{
+					statEntry->xpAwardPercent = d["properties"]["disable_item_drops"].GetInt();
+				}
 			}
 			printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 			return statEntry;
@@ -1054,6 +1064,7 @@ public:
 	public:
 		std::string mapName = "";
 		std::vector<MonsterCurveEntry> monsterCurve;
+		std::vector<MonsterCurveEntry> fixedSpawns;
 	};
 
 	std::vector<LevelCurve> allLevelCurves;
@@ -1095,14 +1106,14 @@ public:
 					{
 						LevelCurve newCurve;
 						newCurve.mapName = map_itr->name.GetString();
-						for ( rapidjson::Value::ConstValueIterator monsters_itr = map_itr->value.Begin(); monsters_itr != map_itr->value.End(); ++monsters_itr )
+						const rapidjson::Value& randomGeneration = map_itr->value["random_generation_monsters"];
+						for ( rapidjson::Value::ConstValueIterator monsters_itr = randomGeneration.Begin(); monsters_itr != randomGeneration.End(); ++monsters_itr )
 						{
 							const rapidjson::Value& monster = *monsters_itr;
-
-							MonsterCurveEntry newMonster(monster["name"].GetString(), 
-								monster["dungeon_depth_minimum"].GetInt(), 
+							MonsterCurveEntry newMonster(monster["name"].GetString(),
+								monster["dungeon_depth_minimum"].GetInt(),
 								monster["dungeon_depth_maximum"].GetInt(),
-								monster["chance"].GetInt(), 
+								monster["chance"].GetInt(),
 								"");
 
 							if ( monster.HasMember("variants") )
@@ -1114,6 +1125,26 @@ public:
 								}
 							}
 							newCurve.monsterCurve.push_back(newMonster);
+						}
+
+						if ( map_itr->value.HasMember("fixed_monsters") )
+						{
+							const rapidjson::Value& fixedGeneration = map_itr->value["fixed_monsters"];
+							for ( rapidjson::Value::ConstValueIterator monsters_itr = fixedGeneration.Begin(); monsters_itr != fixedGeneration.End(); ++monsters_itr )
+							{
+								const rapidjson::Value& monster = *monsters_itr;
+								MonsterCurveEntry newMonster(monster["name"].GetString(), 0, 255, 1, "");
+
+								if ( monster.HasMember("variants") )
+								{
+									for ( rapidjson::Value::ConstMemberIterator var_itr = monster["variants"].MemberBegin();
+										var_itr != monster["variants"].MemberEnd(); ++var_itr )
+									{
+										newMonster.addVariant(var_itr->name.GetString(), var_itr->value.GetInt());
+									}
+								}
+								newCurve.fixedSpawns.push_back(newMonster);
+							}
 						}
 						allLevelCurves.push_back(newCurve);
 					}
@@ -1199,16 +1230,43 @@ public:
 				return result;
 			}
 		}
-		printlog("[MonsterCurveCustomManager]: Error: default to skeleton.");
-		return SKELETON;
+		printlog("[MonsterCurveCustomManager]: Error: default to nothing.");
+		return NOTHING;
 	}
 	std::string rollMonsterVariant(std::string currentMap, int monsterType)
 	{
-		for ( LevelCurve curve : allLevelCurves )
+		for ( LevelCurve& curve : allLevelCurves )
 		{
 			if ( curve.mapName.compare(currentMap) == 0 )
 			{
 				for ( MonsterCurveEntry& monster : curve.monsterCurve )
+				{
+					if ( monster.monsterType == monsterType && monster.variants.size() > 0 )
+					{
+						std::vector<int> variantChances(monster.variants.size(), 0);
+						int index = 0;
+						for ( auto& pair : monster.variants )
+						{
+							variantChances.at(index) = pair.second;
+							++index;
+						}
+
+						std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
+						int result = variantWeightedDistribution(curveSeed);
+						return monster.variants.at(result).first;
+					}
+				}
+			}
+		}
+		return "default";
+	}
+	std::string rollFixedMonsterVariant(std::string currentMap, int monsterType)
+	{
+		for ( LevelCurve& curve : allLevelCurves )
+		{
+			if ( curve.mapName.compare(currentMap) == 0 )
+			{
+				for ( MonsterCurveEntry& monster : curve.fixedSpawns )
 				{
 					if ( monster.monsterType == monsterType && monster.variants.size() > 0 )
 					{

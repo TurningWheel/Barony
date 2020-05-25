@@ -2415,6 +2415,12 @@ void assignActions(map_t* map)
 		}
 	}
 
+	bool customMonsterCurveExists = false;
+	if ( monsterCurveCustomManager.curveExistsForCurrentMapName(map->name) )
+	{
+		customMonsterCurveExists = true;
+	}
+
 	// assign entity behaviors
 	for ( node = map->entities->first; node != nullptr; node = nextnode )
 	{
@@ -3072,7 +3078,7 @@ void assignActions(map_t* map)
 				entity->addToCreatureList(map->creatures);
 
 				Monster monsterType = SKELETON;
-				bool customMonsterCurveExists = false;
+				bool monsterIsFixedSprite = true;
 
 				if ( entity->sprite == 27 )   // human.png
 				{
@@ -3208,12 +3214,19 @@ void assignActions(map_t* map)
 				}
 				else
 				{
+					monsterIsFixedSprite = false;
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
-
-					if ( monsterCurveCustomManager.curveExistsForCurrentMapName(map->name) )
+					if ( customMonsterCurveExists )
 					{
-						customMonsterCurveExists = true;
-						monsterType = static_cast<Monster>(monsterCurveCustomManager.rollMonsterFromCurve(map->name));
+						Monster customMonsterType = static_cast<Monster>(monsterCurveCustomManager.rollMonsterFromCurve(map->name));
+						if ( customMonsterType != NOTHING )
+						{
+							monsterType = customMonsterType;
+						}
+						else
+						{
+							customMonsterCurveExists = false;
+						}
 					}
 				}
 
@@ -3254,7 +3267,19 @@ void assignActions(map_t* map)
 
 					if ( customMonsterCurveExists )
 					{
-						std::string variantName = monsterCurveCustomManager.rollMonsterVariant(map->name, monsterType);
+						std::string variantName = "default";
+						if ( monsterIsFixedSprite )
+						{
+							if ( isMonsterStatsDefault(*myStats) )
+							{
+								variantName = monsterCurveCustomManager.rollFixedMonsterVariant(map->name, monsterType);
+							}
+						}
+						else
+						{
+							variantName = monsterCurveCustomManager.rollMonsterVariant(map->name, monsterType);
+						}
+						
 						if ( variantName.compare("default") != 0 )
 						{
 							// find a custom file name.

@@ -166,6 +166,7 @@ static const int STAT_FLAG_MYSTERIOUS_SHOPKEEP = 16;
 static const int STAT_FLAG_NO_DROP_ITEMS = 19;
 static const int STAT_FLAG_FORCE_ALLEGIANCE_TO_PLAYER = 20;
 static const int STAT_FLAG_DISABLE_MINIBOSS = 21;
+static const int STAT_FLAG_XP_PERCENT_AWARD = 22;
 
 typedef enum
 {
