@@ -2419,6 +2419,7 @@ void assignActions(map_t* map)
 	if ( monsterCurveCustomManager.curveExistsForCurrentMapName(map->name) )
 	{
 		customMonsterCurveExists = true;
+		conductGameChallenges[CONDUCT_MODDED] = 1;
 	}
 
 	// assign entity behaviors
