@@ -6273,6 +6273,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case SPELLBOOK_POISON:
 							castSpell(uid, &spell_poison, true, false);
 							break;
+						case SPELLBOOK_SPRAY_WEB:
+							castSpell(uid, &spell_sprayWeb, true, false);
+							break;
+						case SPELLBOOK_SPEED:
+							castSpell(uid, &spell_speed, true, false);
+							break;
+						case SPELLBOOK_HEALING:
+							castSpell(uid, &spell_healing, true, false);
+							break;
+						case SPELLBOOK_EXTRAHEALING:
+							castSpell(uid, &spell_extrahealing, true, false);
+							break;
+						case SPELLBOOK_TROLLS_BLOOD:
+							castSpell(uid, &spell_trollsBlood, true, false);
+							break;
+						case SPELLBOOK_REFLECT_MAGIC:
+							castSpell(uid, &spell_reflectMagic, true, false);
+							break;
+						case SPELLBOOK_DASH:
+							castSpell(uid, &spell_dash, true, false);
+							break;
+						case SPELLBOOK_FEAR:
+							castSpell(uid, &spell_fear, true, false);
+							break;
 						//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
 						//castSpell(uid, &spell_reflectMagic, true, false)
 						//break;
@@ -15393,6 +15417,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return true;
 	}
+	if ( (myStats.EFFECTS[EFF_DASH] || (myStats.weapon && myStats.weapon->type == SPELLBOOK_DASH)) && behavior == &actMonster )
+	{
+		return false;
+	}
 	if ( myStats.type == VAMPIRE )
 	{
 		return false;
@@ -15482,6 +15510,10 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 		return false;
 	}
 
+	if ( (myStats.EFFECTS[EFF_DASH] || (myStats.weapon && myStats.weapon->type == SPELLBOOK_DASH)) && behavior == &actMonster )
+	{
+		return false;
+	}
 	if ( myStats.type == INSECTOID && monsterSpecialState > 0 )
 	{
 		return false;

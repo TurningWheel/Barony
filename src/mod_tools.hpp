@@ -237,6 +237,8 @@ public:
 		bool forceEnemyToPlayer = false;
 		bool disableItemDrops = false;
 		int xpAwardPercent = 100;
+		bool castSpellbooksFromInventory = false;
+		int spellbookCastCooldown = 250;
 
 		StatEntry(const Stat* myStats) :
 			StatEntrySeed(rand())
@@ -474,6 +476,11 @@ public:
 			if ( xpAwardPercent != 100 )
 			{
 				myStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1 + std::min(std::max(0, xpAwardPercent), 100);
+			}
+			if ( castSpellbooksFromInventory )
+			{
+				myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] = 1;
+				myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] |= (spellbookCastCooldown << 4);
 			}
 		}
 
@@ -1018,6 +1025,14 @@ public:
 				if ( d["properties"].HasMember("xp_award_percent") )
 				{
 					statEntry->xpAwardPercent = d["properties"]["disable_item_drops"].GetInt();
+				}
+				if ( d["properties"].HasMember("enable_casting_inventory_spellbooks") )
+				{
+					statEntry->castSpellbooksFromInventory = d["properties"]["enable_casting_inventory_spellbooks"].GetBool();
+				}
+				if ( d["properties"].HasMember("spellbook_cast_cooldown") )
+				{
+					statEntry->spellbookCastCooldown = d["properties"]["spellbook_cast_cooldown"].GetInt();
 				}
 			}
 			printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
