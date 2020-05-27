@@ -36,6 +36,7 @@
 #include "collision.hpp"
 #include "paths.hpp"
 #include "player.hpp"
+#include "mod_tools.hpp"
 #include <limits>
 
 #ifdef LINUX
@@ -3572,6 +3573,8 @@ int main(int argc, char** argv)
 						// make some messages
 						startMessages();
 
+						gameplayCustomManager.readFromFile();
+
 						// load dungeon
 						mapseed = rand(); //Use prng if decide to make a quickstart for MP...
 						lastEntityUIDs = entity_uids;
@@ -3626,10 +3629,10 @@ int main(int argc, char** argv)
 						enchantedFeatherScrollsShuffled.clear();
 						enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
 						std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
-						for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
-						{
-							//printlog("Sequence: %d", *it);
-						}
+						//for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
+						//{
+						//	printlog("Sequence: %d", *it);
+						//}
 
 						// kick off the main loop!
 						strcpy(classtoquickstart, "");

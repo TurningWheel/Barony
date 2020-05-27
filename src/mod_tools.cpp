@@ -13,6 +13,7 @@ See LICENSE for details.
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
+GameplayCustomManager gameplayCustomManager;
 const std::vector<std::string> MonsterStatCustomManager::itemStatusStrings =
 {
 	"broken",

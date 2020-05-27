@@ -42,6 +42,7 @@
 #include "colors.hpp"
 #include <ctime>
 #include "sys/stat.h"
+#include "mod_tools.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -7993,6 +7994,7 @@ void handleMainMenu(bool mode)
 
 			minimapPings.clear(); // clear minimap pings
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+			gameplayCustomManager.readFromFile();
 
 			// clear follower menu entities.
 			FollowerMenu.closeFollowerMenuGUI(true);
