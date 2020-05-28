@@ -1165,7 +1165,7 @@ void drawClearBuffers()
 
 -------------------------------------------------------------------------------*/
 
-void raycast(view_t* camera, int mode)
+void raycast(view_t* camera, int mode, bool updateVismap)
 {
 	long posx, posy;
 	real_t fracx, fracy;
@@ -1193,7 +1193,7 @@ void raycast(view_t* camera, int mode)
 	rx = cos(camera->ang - wfov / 2.f);
 	ry = sin(camera->ang - wfov / 2.f);
 
-	if ( posx >= 0 && posy >= 0 && posx < map.width && posy < map.height )
+	if ( updateVismap && posx >= 0 && posy >= 0 && posx < map.width && posy < map.height )
 	{
 		vismap[posy + posx * map.height] = true;
 	}
@@ -1269,7 +1269,10 @@ void raycast(view_t* camera, int mode)
 
 			if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height )
 			{
-				vismap[iny + inx * map.height] = true;
+				if ( updateVismap )
+				{
+					vismap[iny + inx * map.height] = true;
+				}
 				for ( z = 0; z < MAPLAYERS; z++ )
 				{
 					zhit[z] = false;

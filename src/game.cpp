@@ -3573,7 +3573,7 @@ int main(int argc, char** argv)
 						// make some messages
 						startMessages();
 
-						gameplayCustomManager.writeAllToDocument();
+						//gameplayCustomManager.writeAllToDocument();
 						gameplayCustomManager.readFromFile();
 
 						// load dungeon
@@ -3867,6 +3867,27 @@ int main(int argc, char** argv)
 								}
 								raycast(&camera, REALCOLORS);
 								glDrawWorld(&camera, REALCOLORS);
+
+								if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
+								{
+									for ( int i = 0; i < MAXPLAYERS; ++i )
+									{
+										if ( i != clientnum && players[i] && players[i]->entity )
+										{
+											real_t x = camera.x;
+											real_t y = camera.y;
+											real_t ang = camera.ang;
+
+											camera.x = players[i]->entity->x / 16.0;
+											camera.y = players[i]->entity->y / 16.0;
+											camera.ang = players[i]->entity->yaw;
+											raycast(&camera, REALCOLORS, false);
+											camera.x = x;
+											camera.y = y;
+											camera.ang = ang;
+										}
+									}
+								}
 							}
 							else
 							{
