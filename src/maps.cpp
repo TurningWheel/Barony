@@ -414,13 +414,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	monsterCurveCustomManager.readFromFile();
 
 	// determine whether shop level or not
-	if ( prng_get_uint() % 2 && currentlevel > 1 && strncmp(map.name, "Underworld", 10) && strncmp(map.name, "Hell", 4) )
+	if ( gameplayCustomManager.processedShopFloor(currentlevel, secretlevel, map.name, shoplevel) )
+	{
+		// function sets shop level for us.
+	}
+	else if ( prng_get_uint() % 2 && currentlevel > 1 && strncmp(map.name, "Underworld", 10) && strncmp(map.name, "Hell", 4) )
 	{
 		shoplevel = true;
 	}
 
 	// determine whether minotaur level or not
-	if ( std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) != -1 )
+	if ( (svFlags & SV_FLAG_MINOTAURS) && gameplayCustomManager.processedMinotaurSpawn(currentlevel, secretlevel, map.name) )
+	{
+		// function sets mino level for us.
+	}
+	else if ( std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) != -1 )
 	{
 		if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) && (svFlags & SV_FLAG_MINOTAURS) )
 		{
@@ -437,7 +445,15 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}
 
 	// dark level
-	if ( !secretlevel )
+	if ( gameplayCustomManager.processedDarkFloor(currentlevel, secretlevel, map.name) )
+	{
+		// function sets dark level for us.
+		if ( darkmap )
+		{
+			messagePlayer(clientnum, language[1108]);
+		}
+	}
+	else if ( !secretlevel )
 	{
 		if ( std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) != -1 )
 		{
@@ -1558,8 +1574,47 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 	}
 
+	bool customTrapsForMapInUse = false;
+	struct CustomTraps
+	{
+		bool boulders = false;
+		bool arrows = false;
+		bool spikes = false;
+		bool verticalSpelltraps = false;
+	} customTraps;
+
+	if ( gameplayCustomManager.inUse() && gameplayCustomManager.mapGenerationExistsForMapName(map.name) )
+	{
+		auto m = gameplayCustomManager.getMapGenerationForMapName(map.name);
+		if ( m )
+		{
+			customTrapsForMapInUse = true;
+			for ( auto& traps : m->trapTypes )
+			{
+				if ( traps.compare("boulders") == 0 )
+				{
+					customTraps.boulders = true;
+				}
+				else if ( traps.compare("arrows") == 0 )
+				{
+					customTraps.arrows = true;
+				}
+				else if ( traps.compare("spikes") == 0 )
+				{
+					customTraps.spikes = true;
+				}
+				else if ( traps.compare("spelltrap_vertical") == 0 )
+				{
+					customTraps.verticalSpelltraps = true;
+				}
+			}
+		}
+	}
+
 	// boulder and arrow traps
-	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 )
+	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 
+		&& (!customTrapsForMapInUse || (customTrapsForMapInUse && (customTraps.boulders || customTraps.arrows)) )
+		)
 	{
 		numpossiblelocations = 0;
 		for ( c = 0; c < map.width * map.height; ++c )
@@ -1727,6 +1782,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					arrowtrapspawn = true;
 				}
 			}
+
+			if ( customTrapsForMapInUse )
+			{
+				arrowtrapspawn = customTraps.arrows;
+				if ( customTraps.boulders && prng_get_uint() % 2 )
+				{
+					arrowtrapspawn = false;
+				}
+			}
+
 			if ( arrowtrapspawn || noceiling )
 			{
 				arrowtrap = true;
@@ -2077,7 +2142,17 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					--forcedMonsterSpawns;
 					if ( monsterexcludelocations[x + y * map.width] == false )
 					{
-						if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+						bool doNPC = false;
+						if ( gameplayCustomManager.processedPropertyForFloor(currentlevel, secretlevel, map.name, GameplayCustomManager::PROPERTY_NPC, doNPC) )
+						{
+							// doNPC processed by function
+						}
+						else if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+						{
+							doNPC = true;
+						}
+
+						if ( doNPC )
 						{
 							if ( currentlevel > 15 && prng_get_uint() % 4 > 0 )
 							{
@@ -2126,7 +2201,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					--forcedDecorationSpawns;
 					// decorations
-					if ( (prng_get_uint() % 4 == 0 || currentlevel <= 10) && strcmp(map.name, "Hell") )
+					if ( (prng_get_uint() % 4 == 0 || currentlevel <= 10 && !customTrapsForMapInUse) && strcmp(map.name, "Hell") )
 					{
 						switch ( prng_get_uint() % 7 )
 						{
@@ -2159,20 +2234,39 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					}
 					else
 					{
-						if ( currentlevel <= 25 )
+						if ( customTrapsForMapInUse )
 						{
-							entity = newEntity(64, 1, map.entities, nullptr); // spear trap
-						}
-						else
-						{
-							if ( prng_get_uint() % 2 == 0 )
+							if ( !customTraps.spikes && !customTraps.verticalSpelltraps )
+							{
+								continue;
+							}
+							else if ( customTraps.verticalSpelltraps && prng_get_uint() % 2 == 0 )
 							{
 								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
 								setSpriteAttributes(entity, nullptr, nullptr);
 							}
-							else
+							else if ( customTraps.spikes )
 							{
 								entity = newEntity(64, 1, map.entities, nullptr); // spear trap
+							}
+						}
+						else
+						{
+							if ( currentlevel <= 25 )
+							{
+								entity = newEntity(64, 1, map.entities, nullptr); // spear trap
+							}
+							else
+							{
+								if ( prng_get_uint() % 2 == 0 )
+								{
+									entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
+									setSpriteAttributes(entity, nullptr, nullptr);
+								}
+								else
+								{
+									entity = newEntity(64, 1, map.entities, nullptr); // spear trap
+								}
 							}
 						}
 						Entity* also = newEntity(33, 1, map.entities, nullptr);
@@ -2240,7 +2334,17 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							if ( monsterexcludelocations[x + y * map.width] == false )
 							{
-								if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+								bool doNPC = false;
+								if ( gameplayCustomManager.processedPropertyForFloor(currentlevel, secretlevel, map.name, GameplayCustomManager::PROPERTY_NPC, doNPC) )
+								{
+									// doNPC processed by function
+								}
+								else if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+								{
+									doNPC = true;
+								}
+
+								if ( doNPC )
 								{
 									if ( currentlevel > 15 && prng_get_uint() % 4 > 0 )
 									{
@@ -2272,7 +2376,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				else
 				{
 					// decorations
-					if ( (prng_get_uint() % 4 == 0 || currentlevel <= 10) && strcmp(map.name, "Hell") )
+					if ( (prng_get_uint() % 4 == 0 || (currentlevel <= 10 && !customTrapsForMapInUse)) && strcmp(map.name, "Hell") )
 					{
 						switch ( prng_get_uint() % 7 )
 						{
@@ -2305,20 +2409,39 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					}
 					else
 					{
-						if ( currentlevel <= 25 )
+						if ( customTrapsForMapInUse )
 						{
-							entity = newEntity(64, 1, map.entities, nullptr); // spear trap
-						}
-						else
-						{
-							if ( prng_get_uint() % 2 == 0 )
+							if ( !customTraps.spikes && !customTraps.verticalSpelltraps )
+							{
+								continue;
+							}
+							else if ( customTraps.verticalSpelltraps && prng_get_uint() % 2 == 0 )
 							{
 								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
 								setSpriteAttributes(entity, nullptr, nullptr);
 							}
-							else
+							else if ( customTraps.spikes )
 							{
 								entity = newEntity(64, 1, map.entities, nullptr); // spear trap
+							}
+						}
+						else
+						{
+							if ( currentlevel <= 25 )
+							{
+								entity = newEntity(64, 1, map.entities, nullptr); // spear trap
+							}
+							else
+							{
+								if ( prng_get_uint() % 2 == 0 )
+								{
+									entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
+									setSpriteAttributes(entity, nullptr, nullptr);
+								}
+								else
+								{
+									entity = newEntity(64, 1, map.entities, nullptr); // spear trap
+								}
 							}
 						}
 						Entity* also = newEntity(33, 1, map.entities, nullptr);

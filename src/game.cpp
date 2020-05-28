@@ -3573,6 +3573,7 @@ int main(int argc, char** argv)
 						// make some messages
 						startMessages();
 
+						gameplayCustomManager.writeAllToDocument();
 						gameplayCustomManager.readFromFile();
 
 						// load dungeon

@@ -14,6 +14,7 @@ See LICENSE for details.
 #include "stat.hpp"
 #include "json.hpp"
 #include "files.hpp"
+#include "prng.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
@@ -38,6 +39,24 @@ public:
 	{
 		rapidjson::Value val(value, d.GetAllocator());        // some value
 		d[subkey.c_str()].PushBack(val, d.GetAllocator());
+	}
+	static bool isLevelPartOfSet(int level, bool secret, std::pair<std::unordered_set<int>, std::unordered_set<int>>& pairOfSets)
+	{
+		if ( !secret )
+		{
+			if ( pairOfSets.first.find(level) == pairOfSets.first.end() )
+			{
+				return false;
+			}
+		}
+		else
+		{
+			if ( pairOfSets.second.find(level) == pairOfSets.second.end() )
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 };
 
@@ -1030,7 +1049,7 @@ public:
 				}
 				if ( d["properties"].HasMember("xp_award_percent") )
 				{
-					statEntry->xpAwardPercent = d["properties"]["disable_item_drops"].GetInt();
+					statEntry->xpAwardPercent = d["properties"]["xp_award_percent"].GetInt();
 				}
 				if ( d["properties"].HasMember("enable_casting_inventory_spellbooks") )
 				{
@@ -1313,19 +1332,19 @@ extern MonsterCurveCustomManager monsterCurveCustomManager;
 
 class GameplayCustomManager
 {
+public:
 	bool usingCustomManager = false;
 	int xpShareRange = XPSHARERANGE;
-	std::unordered_set<int> minotaurForceEnableFloors;
-	std::unordered_set<int> minotaurForceDisableFloors;
-	std::unordered_set<int> hungerDisableFloors;
-	std::unordered_set<int> herxChatterDisableFloors;
-	std::unordered_set<int> minimapDisableFloors;
+	std::pair<std::unordered_set<int>, std::unordered_set<int>> minotaurForceEnableFloors;
+	std::pair<std::unordered_set<int>, std::unordered_set<int>> minotaurForceDisableFloors;
+	std::pair<std::unordered_set<int>, std::unordered_set<int>> hungerDisableFloors;
+	std::pair<std::unordered_set<int>, std::unordered_set<int>> herxChatterDisableFloors;
+	std::pair<std::unordered_set<int>, std::unordered_set<int>> minimapDisableFloors;
 	int globalXPPercent = 100;
 	int globalGoldPercent = 100;
 	bool minimapShareProgress = false;
-	std::vector<std::pair<std::string, std::vector<std::string>>> mapFloorTrapTypes;
 	int playerWeightPercent = 100;
-public:
+	double playerSpeedMax = 18.0;
 	inline bool inUse() { return usingCustomManager; };
 	void resetValues()
 	{
@@ -1335,13 +1354,59 @@ public:
 		globalGoldPercent = 100;
 		minimapShareProgress = false;
 		playerWeightPercent = 100;
+		playerSpeedMax = 18.0;
 
-		minotaurForceEnableFloors.clear();
-		minotaurForceDisableFloors.clear();
-		hungerDisableFloors.clear();
-		herxChatterDisableFloors.clear();
-		minimapDisableFloors.clear();
-		mapFloorTrapTypes.clear();
+		minotaurForceEnableFloors.first.clear();
+		minotaurForceEnableFloors.second.clear();
+		minotaurForceDisableFloors.first.clear();
+		minotaurForceDisableFloors.second.clear();
+		hungerDisableFloors.first.clear();
+		hungerDisableFloors.second.clear();
+		herxChatterDisableFloors.first.clear();
+		herxChatterDisableFloors.second.clear();
+		minimapDisableFloors.first.clear();
+		minimapDisableFloors.second.clear();
+		allMapGenerations.clear();
+	}
+
+	class MapGeneration
+	{
+	public:
+		MapGeneration(std::string name) { mapName = name; };
+		std::string mapName = "";
+		std::vector<std::string> trapTypes;
+		std::unordered_set<int> minoFloors;
+		std::unordered_set<int> darkFloors;
+		std::unordered_set<int> shopFloors;
+		std::unordered_set<int> npcSpawnFloors;
+		int minoPercent = -1;
+		int shopPercent = -1;
+		int darkPercent = -1;
+		int npcSpawnPercent = -1;
+	};
+
+	std::vector<MapGeneration> allMapGenerations;
+	bool mapGenerationExistsForMapName(std::string name)
+	{
+		for ( auto& it : allMapGenerations )
+		{
+			if ( it.mapName.compare(name) == 0 )
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	MapGeneration* getMapGenerationForMapName(std::string name)
+	{
+		for ( auto& it : allMapGenerations )
+		{
+			if ( it.mapName.compare(name) == 0 )
+			{
+				return &it;
+			}
+		}
+		return nullptr;
 	}
 
 	void writeAllToDocument()
@@ -1355,13 +1420,22 @@ public:
 		CustomHelpers::addMemberToRoot(d, "global_gold_drop_scale_percent", rapidjson::Value(globalGoldPercent));
 		CustomHelpers::addMemberToRoot(d, "player_share_minimap_progress", rapidjson::Value(minimapShareProgress));
 		CustomHelpers::addMemberToRoot(d, "player_speed_weight_impact_percent", rapidjson::Value(playerWeightPercent));
+		CustomHelpers::addMemberToRoot(d, "player_speed_max", rapidjson::Value(playerSpeedMax));
 
-		rapidjson::Value arr;
-		arr.SetArray();
-		CustomHelpers::addMemberToRoot(d, "minotaur_force_disable_on_floors", arr);
-		CustomHelpers::addMemberToRoot(d, "minotaur_force_enable_on_floors", arr);
-		CustomHelpers::addMemberToRoot(d, "disable_herx_messages_on_floors", arr);
-		CustomHelpers::addMemberToRoot(d, "disable_minimap_on_floors", arr);
+		rapidjson::Value obj(rapidjson::kObjectType);
+		rapidjson::Value arr(rapidjson::kArrayType);
+		CustomHelpers::addMemberToRoot(d, "minotaur_force_disable_on_floors", obj);
+		CustomHelpers::addMemberToSubkey(d, "minotaur_force_disable_on_floors", "normal_floors", arr);
+		CustomHelpers::addMemberToSubkey(d, "minotaur_force_disable_on_floors", "secret_floors", arr);
+		CustomHelpers::addMemberToRoot(d, "minotaur_force_enable_on_floors", obj);
+		CustomHelpers::addMemberToSubkey(d, "minotaur_force_enable_on_floors", "normal_floors", arr);
+		CustomHelpers::addMemberToSubkey(d, "minotaur_force_enable_on_floors", "secret_floors", arr);
+		CustomHelpers::addMemberToRoot(d, "disable_herx_messages_on_floors", obj);
+		CustomHelpers::addMemberToSubkey(d, "disable_herx_messages_on_floors", "normal_floors", arr);
+		CustomHelpers::addMemberToSubkey(d, "disable_herx_messages_on_floors", "secret_floors", arr);
+		CustomHelpers::addMemberToRoot(d, "disable_minimap_on_floors", obj);
+		CustomHelpers::addMemberToSubkey(d, "disable_minimap_on_floors", "normal_floors", arr);
+		CustomHelpers::addMemberToSubkey(d, "disable_minimap_on_floors", "secret_floors", arr);
 
 		rapidjson::Value mapGenObj;
 		mapGenObj.SetObject();
@@ -1407,6 +1481,7 @@ public:
 
 	void readFromFile()
 	{
+		resetValues();
 		if ( PHYSFS_getRealDir("/data/gameplaymodifiers.json") )
 		{
 			std::string inputPath = PHYSFS_getRealDir("/data/gameplaymodifiers.json");
@@ -1469,57 +1544,320 @@ public:
 			playerWeightPercent = itr->value.GetBool();
 			return true;
 		}
+		else if ( name.compare("player_speed_max") == 0 )
+		{
+			playerSpeedMax = itr->value.GetDouble();
+			return true;
+		}
 		else if ( name.compare("minotaur_force_disable_on_floors") == 0 )
 		{
-			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["normal_floors"].Begin(); arr_itr != itr->value["normal_floors"].End(); ++arr_itr )
 			{
-				minotaurForceDisableFloors.insert(arr_itr->GetInt());
+				minotaurForceDisableFloors.first.insert(arr_itr->GetInt());
+			}
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["secret_floors"].Begin(); arr_itr != itr->value["secret_floors"].End(); ++arr_itr )
+			{
+				minotaurForceDisableFloors.second.insert(arr_itr->GetInt());
 			}
 			return true;
 		}
 		else if ( name.compare("minotaur_force_enable_on_floors") == 0 )
 		{
-			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["normal_floors"].Begin(); arr_itr != itr->value["normal_floors"].End(); ++arr_itr )
 			{
-				minotaurForceEnableFloors.insert(arr_itr->GetInt());
+				minotaurForceEnableFloors.first.insert(arr_itr->GetInt());
+			}
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["secret_floors"].Begin(); arr_itr != itr->value["secret_floors"].End(); ++arr_itr )
+			{
+				minotaurForceEnableFloors.second.insert(arr_itr->GetInt());
 			}
 			return true;
 		}
 		else if ( name.compare("disable_hunger_on_floors") == 0 )
 		{
-			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["normal_floors"].Begin(); arr_itr != itr->value["normal_floors"].End(); ++arr_itr )
 			{
-				hungerDisableFloors.insert(arr_itr->GetInt());
+				hungerDisableFloors.first.insert(arr_itr->GetInt());
+			}
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["secret_floors"].Begin(); arr_itr != itr->value["secret_floors"].End(); ++arr_itr )
+			{
+				hungerDisableFloors.second.insert(arr_itr->GetInt());
 			}
 			return true;
 		}
 		else if ( name.compare("disable_herx_messages_on_floors") == 0 )
 		{
-			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["normal_floors"].Begin(); arr_itr != itr->value["normal_floors"].End(); ++arr_itr )
 			{
-				herxChatterDisableFloors.insert(arr_itr->GetInt());
+				herxChatterDisableFloors.first.insert(arr_itr->GetInt());
+			}
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["secret_floors"].Begin(); arr_itr != itr->value["secret_floors"].End(); ++arr_itr )
+			{
+				herxChatterDisableFloors.second.insert(arr_itr->GetInt());
 			}
 			return true;
 		}
 		else if ( name.compare("disable_minimap_on_floors") == 0 )
 		{
-			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["normal_floors"].Begin(); arr_itr != itr->value["normal_floors"].End(); ++arr_itr )
 			{
-				minimapDisableFloors.insert(arr_itr->GetInt());
+				minimapDisableFloors.first.insert(arr_itr->GetInt());
+			}
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value["secret_floors"].Begin(); arr_itr != itr->value["secret_floors"].End(); ++arr_itr )
+			{
+				minimapDisableFloors.second.insert(arr_itr->GetInt());
 			}
 			return true;
 		}
-		else if ( name.compare("map_force_trap_generation_types") == 0 )
+		else if ( name.compare("map_generation") == 0 )
 		{
-			for ( rapidjson::Value::ConstMemberIterator obj_itr = itr->value.MemberBegin(); obj_itr != itr->value.MemberEnd(); ++obj_itr )
+			for ( rapidjson::Value::ConstMemberIterator map_itr = itr->value.MemberBegin(); map_itr != itr->value.MemberEnd(); ++map_itr )
 			{
-				std::string mapName = obj_itr->name.GetString();
-				std::vector<std::string> trapTypes;
-				for ( rapidjson::Value::ConstValueIterator arr_itr = obj_itr->value.Begin(); arr_itr != obj_itr->value.End(); ++arr_itr )
+				std::string mapName = map_itr->name.GetString();
+				MapGeneration m(mapName);
+				for ( rapidjson::Value::ConstMemberIterator obj_itr = map_itr->value.MemberBegin(); obj_itr != map_itr->value.MemberEnd(); ++obj_itr )
 				{
-					trapTypes.push_back(arr_itr->GetString());
+					readKeyToMapGenerationProperty(m, obj_itr);
 				}
-				mapFloorTrapTypes.push_back(std::make_pair(mapName, trapTypes));
+				allMapGenerations.push_back(m);
+			}
+			return true;
+		}
+		printlog("[JSON]: Unknown property '%s'", name.c_str());
+		return false;
+	}
+
+	bool readKeyToMapGenerationProperty(MapGeneration& m, rapidjson::Value::ConstMemberIterator& itr)
+	{
+		std::string name = itr->name.GetString();
+		if ( name.compare("trap_generation_types") == 0 )
+		{
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			{
+				m.trapTypes.push_back(arr_itr->GetString());
+			}
+			return true;
+		}
+		else if ( name.compare("minotaur_floors") == 0 )
+		{
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			{
+				m.minoFloors.insert(arr_itr->GetInt());
+			}
+			return true;
+		}
+		else if ( name.compare("dark_floors") == 0 )
+		{
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			{
+				m.darkFloors.insert(arr_itr->GetInt());
+			}
+			return true;
+		}
+		else if ( name.compare("shop_floors") == 0 )
+		{
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			{
+				m.shopFloors.insert(arr_itr->GetInt());
+			}
+			return true;
+		}
+		else if ( name.compare("npc_floors") == 0 )
+		{
+			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+			{
+				m.npcSpawnFloors.insert(arr_itr->GetInt());
+			}
+			return true;
+		}
+		else if ( name.compare("dark_floor_percent") == 0 )
+		{
+			m.darkPercent = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("minotaur_floor_percent") == 0 )
+		{
+			m.minoPercent = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("shop_floor_percent") == 0 )
+		{
+			m.shopPercent = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("npc_spawn_chance") == 0 )
+		{
+			m.npcSpawnPercent = itr->value.GetInt();
+			return true;
+		}
+		printlog("[JSON]: Unknown property '%s'", name.c_str());
+		return false;
+	}
+
+	bool processedMinotaurSpawn(int level, bool secret, std::string mapName)
+	{
+		if ( !inUse() )
+		{
+			return false;
+		}
+
+		if ( CustomHelpers::isLevelPartOfSet(level, secret, minotaurForceEnableFloors) )
+		{
+			minotaurlevel = 1;
+			return true;
+		}
+		if ( CustomHelpers::isLevelPartOfSet(level, secret, minotaurForceDisableFloors) )
+		{
+			minotaurlevel = 0;
+			return true;
+		}
+
+		auto m = getMapGenerationForMapName(mapName);
+		if ( m )
+		{
+			if ( m->minoPercent == -1 )
+			{
+				// no key value read in.
+				return false;
+			}
+
+			if ( m->minoFloors.find(level) == m->minoFloors.end() )
+			{
+				// not found
+				minotaurlevel = 0;
+				return true;
+			}
+			// found, roll prng
+			if ( prng_get_uint() % 100 < m->minoPercent )
+			{
+				minotaurlevel = 1;
+			}
+			else
+			{
+				minotaurlevel = 0;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	bool processedDarkFloor(int level, bool secret, std::string mapName)
+	{
+		if ( !inUse() )
+		{
+			return false;
+		}
+
+		auto m = getMapGenerationForMapName(mapName);
+		if ( m )
+		{
+			if ( m->darkPercent == -1 )
+			{
+				// no key value read in.
+				return false;
+			}
+
+			if ( m->darkFloors.find(level) == m->darkFloors.end() )
+			{
+				// not found
+				darkmap = false;
+				return true;
+			}
+			// found, roll prng
+			if ( prng_get_uint() % 100 < m->darkPercent )
+			{
+				darkmap = true;
+			}
+			else
+			{
+				darkmap = false;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	bool processedShopFloor(int level, bool secret, std::string mapName, bool& shoplevel)
+	{
+		if ( !inUse() )
+		{
+			return false;
+		}
+
+		auto m = getMapGenerationForMapName(mapName);
+		if ( m )
+		{
+			if ( m->shopPercent == -1 )
+			{
+				// no key value read in.
+				return false;
+			}
+
+			if ( m->shopFloors.find(level) == m->shopFloors.end() )
+			{
+				// not found
+				shoplevel = false;
+				return true;
+			}
+			// found, roll prng
+			if ( prng_get_uint() % 100 < m->shopPercent )
+			{
+				shoplevel = true;
+			}
+			else
+			{
+				shoplevel = false;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	enum PropertyTypes : int
+	{
+		PROPERTY_NPC
+	};
+
+	bool processedPropertyForFloor(int level, bool secret, std::string mapName, PropertyTypes propertyType, bool& bOut)
+	{
+		if ( !inUse() )
+		{
+			return false;
+		}
+
+		auto m = getMapGenerationForMapName(mapName);
+		if ( m )
+		{
+			int percentValue = -1;
+			switch ( propertyType )
+			{
+				case PROPERTY_NPC:
+					if ( m->npcSpawnFloors.find(level) == m->npcSpawnFloors.end() )
+					{
+						// not found
+						bOut = false;
+						return true;
+					}
+					percentValue = m->npcSpawnPercent;
+					break;
+				default:
+					break;
+			}
+
+			if ( percentValue == -1 )
+			{
+				// no key value read in.
+				return false;
+			}
+
+			// found, roll prng
+			if ( prng_get_uint() % 100 < percentValue )
+			{
+				bOut = true;
+			}
+			else
+			{
+				bOut = false;
 			}
 			return true;
 		}

@@ -19,6 +19,7 @@
 #include "../player.hpp"
 #include "interface.hpp"
 #include "../collision.hpp"
+#include "../mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -44,6 +45,14 @@ Uint32 minimapColorFunc(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 
 void drawMinimap()
 {
+	if ( gameplayCustomManager.inUse() )
+	{
+		if ( CustomHelpers::isLevelPartOfSet(currentlevel, secretlevel, gameplayCustomManager.minimapDisableFloors) )
+		{
+			return;
+		}
+	}
+
 	node_t* node;
 	Uint32 color;
 	int x, y, i;

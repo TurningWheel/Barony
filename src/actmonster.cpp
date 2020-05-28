@@ -26,6 +26,7 @@
 #include "player.hpp"
 #include "colors.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 float limbs[NUMMONSTERS][20][3];
 
@@ -2479,6 +2480,11 @@ void actMonster(Entity* my)
 		}
 
 		// drop gold
+		if ( gameplayCustomManager.inUse() )
+		{
+			int numGold = myStats->GOLD * (gameplayCustomManager.globalGoldPercent / 100.f);
+			myStats->GOLD = numGold;
+		}
 		if ( myStats->GOLD > 0 && myStats->monsterNoDropItems == 0 )
 		{
 			int x = std::min<int>(std::max(0, (int)(my->x / 16)), map.width - 1);

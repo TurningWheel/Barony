@@ -26,6 +26,7 @@
 #include "player.hpp"
 #include "colors.hpp"
 #include "draw.hpp"
+#include "mod_tools.hpp"
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
@@ -648,6 +649,10 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 		}
 	}
 	weight += stats[PLAYER_NUM]->GOLD / 100;
+	if ( gameplayCustomManager.inUse() )
+	{
+		weight = weight * (gameplayCustomManager.playerWeightPercent / 100.f);
+	}
 	if ( stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && !stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
 	{
 		weight = weight * 0.5;
@@ -744,14 +749,21 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			DEX = std::min(DEX - 3, -2);
 			slowSpeedPenalty = 2.0;
 		}
-		real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, 18.0);
+
+		double maxSpeed = 18.0;
+		if ( gameplayCustomManager.inUse() )
+		{
+			maxSpeed = gameplayCustomManager.playerSpeedMax;
+		}
+
+		real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, maxSpeed);
 		if ( DEX <= 5 )
 		{
-			speedFactor = std::min((DEX + 10) * weightratio, 18.0);
+			speedFactor = std::min((DEX + 10) * weightratio, maxSpeed);
 		}
 		else if ( DEX <= 15 )
 		{
-			speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, 18.0);
+			speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, maxSpeed);
 		}
 		/*if ( ticks % 50 == 0 )
 		{

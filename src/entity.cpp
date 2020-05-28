@@ -28,6 +28,7 @@ See LICENSE for details.
 #include "player.hpp"
 #include "scores.hpp"
 #include "menu.hpp"
+#include "mod_tools.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
@@ -10367,6 +10368,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		double percent = value / 100.f;
 		xpGain = percent * xpGain;
 	}
+	if ( gameplayCustomManager.inUse() )
+	{
+		xpGain = (gameplayCustomManager.globalXPPercent / 100.f) * xpGain;
+	}
 
 	// save hit struct
 	hit_t tempHit;
@@ -10376,6 +10381,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	tempHit.side = hit.side;
 	tempHit.x = hit.x;
 	tempHit.y = hit.y;
+
+	int shareRange = gameplayCustomManager.inUse() ? gameplayCustomManager.xpShareRange : XPSHARERANGE;
 
 	// divide shares
 	if ( player >= 0 )
@@ -10400,7 +10407,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			}
 			if ( entity && entity->behavior == &actPlayer )
 			{
-				if ( entityDist(this, entity) < XPSHARERANGE )
+				if ( entityDist(this, entity) < shareRange )
 				{
 					++numshares;
 					shares[numshares] = entity;
@@ -10438,7 +10445,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					for ( node = stats[this->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
 						Entity* follower = uidToEntity(*((Uint32*)node->element));
-						if ( entityDist(this, follower) < XPSHARERANGE && follower != src )
+						if ( entityDist(this, follower) < shareRange && follower != src )
 						{
 							if ( follower && follower->monsterIsTinkeringCreation() )
 							{
