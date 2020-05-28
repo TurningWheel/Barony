@@ -1439,18 +1439,73 @@ public:
 
 		rapidjson::Value mapGenObj;
 		mapGenObj.SetObject();
-		CustomHelpers::addMemberToRoot(d, "map_force_trap_generation_types", mapGenObj);
-
+		CustomHelpers::addMemberToRoot(d, "map_generation", mapGenObj);
 		rapidjson::Value key1("The Mines", d.GetAllocator());
+		rapidjson::Value minesObj(rapidjson::kObjectType);
+
 		rapidjson::Value trapArray1(rapidjson::kArrayType);
 		trapArray1.PushBack("boulders", d.GetAllocator());
-		d["map_force_trap_generation_types"].AddMember(key1, trapArray1, d.GetAllocator());
+		minesObj.AddMember("trap_generation_types", trapArray1, d.GetAllocator());
+		minesObj.AddMember("minotaur_floors", rapidjson::Value(rapidjson::kArrayType), d.GetAllocator());
+		minesObj["minotaur_floors"].PushBack(2, d.GetAllocator());
+		minesObj["minotaur_floors"].PushBack(3, d.GetAllocator());
+		minesObj.AddMember("minotaur_floor_percent", rapidjson::Value(50), d.GetAllocator());
+
+		minesObj.AddMember("dark_floors", rapidjson::Value(rapidjson::kArrayType), d.GetAllocator());
+		minesObj["dark_floors"].PushBack(1, d.GetAllocator());
+		minesObj["dark_floors"].PushBack(2, d.GetAllocator());
+		minesObj["dark_floors"].PushBack(3, d.GetAllocator());
+		minesObj["dark_floors"].PushBack(4, d.GetAllocator());
+		minesObj.AddMember("dark_floor_percent", rapidjson::Value(25), d.GetAllocator());
+
+		minesObj.AddMember("shop_floors", rapidjson::Value(rapidjson::kArrayType), d.GetAllocator());
+		minesObj["shop_floors"].PushBack(2, d.GetAllocator());
+		minesObj["shop_floors"].PushBack(3, d.GetAllocator());
+		minesObj["shop_floors"].PushBack(4, d.GetAllocator());
+		minesObj.AddMember("shop_floor_percent", rapidjson::Value(50), d.GetAllocator());
+
+		minesObj.AddMember("npc_floors", rapidjson::Value(rapidjson::kArrayType), d.GetAllocator());
+		minesObj["npc_floors"].PushBack(2, d.GetAllocator());
+		minesObj["npc_floors"].PushBack(3, d.GetAllocator());
+		minesObj["npc_floors"].PushBack(4, d.GetAllocator());
+		minesObj.AddMember("npc_spawn_chance", rapidjson::Value(10), d.GetAllocator());
+
+		d["map_generation"].AddMember(key1, minesObj, d.GetAllocator());
 		
 		rapidjson::Value key2("The Swamp", d.GetAllocator());
+		rapidjson::Value swampObj(rapidjson::kObjectType);
+
 		rapidjson::Value trapArray2(rapidjson::kArrayType);
 		trapArray2.PushBack("boulders", d.GetAllocator());
 		trapArray2.PushBack("arrows", d.GetAllocator());
-		d["map_force_trap_generation_types"].AddMember(key2, trapArray2, d.GetAllocator());
+		swampObj.AddMember("trap_generation_types", trapArray2, d.GetAllocator());
+		swampObj.AddMember("minotaur_floors", rapidjson::Value(rapidjson::kArrayType), d.GetAllocator());
+		swampObj["minotaur_floors"].PushBack(7, d.GetAllocator());
+		swampObj["minotaur_floors"].PushBack(8, d.GetAllocator());
+		swampObj.AddMember("minotaur_floor_percent", rapidjson::Value(50), d.GetAllocator());
+
+		swampObj.AddMember("dark_floors", rapidjson::Value(rapidjson::kArrayType), d.GetAllocator());
+		swampObj["dark_floors"].PushBack(6, d.GetAllocator());
+		swampObj["dark_floors"].PushBack(7, d.GetAllocator());
+		swampObj["dark_floors"].PushBack(8, d.GetAllocator());
+		swampObj["dark_floors"].PushBack(9, d.GetAllocator());
+		swampObj.AddMember("dark_floor_percent", rapidjson::Value(25), d.GetAllocator());
+
+		swampObj.AddMember("shop_floors", rapidjson::Value(rapidjson::kArrayType), d.GetAllocator());
+		swampObj["shop_floors"].PushBack(6, d.GetAllocator());
+		swampObj["shop_floors"].PushBack(7, d.GetAllocator());
+		swampObj["shop_floors"].PushBack(8, d.GetAllocator());
+		swampObj["shop_floors"].PushBack(9, d.GetAllocator());
+		swampObj.AddMember("shop_floor_percent", rapidjson::Value(50), d.GetAllocator());
+
+		swampObj.AddMember("npc_floors", rapidjson::Value(rapidjson::kArrayType), d.GetAllocator());
+		swampObj["npc_floors"].PushBack(6, d.GetAllocator());
+		swampObj["npc_floors"].PushBack(7, d.GetAllocator());
+		swampObj["npc_floors"].PushBack(8, d.GetAllocator());
+		swampObj["npc_floors"].PushBack(9, d.GetAllocator());
+		swampObj.AddMember("npc_spawn_chance", rapidjson::Value(10), d.GetAllocator());
+
+		d["map_generation"].AddMember(key2, swampObj, d.GetAllocator());
 
 		writeToFile(d);
 	}
@@ -1505,11 +1560,13 @@ public:
 				return;
 			}
 			int version = d["version"].GetInt();
-			usingCustomManager = true;
 
 			for ( rapidjson::Value::ConstMemberIterator prop_itr = d.MemberBegin(); prop_itr != d.MemberEnd(); ++prop_itr )
 			{
-				readKeyToGameplayProperty(prop_itr);
+				if ( readKeyToGameplayProperty(prop_itr) )
+				{
+					usingCustomManager = true;
+				}
 			}
 			
 			printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
@@ -1519,7 +1576,11 @@ public:
 	bool readKeyToGameplayProperty(rapidjson::Value::ConstMemberIterator& itr)
 	{
 		std::string name = itr->name.GetString();
-		if ( name.compare("xp_share_range") == 0 )
+		if ( name.compare("version") == 0 )
+		{
+			return true;
+		}
+		else if ( name.compare("xp_share_range") == 0 )
 		{
 			xpShareRange = itr->value.GetInt();
 			return true;
