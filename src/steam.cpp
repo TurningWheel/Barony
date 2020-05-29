@@ -588,7 +588,13 @@ void SteamServerClientWrapper::m_SteamCallResultEncryptedAppTicket_Set(SteamAPIC
 	m_SteamCallResultEncryptedAppTicket.Set(hSteamAPICall, this, &SteamServerClientWrapper::OnRequestEncryptedAppTicket);
 }
 
-
+SteamAPICall_t cpp_SteamMatchmaking_RequestAppTicket()
+{
+	char someData[] = "data";
+	SteamAPICall_t m_SteamCallResultEncryptedAppTicket = SteamUser()->RequestEncryptedAppTicket(someData, sizeof(someData));
+	steam_server_client_wrapper->m_SteamCallResultEncryptedAppTicket_Set(m_SteamCallResultEncryptedAppTicket);
+	return m_SteamCallResultEncryptedAppTicket;
+}
 
 SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList()
 {
@@ -1423,6 +1429,63 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 	else
 	{
 		printlog( "warning: failed to create steam lobby.\n");
+	}
+}
+
+void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure)
+{
+	if ( bIOFailure )
+	{
+		printlog("OnRequestEncryptedAppTicket failure");
+		return;
+	}
+
+	EncryptedAppTicketResponse_t* cb = static_cast<EncryptedAppTicketResponse_t*>(pCallback);
+	switch ( cb->m_eResult )
+	{
+		case k_EResultOK:
+		{
+			uint8 rgubTicket[1024];
+			uint32 cubTicket;
+			if ( SteamUser()->GetEncryptedAppTicket(rgubTicket, sizeof(rgubTicket), &cubTicket) )
+			{
+				char buf[1024] = "";
+				Uint32 len = 1024;
+				EOS_EResult result = EOS_ByteArray_ToString(rgubTicket, cubTicket, buf, &len);
+				if ( result != EOS_EResult::EOS_Success )
+				{
+					printlog("EOS_ByteArray_ToString failed, error code: %d", static_cast<int>(result));
+				}
+				EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
+				EOS_Connect_Credentials Credentials;
+				Credentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
+				Credentials.Token = buf;
+				Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_STEAM_APP_TICKET; // change this to steam etc for different account providers.
+
+				EOS_Connect_LoginOptions Options;
+				Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
+				Options.Credentials = &Credentials;
+				Options.UserLoginInfo = nullptr;
+
+				EOS_Connect_Login(EOS.ConnectHandle, &Options, nullptr, EOS.ConnectLoginCompleteCallback);
+			}
+			else
+			{
+				printlog("GetEncryptedAppTicket failed");
+			}
+		}
+		break;
+		case k_EResultNoConnection:
+			printlog("OnRequestEncryptedAppTicket no steam connection");
+			break;
+		case k_EResultDuplicateRequest:
+			printlog("OnRequestEncryptedAppTicket duplicate request outstanding");
+			break;
+		case k_EResultLimitExceeded:
+			printlog("OnRequestEncryptedAppTicket called more than once per minute");
+			break;
+		default:
+			break;
 	}
 }
 

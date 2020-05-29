@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #pragma once
+#include "monster.hpp"
 
 #define SCORESFILE "scores.dat"
 #define SCORESFILE_MULTIPLAYER "scores_multiplayer.dat"

@@ -74,6 +74,7 @@ int initGame()
 	cpp_SteamServerClientWrapper_OnLobbyMatchListCallback = &steam_OnLobbyMatchListCallback;
 	cpp_SteamServerClientWrapper_OnP2PSessionConnectFail = &steam_OnP2PSessionConnectFail;
 	cpp_SteamServerClientWrapper_OnLobbyDataUpdate = &steam_OnLobbyDataUpdatedCallback;
+	cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket = &steam_OnRequestEncryptedAppTicket;
 #endif
 
 	// print a loading message
@@ -331,7 +332,8 @@ int initGame()
 	randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
 	loadItemLists();
 
-#ifndef STEAMWORKS
+#if defined(USE_EOS) || defined(STEAMWORKS)
+#else
 	if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
 	{
 		std::string serial = PHYSFS_getRealDir("mythsandoutcasts.key");
@@ -384,7 +386,7 @@ int initGame()
 			fclose(fp);
 		}
 	}
-#endif // !STEAMWORKS
+#endif
 
 	// print a loading message
 	drawClearBuffers();
@@ -994,6 +996,11 @@ void deinitGame()
 			cpp_Free_CSteamID(lobbyIDs[c]);
 			lobbyIDs[c] = NULL;
 		}
+	}
+#elif defined USE_EOS
+	if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
+	{
+		EOS.leaveLobby();
 	}
 #endif
 

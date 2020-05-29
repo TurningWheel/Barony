@@ -83,7 +83,10 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 		{
 			return 0;
 		}
-#else
+#elif defined USE_EOS
+		EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(hostnum), (char*)packet->data, packet->len);
+		return 0;
+#else 
 		return 0;
 #endif
 	}
@@ -153,6 +156,9 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 		{
 			return 0;
 		}
+#elif defined USE_EOS
+		EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(hostnum), packetsend->packet->data, packetsend->packet->len);
+		return 0;
 #else
 		return 0;
 #endif
@@ -1585,7 +1591,6 @@ void clientHandlePacket()
 	packetinfo[net_packet->len] = 0;
 	printlog("info: client packet: %s\n", packetinfo);
 #endif
-
 	if ( logCheckMainLoopTimers )
 	{
 		char packetinfo[NET_PACKET_SIZE];
@@ -4106,15 +4111,25 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 			net_handler->initializeMultithreadedPacketHandling();
 		}
 	}
+#elif defined USE_EOS
+	if ( !directConnect && !net_handler )
+	{
+		net_handler = new NetHandler();
+	}
 #endif
 
 	if (!directConnect)
 	{
+#if defined(STEAMWORKS) || defined(USE_EOS)
+#ifdef STEAMWORKS
 		//Steam stuff goes here.
 		if ( disableMultithreadedSteamNetworking )
 		{
 			steamPacketThread(static_cast<void*>(net_handler));
 		}
+#elif defined USE_EOS
+		EOSPacketThread(static_cast<void*>(net_handler));
+#endif
 		SteamPacketWrapper* packet = nullptr;
 
 		if ( logCheckMainLoopTimers )
@@ -4146,6 +4161,7 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 				break;
 			}
 		}
+#endif // defined(STEAMWORKS) || defined(USE_EOS)
 	}
 	else
 	{
@@ -5271,15 +5287,25 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 			net_handler->initializeMultithreadedPacketHandling();
 		}
 	}
+#elif defined USE_EOS
+	if ( !directConnect && !net_handler )
+	{
+		net_handler = new NetHandler();
+	}
 #endif
 
 	if (!directConnect)
 	{
+#if defined(STEAMWORKS) || defined(USE_EOS)
+#ifdef STEAMWORKS
 		//Steam stuff goes here.
 		if ( disableMultithreadedSteamNetworking )
 		{
 			steamPacketThread(static_cast<void*>(net_handler));
 		}
+#elif defined USE_EOS
+		EOSPacketThread(static_cast<void*>(net_handler));
+#endif // USE_EOS
 		SteamPacketWrapper* packet = nullptr;
 
 		if ( logCheckMainLoopTimers )
@@ -5311,6 +5337,7 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 				break;
 			}
 		}
+#endif
 	}
 	else
 	{
@@ -5622,6 +5649,68 @@ SteamPacketWrapper* NetHandler::getGamePacket()
 		}
 	}
 	return packet;
+}
+
+int EOSPacketThread(void* data)
+{
+#ifdef USE_EOS
+	if ( !data )
+	{
+		return -1;    //Some generic error?
+	}
+
+	NetHandler& handler = *static_cast<NetHandler*>(data); //Basically, our this.
+	EOS_ProductUserId remoteId = nullptr;
+	Uint32 packetlen = 0;
+	Uint32 bytes_read = 0;
+	Uint8* packet = nullptr;
+	bool run = true;
+	std::queue<SteamPacketWrapper* > packets; //TODO: Expose to game? Use lock-free packets?
+
+	while ( run )   //1. Check if thread is supposed to be running.
+	{
+		//2. Game not over. Grab/poll for packet.
+
+		//while (handler.getContinueMultithreadingSteamPackets() && SteamNetworking()->IsP2PPacketAvailable(&packetlen)) //Burst read in a bunch of packets.
+		while (EOS.HandleReceivedMessages(&remoteId) )
+		{
+			packetlen = std::min<uint32_t>(net_packet->len, NET_PACKET_SIZE - 1);
+			//Read packets and push into queue.
+			packet = static_cast<Uint8*>(malloc(packetlen));
+			memcpy(packet, net_packet->data, packetlen);
+			if ( !EOSFuncs::Helpers_t::isMatchingProductIds(remoteId, EOS.CurrentUserInfo.getProductUserIdHandle())
+				&& net_packet->data[0] )
+			{
+				//Push packet into queue.
+				//TODO: Use lock-free queues?
+				packets.push(new SteamPacketWrapper(packet, packetlen));
+				packet = nullptr;
+			}
+			if ( packet )
+			{
+				free(packet);
+			}
+		}
+
+
+		//3. Now push our local packetstack onto the game's network stack.
+		//Well, that is: analyze packet.
+		//If packet is good, push into queue.
+		//If packet is bad, loop back to start of function.
+
+		while ( !packets.empty() )
+		{
+			//Copy over the packets read in so far, and expose them to the game.
+			SteamPacketWrapper* packet = packets.front();
+			packets.pop();
+			handler.addGamePacket(packet);
+		}
+
+		run = false; // only run thread once if multithreading disabled.
+	}
+#endif // USE_EOS
+
+	return 0;
 }
 
 int steamPacketThread(void* data)

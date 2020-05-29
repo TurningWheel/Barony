@@ -3271,6 +3271,13 @@ int main(int argc, char** argv)
 									"and verify Steam is running. Alternatively, contact us through our website\n"
 									"at http://www.baronygame.com/ for support.",
 				screen);
+#elif defined USE_EOS
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
+				"Barony has encountered a critical error and cannot start.\n\n"
+				"Please check the log.txt file in the game directory for additional info,\n"
+				"and verify the store is running. Alternatively, contact us through our website\n"
+				"at http://www.baronygame.com/ for support.",
+				screen);
 #else
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
 									"Barony has encountered a critical error and cannot start.\n\n"
@@ -3368,6 +3375,10 @@ int main(int argc, char** argv)
 			}
 			SteamAPI_RunCallbacks();
 #endif
+#ifdef USE_EOS
+			EOS_Platform_Tick(EOS.PlatformHandle);
+#endif // USE_EOS
+
 			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
 			if ( intro )
 			{
@@ -3779,6 +3790,20 @@ int main(int argc, char** argv)
 							{
 								camera.ang += cosspin * drunkextend;
 								camera.vang += sinspin * drunkextend;
+							}
+
+							if ( players[c] && players[c]->entity )
+							{
+								if ( usecamerasmoothing )
+								{
+									real_t oldYaw = players[c]->entity->yaw;
+									//printText(font8x8_bmp, 20, 20, "using smooth camera");
+									handlePlayerCameraBobbing(players[c]->entity, c, true);
+									handlePlayerMovement(players[c]->entity, c, true);
+									handlePlayerCameraUpdate(players[c]->entity, c, true);
+									handlePlayerCameraPosition(players[c]->entity, c, true);
+									//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
+								}
 							}
 
 							if ( players[clientnum] && players[clientnum]->entity )

@@ -180,9 +180,9 @@ char teleporterPropertyNames[3][25] =
 	"Type of sprite (0-2)"
 };
 
-char ceilingTilePropertyNames[1][29] =
+char ceilingTilePropertyNames[1][30] =
 {
-	"Model texture to use (0-999)"
+	"Model texture to use (0-9999)"
 };
 
 char spellTrapPropertyNames[5][38] =
@@ -190,7 +190,7 @@ char spellTrapPropertyNames[5][38] =
 	"Spell Type: (-1 - 9)",
 	"Amount of times to refire (-1 - 99)",
 	"Power once to continuously fire (0-1)",
-	"Ceiling model to use (0-999)",
+	"Ceiling model to use (0-9999)",
 	"Trap refire rate (1-999s)",
 };
 
@@ -5372,7 +5372,7 @@ int main(int argc, char** argv)
 							{
 								if ( i == 0 )
 								{
-									if ( propertyInt > 999 || propertyInt < 0 )
+									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
 									}
@@ -5483,7 +5483,7 @@ int main(int argc, char** argv)
 								}
 								else if ( i == 3 )
 								{
-									if ( propertyInt > 999 || propertyInt < 0 )
+									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 1); // reset to default 1.
 									}

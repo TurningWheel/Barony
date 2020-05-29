@@ -118,6 +118,9 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
 void buttonGamemodsSubscribeToHostsModFiles(button_t* my);
 void buttonGamemodsMountHostsModFiles(button_t* my);
+#elif defined USE_EOS
+void buttonSteamLobbyBrowserJoinGame(button_t* my);
+void buttonSteamLobbyBrowserRefresh(button_t* my);
 #else
 void windowEnterSerialPrompt();
 void windowSerialResult(int success);
@@ -217,6 +220,7 @@ extern char portnumber_char[6];
 extern char connectaddress[64];
 extern int multiplayerselect;
 extern bool smoothmouse;
+extern bool usecamerasmoothing;
 extern bool disablemouserotationlimit;
 extern bool broadcast;
 extern bool nohud;

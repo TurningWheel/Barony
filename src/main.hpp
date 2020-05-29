@@ -734,3 +734,7 @@ extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
 extern SteamGlobalStat_t g_SteamGlobalStats[2];
 extern CSteamStatistics* g_SteamStatistics;
 #endif // STEAMWORKS
+
+#ifdef USE_EOS
+#include "eos.hpp"
+#endif
