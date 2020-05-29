@@ -17425,6 +17425,10 @@ int playerEntityMatchesUid(Uint32 uid)
 
 bool monsterNameIsGeneric(Stat& monsterStats)
 {
+	if ( monsterStats.MISC_FLAGS[STAT_FLAG_MONSTER_NAME_GENERIC] == 1 )
+	{
+		return true;
+	}
 	if ( strstr(monsterStats.name, "lesser")
 		|| strstr(monsterStats.name, "young")
 		|| strstr(monsterStats.name, "enslaved")

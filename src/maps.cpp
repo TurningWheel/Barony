@@ -3411,6 +3411,7 @@ void assignActions(map_t* map)
 							if ( statEntry )
 							{
 								statEntry->setStatsAndEquipmentToMonster(myStats);
+								monsterType = myStats->type;
 								while ( statEntry->numFollowers > 0 )
 								{
 									std::string followerName = statEntry->getFollowerVariant();

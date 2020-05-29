@@ -65,6 +65,7 @@ class MonsterStatCustomManager
 public:
 	std::mt19937 monsterStatSeed;
 	static const std::vector<std::string> itemStatusStrings;
+	static const std::vector<std::string> shopkeeperTypeStrings;
 	MonsterStatCustomManager() :
 		monsterStatSeed(rand())
 	{
@@ -270,7 +271,20 @@ public:
 		std::vector<std::pair<ItemEntry, int>> equipped_items;
 		std::vector<ItemEntry> inventory_items;
 		std::vector<std::pair<std::string, int>> followerVariants;
+		std::vector<std::pair<std::string, int>> shopkeeperStoreTypes;
+		int chosenShopkeeperStore = -1;
+		int shopkeeperMinItems = -1;
+		int shopkeeperMaxItems = -1;
+		int shopkeeperMaxGeneratedBlessing = -1;
+		bool shopkeeperGenDefaultItems = true;
+		enum ShopkeeperCustomFlags : int
+		{
+			ENABLE_GEN_ITEMS = 1,
+			DISABLE_GEN_ITEMS
+		};
+
 		int numFollowers = 0;
+		bool isMonsterNameGeneric = false;
 		bool useDefaultEquipment = true;
 		bool useDefaultInventoryItems = true;
 		bool disableMiniboss = true;
@@ -496,6 +510,11 @@ public:
 			//myStats->clearStats();
 			setStats(myStats);
 			setItems(myStats);
+
+			if ( isMonsterNameGeneric )
+			{
+				myStats->MISC_FLAGS[STAT_FLAG_MONSTER_NAME_GENERIC] = 1;
+			}
 			if ( disableMiniboss )
 			{
 				myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
@@ -522,6 +541,32 @@ public:
 			{
 				myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] = 1;
 				myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] |= (spellbookCastCooldown << 4);
+			}
+			if ( myStats->type == SHOPKEEPER )
+			{
+				if ( chosenShopkeeperStore >= 0 )
+				{
+					myStats->MISC_FLAGS[STAT_FLAG_NPC] = chosenShopkeeperStore + 1;
+				}
+				Uint8 numItems = 0;
+				myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] = 0;
+				if ( shopkeeperGenDefaultItems )
+				{
+					if ( shopkeeperMinItems >= 0 && shopkeeperMaxItems >= 0 )
+					{
+						numItems = shopkeeperMinItems + rand() % std::max(1, (shopkeeperMaxItems - shopkeeperMinItems + 1));
+						myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] |= numItems + 1;
+					}
+					if ( shopkeeperMaxGeneratedBlessing >= 0 )
+					{
+						myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] |= (static_cast<Uint8>(shopkeeperMaxGeneratedBlessing + 1) << 8);
+					}
+					myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] |= (ShopkeeperCustomFlags::ENABLE_GEN_ITEMS << 12); // indicate to use this property.
+				}
+				else
+				{
+					myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] |= (ShopkeeperCustomFlags::DISABLE_GEN_ITEMS << 12); // indicate to disable gen items.
+				}
 			}
 		}
 
@@ -557,6 +602,7 @@ public:
 		rapidjson::Value propsObject;
 		propsObject.SetObject();
 		CustomHelpers::addMemberToRoot(d, "properties", propsObject);
+		CustomHelpers::addMemberToSubkey(d, "properties", "monster_name_always_display_as_generic_species", rapidjson::Value(false));
 		CustomHelpers::addMemberToSubkey(d, "properties", "populate_empty_equipped_items_with_default", rapidjson::Value(true));
 		CustomHelpers::addMemberToSubkey(d, "properties", "populate_default_inventory", rapidjson::Value(true));
 		CustomHelpers::addMemberToSubkey(d, "properties", "disable_miniboss_chance", rapidjson::Value(false));
@@ -566,6 +612,33 @@ public:
 		CustomHelpers::addMemberToSubkey(d, "properties", "xp_award_percent", rapidjson::Value(100));
 		CustomHelpers::addMemberToSubkey(d, "properties", "enable_casting_inventory_spellbooks", rapidjson::Value(false));
 		CustomHelpers::addMemberToSubkey(d, "properties", "spellbook_cast_cooldown", rapidjson::Value(250));
+
+		if ( myStats->type == SHOPKEEPER )
+		{
+			// shop properties
+			CustomHelpers::addMemberToRoot(d, "shopkeeper_properties", propsObject);
+
+			rapidjson::Value shopObject(rapidjson::kObjectType);
+			shopObject.SetObject();
+
+			rapidjson::Value storeTypesObject(rapidjson::kObjectType);
+			storeTypesObject.AddMember("equipment", rapidjson::Value(1), d.GetAllocator());
+			storeTypesObject.AddMember("hats", rapidjson::Value(1), d.GetAllocator());
+			storeTypesObject.AddMember("jewelry", rapidjson::Value(1), d.GetAllocator());
+			storeTypesObject.AddMember("books", rapidjson::Value(1), d.GetAllocator());
+			storeTypesObject.AddMember("apothecary", rapidjson::Value(1), d.GetAllocator());
+			storeTypesObject.AddMember("staffs", rapidjson::Value(1), d.GetAllocator());
+			storeTypesObject.AddMember("food", rapidjson::Value(1), d.GetAllocator());
+			storeTypesObject.AddMember("hardware", rapidjson::Value(1), d.GetAllocator());
+			storeTypesObject.AddMember("hunting", rapidjson::Value(1), d.GetAllocator());
+			storeTypesObject.AddMember("general", rapidjson::Value(1), d.GetAllocator());
+
+			CustomHelpers::addMemberToSubkey(d, "shopkeeper_properties", "store_type_chances", storeTypesObject);
+			CustomHelpers::addMemberToSubkey(d, "shopkeeper_properties", "generate_default_shop_items", rapidjson::Value(true));
+			CustomHelpers::addMemberToSubkey(d, "shopkeeper_properties", "num_generated_items_min", rapidjson::Value(10));
+			CustomHelpers::addMemberToSubkey(d, "shopkeeper_properties", "num_generated_items_max", rapidjson::Value(15));
+			CustomHelpers::addMemberToSubkey(d, "shopkeeper_properties", "generated_item_blessing_max", rapidjson::Value(0));
+		}
 
 		// follower details
 		rapidjson::Value followersObject;
@@ -676,6 +749,7 @@ public:
 				if ( val.compare(monstertypename[i]) == 0 )
 				{
 					statEntry.type = i;
+					break;
 				}
 			}
 			return true;
@@ -900,13 +974,13 @@ public:
 			rapidjson::Document d;
 			d.ParseStream(is);
 
-			StatEntry* statEntry = new StatEntry();
 
 			if ( !d.HasMember("version") )
 			{
 				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
 				return nullptr;
 			}
+			StatEntry* statEntry = new StatEntry();
 			int version = d["version"].GetInt();
 			const rapidjson::Value& stats = d["stats"];
 			for ( rapidjson::Value::ConstMemberIterator stat_itr = stats.MemberBegin(); stat_itr != stats.MemberEnd(); ++stat_itr )
@@ -1023,6 +1097,10 @@ public:
 			}
 			if ( d.HasMember("properties") )
 			{
+				if ( d["properties"].HasMember("monster_name_always_display_as_generic_species") )
+				{
+					statEntry->isMonsterNameGeneric = d["properties"]["monster_name_always_display_as_generic_species"].GetBool();
+				}
 				if ( d["properties"].HasMember("populate_empty_equipped_items_with_default") )
 				{
 					statEntry->useDefaultEquipment = d["properties"]["populate_empty_equipped_items_with_default"].GetBool();
@@ -1058,6 +1136,56 @@ public:
 				if ( d["properties"].HasMember("spellbook_cast_cooldown") )
 				{
 					statEntry->spellbookCastCooldown = d["properties"]["spellbook_cast_cooldown"].GetInt();
+				}
+			}
+			if ( d.HasMember("shopkeeper_properties") )
+			{
+				if ( d["shopkeeper_properties"].HasMember("store_type_chances") )
+				{
+					for ( rapidjson::Value::ConstMemberIterator types_itr = d["shopkeeper_properties"]["store_type_chances"].MemberBegin(); 
+						types_itr != d["shopkeeper_properties"]["store_type_chances"].MemberEnd(); ++types_itr )
+					{
+						statEntry->shopkeeperStoreTypes.push_back(std::make_pair(types_itr->name.GetString(), types_itr->value.GetInt()));
+					}
+					if ( !statEntry->shopkeeperStoreTypes.empty() )
+					{
+						std::vector<int> storeChances(statEntry->shopkeeperStoreTypes.size(), 0);
+						int index = 0;
+						for ( auto& chance : storeChances )
+						{
+							chance = statEntry->shopkeeperStoreTypes.at(index).second;
+							++index;
+						}
+
+						std::discrete_distribution<> storeTypeWeightedDistribution(storeChances.begin(), storeChances.end());
+						std::string result = statEntry->shopkeeperStoreTypes.at(storeTypeWeightedDistribution(monsterStatSeed)).first;
+						index = 0;
+						for ( auto& lookup : shopkeeperTypeStrings )
+						{
+							if ( lookup.compare(result) == 0 )
+							{
+								statEntry->chosenShopkeeperStore = index;
+								break;
+							}
+							++index;
+						}
+					}
+					if ( d["shopkeeper_properties"].HasMember("generate_default_shop_items") )
+					{
+						statEntry->shopkeeperGenDefaultItems = d["shopkeeper_properties"]["generate_default_shop_items"].GetBool();
+					}
+					if ( d["shopkeeper_properties"].HasMember("num_generated_items_min") )
+					{
+						statEntry->shopkeeperMinItems = d["shopkeeper_properties"]["num_generated_items_min"].GetInt();
+					}
+					if ( d["shopkeeper_properties"].HasMember("num_generated_items_max") )
+					{
+						statEntry->shopkeeperMaxItems = d["shopkeeper_properties"]["num_generated_items_max"].GetInt();
+					}
+					if ( d["shopkeeper_properties"].HasMember("generated_item_blessing_max") )
+					{
+						statEntry->shopkeeperMaxGeneratedBlessing = d["shopkeeper_properties"]["generated_item_blessing_max"].GetInt();
+					}
 				}
 			}
 			printlog("[JSON]: Successfully read json file %s", inputPath.c_str());

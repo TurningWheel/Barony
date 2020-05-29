@@ -22,3 +22,17 @@ const std::vector<std::string> MonsterStatCustomManager::itemStatusStrings =
 	"serviceable",
 	"excellent"
 };
+
+const std::vector<std::string> MonsterStatCustomManager::shopkeeperTypeStrings =
+{
+	"equipment",
+	"hats",
+	"jewelry",
+	"books",
+	"apothecary",
+	"staffs",
+	"food",
+	"hardware",
+	"hunting",
+	"general"
+};
