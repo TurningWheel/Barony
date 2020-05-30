@@ -650,6 +650,10 @@ int devilsummonedtimes = 0;
 
 bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats)
 {
+	if ( !myStats )
+	{
+		return false;
+	}
 	if ( ringconflict )
 	{
 		//Instant fail if ring of conflict is in effect. You have no allies!
@@ -823,7 +827,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 					canAlly = true; // non-boss imps
 				}
 			}
-			if ( stats[monsterclicked]->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
+			if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
 			{
 				canAlly = true;
 			}
@@ -974,7 +978,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 							canAlly = true; // non-boss imps
 						}
 					}
-					if ( stats[monsterclicked]->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
+					if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
 					{
 						canAlly = true;
 					}

@@ -261,7 +261,7 @@ public:
 			{
 				if ( itr->value.IsArray() )
 				{
-					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), 1));
+					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), rand()));
 				}
 				else if ( itr->value.IsInt() )
 				{
