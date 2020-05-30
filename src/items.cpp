@@ -78,6 +78,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	item->identified = identified;
 	item->uid = itemuids;
 	item->ownerUid = 0;
+	item->isDroppable = true;
 	if ( inventory )
 	{
 		int x, y;
@@ -1398,6 +1399,10 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 			{
 				itemDroppable = false;
 			}
+		}
+		if ( !item->isDroppable )
+		{
+			itemDroppable = false;
 		}
 
 		if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )

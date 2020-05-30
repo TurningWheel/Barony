@@ -129,6 +129,7 @@ public:
 		int weightedChance = 1;
 		int dropChance = 100;
 		bool emptyItemEntry = false;
+		bool dropItemOnDeath = true;
 		ItemEntry() {};
 		ItemEntry(const Item& itemToRead)
 		{
@@ -142,6 +143,10 @@ public:
 			count = itemToRead.count;
 			appearance = itemToRead.appearance;
 			identified = itemToRead.identified;
+			if ( itemToRead.appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
+			{
+				dropItemOnDeath = false;
+			}
 		}
 		void setValueFromAttributes(rapidjson::Document& d, rapidjson::Value& outObject)
 		{
@@ -153,28 +158,47 @@ public:
 			rapidjson::Value val2(itemStatusStrings.at(status).c_str(), d.GetAllocator());
 			outObject.AddMember(key2, val2, d.GetAllocator());
 
-			rapidjson::Value key3("beatitude", d.GetAllocator());
-			rapidjson::Value val3(beatitude);
-			outObject.AddMember(key3, val3, d.GetAllocator());
-
-			rapidjson::Value key4("count", d.GetAllocator());
-			rapidjson::Value val4(count);
-			outObject.AddMember(key4, val4, d.GetAllocator());
-
-			rapidjson::Value key5("appearance", d.GetAllocator());
-			rapidjson::Value val5(appearance);
-			outObject.AddMember(key5, val5, d.GetAllocator());
-
-			rapidjson::Value key6("identified", d.GetAllocator());
-			rapidjson::Value val6(identified);
-			outObject.AddMember(key6, val6, d.GetAllocator());
+			outObject.AddMember("status", rapidjson::Value(identified), d.GetAllocator());
+			outObject.AddMember("beatitude", rapidjson::Value(beatitude), d.GetAllocator());
+			outObject.AddMember("count", rapidjson::Value(count), d.GetAllocator());
+			outObject.AddMember("appearance", rapidjson::Value(appearance), d.GetAllocator());
+			outObject.AddMember("identified", rapidjson::Value(identified), d.GetAllocator());
+			outObject.AddMember("spawn_percent_chance", rapidjson::Value(100), d.GetAllocator());
+			outObject.AddMember("drop_percent_chance", rapidjson::Value(dropItemOnDeath ? 100 : 0), d.GetAllocator());
 		}
+
+		const char* getRandomArrayStr(rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, const char* invalidEntry)
+		{
+			if ( arr.Size() == 0 )
+			{
+				return invalidEntry;
+			}
+			return (arr[rapidjson::SizeType(rand() % arr.Size())].GetString());
+		}
+		int getRandomArrayInt(rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, int invalidEntry)
+		{
+			if ( arr.Size() == 0 )
+			{
+				return invalidEntry;
+			}
+			return (arr[rapidjson::SizeType(rand() % arr.Size())].GetInt());
+		}
+
 		bool readKeyToItemEntry(rapidjson::Value::ConstMemberIterator& itr)
 		{
 			std::string name = itr->name.GetString();
 			if ( name.compare("type") == 0 )
 			{
-				std::string itemName = itr->value.GetString();
+				std::string itemName = "empty";
+				if ( itr->value.IsArray() )
+				{
+					itemName = getRandomArrayStr(itr->value.GetArray(), "empty");
+				}
+				else if ( itr->value.IsString() )
+				{
+					itemName = itr->value.GetString();
+				}
+
 				if ( itemName.compare("empty") == 0 )
 				{
 					emptyItemEntry = true;
@@ -191,7 +215,15 @@ public:
 			}
 			else if ( name.compare("status") == 0 )
 			{
-				std::string status = itr->value.GetString();
+				std::string status = "broken";
+				if ( itr->value.IsArray() )
+				{
+					status = getRandomArrayStr(itr->value.GetArray(), "broken");
+				}
+				else if ( itr->value.IsString() )
+				{
+					status = itr->value.GetString();
+				}
 				for ( Uint32 i = 0; i < itemStatusStrings.size(); ++i )
 				{
 					if ( status.compare(itemStatusStrings.at(i)) == 0 )
@@ -203,17 +235,46 @@ public:
 			}
 			else if ( name.compare("beatitude") == 0 )
 			{
-				this->beatitude = static_cast<Sint16>(itr->value.GetInt());
+				if ( itr->value.IsArray() )
+				{
+					this->beatitude = static_cast<Sint16>(getRandomArrayInt(itr->value.GetArray(), 0));
+				}
+				else if ( itr->value.IsInt() )
+				{
+					this->beatitude = static_cast<Sint16>(itr->value.GetInt());
+				}
 				return true;
 			}
 			else if ( name.compare("count") == 0 )
 			{
-				this->count = static_cast<Sint16>(itr->value.GetInt());
+				if ( itr->value.IsArray() )
+				{
+					this->count = static_cast<Sint16>(getRandomArrayInt(itr->value.GetArray(), 1));
+				}
+				else if ( itr->value.IsInt() )
+				{
+					this->count = static_cast<Sint16>(itr->value.GetInt());
+				}
 				return true;
 			}
 			else if ( name.compare("appearance") == 0 )
 			{
-				this->appearance = static_cast<Uint32>(itr->value.GetInt());
+				if ( itr->value.IsArray() )
+				{
+					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), 1));
+				}
+				else if ( itr->value.IsInt() )
+				{
+					this->appearance = static_cast<Uint32>(itr->value.GetInt());
+				}
+				else if ( itr->value.IsString() )
+				{
+					std::string str = itr->value.GetString();
+					if ( str.compare("random") == 0 )
+					{
+						this->appearance = rand();
+					}
+				}
 				return true;
 			}
 			else if ( name.compare("identified") == 0 )
@@ -221,10 +282,22 @@ public:
 				this->identified = itr->value.GetBool();
 				return true;
 			}
-			else if ( name.compare("percent_chance") == 0 )
+			else if ( name.compare("spawn_percent_chance") == 0 )
 			{
 				this->percentChance = itr->value.GetInt();
 				return true;
+			}
+			else if ( name.compare("drop_percent_chance") == 0 )
+			{
+				this->dropChance = itr->value.GetInt();
+				if ( rand() % 100 >= this->dropChance )
+				{
+					this->dropItemOnDeath = false;
+				}
+				else
+				{
+					this->dropItemOnDeath = true;
+				}
 			}
 			return false;
 		}
@@ -290,6 +363,7 @@ public:
 		bool disableMiniboss = true;
 		bool forceFriendlyToPlayer = false;
 		bool forceEnemyToPlayer = false;
+		bool forceRecruitableToPlayer = false;
 		bool disableItemDrops = false;
 		int xpAwardPercent = 100;
 		bool castSpellbooksFromInventory = false;
@@ -420,7 +494,7 @@ public:
 				equippedSlots.insert(it.second);
 				if ( it.first.percentChance < 100 )
 				{
-					if ( rand() % 100 <= it.first.percentChance )
+					if ( rand() % 100 >= it.first.percentChance )
 					{
 						continue;
 					}
@@ -433,33 +507,73 @@ public:
 				{
 					case ITEM_SLOT_WEAPON:
 						myStats->weapon = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->weapon )
+						{
+							myStats->weapon->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					case ITEM_SLOT_SHIELD:
 						myStats->shield = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->shield )
+						{
+							myStats->shield->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					case ITEM_SLOT_HELM:
 						myStats->helmet = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->helmet )
+						{
+							myStats->helmet->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					case ITEM_SLOT_ARMOR:
 						myStats->breastplate = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->breastplate )
+						{
+							myStats->breastplate->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					case ITEM_SLOT_GLOVES:
 						myStats->gloves = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->gloves )
+						{
+							myStats->gloves->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					case ITEM_SLOT_BOOTS:
 						myStats->shoes = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->shoes )
+						{
+							myStats->shoes->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					case ITEM_SLOT_CLOAK:
 						myStats->cloak = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->cloak )
+						{
+							myStats->cloak->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					case ITEM_SLOT_RING:
 						myStats->ring = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->ring )
+						{
+							myStats->ring->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					case ITEM_SLOT_AMULET:
 						myStats->amulet = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->amulet )
+						{
+							myStats->amulet->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					case ITEM_SLOT_MASK:
 						myStats->mask = newItem(it.first.type, it.first.status, it.first.beatitude, it.first.count, it.first.appearance, it.first.identified, nullptr);
+						if ( myStats->mask )
+						{
+							myStats->mask->isDroppable = it.first.dropItemOnDeath;
+						}
 						break;
 					default:
 						break;
@@ -489,12 +603,16 @@ public:
 				}
 				if ( it.percentChance < 100 )
 				{
-					if ( rand() % 100 <= it.percentChance )
+					if ( rand() % 100 >= it.percentChance )
 					{
 						continue;
 					}
 				}
-				newItem(it.type, it.status, it.beatitude, it.count, it.appearance, it.identified, &myStats->inventory);
+				Item* item = newItem(it.type, it.status, it.beatitude, it.count, it.appearance, it.identified, &myStats->inventory);
+				if ( item )
+				{
+					item->isDroppable = it.dropItemOnDeath;
+				}
 			}
 			if ( !useDefaultInventoryItems )
 			{
@@ -528,6 +646,11 @@ public:
 			{
 				myStats->MISC_FLAGS[STAT_FLAG_FORCE_ALLEGIANCE_TO_PLAYER] =
 					Stat::MonsterForceAllegiance::MONSTER_FORCE_PLAYER_ENEMY;
+			}
+			if ( forceRecruitableToPlayer )
+			{
+				myStats->MISC_FLAGS[STAT_FLAG_FORCE_ALLEGIANCE_TO_PLAYER] =
+					Stat::MonsterForceAllegiance::MONSTER_FORCE_PLAYER_RECRUITABLE;
 			}
 			if ( disableItemDrops )
 			{
@@ -606,6 +729,7 @@ public:
 		CustomHelpers::addMemberToSubkey(d, "properties", "populate_empty_equipped_items_with_default", rapidjson::Value(true));
 		CustomHelpers::addMemberToSubkey(d, "properties", "populate_default_inventory", rapidjson::Value(true));
 		CustomHelpers::addMemberToSubkey(d, "properties", "disable_miniboss_chance", rapidjson::Value(false));
+		CustomHelpers::addMemberToSubkey(d, "properties", "force_player_recruitable", rapidjson::Value(false));
 		CustomHelpers::addMemberToSubkey(d, "properties", "force_player_friendly", rapidjson::Value(false));
 		CustomHelpers::addMemberToSubkey(d, "properties", "force_player_enemy", rapidjson::Value(false));
 		CustomHelpers::addMemberToSubkey(d, "properties", "disable_item_drops", rapidjson::Value(false));
@@ -1112,6 +1236,10 @@ public:
 				if ( d["properties"].HasMember("disable_miniboss_chance") )
 				{
 					statEntry->disableMiniboss = d["properties"]["disable_miniboss_chance"].GetBool();
+				}
+				if ( d["properties"].HasMember("force_player_recruitable") )
+				{
+					statEntry->forceRecruitableToPlayer = d["properties"]["force_player_recruitable"].GetBool();
 				}
 				if ( d["properties"].HasMember("force_player_friendly") )
 				{

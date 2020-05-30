@@ -823,6 +823,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 					canAlly = true; // non-boss imps
 				}
 			}
+			if ( stats[monsterclicked]->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
+			{
+				canAlly = true;
+			}
 		}
 		else
 		{
@@ -969,6 +973,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 						{
 							canAlly = true; // non-boss imps
 						}
+					}
+					if ( stats[monsterclicked]->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
+					{
+						canAlly = true;
 					}
 				}
 				else
