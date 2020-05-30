@@ -2539,9 +2539,17 @@ void assignActions(map_t* map)
 	}
 
 	bool customMonsterCurveExists = false;
+	if ( !monsterCurveCustomManager.inUse() )
+	{
+		monsterCurveCustomManager.readFromFile();
+	}
 	if ( monsterCurveCustomManager.curveExistsForCurrentMapName(map->name) )
 	{
 		customMonsterCurveExists = true;
+		conductGameChallenges[CONDUCT_MODDED] = 1;
+	}
+	if ( gameplayCustomManager.inUse() )
+	{
 		conductGameChallenges[CONDUCT_MODDED] = 1;
 	}
 

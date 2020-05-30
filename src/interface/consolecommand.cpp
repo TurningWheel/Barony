@@ -1551,7 +1551,64 @@ void consoleCommand(char* command_str)
 						break;
 					}
 				}
-
+			}
+			if ( !found )
+			{
+				MonsterStatCustomManager::StatEntry* statEntry = monsterStatCustomManager.readFromFile(name);
+				if ( statEntry )
+				{
+					Entity* monster = summonMonster(static_cast<Monster>(statEntry->type), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
+					if ( monster )
+					{
+						if ( static_cast<Monster>(statEntry->type) < KOBOLD )
+						{
+							messagePlayer(clientnum, language[302], language[90 + static_cast<Monster>(statEntry->type)]);
+						}
+						else if ( static_cast<Monster>(statEntry->type) >= KOBOLD )
+						{
+							messagePlayer(clientnum, language[302], language[2000 + (static_cast<Monster>(statEntry->type) - 21)]);
+						}
+						if ( monster->getStats() )
+						{
+							statEntry->setStatsAndEquipmentToMonster(monster->getStats());
+							while ( statEntry->numFollowers > 0 )
+							{
+								std::string followerName = statEntry->getFollowerVariant();
+								if ( followerName.compare("") && followerName.compare("none") )
+								{
+									MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(followerName.c_str());
+									if ( followerEntry )
+									{
+										Entity* summonedFollower = summonMonster(static_cast<Monster>(followerEntry->type), monster->x, monster->y);
+										if ( summonedFollower )
+										{
+											if ( summonedFollower->getStats() )
+											{
+												followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
+												summonedFollower->getStats()->leader_uid = monster->getUID();
+											}
+										}
+										delete followerEntry;
+									}
+									else
+									{
+										Entity* summonedFollower = summonMonster(monster->getStats()->type, monster->x, monster->y);
+										if ( summonedFollower )
+										{
+											if ( summonedFollower->getStats() )
+											{
+												summonedFollower->getStats()->leader_uid = monster->getUID();
+											}
+										}
+									}
+								}
+								--statEntry->numFollowers;
+							}
+						}
+					}
+					delete statEntry;
+					return;
+				}
 			}
 
 			if (found)
@@ -2745,6 +2802,14 @@ void consoleCommand(char* command_str)
 				}
 				monsterStatCustomManager.writeAllFromStats(target->getStats());
 			}
+		}
+		else if ( !strncmp(command_str, "/jsonexportgameplaymodifiers", 28) )
+		{
+			gameplayCustomManager.writeAllToDocument();
+		}
+		else if ( !strncmp(command_str, "/jsonexportmonstercurve", 23) )
+		{
+			monsterCurveCustomManager.writeSampleToDocument();
 		}
 		else
 		{
