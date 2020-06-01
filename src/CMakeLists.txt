@@ -102,6 +102,7 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/actteleporter.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/actmagictrap.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/steam_shared.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/mod_tools.cpp"
 )
 
 if( WIN32 )
