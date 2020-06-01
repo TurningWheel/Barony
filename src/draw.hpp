@@ -37,7 +37,7 @@ void drawLayer(long camx, long camy, int z, map_t* map);
 void drawBackground(long camx, long camy);
 void drawForeground(long camx, long camy);
 void drawClearBuffers();
-void raycast(view_t* camera, int mode);
+void raycast(view_t* camera, int mode, bool updateVismap = true);
 void drawFloors(view_t* camera);
 void drawSky(SDL_Surface* srfc);
 void drawVoxel(view_t* camera, Entity* entity);

@@ -235,6 +235,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\book.cpp" />
     <ClCompile Include="..\..\src\charclass.cpp" />
     <ClCompile Include="..\..\src\collision.cpp" />
+    <ClCompile Include="..\..\src\mod_tools.cpp" />
     <ClCompile Include="..\..\src\draw.cpp" />
     <ClCompile Include="..\..\src\entity.cpp" />
     <ClCompile Include="..\..\src\entity_shared.cpp" />
@@ -328,6 +329,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\classdescriptions.hpp" />
     <ClInclude Include="..\..\src\cppfuncs.hpp" />
     <ClInclude Include="..\..\src\credits.hpp" />
+    <ClInclude Include="..\..\src\mod_tools.hpp" />
     <ClInclude Include="..\..\src\entity.hpp" />
     <ClInclude Include="..\..\src\game.hpp" />
     <ClInclude Include="..\..\src\interface\interface.hpp" />

@@ -1930,7 +1930,7 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Teleporter Properties:");
 				break;
 			case 10:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->ceilingTileModel));
+				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity->ceilingTileModel));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1946,7 +1946,7 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->spellTrapType));
 				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefire));
 				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->spellTrapLatchPower));
-				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->spellTrapFloorTile));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->spellTrapFloorTile));
 				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefireRate));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;

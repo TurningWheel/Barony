@@ -26,6 +26,7 @@
 #include "player.hpp"
 #include "colors.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 float limbs[NUMMONSTERS][20][3];
 
@@ -649,6 +650,10 @@ int devilsummonedtimes = 0;
 
 bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats)
 {
+	if ( !myStats )
+	{
+		return false;
+	}
 	if ( ringconflict )
 	{
 		//Instant fail if ring of conflict is in effect. You have no allies!
@@ -822,6 +827,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 					canAlly = true; // non-boss imps
 				}
 			}
+			if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
+			{
+				canAlly = true;
+			}
 		}
 		else
 		{
@@ -968,6 +977,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 						{
 							canAlly = true; // non-boss imps
 						}
+					}
+					if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
+					{
+						canAlly = true;
 					}
 				}
 				else
@@ -2479,6 +2492,11 @@ void actMonster(Entity* my)
 		}
 
 		// drop gold
+		if ( gameplayCustomManager.inUse() )
+		{
+			int numGold = myStats->GOLD * (gameplayCustomManager.globalGoldPercent / 100.f);
+			myStats->GOLD = numGold;
+		}
 		if ( myStats->GOLD > 0 && myStats->monsterNoDropItems == 0 )
 		{
 			int x = std::min<int>(std::max(0, (int)(my->x / 16)), map.width - 1);
@@ -4092,6 +4110,26 @@ void actMonster(Entity* my)
 						if ( myReflex )
 						{
 							tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
+
+							if ( myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] > 0 && !hasrangedweapon )
+							{
+								if ( rand() % 10 == 0 )
+								{
+									node_t* node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+									if ( node != nullptr )
+									{
+										bool swapped = swapMonsterWeaponWithInventoryItem(my, myStats, node, true, true);
+										if ( swapped )
+										{
+											my->monsterSpecialState = MONSTER_SPELLCAST_GENERIC;
+											int timer = (myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] >> 4) & 0xFFFF;
+											my->monsterSpecialTimer = timer > 0 ? timer : 250;
+											hasrangedweapon = true;
+										}
+									}
+								}
+							}
+
 							if ( !levitating )
 							{
 								if ( hasrangedweapon )
@@ -4200,6 +4238,10 @@ timeToGoAgain:
 								{
 									// shorter range xbows etc should advance at a little less than the extremity.
 									rangedWeaponDistance = effectiveDistance - 10; 
+								}
+								if ( myStats->weapon && myStats->weapon->type == SPELLBOOK_DASH )
+								{
+									rangedWeaponDistance = TOUCHRANGE;
 								}
 							}
 
@@ -7237,6 +7279,30 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	{
 		return;
 	}
+	else
+	{
+		if ( myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] > 0 )
+		{
+			if ( monsterSpecialTimer == 0 && monsterSpecialState == 0 && (this->monsterHitTime >= HITRATE / 2) )
+			{
+				if ( rand() % 50 == 0 )
+				{
+					node_t* node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+					if ( node != nullptr )
+					{
+						bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
+						if ( swapped )
+						{
+							monsterSpecialState = MONSTER_SPELLCAST_GENERIC;
+							int timer = (myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] >> 4) & 0xFFFF;
+							monsterSpecialTimer = timer > 0 ? timer : 250;
+							hasrangedweapon = true;
+						}
+					}
+				}
+			}
+		}
+	}
 
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (hasrangedweapon && dist < getMonsterEffectiveDistanceOfRangedWeapon(myStats->weapon)) || lichRangeCheckOverride )
@@ -7947,6 +8013,32 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 
 		if ( this->monsterSpecialTimer == 0 )
 		{
+			if ( myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] > 0 
+				&& (monsterSpecialState == MONSTER_SPELLCAST_GENERIC || monsterSpecialState == MONSTER_SPELLCAST_GENERIC2) )
+			{
+				monsterSpecialState = 0;
+				if ( myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK )
+				{
+					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+					if ( node != nullptr )
+					{
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						return true;
+					}
+					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), MAGICSTAFF); // find weapon to re-equip
+					if ( node != nullptr )
+					{
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						return true;
+					}
+					else
+					{
+						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+					}
+				}
+				return true;
+			}
+
 			switch ( myStats->type )
 			{
 				case KOBOLD:
@@ -8204,6 +8296,37 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 		else if ( this->monsterSpecialTimer > 0 )
 		{
 			bool shouldAttack = true;
+
+			if ( myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] > 0 )
+			{
+				if ( monsterSpecialState == MONSTER_SPELLCAST_GENERIC )
+				{
+					monsterSpecialState = MONSTER_SPELLCAST_GENERIC2;
+					return true;
+				}
+				else if ( monsterSpecialState == MONSTER_SPELLCAST_GENERIC2 )
+				{
+					monsterSpecialState = 0;
+					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+					if ( node != nullptr )
+					{
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						return true;
+					}
+					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), MAGICSTAFF); // find weapon to re-equip
+					if ( node != nullptr )
+					{
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						return true;
+					}
+					else
+					{
+						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+					}
+					return true;
+				}
+			}
+
 			switch ( myStats->type )
 			{
 				case KOBOLD:
@@ -10344,6 +10467,10 @@ int Entity::monsterGetDexterityForMovement()
 	if ( this->monsterAllyGetPlayerLeader() )
 	{
 		myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+	}
+	if ( this->getStats()->EFFECTS[EFF_DASH] )
+	{
+		myDex += 30;
 	}
 	return myDex;
 }

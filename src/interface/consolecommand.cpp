@@ -25,6 +25,8 @@
 #include "interface.hpp"
 #include "../scores.hpp"
 #include "../magic/magic.hpp"
+#include "../mod_tools.hpp"
+#include "../collision.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -87,7 +89,7 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/fps", 4) )
 	{
 		fpsLimit = atoi(&command_str[5]);
-		fpsLimit = std::min(std::max<Uint32>(60, fpsLimit), 144u);
+		fpsLimit = std::min(std::max<Uint32>(30, fpsLimit), 144u);
 	}
 	else if (!strncmp(command_str, "/svflags ", 9))
 	{
@@ -1549,7 +1551,64 @@ void consoleCommand(char* command_str)
 						break;
 					}
 				}
-
+			}
+			if ( !found )
+			{
+				MonsterStatCustomManager::StatEntry* statEntry = monsterStatCustomManager.readFromFile(name);
+				if ( statEntry )
+				{
+					Entity* monster = summonMonster(static_cast<Monster>(statEntry->type), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
+					if ( monster )
+					{
+						if ( static_cast<Monster>(statEntry->type) < KOBOLD )
+						{
+							messagePlayer(clientnum, language[302], language[90 + static_cast<Monster>(statEntry->type)]);
+						}
+						else if ( static_cast<Monster>(statEntry->type) >= KOBOLD )
+						{
+							messagePlayer(clientnum, language[302], language[2000 + (static_cast<Monster>(statEntry->type) - 21)]);
+						}
+						if ( monster->getStats() )
+						{
+							statEntry->setStatsAndEquipmentToMonster(monster->getStats());
+							while ( statEntry->numFollowers > 0 )
+							{
+								std::string followerName = statEntry->getFollowerVariant();
+								if ( followerName.compare("") && followerName.compare("none") )
+								{
+									MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(followerName.c_str());
+									if ( followerEntry )
+									{
+										Entity* summonedFollower = summonMonster(static_cast<Monster>(followerEntry->type), monster->x, monster->y);
+										if ( summonedFollower )
+										{
+											if ( summonedFollower->getStats() )
+											{
+												followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
+												summonedFollower->getStats()->leader_uid = monster->getUID();
+											}
+										}
+										delete followerEntry;
+									}
+									else
+									{
+										Entity* summonedFollower = summonMonster(monster->getStats()->type, monster->x, monster->y);
+										if ( summonedFollower )
+										{
+											if ( summonedFollower->getStats() )
+											{
+												summonedFollower->getStats()->leader_uid = monster->getUID();
+											}
+										}
+									}
+								}
+								--statEntry->numFollowers;
+							}
+						}
+					}
+					delete statEntry;
+					return;
+				}
 			}
 
 			if (found)
@@ -2668,6 +2727,10 @@ void consoleCommand(char* command_str)
 		{
 			disablemouserotationlimit = (disablemouserotationlimit == false);
 		}
+		else if ( !strncmp(command_str, "/usecamerasmoothing", 19) )
+		{
+			usecamerasmoothing = (usecamerasmoothing == false);
+		}
 		else if ( !strncmp(command_str, "/lightupdate ", 13) )
 		{
 			globalLightSmoothingRate = atoi(&command_str[13]);
@@ -2685,6 +2748,68 @@ void consoleCommand(char* command_str)
 			{
 				printlog("Sprite: %d | %d", element.first, element.second);
 			}
+		}
+		else if ( !strncmp(command_str, "/borderless", 11) )
+		{
+			borderless = (!borderless);
+		}
+		else if ( !strncmp(command_str, "/jsonexportmonster ", 19) )
+		{
+			strcpy(name, command_str + 19);
+			int creature = NOTHING;
+
+			for ( int i = 1; i < NUMMONSTERS; ++i )   //Start at 1 because 0 is a nothing.
+			{
+				if ( i < KOBOLD ) //Search original monsters
+				{
+					if ( strstr(language[90 + i], name) )
+					{
+						creature = i;
+						break;
+					}
+				}
+				else if ( i >= KOBOLD ) //Search additional monsters
+				{
+					if ( strstr(language[2000 + (i - KOBOLD)], name) )
+					{
+						creature = i;
+						break;
+					}
+				}
+
+			}
+
+			if ( creature != NOTHING )
+			{
+				Stat* monsterStats = new Stat(1000 + creature);
+				monsterStatCustomManager.writeAllFromStats(monsterStats);
+				delete monsterStats;
+			}
+		}
+		else if ( !strncmp(command_str, "/jsonexportfromcursor", 21) )
+		{
+			Entity* target = entityClicked(nullptr, true, clientnum);
+			if ( target )
+			{
+				Entity* parent = uidToEntity(target->skill[2]);
+				if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+				{
+					// see if we selected a limb
+					if ( parent )
+					{
+						target = parent;
+					}
+				}
+				monsterStatCustomManager.writeAllFromStats(target->getStats());
+			}
+		}
+		else if ( !strncmp(command_str, "/jsonexportgameplaymodifiers", 28) )
+		{
+			gameplayCustomManager.writeAllToDocument();
+		}
+		else if ( !strncmp(command_str, "/jsonexportmonstercurve", 23) )
+		{
+			monsterCurveCustomManager.writeSampleToDocument();
 		}
 		else
 		{
