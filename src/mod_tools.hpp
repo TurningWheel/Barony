@@ -158,13 +158,13 @@ public:
 			rapidjson::Value val2(itemStatusStrings.at(status).c_str(), d.GetAllocator());
 			outObject.AddMember(key2, val2, d.GetAllocator());
 
-			outObject.AddMember("status", rapidjson::Value(identified), d.GetAllocator());
 			outObject.AddMember("beatitude", rapidjson::Value(beatitude), d.GetAllocator());
 			outObject.AddMember("count", rapidjson::Value(count), d.GetAllocator());
 			outObject.AddMember("appearance", rapidjson::Value(appearance), d.GetAllocator());
 			outObject.AddMember("identified", rapidjson::Value(identified), d.GetAllocator());
 			outObject.AddMember("spawn_percent_chance", rapidjson::Value(100), d.GetAllocator());
 			outObject.AddMember("drop_percent_chance", rapidjson::Value(dropItemOnDeath ? 100 : 0), d.GetAllocator());
+			outObject.AddMember("slot_weighted_chance", rapidjson::Value(1), d.GetAllocator());
 		}
 
 		const char* getRandomArrayStr(rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, const char* invalidEntry)
@@ -298,6 +298,11 @@ public:
 				{
 					this->dropItemOnDeath = true;
 				}
+			}
+			else if ( name.compare("slot_weighted_chance") == 0 )
+			{
+				this->weightedChance = std::max(1, itr->value.GetInt());
+				return true;
 			}
 			return false;
 		}
@@ -1318,6 +1323,10 @@ public:
 			}
 			printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 			return statEntry;
+		}
+		else
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", filePath.c_str());
 		}
 		return nullptr;
 	}
