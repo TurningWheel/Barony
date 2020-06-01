@@ -646,7 +646,7 @@ public:
 
 			EOS_P2P_SocketId SocketId;
 			SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
-			strncpy_s(SocketId.SocketName, "CHAT", 5);
+			strncpy(SocketId.SocketName, "CHAT", 5);
 
 			EOS_P2P_AddNotifyPeerConnectionRequestOptions ConnectionRequestOptions;
 			ConnectionRequestOptions.ApiVersion = EOS_P2P_ADDNOTIFYPEERCONNECTIONREQUEST_API_LATEST;

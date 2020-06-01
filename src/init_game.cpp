@@ -77,6 +77,18 @@ int initGame()
 	cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket = &steam_OnRequestEncryptedAppTicket;
 #endif
 
+#ifdef USE_EOS
+	EOS.readFromFile();
+	if ( EOS.initPlatform(true) == false )
+	{
+		return 14;
+	}
+	if ( EOS.initAuth() == false )
+	{
+		return 14;
+	}
+#endif // USE_EOS
+
 	// print a loading message
 	drawClearBuffers();
 	int w, h;
@@ -1002,6 +1014,8 @@ void deinitGame()
 	{
 		EOS.leaveLobby();
 	}
+
+	EOS.shutdown();
 #endif
 
 	//Close game controller
