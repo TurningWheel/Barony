@@ -23,19 +23,19 @@ See LICENSE for details.
 class CustomHelpers
 {
 public:
-	static void addMemberToSubkey(rapidjson::Document& d, std::string subkey, std::string name, rapidjson::Value& value)
+	static void addMemberToSubkey(rapidjson::Document& d, std::string subkey, std::string name, const rapidjson::Value& value)
 	{
 		rapidjson::Value key(name.c_str(), d.GetAllocator()); // copy string name
 		rapidjson::Value val(value, d.GetAllocator());
 		d[subkey.c_str()].AddMember(key, val, d.GetAllocator());
 	}
-	static void addMemberToRoot(rapidjson::Document& d, std::string name, rapidjson::Value& value)
+	static void addMemberToRoot(rapidjson::Document& d, std::string name, const rapidjson::Value& value)
 	{
 		rapidjson::Value key(name.c_str(), d.GetAllocator()); // copy string name
 		rapidjson::Value val(value, d.GetAllocator());
 		d.AddMember(key, val, d.GetAllocator());
 	}
-	static void addArrayMemberToSubkey(rapidjson::Document& d, std::string subkey, rapidjson::Value& value)
+	static void addArrayMemberToSubkey(rapidjson::Document& d, std::string subkey, const rapidjson::Value& value)
 	{
 		rapidjson::Value val(value, d.GetAllocator());        // some value
 		d[subkey.c_str()].PushBack(val, d.GetAllocator());
@@ -167,7 +167,7 @@ public:
 			outObject.AddMember("slot_weighted_chance", rapidjson::Value(1), d.GetAllocator());
 		}
 
-		const char* getRandomArrayStr(rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, const char* invalidEntry)
+		const char* getRandomArrayStr(const rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, const char* invalidEntry)
 		{
 			if ( arr.Size() == 0 )
 			{
@@ -175,7 +175,7 @@ public:
 			}
 			return (arr[rapidjson::SizeType(rand() % arr.Size())].GetString());
 		}
-		int getRandomArrayInt(rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, int invalidEntry)
+		int getRandomArrayInt(const rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, int invalidEntry)
 		{
 			if ( arr.Size() == 0 )
 			{
