@@ -1062,7 +1062,9 @@ public:
 			++filenum;
 			testPath = "/data/custom-monsters/monster_" + monsterFileName + "_export" + std::to_string(filenum) + ".json";
 		}
-		std::string outputPath = "." + testPath;
+		std::string outputPath = PHYSFS_getRealDir(testPath.c_str());
+		outputPath.append(testPath.c_str());
+
 
 		FILE* fp = fopen(outputPath.c_str(), "wb");
 		if ( !fp )
@@ -1725,7 +1727,8 @@ public:
 			++filenum;
 			testPath = "/data/monstercurve_export" + std::to_string(filenum) + ".json";
 		}
-		std::string outputPath = "." + testPath;
+		std::string outputPath = PHYSFS_getRealDir(testPath.c_str());
+		outputPath.append(testPath.c_str());
 
 		FILE* fp = fopen(outputPath.c_str(), "wb");
 		if ( !fp )
@@ -1931,7 +1934,8 @@ public:
 			++filenum;
 			testPath = "/data/gameplaymodifiers_export" + std::to_string(filenum) + ".json";
 		}
-		std::string outputPath = "." + testPath;
+		std::string outputPath = PHYSFS_getRealDir(testPath.c_str());
+		outputPath.append(testPath.c_str());
 
 		FILE* fp = fopen(outputPath.c_str(), "wb");
 		if ( !fp )
