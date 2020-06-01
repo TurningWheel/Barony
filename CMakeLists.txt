@@ -153,6 +153,8 @@ if (NOT WIN32)
     find_package(SDL2_ttf REQUIRED)
   endif()
   find_package(PhysFS REQUIRED)
+  find_package(RapidJson REQUIRED)
+  INCLUDE_DIRECTORIES(${RAPID_JSON_INCLUDE_DIR})
 endif()
 
 if (NOT WIN32)
