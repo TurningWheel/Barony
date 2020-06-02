@@ -19,6 +19,10 @@
 	#define STEAMWORKS
 #endif
 
+#if @EOS_ENABLED@
+	#define USE_EOS
+#endif
+
 #if @FMOD@
 	#define USE_FMOD
 #endif

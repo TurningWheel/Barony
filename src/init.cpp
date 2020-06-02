@@ -638,17 +638,6 @@ int initApp(char* title, int fullscreen)
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif
-#ifdef USE_EOS
-	EOS.readFromFile();
-	if ( EOS.initPlatform(true) == false )
-	{
-		return 14;
-	}
-	if ( EOS.initAuth() == false )
-	{
-		return 14;
-	}
-#endif // USE_EOS
 	return 0;
 }
 
@@ -2328,9 +2317,6 @@ int deinitApp()
 		SteamAPI_Shutdown();
 	}
 #endif
-#ifdef USE_EOS
-	EOS.shutdown();
-#endif // USE_EOS
 
 
 	int numLogFilesToKeepInArchive = 30;

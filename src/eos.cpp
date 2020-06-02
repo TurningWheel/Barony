@@ -1,3 +1,8 @@
+
+#include "Config.hpp"
+
+#ifdef USE_EOS
+
 #include "main.hpp"
 #include "game.hpp"
 #include "eos.hpp"
@@ -13,6 +18,7 @@ void EOS_CALL EOSFuncs::LoggingCallback(const EOS_LogMessage* log)
 void EOS_CALL EOSFuncs::AuthLoginCompleteCallback(const EOS_Auth_LoginCallbackInfo* data)
 {
 	EOS_HAuth AuthHandle = EOS_Platform_GetAuthInterface(EOS.PlatformHandle);
+
 	if ( !data )
 	{
 		EOSFuncs::logError("Login Callback error: null data");
@@ -433,7 +439,7 @@ void EOS_CALL EOSFuncs::OnIncomingConnectionRequest(const EOS_P2P_OnIncomingConn
 
 		EOS_P2P_SocketId SocketId;
 		SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
-		strncpy_s(SocketId.SocketName, "CHAT", 5);
+		strncpy(SocketId.SocketName, "CHAT", 5);
 		Options.SocketId = &SocketId;
 
 		EOS_EResult Result = EOS_P2P_AcceptConnection(P2PHandle, &Options);
@@ -801,7 +807,7 @@ void EOSFuncs::SendMessageP2P(EOS_ProductUserId RemoteId, const void* data, int 
 
 	EOS_P2P_SocketId SocketId;
 	SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
-	strncpy_s(SocketId.SocketName, "CHAT", 5);
+	strncpy(SocketId.SocketName, "CHAT", 5);
 
 	EOS_P2P_SendPacketOptions SendPacketOptions;
 	SendPacketOptions.ApiVersion = EOS_P2P_SENDPACKET_API_LATEST;
@@ -1520,6 +1526,7 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 
 	EOS_Auth_Credentials Credentials = {};
 	Credentials.ApiVersion = EOS_AUTH_CREDENTIALS_API_LATEST;
+	printlog("EOS is trying to connect to \'%s\"", hostname.c_str());
 	Credentials.Id = hostname.c_str();
 	Credentials.Token = tokenName.c_str();
 	Credentials.Type = EOS_ELoginCredentialType::EOS_LCT_Developer;
@@ -1556,3 +1563,5 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 		return false;
 	}
 }
+
+#endif //USE_EOS
