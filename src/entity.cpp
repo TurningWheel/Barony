@@ -28,6 +28,7 @@ See LICENSE for details.
 #include "player.hpp"
 #include "scores.hpp"
 #include "menu.hpp"
+#include "mod_tools.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
@@ -61,6 +62,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	chestType(skill[9]),
 	chestPreventLockpickCapstoneExploit(skill[10]),
 	chestHasVampireBook(skill[11]),
+	chestLockpickHealth(skill[12]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
 	monsterTargetX(fskill[2]),
@@ -178,6 +180,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	doorForceLockedUnlocked(skill[11]),
 	doorDisableLockpicks(skill[12]),
 	doorDisableOpening(skill[13]),
+	doorLockpickHealth(skill[14]),
 	particleTimerDuration(skill[0]),
 	particleTimerEndAction(skill[1]),
 	particleTimerEndSprite(skill[3]),
@@ -6268,6 +6271,33 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case SPELLBOOK_CHARM_MONSTER:
 							castSpell(uid, &spell_charmMonster, true, false);
 							break;
+						case SPELLBOOK_POISON:
+							castSpell(uid, &spell_poison, true, false);
+							break;
+						case SPELLBOOK_SPRAY_WEB:
+							castSpell(uid, &spell_sprayWeb, true, false);
+							break;
+						case SPELLBOOK_SPEED:
+							castSpell(uid, &spell_speed, true, false);
+							break;
+						case SPELLBOOK_HEALING:
+							castSpell(uid, &spell_healing, true, false);
+							break;
+						case SPELLBOOK_EXTRAHEALING:
+							castSpell(uid, &spell_extrahealing, true, false);
+							break;
+						case SPELLBOOK_TROLLS_BLOOD:
+							castSpell(uid, &spell_trollsBlood, true, false);
+							break;
+						case SPELLBOOK_REFLECT_MAGIC:
+							castSpell(uid, &spell_reflectMagic, true, false);
+							break;
+						case SPELLBOOK_DASH:
+							castSpell(uid, &spell_dash, true, false);
+							break;
+						case SPELLBOOK_FEAR:
+							castSpell(uid, &spell_fear, true, false);
+							break;
 						//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
 						//castSpell(uid, &spell_reflectMagic, true, false)
 						//break;
@@ -10330,7 +10360,18 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	}
 
 	// calculate XP gain
-	int xpGain = 10 + rand() % 10 + std::max(0, srcStats->LVL - destStats->LVL) * 10;
+	int baseXp = 10;
+	int xpGain = baseXp + rand() % std::max(1, baseXp) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
+	if ( srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] > 0 )
+	{
+		int value = srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] - 1; // offset by 1 since 0 is nothing
+		double percent = value / 100.f;
+		xpGain = percent * xpGain;
+	}
+	if ( gameplayCustomManager.inUse() )
+	{
+		xpGain = (gameplayCustomManager.globalXPPercent / 100.f) * xpGain;
+	}
 
 	// save hit struct
 	hit_t tempHit;
@@ -10340,6 +10381,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	tempHit.side = hit.side;
 	tempHit.x = hit.x;
 	tempHit.y = hit.y;
+
+	int shareRange = gameplayCustomManager.inUse() ? gameplayCustomManager.xpShareRange : XPSHARERANGE;
 
 	// divide shares
 	if ( player >= 0 )
@@ -10364,7 +10407,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			}
 			if ( entity && entity->behavior == &actPlayer )
 			{
-				if ( entityDist(this, entity) < XPSHARERANGE )
+				if ( entityDist(this, entity) < shareRange )
 				{
 					++numshares;
 					shares[numshares] = entity;
@@ -10402,7 +10445,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					for ( node = stats[this->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
 						Entity* follower = uidToEntity(*((Uint32*)node->element));
-						if ( entityDist(this, follower) < XPSHARERANGE && follower != src )
+						if ( entityDist(this, follower) < shareRange && follower != src )
 						{
 							if ( follower && follower->monsterIsTinkeringCreation() )
 							{
@@ -10681,7 +10724,7 @@ bool Entity::checkEnemy(Entity* your)
 
 	if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
 	{
-		if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY || yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
 		{
 			return false;
 		}
@@ -10692,7 +10735,7 @@ bool Entity::checkEnemy(Entity* your)
 	}
 	else if ( your->behavior == &actPlayer && behavior == &actMonster && myStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
 	{
-		if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY || myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
 		{
 			return false;
 		}
@@ -11071,7 +11114,7 @@ bool Entity::checkFriend(Entity* your)
 
 	if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
 	{
-		if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY || yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
 		{
 			return true;
 		}
@@ -11082,7 +11125,7 @@ bool Entity::checkFriend(Entity* your)
 	}
 	else if ( your->behavior == &actPlayer && behavior == &actMonster && myStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
 	{
-		if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY )
+		if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY || myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
 		{
 			return true;
 		}
@@ -15381,6 +15424,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return true;
 	}
+	if ( (myStats.EFFECTS[EFF_DASH] || (myStats.weapon && myStats.weapon->type == SPELLBOOK_DASH)) && behavior == &actMonster )
+	{
+		return false;
+	}
 	if ( myStats.type == VAMPIRE )
 	{
 		return false;
@@ -15470,6 +15517,10 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 		return false;
 	}
 
+	if ( (myStats.EFFECTS[EFF_DASH] || (myStats.weapon && myStats.weapon->type == SPELLBOOK_DASH)) && behavior == &actMonster )
+	{
+		return false;
+	}
 	if ( myStats.type == INSECTOID && monsterSpecialState > 0 )
 	{
 		return false;
@@ -17374,6 +17425,10 @@ int playerEntityMatchesUid(Uint32 uid)
 
 bool monsterNameIsGeneric(Stat& monsterStats)
 {
+	if ( monsterStats.MISC_FLAGS[STAT_FLAG_MONSTER_NAME_GENERIC] == 1 )
+	{
+		return true;
+	}
 	if ( strstr(monsterStats.name, "lesser")
 		|| strstr(monsterStats.name, "young")
 		|| strstr(monsterStats.name, "enslaved")

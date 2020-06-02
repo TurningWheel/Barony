@@ -160,6 +160,7 @@ public:
 	 */
 	Sint32& chestPreventLockpickCapstoneExploit;
 	Sint32& chestHasVampireBook; // skill[11]
+	Sint32& chestLockpickHealth; // skill[12]
 
 	//--PUBLIC MONSTER SKILLS--
 	Sint32& monsterState; //skill[0]
@@ -305,6 +306,7 @@ public:
 	Sint32& doorForceLockedUnlocked; //skill[11]
 	Sint32& doorDisableLockpicks; //skill[12]
 	Sint32& doorDisableOpening; //skill[13]
+	Sint32& doorLockpickHealth; //skill[14]
 
 	//--PUBLIC PEDESTAL SKILLS--
 	Sint32& pedestalHasOrb; //skill[0]
