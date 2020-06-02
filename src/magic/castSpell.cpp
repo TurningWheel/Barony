@@ -824,6 +824,44 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 			}
+			else if ( caster->behavior == &actMonster )
+			{
+				caster->setEffect(EFF_STUNNED, true, 35, true);
+				caster->attack(MONSTER_POSE_SPECIAL_WINDUP2, 0, nullptr);
+				int foundTarget = 0;
+				for ( node_t* node3 = map.creatures->first; node3 != nullptr; node3 = node3->next )
+				{
+					Entity* creature = (Entity*)node3->element;
+					if ( creature && creature != caster
+						&& !caster->checkFriend(creature) && entityDist(caster, creature) < TOUCHRANGE * 2 )
+					{
+						// check LOS
+						Entity* ohit = hit.entity;
+						real_t tangent = atan2(creature->y - caster->y, creature->x - caster->x);
+						lineTraceTarget(caster, caster->x, caster->y, tangent, TOUCHRANGE * 2, 0, false, creature);
+						if ( hit.entity == creature )
+						{
+							Entity* spellEntity = createParticleSapCenter(creature, caster, SPELL_FEAR, 864, 864);
+							if ( spellEntity )
+							{
+								++foundTarget;
+								spellEntity->skill[0] = 25; // duration
+								spellEntity->skill[7] = caster->getUID();
+							}
+						}
+						hit.entity = ohit;
+					}
+				}
+				if ( foundTarget == 0 )
+				{
+					createParticleErupt(caster, 864);
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_ERUPT, 864);
+					if ( caster->behavior == &actPlayer )
+					{
+						messagePlayer(caster->skill[2], language[3438]);
+					}
+				}
+			}
 		}
 		else if (!strcmp(element->name, spellElement_identify.name))
 		{
@@ -1064,6 +1102,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					break;
 				}
 			}
+			if ( caster->behavior == &actMonster )
+			{
+				caster->setEffect(EFF_TROLLS_BLOOD, true, element->duration, true);
+			}
 
 			playSoundEntity(caster, 168, 128);
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
@@ -1100,7 +1142,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					playSoundEntity(caster, 180, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
-					caster->setEffect(EFF_DASH, true, 30, true);
+					caster->setEffect(EFF_DASH, true, 60, true);
 					if ( i > 0 && multiplayer == SERVER )
 					{
 						strcpy((char*)net_packet->data, "DASH");
@@ -1121,6 +1163,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					break;
 				}
+			}
+			if ( caster->behavior == &actMonster )
+			{
+				playSoundEntity(caster, 180, 128);
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
+				caster->setEffect(EFF_DASH, true, 30, true);
 			}
 		}
 		else if ( !strcmp(element->name, spellElement_speed.name) )
@@ -1179,6 +1227,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					break;
 				}
+			}
+			if ( caster->behavior == &actMonster )
+			{
+				if ( caster->getStats()->EFFECTS[EFF_SLOW] )
+				{
+					caster->setEffect(EFF_SLOW, false, 0, true);
+				}
+				caster->setEffect(EFF_FAST, true, element->duration, true);
 			}
 
 			playSoundEntity(caster, 178, 128);
@@ -1249,6 +1305,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					break;
 				}
+			}
+
+			if ( caster->behavior == &actMonster )
+			{
+				spell_changeHealth(caster, element->damage * element->mana);
 			}
 
 			playSoundEntity(caster, 168, 128);
@@ -1525,88 +1586,112 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_reflectMagic.name) )
 		{
-			//TODO: Refactor into a function that adds magic_effects. Invisibility also makes use of this.
-			//Also refactor the duration determining code.
-			int duration = element->duration;
-			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
-			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
-			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
-			channeled_spell = (spell_t*)(spellnode->element);
-			channeled_spell->magic_effects_node = spellnode;
-			spellnode->size = sizeof(spell_t);
-			((spell_t*)spellnode->element)->caster = caster->getUID();
-			spellnode->deconstructor = &spellDeconstructor;
-			if ( newbie )
+			if ( caster->behavior == &actMonster )
 			{
-				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = rand() % 10;
-				if ( chance >= spellcasting / 10 )
-				{
-					duration -= rand() % (1000 / (spellcasting + 1));
-				}
-				if ( duration < 180 )
-				{
-					duration = 180;    //Range checking.
-				}
+				caster->setEffect(EFF_MAGICREFLECT, true, 600, true);
+				playSoundEntity(caster, 166, 128);
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
 			}
-			duration /= getCostOfSpell((spell_t*)spellnode->element);
-			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-			caster->setEffect(EFF_MAGICREFLECT, true, duration, true);
-			for ( i = 0; i < numplayers; ++i )
+			else
 			{
-				if ( caster == players[i]->entity )
+				//TODO: Refactor into a function that adds magic_effects. Invisibility also makes use of this.
+				//Also refactor the duration determining code.
+				int duration = element->duration;
+				duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+				node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+				spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+				channeled_spell = (spell_t*)(spellnode->element);
+				channeled_spell->magic_effects_node = spellnode;
+				spellnode->size = sizeof(spell_t);
+				((spell_t*)spellnode->element)->caster = caster->getUID();
+				spellnode->deconstructor = &spellDeconstructor;
+				if ( newbie )
 				{
-					serverUpdateEffects(i);
+					//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+					chance = rand() % 10;
+					if ( chance >= spellcasting / 10 )
+					{
+						duration -= rand() % (1000 / (spellcasting + 1));
+					}
+					if ( duration < 180 )
+					{
+						duration = 180;    //Range checking.
+					}
 				}
-			}
+				duration /= getCostOfSpell((spell_t*)spellnode->element);
+				channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+				caster->setEffect(EFF_MAGICREFLECT, true, duration, true);
+				for ( i = 0; i < numplayers; ++i )
+				{
+					if ( caster == players[i]->entity )
+					{
+						serverUpdateEffects(i);
+					}
+				}
 
-			playSoundEntity(caster, 166, 128 );
-			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+				playSoundEntity(caster, 166, 128 );
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+			}
 		}
 		else if ( !strcmp(element->name, spellElement_amplifyMagic.name) )
 		{
-			//TODO: Refactor into a function that adds magic_effects. Invisibility also makes use of this.
-			//Also refactor the duration determining code.
-			int duration = element->duration;
-			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
-			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
-			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
-			channeled_spell = (spell_t*)(spellnode->element);
-			channeled_spell->magic_effects_node = spellnode;
-			spellnode->size = sizeof(spell_t);
-			((spell_t*)spellnode->element)->caster = caster->getUID();
-			spellnode->deconstructor = &spellDeconstructor;
-			//if ( newbie )
-			//{
-			//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-			//	chance = rand() % 10;
-			//	if ( chance >= spellcasting / 10 )
-			//	{
-			//		duration -= rand() % (1000 / (spellcasting + 1));
-			//	}
-			//	if ( duration < 180 )
-			//	{
-			//		duration = 180;    //Range checking.
-			//	}
-			//}
-			duration /= getCostOfSpell((spell_t*)spellnode->element);
-			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-			caster->setEffect(EFF_MAGICAMPLIFY, true, duration, true);
-			for ( i = 0; i < numplayers; ++i )
+			if ( caster->behavior == &actMonster )
 			{
-				if ( caster == players[i]->entity )
-				{
-					serverUpdateEffects(i);
-					messagePlayer(i, language[3442]);
-				}
+				caster->setEffect(EFF_MAGICAMPLIFY, true, 600, true);
+				playSoundEntity(caster, 166, 128);
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
 			}
+			else
+			{
+				//TODO: Refactor into a function that adds magic_effects. Invisibility also makes use of this.
+				//Also refactor the duration determining code.
+				int duration = element->duration;
+				duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+				node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+				spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+				channeled_spell = (spell_t*)(spellnode->element);
+				channeled_spell->magic_effects_node = spellnode;
+				spellnode->size = sizeof(spell_t);
+				((spell_t*)spellnode->element)->caster = caster->getUID();
+				spellnode->deconstructor = &spellDeconstructor;
+				//if ( newbie )
+				//{
+				//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+				//	chance = rand() % 10;
+				//	if ( chance >= spellcasting / 10 )
+				//	{
+				//		duration -= rand() % (1000 / (spellcasting + 1));
+				//	}
+				//	if ( duration < 180 )
+				//	{
+				//		duration = 180;    //Range checking.
+				//	}
+				//}
+				duration /= getCostOfSpell((spell_t*)spellnode->element);
+				channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+				caster->setEffect(EFF_MAGICAMPLIFY, true, duration, true);
+				for ( i = 0; i < numplayers; ++i )
+				{
+					if ( caster == players[i]->entity )
+					{
+						serverUpdateEffects(i);
+						messagePlayer(i, language[3442]);
+					}
+				}
 
-			playSoundEntity(caster, 166, 128);
-			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+				playSoundEntity(caster, 166, 128);
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+			}
 		}
 		else if ( !strcmp(element->name, spellElement_vampiricAura.name) )
 		{
-			channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
+			if ( caster->behavior == &actMonster )
+			{
+				createParticleDropRising(caster, 600, 0.7);
+				serverSpawnMiscParticles(caster, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
+				caster->getStats()->EFFECTS[EFF_VAMPIRICAURA] = true;
+				caster->getStats()->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = 600;
+			}
 			//Also refactor the duration determining code.
 		}
 

@@ -40,7 +40,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 	else if ( entity.behavior == &actDoor )
 	{
 		playSoundEntity(&entity, 91, 64);
-		if ( entity.skill[5] )
+		if ( entity.doorLocked )
 		{
 			if ( entity.doorDisableLockpicks == 1 )
 			{
@@ -50,13 +50,13 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			else
 			{
 				messagePlayer(player, language[1099]);
-				entity.skill[5] = 0;
+				entity.doorLocked = 0;
 			}
 		}
 		else
 		{
 			messagePlayer(player, language[1100]);
-			entity.skill[5] = 1;
+			entity.doorLocked = 1;
 		}
 	}
 	else
@@ -140,7 +140,18 @@ void Item::applyLockpick(int player, Entity& entity)
 	{
 		if ( entity.chestLocked )
 		{
-			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200 )
+			// 3-17 damage on lockpick depending on skill
+			// 0 skill is 3 damage
+			// 20 skill is 4-5 damage
+			// 60 skill is 6-11 damage
+			// 100 skill is 8-17 damage
+			int lockpickDamageToChest = 3 + stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20
+				+ rand() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+			entity.chestLockpickHealth = std::max(0, entity.chestLockpickHealth - lockpickDamageToChest);
+			bool unlockedFromLockpickHealth = (entity.chestLockpickHealth == 0);
+
+			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200
+				|| unlockedFromLockpickHealth )
 			{
 				//Unlock chest.
 				playSoundEntity(&entity, 91, 64);
@@ -162,7 +173,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				}
 				if ( !entity.chestPreventLockpickCapstoneExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_SKILLED )
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
 					{
 						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					}
@@ -200,7 +211,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				bool tryDegradeLockpick = true;
 				if ( !entity.chestPreventLockpickCapstoneExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
 					{
 						if ( rand() % 10 == 0 )
 						{
@@ -260,22 +271,34 @@ void Item::applyLockpick(int player, Entity& entity)
 	}
 	else if ( entity.behavior == &actDoor )
 	{
-		if ( entity.skill[5] )
+		if ( entity.doorLocked )
 		{
+			// 3-17 damage on lockpick depending on skill
+			// 0 skill is 3 damage
+			// 20 skill is 4-5 damage
+			// 60 skill is 6-11 damage
+			// 100 skill is 8-17 damage
+			int lockpickDamageToDoor = 3 + stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20
+				+ rand() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+			entity.doorLockpickHealth = std::max(0, entity.doorLockpickHealth - lockpickDamageToDoor);
+			bool unlockedFromLockpickHealth = (entity.doorLockpickHealth == 0);
+
 			if ( entity.doorDisableLockpicks == 1 )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 				messagePlayerColor(player, color, language[3101]); // disabled.
 			}
-			else if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200 )
+			else if ( capstoneUnlocked 
+				|| stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200
+				|| unlockedFromLockpickHealth )
 			{
 				//Unlock door.
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, language[1099]);
-				entity.skill[5] = 0;
+				entity.doorLocked = 0;
 				if ( !entity.doorPreventLockpickExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_SKILLED )
 					{
 						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					}
@@ -297,7 +320,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				bool tryDegradeLockpick = true;
 				if ( !entity.doorPreventLockpickExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_SKILLED )
 					{
 						if ( rand() % 10 == 0 )
 						{

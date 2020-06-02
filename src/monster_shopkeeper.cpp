@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "shops.hpp"
+#include "mod_tools.hpp"
 
 void initShopkeeper(Entity* my, Stat* myStats)
 {
@@ -156,7 +157,6 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				my->monsterStoreType = rand() % 10;
 			}
 			int numitems = 10 + rand() % 5;
-
 			int blessedShopkeeper = 1; // bless important pieces of gear like armor, jewelry, weapons..
 			if ( currentlevel >= 30 )
 			{
@@ -188,6 +188,24 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				}
 			}
 
+			int customShopkeeperInUse = ((myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] >> 12) & 0xF);
+			int oldMonsterStoreType = my->monsterStoreType;
+			if ( customShopkeeperInUse == MonsterStatCustomManager::StatEntry::ShopkeeperCustomFlags::ENABLE_GEN_ITEMS )
+			{
+				if ( (myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] & 0xFF) > 1 )
+				{
+					numitems = (myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] & 0xFF) - 1;
+				}
+				if ( ((myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] >> 8) & 0xF) > 0 )
+				{
+					blessedShopkeeper = std::max(1, (myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] >> 8) & 0xF);
+				}
+			}
+			else if ( customShopkeeperInUse == MonsterStatCustomManager::StatEntry::ShopkeeperCustomFlags::DISABLE_GEN_ITEMS )
+			{
+				my->monsterStoreType = -1;
+			}
+
 			bool sellVampireBlood = false;
 			for ( c = 0; c < MAXPLAYERS; ++c )
 			{
@@ -209,6 +227,9 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			bool doneFeather = false;
 			switch ( my->monsterStoreType )
 			{
+				case -1:
+					my->monsterStoreType = oldMonsterStoreType; // don't generate any items.
+					break;
 				case 0:
 					// arms & armor store
 					if ( blessedShopkeeper > 0 )
@@ -515,7 +536,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					break;
 				case 8:
 					// weapon/hunting store
-					if ( currentlevel < 10 )
+					if ( currentlevel < 10 && customShopkeeperInUse == 0 )
 					{
 						numitems = 7 + rand() % 4;
 					}

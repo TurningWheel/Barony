@@ -1120,6 +1120,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/fullscreen\n");
 	}
+	if ( borderless )
+	{
+		fprintf(fp, "/borderless\n");
+	}
 	if ( shaking )
 	{
 		fprintf(fp, "/shaking\n");

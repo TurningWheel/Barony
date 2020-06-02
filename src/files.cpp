@@ -1213,9 +1213,9 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		vismap = (bool*) calloc(destmap->width * destmap->height, sizeof(bool));
 
 		// reset minimap
-		for ( x = 0; x < 64; x++ )
+		for ( x = 0; x < MINIMAP_MAX_DIMENSION; x++ )
 		{
-			for ( y = 0; y < 64; y++ )
+			for ( y = 0; y < MINIMAP_MAX_DIMENSION; y++ )
 			{
 				minimap[y][x] = 0;
 			}
