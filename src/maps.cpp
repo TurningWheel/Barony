@@ -1586,7 +1586,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	if ( gameplayCustomManager.inUse() && gameplayCustomManager.mapGenerationExistsForMapName(map.name) )
 	{
 		auto m = gameplayCustomManager.getMapGenerationForMapName(map.name);
-		if ( m )
+		if ( m && m->usingTrapTypes )
 		{
 			customTrapsForMapInUse = true;
 			for ( auto& traps : m->trapTypes )
