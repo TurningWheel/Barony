@@ -2025,7 +2025,7 @@ public:
 		}
 		else if ( name.compare("player_speed_weight_impact_percent") == 0 )
 		{
-			playerWeightPercent = itr->value.GetBool();
+			playerWeightPercent = itr->value.GetInt();
 			return true;
 		}
 		else if ( name.compare("player_speed_max") == 0 )
