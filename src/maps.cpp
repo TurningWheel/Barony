@@ -26,6 +26,7 @@
 #include "player.hpp"
 #include "scores.hpp"
 #include "mod_tools.hpp"
+#include "menu.hpp"
 
 int startfloor = 0;
 
@@ -2547,10 +2548,12 @@ void assignActions(map_t* map)
 	{
 		customMonsterCurveExists = true;
 		conductGameChallenges[CONDUCT_MODDED] = 1;
+		gamemods_disableSteamAchievements = true;
 	}
 	if ( gameplayCustomManager.inUse() )
 	{
 		conductGameChallenges[CONDUCT_MODDED] = 1;
+		gamemods_disableSteamAchievements = true;
 	}
 
 	// assign entity behaviors
