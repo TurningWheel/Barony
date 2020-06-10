@@ -142,7 +142,6 @@ bool isLetter(char character)
 		default:
 			return false;
 	}
-	return false;
 }
 
 //This is a more powerful version of isLetter that checks if a specified character is part of a word. However, it requires contextual information -- what are the next and previous characters? So pass the entire string to this function and the index in the string of the character being looked up.
@@ -173,8 +172,6 @@ bool isCharacterPartOfWord(char* text, int index)
 		default:
 			return false;
 	}
-
-	return false;
 }
 
 int moveToStartOfWord(char* text, int index)
