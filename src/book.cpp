@@ -264,14 +264,14 @@ void createBook(book_t* book)
 		return; //Failed to open the file.
 	}
 
-	int book_characterspace_x = BOOK_PAGE_WIDTH / BOOK_FONT_WIDTH;
-	int book_characterspace_y = BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
-	int max_characters = book_characterspace_x * book_characterspace_y;
+	const int book_characterspace_x = BOOK_PAGE_WIDTH / BOOK_FONT_WIDTH;
+	const int book_characterspace_y = BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
+	const int max_characters = book_characterspace_x * book_characterspace_y;
 
 	book->pages.first = nullptr;
 	book->pages.last = nullptr;
 
-	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
+	const Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
 	string_t* string = newString(&book->pages, color, nullptr);
 	string->data = static_cast<char*>(malloc(sizeof(char) * (max_characters + 1)));
 	memset(string->data, 0, sizeof(char) * (max_characters + 1));
@@ -482,7 +482,7 @@ bool physfsSearchBooksToUpdate()
 
 void physfsReloadBooks()
 {
-	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	const std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
 	if ( !booklist.empty() )
 	{
 		// clear the previous book memory..
