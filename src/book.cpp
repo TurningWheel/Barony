@@ -225,7 +225,8 @@ int lengthOfCurrentWord(char* const text, const int index)
 	{
 		return 0;    //Not our problem. Tell it the current word is length 0.
 	}
-	else if (i > 0 && isCharacterPartOfWord(text, i))     //Not at the start of the text array and the previous character is a letter...yikes, not at the start of the word.
+
+	if (i > 0 && isCharacterPartOfWord(text, i))     //Not at the start of the text array and the previous character is a letter...yikes, not at the start of the word.
 	{
 		i = moveToStartOfWord(text, i);    //Move to the start of the current word.
 	}
