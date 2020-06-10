@@ -276,7 +276,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 				{
 					PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
 				}
-				PLAYER_ROTX *= .5 / refreshRateDelta;
+				PLAYER_ROTX *= pow(0.5, refreshRateDelta);
 			}
 			else
 			{
@@ -309,7 +309,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 				{
 					PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
 				}
-				PLAYER_ROTX *= .5 / refreshRateDelta;
+				PLAYER_ROTX *= pow(0.5, refreshRateDelta);
 			}
 			else
 			{
@@ -342,7 +342,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 	}
 	if ( smoothmouse )
 	{
-		PLAYER_ROTX *= .5 / refreshRateDelta;
+		PLAYER_ROTX *= pow(0.5, refreshRateDelta);
 	}
 	else
 	{
@@ -372,7 +372,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 					PLAYER_ROTY += mouseyrel * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 				}
 				PLAYER_ROTY = fmin(fmax(-0.35, PLAYER_ROTY), 0.35);
-				PLAYER_ROTY *= .5 / refreshRateDelta;
+				PLAYER_ROTY *= pow(0.5, refreshRateDelta);
 			}
 			else
 			{
@@ -396,7 +396,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 					PLAYER_ROTY -= mouseyrel * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 				}
 				PLAYER_ROTY = fmin(fmax(-0.35f, PLAYER_ROTY), 0.35f);
-				PLAYER_ROTY *= .5 / refreshRateDelta;
+				PLAYER_ROTY *= pow(0.5, refreshRateDelta);
 			}
 			else
 			{
