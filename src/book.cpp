@@ -462,9 +462,9 @@ bool physfsSearchBooksToUpdate()
 	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
 	if ( !booklist.empty() )
 	{
-		for ( std::list<std::string>::iterator it = booklist.begin(); it != booklist.end(); ++it )
+		for ( auto& bookTitle : booklist )
 		{
-			std::string bookFilename = "books/" + *it;
+			std::string bookFilename = "books/" + bookTitle;
 			if ( PHYSFS_getRealDir(bookFilename.c_str()) != nullptr )
 			{
 				std::string bookDir = PHYSFS_getRealDir(bookFilename.c_str());
