@@ -59,7 +59,7 @@ void createBooks()
 		discoveredbooks.sort();
 
 		// create books
-		for (auto filename : discoveredbooks)
+		for ( const auto& filename : discoveredbooks )
 		{
 			books[i] = static_cast<book_t*>(malloc(sizeof(book_t)));
 			books[i]->text = nullptr;
