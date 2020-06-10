@@ -1278,9 +1278,9 @@ void EOSFuncs::queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS
 	{
 		return;
 	}
-	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions;
+	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions = {};
 	QueryOptions.ApiVersion = EOS_CONNECT_QUERYPRODUCTUSERIDMAPPINGS_API_LATEST;
-	QueryOptions.AccountIdType = EOS_EExternalAccountType::EOS_EAT_EPIC;
+	QueryOptions.AccountIdType_DEPRECATED = EOS_EExternalAccountType::EOS_EAT_EPIC;
 	QueryOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 
 	QueryOptions.ProductUserIdCount = lobby->lobbyMembersQueueToMappingUpdate.size();

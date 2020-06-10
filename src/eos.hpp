@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "stat.hpp"
 #include "physfs.h"
+#include "game.hpp"
 
 class EOSFuncs
 {
@@ -561,7 +562,7 @@ public:
 	{
 		LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
 		logInfo("searchLobbies: starting search");
-		EOS_Lobby_CreateLobbySearchOptions CreateSearchOptions;
+		EOS_Lobby_CreateLobbySearchOptions CreateSearchOptions = {};
 		CreateSearchOptions.ApiVersion = EOS_LOBBY_CREATELOBBYSEARCH_API_LATEST;
 		CreateSearchOptions.MaxResults = kMaxLobbiesToSearch;
 
@@ -589,6 +590,17 @@ public:
 		SetLobbyOptions.ApiVersion = EOS_LOBBYSEARCH_SETLOBBYID_API_LATEST;
 		SetLobbyOptions.TargetUserId = CurrentUserInfo.Friends.at(0).UserId;
 		Result = EOS_LobbySearch_SetTargetUserId(LobbySearch, &SetLobbyOptions);*/
+		EOS_LobbySearch_SetParameterOptions ParamOptions = {};
+		ParamOptions.ApiVersion = EOS_LOBBYSEARCH_SETPARAMETER_API_LATEST;
+		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+
+		EOS_Lobby_AttributeData AttrData;
+		AttrData.ApiVersion = EOS_LOBBY_ATTRIBUTEDATA_API_LATEST;
+		ParamOptions.Parameter = &AttrData;
+		AttrData.Key = "VER";
+		AttrData.Value.AsUtf8 = VERSION;
+		AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+		EOS_EResult resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 
 		if ( searchType == LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
 		{
