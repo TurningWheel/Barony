@@ -29,8 +29,7 @@ int numbooks = 0;
 
 int getBook(char* booktitle)
 {
-	int c;
-	for ( c = 0; c < numbooks; c++ )
+	for ( int c = 0; c < numbooks; c++ )
 	{
 		if ( !strcmp(booktitle, books[c]->name) )
 		{
@@ -281,7 +280,6 @@ void createBook(book_t* book)
 	string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
 	memset(string->data, 0, sizeof(char) * (max_characters + 1));
 
-	int i; // current character in the book's entire text
 	int p = 0; // current character in the page's text
 	int x = 0; // number of characters written on the current line
 	int y = 0; // number of lines on the page
@@ -293,7 +291,7 @@ void createBook(book_t* book)
 	//found_word and word_length are used to prevent smaller words from being broken up. When the for loop detects that it has hit the start of a word, it queries for the word's length. If the word's length < MIN_LENGTH_TO_SPLIT_WORD, then it pumps out a newline and then starts the word. word_length_left is there so that it knows how many more characters it has to go through to reach the end of the word.
 	bool found_word = false;
 	int word_length = 0;
-	for (i = 0; book->text[i] != 0; ++i)
+	for (int i = 0; book->text[i] != 0; ++i)
 	{
 		//So first iterate through and count every line.
 		//Line end conditions:
