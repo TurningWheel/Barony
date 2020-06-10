@@ -83,7 +83,7 @@ void createBooks()
 
 /*****createBook() helper functions******/
 
-bool isLetter(char character)
+bool isLetter(const char character)
 {
 	switch (tolower(character))
 	{
@@ -145,7 +145,7 @@ bool isLetter(char character)
 }
 
 //This is a more powerful version of isLetter that checks if a specified character is part of a word. However, it requires contextual information -- what are the next and previous characters? So pass the entire string to this function and the index in the string of the character being looked up.
-bool isCharacterPartOfWord(char* text, int index)
+bool isCharacterPartOfWord(char* text, const int index)
 {
 	if (!text)
 	{
@@ -174,7 +174,7 @@ bool isCharacterPartOfWord(char* text, int index)
 	}
 }
 
-int moveToStartOfWord(char* text, int index)
+int moveToStartOfWord(char* text, const int index)
 {
 	if (!text)
 	{
@@ -200,7 +200,7 @@ int moveToStartOfWord(char* text, int index)
 }
 
 //Returns 0 on error. Returns 0 if index not on a word. Returns length of word otherwise. If nonletter character at the current index, it keeps looking until it finds the start of the next word.
-int lengthOfCurrentWord(char* text, int index)
+int lengthOfCurrentWord(char* text, const int index)
 {
 	if (!text)   //Can't do this without text.
 	{
