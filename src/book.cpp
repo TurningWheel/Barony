@@ -33,7 +33,7 @@ int numbooks = 0;
 
 //book_t *book_space_ninjas = NULL;
 
-int getBook(char* booktitle)
+int getBook(char* const booktitle)
 {
 	for ( int c = 0; c < numbooks; c++ )
 	{
@@ -151,7 +151,7 @@ bool isLetter(const char character)
 }
 
 //This is a more powerful version of isLetter that checks if a specified character is part of a word. However, it requires contextual information -- what are the next and previous characters? So pass the entire string to this function and the index in the string of the character being looked up.
-bool isCharacterPartOfWord(char* text, const int index)
+bool isCharacterPartOfWord(char* const text, const int index)
 {
 	if (!text)
 	{
@@ -180,7 +180,7 @@ bool isCharacterPartOfWord(char* text, const int index)
 	}
 }
 
-int moveToStartOfWord(char* text, const int index)
+int moveToStartOfWord(char* const text, const int index)
 {
 	if (!text)
 	{
@@ -206,7 +206,7 @@ int moveToStartOfWord(char* text, const int index)
 }
 
 //Returns 0 on error. Returns 0 if index not on a word. Returns length of word otherwise. If nonletter character at the current index, it keeps looking until it finds the start of the next word.
-int lengthOfCurrentWord(char* text, const int index)
+int lengthOfCurrentWord(char* const text, const int index)
 {
 	if (!text)   //Can't do this without text.
 	{
@@ -245,7 +245,7 @@ int lengthOfCurrentWord(char* text, const int index)
 	return length;
 }
 
-void createBook(book_t* book)
+void createBook(book_t* const book)
 {
 	if (!book)
 	{
