@@ -22,7 +22,7 @@
 //#define MIN_LENGTH_TO_SPLIT_WORD_TITLE (characterspace_x / 2) //This only works in the formatTitle() function, since it uses a local variable characterspace_x in there.
 #define SPLIT_WORD_IN_TITLE false //Whether or not to split a word in the book's title. If set to false, will only split words if they have to be split. If set to true, will split workds if they're a minimum length of MIN_LENGTH_TO_SPLIT_WORD_TITLE.
 
-book_t** books = NULL;
+book_t** books = nullptr;
 int numbooks = 0;
 
 //book_t *book_space_ninjas = NULL;
@@ -42,7 +42,7 @@ int getBook(char* booktitle)
 
 void createBooks()
 {
-	string_t* name = NULL;
+	string_t* name = nullptr;
 	int i = 0;
 
 	//TODO: Read the books/ inventory for all *.txt files.
@@ -64,13 +64,13 @@ void createBooks()
 		for (auto filename : discoveredbooks)
 		{
 			books[i] = (book_t*) malloc(sizeof(book_t));
-			books[i]->text = NULL;
+			books[i]->text = nullptr;
 			books[i]->name = strdup(filename.c_str());
 			printlog("compiling book: \"%s\"\n",books[i]->name);
-			books[i]->bookgui_render_title = NULL;
+			books[i]->bookgui_render_title = nullptr;
 			books[i]->bookgui_render_title_numlines = 0;
-			books[i]->pages.first = NULL;
-			books[i]->pages.last = NULL;
+			books[i]->pages.first = nullptr;
+			books[i]->pages.last = nullptr;
 			//formatTitle(books[i]);
 			createBook(books[i]);
 			books[i]->name[strlen(books[i]->name) - 4] = 0;
@@ -254,7 +254,7 @@ void createBook(book_t* book)
 	//Load in the text from a file.
 	std::string tempstr = "books/";
 	tempstr.append(book->name);
-	if ( PHYSFS_getRealDir(tempstr.c_str()) != NULL )
+	if ( PHYSFS_getRealDir(tempstr.c_str()) != nullptr )
 	{
 		std::string path = PHYSFS_getRealDir(tempstr.c_str());
 		path.append(PHYSFS_getDirSeparator());
@@ -273,11 +273,11 @@ void createBook(book_t* book)
 	int book_characterspace_y = BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
 	int max_characters = book_characterspace_x * book_characterspace_y;
 
-	book->pages.first = NULL;
-	book->pages.last = NULL;
+	book->pages.first = nullptr;
+	book->pages.last = nullptr;
 
 	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
-	string_t* string = newString(&book->pages, color, NULL);
+	string_t* string = newString(&book->pages, color, nullptr);
 	string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
 	memset(string->data, 0, sizeof(char) * (max_characters + 1));
 
@@ -328,7 +328,7 @@ void createBook(book_t* book)
 			if (y + 1 >= book_characterspace_y)
 			{
 				//Create the next page. Do not record the character if it's a newline.
-				string = newString(&book->pages, color, NULL);
+				string = newString(&book->pages, color, nullptr);
 				string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
 				memset(string->data, 0, sizeof(char) * (max_characters + 1));
 				p = 0;
@@ -386,7 +386,7 @@ void createBook(book_t* book)
 							if (y + 1 >= book_characterspace_y)   //Check if it hit the end of the page.
 							{
 								//It does indeed go off the page. Start a new page.
-								string = newString(&book->pages, color, NULL);
+								string = newString(&book->pages, color, nullptr);
 								string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
 								memset(string->data, 0, sizeof(char) * (max_characters + 1));
 								p = 0;
@@ -471,7 +471,7 @@ bool physfsSearchBooksToUpdate()
 		for ( std::list<std::string>::iterator it = booklist.begin(); it != booklist.end(); ++it )
 		{
 			std::string bookFilename = "books/" + *it;
-			if ( PHYSFS_getRealDir(bookFilename.c_str()) != NULL )
+			if ( PHYSFS_getRealDir(bookFilename.c_str()) != nullptr )
 			{
 				std::string bookDir = PHYSFS_getRealDir(bookFilename.c_str());
 				if ( bookDir.compare("./") != 0 )
