@@ -53,7 +53,7 @@ void createBooks()
 
 		// Allocate memory for books
 		numbooks = discoveredbooks.size();
-		books = (book_t**) malloc(sizeof(book_t*) * numbooks);
+		books = static_cast<book_t**>(malloc(sizeof(book_t*) * numbooks));
 
 		// sort books alphabetically
 		discoveredbooks.sort();
@@ -61,7 +61,7 @@ void createBooks()
 		// create books
 		for (auto filename : discoveredbooks)
 		{
-			books[i] = (book_t*) malloc(sizeof(book_t));
+			books[i] = static_cast<book_t*>(malloc(sizeof(book_t)));
 			books[i]->text = nullptr;
 			books[i]->name = strdup(filename.c_str());
 			printlog("compiling book: \"%s\"\n",books[i]->name);
@@ -276,7 +276,7 @@ void createBook(book_t* book)
 
 	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
 	string_t* string = newString(&book->pages, color, nullptr);
-	string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
+	string->data = static_cast<char*>(malloc(sizeof(char) * (max_characters + 1)));
 	memset(string->data, 0, sizeof(char) * (max_characters + 1));
 
 	int p = 0; // current character in the page's text
@@ -326,7 +326,7 @@ void createBook(book_t* book)
 			{
 				//Create the next page. Do not record the character if it's a newline.
 				string = newString(&book->pages, color, nullptr);
-				string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
+				string->data = static_cast<char*>(malloc(sizeof(char) * (max_characters + 1)));
 				memset(string->data, 0, sizeof(char) * (max_characters + 1));
 				p = 0;
 				y = 0;
@@ -384,7 +384,7 @@ void createBook(book_t* book)
 							{
 								//It does indeed go off the page. Start a new page.
 								string = newString(&book->pages, color, nullptr);
-								string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
+								string->data = static_cast<char*>(malloc(sizeof(char) * (max_characters + 1)));
 								memset(string->data, 0, sizeof(char) * (max_characters + 1));
 								p = 0;
 								y = 0;
