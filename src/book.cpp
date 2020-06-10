@@ -41,7 +41,6 @@ int getBook(char* booktitle)
 
 void createBooks()
 {
-	string_t* name = nullptr;
 	int i = 0;
 
 	//TODO: Read the books/ inventory for all *.txt files.
