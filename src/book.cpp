@@ -15,12 +15,18 @@
 #include "interface/interface.hpp"
 #include "book.hpp"
 
+namespace
+{
+
+constexpr int32_t TAB_WIDTH = 3;
+
+}
+
 //#define SPACE_NINJA_NAME "Order of the Space Ninjas"
-#define TAB_WIDTH 3
 //Any word less than this will just get bumped onto the next line.
 #define MIN_LENGTH_TO_SPLIT_WORD (book_characterspace_x / 2)
 //#define MIN_LENGTH_TO_SPLIT_WORD_TITLE (characterspace_x / 2) //This only works in the formatTitle() function, since it uses a local variable characterspace_x in there.
-#define SPLIT_WORD_IN_TITLE false //Whether or not to split a word in the book's title. If set to false, will only split words if they have to be split. If set to true, will split workds if they're a minimum length of MIN_LENGTH_TO_SPLIT_WORD_TITLE.
+//#define SPLIT_WORD_IN_TITLE false //Whether or not to split a word in the book's title. If set to false, will only split words if they have to be split. If set to true, will split words if they're a minimum length of MIN_LENGTH_TO_SPLIT_WORD_TITLE.;
 
 book_t** books = nullptr;
 int numbooks = 0;
