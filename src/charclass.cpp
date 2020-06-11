@@ -2904,7 +2904,6 @@ bool playerUnlockedShamanSpell(const int player, Item* const item)
 					break;
 				default:
 					return true;
-					break;
 			}
 		}
 		else
@@ -2925,7 +2924,6 @@ bool playerUnlockedShamanSpell(const int player, Item* const item)
 					break;
 				default:
 					return true;
-					break;
 			}
 		}
 	}
