@@ -2580,10 +2580,10 @@ void initShapeshiftHotbar()
 		}
 	}
 
-	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	for ( uint32_t slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
 	{
-		hotbar_alternate[HOTBAR_DEFAULT][i].item = hotbar[i].item; // store our current hotbar.
-		hotbar[i].item = newHotbar[i].item; // load from the monster's hotbar.
+		hotbar_alternate[HOTBAR_DEFAULT][slotIndex].item = hotbar[slotIndex].item; // store our current hotbar.
+		hotbar[slotIndex].item = newHotbar[slotIndex].item; // load from the monster's hotbar.
 	}
 
 	// find "shapeshift" only spells, add em to view.
