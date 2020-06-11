@@ -2897,6 +2897,7 @@ bool playerUnlockedShamanSpell(const int player, Item* const item)
 				case SPELL_LIGHTNING:
 				case SPELL_CONFUSE:
 					levelRequirement = 12;
+					break;
 				case SPELL_FEAR:
 				case SPELL_AMPLIFY_MAGIC:
 					levelRequirement = 15;
