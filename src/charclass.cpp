@@ -41,9 +41,9 @@ void initClass(int player)
 		selected_inventory_slot_y = 0;
 		current_hotbar = 0;
 
-		for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+		for ( auto& slot : hotbar )
 		{
-			hotbar[i].item = 0;
+			slot.item = 0;
 		}
 		magicBoomerangHotbarSlot = -1;
 	}
@@ -2515,12 +2515,12 @@ void initClass(int player)
 					{
 						continue;
 					}
-					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+					for ( auto& slot : hotbar )
 					{
-						if ( hotbar[i].item == 0 )
+						if ( slot.item == 0 )
 						{
 							//printlog("%d %s", i, item->getName());
-							hotbar[i].item = item->uid;
+							slot.item = item->uid;
 							break;
 						}
 					}
@@ -2671,11 +2671,11 @@ void initShapeshiftHotbar()
 					}
 					else
 					{
-						for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+						for ( auto& slot : hotbar )
 						{
-							if ( hotbar[i].item == item->uid )
+							if ( slot.item == item->uid )
 							{
-								hotbar[i].item = 0;
+								slot.item = 0;
 							}
 						}
 					}
@@ -2724,21 +2724,21 @@ void initShapeshiftHotbar()
 		}
 	}*/
 
-	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	for ( const auto& slot : hotbar )
 	{
-		if ( hotbar[i].item == 0 )
+		if ( slot.item == 0 )
 		{
 			continue;
 		}
-		if ( hotbar[i].item == spellRevertUid )
+		if ( slot.item == spellRevertUid )
 		{
 			spellRevertUid = 0;
 		}
-		for ( auto it = monsterSpells.begin(); it != monsterSpells.end(); ++it )
+		for ( auto& monsterSpell : monsterSpells )
 		{
-			if ( *it == hotbar[i].item )
+			if ( monsterSpell == slot.item )
 			{
-				*it = 0;
+				monsterSpell = 0;
 			}
 		}
 	}
