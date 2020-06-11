@@ -2480,7 +2480,7 @@ void initClass(int player)
 		// move default items to the right
 		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
-			Item* item = (Item*)node->element;
+			Item* item = static_cast<Item*>(node->element);
 			if ( item )
 			{
 				item->x = INVENTORY_SIZEX - item->x - 1;
@@ -2589,7 +2589,7 @@ void initShapeshiftHotbar()
 	// find "shapeshift" only spells, add em to view.
 	for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item && item->type == SPELL_ITEM )
 		{
 			spell_t* spell = getSpellFromItem(item);
@@ -2636,7 +2636,7 @@ void initShapeshiftHotbar()
 							{
 								for ( node_t* node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
 								{
-									Item* tempItem = (Item*)node2->element;
+									Item* tempItem = static_cast<Item*>(node2->element);
 									if ( tempItem == item )
 									{
 										continue;
@@ -2817,7 +2817,7 @@ void deinitShapeshiftHotbar()
 
 	for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item )
 		{
 			if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
