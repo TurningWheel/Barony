@@ -27,7 +27,7 @@
 
 -------------------------------------------------------------------------------*/
 
-void initClass(int player)
+void initClass(const int player)
 {
 	Item* item, *item2;
 	/*client_classes[player] = CLASS_HUNTER;
@@ -2624,7 +2624,7 @@ void initShapeshiftHotbar()
 						int x = 0;
 						bool notfree = false;
 						bool foundaspot = false;
-						bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
+						const bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
 						int numRows = INVENTORY_SIZEY;
 						if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
 						{
@@ -2862,7 +2862,7 @@ void deinitShapeshiftHotbar()
 	}
 }
 
-bool playerUnlockedShamanSpell(int player, Item* item)
+bool playerUnlockedShamanSpell(const int player, Item* const item)
 {
 	if ( player < 0 && player >= MAXPLAYERS )
 	{

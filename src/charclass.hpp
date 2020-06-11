@@ -20,12 +20,12 @@ class PlayerCharacterClassManager
 	Stat* classStats = nullptr;
 	int characterClass = CLASS_BARBARIAN;
 public:
-	PlayerCharacterClassManager(Stat* myStats, int charClass)
+	PlayerCharacterClassManager(Stat* const myStats, const int charClass)
 	{
 		classStats = myStats;
 		characterClass = charClass;
 	};
-	void serialize(FileInterface* file) {
+	void serialize(FileInterface* const file) {
 		// recommend you start with this because it makes versioning way easier down the road
 		int version = 0;
 		file->property("version", version);
