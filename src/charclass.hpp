@@ -94,7 +94,7 @@ public:
 		}
 	}
 
-	void setCharacterStatsAfterSerialization()
+	void setCharacterStatsAfterSerialization() const
 	{
 		classStats->HP = classStats->MAXHP;
 		classStats->OLDHP = classStats->HP;
