@@ -2630,7 +2630,7 @@ void initShapeshiftHotbar()
 						{
 							numRows = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
 						}
-						while ( 1 )
+						while ( true )
 						{
 							for ( int y = 0; y < numRows; y++ )
 							{
