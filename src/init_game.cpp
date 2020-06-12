@@ -81,6 +81,7 @@ int initGame()
 
 #ifdef USE_EOS
 	EOS.readFromFile();
+	EOS.readFromCmdLineArgs();
 	if ( EOS.initPlatform(true) == false )
 	{
 		return 14;

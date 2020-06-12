@@ -3236,6 +3236,12 @@ int main(int argc, char** argv)
 					{
 						no_sound = true;
 					}
+					else
+					{
+#ifdef USE_EOS
+						EOS.CommandLineArgs.push_back(argv[c]);
+#endif // USE_EOS
+					}
 				}
 			}
 		}
