@@ -1761,7 +1761,18 @@ void handleMainMenu(bool mode)
 			}
 
 			// lobby entered
-			if ( !EOS.bConnectingToLobby && EOS.bConnectingToLobbyWindow )
+			if ( EOS.ConnectingToLobbyStatus != EOS_EResult::EOS_Success )
+			{
+				// close current window
+				buttonCloseSubwindow(NULL);
+				list_FreeAll(&button_l);
+				deleteallbuttons = true;
+
+				openFailedConnectionWindow(CLIENT);
+				strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS.ConnectingToLobbyStatus).c_str());
+				EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_Success;
+			}
+			else if ( !EOS.bConnectingToLobby && EOS.bConnectingToLobbyWindow )
 			{
 				EOS.bConnectingToLobbyWindow = false;
 				EOS.bConnectingToLobby = false;
@@ -1773,29 +1784,6 @@ void handleMainMenu(bool mode)
 
 				// we are assuming here that the lobby join was successful
 				// otherwise, the callback would've flipped off the connectingToLobbyWindow and opened an error window
-
-				// get number of lobby members (capped to game limit)
-
-				// record CSteamID of lobby owner (and nobody else)
-				//int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
-				//if ( steamIDRemote[0] )
-				//{
-				//	cpp_Free_CSteamID(steamIDRemote[0]);
-				//}
-				//steamIDRemote[0] = cpp_SteamMatchmaking_GetLobbyOwner(currentLobby); //TODO: Bugger void pointers!
-				//int c;
-				//for ( c = 1; c < MAXPLAYERS; c++ )
-				//{
-				//	if ( steamIDRemote[c] )
-				//	{
-				//		cpp_Free_CSteamID(steamIDRemote[c]);
-				//		steamIDRemote[c] = NULL;
-				//	}
-				//}
-				//for ( c = 1; c < lobbyMembers; ++c )
-				//{
-				//	steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
-				//}
 				buttonJoinLobby(NULL);
 			}
 		}
@@ -11635,7 +11623,11 @@ void buttonCloseSubwindow(button_t* my)
 	}
 	connectingToLobbyWindow = false;
 	connectingToLobby = false;
-#endif
+#elif defined USE_EOS
+	EOS.bConnectingToLobby = false;
+	EOS.bConnectingToLobbyWindow = false;
+#endif // USE_EOS
+
 	charcreation_step = 0;
 	subwindow = 0;
 	if ( SDL_IsTextInputActive() )

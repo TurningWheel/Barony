@@ -17,7 +17,6 @@
 #include "net.hpp"
 #include "stat.hpp"
 #include "physfs.h"
-#include "game.hpp"
 
 class EOSFuncs
 {
@@ -27,8 +26,8 @@ public:
 	std::string DeploymentId = "";
 	std::string ClientCredentialsId = "";
 	std::string ClientCredentialsSecret = "";
-	std::string CredentialName = "cred1";
-	std::string CredentialHost = "localhost:12345";
+	std::string CredentialName = "";
+	std::string CredentialHost = "";
 	std::vector<std::string> CommandLineArgs;
 	EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_Developer;
 
@@ -39,6 +38,7 @@ public:
 	bool bRequestingLobbies = false; // client is waiting for lobby data to display
 	bool bConnectingToLobby = false; // if true, client is waiting for lobby join callback
 	bool bConnectingToLobbyWindow = false; // client has a valid lobby window and has not encountered a new error window
+	EOS_EResult ConnectingToLobbyStatus = EOS_EResult::EOS_Success; // if invalid lobby join attempt, set to non-success
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
 
@@ -198,6 +198,7 @@ public:
 				Uint32 isLobbyLoadingSavedGame = 0;
 				Uint32 serverFlags = 0;
 				Uint32 numServerMods = 0;
+				long long lobbyCreationTime = 0;
 				void ClearData()
 				{
 					lobbyName = "";
@@ -205,6 +206,7 @@ public:
 					isLobbyLoadingSavedGame = 0;
 					serverFlags = 0;
 					numServerMods = 0;
+					lobbyCreationTime = 0;
 				}
 		} LobbyAttributes;
 		bool updateLobbyForHost();
@@ -229,9 +231,10 @@ public:
 			GAME_VERSION,
 			LOADING_SAVEGAME,
 			SERVER_FLAGS,
-			GAME_MODS
+			GAME_MODS,
+			CREATION_TIME
 		};
-		const int kNumAttributes = 5;
+		const int kNumAttributes = 6;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;
@@ -568,6 +571,7 @@ public:
 	void readFromCmdLineArgs();
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);
 	void showFriendsOverlay();
+	static std::string getLobbyJoinFailedConnectString(EOS_EResult result);
 	static void logInfo(const char* str, ...)
 	{
 		char newstr[1024] = { 0 };

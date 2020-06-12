@@ -343,11 +343,44 @@ void EOS_CALL EOSFuncs::OnLobbySearchFinished(const EOS_LobbySearch_FindCallback
 		{
 			EOSFuncs::logInfo("OnLobbySearchFinished: Found 0 lobbies!");
 		}
+		return;
+	}
+	else if ( data->ResultCode == EOS_EResult::EOS_NotFound )
+	{
+		EOSFuncs::logError("OnLobbySearchFinished: Requested lobby no longer exists", static_cast<int>(data->ResultCode));
 	}
 	else
 	{
 		EOSFuncs::logError("OnLobbySearchFinished: Callback failure: %d", static_cast<int>(data->ResultCode));
 	}
+
+	int* searchOptions = static_cast<int*>(data->ClientData);
+	if ( searchOptions[EOSFuncs::LobbyParameters_t::JOIN_OPTIONS]
+		== static_cast<int>(EOSFuncs::LobbyParameters_t::LOBBY_JOIN_FIRST_SEARCH_RESULT) )
+	{
+		// we were trying to join a lobby, set error message.
+		EOS.bConnectingToLobbyWindow = false;
+		EOS.bConnectingToLobby = false;
+		EOS.ConnectingToLobbyStatus = data->ResultCode;
+	}
+}
+
+std::string EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult result)
+{
+	char buf[1024] = "";
+	switch ( result )
+	{
+		case EOS_EResult::EOS_NotFound:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nLobby no longer exists.");
+			break;
+		case EOS_EResult::EOS_Lobby_TooManyPlayers:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nLobby is full.");
+			break;
+		default:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nGeneral failure - error code: %d.", result);
+			break;
+	}
+	return buf;
 }
 
 void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInfo* data)
@@ -357,6 +390,7 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 		EOSFuncs::logError("OnLobbyJoinCallback: null data");
 		EOS.bConnectingToLobby = false;
 		EOS.bConnectingToLobbyWindow = false;
+		EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_UnexpectedError;
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
@@ -366,6 +400,7 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 			EOS.CurrentLobbyData.LobbyId = data->LobbyId;
 		}*/
 		EOS.bConnectingToLobby = false;
+		EOS.ConnectingToLobbyStatus = data->ResultCode;
 		EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
 			EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_UPDATE_CURRENTLOBBY, data->LobbyId);
 
@@ -378,9 +413,15 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 	else
 	{
 		EOSFuncs::logError("OnLobbyJoinCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
-		EOS.bConnectingToLobby = false;
 		EOS.bConnectingToLobbyWindow = false;
+		EOS.bConnectingToLobby = false;
+		EOS.ConnectingToLobbyStatus = data->ResultCode;
 	}
+
+	EOS.P2PConnectionInfo.resetPeersAndServerData();
+	EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
+	EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
+	EOS.CurrentLobbyData.ClearData();
 	EOS.LobbyParameters.clearLobbyToJoin();
 }
 
@@ -939,6 +980,8 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame()
 	LobbyAttributes.isLobbyLoadingSavedGame = loadingsavegame;
 	LobbyAttributes.serverFlags = svFlags;
 	LobbyAttributes.numServerMods = 0;
+	std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
+	LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();
 }
 
 void EOSFuncs::LobbyData_t::setBasicCurrentLobbyDataFromInitialJoin(LobbyData_t* lobbyToJoin)
@@ -1251,12 +1294,13 @@ void EOSFuncs::createLobby()
 	EOS_Lobby_CreateLobbyOptions CreateOptions;
 	CreateOptions.ApiVersion = EOS_LOBBY_CREATELOBBY_API_LATEST;
 	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
-	CreateOptions.MaxLobbyMembers = 4;
+	CreateOptions.MaxLobbyMembers = 1;
 	CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 
 	EOS_Lobby_CreateLobby(LobbyHandle, &CreateOptions, nullptr, OnCreateLobbyFinished);
 	CurrentLobbyData.MaxPlayers = CreateOptions.MaxLobbyMembers;
 	CurrentLobbyData.OwnerProductUserId = CurrentUserInfo.getProductUserIdStr();
+	strcpy(EOS.currentLobbyName, "Lobby creation in progress...");
 }
 
 void EOSFuncs::joinLobby(LobbyData_t* lobby)
@@ -1282,6 +1326,17 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 	}
 	CurrentLobbyData.ClearData();
 	CurrentLobbyData.setBasicCurrentLobbyDataFromInitialJoin(lobby);
+
+	if ( CurrentLobbyData.OwnerProductUserId.compare("NULL") == 0 )
+	{
+		// this is unexpected - perhaps an attempt to join a lobby that was freshly abandoned
+		bConnectingToLobbyWindow = false;
+		bConnectingToLobby = false;
+		ConnectingToLobbyStatus = EOS_EResult::EOS_NotFound;
+		logError("joinLobby: attempting to join a lobby with a NULL owner: %s, aborting.", CurrentLobbyData.LobbyId.c_str());
+		LobbyParameters.clearLobbyToJoin();
+		return;
+	}
 
 	EOS_Lobby_JoinLobbyOptions JoinOptions;
 	JoinOptions.ApiVersion = EOS_LOBBY_JOINLOBBY_API_LATEST;
@@ -1355,13 +1410,13 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	Result = EOS_LobbySearch_SetTargetUserId(LobbySearch, &SetLobbyOptions);*/
 	EOS_LobbySearch_SetParameterOptions ParamOptions = {};
 	ParamOptions.ApiVersion = EOS_LOBBYSEARCH_SETPARAMETER_API_LATEST;
-	ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+	ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_NOTANYOF;
 
 	EOS_Lobby_AttributeData AttrData;
 	AttrData.ApiVersion = EOS_LOBBY_ATTRIBUTEDATA_API_LATEST;
 	ParamOptions.Parameter = &AttrData;
 	AttrData.Key = "VER";
-	AttrData.Value.AsUtf8 = VERSION;
+	AttrData.Value.AsUtf8 = "0.0.0";
 	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
 	EOS_EResult resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 
@@ -1604,6 +1659,10 @@ std::pair<std::string, std::string> EOSFuncs::LobbyData_t::getAttributePair(Attr
 			attributePair.first = "SVNUMMODS";
 			attributePair.second = "0";
 			break;
+		case CREATION_TIME:
+			attributePair.first = "CREATETIME";
+			attributePair.second = std::to_string(this->LobbyAttributes.lobbyCreationTime);
+			break;
 		default:
 			break;
 	}
@@ -1632,6 +1691,10 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesAfterReading(EOS_Lobby_AttributeDa
 	else if ( keyName.compare("SVNUMMODS") == 0 )
 	{
 		this->LobbyAttributes.numServerMods = std::stoi(data->Value.AsUtf8);
+	}
+	else if ( keyName.compare("CREATETIME") == 0 )
+	{
+		this->LobbyAttributes.lobbyCreationTime = std::stoll(data->Value.AsUtf8);
 	}
 }
 
@@ -1787,8 +1850,22 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 	EOS_Auth_Credentials Credentials = {};
 	Credentials.ApiVersion = EOS_AUTH_CREDENTIALS_API_LATEST;
 	printlog("EOS is trying to connect to \'%s\"", hostname.c_str());
-	Credentials.Id = hostname.c_str();
-	Credentials.Token = tokenName.c_str();
+	if ( hostname.compare("") == 0 )
+	{
+		Credentials.Id = nullptr;
+	}
+	else
+	{
+		Credentials.Id = hostname.c_str();
+	}
+	if ( tokenName.compare("") == 0 )
+	{
+		Credentials.Token = nullptr;
+	}
+	else
+	{
+		Credentials.Token = tokenName.c_str();
+	}
 	Credentials.Type = AuthType;
 
 	EOS_Auth_LoginOptions LoginOptions;
