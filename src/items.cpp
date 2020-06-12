@@ -105,12 +105,12 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		}
 		else if ( multiplayer != CLIENT )
 		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
+			for ( const auto* const stat : stats )
 			{
-				if ( stats[i] && &stats[i]->inventory == inventory )
+				if ( stat && &stat->inventory == inventory )
 				{
-					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
-						&& (shouldInvertEquipmentBeatitude(stats[i]) ? stats[i]->cloak->beatitude <= 0 : stats[i]->cloak->beatitude >= 0) )
+					if ( stat->cloak && stat->cloak->type == CLOAK_BACKPACK 
+						&& (shouldInvertEquipmentBeatitude(stat) ? stat->cloak->beatitude <= 0 : stat->cloak->beatitude >= 0) )
 					{
 						inventory_y = 4;
 						break;
@@ -231,9 +231,9 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		{
 			if ( inventory == &stats[clientnum]->inventory )
 			{
-				for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+				for ( auto& c : hotbar )
 				{
-					if ( !uidToItem(hotbar[c].item) )
+					if ( !uidToItem(c.item) )
 					{
 						if ( autoAddHotbarFilter(*item) )
 						{
@@ -241,12 +241,12 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 							{
 								if ( item->usableWhileShapeshifted(stats[clientnum]) )
 								{
-									hotbar[c].item = item->uid;
+									c.item = item->uid;
 								}
 							}
 							else
 							{
-								hotbar[c].item = item->uid;
+								c.item = item->uid;
 							}
 							break;
 						}
@@ -331,11 +331,11 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 	{
 		if ( &inventory == &stats[clientnum]->inventory )
 		{
-			for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+			for ( auto& c : hotbar )
 			{
-				if ( !uidToItem(hotbar[c].item) )
+				if ( !uidToItem(c.item) )
 				{
-					hotbar[c].item = item.uid;
+					c.item = item.uid;
 					break;
 				}
 			}
@@ -1598,12 +1598,12 @@ void consumeItem(Item*& item, int player)
 	{
 		if ( item->node != nullptr )
 		{
-			for ( int i = 0; i < MAXPLAYERS; i++ )
+			for ( auto* const stat : stats )
 			{
-				if ( item->node->list == &stats[i]->inventory )
+				if ( item->node->list == &stat->inventory )
 				{
 					Item** slot;
-					if ( (slot = itemSlot(stats[i], item)) != nullptr )
+					if ( (slot = itemSlot(stat, item)) != nullptr )
 					{
 						*slot = nullptr;
 					}
@@ -3103,9 +3103,9 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	{
 		if ( wielder->type == TROLL || wielder->type == RAT || wielder->type == SPIDER || wielder->type == CREATURE_IMP )
 		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
+			for ( const auto* const stat : stats )
 			{
-				if ( wielder == stats[i] ) // is a player stat pointer.
+				if ( wielder == stat ) // is a player stat pointer.
 				{
 					return 0; // players that are these monsters do not benefit from weapons
 				}
@@ -3470,9 +3470,9 @@ Sint32 Item::armorGetAC(Stat* wielder) const
 	{
 		if ( wielder->type == TROLL || wielder->type == RAT || wielder->type == SPIDER || wielder->type == CREATURE_IMP )
 		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
+			for ( const auto* const stat : stats )
 			{
-				if ( wielder == stats[i] ) // is a player stat pointer.
+				if ( wielder == stat ) // is a player stat pointer.
 				{
 					if ( itemCategory(this) == RING || itemCategory(this) == AMULET )
 					{
