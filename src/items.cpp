@@ -48,7 +48,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	Item* item;
 
 	// allocate memory for the item
-	if ( (item = static_cast<Item*>(malloc(sizeof(Item)))) == NULL )
+	if ( (item = static_cast<Item*>(malloc(sizeof(Item)))) == nullptr )
 	{
 		printlog( "failed to allocate memory for new item!\n" );
 		exit(1);
@@ -57,7 +57,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	//item->captured_monster = nullptr;
 
 	// add the item to the inventory
-	if ( inventory != NULL )
+	if ( inventory != nullptr )
 	{
 		item->node = list_AddNodeLast(inventory);
 		item->node->element = item;
@@ -66,7 +66,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	}
 	else
 	{
-		item->node = NULL;
+		item->node = nullptr;
 	}
 
 	// now set all of my data elements
@@ -137,7 +137,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 			for ( y = 0; y < sort_y; y++ )
 			{
 				node_t* node;
-				for ( node = inventory->first; node != NULL; node = node->next )
+				for ( node = inventory->first; node != nullptr; node = node->next )
 				{
 					Item* tempItem = static_cast<Item*>(node->element);
 					if ( tempItem == item )
@@ -188,7 +188,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 				for ( y = 3; y < inventory_y; y++ )
 				{
 					node_t* node;
-					for ( node = inventory->first; node != NULL; node = node->next )
+					for ( node = inventory->first; node != nullptr; node = node->next )
 					{
 						Item* tempItem = static_cast<Item*>(node->element);
 						if ( tempItem == item )
@@ -364,7 +364,7 @@ Item* uidToItem(Uint32 uid)
 		return nullptr;
 	}
 	node_t* node;
-	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	for ( node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 	{
 		Item* item = static_cast<Item*>(node->element);
 		if ( item->uid == uid )
@@ -1048,7 +1048,7 @@ SDL_Surface* itemSprite(Item* item)
 {
 	if ( !item )
 	{
-		return NULL;
+		return nullptr;
 	}
 	if (itemCategory(item) == SPELL_CAT)
 	{
@@ -1058,7 +1058,7 @@ SDL_Surface* itemSprite(Item* item)
 			node_t* node = list_Node(&items[item->type].surfaces, spell->ID);
 			if ( !node )
 			{
-				return NULL;
+				return nullptr;
 			}
 			SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
 			return *surface;
@@ -1069,12 +1069,12 @@ SDL_Surface* itemSprite(Item* item)
 		node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
 		if ( !node )
 		{
-			return NULL;
+			return nullptr;
 		}
 		SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
 		return *surface;
 	}
-	return NULL;
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1092,9 +1092,9 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 	Sint32 model2 = 0;
 
 	// null cases
-	if ( item1 == NULL )
+	if ( item1 == nullptr )
 	{
-		if ( item2 == NULL )
+		if ( item2 == nullptr )
 		{
 			return 0;
 		}
@@ -1105,7 +1105,7 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 	}
 	else
 	{
-		if ( item2 == NULL )
+		if ( item2 == nullptr )
 		{
 			return 1;
 		}
@@ -1261,9 +1261,9 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 		{
 		}*/
 		Item** slot = itemSlot(stats[player], item);
-		if ( slot != NULL )
+		if ( slot != nullptr )
 		{
-			*slot = NULL;
+			*slot = nullptr;
 		}
 
 		if ( item->count <= 0 )
@@ -1324,11 +1324,11 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 
 		// unequip the item
 		Item** slot = itemSlot(stats[player], item);
-		if ( slot != NULL )
+		if ( slot != nullptr )
 		{
-			*slot = NULL;
+			*slot = nullptr;
 		}
-		if ( item->node != NULL )
+		if ( item->node != nullptr )
 		{
 			if ( item->node->list == &stats[0]->inventory )
 			{
@@ -1659,7 +1659,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 	if ( itemCompare(*slot, item, true) )
 	{
 		// if items are different... (excluding the quantity of both item nodes)
-		if ( *slot != NULL )
+		if ( *slot != nullptr )
 		{
 			if (!(*slot)->canUnequip(stats[player]))
 			{
@@ -1717,7 +1717,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 		}
 		if ( multiplayer == SERVER && player > 0 )
 		{
-			if ( *slot != NULL )
+			if ( *slot != nullptr )
 			{
 				if ( (*slot)->node )
 				{
@@ -1756,7 +1756,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 	else
 	{
 		// if items are the same... (excluding the quantity of both item nodes)
-		if ( *slot != NULL )
+		if ( *slot != nullptr )
 		{
 			if ( (*slot)->count == item->count ) // if quantity is the same then it's the same item, can unequip
 			{
@@ -1811,7 +1811,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 			{
 				free(item);
 			}
-			if ( *slot != NULL )
+			if ( *slot != nullptr )
 			{
 				if ( (*slot)->node )
 				{
@@ -1833,7 +1833,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 			}
 			item->count = oldcount;
 		}
-		*slot = NULL;
+		*slot = nullptr;
 		return EQUIP_ITEM_SUCCESS_UNEQUIP;
 	}
 }
@@ -1848,7 +1848,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 
 void useItem(Item* item, int player, Entity* usedBy)
 {
-	if ( item == NULL )
+	if ( item == nullptr )
 	{
 		return;
 	}
@@ -1954,7 +1954,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		{
 			bool havetinopener = false;
 			node_t* node;
-			for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+			for ( node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 			{
 				Item* tempitem = static_cast<Item*>(node->element);
 				if ( tempitem->type == TOOL_TINOPENER )
@@ -2775,7 +2775,7 @@ Item* itemPickup(int player, Item* item)
 {
 	if (!item)
 	{
-		return NULL;
+		return nullptr;
 	}
 	Item* item2;
 	node_t* node;
@@ -2828,7 +2828,7 @@ Item* itemPickup(int player, Item* item)
 	else
 	{
 		std::unordered_set<Uint32> appearancesOfSimilarItems;
-		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
+		for ( node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
 			item2 = static_cast<Item*>(node->element);
 			if (!itemCompare(item, item2, false))
@@ -3000,7 +3000,7 @@ Item** itemSlot(Stat* myStats, Item* item)
 {
 	if ( !myStats || !item )
 	{
-		return NULL;
+		return nullptr;
 	}
 	if (!itemCompare(item, myStats->helmet, true))
 	{
@@ -3042,7 +3042,7 @@ Item** itemSlot(Stat* myStats, Item* item)
 	{
 		return &myStats->mask;
 	}
-	return NULL;
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
