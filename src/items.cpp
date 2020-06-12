@@ -81,7 +81,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	item->isDroppable = true;
 	if ( inventory )
 	{
-		int x, y;
+		int y;
 		bool notfree = false, foundaspot = false;
 
 		bool is_spell = false;
@@ -90,7 +90,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 			is_spell = true;
 		}
 
-		x = 0;
+		int x = 0;
 		int inventory_y = INVENTORY_SIZEY;
 		if ( is_spell )
 		{
@@ -136,8 +136,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		{
 			for ( y = 0; y < sort_y; y++ )
 			{
-				node_t* node;
-				for ( node = inventory->first; node != nullptr; node = node->next )
+				for ( node_t* node = inventory->first; node != nullptr; node = node->next )
 				{
 					Item* tempItem = static_cast<Item*>(node->element);
 					if ( tempItem == item )
@@ -187,8 +186,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 			{
 				for ( y = 3; y < inventory_y; y++ )
 				{
-					node_t* node;
-					for ( node = inventory->first; node != nullptr; node = node->next )
+					for ( node_t* node = inventory->first; node != nullptr; node = node->next )
 					{
 						Item* tempItem = static_cast<Item*>(node->element);
 						if ( tempItem == item )
@@ -233,8 +231,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		{
 			if ( inventory == &stats[clientnum]->inventory )
 			{
-				int c;
-				for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+				for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 				{
 					if ( !uidToItem(hotbar[c].item) )
 					{
@@ -277,7 +274,6 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 	item.node->deconstructor = &defaultDeconstructor;
 	item.node->size = sizeof(Item);
 
-	int x, y;
 	bool notfree = false, foundaspot = false;
 
 	bool is_spell = false;
@@ -286,13 +282,12 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 		is_spell = true;
 	}
 
-	x = 0;
+	int x = 0;
 	while ( 1 )
 	{
-		for ( y = 0; y < INVENTORY_SIZEY; ++y )
+		for ( int y = 0; y < INVENTORY_SIZEY; ++y )
 		{
-			node_t* node;
-			for ( node = inventory.first; node != nullptr; node = node->next )
+			for ( node_t* node = inventory.first; node != nullptr; node = node->next )
 			{
 				Item* tempItem = static_cast<Item*>(node->element);
 				if ( tempItem == &item )
@@ -336,8 +331,7 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 	{
 		if ( &inventory == &stats[clientnum]->inventory )
 		{
-			int c;
-			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+			for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
 				if ( !uidToItem(hotbar[c].item) )
 				{
@@ -363,8 +357,7 @@ Item* uidToItem(Uint32 uid)
 	{
 		return nullptr;
 	}
-	node_t* node;
-	for ( node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
+	for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 	{
 		Item* item = static_cast<Item*>(node->element);
 		if ( item->uid == uid )
@@ -1179,7 +1172,6 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 		return false;
 	}
 
-	Entity* entity;
 	Sint16 oldcount;
 
 	if (item == nullptr || players[player] == nullptr || players[player]->entity == nullptr || itemCategory(item) == SPELL_CAT)
@@ -1297,7 +1289,7 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 			}*/
 		}
 
-		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 		entity->flags[INVISIBLE] = true;
 		entity->flags[UPDATENEEDED] = true;
 		entity->x = players[player]->entity->x;
@@ -1606,8 +1598,7 @@ void consumeItem(Item*& item, int player)
 	{
 		if ( item->node != nullptr )
 		{
-			int i;
-			for ( i = 0; i < MAXPLAYERS; i++ )
+			for ( int i = 0; i < MAXPLAYERS; i++ )
 			{
 				if ( item->node->list == &stats[i]->inventory )
 				{
@@ -1953,8 +1944,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		if ( item->type == FOOD_TIN )
 		{
 			bool havetinopener = false;
-			node_t* node;
-			for ( node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
+			for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 			{
 				Item* tempitem = static_cast<Item*>(node->element);
 				if ( tempitem->type == TOOL_TINOPENER )
@@ -2778,7 +2768,6 @@ Item* itemPickup(int player, Item* item)
 		return nullptr;
 	}
 	Item* item2;
-	node_t* node;
 
 	if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
@@ -2828,7 +2817,7 @@ Item* itemPickup(int player, Item* item)
 	else
 	{
 		std::unordered_set<Uint32> appearancesOfSimilarItems;
-		for ( node = stats[player]->inventory.first; node != nullptr; node = node->next )
+		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
 			item2 = static_cast<Item*>(node->element);
 			if (!itemCompare(item, item2, false))
@@ -3873,10 +3862,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;
 	ItemType itemId;
-	Status itemStatus;
-	int itemBless;
 	int itemAppearance = rand();
-	int itemCount;
 	int category = 0;
 	bool itemIdentified;
 	int itemsGenerated = 0;
@@ -3948,7 +3934,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 
 			if ( itemId >= 0 )
 			{
-				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
+				Status itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
 				if ( itemStatus == 0 )
 				{
 					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
@@ -3957,12 +3943,12 @@ void createCustomInventory(Stat* stats, int itemLimit)
 				{
 					itemStatus = static_cast<Status>(itemStatus - 1); // reserved '0' for random, so '1' is decrepit... etc to '5' being excellent.
 				}
-				itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
+				int itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
 				if ( itemBless == 10 )
 				{
 					itemBless = -1 + rand() % 3;
 				}
-				itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
+				int itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
 				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
 				{
 					itemIdentified = false;
