@@ -132,7 +132,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		}
 		int sort_y = std::min(std::max(inventory_y, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
 
-		while ( 1 )
+		while ( true )
 		{
 			for ( y = 0; y < sort_y; y++ )
 			{
@@ -182,7 +182,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 			x = 0;
 			foundaspot = false;
 			notfree = false;
-			while ( 1 )
+			while ( true )
 			{
 				for ( y = 3; y < inventory_y; y++ )
 				{
@@ -283,7 +283,7 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 	}
 
 	int x = 0;
-	while ( 1 )
+	while ( true )
 	{
 		for ( int y = 0; y < INVENTORY_SIZEY; ++y )
 		{
