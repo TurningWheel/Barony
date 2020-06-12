@@ -2786,20 +2786,20 @@ void deinitShapeshiftHotbar()
 			newSpell = selected_spell_alternate[HOTBAR_IMP];
 		}
 	}
-	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	for ( uint32_t slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
 	{
-		swapItem = hotbar[i].item;
-		hotbar[i].item = hotbar_alternate[HOTBAR_DEFAULT][i].item; // swap back to default loadout
-		newHotbar[i].item = swapItem;
+		swapItem = hotbar[slotIndex].item;
+		hotbar[slotIndex].item = hotbar_alternate[HOTBAR_DEFAULT][slotIndex].item; // swap back to default loadout
+		newHotbar[slotIndex].item = swapItem;
 
 		// double check for shapeshift spells and remove them.
-		Item* item = uidToItem(hotbar[i].item);
+		Item* item = uidToItem(hotbar[slotIndex].item);
 		if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
 		{
 			if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 ) // not allowed to use spell.
 			{
-				hotbar[i].item = 0;
-				hotbar_alternate[HOTBAR_DEFAULT][i].item = 0;
+				hotbar[slotIndex].item = 0;
+				hotbar_alternate[HOTBAR_DEFAULT][slotIndex].item = 0;
 			}
 		}
 	}
