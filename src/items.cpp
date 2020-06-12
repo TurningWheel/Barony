@@ -641,7 +641,7 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 
 -------------------------------------------------------------------------------*/
 
-char* Item::description()
+char* Item::description() const
 {
 	int c = 0;
 
@@ -957,7 +957,7 @@ Category itemCategory(const Item* item)
 
 -------------------------------------------------------------------------------*/
 
-char* Item::getName()
+char* Item::getName() const
 {
 	if ( type >= 0 && type < NUMITEMS )
 	{
@@ -3540,7 +3540,7 @@ bool Item::canUnequip(Stat* wielder)
 
 -------------------------------------------------------------------------------*/
 
-int Item::buyValue(int player)
+int Item::buyValue(int player) const
 {
 	int value = items[type].value; // base value
 
@@ -3602,7 +3602,7 @@ int Item::buyValue(int player)
 
 -------------------------------------------------------------------------------*/
 
-int Item::sellValue(int player)
+int Item::sellValue(int player) const
 {
 	int value = items[type].value; // base value
 
@@ -3707,7 +3707,7 @@ void Item::apply(int player, Entity* entity)
 	}
 }
 
-void Item::applyLockpickToWall(int player, int x, int y)
+void Item::applyLockpickToWall(int player, int x, int y) const
 {
 	// for clients:
 	if ( multiplayer == CLIENT )
@@ -4394,7 +4394,7 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave
 	return false;
 }
 
-bool Item::shouldItemStack(int player)
+bool Item::shouldItemStack(int player) const
 {
 	if ( player >= 0 )
 	{

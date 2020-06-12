@@ -401,20 +401,20 @@ public:
 	//As it stands, no item destructor is called , so this would lead to a memory leak.
 	//And tracking down every time an item gets deleted and calling an item destructor would be quite a doozey.
 
-	char* description();
-	char* getName();
+	char* description() const;
+	char* getName() const;
 
 	//General Functions.
 	Sint32 weaponGetAttack(Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
 	Sint32 armorGetAC(Stat* wielder = nullptr) const;
 	bool canUnequip(Stat* wielder = nullptr); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
-	int buyValue(int player);
-	int sellValue(int player);
+	int buyValue(int player) const;
+	int sellValue(int player) const;
 	bool usableWhileShapeshifted(Stat* wielder = nullptr) const;
 	char* getScrollLabel() const;
 
 	void apply(int player, Entity* entity);
-	void applyLockpickToWall(int player, int x, int y);
+	void applyLockpickToWall(int player, int x, int y) const;
 
 	//Item usage functions.
 	void applySkeletonKey(int player, Entity& entity);
@@ -427,7 +427,7 @@ public:
 	 */
 	static bool isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave);
 	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave); //Also checks shields.
-	bool shouldItemStack(int player);
+	bool shouldItemStack(int player) const;
 
 	bool isShield() const;
 
