@@ -48,7 +48,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	Item* item;
 
 	// allocate memory for the item
-	if ( (item = (Item*) malloc(sizeof(Item))) == NULL )
+	if ( (item = static_cast<Item*>(malloc(sizeof(Item)))) == NULL )
 	{
 		printlog( "failed to allocate memory for new item!\n" );
 		exit(1);
@@ -139,7 +139,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 				node_t* node;
 				for ( node = inventory->first; node != NULL; node = node->next )
 				{
-					Item* tempItem = (Item*)node->element;
+					Item* tempItem = static_cast<Item*>(node->element);
 					if ( tempItem == item )
 					{
 						continue;
@@ -190,7 +190,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 					node_t* node;
 					for ( node = inventory->first; node != NULL; node = node->next )
 					{
-						Item* tempItem = (Item*)node->element;
+						Item* tempItem = static_cast<Item*>(node->element);
 						if ( tempItem == item )
 						{
 							continue;
@@ -294,7 +294,7 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 			node_t* node;
 			for ( node = inventory.first; node != nullptr; node = node->next )
 			{
-				Item* tempItem = (Item*)node->element;
+				Item* tempItem = static_cast<Item*>(node->element);
 				if ( tempItem == &item )
 				{
 					continue;
@@ -366,7 +366,7 @@ Item* uidToItem(Uint32 uid)
 	node_t* node;
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item->uid == uid )
 		{
 			return item;
@@ -386,7 +386,7 @@ Item* uidToItem(Uint32 uid)
 
 ItemType itemCurve(Category cat)
 {
-	int numitems = NUMITEMS - ( NUMITEMS - ((int)ARTIFACT_SWORD) );
+	int numitems = NUMITEMS - ( NUMITEMS - static_cast<int>(ARTIFACT_SWORD) );
 	bool chances[NUMITEMS];
 	int c;
 
@@ -435,7 +435,7 @@ ItemType itemCurve(Category cat)
 			chances[c] = false;
 			if ( items[c].category == cat )
 			{
-				switch ( (ItemType)c )
+				switch ( static_cast<ItemType>(c) )
 				{
 					case TOOL_TINOPENER:
 						if ( prng_get_uint() % 2 )   // 50% chance
@@ -552,7 +552,7 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 				numoftype++;
 				if ( cat == TOOL )
 				{
-					switch ( (ItemType)c )
+					switch ( static_cast<ItemType>(c) )
 					{
 						case TOOL_TINOPENER:
 							if ( prng_get_uint() % 2 )   // 50% chance
@@ -572,7 +572,7 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 				}
 				else if ( cat == ARMOR )
 				{
-					switch ( (ItemType)c )
+					switch ( static_cast<ItemType>(c) )
 					{
 						case CLOAK_BACKPACK:
 							if ( prng_get_uint() % 4 )   // 25% chance
@@ -1060,7 +1060,7 @@ SDL_Surface* itemSprite(Item* item)
 			{
 				return NULL;
 			}
-			SDL_Surface** surface = (SDL_Surface**)node->element;
+			SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
 			return *surface;
 		}
 	}
@@ -1071,7 +1071,7 @@ SDL_Surface* itemSprite(Item* item)
 		{
 			return NULL;
 		}
-		SDL_Surface** surface = (SDL_Surface**)node->element;
+		SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
 		return *surface;
 	}
 	return NULL;
@@ -1206,11 +1206,11 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "DROP");
-		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+		SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+		SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
 		net_packet->data[24] = item->identified;
 		net_packet->data[25] = clientnum;
 		net_packet->address.host = net_server.host;
@@ -1956,7 +1956,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			node_t* node;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 			{
-				Item* tempitem = (Item*)node->element;
+				Item* tempitem = static_cast<Item*>(node->element);
 				if ( tempitem->type == TOOL_TINOPENER )
 				{
 					if ( tempitem->status != BROKEN )
@@ -1985,11 +1985,11 @@ void useItem(Item* item, int player, Entity* usedBy)
 		else
 		{
 			strcpy((char*)net_packet->data, "USEI");
-			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-			SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+			SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+			SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+			SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+			SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+			SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
 			net_packet->data[24] = item->identified;
 			net_packet->data[25] = clientnum;
 			net_packet->address.host = net_server.host;
@@ -2591,7 +2591,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		default:
-			printlog("error: item %d used, but it has no use case!\n", (int)item->type);
+			printlog("error: item %d used, but it has no use case!\n", static_cast<int>(item->type));
 			break;
 	}
 
@@ -2813,12 +2813,12 @@ Item* itemPickup(int player, Item* item)
 	{
 		// send the client info on the item it just picked up
 		strcpy((char*)net_packet->data, "ITEM");
-		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-		SDLNet_Write32((Uint32)item->ownerUid, &net_packet->data[24]);
+		SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+		SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+		SDLNet_Write32(static_cast<Uint32>(item->ownerUid), &net_packet->data[24]);
 		net_packet->data[28] = item->identified;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
@@ -2830,7 +2830,7 @@ Item* itemPickup(int player, Item* item)
 		std::unordered_set<Uint32> appearancesOfSimilarItems;
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
-			item2 = (Item*) node->element;
+			item2 = static_cast<Item*>(node->element);
 			if (!itemCompare(item, item2, false))
 			{
 				if ( (itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
@@ -2865,11 +2865,11 @@ Item* itemPickup(int player, Item* item)
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
 						strcpy((char*)net_packet->data, "EQUS");
-						SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
-						SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
-						SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
-						SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
-						SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
+						SDLNet_Write32(static_cast<Uint32>(item2->type), &net_packet->data[4]);
+						SDLNet_Write32(static_cast<Uint32>(item2->status), &net_packet->data[8]);
+						SDLNet_Write32(static_cast<Uint32>(item2->beatitude), &net_packet->data[12]);
+						SDLNet_Write32(static_cast<Uint32>(item2->count), &net_packet->data[16]);
+						SDLNet_Write32(static_cast<Uint32>(item2->appearance), &net_packet->data[20]);
 						net_packet->data[24] = item2->identified;
 						net_packet->data[25] = clientnum;
 						net_packet->address.host = net_server.host;
@@ -3581,7 +3581,7 @@ int Item::buyValue(int player)
 	{
 		value *= 1.f + beatitude / 2.f;
 	}
-	value *= ((int)status + 5) / 10.f;
+	value *= (static_cast<int>(status) + 5) / 10.f;
 
 	// trading bonus
 	value /= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
@@ -3636,7 +3636,7 @@ int Item::sellValue(int player)
 
 	// cursed and status bonuses
 	value *= 1.f + beatitude / 20.f;
-	value *= ((int)status + 5) / 10.f;
+	value *= (static_cast<int>(status) + 5) / 10.f;
 
 	// trading bonus
 	value *= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
@@ -3676,14 +3676,14 @@ void Item::apply(int player, Entity* entity)
 	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "APIT");
-		SDLNet_Write32((Uint32)type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
+		SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
+		SDLNet_Write32(static_cast<Uint32>(count), &net_packet->data[16]);
+		SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
 		net_packet->data[24] = identified;
 		net_packet->data[25] = player;
-		SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[26]);
+		SDLNet_Write32(static_cast<Uint32>(entity->getUID()), &net_packet->data[26]);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		net_packet->len = 30;
@@ -3724,11 +3724,11 @@ void Item::applyLockpickToWall(int player, int x, int y)
 	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "APIW");
-		SDLNet_Write32((Uint32)type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
+		SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
+		SDLNet_Write32(static_cast<Uint32>(count), &net_packet->data[16]);
+		SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
 		net_packet->data[24] = identified;
 		net_packet->data[25] = player;
 		SDLNet_Write16(x, &net_packet->data[26]);
@@ -3742,7 +3742,7 @@ void Item::applyLockpickToWall(int player, int x, int y)
 
 	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
 	{
-		Entity* entity = (Entity*)node->element;
+		Entity* entity = static_cast<Entity*>(node->element);
 		if ( entity && entity->behavior == &actArrowTrap
 			&& static_cast<int>(entity->x / 16) == x
 			&& static_cast<int>(entity->y / 16) == y )
@@ -4000,7 +4000,7 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
 	{
 		nextnode = node->next;
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item != nullptr )
 		{
 			if ( cat >= WEAPON && itemCategory(item) == cat )
@@ -4032,7 +4032,7 @@ node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
 
 	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item != nullptr && itemCategory(item) == SPELLBOOK && getSpellIDFromSpellbook(item->type) == spellIDToFind )
 		{
 			return node;
@@ -4060,7 +4060,7 @@ node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff
 
 	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item != nullptr )
 		{
 			if ( isRangedWeapon(*item) )
@@ -4086,7 +4086,7 @@ node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats)
 
 	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item != nullptr )
 		{
 			if ( isMeleeWeapon(*item) )
@@ -4152,7 +4152,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		return false; //Can't unequip cursed items!
 	}
 
-	item = (Item*)inventoryNode->element;
+	item = static_cast<Item*>(inventoryNode->element);
 	
 	if ( item->count == 1 || moveStack )
 	{
@@ -4844,7 +4844,7 @@ bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 	int numBots = 0;
 	for ( node_t* node = myStats->FOLLOWERS.first; node != nullptr; node = node->next )
 	{
-		Entity* follower = uidToEntity(*((Uint32*)node->element));
+		Entity* follower = uidToEntity(*static_cast<Uint32*>(node->element));
 		if ( follower )
 		{
 			Stat* followerStats = follower->getStats();
@@ -4945,11 +4945,11 @@ void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResu
 	{
 		strcpy((char*)net_packet->data, "EQUM");
 	}
-	SDLNet_Write32((Uint32)type, &net_packet->data[4]);
-	SDLNet_Write32((Uint32)status, &net_packet->data[8]);
-	SDLNet_Write32((Uint32)beatitude, &net_packet->data[12]);
-	SDLNet_Write32((Uint32)count, &net_packet->data[16]);
-	SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
+	SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+	SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
+	SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
+	SDLNet_Write32(static_cast<Uint32>(count), &net_packet->data[16]);
+	SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
 	net_packet->data[24] = identified;
 	net_packet->data[25] = player;
 	net_packet->data[26] = equipType;
