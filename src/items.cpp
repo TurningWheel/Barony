@@ -490,7 +490,7 @@ ItemType itemCurve(Category cat)
 	}
 
 	// pick the item
-	int pick = prng_get_uint() % numleft;
+	Uint32 pick = prng_get_uint() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
@@ -610,7 +610,7 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 	}
 
 	// pick the item
-	int pick = prng_get_uint() % numleft;
+	Uint32 pick = prng_get_uint() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
