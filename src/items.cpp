@@ -4455,7 +4455,7 @@ bool Item::shouldItemStack(int player)
 }
 
 
-bool shouldInvertEquipmentBeatitude(Stat* wielder)
+bool shouldInvertEquipmentBeatitude(const Stat* const wielder)
 {
 	if ( wielder->type == SUCCUBUS || wielder->type == INCUBUS )
 	{

@@ -575,7 +575,7 @@ void clientUnequipSlotAndUpdateServer(EquipItemSendToServerSlot slot, Item* item
 EquipItemResult equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
-bool shouldInvertEquipmentBeatitude(Stat* wielder);
+bool shouldInvertEquipmentBeatitude(const Stat* wielder);
 bool isItemEquippableInShieldSlot(Item* item);
 bool itemIsConsumableByAutomaton(const Item& item);
 
