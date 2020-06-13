@@ -152,7 +152,7 @@ SDL_Surface* itemSprite(Item* const item)
 		{
 			return nullptr;
 		}
-		SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
+	auto** surface = static_cast<SDL_Surface**>(node->element);
 		return *surface;
 	return nullptr;
 }
@@ -273,7 +273,7 @@ int loadItems()
 		items[c].images.last = nullptr;
 		while ( 1 )
 		{
-			string_t* string = static_cast<string_t*>(malloc(sizeof(string_t)));
+			auto* string = static_cast<string_t*>(malloc(sizeof(string_t)));
 			string->data = static_cast<char*>(malloc(sizeof(char) * 64));
 			string->lines = 1;
 
@@ -308,14 +308,14 @@ int loadItems()
 		items[c].surfaces.last = nullptr;
 		for ( x = 0; x < list_Size(&items[c].images); x++ )
 		{
-			SDL_Surface** surface = static_cast<SDL_Surface**>(malloc(sizeof(SDL_Surface*)));
+			auto** surface = static_cast<SDL_Surface**>(malloc(sizeof(SDL_Surface*)));
 			node_t* node = list_AddNodeLast(&items[c].surfaces);
 			node->element = surface;
 			node->deconstructor = &defaultDeconstructor;
 			node->size = sizeof(SDL_Surface*);
 
 			node_t* node2 = list_Node(&items[c].images, x);
-			string_t* string = static_cast<string_t*>(node2->element);
+			auto* string = static_cast<string_t*>(node2->element);
 			*surface = loadImage(string->data);
 		}
 	}
