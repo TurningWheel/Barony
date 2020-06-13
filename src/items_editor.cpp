@@ -61,7 +61,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->uid = itemuids;
 	if ( inventory )
 	{
-		int x, y;
+		/*int x, y;
 		bool notfree = false, foundaspot = false;
 
 		bool is_spell = false;
@@ -70,7 +70,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 			is_spell = true;
 		}
 
-		x = 0;
+		x = 0;*/
 	}
 	else
 	{
