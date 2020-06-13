@@ -1,2 +1,0 @@
-[10-09-43] error: unable to locate language file: 'lang/en.txt'
-[10-09-43] Fatal error: failed to load default language file!

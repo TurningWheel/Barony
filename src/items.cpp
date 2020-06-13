@@ -3955,7 +3955,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 	}
 }
 
-node_t* itemNodeInInventory(const Stat* const myStats, const int32_t itemToFind, const Category cat)
+node_t* itemNodeInInventory(const Stat* const myStats, const ItemType itemToFind, const Category cat)
 {
 	if ( myStats == nullptr )
 	{
