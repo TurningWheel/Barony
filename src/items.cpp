@@ -3813,15 +3813,9 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 	}
 }
 
-SummonProperties::SummonProperties()
-{
-	//TODO:
-}
+SummonProperties::SummonProperties() = default;
 
-SummonProperties::~SummonProperties()
-{
-	//TODO:
-}
+SummonProperties::~SummonProperties() noexcept = default;
 
 bool isPotionBad(const Item& potion)
 {

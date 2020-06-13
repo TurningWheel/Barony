@@ -368,7 +368,7 @@ class SummonProperties
 	//TODO: Store monster stats.
 public:
 	SummonProperties();
-	~SummonProperties();
+	~SummonProperties() noexcept;
 
 	SummonProperties(const SummonProperties& other) = default;
 	SummonProperties(SummonProperties&& other) noexcept = default;
