@@ -1197,7 +1197,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 
 	if ( multiplayer == CLIENT )
 	{
-		strcpy((char*)net_packet->data, "DROP");
+		strcpy(reinterpret_cast<char*>(net_packet->data), "DROP");
 		SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
 		SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
 		SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
@@ -1974,7 +1974,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		}
 		else
 		{
-			strcpy((char*)net_packet->data, "USEI");
+			strcpy(reinterpret_cast<char*>(net_packet->data), "USEI");
 			SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
 			SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
 			SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
@@ -2801,7 +2801,7 @@ Item* itemPickup(const int player, Item* const item)
 	if ( player != 0 && multiplayer == SERVER )
 	{
 		// send the client info on the item it just picked up
-		strcpy((char*)net_packet->data, "ITEM");
+		strcpy(reinterpret_cast<char*>(net_packet->data), "ITEM");
 		SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
 		SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
 		SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
@@ -2853,7 +2853,7 @@ Item* itemPickup(const int player, Item* const item)
 					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						strcpy((char*)net_packet->data, "EQUS");
+						strcpy(reinterpret_cast<char*>(net_packet->data), "EQUS");
 						SDLNet_Write32(static_cast<Uint32>(item2->type), &net_packet->data[4]);
 						SDLNet_Write32(static_cast<Uint32>(item2->status), &net_packet->data[8]);
 						SDLNet_Write32(static_cast<Uint32>(item2->beatitude), &net_packet->data[12]);
@@ -3664,7 +3664,7 @@ void Item::apply(const int player, Entity* const entity)
 	// for clients:
 	if ( multiplayer == CLIENT )
 	{
-		strcpy((char*)net_packet->data, "APIT");
+		strcpy(reinterpret_cast<char*>(net_packet->data), "APIT");
 		SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
 		SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
 		SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
@@ -3712,7 +3712,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 	// for clients:
 	if ( multiplayer == CLIENT )
 	{
-		strcpy((char*)net_packet->data, "APIW");
+		strcpy(reinterpret_cast<char*>(net_packet->data), "APIW");
 		SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
 		SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
 		SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
@@ -3794,7 +3794,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 						}
 						if ( player > 0 && multiplayer == SERVER )
 						{
-							strcpy((char*)net_packet->data, "ARMR");
+							strcpy(reinterpret_cast<char*>(net_packet->data), "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = stats[player]->weapon->status;
 							net_packet->address.host = net_clients[player - 1].host;
@@ -4917,15 +4917,15 @@ void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const E
 {
 	if ( slot == EQUIP_ITEM_SLOT_SHIELD )
 	{
-		strcpy((char*)net_packet->data, "EQUS");
+		strcpy(reinterpret_cast<char*>(net_packet->data), "EQUS");
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_WEAPON )
 	{
-		strcpy((char*)net_packet->data, "EQUI");
+		strcpy(reinterpret_cast<char*>(net_packet->data), "EQUI");
 	}
 	else
 	{
-		strcpy((char*)net_packet->data, "EQUM");
+		strcpy(reinterpret_cast<char*>(net_packet->data), "EQUM");
 	}
 	SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
 	SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
