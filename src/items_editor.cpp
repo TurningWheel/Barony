@@ -30,7 +30,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	Item* item;
 
 	// allocate memory for the item
-	if ( (item = (Item*)malloc(sizeof(Item))) == NULL )
+	if ( (item = (Item*)malloc(sizeof(Item))) == nullptr )
 	{
 		printlog("failed to allocate memory for new item!\n");
 		exit(1);
@@ -39,7 +39,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	//item->captured_monster = nullptr;
 
 	// add the item to the inventory
-	if ( inventory != NULL )
+	if ( inventory != nullptr )
 	{
 		item->node = list_AddNodeLast(inventory);
 		item->node->element = item;
@@ -48,7 +48,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	}
 	else
 	{
-		item->node = NULL;
+		item->node = nullptr;
 	}
 
 	// now set all of my data elements
@@ -145,16 +145,16 @@ SDL_Surface* itemSprite(Item* const item)
 {
 	if ( !item )
 	{
-		return NULL;
+		return nullptr;
 	}
 		node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
 		if ( !node )
 		{
-			return NULL;
+			return nullptr;
 		}
 		SDL_Surface** surface = (SDL_Surface**)node->element;
 		return *surface;
-	return NULL;
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -168,11 +168,11 @@ returns a pointer to an item struct from the given entity if it's an
 
 Item* newItemFromEntity(const Entity* const entity)
 {
-	if ( entity == NULL )
+	if ( entity == nullptr )
 	{
-		return NULL;
+		return nullptr;
 	}
-	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], NULL);
+	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
 }
 
 int loadItems()
@@ -269,8 +269,8 @@ int loadItems()
 		{
 			break;
 		}
-		items[c].images.first = NULL;
-		items[c].images.last = NULL;
+		items[c].images.first = nullptr;
+		items[c].images.last = nullptr;
 		while ( 1 )
 		{
 			string_t* string = (string_t*)malloc(sizeof(string_t));
@@ -304,8 +304,8 @@ int loadItems()
 	}
 	for ( c = 0; c < NUMITEMS; c++ )
 	{
-		items[c].surfaces.first = NULL;
-		items[c].surfaces.last = NULL;
+		items[c].surfaces.first = nullptr;
+		items[c].surfaces.last = nullptr;
 		for ( x = 0; x < list_Size(&items[c].images); x++ )
 		{
 			SDL_Surface** surface = (SDL_Surface**)malloc(sizeof(SDL_Surface*));
