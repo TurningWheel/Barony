@@ -4200,8 +4200,6 @@ bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, n
 		}
 		return true;
 	}
-
-	return false;
 }
 
 bool monsterUnequipSlot(Stat* const myStats, Item** const slot, Item* const itemToUnequip)
@@ -4489,7 +4487,6 @@ bool isItemEquippableInShieldSlot(const Item* const item)
 		case TOOL_LANTERN:
 		case TOOL_CRYSTALSHARD:
 			return true;
-			break;
 		default:
 			break;
 	}
@@ -4512,31 +4509,30 @@ bool Item::usableWhileShapeshifted(const Stat* const wielder) const
 		case BOOK:
 		case SCROLL:
 			return false;
-			break;
 		case MAGICSTAFF:
 		case SPELLBOOK:
-			if ( wielder->type == CREATURE_IMP )
+		{
+			if (wielder->type == CREATURE_IMP)
 			{
 				return true;
 			}
-			else
-			{
-				return false;
-			}
-			break;
+
+			return false;
+		}
 		case POTION:
-			if ( type == POTION_EMPTY )
+		{
+			if (type == POTION_EMPTY)
 			{
 				return false;
 			}
+
 			return true;
-			break;
+		}
 		case AMULET:
 		case RING:
 		case FOOD:
 		case SPELL_CAT:
 			return true;
-			break;
 		default:
 			break;
 	}
