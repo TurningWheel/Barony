@@ -369,6 +369,16 @@ class SummonProperties
 public:
 	SummonProperties();
 	~SummonProperties();
+
+	SummonProperties(const SummonProperties& other) = default;
+	SummonProperties(SummonProperties&& other) noexcept = default;
+	SummonProperties& operator=(const SummonProperties& other) = default;
+	SummonProperties& operator=(SummonProperties&& other) noexcept = default;
+
+protected:
+
+private:
+
 };
 
 // inventory item structure
