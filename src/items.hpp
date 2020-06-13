@@ -405,12 +405,12 @@ public:
 	char* getName() const;
 
 	//General Functions.
-	Sint32 weaponGetAttack(Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
-	Sint32 armorGetAC(Stat* wielder = nullptr) const;
-	bool canUnequip(Stat* wielder = nullptr); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
+	Sint32 weaponGetAttack(const Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
+	Sint32 armorGetAC(const Stat* wielder = nullptr) const;
+	bool canUnequip(const Stat* wielder = nullptr); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
 	int buyValue(int player) const;
 	int sellValue(int player) const;
-	bool usableWhileShapeshifted(Stat* wielder = nullptr) const;
+	bool usableWhileShapeshifted(const Stat* wielder = nullptr) const;
 	char* getScrollLabel() const;
 
 	void apply(int player, Entity* entity);
@@ -454,7 +454,7 @@ public:
 	};
 	void applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity);
 	void applyTinkeringCreation(Entity* parent, Entity* thrown);
-	bool unableToEquipDueToSwapWeaponTimer();
+	bool unableToEquipDueToSwapWeaponTimer() const;
 	bool tinkeringBotIsMaxHealth() const;
 	bool isTinkeringItemWithThrownLimit() const;
 };
@@ -542,9 +542,9 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 Item** itemSlot(Stat* myStats, Item* item);
 
 enum Category itemCategory(const Item* item);
-Sint32 itemModel(Item* item);
-Sint32 itemModelFirstperson(Item* item);
-SDL_Surface* itemSprite(Item* item);
+Sint32 itemModel(const Item* item);
+Sint32 itemModelFirstperson(const Item* item);
+SDL_Surface* itemSprite(const Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 bool dropItem(Item* item, int player, bool notifyMessage = true); // return true on free'd item
 void useItem(Item* item, int player, Entity* usedBy = nullptr);
@@ -635,7 +635,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
 node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
-node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFInd);
+node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind);
 node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
 ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue);

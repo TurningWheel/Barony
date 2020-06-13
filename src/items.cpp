@@ -43,7 +43,7 @@ int decoyBoxRange = 15;
 
 -------------------------------------------------------------------------------*/
 
-Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory)
+Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, const Sint16 count, const Uint32 appearance, const bool identified, list_t* const inventory)
 {
 	Item* item;
 
@@ -351,7 +351,7 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 
 -------------------------------------------------------------------------------*/
 
-Item* uidToItem(Uint32 uid)
+Item* uidToItem(const Uint32 uid)
 {
 	if ( uid == 0 )
 	{
@@ -377,7 +377,7 @@ Item* uidToItem(Uint32 uid)
 
 -------------------------------------------------------------------------------*/
 
-ItemType itemCurve(Category cat)
+ItemType itemCurve(const Category cat)
 {
 	int numitems = NUMITEMS - ( NUMITEMS - static_cast<int>(ARTIFACT_SWORD) );
 	bool chances[NUMITEMS];
@@ -521,7 +521,7 @@ dungeon level and defined level of the item
 
 -------------------------------------------------------------------------------*/
 
-ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
+ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLevel)
 {
 	int numitems = NUMITEMS;
 	bool chances[NUMITEMS];
@@ -940,7 +940,7 @@ char* Item::description() const
 
 -------------------------------------------------------------------------------*/
 
-Category itemCategory(const Item* item)
+Category itemCategory(const Item* const item)
 {
 	if ( !item )
 	{
@@ -1003,7 +1003,7 @@ char* Item::getName() const
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModel(Item* item)
+Sint32 itemModel(const Item* const item)
 {
 	if ( !item )
 	{
@@ -1020,7 +1020,7 @@ Sint32 itemModel(Item* item)
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModelFirstperson(Item* item)
+Sint32 itemModelFirstperson(const Item* const item)
 {
 	if ( !item )
 	{
@@ -1037,7 +1037,7 @@ Sint32 itemModelFirstperson(Item* item)
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* itemSprite(Item* item)
+SDL_Surface* itemSprite(Item* const item)
 {
 	if ( !item )
 	{
@@ -1079,7 +1079,7 @@ SDL_Surface* itemSprite(Item* item)
 
 -------------------------------------------------------------------------------*/
 
-int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
+int itemCompare(const Item* const item1, const Item* const item2, bool checkAppearance)
 {
 	Sint32 model1 = 0;
 	Sint32 model2 = 0;
@@ -1165,7 +1165,7 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 
 -------------------------------------------------------------------------------*/
 
-bool dropItem(Item* item, int player, bool notifyMessage)
+bool dropItem(Item* const item, const int player, const bool notifyMessage)
 {
 	if (!item)
 	{
@@ -1351,7 +1351,7 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 	}
 }
 
-Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count)
+Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const monsterStats, Sint16 count)
 {
 	// WARNING - dropItemMonster is used on playerDeaths, modifying this here neet to edit in actPlayer.cpp and net.cpp
 	Entity* entity = nullptr;
@@ -1572,7 +1572,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 
 -------------------------------------------------------------------------------*/
 
-void consumeItem(Item*& item, int player)
+void consumeItem(Item*& item, const int player)
 {
 	if ( item == nullptr )
 	{
@@ -1627,7 +1627,7 @@ void consumeItem(Item*& item, int player)
 
 -------------------------------------------------------------------------------*/
 
-EquipItemResult equipItem(Item* item, Item** slot, int player)
+EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 {
 	int oldcount;
 
@@ -1837,7 +1837,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item* item, int player, Entity* usedBy)
+void useItem(Item* item, const int player, Entity* usedBy)
 {
 	if ( item == nullptr )
 	{
@@ -2761,7 +2761,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 
 -------------------------------------------------------------------------------*/
 
-Item* itemPickup(int player, Item* item)
+Item* itemPickup(const int player, Item* const item)
 {
 	if (!item)
 	{
@@ -2964,7 +2964,7 @@ Item* itemPickup(int player, Item* item)
 
 -------------------------------------------------------------------------------*/
 
-Item* newItemFromEntity(Entity* entity)
+Item* newItemFromEntity(const Entity* const entity)
 {
 	if ( entity == nullptr )
 	{
@@ -2985,7 +2985,7 @@ Item* newItemFromEntity(Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
-Item** itemSlot(Stat* myStats, Item* item)
+Item** itemSlot(Stat* const myStats, Item* const item)
 {
 	if ( !myStats || !item )
 	{
@@ -3042,7 +3042,7 @@ Item** itemSlot(Stat* myStats, Item* item)
 
 -------------------------------------------------------------------------------*/
 
-bool itemIsEquipped(const Item* item, int player)
+bool itemIsEquipped(const Item* const item, const int player)
 {
 	if ( !itemCompare(item, stats[player]->helmet, true) )
 	{
@@ -3096,7 +3096,7 @@ bool itemIsEquipped(const Item* item, int player)
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::weaponGetAttack(Stat* wielder) const
+Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 {
 	Sint32 attack = beatitude;
 	if ( wielder )
@@ -3308,7 +3308,7 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::armorGetAC(Stat* wielder) const
+Sint32 Item::armorGetAC(const Stat* const wielder) const
 {
 	Sint32 armor = beatitude;
 	if ( wielder )
@@ -3495,7 +3495,7 @@ Sint32 Item::armorGetAC(Stat* wielder) const
 
 -------------------------------------------------------------------------------*/
 
-bool Item::canUnequip(Stat* wielder)
+bool Item::canUnequip(const Stat* const wielder)
 {
 	/*
 	//Spellbooks are no longer equipable.
@@ -3540,7 +3540,7 @@ bool Item::canUnequip(Stat* wielder)
 
 -------------------------------------------------------------------------------*/
 
-int Item::buyValue(int player) const
+int Item::buyValue(const int player) const
 {
 	int value = items[type].value; // base value
 
@@ -3602,7 +3602,7 @@ int Item::buyValue(int player) const
 
 -------------------------------------------------------------------------------*/
 
-int Item::sellValue(int player) const
+int Item::sellValue(const int player) const
 {
 	int value = items[type].value; // base value
 
@@ -3653,7 +3653,7 @@ int Item::sellValue(int player) const
 
 -------------------------------------------------------------------------------*/
 
-void Item::apply(int player, Entity* entity)
+void Item::apply(const int player, Entity* const entity)
 {
 	if ( !entity )
 	{
@@ -3707,7 +3707,7 @@ void Item::apply(int player, Entity* entity)
 	}
 }
 
-void Item::applyLockpickToWall(int player, int x, int y) const
+void Item::applyLockpickToWall(const int player, const int x, const int y) const
 {
 	// for clients:
 	if ( multiplayer == CLIENT )
@@ -3857,7 +3857,7 @@ bool isPotionBad(const Item& potion)
 	return false;
 }
 
-void createCustomInventory(Stat* stats, int itemLimit)
+void createCustomInventory(Stat* const stats, const int itemLimit)
 {
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;
@@ -3973,7 +3973,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 	}
 }
 
-node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
+node_t* itemNodeInInventory(const Stat* const myStats, const ItemType itemToFind, const Category cat)
 {
 	if ( myStats == nullptr )
 	{
@@ -4003,7 +4003,7 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	return nullptr;
 }
 
-node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
+node_t* spellbookNodeInInventory(const Stat* const myStats, const int spellIDToFind)
 {
 	if ( spellIDToFind == SPELL_NONE )
 	{
@@ -4037,7 +4037,7 @@ node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
 	return nullptr;
 }
 
-node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff)
+node_t* getRangedWeaponItemNodeInInventory(const Stat* const myStats, const bool includeMagicstaff)
 {
 	if ( myStats == nullptr )
 	{
@@ -4063,7 +4063,7 @@ node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff
 	return nullptr;
 }
 
-node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats)
+node_t* getMeleeWeaponItemNodeInInventory(const Stat* const myStats)
 {
 	if ( myStats == nullptr )
 	{
@@ -4122,7 +4122,7 @@ bool Item::isShield() const
 	return true;
 }
 
-bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed)
+bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, node_t* const inventoryNode, const bool moveStack,  const bool overrideCursed)
 {
 	//TODO: Does this work with multiplayer?
 	Item* item = nullptr;
@@ -4204,7 +4204,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 	return false;
 }
 
-bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip)
+bool monsterUnequipSlot(Stat* const myStats, Item** const slot, Item* const itemToUnequip)
 {
 	Item* tmpItem = nullptr;
 
@@ -4233,7 +4233,7 @@ bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip)
 	return true;
 }
 
-bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat)
+bool monsterUnequipSlotFromCategory(Stat* const myStats, Item** const slot, const Category cat)
 {
 	Item* tmpItem = nullptr;
 
@@ -4264,7 +4264,7 @@ bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat)
 	return false;
 }
 
-void copyItem(Item* itemToSet, Item* itemToCopy) //This should probably use references instead...
+void copyItem(Item* const itemToSet, const Item* const itemToCopy) //This should probably use references instead...
 {
 	if ( !itemToSet || !itemToCopy )
 	{
@@ -4283,7 +4283,7 @@ void copyItem(Item* itemToSet, Item* itemToCopy) //This should probably use refe
 	return;
 }
 
-ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue)
+ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int maxValue)
 {
 	int numitems = NUMITEMS;
 	int numoftype = 0;
@@ -4342,7 +4342,7 @@ ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue)
 	return GEM_ROCK;
 }
 
-bool Item::isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave)
+bool Item::isThisABetterWeapon(const Item& newWeapon, const Item* const weaponAlreadyHave)
 {
 	if ( !weaponAlreadyHave )
 	{
@@ -4358,7 +4358,7 @@ bool Item::isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyH
 	return false;
 }
 
-bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave)
+bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlreadyHave)
 {
 	if ( !armorAlreadyHave )
 	{
@@ -4394,7 +4394,7 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave
 	return false;
 }
 
-bool Item::shouldItemStack(int player) const
+bool Item::shouldItemStack(const int player) const
 {
 	if ( player >= 0 )
 	{
@@ -4464,7 +4464,7 @@ bool shouldInvertEquipmentBeatitude(const Stat* const wielder)
 	return false;
 }
 
-bool isItemEquippableInShieldSlot(Item* item)
+bool isItemEquippableInShieldSlot(const Item* const item)
 {
 	if ( !item )
 	{
@@ -4496,7 +4496,7 @@ bool isItemEquippableInShieldSlot(Item* item)
 	return false;
 }
 
-bool Item::usableWhileShapeshifted(Stat* wielder) const
+bool Item::usableWhileShapeshifted(const Stat* const wielder) const
 {
 	if ( !wielder )
 	{
@@ -4576,7 +4576,7 @@ char* Item::getScrollLabel() const
 	return scroll_label[chosenLabel];
 }
 
-bool itemSpriteIsQuiverThirdPersonModel(int sprite)
+bool itemSpriteIsQuiverThirdPersonModel(const int sprite)
 {
 	for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
 	{
@@ -4591,7 +4591,7 @@ bool itemSpriteIsQuiverThirdPersonModel(int sprite)
 	return false;
 }
 
-bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
+bool itemSpriteIsQuiverBaseThirdPersonModel(const int sprite)
 {
 	for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
 	{
@@ -4603,12 +4603,12 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
 	return false;
 }
 
-bool itemTypeIsQuiver(ItemType type)
+bool itemTypeIsQuiver(const ItemType type)
 {
 	return (type >= QUIVER_SILVER && type <= QUIVER_HUNTING);
 }
 
-real_t rangedAttackGetSpeedModifier(Stat* myStats)
+real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 {
 	if ( !myStats || !myStats->weapon )
 	{
@@ -4652,7 +4652,7 @@ real_t rangedAttackGetSpeedModifier(Stat* myStats)
 	return std::max(0.25, bowModifier + arrowModifier);
 }
 
-bool rangedWeaponUseQuiverOnAttack(Stat* myStats)
+bool rangedWeaponUseQuiverOnAttack(const Stat* const myStats)
 {
 	if ( !myStats || !myStats->weapon || !myStats->shield )
 	{
@@ -4670,7 +4670,7 @@ bool rangedWeaponUseQuiverOnAttack(Stat* myStats)
 	return false;
 }
 
-bool itemSpriteIsBreastpiece(int sprite)
+bool itemSpriteIsBreastpiece(const int sprite)
 {
 	if ( sprite < 0 || sprite > NUMITEMS )
 	{
@@ -4693,7 +4693,7 @@ bool itemSpriteIsBreastpiece(int sprite)
 	return false;
 }
 
-real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount)
+real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t* const effectAmount)
 {
 	if ( type == ARTIFACT_AXE )
 	{
@@ -4743,7 +4743,7 @@ real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effec
 	return 0.0;
 }
 
-bool Item::unableToEquipDueToSwapWeaponTimer()
+bool Item::unableToEquipDueToSwapWeaponTimer() const
 {
 	if ( pickaxeGimpTimer > 0 && !intro )
 	{
@@ -4785,7 +4785,7 @@ bool Item::isTinkeringItemWithThrownLimit() const
 	return false;
 }
 
-int maximumTinkeringBotsCanBeDeployed(Stat* myStats)
+int maximumTinkeringBotsCanBeDeployed(const Stat* const myStats)
 {
 	if ( !myStats )
 	{
@@ -4817,7 +4817,7 @@ int maximumTinkeringBotsCanBeDeployed(Stat* myStats)
 	return maxFollowers;
 }
 
-bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
+bool playerCanSpawnMoreTinkeringBots(const Stat* const myStats)
 {
 	if ( !myStats )
 	{
@@ -4851,7 +4851,7 @@ bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 	return false;
 }
 
-void playerTryEquipItemAndUpdateServer(Item* item)
+void playerTryEquipItemAndUpdateServer(Item* const item)
 {
 	if ( !item )
 	{
@@ -4916,8 +4916,8 @@ void playerTryEquipItemAndUpdateServer(Item* item)
 	}
 }
 
-void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
-	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified)
+void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const EquipItemResult equipType, const int player,
+	const ItemType type, const Status status, const Sint16 beatitude, const int count, const Uint32 appearance, const bool identified)
 {
 	if ( slot == EQUIP_ITEM_SLOT_SHIELD )
 	{
@@ -4946,7 +4946,7 @@ void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResu
 	sendPacketSafe(net_sock, -1, net_packet, 0);
 }
 
-void clientUnequipSlotAndUpdateServer(EquipItemSendToServerSlot slot, Item* item)
+void clientUnequipSlotAndUpdateServer(const EquipItemSendToServerSlot slot, Item* const item)
 {
 	if ( !item )
 	{
