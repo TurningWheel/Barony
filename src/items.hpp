@@ -547,14 +547,14 @@ void addItemToMonsterInventory(Item &item, list_t& inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel);
-Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).
+Item* newItemFromEntity(const Entity* entity); //Make sure to call free(item).
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
 Item** itemSlot(Stat* myStats, Item* item);
 
 enum Category itemCategory(const Item* item);
 Sint32 itemModel(const Item* item);
 Sint32 itemModelFirstperson(const Item* item);
-SDL_Surface* itemSprite(const Item* item);
+SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 bool dropItem(Item* item, int player, bool notifyMessage = true); // return true on free'd item
 void useItem(Item* item, int player, Entity* usedBy = nullptr);
@@ -586,7 +586,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(const Stat* wielder);
-bool isItemEquippableInShieldSlot(Item* item);
+bool isItemEquippableInShieldSlot(const Item* item);
 bool itemIsConsumableByAutomaton(const Item& item);
 
 extern const real_t potionDamageSkillMultipliers[6];
@@ -640,25 +640,25 @@ bool isMeleeWeapon(const Item& item);
 bool itemIsThrowableTinkerTool(const Item* item);
 
 void createCustomInventory(Stat* stats, int itemLimit);
-void copyItem(Item* itemToSet, Item* itemToCopy);
+void copyItem(Item* itemToSet, const Item* itemToCopy);
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed);
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
-node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
-node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind);
-node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff);
-node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
+node_t* itemNodeInInventory(const Stat* myStats, ItemType itemToFind, Category cat);
+node_t* spellbookNodeInInventory(const Stat* myStats, int spellIDToFind);
+node_t* getRangedWeaponItemNodeInInventory(const Stat* myStats, bool includeMagicstaff);
+node_t* getMeleeWeaponItemNodeInInventory(const Stat* myStats);
 ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue);
 bool itemSpriteIsQuiverThirdPersonModel(int sprite);
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
 bool itemTypeIsQuiver(ItemType type);
 bool itemSpriteIsBreastpiece(int sprite);
-real_t rangedAttackGetSpeedModifier(Stat* myStats);
-bool rangedWeaponUseQuiverOnAttack(Stat* myStats);
+real_t rangedAttackGetSpeedModifier(const Stat* myStats);
+bool rangedWeaponUseQuiverOnAttack(const Stat* myStats);
 real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount);
 void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten);
-bool playerCanSpawnMoreTinkeringBots(Stat* myStats);
-int maximumTinkeringBotsCanBeDeployed(Stat* myStats);
+bool playerCanSpawnMoreTinkeringBots(const Stat* myStats);
+int maximumTinkeringBotsCanBeDeployed(const Stat* myStats);
 extern bool overrideTinkeringLimit;
 extern int decoyBoxRange;
 

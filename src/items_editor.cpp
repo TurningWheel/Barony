@@ -107,7 +107,7 @@ returns a model index number based on the properties of the given item
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModel(Item* item)
+Sint32 itemModel(const Item* const item)
 {
 	if ( !item )
 	{
@@ -124,7 +124,7 @@ returns the first person model of the given item
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModelFirstperson(Item* item)
+Sint32 itemModelFirstperson(const Item* const item)
 {
 	if ( !item )
 	{
@@ -141,7 +141,7 @@ returns a pointer to the SDL_Surface used to represent the item
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* itemSprite(Item* item)
+SDL_Surface* itemSprite(Item* const item)
 {
 	if ( !item )
 	{
@@ -166,7 +166,7 @@ returns a pointer to an item struct from the given entity if it's an
 
 -------------------------------------------------------------------------------*/
 
-Item* newItemFromEntity(Entity* entity)
+Item* newItemFromEntity(const Entity* const entity)
 {
 	if ( entity == NULL )
 	{
