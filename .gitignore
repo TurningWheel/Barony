@@ -1,0 +1,11 @@
+﻿.vs
+Debug
+Release
+NODRM
+VS-includes
+VS-libs
+*.db
+*.sdf
+*.DotSettings
+log.txt
+*.vcxproj.user
