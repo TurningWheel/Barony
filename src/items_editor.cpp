@@ -270,7 +270,7 @@ int loadItems()
 		}
 		items[c].images.first = nullptr;
 		items[c].images.last = nullptr;
-		while ( 1 )
+		while ( true )
 		{
 			auto* string = static_cast<string_t*>(malloc(sizeof(string_t)));
 			string->data = static_cast<char*>(malloc(sizeof(char) * 64));
