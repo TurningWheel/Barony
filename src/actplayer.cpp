@@ -26,6 +26,7 @@
 #include "player.hpp"
 #include "colors.hpp"
 #include "draw.hpp"
+#include "mod_tools.hpp"
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
@@ -648,6 +649,10 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 		}
 	}
 	weight += stats[PLAYER_NUM]->GOLD / 100;
+	if ( gameplayCustomManager.inUse() )
+	{
+		weight = weight * (gameplayCustomManager.playerWeightPercent / 100.f);
+	}
 	if ( stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && !stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
 	{
 		weight = weight * 0.5;
@@ -744,14 +749,21 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			DEX = std::min(DEX - 3, -2);
 			slowSpeedPenalty = 2.0;
 		}
-		real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, 18.0);
+
+		double maxSpeed = 18.0;
+		if ( gameplayCustomManager.inUse() )
+		{
+			maxSpeed = gameplayCustomManager.playerSpeedMax;
+		}
+
+		real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, maxSpeed);
 		if ( DEX <= 5 )
 		{
-			speedFactor = std::min((DEX + 10) * weightratio, 18.0);
+			speedFactor = std::min((DEX + 10) * weightratio, maxSpeed);
 		}
 		else if ( DEX <= 15 )
 		{
-			speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, 18.0);
+			speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, maxSpeed);
 		}
 		/*if ( ticks % 50 == 0 )
 		{
@@ -799,10 +811,10 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 	PLAYER_VELX *= pow(0.75, refreshRateDelta);
 	PLAYER_VELY *= pow(0.75, refreshRateDelta);
 
-	if ( keystatus[SDL_SCANCODE_G] )
+	/*if ( keystatus[SDL_SCANCODE_G] )
 	{
 		messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
-	}
+	}*/
 
 	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
 	{
@@ -2942,6 +2954,18 @@ void actPlayer(Entity* my)
 							*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
 
 							int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+							if ( map.height > 64 || map.width > 64 )
+							{
+								int maxDimension = std::max(map.height, map.width);
+								maxDimension -= 64;
+								int numMinimapSizesToReduce = 0;
+								while ( maxDimension > 0 )
+								{
+									maxDimension -= 32;
+									++numMinimapSizesToReduce;
+								}
+								minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
+							}
 							if ( !shootmode && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 							{
 								MinimapPing newPing(ticks, -1, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);

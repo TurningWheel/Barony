@@ -74,8 +74,23 @@ int initGame()
 	cpp_SteamServerClientWrapper_OnLobbyMatchListCallback = &steam_OnLobbyMatchListCallback;
 	cpp_SteamServerClientWrapper_OnP2PSessionConnectFail = &steam_OnP2PSessionConnectFail;
 	cpp_SteamServerClientWrapper_OnLobbyDataUpdate = &steam_OnLobbyDataUpdatedCallback;
+ #ifdef USE_EOS
 	cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket = &steam_OnRequestEncryptedAppTicket;
+ #endif //USE_EOS
 #endif
+
+#ifdef USE_EOS
+	EOS.readFromFile();
+	EOS.readFromCmdLineArgs();
+	if ( EOS.initPlatform(true) == false )
+	{
+		return 14;
+	}
+	if ( EOS.initAuth() == false )
+	{
+		return 14;
+	}
+#endif // USE_EOS
 
 	// print a loading message
 	drawClearBuffers();
@@ -1002,6 +1017,8 @@ void deinitGame()
 	{
 		EOS.leaveLobby();
 	}
+
+	EOS.shutdown();
 #endif
 
 	//Close game controller

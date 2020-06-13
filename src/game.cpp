@@ -36,6 +36,7 @@
 #include "collision.hpp"
 #include "paths.hpp"
 #include "player.hpp"
+#include "mod_tools.hpp"
 #include <limits>
 
 #ifdef LINUX
@@ -3235,6 +3236,12 @@ int main(int argc, char** argv)
 					{
 						no_sound = true;
 					}
+					else
+					{
+#ifdef USE_EOS
+						EOS.CommandLineArgs.push_back(argv[c]);
+#endif // USE_EOS
+					}
 				}
 			}
 		}
@@ -3583,6 +3590,9 @@ int main(int argc, char** argv)
 						// make some messages
 						startMessages();
 
+						//gameplayCustomManager.writeAllToDocument();
+						gameplayCustomManager.readFromFile();
+
 						// load dungeon
 						mapseed = rand(); //Use prng if decide to make a quickstart for MP...
 						lastEntityUIDs = entity_uids;
@@ -3637,10 +3647,10 @@ int main(int argc, char** argv)
 						enchantedFeatherScrollsShuffled.clear();
 						enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
 						std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
-						for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
-						{
-							//printlog("Sequence: %d", *it);
-						}
+						//for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
+						//{
+						//	printlog("Sequence: %d", *it);
+						//}
 
 						// kick off the main loop!
 						strcpy(classtoquickstart, "");
@@ -3874,6 +3884,27 @@ int main(int argc, char** argv)
 								}
 								raycast(&camera, REALCOLORS);
 								glDrawWorld(&camera, REALCOLORS);
+
+								if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
+								{
+									for ( int i = 0; i < MAXPLAYERS; ++i )
+									{
+										if ( i != clientnum && players[i] && players[i]->entity )
+										{
+											real_t x = camera.x;
+											real_t y = camera.y;
+											real_t ang = camera.ang;
+
+											camera.x = players[i]->entity->x / 16.0;
+											camera.y = players[i]->entity->y / 16.0;
+											camera.ang = players[i]->entity->yaw;
+											raycast(&camera, REALCOLORS, false);
+											camera.x = x;
+											camera.y = y;
+											camera.ang = ang;
+										}
+									}
+								}
 							}
 							else
 							{

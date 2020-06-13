@@ -102,6 +102,9 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/actteleporter.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/actmagictrap.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/steam_shared.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/mod_tools.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/json.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/eos.cpp"
 )
 
 if( WIN32 )
@@ -129,6 +132,8 @@ list(APPEND EDITOR_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_shared.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/items_editor.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/steam_shared.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/json.cpp"
+	#"${CMAKE_CURRENT_SOURCE_DIR}/eos.cpp"
 )
 
 add_subdirectory(magic)

@@ -19,6 +19,7 @@
 #include "../player.hpp"
 #include "interface.hpp"
 #include "../collision.hpp"
+#include "../mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -44,6 +45,14 @@ Uint32 minimapColorFunc(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 
 void drawMinimap()
 {
+	if ( gameplayCustomManager.inUse() )
+	{
+		if ( CustomHelpers::isLevelPartOfSet(currentlevel, secretlevel, gameplayCustomManager.minimapDisableFloors) )
+		{
+			return;
+		}
+	}
+
 	node_t* node;
 	Uint32 color;
 	int x, y, i;
@@ -62,6 +71,19 @@ void drawMinimap()
 		*inputPressed(impulses[IN_MINIMAPSCALE]) = 0;
 		*inputPressed(joyimpulses[INJOY_GAME_MINIMAPSCALE]) = 0;
 		playSound(139, 32);
+	}
+
+	if ( map.height > 64 || map.width > 64 )
+	{
+		int maxDimension = std::max(map.height, map.width);
+		maxDimension -= 64;
+		int numMinimapSizesToReduce = 0;
+		while ( maxDimension > 0 )
+		{
+			maxDimension -= 32;
+			++numMinimapSizesToReduce;
+		}
+		minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
 	}
 
 	// create a new minimap texture

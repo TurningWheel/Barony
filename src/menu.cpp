@@ -43,6 +43,7 @@
 #include <ctime>
 #include "sys/stat.h"
 #include "eos.hpp"
+#include "mod_tools.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -165,6 +166,7 @@ Uint32 settings_fov;
 Uint32 settings_fps;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
+bool settings_borderless = false;
 real_t settings_gamma;
 int settings_sfxvolume, settings_musvolume;
 int settings_impulses[NUMIMPULSES];
@@ -291,6 +293,7 @@ int resolutionConfirmationTimer = 0;
 Sint32 oldXres;
 Sint32 oldYres;
 Sint32 oldFullscreen;
+bool oldBorderless = false;
 real_t oldGamma;
 bool oldVerticalSync = false;
 button_t* revertResolutionButton = nullptr;
@@ -1747,6 +1750,7 @@ void handleMainMenu(bool mode)
 					steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
 				}
 				buttonJoinLobby(NULL);
+				// TODO - what if the server never replies? hangs indefinitely.
 			}
 		}
 #elif defined USE_EOS
@@ -1759,7 +1763,18 @@ void handleMainMenu(bool mode)
 			}
 
 			// lobby entered
-			if ( !EOS.bConnectingToLobby && EOS.bConnectingToLobbyWindow )
+			if ( EOS.ConnectingToLobbyStatus != EOS_EResult::EOS_Success )
+			{
+				// close current window
+				buttonCloseSubwindow(NULL);
+				list_FreeAll(&button_l);
+				deleteallbuttons = true;
+
+				openFailedConnectionWindow(CLIENT);
+				strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS.ConnectingToLobbyStatus).c_str());
+				EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_Success;
+			}
+			else if ( !EOS.bConnectingToLobby && EOS.bConnectingToLobbyWindow )
 			{
 				EOS.bConnectingToLobbyWindow = false;
 				EOS.bConnectingToLobby = false;
@@ -1771,29 +1786,6 @@ void handleMainMenu(bool mode)
 
 				// we are assuming here that the lobby join was successful
 				// otherwise, the callback would've flipped off the connectingToLobbyWindow and opened an error window
-
-				// get number of lobby members (capped to game limit)
-
-				// record CSteamID of lobby owner (and nobody else)
-				//int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
-				//if ( steamIDRemote[0] )
-				//{
-				//	cpp_Free_CSteamID(steamIDRemote[0]);
-				//}
-				//steamIDRemote[0] = cpp_SteamMatchmaking_GetLobbyOwner(currentLobby); //TODO: Bugger void pointers!
-				//int c;
-				//for ( c = 1; c < MAXPLAYERS; c++ )
-				//{
-				//	if ( steamIDRemote[c] )
-				//	{
-				//		cpp_Free_CSteamID(steamIDRemote[c]);
-				//		steamIDRemote[c] = NULL;
-				//	}
-				//}
-				//for ( c = 1; c < lobbyMembers; ++c )
-				//{
-				//	steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
-				//}
 				buttonJoinLobby(NULL);
 			}
 		}
@@ -3745,6 +3737,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[ ] %s", language[3357]);
 			}
+			if ( settings_borderless )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 300, "[x] %s", language[3935]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 300, "[ ] %s", language[3935]);
+			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -3794,6 +3794,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_status_effect_icons = (settings_status_effect_icons == false);
+					}
+					else if ( omousey >= suby1 + 300 && omousey < suby1 + 300 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_borderless = (settings_borderless == false);
 					}
 				}
 			}
@@ -5284,6 +5289,17 @@ void handleMainMenu(bool mode)
 			CSteamID newSteamID;
 #elif defined USE_EOS
 			EOS_ProductUserId newRemoteProductId = nullptr;
+			if ( EOS.bJoinLobbyWaitingForHostResponse )
+			{
+				// waiting on host response.
+				if ( ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND ) // 15 second timeout
+				{
+					buttonDisconnect(nullptr);
+					openFailedConnectionWindow(CLIENT);
+					strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult::EOS_TimedOut).c_str());
+					EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_Success;
+				}
+			}
 #endif
 
 			// trying to connect to the server and get a player number
@@ -5577,6 +5593,9 @@ void handleMainMenu(bool mode)
 		{
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
+#endif
+#ifdef USE_EOS
+			EOS.bJoinLobbyWaitingForHostResponse = false;
 #endif
 			int numpacket;
 			for ( numpacket = 0; numpacket < PACKET_LIMIT; numpacket++ )
@@ -6475,7 +6494,14 @@ void handleMainMenu(bool mode)
 				{
 					continue;
 				}
-				if ( ticks - client_keepalive[i] > TICKS_PER_SECOND * 30 )
+				bool clientHasLostP2P = false;
+#ifdef USE_EOS
+				if ( !EOS.P2PConnectionInfo.isPeerStillValid(i - 1) )
+				{
+					clientHasLostP2P = true;
+				}
+#endif
+				if ( clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * 30) )
 				{
 					client_disconnected[i] = true;
 					strncpy((char*)(net_packet->data), "PLAYERDISCONNECT", 16);
@@ -8369,6 +8395,7 @@ void handleMainMenu(bool mode)
 
 			minimapPings.clear(); // clear minimap pings
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+			gameplayCustomManager.readFromFile();
 
 			// clear follower menu entities.
 			FollowerMenu.closeFollowerMenuGUI(true);
@@ -8800,7 +8827,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 			bool usedAllRaces = true;
-			for ( c = RACE_HUMAN; c < RACE_INSECTOID; ++c )
+			for ( c = RACE_HUMAN; c <= RACE_INSECTOID; ++c )
 			{
 				if ( !usedRace[c] )
 				{
@@ -10899,6 +10926,7 @@ void openSettingsWindow()
 	settings_fov = fov;
 	settings_smoothlighting = smoothlighting;
 	settings_fullscreen = fullscreen;
+	settings_borderless = borderless;
 	settings_shaking = shaking;
 	settings_bobbing = bobbing;
 	settings_spawn_blood = spawn_blood;
@@ -11262,6 +11290,26 @@ void openSteamLobbyWaitWindow(button_t* my)
 	button_t* button;
 
 	// close current window
+#ifdef STEAMWORKS
+	bool prevConnectingToLobbyWindow = connectingToLobbyWindow;
+#elif defined USE_EOS
+	if ( EOS.bConnectingToLobbyWindow )
+	{
+		// we quit the connection window before joining lobby, but invite was mid-flight.
+		EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true;
+	}
+	else if ( EOS.bJoinLobbyWaitingForHostResponse )
+	{
+		// we quit the connection window after lobby join, but before host has accepted us.
+		EOS.bJoinLobbyWaitingForHostResponse = false;
+		buttonDisconnect(nullptr);
+		openFailedConnectionWindow(CLIENT);
+		strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult::EOS_Canceled).c_str());
+		return;
+	}
+#endif // STEAMWORKS
+
+
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
@@ -11594,6 +11642,7 @@ void buttonCloseSubwindow(button_t* my)
 	requestingLobbies = false;
 #elif defined USE_EOS
 	EOS.bRequestingLobbies = false;
+	EOS.bJoinLobbyWaitingForHostResponse = false;
 #else
 	serialEnterWindow = false;
 #endif
@@ -11618,7 +11667,11 @@ void buttonCloseSubwindow(button_t* my)
 	}
 	connectingToLobbyWindow = false;
 	connectingToLobby = false;
-#endif
+#elif defined USE_EOS
+	EOS.bConnectingToLobby = false;
+	EOS.bConnectingToLobbyWindow = false;
+#endif // USE_EOS
+
 	charcreation_step = 0;
 	subwindow = 0;
 	if ( SDL_IsTextInputActive() )
@@ -12225,6 +12278,8 @@ void buttonHostLobby(button_t* my)
 }
 
 // joins a lobby as client
+// if direct-ip, this is called directly after pressing join
+// otherwise for matchmaking, this is called asynchronously after a matchmaking lobby has been joined
 void buttonJoinLobby(button_t* my)
 {
 	button_t* button;
@@ -12240,6 +12295,10 @@ void buttonJoinLobby(button_t* my)
 #elif defined USE_EOS
 	bool temp1 = EOS.bConnectingToLobby;
 	bool temp2 = EOS.bConnectingToLobbyWindow;
+	if ( !directConnect )
+	{
+		EOS.bJoinLobbyWaitingForHostResponse = true;
+	}
 #endif
 	if ( directConnect )
 	{
@@ -12637,7 +12696,9 @@ void applySettings()
 	fov = settings_fov;
 	smoothlighting = settings_smoothlighting;
 	oldFullscreen = fullscreen;
+	oldBorderless = borderless;
 	fullscreen = settings_fullscreen;
+	borderless = settings_borderless;
 	shaking = settings_shaking;
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
@@ -12664,7 +12725,7 @@ void applySettings()
 	cameras[0].winw = std::min(cameras[0].winw, xres);
 	cameras[0].winh = std::min(cameras[0].winh, yres);
 	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen || oldGamma!=vidgamma
-		|| oldVerticalSync != verticalSync )
+		|| oldVerticalSync != verticalSync || oldBorderless != borderless )
 	{
 		if ( !changeVideoMode() )
 		{
@@ -13930,7 +13991,7 @@ void buttonLoadSingleplayerGame(button_t* button)
 				subx2 = xres / 2 + 256;
 				suby1 = yres / 2 - 64;
 				suby2 = yres / 2 + 64;
-				strcpy(subtext, language[1467]);
+				strcpy(subtext, language[1447]);
 
 				// close button
 				button = newButton();
@@ -14024,7 +14085,7 @@ void buttonLoadMultiplayerGame(button_t* button)
 				subx2 = xres / 2 + 256;
 				suby1 = yres / 2 - 64;
 				suby2 = yres / 2 + 64;
-				strcpy(subtext, language[1467]);
+				strcpy(subtext, language[1447]);
 
 				// close button
 				button = newButton();

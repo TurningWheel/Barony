@@ -66,6 +66,7 @@ void Entity::actChest()
 		chestHealth = 90 + rand() % 20;
 		chestMaxHealth = chestHealth;
 		chestPreventLockpickCapstoneExploit = 1;
+		chestLockpickHealth = 40;
 		int roll = 0;
 
 		if ( chestLocked == -1 )

@@ -1,3 +1,8 @@
+
+#include "Config.hpp"
+
+#ifdef USE_EOS
+
 #include "main.hpp"
 #include "game.hpp"
 #include "eos.hpp"
@@ -13,6 +18,7 @@ void EOS_CALL EOSFuncs::LoggingCallback(const EOS_LogMessage* log)
 void EOS_CALL EOSFuncs::AuthLoginCompleteCallback(const EOS_Auth_LoginCallbackInfo* data)
 {
 	EOS_HAuth AuthHandle = EOS_Platform_GetAuthInterface(EOS.PlatformHandle);
+
 	if ( !data )
 	{
 		EOSFuncs::logError("Login Callback error: null data");
@@ -337,11 +343,54 @@ void EOS_CALL EOSFuncs::OnLobbySearchFinished(const EOS_LobbySearch_FindCallback
 		{
 			EOSFuncs::logInfo("OnLobbySearchFinished: Found 0 lobbies!");
 		}
+		return;
+	}
+	else if ( data->ResultCode == EOS_EResult::EOS_NotFound )
+	{
+		EOSFuncs::logError("OnLobbySearchFinished: Requested lobby no longer exists", static_cast<int>(data->ResultCode));
 	}
 	else
 	{
 		EOSFuncs::logError("OnLobbySearchFinished: Callback failure: %d", static_cast<int>(data->ResultCode));
 	}
+
+	int* searchOptions = static_cast<int*>(data->ClientData);
+	if ( searchOptions[EOSFuncs::LobbyParameters_t::JOIN_OPTIONS]
+		== static_cast<int>(EOSFuncs::LobbyParameters_t::LOBBY_JOIN_FIRST_SEARCH_RESULT) )
+	{
+		// we were trying to join a lobby, set error message.
+		EOS.bConnectingToLobbyWindow = false;
+		EOS.bConnectingToLobby = false;
+		EOS.ConnectingToLobbyStatus = data->ResultCode;
+	}
+}
+
+std::string EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult result)
+{
+	char buf[1024] = "";
+	switch ( result )
+	{
+		case EOS_EResult::EOS_Canceled:
+			snprintf(buf, 1023, "Lobby join cancelled while setting up players.\nSafely leaving lobby.");
+			break;
+		case EOS_EResult::EOS_TimedOut:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nTimeout waiting for response from host.");
+			break;
+		case EOS_EResult::EOS_Lobby_NotOwner:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nNo host found for lobby.");
+			break;
+		case EOS_EResult::EOS_NotFound:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nLobby no longer exists.");
+			break;
+		case EOS_EResult::EOS_Lobby_TooManyPlayers:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nLobby is full.");
+			break;
+		default:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nGeneral failure - error code: %d.", result);
+			break;
+	}
+	EOSFuncs::logError(buf);
+	return buf;
 }
 
 void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInfo* data)
@@ -351,6 +400,7 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 		EOSFuncs::logError("OnLobbyJoinCallback: null data");
 		EOS.bConnectingToLobby = false;
 		EOS.bConnectingToLobbyWindow = false;
+		EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_UnexpectedError;
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
@@ -360,6 +410,17 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 			EOS.CurrentLobbyData.LobbyId = data->LobbyId;
 		}*/
 		EOS.bConnectingToLobby = false;
+
+		if ( EOS.CurrentLobbyData.bDenyLobbyJoinEvent && EOS.CurrentLobbyData.LobbyId.compare(data->LobbyId) == 0 )
+		{
+			// early return, immediately exit lobby.
+			EOS.CurrentLobbyData.bDenyLobbyJoinEvent = false;
+			EOS.leaveLobby();
+			logInfo("OnLobbyJoinCallback: forcibly denying joining current lobby id: %s", EOS.CurrentLobbyData.LobbyId.c_str());
+			return;
+		}
+
+		EOS.ConnectingToLobbyStatus = data->ResultCode;
 		EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
 			EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_UPDATE_CURRENTLOBBY, data->LobbyId);
 
@@ -372,9 +433,15 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 	else
 	{
 		EOSFuncs::logError("OnLobbyJoinCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
-		EOS.bConnectingToLobby = false;
 		EOS.bConnectingToLobbyWindow = false;
+		EOS.bConnectingToLobby = false;
+		EOS.ConnectingToLobbyStatus = data->ResultCode;
 	}
+
+	EOS.P2PConnectionInfo.resetPeersAndServerData();
+	EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
+	EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
+	EOS.CurrentLobbyData.ClearData();
 	EOS.LobbyParameters.clearLobbyToJoin();
 }
 
@@ -433,7 +500,7 @@ void EOS_CALL EOSFuncs::OnIncomingConnectionRequest(const EOS_P2P_OnIncomingConn
 
 		EOS_P2P_SocketId SocketId;
 		SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
-		strncpy_s(SocketId.SocketName, "CHAT", 5);
+		strncpy(SocketId.SocketName, "CHAT", 5);
 		Options.SocketId = &SocketId;
 
 		EOS_EResult Result = EOS_P2P_AcceptConnection(P2PHandle, &Options);
@@ -613,6 +680,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 						EOSFuncs::logInfo("OnMemberStatusReceived: received user: %s, event: %d, updating lobby", 
 							EOSFuncs::Helpers_t::productIdToString(data->TargetUserId),
 							static_cast<int>(data->CurrentStatus));
+						return;
 					}
 				}
 				break;
@@ -624,6 +692,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 					EOSFuncs::logInfo("OnMemberStatusReceived: received user: %s, event: %d, updating lobby", 
 						EOSFuncs::Helpers_t::productIdToString(data->TargetUserId),
 						static_cast<int>(data->CurrentStatus));
+					return;
 				}
 				break;
 			default:
@@ -720,6 +789,95 @@ void EOSFuncs::serialize(void* file) {
 	fileInterface->property("credentialname", CredentialName);
 }
 
+bool EOSFuncs::initPlatform(bool enableLogging)
+{
+	EOS_InitializeOptions InitializeOptions;
+	InitializeOptions.ProductName = "Barony";
+	InitializeOptions.ProductVersion = "v3.3.3";
+	InitializeOptions.ApiVersion = EOS_INITIALIZE_API_LATEST;
+	InitializeOptions.AllocateMemoryFunction = nullptr;
+	InitializeOptions.ReallocateMemoryFunction = nullptr;
+	InitializeOptions.ReleaseMemoryFunction = nullptr;
+	InitializeOptions.Reserved = nullptr;
+	InitializeOptions.SystemInitializeOptions = nullptr;
+	EOS_EResult result = EOS_Initialize(&InitializeOptions);
+	if ( result != EOS_EResult::EOS_Success )
+	{
+		logError("initPlatform: Failure to initialize - error code: %d", static_cast<int>(result));
+		return false;
+	}
+	else
+	{
+		logInfo("initPlatform: Initialize success");
+	}
+
+	if ( enableLogging )
+	{
+		EOS_EResult SetLogCallbackResult = EOS_Logging_SetCallback(&this->LoggingCallback);
+		if ( SetLogCallbackResult != EOS_EResult::EOS_Success )
+		{
+			logError("SetLogCallbackResult: Set Logging Callback Failed!");
+		}
+		else
+		{
+			logInfo("SetLogCallbackResult: Logging Callback set");
+			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Info);
+		}
+	}
+
+	EOS_Platform_Options PlatformOptions = {};
+	PlatformOptions.ApiVersion = EOS_PLATFORM_OPTIONS_API_LATEST;
+	PlatformOptions.Reserved = nullptr;
+	PlatformOptions.ProductId = ProductId.c_str();
+	PlatformOptions.SandboxId = SandboxId.c_str();
+	PlatformOptions.DeploymentId = DeploymentId.c_str();
+	PlatformOptions.ClientCredentials.ClientId = ClientCredentialsId.c_str();
+	PlatformOptions.ClientCredentials.ClientSecret = ClientCredentialsSecret.c_str();
+	PlatformOptions.OverrideCountryCode = nullptr;
+	PlatformOptions.OverrideLocaleCode = nullptr;
+	PlatformOptions.bIsServer = EOS_FALSE;
+	PlatformOptions.Flags = 0;
+	static std::string EncryptionKey(64, '1');
+	PlatformOptions.EncryptionKey = EncryptionKey.c_str();
+	PlatformOptions.CacheDirectory = nullptr; // important - needs double slashes and absolute path
+
+	PlatformHandle = EOS_Platform_Create(&PlatformOptions);
+	if ( !PlatformHandle )
+	{
+		logError("PlatformHandle: Platform failed to initialize - invalid handle");
+		return false;
+	}
+	return true;
+}
+
+void EOSFuncs::initConnectLogin()
+{
+	ConnectHandle = EOS_Platform_GetConnectInterface(PlatformHandle);
+
+	EOS_Auth_Token* UserAuthToken = nullptr;
+	EOS_Auth_CopyUserAuthTokenOptions CopyTokenOptions = { 0 };
+	CopyTokenOptions.ApiVersion = EOS_AUTH_COPYUSERAUTHTOKEN_API_LATEST;
+
+	if ( EOS_Auth_CopyUserAuthToken(AuthHandle, &CopyTokenOptions,
+		EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str()), &UserAuthToken) == EOS_EResult::EOS_Success )
+	{
+		logInfo("initConnectLogin: Auth expires: %f", UserAuthToken->ExpiresIn);
+
+		EOS_Connect_Credentials Credentials;
+		Credentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
+		Credentials.Token = UserAuthToken->AccessToken;
+		Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_EPIC; // change this to steam etc for different account providers.
+
+		EOS_Connect_LoginOptions Options;
+		Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
+		Options.Credentials = &Credentials;
+		Options.UserLoginInfo = nullptr;
+
+		EOS_Connect_Login(ConnectHandle, &Options, nullptr, ConnectLoginCompleteCallback);
+		EOS_Auth_Token_Release(UserAuthToken);
+	}
+}
+
 void EOSFuncs::readFromFile()
 {
 	if ( PHYSFS_getRealDir("/data/eos.json") )
@@ -729,6 +887,22 @@ void EOSFuncs::readFromFile()
 		if ( FileHelper::readObject(inputPath.c_str(), *this) )
 		{
 			EOSFuncs::logInfo("[JSON]: Successfully read json file %s", inputPath.c_str());
+		}
+	}
+}
+
+void EOSFuncs::readFromCmdLineArgs()
+{
+	for ( auto& arg : CommandLineArgs )
+	{
+		if ( arg.find("-AUTH_PASSWORD=") != std::string::npos )
+		{
+			EOSFuncs::logInfo("Launching from store...");
+			CredentialName = arg.substr(strlen("-AUTH_PASSWORD="));
+		}
+		else if ( arg.find("-AUTH_TYPE=exchangecode") != std::string::npos )
+		{
+			AuthType = EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
 		}
 	}
 }
@@ -801,7 +975,7 @@ void EOSFuncs::SendMessageP2P(EOS_ProductUserId RemoteId, const void* data, int 
 
 	EOS_P2P_SocketId SocketId;
 	SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
-	strncpy_s(SocketId.SocketName, "CHAT", 5);
+	strncpy(SocketId.SocketName, "CHAT", 5);
 
 	EOS_P2P_SendPacketOptions SendPacketOptions;
 	SendPacketOptions.ApiVersion = EOS_P2P_SENDPACKET_API_LATEST;
@@ -828,6 +1002,8 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame()
 	LobbyAttributes.isLobbyLoadingSavedGame = loadingsavegame;
 	LobbyAttributes.serverFlags = svFlags;
 	LobbyAttributes.numServerMods = 0;
+	std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
+	LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();
 }
 
 void EOSFuncs::LobbyData_t::setBasicCurrentLobbyDataFromInitialJoin(LobbyData_t* lobbyToJoin)
@@ -1117,6 +1293,178 @@ void EOSFuncs::LobbyData_t::getLobbyAttributes(EOS_HLobbyDetails LobbyDetails)
 	this->bLobbyHasFullDetailsRead = true;
 }
 
+void EOSFuncs::createLobby()
+{
+	/*if ( CurrentLobbyData.currentLobbyIsValid() )
+	{
+	logInfo("");
+	return;
+	}*/
+
+	if ( CurrentLobbyData.bAwaitingLeaveCallback )
+	{
+		logInfo("createLobby: CurrentLobbyData.bAwaitingLeaveCallback is true");
+	}
+	if ( CurrentLobbyData.bAwaitingCreationCallback )
+	{
+		logInfo("createLobby: CurrentLobbyData.bAwaitingCreationCallback is true");
+	}
+
+	CurrentLobbyData.bAwaitingCreationCallback = true;
+
+	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
+	EOS_Lobby_CreateLobbyOptions CreateOptions;
+	CreateOptions.ApiVersion = EOS_LOBBY_CREATELOBBY_API_LATEST;
+	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
+	CreateOptions.MaxLobbyMembers = 2;
+	CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+
+	EOS_Lobby_CreateLobby(LobbyHandle, &CreateOptions, nullptr, OnCreateLobbyFinished);
+	CurrentLobbyData.MaxPlayers = CreateOptions.MaxLobbyMembers;
+	CurrentLobbyData.OwnerProductUserId = CurrentUserInfo.getProductUserIdStr();
+	strcpy(EOS.currentLobbyName, "Lobby creation in progress...");
+}
+
+void EOSFuncs::joinLobby(LobbyData_t* lobby)
+{
+	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
+
+	if ( CurrentLobbyData.currentLobbyIsValid() )
+	{
+		if ( CurrentLobbyData.LobbyId.compare(lobby->LobbyId) == 0 )
+		{
+			logInfo("joinLobby: attempting to join current lobby");
+			return;
+		}
+		if ( CurrentLobbyData.bAwaitingLeaveCallback )
+		{
+			logInfo("joinLobby: CurrentLobbyData.bAwaitingLeaveCallback is true");
+		}
+		else
+		{
+			leaveLobby();
+			logInfo("joinLobby: leaving current lobby id: %s", CurrentLobbyData.LobbyId.c_str());
+		}
+	}
+	CurrentLobbyData.ClearData();
+	CurrentLobbyData.setBasicCurrentLobbyDataFromInitialJoin(lobby);
+
+	if ( CurrentLobbyData.OwnerProductUserId.compare("NULL") == 0 )
+	{
+		// this is unexpected - perhaps an attempt to join a lobby that was freshly abandoned
+		bConnectingToLobbyWindow = false;
+		bConnectingToLobby = false;
+		ConnectingToLobbyStatus = EOS_EResult::EOS_Lobby_NotOwner;
+		logError("joinLobby: attempting to join a lobby with a NULL owner: %s, aborting.", CurrentLobbyData.LobbyId.c_str());
+		LobbyParameters.clearLobbyToJoin();
+
+		EOS.P2PConnectionInfo.resetPeersAndServerData();
+		EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
+		EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
+		EOS.CurrentLobbyData.ClearData();
+		return;
+	}
+
+	EOS_Lobby_JoinLobbyOptions JoinOptions;
+	JoinOptions.ApiVersion = EOS_LOBBY_JOINLOBBY_API_LATEST;
+	JoinOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
+	JoinOptions.LobbyDetailsHandle = LobbyParameters.lobbyToJoin;
+	EOS_Lobby_JoinLobby(LobbyHandle, &JoinOptions, nullptr, OnLobbyJoinCallback);
+
+	LobbyParameters.clearLobbyToJoin();
+}
+
+void EOSFuncs::leaveLobby()
+{
+	//if ( CurrentLobbyData.bAwaitingLeaveCallback )
+	//{
+	//	// no action needed
+	//	logInfo("leaveLobby: attempting to leave lobby with callback already requested, ignoring");
+	//	return;
+	//}
+
+	// attempt to destroy the lobby if leaving and we are the owner.
+	if ( CurrentLobbyData.currentUserIsOwner() )
+	{
+		CurrentLobbyData.destroyLobby();
+		return;
+	}
+
+	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
+
+	EOS_Lobby_LeaveLobbyOptions LeaveOptions;
+	LeaveOptions.ApiVersion = EOS_LOBBY_LEAVELOBBY_API_LATEST;
+	LeaveOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
+	LeaveOptions.LobbyId = CurrentLobbyData.LobbyId.c_str();
+
+	CurrentLobbyData.bAwaitingLeaveCallback = true;
+	EOS_Lobby_LeaveLobby(LobbyHandle, &LeaveOptions, nullptr, OnLobbyLeaveCallback);
+
+}
+
+void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
+	LobbyParameters_t::LobbyJoinOptions joinOptions, EOS_LobbyId lobbyIdToSearch)
+{
+	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
+	logInfo("searchLobbies: starting search");
+	EOS_Lobby_CreateLobbySearchOptions CreateSearchOptions = {};
+	CreateSearchOptions.ApiVersion = EOS_LOBBY_CREATELOBBYSEARCH_API_LATEST;
+	CreateSearchOptions.MaxResults = kMaxLobbiesToSearch;
+
+	EOS_HLobbySearch LobbySearch = nullptr;
+	if ( LobbySearchResults.CurrentLobbySearch != nullptr )
+	{
+		EOS_LobbySearch_Release(LobbySearchResults.CurrentLobbySearch);
+		LobbySearchResults.CurrentLobbySearch = nullptr;
+	}
+
+	EOS_EResult result = EOS_Lobby_CreateLobbySearch(LobbyHandle, &CreateSearchOptions, &LobbySearch);
+	if ( result != EOS_EResult::EOS_Success )
+	{
+		logError("searchLobbies: EOS_Lobby_CreateLobbySearch failure: %d", static_cast<int>(result));
+		return;
+	}
+	LobbySearchResults.CurrentLobbySearch = LobbySearch;
+	for ( auto& result : LobbySearchResults.results )
+	{
+		result.ClearData();
+	}
+	LobbySearchResults.results.clear();
+
+	/*EOS_LobbySearch_SetTargetUserIdOptions SetLobbyOptions = {};
+	SetLobbyOptions.ApiVersion = EOS_LOBBYSEARCH_SETLOBBYID_API_LATEST;
+	SetLobbyOptions.TargetUserId = CurrentUserInfo.Friends.at(0).UserId;
+	Result = EOS_LobbySearch_SetTargetUserId(LobbySearch, &SetLobbyOptions);*/
+	EOS_LobbySearch_SetParameterOptions ParamOptions = {};
+	ParamOptions.ApiVersion = EOS_LOBBYSEARCH_SETPARAMETER_API_LATEST;
+	ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_NOTANYOF;
+
+	EOS_Lobby_AttributeData AttrData;
+	AttrData.ApiVersion = EOS_LOBBY_ATTRIBUTEDATA_API_LATEST;
+	ParamOptions.Parameter = &AttrData;
+	AttrData.Key = "VER";
+	AttrData.Value.AsUtf8 = "0.0.0";
+	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+	EOS_EResult resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+
+	if ( searchType == LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
+	{
+		// appends criteria to search for within the normal search function
+		EOS_LobbySearch_SetLobbyIdOptions SetLobbyOptions = {};
+		SetLobbyOptions.ApiVersion = EOS_LOBBYSEARCH_SETLOBBYID_API_LATEST;
+		SetLobbyOptions.LobbyId = lobbyIdToSearch;
+		EOS_LobbySearch_SetLobbyId(LobbySearch, &SetLobbyOptions);
+	}
+
+	EOS_LobbySearch_FindOptions FindOptions;
+	FindOptions.ApiVersion = EOS_LOBBYSEARCH_FIND_API_LATEST;
+	FindOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
+
+	LobbyParameters.clearLobbySearchOptions();
+	LobbyParameters.setLobbySearchOptions(searchType, joinOptions);
+	EOS_LobbySearch_Find(LobbySearch, &FindOptions, LobbyParameters.lobbySearchOptions, OnLobbySearchFinished);
+}
+
 void EOSFuncs::LobbyData_t::destroyLobby()
 {
 	if ( !currentLobbyIsValid() )
@@ -1272,9 +1620,9 @@ void EOSFuncs::queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS
 	{
 		return;
 	}
-	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions;
+	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions = {};
 	QueryOptions.ApiVersion = EOS_CONNECT_QUERYPRODUCTUSERIDMAPPINGS_API_LATEST;
-	QueryOptions.AccountIdType = EOS_EExternalAccountType::EOS_EAT_EPIC;
+	QueryOptions.AccountIdType_DEPRECATED = EOS_EExternalAccountType::EOS_EAT_EPIC;
 	QueryOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 
 	QueryOptions.ProductUserIdCount = lobby->lobbyMembersQueueToMappingUpdate.size();
@@ -1338,6 +1686,10 @@ std::pair<std::string, std::string> EOSFuncs::LobbyData_t::getAttributePair(Attr
 			attributePair.first = "SVNUMMODS";
 			attributePair.second = "0";
 			break;
+		case CREATION_TIME:
+			attributePair.first = "CREATETIME";
+			attributePair.second = std::to_string(this->LobbyAttributes.lobbyCreationTime);
+			break;
 		default:
 			break;
 	}
@@ -1366,6 +1718,10 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesAfterReading(EOS_Lobby_AttributeDa
 	else if ( keyName.compare("SVNUMMODS") == 0 )
 	{
 		this->LobbyAttributes.numServerMods = std::stoi(data->Value.AsUtf8);
+	}
+	else if ( keyName.compare("CREATETIME") == 0 )
+	{
+		this->LobbyAttributes.lobbyCreationTime = std::stoll(data->Value.AsUtf8);
 	}
 }
 
@@ -1433,6 +1789,18 @@ bool EOSFuncs::P2PConnectionInfo_t::assignPeerIndex(EOS_ProductUserId id, int in
 	return false;
 }
 
+bool EOSFuncs::P2PConnectionInfo_t::isPeerStillValid(int index)
+{
+	if ( !getPeerIdFromIndex(index) )
+	{
+		return false;
+	}
+	if ( !Helpers_t::productIdIsValid(getPeerIdFromIndex(index)) )
+	{
+		return false;
+	}
+	return true;
+}
 
 void EOSFuncs::LobbyData_t::SubscribeToLobbyUpdates()
 {
@@ -1520,9 +1888,24 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 
 	EOS_Auth_Credentials Credentials = {};
 	Credentials.ApiVersion = EOS_AUTH_CREDENTIALS_API_LATEST;
-	Credentials.Id = hostname.c_str();
-	Credentials.Token = tokenName.c_str();
-	Credentials.Type = EOS_ELoginCredentialType::EOS_LCT_Developer;
+	printlog("EOS is trying to connect to \'%s\"", hostname.c_str());
+	if ( hostname.compare("") == 0 )
+	{
+		Credentials.Id = nullptr;
+	}
+	else
+	{
+		Credentials.Id = hostname.c_str();
+	}
+	if ( tokenName.compare("") == 0 )
+	{
+		Credentials.Token = nullptr;
+	}
+	else
+	{
+		Credentials.Token = tokenName.c_str();
+	}
+	Credentials.Type = AuthType;
 
 	EOS_Auth_LoginOptions LoginOptions;
 	LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
@@ -1556,3 +1939,7 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 		return false;
 	}
 }
+
+
+
+#endif //USE_EOS

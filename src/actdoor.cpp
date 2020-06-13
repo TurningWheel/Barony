@@ -46,6 +46,7 @@ void actDoor(Entity* my)
 		my->doorHealth = 15 + rand() % 5;
 		my->doorMaxHealth = my->doorHealth;
 		my->doorPreventLockpickExploit = 1;
+		my->doorLockpickHealth = 20;
 		if ( my->doorForceLockedUnlocked == 2 )
 		{
 			my->doorLocked = 0; // force unlocked.
