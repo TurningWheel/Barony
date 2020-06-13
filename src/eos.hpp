@@ -39,6 +39,7 @@ public:
 	bool bConnectingToLobby = false; // if true, client is waiting for lobby join callback
 	bool bConnectingToLobbyWindow = false; // client has a valid lobby window and has not encountered a new error window
 	EOS_EResult ConnectingToLobbyStatus = EOS_EResult::EOS_Success; // if invalid lobby join attempt, set to non-success
+	bool bJoinLobbyWaitingForHostResponse = false;
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
 
@@ -155,6 +156,7 @@ public:
 		bool bLobbyHasBasicDetailsRead = false;
 		bool bAwaitingLeaveCallback = false;
 		bool bAwaitingCreationCallback = false;
+		bool bDenyLobbyJoinEvent = false;
 
 		class PlayerLobbyData_t {
 		public:
@@ -180,6 +182,7 @@ public:
 			playersInLobby.clear();
 			bLobbyHasFullDetailsRead = false;
 			bLobbyHasBasicDetailsRead = false;
+			bDenyLobbyJoinEvent = false;
 			LobbyAttributes.ClearData();
 		};
 		bool currentLobbyIsValid()
@@ -312,6 +315,7 @@ public:
 		}
 		bool isPeerIndexed(EOS_ProductUserId id);
 		bool assignPeerIndex(EOS_ProductUserId id, int index);
+		bool isPeerStillValid(int index);
 		void resetPeersAndServerData()
 		{
 			peerProductIds.clear();

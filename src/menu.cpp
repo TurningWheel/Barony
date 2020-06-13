@@ -1749,6 +1749,7 @@ void handleMainMenu(bool mode)
 					steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
 				}
 				buttonJoinLobby(NULL);
+				// TODO - what if the server never replies? hangs indefinitely.
 			}
 		}
 #elif defined USE_EOS
@@ -5287,6 +5288,17 @@ void handleMainMenu(bool mode)
 			CSteamID newSteamID;
 #elif defined USE_EOS
 			EOS_ProductUserId newRemoteProductId = nullptr;
+			if ( EOS.bJoinLobbyWaitingForHostResponse )
+			{
+				// waiting on host response.
+				if ( ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND ) // 15 second timeout
+				{
+					buttonDisconnect(nullptr);
+					openFailedConnectionWindow(CLIENT);
+					strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult::EOS_TimedOut).c_str());
+					EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_Success;
+				}
+			}
 #endif
 
 			// trying to connect to the server and get a player number
@@ -5580,6 +5592,9 @@ void handleMainMenu(bool mode)
 		{
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
+#endif
+#ifdef USE_EOS
+			EOS.bJoinLobbyWaitingForHostResponse = false;
 #endif
 			int numpacket;
 			for ( numpacket = 0; numpacket < PACKET_LIMIT; numpacket++ )
@@ -6478,7 +6493,14 @@ void handleMainMenu(bool mode)
 				{
 					continue;
 				}
-				if ( ticks - client_keepalive[i] > TICKS_PER_SECOND * 30 )
+				bool clientHasLostP2P = false;
+#ifdef USE_EOS
+				if ( !EOS.P2PConnectionInfo.isPeerStillValid(i - 1) )
+				{
+					clientHasLostP2P = true;
+				}
+#endif
+				if ( clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * 30) )
 				{
 					client_disconnected[i] = true;
 					strncpy((char*)(net_packet->data), "PLAYERDISCONNECT", 16);
@@ -11267,6 +11289,26 @@ void openSteamLobbyWaitWindow(button_t* my)
 	button_t* button;
 
 	// close current window
+#ifdef STEAMWORKS
+	bool prevConnectingToLobbyWindow = connectingToLobbyWindow;
+#elif defined USE_EOS
+	if ( EOS.bConnectingToLobbyWindow )
+	{
+		// we quit the connection window before joining lobby, but invite was mid-flight.
+		EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true;
+	}
+	else if ( EOS.bJoinLobbyWaitingForHostResponse )
+	{
+		// we quit the connection window after lobby join, but before host has accepted us.
+		EOS.bJoinLobbyWaitingForHostResponse = false;
+		buttonDisconnect(nullptr);
+		openFailedConnectionWindow(CLIENT);
+		strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult::EOS_Canceled).c_str());
+		return;
+	}
+#endif // STEAMWORKS
+
+
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
@@ -11599,6 +11641,7 @@ void buttonCloseSubwindow(button_t* my)
 	requestingLobbies = false;
 #elif defined USE_EOS
 	EOS.bRequestingLobbies = false;
+	EOS.bJoinLobbyWaitingForHostResponse = false;
 #else
 	serialEnterWindow = false;
 #endif
@@ -12236,6 +12279,8 @@ void buttonHostLobby(button_t* my)
 }
 
 // joins a lobby as client
+// if direct-ip, this is called directly after pressing join
+// otherwise for matchmaking, this is called asynchronously after a matchmaking lobby has been joined
 void buttonJoinLobby(button_t* my)
 {
 	button_t* button;
@@ -12251,6 +12296,10 @@ void buttonJoinLobby(button_t* my)
 #elif defined USE_EOS
 	bool temp1 = EOS.bConnectingToLobby;
 	bool temp2 = EOS.bConnectingToLobbyWindow;
+	if ( !directConnect )
+	{
+		EOS.bJoinLobbyWaitingForHostResponse = true;
+	}
 #endif
 	if ( directConnect )
 	{
@@ -13940,7 +13989,7 @@ void buttonLoadSingleplayerGame(button_t* button)
 				subx2 = xres / 2 + 256;
 				suby1 = yres / 2 - 64;
 				suby2 = yres / 2 + 64;
-				strcpy(subtext, language[1467]);
+				strcpy(subtext, language[1447]);
 
 				// close button
 				button = newButton();
@@ -14034,7 +14083,7 @@ void buttonLoadMultiplayerGame(button_t* button)
 				subx2 = xres / 2 + 256;
 				suby1 = yres / 2 - 64;
 				suby2 = yres / 2 + 64;
-				strcpy(subtext, language[1467]);
+				strcpy(subtext, language[1447]);
 
 				// close button
 				button = newButton();

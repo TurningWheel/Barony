@@ -370,6 +370,15 @@ std::string EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult result)
 	char buf[1024] = "";
 	switch ( result )
 	{
+		case EOS_EResult::EOS_Canceled:
+			snprintf(buf, 1023, "Lobby join cancelled while setting up players.\nSafely leaving lobby.");
+			break;
+		case EOS_EResult::EOS_TimedOut:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nTimeout waiting for response from host.");
+			break;
+		case EOS_EResult::EOS_Lobby_NotOwner:
+			snprintf(buf, 1023, "Failed to join the selected lobby.\nNo host found for lobby.");
+			break;
 		case EOS_EResult::EOS_NotFound:
 			snprintf(buf, 1023, "Failed to join the selected lobby.\nLobby no longer exists.");
 			break;
@@ -380,6 +389,7 @@ std::string EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult result)
 			snprintf(buf, 1023, "Failed to join the selected lobby.\nGeneral failure - error code: %d.", result);
 			break;
 	}
+	EOSFuncs::logError(buf);
 	return buf;
 }
 
@@ -400,6 +410,16 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 			EOS.CurrentLobbyData.LobbyId = data->LobbyId;
 		}*/
 		EOS.bConnectingToLobby = false;
+
+		if ( EOS.CurrentLobbyData.bDenyLobbyJoinEvent && EOS.CurrentLobbyData.LobbyId.compare(data->LobbyId) == 0 )
+		{
+			// early return, immediately exit lobby.
+			EOS.CurrentLobbyData.bDenyLobbyJoinEvent = false;
+			EOS.leaveLobby();
+			logInfo("OnLobbyJoinCallback: forcibly denying joining current lobby id: %s", EOS.CurrentLobbyData.LobbyId.c_str());
+			return;
+		}
+
 		EOS.ConnectingToLobbyStatus = data->ResultCode;
 		EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
 			EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_UPDATE_CURRENTLOBBY, data->LobbyId);
@@ -660,6 +680,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 						EOSFuncs::logInfo("OnMemberStatusReceived: received user: %s, event: %d, updating lobby", 
 							EOSFuncs::Helpers_t::productIdToString(data->TargetUserId),
 							static_cast<int>(data->CurrentStatus));
+						return;
 					}
 				}
 				break;
@@ -671,6 +692,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 					EOSFuncs::logInfo("OnMemberStatusReceived: received user: %s, event: %d, updating lobby", 
 						EOSFuncs::Helpers_t::productIdToString(data->TargetUserId),
 						static_cast<int>(data->CurrentStatus));
+					return;
 				}
 				break;
 			default:
@@ -1294,7 +1316,7 @@ void EOSFuncs::createLobby()
 	EOS_Lobby_CreateLobbyOptions CreateOptions;
 	CreateOptions.ApiVersion = EOS_LOBBY_CREATELOBBY_API_LATEST;
 	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
-	CreateOptions.MaxLobbyMembers = 1;
+	CreateOptions.MaxLobbyMembers = 2;
 	CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 
 	EOS_Lobby_CreateLobby(LobbyHandle, &CreateOptions, nullptr, OnCreateLobbyFinished);
@@ -1332,9 +1354,14 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 		// this is unexpected - perhaps an attempt to join a lobby that was freshly abandoned
 		bConnectingToLobbyWindow = false;
 		bConnectingToLobby = false;
-		ConnectingToLobbyStatus = EOS_EResult::EOS_NotFound;
+		ConnectingToLobbyStatus = EOS_EResult::EOS_Lobby_NotOwner;
 		logError("joinLobby: attempting to join a lobby with a NULL owner: %s, aborting.", CurrentLobbyData.LobbyId.c_str());
 		LobbyParameters.clearLobbyToJoin();
+
+		EOS.P2PConnectionInfo.resetPeersAndServerData();
+		EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
+		EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
+		EOS.CurrentLobbyData.ClearData();
 		return;
 	}
 
@@ -1762,6 +1789,18 @@ bool EOSFuncs::P2PConnectionInfo_t::assignPeerIndex(EOS_ProductUserId id, int in
 	return false;
 }
 
+bool EOSFuncs::P2PConnectionInfo_t::isPeerStillValid(int index)
+{
+	if ( !getPeerIdFromIndex(index) )
+	{
+		return false;
+	}
+	if ( !Helpers_t::productIdIsValid(getPeerIdFromIndex(index)) )
+	{
+		return false;
+	}
+	return true;
+}
 
 void EOSFuncs::LobbyData_t::SubscribeToLobbyUpdates()
 {
