@@ -30,7 +30,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	Item* item;
 
 	// allocate memory for the item
-	if ( (item = (Item*)malloc(sizeof(Item))) == nullptr )
+	if ( (item = static_cast<Item*>(malloc(sizeof(Item)))) == nullptr )
 	{
 		printlog("failed to allocate memory for new item!\n");
 		exit(1);
@@ -152,7 +152,7 @@ SDL_Surface* itemSprite(Item* const item)
 		{
 			return nullptr;
 		}
-		SDL_Surface** surface = (SDL_Surface**)node->element;
+		SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
 		return *surface;
 	return nullptr;
 }
@@ -273,8 +273,8 @@ int loadItems()
 		items[c].images.last = nullptr;
 		while ( 1 )
 		{
-			string_t* string = (string_t*)malloc(sizeof(string_t));
-			string->data = (char*)malloc(sizeof(char) * 64);
+			string_t* string = static_cast<string_t*>(malloc(sizeof(string_t)));
+			string->data = static_cast<char*>(malloc(sizeof(char) * 64));
 			string->lines = 1;
 
 			node_t* node = list_AddNodeLast(&items[c].images);
@@ -308,14 +308,14 @@ int loadItems()
 		items[c].surfaces.last = nullptr;
 		for ( x = 0; x < list_Size(&items[c].images); x++ )
 		{
-			SDL_Surface** surface = (SDL_Surface**)malloc(sizeof(SDL_Surface*));
+			SDL_Surface** surface = static_cast<SDL_Surface**>(malloc(sizeof(SDL_Surface*)));
 			node_t* node = list_AddNodeLast(&items[c].surfaces);
 			node->element = surface;
 			node->deconstructor = &defaultDeconstructor;
 			node->size = sizeof(SDL_Surface*);
 
 			node_t* node2 = list_Node(&items[c].images, x);
-			string_t* string = (string_t*)node2->element;
+			string_t* string = static_cast<string_t*>(node2->element);
 			*surface = loadImage(string->data);
 		}
 	}
