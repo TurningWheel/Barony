@@ -3843,7 +3843,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 {
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;
-	ItemType itemId;
+	ItemType itemId { static_cast<ItemType>(-1) };
 	int itemAppearance = rand();
 	int category = 0;
 	bool itemIdentified;
