@@ -130,7 +130,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 				}
 			}
 		}
-		int sort_y = std::min(std::max(inventory_y, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
+		const int sort_y = std::min(std::max(inventory_y, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
 
 		while ( true )
 		{
@@ -379,7 +379,7 @@ Item* uidToItem(const Uint32 uid)
 
 ItemType itemCurve(const Category cat)
 {
-	int numitems = NUMITEMS - ( NUMITEMS - static_cast<int>(ARTIFACT_SWORD) );
+	const int numitems = NUMITEMS - ( NUMITEMS - static_cast<int>(ARTIFACT_SWORD) );
 	bool chances[NUMITEMS];
 	int c;
 
@@ -455,7 +455,7 @@ ItemType itemCurve(const Category cat)
 	else
 	{
 		// other categories get a special chance algorithm based on item value and dungeon level
-		int acceptablehigh = std::max<Uint32>(highestvalue * fmin(1.0, (currentlevel + 10) / 25.0), lowestvalue); //TODO: Why are double and Uint32 being compared?
+		const int acceptablehigh = std::max<Uint32>(highestvalue * fmin(1.0, (currentlevel + 10) / 25.0), lowestvalue); //TODO: Why are double and Uint32 being compared?
 		for ( c = 0; c < numitems; c++ )
 		{
 			chances[c] = false;
@@ -523,7 +523,7 @@ dungeon level and defined level of the item
 
 ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLevel)
 {
-	int numitems = NUMITEMS;
+	const int numitems = NUMITEMS;
 	bool chances[NUMITEMS];
 	int c;
 
@@ -1991,8 +1991,8 @@ void useItem(Item* item, const int player, Entity* usedBy)
 
 	bool drankPotion = false;
 	bool tryLearnPotionRecipe = false;
-	bool tryEmptyBottle = (item->status >= SERVICABLE);
-	ItemType potionType = item->type;
+	const bool tryEmptyBottle = (item->status >= SERVICABLE);
+	const ItemType potionType = item->type;
 	if ( player == clientnum )
 	{
 		if ( itemCategory(item) == POTION && item->type != POTION_EMPTY && usedBy
@@ -2196,7 +2196,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		case POTION_POLYMORPH:
 		{
-			int oldcount = item->count;
+			const int oldcount = item->count;
 			item_PotionPolymorph(item, players[player]->entity, nullptr);
 			if ( !item || (item && item->count < oldcount) )
 			{
@@ -2255,7 +2255,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		case SCROLL_FIRE:
 		{
-			bool exploded = item_ScrollFire(item, player);
+			const bool exploded = item_ScrollFire(item, player);
 			if ( exploded && stats[player] && stats[player]->type == AUTOMATON )
 			{
 				if ( multiplayer != CLIENT )
@@ -2263,7 +2263,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 					stats[player]->HUNGER = std::min(stats[player]->HUNGER + 1500, 1500);
 					players[player]->entity->modMP(stats[player]->MAXMP);
 					// results of eating
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+					const Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 					messagePlayerColor(player, color, language[3699]); // superheats
 					serverUpdateHunger(player);
 					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
@@ -2595,7 +2595,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			{
 				GenericGUI.alchemyLearnRecipe(potionType, true);
 			}
-			int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			const int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
 			if ( tryEmptyBottle && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -2783,7 +2783,7 @@ Item* itemPickup(const int player, Item* const item)
 		bool assignNewOwner = true;
 		if ( item->ownerUid != 0 && !achievementObserver.playerAchievements[player].ironicPunishmentTargets.empty() )
 		{
-			auto it = achievementObserver.playerAchievements[player].ironicPunishmentTargets.find(item->ownerUid);
+			const auto it = achievementObserver.playerAchievements[player].ironicPunishmentTargets.find(item->ownerUid);
 			if ( it != achievementObserver.playerAchievements[player].ironicPunishmentTargets.end() )
 			{
 				assignNewOwner = false;
@@ -2846,7 +2846,7 @@ Item* itemPickup(const int player, Item* const item)
 					}
 
 					// too many arrows, split off into a new stack with reduced qty.
-					int total = item->count + item2->count;
+					const int total = item->count + item2->count;
 					item2->count = maxStack - 1;
 					item->count = total - item2->count;
 
@@ -3743,12 +3743,12 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					&& stats[player] && stats[player]->weapon
 					&& (stats[player]->weapon->type == TOOL_LOCKPICK || stats[player]->weapon->type == TOOL_SKELETONKEY) )
 				{
-					int skill = std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+					const int skill = std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
 					bool failed = false;
 					if ( skill < 2 || rand() % skill == 0 ) // 20 skill requirement.
 					{
 						// failed.
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						const Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerColor(player, color, language[3871]); // trap fires.
 						if ( skill < 2 )
 						{
@@ -3764,7 +3764,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					}
 					else
 					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						const Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 						messagePlayerColor(player, color, language[3872]);
 						playSoundEntity(entity, 176, 128);
 						entity->skill[4] = player + 1; // disabled flag and spit out items.
@@ -3948,7 +3948,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				{
 					itemBless = -1 + rand() % 3;
 				}
-				int itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
+				const int itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
 				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
 				{
 					itemIdentified = false;
@@ -4285,7 +4285,7 @@ void copyItem(Item* const itemToSet, const Item* const itemToCopy) //This should
 
 ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int maxValue)
 {
-	int numitems = NUMITEMS;
+	const int numitems = NUMITEMS;
 	int numoftype = 0;
 	bool chances[NUMITEMS] = { false };
 	bool pickAnyCategory = false;
@@ -4697,7 +4697,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 {
 	if ( type == ARTIFACT_AXE )
 	{
-		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f; //0-25%
+		const real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f; //0-25%
 		if ( effectAmount )
 		{
 			*effectAmount = 1.5; //1.5x damage.
@@ -4706,7 +4706,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 	}
 	else if ( type == ARTIFACT_SWORD )
 	{
-		real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]); //0-100%
+		const real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]); //0-100%
 		if ( effectAmount )
 		{
 			*effectAmount = (wielder.PROFICIENCIES[PRO_SWORD]) / 200.f + 0.5; //0.5x-1.0x add to weapon multiplier
@@ -4715,7 +4715,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 	}
 	else if ( type == ARTIFACT_SPEAR )
 	{
-		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_POLEARM]) / 100.f; //0-25%
+		const real_t percent = 25 * (wielder.PROFICIENCIES[PRO_POLEARM]) / 100.f; //0-25%
 		if ( effectAmount )
 		{
 			*effectAmount = .5; // bypasses 50% enemies' armor.
@@ -4724,7 +4724,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 	}
 	else if ( type == ARTIFACT_MACE )
 	{
-		real_t percent = 1.f; //100%
+		const real_t percent = 1.f; //100%
 		if ( effectAmount )
 		{
 			*effectAmount = wielder.PROFICIENCIES[PRO_MACE]; // 0-2 second bonus mana regen
@@ -4733,7 +4733,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 	}
 	else if ( type == ARTIFACT_BOW )
 	{
-		real_t percent = wielder.PROFICIENCIES[PRO_RANGED] / 2.f; //0-50%
+		const real_t percent = wielder.PROFICIENCIES[PRO_RANGED] / 2.f; //0-50%
 		if ( effectAmount )
 		{
 			*effectAmount = 0.f; // no use here.
@@ -4792,7 +4792,7 @@ int maximumTinkeringBotsCanBeDeployed(const Stat* const myStats)
 		return 0;
 	}
 	int maxFollowers = 2;
-	int skillLVL = myStats->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0-5.
+	const int skillLVL = myStats->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0-5.
 	switch ( skillLVL )
 	{
 		case 0:
@@ -4860,14 +4860,14 @@ void playerTryEquipItemAndUpdateServer(Item* const item)
 	if ( multiplayer == CLIENT )
 	{
 		// store these to send to server.
-		ItemType type = item->type;
-		Status status = item->status;
-		Sint16 beatitude = item->beatitude;
-		int count = item->count;
-		Uint32 appearance = item->appearance;
-		bool identified = item->identified;
+		const ItemType type = item->type;
+		const Status status = item->status;
+		const Sint16 beatitude = item->beatitude;
+		const int count = item->count;
+		const Uint32 appearance = item->appearance;
+		const bool identified = item->identified;
 
-		Category cat = itemCategory(item);
+		const Category cat = itemCategory(item);
 
 		EquipItemResult equipResult = EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 		if ( cat == SPELLBOOK )
