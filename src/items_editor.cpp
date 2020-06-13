@@ -147,14 +147,14 @@ SDL_Surface* itemSprite(Item* const item)
 	{
 		return nullptr;
 	}
-		node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
-		if ( !node )
-		{
-			return nullptr;
-		}
+	node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
+	if ( !node )
+	{
+		return nullptr;
+	}
+	
 	auto** surface = static_cast<SDL_Surface**>(node->element);
-		return *surface;
-	return nullptr;
+	return *surface;
 }
 
 /*-------------------------------------------------------------------------------
