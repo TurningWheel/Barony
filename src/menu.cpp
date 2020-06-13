@@ -42,6 +42,7 @@
 #include "colors.hpp"
 #include <ctime>
 #include "sys/stat.h"
+#include "eos.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -12203,7 +12204,6 @@ void buttonHostLobby(button_t* my)
 	// invite friends button
 	if ( !directConnect )
 	{
-#ifdef STEAMWORKS
 		button = newButton();
 		strcpy(button->label, language[1458]);
 		button->sizex = strlen(language[1458]) * 12 + 8;
@@ -12213,7 +12213,6 @@ void buttonHostLobby(button_t* my)
 		button->action = &buttonInviteFriends;
 		button->visible = 1;
 		button->focused = 1;
-#endif
 	}
 
 	if ( loadingsavegame )
@@ -12509,16 +12508,19 @@ void buttonStartServer(button_t* my)
 }
 
 // opens the steam dialog to invite friends
-#ifdef STEAMWORKS
 void buttonInviteFriends(button_t* my)
 {
+#ifdef STEAMWORKS
 	if (SteamUser()->BLoggedOn())
 	{
 		SteamFriends()->ActivateGameOverlayInviteDialog(*static_cast<CSteamID*>(currentLobby));
 	}
-	return;
-}
+#else
+#ifdef USE_EOS
+	EOS.showFriendsOverlay();
 #endif
+#endif
+}
 
 // disconnects from whatever lobby the game is connected to
 void buttonDisconnect(button_t* my)
