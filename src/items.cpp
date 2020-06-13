@@ -501,10 +501,8 @@ ItemType itemCurve(const Category cat)
 				{
 					return static_cast<ItemType>(c);
 				}
-				else
-				{
-					pick--;
-				}
+
+				pick--;
 			}
 		}
 	}
@@ -622,10 +620,8 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 					//messagePlayer(0, "Chose item: %s of %d items.", items[c].name_identified ,numleft);
 					return static_cast<ItemType>(c);
 				}
-				else
-				{
-					pick--;
-				}
+
+				pick--;
 			}
 		}
 	}
@@ -1091,17 +1087,12 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 		{
 			return 0;
 		}
-		else
-		{
-			return 1;
-		}
+		return 1;
 	}
-	else
+
+	if ( item2 == nullptr )
 	{
-		if ( item2 == nullptr )
-		{
-			return 1;
-		}
+		return 1;
 	}
 
 	// check attributes
@@ -1127,14 +1118,17 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	{
 		return 1;
 	}
-	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
+
+	if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
 	{
 		return 1; // these items do not stack
 	}
+
 	if (item1->identified != item2->identified)
 	{
 		return 1;
 	}
+
 	if ( !item1->identified && itemCategory(item1) == SCROLL && itemCategory(item2) == SCROLL )
 	{
 		if ( item1->getScrollLabel() != item2->getScrollLabel() )
@@ -1265,21 +1259,19 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		}
 		return false;
 	}
-	else
+	if (item == open_book_item)
 	{
-		if (item == open_book_item)
-		{
-			closeBookGUI();
-		}
-		int qtyToDrop = 1;
-		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
-		{
-			qtyToDrop = 10;
-		}
-		else if ( itemTypeIsQuiver(item->type) )
-		{
-			qtyToDrop = item->count;
-			/*if ( item->count >= 10 )
+		closeBookGUI();
+	}
+	int qtyToDrop = 1;
+	if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+	{
+		qtyToDrop = 10;
+	}
+	else if ( itemTypeIsQuiver(item->type) )
+	{
+		qtyToDrop = item->count;
+		/*if ( item->count >= 10 )
 			{
 				qtyToDrop = 10;
 			}
@@ -1287,68 +1279,69 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			{
 				qtyToDrop = item->count;
 			}*/
-		}
+	}
 
-		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-		entity->flags[INVISIBLE] = true;
-		entity->flags[UPDATENEEDED] = true;
-		entity->x = players[player]->entity->x;
-		entity->y = players[player]->entity->y;
-		entity->sizex = 4;
-		entity->sizey = 4;
-		entity->yaw = players[player]->entity->yaw;
-		entity->vel_x = (1.5 + .025 * (rand() % 11)) * cos(players[player]->entity->yaw);
-		entity->vel_y = (1.5 + .025 * (rand() % 11)) * sin(players[player]->entity->yaw);
-		entity->vel_z = (-10 - rand() % 20) * .01;
-		entity->flags[PASSABLE] = true;
-		entity->behavior = &actItem;
-		entity->skill[10] = item->type;
-		entity->skill[11] = item->status;
-		entity->skill[12] = item->beatitude;
-		entity->skill[13] = qtyToDrop;
-		entity->skill[14] = item->appearance;
-		entity->skill[15] = item->identified;
-		entity->parent = players[player]->entity->getUID();
-		entity->itemOriginalOwner = entity->parent;
+	Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+	entity->flags[INVISIBLE] = true;
+	entity->flags[UPDATENEEDED] = true;
+	entity->x = players[player]->entity->x;
+	entity->y = players[player]->entity->y;
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->yaw = players[player]->entity->yaw;
+	entity->vel_x = (1.5 + .025 * (rand() % 11)) * cos(players[player]->entity->yaw);
+	entity->vel_y = (1.5 + .025 * (rand() % 11)) * sin(players[player]->entity->yaw);
+	entity->vel_z = (-10 - rand() % 20) * .01;
+	entity->flags[PASSABLE] = true;
+	entity->behavior = &actItem;
+	entity->skill[10] = item->type;
+	entity->skill[11] = item->status;
+	entity->skill[12] = item->beatitude;
+	entity->skill[13] = qtyToDrop;
+	entity->skill[14] = item->appearance;
+	entity->skill[15] = item->identified;
+	entity->parent = players[player]->entity->getUID();
+	entity->itemOriginalOwner = entity->parent;
 
-		// play sound
-		playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
+	// play sound
+	playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
 
-		// unequip the item
-		Item** slot = itemSlot(stats[player], item);
-		if ( slot != nullptr )
+	// unequip the item
+	Item** slot = itemSlot(stats[player], item);
+	if ( slot != nullptr )
+	{
+		*slot = nullptr;
+	}
+
+	if ( item->node != nullptr )
+	{
+		if ( item->node->list == &stats[0]->inventory )
 		{
-			*slot = nullptr;
-		}
-		if ( item->node != nullptr )
-		{
-			if ( item->node->list == &stats[0]->inventory )
+			oldcount = item->count;
+			item->count = qtyToDrop;
+			if ( notifyMessage )
 			{
-				oldcount = item->count;
-				item->count = qtyToDrop;
-				if ( notifyMessage )
-				{
-					messagePlayer(player, language[1088], item->description());
-				}
-				item->count = oldcount - qtyToDrop;
-				if ( item->count <= 0 )
-				{
-					list_RemoveNode(item->node);
-					return true;
-				}
+				messagePlayer(player, language[1088], item->description());
 			}
-		}
-		else
-		{
-			item->count = item->count - qtyToDrop;
+			item->count = oldcount - qtyToDrop;
 			if ( item->count <= 0 )
 			{
-				free(item);
+				list_RemoveNode(item->node);
 				return true;
 			}
 		}
-		return false;
 	}
+	else
+	{
+		item->count = item->count - qtyToDrop;
+		if ( item->count <= 0 )
+		{
+			free(item);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const monsterStats, Sint16 count)
@@ -1744,89 +1737,86 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 		}
 		return EQUIP_ITEM_SUCCESS_NEWITEM;
 	}
-	else
+	// if items are the same... (excluding the quantity of both item nodes)
+	if ( *slot != nullptr )
 	{
-		// if items are the same... (excluding the quantity of both item nodes)
-		if ( *slot != nullptr )
+		if ( (*slot)->count == item->count ) // if quantity is the same then it's the same item, can unequip
 		{
-			if ( (*slot)->count == item->count ) // if quantity is the same then it's the same item, can unequip
+			if (!(*slot)->canUnequip(stats[player]))
 			{
-				if (!(*slot)->canUnequip(stats[player]))
+				if ( player == clientnum )
 				{
-					if ( player == clientnum )
+					if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
 					{
-						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
-						{
-							messagePlayer(player, language[3217], (*slot)->getName());
-						}
-						else
-						{
-							messagePlayer(player, language[1089], (*slot)->getName());
-						}
+						messagePlayer(player, language[3217], (*slot)->getName());
 					}
-					(*slot)->identified = true;
-					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
-				}
-			}
-			else
-			{
-				// This lets the server know when a client "equipped" a new item in their slot but actually just updated the count.
-				// Otherwise if this count check were not here, server would think that equipping 2 rocks after only holding 1 rock is
-				// the same as unequipping the slot since they are the same item, barring the quantity. So the client would appear to
-				// the server as empty handed, while the client holds 2 rocks, and when thrown on client end, the server never sees the item
-				// and the client "throws" nothing, but actually loses their thrown items into nothingness. This fixes that issue.
-				(*slot)->count = item->count; // update quantity. 
-				return EQUIP_ITEM_SUCCESS_UPDATE_QTY;
-			}
-		}
-		if (multiplayer != CLIENT && !intro && !fadeout)
-		{
-			if (players[player] != nullptr && players[player]->entity != nullptr)
-			{
-				if (players[player]->entity->ticks > 60)
-				{
-					if (itemCategory(item) == ARMOR )
+					else
 					{
-						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
+						messagePlayer(player, language[1089], (*slot)->getName());
 					}
 				}
-			}
-		}
-		if ( player != 0 && multiplayer == SERVER )
-		{
-			if ( item->node )
-			{
-				list_RemoveNode(item->node);
-			}
-			else
-			{
-				free(item);
-			}
-			if ( *slot != nullptr )
-			{
-				if ( (*slot)->node )
-				{
-					list_RemoveNode((*slot)->node);
-				}
-				else
-				{
-					free(*slot);
-				}
+				(*slot)->identified = true;
+				return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 			}
 		}
 		else
 		{
-			oldcount = item->count;
-			item->count = 1;
-			if ( intro == false && !fadeout )
-			{
-				messagePlayer(player, language[1091], item->description());
-			}
-			item->count = oldcount;
+			// This lets the server know when a client "equipped" a new item in their slot but actually just updated the count.
+			// Otherwise if this count check were not here, server would think that equipping 2 rocks after only holding 1 rock is
+			// the same as unequipping the slot since they are the same item, barring the quantity. So the client would appear to
+			// the server as empty handed, while the client holds 2 rocks, and when thrown on client end, the server never sees the item
+			// and the client "throws" nothing, but actually loses their thrown items into nothingness. This fixes that issue.
+			(*slot)->count = item->count; // update quantity. 
+			return EQUIP_ITEM_SUCCESS_UPDATE_QTY;
 		}
-		*slot = nullptr;
-		return EQUIP_ITEM_SUCCESS_UNEQUIP;
 	}
+	if (multiplayer != CLIENT && !intro && !fadeout)
+	{
+		if (players[player] != nullptr && players[player]->entity != nullptr)
+		{
+			if (players[player]->entity->ticks > 60)
+			{
+				if (itemCategory(item) == ARMOR )
+				{
+					playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
+				}
+			}
+		}
+	}
+	if ( player != 0 && multiplayer == SERVER )
+	{
+		if ( item->node )
+		{
+			list_RemoveNode(item->node);
+		}
+		else
+		{
+			free(item);
+		}
+		if ( *slot != nullptr )
+		{
+			if ( (*slot)->node )
+			{
+				list_RemoveNode((*slot)->node);
+			}
+			else
+			{
+				free(*slot);
+			}
+		}
+	}
+	else
+	{
+		oldcount = item->count;
+		item->count = 1;
+		if ( intro == false && !fadeout )
+		{
+			messagePlayer(player, language[1091], item->description());
+		}
+		item->count = oldcount;
+	}
+	*slot = nullptr;
+	return EQUIP_ITEM_SUCCESS_UNEQUIP;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1856,7 +1846,8 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		openedChest[player]->addItemToChestFromInventory(player, item, false);
 		return;
 	}
-	else if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
+
+	if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
 	{
 		bool deal = true;
 		switch ( shopkeepertype )
@@ -2871,20 +2862,17 @@ Item* itemPickup(const int player, Item* const item)
 					{
 						return item2;
 					}
-					else
+					// we have to search other items to stack with, otherwise this search ends after 1 full stack.
+					if ( item->appearance == item2->appearance )
 					{
-						// we have to search other items to stack with, otherwise this search ends after 1 full stack.
-						if ( item->appearance == item2->appearance )
-						{
-							// items are the same (incl. appearance!)
-							// if they shouldn't stack, we need to change appearance of the new item.
-							appearancesOfSimilarItems.insert(item2->appearance);
-						}
-						continue;
+						// items are the same (incl. appearance!)
+						// if they shouldn't stack, we need to change appearance of the new item.
+						appearancesOfSimilarItems.insert(item2->appearance);
 					}
+					continue;
 				}
 				// if items are the same, check to see if they should stack
-				else if ( item2->shouldItemStack(player) )
+				if ( item2->shouldItemStack(player) )
 				{
 					item2->count += item->count;
 					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
@@ -2908,7 +2896,8 @@ Item* itemPickup(const int player, Item* const item)
 					item2->ownerUid = item->ownerUid;
 					return item2;
 				}
-				else if ( !itemCompare(item, item2, true) )
+
+				if ( !itemCompare(item, item2, true) )
 				{
 					// items are the same (incl. appearance!)
 					// if they shouldn't stack, we need to change appearance of the new item.
@@ -3509,17 +3498,16 @@ bool Item::canUnequip(const Stat* const wielder)
 		{
 			return true;
 		}
-		else if ( shouldInvertEquipmentBeatitude(wielder) )
+
+		if ( shouldInvertEquipmentBeatitude(wielder) )
 		{
 			if ( beatitude > 0 )
 			{
 				identified = true;
 				return false;
 			}
-			else
-			{
-				return true;
-			}
+
+			return true;
 		}
 	}
 
@@ -3809,7 +3797,8 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					}
 					return;
 				}
-				else if ( entity->skill[4] != 0 )
+
+				if ( entity->skill[4] != 0 )
 				{
 					messagePlayer(player, language[3870]);
 					return;
@@ -3993,7 +3982,8 @@ node_t* itemNodeInInventory(const Stat* const myStats, const ItemType itemToFind
 			{
 				return node;
 			}
-			else if ( itemToFind != -1 && item->type == itemToFind )
+
+			if ( itemToFind != -1 && item->type == itemToFind )
 			{
 				return node;
 			}
@@ -4023,12 +4013,10 @@ node_t* spellbookNodeInInventory(const Stat* const myStats, const int spellIDToF
 		{
 			return node;
 		}
-		else
+
+		if ( itemCategory(item) == SPELLBOOK )
 		{
-			if ( itemCategory(item) == SPELLBOOK )
-			{
-				//messagePlayer(clientnum, "Well...I found a spellbook? Type: %d. Looking for: %d.", getSpellIDFromSpellbook(item->type), spellIDToFind);
-			}
+			//messagePlayer(clientnum, "Well...I found a spellbook? Type: %d. Looking for: %d.", getSpellIDFromSpellbook(item->type), spellIDToFind);
 		}
 	}
 
@@ -4167,39 +4155,37 @@ bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, n
 		}
 		return true;
 	}
+	//Move exactly 1 item into hand.
+	if ( my == nullptr )
+	{
+		return false;
+	}
+
+	tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+	if ( !tmpItem )
+	{
+		return false;
+	}
+
+	copyItem(tmpItem, item);
+	tmpItem->count = 1;
+	item->count--;
+
+	if ( myStats->weapon != nullptr )
+	{
+		my->addItemToMonsterInventory(myStats->weapon);
+		myStats->weapon = tmpItem;
+		if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
+		{
+			playSoundEntity(my, 40 + rand() % 4, 64);
+		}
+	}
 	else
 	{
-		//Move exactly 1 item into hand.
-		if ( my == nullptr )
-		{
-			return false;
-		}
-
-		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
-		if ( !tmpItem )
-		{
-			return false;
-		}
-
-		copyItem(tmpItem, item);
-		tmpItem->count = 1;
-		item->count--;
-
-		if ( myStats->weapon != nullptr )
-		{
-			my->addItemToMonsterInventory(myStats->weapon);
-			myStats->weapon = tmpItem;
-			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
-			{
-				playSoundEntity(my, 40 + rand() % 4, 64);
-			}
-		}
-		else
-		{
-			myStats->weapon = tmpItem;
-		}
-		return true;
+		myStats->weapon = tmpItem;
 	}
+
+	return true;
 }
 
 bool monsterUnequipSlot(Stat* const myStats, Item** const slot, Item* const itemToUnequip)
@@ -4330,10 +4316,8 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 			{
 				return static_cast<ItemType>(c);
 			}
-			else
-			{
-				pick--;
-			}
+
+			pick--;
 		}
 	}
 
@@ -4698,44 +4682,54 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 		{
 			*effectAmount = 1.5; //1.5x damage.
 		}
+
 		return percent;
 	}
-	else if ( type == ARTIFACT_SWORD )
+
+	if ( type == ARTIFACT_SWORD )
 	{
 		const real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]); //0-100%
 		if ( effectAmount )
 		{
 			*effectAmount = (wielder.PROFICIENCIES[PRO_SWORD]) / 200.f + 0.5; //0.5x-1.0x add to weapon multiplier
 		}
+
 		return percent;
 	}
-	else if ( type == ARTIFACT_SPEAR )
+
+	if ( type == ARTIFACT_SPEAR )
 	{
 		const real_t percent = 25 * (wielder.PROFICIENCIES[PRO_POLEARM]) / 100.f; //0-25%
 		if ( effectAmount )
 		{
 			*effectAmount = .5; // bypasses 50% enemies' armor.
 		}
+
 		return percent;
 	}
-	else if ( type == ARTIFACT_MACE )
+
+	if ( type == ARTIFACT_MACE )
 	{
 		const real_t percent = 1.f; //100%
 		if ( effectAmount )
 		{
 			*effectAmount = wielder.PROFICIENCIES[PRO_MACE]; // 0-2 second bonus mana regen
 		}
+
 		return percent;
 	}
-	else if ( type == ARTIFACT_BOW )
+
+	if ( type == ARTIFACT_BOW )
 	{
 		const real_t percent = wielder.PROFICIENCIES[PRO_RANGED] / 2.f; //0-50%
 		if ( effectAmount )
 		{
 			*effectAmount = 0.f; // no use here.
 		}
+
 		return percent;
 	}
+
 	return 0.0;
 }
 
