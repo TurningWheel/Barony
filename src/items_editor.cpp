@@ -25,7 +25,7 @@ Creates a new item and places it in an inventory
 
 -------------------------------------------------------------------------------*/
 
-Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory)
+Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, const Sint16 count, const Uint32 appearance, const bool identified, list_t* const inventory)
 {
 	Item* item;
 
@@ -90,7 +90,7 @@ Returns the category that a specified item belongs to
 
 -------------------------------------------------------------------------------*/
 
-Category itemCategory(const Item* item)
+Category itemCategory(const Item* const item)
 {
 	if ( !item )
 	{
