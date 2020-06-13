@@ -2542,7 +2542,6 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		case SPELL_ITEM:
 		{
-			;
 			spell_t* spell = getSpellFromItem(item);
 			if (spell)
 			{
@@ -4264,7 +4263,6 @@ void copyItem(Item* const itemToSet, const Item* const itemToCopy) //This should
 	itemToSet->uid = itemToCopy->uid;
 	itemToSet->ownerUid = itemToCopy->ownerUid;
 	itemToSet->isDroppable = itemToCopy->isDroppable;
-	return;
 }
 
 ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int maxValue)
