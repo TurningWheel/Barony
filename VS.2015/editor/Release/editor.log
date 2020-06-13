@@ -1,0 +1,76 @@
+﻿  buttons.cpp
+  cursors.cpp
+  draw.cpp
+  editor.cpp
+  entity_editor.cpp
+  entity_shared.cpp
+  files.cpp
+  hash.cpp
+  init.cpp
+  items_editor.cpp
+  light.cpp
+  list.cpp
+  main.cpp
+  objects.cpp
+  opengl.cpp
+  sound.cpp
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\files.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\files.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\entity_editor.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\entity_editor.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\draw.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\draw.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\hash.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\hash.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\light.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\light.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\sound.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\sound.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\cursors.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\cursors.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\opengl.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\opengl.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\items_editor.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\items_editor.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\init.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\init.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\editor.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\editor.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\entity_shared.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\entity_shared.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\objects.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\objects.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\main.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\main.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\buttons.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\buttons.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\list.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\list.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\files.cpp)
+  stat_editor.cpp
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\entity_editor.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\draw.cpp)
+  stat_shared.cpp
+  steam_shared.cpp
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\light.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\sound.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\opengl.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\entity_shared.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\cursors.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\hash.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\init.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\main.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\list.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\objects.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\buttons.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\items_editor.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\editor.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\stat_editor.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\stat_editor.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\stat_shared.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\stat_shared.cpp)
+C:\BARONY\Barony\src\main.hpp(58,1): warning C4005: 'PATH_MAX': macro redefinition (compiling source file ..\..\src\steam_shared.cpp)
+C:\BARONY\Barony\VS-includes\dirent.h(150): message : see previous definition of 'PATH_MAX' (compiling source file ..\..\src\steam_shared.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\stat_editor.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\stat_shared.cpp)
+C:\BARONY\Barony\src\main.hpp(730,10): fatal error C1083: Cannot open include file: 'steam/steam_api.h': No such file or directory (compiling source file ..\..\src\steam_shared.cpp)
