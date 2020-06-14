@@ -343,6 +343,7 @@ void EOS_CALL EOSFuncs::OnLobbySearchFinished(const EOS_LobbySearch_FindCallback
 		{
 			EOSFuncs::logInfo("OnLobbySearchFinished: Found 0 lobbies!");
 		}
+		EOS.LobbySearchResults.sortResults();
 		return;
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_NotFound )
@@ -361,32 +362,41 @@ void EOS_CALL EOSFuncs::OnLobbySearchFinished(const EOS_LobbySearch_FindCallback
 		// we were trying to join a lobby, set error message.
 		EOS.bConnectingToLobbyWindow = false;
 		EOS.bConnectingToLobby = false;
-		EOS.ConnectingToLobbyStatus = data->ResultCode;
+		EOS.ConnectingToLobbyStatus = static_cast<int>(data->ResultCode);
 	}
 }
 
-std::string EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult result)
+std::string EOSFuncs::getLobbyJoinFailedConnectString(int result)
 {
 	char buf[1024] = "";
 	switch ( result )
 	{
+		case EResult_LobbyFailures::LOBBY_USING_SAVEGAME:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby requires a compatible saved game to join.\nNewly created characters cannot join this lobby.");
+			break;
+		case EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is not loading from a saved game.\nCreate a new character to join.");
+			break;
+		case EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby saved game is incompatible with current save.\nEnsure the correct saved game is loaded.");
+			break;
 		case EOS_EResult::EOS_Canceled:
-			snprintf(buf, 1023, "Lobby join cancelled while setting up players.\nSafely leaving lobby.");
+			snprintf(buf, 1023, "Lobby join cancelled while setting up players.\n\nSafely leaving lobby.");
 			break;
 		case EOS_EResult::EOS_TimedOut:
-			snprintf(buf, 1023, "Failed to join the selected lobby.\nTimeout waiting for response from host.");
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nTimeout waiting for response from host.");
 			break;
-		case EOS_EResult::EOS_Lobby_NotOwner:
-			snprintf(buf, 1023, "Failed to join the selected lobby.\nNo host found for lobby.");
+		case EResult_LobbyFailures::LOBBY_NO_OWNER:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nNo host found for lobby.");
 			break;
 		case EOS_EResult::EOS_NotFound:
-			snprintf(buf, 1023, "Failed to join the selected lobby.\nLobby no longer exists.");
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby no longer exists.");
 			break;
 		case EOS_EResult::EOS_Lobby_TooManyPlayers:
-			snprintf(buf, 1023, "Failed to join the selected lobby.\nLobby is full.");
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is full.");
 			break;
 		default:
-			snprintf(buf, 1023, "Failed to join the selected lobby.\nGeneral failure - error code: %d.", result);
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nGeneral failure - error code: %d.", result);
 			break;
 	}
 	EOSFuncs::logError(buf);
@@ -400,7 +410,7 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 		EOSFuncs::logError("OnLobbyJoinCallback: null data");
 		EOS.bConnectingToLobby = false;
 		EOS.bConnectingToLobbyWindow = false;
-		EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_UnexpectedError;
+		EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_UnexpectedError);
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
@@ -420,7 +430,7 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 			return;
 		}
 
-		EOS.ConnectingToLobbyStatus = data->ResultCode;
+		EOS.ConnectingToLobbyStatus = static_cast<int>(data->ResultCode);
 		EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
 			EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_UPDATE_CURRENTLOBBY, data->LobbyId);
 
@@ -435,7 +445,7 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 		EOSFuncs::logError("OnLobbyJoinCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
 		EOS.bConnectingToLobbyWindow = false;
 		EOS.bConnectingToLobby = false;
-		EOS.ConnectingToLobbyStatus = data->ResultCode;
+		EOS.ConnectingToLobbyStatus = static_cast<int>(data->ResultCode);
 	}
 
 	EOS.P2PConnectionInfo.resetPeersAndServerData();
@@ -947,12 +957,68 @@ bool EOSFuncs::HandleReceivedMessages(EOS_ProductUserId* remoteIdReturn)
 		//char buffer[512] = "";
 		//strncpy_s(buffer, (char*)net_packet->data, 512 - 1);
 		//buffer[4] = '\0';
-		//logInfo("HandleReceivedMessages: remote id: %s received: %s", EOSFuncs::Helpers_t::productIdToString(*remoteIdReturn), buffer);
+		//logInfo("HandleReceivedMessages: remote id: %s received: %s", EOSFuncs::Helpers_t::productIdToString(*remoteIdReturn).c_str(), buffer);
 		return true;
 	}
 	else
 	{
 		logError("HandleReceivedMessages: error while reading data, code: %d", static_cast<int>(result));
+		return false;
+	}
+}
+
+// function to empty the packet queue on main lobby.
+bool EOSFuncs::HandleReceivedMessagesAndIgnore(EOS_ProductUserId* remoteIdReturn)
+{
+	if ( !CurrentUserInfo.isValid() )
+	{
+		//logError("HandleReceivedMessages: Invalid local user Id: %s", CurrentUserInfo.getProductUserIdStr());
+		return false;
+	}
+	EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(PlatformHandle);
+
+	EOS_P2P_ReceivePacketOptions ReceivePacketOptions;
+	ReceivePacketOptions.ApiVersion = EOS_P2P_RECEIVEPACKET_API_LATEST;
+	ReceivePacketOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
+	ReceivePacketOptions.MaxDataSizeBytes = 512;
+	ReceivePacketOptions.RequestedChannel = nullptr;
+
+	EOS_P2P_SocketId SocketId;
+	SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
+	uint8_t Channel = 0;
+
+	Uint32 bytesWritten = 0;
+	Uint8 dummyData[512];
+	EOS_EResult result = EOS_P2P_ReceivePacket(P2PHandle, &ReceivePacketOptions, remoteIdReturn, &SocketId, &Channel, dummyData, &bytesWritten);
+	if ( result == EOS_EResult::EOS_NotFound
+		|| result == EOS_EResult::EOS_InvalidAuth
+		|| result == EOS_EResult::EOS_InvalidUser )
+	{
+		//no more packets, just end
+		return false;
+	}
+	else if ( result == EOS_EResult::EOS_Success )
+	{
+		char buffer[512] = "";
+		strncpy(buffer, (char*)dummyData, 512 - 1);
+		buffer[4] = '\0';
+		std::string remoteStr = EOSFuncs::Helpers_t::productIdToString(*remoteIdReturn);
+		if ( (int)buffer[3] < '0'
+			&& (int)buffer[0] == 0
+			&& (int)buffer[1] == 0
+			&& (int)buffer[2] == 0 )
+		{
+			logInfo("Clearing P2P packet queue: remote id: %s received: %d", remoteStr.c_str(), (int)buffer[3]);
+		}
+		else
+		{
+			logInfo("Clearing P2P packet queue: remote id: %s received: %s", remoteStr.c_str(), buffer);
+		}
+		return true;
+	}
+	else
+	{
+		logError("HandleReceivedMessagesAndIgnore: error while reading data, code: %d", static_cast<int>(result));
 		return false;
 	}
 }
@@ -1354,8 +1420,37 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 		// this is unexpected - perhaps an attempt to join a lobby that was freshly abandoned
 		bConnectingToLobbyWindow = false;
 		bConnectingToLobby = false;
-		ConnectingToLobbyStatus = EOS_EResult::EOS_Lobby_NotOwner;
+		ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_NO_OWNER;
 		logError("joinLobby: attempting to join a lobby with a NULL owner: %s, aborting.", CurrentLobbyData.LobbyId.c_str());
+		LobbyParameters.clearLobbyToJoin();
+
+		EOS.P2PConnectionInfo.resetPeersAndServerData();
+		EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
+		EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
+		EOS.CurrentLobbyData.ClearData();
+		return;
+	}
+	else if ( lobby->LobbyAttributes.isLobbyLoadingSavedGame != loadingsavegame )
+	{
+		// loading save game, but incorrect assertion from client side.
+		bConnectingToLobbyWindow = false;
+		bConnectingToLobby = false;
+		if ( loadingsavegame == 0 )
+		{
+			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+		}
+		else if ( loadingsavegame > 0 && lobby->LobbyAttributes.isLobbyLoadingSavedGame == 0 )
+		{
+			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
+		}
+		else if ( loadingsavegame > 0 && lobby->LobbyAttributes.isLobbyLoadingSavedGame > 0 )
+		{
+			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
+		}
+		else
+		{
+			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
+		}
 		LobbyParameters.clearLobbyToJoin();
 
 		EOS.P2PConnectionInfo.resetPeersAndServerData();
@@ -1430,6 +1525,7 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 		result.ClearData();
 	}
 	LobbySearchResults.results.clear();
+	LobbySearchResults.resultsSortedForDisplay.clear();
 
 	/*EOS_LobbySearch_SetTargetUserIdOptions SetLobbyOptions = {};
 	SetLobbyOptions.ApiVersion = EOS_LOBBYSEARCH_SETLOBBYID_API_LATEST;
@@ -1673,14 +1769,7 @@ std::pair<std::string, std::string> EOSFuncs::LobbyData_t::getAttributePair(Attr
 			break;
 		case LOADING_SAVEGAME:
 			attributePair.first = "LOADINGSAVEGAME";
-			if ( this->LobbyAttributes.isLobbyLoadingSavedGame == 0 )
-			{
-				attributePair.second = "0";
-			}
-			else
-			{
-				attributePair.second = "1";
-			}
+			attributePair.second = std::to_string(this->LobbyAttributes.isLobbyLoadingSavedGame);
 			break;
 		case GAME_MODS:
 			attributePair.first = "SVNUMMODS";
@@ -1713,7 +1802,7 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesAfterReading(EOS_Lobby_AttributeDa
 	}
 	else if ( keyName.compare("LOADINGSAVEGAME") == 0 )
 	{
-		this->LobbyAttributes.isLobbyLoadingSavedGame = std::stoi(data->Value.AsUtf8);
+		this->LobbyAttributes.isLobbyLoadingSavedGame = std::stoul(data->Value.AsUtf8);
 	}
 	else if ( keyName.compare("SVNUMMODS") == 0 )
 	{
@@ -1940,6 +2029,26 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 	}
 }
 
+void EOSFuncs::LobbySearchResults_t::sortResults()
+{
+	resultsSortedForDisplay.clear();
+	if ( results.empty() )
+	{
+		return;
+	}
 
+	int index = 0;
+	for ( auto it = results.begin(); it != results.end(); ++it )
+	{
+		resultsSortedForDisplay.push_back(std::make_pair((*it).LobbyAttributes.lobbyCreationTime, index));
+		++index;
+	}
+	std::sort(resultsSortedForDisplay.begin(), resultsSortedForDisplay.end(), 
+		[](const std::pair<long long, int>& lhs, const std::pair<long long, int>& rhs) 
+		{
+			return lhs.first > rhs.first;
+		}
+	);
+}
 
 #endif //USE_EOS

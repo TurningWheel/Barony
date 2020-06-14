@@ -38,7 +38,7 @@ public:
 	bool bRequestingLobbies = false; // client is waiting for lobby data to display
 	bool bConnectingToLobby = false; // if true, client is waiting for lobby join callback
 	bool bConnectingToLobbyWindow = false; // client has a valid lobby window and has not encountered a new error window
-	EOS_EResult ConnectingToLobbyStatus = EOS_EResult::EOS_Success; // if invalid lobby join attempt, set to non-success
+	int ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success); // if invalid lobby join attempt, set to non-success
 	bool bJoinLobbyWaitingForHostResponse = false;
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
@@ -246,7 +246,13 @@ public:
 	public:
 		EOS_HLobbySearch CurrentLobbySearch = nullptr;
 		std::vector<LobbyData_t> results;
+		std::vector<std::pair<long long, int>> resultsSortedForDisplay;
 		int selectedLobby = 0;
+		void sortResults();
+		LobbyData_t* getResultFromDisplayedIndex(int index)
+		{
+			return &results.at(resultsSortedForDisplay.at(index).second);
+		}
 	} LobbySearchResults;
 
 	class CurrentUserInfo_t {
@@ -569,13 +575,22 @@ public:
 	};
 
 	bool HandleReceivedMessages(EOS_ProductUserId* remoteIdReturn);
+	bool HandleReceivedMessagesAndIgnore(EOS_ProductUserId* remoteIdReturn); // function to empty the packet queue on main lobby.
 	void SendMessageP2P(EOS_ProductUserId RemoteId, const void* data, int len);
 	void serialize(void* file);
 	void readFromFile();
 	void readFromCmdLineArgs();
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);
 	void showFriendsOverlay();
-	static std::string getLobbyJoinFailedConnectString(EOS_EResult result);
+	enum EResult_LobbyFailures : int
+	{
+		LOBBY_USING_SAVEGAME = 50000,
+		LOBBY_WRONG_SAVEGAME,
+		LOBBY_NOT_USING_SAVEGAME,
+		LOBBY_NO_OWNER,
+		LOBBY_UNHANDLED_ERROR
+	};
+	static std::string getLobbyJoinFailedConnectString(int result);
 	static void logInfo(const char* str, ...)
 	{
 		char newstr[1024] = { 0 };

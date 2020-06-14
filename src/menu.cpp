@@ -2060,7 +2060,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// lobby entered
-			if ( EOS.ConnectingToLobbyStatus != EOS_EResult::EOS_Success )
+			if ( EOS.ConnectingToLobbyStatus != static_cast<int>(EOS_EResult::EOS_Success) )
 			{
 				// close current window
 				buttonCloseSubwindow(NULL);
@@ -2069,7 +2069,7 @@ void handleMainMenu(bool mode)
 
 				openFailedConnectionWindow(CLIENT);
 				strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS.ConnectingToLobbyStatus).c_str());
-				EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_Success;
+				EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 			}
 			else if ( !EOS.bConnectingToLobby && EOS.bConnectingToLobbyWindow )
 			{
@@ -3683,13 +3683,15 @@ void handleMainMenu(bool mode)
 		drawDepressed(subx1 + 8, suby1 + 24, subx2 - 32, suby2 - 64);
 		drawDepressed(subx2 - 32, suby1 + 24, subx2 - 8, suby2 - 64);
 
+		int numSearchResults = EOS.LobbySearchResults.resultsSortedForDisplay.size();
+
 		// slider
-		slidersize = std::min<int>(((suby2 - 65) - (suby1 + 25)), ((suby2 - 65) - (suby1 + 25)) / ((real_t)std::max(static_cast<int>(EOS.LobbySearchResults.results.size()) + 1, 1) / 20));
+		slidersize = std::min<int>(((suby2 - 65) - (suby1 + 25)), ((suby2 - 65) - (suby1 + 25)) / ((real_t)std::max(numSearchResults + 1, 1) / 20));
 		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
 		drawWindowFancy(subx2 - 31, slidery, subx2 - 9, slidery + slidersize);
 
 		// directory list offset from slider
-		Sint32 y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (EOS.LobbySearchResults.results.size() + 1);
+		Sint32 y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSearchResults + 1);
 		if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 32 && omousex < subx2 - 8 && omousey >= suby1 + 24 && omousey < suby2 - 64 )
 		{
 			slidery = oslidery + mousey - omousey;
@@ -3705,7 +3707,7 @@ void handleMainMenu(bool mode)
 			oslidery = slidery;
 		}
 		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
-		y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (EOS.LobbySearchResults.results.size() + 1);
+		y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSearchResults + 1);
 
 		// server flags tooltip variables
 		SDL_Rect flagsBox;
@@ -3720,10 +3722,10 @@ void handleMainMenu(bool mode)
 			hoveringSelection = std::min(std::max(0, y2 + ((omousey - suby1 - 24) >> 4)), EOS.kMaxLobbiesToSearch);
 
 			// lobby info tooltip
-			if ( hoveringSelection < EOS.LobbySearchResults.results.size()/*lobbyIDs[hoveringSelection]*/ )
+			if ( hoveringSelection < numSearchResults/*lobbyIDs[hoveringSelection]*/ )
 			{
 				//const char* lobbySvFlagsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[hoveringSelection]), "svFlags");
-				Uint32 lobbySvFlags = EOS.LobbySearchResults.results.at(hoveringSelection).LobbyAttributes.serverFlags;
+				Uint32 lobbySvFlags = EOS.LobbySearchResults.getResultFromDisplayedIndex(hoveringSelection)->LobbyAttributes.serverFlags;
 
 				int numSvFlags = 0, c;
 				for ( c = 0; c < NUM_SERVER_FLAGS; ++c )
@@ -3735,7 +3737,7 @@ void handleMainMenu(bool mode)
 				}
 
 				//const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[hoveringSelection]), "svNumMods");
-				int serverNumModsLoaded = EOS.LobbySearchResults.results.at(hoveringSelection).LobbyAttributes.numServerMods;
+				int serverNumModsLoaded = EOS.LobbySearchResults.getResultFromDisplayedIndex(hoveringSelection)->LobbyAttributes.numServerMods;
 
 				flagsBox.x = mousex + 8;
 				flagsBox.y = mousey + 8;
@@ -3791,7 +3793,7 @@ void handleMainMenu(bool mode)
 				EOS.LobbySearchResults.selectedLobby = hoveringSelection;
 			}
 		}
-		EOS.LobbySearchResults.selectedLobby = std::min(std::max(y2, EOS.LobbySearchResults.selectedLobby), std::min(std::max(static_cast<int>(EOS.LobbySearchResults.results.size()) - 1, 0), y2 + 17));
+		EOS.LobbySearchResults.selectedLobby = std::min(std::max(y2, EOS.LobbySearchResults.selectedLobby), std::min(std::max(static_cast<int>(numSearchResults) - 1, 0), y2 + 17));
 		pos.x = subx1 + 10;
 		pos.y = suby1 + 26 + (EOS.LobbySearchResults.selectedLobby - y2) * 16;
 		pos.w = subx2 - subx1 - 44;
@@ -3801,18 +3803,18 @@ void handleMainMenu(bool mode)
 		// print all lobby entries
 		Sint32 x = subx1 + 10;
 		Sint32 y = suby1 + 28;
-		if ( EOS.LobbySearchResults.results.size() > 0 )
+		if ( numSearchResults > 0 )
 		{
 			Sint32 z;
-			c = std::min(static_cast<int>(EOS.LobbySearchResults.results.size()), 18 + y2);
+			c = std::min(static_cast<int>(numSearchResults), 18 + y2);
 			for ( z = y2; z < c; z++ )
 			{
 				char temporary[1024] = "";
-				strcpy(temporary, EOS.LobbySearchResults.results.at(z).LobbyAttributes.lobbyName.c_str());
+				strcpy(temporary, EOS.LobbySearchResults.getResultFromDisplayedIndex(z)->LobbyAttributes.lobbyName.c_str());
 				ttfPrintTextFormatted(ttf12, x, y, temporary); // name
 				ttfPrintTextFormatted(ttf12, subx2 - 72, y, "%d/%d", 
-					EOS.LobbySearchResults.results.at(z).playersInLobby.size(),
-					EOS.LobbySearchResults.results.at(z).MaxPlayers); // player count
+					EOS.LobbySearchResults.getResultFromDisplayedIndex(z)->playersInLobby.size(),
+					EOS.LobbySearchResults.getResultFromDisplayedIndex(z)->MaxPlayers); // player count
 				y += 16;
 			}
 		}
@@ -3822,8 +3824,9 @@ void handleMainMenu(bool mode)
 		}
 
 		// draw server flags tooltip (if applicable)
-		if ( hoveringSelection >= 0 && hoveringSelection < EOS.LobbySearchResults.results.size() > 0 
-			&& hoveringSelection < hoveringSelection < EOS.LobbySearchResults.results.size() )
+		if ( hoveringSelection >= 0 
+			&& numSearchResults > 0
+			&& hoveringSelection < numSearchResults )
 		{
 			drawTooltip(&flagsBox);
 			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 4, flagsBoxText);
@@ -5593,8 +5596,8 @@ void handleMainMenu(bool mode)
 				{
 					buttonDisconnect(nullptr);
 					openFailedConnectionWindow(CLIENT);
-					strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult::EOS_TimedOut).c_str());
-					EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_Success;
+					strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(static_cast<int>(EOS_EResult::EOS_TimedOut)).c_str());
+					EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 				}
 			}
 #endif
@@ -5680,6 +5683,26 @@ void handleMainMenu(bool mode)
 				{
 					printlog("connection attempt denied by server, error code: %d.\n", clientnum);
 					multiplayer = SINGLE;
+
+#ifdef USE_EOS
+					// if we got a packet, flush any remaining packets from the queue.
+					Uint32 startTicks = SDL_GetTicks();
+					Uint32 checkTicks = startTicks;
+					while ( (checkTicks - startTicks) < 2000 )
+					{
+						EOS_Platform_Tick(EOS.PlatformHandle);
+						if ( EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId) )
+						{
+							checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
+						}
+						SDL_Delay(10);
+						if ( (SDL_GetTicks() - startTicks) > 5000 )
+						{
+							// hard break at 3 seconds.
+							break;
+						}
+					}
+#endif // USE_EOS
 
 					// close current window
 					buttonCloseSubwindow(NULL);
@@ -6456,10 +6479,14 @@ void handleMainMenu(bool mode)
 			else if ( multiplayer == SERVER )
 			{
 				// update the backend's copy of the lobby name
-				if ( EOS.CurrentLobbyData.LobbyAttributes.lobbyName.compare(EOS.currentLobbyName) != 0
-					&& strcmp(EOS.currentLobbyName, "") != 0 )
+				if ( ticks % TICKS_PER_SECOND == 0 )
 				{
-					if ( ticks % TICKS_PER_SECOND == 0 )
+					if ( EOS.CurrentLobbyData.LobbyAttributes.lobbyName.compare(EOS.currentLobbyName) != 0
+						&& strcmp(EOS.currentLobbyName, "") != 0 )
+					{
+						EOS.CurrentLobbyData.updateLobbyForHost();
+					}
+					else if ( EOS.CurrentLobbyData.LobbyAttributes.serverFlags != svFlags )
 					{
 						EOS.CurrentLobbyData.updateLobbyForHost();
 					}
@@ -11601,7 +11628,7 @@ void openSteamLobbyWaitWindow(button_t* my)
 		EOS.bJoinLobbyWaitingForHostResponse = false;
 		buttonDisconnect(nullptr);
 		openFailedConnectionWindow(CLIENT);
-		strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult::EOS_Canceled).c_str());
+		strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(static_cast<int>(EOS_EResult::EOS_Canceled)).c_str());
 		return;
 	}
 #endif // STEAMWORKS
@@ -11742,14 +11769,9 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my)
 	int lobbyIndex = std::min(std::max(0, selectedSteamLobby), MAX_STEAM_LOBBIES - 1);
 	if ( lobbyIDs[lobbyIndex] )
 	{
-		// close current window
-		bool temp1 = connectingToLobby;
-		bool temp2 = connectingToLobbyWindow;
-		//buttonCloseSubwindow(my);
+		// clear buttons
 		list_FreeAll(&button_l);
 		deleteallbuttons = true;
-		connectingToLobby = temp1;
-		connectingToLobbyWindow = temp2;
 
 		// create new window
 		subwindow = 1;
@@ -11793,14 +11815,9 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my)
 	int lobbyIndex = std::min(std::max(0, EOS.LobbySearchResults.selectedLobby), EOS.kMaxLobbiesToSearch - 1);
 	if ( !EOS.LobbySearchResults.results.empty() )
 	{
-		// close current window
-		bool temp1 = EOS.bConnectingToLobby;
-		bool temp2 = EOS.bConnectingToLobbyWindow;
-		//buttonCloseSubwindow(my);
+		// clear buttons
 		list_FreeAll(&button_l);
 		deleteallbuttons = true;
-		EOS.bConnectingToLobby = temp1;
-		EOS.bConnectingToLobbyWindow = temp2;
 
 		// create new window
 		subwindow = 1;
@@ -11836,8 +11853,8 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my)
 
 		EOS.bConnectingToLobby = true;
 		EOS.bConnectingToLobbyWindow = true;
-		strncpy(EOS.currentLobbyName, EOS.LobbySearchResults.results.at(lobbyIndex).LobbyAttributes.lobbyName.c_str(), 31);
-		std::string lobbyToJoin = EOS.LobbySearchResults.results.at(lobbyIndex).LobbyId;
+		strncpy(EOS.currentLobbyName, EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.lobbyName.c_str(), 31);
+		std::string lobbyToJoin = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyId;
 		EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
 			EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
 			lobbyToJoin.c_str());
@@ -12078,14 +12095,9 @@ void buttonContinue(button_t* my)
 				savegameCurrentFileIndex = multiplayerSavegameFreeSlot;
 			}
 
-			// close current window
-			bool temp1 = connectingToLobby;
-			bool temp2 = connectingToLobbyWindow;
-			//buttonCloseSubwindow(my);
+			// clear buttons
 			list_FreeAll(&button_l);
 			deleteallbuttons = true;
-			connectingToLobby = temp1;
-			connectingToLobbyWindow = temp2;
 
 			// create new window
 			subwindow = 1;
@@ -14259,27 +14271,23 @@ void buttonLoadSingleplayerGame(button_t* button)
 	else
 	{
 		directConnect = false;
-#ifdef STEAMWORKS
+#if defined(USE_EOS) || defined(STEAMWORKS)
 		if ( mul == SERVER )
 		{
 			buttonHostMultiplayer(button);
 		}
 		else if ( mul == CLIENT )
 		{
+#ifdef STEAMWORKS
 			if ( !lobbyToConnectTo )
 			{
-				openSteamLobbyBrowserWindow(button);
+				openSteamLobbyWaitWindow(button);
 			}
 			else
 			{
 				// close current window
-				bool temp1 = connectingToLobby;
-				bool temp2 = connectingToLobbyWindow;
-				//buttonCloseSubwindow(button);
 				list_FreeAll(&button_l);
 				deleteallbuttons = true;
-				connectingToLobby = temp1;
-				connectingToLobbyWindow = temp2;
 
 				// create new window
 				subwindow = 1;
@@ -14320,6 +14328,9 @@ void buttonLoadSingleplayerGame(button_t* button)
 				cpp_Free_CSteamID(lobbyToConnectTo);
 				lobbyToConnectTo = NULL;
 			}
+#elif defined USE_EOS
+			openSteamLobbyWaitWindow(button);
+#endif
 		}
 		else
 		{
@@ -14353,27 +14364,22 @@ void buttonLoadMultiplayerGame(button_t* button)
 	else
 	{
 		directConnect = false;
-#ifdef STEAMWORKS
+#if defined(USE_EOS) || defined(STEAMWORKS)
 		if ( mul == SERVER )
 		{
 			buttonHostMultiplayer(button);
 		}
 		else if ( mul == CLIENT )
 		{
+#ifdef STEAMWORKS
 			if ( !lobbyToConnectTo )
 			{
-				openSteamLobbyBrowserWindow(button);
+				openSteamLobbyWaitWindow(button);
 			}
 			else
 			{
-				// close current window
-				int temp1 = connectingToLobby;
-				int temp2 = connectingToLobbyWindow;
-				//buttonCloseSubwindow(button);
 				list_FreeAll(&button_l);
 				deleteallbuttons = true;
-				connectingToLobby = temp1;
-				connectingToLobbyWindow = temp2;
 
 				// create new window
 				subwindow = 1;
@@ -14414,6 +14420,9 @@ void buttonLoadMultiplayerGame(button_t* button)
 				cpp_Free_CSteamID(lobbyToConnectTo);
 				lobbyToConnectTo = NULL;
 			}
+#elif defined USE_EOS
+			openSteamLobbyWaitWindow(button);
+#endif
 		}
 		else
 		{
