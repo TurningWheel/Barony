@@ -26,8 +26,10 @@ public:
 	std::string DeploymentId = "";
 	std::string ClientCredentialsId = "";
 	std::string ClientCredentialsSecret = "";
-	std::string CredentialName = "cred1";
-	std::string CredentialHost = "localhost:12345";
+	std::string CredentialName = "";
+	std::string CredentialHost = "";
+	std::vector<std::string> CommandLineArgs;
+	EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_Developer;
 
 	const int kMaxLobbiesToSearch = 100;
 	EOS_EResult AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
@@ -36,6 +38,8 @@ public:
 	bool bRequestingLobbies = false; // client is waiting for lobby data to display
 	bool bConnectingToLobby = false; // if true, client is waiting for lobby join callback
 	bool bConnectingToLobbyWindow = false; // client has a valid lobby window and has not encountered a new error window
+	EOS_EResult ConnectingToLobbyStatus = EOS_EResult::EOS_Success; // if invalid lobby join attempt, set to non-success
+	bool bJoinLobbyWaitingForHostResponse = false;
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
 
@@ -152,6 +156,7 @@ public:
 		bool bLobbyHasBasicDetailsRead = false;
 		bool bAwaitingLeaveCallback = false;
 		bool bAwaitingCreationCallback = false;
+		bool bDenyLobbyJoinEvent = false;
 
 		class PlayerLobbyData_t {
 		public:
@@ -177,6 +182,7 @@ public:
 			playersInLobby.clear();
 			bLobbyHasFullDetailsRead = false;
 			bLobbyHasBasicDetailsRead = false;
+			bDenyLobbyJoinEvent = false;
 			LobbyAttributes.ClearData();
 		};
 		bool currentLobbyIsValid()
@@ -195,6 +201,7 @@ public:
 				Uint32 isLobbyLoadingSavedGame = 0;
 				Uint32 serverFlags = 0;
 				Uint32 numServerMods = 0;
+				long long lobbyCreationTime = 0;
 				void ClearData()
 				{
 					lobbyName = "";
@@ -202,6 +209,7 @@ public:
 					isLobbyLoadingSavedGame = 0;
 					serverFlags = 0;
 					numServerMods = 0;
+					lobbyCreationTime = 0;
 				}
 		} LobbyAttributes;
 		bool updateLobbyForHost();
@@ -226,9 +234,10 @@ public:
 			GAME_VERSION,
 			LOADING_SAVEGAME,
 			SERVER_FLAGS,
-			GAME_MODS
+			GAME_MODS,
+			CREATION_TIME
 		};
-		const int kNumAttributes = 5;
+		const int kNumAttributes = 6;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;
@@ -306,6 +315,7 @@ public:
 		}
 		bool isPeerIndexed(EOS_ProductUserId id);
 		bool assignPeerIndex(EOS_ProductUserId id, int index);
+		bool isPeerStillValid(int index);
 		void resetPeersAndServerData()
 		{
 			peerProductIds.clear();
@@ -344,100 +354,13 @@ public:
 		logInfo("Shutdown completed.");
 	}
 
-	bool initPlatform(bool enableLogging)
-	{
-		EOS_InitializeOptions InitializeOptions;
-		InitializeOptions.ProductName = "Barony";
-		InitializeOptions.ProductVersion = "v3.3.3";
-		InitializeOptions.ApiVersion = EOS_INITIALIZE_API_LATEST;
-		InitializeOptions.AllocateMemoryFunction = nullptr;
-		InitializeOptions.ReallocateMemoryFunction = nullptr;
-		InitializeOptions.ReleaseMemoryFunction = nullptr;
-		InitializeOptions.Reserved = nullptr;
-		InitializeOptions.SystemInitializeOptions = nullptr;
-		EOS_EResult result = EOS_Initialize(&InitializeOptions);
-		if ( result != EOS_EResult::EOS_Success )
-		{
-			logError("initPlatform: Failure to initialize - error code: %d", static_cast<int>(result));
-			return false;
-		}
-		else
-		{
-			logInfo("initPlatform: Initialize success");
-		}
-
-		if ( enableLogging )
-		{
-			EOS_EResult SetLogCallbackResult = EOS_Logging_SetCallback(&this->LoggingCallback);
-			if ( SetLogCallbackResult != EOS_EResult::EOS_Success )
-			{
-				logError("SetLogCallbackResult: Set Logging Callback Failed!");
-			}
-			else
-			{
-				logInfo("SetLogCallbackResult: Logging Callback set");
-				EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Info);
-			}
-		}
-
-		EOS_Platform_Options PlatformOptions = {};
-		PlatformOptions.ApiVersion = EOS_PLATFORM_OPTIONS_API_LATEST;
-		PlatformOptions.Reserved = nullptr;
-		PlatformOptions.ProductId = ProductId.c_str();
-		PlatformOptions.SandboxId = SandboxId.c_str();
-		PlatformOptions.DeploymentId = DeploymentId.c_str();
-		PlatformOptions.ClientCredentials.ClientId = ClientCredentialsId.c_str();
-		PlatformOptions.ClientCredentials.ClientSecret = ClientCredentialsSecret.c_str();
-		PlatformOptions.OverrideCountryCode = nullptr;
-		PlatformOptions.OverrideLocaleCode = nullptr;
-		PlatformOptions.bIsServer = EOS_FALSE;
-		PlatformOptions.Flags = 0;
-		static std::string EncryptionKey(64, '1');
-		PlatformOptions.EncryptionKey = EncryptionKey.c_str();
-		PlatformOptions.CacheDirectory = nullptr; // important - needs double slashes and absolute path
-
-		PlatformHandle = EOS_Platform_Create(&PlatformOptions);
-		if ( !PlatformHandle )
-		{
-			logError("PlatformHandle: Platform failed to initialize - invalid handle");
-			return false;
-		}
-		return true;
-	}
-
+	bool initPlatform(bool enableLogging);
 	bool initAuth()
 	{
 		return initAuth(CredentialHost, CredentialName);
 	}
 	bool initAuth(std::string hostname, std::string tokenName);
-
-	void initConnectLogin()
-	{
-		ConnectHandle = EOS_Platform_GetConnectInterface(PlatformHandle);
-
-		EOS_Auth_Token* UserAuthToken = nullptr;
-		EOS_Auth_CopyUserAuthTokenOptions CopyTokenOptions = { 0 };
-		CopyTokenOptions.ApiVersion = EOS_AUTH_COPYUSERAUTHTOKEN_API_LATEST;
-
-		if ( EOS_Auth_CopyUserAuthToken(AuthHandle, &CopyTokenOptions,
-			EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str()), &UserAuthToken) == EOS_EResult::EOS_Success )
-		{
-			logInfo("initConnectLogin: Auth expires: %f", UserAuthToken->ExpiresIn);
-
-			EOS_Connect_Credentials Credentials;
-			Credentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
-			Credentials.Token = UserAuthToken->AccessToken;
-			Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_EPIC; // change this to steam etc for different account providers.
-
-			EOS_Connect_LoginOptions Options;
-			Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
-			Options.Credentials = &Credentials;
-			Options.UserLoginInfo = nullptr;
-
-			EOS_Connect_Login(ConnectHandle, &Options, nullptr, ConnectLoginCompleteCallback);
-			EOS_Auth_Token_Release(UserAuthToken);
-		}
-	}
+	void initConnectLogin();
 
 	void queryFriends()
 	{
@@ -464,149 +387,11 @@ public:
 		EOS_UserInfo_QueryUserInfo(UserInfoHandle, &UserInfoQueryOptions, userInfoQueryData, UserInfoCallback);
 	}
 
-	void createLobby()
-	{
-		/*if ( CurrentLobbyData.currentLobbyIsValid() )
-		{
-			logInfo("");
-			return;
-		}*/
-		
-		if ( CurrentLobbyData.bAwaitingLeaveCallback )
-		{
-			logInfo("createLobby: CurrentLobbyData.bAwaitingLeaveCallback is true");
-		}
-		if ( CurrentLobbyData.bAwaitingCreationCallback )
-		{
-			logInfo("createLobby: CurrentLobbyData.bAwaitingCreationCallback is true");
-		}
-
-		CurrentLobbyData.bAwaitingCreationCallback = true;
-
-		LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
-		EOS_Lobby_CreateLobbyOptions CreateOptions;
-		CreateOptions.ApiVersion = EOS_LOBBY_CREATELOBBY_API_LATEST;
-		CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
-		CreateOptions.MaxLobbyMembers = 4;
-		CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
-
-		EOS_Lobby_CreateLobby(LobbyHandle, &CreateOptions, nullptr, OnCreateLobbyFinished);
-		CurrentLobbyData.MaxPlayers = CreateOptions.MaxLobbyMembers;
-		CurrentLobbyData.OwnerProductUserId = CurrentUserInfo.getProductUserIdStr();
-	}
-
-	void joinLobby(LobbyData_t* lobby)
-	{
-		LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
-
-		if ( CurrentLobbyData.currentLobbyIsValid() )
-		{
-			if ( CurrentLobbyData.LobbyId.compare(lobby->LobbyId) == 0 )
-			{
-				logInfo("joinLobby: attempting to join current lobby");
-				return;
-			}
-			if ( CurrentLobbyData.bAwaitingLeaveCallback )
-			{
-				logInfo("joinLobby: CurrentLobbyData.bAwaitingLeaveCallback is true");
-			}
-			else
-			{
-				leaveLobby();
-				logInfo("joinLobby: leaving current lobby id: %s", CurrentLobbyData.LobbyId.c_str());
-			}
-		}
-		CurrentLobbyData.ClearData();
-		CurrentLobbyData.setBasicCurrentLobbyDataFromInitialJoin(lobby);
-
-		EOS_Lobby_JoinLobbyOptions JoinOptions;
-		JoinOptions.ApiVersion = EOS_LOBBY_JOINLOBBY_API_LATEST;
-		JoinOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
-		JoinOptions.LobbyDetailsHandle = LobbyParameters.lobbyToJoin;
-		EOS_Lobby_JoinLobby(LobbyHandle, &JoinOptions, nullptr, OnLobbyJoinCallback);
-
-		LobbyParameters.clearLobbyToJoin();
-	}
-
-	void leaveLobby()
-	{
-		//if ( CurrentLobbyData.bAwaitingLeaveCallback )
-		//{
-		//	// no action needed
-		//	logInfo("leaveLobby: attempting to leave lobby with callback already requested, ignoring");
-		//	return;
-		//}
-
-		// attempt to destroy the lobby if leaving and we are the owner.
-		if ( CurrentLobbyData.currentUserIsOwner() )
-		{
-			CurrentLobbyData.destroyLobby();
-			return;
-		}
-
-		LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
-
-		EOS_Lobby_LeaveLobbyOptions LeaveOptions;
-		LeaveOptions.ApiVersion = EOS_LOBBY_LEAVELOBBY_API_LATEST;
-		LeaveOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
-		LeaveOptions.LobbyId = CurrentLobbyData.LobbyId.c_str();
-
-		CurrentLobbyData.bAwaitingLeaveCallback = true;
-		EOS_Lobby_LeaveLobby(LobbyHandle, &LeaveOptions, nullptr, OnLobbyLeaveCallback);
-
-	}
-
+	void createLobby();
+	void joinLobby(LobbyData_t* lobby);
+	void leaveLobby();
 	void searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
-		LobbyParameters_t::LobbyJoinOptions joinOptions, EOS_LobbyId lobbyIdToSearch)
-	{
-		LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
-		logInfo("searchLobbies: starting search");
-		EOS_Lobby_CreateLobbySearchOptions CreateSearchOptions;
-		CreateSearchOptions.ApiVersion = EOS_LOBBY_CREATELOBBYSEARCH_API_LATEST;
-		CreateSearchOptions.MaxResults = kMaxLobbiesToSearch;
-
-		EOS_HLobbySearch LobbySearch = nullptr;
-		if ( LobbySearchResults.CurrentLobbySearch != nullptr )
-		{
-			EOS_LobbySearch_Release(LobbySearchResults.CurrentLobbySearch);
-			LobbySearchResults.CurrentLobbySearch = nullptr;
-		}
-
-		EOS_EResult result = EOS_Lobby_CreateLobbySearch(LobbyHandle, &CreateSearchOptions, &LobbySearch);
-		if ( result != EOS_EResult::EOS_Success )
-		{
-			logError("searchLobbies: EOS_Lobby_CreateLobbySearch failure: %d", static_cast<int>(result));
-			return;
-		}
-		LobbySearchResults.CurrentLobbySearch = LobbySearch;
-		for ( auto& result : LobbySearchResults.results )
-		{
-			result.ClearData();
-		}
-		LobbySearchResults.results.clear();
-
-		/*EOS_LobbySearch_SetTargetUserIdOptions SetLobbyOptions = {};
-		SetLobbyOptions.ApiVersion = EOS_LOBBYSEARCH_SETLOBBYID_API_LATEST;
-		SetLobbyOptions.TargetUserId = CurrentUserInfo.Friends.at(0).UserId;
-		Result = EOS_LobbySearch_SetTargetUserId(LobbySearch, &SetLobbyOptions);*/
-
-		if ( searchType == LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
-		{
-			// appends criteria to search for within the normal search function
-			EOS_LobbySearch_SetLobbyIdOptions SetLobbyOptions = {};
-			SetLobbyOptions.ApiVersion = EOS_LOBBYSEARCH_SETLOBBYID_API_LATEST;
-			SetLobbyOptions.LobbyId = lobbyIdToSearch;
-			EOS_LobbySearch_SetLobbyId(LobbySearch, &SetLobbyOptions);
-		}
-
-		EOS_LobbySearch_FindOptions FindOptions;
-		FindOptions.ApiVersion = EOS_LOBBYSEARCH_FIND_API_LATEST;
-		FindOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
-
-		LobbyParameters.clearLobbySearchOptions();
-		LobbyParameters.setLobbySearchOptions(searchType, joinOptions);
-		EOS_LobbySearch_Find(LobbySearch, &FindOptions, LobbyParameters.lobbySearchOptions, OnLobbySearchFinished);
-	}
+		LobbyParameters_t::LobbyJoinOptions joinOptions, EOS_LobbyId lobbyIdToSearch);
 
 	void setLobbyDetailsFromHandle(EOS_HLobbyDetails LobbyDetails, LobbyData_t* LobbyToSet)
 	{
@@ -787,8 +572,10 @@ public:
 	void SendMessageP2P(EOS_ProductUserId RemoteId, const void* data, int len);
 	void serialize(void* file);
 	void readFromFile();
+	void readFromCmdLineArgs();
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);
 	void showFriendsOverlay();
+	static std::string getLobbyJoinFailedConnectString(EOS_EResult result);
 	static void logInfo(const char* str, ...)
 	{
 		char newstr[1024] = { 0 };

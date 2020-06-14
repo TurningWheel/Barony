@@ -4293,6 +4293,7 @@ void copyItem(Item* itemToSet, Item* itemToCopy) //This should probably use refe
 	itemToSet->identified = itemToCopy->identified;
 	itemToSet->uid = itemToCopy->uid;
 	itemToSet->ownerUid = itemToCopy->ownerUid;
+	itemToSet->isDroppable = itemToCopy->isDroppable;
 	return;
 }
 

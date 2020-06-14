@@ -34,6 +34,7 @@
 #include "player.hpp"
 #include "scores.hpp"
 #include "colors.hpp"
+#include "mod_tools.hpp"
 
 NetHandler* net_handler = nullptr;
 
@@ -3337,6 +3338,9 @@ void clientHandlePacket()
 		numplayers = 0;
 		entity_uids = (Uint32)SDLNet_Read32(&net_packet->data[9]);
 		printlog("Received map seed: %d. Entity UID start: %d\n", mapseed, entity_uids);
+
+		gameplayCustomManager.readFromFile();
+
 		int checkMapHash = -1;
 		physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
 		if ( checkMapHash == 0 )

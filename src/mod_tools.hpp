@@ -1798,6 +1798,7 @@ public:
 		std::unordered_set<int> darkFloors;
 		std::unordered_set<int> shopFloors;
 		std::unordered_set<int> npcSpawnFloors;
+		bool usingTrapTypes = false;
 		int minoPercent = -1;
 		int shopPercent = -1;
 		int darkPercent = -1;
@@ -2024,7 +2025,7 @@ public:
 		}
 		else if ( name.compare("player_speed_weight_impact_percent") == 0 )
 		{
-			playerWeightPercent = itr->value.GetBool();
+			playerWeightPercent = itr->value.GetInt();
 			return true;
 		}
 		else if ( name.compare("player_speed_max") == 0 )
@@ -2115,6 +2116,7 @@ public:
 		std::string name = itr->name.GetString();
 		if ( name.compare("trap_generation_types") == 0 )
 		{
+			m.usingTrapTypes = true;
 			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
 			{
 				m.trapTypes.push_back(arr_itr->GetString());

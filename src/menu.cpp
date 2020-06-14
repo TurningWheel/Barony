@@ -678,6 +678,290 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	return INVALID_CHARACTER;
 }
 
+#ifdef STEAMWORKS
+class CommunityLinks
+{
+	double scalex = 0.25;
+	double scaley = 0.25;
+	int posx = 260;
+	int posy = 110;
+	SDL_Surface* communityLink1 = nullptr;
+	bool isInit = false;
+	int textx = 8;
+	int texty = 0;
+	int bodyx = 12;
+	int bodyy = 16;
+
+	bool mainCardHide = false;
+	bool mainCardIsHidden = false;
+	const int cardWidth = 332;
+	int animx = cardWidth;
+	int anim_ticks = 0;
+	const int anim_duration = 50;
+
+	bool dockedCardHide = true;
+	bool dockedCardIsHidden = true;
+	const int dockedCardWidth = 48;
+	int docked_animx = dockedCardWidth;
+	int docked_anim_ticks = 0;
+	const int docked_anim_duration = 25;
+
+	int cardState = 0;
+	bool temporaryCardHide = false;
+	bool idleDisappear = true;
+	Uint32 lastInteractedTick = 0;
+
+	std::string displayedText;
+	std::string mainCardText;
+	std::string overlayDisabledCardText;
+public:
+	CommunityLinks() {
+		mainCardText = "Find co-op allies and\nchat in real-time on the\nofficial Barony Discord!";
+		displayedText = mainCardText;
+		overlayDisabledCardText = "Overlay is disabled -\nVisit discord.gg/j2ne4qW\nin your browser to join!";
+	};
+	~CommunityLinks()
+	{
+		SDL_FreeSurface(communityLink1);
+	}
+
+	void draw()
+	{
+		if ( !isInit )
+		{
+			return;
+		}
+
+		if ( subwindow || fadeout )
+		{
+			temporaryCardHide = true;
+			lastInteractedTick = ticks;
+			if ( cardState == 0 )
+			{
+				mainCardHide = true;
+				dockedCardHide = false;
+			}
+		}
+		else
+		{
+			temporaryCardHide = false;
+		}
+
+		if ( cardState == 0 )
+		{
+			drawMainCard();
+		}
+		else
+		{
+			drawDockedCard();
+		}
+	}
+
+	void drawDockedCard()
+	{
+		SDL_Rect r;
+		r.w = 32;
+		r.h = communityLink1->h * scaley;
+		r.x = xres - r.w + docked_animx;
+		r.y = yres - r.h - posy;
+		drawWindowFancy(r.x, r.y - 8, xres + 16 + docked_animx, r.y + 24);
+
+		if ( !temporaryCardHide && mouseInBounds(r.x, xres + docked_animx, r.y - 8, r.y + 24) )
+		{
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				dockedCardHide = true;
+				mainCardHide = false;
+				lastInteractedTick = ticks;
+			}
+		}
+		ttfPrintTextColor(ttf16, r.x + 8, r.y + texty, 
+			SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255), true, "<");
+
+		if ( temporaryCardHide )
+		{
+			animate(docked_animx, docked_anim_ticks, docked_anim_duration, dockedCardWidth, false, dockedCardIsHidden);
+		}
+		else
+		{
+			animate(docked_animx, docked_anim_ticks, docked_anim_duration, dockedCardWidth, dockedCardHide, dockedCardIsHidden);
+			if ( dockedCardHide && dockedCardIsHidden )
+			{
+				cardState = 0;
+			}
+		}
+	}
+
+	void drawMainCard()
+	{
+		SDL_Rect r;
+		r.w = communityLink1->w * scalex;
+		r.h = communityLink1->h * scaley;
+		r.x = xres - r.w - posx + animx + 12;
+		r.y = yres - r.h - posy;
+		drawWindowFancy(r.x - 8, r.y - 8, xres - 8 + animx, r.y + r.h + 8);
+		drawCloseButton(&r);
+		ttfPrintTextColor(ttf12, r.x + r.w + textx, r.y + texty, SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255), true, 
+			"Join the community!");
+
+		ttfPrintTextColor(ttf12, r.x + r.w + bodyx, r.y + bodyy, SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255), true, 
+			displayedText.c_str());
+		drawImageScaled(communityLink1, nullptr, &r);
+		drawInviteButton(&r);
+
+		if ( temporaryCardHide )
+		{
+			animate(animx, anim_ticks, anim_duration, cardWidth, true, mainCardIsHidden);
+		}
+		else
+		{
+			animate(animx, anim_ticks, anim_duration, cardWidth, mainCardHide, mainCardIsHidden);
+			if ( mainCardHide && mainCardIsHidden )
+			{
+				cardState = 1;
+				displayedText = mainCardText;
+			}
+			else
+			{
+				if ( ticks - lastInteractedTick > TICKS_PER_SECOND * 10 )
+				{
+					mainCardHide = true;
+					dockedCardHide = false;
+				}
+			}
+		}
+	}
+	void animate(int& xout, int& current_ticks, int duration, int width, bool hideElement, bool& isHidden)
+	{
+		// scale duration to FPS - tested @ 144hz
+		double scaledDuration = (duration / (144.f / std::max(1.0, fps)));
+
+		double t = current_ticks / static_cast<double>(scaledDuration);
+		double result = -width * t * t * (3.0f - 2.0f * t); // bezier from 0 to width as t (0-1)
+		xout = floor(result) + width;
+		isHidden = false;
+		if ( hideElement )
+		{
+			current_ticks = std::max(current_ticks - 1, 0);
+			if ( current_ticks == 0 )
+			{
+				isHidden = true;
+			}
+		}
+		else
+		{
+			current_ticks = std::min(current_ticks + 1, static_cast<int>(scaledDuration));
+		}
+	}
+
+	bool drawCloseButton(SDL_Rect* src)
+	{
+		SDL_Rect closeBtn;
+		closeBtn.x = xres - 8 - 12 - 8 + animx;
+		closeBtn.y = src->y - 8 + 4;
+		closeBtn.w = 16;
+		closeBtn.h = 16;
+		if ( !temporaryCardHide && mouseInBounds(closeBtn.x, closeBtn.x + closeBtn.w, closeBtn.y, closeBtn.y + closeBtn.h) )
+		{
+			drawDepressed(closeBtn.x, closeBtn.y, closeBtn.x + closeBtn.w, closeBtn.y + closeBtn.h);
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				ttfPrintText(ttf12, closeBtn.x + 1, closeBtn.y + 2, "x");
+				mainCardHide = true;
+				dockedCardHide = false;
+				lastInteractedTick = ticks;
+				return true;
+			}
+		}
+		else
+		{
+			drawWindow(closeBtn.x, closeBtn.y, closeBtn.x + closeBtn.w, closeBtn.y + closeBtn.h);
+		}
+		ttfPrintText(ttf12, closeBtn.x + 1, closeBtn.y + 2, "x");
+		return false;
+	}
+
+	bool drawInviteButton(SDL_Rect* src)
+	{
+		SDL_Rect inviteBtn;
+		inviteBtn.x = src->x + 4;
+		inviteBtn.y = src->y + src->h - 4 - TTF12_HEIGHT;
+		inviteBtn.w = src->w - 8;
+		inviteBtn.h = 20;
+		if ( !temporaryCardHide && mouseInBounds(inviteBtn.x, inviteBtn.x + inviteBtn.w, inviteBtn.y, inviteBtn.y + inviteBtn.h) )
+		{
+			//drawDepressed(inviteBtn.x, inviteBtn.y, inviteBtn.x + inviteBtn.w, inviteBtn.y + inviteBtn.h);
+			drawWindowFancy(inviteBtn.x, inviteBtn.y, inviteBtn.x + inviteBtn.w, inviteBtn.y + inviteBtn.h);
+			drawRect(&inviteBtn, uint32ColorBaronyBlue(*mainsurface), 32);
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				ttfPrintText(ttf12, inviteBtn.x - 2, inviteBtn.y + 5, " Join");
+				if ( SteamUtils()->IsOverlayEnabled() )
+				{
+					SteamFriends()->ActivateGameOverlayToWebPage("https://discord.gg/j2ne4qW");
+				}
+				else
+				{
+					displayedText = overlayDisabledCardText;
+				}
+				lastInteractedTick = ticks;
+				return true;
+			}
+		}
+		else
+		{
+			drawWindowFancy(inviteBtn.x, inviteBtn.y, inviteBtn.x + inviteBtn.w, inviteBtn.y + inviteBtn.h);
+			drawRect(&inviteBtn, SDL_MapRGB(mainsurface->format, 255, 255, 255), 32);
+		}
+		ttfPrintText(ttf12, inviteBtn.x - 2, inviteBtn.y + 5, " Join");
+		return false;
+	}
+
+	//void serialize(FileInterface* file) {
+	//	file->property("x", posx);
+	//	file->property("y", posy);
+	//	file->property("scalex", scalex);
+	//	file->property("scaley", scaley);
+	//	file->property("textx", textx);
+	//	file->property("texty", texty);
+	//	file->property("bodyx", bodyx);
+	//	file->property("bodyy", bodyy);
+	//	file->property("cardwidth", cardWidth);
+	//}
+	//void readFromFile()
+	//{
+	//	if ( PHYSFS_getRealDir("/data/links.json") )
+	//	{
+	//		std::string inputPath = PHYSFS_getRealDir("/data/links.json");
+	//		inputPath.append("/data/links.json");
+	//		FileHelper::readObject(inputPath.c_str(), *this);
+	//	}
+	//	if ( !isInit )
+	//	{
+	//		init();
+	//	}
+	//}
+	void init()
+	{
+		if ( isInit )
+		{
+			return;
+		}
+		communityLink1 = loadImage("images/system/CommunityLink1.png");
+		if ( communityLink1 )
+		{
+			mainCardIsHidden = false;
+			mainCardHide = false;
+			isInit = true;
+		}
+		lastInteractedTick = ticks;
+	}
+} communityLinks;
+#endif
+
 /*-------------------------------------------------------------------------------
 
 	handleMainMenu
@@ -734,6 +1018,20 @@ void handleMainMenu(bool mode)
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
 			ttfPrintTextColor(ttf16, 176, 20 + title_bmp->h - 24, colorYellow, true, language[1910 + subtitleCurrent]);
 		}
+#ifdef STEAMWORKS
+		if ( mode )
+		{
+			// print community links
+			if ( SteamUser()->BLoggedOn() )
+			{
+				if ( ticks % 50 == 0 )
+				{
+					communityLinks.init();
+				}
+				communityLinks.draw();
+			}
+		}
+#endif
 
 		// gray text color
 		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
@@ -1749,6 +2047,7 @@ void handleMainMenu(bool mode)
 					steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
 				}
 				buttonJoinLobby(NULL);
+				// TODO - what if the server never replies? hangs indefinitely.
 			}
 		}
 #elif defined USE_EOS
@@ -1761,7 +2060,18 @@ void handleMainMenu(bool mode)
 			}
 
 			// lobby entered
-			if ( !EOS.bConnectingToLobby && EOS.bConnectingToLobbyWindow )
+			if ( EOS.ConnectingToLobbyStatus != EOS_EResult::EOS_Success )
+			{
+				// close current window
+				buttonCloseSubwindow(NULL);
+				list_FreeAll(&button_l);
+				deleteallbuttons = true;
+
+				openFailedConnectionWindow(CLIENT);
+				strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS.ConnectingToLobbyStatus).c_str());
+				EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_Success;
+			}
+			else if ( !EOS.bConnectingToLobby && EOS.bConnectingToLobbyWindow )
 			{
 				EOS.bConnectingToLobbyWindow = false;
 				EOS.bConnectingToLobby = false;
@@ -1773,29 +2083,6 @@ void handleMainMenu(bool mode)
 
 				// we are assuming here that the lobby join was successful
 				// otherwise, the callback would've flipped off the connectingToLobbyWindow and opened an error window
-
-				// get number of lobby members (capped to game limit)
-
-				// record CSteamID of lobby owner (and nobody else)
-				//int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
-				//if ( steamIDRemote[0] )
-				//{
-				//	cpp_Free_CSteamID(steamIDRemote[0]);
-				//}
-				//steamIDRemote[0] = cpp_SteamMatchmaking_GetLobbyOwner(currentLobby); //TODO: Bugger void pointers!
-				//int c;
-				//for ( c = 1; c < MAXPLAYERS; c++ )
-				//{
-				//	if ( steamIDRemote[c] )
-				//	{
-				//		cpp_Free_CSteamID(steamIDRemote[c]);
-				//		steamIDRemote[c] = NULL;
-				//	}
-				//}
-				//for ( c = 1; c < lobbyMembers; ++c )
-				//{
-				//	steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
-				//}
 				buttonJoinLobby(NULL);
 			}
 		}
@@ -5299,6 +5586,17 @@ void handleMainMenu(bool mode)
 			CSteamID newSteamID;
 #elif defined USE_EOS
 			EOS_ProductUserId newRemoteProductId = nullptr;
+			if ( EOS.bJoinLobbyWaitingForHostResponse )
+			{
+				// waiting on host response.
+				if ( ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND ) // 15 second timeout
+				{
+					buttonDisconnect(nullptr);
+					openFailedConnectionWindow(CLIENT);
+					strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult::EOS_TimedOut).c_str());
+					EOS.ConnectingToLobbyStatus = EOS_EResult::EOS_Success;
+				}
+			}
 #endif
 
 			// trying to connect to the server and get a player number
@@ -5592,6 +5890,9 @@ void handleMainMenu(bool mode)
 		{
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
+#endif
+#ifdef USE_EOS
+			EOS.bJoinLobbyWaitingForHostResponse = false;
 #endif
 			int numpacket;
 			for ( numpacket = 0; numpacket < PACKET_LIMIT; numpacket++ )
@@ -6490,7 +6791,14 @@ void handleMainMenu(bool mode)
 				{
 					continue;
 				}
-				if ( ticks - client_keepalive[i] > TICKS_PER_SECOND * 30 )
+				bool clientHasLostP2P = false;
+#ifdef USE_EOS
+				if ( !EOS.P2PConnectionInfo.isPeerStillValid(i - 1) )
+				{
+					clientHasLostP2P = true;
+				}
+#endif
+				if ( clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * 30) )
 				{
 					client_disconnected[i] = true;
 					strncpy((char*)(net_packet->data), "PLAYERDISCONNECT", 16);
@@ -11279,6 +11587,26 @@ void openSteamLobbyWaitWindow(button_t* my)
 	button_t* button;
 
 	// close current window
+#ifdef STEAMWORKS
+	bool prevConnectingToLobbyWindow = connectingToLobbyWindow;
+#elif defined USE_EOS
+	if ( EOS.bConnectingToLobbyWindow )
+	{
+		// we quit the connection window before joining lobby, but invite was mid-flight.
+		EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true;
+	}
+	else if ( EOS.bJoinLobbyWaitingForHostResponse )
+	{
+		// we quit the connection window after lobby join, but before host has accepted us.
+		EOS.bJoinLobbyWaitingForHostResponse = false;
+		buttonDisconnect(nullptr);
+		openFailedConnectionWindow(CLIENT);
+		strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS_EResult::EOS_Canceled).c_str());
+		return;
+	}
+#endif // STEAMWORKS
+
+
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
@@ -11611,6 +11939,7 @@ void buttonCloseSubwindow(button_t* my)
 	requestingLobbies = false;
 #elif defined USE_EOS
 	EOS.bRequestingLobbies = false;
+	EOS.bJoinLobbyWaitingForHostResponse = false;
 #else
 	serialEnterWindow = false;
 #endif
@@ -11635,7 +11964,11 @@ void buttonCloseSubwindow(button_t* my)
 	}
 	connectingToLobbyWindow = false;
 	connectingToLobby = false;
-#endif
+#elif defined USE_EOS
+	EOS.bConnectingToLobby = false;
+	EOS.bConnectingToLobbyWindow = false;
+#endif // USE_EOS
+
 	charcreation_step = 0;
 	subwindow = 0;
 	if ( SDL_IsTextInputActive() )
@@ -12244,6 +12577,8 @@ void buttonHostLobby(button_t* my)
 }
 
 // joins a lobby as client
+// if direct-ip, this is called directly after pressing join
+// otherwise for matchmaking, this is called asynchronously after a matchmaking lobby has been joined
 void buttonJoinLobby(button_t* my)
 {
 	button_t* button;
@@ -12259,6 +12594,10 @@ void buttonJoinLobby(button_t* my)
 #elif defined USE_EOS
 	bool temp1 = EOS.bConnectingToLobby;
 	bool temp2 = EOS.bConnectingToLobbyWindow;
+	if ( !directConnect )
+	{
+		EOS.bJoinLobbyWaitingForHostResponse = true;
+	}
 #endif
 	if ( directConnect )
 	{
@@ -13948,7 +14287,7 @@ void buttonLoadSingleplayerGame(button_t* button)
 				subx2 = xres / 2 + 256;
 				suby1 = yres / 2 - 64;
 				suby2 = yres / 2 + 64;
-				strcpy(subtext, language[1467]);
+				strcpy(subtext, language[1447]);
 
 				// close button
 				button = newButton();
@@ -14042,7 +14381,7 @@ void buttonLoadMultiplayerGame(button_t* button)
 				subx2 = xres / 2 + 256;
 				suby1 = yres / 2 - 64;
 				suby2 = yres / 2 + 64;
-				strcpy(subtext, language[1467]);
+				strcpy(subtext, language[1447]);
 
 				// close button
 				button = newButton();

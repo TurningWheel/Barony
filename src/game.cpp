@@ -1199,6 +1199,9 @@ void gameLogic(void)
 					loadingSameLevelAsCurrent = false;
 					darkmap = false;
 					numplayers = 0;
+
+					gameplayCustomManager.readFromFile();
+
 					int checkMapHash = -1;
 					int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
 					if ( checkMapHash == 0 )
@@ -3235,6 +3238,12 @@ int main(int argc, char** argv)
 					else if ( !strcmp(argv[c], "-nosound") )
 					{
 						no_sound = true;
+					}
+					else
+					{
+#ifdef USE_EOS
+						EOS.CommandLineArgs.push_back(argv[c]);
+#endif // USE_EOS
 					}
 				}
 			}

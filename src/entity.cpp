@@ -12404,7 +12404,7 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
-			else if ( myStats->type == DEMON || myStats->type == CREATURE_IMP )
+			else if ( myStats->type == DEMON || myStats->type == CREATURE_IMP || myStats->type == GHOUL )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
