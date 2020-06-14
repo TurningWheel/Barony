@@ -1950,13 +1950,20 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 				}
 			}
 
-			if ( models[c] != NULL )
+			if ( c < nummodels )
 			{
-				if ( models[c]->data )
+				if ( models[c] != NULL )
 				{
-					free(models[c]->data);
+					if ( models[c]->data )
+					{
+						free(models[c]->data);
+					}
+					free(models[c]);
 				}
-				free(models[c]);
+			}
+			else
+			{
+				printlog("[PhysFS]: WARNING: Loading a new model: %d outside normal nummodels: %d range - Need special handling case to free model after use", c, nummodels);
 			}
 			models[c] = loadVoxel(modelName);
 
@@ -1989,8 +1996,9 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 	// now free polymodels as we'll be loading them up later.
 	if ( freePreviousModels )
 	{
-		for ( int c = start; c < end; ++c )
+		for ( int c = std::max(1, start); c < end && c < nummodels; ++c )
 		{
+			// cannot free index 0 - null object
 			if ( polymodels[c].faces )
 			{
 				free(polymodels[c].faces);

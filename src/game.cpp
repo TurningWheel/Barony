@@ -1199,6 +1199,9 @@ void gameLogic(void)
 					loadingSameLevelAsCurrent = false;
 					darkmap = false;
 					numplayers = 0;
+
+					gameplayCustomManager.readFromFile();
+
 					int checkMapHash = -1;
 					int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
 					if ( checkMapHash == 0 )
