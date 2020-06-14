@@ -4205,7 +4205,6 @@ void serverHandlePacket()
 	int c = 0;
 	Uint32 j;
 	Item* item;
-	char shortname[11];
 	double dx, dy, velx, vely, yaw, pitch, dist;
 	deleteent_t* deleteent;
 
@@ -4470,8 +4469,8 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "DISCONNECT", 10))
 	{
 		int playerDisconnected = net_packet->data[10];
-		strncpy(shortname, stats[playerDisconnected]->name, 10);
-		shortname[10] = 0;
+		char shortname[32] = { 0 };
+		strncpy(shortname, stats[playerDisconnected]->name, 22);
 		client_disconnected[playerDisconnected] = true;
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
