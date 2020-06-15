@@ -202,6 +202,7 @@ public:
 				Uint32 serverFlags = 0;
 				Uint32 numServerMods = 0;
 				long long lobbyCreationTime = 0;
+				int gameCurrentLevel = -1;
 				void ClearData()
 				{
 					lobbyName = "";
@@ -210,17 +211,24 @@ public:
 					serverFlags = 0;
 					numServerMods = 0;
 					lobbyCreationTime = 0;
+					gameCurrentLevel = -1;
 				}
 		} LobbyAttributes;
-		bool updateLobbyForHost();
+		enum HostUpdateLobbyTypes : int
+		{
+			LOBBY_UPDATE_MAIN_MENU,
+			LOBBY_UPDATE_DURING_GAME
+		};
+		bool updateLobbyForHost(HostUpdateLobbyTypes updateType);
 		void getLobbyAttributes(EOS_HLobbyDetails LobbyDetails);
 		void getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails);
 		void setLobbyAttributesAfterReading(EOS_Lobby_AttributeData* data);
-		void setLobbyAttributesFromGame();
+		void setLobbyAttributesFromGame(HostUpdateLobbyTypes updateType);
 		void setBasicCurrentLobbyDataFromInitialJoin(LobbyData_t* lobbyToJoin);
 		void destroyLobby();
 		bool currentUserIsOwner();
 		void updateLobby();
+		void updateLobbyDuringGameLoop();
 		bool assignClientnumMemberAttribute(EOS_ProductUserId targetId, int clientNumToSet);
 		int getClientnumMemberAttribute(EOS_ProductUserId targetId);
 		bool modifyLobbyMemberAttributeForCurrentUser();
@@ -235,9 +243,10 @@ public:
 			LOADING_SAVEGAME,
 			SERVER_FLAGS,
 			GAME_MODS,
-			CREATION_TIME
+			CREATION_TIME,
+			GAME_CURRENT_LEVEL
 		};
-		const int kNumAttributes = 6;
+		const int kNumAttributes = 7;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;
@@ -588,6 +597,7 @@ public:
 		LOBBY_WRONG_SAVEGAME,
 		LOBBY_NOT_USING_SAVEGAME,
 		LOBBY_NO_OWNER,
+		LOBBY_GAME_IN_PROGRESS,
 		LOBBY_UNHANDLED_ERROR
 	};
 	static std::string getLobbyJoinFailedConnectString(int result);

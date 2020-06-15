@@ -11,6 +11,14 @@
 
 EOSFuncs EOS;
 
+void LobbyLeaveCleanup(EOSFuncs::LobbyData_t& lobby)
+{
+	EOS.P2PConnectionInfo.resetPeersAndServerData();
+	lobby.bAwaitingLeaveCallback = false;
+	lobby.UnsubscribeFromLobbyUpdates();
+	lobby.ClearData();
+}
+
 void EOS_CALL EOSFuncs::LoggingCallback(const EOS_LogMessage* log)
 {
 	printlog("[EOS Logging]: %s:%s", log->Category, log->Message);
@@ -269,7 +277,7 @@ void EOS_CALL EOSFuncs::OnCreateLobbyFinished(const EOS_Lobby_CreateLobbyCallbac
 		EOS.CurrentLobbyData.LobbyAttributes.lobbyName = EOS.CurrentUserInfo.Name + "'s lobby";
 		strncpy(EOS.currentLobbyName, EOS.CurrentLobbyData.LobbyAttributes.lobbyName.c_str(), 31);
 
-		EOS.CurrentLobbyData.updateLobbyForHost();
+		EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 		EOS.CurrentLobbyData.SubscribeToLobbyUpdates();
 	}
 	else
@@ -371,6 +379,9 @@ std::string EOSFuncs::getLobbyJoinFailedConnectString(int result)
 	char buf[1024] = "";
 	switch ( result )
 	{
+		case EResult_LobbyFailures::LOBBY_GAME_IN_PROGRESS:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nGame is currently in progress and not joinable.");
+			break;
 		case EResult_LobbyFailures::LOBBY_USING_SAVEGAME:
 			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby requires a compatible saved game to join.\nNewly created characters cannot join this lobby.");
 			break;
@@ -448,10 +459,7 @@ void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInf
 		EOS.ConnectingToLobbyStatus = static_cast<int>(data->ResultCode);
 	}
 
-	EOS.P2PConnectionInfo.resetPeersAndServerData();
-	EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
-	EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
-	EOS.CurrentLobbyData.ClearData();
+	LobbyLeaveCleanup(EOS.CurrentLobbyData);
 	EOS.LobbyParameters.clearLobbyToJoin();
 }
 
@@ -466,10 +474,7 @@ void EOS_CALL EOSFuncs::OnLobbyLeaveCallback(const EOS_Lobby_LeaveLobbyCallbackI
 		EOSFuncs::logInfo("OnLobbyLeaveCallback: Left lobby id: %s", data->LobbyId);
 		if ( EOS.CurrentLobbyData.LobbyId.compare(data->LobbyId) == 0 )
 		{
-			EOS.P2PConnectionInfo.resetPeersAndServerData();
-			EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
-			EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
-			EOS.CurrentLobbyData.ClearData();
+			LobbyLeaveCleanup(EOS.CurrentLobbyData);
 		}
 		return;
 	}
@@ -478,10 +483,7 @@ void EOS_CALL EOSFuncs::OnLobbyLeaveCallback(const EOS_Lobby_LeaveLobbyCallbackI
 		EOSFuncs::logInfo("OnLobbyLeaveCallback: Could not find lobby id to leave: %s", data->LobbyId);
 		if ( EOS.CurrentLobbyData.LobbyId.compare(data->LobbyId) == 0 )
 		{
-			EOS.P2PConnectionInfo.resetPeersAndServerData();
-			EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
-			EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
-			EOS.CurrentLobbyData.ClearData();
+			LobbyLeaveCleanup(EOS.CurrentLobbyData);
 		}
 		return;
 	}
@@ -679,10 +681,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 						)
 					{
 						// if lobby closed or we got kicked, then clear data.
-						EOS.P2PConnectionInfo.resetPeersAndServerData();
-						EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
-						EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
-						EOS.CurrentLobbyData.ClearData();
+						LobbyLeaveCleanup(EOS.CurrentLobbyData);
 					}
 					else
 					{
@@ -1061,15 +1060,23 @@ void EOSFuncs::SendMessageP2P(EOS_ProductUserId RemoteId, const void* data, int 
 	}
 }
 
-void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame()
+void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame(HostUpdateLobbyTypes updateType)
 {
-	LobbyAttributes.lobbyName = EOS.currentLobbyName;
-	LobbyAttributes.gameVersion = VERSION;
-	LobbyAttributes.isLobbyLoadingSavedGame = loadingsavegame;
-	LobbyAttributes.serverFlags = svFlags;
-	LobbyAttributes.numServerMods = 0;
-	std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
-	LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();
+	if ( updateType == LOBBY_UPDATE_MAIN_MENU )
+	{
+		LobbyAttributes.lobbyName = EOS.currentLobbyName;
+		LobbyAttributes.gameVersion = VERSION;
+		LobbyAttributes.isLobbyLoadingSavedGame = loadingsavegame;
+		LobbyAttributes.serverFlags = svFlags;
+		LobbyAttributes.numServerMods = 0;
+		std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
+		LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();
+	}
+	else if ( updateType == LOBBY_UPDATE_DURING_GAME )
+	{
+		LobbyAttributes.serverFlags = svFlags;
+		LobbyAttributes.gameCurrentLevel = currentlevel;
+	}
 }
 
 void EOSFuncs::LobbyData_t::setBasicCurrentLobbyDataFromInitialJoin(LobbyData_t* lobbyToJoin)
@@ -1104,7 +1111,7 @@ bool EOSFuncs::LobbyData_t::currentUserIsOwner()
 	return false;
 };
 
-bool EOSFuncs::LobbyData_t::updateLobbyForHost()
+bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 {
 	if ( !EOSFuncs::Helpers_t::isMatchingProductIds(EOSFuncs::Helpers_t::productIdFromString(this->OwnerProductUserId.c_str()), 
 		EOS.CurrentUserInfo.getProductUserIdHandle()) )
@@ -1133,8 +1140,7 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost()
 	}
 
 	EOS.LobbyModificationHandle = LobbyModification;
-
-	setLobbyAttributesFromGame();
+	setLobbyAttributesFromGame(updateType);
 
 	// build the list of attributes:
 	for ( int i = 0; i < EOSFuncs::LobbyData_t::kNumAttributes; ++i )
@@ -1393,6 +1399,10 @@ void EOSFuncs::createLobby()
 
 void EOSFuncs::joinLobby(LobbyData_t* lobby)
 {
+	if ( !lobby )
+	{
+		return;
+	}
 	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
 
 	if ( CurrentLobbyData.currentLobbyIsValid() )
@@ -1415,26 +1425,17 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 	CurrentLobbyData.ClearData();
 	CurrentLobbyData.setBasicCurrentLobbyDataFromInitialJoin(lobby);
 
+	bool errorOnJoin = false;
 	if ( CurrentLobbyData.OwnerProductUserId.compare("NULL") == 0 )
 	{
 		// this is unexpected - perhaps an attempt to join a lobby that was freshly abandoned
-		bConnectingToLobbyWindow = false;
-		bConnectingToLobby = false;
 		ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_NO_OWNER;
 		logError("joinLobby: attempting to join a lobby with a NULL owner: %s, aborting.", CurrentLobbyData.LobbyId.c_str());
-		LobbyParameters.clearLobbyToJoin();
-
-		EOS.P2PConnectionInfo.resetPeersAndServerData();
-		EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
-		EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
-		EOS.CurrentLobbyData.ClearData();
-		return;
+		errorOnJoin = true;
 	}
 	else if ( lobby->LobbyAttributes.isLobbyLoadingSavedGame != loadingsavegame )
 	{
 		// loading save game, but incorrect assertion from client side.
-		bConnectingToLobbyWindow = false;
-		bConnectingToLobby = false;
 		if ( loadingsavegame == 0 )
 		{
 			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
@@ -1451,12 +1452,28 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 		{
 			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
 		}
-		LobbyParameters.clearLobbyToJoin();
+		errorOnJoin = true;
+	}
+	else if ( lobby->LobbyAttributes.gameCurrentLevel >= 0 )
+	{
+		/*if ( lobby->LobbyAttributes.gameCurrentLevel == 0 )
+		{
+			if (  )
+		}
+		else
+		{
+		}*/
+		ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_GAME_IN_PROGRESS;
+		errorOnJoin = true;
+	}
 
-		EOS.P2PConnectionInfo.resetPeersAndServerData();
-		EOS.CurrentLobbyData.bAwaitingLeaveCallback = false;
-		EOS.CurrentLobbyData.UnsubscribeFromLobbyUpdates();
-		EOS.CurrentLobbyData.ClearData();
+	if ( errorOnJoin )
+	{
+		bConnectingToLobbyWindow = false;
+		bConnectingToLobby = false;
+
+		LobbyParameters.clearLobbyToJoin();
+		LobbyLeaveCleanup(EOS.CurrentLobbyData);
 		return;
 	}
 
@@ -1588,6 +1605,28 @@ void EOSFuncs::LobbyData_t::destroyLobby()
 	bAwaitingLeaveCallback = false;
 	UnsubscribeFromLobbyUpdates();
 	ClearData();
+}
+
+void EOSFuncs::LobbyData_t::updateLobbyDuringGameLoop()
+{
+	if ( !currentLobbyIsValid() )
+	{
+		return;
+	}
+	bool doUpdate = false;
+	if ( LobbyAttributes.gameCurrentLevel != currentlevel )
+	{
+		doUpdate = true;
+	}
+	if ( LobbyAttributes.serverFlags != svFlags )
+	{
+		doUpdate = true;
+	}
+
+	if ( doUpdate )
+	{
+		updateLobbyForHost(LOBBY_UPDATE_DURING_GAME);
+	}
 }
 
 void EOSFuncs::LobbyData_t::updateLobby()
@@ -1779,6 +1818,10 @@ std::pair<std::string, std::string> EOSFuncs::LobbyData_t::getAttributePair(Attr
 			attributePair.first = "CREATETIME";
 			attributePair.second = std::to_string(this->LobbyAttributes.lobbyCreationTime);
 			break;
+		case GAME_CURRENT_LEVEL:
+			attributePair.first = "CURRENTLEVEL";
+			attributePair.second = std::to_string(this->LobbyAttributes.gameCurrentLevel);
+			break;
 		default:
 			break;
 	}
@@ -1811,6 +1854,10 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesAfterReading(EOS_Lobby_AttributeDa
 	else if ( keyName.compare("CREATETIME") == 0 )
 	{
 		this->LobbyAttributes.lobbyCreationTime = std::stoll(data->Value.AsUtf8);
+	}
+	else if ( keyName.compare("CURRENTLEVEL") == 0 )
+	{
+		this->LobbyAttributes.gameCurrentLevel = std::stoi(data->Value.AsUtf8);
 	}
 }
 

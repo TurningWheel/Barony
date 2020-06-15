@@ -617,6 +617,14 @@ void gameLogic(void)
 				}
 			}
 
+#ifdef USE_EOS
+			if ( multiplayer == SERVER && ticks % TICKS_PER_SECOND == 0 )
+			{
+				EOS.CurrentLobbyData.updateLobbyDuringGameLoop();
+			}
+#endif // USE_EOS
+
+
 			// animate tiles
 			if ( !gamePaused )
 			{
