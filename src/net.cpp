@@ -1294,6 +1294,155 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 	sendPacket(net_sock, -1, net_packet, 0);
 }
 
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest()
+{
+	int c = MAXPLAYERS;
+	if ( strcmp(VERSION, (char*)net_packet->data + 54) )
+	{
+		c = MAXPLAYERS + 1; // wrong version number
+	}
+	else
+	{
+		Uint32 clientlsg = SDLNet_Read32(&net_packet->data[68]);
+		Uint32 clientms = SDLNet_Read32(&net_packet->data[64]);
+		if ( net_packet->data[63] == 0 )
+		{
+			// client will enter any player spot
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				if ( client_disconnected[c] == true )
+				{
+					break;    // no more player slots
+				}
+			}
+		}
+		else
+		{
+			// client is joining a particular player spot
+			c = net_packet->data[63];
+			if ( !client_disconnected[c] )
+			{
+				c = MAXPLAYERS;  // client wants to fill a space that is already filled
+			}
+		}
+		if ( clientlsg != loadingsavegame && loadingsavegame == 0 )
+		{
+			c = MAXPLAYERS + 2;  // client shouldn't load save game
+		}
+		else if ( clientlsg == 0 && loadingsavegame != 0 )
+		{
+			c = MAXPLAYERS + 3;  // client is trying to join a save game without a save of their own
+		}
+		else if ( clientlsg != loadingsavegame )
+		{
+			c = MAXPLAYERS + 4;  // client is trying to join the game with an incompatible save
+		}
+		else if ( loadingsavegame && getSaveGameMapSeed(false) != clientms )
+		{
+			c = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
+		}
+	}
+	if ( c >= MAXPLAYERS )
+	{
+		// on error, client gets a player number that is invalid (to be interpreted as an error code)
+		net_clients[MAXPLAYERS - 1].host = net_packet->address.host;
+		net_clients[MAXPLAYERS - 1].port = net_packet->address.port;
+		if ( directConnect )
+			while ( (net_tcpclients[MAXPLAYERS - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL );
+		net_packet->address.host = net_clients[MAXPLAYERS - 1].host;
+		net_packet->address.port = net_clients[MAXPLAYERS - 1].port;
+		net_packet->len = 4;
+		SDLNet_Write32(c, &net_packet->data[0]); // error code for client to interpret
+		printlog("sending error code %d to client.\n", c);
+		if ( directConnect )
+		{
+			SDLNet_TCP_Send(net_tcpclients[MAXPLAYERS - 1], net_packet->data, net_packet->len);
+			SDLNet_TCP_Close(net_tcpclients[MAXPLAYERS - 1]);
+			return NET_LOBBY_JOIN_DIRECTIP_FAILURE;
+		}
+		else
+		{
+			return NET_LOBBY_JOIN_P2P_FAILURE;
+		}
+	}
+	else
+	{
+		// on success, client gets legit player number
+		strcpy(stats[c]->name, (char*)(&net_packet->data[19]));
+		client_disconnected[c] = false;
+		client_classes[c] = (int)SDLNet_Read32(&net_packet->data[42]);
+		stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[46]));
+		Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[50]);
+		stats[c]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+		stats[c]->playerRace = (raceAndAppearance & 0xFF);
+		net_clients[c - 1].host = net_packet->address.host;
+		net_clients[c - 1].port = net_packet->address.port;
+		if ( directConnect )
+		{
+			while ( (net_tcpclients[c - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL );
+			const char* clientaddr = SDLNet_ResolveIP(&net_packet->address);
+			printlog("client %d connected from %s:%d\n", c, clientaddr, net_packet->address.port);
+		}
+		else
+		{
+			printlog("client %d connected.\n", c);
+		}
+		client_keepalive[c] = ticks;
+
+		// send existing clients info on new client
+		for ( int x = 1; x < MAXPLAYERS; x++ )
+		{
+			if ( client_disconnected[x] || c == x )
+			{
+				continue;
+			}
+			strcpy((char*)(&net_packet->data[0]), "NEWPLAYER");
+			net_packet->data[9] = c; // clientnum
+			net_packet->data[10] = client_classes[c]; // class
+			net_packet->data[11] = stats[c]->sex; // sex
+			net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
+			net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
+			char shortname[32] = "";
+			strncpy(shortname, stats[c]->name, 22);
+			strcpy((char*)(&net_packet->data[14]), shortname);  // name
+			net_packet->address.host = net_clients[x - 1].host;
+			net_packet->address.port = net_clients[x - 1].port;
+			net_packet->len = 14 + strlen(stats[c]->name) + 1;
+			sendPacketSafe(net_sock, -1, net_packet, x - 1);
+		}
+		char shortname[32] = { 0 };
+		strncpy(shortname, stats[c]->name, 22);
+
+		newString(&lobbyChatboxMessages, 0xFFFFFFFF, "\n***   %s has joined the game   ***\n", shortname);
+
+		// send new client their id number + info on other clients
+		SDLNet_Write32(c, &net_packet->data[0]);
+		for ( int x = 0; x < MAXPLAYERS; x++ )
+		{
+			net_packet->data[4 + x * (5 + 23)] = client_classes[x]; // class
+			net_packet->data[5 + x * (5 + 23)] = stats[x]->sex; // sex
+			net_packet->data[6 + x * (5 + 23)] = client_disconnected[x]; // connectedness :p
+			net_packet->data[7 + x * (5 + 23)] = (Uint8)stats[x]->appearance; // appearance
+			net_packet->data[8 + x * (5 + 23)] = (Uint8)stats[x]->playerRace; // player race
+			char shortname[32] = "";
+			strncpy(shortname, stats[x]->name, 22);
+			strcpy((char*)(&net_packet->data[9 + x * (5 + 23)]), shortname);  // name
+		}
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 4 + MAXPLAYERS * (5 + 23);
+		if ( directConnect )
+		{
+			SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
+			return NET_LOBBY_JOIN_DIRECTIP_SUCCESS;
+		}
+		else
+		{
+			return NET_LOBBY_JOIN_P2P_SUCCESS;
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	receiveEntity
@@ -5268,6 +5417,14 @@ void serverHandlePacket()
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		item_FoodAutomaton(item, net_packet->data[25]);
 		return;
+	}
+
+	else if ( !strncmp((char*)net_packet->data, "BARONY_JOIN_PROGRES", 19) )
+	{
+		if ( directConnect )
+		{
+			return;
+		}
 	}
 }
 

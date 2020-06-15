@@ -5313,199 +5313,45 @@ void handleMainMenu(bool mode)
 					}
 				}
 #endif // USE_EOS
-
-				if ( strcmp( VERSION, (char*)net_packet->data + 54 ) )
+				NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest();
+				if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE )
 				{
-					c = MAXPLAYERS + 1; // wrong version number
-				}
-				else
-				{
-					Uint32 clientlsg = SDLNet_Read32(&net_packet->data[68]);
-					Uint32 clientms = SDLNet_Read32(&net_packet->data[64]);
-					if ( net_packet->data[63] == 0 )
-					{
-						// client will enter any player spot
-						for ( c = 0; c < MAXPLAYERS; c++ )
-						{
-							if ( client_disconnected[c] == true )
-							{
-								break;    // no more player slots
-							}
-						}
-					}
-					else
-					{
-						// client is joining a particular player spot
-						c = net_packet->data[63];
-						if ( !client_disconnected[c] )
-						{
-							c = MAXPLAYERS;  // client wants to fill a space that is already filled
-						}
-					}
-					if ( clientlsg != loadingsavegame && loadingsavegame == 0 )
-					{
-						c = MAXPLAYERS + 2;  // client shouldn't load save game
-					}
-					else if ( clientlsg == 0 && loadingsavegame != 0 )
-					{
-						c = MAXPLAYERS + 3;  // client is trying to join a save game without a save of their own
-					}
-					else if ( clientlsg != loadingsavegame )
-					{
-						c = MAXPLAYERS + 4;  // client is trying to join the game with an incompatible save
-					}
-					else if ( loadingsavegame && getSaveGameMapSeed(false) != clientms )
-					{
-						c = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
-					}
-				}
-				if ( c >= MAXPLAYERS )
-				{
-					// on error, client gets a player number that is invalid (to be interpreted as an error code)
-					net_clients[MAXPLAYERS - 1].host = net_packet->address.host;
-					net_clients[MAXPLAYERS - 1].port = net_packet->address.port;
-					if ( directConnect )
-						while ((net_tcpclients[MAXPLAYERS - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL);
-					net_packet->address.host = net_clients[MAXPLAYERS - 1].host;
-					net_packet->address.port = net_clients[MAXPLAYERS - 1].port;
-					net_packet->len = 4;
-					SDLNet_Write32(c, &net_packet->data[0]); // error code for client to interpret
-					printlog("sending error code %d to client.\n", c);
-					if ( directConnect )
-					{
-						SDLNet_TCP_Send(net_tcpclients[MAXPLAYERS - 1], net_packet->data, net_packet->len);
-						SDLNet_TCP_Close(net_tcpclients[MAXPLAYERS - 1]);
-					}
-					else
-					{
 #ifdef STEAMWORKS
+					for ( int responses = 0; responses < 5; ++responses )
+					{
 						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
 						SDL_Delay(5);
-						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-#elif defined USE_EOS
-						EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
-						SDL_Delay(5);
-						EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
-						SDL_Delay(5);
-						EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
-						SDL_Delay(5);
-						EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
-						SDL_Delay(5);
-						EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
-						SDL_Delay(5);
-#endif
 					}
+#elif defined USE_EOS
+					for ( int responses = 0; responses < 5; ++responses )
+					{
+						EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
+						SDL_Delay(5);
+					}
+#endif
 				}
-				else
+				else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_SUCCESS )
 				{
-					// on success, client gets legit player number
-					strcpy(stats[c]->name, (char*)(&net_packet->data[19]));
-					client_disconnected[c] = false;
-					client_classes[c] = (int)SDLNet_Read32(&net_packet->data[42]);
-					stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[46]));
-					Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[50]);
-					stats[c]->appearance = (raceAndAppearance & 0xFF00) >> 8;
-					stats[c]->playerRace = (raceAndAppearance & 0xFF);
-					net_clients[c - 1].host = net_packet->address.host;
-					net_clients[c - 1].port = net_packet->address.port;
-					if ( directConnect )
-					{
-						while ((net_tcpclients[c - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL);
-						const char* clientaddr = SDLNet_ResolveIP(&net_packet->address);
-						printlog("client %d connected from %s:%d\n", c, clientaddr, net_packet->address.port);
-					}
-					else
-					{
-						printlog("client %d connected.\n", c);
-					}
-					client_keepalive[c] = ticks;
-
-					// send existing clients info on new client
-					for ( x = 1; x < MAXPLAYERS; x++ )
-					{
-						if ( client_disconnected[x] || c == x )
-						{
-							continue;
-						}
-						strcpy((char*)(&net_packet->data[0]), "NEWPLAYER");
-						net_packet->data[9] = c; // clientnum
-						net_packet->data[10] = client_classes[c]; // class
-						net_packet->data[11] = stats[c]->sex; // sex
-						net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
-						net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
-						char shortname[32] = "";
-						strncpy(shortname, stats[c]->name, 22);
-						strcpy((char*)(&net_packet->data[14]), shortname);  // name
-						net_packet->address.host = net_clients[x - 1].host;
-						net_packet->address.port = net_clients[x - 1].port;
-						net_packet->len = 14 + strlen(stats[c]->name) + 1;
-						sendPacketSafe(net_sock, -1, net_packet, x - 1);
-					}
-					char shortname[32] = { 0 };
-					strncpy(shortname, stats[c]->name, 22);
-
-					newString(&lobbyChatboxMessages, 0xFFFFFFFF, "\n***   %s has joined the game   ***\n", shortname);
-
-					// send new client their id number + info on other clients
-					SDLNet_Write32(c, &net_packet->data[0]);
-					for ( x = 0; x < MAXPLAYERS; x++ )
-					{
-						net_packet->data[4 + x * (5 + 23)] = client_classes[x]; // class
-						net_packet->data[5 + x * (5 + 23)] = stats[x]->sex; // sex
-						net_packet->data[6 + x * (5 + 23)] = client_disconnected[x]; // connectedness :p
-						net_packet->data[7 + x * (5 + 23)] = (Uint8)stats[x]->appearance; // appearance
-						net_packet->data[8 + x * (5 + 23)] = (Uint8)stats[x]->playerRace; // player race
-						char shortname[32] = "";
-						strncpy(shortname, stats[x]->name, 22);
-						strcpy((char*)(&net_packet->data[9 + x * (5 + 23)]), shortname);  // name
-					}
-					net_packet->address.host = net_clients[c - 1].host;
-					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 4 + MAXPLAYERS * (5 + 23);
-					if ( directConnect )
-					{
-						SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
-					}
-					else
-					{
 #ifdef STEAMWORKS
-						if ( steamIDRemote[c - 1] )
-						{
-							cpp_Free_CSteamID( steamIDRemote[c - 1] );
-						}
-						steamIDRemote[c - 1] = new CSteamID();
-						*static_cast<CSteamID*>(steamIDRemote[c - 1]) = newSteamID;
-						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-#elif defined USE_EOS
-						EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, c - 1);
-						EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(c - 1), net_packet->data, net_packet->len);
-						SDL_Delay(5);
-						EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(c - 1), net_packet->data, net_packet->len);
-						SDL_Delay(5);
-						EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(c - 1), net_packet->data, net_packet->len);
-						SDL_Delay(5);
-						EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(c - 1), net_packet->data, net_packet->len);
-						SDL_Delay(5);
-						EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(c - 1), net_packet->data, net_packet->len);
-						SDL_Delay(5);
-#endif
+					if ( steamIDRemote[c - 1] )
+					{
+						cpp_Free_CSteamID(steamIDRemote[c - 1]);
 					}
+					steamIDRemote[c - 1] = new CSteamID();
+					*static_cast<CSteamID*>(steamIDRemote[c - 1]) = newSteamID;
+					for ( int responses = 0; responses < 5; ++responses )
+					{
+						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+						SDL_Delay(5);
+					}
+#elif defined USE_EOS
+					EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, c - 1);
+					for ( int responses = 0; responses < 5; ++responses )
+					{
+						EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(c - 1), net_packet->data, net_packet->len);
+						SDL_Delay(5);
+					}
+#endif
 				}
 				continue;
 			}
@@ -5589,15 +5435,18 @@ void handleMainMenu(bool mode)
 			CSteamID newSteamID;
 #elif defined USE_EOS
 			EOS_ProductUserId newRemoteProductId = nullptr;
-			if ( EOS.bJoinLobbyWaitingForHostResponse )
+			if ( !directConnect )
 			{
-				// waiting on host response.
-				if ( ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND ) // 15 second timeout
+				if ( EOS.bJoinLobbyWaitingForHostResponse )
 				{
-					buttonDisconnect(nullptr);
-					openFailedConnectionWindow(CLIENT);
-					strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(static_cast<int>(EOS_EResult::EOS_TimedOut)).c_str());
-					EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
+					// waiting on host response.
+					if ( ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND ) // 15 second timeout
+					{
+						buttonDisconnect(nullptr);
+						openFailedConnectionWindow(CLIENT);
+						strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(static_cast<int>(EOS_EResult::EOS_TimedOut)).c_str());
+						EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
+					}
 				}
 			}
 #endif
@@ -5685,21 +5534,24 @@ void handleMainMenu(bool mode)
 					multiplayer = SINGLE;
 
 #ifdef USE_EOS
-					// if we got a packet, flush any remaining packets from the queue.
-					Uint32 startTicks = SDL_GetTicks();
-					Uint32 checkTicks = startTicks;
-					while ( (checkTicks - startTicks) < 2000 )
+					if ( !directConnect )
 					{
-						EOS_Platform_Tick(EOS.PlatformHandle);
-						if ( EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId) )
+						// if we got a packet, flush any remaining packets from the queue.
+						Uint32 startTicks = SDL_GetTicks();
+						Uint32 checkTicks = startTicks;
+						while ( (checkTicks - startTicks) < 2000 )
 						{
-							checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
-						}
-						SDL_Delay(10);
-						if ( (SDL_GetTicks() - startTicks) > 5000 )
-						{
-							// hard break at 3 seconds.
-							break;
+							EOS_Platform_Tick(EOS.PlatformHandle);
+							if ( EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId) )
+							{
+								checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
+							}
+							SDL_Delay(10);
+							if ( (SDL_GetTicks() - startTicks) > 5000 )
+							{
+								// hard break at 3 seconds.
+								break;
+							}
 						}
 					}
 #endif // USE_EOS
@@ -6085,8 +5937,8 @@ void handleMainMenu(bool mode)
 					}
 					else
 					{
-						char shortname[11] = { 0 };
-						strncpy(shortname, stats[net_packet->data[16]]->name, 10);
+						char shortname[32] = { 0 };
+						strncpy(shortname, stats[net_packet->data[16]]->name, 22);
 						newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
 					}
 					continue;
@@ -6479,16 +6331,16 @@ void handleMainMenu(bool mode)
 			else if ( multiplayer == SERVER )
 			{
 				// update the backend's copy of the lobby name
-				if ( ticks % TICKS_PER_SECOND == 0 )
+				if ( ticks % TICKS_PER_SECOND == 0 && EOS.CurrentLobbyData.currentLobbyIsValid() )
 				{
 					if ( EOS.CurrentLobbyData.LobbyAttributes.lobbyName.compare(EOS.currentLobbyName) != 0
 						&& strcmp(EOS.currentLobbyName, "") != 0 )
 					{
-						EOS.CurrentLobbyData.updateLobbyForHost();
+						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 					}
 					else if ( EOS.CurrentLobbyData.LobbyAttributes.serverFlags != svFlags )
 					{
-						EOS.CurrentLobbyData.updateLobbyForHost();
+						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 					}
 				}
 			}
@@ -6541,8 +6393,8 @@ void handleMainMenu(bool mode)
 				playSound(238, 64);
 			}
 
-			char shortname[11] = {0};
-			strncpy(shortname, stats[clientnum]->name, 10);
+			char shortname[32] = {0};
+			strncpy(shortname, stats[clientnum]->name, 22);
 
 			char msg[LOBBY_CHATBOX_LENGTH + 32] = { 0 };
 			snprintf(msg, LOBBY_CHATBOX_LENGTH, "%s: %s", shortname, lobbyChatbox);
@@ -6820,7 +6672,8 @@ void handleMainMenu(bool mode)
 				}
 				bool clientHasLostP2P = false;
 #ifdef USE_EOS
-				if ( !EOS.P2PConnectionInfo.isPeerStillValid(i - 1) )
+
+				if ( !directConnect && !EOS.P2PConnectionInfo.isPeerStillValid(i - 1) )
 				{
 					clientHasLostP2P = true;
 				}
@@ -6841,8 +6694,8 @@ void handleMainMenu(bool mode)
 						net_packet->address.port = net_clients[c - 1].port;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
-					char shortname[11] = { 0 };
-					strncpy(shortname, stats[i]->name, 10);
+					char shortname[32] = { 0 };
+					strncpy(shortname, stats[i]->name, 22);
 					newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
 					continue;
 				}
