@@ -1920,6 +1920,13 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 	Uint32 currentAuthTicks = startAuthTicks;
 	while ( AccountAuthenticationCompleted == EOS_EResult::EOS_NotConfigured )
 	{
+#ifdef APPLE
+		SDL_Event event;
+		while(SDL_PollEvent(&event) != 0)
+		{
+			//Makes Mac work because Apple had to do it different.
+		}
+#endif
 		EOS_Platform_Tick(PlatformHandle);
 		SDL_Delay(50);
 		currentAuthTicks = SDL_GetTicks();
