@@ -255,7 +255,7 @@ public:
 	public:
 		EOS_HLobbySearch CurrentLobbySearch = nullptr;
 		std::vector<LobbyData_t> results;
-		std::vector<std::pair<long long, int>> resultsSortedForDisplay;
+		std::vector<std::pair<LobbyData_t::LobbyAttributes_t, int>> resultsSortedForDisplay;
 		int selectedLobby = 0;
 		void sortResults();
 		LobbyData_t* getResultFromDisplayedIndex(int index)

@@ -2087,13 +2087,17 @@ void EOSFuncs::LobbySearchResults_t::sortResults()
 	int index = 0;
 	for ( auto it = results.begin(); it != results.end(); ++it )
 	{
-		resultsSortedForDisplay.push_back(std::make_pair((*it).LobbyAttributes.lobbyCreationTime, index));
+		resultsSortedForDisplay.push_back(std::make_pair(EOSFuncs::LobbyData_t::LobbyAttributes_t((*it).LobbyAttributes), index));
 		++index;
 	}
 	std::sort(resultsSortedForDisplay.begin(), resultsSortedForDisplay.end(), 
-		[](const std::pair<long long, int>& lhs, const std::pair<long long, int>& rhs) 
+		[](const std::pair<EOSFuncs::LobbyData_t::LobbyAttributes_t, int>& lhs, const std::pair<EOSFuncs::LobbyData_t::LobbyAttributes_t, int>& rhs)
 		{
-			return lhs.first > rhs.first;
+			if ( lhs.first.gameCurrentLevel == -1 && rhs.first.gameCurrentLevel == -1 )
+			{
+				return (lhs.first.lobbyCreationTime > rhs.first.lobbyCreationTime);
+			}
+			return lhs.first.gameCurrentLevel < rhs.first.gameCurrentLevel;
 		}
 	);
 }
