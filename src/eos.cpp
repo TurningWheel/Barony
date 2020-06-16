@@ -845,7 +845,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.OverrideCountryCode = nullptr;
 	PlatformOptions.OverrideLocaleCode = nullptr;
 	PlatformOptions.bIsServer = EOS_FALSE;
-	PlatformOptions.Flags = 0;
+	PlatformOptions.Flags = EOS_PF_DISABLE_OVERLAY;
 	static std::string EncryptionKey(64, '1');
 	PlatformOptions.EncryptionKey = EncryptionKey.c_str();
 	PlatformOptions.CacheDirectory = nullptr; // important - needs double slashes and absolute path
