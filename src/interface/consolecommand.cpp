@@ -2811,6 +2811,12 @@ void consoleCommand(char* command_str)
 		{
 			monsterCurveCustomManager.writeSampleToDocument();
 		}
+		else if ( !strncmp(command_str, "/eossetupcompleted", 18) )
+		{
+#if USE_EOS
+			EOS.AccountManager.firstTimeSetupCompleted = true;
+#endif // USE_EOS
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

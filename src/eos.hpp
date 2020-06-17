@@ -29,10 +29,44 @@ public:
 	std::string CredentialName = "";
 	std::string CredentialHost = "";
 	std::vector<std::string> CommandLineArgs;
-	EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_Developer;
+	class Accounts_t 
+	{
+	public:
+		EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_Developer;
+		EOS_EResult AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
+		EOS_EResult AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
+
+		bool waitingForCallback = false;
+		bool firstTimeSetupCompleted = false;
+		bool initPopupWindow = false;
+		Uint32 popupInitTicks = 0;
+		Uint32 popupCurrentTicks = 0;
+		Uint32 loadingTicks = 0;
+		bool loginCriticalErrorOccurred = false;
+		enum PopupType
+		{
+			POPUP_FULL,
+			POPUP_TOAST
+		};
+		PopupType popupType = POPUP_FULL;
+
+		SDL_Surface* loginBanner = nullptr;
+
+		void createLoginDialogue();
+		void drawDialogue();
+		void handleLogin();
+
+		void deinit()
+		{
+			if ( loginBanner )
+			{
+				SDL_FreeSurface(loginBanner);
+			}
+		}
+	} AccountManager;
+
 
 	const int kMaxLobbiesToSearch = 100;
-	EOS_EResult AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
 
 	// global shenanigans
 	bool bRequestingLobbies = false; // client is waiting for lobby data to display

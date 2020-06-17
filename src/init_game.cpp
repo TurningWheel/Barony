@@ -86,10 +86,7 @@ int initGame()
 	{
 		return 14;
 	}
-	if ( EOS.initAuth() == false )
-	{
-		return 14;
-	}
+	EOS.initAuth();
 #endif // USE_EOS
 
 	// print a loading message
@@ -1017,7 +1014,7 @@ void deinitGame()
 	{
 		EOS.leaveLobby();
 	}
-
+	EOS.AccountManager.deinit();
 	EOS.shutdown();
 #endif
 

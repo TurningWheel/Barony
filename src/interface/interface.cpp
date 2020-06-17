@@ -1325,6 +1325,13 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/disablenetcodefpslimit\n");
 	}
+#ifdef USE_EOS
+	if ( EOS.AccountManager.firstTimeSetupCompleted )
+	{
+		fprintf(fp, "/eossetupcompleted\n");
+	}
+#endif // USE_EOS
+
 	if ( !gamemods_mountedFilepaths.empty() )
 	{
 		std::vector<std::pair<std::string, std::string>>::iterator it;

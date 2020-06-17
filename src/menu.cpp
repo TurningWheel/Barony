@@ -2165,6 +2165,13 @@ void handleMainMenu(bool mode)
 			loadGameSaveShowRectangle = 0;
 		}
 
+#ifdef USE_EOS
+		if ( intro )
+		{
+			EOS.AccountManager.handleLogin();
+		}
+#endif // USE_EOS
+
 		// process button actions
 		handleButtons();
 	}
