@@ -48,7 +48,7 @@ public:
 			POPUP_FULL,
 			POPUP_TOAST
 		};
-		PopupType popupType = POPUP_FULL;
+		PopupType popupType = POPUP_TOAST;
 
 		SDL_Surface* loginBanner = nullptr;
 

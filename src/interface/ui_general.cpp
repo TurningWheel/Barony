@@ -22,18 +22,37 @@ void UIToastNotificationManager_t::drawNotifications()
 
 	for ( auto& card : allNotifications )
 	{
+		card.init();
 		card.draw();
 	}
 }
 
-void UIToastNotificationManager_t::addNotification(ImageTypes image, std::string headerText, std::string mainText, std::string secondaryText)
+UIToastNotification* UIToastNotificationManager_t::addNotification(ImageTypes image)
 {
 	if ( !bIsInit )
 	{
 		init();
 	}
+
+	SDL_Rect newPosition;
+	newPosition.x = 0;
+	newPosition.y = 0;
+	newPosition.w = 0;
+	newPosition.h = 0;
+	bool hasPrevNotification = allNotifications.size() > 0;
+	if ( hasPrevNotification )
+	{
+		auto& prevNotification = allNotifications.back();
+		prevNotification.getDimensions(newPosition.x, newPosition.y, newPosition.w, newPosition.h);
+	}
+
 	SDL_Surface* surf = getImage(image);
-	allNotifications.push_back(UIToastNotification(surf, headerText, mainText, secondaryText));
+	allNotifications.push_back(UIToastNotification(surf));
 	auto& notification = allNotifications.back();
-	notification.init();
+	if ( hasPrevNotification )
+	{
+		// stack this higher than the previous
+		notification.setPosY(newPosition.y + newPosition.h + 8);
+	}
+	return &notification;
 }

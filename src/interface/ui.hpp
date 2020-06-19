@@ -24,13 +24,16 @@ class UIToastNotification
 	double scaley = 0.25;
 	int posx = 260;
 	int posy = 110;
-	int height = 0;
+	int showHeight = 0;
+	int dockHeight = 32;
 	SDL_Surface* notificationImage = nullptr;
 	bool isInit = false;
 	int textx = 8;
 	int texty = 0;
 	int bodyx = 12;
 	int bodyy = 16;
+	const int kImageBorderHeight = 256;
+	const int kImageBorderWidth = 256;
 
 	bool mainCardHide = false;
 	bool mainCardIsHidden = false;
@@ -46,31 +49,73 @@ class UIToastNotification
 	int docked_anim_ticks = 0;
 	const int docked_anim_duration = 25;
 
-	int cardState = 0;
+	Uint32 cardState = UI_CARD_STATE_SHOW;
 	bool temporaryCardHide = false;
 	bool idleDisappear = true;
 	Uint32 lastInteractedTick = 0;
 
 	std::string displayedText;
 	std::string mainCardText;
-	std::string overlayDisabledCardText;
+	std::string secondaryCardText;
 	std::string headerCardText;
+	std::string actionText;
+
 public:
-	UIToastNotification(SDL_Surface* image, std::string headerText, std::string mainText, std::string secondaryText) {
+	UIToastNotification(SDL_Surface* image) {
 		notificationImage = image;
-		headerCardText = headerText;
-		mainCardText = mainText;
-		displayedText = mainCardText;
-		overlayDisabledCardText = secondaryText;
+		showHeight = kImageBorderHeight * scaley + 16;
 	};
 	~UIToastNotification() {};
+
+	Uint32 actionFlags = 0;
+	enum ActionFlags : Uint32
+	{
+		UI_NOTIFICATION_CLOSE = 1,
+		UI_NOTIFICATION_ACTION_BUTTON = 2,
+		UI_NOTIFICATION_AUTO_HIDE = 4
+	};
+	enum CardType : Uint32
+	{
+		UI_CARD_DEFAULT,
+		UI_CARD_EOS_ACCOUNT
+	};
+	CardType cardType = CardType::UI_CARD_DEFAULT;
+	enum CardState : Uint32
+	{
+		UI_CARD_STATE_SHOW,
+		UI_CARD_STATE_DOCKED
+	};
 
 	void getDimensions(int& outPosX, int& outPosY, int& outPosW, int& outPosH)
 	{
 		outPosX = posx;
 		outPosY = posy;
 		outPosW = cardWidth;
-		outPosH = height;
+		outPosH = showHeight;
+	}
+	void setPosY(int y)
+	{
+		posy = y;
+	}
+	void setMainText(std::string& text)
+	{
+		mainCardText = text;
+	}
+	void setSecondaryText(std::string& text)
+	{
+		secondaryCardText = text;
+	}
+	void setHeaderText(std::string& text)
+	{
+		headerCardText = text;
+	}
+	void setDisplayedText(std::string& text)
+	{
+		displayedText = text;
+	}
+	void setActionText(std::string& text)
+	{
+		actionText = text;
 	}
 
 	void draw()
@@ -82,12 +127,19 @@ public:
 
 		if ( subwindow || fadeout )
 		{
-			temporaryCardHide = true;
-			lastInteractedTick = ticks;
-			if ( cardState == 0 )
+			if ( !fadeout && !(actionFlags & UI_NOTIFICATION_AUTO_HIDE) )
 			{
-				mainCardHide = true;
-				dockedCardHide = false;
+				// don't hide.
+			}
+			else
+			{
+				temporaryCardHide = true;
+				lastInteractedTick = ticks;
+				if ( cardState == UI_CARD_STATE_SHOW )
+				{
+					mainCardHide = true;
+					dockedCardHide = false;
+				}
 			}
 		}
 		else
@@ -95,11 +147,11 @@ public:
 			temporaryCardHide = false;
 		}
 
-		if ( cardState == 0 )
+		if ( cardState == UI_CARD_STATE_SHOW )
 		{
 			drawMainCard();
 		}
-		else
+		else if ( cardState == UI_CARD_STATE_DOCKED )
 		{
 			drawDockedCard();
 		}
@@ -109,11 +161,10 @@ public:
 	{
 		SDL_Rect r;
 		r.w = 32;
-		r.h = notificationImage->h * scaley;
+		r.h = kImageBorderHeight * scaley;
 		r.x = xres - r.w + docked_animx;
 		r.y = yres - r.h - posy;
 		drawWindowFancy(r.x, r.y - 8, xres + 16 + docked_animx, r.y + 24);
-		height = (r.y + 24 - (r.y - 8));
 
 		if ( !temporaryCardHide && mouseInBounds(r.x, xres + docked_animx, r.y - 8, r.y + 24) )
 		{
@@ -137,7 +188,7 @@ public:
 			animate(docked_animx, docked_anim_ticks, docked_anim_duration, dockedCardWidth, dockedCardHide, dockedCardIsHidden);
 			if ( dockedCardHide && dockedCardIsHidden )
 			{
-				cardState = 0;
+				cardState = UI_CARD_STATE_SHOW;
 			}
 		}
 	}
@@ -145,8 +196,8 @@ public:
 	void drawMainCard()
 	{
 		SDL_Rect r;
-		r.w = notificationImage->w * scalex;
-		r.h = notificationImage->h * scaley;
+		r.w = kImageBorderWidth * scalex;
+		r.h = kImageBorderHeight * scaley;
 		r.x = xres - r.w - posx + animx + 12;
 		r.y = yres - r.h - posy;
 		drawWindowFancy(r.x - 8, r.y - 8, xres - 8 + animx, r.y + r.h + 8);
@@ -157,7 +208,7 @@ public:
 		ttfPrintTextColor(ttf12, r.x + r.w + bodyx, r.y + bodyy, SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255), true,
 			displayedText.c_str());
 		drawImageScaled(notificationImage, nullptr, &r);
-		//drawInviteButton(&r);
+		drawActionButton(&r);
 
 		if ( temporaryCardHide )
 		{
@@ -168,7 +219,7 @@ public:
 			animate(animx, anim_ticks, anim_duration, cardWidth, mainCardHide, mainCardIsHidden);
 			if ( mainCardHide && mainCardIsHidden )
 			{
-				cardState = 1;
+				cardState = UI_CARD_STATE_DOCKED;
 				displayedText = mainCardText;
 			}
 			else
@@ -206,6 +257,10 @@ public:
 
 	bool drawCloseButton(SDL_Rect* src)
 	{
+		if ( !(actionFlags & ActionFlags::UI_NOTIFICATION_CLOSE) )
+		{
+			return false;
+		}
 		SDL_Rect closeBtn;
 		closeBtn.x = xres - 8 - 12 - 8 + animx;
 		closeBtn.y = src->y - 8 + 4;
@@ -232,66 +287,41 @@ public:
 		return false;
 	}
 
-	//bool drawInviteButton(SDL_Rect* src)
-	//{
-	//	SDL_Rect inviteBtn;
-	//	inviteBtn.x = src->x + 4;
-	//	inviteBtn.y = src->y + src->h - 4 - TTF12_HEIGHT;
-	//	inviteBtn.w = src->w - 8;
-	//	inviteBtn.h = 20;
-	//	if ( !temporaryCardHide && mouseInBounds(inviteBtn.x, inviteBtn.x + inviteBtn.w, inviteBtn.y, inviteBtn.y + inviteBtn.h) )
-	//	{
-	//		//drawDepressed(inviteBtn.x, inviteBtn.y, inviteBtn.x + inviteBtn.w, inviteBtn.y + inviteBtn.h);
-	//		drawWindowFancy(inviteBtn.x, inviteBtn.y, inviteBtn.x + inviteBtn.w, inviteBtn.y + inviteBtn.h);
-	//		drawRect(&inviteBtn, uint32ColorBaronyBlue(*mainsurface), 32);
-	//		if ( mousestatus[SDL_BUTTON_LEFT] )
-	//		{
-	//			mousestatus[SDL_BUTTON_LEFT] = 0;
-	//			ttfPrintText(ttf12, inviteBtn.x - 2, inviteBtn.y + 5, " Join");
-	//			lastInteractedTick = ticks;
-	//			return true;
-	//		}
-	//	}
-	//	else
-	//	{
-	//		drawWindowFancy(inviteBtn.x, inviteBtn.y, inviteBtn.x + inviteBtn.w, inviteBtn.y + inviteBtn.h);
-	//		drawRect(&inviteBtn, SDL_MapRGB(mainsurface->format, 255, 255, 255), 32);
-	//	}
-	//	ttfPrintText(ttf12, inviteBtn.x - 2, inviteBtn.y + 5, " Join");
-	//	return false;
-	//}
-
-	//void serialize(FileInterface* file) {
-	//	file->property("x", posx);
-	//	file->property("y", posy);
-	//	file->property("scalex", scalex);
-	//	file->property("scaley", scaley);
-	//	file->property("textx", textx);
-	//	file->property("texty", texty);
-	//	file->property("bodyx", bodyx);
-	//	file->property("bodyy", bodyy);
-	//	file->property("cardwidth", cardWidth);
-	//}
-	//void readFromFile()
-	//{
-	//	if ( PHYSFS_getRealDir("/data/links.json") )
-	//	{
-	//		std::string inputPath = PHYSFS_getRealDir("/data/links.json");
-	//		inputPath.append("/data/links.json");
-	//		FileHelper::readObject(inputPath.c_str(), *this);
-	//	}
-	//	if ( !isInit )
-	//	{
-	//		init();
-	//	}
-	//}
+	bool drawActionButton(SDL_Rect* src)
+	{
+		SDL_Rect actionBtn;
+		actionBtn.x = src->x + 4;
+		actionBtn.y = src->y + src->h - 4 - TTF12_HEIGHT;
+		actionBtn.w = src->w - 8;
+		actionBtn.h = 20;
+		if ( !temporaryCardHide && mouseInBounds(actionBtn.x, actionBtn.x + actionBtn.w, actionBtn.y, actionBtn.y + actionBtn.h) )
+		{
+			//drawDepressed(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
+			drawWindowFancy(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
+			drawRect(&actionBtn, uint32ColorBaronyBlue(*mainsurface), 32);
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				ttfPrintText(ttf12, actionBtn.x - 2, actionBtn.y + 5, actionText.c_str());
+				lastInteractedTick = ticks;
+				return true;
+			}
+		}
+		else
+		{
+			drawWindowFancy(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
+			drawRect(&actionBtn, SDL_MapRGB(mainsurface->format, 255, 255, 255), 32);
+		}
+		ttfPrintText(ttf12, actionBtn.x - 2, actionBtn.y + 5, actionText.c_str());
+		return false;
+	}
 	void init()
 	{
 		if ( isInit )
 		{
 			return;
 		}
-
+		displayedText = mainCardText;
 		mainCardIsHidden = false;
 		mainCardHide = false;
 		isInit = true;
@@ -327,7 +357,7 @@ public:
 	}
 	void drawNotifications();
 
-	void addNotification(ImageTypes image, std::string headerText, std::string mainText, std::string secondaryText);
+	UIToastNotification* addNotification(ImageTypes image);
 	std::vector<UIToastNotification> allNotifications;
 };
 extern UIToastNotificationManager_t UIToastNotificationManager;

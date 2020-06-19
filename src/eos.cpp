@@ -2318,10 +2318,10 @@ void EOSFuncs::Accounts_t::handleLogin()
 	}
 	AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
 
-	if ( !initPopupWindow && firstTimeSetupCompleted )
+	/*if ( !initPopupWindow && firstTimeSetupCompleted )
 	{
 		popupType = POPUP_TOAST;
-	}
+	}*/
 
 	if ( popupType == POPUP_FULL )
 	{
@@ -2334,13 +2334,18 @@ void EOSFuncs::Accounts_t::handleLogin()
 	{
 		if ( !initPopupWindow )
 		{
-			UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE,
-				"Logging in...",
-				"",
-				"");
+			UIToastNotification* notification = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
+			notification->setHeaderText(std::string("Account Status"));
+			notification->setMainText(std::string("Logging in..."));
+			notification->setSecondaryText(std::string("An error has occurred!"));
+			notification->setActionText(std::string("Retry"));
+			if ( notification )
+			{
+				notification->actionFlags = UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON;
+				notification->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
+			}
 			initPopupWindow = true;
 		}
-		UIToastNotificationManager.drawNotifications();
 	}
 
 	drawDialogue();

@@ -43,6 +43,7 @@
 #include <ctime>
 #include "sys/stat.h"
 #include "mod_tools.hpp"
+#include "interface/ui.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -1032,6 +1033,10 @@ void handleMainMenu(bool mode)
 			}
 		}
 #endif
+		if ( mode )
+		{
+			UIToastNotificationManager.drawNotifications();
+		}
 
 		// gray text color
 		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
