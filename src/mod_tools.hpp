@@ -1616,6 +1616,50 @@ public:
 		return "default";
 	}
 
+	void createMonsterFromFile(Entity* entity, Stat* myStats, const std::string& filename, Monster& outMonsterType)
+	{
+		MonsterStatCustomManager::StatEntry* statEntry = monsterStatCustomManager.readFromFile(filename.c_str());
+		if ( statEntry )
+		{
+			statEntry->setStatsAndEquipmentToMonster(myStats);
+			outMonsterType = myStats->type;
+			while ( statEntry->numFollowers > 0 )
+			{
+				std::string followerName = statEntry->getFollowerVariant();
+				if ( followerName.compare("") && followerName.compare("none") )
+				{
+					MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(followerName.c_str());
+					if ( followerEntry )
+					{
+						Entity* summonedFollower = summonMonster(static_cast<Monster>(followerEntry->type), entity->x, entity->y);
+						if ( summonedFollower )
+						{
+							if ( summonedFollower->getStats() )
+							{
+								followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
+								summonedFollower->getStats()->leader_uid = entity->getUID();
+							}
+						}
+						delete followerEntry;
+					}
+					else
+					{
+						Entity* summonedFollower = summonMonster(myStats->type, entity->x, entity->y);
+						if ( summonedFollower )
+						{
+							if ( summonedFollower->getStats() )
+							{
+								summonedFollower->getStats()->leader_uid = entity->getUID();
+							}
+						}
+					}
+				}
+				--statEntry->numFollowers;
+			}
+			delete statEntry;
+		}
+	}
+
 	void writeSampleToDocument()
 	{
 		rapidjson::Document d;
