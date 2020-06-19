@@ -14,6 +14,8 @@
 #include "game.hpp"
 #include "interface/interface.hpp"
 #include "book.hpp"
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
 
 //#define SPACE_NINJA_NAME "Order of the Space Ninjas"
 #define TAB_WIDTH 3
@@ -49,12 +51,61 @@ void createBooks()
 	//TODO: Then create a book for each file there and add it to a books array.
 	//auto discoveredbooks = directoryContents("books/", false, true);
 	std::list<std::string> discoveredbooks = physfsGetFileNamesInDirectory("books/");
+
+	std::string ignoreBooksPath = "books/ignored_books.json";
+	std::unordered_set<std::string> ignoredBooks;
+	bool foundIgnoreBookFile = false;
+	if ( PHYSFS_getRealDir(ignoreBooksPath.c_str()) != NULL )
+	{
+		foundIgnoreBookFile = true;
+		ignoredBooks.insert("ignored_books.json");
+		std::string path = PHYSFS_getRealDir(ignoreBooksPath.c_str());
+		path.append(PHYSFS_getDirSeparator());
+		ignoreBooksPath = path + ignoreBooksPath;
+
+		FILE* fp = fopen(ignoreBooksPath.c_str(), "rb");
+		if ( fp )
+		{
+			char buf[65536];
+			rapidjson::FileReadStream is(fp, buf, sizeof(buf));
+			fclose(fp);
+
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("ignored_books") )
+			{
+				printlog("[JSON]: Could not read member 'ignored_books', possible invalid syntax.");
+			}
+			else
+			{
+				for ( rapidjson::Value::ConstValueIterator itr = d["ignored_books"].Begin(); itr != d["ignored_books"].End(); ++itr )
+				{
+					ignoredBooks.insert(itr->GetString());
+				}
+			}
+		}
+	}
+
 	if (!discoveredbooks.empty())
 	{
 		printlog("compiling books...\n");
 
+		int numSkipBooks = 0;
+		if ( foundIgnoreBookFile )
+		{
+			numSkipBooks = 1; // skip the JSON file.
+			for ( auto& filename : discoveredbooks )
+			{
+				if ( ignoredBooks.find(filename) != ignoredBooks.end() )
+				{
+					++numSkipBooks;
+					printlog("'skipping book %s due to 'ignored_books.json'\n", filename.c_str());
+				}
+			}
+		}
+
 		// Allocate memory for books
-		numbooks = discoveredbooks.size();
+		numbooks = discoveredbooks.size() - numSkipBooks;
 		books = (book_t**) malloc(sizeof(book_t*) * numbooks);
 
 		// sort books alphabetically
@@ -63,6 +114,10 @@ void createBooks()
 		// create books
 		for (auto filename : discoveredbooks)
 		{
+			if ( ignoredBooks.find(filename) != ignoredBooks.end() )
+			{
+				continue;
+			}
 			books[i] = (book_t*) malloc(sizeof(book_t));
 			books[i]->text = NULL;
 			books[i]->name = strdup(filename.c_str());

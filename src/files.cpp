@@ -2028,6 +2028,10 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 
 bool physfsSearchSoundsToUpdate()
 {
+	if ( no_sound )
+	{
+		return false;
+	}
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	if ( soundsDirectory.compare("./") != 0 )
 	{
@@ -2061,6 +2065,10 @@ bool physfsSearchSoundsToUpdate()
 
 void physfsReloadSounds(bool reloadAll)
 {
+	if ( no_sound )
+	{
+		return;
+	}
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
 	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
@@ -2121,6 +2129,84 @@ void physfsReloadSounds(bool reloadAll)
 				}
 				OPENAL_CreateSound(soundFile.c_str(), true, &sounds[c]);
 #endif 
+			}
+		}
+	}
+	fclose(fp);
+}
+
+bool physfsSearchSpritesToUpdate()
+{
+	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
+	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
+	FILE* fp = openDataFile(spritesDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string spritesRealDir = PHYSFS_getRealDir(name);
+			if ( spritesRealDir.compare("./") != 0 )
+			{
+				fclose(fp);
+				printlog("[PhysFS]: Found modified sprite in sprites/ directory, reloading all sprites...");
+				return true;
+			}
+		}
+	}
+	fclose(fp);
+	return false;
+}
+
+void physfsReloadSprites(bool reloadAll)
+{
+	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
+	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
+	printlog("[PhysFS]: Loading sprites from directory %s...\n", spritesDirectory.c_str());
+	FILE* fp = openDataFile(spritesDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string spritesRealDir = PHYSFS_getRealDir(name);
+			if ( reloadAll || spritesRealDir.compare("./") != 0 )
+			{
+				std::string spriteFile = spritesRealDir;
+				spriteFile.append(PHYSFS_getDirSeparator()).append(name);
+				if ( sprites[c] )
+				{
+					SDL_FreeSurface(sprites[c]);
+				}
+				char fullname[128];
+				strncpy(fullname, spriteFile.c_str(), 127);
+				sprites[c] = loadImage(fullname);
+				if ( sprites[c] != NULL )
+				{
+				}
+				else
+				{
+					printlog("warning: failed to load '%s' listed at line %d in %s\n", name, c + 1, spritesDirectory.c_str());
+					if ( c == 0 )
+					{
+						printlog("sprite 0 cannot be NULL!\n");
+						fclose(fp);
+						return;
+					}
+				}
 			}
 		}
 	}
