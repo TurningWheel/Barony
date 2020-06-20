@@ -110,8 +110,6 @@ void createBooks()
 
 		// Allocate memory for books
 		numbooks = discoveredbooks.size() - numSkipBooks;
-		books = (book_t**) malloc(sizeof(book_t*) * numbooks);
-		numbooks = discoveredbooks.size();
 		books = static_cast<book_t**>(malloc(sizeof(book_t*) * numbooks));
 
 		// sort books alphabetically
@@ -124,8 +122,6 @@ void createBooks()
 			{
 				continue;
 			}
-			books[i] = (book_t*) malloc(sizeof(book_t));
-			books[i]->text = NULL;
 			books[i] = static_cast<book_t*>(malloc(sizeof(book_t)));
 			books[i]->text = nullptr;
 			books[i]->name = strdup(filename.c_str());
