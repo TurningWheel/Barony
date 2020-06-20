@@ -29,10 +29,8 @@
 
 void initClass(const int player)
 {
-	Item* item, *item2;
-	/*client_classes[player] = CLASS_HUNTER;
-	stats[player]->playerRace = RACE_INSECTOID;
-	stats[player]->appearance = 0;*/
+	Item* item = nullptr;
+	Item* item2 = nullptr;
 	if ( player == clientnum)
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
@@ -41,9 +39,9 @@ void initClass(const int player)
 		selected_inventory_slot_y = 0;
 		current_hotbar = 0;
 
-		for ( auto& slot : hotbar )
+		for ( Uint32 i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 		{
-			slot.item = 0;
+			hotbar[i].item = 0;
 		}
 		magicBoomerangHotbarSlot = -1;
 	}
@@ -2515,12 +2513,12 @@ void initClass(const int player)
 					{
 						continue;
 					}
-					for ( auto& slot : hotbar )
+					for ( Uint32 i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 					{
-						if ( slot.item == 0 )
+						if ( hotbar[i].item == 0 )
 						{
 							//printlog("%d %s", i, item->getName());
-							slot.item = item->uid;
+							hotbar[i].item = item->uid;
 							break;
 						}
 					}
@@ -2580,7 +2578,7 @@ void initShapeshiftHotbar()
 		}
 	}
 
-	for ( uint32_t slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
+	for ( Uint32 slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
 	{
 		hotbar_alternate[HOTBAR_DEFAULT][slotIndex].item = hotbar[slotIndex].item; // store our current hotbar.
 		hotbar[slotIndex].item = newHotbar[slotIndex].item; // load from the monster's hotbar.
@@ -2671,72 +2669,32 @@ void initShapeshiftHotbar()
 					}
 					else
 					{
-						for ( auto& slot : hotbar )
+						for ( Uint32 i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 						{
-							if ( slot.item == item->uid )
+							if ( hotbar[i].item == item->uid )
 							{
-								slot.item = 0;
+								hotbar[i].item = 0;
 							}
 						}
 					}
 				}
 			}
 		}
-		/*else if ( item )
-		{
-			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
-			{
-				if ( hotbar[i].item != 0 )
-				{
-					Item* itemToHide = uidToItem(hotbar[i].item);
-					if ( itemToHide == item )
-					{
-						if ( itemCategory(itemToHide) == ARMOR
-							|| itemCategory(itemToHide) == MAGICSTAFF
-							|| itemCategory(itemToHide) == WEAPON
-							|| itemCategory(itemToHide) == SPELLBOOK
-							|| itemCategory(itemToHide) == THROWN )
-						{
-							hotbar[i].item = 0;
-						}
-					}
-				}
-			}
-		}*/
 	}
 
-	/*for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	for ( Uint32 i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 	{
-		if ( hotbar[i].item == 0 && hotbar_alternate[i].item != 0 )
-		{
-			Item* itemToAdd = uidToItem(hotbar_alternate[i].item);
-			if ( itemToAdd )
-			{
-				if ( !(itemCategory(itemToAdd) == ARMOR
-					|| itemCategory(itemToAdd) == MAGICSTAFF
-					|| itemCategory(itemToAdd) == WEAPON
-					|| itemCategory(itemToAdd) == SPELLBOOK
-					|| itemCategory(itemToAdd) == THROWN) )
-				{
-					hotbar[i].item = hotbar_alternate[i].item;
-				}
-			}
-		}
-	}*/
-
-	for ( const auto& slot : hotbar )
-	{
-		if ( slot.item == 0 )
+		if ( hotbar[i].item == 0 )
 		{
 			continue;
 		}
-		if ( slot.item == spellRevertUid )
+		if ( hotbar[i].item == spellRevertUid )
 		{
 			spellRevertUid = 0;
 		}
 		for ( auto& monsterSpell : monsterSpells )
 		{
-			if ( monsterSpell == slot.item )
+			if ( monsterSpell == hotbar[i].item )
 			{
 				monsterSpell = 0;
 			}
@@ -2786,7 +2744,7 @@ void deinitShapeshiftHotbar()
 			newSpell = selected_spell_alternate[HOTBAR_IMP];
 		}
 	}
-	for ( uint32_t slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
+	for ( Uint32 slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
 	{
 		swapItem = hotbar[slotIndex].item;
 		hotbar[slotIndex].item = hotbar_alternate[HOTBAR_DEFAULT][slotIndex].item; // swap back to default loadout
