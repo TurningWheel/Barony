@@ -97,10 +97,14 @@ void createBooks()
 		int numSkipBooks = 0;
 		if ( foundIgnoreBookFile )
 		{
-			numSkipBooks = 1; // skip the JSON file.
 			for ( auto& filename : discoveredbooks )
 			{
-				if ( ignoredBooks.find(filename) != ignoredBooks.end() )
+				if ( filename.compare("ignored_books.json") == 0 )
+				{
+					++numSkipBooks;
+					printlog("skipping book %s due to filename\n", filename.c_str());
+				}
+				else if ( ignoredBooks.find(filename) != ignoredBooks.end() )
 				{
 					++numSkipBooks;
 					printlog("'skipping book %s due to 'ignored_books.json'\n", filename.c_str());
