@@ -20,7 +20,7 @@ See LICENSE for details.
 #include "magic/magic.hpp"
 #include "sound.hpp"
 #include "player.hpp"
-#include "prng.hpp"
+#include "mod_tools.hpp"
 
 #define SUMMONTRAP_MONSTER my->skill[0]
 #define SUMMONTRAP_COUNT my->skill[1]
@@ -46,14 +46,25 @@ void actSummonTrap(Entity* my)
 		{
 			if ( !SUMMONTRAP_FIRED && SUMMONTRAP_SPAWNCYCLES > 0 )
 			{
+				bool useCustomMonsters = monsterCurveCustomManager.curveExistsForCurrentMapName(map.name);
+				bool fixedCustomMonster = true;
+				Monster customMonsterType = NOTHING;
 				if ( SUMMONTRAP_MONSTER > 0 && SUMMONTRAP_MONSTER < NUMMONSTERS )
 				{
 					// spawn the monster given to the trap.
 				}
 				else if ( SUMMONTRAP_MONSTER == 0 || SUMMONTRAP_MONSTER >= NUMMONSTERS )
 				{
-					SUMMONTRAP_MONSTER = monsterCurve(currentlevel);
 					// spawn the monster scaled to current level.
+					if ( useCustomMonsters )
+					{
+						fixedCustomMonster = false;
+						customMonsterType = static_cast<Monster>(monsterCurveCustomManager.rollMonsterFromCurve(map.name));
+					}
+					else
+					{
+						SUMMONTRAP_MONSTER = monsterCurve(currentlevel);
+					}
 				}
 				else
 				{
@@ -70,10 +81,32 @@ void actSummonTrap(Entity* my)
 				}
 
 				int count = 0;
-				Entity* monster = nullptr;
 				for ( count = 0; count < SUMMONTRAP_COUNT; count++ )
 				{
-					Entity* monster = summonMonster(static_cast<Monster>(SUMMONTRAP_MONSTER), my->x, my->y);
+					Entity* monster = nullptr;
+					int typeToSpawn = SUMMONTRAP_MONSTER;
+					if ( useCustomMonsters && customMonsterType != NOTHING )
+					{
+						typeToSpawn = customMonsterType;
+					}
+					monster = summonMonster(static_cast<Monster>(typeToSpawn), my->x, my->y);
+					if ( monster && useCustomMonsters )
+					{
+						std::string variantName = "default";
+						if ( fixedCustomMonster )
+						{
+							variantName = monsterCurveCustomManager.rollFixedMonsterVariant(map.name, typeToSpawn);
+						}
+						else
+						{
+							variantName = monsterCurveCustomManager.rollMonsterVariant(map.name, typeToSpawn);
+						}
+						if ( variantName.compare("default") != 0 )
+						{
+							Monster tmp = NOTHING;
+							monsterCurveCustomManager.createMonsterFromFile(monster, monster->getStats(), variantName, tmp);
+						}
+					}
 				}
 
 				playSoundEntity(my, 153, 128);

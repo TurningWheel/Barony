@@ -926,6 +926,10 @@ void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
 
 bool physfsSearchMusicToUpdate()
 {
+	if ( no_sound )
+	{
+		return false;
+	}
 #ifdef SOUND
 	std::vector<std::string> themeMusic;
 	themeMusic.push_back("music/introduction.ogg");
@@ -1106,6 +1110,10 @@ bool physfsSearchMusicToUpdate()
 
 void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 {
+	if ( no_sound )
+	{
+		return;
+	}
 #ifdef SOUND
 
 	std::vector<std::string> themeMusic;
