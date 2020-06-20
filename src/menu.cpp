@@ -128,6 +128,7 @@ bool gamemods_modelsListLastStartedUnmodded = false; // if starting regular game
 bool gamemods_soundListRequiresReload = false;
 bool gamemods_soundsListLastStartedUnmodded = false; // if starting regular game that had to reset sounds list, use this to reinit custom sounds.
 bool gamemods_tileListRequireReloadUnmodded = false;
+bool gamemods_spriteImagesRequireReloadUnmodded = false;
 bool gamemods_booksRequireReloadUnmodded = false;
 bool gamemods_musicRequireReloadUnmodded = false;
 bool gamemods_langRequireReloadUnmodded = false;
@@ -1392,6 +1393,17 @@ void handleMainMenu(bool mode)
 						GO_SwapBuffers(screen);
 						physfsReloadItemSprites(true);
 						gamemods_itemSpritesRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_spriteImagesRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[3016], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3016]);
+						GO_SwapBuffers(screen);
+						physfsReloadSprites(true);
+						gamemods_spriteImagesRequireReloadUnmodded = false;
 					}
 
 					if ( gamemods_itemsGlobalTxtRequireReloadUnmodded )
@@ -15189,6 +15201,17 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		GO_SwapBuffers(screen);
 		physfsReloadTiles(false);
 		gamemods_tileListRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchSpritesToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[3015], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
+		GO_SwapBuffers(screen);
+		physfsReloadSprites(false);
+		gamemods_spriteImagesRequireReloadUnmodded = true;
 	}
 
 	if ( physfsSearchBooksToUpdate() )
