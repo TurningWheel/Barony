@@ -84,7 +84,7 @@ void Entity::actMagicTrapCeiling()
 					break;
 				case 5:
 					spellTrapType = SPELL_SLEEP;
-					spellTrapRefireRate = 225; // stop getting stuck forever!
+					spellTrapRefireRate = 275; // stop getting stuck forever!
 					break;
 				case 6:
 					spellTrapType = SPELL_CONFUSE;
