@@ -1740,88 +1740,90 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 		}
 		return EQUIP_ITEM_SUCCESS_NEWITEM;
 	}
-	// if items are the same... (excluding the quantity of both item nodes)
-	if ( *slot != nullptr )
+	else
 	{
-		if ( (*slot)->count == item->count ) // if quantity is the same then it's the same item, can unequip
-		{
-			if (!(*slot)->canUnequip(stats[player]))
-			{
-				if ( player == clientnum )
-				{
-					if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
-					{
-						messagePlayer(player, language[3217], (*slot)->getName());
-					}
-					else
-					{
-						messagePlayer(player, language[1089], (*slot)->getName());
-					}
-				}
-				(*slot)->identified = true;
-				return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
-			}
-		}
-		else
-		{
-			// This lets the server know when a client "equipped" a new item in their slot but actually just updated the count.
-			// Otherwise if this count check were not here, server would think that equipping 2 rocks after only holding 1 rock is
-			// the same as unequipping the slot since they are the same item, barring the quantity. So the client would appear to
-			// the server as empty handed, while the client holds 2 rocks, and when thrown on client end, the server never sees the item
-			// and the client "throws" nothing, but actually loses their thrown items into nothingness. This fixes that issue.
-			(*slot)->count = item->count; // update quantity. 
-			return EQUIP_ITEM_SUCCESS_UPDATE_QTY;
-		}
-	}
-	if (multiplayer != CLIENT && !intro && !fadeout)
-	{
-		if (players[player] != nullptr && players[player]->entity != nullptr)
-		{
-			if (players[player]->entity->ticks > 60)
-			{
-				if (itemCategory(item) == ARMOR )
-				{
-					playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
-				}
-			}
-		}
-	}
-	if ( player != 0 && multiplayer == SERVER )
-	{
-		if ( item->node )
-		{
-			list_RemoveNode(item->node);
-		}
-		else
-		{
-			free(item);
-		}
+		// if items are the same... (excluding the quantity of both item nodes)
 		if ( *slot != nullptr )
 		{
-			if ( (*slot)->node )
+			if ( (*slot)->count == item->count ) // if quantity is the same then it's the same item, can unequip
 			{
-				list_RemoveNode((*slot)->node);
+				if (!(*slot)->canUnequip(stats[player]))
+				{
+					if ( player == clientnum )
+					{
+						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
+						{
+							messagePlayer(player, language[3217], (*slot)->getName());
+						}
+						else
+						{
+							messagePlayer(player, language[1089], (*slot)->getName());
+						}
+					}
+					(*slot)->identified = true;
+					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+				}
 			}
 			else
 			{
-				free(*slot);
+				// This lets the server know when a client "equipped" a new item in their slot but actually just updated the count.
+				// Otherwise if this count check were not here, server would think that equipping 2 rocks after only holding 1 rock is
+				// the same as unequipping the slot since they are the same item, barring the quantity. So the client would appear to
+				// the server as empty handed, while the client holds 2 rocks, and when thrown on client end, the server never sees the item
+				// and the client "throws" nothing, but actually loses their thrown items into nothingness. This fixes that issue.
+				(*slot)->count = item->count; // update quantity. 
+				return EQUIP_ITEM_SUCCESS_UPDATE_QTY;
 			}
 		}
-	}
-	else
-	{
-		oldcount = item->count;
-		item->count = 1;
-		if ( intro == false && !fadeout )
+		if (multiplayer != CLIENT && !intro && !fadeout)
 		{
-			messagePlayer(player, language[1091], item->description());
+			if (players[player] != nullptr && players[player]->entity != nullptr)
+			{
+				if (players[player]->entity->ticks > 60)
+				{
+					if (itemCategory(item) == ARMOR )
+					{
+						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
+					}
+				}
+			}
 		}
-		item->count = oldcount;
+		if ( player != 0 && multiplayer == SERVER )
+		{
+			if ( item->node )
+			{
+				list_RemoveNode(item->node);
+			}
+			else
+			{
+				free(item);
+			}
+			if ( *slot != nullptr )
+			{
+				if ( (*slot)->node )
+				{
+					list_RemoveNode((*slot)->node);
+				}
+				else
+				{
+					free(*slot);
+				}
+			}
+		}
+		else
+		{
+			oldcount = item->count;
+			item->count = 1;
+			if ( intro == false && !fadeout )
+			{
+				messagePlayer(player, language[1091], item->description());
+			}
+			item->count = oldcount;
+		}
+		*slot = nullptr;
+		return EQUIP_ITEM_SUCCESS_UNEQUIP;
 	}
-	*slot = nullptr;
-	return EQUIP_ITEM_SUCCESS_UNEQUIP;
 }
-
 /*-------------------------------------------------------------------------------
 
 	useItem
