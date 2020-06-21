@@ -1693,7 +1693,7 @@ void EOSFuncs::LobbyData_t::getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails)
 
 	EOS_LobbyDetails_GetMemberByIndexOptions MemberByIndexOptions;
 	MemberByIndexOptions.ApiVersion = EOS_LOBBYDETAILS_GETMEMBERBYINDEX_API_LATEST;
-	for ( int i = 0; i < numPlayers; ++i )
+	for ( Uint32 i = 0; i < numPlayers; ++i )
 	{
 		MemberByIndexOptions.MemberIndex = i;
 		EOS_ProductUserId memberId = EOS_LobbyDetails_GetMemberByIndex(LobbyDetails, &MemberByIndexOptions);
@@ -1720,7 +1720,7 @@ void EOSFuncs::LobbyData_t::getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails)
 		MemberAttributeCountOptions.ApiVersion = EOS_LOBBYDETAILS_GETMEMBERATTRIBUTECOUNT_API_LATEST;
 		MemberAttributeCountOptions.TargetUserId = memberId;
 		const Uint32 numAttributes = EOS_LobbyDetails_GetMemberAttributeCount(LobbyDetails, &MemberAttributeCountOptions);
-		for ( int j = 0; j < numAttributes; ++j )
+		for ( Uint32 j = 0; j < numAttributes; ++j )
 		{
 			EOS_LobbyDetails_CopyMemberAttributeByIndexOptions MemberAttributeCopyOptions;
 			MemberAttributeCopyOptions.ApiVersion = EOS_LOBBYDETAILS_COPYMEMBERATTRIBUTEBYINDEX_API_LATEST;
@@ -1738,7 +1738,7 @@ void EOSFuncs::LobbyData_t::getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails)
 			std::string key = MemberAttribute->Data->Key;
 			if ( key.compare("CLIENTNUM") == 0 )
 			{
-				newPlayer.clientNumber = MemberAttribute->Data->Value.AsInt64;
+				newPlayer.clientNumber = static_cast<int>(MemberAttribute->Data->Value.AsInt64);
 				EOSFuncs::logInfo("Read clientnum: %d for user: %s", newPlayer.clientNumber, newPlayer.memberProductUserId.c_str());
 			}
 			EOS_Lobby_Attribute_Release(MemberAttribute);
@@ -2118,199 +2118,39 @@ void EOSFuncs::LobbySearchResults_t::sortResults()
 	);
 }
 
-void buttonRetryAuthorisation(button_t* my)
+void buttonRetryAuthorisation()
 {
-	/*if ( EOS.AccountManager.waitingForCallback )
-	{
-		return;
-	}*/
 	EOS.AccountManager.AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
 	EOS.initAuth();
-}
 
-void EOSFuncs::Accounts_t::createLoginDialogue()
-{
-	if ( initPopupWindow )
+	UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
+	if ( n )
 	{
-		return;
-	}
-	initPopupWindow = true;
-	popupInitTicks = ticks;
-	popupCurrentTicks = ticks;
-
-	if ( !loginBanner )
-	{
-		loginBanner = loadImage("images/system/title.png");
-	}
-
-	// close current window
-	buttonCloseSubwindow(NULL);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	// create new window
-	subwindow = 1;
-	subx1 = xres / 2 - ((loginBanner->w / 2)+ 16);
-	subx2 = xres / 2 + ((loginBanner->w / 2) + 16);
-	suby1 = yres / 2 - ((loginBanner->h / 2) + 64);
-	suby2 = yres / 2 + ((loginBanner->h / 2) + 64);
-	strcpy(subtext, "");
-
-	// close button
-	button_t* button;
-	// retry button
-	button = newButton();
-	strcpy(button->label, "Retry login");
-	button->x = subx1 + 4;
-	button->y = suby2 - 24;
-	button->sizex = strlen("Retry login") * 12 + 8;
-	button->sizey = 20;
-	button->visible = 1;
-	button->focused = 1;
-	button->action = &buttonRetryAuthorisation;
-
-	// qtd button
-	button = newButton();
-	strcpy(button->label, "Quit to desktop");
-	button->sizex = strlen("Quit to desktop") * 12 + 4;
-	button->sizey = 20;
-	button->x = subx2 - button->sizex - 8;
-	button->y = suby2 - 24;
-	button->visible = 1;
-	button->focused = 1;
-	button->action = &buttonQuitConfirm;
-}
-
-void EOSFuncs::Accounts_t::drawDialogue()
-{
-	Uint32 oldTicks = popupCurrentTicks;
-	popupCurrentTicks = ticks;
-
-	if ( fadeout )
-	{
-		return;
-	}
-
-	int centerWindowX = subx1 + (subx2 - subx1) / 2;
-	if ( loginBanner )
-	{
-		SDL_Rect pos;
-		pos.x = centerWindowX - loginBanner->w / 2;
-		pos.y = suby1 + 4;
-		pos.w = loginBanner->w;
-		pos.h = loginBanner->h;
-		drawImage(loginBanner, nullptr, &pos);
-	}
-
-	ttfPrintTextFormatted(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 9, language[3936]);
-
-	char messageBuffer[512] = "";
-	strcpy(messageBuffer, language[3937]);
-	if ( popupCurrentTicks % TICKS_PER_SECOND == 0 && oldTicks != popupCurrentTicks )
-	{
-		++loadingTicks;
-		if ( loadingTicks > 3 )
-		{
-			loadingTicks = 0;
-		}
-	}
-	switch ( loadingTicks )
-	{
-		case 0:
-			break;
-		case 1:
-			strcat(messageBuffer, ".");
-			break;
-		case 2:
-			strcat(messageBuffer, "..");
-			break;
-		case 3:
-			strcat(messageBuffer, "...");
-			break;
-		default:
-			break;
-	}
-
-	if ( waitingForCallback )
-	{
-		ttfPrintTextFormatted(ttf12, centerWindowX - strlen(messageBuffer) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 8, messageBuffer);
-	}
-	else
-	{
-		if ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_Success )
-		{
-			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3941]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
-				SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3941]);
-		}
-		else if ( EOS.AccountManager.AccountAuthenticationStatus != EOS_EResult::EOS_NotConfigured )
-		{
-			// general error messages
-			if ( !firstTimeSetupCompleted && EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_Auth_ExchangeCodeNotFound )
-			{
-				if ( !loginCriticalErrorOccurred )
-				{
-					list_FreeAll(&button_l);
-					deleteallbuttons = true;
-
-					// qtd button
-					button_t* button = newButton();
-					strcpy(button->label, "Quit to desktop");
-					button->sizex = strlen("Quit to desktop") * 12 + 4;
-					button->sizey = 20;
-					button->x = subx1 + ((subx2 - subx1) / 2) - (button->sizex / 2);
-					button->y = suby2 - 24;
-					button->visible = 1;
-					button->focused = 1;
-					button->action = &buttonQuitConfirm;
-				}
-				loginCriticalErrorOccurred = true;
-				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3942]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
-					SDL_MapRGB(mainsurface->format, 255, 128, 0), language[3942]);
-				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3943]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 7,
-					SDL_MapRGB(mainsurface->format, 255, 128, 0), language[3943]);
-				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3944]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 5,
-					SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3944]);
-			}
-			else
-			{
-				char errorBuf[512] = "";
-				snprintf(errorBuf, 512 - 1, language[3941], static_cast<int>(EOS.AccountManager.AccountAuthenticationStatus));
-				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3941]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
-					SDL_MapRGB(mainsurface->format, 255, 0, 0), errorBuf);
-			}
-		}
-	}
-
-	if ( !firstTimeSetupCompleted && EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_NotConfigured )
-	{
-		if ( popupCurrentTicks - popupInitTicks >= TICKS_PER_SECOND * 3 )
-		{
-			suby1 = yres / 2 - ((loginBanner->h / 2) + 64);
-			suby2 = yres / 2 + ((loginBanner->h / 2) + 64);
-
-			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3938]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 6, 
-				SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3938]);
-			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3939]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 5,
-				SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3939]);
-			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3940]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 4,
-				SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3940]);
-		}
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+		n->showMainCard();
+		n->setDisplayedText(n->getMainText());
+		n->updateCardEvent(true, false);
 	}
 }
 
 void EOSFuncs::Accounts_t::handleLogin()
 {
-	if ( AccountAuthenticationStatus == EOS_EResult::EOS_Success || AccountAuthenticationCompleted == EOS_EResult::EOS_Success )
+	if ( !waitingForCallback && (AccountAuthenticationStatus == EOS_EResult::EOS_Success || AccountAuthenticationCompleted == EOS_EResult::EOS_Success) )
 	{
 		firstTimeSetupCompleted = true;
 		if ( AccountAuthenticationCompleted != EOS_EResult::EOS_Success )
 		{
-			if ( popupType == POPUP_FULL )
+			if ( popupType == POPUP_TOAST )
 			{
-				// close this popup.
-				buttonCloseSubwindow(nullptr);
-				list_FreeAll(&button_l);
-				deleteallbuttons = true;
+				UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
+				if ( n )
+				{
+					n->showMainCard();
+					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+					n->setSecondaryText(std::string("Logged in successfully!"));
+					n->updateCardEvent(false, true);
+				}
 			}
 			AccountAuthenticationCompleted = EOS_EResult::EOS_Success;
 		}
@@ -2318,36 +2158,239 @@ void EOSFuncs::Accounts_t::handleLogin()
 	}
 	AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
 
+	if ( popupType == POPUP_TOAST )
+	{
+		if ( !initPopupWindow )
+		{
+			if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT) )
+			{
+				UIToastNotification* n = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
+				n->setHeaderText(std::string("Account Status"));
+				n->setMainText(std::string("Logging in..."));
+				n->setSecondaryText(std::string("An error has occurred!"));
+				n->setActionText(std::string("Retry"));
+				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
+				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+				n->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
+				n->buttonAction = &buttonRetryAuthorisation;
+			}
+			initPopupWindow = true;
+		}
+		else
+		{
+			if ( !waitingForCallback )
+			{
+				if ( AccountAuthenticationStatus != EOS_EResult::EOS_NotConfigured )
+				{
+					UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
+					// update the status here.
+					if ( n )
+					{
+						n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
+						n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+						char buf[128] = "";
+						snprintf(buf, 128 - 1, "Login has failed.\nError code: %d", static_cast<int>(AccountAuthenticationStatus));
+						n->showMainCard();
+						n->setSecondaryText(std::string(buf));
+						n->updateCardEvent(false, true);
+					}
+				}
+				AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
+			}
+		}
+	}
+
+	//if ( popupType == POPUP_FULL )
+	//{
+	//	// close this popup.
+	//	buttonCloseSubwindow(nullptr);
+	//	list_FreeAll(&button_l);
+	//	deleteallbuttons = true;
+	//}
 	/*if ( !initPopupWindow && firstTimeSetupCompleted )
 	{
 		popupType = POPUP_TOAST;
 	}*/
 
-	if ( popupType == POPUP_FULL )
-	{
-		if ( !initPopupWindow )
-		{
-			createLoginDialogue();
-		}
-	}
-	else if ( popupType == POPUP_TOAST )
-	{
-		if ( !initPopupWindow )
-		{
-			UIToastNotification* notification = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
-			notification->setHeaderText(std::string("Account Status"));
-			notification->setMainText(std::string("Logging in..."));
-			notification->setSecondaryText(std::string("An error has occurred!"));
-			notification->setActionText(std::string("Retry"));
-			if ( notification )
-			{
-				notification->actionFlags = UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON;
-				notification->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
-			}
-			initPopupWindow = true;
-		}
-	}
-
-	drawDialogue();
+	//if ( popupType == POPUP_FULL )
+	//{
+	//	if ( !initPopupWindow )
+	//	{
+	//		createLoginDialogue();
+	//	}
+	//}
+	//drawDialogue();
 }
 #endif //USE_EOS
+
+
+//void EOSFuncs::Accounts_t::createLoginDialogue()
+//{
+//	if ( initPopupWindow )
+//	{
+//		return;
+//	}
+//	initPopupWindow = true;
+//	popupInitTicks = ticks;
+//	popupCurrentTicks = ticks;
+//
+//	if ( !loginBanner )
+//	{
+//		loginBanner = loadImage("images/system/title.png");
+//	}
+//
+//	// close current window
+//	buttonCloseSubwindow(NULL);
+//	list_FreeAll(&button_l);
+//	deleteallbuttons = true;
+//
+//	// create new window
+//	subwindow = 1;
+//	subx1 = xres / 2 - ((loginBanner->w / 2)+ 16);
+//	subx2 = xres / 2 + ((loginBanner->w / 2) + 16);
+//	suby1 = yres / 2 - ((loginBanner->h / 2) + 64);
+//	suby2 = yres / 2 + ((loginBanner->h / 2) + 64);
+//	strcpy(subtext, "");
+//
+//	// close button
+//	button_t* button;
+//	// retry button
+//	button = newButton();
+//	strcpy(button->label, "Retry login");
+//	button->x = subx1 + 4;
+//	button->y = suby2 - 24;
+//	button->sizex = strlen("Retry login") * 12 + 8;
+//	button->sizey = 20;
+//	button->visible = 1;
+//	button->focused = 1;
+//	button->action = &buttonRetryAuthorisation;
+//
+//	// qtd button
+//	button = newButton();
+//	strcpy(button->label, "Quit to desktop");
+//	button->sizex = strlen("Quit to desktop") * 12 + 4;
+//	button->sizey = 20;
+//	button->x = subx2 - button->sizex - 8;
+//	button->y = suby2 - 24;
+//	button->visible = 1;
+//	button->focused = 1;
+//	button->action = &buttonQuitConfirm;
+//}
+//
+//void EOSFuncs::Accounts_t::drawDialogue()
+//{
+//	Uint32 oldTicks = popupCurrentTicks;
+//	popupCurrentTicks = ticks;
+//
+//	if ( fadeout )
+//	{
+//		return;
+//	}
+//
+//	int centerWindowX = subx1 + (subx2 - subx1) / 2;
+//	if ( loginBanner )
+//	{
+//		SDL_Rect pos;
+//		pos.x = centerWindowX - loginBanner->w / 2;
+//		pos.y = suby1 + 4;
+//		pos.w = loginBanner->w;
+//		pos.h = loginBanner->h;
+//		drawImage(loginBanner, nullptr, &pos);
+//	}
+//
+//	ttfPrintTextFormatted(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 9, language[3936]);
+//
+//	char messageBuffer[512] = "";
+//	strcpy(messageBuffer, language[3937]);
+//	if ( popupCurrentTicks % TICKS_PER_SECOND == 0 && oldTicks != popupCurrentTicks )
+//	{
+//		++loadingTicks;
+//		if ( loadingTicks > 3 )
+//		{
+//			loadingTicks = 0;
+//		}
+//	}
+//	switch ( loadingTicks )
+//	{
+//		case 0:
+//			break;
+//		case 1:
+//			strcat(messageBuffer, ".");
+//			break;
+//		case 2:
+//			strcat(messageBuffer, "..");
+//			break;
+//		case 3:
+//			strcat(messageBuffer, "...");
+//			break;
+//		default:
+//			break;
+//	}
+//
+//	if ( waitingForCallback )
+//	{
+//		ttfPrintTextFormatted(ttf12, centerWindowX - strlen(messageBuffer) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 8, messageBuffer);
+//	}
+//	else
+//	{
+//		if ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_Success )
+//		{
+//			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3941]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
+//				SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3941]);
+//		}
+//		else if ( EOS.AccountManager.AccountAuthenticationStatus != EOS_EResult::EOS_NotConfigured )
+//		{
+//			// general error messages
+//			if ( !firstTimeSetupCompleted && EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_Auth_ExchangeCodeNotFound )
+//			{
+//				if ( !loginCriticalErrorOccurred )
+//				{
+//					list_FreeAll(&button_l);
+//					deleteallbuttons = true;
+//
+//					// qtd button
+//					button_t* button = newButton();
+//					strcpy(button->label, "Quit to desktop");
+//					button->sizex = strlen("Quit to desktop") * 12 + 4;
+//					button->sizey = 20;
+//					button->x = subx1 + ((subx2 - subx1) / 2) - (button->sizex / 2);
+//					button->y = suby2 - 24;
+//					button->visible = 1;
+//					button->focused = 1;
+//					button->action = &buttonQuitConfirm;
+//				}
+//				loginCriticalErrorOccurred = true;
+//				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3942]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
+//					SDL_MapRGB(mainsurface->format, 255, 128, 0), language[3942]);
+//				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3943]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 7,
+//					SDL_MapRGB(mainsurface->format, 255, 128, 0), language[3943]);
+//				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3944]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 5,
+//					SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3944]);
+//			}
+//			else
+//			{
+//				char errorBuf[512] = "";
+//				snprintf(errorBuf, 512 - 1, language[3941], static_cast<int>(EOS.AccountManager.AccountAuthenticationStatus));
+//				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3941]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
+//					SDL_MapRGB(mainsurface->format, 255, 0, 0), errorBuf);
+//			}
+//		}
+//	}
+//
+//	if ( !firstTimeSetupCompleted && EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_NotConfigured )
+//	{
+//		if ( popupCurrentTicks - popupInitTicks >= TICKS_PER_SECOND * 3 )
+//		{
+//			suby1 = yres / 2 - ((loginBanner->h / 2) + 64);
+//			suby2 = yres / 2 + ((loginBanner->h / 2) + 64);
+//
+//			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3938]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 6, 
+//				SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3938]);
+//			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3939]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 5,
+//				SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3939]);
+//			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3940]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 4,
+//				SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3940]);
+//		}
+//	}
+//}
