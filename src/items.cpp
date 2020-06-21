@@ -1259,89 +1259,92 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		}
 		return false;
 	}
-	if (item == open_book_item)
+	else
 	{
-		closeBookGUI();
-	}
-	int qtyToDrop = 1;
-	if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
-	{
-		qtyToDrop = 10;
-	}
-	else if ( itemTypeIsQuiver(item->type) )
-	{
-		qtyToDrop = item->count;
-		/*if ( item->count >= 10 )
-			{
-				qtyToDrop = 10;
-			}
-			else
-			{
-				qtyToDrop = item->count;
-			}*/
-	}
-
-	Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-	entity->flags[INVISIBLE] = true;
-	entity->flags[UPDATENEEDED] = true;
-	entity->x = players[player]->entity->x;
-	entity->y = players[player]->entity->y;
-	entity->sizex = 4;
-	entity->sizey = 4;
-	entity->yaw = players[player]->entity->yaw;
-	entity->vel_x = (1.5 + .025 * (rand() % 11)) * cos(players[player]->entity->yaw);
-	entity->vel_y = (1.5 + .025 * (rand() % 11)) * sin(players[player]->entity->yaw);
-	entity->vel_z = (-10 - rand() % 20) * .01;
-	entity->flags[PASSABLE] = true;
-	entity->behavior = &actItem;
-	entity->skill[10] = item->type;
-	entity->skill[11] = item->status;
-	entity->skill[12] = item->beatitude;
-	entity->skill[13] = qtyToDrop;
-	entity->skill[14] = item->appearance;
-	entity->skill[15] = item->identified;
-	entity->parent = players[player]->entity->getUID();
-	entity->itemOriginalOwner = entity->parent;
-
-	// play sound
-	playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
-
-	// unequip the item
-	Item** slot = itemSlot(stats[player], item);
-	if ( slot != nullptr )
-	{
-		*slot = nullptr;
-	}
-
-	if ( item->node != nullptr )
-	{
-		if ( item->node->list == &stats[0]->inventory )
+		if (item == open_book_item)
 		{
-			oldcount = item->count;
-			item->count = qtyToDrop;
-			if ( notifyMessage )
+			closeBookGUI();
+		}
+		int qtyToDrop = 1;
+		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+		{
+			qtyToDrop = 10;
+		}
+		else if ( itemTypeIsQuiver(item->type) )
+		{
+			qtyToDrop = item->count;
+			/*if ( item->count >= 10 )
+				{
+					qtyToDrop = 10;
+				}
+				else
+				{
+					qtyToDrop = item->count;
+				}*/
+		}
+
+		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+		entity->flags[INVISIBLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+		entity->x = players[player]->entity->x;
+		entity->y = players[player]->entity->y;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->yaw = players[player]->entity->yaw;
+		entity->vel_x = (1.5 + .025 * (rand() % 11)) * cos(players[player]->entity->yaw);
+		entity->vel_y = (1.5 + .025 * (rand() % 11)) * sin(players[player]->entity->yaw);
+		entity->vel_z = (-10 - rand() % 20) * .01;
+		entity->flags[PASSABLE] = true;
+		entity->behavior = &actItem;
+		entity->skill[10] = item->type;
+		entity->skill[11] = item->status;
+		entity->skill[12] = item->beatitude;
+		entity->skill[13] = qtyToDrop;
+		entity->skill[14] = item->appearance;
+		entity->skill[15] = item->identified;
+		entity->parent = players[player]->entity->getUID();
+		entity->itemOriginalOwner = entity->parent;
+
+		// play sound
+		playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
+
+		// unequip the item
+		Item** slot = itemSlot(stats[player], item);
+		if ( slot != nullptr )
+		{
+			*slot = nullptr;
+		}
+
+		if ( item->node != nullptr )
+		{
+			if ( item->node->list == &stats[0]->inventory )
 			{
-				messagePlayer(player, language[1088], item->description());
+				oldcount = item->count;
+				item->count = qtyToDrop;
+				if ( notifyMessage )
+				{
+					messagePlayer(player, language[1088], item->description());
+				}
+				item->count = oldcount - qtyToDrop;
+				if ( item->count <= 0 )
+				{
+					list_RemoveNode(item->node);
+					return true;
+				}
 			}
-			item->count = oldcount - qtyToDrop;
+		}
+		else
+		{
+			item->count = item->count - qtyToDrop;
 			if ( item->count <= 0 )
 			{
-				list_RemoveNode(item->node);
+				free(item);
 				return true;
 			}
 		}
-	}
-	else
-	{
-		item->count = item->count - qtyToDrop;
-		if ( item->count <= 0 )
-		{
-			free(item);
-			return true;
-		}
-	}
 
-	return false;
+		return false;
+	}
 }
 
 Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const monsterStats, Sint16 count)
