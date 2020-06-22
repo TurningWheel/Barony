@@ -976,7 +976,7 @@ public:
 
 void handleMainMenu(bool mode)
 {
-	SDL_Rect pos, src, dest;
+	SDL_Rect src, dest;
 	int x, c;
 	//int y;
 	bool b;
@@ -2140,6 +2140,7 @@ void handleMainMenu(bool mode)
 			camera_charsheet.winy = suby1 + 32;
 			camera_charsheet.winh = suby2 - 96 - camera_charsheet.winy;
 			camera_charsheet.winx = subx2 - camera_charsheet.winw - 32;
+			SDL_Rect pos;
 			pos.x = camera_charsheet.winx;
 			pos.y = camera_charsheet.winy;
 			pos.w = camera_charsheet.winw;
@@ -3469,310 +3470,10 @@ void handleMainMenu(bool mode)
 		}
 	}
 
-	// epic/steam lobby browser
-#ifdef STEAMWORKS
-	if ( subwindow && !strcmp(subtext, language[1334]) )
-	{
-		drawDepressed(subx1 + 8, suby1 + 24, subx2 - 32, suby2 - 64);
-		drawDepressed(subx2 - 32, suby1 + 24, subx2 - 8, suby2 - 64);
+	LobbyHandler.handleLobbyBrowser();
 
-		// slider
-		slidersize = std::min<int>(((suby2 - 65) - (suby1 + 25)), ((suby2 - 65) - (suby1 + 25)) / ((real_t)std::max(numSteamLobbies + 1, 1) / 20));
-		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
-		drawWindowFancy(subx2 - 31, slidery, subx2 - 9, slidery + slidersize);
-
-		// directory list offset from slider
-		Sint32 y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
-		if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 32 && omousex < subx2 - 8 && omousey >= suby1 + 24 && omousey < suby2 - 64 )
-		{
-			slidery = oslidery + mousey - omousey;
-		}
-		else if ( mousestatus[SDL_BUTTON_WHEELUP] || mousestatus[SDL_BUTTON_WHEELDOWN] )
-		{
-			slidery += 16 * mousestatus[SDL_BUTTON_WHEELDOWN] - 16 * mousestatus[SDL_BUTTON_WHEELUP];
-			mousestatus[SDL_BUTTON_WHEELUP] = 0;
-			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-		}
-		else
-		{
-			oslidery = slidery;
-		}
-		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
-		y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
-
-		// server flags tooltip variables
-		SDL_Rect flagsBox;
-		char flagsBoxText[256];
-		int hoveringSelection = -1;
-
-		// select/inspect lobbies
-		if ( omousex >= subx1 + 8 && omousex < subx2 - 32 && omousey >= suby1 + 26 && omousey < suby2 - 64 )
-		{
-			//Something is flawed somewhere in here, because commit 1bad2c5d9f67e0a503ca79f93b03101fbcc7c7ba had to fix the game using an inappropriate hoveringSelection.
-			//Perhaps it's as simple as setting hoveringSelection back to -1 if lobbyIDs[hoveringSelection] is in-fact null.
-			hoveringSelection = std::min(std::max(0, y2 + ((omousey - suby1 - 24) >> 4)), MAX_STEAM_LOBBIES);
-
-			// lobby info tooltip
-			if ( lobbyIDs[hoveringSelection] )
-			{
-				const char* lobbySvFlagsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[hoveringSelection]), "svFlags");
-				Uint32 lobbySvFlags = atoi(lobbySvFlagsChar);
-
-				int numSvFlags = 0, c;
-				for ( c = 0; c < NUM_SERVER_FLAGS; ++c )
-				{
-					if ( lobbySvFlags & power(2, c) )
-					{
-						++numSvFlags;
-					}
-				}
-
-				const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[hoveringSelection]), "svNumMods");
-				int serverNumModsLoaded = atoi(serverNumModsChar);
-
-				flagsBox.x = mousex + 8;
-				flagsBox.y = mousey + 8;
-				flagsBox.w = strlen(language[2919]) * 10 + 4;
-				flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
-				if ( serverNumModsLoaded > 0 )
-				{
-					flagsBox.h += TTF12_HEIGHT;
-					flagsBox.w += 16;
-				}
-				strcpy(flagsBoxText, language[1335]);
-				strcat(flagsBoxText, "\n");
-
-				if ( !numSvFlags )
-				{
-					strcat(flagsBoxText, language[1336]);
-				}
-				else
-				{
-					int y = 2;
-					for ( c = 0; c < NUM_SERVER_FLAGS; c++ )
-					{
-						if ( lobbySvFlags & power(2, c) )
-						{
-							y += TTF_FontHeight(ttf12);
-							strcat(flagsBoxText, "\n");
-							char flagStringBuffer[256] = "";
-							if ( c < 5 )
-							{
-								strcpy(flagStringBuffer, language[153 + c]);
-							}
-							else
-							{
-								strcpy(flagStringBuffer, language[2917 - 5 + c]);
-							}
-							strcat(flagsBoxText, flagStringBuffer);
-						}
-					}
-				}
-				if ( serverNumModsLoaded > 0 )
-				{
-					strcat(flagsBoxText, "\n");
-					char numModsBuffer[32];
-					snprintf(numModsBuffer, 32, "%2d mod(s) loaded", serverNumModsLoaded);
-					strcat(flagsBoxText, numModsBuffer);
-				}
-			}
-
-			// selecting lobby
-			if ( mousestatus[SDL_BUTTON_LEFT] )
-			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				selectedSteamLobby = hoveringSelection;
-			}
-		}
-		selectedSteamLobby = std::min(std::max(y2, selectedSteamLobby), std::min(std::max(numSteamLobbies - 1, 0), y2 + 17));
-		pos.x = subx1 + 10;
-		pos.y = suby1 + 26 + (selectedSteamLobby - y2) * 16;
-		pos.w = subx2 - subx1 - 44;
-		pos.h = 16;
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
-
-		// print all lobby entries
-		Sint32 x = subx1 + 10;
-		Sint32 y = suby1 + 28;
-		if ( numSteamLobbies > 0 )
-		{
-			Sint32 z;
-			c = std::min(numSteamLobbies, 18 + y2);
-			for ( z = y2; z < c; z++ )
-			{
-				ttfPrintTextFormatted(ttf12, x, y, lobbyText[z]); // name
-				ttfPrintTextFormatted(ttf12, subx2 - 72, y, "%d/4", lobbyPlayers[z]); // player count
-				y += 16;
-			}
-		}
-		else
-		{
-			ttfPrintText(ttf12, x, y, language[1337]);
-		}
-
-		// draw server flags tooltip (if applicable)
-		if ( hoveringSelection >= 0 && numSteamLobbies > 0 && hoveringSelection < numSteamLobbies )
-		{
-			drawTooltip(&flagsBox);
-			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 4, flagsBoxText);
-		}
-	}
-#elif defined USE_EOS
-	if ( subwindow && !strcmp(subtext, language[1334]) )
-	{
-		drawDepressed(subx1 + 8, suby1 + 24, subx2 - 32, suby2 - 64);
-		drawDepressed(subx2 - 32, suby1 + 24, subx2 - 8, suby2 - 64);
-
-		int numSearchResults = EOS.LobbySearchResults.resultsSortedForDisplay.size();
-
-		// slider
-		slidersize = std::min<int>(((suby2 - 65) - (suby1 + 25)), ((suby2 - 65) - (suby1 + 25)) / ((real_t)std::max(numSearchResults + 1, 1) / 20));
-		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
-		drawWindowFancy(subx2 - 31, slidery, subx2 - 9, slidery + slidersize);
-
-		// directory list offset from slider
-		Sint32 y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSearchResults + 1);
-		if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 32 && omousex < subx2 - 8 && omousey >= suby1 + 24 && omousey < suby2 - 64 )
-		{
-			slidery = oslidery + mousey - omousey;
-		}
-		else if ( mousestatus[SDL_BUTTON_WHEELUP] || mousestatus[SDL_BUTTON_WHEELDOWN] )
-		{
-			slidery += 16 * mousestatus[SDL_BUTTON_WHEELDOWN] - 16 * mousestatus[SDL_BUTTON_WHEELUP];
-			mousestatus[SDL_BUTTON_WHEELUP] = 0;
-			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-		}
-		else
-		{
-			oslidery = slidery;
-		}
-		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
-		y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSearchResults + 1);
-
-		// server flags tooltip variables
-		SDL_Rect flagsBox;
-		char flagsBoxText[256];
-		int hoveringSelection = -1;
-
-		// select/inspect lobbies
-		if ( omousex >= subx1 + 8 && omousex < subx2 - 32 && omousey >= suby1 + 26 && omousey < suby2 - 64 )
-		{
-			//Something is flawed somewhere in here, because commit 1bad2c5d9f67e0a503ca79f93b03101fbcc7c7ba had to fix the game using an inappropriate hoveringSelection.
-			//Perhaps it's as simple as setting hoveringSelection back to -1 if lobbyIDs[hoveringSelection] is in-fact null.
-			hoveringSelection = std::min(std::max(0, y2 + ((omousey - suby1 - 24) >> 4)), EOS.kMaxLobbiesToSearch);
-
-			// lobby info tooltip
-			if ( hoveringSelection < numSearchResults/*lobbyIDs[hoveringSelection]*/ )
-			{
-				//const char* lobbySvFlagsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[hoveringSelection]), "svFlags");
-				Uint32 lobbySvFlags = EOS.LobbySearchResults.getResultFromDisplayedIndex(hoveringSelection)->LobbyAttributes.serverFlags;
-
-				int numSvFlags = 0, c;
-				for ( c = 0; c < NUM_SERVER_FLAGS; ++c )
-				{
-					if ( lobbySvFlags & power(2, c) )
-					{
-						++numSvFlags;
-					}
-				}
-
-				//const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[hoveringSelection]), "svNumMods");
-				int serverNumModsLoaded = EOS.LobbySearchResults.getResultFromDisplayedIndex(hoveringSelection)->LobbyAttributes.numServerMods;
-
-				flagsBox.x = mousex + 8;
-				flagsBox.y = mousey + 8;
-				flagsBox.w = strlen(language[2919]) * 10 + 4;
-				flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
-				if ( serverNumModsLoaded > 0 )
-				{
-					flagsBox.h += TTF12_HEIGHT;
-					flagsBox.w += 16;
-				}
-				strcpy(flagsBoxText, language[1335]);
-				strcat(flagsBoxText, "\n");
-
-				if ( !numSvFlags )
-				{
-					strcat(flagsBoxText, language[1336]);
-				}
-				else
-				{
-					int y = 2;
-					for ( c = 0; c < NUM_SERVER_FLAGS; c++ )
-					{
-						if ( lobbySvFlags & power(2, c) )
-						{
-							y += TTF_FontHeight(ttf12);
-							strcat(flagsBoxText, "\n");
-							char flagStringBuffer[256] = "";
-							if ( c < 5 )
-							{
-								strcpy(flagStringBuffer, language[153 + c]);
-							}
-							else
-							{
-								strcpy(flagStringBuffer, language[2917 - 5 + c]);
-							}
-							strcat(flagsBoxText, flagStringBuffer);
-						}
-					}
-				}
-				if ( serverNumModsLoaded > 0 )
-				{
-					strcat(flagsBoxText, "\n");
-					char numModsBuffer[32];
-					snprintf(numModsBuffer, 32, "%2d mod(s) loaded", serverNumModsLoaded);
-					strcat(flagsBoxText, numModsBuffer);
-				}
-			}
-
-			// selecting lobby
-			if ( mousestatus[SDL_BUTTON_LEFT] )
-			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				EOS.LobbySearchResults.selectedLobby = hoveringSelection;
-			}
-		}
-		EOS.LobbySearchResults.selectedLobby = std::min(std::max(y2, EOS.LobbySearchResults.selectedLobby), std::min(std::max(static_cast<int>(numSearchResults) - 1, 0), y2 + 17));
-		pos.x = subx1 + 10;
-		pos.y = suby1 + 26 + (EOS.LobbySearchResults.selectedLobby - y2) * 16;
-		pos.w = subx2 - subx1 - 44;
-		pos.h = 16;
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
-
-		// print all lobby entries
-		Sint32 x = subx1 + 10;
-		Sint32 y = suby1 + 28;
-		if ( numSearchResults > 0 )
-		{
-			Sint32 z;
-			c = std::min(static_cast<int>(numSearchResults), 18 + y2);
-			for ( z = y2; z < c; z++ )
-			{
-				char temporary[1024] = "";
-				strcpy(temporary, EOS.LobbySearchResults.getResultFromDisplayedIndex(z)->LobbyAttributes.lobbyName.c_str());
-				ttfPrintTextFormatted(ttf12, x, y, temporary); // name
-				ttfPrintTextFormatted(ttf12, subx2 - 72, y, "%d/%d", 
-					EOS.LobbySearchResults.getResultFromDisplayedIndex(z)->playersInLobby.size(),
-					EOS.LobbySearchResults.getResultFromDisplayedIndex(z)->MaxPlayers); // player count
-				y += 16;
-			}
-		}
-		else
-		{
-			ttfPrintText(ttf12, x, y, language[1337]);
-		}
-
-		// draw server flags tooltip (if applicable)
-		if ( hoveringSelection >= 0 
-			&& numSearchResults > 0
-			&& hoveringSelection < numSearchResults )
-		{
-			drawTooltip(&flagsBox);
-			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 4, flagsBoxText);
-		}
-	}
-#else
+	// serial window.
+#if (!defined STEAMWORKS && !defined USE_EOS)
 	if ( intro && introstage == 1 && subwindow && !strcmp(subtext, language[3403]) && serialEnterWindow )
 	{
 		drawDepressed(subx1 + 8, suby1 + 32, subx2 - 8, suby1 + 56);
@@ -5472,8 +5173,8 @@ void handleMainMenu(bool mode)
 				{
 					printlog("connection attempt denied by server, error code: %d.\n", clientnum);
 					multiplayer = SINGLE;
-
-#ifdef USE_EOS
+#ifdef STEAMWORKS
+#elif defined USE_EOS
 					if ( !directConnect )
 					{
 						// if we got a packet, flush any remaining packets from the queue.
@@ -6936,6 +6637,7 @@ void handleMainMenu(bool mode)
 				camera_charsheet.winy = suby1 + 32;
 				camera_charsheet.winh = suby2 - 96 - camera_charsheet.winy;
 				camera_charsheet.winx = subx1 + 32;
+				SDL_Rect pos;
 				pos.x = camera_charsheet.winx;
 				pos.y = camera_charsheet.winy;
 				pos.w = camera_charsheet.winw;
@@ -11435,7 +11137,8 @@ void openSteamLobbyWaitWindow(button_t* my)
 	subwindow = 1;
 #ifdef STEAMWORKS
 	requestingLobbies = true;
-#elif defined USE_EOS
+#endif
+#if defined USE_EOS
 	EOS.bRequestingLobbies = true;
 #endif // USE_EOS
 
@@ -11448,7 +11151,8 @@ void openSteamLobbyWaitWindow(button_t* my)
 	//c_SteamMatchmaking_RequestLobbyList();
 	//SteamMatchmaking()->RequestLobbyList(); //TODO: Is this sufficient for it to work?
 	cpp_SteamMatchmaking_RequestLobbyList();
-#elif defined USE_EOS
+#endif
+#if defined USE_EOS
 	EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
 		EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
 #endif // USE_EOS
