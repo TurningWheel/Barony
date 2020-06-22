@@ -501,8 +501,10 @@ ItemType itemCurve(const Category cat)
 				{
 					return static_cast<ItemType>(c);
 				}
-
-				pick--;
+				else
+				{
+					pick--;
+				}
 			}
 		}
 	}
@@ -620,8 +622,10 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 					//messagePlayer(0, "Chose item: %s of %d items.", items[c].name_identified ,numleft);
 					return static_cast<ItemType>(c);
 				}
-
-				pick--;
+				else
+				{
+					pick--;
+				}
 			}
 		}
 	}
@@ -1087,12 +1091,17 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 		{
 			return 0;
 		}
-		return 1;
+		else
+		{
+			return 1;
+		}
 	}
-
-	if ( item2 == nullptr )
+	else
 	{
-		return 1;
+		if ( item2 == nullptr )
+		{
+			return 1;
+		}
 	}
 
 	// check attributes
@@ -1118,8 +1127,7 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	{
 		return 1;
 	}
-
-	if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
 	{
 		return 1; // these items do not stack
 	}
@@ -1851,8 +1859,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		openedChest[player]->addItemToChestFromInventory(player, item, false);
 		return;
 	}
-
-	if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
+	else if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
 	{
 		bool deal = true;
 		switch ( shopkeepertype )
@@ -2818,8 +2825,8 @@ Item* itemPickup(const int player, Item* const item)
 			if (!itemCompare(item, item2, false))
 			{
 				if ( (itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
-					|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP) 
-							&& (item->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
+					|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP)
+						&& (item->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
 				{
 					int maxStack = QUIVER_MAX_AMMO_QTY;
 					if ( item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP )
@@ -2866,17 +2873,20 @@ Item* itemPickup(const int player, Item* const item)
 					{
 						return item2;
 					}
-					// we have to search other items to stack with, otherwise this search ends after 1 full stack.
-					if ( item->appearance == item2->appearance )
+					else
 					{
-						// items are the same (incl. appearance!)
-						// if they shouldn't stack, we need to change appearance of the new item.
-						appearancesOfSimilarItems.insert(item2->appearance);
+						// we have to search other items to stack with, otherwise this search ends after 1 full stack.
+						if ( item->appearance == item2->appearance )
+						{
+							// items are the same (incl. appearance!)
+							// if they shouldn't stack, we need to change appearance of the new item.
+							appearancesOfSimilarItems.insert(item2->appearance);
+						}
+						continue;
 					}
-					continue;
 				}
 				// if items are the same, check to see if they should stack
-				if ( item2->shouldItemStack(player) )
+				else if ( item2->shouldItemStack(player) )
 				{
 					item2->count += item->count;
 					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
@@ -2900,8 +2910,7 @@ Item* itemPickup(const int player, Item* const item)
 					item2->ownerUid = item->ownerUid;
 					return item2;
 				}
-
-				if ( !itemCompare(item, item2, true) )
+				else if ( !itemCompare(item, item2, true) )
 				{
 					// items are the same (incl. appearance!)
 					// if they shouldn't stack, we need to change appearance of the new item.
@@ -3502,16 +3511,17 @@ bool Item::canUnequip(const Stat* const wielder)
 		{
 			return true;
 		}
-
-		if ( shouldInvertEquipmentBeatitude(wielder) )
+		else if ( shouldInvertEquipmentBeatitude(wielder) )
 		{
 			if ( beatitude > 0 )
 			{
 				identified = true;
 				return false;
 			}
-
-			return true;
+			else
+			{
+				return true;
+			}
 		}
 	}
 
@@ -3801,8 +3811,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					}
 					return;
 				}
-
-				if ( entity->skill[4] != 0 )
+				else if ( entity->skill[4] != 0 )
 				{
 					messagePlayer(player, language[3870]);
 					return;
@@ -3980,8 +3989,7 @@ node_t* itemNodeInInventory(const Stat* const myStats, const int32_t itemToFind,
 			{
 				return node;
 			}
-
-			if ( itemToFind != -1 && item->type == itemToFind )
+			else if ( itemToFind != -1 && item->type == itemToFind )
 			{
 				return node;
 			}
@@ -4011,10 +4019,12 @@ node_t* spellbookNodeInInventory(const Stat* const myStats, const int spellIDToF
 		{
 			return node;
 		}
-
-		if ( itemCategory(item) == SPELLBOOK )
+		else
 		{
-			//messagePlayer(clientnum, "Well...I found a spellbook? Type: %d. Looking for: %d.", getSpellIDFromSpellbook(item->type), spellIDToFind);
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				//messagePlayer(clientnum, "Well...I found a spellbook? Type: %d. Looking for: %d.", getSpellIDFromSpellbook(item->type), spellIDToFind);
+			}
 		}
 	}
 
@@ -4153,37 +4163,40 @@ bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, n
 		}
 		return true;
 	}
-	//Move exactly 1 item into hand.
-	if ( my == nullptr )
-	{
-		return false;
-	}
-
-	tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
-	if ( !tmpItem )
-	{
-		return false;
-	}
-
-	copyItem(tmpItem, item);
-	tmpItem->count = 1;
-	item->count--;
-
-	if ( myStats->weapon != nullptr )
-	{
-		my->addItemToMonsterInventory(myStats->weapon);
-		myStats->weapon = tmpItem;
-		if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
-		{
-			playSoundEntity(my, 40 + rand() % 4, 64);
-		}
-	}
 	else
 	{
-		myStats->weapon = tmpItem;
-	}
+		//Move exactly 1 item into hand.
+		if ( my == nullptr )
+		{
+			return false;
+		}
 
-	return true;
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+		if ( !tmpItem )
+		{
+			return false;
+		}
+
+		copyItem(tmpItem, item);
+		tmpItem->count = 1;
+		item->count--;
+
+		if ( myStats->weapon != nullptr )
+		{
+			my->addItemToMonsterInventory(myStats->weapon);
+			myStats->weapon = tmpItem;
+			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
+			{
+				playSoundEntity(my, 40 + rand() % 4, 64);
+			}
+		}
+		else
+		{
+			myStats->weapon = tmpItem;
+		}
+
+		return true;
+	}
 }
 
 bool monsterUnequipSlot(Stat* const myStats, Item** const slot, Item* const itemToUnequip)
@@ -4313,8 +4326,10 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 			{
 				return static_cast<ItemType>(c);
 			}
-
-			pick--;
+			else
+			{
+				pick--;
+			}
 		}
 	}
 
@@ -4682,8 +4697,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 
 		return percent;
 	}
-
-	if ( type == ARTIFACT_SWORD )
+	else if ( type == ARTIFACT_SWORD )
 	{
 		const real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]); //0-100%
 		if ( effectAmount )
@@ -4693,8 +4707,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 
 		return percent;
 	}
-
-	if ( type == ARTIFACT_SPEAR )
+	else if ( type == ARTIFACT_SPEAR )
 	{
 		const real_t percent = 25 * (wielder.PROFICIENCIES[PRO_POLEARM]) / 100.f; //0-25%
 		if ( effectAmount )
@@ -4704,8 +4717,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 
 		return percent;
 	}
-
-	if ( type == ARTIFACT_MACE )
+	else if ( type == ARTIFACT_MACE )
 	{
 		const real_t percent = 1.f; //100%
 		if ( effectAmount )
@@ -4715,8 +4727,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 
 		return percent;
 	}
-
-	if ( type == ARTIFACT_BOW )
+	else if ( type == ARTIFACT_BOW )
 	{
 		const real_t percent = wielder.PROFICIENCIES[PRO_RANGED] / 2.f; //0-50%
 		if ( effectAmount )
