@@ -1009,7 +1009,8 @@ void deinitGame()
 			lobbyIDs[c] = NULL;
 		}
 	}
-#elif defined USE_EOS
+#endif
+#if defined USE_EOS
 	if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
 	{
 		EOS.leaveLobby();

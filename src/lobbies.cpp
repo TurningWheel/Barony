@@ -22,7 +22,7 @@ LobbyHandler_t LobbyHandler;
 
 void LobbyHandler_t::handleLobbyListRequests()
 {
-	if ( !intro || connectionType == LOBBY_DISABLE )
+	if ( !intro || joiningType == LOBBY_DISABLE )
 	{
 		return;
 	}
@@ -30,17 +30,9 @@ void LobbyHandler_t::handleLobbyListRequests()
 #if !defined STEAMWORKS && !defined USE_EOS
 	return;
 #endif
-
-
-	if ( connectionType == LOBBY_STEAM )
+	if ( joiningType == LOBBY_STEAM )
 	{
 #ifdef STEAMWORKS
-		// lobby list request succeeded
-		if ( !requestingLobbies && !strcmp(subtext, language[1132]) )
-		{
-			openSteamLobbyBrowserWindow(NULL);
-		}
-
 		// lobby entered
 		if ( !connectingToLobby && connectingToLobbyWindow )
 		{
@@ -82,15 +74,9 @@ void LobbyHandler_t::handleLobbyListRequests()
 		}
 #endif
 	}
-	else if ( connectionType == LOBBY_CROSSPLAY )
+	else if ( joiningType == LOBBY_CROSSPLAY )
 	{
 #ifdef USE_EOS
-		// lobby list request succeeded
-		if ( !EOS.bRequestingLobbies && !strcmp(subtext, language[1132]) )
-		{
-			openSteamLobbyBrowserWindow(NULL);
-		}
-
 		// lobby entered
 		if ( EOS.ConnectingToLobbyStatus != static_cast<int>(EOS_EResult::EOS_Success) )
 		{
@@ -119,6 +105,37 @@ void LobbyHandler_t::handleLobbyListRequests()
 		}
 	}
 #endif
+
+
+	// lobby list request succeeded?
+	if ( !strcmp(subtext, language[1132]) )
+	{
+		bool hasLobbyListRequestReturned = false;
+		switch ( searchType )
+		{
+			case LOBBY_STEAM:
+#ifdef STEAMWORKS
+				hasLobbyListRequestReturned = !requestingLobbies;
+#endif
+				break;
+			case LOBBY_CROSSPLAY:
+#ifdef USE_EOS
+				hasLobbyListRequestReturned = !EOS.bRequestingLobbies;
+#endif // USE_EOS
+				break;
+			case LOBBY_COMBINED:
+#if defined STEAMWORKS && defined USE_EOS
+				hasLobbyListRequestReturned = !EOS.bRequestingLobbies && !requestingLobbies;
+#endif
+				break;
+			default:
+				break;
+		}
+		if ( hasLobbyListRequestReturned )
+		{
+			openSteamLobbyBrowserWindow(NULL);
+		}
+	}
 }
 
 void LobbyHandler_t::updateSearchResults()
@@ -242,6 +259,29 @@ Sint32 LobbyHandler_t::getDisplayedResultLobbyIndex(int selection)
 
 void LobbyHandler_t::handleLobbyBrowser()
 {
+	// debug toggles
+	if ( keystatus[SDL_SCANCODE_F1] )
+	{
+		connectionType = LOBBY_STEAM;
+		searchType = LOBBY_COMBINED;
+		joiningType = LOBBY_STEAM;
+		hostingType = LOBBY_STEAM;
+	}
+	else if ( keystatus[SDL_SCANCODE_F2] )
+	{
+		connectionType = LOBBY_CROSSPLAY;
+		searchType = LOBBY_CROSSPLAY;
+		joiningType = LOBBY_CROSSPLAY;
+		hostingType = LOBBY_CROSSPLAY;
+	}
+	else if ( keystatus[SDL_SCANCODE_F3] )
+	{
+		connectionType = LOBBY_STEAM;
+		searchType = LOBBY_STEAM;
+		joiningType = LOBBY_STEAM;
+		hostingType = LOBBY_STEAM;
+	}
+
 	updateSearchResults();
 
 	// epic/steam lobby browser
@@ -267,6 +307,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 			sliderExtents.x + sliderExtents.w, sliderExtents.y + sliderExtents.h);
 
 		int numSearchResults = numLobbyDisplaySearchResults;
+		selectedLobbyInList = std::max(0, std::min(selectedLobbyInList, static_cast<int>(numLobbyDisplaySearchResults - 1)));
 		int maxLobbyResults = kNumSearchResults;
 //#ifdef STEAMWORKS
 //		numSearchResults += numSearchResults;

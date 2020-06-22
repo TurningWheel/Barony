@@ -35,6 +35,7 @@
 #include "scores.hpp"
 #include "colors.hpp"
 #include "mod_tools.hpp"
+#include "lobbies.hpp"
 
 NetHandler* net_handler = nullptr;
 
@@ -75,21 +76,27 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 	}
 	else
 	{
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		{
 #ifdef STEAMWORKS
-		if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
-		{
-			return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packet->data, packet->len, tryReliable? k_EP2PSendReliable : k_EP2PSendUnreliable, 0);
-		}
-		else
-		{
-			return 0;
-		}
-#elif defined USE_EOS
-		EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(hostnum), (char*)packet->data, packet->len);
-		return 0;
-#else 
-		return 0;
+			if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
+			{
+				return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packet->data, packet->len, tryReliable? k_EP2PSendReliable : k_EP2PSendUnreliable, 0);
+			}
+			else
+			{
+				return 0;
+			}
 #endif
+		}
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(hostnum), (char*)packet->data, packet->len);
+			return 0;
+#endif
+		}
+		return 0;
 	}
 }
 
@@ -148,21 +155,27 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 	}
 	else
 	{
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		{
 #ifdef STEAMWORKS
-		if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
-		{
-			return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packetsend->packet->data, packetsend->packet->len, k_EP2PSendReliable, 0);
-		}
-		else
-		{
-			return 0;
-		}
-#elif defined USE_EOS
-		EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(hostnum), packetsend->packet->data, packetsend->packet->len);
-		return 0;
-#else
-		return 0;
+			if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
+			{
+				return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packetsend->packet->data, packetsend->packet->len, k_EP2PSendReliable, 0);
+			}
+			else
+			{
+				return 0;
+			}
 #endif
+		}
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(hostnum), packetsend->packet->data, packetsend->packet->len);
+			return 0;
+#endif
+		}
+		return 0;
 	}
 }
 
@@ -4274,15 +4287,22 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 	if (!directConnect)
 	{
 #if defined(STEAMWORKS) || defined(USE_EOS)
-#ifdef STEAMWORKS
-		//Steam stuff goes here.
-		if ( disableMultithreadedSteamNetworking )
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
-			steamPacketThread(static_cast<void*>(net_handler));
-		}
-#elif defined USE_EOS
-		EOSPacketThread(static_cast<void*>(net_handler));
+#ifdef STEAMWORKS
+			//Steam stuff goes here.
+			if ( disableMultithreadedSteamNetworking )
+			{
+				steamPacketThread(static_cast<void*>(net_handler));
+			}
 #endif
+		}
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			EOSPacketThread(static_cast<void*>(net_handler));
+#endif
+		}
 		SteamPacketWrapper* packet = nullptr;
 
 		if ( logCheckMainLoopTimers )
@@ -4314,7 +4334,7 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 				break;
 			}
 		}
-#endif // defined(STEAMWORKS) || defined(USE_EOS)
+#endif
 	}
 	else
 	{
@@ -5457,15 +5477,22 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 	if (!directConnect)
 	{
 #if defined(STEAMWORKS) || defined(USE_EOS)
-#ifdef STEAMWORKS
-		//Steam stuff goes here.
-		if ( disableMultithreadedSteamNetworking )
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
-			steamPacketThread(static_cast<void*>(net_handler));
+#ifdef STEAMWORKS
+			//Steam stuff goes here.
+			if ( disableMultithreadedSteamNetworking )
+			{
+				steamPacketThread(static_cast<void*>(net_handler));
+			}
+#endif
 		}
-#elif defined USE_EOS
-		EOSPacketThread(static_cast<void*>(net_handler));
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			EOSPacketThread(static_cast<void*>(net_handler));
 #endif // USE_EOS
+		}
 		SteamPacketWrapper* packet = nullptr;
 
 		if ( logCheckMainLoopTimers )
