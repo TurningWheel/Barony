@@ -1053,7 +1053,7 @@ SDL_Surface* itemSprite(Item* const item)
 			{
 				return nullptr;
 			}
-			auto** surface = static_cast<SDL_Surface**>(node->element);
+			SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
 			return *surface;
 		}
 	}
@@ -1064,7 +1064,7 @@ SDL_Surface* itemSprite(Item* const item)
 		{
 			return nullptr;
 		}
-		auto** surface = static_cast<SDL_Surface**>(node->element);
+		SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
 		return *surface;
 	}
 	return nullptr;
@@ -3733,7 +3733,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 
 	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
 	{
-		auto* entity = static_cast<Entity*>(node->element);
+		Entity* entity = static_cast<Entity*>(node->element);
 		if ( entity && entity->behavior == &actArrowTrap
 			&& static_cast<int>(entity->x / 16) == x
 			&& static_cast<int>(entity->y / 16) == y )
@@ -3930,7 +3930,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 
 			if ( itemId >= 0 )
 			{
-				auto itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
+				Status itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
 				if ( itemStatus == 0 )
 				{
 					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
