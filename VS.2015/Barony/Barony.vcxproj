@@ -338,6 +338,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\charclass.cpp" />
     <ClCompile Include="..\..\src\collision.cpp" />
     <ClCompile Include="..\..\src\interface\ui_general.cpp" />
+    <ClCompile Include="..\..\src\lobbies.cpp" />
     <ClCompile Include="..\..\src\mod_tools.cpp" />
     <ClCompile Include="..\..\src\draw.cpp" />
     <ClCompile Include="..\..\src\entity.cpp" />
@@ -434,6 +435,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\cppfuncs.hpp" />
     <ClInclude Include="..\..\src\credits.hpp" />
     <ClInclude Include="..\..\src\interface\ui.hpp" />
+    <ClInclude Include="..\..\src\lobbies.hpp" />
     <ClInclude Include="..\..\src\mod_tools.hpp" />
     <ClInclude Include="..\..\src\entity.hpp" />
     <ClInclude Include="..\..\src\eos.hpp" />
