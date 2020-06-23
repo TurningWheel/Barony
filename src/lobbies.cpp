@@ -141,6 +141,16 @@ void LobbyHandler_t::handleLobbyListRequests()
 void LobbyHandler_t::updateSearchResults()
 {
 	numLobbyDisplaySearchResults = 0;
+
+#if !defined STEAMWORKS && !defined USE_EOS
+	for ( auto& result : lobbyDisplayedSearchResults )
+	{
+		result.first = -1;
+		result.second = LOBBY_DISABLE;
+	}
+	return;
+#endif
+
 	if ( searchType == LOBBY_STEAM )
 	{
 #ifdef STEAMWORKS
@@ -161,12 +171,6 @@ void LobbyHandler_t::updateSearchResults()
 			}
 			++steamLobbyIndex;
 		}
-#else
-		for ( auto& result : lobbyDisplayedSearchResults )
-		{
-			result.first = -1;
-			result.second = LOBBY_DISABLE;
-		}
 #endif
 	}
 	else if ( searchType == LOBBY_CROSSPLAY )
@@ -186,12 +190,6 @@ void LobbyHandler_t::updateSearchResults()
 			result.second = LOBBY_CROSSPLAY;
 			++numLobbyDisplaySearchResults;
 			++eosLobbyIndex;
-		}
-#else
-		for ( auto& result : lobbyDisplayedSearchResults )
-		{
-			result.first = -1;
-			result.second = LOBBY_DISABLE;
 		}
 #endif // USE_EOS
 	}
@@ -229,12 +227,6 @@ void LobbyHandler_t::updateSearchResults()
 				}
 			}
 			++steamLobbyIndex;
-		}
-#else
-		for ( auto& result : lobbyDisplayedSearchResults )
-		{
-			result.first = -1;
-			result.second = LOBBY_DISABLE;
 		}
 #endif
 	}
@@ -483,17 +475,21 @@ void LobbyHandler_t::handleLobbyBrowser()
 				Sint32 lobbyIndex = getDisplayedResultLobbyIndex(z);
 				if ( lobbyType == LOBBY_STEAM )
 				{
+#ifdef STEAMWORKS
 					ttfPrintTextFormatted(ttf12, x, y, lobbyText[lobbyIndex]); // name
-					ttfPrintTextFormatted(ttf12, subx2 - 72, y, "%d/4", lobbyPlayers[lobbyIndex]); // player count
+					ttfPrintTextFormatted(ttf12, subx2 - 72, y, "%d/%d", lobbyPlayers[lobbyIndex], MAXPLAYERS); // player count
+#endif // STEAMWORKS
 				}
 				else if ( lobbyType == LOBBY_CROSSPLAY )
 				{
+#ifdef USE_EOS
 					char buf[1024] = "";
 					strcpy(buf, EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.lobbyName.c_str());
 					ttfPrintTextFormatted(ttf12, x, y, buf); // name
 					ttfPrintTextFormatted(ttf12, subx2 - 72, y, "%d/%d",
 						EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->playersInLobby.size(),
 						EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->MaxPlayers); // player count
+#endif
 				}
 				y += 16;
 			}
