@@ -254,21 +254,21 @@ void LobbyHandler_t::handleLobbyBrowser()
 	// debug toggles
 	if ( keystatus[SDL_SCANCODE_F1] )
 	{
-		connectionType = LOBBY_STEAM;
+		P2PType = LOBBY_STEAM;
 		searchType = LOBBY_COMBINED;
 		joiningType = LOBBY_STEAM;
 		hostingType = LOBBY_STEAM;
 	}
 	else if ( keystatus[SDL_SCANCODE_F2] )
 	{
-		connectionType = LOBBY_CROSSPLAY;
+		P2PType = LOBBY_CROSSPLAY;
 		searchType = LOBBY_CROSSPLAY;
 		joiningType = LOBBY_CROSSPLAY;
 		hostingType = LOBBY_CROSSPLAY;
 	}
 	else if ( keystatus[SDL_SCANCODE_F3] )
 	{
-		connectionType = LOBBY_STEAM;
+		P2PType = LOBBY_STEAM;
 		searchType = LOBBY_STEAM;
 		joiningType = LOBBY_STEAM;
 		hostingType = LOBBY_STEAM;
@@ -330,7 +330,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 
 		// server flags tooltip variables
 		SDL_Rect flagsBox;
-		char flagsBoxText[256];
+		char flagsBoxText[256] = "";
 		int hoveringSelection = -1;
 		Uint32 lobbySvFlags = 0;
 		int numSvFlags = 0;
@@ -349,27 +349,27 @@ void LobbyHandler_t::handleLobbyBrowser()
 			// lobby info tooltip
 			if ( lobbyType == LOBBY_STEAM )
 			{
+#ifdef STEAMWORKS
 				// lobby info tooltip
 				if ( lobbyIndex >= 0 && lobbyIDs[lobbyIndex] )
 				{
-#ifdef STEAMWORKS
 					const char* lobbySvFlagsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[lobbyIndex]), "svFlags");
 					lobbySvFlags = atoi(lobbySvFlagsChar);
 					const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[lobbyIndex]), "svNumMods");
 					serverNumModsLoaded = atoi(serverNumModsChar);
-#endif
 				}
+#endif
 			}
 			else if ( lobbyType == LOBBY_CROSSPLAY )
 			{
+#ifdef USE_EOS
 				// lobby info tooltip
 				if ( lobbyIndex >= 0 )
 				{
-#ifdef USE_EOS
 					lobbySvFlags = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.serverFlags;
 					serverNumModsLoaded = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.numServerMods;
-#endif // USE_EOS
 				}
+#endif // USE_EOS
 			}
 
 			for ( int c = 0; c < NUM_SERVER_FLAGS; ++c )
@@ -467,9 +467,8 @@ void LobbyHandler_t::handleLobbyBrowser()
 		Sint32 y = suby1 + 28;
 		if ( numLobbyDisplaySearchResults > 0 )
 		{
-			Sint32 z = 0;
 			int searchResultLowestVisibleEntry = std::min(numLobbyDisplaySearchResults, static_cast<Uint32>(18 + y2));
-			for ( z = y2; z < searchResultLowestVisibleEntry; ++z )
+			for ( Sint32 z = y2; z < searchResultLowestVisibleEntry; ++z )
 			{
 				LobbyServiceType lobbyType = getDisplayedResultLobbyType(z);
 				Sint32 lobbyIndex = getDisplayedResultLobbyIndex(z);

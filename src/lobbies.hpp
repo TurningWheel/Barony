@@ -19,19 +19,16 @@ public:
 		lobbyDisplayedSearchResults(kNumSearchResults, std::make_pair(-1, LOBBY_DISABLE))
 	{
 #if defined STEAMWORKS && !defined USE_EOS
-		connectionType = LOBBY_STEAM;
 		searchType = LOBBY_STEAM;
 		joiningType = LOBBY_STEAM;
 		hostingType = LOBBY_STEAM;
 		P2PType = LOBBY_STEAM;
 #elif !defined STEAMWORKS && defined USE_EOS
-		connectionType = LOBBY_CROSSPLAY;
 		searchType = LOBBY_CROSSPLAY;
 		joiningType = LOBBY_CROSSPLAY;
 		hostingType = LOBBY_CROSSPLAY;
 		P2PType = LOBBY_CROSSPLAY;
 #elif defined STEAMWORKS && defined USE_EOS
-		connectionType = LOBBY_STEAM;
 		searchType = LOBBY_COMBINED;
 		joiningType = LOBBY_STEAM;
 		hostingType = LOBBY_STEAM;
@@ -46,7 +43,6 @@ public:
 		LOBBY_CROSSPLAY,
 		LOBBY_COMBINED
 	};
-	LobbyServiceType connectionType = LOBBY_DISABLE;
 	LobbyServiceType hostingType = LOBBY_DISABLE;
 	LobbyServiceType joiningType = LOBBY_DISABLE;
 	LobbyServiceType searchType = LOBBY_DISABLE;
@@ -70,6 +66,26 @@ public:
 	LobbyServiceType getP2PType()
 	{
 		return P2PType;
+	}
+	LobbyServiceType setLobbyJoinTypeOfCurrentSelection()
+	{
+		joiningType = getDisplayedResultLobbyType(selectedLobbyInList);
+		return joiningType;
+	}
+	void setP2PType(LobbyServiceType type)
+	{
+		P2PType = type;
+	}
+	static void logError(const char* str, ...)
+	{
+		char newstr[1024] = { 0 };
+		va_list argptr;
+
+		// format the content
+		va_start(argptr, str);
+		vsnprintf(newstr, 1023, str, argptr);
+		va_end(argptr);
+		printlog("[Lobbies Error]: %s", newstr);
 	}
 };
 extern LobbyHandler_t LobbyHandler;
