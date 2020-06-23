@@ -5841,6 +5841,12 @@ SteamPacketWrapper* NetHandler::getGamePacket()
 int EOSPacketThread(void* data)
 {
 #ifdef USE_EOS
+	if ( !EOS.CurrentUserInfo.isValid() )
+	{
+		//logError("EOSPacketThread: Invalid local user Id: %s", CurrentUserInfo.getProductUserIdStr());
+		return -1;
+	}
+
 	if ( !data )
 	{
 		return -1;    //Some generic error?
