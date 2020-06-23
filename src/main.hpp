@@ -561,6 +561,7 @@ extern int minotaurlevel;
 #define CLIENT 2
 #define DIRECTSERVER 3
 #define DIRECTCLIENT 4
+#define SERVERCROSSPLAY 5
 
 // language stuff
 #define NUMLANGENTRIES 3950

@@ -3340,68 +3340,74 @@ void handleMainMenu(bool mode)
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1327]);
 
+			std::vector<Sint32> optionY;
+			std::vector<char*> optionTexts;
+			std::vector<char*> optionSubtexts;
+			std::vector<char*> optionDescriptions;
+			std::vector<Uint32> displayedOptionToGamemode;
+			Uint32 optionHeight = TTF12_HEIGHT + 2;
 			int nummodes = 3;
-#if defined(USE_EOS) || defined(STEAMWORKS)
+#if (defined USE_EOS && defined STEAMWORKS)
 			nummodes += 2;
-#endif // defined(USE_EOS) || defined(STEAMWORKS)
-
+			if ( LobbyHandler.crossplayEnabled )
+			{
+				nummodes += 1;
+				optionY.insert(optionY.end(), { suby1 + 56, suby1 + 86, suby1 + 128, suby1 + 178, suby1 + 216, suby1 + 256 });
+				optionTexts.insert(optionTexts.end(), { language[1328], language[1330], language[1330], language[1332], language[1330], language[1332] });
+				optionDescriptions.insert(optionDescriptions.end(), { language[1329], language[3946], language[3947], language[3945], language[1538], language[1539] });
+				optionSubtexts.insert(optionSubtexts.end(), { nullptr, language[3943], language[3944], nullptr, language[1537], language[1537] });
+				displayedOptionToGamemode.insert(displayedOptionToGamemode.end(), { SINGLE, SERVER, SERVERCROSSPLAY, CLIENT, DIRECTSERVER, DIRECTCLIENT});
+			}
+			else
+			{
+				optionY.insert(optionY.end(), { suby1 + 56, suby1 + 76, suby1 + 96, suby1 + 136, suby1 + 176, 0 });
+				optionTexts.insert(optionTexts.end(), { language[1328], language[1330], language[1332], language[1330], language[1332], nullptr });
+				optionDescriptions.insert(optionDescriptions.end(), { language[1329], language[1331], language[1333], language[1538], language[1539], nullptr });
+				optionSubtexts.insert(optionSubtexts.end(), { nullptr, nullptr, nullptr, language[1537], language[1537], nullptr });
+				displayedOptionToGamemode.insert(displayedOptionToGamemode.end(), { SINGLE, SERVER, CLIENT, DIRECTSERVER, DIRECTCLIENT, 0 });
+			}
+#elif (defined(USE_EOS) || defined(STEAMWORKS))
+			nummodes += 2;
+			optionY.insert(optionY.end(), { suby1 + 56, suby1 + 76, suby1 + 96, suby1 + 136, suby1 + 176, 0 });
+			optionTexts.insert(optionTexts.end(), { language[1328], language[1330], language[1332], language[1330], language[1332], nullptr });
+			optionDescriptions.insert(optionDescriptions.end(), { language[1329], language[1331], language[1333], language[1538], language[1539], nullptr });
+			optionSubtexts.insert(optionSubtexts.end(), { nullptr, nullptr, nullptr, language[1537], language[1537] });
+			displayedOptionToGamemode.insert(displayedOptionToGamemode.end(), { SINGLE, SERVER, CLIENT, DIRECTSERVER, DIRECTCLIENT, 0 });
+#else
+			optionY.insert(optionY.end(), { suby1 + 56, suby1 + 76, suby1 + 96, suby1 + 136, suby1 + 176, 0 });
+			optionTexts.insert(optionTexts.end(), { language[1328], language[1330], language[1332], language[1330], language[1332], nullptr });
+			optionDescriptions.insert(optionDescriptions.end(), { language[1329], language[1331], language[1333], language[1538], language[1539], nullptr });
+			optionSubtexts.insert(optionSubtexts.end(), { nullptr, nullptr, nullptr, language[1537], language[1537] });
+			displayedOptionToGamemode.insert(displayedOptionToGamemode.end(), { SINGLE, SERVER, CLIENT, DIRECTSERVER, DIRECTCLIENT, 0 });
+#endif
 			for ( int mode = 0; mode < nummodes; mode++ )
 			{
-				if ( multiplayerselect == mode )
+				char selected = ' ';
+				if ( multiplayerselect == displayedOptionToGamemode.at(mode) )
 				{
-					switch ( mode )
-					{
-						case 0:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[o] %s", language[1328]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1329]);
-							break;
-						case 1:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 76, "[o] %s", language[1330]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1331]);
-							break;
-						case 2:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 96, "[o] %s", language[1332]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1333]);
-							break;
-						case 3:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 136, "[o] %s\n     %s", language[1330], language[1537]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1538]);
-							break;
-						case 4:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 176, "[o] %s\n     %s", language[1332], language[1537]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1539]);
-							break;
-					}
+					selected = 'o';
+				}
+				if ( optionSubtexts.at(mode) == nullptr )
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 32, optionY.at(mode), "[%c] %s", selected, optionTexts.at(mode));
 				}
 				else
 				{
-					switch ( mode )
-					{
-						case 0:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[ ] %s", language[1328]);
-							break;
-						case 1:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 76, "[ ] %s", language[1330]);
-							break;
-						case 2:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 96, "[ ] %s", language[1332]);
-							break;
-						case 3:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 136, "[ ] %s\n     %s", language[1330], language[1537]);
-							break;
-						case 4:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 176, "[ ] %s\n     %s", language[1332], language[1537]);
-							break;
-					}
+					ttfPrintTextFormatted(ttf16, subx1 + 32, optionY.at(mode), "[%c] %s\n     %s", selected, optionTexts.at(mode), optionSubtexts.at(mode));
 				}
-				if ( multiplayerselect == 0 )
+				if ( selected == 'o' ) // draw description
+				{
+					ttfPrintText(ttf12, subx1 + 8, suby2 - 80, optionDescriptions.at(mode));
+				}
+
+				if ( multiplayerselect == SINGLE )
 				{
 					if ( singleplayerSavegameFreeSlot == -1 )
 					{
 						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2965]);
 					}
 				}
-				else if ( multiplayerselect > 0 )
+				else if ( multiplayerselect > SINGLE )
 				{
 					if ( multiplayerSavegameFreeSlot == -1 )
 					{
@@ -3420,51 +3426,66 @@ void handleMainMenu(bool mode)
 				{
 					if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
 					{
-						if ( mode < 3 )
+						if ( omousey >= optionY.at(mode) && omousey < (optionY.at(mode) + optionHeight) )
 						{
-							if ( omousey >= suby1 + 56 + 20 * mode && omousey < suby1 + 74 + 20 * mode )
-							{
-								mousestatus[SDL_BUTTON_LEFT] = 0;
-								multiplayerselect = mode;
-							}
-						}
-						else
-						{
-							if ( omousey >= suby1 + 136 + 40 * (mode - 3) && omousey < suby1 + 148 + 40 * (mode - 3) )
-							{
-								mousestatus[SDL_BUTTON_LEFT] = 0;
-								multiplayerselect = mode;
-							}
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+							multiplayerselect = displayedOptionToGamemode.at(mode);
 						}
 					}
 				}
-				if (keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
+			}
+			if (keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
+			{
+				keystatus[SDL_SCANCODE_UP] = 0;
+				if ( rebindaction == -1 )
 				{
-					keystatus[SDL_SCANCODE_UP] = 0;
-					if ( rebindaction == -1 )
-					{
-						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
-					}
-					draw_cursor = false;
-					multiplayerselect--;
-					if (multiplayerselect < 0)
-					{
-						multiplayerselect = nummodes - 1;
-					}
+					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 				}
-				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
+				draw_cursor = false;
+
+				Uint32 vIndex = 0;
+				for ( auto& option : displayedOptionToGamemode )
 				{
-					keystatus[SDL_SCANCODE_DOWN] = 0;
-					if ( rebindaction == -1 )
+					if ( option == multiplayerselect )
 					{
-						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+						break;
 					}
-					draw_cursor = false;
-					multiplayerselect++;
-					if (multiplayerselect > nummodes - 1)
+					++vIndex;
+				}
+				if ( vIndex > 0 )
+				{
+					multiplayerselect = displayedOptionToGamemode.at(vIndex - 1);
+				}
+				else
+				{
+					multiplayerselect = displayedOptionToGamemode.at(nummodes - 1);
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
+			{
+				keystatus[SDL_SCANCODE_DOWN] = 0;
+				if ( rebindaction == -1 )
+				{
+					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+				}
+				draw_cursor = false;
+
+				Uint32 vIndex = 0;
+				for ( auto& option : displayedOptionToGamemode )
+				{
+					if ( option == multiplayerselect )
 					{
-						multiplayerselect = 0;
+						break;
 					}
+					++vIndex;
+				}
+				if ( vIndex >= nummodes - 1 )
+				{
+					multiplayerselect = displayedOptionToGamemode.at(0);
+				}
+				else
+				{
+					multiplayerselect = displayedOptionToGamemode.at(vIndex + 1);
 				}
 			}
 		}
@@ -4511,6 +4532,10 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[3147]);
 			}
+#ifdef USE_EOS
+			current_y += 16;
+			ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[%c] %s", LobbyHandler.settings_crossplayEnabled ? 'x' : ' ', language[3948]);
+#endif
 #endif // STEAMWORKS
 
 			if (hovering_selection > -1)
@@ -4712,6 +4737,21 @@ void handleMainMenu(bool mode)
 						settings_disableMultithreadedSteamNetworking = true;// (settings_disableMultithreadedSteamNetworking == false);
 					}
 				}
+#ifdef USE_EOS
+				current_y += 16;
+				if ( omousey >= current_y && omousey < current_y + 12 )
+				{
+					/*tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);*/
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						LobbyHandler.settings_crossplayEnabled = !LobbyHandler.settings_crossplayEnabled;
+					}
+				}
+#endif
 #endif // STEAMWORKS
 
 
@@ -5957,86 +5997,80 @@ void handleMainMenu(bool mode)
 		}
 #endif
 
-		if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
 #ifdef STEAMWORKS
-			if ( !directConnect )
+			// server name
+			drawDepressed(xres / 2, suby1 + 56, xres / 2 + 388, suby1 + 72);
+			ttfPrintTextFormatted(ttf12, xres / 2 + 2, suby1 + 58, "%s", currentLobbyName);
+			if ( inputstr == currentLobbyName )
 			{
-				// server name
-				drawDepressed(xres / 2, suby1 + 56, xres / 2 + 388, suby1 + 72);
-				ttfPrintTextFormatted(ttf12, xres / 2 + 2, suby1 + 58, "%s", currentLobbyName);
-				if ( inputstr == currentLobbyName )
+				if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 				{
-					if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
-					{
-						int x;
-						TTF_SizeUTF8(ttf12, currentLobbyName, &x, NULL);
-						ttfPrintTextFormatted(ttf12, xres / 2 + 2 + x, suby1 + 58, "_");
-					}
+					int x;
+					TTF_SizeUTF8(ttf12, currentLobbyName, &x, NULL);
+					ttfPrintTextFormatted(ttf12, xres / 2 + 2 + x, suby1 + 58, "_");
 				}
+			}
 
-				// update server name
-				if ( currentLobby )
+			// update server name
+			if ( currentLobby )
+			{
+				const char* lobbyName = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(currentLobby), "name");
+				if ( lobbyName )
 				{
-					const char* lobbyName = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(currentLobby), "name");
-					if ( lobbyName )
+					if ( strcmp(lobbyName, currentLobbyName) )
 					{
-						if ( strcmp(lobbyName, currentLobbyName) )
+						if ( multiplayer == CLIENT )
 						{
-							if ( multiplayer == CLIENT )
-							{
-								// update the lobby name on our end
-								snprintf( currentLobbyName, 31, "%s", lobbyName );
-							}
-							else if ( multiplayer == SERVER )
-							{
-								// update the backend's copy of the lobby name
-								SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName);
-							}
+							// update the lobby name on our end
+							snprintf( currentLobbyName, 31, "%s", lobbyName );
+						}
+						else if ( multiplayer == SERVER )
+						{
+							// update the backend's copy of the lobby name
+							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName);
 						}
 					}
 				}
 			}
 #endif
 		}
-		else if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		else if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
 		{
 #if defined USE_EOS
-			if ( !directConnect )
+			// server name
+			drawDepressed(xres / 2, suby1 + 56, xres / 2 + 388, suby1 + 72);
+			ttfPrintTextFormatted(ttf12, xres / 2 + 2, suby1 + 58, "%s", EOS.currentLobbyName);
+			if ( inputstr == EOS.currentLobbyName )
 			{
-				// server name
-				drawDepressed(xres / 2, suby1 + 56, xres / 2 + 388, suby1 + 72);
-				ttfPrintTextFormatted(ttf12, xres / 2 + 2, suby1 + 58, "%s", EOS.currentLobbyName);
-				if ( inputstr == EOS.currentLobbyName )
+				if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 				{
-					if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
-					{
-						int x;
-						TTF_SizeUTF8(ttf12, EOS.currentLobbyName, &x, NULL);
-						ttfPrintTextFormatted(ttf12, xres / 2 + 2 + x, suby1 + 58, "_");
-					}
+					int x;
+					TTF_SizeUTF8(ttf12, EOS.currentLobbyName, &x, NULL);
+					ttfPrintTextFormatted(ttf12, xres / 2 + 2 + x, suby1 + 58, "_");
 				}
+			}
 
-				// update server name
-				if ( multiplayer == CLIENT )
+			// update server name
+			if ( multiplayer == CLIENT )
+			{
+				// update the lobby name on our end
+				snprintf(EOS.currentLobbyName, 31, "%s", EOS.CurrentLobbyData.LobbyAttributes.lobbyName.c_str());
+			}
+			else if ( multiplayer == SERVER )
+			{
+				// update the backend's copy of the lobby name
+				if ( ticks % TICKS_PER_SECOND == 0 && EOS.CurrentLobbyData.currentLobbyIsValid() )
 				{
-					// update the lobby name on our end
-					snprintf(EOS.currentLobbyName, 31, "%s", EOS.CurrentLobbyData.LobbyAttributes.lobbyName.c_str());
-				}
-				else if ( multiplayer == SERVER )
-				{
-					// update the backend's copy of the lobby name
-					if ( ticks % TICKS_PER_SECOND == 0 && EOS.CurrentLobbyData.currentLobbyIsValid() )
+					if ( EOS.CurrentLobbyData.LobbyAttributes.lobbyName.compare(EOS.currentLobbyName) != 0
+						&& strcmp(EOS.currentLobbyName, "") != 0 )
 					{
-						if ( EOS.CurrentLobbyData.LobbyAttributes.lobbyName.compare(EOS.currentLobbyName) != 0
-							&& strcmp(EOS.currentLobbyName, "") != 0 )
-						{
-							EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
-						}
-						else if ( EOS.CurrentLobbyData.LobbyAttributes.serverFlags != svFlags )
-						{
-							EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
-						}
+						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
+					}
+					else if ( EOS.CurrentLobbyData.LobbyAttributes.serverFlags != svFlags )
+					{
+						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 					}
 				}
 			}
@@ -8222,7 +8256,7 @@ void handleMainMenu(bool mode)
 			fadefinished = false;
 			fadeout = false;
 			gamePaused = false;
-			multiplayerselect = 0;
+			multiplayerselect = SINGLE;
 			intro = true; //Fix items auto-adding to the hotbar on game restart.
 			swapWeaponGimpTimer = 0;
 			pickaxeGimpTimer = 0;
@@ -11315,7 +11349,7 @@ void openSteamLobbyBrowserWindow(button_t* my)
 void buttonSteamLobbyBrowserJoinGame(button_t* my)
 {
 	LobbyHandler.setLobbyJoinTypeOfCurrentSelection();
-	LobbyHandler.setP2PType(LobbyHandler.getJoiningType);
+	LobbyHandler.setP2PType(LobbyHandler.getJoiningType());
 	if ( LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 	{
 #ifdef STEAMWORKS
@@ -11757,12 +11791,22 @@ void buttonContinue(button_t* my)
 			buttonStartSingleplayer(my);
 			singleplayerSavegameFreeSlot = -1;
 		}
-		else if ( multiplayerselect == SERVER )
+		else if ( multiplayerselect == SERVER || multiplayerselect == SERVERCROSSPLAY )
 		{
 #if (defined STEAMWORKS || defined USE_EOS)
 			directConnect = false;
 #else
 			directConnect = true;
+#endif
+#ifdef STEAMWORKS
+			if ( multiplayerselect == SERVERCROSSPLAY )
+			{
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+			}
+			else
+			{
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+			}
 #endif
 			buttonHostMultiplayer(my);
 		}
