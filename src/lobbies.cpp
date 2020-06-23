@@ -309,15 +309,6 @@ void LobbyHandler_t::handleLobbyBrowser()
 		int numSearchResults = numLobbyDisplaySearchResults;
 		selectedLobbyInList = std::max(0, std::min(selectedLobbyInList, static_cast<int>(numLobbyDisplaySearchResults - 1)));
 		int maxLobbyResults = kNumSearchResults;
-//#ifdef STEAMWORKS
-//		numSearchResults += numSearchResults;
-//		maxLobbyResults += MAX_STEAM_LOBBIES;
-//#endif // STEAMWORKS
-//#ifdef USE_EOS
-//		numSearchResults += EOS.LobbySearchResults.resultsSortedForDisplay.size();
-//		maxLobbyResults += EOS.kMaxLobbiesToSearch;
-//#endif // USE_EOS
-
 
 		// slider
 		slidersize = std::min<int>(((suby2 - 65) - (suby1 + 25)), ((suby2 - 65) - (suby1 + 25)) / ((real_t)std::max(numSearchResults + 1, 1) / 20));
@@ -349,6 +340,9 @@ void LobbyHandler_t::handleLobbyBrowser()
 		SDL_Rect flagsBox;
 		char flagsBoxText[256];
 		int hoveringSelection = -1;
+		Uint32 lobbySvFlags = 0;
+		int numSvFlags = 0;
+		int serverNumModsLoaded = 0;
 
 		// select/inspect lobbies
 		if ( (omousex >= listExtents.x && omousex < listExtents.x + listExtents.w)
@@ -359,156 +353,92 @@ void LobbyHandler_t::handleLobbyBrowser()
 			hoveringSelection = std::min(std::max(0, y2 + ((omousey - suby1 - 24) >> 4)), maxLobbyResults);
 
 			LobbyServiceType lobbyType = getDisplayedResultLobbyType(hoveringSelection);
+			Sint32 lobbyIndex = getDisplayedResultLobbyIndex(hoveringSelection);
 			// lobby info tooltip
 			if ( lobbyType == LOBBY_STEAM )
 			{
-				Sint32 lobbyIndex = getDisplayedResultLobbyIndex(hoveringSelection);
 				// lobby info tooltip
 				if ( lobbyIndex >= 0 && lobbyIDs[lobbyIndex] )
 				{
+#ifdef STEAMWORKS
 					const char* lobbySvFlagsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[lobbyIndex]), "svFlags");
-					Uint32 lobbySvFlags = atoi(lobbySvFlagsChar);
-
-					int numSvFlags = 0;
-					for ( int c = 0; c < NUM_SERVER_FLAGS; ++c )
-					{
-						if ( lobbySvFlags & power(2, c) )
-						{
-							++numSvFlags;
-						}
-					}
-
+					lobbySvFlags = atoi(lobbySvFlagsChar);
 					const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[lobbyIndex]), "svNumMods");
-					int serverNumModsLoaded = atoi(serverNumModsChar);
-
-					flagsBox.x = mousex + 8;
-					flagsBox.y = mousey + 8;
-					flagsBox.w = strlen(language[2919]) * 10 + 4;
-					flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
-					if ( serverNumModsLoaded > 0 )
-					{
-						flagsBox.h += TTF12_HEIGHT;
-						flagsBox.w += 16;
-					}
-					strcpy(flagsBoxText, language[1335]);
-					strcat(flagsBoxText, "\n");
-
-					if ( !numSvFlags )
-					{
-						strcat(flagsBoxText, language[1336]);
-					}
-					else
-					{
-						int y = 2;
-						for ( int c = 0; c < NUM_SERVER_FLAGS; c++ )
-						{
-							if ( lobbySvFlags & power(2, c) )
-							{
-								y += TTF_FontHeight(ttf12);
-								strcat(flagsBoxText, "\n");
-								char flagStringBuffer[256] = "";
-								if ( c < 5 )
-								{
-									strcpy(flagStringBuffer, language[153 + c]);
-								}
-								else
-								{
-									strcpy(flagStringBuffer, language[2917 - 5 + c]);
-								}
-								strcat(flagsBoxText, flagStringBuffer);
-							}
-						}
-					}
-					if ( serverNumModsLoaded > 0 )
-					{
-						strcat(flagsBoxText, "\n");
-						char numModsBuffer[32];
-						snprintf(numModsBuffer, 32, "%2d mod(s) loaded", serverNumModsLoaded);
-						strcat(flagsBoxText, numModsBuffer);
-					}
-				}
-				// selecting lobby
-				if ( mousestatus[SDL_BUTTON_LEFT] )
-				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					//selectedSteamLobby = lobbyIndex;
-					this->selectedLobbyInList = hoveringSelection;
+					serverNumModsLoaded = atoi(serverNumModsChar);
+#endif
 				}
 			}
 			else if ( lobbyType == LOBBY_CROSSPLAY )
 			{
-				Sint32 lobbyIndex = getDisplayedResultLobbyIndex(hoveringSelection);
 				// lobby info tooltip
 				if ( lobbyIndex >= 0 )
 				{
-					//const char* lobbySvFlagsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[lobbyIndex]), "svFlags");
-					Uint32 lobbySvFlags = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.serverFlags;
-
-					int numSvFlags = 0;
-					for ( int c = 0; c < NUM_SERVER_FLAGS; ++c )
-					{
-						if ( lobbySvFlags & power(2, c) )
-						{
-							++numSvFlags;
-						}
-					}
-
-					//const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[lobbyIndex]), "svNumMods");
-					int serverNumModsLoaded = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.numServerMods;
-
-					flagsBox.x = mousex + 8;
-					flagsBox.y = mousey + 8;
-					flagsBox.w = strlen(language[2919]) * 10 + 4;
-					flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
-					if ( serverNumModsLoaded > 0 )
-					{
-						flagsBox.h += TTF12_HEIGHT;
-						flagsBox.w += 16;
-					}
-					strcpy(flagsBoxText, language[1335]);
-					strcat(flagsBoxText, "\n");
-
-					if ( !numSvFlags )
-					{
-						strcat(flagsBoxText, language[1336]);
-					}
-					else
-					{
-						int y = 2;
-						for ( int c = 0; c < NUM_SERVER_FLAGS; c++ )
-						{
-							if ( lobbySvFlags & power(2, c) )
-							{
-								y += TTF_FontHeight(ttf12);
-								strcat(flagsBoxText, "\n");
-								char flagStringBuffer[256] = "";
-								if ( c < 5 )
-								{
-									strcpy(flagStringBuffer, language[153 + c]);
-								}
-								else
-								{
-									strcpy(flagStringBuffer, language[2917 - 5 + c]);
-								}
-								strcat(flagsBoxText, flagStringBuffer);
-							}
-						}
-					}
-					if ( serverNumModsLoaded > 0 )
-					{
-						strcat(flagsBoxText, "\n");
-						char numModsBuffer[32];
-						snprintf(numModsBuffer, 32, "%2d mod(s) loaded", serverNumModsLoaded);
-						strcat(flagsBoxText, numModsBuffer);
-					}
+#ifdef USE_EOS
+					lobbySvFlags = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.serverFlags;
+					serverNumModsLoaded = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.numServerMods;
+#endif // USE_EOS
 				}
-				// selecting lobby
-				if ( mousestatus[SDL_BUTTON_LEFT] )
+			}
+
+			for ( int c = 0; c < NUM_SERVER_FLAGS; ++c )
+			{
+				if ( lobbySvFlags & power(2, c) )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					//EOS.LobbySearchResults.selectedLobby = lobbyIndex;
-					this->selectedLobbyInList = hoveringSelection;
+					++numSvFlags;
 				}
+			}
+
+			flagsBox.x = mousex + 8;
+			flagsBox.y = mousey + 8;
+			flagsBox.w = strlen(language[2919]) * 10 + 4;
+			flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
+			if ( serverNumModsLoaded > 0 )
+			{
+				flagsBox.h += TTF12_HEIGHT;
+				flagsBox.w += 16;
+			}
+			strcpy(flagsBoxText, language[1335]);
+			strcat(flagsBoxText, "\n");
+
+			if ( !numSvFlags )
+			{
+				strcat(flagsBoxText, language[1336]);
+			}
+			else
+			{
+				int y = 2;
+				for ( int c = 0; c < NUM_SERVER_FLAGS; c++ )
+				{
+					if ( lobbySvFlags & power(2, c) )
+					{
+						y += TTF_FontHeight(ttf12);
+						strcat(flagsBoxText, "\n");
+						char flagStringBuffer[256] = "";
+						if ( c < 5 )
+						{
+							strcpy(flagStringBuffer, language[153 + c]);
+						}
+						else
+						{
+							strcpy(flagStringBuffer, language[2917 - 5 + c]);
+						}
+						strcat(flagsBoxText, flagStringBuffer);
+					}
+				}
+			}
+			if ( serverNumModsLoaded > 0 )
+			{
+				strcat(flagsBoxText, "\n");
+				char numModsBuffer[32];
+				snprintf(numModsBuffer, 32, "%2d mod(s) loaded", serverNumModsLoaded);
+				strcat(flagsBoxText, numModsBuffer);
+			}
+
+			// selecting lobby
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				this->selectedLobbyInList = hoveringSelection;
 			}
 		}
 
@@ -525,9 +455,13 @@ void LobbyHandler_t::handleLobbyBrowser()
 			}
 			else if ( lobbyType == LOBBY_CROSSPLAY )
 			{
+#ifdef USE_EOS
 				EOS.LobbySearchResults.selectedLobby = std::max(0, getDisplayedResultLobbyIndex(this->selectedLobbyInList));
 				EOS.LobbySearchResults.selectedLobby = std::min(std::max(y2, EOS.LobbySearchResults.selectedLobby), std::min(std::max(static_cast<int>(numSearchResults) - 1, 0), y2 + 17));
+#endif // USE_EOS
 			}
+
+			// selected window
 			SDL_Rect pos;
 			pos.x = subx1 + 10;
 			pos.y = suby1 + 26 + (this->selectedLobbyInList - y2) * 16;
