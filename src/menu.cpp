@@ -3345,11 +3345,11 @@ void handleMainMenu(bool mode)
 			nummodes += 2;
 #endif // defined(USE_EOS) || defined(STEAMWORKS)
 
-			for ( c = 0; c < nummodes; c++ )
+			for ( int mode = 0; mode < nummodes; mode++ )
 			{
-				if ( multiplayerselect == c )
+				if ( multiplayerselect == mode )
 				{
-					switch ( c )
+					switch ( mode )
 					{
 						case 0:
 							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[o] %s", language[1328]);
@@ -3375,7 +3375,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					switch ( c )
+					switch ( mode )
 					{
 						case 0:
 							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[ ] %s", language[1328]);
@@ -3420,20 +3420,20 @@ void handleMainMenu(bool mode)
 				{
 					if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
 					{
-						if ( c < 3 )
+						if ( mode < 3 )
 						{
-							if ( omousey >= suby1 + 56 + 20 * c && omousey < suby1 + 74 + 20 * c )
+							if ( omousey >= suby1 + 56 + 20 * mode && omousey < suby1 + 74 + 20 * mode )
 							{
 								mousestatus[SDL_BUTTON_LEFT] = 0;
-								multiplayerselect = c;
+								multiplayerselect = mode;
 							}
 						}
 						else
 						{
-							if ( omousey >= suby1 + 136 + 40 * (c - 3) && omousey < suby1 + 148 + 40 * (c - 3) )
+							if ( omousey >= suby1 + 136 + 40 * (mode - 3) && omousey < suby1 + 148 + 40 * (mode - 3) )
 							{
 								mousestatus[SDL_BUTTON_LEFT] = 0;
-								multiplayerselect = c;
+								multiplayerselect = mode;
 							}
 						}
 					}
