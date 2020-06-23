@@ -13,6 +13,7 @@
 #include "draw.hpp"
 #include "interface/interface.hpp"
 #include "interface/ui.hpp"
+#include "lobbies.hpp"
 
 EOSFuncs EOS;
 
@@ -88,20 +89,18 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 		EOS.CurrentUserInfo.bUserLoggedIn = false;
 		return;
 	}
+
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
+		EOS.CrossplayAccountManager.awaitingAppTicketResponse = false;
 		EOS.CurrentUserInfo.setProductUserIdHandle(data->LocalUserId);
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
 		EOSFuncs::logInfo("Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
-	else
+	else if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
 	{
-		EOSFuncs::logError("Connect Login Callback: General fail: %d", static_cast<int>(data->ResultCode));
-		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
-		EOS.CurrentUserInfo.bUserLoggedIn = false;
-
-		/*if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
+		if ( EOS.CrossplayAccountManager.awaitingAppTicketResponse && EOS.CrossplayAccountManager.acceptedEula )
 		{
 			EOS_Connect_CreateUserOptions CreateUserOptions;
 			CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
@@ -109,12 +108,20 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 
 			EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
 			EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, OnCreateUserCallback);
-		}*/
+		}
+	}
+	else
+	{
+		EOSFuncs::logError("Connect Login Callback: General fail: %d", static_cast<int>(data->ResultCode));
+		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
+		EOS.CurrentUserInfo.bUserLoggedIn = false;
+
 	}
 }
 
 void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbackInfo* data)
 {
+	EOS.CrossplayAccountManager.awaitingAppTicketResponse = false;
 	if ( !data )
 	{
 		EOSFuncs::logError("OnCreateUserCallback: null data");
@@ -2221,6 +2228,91 @@ void EOSFuncs::Accounts_t::handleLogin()
 	//	}
 	//}
 	//drawDialogue();
+}
+
+void EOSFuncs::CrossplayAccounts_t::handleLogin()
+{
+	bool initWindow = false;
+	if ( trySetupFromSettingsMenu )
+	{
+		initWindow = true;
+		trySetupFromSettingsMenu = false;
+	}
+
+	if ( initWindow )
+	{
+		createDialogue();
+		initWindow = false;
+	}
+
+	if ( !acceptedEula )
+	{
+		return;
+	}
+
+	if ( EOS.CurrentUserInfo.bUserLoggedIn )
+	{
+		return;
+	}
+
+	if ( subwindow == 1 && awaitingAppTicketResponse && !EOS.CurrentUserInfo.bUserLoggedIn )
+	{
+		strcpy(subtext, "Setting up...");
+	}
+	else if ( subwindow == 1 && !awaitingAppTicketResponse && EOS.CurrentUserInfo.bUserLoggedIn )
+	{
+		strcpy(subtext, "Logged in!");
+		LobbyHandler.crossplayEnabled = true;
+	}
+}
+
+void buttonAcceptSetupNoLogin(button_t* my)
+{
+#ifdef STEAMWORKS
+	cpp_SteamMatchmaking_RequestAppTicket();
+#endif
+	EOS.CrossplayAccountManager.acceptedEula = true;
+	EOS.CrossplayAccountManager.awaitingAppTicketResponse = true;
+}
+
+void EOSFuncs::CrossplayAccounts_t::createDialogue()
+{
+	// close current window
+	buttonCloseSubwindow(NULL);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	// create new window
+	subwindow = 1;
+	subx1 = xres / 2 - (240);
+	subx2 = xres / 2 + (240);
+	suby1 = yres / 2 - (240);
+	suby2 = yres / 2 + (240);
+	strcpy(subtext, "Crossplay Setup");
+
+	// close button
+	button_t* button;
+	// retry button
+	button = newButton();
+	strcpy(button->label, "Accept");
+	button->x = subx1 + 4;
+	button->y = suby2 - 24;
+	button->sizex = strlen("Accept") * 12 + 8;
+	button->sizey = 20;
+	button->visible = 1;
+	button->focused = 1;
+	button->action = &buttonAcceptSetupNoLogin;
+	
+	// qtd button
+	button = newButton();
+	strcpy(button->label, "Cancel");
+	button->sizex = strlen("Cancel") * 12 + 4;
+	button->sizey = 20;
+	button->x = subx2 - button->sizex - 8;
+	button->y = suby2 - 24;
+	button->visible = 1;
+	button->focused = 1;
+	button->action = &buttonCloseSubwindow;
 }
 #endif //USE_EOS
 

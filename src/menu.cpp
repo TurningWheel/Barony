@@ -2103,6 +2103,7 @@ void handleMainMenu(bool mode)
 		{
 			EOS.AccountManager.handleLogin();
 		}
+		EOS.CrossplayAccountManager.handleLogin();
 #endif // USE_EOS
 
 		// process button actions
@@ -5447,7 +5448,7 @@ void handleMainMenu(bool mode)
 					button->focused = 1;
 					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 #ifdef STEAMWORKS
-					if ( !directConnect )
+					if ( !directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 					{
 						const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods");
 						int serverNumModsLoaded = atoi(serverNumModsChar);
@@ -10865,6 +10866,7 @@ void openSettingsWindow()
 	settings_show_skill_values = show_skill_values;
 	settings_disableMultithreadedSteamNetworking = disableMultithreadedSteamNetworking;
 	settings_disableFPSLimitOnNetworkMessages = disableFPSLimitOnNetworkMessages;
+	LobbyHandler.settings_crossplayEnabled = LobbyHandler.crossplayEnabled;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
 		settings_impulses[c] = impulses[c];
@@ -11802,10 +11804,12 @@ void buttonContinue(button_t* my)
 			if ( multiplayerselect == SERVERCROSSPLAY )
 			{
 				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 			}
 			else
 			{
 				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 			}
 #endif
 			buttonHostMultiplayer(my);
@@ -12739,6 +12743,13 @@ void applySettings()
 	}
 	disableMultithreadedSteamNetworking = settings_disableMultithreadedSteamNetworking;
 	disableFPSLimitOnNetworkMessages = settings_disableFPSLimitOnNetworkMessages;
+	if ( LobbyHandler.settings_crossplayEnabled )
+	{
+		LobbyHandler.settings_crossplayEnabled = false;
+#ifdef USE_EOS
+		EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+#endif
+	}
 	saveConfig("default.cfg");
 }
 

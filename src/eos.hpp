@@ -66,6 +66,16 @@ public:
 	} AccountManager;
 
 
+	class CrossplayAccounts_t
+	{
+	public:
+		bool awaitingAppTicketResponse = false;
+		bool acceptedEula = false;
+		bool trySetupFromSettingsMenu = false;
+		void handleLogin();
+		void createDialogue();
+	} CrossplayAccountManager;
+
 	const int kMaxLobbiesToSearch = 100;
 
 	// global shenanigans
