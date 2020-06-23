@@ -55,6 +55,8 @@ public:
 	std::vector<std::pair<Sint32, LobbyServiceType>> lobbyDisplayedSearchResults;
 	Uint32 numLobbyDisplaySearchResults = 0;
 	int selectedLobbyInList = 0;
+	bool crossplayEnabled = false;
+	bool settings_crossplayEnabled = false;
 	LobbyServiceType getHostingType()
 	{
 		return hostingType;

@@ -273,6 +273,11 @@ void LobbyHandler_t::handleLobbyBrowser()
 		joiningType = LOBBY_STEAM;
 		hostingType = LOBBY_STEAM;
 	}
+	else if ( keystatus[SDL_SCANCODE_F4] )
+	{
+		keystatus[SDL_SCANCODE_F4] = 0;
+		crossplayEnabled = !crossplayEnabled;
+	}
 
 	updateSearchResults();
 
