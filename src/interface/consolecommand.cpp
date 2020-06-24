@@ -2811,10 +2811,10 @@ void consoleCommand(char* command_str)
 		{
 			monsterCurveCustomManager.writeSampleToDocument();
 		}
-		else if ( !strncmp(command_str, "/eossetupcompleted", 18) )
+		else if ( !strncmp(command_str, "/crossplay", 10) )
 		{
-#if USE_EOS
-			EOS.AccountManager.firstTimeSetupCompleted = true;
+#if (defined STEAMWORKS && defined USE_EOS)
+			EOS.CrossplayAccountManager.autologin = true;
 #endif // USE_EOS
 		}
 		else

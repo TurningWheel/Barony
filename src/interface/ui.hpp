@@ -32,22 +32,22 @@ class UIToastNotification
 	int texty = 0;
 	int bodyx = 12;
 	int bodyy = 16;
-	const int kImageBorderHeight = 256;
-	const int kImageBorderWidth = 256;
+	int kImageBorderHeight = 256;
+	int kImageBorderWidth = 256;
 
 	bool mainCardHide = false;
 	bool mainCardIsHidden = false;
-	const int cardWidth = 332;
+	int cardWidth = 332;
 	int animx = cardWidth;
 	int anim_ticks = 0;
-	const int anim_duration = 50;
+	int anim_duration = 50;
 
 	bool dockedCardHide = true;
 	bool dockedCardIsHidden = true;
-	const int dockedCardWidth = 48;
+	int dockedCardWidth = 48;
 	int docked_animx = dockedCardWidth;
 	int docked_anim_ticks = 0;
-	const int docked_anim_duration = 25;
+	int docked_anim_duration = 25;
 
 	Uint32 cardState = UI_CARD_STATE_SHOW;
 	bool temporaryCardHide = false;
@@ -66,7 +66,7 @@ public:
 		notificationImage = image;
 		showHeight = static_cast<int>(kImageBorderHeight * scaley + 16);
 	};
-	~UIToastNotification() {};
+	~UIToastNotification(){};
 
 	Uint32 actionFlags = 0;
 	enum ActionFlags : Uint32
@@ -78,7 +78,8 @@ public:
 	enum CardType : Uint32
 	{
 		UI_CARD_DEFAULT,
-		UI_CARD_EOS_ACCOUNT
+		UI_CARD_EOS_ACCOUNT,
+		UI_CARD_CROSSPLAY_ACCOUNT
 	};
 	CardType cardType = CardType::UI_CARD_DEFAULT;
 	enum CardState : Uint32

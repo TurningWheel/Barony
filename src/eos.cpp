@@ -92,15 +92,43 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		EOS.CrossplayAccountManager.awaitingAppTicketResponse = false;
 		EOS.CurrentUserInfo.setProductUserIdHandle(data->LocalUserId);
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
 		EOSFuncs::logInfo("Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
+	else
+	{
+		EOSFuncs::logError("Connect Login Callback: General fail: %d", static_cast<int>(data->ResultCode));
+		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
+		EOS.CurrentUserInfo.bUserLoggedIn = false;
+	}
+}
+
+void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_LoginCallbackInfo* data)
+{
+	EOS.CrossplayAccountManager.awaitingConnectCallback = false;
+
+	if ( !data )
+	{
+		EOSFuncs::logError("Crossplay Connect Login Callback: null data");
+		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
+		EOS.CurrentUserInfo.bUserLoggedIn = false;
+		return;
+	}
+	
+	EOS.CrossplayAccountManager.connectLoginStatus = data->ResultCode;
+
+	if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+		EOS.CurrentUserInfo.setProductUserIdHandle(data->LocalUserId);
+		EOS.CurrentUserInfo.bUserLoggedIn = true;
+		EOS.SubscribeToConnectionRequests();
+		EOSFuncs::logInfo("Crossplay Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
+	}
 	else if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
 	{
-		if ( EOS.CrossplayAccountManager.awaitingAppTicketResponse && EOS.CrossplayAccountManager.acceptedEula )
+		if ( EOS.CrossplayAccountManager.acceptedEula )
 		{
 			EOS_Connect_CreateUserOptions CreateUserOptions;
 			CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
@@ -109,26 +137,32 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 			EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
 			EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, OnCreateUserCallback);
 		}
+		else
+		{
+			EOS.CrossplayAccountManager.continuanceToken = data->ContinuanceToken;
+		}
 	}
 	else
 	{
-		EOSFuncs::logError("Connect Login Callback: General fail: %d", static_cast<int>(data->ResultCode));
+		EOSFuncs::logError("Crossplay Connect Login Callback: General fail: %d", static_cast<int>(data->ResultCode));
 		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
 		EOS.CurrentUserInfo.bUserLoggedIn = false;
-
 	}
 }
 
 void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbackInfo* data)
 {
-	EOS.CrossplayAccountManager.awaitingAppTicketResponse = false;
+	EOS.CrossplayAccountManager.connectLoginStatus = EOS_EResult::EOS_NotConfigured;
 	if ( !data )
 	{
 		EOSFuncs::logError("OnCreateUserCallback: null data");
+		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
+		EOS.CurrentUserInfo.bUserLoggedIn = false;
 		return;
 	}
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
+		EOS.CrossplayAccountManager.connectLoginStatus = EOS_EResult::EOS_Success;
 		EOS.CurrentUserInfo.setProductUserIdHandle(data->LocalUserId);
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
@@ -136,7 +170,10 @@ void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbac
 	}
 	else
 	{
+		EOS.CrossplayAccountManager.connectLoginStatus = data->ResultCode;
 		EOSFuncs::logError("OnCreateUserCallback: General fail: %d", static_cast<int>(data->ResultCode));
+		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
+		EOS.CurrentUserInfo.bUserLoggedIn = false;
 	}
 }
 
@@ -2230,49 +2267,210 @@ void EOSFuncs::Accounts_t::handleLogin()
 	//drawDialogue();
 }
 
-void EOSFuncs::CrossplayAccounts_t::handleLogin()
+void EOSFuncs::CrossplayAccounts_t::createNotification()
 {
-	bool initWindow = false;
-	if ( trySetupFromSettingsMenu )
+	if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT) )
 	{
-		initWindow = true;
-		trySetupFromSettingsMenu = false;
-	}
-
-	if ( initWindow )
-	{
-		createDialogue();
-		initWindow = false;
-	}
-
-	if ( !acceptedEula )
-	{
-		return;
-	}
-
-	if ( EOS.CurrentUserInfo.bUserLoggedIn )
-	{
-		return;
-	}
-
-	if ( subwindow == 1 && awaitingAppTicketResponse && !EOS.CurrentUserInfo.bUserLoggedIn )
-	{
-		strcpy(subtext, "Setting up...");
-	}
-	else if ( subwindow == 1 && !awaitingAppTicketResponse && EOS.CurrentUserInfo.bUserLoggedIn )
-	{
-		strcpy(subtext, "Logged in!");
-		LobbyHandler.crossplayEnabled = true;
+		UIToastNotification* n = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
+		n->setHeaderText(std::string("Crossplay Status"));
+		n->setMainText(std::string("Initializing..."));
+		n->setSecondaryText(std::string("An error has occurred!"));
+		n->setActionText(std::string("Retry"));
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+		n->cardType = UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT;
 	}
 }
 
-void buttonAcceptSetupNoLogin(button_t* my)
+void EOSFuncs::CrossplayAccounts_t::handleLogin()
 {
+#ifndef STEAMWORKS
+	return;
+#endif // !STEAMWORKS
+
+	if ( logOut )
+	{
+		if ( awaitingAppTicketResponse || awaitingConnectCallback || awaitingCreateUserCallback )
+		{
+			EOSFuncs::logInfo("Crossplay logout pending callbacks...");
+			if ( awaitingAppTicketResponse )
+			{
+				EOSFuncs::logInfo("Callback AppTicket still pending...");
+			}
+			if ( awaitingConnectCallback )
+			{
+				EOSFuncs::logInfo("Callback Connect still pending...");
+			}
+			if ( awaitingCreateUserCallback )
+			{
+				EOSFuncs::logInfo("Callback CreateUser still pending...");
+			}
+			return;
+		}
+		EOSFuncs::logInfo("Crossplay logout request received.");
+		EOS.UnsubscribeFromConnectionRequests();
+		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
+		EOS.CurrentUserInfo.bUserLoggedIn = false;
+
+		resetOnFailure();
+		for ( auto it = UIToastNotificationManager.allNotifications.begin(); it != UIToastNotificationManager.allNotifications.end(); )
+		{
+			if ( (*it).cardType == UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT )
+			{
+				it = UIToastNotificationManager.allNotifications.erase(it);
+				continue;
+			}
+			++it;
+		}
+		logOut = false;
+		EOSFuncs::logInfo("Crossplay logout completed.");
+		return;
+	}
+
+	bool initLogin = false;
+	if ( autologin )
+	{
+		initLogin = true;
+		autologin = false;
+	}
+	if ( trySetupFromSettingsMenu )
+	{
+		initLogin = true;
+		trySetupFromSettingsMenu = false;
+		if ( subwindow )
+		{
+			buttonCloseSubwindow(nullptr);
+		}
+	}
+
+	if ( initLogin )
+	{
 #ifdef STEAMWORKS
-	cpp_SteamMatchmaking_RequestAppTicket();
-#endif
+		cpp_SteamMatchmaking_RequestAppTicket();
+#endif // STEAMWORKS
+
+		createNotification();
+		awaitingAppTicketResponse = true;
+		EOSFuncs::logInfo("Crossplay login request started...");
+		return;
+	}
+
+	if ( awaitingAppTicketResponse )
+	{
+		return;
+	}
+	if ( awaitingConnectCallback )
+	{
+		return;
+	}
+	if ( connectLoginStatus == EOS_EResult::EOS_Success )
+	{
+		if ( connectLoginCompleted != EOS_EResult::EOS_Success )
+		{
+			connectLoginCompleted = EOS_EResult::EOS_Success;
+			UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT);
+			if ( n )
+			{
+				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
+				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+				n->showMainCard();
+				n->setMainText(std::string("Steam account linked.\nCrossplay enabled."));
+				n->updateCardEvent(true, false);
+			}
+			LobbyHandler.crossplayEnabled = true;
+			LobbyHandler.settings_crossplayEnabled = true;
+		}
+		return;
+	}
+
+	if ( connectLoginCompleted == EOS_EResult::EOS_Success )
+	{
+		return;
+	}
+
+	if ( connectLoginStatus != EOS_EResult::EOS_NotConfigured )
+	{
+		if ( connectLoginStatus == EOS_EResult::EOS_InvalidUser )
+		{
+			UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT);
+			if ( n )
+			{
+				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
+				n->showMainCard();
+				n->setSecondaryText(std::string("New Steam user.\nAccept EULA to proceed."));
+				n->updateCardEvent(false, true);
+			}
+			EOSFuncs::logInfo("New Steam user, awaiting user response.");
+			createDialogue();
+		}
+		else
+		{
+			UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT);
+			// update the status here.
+			if ( n )
+			{
+				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
+				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+				char buf[128] = "";
+				snprintf(buf, 128 - 1, "Setup has failed.\nError code: %d", static_cast<int>(connectLoginStatus));
+				n->showMainCard();
+				n->setSecondaryText(std::string(buf));
+				n->updateCardEvent(false, true);
+				n->buttonAction = &EOSFuncs::CrossplayAccounts_t::retryCrossplaySetupOnFailure;
+			}
+			EOSFuncs::logError("Crossplay setup has failed. Error code: %d", static_cast<int>(connectLoginStatus));
+			resetOnFailure();
+		}
+		connectLoginStatus = EOS_EResult::EOS_NotConfigured;
+	}
+}
+
+void EOSFuncs::CrossplayAccounts_t::retryCrossplaySetupOnFailure()
+{
+	EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+	EOS.CrossplayAccountManager.connectLoginCompleted = EOS_EResult::EOS_NotConfigured;
+	EOS.CrossplayAccountManager.connectLoginStatus = EOS_EResult::EOS_NotConfigured;
+}
+
+void EOSFuncs::CrossplayAccounts_t::resetOnFailure()
+{
+	LobbyHandler.settings_crossplayEnabled = false;
+	LobbyHandler.crossplayEnabled = false;
+	connectLoginCompleted = EOS_EResult::EOS_NotConfigured;
+	connectLoginStatus = EOS_EResult::EOS_NotConfigured;
+	continuanceToken = nullptr;
+}
+
+void buttonAcceptCrossplaySetup(button_t* my)
+{
 	EOS.CrossplayAccountManager.acceptedEula = true;
-	EOS.CrossplayAccountManager.awaitingAppTicketResponse = true;
+	if ( EOS.CrossplayAccountManager.continuanceToken )
+	{
+		EOS_Connect_CreateUserOptions CreateUserOptions;
+		CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
+		CreateUserOptions.ContinuanceToken = EOS.CrossplayAccountManager.continuanceToken;
+
+		EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
+		EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, EOSFuncs::OnCreateUserCallback);
+
+		EOS.CrossplayAccountManager.continuanceToken = nullptr;
+	}
+	else
+	{
+		EOS.CrossplayAccountManager.resetOnFailure();
+	}
+	buttonCloseSubwindow(nullptr);
+	EOSFuncs::logInfo("Crossplay account link has been accepted by user");
+}
+
+void buttonDenyCrossplaySetup(button_t* my)
+{
+	EOS.CrossplayAccountManager.logOut = true;
+	EOS.CrossplayAccountManager.resetOnFailure();
+	buttonCloseSubwindow(nullptr);
+	EOSFuncs::logInfo("Crossplay account link has been denied by user");
 }
 
 void EOSFuncs::CrossplayAccounts_t::createDialogue()
@@ -2286,8 +2484,8 @@ void EOSFuncs::CrossplayAccounts_t::createDialogue()
 	subwindow = 1;
 	subx1 = xres / 2 - (240);
 	subx2 = xres / 2 + (240);
-	suby1 = yres / 2 - (240);
-	suby2 = yres / 2 + (240);
+	suby1 = yres / 2 - (60);
+	suby2 = yres / 2 + (60);
 	strcpy(subtext, "Crossplay Setup");
 
 	// close button
@@ -2301,7 +2499,7 @@ void EOSFuncs::CrossplayAccounts_t::createDialogue()
 	button->sizey = 20;
 	button->visible = 1;
 	button->focused = 1;
-	button->action = &buttonAcceptSetupNoLogin;
+	button->action = &buttonAcceptCrossplaySetup;
 	
 	// qtd button
 	button = newButton();
@@ -2312,7 +2510,7 @@ void EOSFuncs::CrossplayAccounts_t::createDialogue()
 	button->y = suby2 - 24;
 	button->visible = 1;
 	button->focused = 1;
-	button->action = &buttonCloseSubwindow;
+	button->action = &buttonDenyCrossplaySetup;
 }
 #endif //USE_EOS
 

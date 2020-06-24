@@ -69,11 +69,25 @@ public:
 	class CrossplayAccounts_t
 	{
 	public:
+		EOS_ContinuanceToken continuanceToken = nullptr;
+		EOS_EResult connectLoginStatus = EOS_EResult::EOS_NotConfigured;
+		EOS_EResult connectLoginCompleted = EOS_EResult::EOS_NotConfigured;
+
+		bool awaitingConnectCallback = false;
+		bool awaitingCreateUserCallback = false;
 		bool awaitingAppTicketResponse = false;
+
 		bool acceptedEula = false;
 		bool trySetupFromSettingsMenu = false;
+		bool logOut = false;
+		bool autologin = false;
+
 		void handleLogin();
 		void createDialogue();
+		void createNotification();
+
+		void resetOnFailure();
+		static void retryCrossplaySetupOnFailure();
 	} CrossplayAccountManager;
 
 	const int kMaxLobbiesToSearch = 100;
@@ -163,6 +177,7 @@ public:
 	static void EOS_CALL FriendsQueryCallback(const EOS_Friends_QueryFriendsCallbackInfo* data);
 	static void EOS_CALL UserInfoCallback(const EOS_UserInfo_QueryUserInfoCallbackInfo* data);
 	static void EOS_CALL ConnectLoginCompleteCallback(const EOS_Connect_LoginCallbackInfo* Data);
+	static void EOS_CALL ConnectLoginCrossplayCompleteCallback(const EOS_Connect_LoginCallbackInfo* Data);
 	static void EOS_CALL OnCreateLobbyFinished(const EOS_Lobby_CreateLobbyCallbackInfo* Data);
 	static void EOS_CALL OnLobbySearchFinished(const EOS_LobbySearch_FindCallbackInfo* data);
 	static void EOS_CALL OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInfo* data);
@@ -512,6 +527,10 @@ public:
 
 	void UnsubscribeFromConnectionRequests()
 	{
+		if ( NotificationIds.P2PConnection == EOS_INVALID_NOTIFICATIONID )
+		{
+			return;
+		}
 		EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(PlatformHandle);
 		EOS_P2P_RemoveNotifyPeerConnectionRequest(P2PHandle, NotificationIds.P2PConnection);
 		NotificationIds.P2PConnection = EOS_INVALID_NOTIFICATIONID;

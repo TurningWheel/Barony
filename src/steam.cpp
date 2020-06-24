@@ -1468,7 +1468,10 @@ void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure)
 				Options.Credentials = &Credentials;
 				Options.UserLoginInfo = nullptr;
 
-				EOS_Connect_Login(EOS.ConnectHandle, &Options, nullptr, EOS.ConnectLoginCompleteCallback);
+				EOS_Connect_Login(EOS.ConnectHandle, &Options, nullptr, EOS.ConnectLoginCrossplayCompleteCallback);
+				EOS.CrossplayAccountManager.awaitingConnectCallback = true;
+				EOS.CrossplayAccountManager.awaitingAppTicketResponse = false;
+				printlog("[STEAM]: AppTicket request success");
 			}
 			else
 			{

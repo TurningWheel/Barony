@@ -12743,13 +12743,24 @@ void applySettings()
 	}
 	disableMultithreadedSteamNetworking = settings_disableMultithreadedSteamNetworking;
 	disableFPSLimitOnNetworkMessages = settings_disableFPSLimitOnNetworkMessages;
+#ifdef USE_EOS
 	if ( LobbyHandler.settings_crossplayEnabled )
 	{
-		LobbyHandler.settings_crossplayEnabled = false;
-#ifdef USE_EOS
-		EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
-#endif
+		if ( !LobbyHandler.crossplayEnabled )
+		{
+			LobbyHandler.settings_crossplayEnabled = false;
+			EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+		}
 	}
+	else
+	{
+		if ( LobbyHandler.crossplayEnabled )
+		{
+			LobbyHandler.crossplayEnabled = false;
+			EOS.CrossplayAccountManager.logOut = true;
+		}
+	}
+#endif
 	saveConfig("default.cfg");
 }
 
