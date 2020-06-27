@@ -5143,7 +5143,18 @@ void handleMainMenu(bool mode)
 			CSteamID newSteamID;
 			if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 			{
-				// TODO
+				// waiting on host response.
+				if ( joinLobbyWaitingForHostResponse )
+				{
+					// waiting on host response.
+					if ( ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND ) // 15 second timeout
+					{
+						buttonDisconnect(nullptr);
+						openFailedConnectionWindow(CLIENT);
+						strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT)).c_str());
+						//EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
+					}
+				}
 			}
 #endif
 #if defined USE_EOS
@@ -5157,7 +5168,7 @@ void handleMainMenu(bool mode)
 					{
 						buttonDisconnect(nullptr);
 						openFailedConnectionWindow(CLIENT);
-						strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(static_cast<int>(EOS_EResult::EOS_TimedOut)).c_str());
+						strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT)).c_str());
 						EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 					}
 				}
@@ -5488,6 +5499,7 @@ void handleMainMenu(bool mode)
 		{
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
+			joinLobbyWaitingForHostResponse = false;
 #endif
 #ifdef USE_EOS
 			EOS.bJoinLobbyWaitingForHostResponse = false;
@@ -11203,6 +11215,20 @@ void openSteamLobbyWaitWindow(button_t* my)
 	// close current window
 #ifdef STEAMWORKS
 	bool prevConnectingToLobbyWindow = connectingToLobbyWindow;
+	if ( connectingToLobbyWindow )
+	{
+		// we quit the connection window before joining lobby, but invite was mid-flight.
+		// EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true; TODO
+	}
+	else if ( joinLobbyWaitingForHostResponse )
+	{
+		// we quit the connection window after lobby join, but before host has accepted us.
+		joinLobbyWaitingForHostResponse = false;
+		buttonDisconnect(nullptr);
+		openFailedConnectionWindow(CLIENT);
+		strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
+		return;
+	}
 #endif
 #if defined USE_EOS
 	if ( EOS.bConnectingToLobbyWindow )
@@ -11216,7 +11242,7 @@ void openSteamLobbyWaitWindow(button_t* my)
 		EOS.bJoinLobbyWaitingForHostResponse = false;
 		buttonDisconnect(nullptr);
 		openFailedConnectionWindow(CLIENT);
-		strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(static_cast<int>(EOS_EResult::EOS_Canceled)).c_str());
+		strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
 		return;
 	}
 #endif
@@ -11553,6 +11579,7 @@ void buttonCloseSubwindow(button_t* my)
 	requestingLobbies = false;
 	connectingToLobbyWindow = false;
 	connectingToLobby = false;
+	joinLobbyWaitingForHostResponse = false;
 #endif
 #if defined USE_EOS
 	EOS.bRequestingLobbies = false;
@@ -12223,11 +12250,15 @@ void buttonJoinLobby(button_t* my)
 #ifdef STEAMWORKS
 	temp1 = connectingToLobby;
 	temp2 = connectingToLobbyWindow;
+	if ( !directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+	{
+		joinLobbyWaitingForHostResponse = true;
+	}
 #endif
 #if defined USE_EOS
 	temp3 = EOS.bConnectingToLobby;
 	temp4 = EOS.bConnectingToLobbyWindow;
-	if ( !directConnect )
+	if ( !directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY)
 	{
 		EOS.bJoinLobbyWaitingForHostResponse = true;
 	}

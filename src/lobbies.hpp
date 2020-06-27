@@ -89,6 +89,20 @@ public:
 		va_end(argptr);
 		printlog("[Lobbies Error]: %s", newstr);
 	}
+	static std::string getLobbyJoinFailedConnectString(int result);
+	enum EResult_LobbyFailures : int
+	{
+		LOBBY_USING_SAVEGAME = 50000,
+		LOBBY_WRONG_SAVEGAME,
+		LOBBY_NOT_USING_SAVEGAME,
+		LOBBY_NO_OWNER,
+		LOBBY_GAME_IN_PROGRESS,
+		LOBBY_UNHANDLED_ERROR,
+		LOBBY_JOIN_CANCELLED,
+		LOBBY_JOIN_TIMEOUT,
+		LOBBY_NOT_FOUND,
+		LOBBY_TOO_MANY_PLAYERS
+	};
 };
 extern LobbyHandler_t LobbyHandler;
 

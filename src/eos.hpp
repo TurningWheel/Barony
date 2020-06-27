@@ -654,16 +654,6 @@ public:
 	void readFromCmdLineArgs();
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);
 	void showFriendsOverlay();
-	enum EResult_LobbyFailures : int
-	{
-		LOBBY_USING_SAVEGAME = 50000,
-		LOBBY_WRONG_SAVEGAME,
-		LOBBY_NOT_USING_SAVEGAME,
-		LOBBY_NO_OWNER,
-		LOBBY_GAME_IN_PROGRESS,
-		LOBBY_UNHANDLED_ERROR
-	};
-	static std::string getLobbyJoinFailedConnectString(int result);
 	static void logInfo(const char* str, ...)
 	{
 		char newstr[1024] = { 0 };

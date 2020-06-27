@@ -425,46 +425,6 @@ void EOS_CALL EOSFuncs::OnLobbySearchFinished(const EOS_LobbySearch_FindCallback
 	}
 }
 
-std::string EOSFuncs::getLobbyJoinFailedConnectString(int result)
-{
-	char buf[1024] = "";
-	switch ( result )
-	{
-		case EResult_LobbyFailures::LOBBY_GAME_IN_PROGRESS:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nGame is currently in progress and not joinable.");
-			break;
-		case EResult_LobbyFailures::LOBBY_USING_SAVEGAME:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby requires a compatible saved game to join.\nNewly created characters cannot join this lobby.");
-			break;
-		case EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is not loading from a saved game.\nCreate a new character to join.");
-			break;
-		case EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby saved game is incompatible with current save.\nEnsure the correct saved game is loaded.");
-			break;
-		case EOS_EResult::EOS_Canceled:
-			snprintf(buf, 1023, "Lobby join cancelled while setting up players.\n\nSafely leaving lobby.");
-			break;
-		case EOS_EResult::EOS_TimedOut:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nTimeout waiting for response from host.");
-			break;
-		case EResult_LobbyFailures::LOBBY_NO_OWNER:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nNo host found for lobby.");
-			break;
-		case EOS_EResult::EOS_NotFound:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby no longer exists.");
-			break;
-		case EOS_EResult::EOS_Lobby_TooManyPlayers:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is full.");
-			break;
-		default:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nGeneral failure - error code: %d.", result);
-			break;
-	}
-	EOSFuncs::logError(buf);
-	return buf;
-}
-
 void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInfo* data)
 {
 	if ( !data )
@@ -1480,7 +1440,7 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 	if ( CurrentLobbyData.OwnerProductUserId.compare("NULL") == 0 )
 	{
 		// this is unexpected - perhaps an attempt to join a lobby that was freshly abandoned
-		ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_NO_OWNER;
+		ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NO_OWNER;
 		logError("joinLobby: attempting to join a lobby with a NULL owner: %s, aborting.", CurrentLobbyData.LobbyId.c_str());
 		errorOnJoin = true;
 	}
@@ -1489,19 +1449,19 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 		// loading save game, but incorrect assertion from client side.
 		if ( loadingsavegame == 0 )
 		{
-			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+			ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
 		}
 		else if ( loadingsavegame > 0 && lobby->LobbyAttributes.isLobbyLoadingSavedGame == 0 )
 		{
-			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
+			ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
 		}
 		else if ( loadingsavegame > 0 && lobby->LobbyAttributes.isLobbyLoadingSavedGame > 0 )
 		{
-			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
+			ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
 		}
 		else
 		{
-			ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
+			ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
 		}
 		errorOnJoin = true;
 	}
@@ -1514,7 +1474,7 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 		else
 		{
 		}*/
-		ConnectingToLobbyStatus = EResult_LobbyFailures::LOBBY_GAME_IN_PROGRESS;
+		ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_GAME_IN_PROGRESS;
 		errorOnJoin = true;
 	}
 

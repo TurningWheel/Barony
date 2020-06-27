@@ -13,12 +13,64 @@ See LICENSE for details.
 #include "menu.hpp"
 #include "game.hpp"
 #include "lobbies.hpp"
+#ifdef USE_EOS
 #include "eos.hpp"
+#endif
+#ifdef STEAMWORKS
 #include "steam.hpp"
+#endif
 #include "draw.hpp"
 #include "player.hpp"
 
 LobbyHandler_t LobbyHandler;
+
+std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
+{
+	char buf[1024] = "";
+	switch ( result )
+	{
+		case EResult_LobbyFailures::LOBBY_GAME_IN_PROGRESS:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nGame is currently in progress and not joinable.");
+			break;
+		case EResult_LobbyFailures::LOBBY_USING_SAVEGAME:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby requires a compatible saved game to join.\nNewly created characters cannot join this lobby.");
+			break;
+		case EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is not loading from a saved game.\nCreate a new character to join.");
+			break;
+		case EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby saved game is incompatible with current save.\nEnsure the correct saved game is loaded.");
+			break;
+		case EResult_LobbyFailures::LOBBY_JOIN_CANCELLED:
+			snprintf(buf, 1023, "Lobby join cancelled while setting up players.\n\nSafely leaving lobby.");
+			break;
+		case EResult_LobbyFailures::LOBBY_JOIN_TIMEOUT:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nTimeout waiting for response from host.");
+			break;
+		case EResult_LobbyFailures::LOBBY_NO_OWNER:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nNo host found for lobby.");
+			break;
+		case EResult_LobbyFailures::LOBBY_NOT_FOUND:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby no longer exists.");
+			break;
+		case EResult_LobbyFailures::LOBBY_TOO_MANY_PLAYERS:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is full.");
+			break;
+#ifdef USE_EOS
+		case EOS_EResult::EOS_NotFound:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby no longer exists.");
+			break;
+		case EOS_EResult::EOS_Lobby_TooManyPlayers:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is full.");
+			break;
+#endif
+		default:
+			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nGeneral failure - error code: %d.", result);
+			break;
+	}
+	printlog("[Lobbies Error]: %s", buf);
+	return buf;
+}
 
 void LobbyHandler_t::handleLobbyListRequests()
 {
@@ -34,7 +86,18 @@ void LobbyHandler_t::handleLobbyListRequests()
 	{
 #ifdef STEAMWORKS
 		// lobby entered
-		if ( !connectingToLobby && connectingToLobbyWindow )
+		/*if ( EOS.ConnectingToLobbyStatus != static_cast<int>(EOS_EResult::EOS_Success) )
+		{
+			// close current window
+			//buttonCloseSubwindow(NULL);
+			//list_FreeAll(&button_l);
+			//deleteallbuttons = true;
+			//
+			//openFailedConnectionWindow(CLIENT);
+			//strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(EOS.ConnectingToLobbyStatus).c_str());
+			//EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
+		}
+		else*/ if ( !connectingToLobby && connectingToLobbyWindow )
 		{
 			connectingToLobbyWindow = false;
 			connectingToLobby = false;
@@ -86,7 +149,7 @@ void LobbyHandler_t::handleLobbyListRequests()
 			deleteallbuttons = true;
 
 			openFailedConnectionWindow(CLIENT);
-			strcpy(subtext, EOSFuncs::getLobbyJoinFailedConnectString(EOS.ConnectingToLobbyStatus).c_str());
+			strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(EOS.ConnectingToLobbyStatus).c_str());
 			EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 		}
 		else if ( !EOS.bConnectingToLobby && EOS.bConnectingToLobbyWindow )

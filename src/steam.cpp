@@ -55,6 +55,7 @@ char pchCmdLine[1024] = { 0 }; // for game join requests
 // menu stuff
 bool connectingToLobby = false, connectingToLobbyWindow = false;
 bool requestingLobbies = false;
+bool joinLobbyWaitingForHostResponse = false;
 
 const std::string CSteamLeaderboards::leaderboardNames[CSteamLeaderboards::k_numLeaderboards] =
 {
@@ -344,7 +345,6 @@ public:
 	void m_SteamCallResultEncryptedAppTicket_Set(SteamAPICall_t hSteamAPICall);
 	void RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort );
 	void GetNumberOfCurrentPlayers();
-
 private:
 	void OnGetNumberOfCurrentPlayers( NumberOfCurrentPlayers_t *pCallback, bool bIOFailure );
 	CCallResult< SteamServerClientWrapper, NumberOfCurrentPlayers_t > m_NumberOfCurrentPlayersCallResult;
