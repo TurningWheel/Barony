@@ -1307,7 +1307,7 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 	sendPacket(net_sock, -1, net_packet, 0);
 }
 
-NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest()
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 {
 	int c = MAXPLAYERS;
 	if ( strcmp(VERSION, (char*)net_packet->data + 54) )
@@ -1355,6 +1355,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest()
 			c = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
 		}
 	}
+	outResult = c;
 	if ( c >= MAXPLAYERS )
 	{
 		// on error, client gets a player number that is invalid (to be interpreted as an error code)

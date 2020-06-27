@@ -3949,8 +3949,7 @@ void handleMainMenu(bool mode)
 				rebindingkey = true;
 			}
 
-			int c;
-			for ( c = 0; c < NUMIMPULSES; c++ )
+			for ( int c = 0; c < NUMIMPULSES; c++ )
 			{
 				if ( c < 14 )
 				{
@@ -4684,8 +4683,7 @@ void handleMainMenu(bool mode)
 								SDLNet_Write32(svFlags, &net_packet->data[4]);
 								net_packet->len = 8;
 
-								int c;
-								for ( c = 1; c < MAXPLAYERS; ++c )
+								for ( int c = 1; c < MAXPLAYERS; ++c )
 								{
 									if ( client_disconnected[c] )
 									{
@@ -4955,13 +4953,14 @@ void handleMainMenu(bool mode)
 			}
 			if (!strncmp((char*)net_packet->data, "BARONY_JOIN_REQUEST", 19))
 			{
+				int playerNum = MAXPLAYERS;
 				if ( !directConnect )
 				{
 					if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 					{
 #ifdef STEAMWORKS
 						bool skipJoin = false;
-						for ( c = 0; c < MAXPLAYERS; c++ )
+						for ( int c = 0; c < MAXPLAYERS; c++ )
 						{
 							if ( client_disconnected[c] || !steamIDRemote[c] )
 							{
@@ -5007,7 +5006,7 @@ void handleMainMenu(bool mode)
 #endif // USE_EOS
 					}
 				}
-				NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest();
+				NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum);
 				if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE )
 				{
 					if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
@@ -5036,15 +5035,15 @@ void handleMainMenu(bool mode)
 					if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 					{
 #ifdef STEAMWORKS
-						if ( steamIDRemote[c - 1] )
+						if ( steamIDRemote[playerNum - 1] )
 						{
-							cpp_Free_CSteamID(steamIDRemote[c - 1]);
+							cpp_Free_CSteamID(steamIDRemote[playerNum - 1]);
 						}
-						steamIDRemote[c - 1] = new CSteamID();
-						*static_cast<CSteamID*>(steamIDRemote[c - 1]) = newSteamID;
+						steamIDRemote[playerNum - 1] = new CSteamID();
+						*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
 						for ( int responses = 0; responses < 5; ++responses )
 						{
-							SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+							SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
 							SDL_Delay(5);
 						}
 #endif
@@ -5052,10 +5051,10 @@ void handleMainMenu(bool mode)
 					else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
 					{
 #if defined USE_EOS
-						EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, c - 1);
+						EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
 						for ( int responses = 0; responses < 5; ++responses )
 						{
-							EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(c - 1), net_packet->data, net_packet->len);
+							EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
 							SDL_Delay(5);
 						}
 #endif
@@ -5087,7 +5086,7 @@ void handleMainMenu(bool mode)
 			else if (!strncmp((char*)net_packet->data, "PLAYERDISCONNECT", 16))
 			{
 				client_disconnected[net_packet->data[16]] = true;
-				for ( c = 1; c < MAXPLAYERS; c++ )
+				for ( int c = 1; c < MAXPLAYERS; c++ )
 				{
 					if ( client_disconnected[c] )
 					{
@@ -5111,8 +5110,7 @@ void handleMainMenu(bool mode)
 				SDLNet_Write32(svFlags, &net_packet->data[4]);
 				net_packet->len = 8;
 
-				int c;
-				for ( c = 1; c < MAXPLAYERS; c++ )
+				for ( int c = 1; c < MAXPLAYERS; c++ )
 				{
 					if ( client_disconnected[c] )
 					{
@@ -5446,7 +5444,7 @@ void handleMainMenu(bool mode)
 					}
 
 					// now set up everybody else
-					for ( c = 0; c < MAXPLAYERS; c++ )
+					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
 						client_disconnected[c] = false;
 						client_classes[c] = net_packet->data[4 + c * (5 + 23)]; // class
@@ -5697,7 +5695,7 @@ void handleMainMenu(bool mode)
 						strcpy(stats[0]->name, stats[clientnum]->name);
 						clientnum = 0;
 						client_disconnected[0] = false;
-						for ( c = 1; c < MAXPLAYERS; c++ )
+						for ( int c = 1; c < MAXPLAYERS; c++ )
 						{
 							client_disconnected[c] = true;
 						}
@@ -5771,7 +5769,7 @@ void handleMainMenu(bool mode)
 		SDL_Rect tooltip_box;
 
 		// player info text
-		for ( c = 0; c < MAXPLAYERS; ++c )
+		for ( int c = 0; c < MAXPLAYERS; ++c )
 		{
 			if ( client_disconnected[c] )
 			{
@@ -6454,28 +6452,40 @@ void handleMainMenu(bool mode)
 		// handle keepalive timeouts (lobby)
 		if ( multiplayer == SERVER )
 		{
-			int i;
-			for ( i = 1; i < MAXPLAYERS; i++ )
+			for ( int i = 1; i < MAXPLAYERS; i++ )
 			{
 				if ( client_disconnected[i] )
 				{
 					continue;
 				}
 				bool clientHasLostP2P = false;
+				if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+				{
+#ifdef STEAMWORKS
+					// todo
+					if ( !steamIDRemote[i - 1] )
+					{
+						clientHasLostP2P = true;
+					}
+#endif
+				}
+				else if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+				{
 #ifdef USE_EOS
 
-				if ( !directConnect && !EOS.P2PConnectionInfo.isPeerStillValid(i - 1) )
-				{
-					clientHasLostP2P = true;
-				}
+					if ( !EOS.P2PConnectionInfo.isPeerStillValid(i - 1) )
+					{
+						clientHasLostP2P = true;
+					}
 #endif
+				}
 				if ( clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * 30) )
 				{
 					client_disconnected[i] = true;
 					strncpy((char*)(net_packet->data), "PLAYERDISCONNECT", 16);
 					net_packet->data[16] = i;
 					net_packet->len = 17;
-					for ( c = 1; c < MAXPLAYERS; c++ )
+					for ( int c = 1; c < MAXPLAYERS; c++ )
 					{
 						if ( client_disconnected[c] )
 						{
@@ -12478,15 +12488,15 @@ void buttonJoinLobby(button_t* my)
 	if ( !directConnect )
 	{
 #if (defined STEAMWORKS || defined USE_EOS)
-		sendPacket(net_sock, -1, net_packet, 0);
+		sendPacketSafe(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
-		sendPacket(net_sock, -1, net_packet, 0);
+		sendPacketSafe(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
-		sendPacket(net_sock, -1, net_packet, 0);
+		sendPacketSafe(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
-		sendPacket(net_sock, -1, net_packet, 0);
+		sendPacketSafe(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
-		sendPacket(net_sock, -1, net_packet, 0);
+		sendPacketSafe(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
 #endif
 	}
