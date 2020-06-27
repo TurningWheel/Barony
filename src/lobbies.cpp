@@ -86,18 +86,18 @@ void LobbyHandler_t::handleLobbyListRequests()
 	{
 #ifdef STEAMWORKS
 		// lobby entered
-		/*if ( EOS.ConnectingToLobbyStatus != static_cast<int>(EOS_EResult::EOS_Success) )
+		if ( connectingToLobbyStatus != EResult::k_EResultOK )
 		{
 			// close current window
-			//buttonCloseSubwindow(NULL);
-			//list_FreeAll(&button_l);
-			//deleteallbuttons = true;
-			//
-			//openFailedConnectionWindow(CLIENT);
-			//strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(EOS.ConnectingToLobbyStatus).c_str());
-			//EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
+			buttonCloseSubwindow(NULL);
+			list_FreeAll(&button_l);
+			deleteallbuttons = true;
+			
+			openFailedConnectionWindow(CLIENT);
+			strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus)).c_str());
+			connectingToLobbyStatus = EResult::k_EResultOK;
 		}
-		else*/ if ( !connectingToLobby && connectingToLobbyWindow )
+		else if ( !connectingToLobby && connectingToLobbyWindow )
 		{
 			connectingToLobbyWindow = false;
 			connectingToLobby = false;
@@ -133,7 +133,6 @@ void LobbyHandler_t::handleLobbyListRequests()
 				steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
 			}
 			buttonJoinLobby(NULL);
-			// TODO - what if the server never replies? hangs indefinitely.
 		}
 #endif
 	}

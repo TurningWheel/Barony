@@ -5152,7 +5152,7 @@ void handleMainMenu(bool mode)
 						buttonDisconnect(nullptr);
 						openFailedConnectionWindow(CLIENT);
 						strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT)).c_str());
-						//EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
+						connectingToLobbyStatus = EResult::k_EResultOK;
 					}
 				}
 			}
@@ -5212,7 +5212,19 @@ void handleMainMenu(bool mode)
 					{
 						continue;
 					}
-					gotPacket = true;
+					if ( (int)net_packet->data[3] < '0'
+						&& (int)net_packet->data[0] == 0
+						&& (int)net_packet->data[1] == 0
+						&& (int)net_packet->data[2] == 0 )
+					{
+						// data encoded with [0 0 0 clientnum] - directly sends an INT, if the character is < '0', then it is non-alphanumeric character.
+						// likely not some other form of data - like an old "GOTP" from a recently closed session.
+						gotPacket = true;
+					}
+					else
+					{
+						continue;
+					}
 					break;
 				}
 #endif
@@ -5264,6 +5276,42 @@ void handleMainMenu(bool mode)
 						if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 						{
 #ifdef STEAMWORKS
+							// if we got a packet, flush any remaining packets from the queue.
+							Uint32 startTicks = SDL_GetTicks();
+							Uint32 checkTicks = startTicks;
+							while ( (checkTicks - startTicks) < 2000 )
+							{
+								SteamAPI_RunCallbacks();
+								Uint32 packetlen = 0;
+								if ( SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0) )
+								{
+									packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
+									Uint32 bytesRead = 0;
+									char buffer[NET_PACKET_SIZE];
+									if ( SteamNetworking()->ReadP2PPacket(buffer, packetlen, &bytesRead, &newSteamID, 0) )
+									{
+										checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
+									}
+									buffer[4] = '\0';
+									if ( (int)buffer[3] < '0'
+										&& (int)buffer[0] == 0
+										&& (int)buffer[1] == 0
+										&& (int)buffer[2] == 0 )
+									{
+										printlog("[Steam Lobby]: Clearing P2P packet queue: received: %d", (int)buffer[3]);
+									}
+									else
+									{
+										printlog("[Steam Lobby]: Clearing P2P packet queue: received: %s", buffer);
+									}
+								}
+								SDL_Delay(10);
+								if ( (SDL_GetTicks() - startTicks) > 5000 )
+								{
+									// hard break at 3 seconds.
+									break;
+								}
+							}
 #endif
 						}
 						else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )

@@ -56,6 +56,7 @@ char pchCmdLine[1024] = { 0 }; // for game join requests
 bool connectingToLobby = false, connectingToLobbyWindow = false;
 bool requestingLobbies = false;
 bool joinLobbyWaitingForHostResponse = false;
+EResult connectingToLobbyStatus = EResult::k_EResultOK;
 
 const std::string CSteamLeaderboards::leaderboardNames[CSteamLeaderboards::k_numLeaderboards] =
 {
