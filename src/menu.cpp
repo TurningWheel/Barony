@@ -5788,15 +5788,20 @@ void handleMainMenu(bool mode)
 						if ( steamIDRemote[remoteIDIndex] )
 						{
 							//printlog("remoteIDIndex = %d. Name = \"%s\"", remoteIDIndex, SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex])));
-							std::string memberNumStr = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), *static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]), "clientnum");
-							if ( memberNumStr.compare("") != 0 )
+							char memberNumChar[64];
+							strcpy(memberNumChar, SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), *static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]), "clientnum"));
+							if ( memberNumChar )
 							{
-								int memberNum = std::stoi(memberNumStr);
-								if ( memberNum >= 0 && memberNum < MAXPLAYERS && memberNum == c )
+								std::string str = memberNumChar;
+								if ( str.compare("") != 0 )
 								{
-									charDisplayName += " (";
-									charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID*>(steamIDRemote[memberNum]));
-									charDisplayName += ")";
+									int memberNum = std::stoi(str);
+									if ( memberNum >= 0 && memberNum < MAXPLAYERS && memberNum == c )
+									{
+										charDisplayName += " (";
+										charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID*>(steamIDRemote[memberNum]));
+										charDisplayName += ")";
+									}
 								}
 							}
 						}
@@ -5816,11 +5821,16 @@ void handleMainMenu(bool mode)
 					{
 						if ( ticks % 10 == 0 )
 						{
-							std::string memberNumStr = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum");
-							if ( memberNumStr.compare("") == 0 || memberNumStr.compare(std::to_string(clientnum)) != 0 )
+							char memberNumChar[64];
+							strcpy(memberNumChar, SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum"));
+							if ( memberNumChar )
 							{
-								SteamMatchmaking()->SetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), "clientnum", std::to_string(clientnum).c_str());
-								printlog("[STEAM Lobbies]: Updating clientnum %d to lobby member data", clientnum);
+								std::string str = memberNumChar;
+								if ( str.compare("") == 0 || str.compare(std::to_string(clientnum)) != 0 )
+								{
+									SteamMatchmaking()->SetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), "clientnum", std::to_string(clientnum).c_str());
+									printlog("[STEAM Lobbies]: Updating clientnum %d to lobby member data", clientnum);
+								}
 							}
 						}
 					}
