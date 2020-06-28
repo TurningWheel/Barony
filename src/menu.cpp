@@ -2099,10 +2099,7 @@ void handleMainMenu(bool mode)
 		}
 
 #ifdef USE_EOS
-		if ( intro )
-		{
-			EOS.AccountManager.handleLogin();
-		}
+		EOS.AccountManager.handleLogin();
 		EOS.CrossplayAccountManager.handleLogin();
 #endif // USE_EOS
 

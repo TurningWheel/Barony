@@ -103,6 +103,7 @@ public:
 
 	std::unordered_set<EOS_ProductUserId> ProductIdsAwaitingAccountMappingCallback;
 	std::unordered_map<EOS_ProductUserId, EOS_EpicAccountId> AccountMappings;
+	std::unordered_map<EOS_ProductUserId, std::string> ExternalAccountMappings;
 
 	// actually all pointers...
 	EOS_HPlatform PlatformHandle = nullptr; 
@@ -224,6 +225,7 @@ public:
 			std::string name = "";
 			int clientNumber = -1;
 			bool bUserInfoRequireUpdate = true;
+			EOS_EExternalAccountType accountType = EOS_EExternalAccountType::EOS_EAT_EPIC;
 		};
 		std::vector<PlayerLobbyData_t> playersInLobby;
 		std::vector<EOS_ProductUserId> lobbyMembersQueueToMappingUpdate;
@@ -461,6 +463,8 @@ public:
 		EOS_UserInfo_QueryUserInfo(UserInfoHandle, &UserInfoQueryOptions, userInfoQueryData, UserInfoCallback);
 	}
 
+	void getExternalAccountUserInfo(EOS_ProductUserId targetId, UserInfoQueryType queryType);
+
 	void createLobby();
 	void joinLobby(LobbyData_t* lobby);
 	void leaveLobby();
@@ -653,6 +657,7 @@ public:
 	void readFromFile();
 	void readFromCmdLineArgs();
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);
+	void queryLocalExternalAccountId(EOS_EExternalAccountType accountType);
 	void showFriendsOverlay();
 	static void logInfo(const char* str, ...)
 	{

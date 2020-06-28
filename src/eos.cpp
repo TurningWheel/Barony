@@ -125,6 +125,14 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
 		EOS.AddConnectAuthExpirationNotification();
+#ifdef STEAMWORKS
+		EOS_ELoginStatus authLoginStatus = EOS_Auth_GetLoginStatus(EOS_Platform_GetAuthInterface(EOS.PlatformHandle),
+			EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str()));
+		if ( authLoginStatus != EOS_ELoginStatus::EOS_LS_LoggedIn )
+		{
+			EOS.queryLocalExternalAccountId(EOS_EExternalAccountType::EOS_EAT_STEAM);
+		}
+#endif
 		EOSFuncs::logInfo("Crossplay Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
@@ -603,10 +611,19 @@ void EOS_CALL EOSFuncs::OnQueryAccountMappingsCallback(const EOS_Connect_QueryPr
 		if ( data->ResultCode == EOS_EResult::EOS_Success )
 		{
 			EOSFuncs::logInfo("OnQueryAccountMappingsCallback: Success");
+
+			bool authEnabledForLocalUser = false; // if we're using auth() interface we can use EpicAccountIds for queries
+			EOS_ELoginStatus loginStatus =  EOS_Auth_GetLoginStatus(EOS_Platform_GetAuthInterface(EOS.PlatformHandle), 
+				EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str()));
+			if ( loginStatus == EOS_ELoginStatus::EOS_LS_LoggedIn )
+			{
+				authEnabledForLocalUser = true;
+			}
+
 			std::vector<EOS_ProductUserId> MappingsReceived;
 			for ( const EOS_ProductUserId& productId : EOS.ProductIdsAwaitingAccountMappingCallback )
 			{
-				EOS_Connect_GetProductUserIdMappingOptions Options;
+				EOS_Connect_GetProductUserIdMappingOptions Options = {};
 				Options.ApiVersion = EOS_CONNECT_GETEXTERNALACCOUNTMAPPINGS_API_LATEST;
 				Options.AccountIdType = EOS_EExternalAccountType::EOS_EAT_EPIC;
 				Options.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
@@ -622,20 +639,56 @@ void EOS_CALL EOSFuncs::OnQueryAccountMappingsCallback(const EOS_Connect_QueryPr
 					EOS_EpicAccountId epicAccountId = EOSFuncs::Helpers_t::epicIdFromString(receivedStr.c_str());
 
 					// insert the ids into the global map
-					EOS.AccountMappings.insert(std::pair<EOS_ProductUserId, EOS_EpicAccountId>(productId,epicAccountId));
+					if ( authEnabledForLocalUser )
+					{
+						EOS.AccountMappings.insert(std::pair<EOS_ProductUserId, EOS_EpicAccountId>(productId,epicAccountId));
+					}
+					else
+					{
+						EOS.ExternalAccountMappings.insert(std::pair<EOS_ProductUserId, std::string>(productId, buffer));
+					}
 
 					for ( LobbyData_t::PlayerLobbyData_t& player : EOS.CurrentLobbyData.playersInLobby )
 					{
 						if ( EOSFuncs::Helpers_t::isMatchingProductIds(productId, EOSFuncs::Helpers_t::productIdFromString(player.memberProductUserId.c_str())) )
 						{
 							player.memberEpicAccountId = receivedStr;
-							EOS.getUserInfo(epicAccountId, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER, 0);
-							EOSFuncs::logInfo("OnQueryAccountMappingsCallback: product id: %s, epic account id: %s", 
-								player.memberProductUserId.c_str(), player.memberEpicAccountId.c_str());
+							if ( authEnabledForLocalUser )
+							{
+								EOS.getUserInfo(epicAccountId, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER, 0);
+								EOSFuncs::logInfo("OnQueryAccountMappingsCallback: product id: %s, epic account id: %s", 
+									player.memberProductUserId.c_str(), player.memberEpicAccountId.c_str());
+							}
+							else
+							{
+								EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER);
+							}
 							break;
 						}
 					}
 					MappingsReceived.push_back(productId);
+				}
+				else if ( Result == EOS_EResult::EOS_NotFound )
+				{
+					// try different account types
+					Options.AccountIdType = EOS_EExternalAccountType::EOS_EAT_STEAM;
+					Result = EOS_Connect_GetProductUserIdMapping(ConnectHandle, &Options, buffer, &bufferSize);
+					if ( Result == EOS_EResult::EOS_Success )
+					{
+						EOS.ExternalAccountMappings.insert(std::pair<EOS_ProductUserId, std::string>(productId, buffer));
+						if ( EOSFuncs::Helpers_t::isMatchingProductIds(EOS.CurrentUserInfo.getProductUserIdHandle(), productId) )
+						{
+							EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOCAL);
+						}
+						for ( LobbyData_t::PlayerLobbyData_t& player : EOS.CurrentLobbyData.playersInLobby )
+						{
+							if ( EOSFuncs::Helpers_t::isMatchingProductIds(productId, EOSFuncs::Helpers_t::productIdFromString(player.memberProductUserId.c_str())) )
+							{
+								EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER);
+							}
+						}
+						MappingsReceived.push_back(productId);
+					}
 				}
 			}
 
@@ -649,6 +702,67 @@ void EOS_CALL EOSFuncs::OnQueryAccountMappingsCallback(const EOS_Connect_QueryPr
 			EOSFuncs::logError("OnQueryAccountMappingsCallback: retrying");
 		}
 	}
+}
+
+void EOSFuncs::getExternalAccountUserInfo(EOS_ProductUserId targetId, UserInfoQueryType queryType)
+{
+	EOS_Connect_CopyProductUserInfoOptions CopyProductUserInfoOptions = {};
+	CopyProductUserInfoOptions.ApiVersion = EOS_CONNECT_COPYPRODUCTUSERINFO_API_LATEST;
+	CopyProductUserInfoOptions.TargetUserId = targetId;
+
+	EOS_Connect_ExternalAccountInfo* ExternalAccountInfo = nullptr;
+	EOS_EResult CopyResult = EOS_Connect_CopyProductUserInfo(ConnectHandle, &CopyProductUserInfoOptions, &ExternalAccountInfo);
+	if ( CopyResult != EOS_EResult::EOS_Success )
+	{
+		EOSFuncs::logInfo("getExternalAccountUserInfo: Error %d", static_cast<int>(CopyResult));
+		EOS_Connect_ExternalAccountInfo_Release(ExternalAccountInfo);
+		return;
+	}
+	else if ( !ExternalAccountInfo )
+	{
+		EOSFuncs::logInfo("getExternalAccountUserInfo: Info was null");
+		return;
+	}
+
+	EOSFuncs::logInfo("getExternalAccountUserInfo: Received info for product id: %s", EOSFuncs::Helpers_t::productIdToString(targetId));
+
+	if ( queryType == UserInfoQueryType::USER_INFO_QUERY_LOCAL )
+	{
+		// local user
+		EOS.CurrentUserInfo.Name = ExternalAccountInfo->DisplayName;
+		EOS.CurrentUserInfo.bUserInfoRequireUpdate = false;
+		EOSFuncs::logInfo("getExternalAccountUserInfo: Current User Name: %s", ExternalAccountInfo->DisplayName);
+	}
+	else if ( queryType == UserInfoQueryType::USER_INFO_QUERY_LOBBY_MEMBER )
+	{
+		if ( !CurrentLobbyData.currentLobbyIsValid() || CurrentLobbyData.playersInLobby.empty() )
+		{
+			EOSFuncs::logInfo("getExternalAccountUserInfo: lobby member request failed due to invalid or no player data in lobby");
+		}
+		else
+		{
+			bool foundMember = false;
+			std::string queryTarget = EOSFuncs::Helpers_t::productIdToString(targetId);
+			for ( auto& it : EOS.CurrentLobbyData.playersInLobby )
+			{
+				if ( queryTarget.compare(it.memberProductUserId.c_str()) == 0 )
+				{
+					foundMember = true;
+					it.name = ExternalAccountInfo->DisplayName;
+					it.accountType = ExternalAccountInfo->AccountIdType;
+					it.bUserInfoRequireUpdate = false;
+					EOSFuncs::logInfo("getExternalAccountUserInfo: found lobby username: %s, account type: %d", ExternalAccountInfo->DisplayName, ExternalAccountInfo->AccountIdType);
+					break;
+				}
+			}
+			if ( !foundMember )
+			{
+				EOSFuncs::logInfo("getExternalAccountUserInfo: could not find player in current lobby with product id %s",
+					EOSFuncs::Helpers_t::productIdToString(targetId));
+			}
+		}
+	}
+	EOS_Connect_ExternalAccountInfo_Release(ExternalAccountInfo);
 }
 
 void EOS_CALL EOSFuncs::OnMemberUpdateReceived(const EOS_Lobby_LobbyMemberUpdateReceivedCallbackInfo* data)
@@ -1766,6 +1880,35 @@ void EOSFuncs::LobbyData_t::getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails)
 	EOS.queryAccountIdFromProductId(this);
 }
 
+void EOSFuncs::queryLocalExternalAccountId(EOS_EExternalAccountType accountType)
+{
+	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions = {};
+	QueryOptions.ApiVersion = EOS_CONNECT_QUERYPRODUCTUSERIDMAPPINGS_API_LATEST;
+	QueryOptions.AccountIdType_DEPRECATED = accountType;
+	QueryOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
+
+	std::vector<EOS_ProductUserId> ids = { EOS.CurrentUserInfo.getProductUserIdHandle() };
+	QueryOptions.ProductUserIdCount = ids.size();
+	QueryOptions.ProductUserIds = ids.data();
+
+	for ( EOS_ProductUserId& id : ids )
+	{
+		auto findExternalAccounts = ExternalAccountMappings.find(id);
+		if ( findExternalAccounts == ExternalAccountMappings.end() )
+		{
+			// if the mapping doesn't exist, add to set. otherwise we already know the account id for the given product id
+			ProductIdsAwaitingAccountMappingCallback.insert(id);
+		}
+		else
+		{
+			// kick off the user info query since we know the data for the external account
+			getExternalAccountUserInfo(id, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER);
+		}
+	}
+	EOS_HConnect ConnectHandle = EOS_Platform_GetConnectInterface(PlatformHandle);
+	EOS_Connect_QueryProductUserIdMappings(ConnectHandle, &QueryOptions, nullptr, OnQueryAccountMappingsCallback);
+}
+
 void EOSFuncs::queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/)
 {
 	if ( !lobby )
@@ -1786,11 +1929,20 @@ void EOSFuncs::queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS
 
 	for ( EOS_ProductUserId& id : lobby->lobbyMembersQueueToMappingUpdate )
 	{
-		auto find = AccountMappings.find(id);
-		if ( find == AccountMappings.end() || (*find).second == nullptr )
+		auto findEpicAccounts = AccountMappings.find(id);
+		auto findExternalAccounts = ExternalAccountMappings.find(id);
+		if ( findEpicAccounts == AccountMappings.end() || (*findEpicAccounts).second == nullptr )
 		{
-			// if the mapping doesn't exist, add to set. otherwise we already know the account id for the given product id
-			ProductIdsAwaitingAccountMappingCallback.insert(id);
+			if ( findExternalAccounts == ExternalAccountMappings.end() )
+			{
+				// if the mapping doesn't exist, add to set. otherwise we already know the account id for the given product id
+				ProductIdsAwaitingAccountMappingCallback.insert(id);
+			}
+			else
+			{
+				// kick off the user info query since we know the data for the external account
+				getExternalAccountUserInfo(id, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER);
+			}
 		}
 		else
 		{
@@ -2026,8 +2178,6 @@ void EOSFuncs::showFriendsOverlay()
 	Options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
 
 	EOS_UI_ShowFriends(UIHandle, &Options, nullptr, ShowFriendsCallback);
-
-
 }
 
 void EOS_CALL EOSFuncs::ShowFriendsCallback(const EOS_UI_ShowFriendsCallbackInfo* data)
