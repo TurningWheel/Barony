@@ -787,7 +787,18 @@ void EOS_CALL EOSFuncs::ConnectAuthExpirationCallback(const EOS_Connect_AuthExpi
 		EOSFuncs::logInfo("ConnectAuthExpirationCallback: connect auth expiring - product id: %s",
 			EOSFuncs::Helpers_t::productIdToString(data->LocalUserId));
 		EOS.CurrentUserInfo.bUserLoggedIn = false;
+#ifdef STEAMWORKS
+		if ( LobbyHandler.crossplayEnabled )
+		{
+			EOSFuncs::logInfo("ConnectAuthExpirationCallback: Reconnecting crossplay account");
+			EOS.UnsubscribeFromConnectionRequests();
+			EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
+			EOS.CrossplayAccountManager.resetOnFailure();
+			EOS.CrossplayAccountManager.autologin = true;
+		}
+#else
 		EOS.initConnectLogin();
+#endif // STEAMWORKS
 	}
 	else
 	{
@@ -870,7 +881,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	return true;
 }
 
-void EOSFuncs::initConnectLogin()
+void EOSFuncs::initConnectLogin() // should not handle for Steam connect logins
 {
 	ConnectHandle = EOS_Platform_GetConnectInterface(PlatformHandle);
 

@@ -5186,7 +5186,7 @@ void handleMainMenu(bool mode)
 			else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 			{
 #ifdef STEAMWORKS
-				for ( Uint32 numpacket = 0; numpacket < PACKET_LIMIT; numpacket++ )
+				for ( Uint32 numpacket = 0; numpacket < PACKET_LIMIT && net_packet; numpacket++ )
 				{
 					Uint32 packetlen = 0;
 					if ( !SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0) )
@@ -5551,7 +5551,7 @@ void handleMainMenu(bool mode)
 			EOS.bJoinLobbyWaitingForHostResponse = false;
 #endif
 			int numpacket;
-			for ( numpacket = 0; numpacket < PACKET_LIMIT; numpacket++ )
+			for ( numpacket = 0; numpacket < PACKET_LIMIT && net_packet; numpacket++ )
 			{
 				if ( directConnect )
 				{
