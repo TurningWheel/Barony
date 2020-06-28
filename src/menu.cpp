@@ -5799,7 +5799,7 @@ void handleMainMenu(bool mode)
 									if ( memberNum >= 0 && memberNum < MAXPLAYERS && memberNum == c )
 									{
 										charDisplayName += " (";
-										charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID*>(steamIDRemote[memberNum]));
+										charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]));
 										charDisplayName += ")";
 									}
 								}
