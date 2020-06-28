@@ -5782,12 +5782,10 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 				if ( c != clientnum )
 				{
-					//printlog("\n\n/* ********* *\nc = %d", c);
 					for ( int remoteIDIndex = 0; remoteIDIndex < MAXPLAYERS; ++remoteIDIndex )
 					{
 						if ( steamIDRemote[remoteIDIndex] )
 						{
-							//printlog("remoteIDIndex = %d. Name = \"%s\"", remoteIDIndex, SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex])));
 							char memberNumChar[64];
 							strcpy(memberNumChar, SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), *static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]), "clientnum"));
 							if ( memberNumChar )
@@ -5806,10 +5804,6 @@ void handleMainMenu(bool mode)
 							}
 						}
 					}
-					/*else
-					{
-						printlog("remoteIDIndex = %d. No name b/c remote ID is NULL", remoteIDIndex);
-					}*/
 				}
 				else
 				{
