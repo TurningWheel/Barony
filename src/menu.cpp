@@ -2659,6 +2659,7 @@ void handleMainMenu(bool mode)
 									drawTooltip(&tooltip);
 									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3200]);
 								}
+#ifdef STEAMWORKS
 								if ( SteamUser()->BLoggedOn() )
 								{
 									if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -2667,6 +2668,7 @@ void handleMainMenu(bool mode)
 										mousestatus[SDL_BUTTON_LEFT] = 0;
 									}
 								}
+#endif
 #else
 								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID )
 								{
@@ -5781,22 +5783,54 @@ void handleMainMenu(bool mode)
 				if ( c != clientnum )
 				{
 					//printlog("\n\n/* ********* *\nc = %d", c);
-					int remoteIDIndex = c;
-					if ( multiplayer == SERVER && c != 0 ) //Skip the server, because that would be undefined behavior (array index of -1). //TODO: if c > clientnum instead?
+					for ( int remoteIDIndex = 0; remoteIDIndex < MAXPLAYERS; ++remoteIDIndex )
 					{
-						remoteIDIndex--;
-					}
-
-					if ( remoteIDIndex >= 0 && steamIDRemote[remoteIDIndex] )
-					{
-						//printlog("remoteIDIndex = %d. Name = \"%s\"", remoteIDIndex, SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex])));
-						charDisplayName += " (";
-						charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]));
-						charDisplayName += ")";
+						if ( steamIDRemote[remoteIDIndex] )
+						{
+							//printlog("remoteIDIndex = %d. Name = \"%s\"", remoteIDIndex, SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex])));
+							std::string memberNumStr = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), *static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]), "clientnum");
+							if ( memberNumStr.compare("") != 0 )
+							{
+								int memberNum = std::stoi(memberNumStr);
+								if ( memberNum >= 0 && memberNum < MAXPLAYERS && memberNum == c )
+								{
+									charDisplayName += " (";
+									charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID*>(steamIDRemote[memberNum]));
+									charDisplayName += ")";
+								}
+							}
+						}
 					}
 					/*else
 					{
 						printlog("remoteIDIndex = %d. No name b/c remote ID is NULL", remoteIDIndex);
+					}*/
+				}
+				else
+				{
+					charDisplayName += " (";
+					charDisplayName += SteamFriends()->GetPersonaName();
+					charDisplayName += ")";
+
+					if ( currentLobby )
+					{
+						if ( ticks % 10 == 0 )
+						{
+							std::string memberNumStr = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum");
+							if ( memberNumStr.compare("") == 0 || memberNumStr.compare(std::to_string(clientnum)) != 0 )
+							{
+								SteamMatchmaking()->SetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), "clientnum", std::to_string(clientnum).c_str());
+								printlog("[STEAM Lobbies]: Updating clientnum %d to lobby member data", clientnum);
+							}
+						}
+					}
+					/*if ( EOS.CurrentLobbyData.currentLobbyIsValid()
+						&& EOS.CurrentLobbyData.getClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle()) < 0 )
+					{
+						if ( EOS.CurrentLobbyData.assignClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle(), clientnum) )
+						{
+							EOS.CurrentLobbyData.modifyLobbyMemberAttributeForCurrentUser();
+						}
 					}*/
 				}
 #endif
@@ -5834,13 +5868,27 @@ void handleMainMenu(bool mode)
 #endif
 			}
 
+			std::string raceAndClass = language[3161 + stats[c]->playerRace];
+			raceAndClass += " ";
+			if ( stats[c]->playerRace > RACE_HUMAN && stats[c]->appearance != 0 )
+			{
+				raceAndClass += "(aesthetic) ";
+			}
+			raceAndClass += playerClassLangEntry(client_classes[c], c);
+
+			if ( charDisplayName.size() > 39 )
+			{
+				charDisplayName = charDisplayName.substr(0, 37);
+				charDisplayName += "..";
+			}
+
 			if ( stats[c]->sex )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], playerClassLangEntry(client_classes[c], c));
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], raceAndClass.c_str());
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], playerClassLangEntry(client_classes[c], c));
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], raceAndClass.c_str());
 			}
 		}
 
