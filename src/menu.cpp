@@ -11276,7 +11276,7 @@ void openSteamLobbyWaitWindow(button_t* my)
 	if ( connectingToLobbyWindow )
 	{
 		// we quit the connection window before joining lobby, but invite was mid-flight.
-		// EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true; TODO
+		denyLobbyJoinEvent = true;
 	}
 	else if ( joinLobbyWaitingForHostResponse )
 	{

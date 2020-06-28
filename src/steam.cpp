@@ -56,6 +56,7 @@ char pchCmdLine[1024] = { 0 }; // for game join requests
 bool connectingToLobby = false, connectingToLobbyWindow = false;
 bool requestingLobbies = false;
 bool joinLobbyWaitingForHostResponse = false;
+bool denyLobbyJoinEvent = false;
 EResult connectingToLobbyStatus = EResult::k_EResultOK;
 
 const std::string CSteamLeaderboards::leaderboardNames[CSteamLeaderboards::k_numLeaderboards] =
@@ -279,7 +280,8 @@ public:
 		m_CallbackP2PSessionRequest(this, &SteamServerClientWrapper::OnP2PSessionRequest),
 		m_CallbackLobbyDataUpdate(this, &SteamServerClientWrapper::OnLobbyDataUpdate),
 		m_IPCFailureCallback(this, &SteamServerClientWrapper::OnIPCFailure),
-		m_SteamShutdownCallback(this, &SteamServerClientWrapper::OnSteamShutdown)
+		m_SteamShutdownCallback(this, &SteamServerClientWrapper::OnSteamShutdown),
+		m_CallbackLobbyMemberUpdate(this, &SteamServerClientWrapper::OnLobbyMemberUpdate)
 	{
 		cpp_SteamServerClientWrapper_OnLobbyGameCreated = nullptr;
 		cpp_SteamServerClientWrapper_OnGameJoinRequested = nullptr;
@@ -298,6 +300,7 @@ public:
 	}
 
 	STEAM_CALLBACK(SteamServerClientWrapper, OnLobbyDataUpdate, LobbyDataUpdate_t, m_CallbackLobbyDataUpdate);
+	STEAM_CALLBACK(SteamServerClientWrapper, OnLobbyMemberUpdate, LobbyChatUpdate_t, m_CallbackLobbyMemberUpdate);
 
 	STEAM_CALLBACK(SteamServerClientWrapper, OnLobbyGameCreated, LobbyGameCreated_t, m_LobbyGameCreated);
 
@@ -401,6 +404,74 @@ void SteamServerClientWrapper::OnLobbyDataUpdate(LobbyDataUpdate_t* pCallback)
 	if (cpp_SteamServerClientWrapper_OnLobbyDataUpdate)
 	{
 		(*cpp_SteamServerClientWrapper_OnLobbyDataUpdate)(pCallback);
+	}
+}
+
+void SteamServerClientWrapper::OnLobbyMemberUpdate(LobbyChatUpdate_t* pCallback)
+{
+	if ( pCallback )
+	{
+		if ( !currentLobby )
+		{
+			printlog("[STEAM Lobbies]: Error: OnLobbyMemberUpdate: current lobby is null");
+			printlog("[STEAM Lobbies]: Warning: OnLobbyMemberUpdate received for not current lobby, leaving received lobby");
+			SteamMatchmaking()->LeaveLobby(pCallback->m_ulSteamIDLobby);
+		}
+		else
+		{
+			uint64 currentLobbyID = (static_cast<CSteamID*>(currentLobby))->ConvertToUint64();
+			if ( pCallback->m_ulSteamIDLobby == currentLobbyID )
+			{
+				int numLobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(currentLobbyID);
+				printlog("[STEAM Lobbies]: Info: OnLobbyMemberUpdate received, %d players", numLobbyMembers);
+				EResult userStatus = EResult::k_EResultFail;
+				for ( int lobbyMember = 0; lobbyMember < numLobbyMembers; ++lobbyMember )
+				{
+					if ( SteamMatchmaking()->GetLobbyMemberByIndex(currentLobbyID, lobbyMember).ConvertToUint64() == pCallback->m_ulSteamIDUserChanged )
+					{
+						userStatus = EResult::k_EResultOK;
+						break;
+					}
+				}
+				if ( userStatus == EResult::k_EResultFail )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( steamIDRemote[i] )
+						{
+							if ( static_cast<CSteamID*>(steamIDRemote[i])->ConvertToUint64() == pCallback->m_ulSteamIDUserChanged )
+							{
+								printlog("[STEAM Lobbies]: Info: OnLobbyMemberUpdate Player has left, freeing player index %d", i);
+								cpp_Free_CSteamID(steamIDRemote[i]);
+								steamIDRemote[i] = nullptr;
+							}
+						}
+					}
+				}
+				else if ( userStatus == EResult::k_EResultOK )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( steamIDRemote[i] )
+						{
+							if ( static_cast<CSteamID*>(steamIDRemote[i])->ConvertToUint64() == pCallback->m_ulSteamIDUserChanged )
+							{
+								printlog("[STEAM Lobbies]: Info: OnLobbyMemberUpdate Player index %d has been updated", i);
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				printlog("[STEAM Lobbies]: Warning: OnLobbyMemberUpdate received for not current lobby, leaving received lobby");
+				SteamMatchmaking()->LeaveLobby(pCallback->m_ulSteamIDLobby);
+			}
+		}
+	}
+	else
+	{
+		printlog("[STEAM Lobbies]: Error: OnLobbyMemberUpdate: null data");
 	}
 }
 
@@ -1681,11 +1752,34 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 #ifdef STEAMDEBUG
 	printlog( "OnLobbyEntered\n" );
 #endif
-
-	if ( !connectingToLobby )
+	if ( denyLobbyJoinEvent || !connectingToLobby )
 	{
+		if ( denyLobbyJoinEvent )
+		{
+			printlog("[STEAM Lobbies]: Forcibly denying joining current lobby");
+		}
+		else if ( !connectingToLobby )
+		{
+			printlog("[STEAM Lobbies]: On lobby entered, unexpected closed window. Leaving lobby");
+		}
+		denyLobbyJoinEvent = false;
+		if ( pCallback )
+		{
+			if ( static_cast<LobbyEnter_t*>(pCallback)->m_EChatRoomEnterResponse == k_EChatRoomEnterResponseSuccess )
+			{
+				SteamMatchmaking()->LeaveLobby(static_cast<LobbyEnter_t*>(pCallback)->m_ulSteamIDLobby);
+			}
+		}
+		if ( currentLobby )
+		{
+			SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
+			cpp_Free_CSteamID(currentLobby); //TODO: Bugger.
+			currentLobby = nullptr;
+		}
 		return;
 	}
+
+	denyLobbyJoinEvent = false;
 
 	if ( static_cast<LobbyEnter_t*>(pCallback)->m_EChatRoomEnterResponse != k_EChatRoomEnterResponseSuccess )
 	{
@@ -1703,7 +1797,7 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 	{
 		SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
 		cpp_Free_CSteamID(currentLobby); //TODO: Bugger.
-		currentLobby = NULL;
+		currentLobby = nullptr;
 	}
 	currentLobby = cpp_pCallback_m_ulSteamIDLobby(pCallback); //TODO: More buggery.
 	connectingToLobby = false;
@@ -1724,14 +1818,15 @@ void steam_OnP2PSessionConnectFail( void* pCallback )
 	printlog( "OnP2PSessionConnectFail\n" );
 #endif
 
-	printlog("warning: failed to establish steam P2P connection.\n");
+	printlog("[STEAM P2P]: Warning: failed to establish steam P2P connection.\n");
 
-	if ( intro )
+	/*if ( intro )
 	{
 		connectingToLobby = false;
 		connectingToLobbyWindow = false;
-		openFailedConnectionWindow(multiplayer);
-	}
+		buttonDisconnect(nullptr);
+		openFailedConnectionWindow(SINGLE);
+	}*/
 }
 
 void CSteamLeaderboards::FindLeaderboard(const char *pchLeaderboardName)
