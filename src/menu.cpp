@@ -12488,15 +12488,15 @@ void buttonJoinLobby(button_t* my)
 	if ( !directConnect )
 	{
 #if (defined STEAMWORKS || defined USE_EOS)
-		sendPacketSafe(net_sock, -1, net_packet, 0);
+		sendPacket(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
-		sendPacketSafe(net_sock, -1, net_packet, 0);
+		sendPacket(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
-		sendPacketSafe(net_sock, -1, net_packet, 0);
+		sendPacket(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
-		sendPacketSafe(net_sock, -1, net_packet, 0);
+		sendPacket(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
-		sendPacketSafe(net_sock, -1, net_packet, 0);
+		sendPacket(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
 #endif
 	}
