@@ -5778,31 +5778,35 @@ void handleMainMenu(bool mode)
 			string charDisplayName = "";
 			charDisplayName = stats[c]->name;
 
+			if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+			{
 #ifdef STEAMWORKS
-			if ( !directConnect && c != clientnum )
-			{
-				//printlog("\n\n/* ********* *\nc = %d", c);
-				int remoteIDIndex = c;
-				if ( multiplayer == SERVER && c != 0 ) //Skip the server, because that would be undefined behavior (array index of -1). //TODO: if c > clientnum instead?
+				if ( c != clientnum )
 				{
-					remoteIDIndex--;
-				}
+					//printlog("\n\n/* ********* *\nc = %d", c);
+					int remoteIDIndex = c;
+					if ( multiplayer == SERVER && c != 0 ) //Skip the server, because that would be undefined behavior (array index of -1). //TODO: if c > clientnum instead?
+					{
+						remoteIDIndex--;
+					}
 
-				if ( remoteIDIndex >= 0 && steamIDRemote[remoteIDIndex] )
-				{
-					//printlog("remoteIDIndex = %d. Name = \"%s\"", remoteIDIndex, SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex])));
-					charDisplayName += " (";
-					charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex]));
-					charDisplayName += ")";
+					if ( remoteIDIndex >= 0 && steamIDRemote[remoteIDIndex] )
+					{
+						//printlog("remoteIDIndex = %d. Name = \"%s\"", remoteIDIndex, SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex])));
+						charDisplayName += " (";
+						charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]));
+						charDisplayName += ")";
+					}
+					/*else
+					{
+						printlog("remoteIDIndex = %d. No name b/c remote ID is NULL", remoteIDIndex);
+					}*/
 				}
-				/*else
-				{
-					printlog("remoteIDIndex = %d. No name b/c remote ID is NULL", remoteIDIndex);
-				}*/
+#endif
 			}
-#elif defined USE_EOS
-			if ( !directConnect )
+			else if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
 			{
+#if defined USE_EOS
 				if ( c == clientnum )
 				{
 					charDisplayName += " (";
@@ -5830,8 +5834,8 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-			}
 #endif
+			}
 
 			if ( stats[c]->sex )
 			{
@@ -5855,18 +5859,25 @@ void handleMainMenu(bool mode)
 				inputlen = LOBBY_CHATBOX_LENGTH - 1;
 				cursorflash = ticks;
 			}
-			else if ( mouseInBounds(xres / 2, subx2 - 32, suby1 + 56, suby1 + 68) && multiplayer == SERVER )
+			else if ( mouseInBounds(xres / 2, subx2 - 32, suby1 + 56, suby1 + 68) && !directConnect )
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 
 				// lobby name
+				if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+				{
 #ifdef STEAMWORKS
-				inputstr = currentLobbyName;
-				inputlen = 31;
-#elif defined USE_EOS
-				inputstr = EOS.currentLobbyName;
-				inputlen = 31;
+					inputstr = currentLobbyName;
+					inputlen = 31;
 #endif
+				}
+				else if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+				{
+#if defined USE_EOS
+					inputstr = EOS.currentLobbyName;
+					inputlen = 31;
+#endif
+				}
 				cursorflash = ticks;
 			}
 
@@ -5901,77 +5912,84 @@ void handleMainMenu(bool mode)
 						}
 
 						// update lobby data
-#ifdef STEAMWORKS
-						if ( !directConnect )
+						if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 						{
+#ifdef STEAMWORKS
 							char svFlagsChar[16];
 							snprintf(svFlagsChar, 15, "%d", svFlags);
 							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svFlags", svFlagsChar);
-						}
 #endif
+						}
 					}
 				}
 			}
 
 			// switch lobby type
-#ifdef STEAMWORKS
-			if ( !directConnect )
+			if ( multiplayer == SERVER && !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 			{
-				if ( multiplayer == SERVER )
+#ifdef STEAMWORKS
+				for ( i = 0; i < 2; i++ )
 				{
-					for ( i = 0; i < 2; i++ )
+					if ( mouseInBounds(xres / 2 + 8 + 6, xres / 2 + 8 + 30, suby1 + 256 + i * 16, suby1 + 268 + i * 16) )
 					{
-						if ( mouseInBounds(xres / 2 + 8 + 6, xres / 2 + 8 + 30, suby1 + 256 + i * 16, suby1 + 268 + i * 16) )
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						switch ( i )
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
-							switch ( i )
-							{
-								default:
-									currentLobbyType = k_ELobbyTypePrivate;
-									break;
-								case 1:
-									currentLobbyType = k_ELobbyTypePublic;
-									break;
-								/*case 2:
-									currentLobbyType = k_ELobbyTypeFriendsOnly;
-									// deprecated by steam, doesn't return in getLobbyList.
-									break;*/
-							}
-							SteamMatchmaking()->SetLobbyType(*static_cast<CSteamID*>(currentLobby), currentLobbyType);
+							default:
+								currentLobbyType = k_ELobbyTypePrivate;
+								break;
+							case 1:
+								currentLobbyType = k_ELobbyTypePublic;
+								break;
+							/*case 2:
+								currentLobbyType = k_ELobbyTypeFriendsOnly;
+								// deprecated by steam, doesn't return in getLobbyList.
+								break;*/
 						}
+						SteamMatchmaking()->SetLobbyType(*static_cast<CSteamID*>(currentLobby), currentLobbyType);
 					}
 				}
-			}
 #endif
+			}
 		}
 
 		// switch textboxes with TAB
-		if ( keystatus[SDL_SCANCODE_TAB] )
+		if ( multiplayer == SERVER )
 		{
-			keystatus[SDL_SCANCODE_TAB] = 0;
+			if ( keystatus[SDL_SCANCODE_TAB] )
+			{
+				keystatus[SDL_SCANCODE_TAB] = 0;
+				if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+				{
 #ifdef STEAMWORKS
-			if ( inputstr == currentLobbyName )
-			{
-				inputstr = lobbyChatbox;
-				inputlen = LOBBY_CHATBOX_LENGTH - 1;
-			}
-			else
-			{
-				inputstr = currentLobbyName;
-				inputlen = 31;
-			}
-#elif defined USE_EOS
-			if ( inputstr == EOS.currentLobbyName )
-			{
-				inputstr = lobbyChatbox;
-				inputlen = LOBBY_CHATBOX_LENGTH - 1;
-			}
-			else
-			{
-				inputstr = EOS.currentLobbyName;
-				inputlen = 31;
-			}
+					if ( inputstr == currentLobbyName )
+					{
+						inputstr = lobbyChatbox;
+						inputlen = LOBBY_CHATBOX_LENGTH - 1;
+					}
+					else
+					{
+						inputstr = currentLobbyName;
+						inputlen = 31;
+					}
 #endif
+				}
+				else if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+				{
+#if defined USE_EOS
+					if ( inputstr == EOS.currentLobbyName )
+					{
+						inputstr = lobbyChatbox;
+						inputlen = LOBBY_CHATBOX_LENGTH - 1;
+					}
+					else
+					{
+						inputstr = EOS.currentLobbyName;
+						inputlen = 31;
+					}
+#endif
+				}
+			}
 		}
 
 		// server flag elements
@@ -6008,7 +6026,7 @@ void handleMainMenu(bool mode)
 				if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
 					hovering_selection = i;
-#ifndef STEAMWORKS
+#if !defined STEAMWORKS && !defined USE_EOS
 					if ( hovering_selection == 0 )
 					{
 						hovering_selection = -1; // don't show cheats tooltip about disabling achievements.
@@ -6035,9 +6053,9 @@ void handleMainMenu(bool mode)
 		}
 
 		// lobby type elements
-#ifdef STEAMWORKS
-		if ( !directConnect )
+		if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
+#ifdef STEAMWORKS
 			if ( multiplayer == SERVER )
 			{
 				for ( i = 0; i < 2; i++ )
@@ -6053,8 +6071,8 @@ void handleMainMenu(bool mode)
 					}
 				}
 			}
-		}
 #endif
+		}
 
 		if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
@@ -6462,7 +6480,6 @@ void handleMainMenu(bool mode)
 				if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 				{
 #ifdef STEAMWORKS
-					// todo
 					if ( !steamIDRemote[i - 1] )
 					{
 						clientHasLostP2P = true;

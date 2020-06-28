@@ -37,6 +37,7 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include "mod_tools.hpp"
+#include "lobbies.hpp"
 #include <limits>
 
 #ifdef LINUX
@@ -617,12 +618,15 @@ void gameLogic(void)
 				}
 			}
 
-#ifdef USE_EOS
-			if ( multiplayer == SERVER && ticks % TICKS_PER_SECOND == 0 )
+			if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
 			{
-				EOS.CurrentLobbyData.updateLobbyDuringGameLoop();
-			}
+#ifdef USE_EOS
+				if ( multiplayer == SERVER && ticks % TICKS_PER_SECOND == 0 )
+				{
+					EOS.CurrentLobbyData.updateLobbyDuringGameLoop();
+				}
 #endif // USE_EOS
+			}
 
 
 			// animate tiles
