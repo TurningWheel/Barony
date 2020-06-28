@@ -5864,14 +5864,14 @@ void handleMainMenu(bool mode)
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 
 				// lobby name
-				if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+				if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 				{
 #ifdef STEAMWORKS
 					inputstr = currentLobbyName;
 					inputlen = 31;
 #endif
 				}
-				else if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+				else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
 				{
 #if defined USE_EOS
 					inputstr = EOS.currentLobbyName;
@@ -6074,7 +6074,7 @@ void handleMainMenu(bool mode)
 #endif
 		}
 
-		if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
 #ifdef STEAMWORKS
 			// server name
@@ -6113,7 +6113,7 @@ void handleMainMenu(bool mode)
 			}
 #endif
 		}
-		else if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		else if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
 		{
 #if defined USE_EOS
 			// server name
