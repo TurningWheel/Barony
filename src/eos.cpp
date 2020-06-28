@@ -124,6 +124,7 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 		EOS.CurrentUserInfo.setProductUserIdHandle(data->LocalUserId);
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
+		EOS.AddConnectAuthExpirationNotification();
 		EOSFuncs::logInfo("Crossplay Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
@@ -166,6 +167,7 @@ void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbac
 		EOS.CurrentUserInfo.setProductUserIdHandle(data->LocalUserId);
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
+		EOS.AddConnectAuthExpirationNotification();
 		EOSFuncs::logInfo("OnCreateUserCallback success, new user: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
 	else
@@ -791,6 +793,7 @@ void EOS_CALL EOSFuncs::ConnectAuthExpirationCallback(const EOS_Connect_AuthExpi
 		{
 			EOSFuncs::logInfo("ConnectAuthExpirationCallback: Reconnecting crossplay account");
 			EOS.CrossplayAccountManager.autologin = true;
+			EOS.CrossplayAccountManager.connectLoginCompleted = EOS_EResult::EOS_NotConfigured;
 		}
 #else
 		EOS.initConnectLogin();
