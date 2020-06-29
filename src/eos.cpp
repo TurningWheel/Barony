@@ -2308,6 +2308,9 @@ void buttonRetryAuthorisation()
 
 void EOSFuncs::Accounts_t::handleLogin()
 {
+#ifdef STEAMWORKS
+	return;
+#endif
 	if ( !waitingForCallback && (AccountAuthenticationStatus == EOS_EResult::EOS_Success || AccountAuthenticationCompleted == EOS_EResult::EOS_Success) )
 	{
 		firstTimeSetupCompleted = true;
@@ -2322,6 +2325,7 @@ void EOSFuncs::Accounts_t::handleLogin()
 					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 					n->setSecondaryText(std::string("Logged in successfully!"));
 					n->updateCardEvent(false, true);
+					n->setIdleSeconds(5);
 				}
 			}
 			AccountAuthenticationCompleted = EOS_EResult::EOS_Success;
@@ -2346,6 +2350,7 @@ void EOSFuncs::Accounts_t::handleLogin()
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
 				n->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
 				n->buttonAction = &buttonRetryAuthorisation;
+				n->setIdleSeconds(5);
 			}
 			initPopupWindow = true;
 		}
@@ -2366,6 +2371,7 @@ void EOSFuncs::Accounts_t::handleLogin()
 						n->showMainCard();
 						n->setSecondaryText(std::string(buf));
 						n->updateCardEvent(false, true);
+						n->setIdleSeconds(10);
 					}
 				}
 				AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
@@ -2408,6 +2414,7 @@ void EOSFuncs::CrossplayAccounts_t::createNotification()
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
 		n->cardType = UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT;
+		n->setIdleSeconds(5);
 	}
 }
 
@@ -2506,6 +2513,7 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 				n->showMainCard();
 				n->setMainText(std::string("Steam account linked.\nCrossplay enabled."));
 				n->updateCardEvent(true, false);
+				n->setIdleSeconds(5);
 			}
 			LobbyHandler.crossplayEnabled = true;
 			LobbyHandler.settings_crossplayEnabled = true;
@@ -2529,6 +2537,7 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 				n->showMainCard();
 				n->setSecondaryText(std::string("New Steam user.\nAccept EULA to proceed."));
 				n->updateCardEvent(false, true);
+				n->setIdleSeconds(10);
 			}
 			EOSFuncs::logInfo("New Steam user, awaiting user response.");
 			createDialogue();
@@ -2547,6 +2556,7 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 				n->setSecondaryText(std::string(buf));
 				n->updateCardEvent(false, true);
 				n->buttonAction = &EOSFuncs::CrossplayAccounts_t::retryCrossplaySetupOnFailure;
+				n->setIdleSeconds(10);
 			}
 			EOSFuncs::logError("Crossplay setup has failed. Error code: %d", static_cast<int>(connectLoginStatus));
 			resetOnFailure();
