@@ -21,6 +21,7 @@ See LICENSE for details.
 #endif
 #include "draw.hpp"
 #include "player.hpp"
+#include "scores.hpp"
 
 LobbyHandler_t LobbyHandler;
 
@@ -71,6 +72,44 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 	printlog("[Lobbies Error]: %s", buf);
 	return buf;
 }
+
+#ifdef STEAMWORKS
+bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
+{
+	const char* lsgStr = SteamMatchmaking()->GetLobbyData(steamLobbyToValidate, "loadingsavegame");
+	Uint32 lsg = atoi(lsgStr);
+	bool errorOnJoin = false;
+	if ( lsg != loadingsavegame )
+	{
+		// loading save game, but incorrect assertion from client side.
+		if ( loadingsavegame == 0 )
+		{
+			connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+		}
+		else if ( loadingsavegame > 0 && lsg == 0 )
+		{
+			connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
+		}
+		else if ( loadingsavegame > 0 && lsg > 0 )
+		{
+			connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
+		}
+		else
+		{
+			connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
+		}
+		errorOnJoin = true;
+	}
+
+	if ( errorOnJoin )
+	{
+		connectingToLobbyWindow = false;
+		connectingToLobby = false;
+	}
+
+	return !errorOnJoin;
+}
+#endif
 
 void LobbyHandler_t::handleLobbyListRequests()
 {
@@ -641,3 +680,14 @@ void LobbyHandler_t::handleLobbyBrowser()
 //	}
 //#endif
 }
+#ifdef STEAMWORKS
+void LobbyHandler_t::steamValidateAndJoinLobby(CSteamID& id)
+{
+	steamLobbyToValidate.Set(id.GetAccountID(), id.GetEUniverse(), id.GetEAccountType());
+	steamLobbyToValidate.SetAccountInstance(id.GetUnAccountInstance());
+	if ( !SteamMatchmaking()->RequestLobbyData(steamLobbyToValidate) )
+	{
+		steamLobbyToValidate.SetAccountID(0);
+	}
+}
+#endif

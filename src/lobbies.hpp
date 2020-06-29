@@ -90,6 +90,11 @@ public:
 		printlog("[Lobbies Error]: %s", newstr);
 	}
 	static std::string getLobbyJoinFailedConnectString(int result);
+#ifdef STEAMWORKS
+	CSteamID steamLobbyToValidate = {};
+	void steamValidateAndJoinLobby(CSteamID& id);
+	bool validateSteamLobbyDataOnJoin();
+#endif
 	enum EResult_LobbyFailures : int
 	{
 		LOBBY_USING_SAVEGAME = 50000,

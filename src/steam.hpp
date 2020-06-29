@@ -50,7 +50,7 @@ extern bool connectingToLobby, connectingToLobbyWindow;
 extern bool stillConnectingToLobby;
 extern bool joinLobbyWaitingForHostResponse;
 extern bool denyLobbyJoinEvent;
-extern EResult connectingToLobbyStatus;
+extern int connectingToLobbyStatus;
 #endif
 
 

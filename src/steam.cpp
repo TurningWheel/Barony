@@ -25,6 +25,7 @@
 #include <steam/steam_api.h>
 #include <steam/steam_gameserver.h>
 #include "steam.hpp"
+#include "lobbies.hpp"
 #endif
 
 #ifdef STEAMWORKS
@@ -57,7 +58,7 @@ bool connectingToLobby = false, connectingToLobbyWindow = false;
 bool requestingLobbies = false;
 bool joinLobbyWaitingForHostResponse = false;
 bool denyLobbyJoinEvent = false;
-EResult connectingToLobbyStatus = EResult::k_EResultOK;
+int connectingToLobbyStatus = EResult::k_EResultOK;
 
 const std::string CSteamLeaderboards::leaderboardNames[CSteamLeaderboards::k_numLeaderboards] =
 {
@@ -1397,6 +1398,28 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 #ifdef STEAMDEBUG
 	printlog( "OnLobbyDataUpdatedCallback\n" );
 #endif
+	if ( LobbyHandler.steamLobbyToValidate.GetAccountID() != 0 )
+	{
+		LobbyDataUpdate_t* cb = static_cast<LobbyDataUpdate_t*>(pCallback);
+		if ( cb )
+		{
+			if ( cb->m_ulSteamIDLobby == LobbyHandler.steamLobbyToValidate.ConvertToUint64() )
+			{
+				printlog("[STEAM Lobbies]: Received update for join lobby request");
+				if ( LobbyHandler.validateSteamLobbyDataOnJoin() )
+				{
+					printlog("[STEAM Lobbies]: Join lobby request initiated");
+					cpp_SteamMatchmaking_JoinLobby(LobbyHandler.steamLobbyToValidate);
+				}
+				else
+				{
+					printlog("[STEAM Lobbies]: Incompatible lobby to join");
+				}
+			}
+			LobbyHandler.steamLobbyToValidate.SetAccountID(0);
+			return;
+		}
+	}
 
 	// finish processing lobby invite?
 	if ( stillConnectingToLobby )
@@ -1776,6 +1799,8 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 			cpp_Free_CSteamID(currentLobby); //TODO: Bugger.
 			currentLobby = nullptr;
 		}
+		connectingToLobby = false;
+		connectingToLobbyWindow = false;
 		return;
 	}
 

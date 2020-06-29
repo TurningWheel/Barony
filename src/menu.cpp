@@ -5503,9 +5503,8 @@ void handleMainMenu(bool mode)
 					{
 						if ( steamIDRemote[remoteIDIndex] )
 						{
-							char memberNumChar[64];
-							strcpy(memberNumChar, SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), *static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]), "clientnum"));
-							if ( memberNumChar )
+							const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), *static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]), "clientnum");
+							if ( memberNumChar && memberNumChar[0] )
 							{
 								std::string str = memberNumChar;
 								if ( str.compare("") != 0 )
@@ -5532,9 +5531,8 @@ void handleMainMenu(bool mode)
 					{
 						if ( ticks % 10 == 0 )
 						{
-							char memberNumChar[64];
-							strcpy(memberNumChar, SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum"));
-							if ( memberNumChar )
+							const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum"));
+							if ( memberNumChar && memberNumChar[0] )
 							{
 								std::string str = memberNumChar;
 								if ( str.compare("") == 0 || str.compare(std::to_string(clientnum)) != 0 )
@@ -11257,7 +11255,7 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my)
 			connectingToLobby = true;
 			connectingToLobbyWindow = true;
 			strncpy(currentLobbyName, lobbyText[lobbyIndex], 31);
-			cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID*>(lobbyIDs[lobbyIndex]));
+			LobbyHandler.steamValidateAndJoinLobby(*static_cast<CSteamID*>(lobbyIDs[lobbyIndex]));
 		}
 #endif
 	}
@@ -11593,7 +11591,7 @@ void buttonContinue(button_t* my)
 			connectingToLobby = true;
 			connectingToLobbyWindow = true;
 			strncpy( currentLobbyName, "", 31 );
-			cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID*>(lobbyToConnectTo));
+			LobbyHandler.steamValidateAndJoinLobby(*static_cast<CSteamID*>(lobbyToConnectTo));
 			cpp_Free_CSteamID(lobbyToConnectTo); //TODO: Bugger this.
 			lobbyToConnectTo = NULL;
 		}
@@ -13818,7 +13816,7 @@ void buttonLoadSingleplayerGame(button_t* button)
 				connectingToLobby = true;
 				connectingToLobbyWindow = true;
 				strncpy( currentLobbyName, "", 31 );
-				cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyToConnectTo));
+				LobbyHandler.steamValidateAndJoinLobby(*static_cast<CSteamID*>(lobbyToConnectTo));
 				cpp_Free_CSteamID(lobbyToConnectTo);
 				lobbyToConnectTo = NULL;
 			}
@@ -13910,7 +13908,7 @@ void buttonLoadMultiplayerGame(button_t* button)
 				connectingToLobby = true;
 				connectingToLobbyWindow = true;
 				strncpy(currentLobbyName, "", 31);
-				cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyToConnectTo));
+				LobbyHandler.steamValidateAndJoinLobby(*static_cast<CSteamID*>(lobbyToConnectTo));
 				cpp_Free_CSteamID(lobbyToConnectTo);
 				lobbyToConnectTo = NULL;
 			}
