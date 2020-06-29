@@ -524,6 +524,10 @@ void LobbyHandler_t::handleLobbyBrowser()
 			SDL_Rect pos;
 			pos.x = subx1 + 10;
 			pos.y = suby1 + 26 + (this->selectedLobbyInList - y2) * 16;
+			if ( lobbyType == LOBBY_DISABLE )
+			{
+				pos.y = suby1 + 26 + (0 - y2) * 16; // don't flicker the rectangle on invalid selections.
+			}
 			pos.w = subx2 - subx1 - 44;
 			pos.h = 16;
 			drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
