@@ -1406,6 +1406,9 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 			if ( !cb->m_bSuccess )
 			{
 				printlog("[STEAM Lobbies]: Lobby to join no longer exists");
+				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_FOUND;
+				connectingToLobbyWindow = false;
+				connectingToLobby = false;
 			}
 			else if ( cb->m_ulSteamIDLobby == LobbyHandler.steamLobbyToValidate.ConvertToUint64() )
 			{

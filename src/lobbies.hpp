@@ -71,7 +71,10 @@ public:
 	}
 	LobbyServiceType setLobbyJoinTypeOfCurrentSelection()
 	{
-		joiningType = getDisplayedResultLobbyType(selectedLobbyInList);
+		if ( getDisplayedResultLobbyType(selectedLobbyInList) != LOBBY_DISABLE )
+		{
+			joiningType = getDisplayedResultLobbyType(selectedLobbyInList);
+		}
 		return joiningType;
 	}
 	void setP2PType(LobbyServiceType type)
