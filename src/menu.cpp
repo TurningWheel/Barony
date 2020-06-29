@@ -5504,7 +5504,7 @@ void handleMainMenu(bool mode)
 						if ( steamIDRemote[remoteIDIndex] )
 						{
 							const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), *static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]), "clientnum");
-							if ( memberNumChar && memberNumChar[0] )
+							if ( memberNumChar )
 							{
 								std::string str = memberNumChar;
 								if ( str.compare("") != 0 )
@@ -5532,7 +5532,7 @@ void handleMainMenu(bool mode)
 						if ( ticks % 10 == 0 )
 						{
 							const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum");
-							if ( memberNumChar && memberNumChar[0] )
+							if ( memberNumChar )
 							{
 								std::string str = memberNumChar;
 								if ( str.compare("") == 0 || str.compare(std::to_string(clientnum)) != 0 )

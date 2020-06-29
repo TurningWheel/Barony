@@ -1403,7 +1403,11 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 		LobbyDataUpdate_t* cb = static_cast<LobbyDataUpdate_t*>(pCallback);
 		if ( cb )
 		{
-			if ( cb->m_ulSteamIDLobby == LobbyHandler.steamLobbyToValidate.ConvertToUint64() )
+			if ( !cb->m_bSuccess )
+			{
+				printlog("[STEAM Lobbies]: Lobby to join no longer exists");
+			}
+			else if ( cb->m_ulSteamIDLobby == LobbyHandler.steamLobbyToValidate.ConvertToUint64() )
 			{
 				printlog("[STEAM Lobbies]: Received update for join lobby request");
 				if ( LobbyHandler.validateSteamLobbyDataOnJoin() )
