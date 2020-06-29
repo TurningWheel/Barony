@@ -5828,14 +5828,6 @@ void handleMainMenu(bool mode)
 							}
 						}
 					}
-					/*if ( EOS.CurrentLobbyData.currentLobbyIsValid()
-						&& EOS.CurrentLobbyData.getClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle()) < 0 )
-					{
-						if ( EOS.CurrentLobbyData.assignClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle(), clientnum) )
-						{
-							EOS.CurrentLobbyData.modifyLobbyMemberAttributeForCurrentUser();
-						}
-					}*/
 				}
 #endif
 			}
