@@ -76,29 +76,42 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 #ifdef STEAMWORKS
 bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 {
-	const char* lsgStr = SteamMatchmaking()->GetLobbyData(steamLobbyToValidate, "loadingsavegame");
-	Uint32 lsg = atoi(lsgStr);
 	bool errorOnJoin = false;
-	if ( lsg != loadingsavegame )
+	const char* lsgStr = SteamMatchmaking()->GetLobbyData(steamLobbyToValidate, "loadingsavegame");
+	if ( lsgStr )
 	{
-		// loading save game, but incorrect assertion from client side.
-		if ( loadingsavegame == 0 )
+		Uint32 lsg = atoi(lsgStr);
+		if ( lsg != loadingsavegame )
 		{
-			connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+			// loading save game, but incorrect assertion from client side.
+			if ( loadingsavegame == 0 )
+			{
+				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+			}
+			else if ( loadingsavegame > 0 && lsg == 0 )
+			{
+				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
+			}
+			else if ( loadingsavegame > 0 && lsg > 0 )
+			{
+				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
+			}
+			else
+			{
+				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
+			}
+			errorOnJoin = true;
 		}
-		else if ( loadingsavegame > 0 && lsg == 0 )
+	}
+
+	if ( !errorOnJoin )
+	{
+		const int numMembers = SteamMatchmaking()->GetNumLobbyMembers(steamLobbyToValidate);
+		if ( numMembers == 0 )
 		{
-			connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
+			connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NO_OWNER;
+			errorOnJoin = true;
 		}
-		else if ( loadingsavegame > 0 && lsg > 0 )
-		{
-			connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
-		}
-		else
-		{
-			connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
-		}
-		errorOnJoin = true;
 	}
 
 	if ( errorOnJoin )
