@@ -176,6 +176,14 @@ void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbac
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
 		EOS.AddConnectAuthExpirationNotification();
+#ifdef STEAMWORKS
+		EOS_ELoginStatus authLoginStatus = EOS_Auth_GetLoginStatus(EOS_Platform_GetAuthInterface(EOS.PlatformHandle),
+			EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str()));
+		if ( authLoginStatus != EOS_ELoginStatus::EOS_LS_LoggedIn )
+		{
+			EOS.queryLocalExternalAccountId(EOS_EExternalAccountType::EOS_EAT_STEAM);
+		}
+#endif
 		EOSFuncs::logInfo("OnCreateUserCallback success, new user: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
 	else
@@ -1902,7 +1910,7 @@ void EOSFuncs::queryLocalExternalAccountId(EOS_EExternalAccountType accountType)
 		else
 		{
 			// kick off the user info query since we know the data for the external account
-			getExternalAccountUserInfo(id, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER);
+			getExternalAccountUserInfo(id, EOSFuncs::USER_INFO_QUERY_LOCAL);
 		}
 	}
 	EOS_HConnect ConnectHandle = EOS_Platform_GetConnectInterface(PlatformHandle);
