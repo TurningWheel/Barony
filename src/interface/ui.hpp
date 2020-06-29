@@ -55,6 +55,7 @@ class UIToastNotification
 	Uint32 lastInteractedTick = 0;
 	bool cardUpdateDisplayMainText = false;
 	bool cardUpdateDisplaySecondaryText = false;
+	Uint32 idleTicksToHide = 10 * TICKS_PER_SECOND;
 
 	std::string displayedText;
 	std::string mainCardText;
@@ -73,13 +74,15 @@ public:
 	{
 		UI_NOTIFICATION_CLOSE = 1,
 		UI_NOTIFICATION_ACTION_BUTTON = 2,
-		UI_NOTIFICATION_AUTO_HIDE = 4
+		UI_NOTIFICATION_AUTO_HIDE = 4,
+		UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE = 8
 	};
 	enum CardType : Uint32
 	{
 		UI_CARD_DEFAULT,
 		UI_CARD_EOS_ACCOUNT,
-		UI_CARD_CROSSPLAY_ACCOUNT
+		UI_CARD_CROSSPLAY_ACCOUNT,
+		UI_CARD_COMMUNITY_LINK
 	};
 	CardType cardType = CardType::UI_CARD_DEFAULT;
 	enum CardState : Uint32
@@ -120,6 +123,10 @@ public:
 	void setActionText(std::string& text)
 	{
 		actionText = text;
+	}
+	void setIdleSeconds(Uint32 seconds)
+	{
+		idleTicksToHide = seconds * TICKS_PER_SECOND;
 	}
 	std::string& getMainText() { return mainCardText; };
 
@@ -278,14 +285,19 @@ public:
 		}
 		else
 		{
+			bool oldHiddenStatus = mainCardIsHidden;
 			animate(animx, anim_ticks, anim_duration, cardWidth, mainCardHide, mainCardIsHidden);
 			if ( mainCardHide && mainCardIsHidden )
 			{
 				cardState = UI_CARD_STATE_DOCKED;
+				if ( oldHiddenStatus != mainCardIsHidden && (actionFlags & UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE) )
+				{
+					setDisplayedText(mainCardText);
+				}
 			}
 			else
 			{
-				if ( ticks - lastInteractedTick > TICKS_PER_SECOND * 10 )
+				if ( ticks - lastInteractedTick > idleTicksToHide )
 				{
 					mainCardHide = true;
 					dockedCardHide = false;
@@ -361,6 +373,10 @@ public:
 		actionBtn.w = src->w - 8;
 		actionBtn.h = 20;
 		Uint32 textx = actionBtn.x + (actionBtn.w / 2) - ((TTF12_WIDTH * actionText.length()) / 2) - 3;
+		if ( actionText.length() == 4 )
+		{
+			textx += 1;
+		}
 		if ( !temporaryCardHide && mouseInBounds(actionBtn.x, actionBtn.x + actionBtn.w, actionBtn.y, actionBtn.y + actionBtn.h) )
 		{
 			//drawDepressed(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
@@ -423,6 +439,7 @@ public:
 		communityLink1 = loadImage("images/system/CommunityLink1.png");
 	}
 	void drawNotifications();
+	void createCommunityNotification();
 
 	UIToastNotification* addNotification(ImageTypes image);
 	UIToastNotification* getNotificationSingle(UIToastNotification::CardType cardType)
