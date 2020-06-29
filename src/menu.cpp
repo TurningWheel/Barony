@@ -5531,7 +5531,7 @@ void handleMainMenu(bool mode)
 					{
 						if ( ticks % 10 == 0 )
 						{
-							const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum"));
+							const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(*static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum");
 							if ( memberNumChar && memberNumChar[0] )
 							{
 								std::string str = memberNumChar;
