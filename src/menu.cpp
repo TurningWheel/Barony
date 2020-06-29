@@ -5357,7 +5357,8 @@ void handleMainMenu(bool mode)
 							currentLobby = NULL;
 						}
 					}
-#elif defined USE_EOS
+#endif
+#if defined USE_EOS
 					if ( !directConnect )
 					{
 						if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
@@ -5712,7 +5713,8 @@ void handleMainMenu(bool mode)
 								currentLobby = NULL;
 							}
 						}
-#elif defined USE_EOS
+#endif
+#if defined USE_EOS
 						if ( !directConnect )
 						{
 							if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
