@@ -55,8 +55,10 @@ public:
 	std::vector<std::pair<Sint32, LobbyServiceType>> lobbyDisplayedSearchResults;
 	Uint32 numLobbyDisplaySearchResults = 0;
 	int selectedLobbyInList = 0;
+
 	bool crossplayEnabled = false;
 	bool settings_crossplayEnabled = false;
+
 	LobbyServiceType getHostingType()
 	{
 		return hostingType;
@@ -113,8 +115,3 @@ public:
 	};
 };
 extern LobbyHandler_t LobbyHandler;
-
-//if ( LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
-//{
-//}
-//else if ( LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
