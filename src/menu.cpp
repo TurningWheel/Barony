@@ -5681,31 +5681,55 @@ void handleMainMenu(bool mode)
 			}
 
 			// switch lobby type
-			if ( multiplayer == SERVER && !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+			if ( multiplayer == SERVER && !directConnect )
 			{
-#ifdef STEAMWORKS
-				for ( i = 0; i < 2; i++ )
+				if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 				{
-					if ( mouseInBounds(xres / 2 + 8 + 6, xres / 2 + 8 + 30, suby1 + 256 + i * 16, suby1 + 268 + i * 16) )
+#ifdef STEAMWORKS
+					for ( Uint32 i = 0; i < 2; i++ )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						switch ( i )
+						if ( mouseInBounds(xres / 2 + 8 + 6, xres / 2 + 8 + 30, suby1 + 256 + i * 16, suby1 + 268 + i * 16) )
 						{
-							default:
-								currentLobbyType = k_ELobbyTypePrivate;
-								break;
-							case 1:
-								currentLobbyType = k_ELobbyTypePublic;
-								break;
-							/*case 2:
-								currentLobbyType = k_ELobbyTypeFriendsOnly;
-								// deprecated by steam, doesn't return in getLobbyList.
-								break;*/
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+							switch ( i )
+							{
+								default:
+									currentLobbyType = k_ELobbyTypePrivate;
+									break;
+								case 1:
+									currentLobbyType = k_ELobbyTypePublic;
+									break;
+								/*case 2:
+									currentLobbyType = k_ELobbyTypeFriendsOnly;
+									// deprecated by steam, doesn't return in getLobbyList.
+									break;*/
+							}
+							SteamMatchmaking()->SetLobbyType(*static_cast<CSteamID*>(currentLobby), currentLobbyType);
 						}
-						SteamMatchmaking()->SetLobbyType(*static_cast<CSteamID*>(currentLobby), currentLobbyType);
 					}
-				}
 #endif
+				}
+				else if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+				{
+#ifdef USE_EOS
+					for ( Uint32 i = 0; i < 2; i++ )
+					{
+						if ( mouseInBounds(xres / 2 + 8 + 6, xres / 2 + 8 + 30, suby1 + 256 + i * 16, suby1 + 268 + i * 16) )
+						{
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+							switch ( i )
+							{
+								default:
+									EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE;
+									break;
+								case 1:
+									EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+									break;
+							}
+						}
+					}
+#endif
+				}
 			}
 		}
 
@@ -5809,12 +5833,12 @@ void handleMainMenu(bool mode)
 		}
 
 		// lobby type elements
-		if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
 #ifdef STEAMWORKS
 			if ( multiplayer == SERVER )
 			{
-				for ( i = 0; i < 2; i++ )
+				for ( Uint32 i = 0; i < 2; i++ )
 				{
 					if ( (i == 0 && currentLobbyType == k_ELobbyTypePrivate)
 						|| (i == 1 && currentLobbyType == k_ELobbyTypePublic) )
@@ -5825,6 +5849,23 @@ void handleMainMenu(bool mode)
 					{
 						ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[ ] %s", language[250 + i]);
 					}
+				}
+			}
+#endif
+		}
+		else if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#ifdef USE_EOS
+			for ( Uint32 i = 0; i < 2; i++ )
+			{
+				if ( (i == 0 && EOS.CurrentLobbyData.PermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE)
+					|| (i == 1 && EOS.CurrentLobbyData.PermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED) )
+				{
+					ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[o] %s", language[250 + i]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[ ] %s", language[250 + i]);
 				}
 			}
 #endif
@@ -5893,7 +5934,7 @@ void handleMainMenu(bool mode)
 			}
 			else if ( multiplayer == SERVER )
 			{
-				// update the backend's copy of the lobby name
+				// update the backend's copy of the lobby name and other properties
 				if ( ticks % TICKS_PER_SECOND == 0 && EOS.CurrentLobbyData.currentLobbyIsValid() )
 				{
 					if ( EOS.CurrentLobbyData.LobbyAttributes.lobbyName.compare(EOS.currentLobbyName) != 0
@@ -5902,6 +5943,10 @@ void handleMainMenu(bool mode)
 						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 					}
 					else if ( EOS.CurrentLobbyData.LobbyAttributes.serverFlags != svFlags )
+					{
+						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
+					}
+					else if ( EOS.CurrentLobbyData.PermissionLevel != EOS.currentPermissionLevel )
 					{
 						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 					}
@@ -6245,7 +6290,6 @@ void handleMainMenu(bool mode)
 				else if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
 				{
 #ifdef USE_EOS
-
 					if ( !EOS.P2PConnectionInfo.isPeerStillValid(i - 1) )
 					{
 						clientHasLostP2P = true;
@@ -6277,7 +6321,27 @@ void handleMainMenu(bool mode)
 		}
 		else if ( multiplayer == CLIENT )
 		{
-			if ( ticks - client_keepalive[0] > TICKS_PER_SECOND * 30 )
+			bool hostHasLostP2P = false;
+			if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+			{
+#ifdef STEAMWORKS
+				if ( !steamIDRemote[0] )
+				{
+					hostHasLostP2P = true;
+				}
+#endif
+			}
+			else if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+			{
+#ifdef USE_EOS
+				if ( !EOS.P2PConnectionInfo.isPeerStillValid(0) )
+				{
+					hostHasLostP2P = true;
+				}
+#endif
+			}
+
+			if ( hostHasLostP2P || (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30) )
 			{
 				buttonDisconnect(NULL);
 				openFailedConnectionWindow(3); // lost connection to server box
