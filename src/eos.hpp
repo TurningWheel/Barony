@@ -100,6 +100,8 @@ public:
 	bool bJoinLobbyWaitingForHostResponse = false;
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
+	EOS_ELobbyPermissionLevel currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+
 
 	std::unordered_set<EOS_ProductUserId> ProductIdsAwaitingAccountMappingCallback;
 	std::unordered_map<EOS_ProductUserId, EOS_EpicAccountId> AccountMappings;
@@ -209,9 +211,11 @@ public:
 	};
 	class LobbyData_t {
 	public:
-		int MaxPlayers = 0;
+		Uint32 MaxPlayers = 0;
 		std::string LobbyId = "";
 		std::string OwnerProductUserId = "";
+		EOS_ELobbyPermissionLevel PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+		Uint32 FreeSlots = 0;
 		bool bLobbyHasFullDetailsRead = false;
 		bool bLobbyHasBasicDetailsRead = false;
 		bool bAwaitingLeaveCallback = false;
@@ -238,6 +242,8 @@ public:
 		void ClearData()
 		{
 			MaxPlayers = 0;
+			FreeSlots = 0;
+			PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 			LobbyId = "";
 			OwnerProductUserId = "";
 			playersInLobby.clear();
@@ -497,6 +503,8 @@ public:
 
 		LobbyToSet->LobbyId = LobbyInfo->LobbyId;
 		LobbyToSet->MaxPlayers = LobbyInfo->MaxMembers;
+		LobbyToSet->FreeSlots = LobbyInfo->AvailableSlots;
+		LobbyToSet->PermissionLevel = LobbyInfo->PermissionLevel;
 		LobbyToSet->OwnerProductUserId = EOSFuncs::Helpers_t::productIdToString(lobbyOwner);
 		EOS_LobbyDetails_Info_Release(LobbyInfo);
 

@@ -1214,6 +1214,7 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame(HostUpdateLobbyTypes upda
 		LobbyAttributes.numServerMods = 0;
 		std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
 		LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();
+		this->PermissionLevel = EOS.currentPermissionLevel;
 	}
 	else if ( updateType == LOBBY_UPDATE_DURING_GAME )
 	{
@@ -1233,6 +1234,8 @@ void EOSFuncs::LobbyData_t::setBasicCurrentLobbyDataFromInitialJoin(LobbyData_t*
 	MaxPlayers = lobbyToJoin->MaxPlayers;
 	OwnerProductUserId = lobbyToJoin->OwnerProductUserId;
 	LobbyId = lobbyToJoin->LobbyId;
+	FreeSlots = lobbyToJoin->FreeSlots;
+	PermissionLevel = lobbyToJoin->PermissionLevel;
 	bLobbyHasBasicDetailsRead = true;
 
 	EOS.P2PConnectionInfo.serverProductId = EOSFuncs::Helpers_t::productIdFromString(OwnerProductUserId.c_str());
@@ -1284,6 +1287,11 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 
 	EOS.LobbyModificationHandle = LobbyModification;
 	setLobbyAttributesFromGame(updateType);
+
+	EOS_LobbyModification_SetPermissionLevelOptions permissionOptions = {};
+	permissionOptions.ApiVersion = EOS_LOBBYMODIFICATION_SETPERMISSIONLEVEL_API_LATEST;
+	permissionOptions.PermissionLevel = EOS.CurrentLobbyData.PermissionLevel;
+	EOS_LobbyModification_SetPermissionLevel(LobbyModification, &permissionOptions);
 
 	// build the list of attributes:
 	for ( int i = 0; i < EOSFuncs::LobbyData_t::kNumAttributes; ++i )
@@ -1533,6 +1541,7 @@ void EOSFuncs::createLobby()
 	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	CreateOptions.MaxLobbyMembers = 2;
 	CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+	currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 
 	EOS_Lobby_CreateLobby(LobbyHandle, &CreateOptions, nullptr, OnCreateLobbyFinished);
 	CurrentLobbyData.MaxPlayers = CreateOptions.MaxLobbyMembers;
