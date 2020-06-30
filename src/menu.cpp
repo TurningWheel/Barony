@@ -5922,7 +5922,7 @@ void handleMainMenu(bool mode)
 			if ( node )
 			{
 				string_t* str = (string_t*)node->element;
-				y -= str->lines * 12;
+				y -= str->lines * TTF12_HEIGHT;
 				if ( y < suby2 - 254 )   // there were some tall messages and we're out of space
 				{
 					break;
