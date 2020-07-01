@@ -328,6 +328,10 @@ public:
 		std::vector<std::pair<LobbyData_t::LobbyAttributes_t, int>> resultsSortedForDisplay;
 		int selectedLobby = 0;
 		void sortResults();
+		bool showLobbiesInProgress = false;
+		bool useLobbyCode = false;
+		bool lastResultWasFiltered = false;
+		char lobbyLastSearchByCode[32] = "";
 		LobbyData_t* getResultFromDisplayedIndex(int index)
 		{
 			return &results.at(resultsSortedForDisplay.at(index).second);

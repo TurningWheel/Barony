@@ -22,6 +22,7 @@ See LICENSE for details.
 #include "draw.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "interface/interface.hpp"
 
 LobbyHandler_t LobbyHandler;
 
@@ -394,11 +395,26 @@ void LobbyHandler_t::handleLobbyBrowser()
 	}
 
 	updateSearchResults();
+	drawLobbyFilters();
 
 	// epic/steam lobby browser
 	if ( subwindow && !strcmp(subtext, language[1334]) )
 	{
 		// draw backdrop for main list and slider
+
+#ifdef USE_EOS
+		if ( EOS.LobbySearchResults.lastResultWasFiltered )
+		{
+			if ( !strcmp(EOS.LobbySearchResults.lobbyLastSearchByCode, "") )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 8 + (strlen(subtext) + 1) * TTF12_WIDTH, suby1 + 8, "(Filtered)");
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 8 + (strlen(subtext) + 1) * TTF12_WIDTH, suby1 + 8, "(Filtered by lobby code: %s)", EOS.LobbySearchResults.lobbyLastSearchByCode);
+			}
+		}
+#endif
 
 		SDL_Rect listExtents;
 		listExtents.x = subx1 + 8;
@@ -629,21 +645,19 @@ void LobbyHandler_t::handleLobbyBrowser()
 		}
 
 		// draw server flags tooltip (if applicable)
-		if ( hoveringSelection >= 0 && numLobbyDisplaySearchResults > 0 && (hoveringSelection < numLobbyDisplaySearchResults) )
+		if ( hoveringSelection >= 0 && numLobbyDisplaySearchResults > 0 && (hoveringSelection < static_cast<int>(numLobbyDisplaySearchResults)) )
 		{
 			drawTooltip(&flagsBox);
 			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 4, flagsBoxText);
 		}
 
 #ifdef USE_EOS
-		if ( !SDL_IsTextInputActive() )
+		if ( !SDL_IsTextInputActive() && showLobbyFilters && (searchType == LOBBY_CROSSPLAY || searchType == LOBBY_COMBINED) )
 		{
 			inputstr = EOS.lobbySearchByCode;
 			SDL_StartTextInput();
 			inputlen = 4;
 		}
-		ttfPrintTextFormatted(ttf12, subx2 - strlen("Search by code:        ") * TTF12_WIDTH, suby2 - TTF12_HEIGHT * 2,
-			"Search by code: %s", EOS.lobbySearchByCode);
 #endif
 	}
 	else
@@ -654,6 +668,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 			SDL_StopTextInput();
 			inputstr = nullptr;
 		}
+		showLobbyFilters = false;
 #endif
 	}
 //
@@ -732,3 +747,101 @@ void LobbyHandler_t::steamValidateAndJoinLobby(CSteamID& id)
 	}
 }
 #endif
+
+void LobbyHandler_t::filterLobbyButton(button_t* my)
+{
+	LobbyHandler.showLobbyFilters = !LobbyHandler.showLobbyFilters;
+}
+
+void LobbyHandler_t::searchLobbyWithFilter(button_t* my)
+{
+#ifdef USE_EOS
+	EOS.LobbySearchResults.showLobbiesInProgress = LobbyHandler.filterShowInProgressLobbies;
+	if ( strcmp(EOS.lobbySearchByCode, "") != 0 )
+	{
+		EOS.LobbySearchResults.useLobbyCode = true;
+		strcpy(EOS.LobbySearchResults.lobbyLastSearchByCode, EOS.lobbySearchByCode);
+	}
+	else
+	{
+		strcpy(EOS.LobbySearchResults.lobbyLastSearchByCode, "");
+	}
+	openSteamLobbyWaitWindow(nullptr);
+	EOS.LobbySearchResults.useLobbyCode = false;
+	EOS.LobbySearchResults.showLobbiesInProgress = false;
+
+	EOS.LobbySearchResults.lastResultWasFiltered = true;
+	LobbyHandler.showLobbyFilters = false;
+#endif
+}
+
+void LobbyHandler_t::drawLobbyFilters()
+{
+	button_t* buttonFilterSearch = nullptr;
+	for ( node_t* node = button_l.first; node != NULL; node = node->next )
+	{
+		if ( node->element == NULL )
+		{
+			continue;
+		}
+		button_t* button = (button_t*)node->element;
+		if ( button && !strcmp(button->label, language[3953]) )
+		{
+			buttonFilterSearch = button;
+			break;
+		}
+	}
+
+	if ( !subwindow || !showLobbyFilters )
+	{
+		if ( buttonFilterSearch )
+		{
+			buttonFilterSearch->visible = 0;
+			buttonFilterSearch->focused = 0;
+		}
+		return;
+	}
+
+	SDL_Rect text;
+	text.x = subx2 + 4 + 8;
+	text.y = suby2 - (TTF12_HEIGHT + 2) * 8;
+
+	SDL_Rect pos;
+	pos.x = subx2 + 4;
+	pos.w = TTF12_WIDTH * 24;
+	pos.y = text.y - 8;
+	pos.h = suby2 - pos.y;
+	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
+
+	if ( buttonFilterSearch )
+	{
+		buttonFilterSearch->x = pos.x + 8;
+		buttonFilterSearch->y = suby2 - 28;
+		buttonFilterSearch->sizex = strlen(language[3953]) * 12 + 8;
+		buttonFilterSearch->sizey = 20;
+		buttonFilterSearch->visible = 1;
+		buttonFilterSearch->focused = 1;
+		strcpy(buttonFilterSearch->label, language[3953]);
+		buttonFilterSearch->action = &LobbyHandler.searchLobbyWithFilter;
+	}
+
+	ttfPrintTextFormatted(ttf12, text.x, text.y, "Search by lobby code:");
+	text.y += (TTF12_HEIGHT + 2) * 1;
+	drawDepressed(text.x, text.y, text.x + (TTF12_WIDTH * 6), text.y + TTF12_HEIGHT + 4);
+	ttfPrintTextFormatted(ttf12, text.x + 2, text.y + 4, "%s", EOS.lobbySearchByCode);
+	if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+	{
+		ttfPrintTextFormatted(ttf12, text.x + 4 + strlen(EOS.lobbySearchByCode) * TTF12_WIDTH, text.y + 4, "_");
+	}
+	text.y += (TTF12_HEIGHT + 2) * 2;
+	ttfPrintTextFormatted(ttf12, text.x, text.y, "Show in-progress\nlobbies: [%c]", filterShowInProgressLobbies ? 'x' : ' ');
+	if ( mousestatus[SDL_BUTTON_LEFT] )
+	{
+		if ( mouseInBounds(text.x + strlen("lobbies: ") * TTF12_WIDTH, text.x + strlen("lobbies: [x]") * TTF12_WIDTH,
+			text.y + TTF12_HEIGHT, text.y + TTF12_HEIGHT * 2) )
+		{
+			filterShowInProgressLobbies = !filterShowInProgressLobbies;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+		}
+	}
+}

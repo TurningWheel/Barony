@@ -14,6 +14,8 @@ See LICENSE for details.
 class LobbyHandler_t
 {
 	const int kNumSearchResults = 200;
+	bool showLobbyFilters = false;
+	bool filterShowInProgressLobbies = false;
 public:
 	LobbyHandler_t() :
 		lobbyDisplayedSearchResults(kNumSearchResults, std::make_pair(-1, LOBBY_DISABLE))
@@ -50,6 +52,9 @@ public:
 	void handleLobbyListRequests();
 	void handleLobbyBrowser();
 	void updateSearchResults();
+	static void filterLobbyButton(button_t* my);
+	static void searchLobbyWithFilter(button_t* my);
+	void drawLobbyFilters();
 	LobbyServiceType getDisplayedResultLobbyType(int selection);
 	Sint32 getDisplayedResultLobbyIndex(int selection);
 	std::vector<std::pair<Sint32, LobbyServiceType>> lobbyDisplayedSearchResults;

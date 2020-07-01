@@ -120,9 +120,11 @@ void buttonGamemodsSubscribeToHostsModFiles(button_t* my);
 void buttonGamemodsMountHostsModFiles(button_t* my);
 void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby);
 void* cpp_SteamMatchmaking_GetLobbyMember(void* steamIDLobby, int index);
+void openSteamLobbyWaitWindow(button_t* my);
 #elif defined USE_EOS
 void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
+void openSteamLobbyWaitWindow(button_t* my);
 #else
 void windowEnterSerialPrompt();
 void windowSerialResult(int success);

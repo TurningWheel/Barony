@@ -1687,6 +1687,8 @@ void EOSFuncs::leaveLobby()
 void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	LobbyParameters_t::LobbyJoinOptions joinOptions, EOS_LobbyId lobbyIdToSearch)
 {
+	LobbySearchResults.lastResultWasFiltered = false;
+
 	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
 	logInfo("searchLobbies: starting search");
 	EOS_Lobby_CreateLobbySearchOptions CreateSearchOptions = {};
@@ -1730,11 +1732,20 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
 	EOS_EResult resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 
-	if ( strcmp(lobbySearchByCode, "") )
+	if ( LobbySearchResults.useLobbyCode && strcmp(lobbySearchByCode, "") )
 	{
 		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
 		AttrData.Key = "JOINKEY";
 		AttrData.Value.AsUtf8 = lobbySearchByCode;
+		AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+	}
+
+	if ( !LobbySearchResults.showLobbiesInProgress )
+	{
+		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+		AttrData.Key = "CURRENTLEVEL";
+		AttrData.Value.AsUtf8 = "-1";
 		AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
 		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 	}

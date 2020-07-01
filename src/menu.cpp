@@ -1818,6 +1818,8 @@ void handleMainMenu(bool mode)
 		EOS.CrossplayAccountManager.handleLogin();
 #endif // USE_EOS
 
+		LobbyHandler.handleLobbyBrowser();
+
 		// process button actions
 		handleButtons();
 	}
@@ -3205,8 +3207,6 @@ void handleMainMenu(bool mode)
 			}
 		}
 	}
-
-	LobbyHandler.handleLobbyBrowser();
 
 	// serial window.
 #if (!defined STEAMWORKS && !defined USE_EOS)
@@ -11008,8 +11008,6 @@ void openSettingsWindow()
 	changeSettingsTab(settings_tab);
 }
 
-void openSteamLobbyWaitWindow(button_t* my);
-
 // "failed to connect" message
 void openFailedConnectionWindow(int mode)
 {
@@ -11232,13 +11230,21 @@ void openSteamLobbyBrowserWindow(button_t* my)
 	suby2 = yres / 2 + 192;
 	strcpy(subtext, language[1334]);
 
+	bool showCrossplayLobbyFilters = false;
+
 	// setup lobby browser
 #ifdef STEAMWORKS //TODO: Should this whole function be ifdeffed?
 	selectedSteamLobby = 0;
 #endif
 #if defined USE_EOS
 	EOS.LobbySearchResults.selectedLobby = 0;
-	strcpy(EOS.lobbySearchByCode, "");
+	showCrossplayLobbyFilters = true;
+#ifdef STEAMWORKS
+	if ( !LobbyHandler.crossplayEnabled )
+	{
+		showCrossplayLobbyFilters = false;
+	}
+#endif
 #endif
 	slidery = 0;
 	oslidery = 0;
@@ -11284,6 +11290,32 @@ void openSteamLobbyBrowserWindow(button_t* my)
 	button->visible = 1;
 	button->focused = 1;
 	button->joykey = joyimpulses[INJOY_MENU_REFRESH_LOBBY]; //"y" refreshes
+
+	if ( showCrossplayLobbyFilters )
+	{
+		// filter button
+		button = newButton();
+		strcpy(button->label, language[3950]);
+		button->sizex = strlen(language[3950]) * 12 + 8;
+		button->sizey = 20;
+		button->x = subx2 - 8 - button->sizex;
+		button->y = suby2 - 56;
+#if defined STEAMWORKS || defined USE_EOS
+		button->action = &LobbyHandler_t::filterLobbyButton;
+#endif
+		button->visible = 1;
+		button->focused = 1;
+
+		button = newButton();
+		button->x = 0;
+		button->y = 0;
+		button->sizex = 0;
+		button->sizey = 0;
+		button->visible = 0;
+		button->focused = 0;
+		strcpy(button->label, language[3953]);
+		button->action = &LobbyHandler.searchLobbyWithFilter;
+	}
 }
 
 // steam lobby browser join game
