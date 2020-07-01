@@ -673,7 +673,7 @@ SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList()
 {
 	SteamMatchmaking()->AddRequestLobbyListNearValueFilter("lobbyModifiedTime", SteamUtils()->GetServerRealTime());
 	SteamMatchmaking()->AddRequestLobbyListNumericalFilter("lobbyModifiedTime", 
-		SteamUtils()->GetServerRealTime() - 15, k_ELobbyComparisonEqualToOrGreaterThan);
+		SteamUtils()->GetServerRealTime() - 8, k_ELobbyComparisonEqualToOrGreaterThan);
 	SteamAPICall_t m_SteamCallResultLobbyMatchList = SteamMatchmaking()->RequestLobbyList();
 	steam_server_client_wrapper->m_SteamCallResultLobbyMatchList_Set(m_SteamCallResultLobbyMatchList);
 	return m_SteamCallResultLobbyMatchList;
@@ -1510,7 +1510,7 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods", svNumMods); //TODO: Bugger void pointer!
 
 		char modifiedTime[32];
-		snprintf(modifiedTime, 31, "%lld", SteamUtils()->GetServerRealTime());
+		snprintf(modifiedTime, 31, "%d", SteamUtils()->GetServerRealTime());
 		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime", modifiedTime); //TODO: Bugger void pointer!
 
 		if ( gamemods_numCurrentModsLoaded > 0 )
