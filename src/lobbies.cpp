@@ -549,7 +549,14 @@ void LobbyHandler_t::handleLobbyBrowser()
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
-				this->selectedLobbyInList = hoveringSelection;
+				if ( getDisplayedResultLobbyType(hoveringSelection) == LOBBY_DISABLE && hoveringSelection > 0 && numSearchResults >= 1 )
+				{
+					this->selectedLobbyInList = numSearchResults - 1;
+				}
+				else
+				{
+					this->selectedLobbyInList = hoveringSelection;
+				}
 			}
 		}
 
