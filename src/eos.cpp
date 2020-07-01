@@ -346,6 +346,10 @@ void EOS_CALL EOSFuncs::OnCreateLobbyFinished(const EOS_Lobby_CreateLobbyCallbac
 		EOS.CurrentLobbyData.LobbyAttributes.lobbyName = EOS.CurrentUserInfo.Name + "'s lobby";
 		strncpy(EOS.currentLobbyName, EOS.CurrentLobbyData.LobbyAttributes.lobbyName.c_str(), 31);
 
+		Uint32 keygen = rand() % (1679615 + 1); // limit of 'zzzz' as base-36 string
+		EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey = EOS.getLobbyCodeFromGameKey(keygen);
+		EOSFuncs::logInfo("OnCreateLobbyFinished: Generated game code %s", EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
+
 		EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 		EOS.CurrentLobbyData.SubscribeToLobbyUpdates();
 	}
@@ -805,6 +809,18 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 			case EOS_ELobbyMemberStatus::EOS_LMS_LEFT:
 				if ( EOS.P2PConnectionInfo.isPeerIndexed(data->TargetUserId) )
 				{
+					EOS_P2P_CloseConnectionOptions closeOptions = {};
+					closeOptions.ApiVersion = EOS_P2P_CLOSECONNECTIONS_API_LATEST;
+					closeOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+					closeOptions.RemoteUserId = data->TargetUserId;
+
+					EOS_P2P_SocketId SocketId = {};
+					SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
+					strncpy(SocketId.SocketName, "CHAT", 5);
+					closeOptions.SocketId = &SocketId;
+					EOS_EResult result = EOS_P2P_CloseConnection(EOS_Platform_GetP2PInterface(EOS.PlatformHandle), &closeOptions);
+					EOSFuncs::logInfo("OnMemberStatusReceived: closing P2P connections, result: %d", static_cast<int>(result));
+
 					EOS.P2PConnectionInfo.assignPeerIndex(data->TargetUserId, -1);
 				}
 
@@ -1215,6 +1231,7 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame(HostUpdateLobbyTypes upda
 		std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
 		LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();
 		this->PermissionLevel = EOS.currentPermissionLevel;
+
 	}
 	else if ( updateType == LOBBY_UPDATE_DURING_GAME )
 	{
@@ -1712,6 +1729,13 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
 	EOS_EResult resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 
+	AttrData.ApiVersion = EOS_LOBBY_ATTRIBUTEDATA_API_LATEST;
+	ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+	AttrData.Key = "JOINKEY";
+	AttrData.Value.AsUtf8 = lobbySearchByCode;
+	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+	resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+
 	if ( searchType == LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
 	{
 		// appends criteria to search for within the normal search function
@@ -2012,6 +2036,9 @@ std::pair<std::string, std::string> EOSFuncs::LobbyData_t::getAttributePair(Attr
 			attributePair.first = "CURRENTLEVEL";
 			attributePair.second = std::to_string(this->LobbyAttributes.gameCurrentLevel);
 			break;
+		case GAME_JOIN_KEY:
+			attributePair.first = "JOINKEY";
+			attributePair.second = this->LobbyAttributes.gameJoinKey;
 		default:
 			break;
 	}
@@ -2049,9 +2076,13 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesAfterReading(EOS_Lobby_AttributeDa
 	{
 		this->LobbyAttributes.gameCurrentLevel = std::stoi(data->Value.AsUtf8);
 	}
+	else if ( keyName.compare("JOINKEY") == 0 )
+	{
+		this->LobbyAttributes.gameJoinKey = data->Value.AsUtf8;
+	}
 }
 
-EOS_ProductUserId EOSFuncs::P2PConnectionInfo_t::getPeerIdFromIndex(int index)
+EOS_ProductUserId EOSFuncs::P2PConnectionInfo_t::getPeerIdFromIndex(int index) const
 {
 	if ( index == 0 && multiplayer == CLIENT )
 	{
@@ -2069,7 +2100,7 @@ EOS_ProductUserId EOSFuncs::P2PConnectionInfo_t::getPeerIdFromIndex(int index)
 	return nullptr;
 }
 
-int EOSFuncs::P2PConnectionInfo_t::getIndexFromPeerId(EOS_ProductUserId id)
+int EOSFuncs::P2PConnectionInfo_t::getIndexFromPeerId(EOS_ProductUserId id) const
 {
 	if ( !id )
 	{
@@ -2115,7 +2146,7 @@ bool EOSFuncs::P2PConnectionInfo_t::assignPeerIndex(EOS_ProductUserId id, int in
 	return false;
 }
 
-bool EOSFuncs::P2PConnectionInfo_t::isPeerStillValid(int index)
+bool EOSFuncs::P2PConnectionInfo_t::isPeerStillValid(int index) const
 {
 	if ( !getPeerIdFromIndex(index) )
 	{
@@ -2126,6 +2157,23 @@ bool EOSFuncs::P2PConnectionInfo_t::isPeerStillValid(int index)
 		return false;
 	}
 	return true;
+}
+
+void EOSFuncs::P2PConnectionInfo_t::resetPeersAndServerData()
+{
+	EOS_P2P_CloseConnectionsOptions closeOptions = {};
+	closeOptions.ApiVersion = EOS_P2P_CLOSECONNECTIONS_API_LATEST;
+	closeOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+	EOS_P2P_SocketId SocketId = {};
+	SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
+	strncpy(SocketId.SocketName, "CHAT", 5);
+	closeOptions.SocketId = &SocketId;
+
+	EOS_EResult result = EOS_P2P_CloseConnections(EOS_Platform_GetP2PInterface(EOS.PlatformHandle), &closeOptions);
+	EOSFuncs::logInfo("resetPeersAndServerData: closing P2P connections, result: %d", static_cast<int>(result));
+
+	peerProductIds.clear();
+	serverProductId = nullptr;
 }
 
 void EOSFuncs::LobbyData_t::SubscribeToLobbyUpdates()
@@ -2659,6 +2707,48 @@ void EOSFuncs::CrossplayAccounts_t::createDialogue()
 	button->focused = 1;
 	button->action = &buttonDenyCrossplaySetup;
 }
+
+std::string EOSFuncs::getLobbyCodeFromGameKey(Uint32 key)
+{
+	const char allChars[37] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	std::string code = "";
+	while ( key != 0 )
+	{
+		code += (allChars[key % 36]);
+		key /= 36;
+	}
+	while ( code.size() < 4 )
+	{
+		code += '0';
+	}
+	return code;
+}
+Uint32 EOSFuncs::getGameKeyFromLobbyCode(std::string& code)
+{
+	const char allChars[37] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	Uint32 result = 0;
+	Uint32 bit = 0;
+	for ( int i = 0; i < code.size(); ++i )
+	{
+		if ( code[i] >= 'A' && code[i] <= 'Z' )
+		{
+			code[i] = 'a' + (code[i] - 'A');
+		}
+
+		if ( code[i] >= '0' && code[i] <= '9' )
+		{
+			result += static_cast<Uint32>(code[i] - '0') * static_cast<Uint32>(pow(36, bit));
+			++bit;
+		}
+		else if ( code[i] >= 'a' && code[i] <= 'z' )
+		{
+			result += (static_cast<Uint32>(code[i] - 'a') + 10) * static_cast<Uint32>(pow(36, bit));
+			++bit;
+		}
+	}
+	return result;
+}
+
 #endif //USE_EOS
 
 

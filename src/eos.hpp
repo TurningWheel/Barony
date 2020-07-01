@@ -101,7 +101,7 @@ public:
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
 	EOS_ELobbyPermissionLevel currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
-
+	char lobbySearchByCode[32] = "";
 
 	std::unordered_set<EOS_ProductUserId> ProductIdsAwaitingAccountMappingCallback;
 	std::unordered_map<EOS_ProductUserId, EOS_EpicAccountId> AccountMappings;
@@ -270,10 +270,12 @@ public:
 				Uint32 numServerMods = 0;
 				long long lobbyCreationTime = 0;
 				int gameCurrentLevel = -1;
+				std::string gameJoinKey = "";
 				void ClearData()
 				{
 					lobbyName = "";
 					gameVersion = "";
+					gameJoinKey = "";
 					isLobbyLoadingSavedGame = 0;
 					serverFlags = 0;
 					numServerMods = 0;
@@ -311,9 +313,10 @@ public:
 			SERVER_FLAGS,
 			GAME_MODS,
 			CREATION_TIME,
-			GAME_CURRENT_LEVEL
+			GAME_CURRENT_LEVEL,
+			GAME_JOIN_KEY
 		};
-		const int kNumAttributes = 7;
+		const int kNumAttributes = 8;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;
@@ -373,8 +376,8 @@ public:
 	public:
 		std::vector<std::pair<EOS_ProductUserId, int>> peerProductIds;
 		EOS_ProductUserId serverProductId = nullptr;
-		EOS_ProductUserId getPeerIdFromIndex(int index);
-		int getIndexFromPeerId(EOS_ProductUserId id);
+		EOS_ProductUserId getPeerIdFromIndex(int index) const;
+		int getIndexFromPeerId(EOS_ProductUserId id) const;
 		void insertProductIdIntoPeers(EOS_ProductUserId newId)
 		{
 			if ( newId == nullptr )
@@ -397,12 +400,8 @@ public:
 		}
 		bool isPeerIndexed(EOS_ProductUserId id);
 		bool assignPeerIndex(EOS_ProductUserId id, int index);
-		bool isPeerStillValid(int index);
-		void resetPeersAndServerData()
-		{
-			peerProductIds.clear();
-			serverProductId = nullptr;
-		}
+		bool isPeerStillValid(int index) const;
+		void resetPeersAndServerData();
 	} P2PConnectionInfo;
 
 	enum UserInfoQueryType : int
@@ -422,6 +421,7 @@ public:
 
 	void shutdown()
 	{
+		UnsubscribeFromConnectionRequests();
 		if ( PlatformHandle )
 		{
 			EOS_Platform_Release(PlatformHandle);
@@ -476,6 +476,8 @@ public:
 	void leaveLobby();
 	void searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 		LobbyParameters_t::LobbyJoinOptions joinOptions, EOS_LobbyId lobbyIdToSearch);
+	std::string getLobbyCodeFromGameKey(Uint32 key);
+	Uint32 getGameKeyFromLobbyCode(std::string& code);
 
 	void setLobbyDetailsFromHandle(EOS_HLobbyDetails LobbyDetails, LobbyData_t* LobbyToSet)
 	{
@@ -519,7 +521,7 @@ public:
 		{
 			EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(PlatformHandle);
 
-			EOS_P2P_SocketId SocketId;
+			EOS_P2P_SocketId SocketId = {};
 			SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
 			strncpy(SocketId.SocketName, "CHAT", 5);
 

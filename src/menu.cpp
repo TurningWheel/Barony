@@ -5868,6 +5868,11 @@ void handleMainMenu(bool mode)
 					ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[ ] %s", language[250 + i]);
 				}
 			}
+
+			if ( EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.compare("") != 0 )
+			{
+				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * 3, "Lobby invite code: %s", EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
+			}
 #endif
 		}
 
@@ -5905,6 +5910,17 @@ void handleMainMenu(bool mode)
 							// update the backend's copy of the lobby name
 							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName);
 						}
+					}
+				}
+				const char* lobbyTimeStr = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime");
+				if ( lobbyTimeStr )
+				{
+					Uint32 lobbyTime = static_cast<Uint32>(atoi(lobbyTimeStr));
+					if ( SteamUtils()->GetServerRealTime() >= lobbyTime + 3 )
+					{
+						char modifiedTime[32];
+						snprintf(modifiedTime, 31, "%lld", SteamUtils()->GetServerRealTime());
+						SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime", modifiedTime);
 					}
 				}
 			}
@@ -11221,6 +11237,7 @@ void openSteamLobbyBrowserWindow(button_t* my)
 #endif
 #if defined USE_EOS
 	EOS.LobbySearchResults.selectedLobby = 0;
+	strcpy(EOS.lobbySearchByCode, "");
 #endif
 	slidery = 0;
 	oslidery = 0;
@@ -11564,6 +11581,7 @@ void buttonContinue(button_t* my)
 	{
 		inputstr = stats[0]->name;
 		SDL_StartTextInput();
+		inputlen = 22;
 	}
 	else if ( charcreation_step == 5 )
 	{

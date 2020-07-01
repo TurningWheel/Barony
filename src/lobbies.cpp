@@ -627,6 +627,27 @@ void LobbyHandler_t::handleLobbyBrowser()
 			drawTooltip(&flagsBox);
 			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 4, flagsBoxText);
 		}
+
+#ifdef USE_EOS
+		if ( !SDL_IsTextInputActive() )
+		{
+			inputstr = EOS.lobbySearchByCode;
+			SDL_StartTextInput();
+			inputlen = 4;
+		}
+		ttfPrintTextFormatted(ttf12, subx2 - strlen("Search by code:        ") * TTF12_WIDTH, suby2 - TTF12_HEIGHT * 2,
+			"Search by code: %s", EOS.lobbySearchByCode);
+#endif
+	}
+	else
+	{
+#ifdef USE_EOS
+		if ( inputstr == EOS.lobbySearchByCode )
+		{
+			SDL_StopTextInput();
+			inputstr = nullptr;
+		}
+#endif
 	}
 //
 //#ifdef STEAMWORKS
