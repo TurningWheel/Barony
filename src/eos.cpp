@@ -348,6 +348,9 @@ void EOS_CALL EOSFuncs::OnCreateLobbyFinished(const EOS_Lobby_CreateLobbyCallbac
 
 		Uint32 keygen = rand() % (1679615 + 1); // limit of 'zzzz' as base-36 string
 		EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey = EOS.getLobbyCodeFromGameKey(keygen);
+		std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
+		EOS.CurrentLobbyData.LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();
+
 		EOSFuncs::logInfo("OnCreateLobbyFinished: Generated game code %s", EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
 
 		EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
@@ -1228,8 +1231,6 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame(HostUpdateLobbyTypes upda
 		LobbyAttributes.isLobbyLoadingSavedGame = loadingsavegame;
 		LobbyAttributes.serverFlags = svFlags;
 		LobbyAttributes.numServerMods = 0;
-		std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
-		LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();
 		this->PermissionLevel = EOS.currentPermissionLevel;
 
 	}
@@ -1729,12 +1730,14 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
 	EOS_EResult resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 
-	AttrData.ApiVersion = EOS_LOBBY_ATTRIBUTEDATA_API_LATEST;
-	ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
-	AttrData.Key = "JOINKEY";
-	AttrData.Value.AsUtf8 = lobbySearchByCode;
-	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
-	resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+	if ( strcmp(lobbySearchByCode, "") )
+	{
+		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+		AttrData.Key = "JOINKEY";
+		AttrData.Value.AsUtf8 = lobbySearchByCode;
+		AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+	}
 
 	if ( searchType == LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
 	{
