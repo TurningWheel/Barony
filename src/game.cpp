@@ -2530,6 +2530,7 @@ void handleButtons(void)
 								if ( deleteallbuttons )
 								{
 									deleteallbuttons = false;
+									button->pressed = false;
 									break;
 								}
 							}
