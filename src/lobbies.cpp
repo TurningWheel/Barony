@@ -757,6 +757,14 @@ void LobbyHandler_t::searchLobbyWithFilter(button_t* my)
 {
 #ifdef USE_EOS
 	EOS.LobbySearchResults.showLobbiesInProgress = LobbyHandler.filterShowInProgressLobbies;
+	for ( int c = 0; c < 4 && EOS.lobbySearchByCode[c] != 0; ++c )
+	{
+		if ( EOS.lobbySearchByCode[c] >= 'A' && EOS.lobbySearchByCode[c] <= 'Z' )
+		{
+			EOS.lobbySearchByCode[c] = 'a' + (EOS.lobbySearchByCode[c] - 'A'); // to lowercase.
+		}
+	}
+
 	if ( strcmp(EOS.lobbySearchByCode, "") != 0 )
 	{
 		EOS.LobbySearchResults.useLobbyCode = true;
