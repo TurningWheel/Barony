@@ -14,7 +14,6 @@ See LICENSE for details.
 class LobbyHandler_t
 {
 	const int kNumSearchResults = 200;
-	bool showLobbyFilters = false;
 	bool filterShowInProgressLobbies = false;
 public:
 	LobbyHandler_t() :
@@ -60,6 +59,7 @@ public:
 	std::vector<std::pair<Sint32, LobbyServiceType>> lobbyDisplayedSearchResults;
 	Uint32 numLobbyDisplaySearchResults = 0;
 	int selectedLobbyInList = 0;
+	bool showLobbyFilters = false;
 
 	bool crossplayEnabled = false;
 	bool settings_crossplayEnabled = false;

@@ -23,6 +23,7 @@ See LICENSE for details.
 #include "player.hpp"
 #include "scores.hpp"
 #include "interface/interface.hpp"
+#include "colors.hpp"
 
 LobbyHandler_t LobbyHandler;
 
@@ -628,10 +629,42 @@ void LobbyHandler_t::handleLobbyBrowser()
 				else if ( lobbyType == LOBBY_CROSSPLAY )
 				{
 #ifdef USE_EOS
-					char buf[1024] = "";
-					strcpy(buf, EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.lobbyName.c_str());
-					ttfPrintTextFormatted(ttf12, x, y, buf); // name
-					ttfPrintTextFormatted(ttf12, subx2 - 72, y, "%d/%d",
+					// set the lobby data
+					const Uint32 lobbyNameSize = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.lobbyName.size();
+					const Uint32 maxCharacters = 54;
+					std::string lobbyDetailText = " ";
+					lobbyDetailText += "(";
+					lobbyDetailText += EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.gameVersion;
+					lobbyDetailText += ") ";
+#ifdef STEAMWORKS
+					lobbyDetailText += "[CROSSPLAY]";
+#endif
+					/*if ( numMods > 0 )
+					{
+						lobbyDetailText += "[MODDED]";
+					}*/
+					std::string displayedLobbyName = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.lobbyName;
+					if ( displayedLobbyName.size() > (maxCharacters - lobbyDetailText.size()) )
+					{
+						// no room, need to truncate lobbyName
+						displayedLobbyName = displayedLobbyName.substr(0, (maxCharacters - lobbyDetailText.size()) - 2);
+						displayedLobbyName += "..";
+					}
+
+					Uint32 color = uint32ColorWhite(*mainsurface);
+					char buf[maxCharacters] = "";
+					if ( EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.gameCurrentLevel >= 0 )
+					{
+						color = uint32ColorYellow(*mainsurface);
+						// hide lobby name for in progress.
+						snprintf(buf, maxCharacters - 1, "%s%s", "In-progress lobby", lobbyDetailText.c_str());
+					}
+					else
+					{
+						snprintf(buf, maxCharacters - 1, "%s%s", displayedLobbyName.c_str(), lobbyDetailText.c_str());
+					}
+					ttfPrintTextFormattedColor(ttf12, x, y, color, buf); // name
+					ttfPrintTextFormattedColor(ttf12, subx2 - 72, y, color, "%d/%d",
 						EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->playersInLobby.size(),
 						EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->MaxPlayers); // player count
 #endif

@@ -32,7 +32,7 @@
 
 int numSteamLobbies = 0;
 int selectedSteamLobby = 0;
-char lobbyText[MAX_STEAM_LOBBIES][48];
+char lobbyText[MAX_STEAM_LOBBIES][64];
 void* lobbyIDs[MAX_STEAM_LOBBIES] = { NULL };
 int lobbyPlayers[MAX_STEAM_LOBBIES] = { 0 };
 
@@ -1363,17 +1363,28 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 			versionText = "Unknown version";
 		}
 
+		const Uint32 maxCharacters = 54;
 		if ( lobbyName && lobbyName[0] && numPlayers )
 		{
 			// set the lobby data
+			const Uint32 lobbyNameSize = strlen(lobbyName);
+			std::string lobbyDetailText = " ";
+			lobbyDetailText += "(";
+			lobbyDetailText += versionText;
+			lobbyDetailText += ") ";
 			if ( numMods > 0 )
 			{
-				snprintf(lobbyText[iLobby], 47, "%s (%s) [MODDED]", lobbyName, versionText.c_str()); //TODO: shorten?
+				lobbyDetailText += "[MODDED]";
 			}
-			else
+
+			std::string displayedLobbyName = lobbyName;
+			if ( displayedLobbyName.size() > (maxCharacters - lobbyDetailText.size()) )
 			{
-				snprintf( lobbyText[iLobby], 47, "%s (%s)", lobbyName, versionText.c_str()); //TODO: Perhaps a better method would be to print the name and the version as two separate strings ( because some steam names are ridiculously long).
+				// no room, need to truncate lobbyName
+				displayedLobbyName = displayedLobbyName.substr(0, (maxCharacters - lobbyDetailText.size()) - 2);
+				displayedLobbyName += "..";
 			}
+			snprintf( lobbyText[iLobby], maxCharacters - 1, "%s%s", displayedLobbyName.c_str(), lobbyDetailText.c_str()); //TODO: Perhaps a better method would be to print the name and the version as two separate strings ( because some steam names are ridiculously long).
 			lobbyPlayers[iLobby] = numPlayers;
 		}
 		else
@@ -1382,7 +1393,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 			SteamMatchmaking()->RequestLobbyData(*static_cast<CSteamID*>(steamIDLobby));
 
 			// results will be returned via LobbyDataUpdate_t callback
-			snprintf( lobbyText[iLobby], 47, "Lobby %d", static_cast<CSteamID*>(steamIDLobby)->GetAccountID() ); //TODO: MORE VOID POINTER BUGGERY.
+			snprintf( lobbyText[iLobby], maxCharacters - 1, "Lobby %d", static_cast<CSteamID*>(steamIDLobby)->GetAccountID() ); //TODO: MORE VOID POINTER BUGGERY.
 			lobbyPlayers[iLobby] = 0;
 		}
 	}
