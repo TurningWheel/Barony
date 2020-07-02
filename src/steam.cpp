@@ -30,7 +30,7 @@
 
 #ifdef STEAMWORKS
 
-int numSteamLobbies = 0;
+Uint32 numSteamLobbies = 0;
 int selectedSteamLobby = 0;
 char lobbyText[MAX_STEAM_LOBBIES][64];
 void* lobbyIDs[MAX_STEAM_LOBBIES] = { NULL };
@@ -443,6 +443,7 @@ void SteamServerClientWrapper::OnLobbyMemberUpdate(LobbyChatUpdate_t* pCallback)
 							if ( static_cast<CSteamID*>(steamIDRemote[i])->ConvertToUint64() == pCallback->m_ulSteamIDUserChanged )
 							{
 								printlog("[STEAM Lobbies]: Info: OnLobbyMemberUpdate Player has left, freeing player index %d", i);
+								SteamNetworking()->CloseP2PSessionWithUser(*static_cast<CSteamID*>(steamIDRemote[i]));
 								cpp_Free_CSteamID(steamIDRemote[i]);
 								steamIDRemote[i] = nullptr;
 							}
@@ -1298,6 +1299,7 @@ void steam_OnP2PSessionRequest( void* p_Callback )
 #ifdef STEAMDEBUG
 	printlog( "OnP2PSessionRequest\n" );
 #endif
+	printlog("[STEAM P2P]: Received P2P session request");
 	SteamNetworking()->AcceptP2PSessionWithUser(*static_cast<CSteamID* >(cpp_P2PSessionRequest_t_m_steamIDRemote(p_Callback)));
 }
 
@@ -1318,14 +1320,12 @@ void* cpp_SteamMatchmaking_GetLobbyByIndex(int iLobby)
 
 void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 {
-	Uint32 iLobby;
-
 	if ( !requestingLobbies )
 	{
 		return;
 	}
 
-	for ( iLobby = 0; iLobby < MAX_STEAM_LOBBIES; iLobby++ )
+	for ( Uint32 iLobby = 0; iLobby < MAX_STEAM_LOBBIES; iLobby++ )
 	{
 		if ( lobbyIDs[iLobby] )
 		{
@@ -1343,7 +1343,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 
 	// lobbies are returned in order of closeness to the user, so add them to the list in that order
 	numSteamLobbies = std::min<uint32>(static_cast<LobbyMatchList_t*>(pCallback)->m_nLobbiesMatching, MAX_STEAM_LOBBIES);
-	for ( iLobby = 0; iLobby < numSteamLobbies; iLobby++ )
+	for ( Uint32 iLobby = 0; iLobby < numSteamLobbies; iLobby++ )
 	{
 		void* steamIDLobby = cpp_SteamMatchmaking_GetLobbyByIndex( iLobby ); //TODO: Bugger this void pointer!
 
