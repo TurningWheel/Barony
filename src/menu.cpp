@@ -11437,6 +11437,7 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my)
 void buttonSteamLobbyBrowserRefresh(button_t* my)
 {
 #if defined STEAMWORKS || defined USE_EOS
+	LobbyHandler.showLobbyFilters = false;
 	openSteamLobbyWaitWindow(my);
 #endif
 }
