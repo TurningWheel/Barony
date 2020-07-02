@@ -1552,22 +1552,37 @@ public:
 		{
 			if ( curve.mapName.compare(currentMap) == 0 )
 			{
+				std::vector<std::string> variantResults;
+				std::vector<int> variantChances;
 				for ( MonsterCurveEntry& monster : curve.monsterCurve )
 				{
-					if ( monster.monsterType == monsterType && monster.variants.size() > 0 )
+					if ( currentlevel >= monster.levelmin && currentlevel <= monster.levelmax )
 					{
-						std::vector<int> variantChances(monster.variants.size(), 0);
-						int index = 0;
-						for ( auto& pair : monster.variants )
+						if ( monster.monsterType == monsterType && monster.variants.size() > 0 )
 						{
-							variantChances.at(index) = pair.second;
-							++index;
-						}
+							for ( auto& pair : monster.variants )
+							{
+								auto find = std::find(variantResults.begin(), variantResults.end(), pair.first);
+								if ( find == variantResults.end() )
+								{
+									variantResults.push_back(pair.first);
+									variantChances.push_back(pair.second);
+								}
+								else
+								{
+									size_t dist = static_cast<size_t>(std::distance(variantResults.begin(), find));
+									variantChances.at(dist) += pair.second;
+								}
+							}
 
-						std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
-						int result = variantWeightedDistribution(curveSeed);
-						return monster.variants.at(result).first;
+						}
 					}
+				}
+				if ( !variantResults.empty() )
+				{
+					std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
+					int result = variantWeightedDistribution(curveSeed);
+					return variantResults[result];
 				}
 			}
 		}
@@ -1599,6 +1614,50 @@ public:
 			}
 		}
 		return "default";
+	}
+
+	void createMonsterFromFile(Entity* entity, Stat* myStats, const std::string& filename, Monster& outMonsterType)
+	{
+		MonsterStatCustomManager::StatEntry* statEntry = monsterStatCustomManager.readFromFile(filename.c_str());
+		if ( statEntry )
+		{
+			statEntry->setStatsAndEquipmentToMonster(myStats);
+			outMonsterType = myStats->type;
+			while ( statEntry->numFollowers > 0 )
+			{
+				std::string followerName = statEntry->getFollowerVariant();
+				if ( followerName.compare("") && followerName.compare("none") )
+				{
+					MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(followerName.c_str());
+					if ( followerEntry )
+					{
+						Entity* summonedFollower = summonMonster(static_cast<Monster>(followerEntry->type), entity->x, entity->y);
+						if ( summonedFollower )
+						{
+							if ( summonedFollower->getStats() )
+							{
+								followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
+								summonedFollower->getStats()->leader_uid = entity->getUID();
+							}
+						}
+						delete followerEntry;
+					}
+					else
+					{
+						Entity* summonedFollower = summonMonster(myStats->type, entity->x, entity->y);
+						if ( summonedFollower )
+						{
+							if ( summonedFollower->getStats() )
+							{
+								summonedFollower->getStats()->leader_uid = entity->getUID();
+							}
+						}
+					}
+				}
+				--statEntry->numFollowers;
+			}
+			delete statEntry;
+		}
 	}
 
 	void writeSampleToDocument()

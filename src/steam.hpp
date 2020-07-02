@@ -48,6 +48,9 @@ extern char currentLobbyName[32];
 extern ELobbyType currentLobbyType;
 extern bool connectingToLobby, connectingToLobbyWindow;
 extern bool stillConnectingToLobby;
+extern bool joinLobbyWaitingForHostResponse;
+extern bool denyLobbyJoinEvent;
+extern int connectingToLobbyStatus;
 #endif
 
 

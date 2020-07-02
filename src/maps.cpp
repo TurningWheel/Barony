@@ -3400,7 +3400,12 @@ void assignActions(map_t* map)
 						setRandomMonsterStats(myStats);
 					}
 
-					if ( customMonsterCurveExists )
+					std::string checkName = myStats->name;
+					if ( checkName.find(".json") != std::string::npos )
+					{
+						monsterCurveCustomManager.createMonsterFromFile(entity, myStats, checkName, monsterType);
+					}
+					else if ( customMonsterCurveExists )
 					{
 						std::string variantName = "default";
 						if ( monsterIsFixedSprite )
@@ -3418,46 +3423,7 @@ void assignActions(map_t* map)
 						if ( variantName.compare("default") != 0 )
 						{
 							// find a custom file name.
-							MonsterStatCustomManager::StatEntry* statEntry = monsterStatCustomManager.readFromFile(variantName.c_str());
-							if ( statEntry )
-							{
-								statEntry->setStatsAndEquipmentToMonster(myStats);
-								monsterType = myStats->type;
-								while ( statEntry->numFollowers > 0 )
-								{
-									std::string followerName = statEntry->getFollowerVariant();
-									if ( followerName.compare("") && followerName.compare("none") )
-									{
-										MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(followerName.c_str());
-										if ( followerEntry )
-										{
-											Entity* summonedFollower = summonMonster(static_cast<Monster>(followerEntry->type), entity->x, entity->y);
-											if ( summonedFollower )
-											{
-												if ( summonedFollower->getStats() )
-												{
-													followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
-													summonedFollower->getStats()->leader_uid = entity->getUID();
-												}
-											}
-											delete followerEntry;
-										}
-										else
-										{
-											Entity* summonedFollower = summonMonster(myStats->type, entity->x, entity->y);
-											if ( summonedFollower )
-											{
-												if ( summonedFollower->getStats() )
-												{
-													summonedFollower->getStats()->leader_uid = entity->getUID();
-												}
-											}
-										}
-									}
-									--statEntry->numFollowers;
-								}
-								delete statEntry;
-							}
+							monsterCurveCustomManager.createMonsterFromFile(entity, myStats, variantName, monsterType);
 						}
 					}
 				}

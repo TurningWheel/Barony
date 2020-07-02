@@ -37,6 +37,7 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include "mod_tools.hpp"
+#include "lobbies.hpp"
 #include <limits>
 
 #ifdef LINUX
@@ -616,6 +617,17 @@ void gameLogic(void)
 					assailantTimer[c] = 0;
 				}
 			}
+
+			if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+			{
+#ifdef USE_EOS
+				if ( multiplayer == SERVER && ticks % TICKS_PER_SECOND == 0 )
+				{
+					EOS.CurrentLobbyData.updateLobbyDuringGameLoop();
+				}
+#endif // USE_EOS
+			}
+
 
 			// animate tiles
 			if ( !gamePaused )
@@ -2518,6 +2530,7 @@ void handleButtons(void)
 								if ( deleteallbuttons )
 								{
 									deleteallbuttons = false;
+									button->pressed = false;
 									break;
 								}
 							}

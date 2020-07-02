@@ -86,10 +86,7 @@ int initGame()
 	{
 		return 14;
 	}
-	if ( EOS.initAuth() == false )
-	{
-		return 14;
-	}
+	EOS.initAuth();
 #endif // USE_EOS
 
 	// print a loading message
@@ -1012,12 +1009,31 @@ void deinitGame()
 			lobbyIDs[c] = NULL;
 		}
 	}
-#elif defined USE_EOS
+#endif
+#if defined USE_EOS
 	if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
 	{
 		EOS.leaveLobby();
-	}
 
+		Uint32 shutdownTicks = SDL_GetTicks();
+		while ( EOS.CurrentLobbyData.bAwaitingLeaveCallback )
+		{
+#ifdef APPLE
+			SDL_Event event;
+			while ( SDL_PollEvent(&event) != 0 )
+			{
+				//Makes Mac work because Apple had to do it different.
+			}
+#endif
+			EOS_Platform_Tick(EOS.PlatformHandle);
+			SDL_Delay(50);
+			if ( SDL_GetTicks() - shutdownTicks >= 3000 )
+			{
+				break;
+			}
+		}
+	}
+	EOS.AccountManager.deinit();
 	EOS.shutdown();
 #endif
 

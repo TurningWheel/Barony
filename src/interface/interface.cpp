@@ -29,6 +29,7 @@
 #include "../draw.hpp"
 #include "../scores.hpp"
 #include "../scrolls.hpp"
+#include "../lobbies.hpp"
 
 Uint32 svFlags = 30;
 SDL_Surface* backdrop_minotaur_bmp = nullptr;
@@ -1325,6 +1326,13 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/disablenetcodefpslimit\n");
 	}
+#ifdef USE_EOS
+	if ( LobbyHandler.crossplayEnabled )
+	{
+		fprintf(fp, "/crossplay\n");
+	}
+#endif // USE_EOS
+
 	if ( !gamemods_mountedFilepaths.empty() )
 	{
 		std::vector<std::pair<std::string, std::string>>::iterator it;
