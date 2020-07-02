@@ -5046,8 +5046,8 @@ void handleMainMenu(bool mode)
 									break;
 								}
 							}
-						}
 #endif // USE_EOS
+						}
 					}
 
 					// close current window

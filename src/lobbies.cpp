@@ -24,6 +24,7 @@ See LICENSE for details.
 #include "scores.hpp"
 #include "interface/interface.hpp"
 #include "colors.hpp"
+#include "net.hpp"
 
 LobbyHandler_t LobbyHandler;
 
@@ -219,8 +220,8 @@ void LobbyHandler_t::handleLobbyListRequests()
 			// otherwise, the callback would've flipped off the connectingToLobbyWindow and opened an error window
 			buttonJoinLobby(NULL);
 		}
-	}
 #endif
+	}
 
 
 	// lobby list request succeeded?
@@ -754,6 +755,7 @@ void LobbyHandler_t::searchLobbyWithFilter(button_t* my)
 
 void LobbyHandler_t::drawLobbyFilters()
 {
+#ifdef USE_EOS
 	button_t* buttonFilterSearch = nullptr;
 	for ( node_t* node = button_l.first; node != NULL; node = node->next )
 	{
@@ -825,4 +827,5 @@ void LobbyHandler_t::drawLobbyFilters()
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 		}
 	}
+#endif
 }
