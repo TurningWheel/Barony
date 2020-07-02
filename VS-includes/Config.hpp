@@ -21,6 +21,6 @@
 
 #ifdef USE_EOS
 #ifdef STEAMWORKS
-#undef STEAMWORKS
+//#undef STEAMWORKS
 #endif // STEAMWORKS
 #endif
