@@ -808,14 +808,14 @@ void LobbyHandler_t::drawLobbyFilters()
 
 	SDL_Rect pos;
 	pos.x = subx2 + 4;
-	pos.w = TTF12_WIDTH * 24;
+	pos.w = TTF12_WIDTH * 24; 
 	pos.y = text.y - 8;
 	pos.h = suby2 - pos.y;
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
 
 	if ( buttonFilterSearch )
 	{
-		buttonFilterSearch->x = pos.x + 8;
+		buttonFilterSearch->x = pos.x + 8 + 4;
 		buttonFilterSearch->y = suby2 - 28;
 		buttonFilterSearch->sizex = strlen(language[3953]) * 12 + 8;
 		buttonFilterSearch->sizey = 20;
@@ -825,7 +825,8 @@ void LobbyHandler_t::drawLobbyFilters()
 		buttonFilterSearch->action = &LobbyHandler.searchLobbyWithFilter;
 	}
 
-	ttfPrintTextFormatted(ttf12, text.x, text.y, "Search by lobby code:");
+	// lobby code search
+	ttfPrintTextFormatted(ttf12, text.x, text.y, language[3954]);
 	text.y += (TTF12_HEIGHT + 2) * 1;
 	drawDepressed(text.x, text.y, text.x + (TTF12_WIDTH * 6), text.y + TTF12_HEIGHT + 4);
 	ttfPrintTextFormatted(ttf12, text.x + 2, text.y + 4, "%s", EOS.lobbySearchByCode);
@@ -833,11 +834,14 @@ void LobbyHandler_t::drawLobbyFilters()
 	{
 		ttfPrintTextFormatted(ttf12, text.x + 4 + strlen(EOS.lobbySearchByCode) * TTF12_WIDTH, text.y + 4, "_");
 	}
+
 	text.y += (TTF12_HEIGHT + 2) * 2;
-	ttfPrintTextFormatted(ttf12, text.x, text.y, "Show in-progress\nlobbies: [%c]", filterShowInProgressLobbies ? 'x' : ' ');
+
+	// show in-progress lobbies
+	ttfPrintTextFormatted(ttf12, text.x, text.y, language[3955], filterShowInProgressLobbies ? 'x' : ' ');
 	if ( mousestatus[SDL_BUTTON_LEFT] )
 	{
-		if ( mouseInBounds(text.x + strlen("lobbies: ") * TTF12_WIDTH, text.x + strlen("lobbies: [x]") * TTF12_WIDTH,
+		if ( mouseInBounds(text.x + strlen("crossplay lobbies: ") * TTF12_WIDTH, text.x + strlen("crossplay lobbies: [x]") * TTF12_WIDTH,
 			text.y + TTF12_HEIGHT, text.y + TTF12_HEIGHT * 2) )
 		{
 			filterShowInProgressLobbies = !filterShowInProgressLobbies;
