@@ -1204,13 +1204,14 @@ void EOSFuncs::SendMessageP2P(EOS_ProductUserId RemoteId, const void* data, int 
 	SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
 	strncpy(SocketId.SocketName, "CHAT", 5);
 
-	EOS_P2P_SendPacketOptions SendPacketOptions;
+	EOS_P2P_SendPacketOptions SendPacketOptions = {};
 	SendPacketOptions.ApiVersion = EOS_P2P_SENDPACKET_API_LATEST;
 	SendPacketOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	SendPacketOptions.RemoteUserId = RemoteId;
 	SendPacketOptions.SocketId = &SocketId;
 	SendPacketOptions.bAllowDelayedDelivery = EOS_TRUE;
 	SendPacketOptions.Channel = 0;
+	SendPacketOptions.Reliability = EOS_EPacketReliability::EOS_PR_UnreliableUnordered;
 
 	SendPacketOptions.DataLengthBytes = len;
 	SendPacketOptions.Data = (char*)data;
@@ -1231,8 +1232,7 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame(HostUpdateLobbyTypes upda
 		LobbyAttributes.isLobbyLoadingSavedGame = loadingsavegame;
 		LobbyAttributes.serverFlags = svFlags;
 		LobbyAttributes.numServerMods = 0;
-		this->PermissionLevel = EOS.currentPermissionLevel;
-
+		LobbyAttributes.PermissionLevel = static_cast<Uint32>(EOS.currentPermissionLevel);
 	}
 	else if ( updateType == LOBBY_UPDATE_DURING_GAME )
 	{
@@ -1253,7 +1253,6 @@ void EOSFuncs::LobbyData_t::setBasicCurrentLobbyDataFromInitialJoin(LobbyData_t*
 	OwnerProductUserId = lobbyToJoin->OwnerProductUserId;
 	LobbyId = lobbyToJoin->LobbyId;
 	FreeSlots = lobbyToJoin->FreeSlots;
-	PermissionLevel = lobbyToJoin->PermissionLevel;
 	bLobbyHasBasicDetailsRead = true;
 
 	EOS.P2PConnectionInfo.serverProductId = EOSFuncs::Helpers_t::productIdFromString(OwnerProductUserId.c_str());
@@ -1306,10 +1305,10 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 	EOS.LobbyModificationHandle = LobbyModification;
 	setLobbyAttributesFromGame(updateType);
 
-	EOS_LobbyModification_SetPermissionLevelOptions permissionOptions = {};
+	/*EOS_LobbyModification_SetPermissionLevelOptions permissionOptions = {};
 	permissionOptions.ApiVersion = EOS_LOBBYMODIFICATION_SETPERMISSIONLEVEL_API_LATEST;
 	permissionOptions.PermissionLevel = EOS.CurrentLobbyData.PermissionLevel;
-	EOS_LobbyModification_SetPermissionLevel(LobbyModification, &permissionOptions);
+	EOS_LobbyModification_SetPermissionLevel(LobbyModification, &permissionOptions);*/
 
 	// build the list of attributes:
 	for ( int i = 0; i < EOSFuncs::LobbyData_t::kNumAttributes; ++i )
@@ -1740,6 +1739,14 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 		AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
 		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 	}
+	else
+	{
+		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+		AttrData.Key = "PERMISSIONLEVEL";
+		AttrData.Value.AsUtf8 = "0";
+		AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+	}
 
 	if ( !LobbySearchResults.showLobbiesInProgress )
 	{
@@ -2053,6 +2060,13 @@ std::pair<std::string, std::string> EOSFuncs::LobbyData_t::getAttributePair(Attr
 		case GAME_JOIN_KEY:
 			attributePair.first = "JOINKEY";
 			attributePair.second = this->LobbyAttributes.gameJoinKey;
+			break;
+		case LOBBY_PERMISSION_LEVEL:
+			attributePair.first = "PERMISSIONLEVEL";
+			char permissionLevel[32];
+			snprintf(permissionLevel, 31, "%d", this->LobbyAttributes.PermissionLevel);
+			attributePair.second = permissionLevel;
+			break;
 		default:
 			break;
 	}
@@ -2093,6 +2107,10 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesAfterReading(EOS_Lobby_AttributeDa
 	else if ( keyName.compare("JOINKEY") == 0 )
 	{
 		this->LobbyAttributes.gameJoinKey = data->Value.AsUtf8;
+	}
+	else if ( keyName.compare("PERMISSIONLEVEL") == 0 )
+	{
+		this->LobbyAttributes.PermissionLevel = std::stoi(data->Value.AsUtf8);
 	}
 }
 

@@ -5858,8 +5858,8 @@ void handleMainMenu(bool mode)
 #ifdef USE_EOS
 			for ( Uint32 i = 0; i < 2; i++ )
 			{
-				if ( (i == 0 && EOS.CurrentLobbyData.PermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE)
-					|| (i == 1 && EOS.CurrentLobbyData.PermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED) )
+				if ( (i == 0 && EOS.CurrentLobbyData.LobbyAttributes.PermissionLevel == static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE))
+					|| (i == 1 && EOS.CurrentLobbyData.LobbyAttributes.PermissionLevel == static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED)) )
 				{
 					ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[o] %s", language[250 + i]);
 				}
@@ -5963,7 +5963,7 @@ void handleMainMenu(bool mode)
 					{
 						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 					}
-					else if ( EOS.CurrentLobbyData.PermissionLevel != EOS.currentPermissionLevel )
+					else if ( EOS.CurrentLobbyData.LobbyAttributes.PermissionLevel != static_cast<Uint32>(EOS.currentPermissionLevel) )
 					{
 						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 					}

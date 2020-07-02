@@ -214,7 +214,6 @@ public:
 		Uint32 MaxPlayers = 0;
 		std::string LobbyId = "";
 		std::string OwnerProductUserId = "";
-		EOS_ELobbyPermissionLevel PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 		Uint32 FreeSlots = 0;
 		bool bLobbyHasFullDetailsRead = false;
 		bool bLobbyHasBasicDetailsRead = false;
@@ -243,7 +242,6 @@ public:
 		{
 			MaxPlayers = 0;
 			FreeSlots = 0;
-			PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 			LobbyId = "";
 			OwnerProductUserId = "";
 			playersInLobby.clear();
@@ -271,6 +269,7 @@ public:
 				long long lobbyCreationTime = 0;
 				int gameCurrentLevel = -1;
 				std::string gameJoinKey = "";
+				Uint32 PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
 				void ClearData()
 				{
 					lobbyName = "";
@@ -281,6 +280,7 @@ public:
 					numServerMods = 0;
 					lobbyCreationTime = 0;
 					gameCurrentLevel = -1;
+					PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
 				}
 		} LobbyAttributes;
 		enum HostUpdateLobbyTypes : int
@@ -314,9 +314,10 @@ public:
 			GAME_MODS,
 			CREATION_TIME,
 			GAME_CURRENT_LEVEL,
-			GAME_JOIN_KEY
+			GAME_JOIN_KEY,
+			LOBBY_PERMISSION_LEVEL
 		};
-		const int kNumAttributes = 8;
+		const int kNumAttributes = 9;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;
@@ -510,7 +511,6 @@ public:
 		LobbyToSet->LobbyId = LobbyInfo->LobbyId;
 		LobbyToSet->MaxPlayers = LobbyInfo->MaxMembers;
 		LobbyToSet->FreeSlots = LobbyInfo->AvailableSlots;
-		LobbyToSet->PermissionLevel = LobbyInfo->PermissionLevel;
 		LobbyToSet->OwnerProductUserId = EOSFuncs::Helpers_t::productIdToString(lobbyOwner);
 		EOS_LobbyDetails_Info_Release(LobbyInfo);
 
