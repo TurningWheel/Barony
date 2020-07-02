@@ -5912,16 +5912,19 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-				const char* lobbyTimeStr = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime");
-				if ( lobbyTimeStr )
+				if ( multiplayer == SERVER )
 				{
-					Uint32 lobbyTime = static_cast<Uint32>(atoi(lobbyTimeStr));
-					if ( SteamUtils()->GetServerRealTime() >= lobbyTime + 3 )
+					const char* lobbyTimeStr = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime");
+					if ( lobbyTimeStr )
 					{
-						//printlog("Updated server time");
-						char modifiedTime[32];
-						snprintf(modifiedTime, 31, "%d", SteamUtils()->GetServerRealTime());
-						SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime", modifiedTime);
+						Uint32 lobbyTime = static_cast<Uint32>(atoi(lobbyTimeStr));
+						if ( SteamUtils()->GetServerRealTime() >= lobbyTime + 3 )
+						{
+							//printlog("Updated server time");
+							char modifiedTime[32];
+							snprintf(modifiedTime, 31, "%d", SteamUtils()->GetServerRealTime());
+							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime", modifiedTime);
+						}
 					}
 				}
 			}
