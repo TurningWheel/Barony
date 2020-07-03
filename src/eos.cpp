@@ -1622,7 +1622,7 @@ void EOSFuncs::queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS
 	}
 	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions = {};
 	QueryOptions.ApiVersion = EOS_CONNECT_QUERYPRODUCTUSERIDMAPPINGS_API_LATEST;
-	QueryOptions.AccountIdType_DEPRECATED = EOS_EExternalAccountType::EOS_EAT_EPIC;
+	//QueryOptions.AccountIdType_DEPRECATED = EOS_EExternalAccountType::EOS_EAT_EPIC;
 	QueryOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 
 	QueryOptions.ProductUserIdCount = lobby->lobbyMembersQueueToMappingUpdate.size();
@@ -1871,6 +1871,42 @@ void EOSFuncs::showFriendsOverlay()
 	EOS_UI_ShowFriends(UIHandle, &Options, nullptr, ShowFriendsCallback);
 
 
+}
+
+bool EOSFuncs::initAchievements()
+{
+	if (!PlatformHandle) {
+		return false;
+	}
+	if ((AchievementsHandle = EOS_Platform_GetAchievementsInterface(PlatformHandle)) == nullptr) {
+		return false;
+	}
+	return true;
+}
+
+void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+
+	if (data->ResultCode == EOS_EResult::EOS_Success)
+	{
+		return;
+	}
+	else
+	{
+		printlog("EOSFuncs::OnUnlockAchievement() failure: %i", data->ResultCode);
+		return;
+	}
+}
+
+void EOSFuncs::unlockAchievement(const char* name)
+{
+	EOS_Achievements_UnlockAchievementsOptions UnlockAchievementsOptions = {};
+	UnlockAchievementsOptions.ApiVersion = EOS_ACHIEVEMENTS_UNLOCKACHIEVEMENTS_API_LATEST;
+	UnlockAchievementsOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
+	UnlockAchievementsOptions.AchievementsCount = 1;
+	UnlockAchievementsOptions.AchievementIds = &name;
+	EOS_Achievements_UnlockAchievements(AchievementsHandle, &UnlockAchievementsOptions, nullptr, OnUnlockAchievement);
 }
 
 void EOS_CALL EOSFuncs::ShowFriendsCallback(const EOS_UI_ShowFriendsCallbackInfo* data)

@@ -11,6 +11,7 @@
 #include "eos_lobby.h"
 #include "eos_p2p.h"
 #include "eos_ui.h"
+#include "eos_achievements.h"
 #include <vector>
 #include <iostream>
 #include <map>
@@ -56,6 +57,7 @@ public:
 	EOS_HLobbyModification LobbyModificationHandle = nullptr;
 	EOS_HLobbyModification LobbyMemberModificationHandle = nullptr;
 	EOS_HUI UIHandle = nullptr;
+	EOS_HAchievements AchievementsHandle = nullptr;
 
 	class LobbyParameters_t {
 	public:
@@ -134,6 +136,7 @@ public:
 	static void EOS_CALL ConnectAuthExpirationCallback(const EOS_Connect_AuthExpirationCallbackInfo* data);
 	static void EOS_CALL ShowFriendsCallback(const EOS_UI_ShowFriendsCallbackInfo* data);
 	static void EOS_CALL OnCreateUserCallback(const EOS_Connect_CreateUserCallbackInfo* data);
+	static void EOS_CALL OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data);
 
 	class FriendInfo_t {
 	public:
@@ -359,6 +362,7 @@ public:
 	{
 		return initAuth(CredentialHost, CredentialName);
 	}
+	bool initAchievements();
 	bool initAuth(std::string hostname, std::string tokenName);
 	void initConnectLogin();
 
@@ -575,6 +579,7 @@ public:
 	void readFromCmdLineArgs();
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);
 	void showFriendsOverlay();
+	void unlockAchievement(const char* name);
 	static std::string getLobbyJoinFailedConnectString(EOS_EResult result);
 	static void logInfo(const char* str, ...)
 	{

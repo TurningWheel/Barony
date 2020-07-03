@@ -666,10 +666,6 @@ void SteamServerClientWrapper::OnGetNumberOfCurrentPlayers(NumberOfCurrentPlayer
 
 bool achievementUnlocked(const char* achName)
 {
-#ifndef STEAMWORKS
-	return false;
-#else
-
 	// check internal achievement record
 	node_t* node;
 	for ( node = steamAchievements.first; node != NULL; node = node->next )
@@ -680,8 +676,13 @@ bool achievementUnlocked(const char* achName)
 			return true;
 		}
 	}
-	return false;
+#ifdef STEAMWORKS
+#else
+#ifdef USE_EOS
 
+#else
+	return false;
+#endif
 #endif
 }
 
@@ -695,10 +696,6 @@ bool achievementUnlocked(const char* achName)
 
 void steamAchievement(const char* achName)
 {
-#ifndef STEAMWORKS
-	return;
-#else
-
 #ifdef DEBUG_ACHIEVEMENTS
 	messagePlayer(clientnum, "%s", achName);
 #endif
@@ -722,8 +719,15 @@ void steamAchievement(const char* achName)
 	if ( !achievementUnlocked(achName) )
 	{
 		//messagePlayer(clientnum, "You've unlocked an achievement!\n [%s]",c_SteamUserStats_GetAchievementDisplayAttribute(achName,"name"));
+
+#ifdef STEAMWORKS
 		SteamUserStats()->SetAchievement(achName);
 		SteamUserStats()->StoreStats();
+#else
+#ifdef USE_EOS
+		EOS.unlockAchievement(achName);
+#endif
+#endif
 
 		char* ach = (char*) malloc(sizeof(char) * (strlen(achName) + 1));
 		strcpy(ach, achName);
@@ -732,12 +736,13 @@ void steamAchievement(const char* achName)
 		node->size = sizeof(char) * (strlen(achName) + 1);
 		node->deconstructor = &defaultDeconstructor;
 	}
-
-#endif
 }
 
 void steamUnsetAchievement(const char* achName)
 {
+#ifdef USE_EOS
+	printlog("unset achievement not supported for epic online services");
+#endif
 #ifndef STEAMWORKS
 	return;
 #else

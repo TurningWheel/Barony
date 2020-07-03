@@ -260,6 +260,7 @@ SDL_Surface* font16x16_bmp = nullptr;
 SDL_Surface* fancyWindow_bmp = nullptr;
 SDL_Surface** sprites = nullptr;
 SDL_Surface** tiles = nullptr;
+std::unordered_map<std::string, SDL_Surface*> achievementImages;
 Uint32 imgref = 1, vboref = 1;
 const Uint32 ttfTextCacheLimit = 9000;
 GLuint* texid = nullptr;

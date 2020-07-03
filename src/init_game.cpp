@@ -32,6 +32,7 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include "cppfuncs.hpp"
+#include "Directory.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -90,6 +91,10 @@ int initGame()
 	{
 		return 14;
 	}
+	if ( EOS.initAchievements() == false )
+	{
+		return 14;
+	}
 #endif // USE_EOS
 
 	// print a loading message
@@ -101,6 +106,13 @@ int initGame()
 	GO_SwapBuffers(screen);
 
 	initGameControllers();
+
+	// load achievement images
+	Directory achievementsDir("images/achievements");
+	for (auto& item : achievementsDir.list) {
+		char* name = const_cast<char*>(item.c_str()); // <- evil
+		achievementImages.emplace(std::make_pair(item, loadImage(name)));
+	}
 
 	// load model offsets
 	printlog( "loading model offsets...\n");

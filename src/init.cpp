@@ -2161,6 +2161,12 @@ int deinitApp()
 		free(sprites);
 	}
 
+	// free achievement images
+	for (auto& item : achievementImages) {
+		SDL_FreeSurface(item.second);
+	}
+	achievementImages.clear();
+
 	// free models
 	printlog("freeing models...\n");
 	if ( models != NULL )
