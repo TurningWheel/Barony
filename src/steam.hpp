@@ -29,9 +29,9 @@ void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure);
 
 #define MAX_STEAM_LOBBIES 100
 
-extern int numSteamLobbies;
+extern Uint32 numSteamLobbies;
 extern int selectedSteamLobby;
-extern char lobbyText[MAX_STEAM_LOBBIES][48];
+extern char lobbyText[MAX_STEAM_LOBBIES][64];
 extern void* lobbyIDs[MAX_STEAM_LOBBIES];
 extern int lobbyPlayers[MAX_STEAM_LOBBIES];
 

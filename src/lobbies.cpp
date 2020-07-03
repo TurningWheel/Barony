@@ -23,6 +23,8 @@ See LICENSE for details.
 #include "player.hpp"
 #include "scores.hpp"
 #include "interface/interface.hpp"
+#include "colors.hpp"
+#include "net.hpp"
 
 LobbyHandler_t LobbyHandler;
 
@@ -218,8 +220,8 @@ void LobbyHandler_t::handleLobbyListRequests()
 			// otherwise, the callback would've flipped off the connectingToLobbyWindow and opened an error window
 			buttonJoinLobby(NULL);
 		}
-	}
 #endif
+	}
 
 
 	// lobby list request succeeded?
@@ -628,10 +630,42 @@ void LobbyHandler_t::handleLobbyBrowser()
 				else if ( lobbyType == LOBBY_CROSSPLAY )
 				{
 #ifdef USE_EOS
-					char buf[1024] = "";
-					strcpy(buf, EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.lobbyName.c_str());
-					ttfPrintTextFormatted(ttf12, x, y, buf); // name
-					ttfPrintTextFormatted(ttf12, subx2 - 72, y, "%d/%d",
+					// set the lobby data
+					const Uint32 lobbyNameSize = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.lobbyName.size();
+					const Uint32 maxCharacters = 54;
+					std::string lobbyDetailText = " ";
+					lobbyDetailText += "(";
+					lobbyDetailText += EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.gameVersion;
+					lobbyDetailText += ") ";
+#ifdef STEAMWORKS
+					lobbyDetailText += "[CROSSPLAY]";
+#endif
+					/*if ( numMods > 0 )
+					{
+						lobbyDetailText += "[MODDED]";
+					}*/
+					std::string displayedLobbyName = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.lobbyName;
+					if ( displayedLobbyName.size() > (maxCharacters - lobbyDetailText.size()) )
+					{
+						// no room, need to truncate lobbyName
+						displayedLobbyName = displayedLobbyName.substr(0, (maxCharacters - lobbyDetailText.size()) - 2);
+						displayedLobbyName += "..";
+					}
+
+					Uint32 color = uint32ColorWhite(*mainsurface);
+					char buf[maxCharacters] = "";
+					if ( EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.gameCurrentLevel >= 0 )
+					{
+						color = uint32ColorYellow(*mainsurface);
+						// hide lobby name for in progress.
+						snprintf(buf, maxCharacters - 1, "%s%s", "In-progress lobby", lobbyDetailText.c_str());
+					}
+					else
+					{
+						snprintf(buf, maxCharacters - 1, "%s%s", displayedLobbyName.c_str(), lobbyDetailText.c_str());
+					}
+					ttfPrintTextFormattedColor(ttf12, x, y, color, buf); // name
+					ttfPrintTextFormattedColor(ttf12, subx2 - 72, y, color, "%d/%d",
 						EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->playersInLobby.size(),
 						EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->MaxPlayers); // player count
 #endif
@@ -671,70 +705,6 @@ void LobbyHandler_t::handleLobbyBrowser()
 		showLobbyFilters = false;
 #endif
 	}
-//
-//#ifdef STEAMWORKS
-//	if ( subwindow && !strcmp(subtext, language[1334]) )
-//	{
-//		
-//	}
-//#elif defined USE_EOS
-//	if ( subwindow && !strcmp(subtext, language[1334]) )
-//	{
-//		// select/inspect lobbies
-//		if ( omousex >= subx1 + 8 && omousex < subx2 - 32 && omousey >= suby1 + 26 && omousey < suby2 - 64 )
-//		{
-//			hoveringSelection = std::min(std::max(0, y2 + ((omousey - suby1 - 24) >> 4)), EOS.kMaxLobbiesToSearch);
-//
-//			
-//
-//			// selecting lobby
-//			if ( mousestatus[SDL_BUTTON_LEFT] )
-//			{
-//				mousestatus[SDL_BUTTON_LEFT] = 0;
-//				EOS.LobbySearchResults.selectedLobby = hoveringSelection;
-//			}
-//		}
-//		EOS.LobbySearchResults.selectedLobby = std::min(std::max(y2, EOS.LobbySearchResults.selectedLobby), std::min(std::max(static_cast<int>(numSearchResults) - 1, 0), y2 + 17));
-//		SDL_Rect pos;
-//		pos.x = subx1 + 10;
-//		pos.y = suby1 + 26 + (EOS.LobbySearchResults.selectedLobby - y2) * 16;
-//		pos.w = subx2 - subx1 - 44;
-//		pos.h = 16;
-//		drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
-//
-//		// print all lobby entries
-//		Sint32 x = subx1 + 10;
-//		Sint32 y = suby1 + 28;
-//		if ( numSearchResults > 0 )
-//		{
-//			Sint32 z;
-//			int searchResultLowestVisibleEntry = std::min(static_cast<int>(numSearchResults), 18 + y2);
-//			for ( z = y2; z < searchResultLowestVisibleEntry; z++ )
-//			{
-//				char temporary[1024] = "";
-//				strcpy(temporary, EOS.LobbySearchResults.getResultFromDisplayedIndex(z)->LobbyAttributes.lobbyName.c_str());
-//				ttfPrintTextFormatted(ttf12, x, y, temporary); // name
-//				ttfPrintTextFormatted(ttf12, subx2 - 72, y, "%d/%d",
-//					EOS.LobbySearchResults.getResultFromDisplayedIndex(z)->playersInLobby.size(),
-//					EOS.LobbySearchResults.getResultFromDisplayedIndex(z)->MaxPlayers); // player count
-//				y += 16;
-//			}
-//		}
-//		else
-//		{
-//			ttfPrintText(ttf12, x, y, language[1337]);
-//		}
-//
-//		// draw server flags tooltip (if applicable)
-//		if ( hoveringSelection >= 0
-//			&& numSearchResults > 0
-//			&& hoveringSelection < numSearchResults )
-//		{
-//			drawTooltip(&flagsBox);
-//			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 4, flagsBoxText);
-//		}
-//	}
-//#endif
 }
 #ifdef STEAMWORKS
 void LobbyHandler_t::steamValidateAndJoinLobby(CSteamID& id)
@@ -785,6 +755,7 @@ void LobbyHandler_t::searchLobbyWithFilter(button_t* my)
 
 void LobbyHandler_t::drawLobbyFilters()
 {
+#ifdef USE_EOS
 	button_t* buttonFilterSearch = nullptr;
 	for ( node_t* node = button_l.first; node != NULL; node = node->next )
 	{
@@ -856,4 +827,5 @@ void LobbyHandler_t::drawLobbyFilters()
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 		}
 	}
+#endif
 }
