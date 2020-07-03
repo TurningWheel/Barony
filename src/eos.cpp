@@ -2277,8 +2277,59 @@ void EOSFuncs::showFriendsOverlay()
 	EOS_UI_ShowFriends(UIHandle, &Options, nullptr, ShowFriendsCallback);
 }
 
+void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+
+	if (data->ResultCode != EOS_EResult::EOS_Success)
+	{
+		printlog("failed to load achievements");
+		return;
+	}
+
+	EOS_Achievements_GetAchievementDefinitionCountOptions AchievementDefinitionsCountOptions = {};
+	AchievementDefinitionsCountOptions.ApiVersion = EOS_ACHIEVEMENTS_GETACHIEVEMENTDEFINITIONCOUNT_API_LATEST;
+
+	uint32_t AchievementDefinitionsCount = EOS_Achievements_GetAchievementDefinitionCount(EOS.AchievementsHandle, &AchievementDefinitionsCountOptions);
+
+	EOS_Achievements_CopyAchievementDefinitionV2ByIndexOptions CopyOptions = {};
+	CopyOptions.ApiVersion = EOS_ACHIEVEMENTS_COPYDEFINITIONV2BYACHIEVEMENTID_API_LATEST;
+
+	for (CopyOptions.AchievementIndex = 0; CopyOptions.AchievementIndex < AchievementDefinitionsCount; ++CopyOptions.AchievementIndex)
+	{
+		EOS_Achievements_DefinitionV2* AchievementDef = NULL;
+
+		EOS_EResult CopyAchievementDefinitionsResult = EOS_Achievements_CopyAchievementDefinitionV2ByIndex(EOS.AchievementsHandle, &CopyOptions, &AchievementDef);
+		if (CopyAchievementDefinitionsResult != EOS_EResult::EOS_Success)
+		{
+			printlog("CopyAchievementDefinitions Failure!");
+			return;
+		}
+
+		if (AchievementDef->UnlockedDisplayName)
+		{
+			achievementNames.emplace(std::make_pair(
+				std::string(AchievementDef->AchievementId),
+				std::string(AchievementDef->UnlockedDisplayName)));
+		}
+
+		if (AchievementDef->UnlockedDescription)
+		{
+			achievementDesc.emplace(std::make_pair(
+				std::string(AchievementDef->AchievementId),
+				std::string(AchievementDef->UnlockedDescription)));
+		}
+
+		// Release Achievement Definition
+		EOS_Achievements_DefinitionV2_Release(AchievementDef);
+	}
+
+	printlog("successfully loaded EOS achievements");
+}
+
 bool EOSFuncs::initAchievements()
 {
+	printlog("loading EOS achievements");
 	if (!PlatformHandle) {
 		return false;
 	}
@@ -2294,6 +2345,7 @@ void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchie
 
 	if (data->ResultCode == EOS_EResult::EOS_Success)
 	{
+		printlog("EOS achievement successfully unlocked");
 		return;
 	}
 	else
@@ -2303,14 +2355,28 @@ void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchie
 	}
 }
 
+void EOSFuncs::loadAchievementData()
+{
+	printlog("loading EOS achievements");
+	EOS_Achievements_QueryDefinitionsOptions Options = {};
+	Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
+	Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+	Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+	Options.HiddenAchievementsCount = 0;
+	Options.HiddenAchievementIds = nullptr;
+	EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
+}
+
 void EOSFuncs::unlockAchievement(const char* name)
 {
+	printlog("unlocking EOS achievement '%s'", name);
 	EOS_Achievements_UnlockAchievementsOptions UnlockAchievementsOptions = {};
 	UnlockAchievementsOptions.ApiVersion = EOS_ACHIEVEMENTS_UNLOCKACHIEVEMENTS_API_LATEST;
 	UnlockAchievementsOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
 	UnlockAchievementsOptions.AchievementsCount = 1;
 	UnlockAchievementsOptions.AchievementIds = &name;
 	EOS_Achievements_UnlockAchievements(AchievementsHandle, &UnlockAchievementsOptions, nullptr, OnUnlockAchievement);
+	UIToastNotificationManager.createAchievementNotification(name);
 }
 
 void EOS_CALL EOSFuncs::ShowFriendsCallback(const EOS_UI_ShowFriendsCallbackInfo* data)
@@ -2474,7 +2540,7 @@ void EOSFuncs::Accounts_t::handleLogin()
 		{
 			if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT) )
 			{
-				UIToastNotification* n = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
+				UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
 				n->setHeaderText(std::string("Account Status"));
 				n->setMainText(std::string("Logging in..."));
 				n->setSecondaryText(std::string("An error has occurred!"));
@@ -2513,6 +2579,9 @@ void EOSFuncs::Accounts_t::handleLogin()
 		}
 	}
 
+	// load achievement data
+	EOS.loadAchievementData();
+
 	//if ( popupType == POPUP_FULL )
 	//{
 	//	// close this popup.
@@ -2539,7 +2608,7 @@ void EOSFuncs::CrossplayAccounts_t::createNotification()
 {
 	if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT) )
 	{
-		UIToastNotification* n = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
+		UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
 		n->setHeaderText(std::string("Crossplay Status"));
 		n->setMainText(std::string("Initializing..."));
 		n->setSecondaryText(std::string("An error has occurred!"));

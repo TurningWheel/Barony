@@ -103,7 +103,8 @@ int initGame()
 	// load achievement images
 	Directory achievementsDir("images/achievements");
 	for (auto& item : achievementsDir.list) {
-		char* name = const_cast<char*>(item.c_str()); // <- evil
+		std::string fullPath = achievementsDir.path + std::string("/") + item;
+		char* name = const_cast<char*>(fullPath.c_str()); // <- evil
 		achievementImages.emplace(std::make_pair(item, loadImage(name)));
 	}
 

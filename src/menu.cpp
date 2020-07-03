@@ -751,10 +751,7 @@ void handleMainMenu(bool mode)
 			}
 		}
 #endif
-		if ( mode )
-		{
-			UIToastNotificationManager.drawNotifications();
-		}
+		UIToastNotificationManager.drawNotifications();
 
 		// gray text color
 		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);

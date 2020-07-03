@@ -5,7 +5,9 @@
 
 class Directory {
 public:
-	Directory(const char* name) {
+	Directory(const char* name) :
+		path(name)
+	{
 		DIR* dir;
 		struct dirent* ent;
 		if ((dir = opendir(name)) == NULL)
@@ -25,4 +27,5 @@ public:
 		std::sort(list.begin(), list.end());
 	}
 	std::vector<std::string> list;
+	const char* path;
 };

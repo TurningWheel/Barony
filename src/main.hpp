@@ -613,6 +613,8 @@ extern SDL_Surface* fancyWindow_bmp;
 extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
 extern std::unordered_map<std::string, SDL_Surface*> achievementImages;
+extern std::unordered_map<std::string, std::string> achievementNames;
+extern std::unordered_map<std::string, std::string> achievementDesc;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
 extern bool useModelCache;

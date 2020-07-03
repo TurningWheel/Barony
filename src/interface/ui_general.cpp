@@ -37,7 +37,7 @@ void UIToastNotificationManager_t::drawNotifications()
 	}
 }
 
-UIToastNotification* UIToastNotificationManager_t::addNotification(ImageTypes image)
+UIToastNotification* UIToastNotificationManager_t::addNotification(SDL_Surface* image)
 {
 	if ( !bIsInit )
 	{
@@ -73,7 +73,7 @@ void UIToastNotificationManager_t::createCommunityNotification()
 {
 	if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_COMMUNITY_LINK) )
 	{
-		UIToastNotification* n = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
+		UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
 		n->setHeaderText(std::string("Join the community!"));
 		n->setMainText(std::string("Find co-op allies and\nchat in real-time on the\nofficial Barony Discord!"));
 		n->setSecondaryText(std::string("Overlay is disabled -\nVisit discord.gg/P55tcYD\nin your browser to join!"));
@@ -86,4 +86,33 @@ void UIToastNotificationManager_t::createCommunityNotification()
 		n->buttonAction = &communityLinkAction;
 		n->setIdleSeconds(8);
 	}
+}
+
+void UIToastNotificationManager_t::createAchievementNotification(const char* name)
+{
+	SDL_Surface* achievementImage = nullptr;
+	{
+		auto it = achievementImages.find(name);
+		if (it != achievementImages.end())
+		{
+			achievementImage = it->second;
+		}
+	}
+	const char* achievementName = "";
+	{
+		auto it = achievementNames.find(name);
+		if (it != achievementNames.end())
+		{
+			achievementName = it->second.c_str();
+		}
+	}
+
+	UIToastNotification* n = UIToastNotificationManager.addNotification(achievementImage);
+	n->setHeaderText(std::string("Achievement unlocked!"));
+	n->setMainText(std::string(achievementName));
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE);
+	n->cardType = UIToastNotification::CardType::UI_CARD_COMMUNITY_LINK;
+	n->setIdleSeconds(5);
 }

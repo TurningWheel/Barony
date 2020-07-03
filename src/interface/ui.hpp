@@ -82,7 +82,8 @@ public:
 		UI_CARD_DEFAULT,
 		UI_CARD_EOS_ACCOUNT,
 		UI_CARD_CROSSPLAY_ACCOUNT,
-		UI_CARD_COMMUNITY_LINK
+		UI_CARD_COMMUNITY_LINK,
+		UI_CARD_ACHIEVEMENT
 	};
 	CardType cardType = CardType::UI_CARD_DEFAULT;
 	enum CardState : Uint32
@@ -419,17 +420,13 @@ class UIToastNotificationManager_t
 public:
 	UIToastNotificationManager_t() {};
 	~UIToastNotificationManager_t() { SDL_FreeSurface(communityLink1); };
-	enum ImageTypes
+	SDL_Surface* getImage(SDL_Surface* image)
 	{
-		GENERIC_TOAST_IMAGE
-	};
-	SDL_Surface* getImage(ImageTypes image)
-	{
-		if ( image == GENERIC_TOAST_IMAGE )
+		if ( image == nullptr )
 		{
 			return communityLink1;
 		}
-		return nullptr;
+		return image;
 	};
 
 	bool bIsInit = false;
@@ -440,8 +437,11 @@ public:
 	}
 	void drawNotifications();
 	void createCommunityNotification();
+	void createAchievementNotification(const char* name);
 
-	UIToastNotification* addNotification(ImageTypes image);
+	/// @param image nullptr for default barony icon
+	UIToastNotification* addNotification(SDL_Surface* image);
+
 	UIToastNotification* getNotificationSingle(UIToastNotification::CardType cardType)
 	{
 		for ( auto& card : allNotifications )

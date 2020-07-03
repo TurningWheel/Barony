@@ -199,6 +199,7 @@ public:
 	static void EOS_CALL ShowFriendsCallback(const EOS_UI_ShowFriendsCallbackInfo* data);
 	static void EOS_CALL OnCreateUserCallback(const EOS_Connect_CreateUserCallbackInfo* data);
 	static void EOS_CALL OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data);
+	static void EOS_CALL OnAchievementQueryComplete(const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* data);
 
 	class FriendInfo_t {
 	public:
@@ -678,6 +679,7 @@ public:
 	void queryLocalExternalAccountId(EOS_EExternalAccountType accountType);
 	void showFriendsOverlay();
 	void unlockAchievement(const char* name);
+	void loadAchievementData();
 	static std::string getLobbyJoinFailedConnectString(EOS_EResult result);
 	static void logInfo(const char* str, ...)
 	{
