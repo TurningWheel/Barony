@@ -30,22 +30,83 @@ public:
 	std::string CredentialName = "";
 	std::string CredentialHost = "";
 	std::vector<std::string> CommandLineArgs;
-	EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_Developer;
+	class Accounts_t 
+	{
+	public:
+		EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_Developer;
+		EOS_EResult AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
+		EOS_EResult AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
+
+		bool waitingForCallback = false;
+		bool firstTimeSetupCompleted = false;
+		bool initPopupWindow = false;
+		Uint32 popupInitTicks = 0;
+		Uint32 popupCurrentTicks = 0;
+		Uint32 loadingTicks = 0;
+		bool loginCriticalErrorOccurred = false;
+		enum PopupType
+		{
+			POPUP_FULL,
+			POPUP_TOAST
+		};
+		PopupType popupType = POPUP_TOAST;
+
+		SDL_Surface* loginBanner = nullptr;
+
+		void createLoginDialogue();
+		void drawDialogue();
+		void handleLogin();
+
+		void deinit()
+		{
+			if ( loginBanner )
+			{
+				SDL_FreeSurface(loginBanner);
+			}
+		}
+	} AccountManager;
+
+
+	class CrossplayAccounts_t
+	{
+	public:
+		EOS_ContinuanceToken continuanceToken = nullptr;
+		EOS_EResult connectLoginStatus = EOS_EResult::EOS_NotConfigured;
+		EOS_EResult connectLoginCompleted = EOS_EResult::EOS_NotConfigured;
+
+		bool awaitingConnectCallback = false;
+		bool awaitingCreateUserCallback = false;
+		bool awaitingAppTicketResponse = false;
+
+		bool acceptedEula = false;
+		bool trySetupFromSettingsMenu = false;
+		bool logOut = false;
+		bool autologin = false;
+
+		void handleLogin();
+		void createDialogue();
+		void createNotification();
+
+		void resetOnFailure();
+		static void retryCrossplaySetupOnFailure();
+	} CrossplayAccountManager;
 
 	const int kMaxLobbiesToSearch = 100;
-	EOS_EResult AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
 
 	// global shenanigans
 	bool bRequestingLobbies = false; // client is waiting for lobby data to display
 	bool bConnectingToLobby = false; // if true, client is waiting for lobby join callback
 	bool bConnectingToLobbyWindow = false; // client has a valid lobby window and has not encountered a new error window
-	EOS_EResult ConnectingToLobbyStatus = EOS_EResult::EOS_Success; // if invalid lobby join attempt, set to non-success
+	int ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success); // if invalid lobby join attempt, set to non-success
 	bool bJoinLobbyWaitingForHostResponse = false;
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
+	EOS_ELobbyPermissionLevel currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+	char lobbySearchByCode[32] = "";
 
 	std::unordered_set<EOS_ProductUserId> ProductIdsAwaitingAccountMappingCallback;
 	std::unordered_map<EOS_ProductUserId, EOS_EpicAccountId> AccountMappings;
+	std::unordered_map<EOS_ProductUserId, std::string> ExternalAccountMappings;
 
 	// actually all pointers...
 	EOS_HPlatform PlatformHandle = nullptr; 
@@ -121,6 +182,7 @@ public:
 	static void EOS_CALL FriendsQueryCallback(const EOS_Friends_QueryFriendsCallbackInfo* data);
 	static void EOS_CALL UserInfoCallback(const EOS_UserInfo_QueryUserInfoCallbackInfo* data);
 	static void EOS_CALL ConnectLoginCompleteCallback(const EOS_Connect_LoginCallbackInfo* Data);
+	static void EOS_CALL ConnectLoginCrossplayCompleteCallback(const EOS_Connect_LoginCallbackInfo* Data);
 	static void EOS_CALL OnCreateLobbyFinished(const EOS_Lobby_CreateLobbyCallbackInfo* Data);
 	static void EOS_CALL OnLobbySearchFinished(const EOS_LobbySearch_FindCallbackInfo* data);
 	static void EOS_CALL OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInfo* data);
@@ -152,9 +214,10 @@ public:
 	};
 	class LobbyData_t {
 	public:
-		int MaxPlayers = 0;
+		Uint32 MaxPlayers = 0;
 		std::string LobbyId = "";
 		std::string OwnerProductUserId = "";
+		Uint32 FreeSlots = 0;
 		bool bLobbyHasFullDetailsRead = false;
 		bool bLobbyHasBasicDetailsRead = false;
 		bool bAwaitingLeaveCallback = false;
@@ -168,6 +231,7 @@ public:
 			std::string name = "";
 			int clientNumber = -1;
 			bool bUserInfoRequireUpdate = true;
+			EOS_EExternalAccountType accountType = EOS_EExternalAccountType::EOS_EAT_EPIC;
 		};
 		std::vector<PlayerLobbyData_t> playersInLobby;
 		std::vector<EOS_ProductUserId> lobbyMembersQueueToMappingUpdate;
@@ -180,6 +244,7 @@ public:
 		void ClearData()
 		{
 			MaxPlayers = 0;
+			FreeSlots = 0;
 			LobbyId = "";
 			OwnerProductUserId = "";
 			playersInLobby.clear();
@@ -205,25 +270,37 @@ public:
 				Uint32 serverFlags = 0;
 				Uint32 numServerMods = 0;
 				long long lobbyCreationTime = 0;
+				int gameCurrentLevel = -1;
+				std::string gameJoinKey = "";
+				Uint32 PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
 				void ClearData()
 				{
 					lobbyName = "";
 					gameVersion = "";
+					gameJoinKey = "";
 					isLobbyLoadingSavedGame = 0;
 					serverFlags = 0;
 					numServerMods = 0;
 					lobbyCreationTime = 0;
+					gameCurrentLevel = -1;
+					PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
 				}
 		} LobbyAttributes;
-		bool updateLobbyForHost();
+		enum HostUpdateLobbyTypes : int
+		{
+			LOBBY_UPDATE_MAIN_MENU,
+			LOBBY_UPDATE_DURING_GAME
+		};
+		bool updateLobbyForHost(HostUpdateLobbyTypes updateType);
 		void getLobbyAttributes(EOS_HLobbyDetails LobbyDetails);
 		void getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails);
 		void setLobbyAttributesAfterReading(EOS_Lobby_AttributeData* data);
-		void setLobbyAttributesFromGame();
+		void setLobbyAttributesFromGame(HostUpdateLobbyTypes updateType);
 		void setBasicCurrentLobbyDataFromInitialJoin(LobbyData_t* lobbyToJoin);
 		void destroyLobby();
 		bool currentUserIsOwner();
 		void updateLobby();
+		void updateLobbyDuringGameLoop();
 		bool assignClientnumMemberAttribute(EOS_ProductUserId targetId, int clientNumToSet);
 		int getClientnumMemberAttribute(EOS_ProductUserId targetId);
 		bool modifyLobbyMemberAttributeForCurrentUser();
@@ -238,9 +315,12 @@ public:
 			LOADING_SAVEGAME,
 			SERVER_FLAGS,
 			GAME_MODS,
-			CREATION_TIME
+			CREATION_TIME,
+			GAME_CURRENT_LEVEL,
+			GAME_JOIN_KEY,
+			LOBBY_PERMISSION_LEVEL
 		};
-		const int kNumAttributes = 6;
+		const int kNumAttributes = 9;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;
@@ -249,7 +329,17 @@ public:
 	public:
 		EOS_HLobbySearch CurrentLobbySearch = nullptr;
 		std::vector<LobbyData_t> results;
+		std::vector<std::pair<LobbyData_t::LobbyAttributes_t, int>> resultsSortedForDisplay;
 		int selectedLobby = 0;
+		void sortResults();
+		bool showLobbiesInProgress = false;
+		bool useLobbyCode = false;
+		bool lastResultWasFiltered = false;
+		char lobbyLastSearchByCode[32] = "";
+		LobbyData_t* getResultFromDisplayedIndex(int index)
+		{
+			return &results.at(resultsSortedForDisplay.at(index).second);
+		}
 	} LobbySearchResults;
 
 	class CurrentUserInfo_t {
@@ -294,8 +384,8 @@ public:
 	public:
 		std::vector<std::pair<EOS_ProductUserId, int>> peerProductIds;
 		EOS_ProductUserId serverProductId = nullptr;
-		EOS_ProductUserId getPeerIdFromIndex(int index);
-		int getIndexFromPeerId(EOS_ProductUserId id);
+		EOS_ProductUserId getPeerIdFromIndex(int index) const;
+		int getIndexFromPeerId(EOS_ProductUserId id) const;
 		void insertProductIdIntoPeers(EOS_ProductUserId newId)
 		{
 			if ( newId == nullptr )
@@ -318,12 +408,8 @@ public:
 		}
 		bool isPeerIndexed(EOS_ProductUserId id);
 		bool assignPeerIndex(EOS_ProductUserId id, int index);
-		bool isPeerStillValid(int index);
-		void resetPeersAndServerData()
-		{
-			peerProductIds.clear();
-			serverProductId = nullptr;
-		}
+		bool isPeerStillValid(int index) const;
+		void resetPeersAndServerData();
 	} P2PConnectionInfo;
 
 	enum UserInfoQueryType : int
@@ -343,6 +429,7 @@ public:
 
 	void shutdown()
 	{
+		UnsubscribeFromConnectionRequests();
 		if ( PlatformHandle )
 		{
 			EOS_Platform_Release(PlatformHandle);
@@ -391,11 +478,15 @@ public:
 		EOS_UserInfo_QueryUserInfo(UserInfoHandle, &UserInfoQueryOptions, userInfoQueryData, UserInfoCallback);
 	}
 
+	void getExternalAccountUserInfo(EOS_ProductUserId targetId, UserInfoQueryType queryType);
+
 	void createLobby();
 	void joinLobby(LobbyData_t* lobby);
 	void leaveLobby();
 	void searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 		LobbyParameters_t::LobbyJoinOptions joinOptions, EOS_LobbyId lobbyIdToSearch);
+	std::string getLobbyCodeFromGameKey(Uint32 key);
+	Uint32 getGameKeyFromLobbyCode(std::string& code);
 
 	void setLobbyDetailsFromHandle(EOS_HLobbyDetails LobbyDetails, LobbyData_t* LobbyToSet)
 	{
@@ -423,6 +514,7 @@ public:
 
 		LobbyToSet->LobbyId = LobbyInfo->LobbyId;
 		LobbyToSet->MaxPlayers = LobbyInfo->MaxMembers;
+		LobbyToSet->FreeSlots = LobbyInfo->AvailableSlots;
 		LobbyToSet->OwnerProductUserId = EOSFuncs::Helpers_t::productIdToString(lobbyOwner);
 		EOS_LobbyDetails_Info_Release(LobbyInfo);
 
@@ -437,7 +529,7 @@ public:
 		{
 			EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(PlatformHandle);
 
-			EOS_P2P_SocketId SocketId;
+			EOS_P2P_SocketId SocketId = {};
 			SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
 			strncpy(SocketId.SocketName, "CHAT", 5);
 
@@ -457,6 +549,10 @@ public:
 
 	void UnsubscribeFromConnectionRequests()
 	{
+		if ( NotificationIds.P2PConnection == EOS_INVALID_NOTIFICATIONID )
+		{
+			return;
+		}
 		EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(PlatformHandle);
 		EOS_P2P_RemoveNotifyPeerConnectionRequest(P2PHandle, NotificationIds.P2PConnection);
 		NotificationIds.P2PConnection = EOS_INVALID_NOTIFICATIONID;
@@ -573,11 +669,13 @@ public:
 	};
 
 	bool HandleReceivedMessages(EOS_ProductUserId* remoteIdReturn);
+	bool HandleReceivedMessagesAndIgnore(EOS_ProductUserId* remoteIdReturn); // function to empty the packet queue on main lobby.
 	void SendMessageP2P(EOS_ProductUserId RemoteId, const void* data, int len);
 	void serialize(void* file);
 	void readFromFile();
 	void readFromCmdLineArgs();
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);
+	void queryLocalExternalAccountId(EOS_EExternalAccountType accountType);
 	void showFriendsOverlay();
 	void unlockAchievement(const char* name);
 	static std::string getLobbyJoinFailedConnectString(EOS_EResult result);

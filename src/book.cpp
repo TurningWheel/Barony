@@ -14,23 +14,30 @@
 #include "game.hpp"
 #include "interface/interface.hpp"
 #include "book.hpp"
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
+
+namespace
+{
+
+constexpr int32_t TAB_WIDTH = 3;
+
+}
 
 //#define SPACE_NINJA_NAME "Order of the Space Ninjas"
-#define TAB_WIDTH 3
 //Any word less than this will just get bumped onto the next line.
 #define MIN_LENGTH_TO_SPLIT_WORD (book_characterspace_x / 2)
 //#define MIN_LENGTH_TO_SPLIT_WORD_TITLE (characterspace_x / 2) //This only works in the formatTitle() function, since it uses a local variable characterspace_x in there.
-#define SPLIT_WORD_IN_TITLE false //Whether or not to split a word in the book's title. If set to false, will only split words if they have to be split. If set to true, will split workds if they're a minimum length of MIN_LENGTH_TO_SPLIT_WORD_TITLE.
+//#define SPLIT_WORD_IN_TITLE false //Whether or not to split a word in the book's title. If set to false, will only split words if they have to be split. If set to true, will split words if they're a minimum length of MIN_LENGTH_TO_SPLIT_WORD_TITLE.;
 
-book_t** books = NULL;
+book_t** books = nullptr;
 int numbooks = 0;
 
 //book_t *book_space_ninjas = NULL;
 
-int getBook(char* booktitle)
+int getBook(char* const booktitle)
 {
-	int c;
-	for ( c = 0; c < numbooks; c++ )
+	for ( int c = 0; c < numbooks; c++ )
 	{
 		if ( !strcmp(booktitle, books[c]->name) )
 		{
@@ -42,35 +49,91 @@ int getBook(char* booktitle)
 
 void createBooks()
 {
-	string_t* name = NULL;
 	int i = 0;
 
 	//TODO: Read the books/ inventory for all *.txt files.
 	//TODO: Then create a book for each file there and add it to a books array.
 	//auto discoveredbooks = directoryContents("books/", false, true);
 	std::list<std::string> discoveredbooks = physfsGetFileNamesInDirectory("books/");
+
+	std::string ignoreBooksPath = "books/ignored_books.json";
+	std::unordered_set<std::string> ignoredBooks;
+	bool foundIgnoreBookFile = false;
+	if ( PHYSFS_getRealDir(ignoreBooksPath.c_str()) != NULL )
+	{
+		foundIgnoreBookFile = true;
+		ignoredBooks.insert("ignored_books.json");
+		std::string path = PHYSFS_getRealDir(ignoreBooksPath.c_str());
+		path.append(PHYSFS_getDirSeparator());
+		ignoreBooksPath = path + ignoreBooksPath;
+
+		FILE* fp = fopen(ignoreBooksPath.c_str(), "rb");
+		if ( fp )
+		{
+			char buf[65536];
+			rapidjson::FileReadStream is(fp, buf, sizeof(buf));
+			fclose(fp);
+
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("ignored_books") )
+			{
+				printlog("[JSON]: Could not read member 'ignored_books', possible invalid syntax.");
+			}
+			else
+			{
+				for ( rapidjson::Value::ConstValueIterator itr = d["ignored_books"].Begin(); itr != d["ignored_books"].End(); ++itr )
+				{
+					ignoredBooks.insert(itr->GetString());
+				}
+			}
+		}
+	}
+
 	if (!discoveredbooks.empty())
 	{
 		printlog("compiling books...\n");
 
+		int numSkipBooks = 0;
+		if ( foundIgnoreBookFile )
+		{
+			for ( auto& filename : discoveredbooks )
+			{
+				if ( filename.compare("ignored_books.json") == 0 )
+				{
+					++numSkipBooks;
+					printlog("skipping book %s due to filename\n", filename.c_str());
+				}
+				else if ( ignoredBooks.find(filename) != ignoredBooks.end() )
+				{
+					++numSkipBooks;
+					printlog("'skipping book %s due to 'ignored_books.json'\n", filename.c_str());
+				}
+			}
+		}
+
 		// Allocate memory for books
-		numbooks = discoveredbooks.size();
-		books = (book_t**) malloc(sizeof(book_t*) * numbooks);
+		numbooks = discoveredbooks.size() - numSkipBooks;
+		books = static_cast<book_t**>(malloc(sizeof(book_t*) * numbooks));
 
 		// sort books alphabetically
 		discoveredbooks.sort();
 
 		// create books
-		for (auto filename : discoveredbooks)
+		for ( const auto& filename : discoveredbooks )
 		{
-			books[i] = (book_t*) malloc(sizeof(book_t));
-			books[i]->text = NULL;
+			if ( ignoredBooks.find(filename) != ignoredBooks.end() )
+			{
+				continue;
+			}
+			books[i] = static_cast<book_t*>(malloc(sizeof(book_t)));
+			books[i]->text = nullptr;
 			books[i]->name = strdup(filename.c_str());
 			printlog("compiling book: \"%s\"\n",books[i]->name);
-			books[i]->bookgui_render_title = NULL;
+			books[i]->bookgui_render_title = nullptr;
 			books[i]->bookgui_render_title_numlines = 0;
-			books[i]->pages.first = NULL;
-			books[i]->pages.last = NULL;
+			books[i]->pages.first = nullptr;
+			books[i]->pages.last = nullptr;
 			//formatTitle(books[i]);
 			createBook(books[i]);
 			books[i]->name[strlen(books[i]->name) - 4] = 0;
@@ -85,7 +148,7 @@ void createBooks()
 
 /*****createBook() helper functions******/
 
-bool isLetter(char character)
+bool isLetter(const char character)
 {
 	switch (tolower(character))
 	{
@@ -144,11 +207,10 @@ bool isLetter(char character)
 		default:
 			return false;
 	}
-	return false;
 }
 
 //This is a more powerful version of isLetter that checks if a specified character is part of a word. However, it requires contextual information -- what are the next and previous characters? So pass the entire string to this function and the index in the string of the character being looked up.
-bool isCharacterPartOfWord(char* text, int index)
+bool isCharacterPartOfWord(char* const text, const int index)
 {
 	if (!text)
 	{
@@ -175,11 +237,9 @@ bool isCharacterPartOfWord(char* text, int index)
 		default:
 			return false;
 	}
-
-	return false;
 }
 
-int moveToStartOfWord(char* text, int index)
+int moveToStartOfWord(char* const text, const int index)
 {
 	if (!text)
 	{
@@ -205,7 +265,7 @@ int moveToStartOfWord(char* text, int index)
 }
 
 //Returns 0 on error. Returns 0 if index not on a word. Returns length of word otherwise. If nonletter character at the current index, it keeps looking until it finds the start of the next word.
-int lengthOfCurrentWord(char* text, int index)
+int lengthOfCurrentWord(char* const text, const int index)
 {
 	if (!text)   //Can't do this without text.
 	{
@@ -224,7 +284,8 @@ int lengthOfCurrentWord(char* text, int index)
 	{
 		return 0;    //Not our problem. Tell it the current word is length 0.
 	}
-	else if (i > 0 && isCharacterPartOfWord(text, i))     //Not at the start of the text array and the previous character is a letter...yikes, not at the start of the word.
+
+	if (i > 0 && isCharacterPartOfWord(text, i))     //Not at the start of the text array and the previous character is a letter...yikes, not at the start of the word.
 	{
 		i = moveToStartOfWord(text, i);    //Move to the start of the current word.
 	}
@@ -244,7 +305,7 @@ int lengthOfCurrentWord(char* text, int index)
 	return length;
 }
 
-void createBook(book_t* book)
+void createBook(book_t* const book)
 {
 	if (!book)
 	{
@@ -254,7 +315,7 @@ void createBook(book_t* book)
 	//Load in the text from a file.
 	std::string tempstr = "books/";
 	tempstr.append(book->name);
-	if ( PHYSFS_getRealDir(tempstr.c_str()) != NULL )
+	if ( PHYSFS_getRealDir(tempstr.c_str()) != nullptr )
 	{
 		std::string path = PHYSFS_getRealDir(tempstr.c_str());
 		path.append(PHYSFS_getDirSeparator());
@@ -269,19 +330,18 @@ void createBook(book_t* book)
 		return; //Failed to open the file.
 	}
 
-	int book_characterspace_x = BOOK_PAGE_WIDTH / BOOK_FONT_WIDTH;
-	int book_characterspace_y = BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
-	int max_characters = book_characterspace_x * book_characterspace_y;
+	const int book_characterspace_x = BOOK_PAGE_WIDTH / BOOK_FONT_WIDTH;
+	const int book_characterspace_y = BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
+	const int max_characters = book_characterspace_x * book_characterspace_y;
 
-	book->pages.first = NULL;
-	book->pages.last = NULL;
+	book->pages.first = nullptr;
+	book->pages.last = nullptr;
 
-	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
-	string_t* string = newString(&book->pages, color, NULL);
-	string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
+	const Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
+	string_t* string = newString(&book->pages, color, nullptr);
+	string->data = static_cast<char*>(malloc(sizeof(char) * (max_characters + 1)));
 	memset(string->data, 0, sizeof(char) * (max_characters + 1));
 
-	int i; // current character in the book's entire text
 	int p = 0; // current character in the page's text
 	int x = 0; // number of characters written on the current line
 	int y = 0; // number of lines on the page
@@ -293,7 +353,7 @@ void createBook(book_t* book)
 	//found_word and word_length are used to prevent smaller words from being broken up. When the for loop detects that it has hit the start of a word, it queries for the word's length. If the word's length < MIN_LENGTH_TO_SPLIT_WORD, then it pumps out a newline and then starts the word. word_length_left is there so that it knows how many more characters it has to go through to reach the end of the word.
 	bool found_word = false;
 	int word_length = 0;
-	for (i = 0; book->text[i] != 0; ++i)
+	for (int i = 0; book->text[i] != 0; ++i)
 	{
 		//So first iterate through and count every line.
 		//Line end conditions:
@@ -328,8 +388,8 @@ void createBook(book_t* book)
 			if (y + 1 >= book_characterspace_y)
 			{
 				//Create the next page. Do not record the character if it's a newline.
-				string = newString(&book->pages, color, NULL);
-				string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
+				string = newString(&book->pages, color, nullptr);
+				string->data = static_cast<char*>(malloc(sizeof(char) * (max_characters + 1)));
 				memset(string->data, 0, sizeof(char) * (max_characters + 1));
 				p = 0;
 				y = 0;
@@ -386,8 +446,8 @@ void createBook(book_t* book)
 							if (y + 1 >= book_characterspace_y)   //Check if it hit the end of the page.
 							{
 								//It does indeed go off the page. Start a new page.
-								string = newString(&book->pages, color, NULL);
-								string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
+								string = newString(&book->pages, color, nullptr);
+								string->data = static_cast<char*>(malloc(sizeof(char) * (max_characters + 1)));
 								memset(string->data, 0, sizeof(char) * (max_characters + 1));
 								p = 0;
 								y = 0;
@@ -468,10 +528,10 @@ bool physfsSearchBooksToUpdate()
 	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
 	if ( !booklist.empty() )
 	{
-		for ( std::list<std::string>::iterator it = booklist.begin(); it != booklist.end(); ++it )
+		for ( auto& bookTitle : booklist )
 		{
-			std::string bookFilename = "books/" + *it;
-			if ( PHYSFS_getRealDir(bookFilename.c_str()) != NULL )
+			std::string bookFilename = "books/" + bookTitle;
+			if ( PHYSFS_getRealDir(bookFilename.c_str()) != nullptr )
 			{
 				std::string bookDir = PHYSFS_getRealDir(bookFilename.c_str());
 				if ( bookDir.compare("./") != 0 )
@@ -488,7 +548,7 @@ bool physfsSearchBooksToUpdate()
 
 void physfsReloadBooks()
 {
-	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	const std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
 	if ( !booklist.empty() )
 	{
 		// clear the previous book memory..

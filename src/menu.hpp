@@ -118,9 +118,13 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
 void buttonGamemodsSubscribeToHostsModFiles(button_t* my);
 void buttonGamemodsMountHostsModFiles(button_t* my);
+void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby);
+void* cpp_SteamMatchmaking_GetLobbyMember(void* steamIDLobby, int index);
+void openSteamLobbyWaitWindow(button_t* my);
 #elif defined USE_EOS
 void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
+void openSteamLobbyWaitWindow(button_t* my);
 #else
 void windowEnterSerialPrompt();
 void windowSerialResult(int success);
@@ -219,7 +223,6 @@ extern int settings_minimap_scale;
 extern int settings_minimap_object_zoom;
 extern char portnumber_char[6];
 extern char connectaddress[64];
-extern int multiplayerselect;
 extern bool smoothmouse;
 extern bool usecamerasmoothing;
 extern bool disablemouserotationlimit;

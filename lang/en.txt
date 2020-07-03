@@ -1882,13 +1882,13 @@ use object, use item#
 Connection denied:
 #
 
-1378 the server is already full.#
-1379 game version mismatch.#
-1380 server is not running a saved game.#
-1381 server is running a saved game.#
-1382 client save does not match server save.#
-1383 client seed does not match server seed.#
-1384 bad response from server.#
+1378 The server is already full.#
+1379 Game version mismatch.#
+1380 Server is not running a saved game.#
+1381 Server is running a saved game.#
+1382 Client save does not match server save.#
+1383 Client seed does not match server seed.#
+1384 Bad response from server.#
 
 1385
 Waiting for the server to start the game.
@@ -2233,7 +2233,7 @@ The connection to the server was lost.
 1446  Refresh #
 
 1447
-Connecting to steam lobby...
+Connecting to matchmaking lobby...
 #
 
 1448
@@ -2294,7 +2294,7 @@ erase the previous save file!#
 1466 Random Character#
 
 1467
-Connecting to steam lobby...
+Connecting to matchmaking lobby...
 #
 
 
@@ -5810,4 +5810,10 @@ before we deal!#
 3933 Unlock achievement "Bayou Baron" to unlock this class for every race!#
 3934 Unlock achievement "Buggar Baron" to unlock this class for every race!#
 3935 borderless#
+3937 Logging in, please wait#
+3938 When logging in for the first time, check your browser#
+3939 to enable account integration with Barony.#
+3940 Account integration is required to use Barony.#
+3941 A login error has occurred (%d). Please retry.#
+3942 Account integration has been denied. Please restart Barony to retry.#
 3949 end#

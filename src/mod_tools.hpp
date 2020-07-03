@@ -1552,22 +1552,37 @@ public:
 		{
 			if ( curve.mapName.compare(currentMap) == 0 )
 			{
+				std::vector<std::string> variantResults;
+				std::vector<int> variantChances;
 				for ( MonsterCurveEntry& monster : curve.monsterCurve )
 				{
-					if ( monster.monsterType == monsterType && monster.variants.size() > 0 )
+					if ( currentlevel >= monster.levelmin && currentlevel <= monster.levelmax )
 					{
-						std::vector<int> variantChances(monster.variants.size(), 0);
-						int index = 0;
-						for ( auto& pair : monster.variants )
+						if ( monster.monsterType == monsterType && monster.variants.size() > 0 )
 						{
-							variantChances.at(index) = pair.second;
-							++index;
-						}
+							for ( auto& pair : monster.variants )
+							{
+								auto find = std::find(variantResults.begin(), variantResults.end(), pair.first);
+								if ( find == variantResults.end() )
+								{
+									variantResults.push_back(pair.first);
+									variantChances.push_back(pair.second);
+								}
+								else
+								{
+									size_t dist = static_cast<size_t>(std::distance(variantResults.begin(), find));
+									variantChances.at(dist) += pair.second;
+								}
+							}
 
-						std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
-						int result = variantWeightedDistribution(curveSeed);
-						return monster.variants.at(result).first;
+						}
 					}
+				}
+				if ( !variantResults.empty() )
+				{
+					std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
+					int result = variantWeightedDistribution(curveSeed);
+					return variantResults[result];
 				}
 			}
 		}
@@ -1599,6 +1614,50 @@ public:
 			}
 		}
 		return "default";
+	}
+
+	void createMonsterFromFile(Entity* entity, Stat* myStats, const std::string& filename, Monster& outMonsterType)
+	{
+		MonsterStatCustomManager::StatEntry* statEntry = monsterStatCustomManager.readFromFile(filename.c_str());
+		if ( statEntry )
+		{
+			statEntry->setStatsAndEquipmentToMonster(myStats);
+			outMonsterType = myStats->type;
+			while ( statEntry->numFollowers > 0 )
+			{
+				std::string followerName = statEntry->getFollowerVariant();
+				if ( followerName.compare("") && followerName.compare("none") )
+				{
+					MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(followerName.c_str());
+					if ( followerEntry )
+					{
+						Entity* summonedFollower = summonMonster(static_cast<Monster>(followerEntry->type), entity->x, entity->y);
+						if ( summonedFollower )
+						{
+							if ( summonedFollower->getStats() )
+							{
+								followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
+								summonedFollower->getStats()->leader_uid = entity->getUID();
+							}
+						}
+						delete followerEntry;
+					}
+					else
+					{
+						Entity* summonedFollower = summonMonster(myStats->type, entity->x, entity->y);
+						if ( summonedFollower )
+						{
+							if ( summonedFollower->getStats() )
+							{
+								summonedFollower->getStats()->leader_uid = entity->getUID();
+							}
+						}
+					}
+				}
+				--statEntry->numFollowers;
+			}
+			delete statEntry;
+		}
 	}
 
 	void writeSampleToDocument()
@@ -1798,6 +1857,7 @@ public:
 		std::unordered_set<int> darkFloors;
 		std::unordered_set<int> shopFloors;
 		std::unordered_set<int> npcSpawnFloors;
+		bool usingTrapTypes = false;
 		int minoPercent = -1;
 		int shopPercent = -1;
 		int darkPercent = -1;
@@ -2024,7 +2084,7 @@ public:
 		}
 		else if ( name.compare("player_speed_weight_impact_percent") == 0 )
 		{
-			playerWeightPercent = itr->value.GetBool();
+			playerWeightPercent = itr->value.GetInt();
 			return true;
 		}
 		else if ( name.compare("player_speed_max") == 0 )
@@ -2115,6 +2175,7 @@ public:
 		std::string name = itr->name.GetString();
 		if ( name.compare("trap_generation_types") == 0 )
 		{
+			m.usingTrapTypes = true;
 			for ( rapidjson::Value::ConstValueIterator arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
 			{
 				m.trapTypes.push_back(arr_itr->GetString());

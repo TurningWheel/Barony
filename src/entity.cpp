@@ -10814,6 +10814,14 @@ bool Entity::checkEnemy(Entity* your)
 			return false;
 		}
 	}
+	else if ( behavior == &actMonster && your->behavior == &actMonster && yourStats->type == INCUBUS && !strncmp(yourStats->name, "inner demon", strlen("inner demon")) )
+	{
+		Entity* illusionTauntingThisEntity = uidToEntity(static_cast<Uint32>(your->monsterIllusionTauntingThisUid));
+		if ( illusionTauntingThisEntity == this )
+		{
+			return true;
+		}
+	}
 
 	// if you have a leader, check whether we are enemies instead
 	Entity* yourLeader = NULL;
@@ -11201,6 +11209,14 @@ bool Entity::checkFriend(Entity* your)
 			return true;
 		}
 		else
+		{
+			return false;
+		}
+	}
+	else if ( behavior == &actMonster && your->behavior == &actMonster && yourStats->type == INCUBUS && !strncmp(yourStats->name, "inner demon", strlen("inner demon")) )
+	{
+		Entity* illusionTauntingThisEntity = uidToEntity(static_cast<Uint32>(your->monsterIllusionTauntingThisUid));
+		if ( illusionTauntingThisEntity == this )
 		{
 			return false;
 		}
@@ -12404,7 +12420,7 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
-			else if ( myStats->type == DEMON || myStats->type == CREATURE_IMP )
+			else if ( myStats->type == DEMON || myStats->type == CREATURE_IMP || myStats->type == GHOUL )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}

@@ -48,6 +48,8 @@ bool physfsSearchMusicToUpdate();
 void physfsReloadMusic(bool &introMusicChanged, bool reloadAll);
 void physfsReloadTiles(bool reloadAll);
 bool physfsSearchTilesToUpdate();
+void physfsReloadSprites(bool reloadAll);
+bool physfsSearchSpritesToUpdate();
 extern std::vector<int> gamemods_modelsListModifiedIndexes;
 bool physfsIsMapLevelListModded();
 bool physfsSearchItemSpritesToUpdate();
