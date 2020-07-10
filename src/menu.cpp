@@ -681,6 +681,599 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	return INVALID_CHARACTER;
 }
 
+void handleInGamePauseMenu()
+{
+	Uint32 colorGray = uint32ColorGray(*mainsurface);
+
+	if ( ((omousex >= 50 && omousex < 50 + strlen(language[1309]) * 18 && omousey >= yres / 4 + 80 && omousey < yres / 4 + 80 + 18) || (menuselect == 1)) && subwindow == 0 && introstage == 1 )
+	{
+		// resume game
+		menuselect = 1;
+		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 80, colorGray, language[1309]);
+		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		{
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+			}
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			keystatus[SDL_SCANCODE_RETURN] = 0;
+			playSound(139, 64);
+			pauseGame(1, MAXPLAYERS);
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf16, 50, yres / 4 + 80, language[1309]);
+	}
+	if ( ((omousex >= 50 && omousex < 50 + strlen(language[1306]) * 18 && omousey >= yres / 4 + 104 && omousey < yres / 4 + 104 + 18) || (menuselect == 2)) && subwindow == 0 && introstage == 1 )
+	{
+		// settings menu
+		menuselect = 2;
+		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 104, colorGray, language[1306]);
+		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		{
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			keystatus[SDL_SCANCODE_RETURN] = 0;
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+			}
+			playSound(139, 64);
+			openSettingsWindow();
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
+	}
+	char* endgameText = NULL;
+	bool singleplayerAliveEndGameAndSave = false;
+	if ( multiplayer == SINGLE )
+	{
+		if ( stats[clientnum] && stats[clientnum]->HP > 0 )
+		{
+			endgameText = language[3919];
+			singleplayerAliveEndGameAndSave = true;
+			if ( !strncmp(map.name, "Boss", 4)
+				|| !strncmp(map.name, "Hell Boss", 9)
+				|| !strncmp(map.name, "Sanctum", 7) )
+			{
+				// boss floor, no save scumming easily!
+				singleplayerAliveEndGameAndSave = false;
+				endgameText = language[1310];
+			}
+		}
+		else
+		{
+			endgameText = language[1310];
+			singleplayerAliveEndGameAndSave = false;
+		}
+	}
+	else
+	{
+		endgameText = language[3019];
+	}
+	if ( ((omousex >= 50 && omousex < 50 + strlen(endgameText) * 18 && omousey >= yres / 4 + 128 && omousey < yres / 4 + 128 + 18) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
+	{
+		// end game / return to main menu
+		menuselect = 3;
+		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 128, colorGray, endgameText);
+		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		{
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			keystatus[SDL_SCANCODE_RETURN] = 0;
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+			}
+			playSound(139, 64);
+
+			// create confirmation window
+			subwindow = 1;
+			if ( multiplayer == SINGLE )
+			{
+				subx1 = xres / 2 - 144;
+				subx2 = xres / 2 + 144;
+				suby1 = yres / 2 - 64;
+				suby2 = yres / 2 + 64;
+				if ( singleplayerAliveEndGameAndSave )
+				{
+					strcpy(subtext, language[3920]);
+					subx1 = xres / 2 - 188;
+					subx2 = xres / 2 + 188;
+					suby1 = yres / 2 - 92;
+					suby2 = yres / 2 + 92;
+
+					// add a cancel button
+					button_t* button = newButton();
+					strcpy(button->label, language[1316]);
+					button->x = subx2 - strlen(language[1316]) * 12 - 16;
+					button->y = suby2 - 28;
+					button->sizex = strlen(language[1316]) * 12 + 8;
+					button->sizey = 20;
+					button->action = &buttonCloseSubwindow;
+					button->visible = 1;
+					button->focused = 1;
+				}
+				else
+				{
+					strcpy(subtext, language[1129]);
+				}
+			}
+			else
+			{
+				subx1 = xres / 2 - 224;
+				subx2 = xres / 2 + 224;
+				if ( multiplayer == SERVER )
+				{
+					suby1 = yres / 2 - 100;
+					suby2 = yres / 2 + 100;
+					strcpy(subtext, language[3021]);
+				}
+				else if ( multiplayer == CLIENT )
+				{
+					suby1 = yres / 2 - 112;
+					suby2 = yres / 2 + 112;
+					strcpy(subtext, language[3020]);
+				}
+			}
+
+			// close button
+			button_t* button = newButton();
+			strcpy(button->label, "x");
+			button->x = subx2 - 20;
+			button->y = suby1;
+			button->sizex = 20;
+			button->sizey = 20;
+			button->action = &buttonCloseSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_ESCAPE;
+			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+			// yes button
+			button = newButton();
+			strcpy(button->label, language[1314]);
+			button->x = subx1 + 8;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1314]) * 12 + 8;
+			button->sizey = 20;
+			if ( multiplayer == SINGLE )
+			{
+				if ( singleplayerAliveEndGameAndSave )
+				{
+					button->action = &buttonCloseAndEndGameConfirm;
+				}
+				else
+				{
+					button->action = &buttonEndGameConfirm;
+				}
+			}
+			else
+			{
+				button->action = &buttonCloseAndEndGameConfirm;
+			}
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_RETURN;
+			button->joykey = joyimpulses[INJOY_MENU_NEXT];
+
+			// no button
+			button = newButton();
+			strcpy(button->label, language[1315]);
+			button->x = subx2 - strlen(language[1315]) * 12 - 16;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1315]) * 12 + 8;
+			button->sizey = 20;
+			if ( multiplayer == SINGLE && singleplayerAliveEndGameAndSave )
+			{
+				button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+				button->action = &buttonEndGameConfirm;
+			}
+			else
+			{
+				button->action = &buttonCloseSubwindow;
+			}
+			button->visible = 1;
+			button->focused = 1;
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf16, 50, yres / 4 + 128, endgameText);
+	}
+	if ( multiplayer != CLIENT )
+	{
+		if ( ((omousex >= 50 && omousex < 50 + strlen(language[1312]) * 18 && omousey >= yres / 4 + 152 && omousey < yres / 4 + 152 + 18) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
+		{
+			//restart game
+			menuselect = 4;
+			ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152, colorGray, language[1312]);
+			if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				keystatus[SDL_SCANCODE_RETURN] = 0;
+				if ( rebindaction == -1 )
+				{
+					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+				}
+				playSound(139, 64);
+
+				// create confirmation window
+				subwindow = 1;
+				subx1 = xres / 2 - 164;
+				subx2 = xres / 2 + 164;
+				suby1 = yres / 2 - 48;
+				suby2 = yres / 2 + 48;
+				strcpy(subtext, language[1130]);
+
+				// close button
+				button_t* button = newButton();
+				strcpy(button->label, "x");
+				button->x = subx2 - 20;
+				button->y = suby1;
+				button->sizex = 20;
+				button->sizey = 20;
+				button->action = &buttonCloseSubwindow;
+				button->visible = 1;
+				button->focused = 1;
+				button->key = SDL_SCANCODE_ESCAPE;
+				button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+				// yes button
+				button = newButton();
+				strcpy(button->label, language[1314]);
+				button->x = subx1 + 8;
+				button->y = suby2 - 28;
+				button->sizex = strlen(language[1314]) * 12 + 8;
+				button->sizey = 20;
+				if ( multiplayer == SINGLE )
+				{
+					button->action = &buttonStartSingleplayer;
+				}
+				else
+				{
+					button->action = &buttonStartServer;
+				}
+				button->visible = 1;
+				button->focused = 1;
+				button->key = SDL_SCANCODE_RETURN;
+				button->joykey = joyimpulses[INJOY_MENU_NEXT];
+
+				// no button
+				button = newButton();
+				strcpy(button->label, language[1315]);
+				button->x = subx2 - strlen(language[1315]) * 12 - 16;
+				button->y = suby2 - 28;
+				button->sizex = strlen(language[1315]) * 12 + 8;
+				button->sizey = 20;
+				button->action = &buttonCloseSubwindow;
+				button->visible = 1;
+				button->focused = 1;
+			}
+		}
+		else
+		{
+			ttfPrintText(ttf16, 50, yres / 4 + 152, language[1312]);
+		}
+	}
+	if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (multiplayer != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (multiplayer != CLIENT)) || (menuselect == 4 + (multiplayer != CLIENT))) && subwindow == 0 && introstage == 1 )
+	{
+		menuselect = 4 + (multiplayer != CLIENT);
+		// save & quit
+		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, language[1313]);
+		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		{
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			keystatus[SDL_SCANCODE_RETURN] = 0;
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+			}
+			playSound(139, 64);
+
+			// create confirmation window
+			subwindow = 1;
+			subx1 = xres / 2 - 188;
+			subx2 = xres / 2 + 188;
+			suby1 = yres / 2 - 64;
+			suby2 = yres / 2 + 64;
+			strcpy(subtext, language[1131]);
+
+			// yes button
+			button_t* button = newButton();
+			strcpy(button->label, language[1314]);
+			button->x = subx1 + 8;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1314]) * 12 + 8;
+			button->sizey = 20;
+			button->action = &buttonQuitConfirm;
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_RETURN;
+			button->joykey = joyimpulses[INJOY_MENU_NEXT]; //TODO: Select which button to activate via dpad.
+
+															// no button
+			button = newButton();
+			strcpy(button->label, language[1315]);
+			button->sizex = strlen(language[1315]) * 12 + 8;
+			button->sizey = 20;
+			button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+			button->y = suby2 - 28;
+			button->action = &buttonQuitNoSaveConfirm;
+			button->visible = 1;
+			button->focused = 1;
+
+			// cancel button
+			button = newButton();
+			strcpy(button->label, language[1316]);
+			button->x = subx2 - strlen(language[1316]) * 12 - 16;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1316]) * 12 + 8;
+			button->sizey = 20;
+			button->action = &buttonCloseSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+
+			// close button
+			button = newButton();
+			strcpy(button->label, "x");
+			button->x = subx2 - 20;
+			button->y = suby1;
+			button->sizex = 20;
+			button->sizey = 20;
+			button->action = &buttonCloseSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_ESCAPE;
+			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), language[1313]);
+	}
+}
+
+void inline pauseMenuOnInputPressed()
+{
+	mousestatus[SDL_BUTTON_LEFT] = 0;
+	keystatus[SDL_SCANCODE_RETURN] = 0;
+	playSound(139, 64);
+	if ( rebindaction == -1 )
+	{
+		*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+	}
+}
+
+void handleTutorialPauseMenu()
+{
+	const Uint32 colorGray = uint32ColorGray(*mainsurface);
+	const bool inputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1));
+	SDL_Rect text;
+	text.x = 50;
+	text.h = 18;
+	text.w = 18;
+
+	text.y = yres / 4 + 80;
+	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1309]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 1)) && subwindow == 0 && introstage == 1 )
+	{
+		// resume game
+		menuselect = 1;
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1309]);
+		if ( inputIsPressed )
+		{
+			pauseMenuOnInputPressed();
+			pauseGame(1, MAXPLAYERS);
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf16, text.x, text.y, language[1309]);
+	}
+
+	text.y = yres / 4 + 104;
+	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1306]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 2)) && subwindow == 0 && introstage == 1 )
+	{
+		// settings menu
+		menuselect = 2;
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1306]);
+		if ( inputIsPressed )
+		{
+			pauseMenuOnInputPressed();
+			openSettingsWindow();
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf16, text.x, text.y, language[1306]);
+	}
+
+	text.y = yres / 4 + 128;
+	if ( ((omousex >= text.x && omousex < text.x + strlen(language[3958]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
+	{
+		// return to hub
+		menuselect = 3;
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3958]);
+		if ( inputIsPressed )
+		{
+			pauseMenuOnInputPressed();
+
+			// create confirmation window
+			subwindow = 1;
+			subx1 = xres / 2 - 144;
+			subx2 = xres / 2 + 144;
+			suby1 = yres / 2 - 48;
+			suby2 = yres / 2 + 48;
+			strcpy(subtext, language[3960]);
+
+			// add a cancel button
+			button_t* button = newButton();
+			strcpy(button->label, language[1316]);
+			button->x = subx2 - strlen(language[1316]) * 12 - 16;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1316]) * 12 + 8;
+			button->sizey = 20;
+			button->action = &buttonCloseSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+
+			// close button
+			button = newButton();
+			strcpy(button->label, "x");
+			button->x = subx2 - 20;
+			button->y = suby1;
+			button->sizex = 20;
+			button->sizey = 20;
+			button->action = &buttonCloseSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_ESCAPE;
+			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+			// yes button
+			button = newButton();
+			strcpy(button->label, language[1314]);
+			button->x = subx1 + 8;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1314]) * 12 + 8;
+			button->sizey = 20;
+			button->action = &gameModeManager.Tutorial.buttonReturnToTutorialHub;
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_RETURN;
+			button->joykey = joyimpulses[INJOY_MENU_NEXT];
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf16, text.x, text.y, language[3958]);
+	}
+
+	text.y = yres / 4 + 152;
+	if ( ((omousex >= text.x && omousex < text.x + strlen(language[3957]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
+	{
+		//restart game
+		menuselect = 4;
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3957]);
+		if ( inputIsPressed )
+		{
+			pauseMenuOnInputPressed();
+
+			// create confirmation window
+			subwindow = 1;
+			subx1 = xres / 2 - 144;
+			subx2 = xres / 2 + 144;
+			suby1 = yres / 2 - 48;
+			suby2 = yres / 2 + 48;
+			strcpy(subtext, language[3956]);
+
+			// add a cancel button
+			button_t* button = newButton();
+			strcpy(button->label, language[1316]);
+			button->x = subx2 - strlen(language[1316]) * 12 - 16;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1316]) * 12 + 8;
+			button->sizey = 20;
+			button->action = &buttonCloseSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+
+			// close button
+			button = newButton();
+			strcpy(button->label, "x");
+			button->x = subx2 - 20;
+			button->y = suby1;
+			button->sizex = 20;
+			button->sizey = 20;
+			button->action = &buttonCloseSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_ESCAPE;
+			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+			// yes button
+			button = newButton();
+			strcpy(button->label, language[1314]);
+			button->x = subx1 + 8;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1314]) * 12 + 8;
+			button->sizey = 20;
+			button->action = &gameModeManager.Tutorial.buttonRestartTrial;
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_RETURN;
+			button->joykey = joyimpulses[INJOY_MENU_NEXT];
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf16, text.x, text.y, language[3957]);
+	}
+
+	text.y = yres / 4 + 176;
+	if ( ((omousex >= 50 && omousex < 50 + strlen(language[3959]) * 18 && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 5)) && subwindow == 0 && introstage == 1 )
+	{
+		menuselect = 5;
+		// return to main menu
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3959]);
+		if ( inputIsPressed )
+		{
+			pauseMenuOnInputPressed();
+
+			// create confirmation window
+			subwindow = 1;
+			subx1 = xres / 2 - 144;
+			subx2 = xres / 2 + 144;
+			suby1 = yres / 2 - 48;
+			suby2 = yres / 2 + 48;
+			strcpy(subtext, language[3961]);
+
+			// yes button
+			button_t* button = newButton();
+			strcpy(button->label, language[1314]);
+			button->x = subx1 + 8;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1314]) * 12 + 8;
+			button->sizey = 20;
+			button->action = &buttonEndGameConfirm;
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_RETURN;
+			button->joykey = joyimpulses[INJOY_MENU_NEXT]; //TODO: Select which button to activate via dpad.
+
+			// cancel button
+			button = newButton();
+			strcpy(button->label, language[1316]);
+			button->x = subx2 - strlen(language[1316]) * 12 - 16;
+			button->y = suby2 - 28;
+			button->sizex = strlen(language[1316]) * 12 + 8;
+			button->sizey = 20;
+			button->action = &buttonCloseSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+
+			// close button
+			button = newButton();
+			strcpy(button->label, "x");
+			button->x = subx2 - 20;
+			button->y = suby1;
+			button->sizex = 20;
+			button->sizey = 20;
+			button->action = &buttonCloseSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+			button->key = SDL_SCANCODE_ESCAPE;
+			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf16, text.x, text.y, language[3959]);
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	handleMainMenu
@@ -945,6 +1538,13 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1303]);
 				//...etc
 			 */
+			if ( keystatus[SDL_SCANCODE_T] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
+			{
+				buttonStartSingleplayer(nullptr);
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
+				gameModeManager.Tutorial.startTutorial();
+			}
+
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
@@ -1387,349 +1987,13 @@ void handleMainMenu(bool mode)
 		{
 			if ( introstage != 5 )
 			{
-				if ( ((omousex >= 50 && omousex < 50 + strlen(language[1309]) * 18 && omousey >= yres / 4 + 80 && omousey < yres / 4 + 80 + 18) || (menuselect == 1)) && subwindow == 0 && introstage == 1 )
+				if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
 				{
-					menuselect = 1;
-					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 80, colorGray, language[1309]);
-					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
-					{
-						if ( rebindaction == -1 )
-						{
-							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-						}
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						keystatus[SDL_SCANCODE_RETURN] = 0;
-						playSound(139, 64);
-						pauseGame(1, MAXPLAYERS);
-					}
+					handleInGamePauseMenu();
 				}
-				else
+				else if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 				{
-					ttfPrintText(ttf16, 50, yres / 4 + 80, language[1309]);
-				}
-				if ( ((omousex >= 50 && omousex < 50 + strlen(language[1306]) * 18 && omousey >= yres / 4 + 104 && omousey < yres / 4 + 104 + 18) || (menuselect == 2)) && subwindow == 0 && introstage == 1 )
-				{
-					menuselect = 2;
-					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 104, colorGray, language[1306]);
-					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
-					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						keystatus[SDL_SCANCODE_RETURN] = 0;
-						if ( rebindaction == -1 )
-						{
-							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-						}
-						playSound(139, 64);
-						openSettingsWindow();
-					}
-				}
-				else
-				{
-					ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
-				}
-				char* endgameText = NULL;
-				bool singleplayerAliveEndGameAndSave = false;
-				if ( multiplayer == SINGLE )
-				{
-					if ( stats[clientnum] && stats[clientnum]->HP > 0 )
-					{
-						endgameText = language[3919];
-						singleplayerAliveEndGameAndSave = true;
-						if ( !strncmp(map.name, "Boss", 4)
-							|| !strncmp(map.name, "Hell Boss", 9)
-							|| !strncmp(map.name, "Sanctum", 7) )
-						{
-							// boss floor, no save scumming easily!
-							singleplayerAliveEndGameAndSave = false;
-							endgameText = language[1310];
-						}
-					}
-					else
-					{
-						endgameText = language[1310];
-						singleplayerAliveEndGameAndSave = false;
-					}
-				}
-				else
-				{
-					endgameText = language[3019];
-				}
-				if ( ((omousex >= 50 && omousex < 50 + strlen(endgameText) * 18 && omousey >= yres / 4 + 128 && omousey < yres / 4 + 128 + 18) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
-				{
-					menuselect = 3;
-					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 128, colorGray, endgameText);
-					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
-					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						keystatus[SDL_SCANCODE_RETURN] = 0;
-						if ( rebindaction == -1 )
-						{
-							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-						}
-						playSound(139, 64);
-
-						// create confirmation window
-						subwindow = 1;
-						if ( multiplayer == SINGLE )
-						{
-							subx1 = xres / 2 - 144;
-							subx2 = xres / 2 + 144;
-							suby1 = yres / 2 - 64;
-							suby2 = yres / 2 + 64;
-							if ( singleplayerAliveEndGameAndSave )
-							{
-								strcpy(subtext, language[3920]);
-								subx1 = xres / 2 - 188;
-								subx2 = xres / 2 + 188;
-								suby1 = yres / 2 - 92;
-								suby2 = yres / 2 + 92;
-
-								// add a cancel button
-								button = newButton();
-								strcpy(button->label, language[1316]);
-								button->x = subx2 - strlen(language[1316]) * 12 - 16;
-								button->y = suby2 - 28;
-								button->sizex = strlen(language[1316]) * 12 + 8;
-								button->sizey = 20;
-								button->action = &buttonCloseSubwindow;
-								button->visible = 1;
-								button->focused = 1;
-							}
-							else
-							{
-								strcpy(subtext, language[1129]);
-							}
-						}
-						else
-						{
-							subx1 = xres / 2 - 224;
-							subx2 = xres / 2 + 224;
-							if ( multiplayer == SERVER )
-							{
-								suby1 = yres / 2 - 100;
-								suby2 = yres / 2 + 100;
-								strcpy(subtext, language[3021]);
-							}
-							else if ( multiplayer == CLIENT )
-							{
-								suby1 = yres / 2 - 112;
-								suby2 = yres / 2 + 112;
-								strcpy(subtext, language[3020]);
-							}
-						}
-
-						// close button
-						button = newButton();
-						strcpy(button->label, "x");
-						button->x = subx2 - 20;
-						button->y = suby1;
-						button->sizex = 20;
-						button->sizey = 20;
-						button->action = &buttonCloseSubwindow;
-						button->visible = 1;
-						button->focused = 1;
-						button->key = SDL_SCANCODE_ESCAPE;
-						button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-						// yes button
-						button = newButton();
-						strcpy(button->label, language[1314]);
-						button->x = subx1 + 8;
-						button->y = suby2 - 28;
-						button->sizex = strlen(language[1314]) * 12 + 8;
-						button->sizey = 20;
-						if ( multiplayer == SINGLE )
-						{
-							if ( singleplayerAliveEndGameAndSave )
-							{
-								button->action = &buttonCloseAndEndGameConfirm;
-							}
-							else
-							{
-								button->action = &buttonEndGameConfirm;
-							}
-						}
-						else
-						{
-							button->action = &buttonCloseAndEndGameConfirm;
-						}
-						button->visible = 1;
-						button->focused = 1;
-						button->key = SDL_SCANCODE_RETURN;
-						button->joykey = joyimpulses[INJOY_MENU_NEXT];
-
-						// no button
-						button = newButton();
-						strcpy(button->label, language[1315]);
-						button->x = subx2 - strlen(language[1315]) * 12 - 16;
-						button->y = suby2 - 28;
-						button->sizex = strlen(language[1315]) * 12 + 8;
-						button->sizey = 20;
-						if ( multiplayer == SINGLE && singleplayerAliveEndGameAndSave )
-						{
-							button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-							button->action = &buttonEndGameConfirm;
-						}
-						else
-						{
-							button->action = &buttonCloseSubwindow;
-						}
-						button->visible = 1;
-						button->focused = 1;
-					}
-				}
-				else
-				{
-					ttfPrintText(ttf16, 50, yres / 4 + 128, endgameText);
-				}
-				if ( multiplayer != CLIENT )
-				{
-					if ( ((omousex >= 50 && omousex < 50 + strlen(language[1312]) * 18 && omousey >= yres / 4 + 152 && omousey < yres / 4 + 152 + 18) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
-					{
-						menuselect = 4;
-						ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152, colorGray, language[1312]);
-						if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
-						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
-							keystatus[SDL_SCANCODE_RETURN] = 0;
-							if ( rebindaction == -1 )
-							{
-								*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-							}
-							playSound(139, 64);
-
-							// create confirmation window
-							subwindow = 1;
-							subx1 = xres / 2 - 164;
-							subx2 = xres / 2 + 164;
-							suby1 = yres / 2 - 48;
-							suby2 = yres / 2 + 48;
-							strcpy(subtext, language[1130]);
-
-							// close button
-							button = newButton();
-							strcpy(button->label, "x");
-							button->x = subx2 - 20;
-							button->y = suby1;
-							button->sizex = 20;
-							button->sizey = 20;
-							button->action = &buttonCloseSubwindow;
-							button->visible = 1;
-							button->focused = 1;
-							button->key = SDL_SCANCODE_ESCAPE;
-							button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-							// yes button
-							button = newButton();
-							strcpy(button->label, language[1314]);
-							button->x = subx1 + 8;
-							button->y = suby2 - 28;
-							button->sizex = strlen(language[1314]) * 12 + 8;
-							button->sizey = 20;
-							if ( multiplayer == SINGLE )
-							{
-								button->action = &buttonStartSingleplayer;
-							}
-							else
-							{
-								button->action = &buttonStartServer;
-							}
-							button->visible = 1;
-							button->focused = 1;
-							button->key = SDL_SCANCODE_RETURN;
-							button->joykey = joyimpulses[INJOY_MENU_NEXT];
-
-							// no button
-							button = newButton();
-							strcpy(button->label, language[1315]);
-							button->x = subx2 - strlen(language[1315]) * 12 - 16;
-							button->y = suby2 - 28;
-							button->sizex = strlen(language[1315]) * 12 + 8;
-							button->sizey = 20;
-							button->action = &buttonCloseSubwindow;
-							button->visible = 1;
-							button->focused = 1;
-						}
-					}
-					else
-					{
-						ttfPrintText(ttf16, 50, yres / 4 + 152, language[1312]);
-					}
-				}
-				if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (multiplayer != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (multiplayer != CLIENT)) || (menuselect == 4 + (multiplayer != CLIENT))) && subwindow == 0 && introstage == 1 )
-				{
-					menuselect = 4 + (multiplayer != CLIENT);
-					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, language[1313]);
-					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
-					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						keystatus[SDL_SCANCODE_RETURN] = 0;
-						if ( rebindaction == -1 )
-						{
-							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-						}
-						playSound(139, 64);
-
-						// create confirmation window
-						subwindow = 1;
-						subx1 = xres / 2 - 188;
-						subx2 = xres / 2 + 188;
-						suby1 = yres / 2 - 64;
-						suby2 = yres / 2 + 64;
-						strcpy(subtext, language[1131]);
-
-						// yes button
-						button = newButton();
-						strcpy(button->label, language[1314]);
-						button->x = subx1 + 8;
-						button->y = suby2 - 28;
-						button->sizex = strlen(language[1314]) * 12 + 8;
-						button->sizey = 20;
-						button->action = &buttonQuitConfirm;
-						button->visible = 1;
-						button->focused = 1;
-						button->key = SDL_SCANCODE_RETURN;
-						button->joykey = joyimpulses[INJOY_MENU_NEXT]; //TODO: Select which button to activate via dpad.
-
-						// no button
-						button = newButton();
-						strcpy(button->label, language[1315]);
-						button->sizex = strlen(language[1315]) * 12 + 8;
-						button->sizey = 20;
-						button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-						button->y = suby2 - 28;
-						button->action = &buttonQuitNoSaveConfirm;
-						button->visible = 1;
-						button->focused = 1;
-
-						// cancel button
-						button = newButton();
-						strcpy(button->label, language[1316]);
-						button->x = subx2 - strlen(language[1316]) * 12 - 16;
-						button->y = suby2 - 28;
-						button->sizex = strlen(language[1316]) * 12 + 8;
-						button->sizey = 20;
-						button->action = &buttonCloseSubwindow;
-						button->visible = 1;
-						button->focused = 1;
-
-						// close button
-						button = newButton();
-						strcpy(button->label, "x");
-						button->x = subx2 - 20;
-						button->y = suby1;
-						button->sizex = 20;
-						button->sizey = 20;
-						button->action = &buttonCloseSubwindow;
-						button->visible = 1;
-						button->focused = 1;
-						button->key = SDL_SCANCODE_ESCAPE;
-						button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-					}
-				}
-				else
-				{
-					ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), language[1313]);
+					handleTutorialPauseMenu();
 				}
 			}
 		}
@@ -8233,6 +8497,15 @@ void handleMainMenu(bool mode)
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 			gameplayCustomManager.readFromFile();
 
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				if ( gameModeManager.Tutorial.dungeonLevel >= 0 )
+				{
+					currentlevel = gameModeManager.Tutorial.dungeonLevel;
+					gameModeManager.Tutorial.dungeonLevel = -1;
+				}
+			}
+
 			// clear follower menu entities.
 			FollowerMenu.closeFollowerMenuGUI(true);
 
@@ -8755,6 +9028,14 @@ void handleMainMenu(bool mode)
 		}
 		else if ( introstage == 5 )     // end game
 		{
+			bool endTutorial = false;
+			if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+			{
+				victory = 0;
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+				endTutorial = true;
+			}
+
 			// in greater numbers achievement
 			if ( victory )
 			{
@@ -8840,7 +9121,10 @@ void handleMainMenu(bool mode)
 			}
 
 			// make a highscore!
-			int saveScoreResult = saveScore();
+			if ( !endTutorial )
+			{
+				int saveScoreResult = saveScore();
+			}
 
 			// pick a new subtitle :)
 			subtitleCurrent = rand() % NUMSUBTITLES;

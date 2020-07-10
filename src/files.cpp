@@ -25,6 +25,7 @@
 #include "menu.hpp"
 #include "items.hpp"
 #include "interface/interface.hpp"
+#include "mod_tools.hpp"
 
 std::vector<int> gamemods_modelsListModifiedIndexes;
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
@@ -1171,7 +1172,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 #if defined (USE_FMOD) || defined(USE_OPENAL)
 		if ( strcmp(oldmapname, map.name) )
 		{
-			levelmusicplaying = false;
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
+			{
+				levelmusicplaying = false;
+			}
 		}
 #endif
 

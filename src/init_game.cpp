@@ -493,6 +493,7 @@ int fmod_result;
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/escape.ogg", FMOD_SOFTWARE, NULL, &escapemusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/devil.ogg", FMOD_SOFTWARE, NULL, &devilmusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/sanctum.ogg", FMOD_SOFTWARE, NULL, &sanctummusic);
+	fmod_result = FMOD_System_CreateStream(fmod_system, "music/tutorial.ogg", FMOD_SOFTWARE, NULL, &tutorialmusic);
 	if ( PHYSFS_getRealDir("music/gnomishmines.ogg") != NULL )
 	{
 		fmod_result = FMOD_System_CreateStream(fmod_system, "music/gnomishmines.ogg", FMOD_SOFTWARE, NULL, &gnomishminesmusic);
@@ -851,6 +852,7 @@ void deinitGame()
 		FMOD_Sound_Release(caveslairmusic);
 		FMOD_Sound_Release(bramscastlemusic);
 		FMOD_Sound_Release(hamletmusic);
+		FMOD_Sound_Release(tutorialmusic);
 		for ( c = 0; c < NUMMINESMUSIC; c++ )
 		{
 			FMOD_Sound_Release(minesmusic[c]);

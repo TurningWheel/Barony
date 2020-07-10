@@ -608,6 +608,10 @@ void handleLevelMusic()
 				playmusic(minesmusic[4], true, true, true);
 			}
 		}
+		else if ( !strncmp(map.name, "Tutorial ", 9) )
+		{
+			playmusic(tutorialmusic, true, true, true);
+		}
 		else
 		{
 			playmusic(intermissionmusic, true, true, true);

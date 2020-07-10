@@ -2409,3 +2409,38 @@ public:
 	}
 };
 extern GameplayCustomManager gameplayCustomManager;
+
+class GameModeManager_t
+{
+public:
+	enum GameModes : int
+	{
+		GAME_MODE_DEFAULT,
+		GAME_MODE_TUTORIAL_INIT,
+		GAME_MODE_TUTORIAL
+	};
+	GameModes currentMode = GAME_MODE_DEFAULT;
+	GameModes getMode() const { return currentMode; };
+	void setMode(const GameModes mode) { currentMode = mode; };
+	class Tutorial_t
+	{
+		bool isFirstTimeLaunch = true;
+		std::string currentMap = "";
+	public:
+		int dungeonLevel = -1;
+		void setTutorialMap(std::string& mapname)
+		{
+			loadCustomNextMap = mapname;
+			currentMap = loadCustomNextMap;
+		}
+		void launchHub()
+		{
+			loadCustomNextMap = "tutorial_hub.lmp";
+			currentMap = loadCustomNextMap;
+		}
+		void startTutorial();
+		static void buttonReturnToTutorialHub(button_t* my);
+		static void buttonRestartTrial(button_t* my);
+	} Tutorial;
+};
+extern GameModeManager_t gameModeManager;
