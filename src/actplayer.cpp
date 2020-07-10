@@ -61,13 +61,27 @@ void actDeathCam(Entity* my)
 		keystatus[SDL_SCANCODE_F4] = 0;
 	}*/
 	DEATHCAM_TIME++;
+
+	Uint32 deathcamGameoverPromptTicks = TICKS_PER_SECOND * 6;
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	{
+		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
+	}
+
 	if ( DEATHCAM_TIME == 1 )
 	{
 		DEATHCAM_PLAYERTARGET = -1;
 	}
-	else if ( DEATHCAM_TIME == TICKS_PER_SECOND * 6 )
+	else if ( DEATHCAM_TIME == deathcamGameoverPromptTicks )
 	{
-		openGameoverWindow();
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+		{
+			gameModeManager.Tutorial.openGameoverWindow();
+		}
+		else
+		{
+			openGameoverWindow();
+		}
 	}
 	if ( shootmode && !gamePaused )
 	{

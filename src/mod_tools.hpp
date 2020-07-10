@@ -2441,6 +2441,7 @@ public:
 		void startTutorial();
 		static void buttonReturnToTutorialHub(button_t* my);
 		static void buttonRestartTrial(button_t* my);
+		void openGameoverWindow();
 	} Tutorial;
 };
 extern GameModeManager_t gameModeManager;
