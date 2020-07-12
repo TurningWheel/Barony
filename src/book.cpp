@@ -148,65 +148,9 @@ void createBooks()
 
 /*****createBook() helper functions******/
 
-bool isLetter(const char character)
+bool isLetter(char character)
 {
-	switch (tolower(character))
-	{
-		case 'a':
-			return true;
-		case 'b':
-			return true;
-		case 'c':
-			return true;
-		case 'd':
-			return true;
-		case 'e':
-			return true;
-		case 'f':
-			return true;
-		case 'g':
-			return true;
-		case 'h':
-			return true;
-		case 'i':
-			return true;
-		case 'j':
-			return true;
-		case 'k':
-			return true;
-		case 'l':
-			return true;
-		case 'm':
-			return true;
-		case 'n':
-			return true;
-		case 'o':
-			return true;
-		case 'p':
-			return true;
-		case 'q':
-			return true;
-		case 'r':
-			return true;
-		case 's':
-			return true;
-		case 't':
-			return true;
-		case 'u':
-			return true;
-		case 'v':
-			return true;
-		case 'w':
-			return true;
-		case 'x':
-			return true;
-		case 'y':
-			return true;
-		case 'z':
-			return true;
-		default:
-			return false;
-	}
+  return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') ;
 }
 
 //This is a more powerful version of isLetter that checks if a specified character is part of a word. However, it requires contextual information -- what are the next and previous characters? So pass the entire string to this function and the index in the string of the character being looked up.
