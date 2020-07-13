@@ -11,6 +11,7 @@ See LICENSE for details.
 #include "items.hpp"
 #include "mod_tools.hpp"
 #include "menu.hpp"
+#include "classdescriptions.hpp"
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -43,7 +44,12 @@ void GameModeManager_t::Tutorial_t::startTutorial()
 {
 	isFirstTimeLaunch ? setTutorialMap(std::string("tutorial1.lmp")) : launchHub();
 	gameModeManager.setMode(gameModeManager.GameModes::GAME_MODE_TUTORIAL);
+	stats[0]->clearStats();
 	strcpy(stats[0]->name, "Player");
+	stats[0]->sex = static_cast<sex_t>(rand() % 2);
+	stats[0]->playerRace = RACE_HUMAN;
+	stats[0]->appearance = rand() % NUMAPPEARANCES;
+	initClass(0);
 }
 
 void GameModeManager_t::Tutorial_t::buttonReturnToTutorialHub(button_t* my)
