@@ -8499,6 +8499,9 @@ void handleMainMenu(bool mode)
 
 			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 			{
+				svFlags &= ~(SV_FLAG_HARDCORE);
+				svFlags |= SV_FLAG_HUNGER;
+
 				if ( gameModeManager.Tutorial.dungeonLevel >= 0 )
 				{
 					currentlevel = gameModeManager.Tutorial.dungeonLevel;
