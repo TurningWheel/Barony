@@ -1434,7 +1434,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 #if (defined STEAMWORKS || defined USE_EOS)
-			if ( gamemods_disableSteamAchievements 
+			if ( gamemods_disableSteamAchievements || (intro == false && gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT)
 				|| (intro == false && 
 					(conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 					|| conductGameChallenges[CONDUCT_LIFESAVING])) )
@@ -1444,7 +1444,18 @@ void handleMainMenu(bool mode)
 				{
 					h = -4;
 				}
-				ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3003]);
+				if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+				{
+					// disabled for current gamemode
+					int dummy = 0;
+					TTF_SizeUTF8(ttf8, language[3963], &w, &dummy);
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3963]);
+				}
+				else
+				{
+					// achievements are disabled
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3003]);
+				}
 			}
 #endif
 
