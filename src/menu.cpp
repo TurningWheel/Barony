@@ -4429,10 +4429,9 @@ void handleMainMenu(bool mode)
 
 
 			int server_flags_start_y = current_y;
-			int i;
-			for ( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
+			for ( int i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
 			{
-				char flagStringBuffer[256] = "";
+				char flagStringBuffer[512] = "";
 				if ( i < 5 )
 				{
 					strncpy(flagStringBuffer, language[153 + i], 255);
@@ -4470,7 +4469,6 @@ void handleMainMenu(bool mode)
 #endif // STEAMWORKS
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
-						tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 						if ( i == 2 || i == 3 || i == 5 || i == 6 || i == 7 )
 						{
 							tooltip_box.h = TTF12_HEIGHT * 2 + 8;
@@ -4483,6 +4481,12 @@ void handleMainMenu(bool mode)
 						{
 							tooltip_box.h = TTF12_HEIGHT + 8;
 						}
+						if ( gameModeManager.isServerflagDisabledForCurrentMode(i) )
+						{
+							strcat(flagStringBuffer, language[3962]); // changing flags disabled.
+							tooltip_box.h += TTF12_HEIGHT;
+						}
+						tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					}
 				}
 			}
@@ -4521,7 +4525,7 @@ void handleMainMenu(bool mode)
 				drawTooltip(&tooltip_box);
 				if (hovering_selection < NUM_SERVER_FLAGS)
 				{
-					char flagStringBuffer[256] = "";
+					char flagStringBuffer[512] = "";
 					if ( hovering_selection < 5 )
 					{
 						strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
@@ -4529,6 +4533,10 @@ void handleMainMenu(bool mode)
 					else
 					{
 						strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+					}
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(hovering_selection) )
+					{
+						strcat(flagStringBuffer, language[3962]); // changing flags disabled.
 					}
 					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 				}
@@ -4592,7 +4600,7 @@ void handleMainMenu(bool mode)
 					{
 						if ( mousestatus[SDL_BUTTON_LEFT] )
 						{
-							for ( i = 0; i < NUM_HOTBAR_CATEGORIES; ++i )
+							for ( int i = 0; i < NUM_HOTBAR_CATEGORIES; ++i )
 							{
 								if ( mouseInBounds(hotbar_options_x, hotbar_options_x + 24, hotbar_options_y, hotbar_options_y + 12) )
 								{
@@ -4612,7 +4620,7 @@ void handleMainMenu(bool mode)
 					// autosort category toggles
 					if ( mousestatus[SDL_BUTTON_LEFT] )
 					{
-						for ( i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
+						for ( int i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
 						{
 							if ( mouseInBounds(autosort_options_x, autosort_options_x + 16, autosort_options_y, autosort_options_y + 12) )
 							{
@@ -4645,9 +4653,10 @@ void handleMainMenu(bool mode)
 				if ( multiplayer != CLIENT )
 				{
 					current_y = server_flags_start_y;
-					for ( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
+					for ( int i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
 					{
-						if ( mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12) )
+						if ( !gameModeManager.isServerflagDisabledForCurrentMode(i)
+							&& mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12) )
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 

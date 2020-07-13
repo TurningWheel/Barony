@@ -19,6 +19,7 @@ See LICENSE for details.
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
+#include "net.hpp"
 
 class CustomHelpers
 {
@@ -2422,6 +2423,28 @@ public:
 	GameModes currentMode = GAME_MODE_DEFAULT;
 	GameModes getMode() const { return currentMode; };
 	void setMode(const GameModes mode) { currentMode = mode; };
+	bool isServerflagDisabledForCurrentMode(int i)
+	{
+		if ( getMode() == GAME_MODE_DEFAULT )
+		{
+			return false;
+		}
+		else if ( getMode() == GAME_MODE_TUTORIAL )
+		{
+			int flag = power(2, i);
+			switch ( flag )
+			{
+				case SV_FLAG_HARDCORE:
+				case SV_FLAG_HUNGER:
+					return true;
+					break;
+				default:
+					break;
+			}
+			return false;
+		}
+		return false;
+	}
 	class Tutorial_t
 	{
 		bool isFirstTimeLaunch = true;
