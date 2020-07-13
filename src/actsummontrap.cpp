@@ -90,21 +90,28 @@ void actSummonTrap(Entity* my)
 						typeToSpawn = customMonsterType;
 					}
 					monster = summonMonster(static_cast<Monster>(typeToSpawn), my->x, my->y);
-					if ( monster && useCustomMonsters )
+					if ( monster && monster->getStats() )
 					{
-						std::string variantName = "default";
-						if ( fixedCustomMonster )
+						if ( useCustomMonsters )
 						{
-							variantName = monsterCurveCustomManager.rollFixedMonsterVariant(map.name, typeToSpawn);
+							std::string variantName = "default";
+							if ( fixedCustomMonster )
+							{
+								variantName = monsterCurveCustomManager.rollFixedMonsterVariant(map.name, typeToSpawn);
+							}
+							else
+							{
+								variantName = monsterCurveCustomManager.rollMonsterVariant(map.name, typeToSpawn);
+							}
+							if ( variantName.compare("default") != 0 )
+							{
+								Monster tmp = NOTHING;
+								monsterCurveCustomManager.createMonsterFromFile(monster, monster->getStats(), variantName, tmp);
+							}
 						}
 						else
 						{
-							variantName = monsterCurveCustomManager.rollMonsterVariant(map.name, typeToSpawn);
-						}
-						if ( variantName.compare("default") != 0 )
-						{
-							Monster tmp = NOTHING;
-							monsterCurveCustomManager.createMonsterFromFile(monster, monster->getStats(), variantName, tmp);
+							monster->getStats()->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1; // disable champion normally.
 						}
 					}
 				}
