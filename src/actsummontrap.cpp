@@ -30,6 +30,7 @@ See LICENSE for details.
 #define SUMMONTRAP_FAILURERATE my->skill[5]
 #define SUMMONTRAP_FIRED my->skill[6]
 #define SUMMONTRAP_INITIALIZED my->skill[7]
+#define SUMMONTRAP_TICKS_TO_FIRE my->skill[8]
 
 void actSummonTrap(Entity* my)
 {
@@ -41,9 +42,16 @@ void actSummonTrap(Entity* my)
 	// received on signal
 	if ( (my->skill[28] == 2 && !SUMMONTRAP_POWERTODISABLE) || my->skill[28] == 1 && SUMMONTRAP_POWERTODISABLE )
 	{
-		// if the time interval between between spawns is reached, or if the mechanism is switched on for the first time.
-		if ( ticks % (TICKS_PER_SECOND * SUMMONTRAP_INTERVAL) == 0 || !SUMMONTRAP_INITIALIZED )
+		if ( SUMMONTRAP_TICKS_TO_FIRE > 0 )
 		{
+			--SUMMONTRAP_TICKS_TO_FIRE;
+		}
+
+		// if the time interval between between spawns is reached, or if the mechanism is switched on for the first time.
+		if ( SUMMONTRAP_TICKS_TO_FIRE == 0 || !SUMMONTRAP_INITIALIZED )
+		{
+			SUMMONTRAP_TICKS_TO_FIRE = (TICKS_PER_SECOND * SUMMONTRAP_INTERVAL);
+
 			if ( !SUMMONTRAP_FIRED && SUMMONTRAP_SPAWNCYCLES > 0 )
 			{
 				bool useCustomMonsters = monsterCurveCustomManager.curveExistsForCurrentMapName(map.name);
@@ -130,7 +138,7 @@ void actSummonTrap(Entity* my)
 					}
 					SUMMONTRAP_INITIALIZED = 1; // trap is starting up for the first time.
 				}
-				
+
 
 				if ( (SUMMONTRAP_FAILURERATE != 0) && (rand() % 100 < SUMMONTRAP_FAILURERATE) )
 				{
@@ -157,6 +165,9 @@ void actSummonTrap(Entity* my)
 			}
 		}
 	}
-
+	else
+	{
+		SUMMONTRAP_TICKS_TO_FIRE = 0;
+	}
 	return;
 }
