@@ -26,6 +26,7 @@
 #include <steam/steam_gameserver.h>
 #include "steam.hpp"
 #include "lobbies.hpp"
+#include "mod_tools.hpp"
 #endif
 
 #ifdef STEAMWORKS
@@ -782,7 +783,8 @@ void steamAchievement(const char* achName)
 
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
-		|| gamemods_disableSteamAchievements )
+		|| gamemods_disableSteamAchievements
+		|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		// cheats/mods have been enabled on savefile, disallow achievements.
 #ifndef DEBUG_ACHIEVEMENTS
