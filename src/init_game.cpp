@@ -32,6 +32,7 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include "cppfuncs.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -642,6 +643,7 @@ int fmod_result;
 
 	loadAllScores(SCORESFILE);
 	loadAllScores(SCORESFILE_MULTIPLAYER);
+	gameModeManager.Tutorial.init();
 	if (!loadInterfaceResources())
 	{
 		printlog("Failed to load interface resources.\n");

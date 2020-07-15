@@ -2449,7 +2449,12 @@ public:
 	{
 		bool isFirstTimeLaunch = true;
 		std::string currentMap = "";
+		const Uint32 kNumTutorialLevels = 10;
 	public:
+		void init()
+		{
+			readFromFile();
+		}
 		int dungeonLevel = -1;
 		void setTutorialMap(std::string& mapname)
 		{
@@ -2465,6 +2470,55 @@ public:
 		static void buttonReturnToTutorialHub(button_t* my);
 		static void buttonRestartTrial(button_t* my);
 		void openGameoverWindow();
+
+		class Menu_t
+		{
+			bool bWindowOpen = false;
+		public:
+			bool isOpen() { return bWindowOpen; }
+			void open();
+			void close() { bWindowOpen = false; }
+			int windowScroll = 0;
+		} Menu;
+
+		class Level_t
+		{
+		public:
+			Level_t()
+			{
+				std::string filename = "";
+				std::string title = "";
+				std::string description = "";
+				Uint32 completionTime = 0;
+			};
+			std::string filename;
+			std::string title;
+			std::string description;
+			Uint32 completionTime;
+		};
+		std::vector<Level_t> levels;
+
+		void readFromFile();
+		void writeToDocument();
+		void writeToFile(rapidjson::Document& d)
+		{
+			std::string outputPath = PHYSFS_getRealDir("/data/");
+			outputPath.append(PHYSFS_getDirSeparator());
+			std::string fileName = "data/tutorial_scores.json";
+			outputPath.append(fileName.c_str());
+
+			FILE* fp = fopen(outputPath.c_str(), "wb");
+			if ( !fp )
+			{
+				return;
+			}
+			char buf[65536];
+			rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
+			rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+			d.Accept(writer);
+
+			fclose(fp);
+		}
 	} Tutorial;
 };
 extern GameModeManager_t gameModeManager;

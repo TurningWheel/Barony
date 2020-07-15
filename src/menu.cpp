@@ -1551,9 +1551,15 @@ void handleMainMenu(bool mode)
 			 */
 			if ( keystatus[SDL_SCANCODE_T] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
+				keystatus[SDL_SCANCODE_T] = 0;
 				buttonStartSingleplayer(nullptr);
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
 				gameModeManager.Tutorial.startTutorial();
+			}
+			if ( keystatus[SDL_SCANCODE_Y] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
+			{
+				keystatus[SDL_SCANCODE_Y] = 0;
+				gameModeManager.Tutorial.Menu.open();
 			}
 
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
@@ -8453,6 +8459,154 @@ void handleMainMenu(bool mode)
 			}
 		}
 	}
+	else if ( gameModeManager.Tutorial.Menu.isOpen() )
+	{
+		int filenameMaxLength = 24;
+		int filename_padx = subx1 + 16;
+		int filename_pady = suby1 + 32;
+		int numFileEntries = 10;
+
+		int filename_padx2 = filename_padx + filenameMaxLength * TTF12_WIDTH + 8;
+		int filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
+		numFileEntries = 8;
+		filenameMaxLength = 48;
+		filename_padx = subx1 + 16;
+		filename_pady = suby1 + 32;
+		filename_padx2 = subx2 - 16 - 40;
+		filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
+		int filename_rowHeight = 2 * TTF12_HEIGHT + 8;
+		filename_pady += 3 * TTF12_HEIGHT;
+
+		std::string modInfoStr = "current loaded mods (hover for info): ";
+		SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
+		int maxDescriptionLines = 10;
+
+		tooltip.x = omousex - 256;
+		tooltip.y = omousey + 16;
+		tooltip.w = 32 + TTF12_WIDTH * 64;
+		tooltip.h = (gamemods_mountedFilepaths.size() + 1) * TTF12_HEIGHT + 8;
+
+		filename_pady += 2 * TTF12_HEIGHT;
+
+		// do slider
+		SDL_Rect slider;
+		slider.x = filename_padx2 + 8;
+		slider.y = filename_pady - 8;
+		slider.h = suby2 - (filename_pady + 20);
+		slider.w = 32;
+
+		int entriesToScroll = static_cast<Uint32>(std::max(((static_cast<int>(gameModeManager.Tutorial.levels.size()) / numFileEntries) - 1), 0));
+		entriesToScroll = entriesToScroll * numFileEntries + (gameModeManager.Tutorial.levels.size() % numFileEntries);
+
+		auto& menu = gameModeManager.Tutorial.Menu;
+
+		// handle slider movement.
+		if ( gameModeManager.Tutorial.levels.size() > numFileEntries )
+		{
+			drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+			if ( mouseInBounds(filename_padx, slider.x + slider.w,
+				slider.y, slider.y + slider.h) )
+			{
+				if ( mousestatus[SDL_BUTTON_WHEELUP] )
+				{
+					menu.windowScroll = std::max(menu.windowScroll - 1, 0);
+					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+				}
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				{
+					menu.windowScroll = std::min(menu.windowScroll + 1, entriesToScroll);
+					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+				}
+			}
+
+			if ( keystatus[SDL_SCANCODE_UP] )
+			{
+				menu.windowScroll = std::max(menu.windowScroll - 1, 0);
+				keystatus[SDL_SCANCODE_UP] = 0;
+			}
+			if ( keystatus[SDL_SCANCODE_DOWN] )
+			{
+				menu.windowScroll = std::min(menu.windowScroll + 1, entriesToScroll);
+				keystatus[SDL_SCANCODE_DOWN] = 0;
+			}
+			slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
+			slider.y += slider.h * menu.windowScroll;
+			if ( menu.windowScroll == entriesToScroll ) // reached end.
+			{
+				slider.y += (suby2 - 28) - (slider.y + slider.h); // bottom of slider is (suby2 - 28), so move the y level to imitate hitting the bottom in case of rounding error.
+			}
+			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h); // draw shortened list relative slider.
+		}
+
+		// draw the content
+		for ( int i = menu.windowScroll; i < gameModeManager.Tutorial.levels.size() && i < numFileEntries + menu.windowScroll; ++i )
+		{
+			filename_padx = subx1 + 16;
+
+			auto it = gameModeManager.Tutorial.levels.begin();
+			std::advance(it, i);
+			std::string folderName = (*it).title;
+
+			drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
+			SDL_Rect highlightEntry;
+			highlightEntry.x = filename_padx;
+			highlightEntry.y = filename_pady - 8;
+			highlightEntry.w = filename_padx2 - filename_padx;
+			highlightEntry.h = filename_rowHeight + 8;
+			drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+
+			/*if ( pathIsMounted )
+			{
+				SDL_Rect pos;
+				pos.x = filename_padx + 2;
+				pos.y = filename_pady - 6;
+				pos.w = filename_padx2 - filename_padx - 4;
+				pos.h = filename_rowHeight + 4;
+				drawRect(&pos, uint32ColorGreen(*mainsurface), 64);
+			}*/
+
+			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "Title: %s", (*it).title.c_str());
+			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady + TTF12_HEIGHT, "Desc: %s", (*it).description.c_str());
+
+			filename_padx = filename_padx2 - (12 * TTF12_WIDTH + 16);
+			// mount button
+			/*if ( !pathIsMounted )
+			{
+				if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, " Load Item ", 0) )
+				{
+					if ( PHYSFS_mount(path.c_str(), NULL, 0) )
+					{
+						gamemods_mountedFilepaths.push_back(std::make_pair(path, folderName));
+						printlog("[PhysFS]: [%s] is in the search path.\n", path.c_str());
+						gamemods_modelsListRequiresReload = true;
+						gamemods_soundListRequiresReload = true;
+					}
+				}
+			}*/
+			filename_pady += filename_rowHeight;
+			filename_pady += filename_rowHeight / 2;
+		}
+
+		// draw the tooltip we initialised earlier.
+		/*if ( drawModLoadOrder )
+		{
+			drawTooltip(&tooltip);
+			int numLoadedModLine = 1;
+			ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorBaronyBlue(*mainsurface),
+				"Current load list: (first is lowest priority)");
+			for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+			{
+				std::pair<std::string, std::string> line = *it;
+				modInfoStr = line.second;
+				if ( modInfoStr.length() > 64 )
+				{
+					modInfoStr = modInfoStr.substr(0, 64 - 2).append("..");
+				}
+				ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 4 + numLoadedModLine * TTF12_HEIGHT, "%2d) %s", numLoadedModLine, modInfoStr.c_str());
+				++numLoadedModLine;
+			}
+		}*/
+	}
 
 	// handle fade actions
 	if ( fadefinished )
@@ -11851,6 +12005,7 @@ void buttonCloseSubwindow(button_t* my)
 	score_window = 0;
 	score_leaderboard_window = 0;
 	gamemods_window = 0;
+	gameModeManager.Tutorial.Menu.close();
 	savegames_window = 0;
 	savegames_window_scroll = 0;
 	lobby_window = false;
