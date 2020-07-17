@@ -9619,10 +9619,10 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 								}
 								break;
 							case RING:
-								snprintf(fullmsg, 63, language[3071], namesays, language[3108 + TYPE_RING]);
+								snprintf(fullmsg, 63, language[3071], namesays, language[3107 + TYPE_RING]);
 								break;
 							case AMULET:
-								snprintf(fullmsg, 63, language[3071], namesays, language[3108 + TYPE_AMULET]);
+								snprintf(fullmsg, 63, language[3071], namesays, language[3107 + TYPE_AMULET]);
 								break;
 							default:
 								break;
@@ -9772,10 +9772,10 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 								}
 								break;
 							case RING:
-								snprintf(fullmsg, 63, language[3118], language[3108 + TYPE_RING]);
+								snprintf(fullmsg, 63, language[3118], language[3107 + TYPE_RING]);
 								break;
 							case AMULET:
-								snprintf(fullmsg, 63, language[3118], language[3108 + TYPE_AMULET]);
+								snprintf(fullmsg, 63, language[3118], language[3107 + TYPE_AMULET]);
 								break;
 							default:
 								break;
