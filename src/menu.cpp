@@ -12935,7 +12935,7 @@ void buttonStartServer(button_t* my)
 #ifdef STEAMWORKS
 void buttonInviteFriends(button_t* my)
 {
-	if (SteamUser()->BLoggedOn())
+	if (SteamUser()->BLoggedOn() && currentLobby)
 	{
 		SteamFriends()->ActivateGameOverlayInviteDialog(*static_cast<CSteamID*>(currentLobby));
 	}
