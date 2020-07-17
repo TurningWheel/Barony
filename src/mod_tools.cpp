@@ -233,7 +233,7 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 
 	//	CustomHelpers::addMemberToSubkey(d, "levels", filename, level);
 	//}
-	for ( int i = 0; i < kNumTutorialLevels && i < levels.size(); ++i )
+	for ( Uint32 i = 0; i < kNumTutorialLevels && i < levels.size(); ++i )
 	{
 		std::string filename = std::string("tutorial" + std::to_string(i + 1)); // non-zero starting index for filenames
 		d["levels"][filename.c_str()]["completion_time"].SetUint(levels.at(i).completionTime);
