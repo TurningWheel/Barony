@@ -10188,6 +10188,8 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
 	}
 
+	bool foodEntityConsumed = false;
+
 	if ( item->count > 1 )
 	{
 		--food->skill[13]; // update the entity on ground item count.
@@ -10196,13 +10198,14 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 	{
 		food->removeLightField();
 		list_RemoveNode(food->mynode);
+		foodEntityConsumed = true;
 	}
 	free(item);
 
 	// eating sound
 	playSoundEntity(this, 50 + rand() % 2, 64);
 
-	return true;
+	return foodEntityConsumed;
 }
 
 Entity* Entity::monsterAllyGetPlayerLeader()
