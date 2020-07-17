@@ -1962,8 +1962,8 @@ void CSteamLeaderboards::OnUploadScore(LeaderboardScoreUploaded_t *pCallback, bo
 	if ( !bIOFailure && pCallback->m_bSuccess )
 	{
 		m_CurrentLeaderboard = pCallback->m_hSteamLeaderboard;
-		LastUploadResult.b_ScoreUploadComplete = pCallback->m_bSuccess;
-		LastUploadResult.b_ScoreChanged = pCallback->m_bScoreChanged;
+		LastUploadResult.b_ScoreUploadComplete = (pCallback->m_bSuccess == 1);
+		LastUploadResult.b_ScoreChanged = (pCallback->m_bScoreChanged != 0);
 		LastUploadResult.globalRankNew = pCallback->m_nGlobalRankNew;
 		LastUploadResult.globalRankPrev = pCallback->m_nGlobalRankPrevious;
 		LastUploadResult.scoreUploaded = pCallback->m_nScore;
