@@ -215,6 +215,7 @@ void actItem(Entity* my)
 					else
 					{
 						monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my);
+						// crashes on item pickup...
 					}
 				}
 				my->clearMonsterInteract();
