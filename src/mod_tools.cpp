@@ -40,9 +40,20 @@ const std::vector<std::string> MonsterStatCustomManager::shopkeeperTypeStrings =
 	"general"
 };
 
-void GameModeManager_t::Tutorial_t::startTutorial()
+void GameModeManager_t::Tutorial_t::startTutorial(std::string mapToSet)
 {
-	isFirstTimeLaunch ? setTutorialMap(std::string("tutorial1.lmp")) : launchHub();
+	if ( mapToSet.compare("") == 0 )
+	{
+		isFirstTimeLaunch ? setTutorialMap(std::string("tutorial1.lmp")) : launchHub();
+	}
+	else
+	{
+		if ( mapToSet.find(".lmp") == std::string::npos )
+		{
+			mapToSet.append(".lmp");
+		}
+		setTutorialMap(mapToSet);
+	}
 	gameModeManager.setMode(gameModeManager.GameModes::GAME_MODE_TUTORIAL);
 	stats[0]->clearStats();
 	strcpy(stats[0]->name, "Player");
@@ -183,7 +194,8 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 			level.completionTime = level_itr->value["completion_time"].GetUint();
 			levels.push_back(level);
 		}
-
+		Menu.windowTitle = d["window_title"].GetString();
+		Menu.defaultHoverText = d["default_hover_text"].GetString();
 		printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 	}
 }
@@ -233,9 +245,9 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 
 	//	CustomHelpers::addMemberToSubkey(d, "levels", filename, level);
 	//}
-	for ( Uint32 i = 0; i < kNumTutorialLevels && i < levels.size(); ++i )
+	for ( Uint32 i = 1; i < kNumTutorialLevels && i < levels.size(); ++i )
 	{
-		std::string filename = std::string("tutorial" + std::to_string(i + 1)); // non-zero starting index for filenames
+		std::string filename = std::string("tutorial" + std::to_string(i));
 		d["levels"][filename.c_str()]["completion_time"].SetUint(levels.at(i).completionTime);
 	}
 
@@ -246,6 +258,7 @@ void GameModeManager_t::Tutorial_t::Menu_t::open()
 {
 	bWindowOpen = true;
 	windowScroll = 0;
+	this->selectedMenuItem = -1;
 
 	// create window
 	subwindow = 1;
@@ -267,26 +280,16 @@ void GameModeManager_t::Tutorial_t::Menu_t::open()
 	button->focused = 1;
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+}
 
-	// upload window button
-	button = newButton();
-	strcpy(button->label, "upload workshop content");
-	button->x = subx2 - 40 - strlen(button->label) * TTF12_WIDTH;
-	button->y = suby1;
-	button->sizex = strlen(button->label) * TTF12_WIDTH + 16;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
+void GameModeManager_t::Tutorial_t::Menu_t::onClickEntry()
+{
+	if ( this->selectedMenuItem == -1 )
+	{
+		return;
+	}
 
-	// start tutorial hub
-	button = newButton();
-	strcpy(button->label, "launch tutorial hub");
-	button->sizex = 25 * TTF12_WIDTH + 8;
-	button->sizey = 32;
-	button->x = subx2 - (button->sizex + 16);
-	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
+	buttonStartSingleplayer(nullptr);
+	gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
+	gameModeManager.Tutorial.startTutorial(gameModeManager.Tutorial.levels.at(this->selectedMenuItem).filename);
 }

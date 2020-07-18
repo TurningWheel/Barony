@@ -21,6 +21,8 @@
 #include "magic/magic.hpp"
 #include "menu.hpp"
 #include "files.hpp"
+#include "items.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1105,6 +1107,27 @@ void actCustomPortal(Entity* my)
 				}
 				loadnextlevel = true;
 				skipLevelsOnLoad = 0;
+
+				if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+				{
+					std::string mapname = map.name;
+					if ( mapname.find("Tutorial Hub") == std::string::npos
+						&& mapname.find("Tutorial ") != std::string::npos )
+					{
+						int number = stoi(mapname.substr(mapname.find("Tutorial ") + strlen("Tutorial "), 2));
+						auto& tutorialLevels = gameModeManager.Tutorial.levels;
+						if ( number >= 1 && number < tutorialLevels.size() )
+						{
+							tutorialLevels.at(number).completionTime = std::min(tutorialLevels.at(number).completionTime, completionTime);
+						}
+						completionTime = 0;
+						gameModeManager.Tutorial.writeToDocument();
+					}
+					else if ( mapname.find("Tutorial Hub") != std::string::npos )
+					{
+						completionTime = 0;
+					}
+				}
 
 				if ( my->portalCustomLevelText1 != 0 )
 				{

@@ -2466,7 +2466,7 @@ public:
 			loadCustomNextMap = "tutorial_hub.lmp";
 			currentMap = loadCustomNextMap;
 		}
-		void startTutorial();
+		void startTutorial(std::string mapToSet);
 		static void buttonReturnToTutorialHub(button_t* my);
 		static void buttonRestartTrial(button_t* my);
 		void openGameoverWindow();
@@ -2478,7 +2478,11 @@ public:
 			bool isOpen() { return bWindowOpen; }
 			void open();
 			void close() { bWindowOpen = false; }
+			void onClickEntry();
 			int windowScroll = 0;
+			int selectedMenuItem = -1;
+			std::string windowTitle = "";
+			std::string defaultHoverText = "";
 		} Menu;
 
 		class Level_t

@@ -1554,11 +1554,12 @@ void handleMainMenu(bool mode)
 				keystatus[SDL_SCANCODE_T] = 0;
 				buttonStartSingleplayer(nullptr);
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
-				gameModeManager.Tutorial.startTutorial();
+				gameModeManager.Tutorial.startTutorial("");
 			}
 			if ( keystatus[SDL_SCANCODE_Y] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				keystatus[SDL_SCANCODE_Y] = 0;
+				gameModeManager.Tutorial.readFromFile();
 				gameModeManager.Tutorial.Menu.open();
 			}
 
@@ -8461,32 +8462,18 @@ void handleMainMenu(bool mode)
 	}
 	else if ( gameModeManager.Tutorial.Menu.isOpen() )
 	{
-		int filenameMaxLength = 24;
+		int numFileEntries = 11;
+
+		int filenameMaxLength = 48;
 		int filename_padx = subx1 + 16;
 		int filename_pady = suby1 + 32;
-		int numFileEntries = 10;
+		int filename_padx2 = subx2 - 16;
+		int filename_rowHeight = 1.25 * TTF12_HEIGHT + 8;
 
-		int filename_padx2 = filename_padx + filenameMaxLength * TTF12_WIDTH + 8;
-		int filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
-		numFileEntries = 8;
-		filenameMaxLength = 48;
-		filename_padx = subx1 + 16;
-		filename_pady = suby1 + 32;
-		filename_padx2 = subx2 - 16 - 40;
-		filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
-		int filename_rowHeight = 2 * TTF12_HEIGHT + 8;
-		filename_pady += 3 * TTF12_HEIGHT;
+		auto& menu = gameModeManager.Tutorial.Menu;
+		ttfPrintTextFormattedColor(ttf12, filename_padx + 8, filename_pady + 8, uint32ColorWhite(*mainsurface), "%s", menu.windowTitle.c_str());
 
-		std::string modInfoStr = "current loaded mods (hover for info): ";
-		SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
-		int maxDescriptionLines = 10;
-
-		tooltip.x = omousex - 256;
-		tooltip.y = omousey + 16;
-		tooltip.w = 32 + TTF12_WIDTH * 64;
-		tooltip.h = (gamemods_mountedFilepaths.size() + 1) * TTF12_HEIGHT + 8;
-
-		filename_pady += 2 * TTF12_HEIGHT;
+		filename_pady += 4 * TTF12_HEIGHT;
 
 		// do slider
 		SDL_Rect slider;
@@ -8498,7 +8485,7 @@ void handleMainMenu(bool mode)
 		int entriesToScroll = static_cast<Uint32>(std::max(((static_cast<int>(gameModeManager.Tutorial.levels.size()) / numFileEntries) - 1), 0));
 		entriesToScroll = entriesToScroll * numFileEntries + (gameModeManager.Tutorial.levels.size() % numFileEntries);
 
-		auto& menu = gameModeManager.Tutorial.Menu;
+		menu.selectedMenuItem = -1;
 
 		// handle slider movement.
 		if ( gameModeManager.Tutorial.levels.size() > numFileEntries )
@@ -8548,6 +8535,7 @@ void handleMainMenu(bool mode)
 			std::string folderName = (*it).title;
 
 			drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
+
 			SDL_Rect highlightEntry;
 			highlightEntry.x = filename_padx;
 			highlightEntry.y = filename_pady - 8;
@@ -8555,57 +8543,72 @@ void handleMainMenu(bool mode)
 			highlightEntry.h = filename_rowHeight + 8;
 			drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
 
-			/*if ( pathIsMounted )
+			if ( mouseInBounds(highlightEntry.x, highlightEntry.x + highlightEntry.w, highlightEntry.y - 2, highlightEntry.y + highlightEntry.h + 4) )
+			{
+				menu.selectedMenuItem = i;
+			}
+
+			if ( menu.selectedMenuItem == i )
 			{
 				SDL_Rect pos;
 				pos.x = filename_padx + 2;
 				pos.y = filename_pady - 6;
 				pos.w = filename_padx2 - filename_padx - 4;
 				pos.h = filename_rowHeight + 4;
-				drawRect(&pos, uint32ColorGreen(*mainsurface), 64);
-			}*/
+				drawRect(&pos, uint32ColorBaronyBlue(*mainsurface), 64);
+				ttfPrintTextFormattedColor(ttf12, filename_padx + 8, suby2 - 3 * TTF12_HEIGHT, uint32ColorYellow(*mainsurface), "%s", (*it).description.c_str());
+			}
 
-			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "Title: %s", (*it).title.c_str());
-			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady + TTF12_HEIGHT, "Desc: %s", (*it).description.c_str());
+			SDL_Rect btn;
+			btn.w = 6 * TTF12_WIDTH + 8;
+			btn.h = highlightEntry.h - 12;
+			btn.x = highlightEntry.x + highlightEntry.w - btn.w - 4;
+			btn.y = highlightEntry.y + 8;
+			if ( i == 0 )
+			{
+				btn.w = 11 * TTF12_WIDTH + 8;
+				btn.x = highlightEntry.x + highlightEntry.w - btn.w - 4;
+				if ( drawClickableButton(btn.x, btn.y, btn.w, btn.h, 0) )
+				{
+					menu.onClickEntry();
+				}
+				ttfPrintTextFormatted(ttf12, btn.x + 11, filename_pady + 4, "%s", "Enter Hub");
+			}
+			else
+			{
+				if ( drawClickableButton(btn.x, btn.y, btn.w, btn.h, 0) )
+				{
+					menu.onClickEntry();
+				}
+				ttfPrintTextFormatted(ttf12, btn.x + 11, filename_pady + 4, "%s", "Play");
+			}
+
+			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady + 4, "%s", (*it).title.c_str());
+
+			if ( i != 0 )
+			{
+				const Uint32 sec = ((*it).completionTime / TICKS_PER_SECOND) % 60;
+				const Uint32 min = (((*it).completionTime / TICKS_PER_SECOND) / 60) % 60;
+				const Uint32 hour = (((*it).completionTime / TICKS_PER_SECOND) / 60) / 60;
+				const Uint32 timeTextWidth = 28 * TTF12_WIDTH + 8;
+				if ( (*it).completionTime > 0 )
+				{
+					ttfPrintTextFormatted(ttf12, btn.x - timeTextWidth, filename_pady + 4, "Best time: %02d:%02d:%02d", hour, min, sec);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, btn.x - timeTextWidth, filename_pady + 4, "Not completed");
+				}
+			}
 
 			filename_padx = filename_padx2 - (12 * TTF12_WIDTH + 16);
-			// mount button
-			/*if ( !pathIsMounted )
-			{
-				if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, " Load Item ", 0) )
-				{
-					if ( PHYSFS_mount(path.c_str(), NULL, 0) )
-					{
-						gamemods_mountedFilepaths.push_back(std::make_pair(path, folderName));
-						printlog("[PhysFS]: [%s] is in the search path.\n", path.c_str());
-						gamemods_modelsListRequiresReload = true;
-						gamemods_soundListRequiresReload = true;
-					}
-				}
-			}*/
-			filename_pady += filename_rowHeight;
-			filename_pady += filename_rowHeight / 2;
+			filename_pady += 1.5 * filename_rowHeight;
 		}
 
-		// draw the tooltip we initialised earlier.
-		/*if ( drawModLoadOrder )
+		if ( menu.selectedMenuItem == -1 )
 		{
-			drawTooltip(&tooltip);
-			int numLoadedModLine = 1;
-			ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorBaronyBlue(*mainsurface),
-				"Current load list: (first is lowest priority)");
-			for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
-			{
-				std::pair<std::string, std::string> line = *it;
-				modInfoStr = line.second;
-				if ( modInfoStr.length() > 64 )
-				{
-					modInfoStr = modInfoStr.substr(0, 64 - 2).append("..");
-				}
-				ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 4 + numLoadedModLine * TTF12_HEIGHT, "%2d) %s", numLoadedModLine, modInfoStr.c_str());
-				++numLoadedModLine;
-			}
-		}*/
+			ttfPrintTextFormattedColor(ttf12, subx1 + 16 + 8, suby2 - 3 * TTF12_HEIGHT, uint32ColorYellow(*mainsurface), "%s", menu.defaultHoverText.c_str());
+		}
 	}
 
 	// handle fade actions
