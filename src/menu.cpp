@@ -353,8 +353,74 @@ void changeSettingsTab(int option)
 	}
 }
 
+std::vector<std::pair<std::string, int>> menuOptions;
+void initMenuOptions()
+{
+	menuOptions.clear();
+	menuOptions.push_back(std::make_pair(language[1303], 1));
+	menuOptions.push_back(std::make_pair(language[1304], 2));
+	menuOptions.push_back(std::make_pair(language[3964], 3));
+	menuOptions.push_back(std::make_pair(language[1305], 4));
+	menuOptions.push_back(std::make_pair(language[1306], 5));
+	menuOptions.push_back(std::make_pair(language[1307], 6));
+	menuOptions.push_back(std::make_pair(language[2978], 7));
+#ifdef STEAMWORKS
+	menuOptions.push_back(std::make_pair(language[2979], 8));
+	menuOptions.push_back(std::make_pair(language[1308], 9));
+#else
+	menuOptions.push_back(std::make_pair(language[1308], 9));
+#endif
+}
+
+void getPrevMenuOption(int& currentMenuOption)
+{
+	for ( auto& it = menuOptions.begin(); it != menuOptions.end(); )
+	{
+		if ( (*it).second == currentMenuOption )
+		{
+			if ( it == menuOptions.begin() )
+			{
+				currentMenuOption = menuOptions.back().second;
+				return;
+			}
+			--it;
+			currentMenuOption = (*it).second;
+			return;
+		}
+		++it;
+	}
+
+	currentMenuOption = menuOptions.at(0).second; // default value.
+}
+
+void getNextMenuOption(int& currentMenuOption)
+{
+	for ( auto& it = menuOptions.begin(); it != menuOptions.end(); )
+	{
+		if ( (*it).second == currentMenuOption )
+		{
+			++it;
+			if ( it == menuOptions.end() )
+			{
+				currentMenuOption = menuOptions.at(0).second;
+				return;
+			}
+			currentMenuOption = (*it).second;
+			return;
+		}
+		++it;
+	}
+
+	currentMenuOption = menuOptions.at(0).second; // default value.
+}
+
 void navigateMainMenuItems(bool mode)
 {
+	if ( menuOptions.empty() )
+	{
+		return;
+	}
+
 	int warpx, warpy;
 	if (menuselect == 0)
 	{
@@ -367,7 +433,7 @@ void navigateMainMenuItems(bool mode)
 				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 			}
 			draw_cursor = false;
-			menuselect = 1;
+			menuselect = menuOptions.at(0).second;
 			//Warp cursor to menu item, for gamepad convenience.
 			warpx = 50 + 18;
 			warpy = (yres / 4) + 80 + (18 / 2); //I am a wizard. I hate magic numbers.
@@ -381,7 +447,7 @@ void navigateMainMenuItems(bool mode)
 				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 			}
 			draw_cursor = false;
-			menuselect = 1;
+			menuselect = menuOptions.at(0).second;
 			warpx = 50 + 18;
 			warpy = (yres / 4) + 80 + (18 / 2);
 			SDL_WarpMouseInWindow(screen, warpx, warpy);
@@ -397,18 +463,14 @@ void navigateMainMenuItems(bool mode)
 				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 			}
 			draw_cursor = false;
-			menuselect--;
-			if (menuselect == 0)
+			if ( mode )
 			{
-				if (mode)
-				{
-#ifdef STEAMWORKS
-					menuselect = 8;
-#else
-					menuselect = 7;
-#endif
-				}
-				else
+				getPrevMenuOption(menuselect);
+			}
+			else
+			{
+				menuselect--;
+				if ( menuselect == 0 )
 				{
 					menuselect = 4 + (multiplayer != CLIENT);
 				}
@@ -426,30 +488,18 @@ void navigateMainMenuItems(bool mode)
 				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 			}
 			draw_cursor = false;
-			menuselect++;
-			if (mode)
+			if ( mode )
 			{
-#ifdef STEAMWORKS
-				if (menuselect > 8 )
-				{
-					menuselect = 1;
-				}
-#else
-				if ( menuselect > 7 )
-				{
-					menuselect = 1;
-				}
-#endif // STEAMWORKS
-
+				getNextMenuOption(menuselect);
 			}
 			else
 			{
-				if (menuselect > 4 + ( multiplayer != CLIENT))
+				menuselect++;
+				if ( menuselect > 4 + (multiplayer != CLIENT) )
 				{
 					menuselect = 1;
 				}
 			}
-
 			warpx = 50 + 18;
 			warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
 			SDL_WarpMouseInWindow(screen, warpx, warpy);
@@ -1308,7 +1358,10 @@ void handleMainMenu(bool mode)
 	}
 #else
 #endif // STEAMWORKS
-
+	if ( menuOptions.empty() )
+	{
+		initMenuOptions();
+	}
 
 	if ( !movie )
 	{
@@ -1536,19 +1589,6 @@ void handleMainMenu(bool mode)
 			/*
 			 * Mouse menu item select/highlight implicitly handled here.
 			 */
-
-			/*
-			bool mouseover = false;
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1303]) * 18 && omousey >= yres / 4 + 80 && omousey < yres / 4 + 80 + 18)) ) {
-				//Mouse hovering over a menu item.
-				mouseover = true;
-				menuselect = 1;
-			}
-
-			if ( (mouseover || (menuselect == 1)) && subwindow == 0 && introstage == 1 ) {
-				ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1303]);
-				//...etc
-			 */
 			if ( keystatus[SDL_SCANCODE_T] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				keystatus[SDL_SCANCODE_T] = 0;
@@ -1601,20 +1641,26 @@ void handleMainMenu(bool mode)
 				buttonJoinLobby(nullptr);
 			}
 
+			bool mainMenuSelectInputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1));
+
 			//"Start Game" button.
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1303]) * 18 && omousey >= yres / 4 + 80 && omousey < yres / 4 + 80 + 18) || (menuselect == 1)) && subwindow == 0 && introstage == 1 )
+			SDL_Rect text;
+			text.x = 50;
+			text.h = 18;
+			text.w = 18;
+
+			const Uint32 numMenuOptions = menuOptions.size();
+			Uint32 menuIndex = 0;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			Uint32 menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
 			{
-				menuselect = 1;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 80, colorGray, language[1303]);
-				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					keystatus[SDL_SCANCODE_RETURN] = 0;
-					if ( rebindaction == -1 )
-					{
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-					}
-					playSound(139, 64);
+					pauseMenuOnInputPressed();
 
 					// look for a save game
 					bool reloadModels = false;
@@ -1796,22 +1842,22 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 80, language[1303]);
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
 			}
+
+			++menuIndex;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+
 			//"Introduction" button.
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1304]) * 18 && omousey >= yres / 4 + 104 && omousey < yres / 4 + 104 + 18) || (menuselect == 2)) && subwindow == 0 && introstage == 1 )
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
 			{
-				menuselect = 2;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 104, colorGray, language[1304]);
-				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					keystatus[SDL_SCANCODE_RETURN] = 0;
-					if ( rebindaction == -1 )
-					{
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-					}
-					playSound(139, 64);
+					pauseMenuOnInputPressed();
+
 					introstage = 6; // goes to intro movie
 					fadeout = true;
 #ifdef MUSIC
@@ -1821,134 +1867,144 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 104, language[1304]);
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
 			}
-			//"Statistics" Button.
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1305]) * 18 && omousey >= yres / 4 + 128 && omousey < yres / 4 + 128 + 18) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
+
+			++menuIndex;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+
+			//"Hall of Trials" Button.
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
 			{
-				menuselect = 3;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 128, colorGray, language[1305]);
-				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					keystatus[SDL_SCANCODE_RETURN] = 0;
-					if ( rebindaction == -1 )
-					{
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-					}
-					playSound(139, 64);
+					pauseMenuOnInputPressed();
+
+					gameModeManager.Tutorial.readFromFile();
+					gameModeManager.Tutorial.Menu.open();
+				}
+			}
+			else
+			{
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
+			}
+
+			++menuIndex;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+
+			//"Statistics" Button.
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
+			{
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
+				{
+					pauseMenuOnInputPressed();
 
 					buttonOpenScoresWindow(nullptr);
 				}
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 128, language[1305]);
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
 			}
+
+			++menuIndex;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+
 			//"Settings" button.
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1306]) * 18 && omousey >= yres / 4 + 152 && omousey < yres / 4 + 152 + 18) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
 			{
-				menuselect = 4;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152, colorGray, language[1306]);
-				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					keystatus[SDL_SCANCODE_RETURN] = 0;
-					if ( rebindaction == -1 )
-					{
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-					}
-					playSound(139, 64);
+					pauseMenuOnInputPressed();
 					openSettingsWindow();
 				}
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 152, language[1306]);
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
 			}
+
+			++menuIndex;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+
 			//"Credits" button
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1307]) * 18 && omousey >= yres / 4 + 176 && omousey < yres / 4 + 176 + 18) || (menuselect == 5)) && subwindow == 0 && introstage == 1 )
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
 			{
-				menuselect = 5;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 176, colorGray, language[1307]);
-				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					keystatus[SDL_SCANCODE_RETURN] = 0;
-					if ( rebindaction == -1 )
-					{
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-					}
-					playSound(139, 64);
+					pauseMenuOnInputPressed();
 					introstage = 4; // goes to credits
 					fadeout = true;
 				}
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 176, language[1307]);
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
 			}
+
+			++menuIndex;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+			
 			//"Custom content" button.
-			int customContent_pady = 0;
-			int customContentMenuSelectOffset = 0;
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[2978]) * 18 && omousey >= yres / 4 + 200 && omousey < yres / 4 + 200 + 18) || (menuselect == 6)) && subwindow == 0 && introstage == 1 )
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
 			{
-				menuselect = 6;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 200, colorGray, language[2978]);
-				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					keystatus[SDL_SCANCODE_RETURN] = 0;
-					if ( rebindaction == -1 )
-					{
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-					}
-					playSound(139, 64);
+					pauseMenuOnInputPressed();
 					gamemodsCustomContentInit();
 				}
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 200, language[2978]);
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
 			}
 #ifdef STEAMWORKS
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[2979]) * 18 && omousey >= yres / 4 + 224 && omousey < yres / 4 + 224 + 18) || (menuselect == 7)) && subwindow == 0 && introstage == 1 )
+			++menuIndex;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
 			{
-				menuselect = 7;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 224, colorGray, language[2979]);
-				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					keystatus[SDL_SCANCODE_RETURN] = 0;
-					if ( rebindaction == -1 )
-					{
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-					}
-					playSound(139, 64);
+					pauseMenuOnInputPressed();
 					gamemodsSubscribedItemsInit();
 				}
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 224, language[2979]);
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
 			}
-			customContent_pady = 24;
-			customContentMenuSelectOffset = 1;
 #endif
+			++menuIndex;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+
 			//"Quit" button.
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1308]) * 18 && omousey >= yres / 4 + 224 + customContent_pady && omousey < yres / 4 + 224 + customContent_pady + 18) || (menuselect == 7 + customContentMenuSelectOffset)) && subwindow == 0 && introstage == 1 )
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
 			{
-				menuselect = 7 + customContentMenuSelectOffset;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 224 + customContent_pady, colorGray, language[1308]);
-				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					keystatus[SDL_SCANCODE_RETURN] = 0;
-					if ( rebindaction == -1 )
-					{
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-					}
-					playSound(139, 64);
+					pauseMenuOnInputPressed();
 
 					// create confirmation window
 					subwindow = 1;
@@ -1998,7 +2054,7 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 224 + customContent_pady, language[1308]);
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
 			}
 		}
 		else
@@ -8580,7 +8636,7 @@ void handleMainMenu(bool mode)
 				{
 					menu.onClickEntry();
 				}
-				ttfPrintTextFormatted(ttf12, btn.x + 11, filename_pady + 4, "%s", "Play");
+				ttfPrintTextFormatted(ttf12, btn.x + 7, filename_pady + 4, "%s", "Begin");
 			}
 
 			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady + 4, "%s", (*it).title.c_str());

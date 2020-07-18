@@ -277,3 +277,6 @@ void openConfirmResolutionWindow();
 void buttonAcceptResolution(button_t* my);
 void buttonRevertResolution(button_t* my);
 void revertResolution();
+
+extern std::vector<std::pair<std::string, int>> menuOptions;
+void initMenuOptions();
