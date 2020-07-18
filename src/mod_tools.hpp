@@ -2485,6 +2485,20 @@ public:
 			std::string defaultHoverText = "";
 		} Menu;
 
+		class FirstTimePrompt_t
+		{
+			bool bWindowOpen = false;
+		public:
+			void createPrompt();
+			void drawDialogue();
+			bool isOpen() { return bWindowOpen; }
+			void close() { bWindowOpen = false; }
+			bool doButtonSkipPrompt = false;
+			bool showFirstTimePrompt = false;
+			static void buttonSkipPrompt(button_t* my);
+			static void buttonPromptEnterTutorialHub(button_t* my);
+		} FirstTimePrompt;
+
 		class Level_t
 		{
 		public:

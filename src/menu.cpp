@@ -421,6 +421,15 @@ void navigateMainMenuItems(bool mode)
 		return;
 	}
 
+	int numInGameMenuOptions = 4 + (multiplayer != CLIENT);
+	if ( !mode && gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	{
+		if ( !strcmp(map.name, "Tutorial Hub") )
+		{
+			numInGameMenuOptions = 4;
+		}
+	}
+
 	int warpx, warpy;
 	if (menuselect == 0)
 	{
@@ -472,7 +481,7 @@ void navigateMainMenuItems(bool mode)
 				menuselect--;
 				if ( menuselect == 0 )
 				{
-					menuselect = 4 + (multiplayer != CLIENT);
+					menuselect = numInGameMenuOptions;
 				}
 			}
 
@@ -495,7 +504,7 @@ void navigateMainMenuItems(bool mode)
 			else
 			{
 				menuselect++;
-				if ( menuselect > 4 + (multiplayer != CLIENT) )
+				if ( menuselect > numInGameMenuOptions )
 				{
 					menuselect = 1;
 				}
@@ -1106,6 +1115,12 @@ void handleTutorialPauseMenu()
 	text.h = 18;
 	text.w = 18;
 
+	bool mapIsTutorialHub = false;
+	if ( !strcmp(map.name, "Tutorial Hub") )
+	{
+		mapIsTutorialHub = true;
+	}
+
 	text.y = yres / 4 + 80;
 	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1309]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 1)) && subwindow == 0 && introstage == 1 )
 	{
@@ -1141,11 +1156,17 @@ void handleTutorialPauseMenu()
 	}
 
 	text.y = yres / 4 + 128;
-	if ( ((omousex >= text.x && omousex < text.x + strlen(language[3958]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
+	char* returnToHubOptionText = language[3958];
+	if ( mapIsTutorialHub )
+	{
+		returnToHubOptionText = language[3969];
+	}
+
+	if ( ((omousex >= text.x && omousex < text.x + strlen(returnToHubOptionText) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
 	{
 		// return to hub
 		menuselect = 3;
-		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3958]);
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, returnToHubOptionText);
 		if ( inputIsPressed )
 		{
 			pauseMenuOnInputPressed();
@@ -1156,7 +1177,15 @@ void handleTutorialPauseMenu()
 			subx2 = xres / 2 + 144;
 			suby1 = yres / 2 - 48;
 			suby2 = yres / 2 + 48;
-			strcpy(subtext, language[3960]);
+
+			if ( mapIsTutorialHub )
+			{
+				strcpy(subtext, language[3970]);
+			}
+			else
+			{
+				strcpy(subtext, language[3960]);
+			}
 
 			// add a cancel button
 			button_t* button = newButton();
@@ -1198,74 +1227,83 @@ void handleTutorialPauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, text.x, text.y, language[3958]);
+		ttfPrintText(ttf16, text.x, text.y, returnToHubOptionText);
 	}
 
 	text.y = yres / 4 + 152;
-	if ( ((omousex >= text.x && omousex < text.x + strlen(language[3957]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
+	if ( !mapIsTutorialHub )
 	{
-		//restart game
-		menuselect = 4;
-		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3957]);
-		if ( inputIsPressed )
+		if ( ((omousex >= text.x && omousex < text.x + strlen(language[3957]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
 		{
-			pauseMenuOnInputPressed();
+			//restart game
+			menuselect = 4;
+			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3957]);
+			if ( inputIsPressed )
+			{
+				pauseMenuOnInputPressed();
 
-			// create confirmation window
-			subwindow = 1;
-			subx1 = xres / 2 - 144;
-			subx2 = xres / 2 + 144;
-			suby1 = yres / 2 - 48;
-			suby2 = yres / 2 + 48;
-			strcpy(subtext, language[3956]);
+				// create confirmation window
+				subwindow = 1;
+				subx1 = xres / 2 - 144;
+				subx2 = xres / 2 + 144;
+				suby1 = yres / 2 - 48;
+				suby2 = yres / 2 + 48;
+				strcpy(subtext, language[3956]);
 
-			// add a cancel button
-			button_t* button = newButton();
-			strcpy(button->label, language[1316]);
-			button->x = subx2 - strlen(language[1316]) * 12 - 16;
-			button->y = suby2 - 28;
-			button->sizex = strlen(language[1316]) * 12 + 8;
-			button->sizey = 20;
-			button->action = &buttonCloseSubwindow;
-			button->visible = 1;
-			button->focused = 1;
+				// add a cancel button
+				button_t* button = newButton();
+				strcpy(button->label, language[1316]);
+				button->x = subx2 - strlen(language[1316]) * 12 - 16;
+				button->y = suby2 - 28;
+				button->sizex = strlen(language[1316]) * 12 + 8;
+				button->sizey = 20;
+				button->action = &buttonCloseSubwindow;
+				button->visible = 1;
+				button->focused = 1;
 
-			// close button
-			button = newButton();
-			strcpy(button->label, "x");
-			button->x = subx2 - 20;
-			button->y = suby1;
-			button->sizex = 20;
-			button->sizey = 20;
-			button->action = &buttonCloseSubwindow;
-			button->visible = 1;
-			button->focused = 1;
-			button->key = SDL_SCANCODE_ESCAPE;
-			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+				// close button
+				button = newButton();
+				strcpy(button->label, "x");
+				button->x = subx2 - 20;
+				button->y = suby1;
+				button->sizex = 20;
+				button->sizey = 20;
+				button->action = &buttonCloseSubwindow;
+				button->visible = 1;
+				button->focused = 1;
+				button->key = SDL_SCANCODE_ESCAPE;
+				button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
-			// yes button
-			button = newButton();
-			strcpy(button->label, language[1314]);
-			button->x = subx1 + 8;
-			button->y = suby2 - 28;
-			button->sizex = strlen(language[1314]) * 12 + 8;
-			button->sizey = 20;
-			button->action = &gameModeManager.Tutorial.buttonRestartTrial;
-			button->visible = 1;
-			button->focused = 1;
-			button->key = SDL_SCANCODE_RETURN;
-			button->joykey = joyimpulses[INJOY_MENU_NEXT];
+				// yes button
+				button = newButton();
+				strcpy(button->label, language[1314]);
+				button->x = subx1 + 8;
+				button->y = suby2 - 28;
+				button->sizex = strlen(language[1314]) * 12 + 8;
+				button->sizey = 20;
+				button->action = &gameModeManager.Tutorial.buttonRestartTrial;
+				button->visible = 1;
+				button->focused = 1;
+				button->key = SDL_SCANCODE_RETURN;
+				button->joykey = joyimpulses[INJOY_MENU_NEXT];
+			}
 		}
-	}
-	else
-	{
-		ttfPrintText(ttf16, text.x, text.y, language[3957]);
+		else
+		{
+			ttfPrintText(ttf16, text.x, text.y, language[3957]);
+		}
+
+		text.y = yres / 4 + 176;
 	}
 
-	text.y = yres / 4 + 176;
-	if ( ((omousex >= 50 && omousex < 50 + strlen(language[3959]) * 18 && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 5)) && subwindow == 0 && introstage == 1 )
+	int quitMenuOptionSelect = 5;
+	if ( mapIsTutorialHub )
 	{
-		menuselect = 5;
+		quitMenuOptionSelect = 4;
+	}
+	if ( ((omousex >= 50 && omousex < 50 + strlen(language[3959]) * 18 && omousey >= text.y && omousey < text.y + text.h) || (menuselect == quitMenuOptionSelect)) && subwindow == 0 && introstage == 1 )
+	{
+		menuselect = quitMenuOptionSelect;
 		// return to main menu
 		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3959]);
 		if ( inputIsPressed )
@@ -1589,20 +1627,6 @@ void handleMainMenu(bool mode)
 			/*
 			 * Mouse menu item select/highlight implicitly handled here.
 			 */
-			if ( keystatus[SDL_SCANCODE_T] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
-			{
-				keystatus[SDL_SCANCODE_T] = 0;
-				buttonStartSingleplayer(nullptr);
-				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
-				gameModeManager.Tutorial.startTutorial("");
-			}
-			if ( keystatus[SDL_SCANCODE_Y] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
-			{
-				keystatus[SDL_SCANCODE_Y] = 0;
-				gameModeManager.Tutorial.readFromFile();
-				gameModeManager.Tutorial.Menu.open();
-			}
-
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
@@ -1829,14 +1853,21 @@ void handleMainMenu(bool mode)
 
 					gamemods_disableSteamAchievements = false;
 
-					if ( anySaveFileExists() )
+					if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
 					{
-						//openLoadGameWindow(NULL);
-						openNewLoadGameWindow(nullptr);
+						gameModeManager.Tutorial.FirstTimePrompt.createPrompt();
 					}
 					else
 					{
-						buttonOpenCharacterCreationWindow(NULL);
+						if ( anySaveFileExists() )
+						{
+							//openLoadGameWindow(NULL);
+							openNewLoadGameWindow(nullptr);
+						}
+						else
+						{
+							buttonOpenCharacterCreationWindow(NULL);
+						}
 					}
 				}
 			}
@@ -8666,6 +8697,22 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormattedColor(ttf12, subx1 + 16 + 8, suby2 - 3 * TTF12_HEIGHT, uint32ColorYellow(*mainsurface), "%s", menu.defaultHoverText.c_str());
 		}
 	}
+	else if ( gameModeManager.Tutorial.FirstTimePrompt.isOpen() )
+	{
+		gameModeManager.Tutorial.FirstTimePrompt.drawDialogue();
+		if ( gameModeManager.Tutorial.FirstTimePrompt.doButtonSkipPrompt )
+		{
+			gameModeManager.Tutorial.FirstTimePrompt.doButtonSkipPrompt = false;
+			if ( anySaveFileExists() )
+			{
+				openNewLoadGameWindow(nullptr);
+			}
+			else
+			{
+				buttonOpenCharacterCreationWindow(NULL);
+			}
+		}
+	}
 
 	// handle fade actions
 	if ( fadefinished )
@@ -12065,6 +12112,7 @@ void buttonCloseSubwindow(button_t* my)
 	score_leaderboard_window = 0;
 	gamemods_window = 0;
 	gameModeManager.Tutorial.Menu.close();
+	gameModeManager.Tutorial.FirstTimePrompt.close();
 	savegames_window = 0;
 	savegames_window_scroll = 0;
 	lobby_window = false;

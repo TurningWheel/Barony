@@ -12,6 +12,7 @@ See LICENSE for details.
 #include "mod_tools.hpp"
 #include "menu.hpp"
 #include "classdescriptions.hpp"
+#include "draw.hpp"
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -225,6 +226,9 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 			return;
 		}
 		int version = d["version"].GetInt();
+
+		this->FirstTimePrompt.showFirstTimePrompt = d["first_time_prompt"].GetBool();
+
 		for ( auto& it = levels.begin(); it != levels.end(); ++it )
 		{
 			if ( d["levels"].HasMember(it->filename.c_str()) && d["levels"][it->filename.c_str()].HasMember("completion_time") )
@@ -241,6 +245,10 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 		rapidjson::Document d;
 		d.SetObject();
 		CustomHelpers::addMemberToRoot(d, "version", rapidjson::Value(1));
+		CustomHelpers::addMemberToRoot(d, "first_time_prompt", rapidjson::Value(true));
+
+		this->FirstTimePrompt.showFirstTimePrompt = true;
+
 		rapidjson::Value levelsObj(rapidjson::kObjectType);
 		CustomHelpers::addMemberToRoot(d, "levels", levelsObj);
 		for ( auto& it = levels.begin(); it != levels.end(); ++it )
@@ -282,6 +290,8 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 
 	rapidjson::Document d;
 	d.ParseStream(is);
+
+	d["first_time_prompt"].SetBool(this->FirstTimePrompt.showFirstTimePrompt);
 
 	for ( auto& it = levels.begin(); it != levels.end(); ++it )
 	{
@@ -329,4 +339,83 @@ void GameModeManager_t::Tutorial_t::Menu_t::onClickEntry()
 	buttonStartSingleplayer(nullptr);
 	gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
 	gameModeManager.Tutorial.startTutorial(gameModeManager.Tutorial.levels.at(this->selectedMenuItem).filename);
+}
+
+void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::createPrompt()
+{
+	bWindowOpen = true;
+	showFirstTimePrompt = false;
+
+	if ( !titleDefault_bmp )
+	{
+		return;
+	}
+
+	// create window
+	subwindow = 1;
+	subx1 = xres / 2 - ((0.75 * titleDefault_bmp->w / 2) + 52);
+	subx2 = xres / 2 + ((0.75 * titleDefault_bmp->w / 2) + 52);
+	suby1 = yres / 2 - ((0.75 * titleDefault_bmp->h / 2) + 88);
+	suby2 = yres / 2 + ((0.75 * titleDefault_bmp->h / 2) + 88);
+	strcpy(subtext, "");
+
+	Uint32 centerWindowX = subx1 + (subx2 - subx1) / 2;
+
+	button_t* button = newButton();
+	strcpy(button->label, language[3965]);
+	button->sizex = strlen(language[3965]) * 10 + 8;
+	button->sizey = 20;
+	button->x = centerWindowX - button->sizex / 2;
+	button->y = suby2 - 28 - 24;
+	button->action = &buttonPromptEnterTutorialHub;
+	button->visible = 1;
+	button->focused = 1;
+
+	button = newButton();
+	strcpy(button->label, language[3966]);
+	button->sizex = strlen(language[3966]) * 12 + 8;
+	button->sizey = 20;
+	button->x = centerWindowX - button->sizex / 2;
+	button->y = suby2 - 28;
+	button->action = &buttonSkipPrompt;
+	button->visible = 1;
+	button->focused = 1;
+}
+
+void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::drawDialogue()
+{
+	if ( !bWindowOpen )
+	{
+		return;
+	}
+	Uint32 centerWindowX = subx1 + (subx2 - subx1) / 2;
+
+	SDL_Rect pos;
+	pos.x = centerWindowX - 0.75 * titleDefault_bmp->w / 2;
+	pos.y = suby1 + 4;
+	pos.w = 0.75 * titleDefault_bmp->w;
+	pos.h = 0.75 * titleDefault_bmp->h;
+	SDL_Rect scaled;
+	scaled.x = 0;
+	scaled.y = 0;
+	scaled.w = titleDefault_bmp->w * 0.75;
+	scaled.h = titleDefault_bmp->h * 0.75;
+	drawImageScaled(titleDefault_bmp, &scaled, &pos);
+	
+	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3936]);
+	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3967]);
+	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2 - TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3968]);
+}
+
+void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::buttonSkipPrompt(button_t* my)
+{
+	gameModeManager.Tutorial.FirstTimePrompt.doButtonSkipPrompt = true;
+	gameModeManager.Tutorial.writeToDocument();
+}
+
+void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::buttonPromptEnterTutorialHub(button_t* my)
+{
+	gameModeManager.Tutorial.Menu.selectedMenuItem = 0; // set the tutorial hub to enter.
+	gameModeManager.Tutorial.Menu.onClickEntry();
+	gameModeManager.Tutorial.writeToDocument();
 }
