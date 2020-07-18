@@ -1118,7 +1118,14 @@ void actCustomPortal(Entity* my)
 						auto& tutorialLevels = gameModeManager.Tutorial.levels;
 						if ( number >= 1 && number < tutorialLevels.size() )
 						{
-							tutorialLevels.at(number).completionTime = std::min(tutorialLevels.at(number).completionTime, completionTime);
+							if ( tutorialLevels.at(number).completionTime == 0 )
+							{
+								tutorialLevels.at(number).completionTime = completionTime; // first time score.
+							}
+							else
+							{
+								tutorialLevels.at(number).completionTime = std::min(tutorialLevels.at(number).completionTime, completionTime);
+							}
 						}
 						completionTime = 0;
 						gameModeManager.Tutorial.writeToDocument();
