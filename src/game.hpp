@@ -113,6 +113,7 @@ extern bool darkmap;
 extern int shaking, bobbing;
 extern int musvolume;
 extern SDL_Surface* title_bmp;
+extern SDL_Surface* titleDefault_bmp;
 extern SDL_Surface* logo_bmp;
 extern SDL_Surface* cursor_bmp;
 extern SDL_Surface* cross_bmp;

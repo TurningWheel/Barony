@@ -300,6 +300,7 @@ int musvolume = 48;
 
 // fun stuff
 SDL_Surface* title_bmp = nullptr;
+SDL_Surface* titleDefault_bmp = nullptr;
 SDL_Surface* logo_bmp = nullptr;
 SDL_Surface* cursor_bmp = nullptr;
 SDL_Surface* cross_bmp = nullptr;
