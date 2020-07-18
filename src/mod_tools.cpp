@@ -161,10 +161,10 @@ void GameModeManager_t::Tutorial_t::openGameoverWindow()
 void GameModeManager_t::Tutorial_t::readFromFile()
 {
 	levels.clear();
-	if ( PHYSFS_getRealDir("/data/tutorial_scores.json") )
+	if ( PHYSFS_getRealDir("/data/tutorial_strings.json") )
 	{
-		std::string inputPath = PHYSFS_getRealDir("/data/tutorial_scores.json");
-		inputPath.append("/data/tutorial_scores.json");
+		std::string inputPath = PHYSFS_getRealDir("/data/tutorial_strings.json");
+		inputPath.append("/data/tutorial_strings.json");
 
 		FILE* fp = fopen(inputPath.c_str(), "rb");
 		if ( !fp )
@@ -191,12 +191,65 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 			level.filename = level_itr->name.GetString();
 			level.title = level_itr->value["title"].GetString();
 			level.description = level_itr->value["desc"].GetString();
-			level.completionTime = level_itr->value["completion_time"].GetUint();
 			levels.push_back(level);
 		}
 		Menu.windowTitle = d["window_title"].GetString();
 		Menu.defaultHoverText = d["default_hover_text"].GetString();
 		printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+	}
+	else
+	{
+		return;
+	}
+
+	if ( PHYSFS_getRealDir("/data/tutorial_scores.json") )
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/tutorial_scores.json");
+		inputPath.append("/data/tutorial_scores.json");
+
+		FILE* fp = fopen(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+			return;
+		}
+		char buf[65536];
+		rapidjson::FileReadStream is(fp, buf, sizeof(buf));
+		fclose(fp);
+
+		rapidjson::Document d;
+		d.ParseStream(is);
+		if ( !d.HasMember("version") || !d.HasMember("levels") )
+		{
+			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			return;
+		}
+		int version = d["version"].GetInt();
+		for ( auto& it = levels.begin(); it != levels.end(); ++it )
+		{
+			if ( d["levels"].HasMember(it->filename.c_str()) && d["levels"][it->filename.c_str()].HasMember("completion_time") )
+			{
+				it->completionTime = d["levels"][it->filename.c_str()]["completion_time"].GetUint();
+			}
+		}
+		printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+	}
+	else
+	{
+		printlog("[JSON]: File /data/tutorial_scores.json does not exist, creating...");
+
+		rapidjson::Document d;
+		d.SetObject();
+		CustomHelpers::addMemberToRoot(d, "version", rapidjson::Value(1));
+		rapidjson::Value levelsObj(rapidjson::kObjectType);
+		CustomHelpers::addMemberToRoot(d, "levels", levelsObj);
+		for ( auto& it = levels.begin(); it != levels.end(); ++it )
+		{
+			rapidjson::Value level(rapidjson::kObjectType);
+			level.AddMember("completion_time", rapidjson::Value(it->completionTime), d.GetAllocator());
+			CustomHelpers::addMemberToSubkey(d, "levels", it->filename, level);
+		}
+		writeToFile(d);
 	}
 }
 
@@ -210,7 +263,7 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 
 	if ( !PHYSFS_getRealDir("/data/tutorial_scores.json") )
 	{
-		printlog("[JSON]: Error: Could not locate json file /data/tutorial_scores.json");
+		printlog("[JSON]: Error file /data/tutorial_scores.json does not exist");
 		return;
 	}
 
@@ -230,25 +283,9 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 	rapidjson::Document d;
 	d.ParseStream(is);
 
-	//rapidjson::Document d;
-	//d.SetObject();
-	//CustomHelpers::addMemberToRoot(d, "version", rapidjson::Value(1));
-	//rapidjson::Value levelsObj(rapidjson::kObjectType);
-	//CustomHelpers::addMemberToRoot(d, "levels", levelsObj);
-	//for ( int i = 0; i < kNumTutorialLevels && i < levels.size(); ++i )
-	//{
-	//	std::string filename = std::string("tutorial" + std::to_string(i + 1)); // non-zero starting index for filenames
-	//	rapidjson::Value level(rapidjson::kObjectType);
-	//	level.AddMember("title", rapidjson::Value(levels.at(i).title.c_str(), d.GetAllocator()), d.GetAllocator());
-	//	level.AddMember("desc", rapidjson::Value(levels.at(i).description.c_str(), d.GetAllocator()), d.GetAllocator());
-	//	level.AddMember("completion_time", rapidjson::Value(levels.at(i).completionTime), d.GetAllocator());
-
-	//	CustomHelpers::addMemberToSubkey(d, "levels", filename, level);
-	//}
-	for ( Uint32 i = 1; i < kNumTutorialLevels && i < levels.size(); ++i )
+	for ( auto& it = levels.begin(); it != levels.end(); ++it )
 	{
-		std::string filename = std::string("tutorial" + std::to_string(i));
-		d["levels"][filename.c_str()]["completion_time"].SetUint(levels.at(i).completionTime);
+		d["levels"][it->filename.c_str()]["completion_time"].SetUint(it->completionTime);
 	}
 
 	writeToFile(d);

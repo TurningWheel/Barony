@@ -2506,7 +2506,7 @@ public:
 		void writeToDocument();
 		void writeToFile(rapidjson::Document& d)
 		{
-			std::string outputPath = PHYSFS_getRealDir("/data/");
+			std::string outputPath = outputdir;
 			outputPath.append(PHYSFS_getDirSeparator());
 			std::string fileName = "data/tutorial_scores.json";
 			outputPath.append(fileName.c_str());
