@@ -22,6 +22,7 @@
 #include "magic/magic.hpp"
 #include "paths.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 #define BOULDER_STOPPED my->skill[0]
 #define BOULDER_AMBIENCE my->skill[1]
@@ -45,6 +46,11 @@ bool boulderCheckIfBlockedExit(Entity* my)
 	{
 		return true; // ignore for custom maps.
 	}
+	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+	{
+		return true; // ignore for custom modes.
+	}
+
 	bool playerAlive = false;
 	for ( int c = 0; c < MAXPLAYERS; ++c )
 	{
