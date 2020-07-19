@@ -1416,22 +1416,19 @@ void handleMainMenu(bool mode)
 	if ( !movie )
 	{
 		// title pic
-		src.x = 0;
-		src.y = 0;
-		src.w = title_bmp->w;
-		src.h = title_bmp->h;
-		dest.x = 20;
-		dest.y = 20;
-		dest.w = xres;
-		dest.h = yres;
+		src.x = 20;
+		src.y = 20;
+		src.w = title_bmp->w * (230.0 / 240.0); // new banner scaled to old size.
+		src.h = title_bmp->h * (230.0 / 240.0);
 		if ( mode || introstage != 5 )
 		{
-			drawImage(title_bmp, &src, &dest);
+			drawImageScaled(title_bmp, nullptr, &src);
 		}
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
-			ttfPrintTextColor(ttf16, 176, 20 + title_bmp->h - 34, colorYellow, true, language[1910 + subtitleCurrent]);
+			Uint32 len = strlen(language[1910 + subtitleCurrent]);
+			ttfPrintTextColor(ttf16, src.x + src.w / 2 - (len * TTF16_WIDTH) / 2, src.y + src.h - 32, colorYellow, true, language[1910 + subtitleCurrent]);
 		}
 #ifdef STEAMWORKS
 		if ( mode )
