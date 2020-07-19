@@ -38,6 +38,7 @@
 #include "player.hpp"
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
+#include "interface/ui.hpp"
 #include <limits>
 
 #ifdef LINUX
@@ -4324,6 +4325,8 @@ int main(int argc, char** argv)
 						printlog("Minimap draw time: %.5f", timeTaken);*/
 						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
+
+					UIToastNotificationManager.drawNotifications();
 
 					DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 

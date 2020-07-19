@@ -23,6 +23,9 @@ void UIToastNotificationManager_t::drawNotifications()
 	int cardPosY = 110; // update the card y values if number of notifications change.
 	for ( auto& card : allNotifications )
 	{
+		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE)) {
+			continue;
+		}
 		card.setPosY(cardPosY);
 		SDL_Rect newPosition;
 		card.getDimensions(newPosition.x, newPosition.y, newPosition.w, newPosition.h);
@@ -32,8 +35,21 @@ void UIToastNotificationManager_t::drawNotifications()
 
 	for ( auto& card : allNotifications )
 	{
+		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE)) {
+			continue;
+		}
 		card.init();
 		card.draw();
+	}
+
+	for ( size_t c = 0; c < allNotifications.size(); ++c )
+	{
+		auto& card = allNotifications[c];
+		if (card.getCardState() == UIToastNotification::CardState::UI_CARD_STATE_REMOVED)
+		{
+			allNotifications.erase(allNotifications.begin() + c);
+			--c;
+		}
 	}
 }
 
@@ -92,7 +108,8 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 {
 	SDL_Surface* achievementImage = nullptr;
 	{
-		auto it = achievementImages.find(name);
+		std::string imgName = name + std::string(".png");
+		auto it = achievementImages.find(imgName.c_str());
 		if (it != achievementImages.end())
 		{
 			achievementImage = it->second;
@@ -110,9 +127,9 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 	UIToastNotification* n = UIToastNotificationManager.addNotification(achievementImage);
 	n->setHeaderText(std::string("Achievement unlocked!"));
 	n->setMainText(std::string(achievementName));
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
-	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE);
 	n->cardType = UIToastNotification::CardType::UI_CARD_COMMUNITY_LINK;
 	n->setIdleSeconds(5);
 }

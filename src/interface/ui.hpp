@@ -75,7 +75,8 @@ public:
 		UI_NOTIFICATION_CLOSE = 1,
 		UI_NOTIFICATION_ACTION_BUTTON = 2,
 		UI_NOTIFICATION_AUTO_HIDE = 4,
-		UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE = 8
+		UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE = 8,
+		UI_NOTIFICATION_REMOVABLE = 16,
 	};
 	enum CardType : Uint32
 	{
@@ -90,7 +91,8 @@ public:
 	{
 		UI_CARD_STATE_SHOW,
 		UI_CARD_STATE_DOCKED,
-		UI_CARD_STATE_UPDATE
+		UI_CARD_STATE_UPDATE,
+		UI_CARD_STATE_REMOVED
 	};
 	void (*buttonAction)() = nullptr;
 
@@ -130,6 +132,7 @@ public:
 		idleTicksToHide = seconds * TICKS_PER_SECOND;
 	}
 	std::string& getMainText() { return mainCardText; };
+	CardState getCardState() { return static_cast<CardState>(cardState); }
 
 	void draw()
 	{
@@ -142,11 +145,11 @@ public:
 		{
 			if ( !fadeout && !(actionFlags & UI_NOTIFICATION_AUTO_HIDE) )
 			{
-				// don't hide.
+				// don't hide or close
 			}
 			else
 			{
-				temporaryCardHide = true;
+				temporaryCardHide = (actionFlags & UI_NOTIFICATION_AUTO_HIDE);
 				lastInteractedTick = ticks;
 				if ( cardState == UI_CARD_STATE_SHOW )
 				{
@@ -290,7 +293,7 @@ public:
 			animate(animx, anim_ticks, anim_duration, cardWidth, mainCardHide, mainCardIsHidden);
 			if ( mainCardHide && mainCardIsHidden )
 			{
-				cardState = UI_CARD_STATE_DOCKED;
+				cardState = actionFlags & UI_NOTIFICATION_REMOVABLE ? UI_CARD_STATE_REMOVED : UI_CARD_STATE_DOCKED;
 				if ( oldHiddenStatus != mainCardIsHidden && (actionFlags & UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE) )
 				{
 					setDisplayedText(mainCardText);

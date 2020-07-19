@@ -21,6 +21,7 @@
 
 class EOSFuncs
 {
+	bool bAchievementsLoaded = false;
 public:
 	std::string ProductId = "";
 	std::string SandboxId = "";

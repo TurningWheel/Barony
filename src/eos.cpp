@@ -96,6 +96,11 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
 		EOSFuncs::logInfo("Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
+
+		// load achievement data
+		if (!EOS.bAchievementsLoaded) {
+			EOS.loadAchievementData();
+		}
 	}
 	else
 	{
@@ -2329,7 +2334,7 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 
 bool EOSFuncs::initAchievements()
 {
-	printlog("loading EOS achievements");
+	printlog("initializing EOS achievements");
 	if (!PlatformHandle) {
 		return false;
 	}
@@ -2357,6 +2362,10 @@ void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchie
 
 void EOSFuncs::loadAchievementData()
 {
+	bAchievementsLoaded = true;
+	achievementNames.clear();
+	achievementDesc.clear();
+
 	printlog("loading EOS achievements");
 	EOS_Achievements_QueryDefinitionsOptions Options = {};
 	Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
@@ -2511,6 +2520,7 @@ void EOSFuncs::Accounts_t::handleLogin()
 #ifdef STEAMWORKS
 	return;
 #endif
+
 	if ( !waitingForCallback && (AccountAuthenticationStatus == EOS_EResult::EOS_Success || AccountAuthenticationCompleted == EOS_EResult::EOS_Success) )
 	{
 		firstTimeSetupCompleted = true;
@@ -2578,9 +2588,6 @@ void EOSFuncs::Accounts_t::handleLogin()
 			}
 		}
 	}
-
-	// load achievement data
-	EOS.loadAchievementData();
 
 	//if ( popupType == POPUP_FULL )
 	//{
