@@ -2447,7 +2447,6 @@ public:
 	}
 	class Tutorial_t
 	{
-		bool isFirstTimeLaunch = true;
 		std::string currentMap = "";
 		const Uint32 kNumTutorialLevels = 10;
 	public:
