@@ -3436,7 +3436,7 @@ int main(int argc, char** argv)
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 						fadealpha = 255;
-#ifndef STEAMWORKS
+#if (!defined STEAMWORKS && !defined USE_EOS)
 						introstage = 0;
 						fadeout = false;
 						fadefinished = false;
