@@ -357,18 +357,30 @@ std::vector<std::pair<std::string, int>> menuOptions;
 void initMenuOptions()
 {
 	menuOptions.clear();
-	menuOptions.push_back(std::make_pair(language[1303], 1));
-	menuOptions.push_back(std::make_pair(language[1304], 2));
-	menuOptions.push_back(std::make_pair(language[3964], 3));
-	menuOptions.push_back(std::make_pair(language[1305], 4));
-	menuOptions.push_back(std::make_pair(language[1306], 5));
-	menuOptions.push_back(std::make_pair(language[1307], 6));
-	menuOptions.push_back(std::make_pair(language[2978], 7));
-#ifdef STEAMWORKS
-	menuOptions.push_back(std::make_pair(language[2979], 8));
-	menuOptions.push_back(std::make_pair(language[1308], 9));
+#if (defined USE_EOS && !defined STEAMWORKS)
+	menuOptions.push_back(std::make_pair(language[1303], 1)); // start game
+	menuOptions.push_back(std::make_pair(language[1304], 2)); // intro
+	menuOptions.push_back(std::make_pair(language[3964], 3)); // hall of trials
+	menuOptions.push_back(std::make_pair(language[1305], 4)); // statistics
+	menuOptions.push_back(std::make_pair(language[3971], 5)); // achievements
+	menuOptions.push_back(std::make_pair(language[1306], 6)); // settings
+	menuOptions.push_back(std::make_pair(language[1307], 7)); // credits
+	menuOptions.push_back(std::make_pair(language[2978], 8)); // custom content
+	menuOptions.push_back(std::make_pair(language[1308], 9)); // quit
 #else
-	menuOptions.push_back(std::make_pair(language[1308], 9));
+	menuOptions.push_back(std::make_pair(language[1303], 1)); // start game
+	menuOptions.push_back(std::make_pair(language[1304], 2)); // intro
+	menuOptions.push_back(std::make_pair(language[3964], 3)); // hall of trials
+	menuOptions.push_back(std::make_pair(language[1305], 4)); // statistics
+	menuOptions.push_back(std::make_pair(language[1306], 5)); // settings
+	menuOptions.push_back(std::make_pair(language[1307], 6)); // credits
+	menuOptions.push_back(std::make_pair(language[2978], 7)); // custom content
+#ifdef STEAMWORKS
+	menuOptions.push_back(std::make_pair(language[2979], 8)); // workshop
+	menuOptions.push_back(std::make_pair(language[1308], 9)); // quit
+#else
+	menuOptions.push_back(std::make_pair(language[1308], 8)); // quit
+#endif
 #endif
 }
 
@@ -1404,22 +1416,19 @@ void handleMainMenu(bool mode)
 	if ( !movie )
 	{
 		// title pic
-		src.x = 0;
-		src.y = 0;
-		src.w = title_bmp->w;
-		src.h = title_bmp->h;
-		dest.x = 20;
-		dest.y = 20;
-		dest.w = xres;
-		dest.h = yres;
+		src.x = 20;
+		src.y = 20;
+		src.w = title_bmp->w * (230.0 / 240.0); // new banner scaled to old size.
+		src.h = title_bmp->h * (230.0 / 240.0);
 		if ( mode || introstage != 5 )
 		{
-			drawImage(title_bmp, &src, &dest);
+			drawImageScaled(title_bmp, nullptr, &src);
 		}
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
-			ttfPrintTextColor(ttf16, 176, 20 + title_bmp->h - 24, colorYellow, true, language[1910 + subtitleCurrent]);
+			Uint32 len = strlen(language[1910 + subtitleCurrent]);
+			ttfPrintTextColor(ttf16, src.x + src.w / 2 - (len * TTF16_WIDTH) / 2, src.y + src.h - 32, colorYellow, true, language[1910 + subtitleCurrent]);
 		}
 #ifdef STEAMWORKS
 		if ( mode )
@@ -1943,6 +1952,28 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
 			}
+
+#if (defined USE_EOS && !defined STEAMWORKS)
+			++menuIndex;
+			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
+			menuOptionSize = std::max(static_cast<Uint32>(menuOptions.at(menuIndex).first.size()), static_cast<Uint32>(4));
+
+			//"Achievements" Button.
+			if ( ((omousex >= text.x && omousex < text.x + menuOptionSize * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == menuOptions.at(menuIndex).second)) && subwindow == 0 && introstage == 1 )
+			{
+				menuselect = menuOptions.at(menuIndex).second;
+				ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, "%s", menuOptions.at(menuIndex).first.c_str());
+				if ( mainMenuSelectInputIsPressed )
+				{
+					pauseMenuOnInputPressed();
+					// achievements menu here.
+				}
+			}
+			else
+			{
+				ttfPrintText(ttf16, text.x, text.y, menuOptions.at(menuIndex).first.c_str());
+			}
+#endif 
 
 			++menuIndex;
 			text.y = yres / 4 + 80 + (menuOptions.at(menuIndex).second - 1) * 24;
@@ -11578,6 +11609,102 @@ void openSettingsWindow()
 	changeSettingsTab(settings_tab);
 }
 
+
+// opens the wait window for steam lobby (getting lobby list, etc.)
+void openSteamLobbyWaitWindow(button_t* my)
+{
+	button_t* button;
+
+	// close current window
+#ifdef STEAMWORKS
+	bool prevConnectingToLobbyWindow = connectingToLobbyWindow;
+	if ( connectingToLobbyWindow )
+	{
+		// we quit the connection window before joining lobby, but invite was mid-flight.
+		denyLobbyJoinEvent = true;
+	}
+	else if ( joinLobbyWaitingForHostResponse )
+	{
+		// we quit the connection window after lobby join, but before host has accepted us.
+		joinLobbyWaitingForHostResponse = false;
+		buttonDisconnect(nullptr);
+		openFailedConnectionWindow(CLIENT);
+		strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
+		return;
+	}
+#endif
+#if defined USE_EOS
+	if ( EOS.bConnectingToLobbyWindow )
+	{
+		// we quit the connection window before joining lobby, but invite was mid-flight.
+		EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true;
+	}
+	else if ( EOS.bJoinLobbyWaitingForHostResponse )
+	{
+		// we quit the connection window after lobby join, but before host has accepted us.
+		EOS.bJoinLobbyWaitingForHostResponse = false;
+		buttonDisconnect(nullptr);
+		openFailedConnectionWindow(CLIENT);
+		strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
+		return;
+	}
+#endif
+
+
+	buttonCloseSubwindow(NULL);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	// create new window
+	subwindow = 1;
+#ifdef STEAMWORKS
+	requestingLobbies = true;
+#endif
+#if defined USE_EOS
+	EOS.bRequestingLobbies = true;
+#endif // USE_EOS
+
+	subx1 = xres / 2 - 256;
+	subx2 = xres / 2 + 256;
+	suby1 = yres / 2 - 64;
+	suby2 = yres / 2 + 64;
+	strcpy(subtext, language[1444]);
+#ifdef STEAMWORKS
+	//c_SteamMatchmaking_RequestLobbyList();
+	//SteamMatchmaking()->RequestLobbyList(); //TODO: Is this sufficient for it to work?
+	cpp_SteamMatchmaking_RequestLobbyList();
+#endif
+#if defined USE_EOS
+	EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+		EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
+#endif // USE_EOS
+
+
+	// close button
+	button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// cancel button
+	button = newButton();
+	strcpy(button->label, language[1316]);
+	button->sizex = strlen(language[1316]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 28;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+}
+
 // "failed to connect" message
 void openFailedConnectionWindow(int mode)
 {
@@ -11685,101 +11812,6 @@ void openFailedConnectionWindow(int mode)
 
 	multiplayer = SINGLE;
 	clientnum = 0;
-}
-
-// opens the wait window for steam lobby (getting lobby list, etc.)
-void openSteamLobbyWaitWindow(button_t* my)
-{
-	button_t* button;
-
-	// close current window
-#ifdef STEAMWORKS
-	bool prevConnectingToLobbyWindow = connectingToLobbyWindow;
-	if ( connectingToLobbyWindow )
-	{
-		// we quit the connection window before joining lobby, but invite was mid-flight.
-		denyLobbyJoinEvent = true;
-	}
-	else if ( joinLobbyWaitingForHostResponse )
-	{
-		// we quit the connection window after lobby join, but before host has accepted us.
-		joinLobbyWaitingForHostResponse = false;
-		buttonDisconnect(nullptr);
-		openFailedConnectionWindow(CLIENT);
-		strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
-		return;
-	}
-#endif
-#if defined USE_EOS
-	if ( EOS.bConnectingToLobbyWindow )
-	{
-		// we quit the connection window before joining lobby, but invite was mid-flight.
-		EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true;
-	}
-	else if ( EOS.bJoinLobbyWaitingForHostResponse )
-	{
-		// we quit the connection window after lobby join, but before host has accepted us.
-		EOS.bJoinLobbyWaitingForHostResponse = false;
-		buttonDisconnect(nullptr);
-		openFailedConnectionWindow(CLIENT);
-		strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
-		return;
-	}
-#endif
-
-
-	buttonCloseSubwindow(NULL);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	// create new window
-	subwindow = 1;
-#ifdef STEAMWORKS
-	requestingLobbies = true;
-#endif
-#if defined USE_EOS
-	EOS.bRequestingLobbies = true;
-#endif // USE_EOS
-
-	subx1 = xres / 2 - 256;
-	subx2 = xres / 2 + 256;
-	suby1 = yres / 2 - 64;
-	suby2 = yres / 2 + 64;
-	strcpy(subtext, language[1444]);
-#ifdef STEAMWORKS
-	//c_SteamMatchmaking_RequestLobbyList();
-	//SteamMatchmaking()->RequestLobbyList(); //TODO: Is this sufficient for it to work?
-	cpp_SteamMatchmaking_RequestLobbyList();
-#endif
-#if defined USE_EOS
-	EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
-		EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
-#endif // USE_EOS
-
-
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// cancel button
-	button = newButton();
-	strcpy(button->label, language[1316]);
-	button->sizex = strlen(language[1316]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 28;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
 }
 
 // opens the lobby browser window (steam client only)

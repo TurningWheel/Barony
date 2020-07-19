@@ -97,6 +97,16 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 		EOS.SubscribeToConnectionRequests();
 		EOSFuncs::logInfo("Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
+	else if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
+	{
+		EOSFuncs::logInfo("Connect Login Callback: creating new user");
+		EOS_Connect_CreateUserOptions CreateUserOptions;
+		CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
+		CreateUserOptions.ContinuanceToken = data->ContinuanceToken;
+
+		EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
+		EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, OnCreateUserCallback);
+	}
 	else
 	{
 		EOSFuncs::logError("Connect Login Callback: General fail: %d", static_cast<int>(data->ResultCode));
@@ -144,7 +154,7 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 			CreateUserOptions.ContinuanceToken = data->ContinuanceToken;
 
 			EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
-			EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, OnCreateUserCallback);
+			EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, OnCreateUserCrossplayCallback);
 		}
 		else
 		{
@@ -161,7 +171,6 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 
 void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbackInfo* data)
 {
-	EOS.CrossplayAccountManager.connectLoginStatus = EOS_EResult::EOS_NotConfigured;
 	if ( !data )
 	{
 		EOSFuncs::logError("OnCreateUserCallback: null data");
@@ -171,12 +180,37 @@ void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbac
 	}
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		EOS.CrossplayAccountManager.connectLoginStatus = EOS_EResult::EOS_Success;
+		EOS.CurrentUserInfo.setProductUserIdHandle(data->LocalUserId);
+		EOS.CurrentUserInfo.bUserLoggedIn = true;
+		EOS.SubscribeToConnectionRequests();
+		EOSFuncs::logInfo("OnCreateUserCallback success, new user: %s", EOS.CurrentUserInfo.getProductUserIdStr());
+	}
+	else
+	{
+		EOSFuncs::logError("OnCreateUserCallback: General fail: %d", static_cast<int>(data->ResultCode));
+		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
+		EOS.CurrentUserInfo.bUserLoggedIn = false;
+	}
+}
+
+void EOS_CALL EOSFuncs::OnCreateUserCrossplayCallback(const EOS_Connect_CreateUserCallbackInfo* data)
+{
+	EOS.CrossplayAccountManager.connectLoginStatus = EOS_EResult::EOS_NotConfigured;
+	if ( !data )
+	{
+		EOSFuncs::logError("OnCreateUserCrossplayCallback: null data");
+		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
+		EOS.CurrentUserInfo.bUserLoggedIn = false;
+		return;
+	}
+	if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
 		EOS.CurrentUserInfo.setProductUserIdHandle(data->LocalUserId);
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
 		EOS.AddConnectAuthExpirationNotification();
 #ifdef STEAMWORKS
+		EOS.CrossplayAccountManager.connectLoginStatus = EOS_EResult::EOS_Success;
 		EOS_ELoginStatus authLoginStatus = EOS_Auth_GetLoginStatus(EOS_Platform_GetAuthInterface(EOS.PlatformHandle),
 			EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str()));
 		if ( authLoginStatus != EOS_ELoginStatus::EOS_LS_LoggedIn )
@@ -184,12 +218,12 @@ void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbac
 			EOS.queryLocalExternalAccountId(EOS_EExternalAccountType::EOS_EAT_STEAM);
 		}
 #endif
-		EOSFuncs::logInfo("OnCreateUserCallback success, new user: %s", EOS.CurrentUserInfo.getProductUserIdStr());
+		EOSFuncs::logInfo("OnCreateUserCrossplayCallback success, new user: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
 	else
 	{
 		EOS.CrossplayAccountManager.connectLoginStatus = data->ResultCode;
-		EOSFuncs::logError("OnCreateUserCallback: General fail: %d", static_cast<int>(data->ResultCode));
+		EOSFuncs::logError("OnCreateUserCrossplayCallback: General fail: %d", static_cast<int>(data->ResultCode));
 		EOS.CurrentUserInfo.setProductUserIdHandle(nullptr);
 		EOS.CurrentUserInfo.bUserLoggedIn = false;
 	}
@@ -2687,7 +2721,7 @@ void buttonAcceptCrossplaySetup(button_t* my)
 		CreateUserOptions.ContinuanceToken = EOS.CrossplayAccountManager.continuanceToken;
 
 		EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
-		EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, EOSFuncs::OnCreateUserCallback);
+		EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, EOSFuncs::OnCreateUserCrossplayCallback);
 
 		EOS.CrossplayAccountManager.continuanceToken = nullptr;
 	}

@@ -196,6 +196,7 @@ public:
 	static void EOS_CALL ConnectAuthExpirationCallback(const EOS_Connect_AuthExpirationCallbackInfo* data);
 	static void EOS_CALL ShowFriendsCallback(const EOS_UI_ShowFriendsCallbackInfo* data);
 	static void EOS_CALL OnCreateUserCallback(const EOS_Connect_CreateUserCallbackInfo* data);
+	static void EOS_CALL OnCreateUserCrossplayCallback(const EOS_Connect_CreateUserCallbackInfo* data);
 
 	class FriendInfo_t {
 	public:
