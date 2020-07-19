@@ -43,12 +43,12 @@ int decoyBoxRange = 15;
 
 -------------------------------------------------------------------------------*/
 
-Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory)
+Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, const Sint16 count, const Uint32 appearance, const bool identified, list_t* const inventory)
 {
 	Item* item;
 
 	// allocate memory for the item
-	if ( (item = (Item*) malloc(sizeof(Item))) == NULL )
+	if ( (item = static_cast<Item*>(malloc(sizeof(Item)))) == nullptr )
 	{
 		printlog( "failed to allocate memory for new item!\n" );
 		exit(1);
@@ -57,7 +57,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	//item->captured_monster = nullptr;
 
 	// add the item to the inventory
-	if ( inventory != NULL )
+	if ( inventory != nullptr )
 	{
 		item->node = list_AddNodeLast(inventory);
 		item->node->element = item;
@@ -66,7 +66,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	}
 	else
 	{
-		item->node = NULL;
+		item->node = nullptr;
 	}
 
 	// now set all of my data elements
@@ -81,7 +81,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	item->isDroppable = true;
 	if ( inventory )
 	{
-		int x, y;
+		int y;
 		bool notfree = false, foundaspot = false;
 
 		bool is_spell = false;
@@ -90,7 +90,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 			is_spell = true;
 		}
 
-		x = 0;
+		int x = 0;
 		int inventory_y = INVENTORY_SIZEY;
 		if ( is_spell )
 		{
@@ -130,16 +130,15 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 				}
 			}
 		}
-		int sort_y = std::min(std::max(inventory_y, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
+		const int sort_y = std::min(std::max(inventory_y, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
 
-		while ( 1 )
+		while ( true )
 		{
 			for ( y = 0; y < sort_y; y++ )
 			{
-				node_t* node;
-				for ( node = inventory->first; node != NULL; node = node->next )
+				for ( node_t* node = inventory->first; node != nullptr; node = node->next )
 				{
-					Item* tempItem = (Item*)node->element;
+					Item* tempItem = static_cast<Item*>(node->element);
 					if ( tempItem == item )
 					{
 						continue;
@@ -183,14 +182,13 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 			x = 0;
 			foundaspot = false;
 			notfree = false;
-			while ( 1 )
+			while ( true )
 			{
 				for ( y = 3; y < inventory_y; y++ )
 				{
-					node_t* node;
-					for ( node = inventory->first; node != NULL; node = node->next )
+					for ( node_t* node = inventory->first; node != nullptr; node = node->next )
 					{
-						Item* tempItem = (Item*)node->element;
+						Item* tempItem = static_cast<Item*>(node->element);
 						if ( tempItem == item )
 						{
 							continue;
@@ -233,8 +231,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		{
 			if ( inventory == &stats[clientnum]->inventory )
 			{
-				int c;
-				for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+				for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 				{
 					if ( !uidToItem(hotbar[c].item) )
 					{
@@ -277,7 +274,6 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 	item.node->deconstructor = &defaultDeconstructor;
 	item.node->size = sizeof(Item);
 
-	int x, y;
 	bool notfree = false, foundaspot = false;
 
 	bool is_spell = false;
@@ -286,15 +282,14 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 		is_spell = true;
 	}
 
-	x = 0;
-	while ( 1 )
+	int x = 0;
+	while ( true )
 	{
-		for ( y = 0; y < INVENTORY_SIZEY; ++y )
+		for ( int y = 0; y < INVENTORY_SIZEY; ++y )
 		{
-			node_t* node;
-			for ( node = inventory.first; node != nullptr; node = node->next )
+			for ( node_t* node = inventory.first; node != nullptr; node = node->next )
 			{
-				Item* tempItem = (Item*)node->element;
+				Item* tempItem = static_cast<Item*>(node->element);
 				if ( tempItem == &item )
 				{
 					continue;
@@ -336,8 +331,7 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 	{
 		if ( &inventory == &stats[clientnum]->inventory )
 		{
-			int c;
-			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+			for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
 				if ( !uidToItem(hotbar[c].item) )
 				{
@@ -357,16 +351,15 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 
 -------------------------------------------------------------------------------*/
 
-Item* uidToItem(Uint32 uid)
+Item* uidToItem(const Uint32 uid)
 {
 	if ( uid == 0 )
 	{
 		return nullptr;
 	}
-	node_t* node;
-	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item->uid == uid )
 		{
 			return item;
@@ -384,9 +377,9 @@ Item* uidToItem(Uint32 uid)
 
 -------------------------------------------------------------------------------*/
 
-ItemType itemCurve(Category cat)
+ItemType itemCurve(const Category cat)
 {
-	int numitems = NUMITEMS - ( NUMITEMS - ((int)ARTIFACT_SWORD) );
+	const int numitems = NUMITEMS - ( NUMITEMS - static_cast<int>(ARTIFACT_SWORD) );
 	bool chances[NUMITEMS];
 	int c;
 
@@ -435,7 +428,7 @@ ItemType itemCurve(Category cat)
 			chances[c] = false;
 			if ( items[c].category == cat )
 			{
-				switch ( (ItemType)c )
+				switch ( static_cast<ItemType>(c) )
 				{
 					case TOOL_TINOPENER:
 						if ( prng_get_uint() % 2 )   // 50% chance
@@ -462,7 +455,7 @@ ItemType itemCurve(Category cat)
 	else
 	{
 		// other categories get a special chance algorithm based on item value and dungeon level
-		int acceptablehigh = std::max<Uint32>(highestvalue * fmin(1.0, (currentlevel + 10) / 25.0), lowestvalue); //TODO: Why are double and Uint32 being compared?
+		const int acceptablehigh = std::max<Uint32>(highestvalue * fmin(1.0, (currentlevel + 10) / 25.0), lowestvalue); //TODO: Why are double and Uint32 being compared?
 		for ( c = 0; c < numitems; c++ )
 		{
 			chances[c] = false;
@@ -497,7 +490,7 @@ ItemType itemCurve(Category cat)
 	}
 
 	// pick the item
-	int pick = prng_get_uint() % numleft;
+	Uint32 pick = prng_get_uint() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
@@ -528,9 +521,9 @@ dungeon level and defined level of the item
 
 -------------------------------------------------------------------------------*/
 
-ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
+ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLevel)
 {
-	int numitems = NUMITEMS;
+	const int numitems = NUMITEMS;
 	bool chances[NUMITEMS];
 	int c;
 
@@ -552,7 +545,7 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 				numoftype++;
 				if ( cat == TOOL )
 				{
-					switch ( (ItemType)c )
+					switch ( static_cast<ItemType>(c) )
 					{
 						case TOOL_TINOPENER:
 							if ( prng_get_uint() % 2 )   // 50% chance
@@ -572,7 +565,7 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 				}
 				else if ( cat == ARMOR )
 				{
-					switch ( (ItemType)c )
+					switch ( static_cast<ItemType>(c) )
 					{
 						case CLOAK_BACKPACK:
 							if ( prng_get_uint() % 4 )   // 25% chance
@@ -617,7 +610,7 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 	}
 
 	// pick the item
-	int pick = prng_get_uint() % numleft;
+	Uint32 pick = prng_get_uint() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
@@ -648,7 +641,7 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 
 -------------------------------------------------------------------------------*/
 
-char* Item::description()
+char* Item::description() const
 {
 	int c = 0;
 
@@ -947,7 +940,7 @@ char* Item::description()
 
 -------------------------------------------------------------------------------*/
 
-Category itemCategory(const Item* item)
+Category itemCategory(const Item* const item)
 {
 	if ( !item )
 	{
@@ -964,7 +957,7 @@ Category itemCategory(const Item* item)
 
 -------------------------------------------------------------------------------*/
 
-char* Item::getName()
+char* Item::getName() const
 {
 	if ( type >= 0 && type < NUMITEMS )
 	{
@@ -1010,7 +1003,7 @@ char* Item::getName()
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModel(Item* item)
+Sint32 itemModel(const Item* const item)
 {
 	if ( !item )
 	{
@@ -1027,7 +1020,7 @@ Sint32 itemModel(Item* item)
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModelFirstperson(Item* item)
+Sint32 itemModelFirstperson(const Item* const item)
 {
 	if ( !item )
 	{
@@ -1044,11 +1037,11 @@ Sint32 itemModelFirstperson(Item* item)
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* itemSprite(Item* item)
+SDL_Surface* itemSprite(Item* const item)
 {
 	if ( !item )
 	{
-		return NULL;
+		return nullptr;
 	}
 	if (itemCategory(item) == SPELL_CAT)
 	{
@@ -1058,9 +1051,9 @@ SDL_Surface* itemSprite(Item* item)
 			node_t* node = list_Node(&items[item->type].surfaces, spell->ID);
 			if ( !node )
 			{
-				return NULL;
+				return nullptr;
 			}
-			SDL_Surface** surface = (SDL_Surface**)node->element;
+			SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
 			return *surface;
 		}
 	}
@@ -1069,12 +1062,12 @@ SDL_Surface* itemSprite(Item* item)
 		node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
 		if ( !node )
 		{
-			return NULL;
+			return nullptr;
 		}
-		SDL_Surface** surface = (SDL_Surface**)node->element;
+		SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
 		return *surface;
 	}
-	return NULL;
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1086,15 +1079,15 @@ SDL_Surface* itemSprite(Item* item)
 
 -------------------------------------------------------------------------------*/
 
-int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
+int itemCompare(const Item* const item1, const Item* const item2, bool checkAppearance)
 {
 	Sint32 model1 = 0;
 	Sint32 model2 = 0;
 
 	// null cases
-	if ( item1 == NULL )
+	if ( item1 == nullptr )
 	{
-		if ( item2 == NULL )
+		if ( item2 == nullptr )
 		{
 			return 0;
 		}
@@ -1105,7 +1098,7 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 	}
 	else
 	{
-		if ( item2 == NULL )
+		if ( item2 == nullptr )
 		{
 			return 1;
 		}
@@ -1138,10 +1131,12 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 	{
 		return 1; // these items do not stack
 	}
+
 	if (item1->identified != item2->identified)
 	{
 		return 1;
 	}
+
 	if ( !item1->identified && itemCategory(item1) == SCROLL && itemCategory(item2) == SCROLL )
 	{
 		if ( item1->getScrollLabel() != item2->getScrollLabel() )
@@ -1172,14 +1167,13 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 
 -------------------------------------------------------------------------------*/
 
-bool dropItem(Item* item, int player, bool notifyMessage)
+bool dropItem(Item* const item, const int player, const bool notifyMessage)
 {
 	if (!item)
 	{
 		return false;
 	}
 
-	Entity* entity;
 	Sint16 oldcount;
 
 	if (item == nullptr || players[player] == nullptr || players[player]->entity == nullptr || itemCategory(item) == SPELL_CAT)
@@ -1206,11 +1200,11 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "DROP");
-		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+		SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+		SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
 		net_packet->data[24] = item->identified;
 		net_packet->data[25] = clientnum;
 		net_packet->address.host = net_server.host;
@@ -1261,9 +1255,9 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 		{
 		}*/
 		Item** slot = itemSlot(stats[player], item);
-		if ( slot != NULL )
+		if ( slot != nullptr )
 		{
-			*slot = NULL;
+			*slot = nullptr;
 		}
 
 		if ( item->count <= 0 )
@@ -1288,16 +1282,16 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 		{
 			qtyToDrop = item->count;
 			/*if ( item->count >= 10 )
-			{
-				qtyToDrop = 10;
-			}
-			else
-			{
-				qtyToDrop = item->count;
-			}*/
+				{
+					qtyToDrop = 10;
+				}
+				else
+				{
+					qtyToDrop = item->count;
+				}*/
 		}
 
-		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 		entity->flags[INVISIBLE] = true;
 		entity->flags[UPDATENEEDED] = true;
 		entity->x = players[player]->entity->x;
@@ -1324,11 +1318,12 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 
 		// unequip the item
 		Item** slot = itemSlot(stats[player], item);
-		if ( slot != NULL )
+		if ( slot != nullptr )
 		{
-			*slot = NULL;
+			*slot = nullptr;
 		}
-		if ( item->node != NULL )
+
+		if ( item->node != nullptr )
 		{
 			if ( item->node->list == &stats[0]->inventory )
 			{
@@ -1355,11 +1350,12 @@ bool dropItem(Item* item, int player, bool notifyMessage)
 				return true;
 			}
 		}
+
 		return false;
 	}
 }
 
-Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count)
+Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const monsterStats, Sint16 count)
 {
 	// WARNING - dropItemMonster is used on playerDeaths, modifying this here neet to edit in actPlayer.cpp and net.cpp
 	Entity* entity = nullptr;
@@ -1580,7 +1576,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 
 -------------------------------------------------------------------------------*/
 
-void consumeItem(Item*& item, int player)
+void consumeItem(Item*& item, const int player)
 {
 	if ( item == nullptr )
 	{
@@ -1606,8 +1602,7 @@ void consumeItem(Item*& item, int player)
 	{
 		if ( item->node != nullptr )
 		{
-			int i;
-			for ( i = 0; i < MAXPLAYERS; i++ )
+			for ( int i = 0; i < MAXPLAYERS; i++ )
 			{
 				if ( item->node->list == &stats[i]->inventory )
 				{
@@ -1636,7 +1631,7 @@ void consumeItem(Item*& item, int player)
 
 -------------------------------------------------------------------------------*/
 
-EquipItemResult equipItem(Item* item, Item** slot, int player)
+EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 {
 	int oldcount;
 
@@ -1659,7 +1654,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 	if ( itemCompare(*slot, item, true) )
 	{
 		// if items are different... (excluding the quantity of both item nodes)
-		if ( *slot != NULL )
+		if ( *slot != nullptr )
 		{
 			if (!(*slot)->canUnequip(stats[player]))
 			{
@@ -1717,7 +1712,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 		}
 		if ( multiplayer == SERVER && player > 0 )
 		{
-			if ( *slot != NULL )
+			if ( *slot != nullptr )
 			{
 				if ( (*slot)->node )
 				{
@@ -1756,7 +1751,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 	else
 	{
 		// if items are the same... (excluding the quantity of both item nodes)
-		if ( *slot != NULL )
+		if ( *slot != nullptr )
 		{
 			if ( (*slot)->count == item->count ) // if quantity is the same then it's the same item, can unequip
 			{
@@ -1811,7 +1806,7 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 			{
 				free(item);
 			}
-			if ( *slot != NULL )
+			if ( *slot != nullptr )
 			{
 				if ( (*slot)->node )
 				{
@@ -1833,11 +1828,10 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 			}
 			item->count = oldcount;
 		}
-		*slot = NULL;
+		*slot = nullptr;
 		return EQUIP_ITEM_SUCCESS_UNEQUIP;
 	}
 }
-
 /*-------------------------------------------------------------------------------
 
 	useItem
@@ -1846,9 +1840,9 @@ EquipItemResult equipItem(Item* item, Item** slot, int player)
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item* item, int player, Entity* usedBy)
+void useItem(Item* item, const int player, Entity* usedBy)
 {
-	if ( item == NULL )
+	if ( item == nullptr )
 	{
 		return;
 	}
@@ -1953,10 +1947,9 @@ void useItem(Item* item, int player, Entity* usedBy)
 		if ( item->type == FOOD_TIN )
 		{
 			bool havetinopener = false;
-			node_t* node;
-			for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+			for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 			{
-				Item* tempitem = (Item*)node->element;
+				Item* tempitem = static_cast<Item*>(node->element);
 				if ( tempitem->type == TOOL_TINOPENER )
 				{
 					if ( tempitem->status != BROKEN )
@@ -1985,11 +1978,11 @@ void useItem(Item* item, int player, Entity* usedBy)
 		else
 		{
 			strcpy((char*)net_packet->data, "USEI");
-			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-			SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+			SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+			SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+			SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+			SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+			SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
 			net_packet->data[24] = item->identified;
 			net_packet->data[25] = clientnum;
 			net_packet->address.host = net_server.host;
@@ -2001,8 +1994,8 @@ void useItem(Item* item, int player, Entity* usedBy)
 
 	bool drankPotion = false;
 	bool tryLearnPotionRecipe = false;
-	bool tryEmptyBottle = (item->status >= SERVICABLE);
-	ItemType potionType = item->type;
+	const bool tryEmptyBottle = (item->status >= SERVICABLE);
+	const ItemType potionType = item->type;
 	if ( player == clientnum )
 	{
 		if ( itemCategory(item) == POTION && item->type != POTION_EMPTY && usedBy
@@ -2206,7 +2199,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			break;
 		case POTION_POLYMORPH:
 		{
-			int oldcount = item->count;
+			const int oldcount = item->count;
 			item_PotionPolymorph(item, players[player]->entity, nullptr);
 			if ( !item || (item && item->count < oldcount) )
 			{
@@ -2265,7 +2258,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			break;
 		case SCROLL_FIRE:
 		{
-			bool exploded = item_ScrollFire(item, player);
+			const bool exploded = item_ScrollFire(item, player);
 			if ( exploded && stats[player] && stats[player]->type == AUTOMATON )
 			{
 				if ( multiplayer != CLIENT )
@@ -2273,7 +2266,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 					stats[player]->HUNGER = std::min(stats[player]->HUNGER + 1500, 1500);
 					players[player]->entity->modMP(stats[player]->MAXMP);
 					// results of eating
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+					const Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 					messagePlayerColor(player, color, language[3699]); // superheats
 					serverUpdateHunger(player);
 					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
@@ -2561,7 +2554,6 @@ void useItem(Item* item, int player, Entity* usedBy)
 			break;
 		case SPELL_ITEM:
 		{
-			;
 			spell_t* spell = getSpellFromItem(item);
 			if (spell)
 			{
@@ -2591,7 +2583,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		default:
-			printlog("error: item %d used, but it has no use case!\n", (int)item->type);
+			printlog("error: item %d used, but it has no use case!\n", static_cast<int>(item->type));
 			break;
 	}
 
@@ -2605,7 +2597,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			{
 				GenericGUI.alchemyLearnRecipe(potionType, true);
 			}
-			int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			const int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
 			if ( tryEmptyBottle && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -2771,14 +2763,13 @@ void useItem(Item* item, int player, Entity* usedBy)
 
 -------------------------------------------------------------------------------*/
 
-Item* itemPickup(int player, Item* item)
+Item* itemPickup(const int player, Item* const item)
 {
 	if (!item)
 	{
-		return NULL;
+		return nullptr;
 	}
 	Item* item2;
-	node_t* node;
 
 	if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
@@ -2794,7 +2785,7 @@ Item* itemPickup(int player, Item* item)
 		bool assignNewOwner = true;
 		if ( item->ownerUid != 0 && !achievementObserver.playerAchievements[player].ironicPunishmentTargets.empty() )
 		{
-			auto it = achievementObserver.playerAchievements[player].ironicPunishmentTargets.find(item->ownerUid);
+			const auto it = achievementObserver.playerAchievements[player].ironicPunishmentTargets.find(item->ownerUid);
 			if ( it != achievementObserver.playerAchievements[player].ironicPunishmentTargets.end() )
 			{
 				assignNewOwner = false;
@@ -2813,12 +2804,12 @@ Item* itemPickup(int player, Item* item)
 	{
 		// send the client info on the item it just picked up
 		strcpy((char*)net_packet->data, "ITEM");
-		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-		SDLNet_Write32((Uint32)item->ownerUid, &net_packet->data[24]);
+		SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+		SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+		SDLNet_Write32(static_cast<Uint32>(item->ownerUid), &net_packet->data[24]);
 		net_packet->data[28] = item->identified;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
@@ -2828,14 +2819,14 @@ Item* itemPickup(int player, Item* item)
 	else
 	{
 		std::unordered_set<Uint32> appearancesOfSimilarItems;
-		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
+		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
-			item2 = (Item*) node->element;
+			item2 = static_cast<Item*>(node->element);
 			if (!itemCompare(item, item2, false))
 			{
 				if ( (itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
-					|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP) 
-							&& (item->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
+					|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP)
+						&& (item->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
 				{
 					int maxStack = QUIVER_MAX_AMMO_QTY;
 					if ( item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP )
@@ -2857,7 +2848,7 @@ Item* itemPickup(int player, Item* item)
 					}
 
 					// too many arrows, split off into a new stack with reduced qty.
-					int total = item->count + item2->count;
+					const int total = item->count + item2->count;
 					item2->count = maxStack - 1;
 					item->count = total - item2->count;
 
@@ -2865,11 +2856,11 @@ Item* itemPickup(int player, Item* item)
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
 						strcpy((char*)net_packet->data, "EQUS");
-						SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
-						SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
-						SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
-						SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
-						SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
+						SDLNet_Write32(static_cast<Uint32>(item2->type), &net_packet->data[4]);
+						SDLNet_Write32(static_cast<Uint32>(item2->status), &net_packet->data[8]);
+						SDLNet_Write32(static_cast<Uint32>(item2->beatitude), &net_packet->data[12]);
+						SDLNet_Write32(static_cast<Uint32>(item2->count), &net_packet->data[16]);
+						SDLNet_Write32(static_cast<Uint32>(item2->appearance), &net_packet->data[20]);
 						net_packet->data[24] = item2->identified;
 						net_packet->data[25] = clientnum;
 						net_packet->address.host = net_server.host;
@@ -2975,7 +2966,7 @@ Item* itemPickup(int player, Item* item)
 
 -------------------------------------------------------------------------------*/
 
-Item* newItemFromEntity(Entity* entity)
+Item* newItemFromEntity(const Entity* const entity)
 {
 	if ( entity == nullptr )
 	{
@@ -2996,11 +2987,11 @@ Item* newItemFromEntity(Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
-Item** itemSlot(Stat* myStats, Item* item)
+Item** itemSlot(Stat* const myStats, Item* const item)
 {
 	if ( !myStats || !item )
 	{
-		return NULL;
+		return nullptr;
 	}
 	if (!itemCompare(item, myStats->helmet, true))
 	{
@@ -3042,7 +3033,7 @@ Item** itemSlot(Stat* myStats, Item* item)
 	{
 		return &myStats->mask;
 	}
-	return NULL;
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -3053,7 +3044,7 @@ Item** itemSlot(Stat* myStats, Item* item)
 
 -------------------------------------------------------------------------------*/
 
-bool itemIsEquipped(const Item* item, int player)
+bool itemIsEquipped(const Item* const item, const int player)
 {
 	if ( !itemCompare(item, stats[player]->helmet, true) )
 	{
@@ -3107,7 +3098,7 @@ bool itemIsEquipped(const Item* item, int player)
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::weaponGetAttack(Stat* wielder) const
+Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 {
 	Sint32 attack = beatitude;
 	if ( wielder )
@@ -3319,7 +3310,7 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::armorGetAC(Stat* wielder) const
+Sint32 Item::armorGetAC(const Stat* const wielder) const
 {
 	Sint32 armor = beatitude;
 	if ( wielder )
@@ -3506,7 +3497,7 @@ Sint32 Item::armorGetAC(Stat* wielder) const
 
 -------------------------------------------------------------------------------*/
 
-bool Item::canUnequip(Stat* wielder)
+bool Item::canUnequip(const Stat* const wielder)
 {
 	/*
 	//Spellbooks are no longer equipable.
@@ -3551,7 +3542,7 @@ bool Item::canUnequip(Stat* wielder)
 
 -------------------------------------------------------------------------------*/
 
-int Item::buyValue(int player)
+int Item::buyValue(const int player) const
 {
 	int value = items[type].value; // base value
 
@@ -3581,7 +3572,7 @@ int Item::buyValue(int player)
 	{
 		value *= 1.f + beatitude / 2.f;
 	}
-	value *= ((int)status + 5) / 10.f;
+	value *= (static_cast<int>(status) + 5) / 10.f;
 
 	// trading bonus
 	value /= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
@@ -3613,7 +3604,7 @@ int Item::buyValue(int player)
 
 -------------------------------------------------------------------------------*/
 
-int Item::sellValue(int player)
+int Item::sellValue(const int player) const
 {
 	int value = items[type].value; // base value
 
@@ -3636,7 +3627,7 @@ int Item::sellValue(int player)
 
 	// cursed and status bonuses
 	value *= 1.f + beatitude / 20.f;
-	value *= ((int)status + 5) / 10.f;
+	value *= (static_cast<int>(status) + 5) / 10.f;
 
 	// trading bonus
 	value *= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
@@ -3664,7 +3655,7 @@ int Item::sellValue(int player)
 
 -------------------------------------------------------------------------------*/
 
-void Item::apply(int player, Entity* entity)
+void Item::apply(const int player, Entity* const entity)
 {
 	if ( !entity )
 	{
@@ -3676,14 +3667,14 @@ void Item::apply(int player, Entity* entity)
 	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "APIT");
-		SDLNet_Write32((Uint32)type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
+		SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
+		SDLNet_Write32(static_cast<Uint32>(count), &net_packet->data[16]);
+		SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
 		net_packet->data[24] = identified;
 		net_packet->data[25] = player;
-		SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[26]);
+		SDLNet_Write32(static_cast<Uint32>(entity->getUID()), &net_packet->data[26]);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		net_packet->len = 30;
@@ -3718,17 +3709,17 @@ void Item::apply(int player, Entity* entity)
 	}
 }
 
-void Item::applyLockpickToWall(int player, int x, int y)
+void Item::applyLockpickToWall(const int player, const int x, const int y) const
 {
 	// for clients:
 	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "APIW");
-		SDLNet_Write32((Uint32)type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
+		SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
+		SDLNet_Write32(static_cast<Uint32>(count), &net_packet->data[16]);
+		SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
 		net_packet->data[24] = identified;
 		net_packet->data[25] = player;
 		SDLNet_Write16(x, &net_packet->data[26]);
@@ -3742,7 +3733,7 @@ void Item::applyLockpickToWall(int player, int x, int y)
 
 	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
 	{
-		Entity* entity = (Entity*)node->element;
+		Entity* entity = static_cast<Entity*>(node->element);
 		if ( entity && entity->behavior == &actArrowTrap
 			&& static_cast<int>(entity->x / 16) == x
 			&& static_cast<int>(entity->y / 16) == y )
@@ -3754,12 +3745,12 @@ void Item::applyLockpickToWall(int player, int x, int y)
 					&& stats[player] && stats[player]->weapon
 					&& (stats[player]->weapon->type == TOOL_LOCKPICK || stats[player]->weapon->type == TOOL_SKELETONKEY) )
 				{
-					int skill = std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+					const int skill = std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
 					bool failed = false;
 					if ( skill < 2 || rand() % skill == 0 ) // 20 skill requirement.
 					{
 						// failed.
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						const Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerColor(player, color, language[3871]); // trap fires.
 						if ( skill < 2 )
 						{
@@ -3775,7 +3766,7 @@ void Item::applyLockpickToWall(int player, int x, int y)
 					}
 					else
 					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						const Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 						messagePlayerColor(player, color, language[3872]);
 						playSoundEntity(entity, 176, 128);
 						entity->skill[4] = player + 1; // disabled flag and spit out items.
@@ -3836,15 +3827,9 @@ void Item::applyLockpickToWall(int player, int x, int y)
 	}
 }
 
-SummonProperties::SummonProperties()
-{
-	//TODO:
-}
+SummonProperties::SummonProperties() = default;
 
-SummonProperties::~SummonProperties()
-{
-	//TODO:
-}
+SummonProperties::~SummonProperties() noexcept = default;
 
 bool isPotionBad(const Item& potion)
 {
@@ -3868,15 +3853,12 @@ bool isPotionBad(const Item& potion)
 	return false;
 }
 
-void createCustomInventory(Stat* stats, int itemLimit)
+void createCustomInventory(Stat* const stats, const int itemLimit)
 {
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;
-	ItemType itemId;
-	Status itemStatus;
-	int itemBless;
+	ItemType itemId { static_cast<ItemType>(-1) };
 	int itemAppearance = rand();
-	int itemCount;
 	int category = 0;
 	bool itemIdentified;
 	int itemsGenerated = 0;
@@ -3948,7 +3930,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 
 			if ( itemId >= 0 )
 			{
-				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
+				Status itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
 				if ( itemStatus == 0 )
 				{
 					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
@@ -3957,12 +3939,12 @@ void createCustomInventory(Stat* stats, int itemLimit)
 				{
 					itemStatus = static_cast<Status>(itemStatus - 1); // reserved '0' for random, so '1' is decrepit... etc to '5' being excellent.
 				}
-				itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
+				int itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
 				if ( itemBless == 10 )
 				{
 					itemBless = -1 + rand() % 3;
 				}
-				itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
+				const int itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
 				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
 				{
 					itemIdentified = false;
@@ -3987,7 +3969,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 	}
 }
 
-node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
+node_t* itemNodeInInventory(const Stat* const myStats, const int32_t itemToFind, const Category cat)
 {
 	if ( myStats == nullptr )
 	{
@@ -4000,7 +3982,7 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
 	{
 		nextnode = node->next;
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item != nullptr )
 		{
 			if ( cat >= WEAPON && itemCategory(item) == cat )
@@ -4017,7 +3999,7 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	return nullptr;
 }
 
-node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
+node_t* spellbookNodeInInventory(const Stat* const myStats, const int spellIDToFind)
 {
 	if ( spellIDToFind == SPELL_NONE )
 	{
@@ -4032,7 +4014,7 @@ node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
 
 	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item != nullptr && itemCategory(item) == SPELLBOOK && getSpellIDFromSpellbook(item->type) == spellIDToFind )
 		{
 			return node;
@@ -4051,7 +4033,7 @@ node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
 	return nullptr;
 }
 
-node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff)
+node_t* getRangedWeaponItemNodeInInventory(const Stat* const myStats, const bool includeMagicstaff)
 {
 	if ( myStats == nullptr )
 	{
@@ -4060,7 +4042,7 @@ node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff
 
 	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item != nullptr )
 		{
 			if ( isRangedWeapon(*item) )
@@ -4077,7 +4059,7 @@ node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff
 	return nullptr;
 }
 
-node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats)
+node_t* getMeleeWeaponItemNodeInInventory(const Stat* const myStats)
 {
 	if ( myStats == nullptr )
 	{
@@ -4086,7 +4068,7 @@ node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats)
 
 	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
 	{
-		Item* item = (Item*)node->element;
+		Item* item = static_cast<Item*>(node->element);
 		if ( item != nullptr )
 		{
 			if ( isMeleeWeapon(*item) )
@@ -4136,7 +4118,7 @@ bool Item::isShield() const
 	return true;
 }
 
-bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed)
+bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, node_t* const inventoryNode, const bool moveStack,  const bool overrideCursed)
 {
 	//TODO: Does this work with multiplayer?
 	Item* item = nullptr;
@@ -4152,7 +4134,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		return false; //Can't unequip cursed items!
 	}
 
-	item = (Item*)inventoryNode->element;
+	item = static_cast<Item*>(inventoryNode->element);
 	
 	if ( item->count == 1 || moveStack )
 	{
@@ -4212,13 +4194,12 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		{
 			myStats->weapon = tmpItem;
 		}
+
 		return true;
 	}
-
-	return false;
 }
 
-bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip)
+bool monsterUnequipSlot(Stat* const myStats, Item** const slot, Item* const itemToUnequip)
 {
 	Item* tmpItem = nullptr;
 
@@ -4247,7 +4228,7 @@ bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip)
 	return true;
 }
 
-bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat)
+bool monsterUnequipSlotFromCategory(Stat* const myStats, Item** const slot, const Category cat)
 {
 	Item* tmpItem = nullptr;
 
@@ -4278,7 +4259,7 @@ bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat)
 	return false;
 }
 
-void copyItem(Item* itemToSet, Item* itemToCopy) //This should probably use references instead...
+void copyItem(Item* const itemToSet, const Item* const itemToCopy) //This should probably use references instead...
 {
 	if ( !itemToSet || !itemToCopy )
 	{
@@ -4294,12 +4275,11 @@ void copyItem(Item* itemToSet, Item* itemToCopy) //This should probably use refe
 	itemToSet->uid = itemToCopy->uid;
 	itemToSet->ownerUid = itemToCopy->ownerUid;
 	itemToSet->isDroppable = itemToCopy->isDroppable;
-	return;
 }
 
-ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue)
+ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int maxValue)
 {
-	int numitems = NUMITEMS;
+	const int numitems = NUMITEMS;
 	int numoftype = 0;
 	bool chances[NUMITEMS] = { false };
 	bool pickAnyCategory = false;
@@ -4356,7 +4336,7 @@ ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue)
 	return GEM_ROCK;
 }
 
-bool Item::isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave)
+bool Item::isThisABetterWeapon(const Item& newWeapon, const Item* const weaponAlreadyHave)
 {
 	if ( !weaponAlreadyHave )
 	{
@@ -4372,7 +4352,7 @@ bool Item::isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyH
 	return false;
 }
 
-bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave)
+bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlreadyHave)
 {
 	if ( !armorAlreadyHave )
 	{
@@ -4408,7 +4388,7 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave
 	return false;
 }
 
-bool Item::shouldItemStack(int player)
+bool Item::shouldItemStack(const int player) const
 {
 	if ( player >= 0 )
 	{
@@ -4469,7 +4449,7 @@ bool Item::shouldItemStack(int player)
 }
 
 
-bool shouldInvertEquipmentBeatitude(Stat* wielder)
+bool shouldInvertEquipmentBeatitude(const Stat* const wielder)
 {
 	if ( wielder->type == SUCCUBUS || wielder->type == INCUBUS )
 	{
@@ -4478,7 +4458,7 @@ bool shouldInvertEquipmentBeatitude(Stat* wielder)
 	return false;
 }
 
-bool isItemEquippableInShieldSlot(Item* item)
+bool isItemEquippableInShieldSlot(const Item* const item)
 {
 	if ( !item )
 	{
@@ -4503,14 +4483,13 @@ bool isItemEquippableInShieldSlot(Item* item)
 		case TOOL_LANTERN:
 		case TOOL_CRYSTALSHARD:
 			return true;
-			break;
 		default:
 			break;
 	}
 	return false;
 }
 
-bool Item::usableWhileShapeshifted(Stat* wielder) const
+bool Item::usableWhileShapeshifted(const Stat* const wielder) const
 {
 	if ( !wielder )
 	{
@@ -4526,31 +4505,30 @@ bool Item::usableWhileShapeshifted(Stat* wielder) const
 		case BOOK:
 		case SCROLL:
 			return false;
-			break;
 		case MAGICSTAFF:
 		case SPELLBOOK:
-			if ( wielder->type == CREATURE_IMP )
+		{
+			if (wielder->type == CREATURE_IMP)
 			{
 				return true;
 			}
-			else
-			{
-				return false;
-			}
-			break;
+
+			return false;
+		}
 		case POTION:
-			if ( type == POTION_EMPTY )
+		{
+			if (type == POTION_EMPTY)
 			{
 				return false;
 			}
+
 			return true;
-			break;
+		}
 		case AMULET:
 		case RING:
 		case FOOD:
 		case SPELL_CAT:
 			return true;
-			break;
 		default:
 			break;
 	}
@@ -4590,7 +4568,7 @@ char* Item::getScrollLabel() const
 	return scroll_label[chosenLabel];
 }
 
-bool itemSpriteIsQuiverThirdPersonModel(int sprite)
+bool itemSpriteIsQuiverThirdPersonModel(const int sprite)
 {
 	for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
 	{
@@ -4605,7 +4583,7 @@ bool itemSpriteIsQuiverThirdPersonModel(int sprite)
 	return false;
 }
 
-bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
+bool itemSpriteIsQuiverBaseThirdPersonModel(const int sprite)
 {
 	for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
 	{
@@ -4617,12 +4595,12 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
 	return false;
 }
 
-bool itemTypeIsQuiver(ItemType type)
+bool itemTypeIsQuiver(const ItemType type)
 {
 	return (type >= QUIVER_SILVER && type <= QUIVER_HUNTING);
 }
 
-real_t rangedAttackGetSpeedModifier(Stat* myStats)
+real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 {
 	if ( !myStats || !myStats->weapon )
 	{
@@ -4666,7 +4644,7 @@ real_t rangedAttackGetSpeedModifier(Stat* myStats)
 	return std::max(0.25, bowModifier + arrowModifier);
 }
 
-bool rangedWeaponUseQuiverOnAttack(Stat* myStats)
+bool rangedWeaponUseQuiverOnAttack(const Stat* const myStats)
 {
 	if ( !myStats || !myStats->weapon || !myStats->shield )
 	{
@@ -4684,7 +4662,7 @@ bool rangedWeaponUseQuiverOnAttack(Stat* myStats)
 	return false;
 }
 
-bool itemSpriteIsBreastpiece(int sprite)
+bool itemSpriteIsBreastpiece(const int sprite)
 {
 	if ( sprite < 0 || sprite > NUMITEMS )
 	{
@@ -4707,57 +4685,63 @@ bool itemSpriteIsBreastpiece(int sprite)
 	return false;
 }
 
-real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount)
+real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t* const effectAmount)
 {
 	if ( type == ARTIFACT_AXE )
 	{
-		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f; //0-25%
+		const real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f; //0-25%
 		if ( effectAmount )
 		{
 			*effectAmount = 1.5; //1.5x damage.
 		}
+
 		return percent;
 	}
 	else if ( type == ARTIFACT_SWORD )
 	{
-		real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]); //0-100%
+		const real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]); //0-100%
 		if ( effectAmount )
 		{
 			*effectAmount = (wielder.PROFICIENCIES[PRO_SWORD]) / 200.f + 0.5; //0.5x-1.0x add to weapon multiplier
 		}
+
 		return percent;
 	}
 	else if ( type == ARTIFACT_SPEAR )
 	{
-		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_POLEARM]) / 100.f; //0-25%
+		const real_t percent = 25 * (wielder.PROFICIENCIES[PRO_POLEARM]) / 100.f; //0-25%
 		if ( effectAmount )
 		{
 			*effectAmount = .5; // bypasses 50% enemies' armor.
 		}
+
 		return percent;
 	}
 	else if ( type == ARTIFACT_MACE )
 	{
-		real_t percent = 1.f; //100%
+		const real_t percent = 1.f; //100%
 		if ( effectAmount )
 		{
 			*effectAmount = wielder.PROFICIENCIES[PRO_MACE]; // 0-2 second bonus mana regen
 		}
+
 		return percent;
 	}
 	else if ( type == ARTIFACT_BOW )
 	{
-		real_t percent = wielder.PROFICIENCIES[PRO_RANGED] / 2.f; //0-50%
+		const real_t percent = wielder.PROFICIENCIES[PRO_RANGED] / 2.f; //0-50%
 		if ( effectAmount )
 		{
 			*effectAmount = 0.f; // no use here.
 		}
+
 		return percent;
 	}
+
 	return 0.0;
 }
 
-bool Item::unableToEquipDueToSwapWeaponTimer()
+bool Item::unableToEquipDueToSwapWeaponTimer() const
 {
 	if ( pickaxeGimpTimer > 0 && !intro )
 	{
@@ -4799,14 +4783,14 @@ bool Item::isTinkeringItemWithThrownLimit() const
 	return false;
 }
 
-int maximumTinkeringBotsCanBeDeployed(Stat* myStats)
+int maximumTinkeringBotsCanBeDeployed(const Stat* const myStats)
 {
 	if ( !myStats )
 	{
 		return 0;
 	}
 	int maxFollowers = 2;
-	int skillLVL = myStats->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0-5.
+	const int skillLVL = myStats->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0-5.
 	switch ( skillLVL )
 	{
 		case 0:
@@ -4831,7 +4815,7 @@ int maximumTinkeringBotsCanBeDeployed(Stat* myStats)
 	return maxFollowers;
 }
 
-bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
+bool playerCanSpawnMoreTinkeringBots(const Stat* const myStats)
 {
 	if ( !myStats )
 	{
@@ -4844,7 +4828,7 @@ bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 	int numBots = 0;
 	for ( node_t* node = myStats->FOLLOWERS.first; node != nullptr; node = node->next )
 	{
-		Entity* follower = uidToEntity(*((Uint32*)node->element));
+		Entity* follower = uidToEntity(*static_cast<Uint32*>(node->element));
 		if ( follower )
 		{
 			Stat* followerStats = follower->getStats();
@@ -4865,7 +4849,7 @@ bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 	return false;
 }
 
-void playerTryEquipItemAndUpdateServer(Item* item)
+void playerTryEquipItemAndUpdateServer(Item* const item)
 {
 	if ( !item )
 	{
@@ -4874,14 +4858,14 @@ void playerTryEquipItemAndUpdateServer(Item* item)
 	if ( multiplayer == CLIENT )
 	{
 		// store these to send to server.
-		ItemType type = item->type;
-		Status status = item->status;
-		Sint16 beatitude = item->beatitude;
-		int count = item->count;
-		Uint32 appearance = item->appearance;
-		bool identified = item->identified;
+		const ItemType type = item->type;
+		const Status status = item->status;
+		const Sint16 beatitude = item->beatitude;
+		const int count = item->count;
+		const Uint32 appearance = item->appearance;
+		const bool identified = item->identified;
 
-		Category cat = itemCategory(item);
+		const Category cat = itemCategory(item);
 
 		EquipItemResult equipResult = EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 		if ( cat == SPELLBOOK )
@@ -4930,8 +4914,8 @@ void playerTryEquipItemAndUpdateServer(Item* item)
 	}
 }
 
-void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
-	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified)
+void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const EquipItemResult equipType, const int player,
+	const ItemType type, const Status status, const Sint16 beatitude, const int count, const Uint32 appearance, const bool identified)
 {
 	if ( slot == EQUIP_ITEM_SLOT_SHIELD )
 	{
@@ -4945,11 +4929,11 @@ void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResu
 	{
 		strcpy((char*)net_packet->data, "EQUM");
 	}
-	SDLNet_Write32((Uint32)type, &net_packet->data[4]);
-	SDLNet_Write32((Uint32)status, &net_packet->data[8]);
-	SDLNet_Write32((Uint32)beatitude, &net_packet->data[12]);
-	SDLNet_Write32((Uint32)count, &net_packet->data[16]);
-	SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
+	SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+	SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
+	SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
+	SDLNet_Write32(static_cast<Uint32>(count), &net_packet->data[16]);
+	SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
 	net_packet->data[24] = identified;
 	net_packet->data[25] = player;
 	net_packet->data[26] = equipType;
@@ -4960,7 +4944,7 @@ void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResu
 	sendPacketSafe(net_sock, -1, net_packet, 0);
 }
 
-void clientUnequipSlotAndUpdateServer(EquipItemSendToServerSlot slot, Item* item)
+void clientUnequipSlotAndUpdateServer(const EquipItemSendToServerSlot slot, Item* const item)
 {
 	if ( !item )
 	{
