@@ -492,6 +492,7 @@
     <ClInclude Include="..\..\src\editor.hpp" />
     <ClInclude Include="..\..\src\entity.hpp" />
     <ClInclude Include="..\..\src\main.hpp" />
+    <ClInclude Include="..\..\src\mod_tools.hpp" />
     <ClInclude Include="..\..\src\savepng.hpp" />
     <ClInclude Include="..\..\src\sound.hpp" />
     <ClInclude Include="..\..\src\stat_editor.hpp" />
@@ -512,6 +513,7 @@
     <ClCompile Include="..\..\src\light.cpp" />
     <ClCompile Include="..\..\src\list.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\mod_tools.cpp" />
     <ClCompile Include="..\..\src\objects.cpp" />
     <ClCompile Include="..\..\src\opengl.cpp" />
     <ClCompile Include="..\..\src\sound.cpp" />

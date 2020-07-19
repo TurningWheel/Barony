@@ -201,6 +201,7 @@ extern char itemName[128];
 extern int itemSelect;
 extern int itemSlotSelected;
 int loadItems();
+void buttonStartSingleplayer(button_t* my);
 
 void propertyPageTextAndInput(int numProperties, int width);
 void propertyPageError(int rowIndex, int resetValue);

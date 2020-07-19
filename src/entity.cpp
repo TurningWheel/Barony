@@ -14464,17 +14464,17 @@ bool Entity::canWieldItem(const Item& item) const
 	}
 }
 
-void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems, Entity* forcePickupItem)
+bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems, Entity* forcePickupItem)
 {
 	//TODO: Any networking/multiplayer needs?
 	if ( !myStats )
 	{
-		return; //Can't continue without these.
+		return false; //Can't continue without these.
 	}
 
 	if ( list_Size(&myStats->inventory) >= maxInventoryItems + 1 )
 	{
-		return;
+		return false;
 	}
 
 	list_t* itemsList = nullptr;
@@ -14483,7 +14483,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 	{
 		if ( !FollowerMenu.allowedInteractItems(myStats->type) )
 		{
-			return;
+			return false;
 		}
 		
 		//If this is the first item found, the list needs to be created.
@@ -14514,6 +14514,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 		getItemsOnTile(tx + 1, ty + 1, &itemsList); //Check tile diagonal down right.
 	}
 	node_t* node = nullptr;
+	bool pickedUpItemReturnValue = false;
 
 	if ( itemsList )
 	{
@@ -14660,6 +14661,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					addItemToMonsterInventory(item);
 					item = nullptr;
 					list_RemoveNode(entity->mynode);
+					pickedUpItemReturnValue = true;
 				}
 				else if ( myStats->type == SLIME )
 				{
@@ -14672,6 +14674,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						messagePlayer(monsterAllyIndex, language[3145], items[item->type].name_unidentified);
 					}
 					list_RemoveNode(entity->mynode); // slimes eat the item up.
+					pickedUpItemReturnValue = true;
 				}
 				else if ( shouldWield )
 				{
@@ -14738,6 +14741,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					(*shouldWield) = item;
 					item = nullptr;
 					list_RemoveNode(entity->mynode);
+					pickedUpItemReturnValue = true;
 				}
 				else if ( replaceInventoryItem )
 				{
@@ -14759,6 +14763,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					}
 					item = nullptr;
 					list_RemoveNode(entity->mynode);
+					pickedUpItemReturnValue = true;
 				}
 				else if ( list_Size(&myStats->inventory) < maxInventoryItems )
 				{
@@ -14777,7 +14782,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 									toStack->count += item->count;
 									item = nullptr;
 									list_RemoveNode(entity->mynode);
-
+									pickedUpItemReturnValue = true;
 									addItem = false;
 								}
 							}
@@ -14789,6 +14794,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						addItemToMonsterInventory(item);
 						item = nullptr;
 						list_RemoveNode(entity->mynode);
+						pickedUpItemReturnValue = true;
 					}
 				}
 
@@ -14801,6 +14807,8 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 		list_FreeAll(itemsList);
 		free(itemsList);
 	}
+
+	return pickedUpItemReturnValue;
 }
 
 node_t* Entity::addItemToMonsterInventory(Item* item)

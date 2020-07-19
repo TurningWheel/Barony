@@ -67,6 +67,7 @@ FMOD_SOUND* sokobanmusic = NULL;
 FMOD_SOUND* caveslairmusic = NULL;
 FMOD_SOUND* bramscastlemusic = NULL;
 FMOD_SOUND* hamletmusic = NULL;
+FMOD_SOUND* tutorialmusic = nullptr;
 bool levelmusicplaying = false;
 
 FMOD_CHANNEL* music_channel = NULL;
@@ -418,6 +419,7 @@ OPENAL_BUFFER* sokobanmusic = NULL;
 OPENAL_BUFFER* caveslairmusic = NULL;
 OPENAL_BUFFER* bramscastlemusic = NULL;
 OPENAL_BUFFER* hamletmusic = NULL;
+OPENAL_BUFFER* tutorialmusic = nullptr;
 bool levelmusicplaying = false;
 
 OPENAL_SOUND* music_channel = NULL;
@@ -950,6 +952,7 @@ bool physfsSearchMusicToUpdate()
 	themeMusic.push_back("music/caveslair.ogg");
 	themeMusic.push_back("music/bramscastle.ogg");
 	themeMusic.push_back("music/hamlet.ogg");
+	themeMusic.push_back("music/tutorial.ogg");
 
 	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
@@ -1135,6 +1138,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 	themeMusic.push_back("music/caveslair.ogg");
 	themeMusic.push_back("music/bramscastle.ogg");
 	themeMusic.push_back("music/hamlet.ogg");
+	themeMusic.push_back("music/tutorial.ogg");
 
 	int index = 0;
 #ifdef USE_OPENAL
@@ -1282,6 +1286,13 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 							FMOD_Sound_Release(hamletmusic);
 						}
 						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &hamletmusic);
+						break;
+					case 18:
+						if ( tutorialmusic )
+						{
+							FMOD_Sound_Release(tutorialmusic);
+						}
+						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &tutorialmusic);
 						break;
 					default:
 						break;

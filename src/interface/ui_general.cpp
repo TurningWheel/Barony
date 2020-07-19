@@ -11,6 +11,7 @@
 
 
 #include "ui.hpp"
+#include <shellapi.h>
 UIToastNotificationManager_t UIToastNotificationManager;
 
 void UIToastNotificationManager_t::drawNotifications()
@@ -75,6 +76,9 @@ void communityLinkAction()
 	}
 	else
 	{
+#ifdef WINDOWS
+		//ShellExecute(NULL, TEXT("open"), TEXT("https://discord.gg/P55tcYD"), NULL, NULL, 0);
+#endif // WINDOWS
 		UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_COMMUNITY_LINK);
 		if ( n )
 		{

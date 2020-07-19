@@ -28,6 +28,7 @@ Returns a pointer to a new instance of the Stats class
 
 -------------------------------------------------------------------------------*/
 
+void Stat::clearStats() {}
 Stat* Stat::copyStats()
 {
 	node_t* node;

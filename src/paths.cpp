@@ -267,7 +267,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		}
 	}
 
-	bool standingOnTrap = 0; // 0 - not checked.
+	Uint32 standingOnTrap = 0; // 0 - not checked.
 
 	for ( entityNode = map.entities->first; entityNode != nullptr; entityNode = entityNode->next )
 	{

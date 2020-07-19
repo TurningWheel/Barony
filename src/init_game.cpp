@@ -33,6 +33,7 @@
 #include "player.hpp"
 #include "cppfuncs.hpp"
 #include "Directory.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -502,6 +503,7 @@ int fmod_result;
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/escape.ogg", FMOD_SOFTWARE, NULL, &escapemusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/devil.ogg", FMOD_SOFTWARE, NULL, &devilmusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/sanctum.ogg", FMOD_SOFTWARE, NULL, &sanctummusic);
+	fmod_result = FMOD_System_CreateStream(fmod_system, "music/tutorial.ogg", FMOD_SOFTWARE, NULL, &tutorialmusic);
 	if ( PHYSFS_getRealDir("music/gnomishmines.ogg") != NULL )
 	{
 		fmod_result = FMOD_System_CreateStream(fmod_system, "music/gnomishmines.ogg", FMOD_SOFTWARE, NULL, &gnomishminesmusic);
@@ -644,12 +646,14 @@ int fmod_result;
 
 	// load extraneous game resources
 	title_bmp = loadImage("images/system/title.png");
+	titleDefault_bmp = loadImage("images/system/title_default.png");
 	logo_bmp = loadImage("images/system/logo.png");
 	cursor_bmp = loadImage("images/system/cursor.png");
 	cross_bmp = loadImage("images/system/cross.png");
 
 	loadAllScores(SCORESFILE);
 	loadAllScores(SCORESFILE_MULTIPLAYER);
+	gameModeManager.Tutorial.init();
 	if (!loadInterfaceResources())
 	{
 		printlog("Failed to load interface resources.\n");
@@ -745,19 +749,23 @@ void deinitGame()
 	list_FreeAll(&topscoresMultiplayer);
 	deleteAllNotificationMessages();
 	list_FreeAll(&removedEntities);
-	if ( title_bmp != NULL )
+	if ( title_bmp != nullptr )
 	{
 		SDL_FreeSurface(title_bmp);
 	}
-	if ( logo_bmp != NULL )
+	if ( titleDefault_bmp != nullptr )
+	{
+		SDL_FreeSurface(titleDefault_bmp);
+	}
+	if ( logo_bmp != nullptr )
 	{
 		SDL_FreeSurface(logo_bmp);
 	}
-	if ( cursor_bmp != NULL )
+	if ( cursor_bmp != nullptr )
 	{
 		SDL_FreeSurface(cursor_bmp);
 	}
-	if ( cross_bmp != NULL )
+	if ( cross_bmp != nullptr )
 	{
 		SDL_FreeSurface(cross_bmp);
 	}
@@ -860,6 +868,7 @@ void deinitGame()
 		FMOD_Sound_Release(caveslairmusic);
 		FMOD_Sound_Release(bramscastlemusic);
 		FMOD_Sound_Release(hamletmusic);
+		FMOD_Sound_Release(tutorialmusic);
 		for ( c = 0; c < NUMMINESMUSIC; c++ )
 		{
 			FMOD_Sound_Release(minesmusic[c]);

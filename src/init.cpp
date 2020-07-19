@@ -888,7 +888,7 @@ int loadLanguage(char* lang)
 			items[c].name_unidentified = language[1546 + c * 2];
 		}
 	}
-
+	initMenuOptions();
 	return 0;
 }
 
