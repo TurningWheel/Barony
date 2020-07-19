@@ -1385,7 +1385,6 @@ void handleTutorialPauseMenu()
 
 void handleMainMenu(bool mode)
 {
-	SDL_Rect src, dest;
 	int x, c;
 	//int y;
 	bool b;
@@ -1416,6 +1415,7 @@ void handleMainMenu(bool mode)
 	if ( !movie )
 	{
 		// title pic
+		SDL_Rect src;
 		src.x = 20;
 		src.y = 20;
 		src.w = title_bmp->w * (230.0 / 240.0); // new banner scaled to old size.
@@ -10158,31 +10158,35 @@ void handleMainMenu(bool mode)
 		}
 		else if ( creditstage == 11 )
 		{
+
+			// title
+			SDL_Rect src;
+			src.x = 0;
+			src.y = 0;
+			src.w = title_bmp->w;
+			src.h = title_bmp->h;
+			SDL_Rect dest;
+			dest.x = xres / 2 - (title_bmp->w) / 2;
+			dest.y = yres / 2 - title_bmp->h / 2 - 96;
+			dest.w = xres;
+			dest.h = yres;
+			drawImage(title_bmp, &src, &dest);
+			// text
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[66]), yres / 2, language[66]);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[67]), yres / 2 + 20, language[67]);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[68]), yres / 2 + 40, language[68]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[69]), yres / 2 + 60, colorBlue, language[69]);
+
 			// logo
 			src.x = 0;
 			src.y = 0;
 			src.w = logo_bmp->w;
 			src.h = logo_bmp->h;
-			dest.x = xres / 2 - (logo_bmp->w + title_bmp->w) / 2 - 16;
-			dest.y = yres / 2 - logo_bmp->h / 2;
+			dest.x = xres / 2 - (logo_bmp->w) / 2;
+			dest.y = yres / 2 + 80;
 			dest.w = xres;
 			dest.h = yres;
 			drawImage(logo_bmp, &src, &dest);
-			// title
-			src.x = 0;
-			src.y = 0;
-			src.w = title_bmp->w;
-			src.h = title_bmp->h;
-			dest.x = xres / 2 - (logo_bmp->w + title_bmp->w) / 2 + logo_bmp->w + 16;
-			dest.y = yres / 2 - title_bmp->h / 2;
-			dest.w = xres;
-			dest.h = yres;
-			drawImage(title_bmp, &src, &dest);
-			// text
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[66]), yres / 2 + 96, language[66]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[67]), yres / 2 + 116, language[67]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[68]), yres / 2 + 136, language[68]);
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[69]), yres / 2 + 156, colorBlue, language[69]);
 		}
 		else if ( creditstage == 13 )
 		{
