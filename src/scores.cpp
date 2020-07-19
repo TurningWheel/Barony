@@ -3041,19 +3041,26 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		}
 	}
 #endif // WINDOWS
-	int oldRace = stats[plnum]->playerRace;
-	stats[plnum]->playerRace = playerRace;
+
+	int plnumTemp = plnum;
+	if ( plnumTemp >= MAXPLAYERS )
+	{
+		plnumTemp = MAXPLAYERS - 1; // fix for loading 16-player savefile in normal Barony. plnum might be out of index for stats[]
+	}
+	int oldRace = stats[plnumTemp]->playerRace;
+	stats[plnumTemp]->playerRace = playerRace;
+
 	if ( mul == DIRECTCLIENT || mul == CLIENT )
 	{
 		// include the player number in the printf.
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnum), dungeonlevel, plnum, timestamp);
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnumTemp), dungeonlevel, plnum, timestamp);
 	}
 	else
 	{
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnum), dungeonlevel, timestamp);
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnumTemp), dungeonlevel, timestamp);
 	}
 	// close file
-	stats[plnum]->playerRace = oldRace;
+	stats[plnumTemp]->playerRace = oldRace;
 	fclose(fp);
 
 	return tempstr;

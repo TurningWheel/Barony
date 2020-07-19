@@ -1075,13 +1075,19 @@ void gameLogic(void)
 
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
+					bool bCopyFollowers = true;
+					if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+					{
+						bCopyFollowers = false;
+					}
+
 					for ( c = 0; c < MAXPLAYERS; ++c )
 					{
 						tempFollowers[c].first = nullptr;
 						tempFollowers[c].last = nullptr;
 
 						node_t* node;
-						for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
+						for ( node = stats[c]->FOLLOWERS.first; bCopyFollowers && node != nullptr; node = node->next )
 						{
 							Entity* follower = uidToEntity(*((Uint32*)node->element));
 							if ( follower )

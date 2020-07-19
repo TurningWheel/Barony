@@ -9619,10 +9619,10 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 								}
 								break;
 							case RING:
-								snprintf(fullmsg, 63, language[3071], namesays, language[3108 + TYPE_RING]);
+								snprintf(fullmsg, 63, language[3071], namesays, language[3107 + TYPE_RING]);
 								break;
 							case AMULET:
-								snprintf(fullmsg, 63, language[3071], namesays, language[3108 + TYPE_AMULET]);
+								snprintf(fullmsg, 63, language[3071], namesays, language[3107 + TYPE_AMULET]);
 								break;
 							default:
 								break;
@@ -9772,10 +9772,10 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 								}
 								break;
 							case RING:
-								snprintf(fullmsg, 63, language[3118], language[3108 + TYPE_RING]);
+								snprintf(fullmsg, 63, language[3118], language[3107 + TYPE_RING]);
 								break;
 							case AMULET:
-								snprintf(fullmsg, 63, language[3118], language[3108 + TYPE_AMULET]);
+								snprintf(fullmsg, 63, language[3118], language[3107 + TYPE_AMULET]);
 								break;
 							default:
 								break;
@@ -10188,6 +10188,8 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
 	}
 
+	bool foodEntityConsumed = false;
+
 	if ( item->count > 1 )
 	{
 		--food->skill[13]; // update the entity on ground item count.
@@ -10196,13 +10198,14 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 	{
 		food->removeLightField();
 		list_RemoveNode(food->mynode);
+		foodEntityConsumed = true;
 	}
 	free(item);
 
 	// eating sound
 	playSoundEntity(this, 50 + rand() % 2, 64);
 
-	return true;
+	return foodEntityConsumed;
 }
 
 Entity* Entity::monsterAllyGetPlayerLeader()

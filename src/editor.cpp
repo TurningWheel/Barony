@@ -54,7 +54,10 @@ std::list<std::string> modFolderNames;
 std::string physfs_saveDirectory = BASE_DATA_DIR;
 std::string physfs_openDirectory = BASE_DATA_DIR;
 float limbs[NUMMONSTERS][20][3]; // dummy variable for files.cpp limbs reloading in Barony.
+void buttonStartSingleplayer(button_t* my) {} // dummy function for mod_tools.cpp
+void initClass(int i) {}; // dummy function for mod_tools.cpp
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages; // dummy variable for files.cpp system resource reloading in Barony.
+void initMenuOptions() {}; // dummy
 int textInsertCaratPosition = -1;
 
 Item* selectedItem = nullptr; //Because it won't compile without this.

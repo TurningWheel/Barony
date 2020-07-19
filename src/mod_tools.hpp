@@ -19,6 +19,7 @@ See LICENSE for details.
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
+#include "net.hpp"
 
 class CustomHelpers
 {
@@ -2409,3 +2410,133 @@ public:
 	}
 };
 extern GameplayCustomManager gameplayCustomManager;
+
+class GameModeManager_t
+{
+public:
+	enum GameModes : int
+	{
+		GAME_MODE_DEFAULT,
+		GAME_MODE_TUTORIAL_INIT,
+		GAME_MODE_TUTORIAL
+	};
+	GameModes currentMode = GAME_MODE_DEFAULT;
+	GameModes getMode() const { return currentMode; };
+	void setMode(const GameModes mode) { currentMode = mode; };
+	bool isServerflagDisabledForCurrentMode(int i)
+	{
+		if ( getMode() == GAME_MODE_DEFAULT )
+		{
+			return false;
+		}
+		else if ( getMode() == GAME_MODE_TUTORIAL )
+		{
+			int flag = power(2, i);
+			switch ( flag )
+			{
+				case SV_FLAG_HARDCORE:
+				case SV_FLAG_HUNGER:
+					return true;
+					break;
+				default:
+					break;
+			}
+			return false;
+		}
+		return false;
+	}
+	class Tutorial_t
+	{
+		bool isFirstTimeLaunch = true;
+		std::string currentMap = "";
+		const Uint32 kNumTutorialLevels = 10;
+	public:
+		void init()
+		{
+			readFromFile();
+		}
+		int dungeonLevel = -1;
+		void setTutorialMap(std::string& mapname)
+		{
+			loadCustomNextMap = mapname;
+			currentMap = loadCustomNextMap;
+		}
+		void launchHub()
+		{
+			loadCustomNextMap = "tutorial_hub.lmp";
+			currentMap = loadCustomNextMap;
+		}
+		void startTutorial(std::string mapToSet);
+		static void buttonReturnToTutorialHub(button_t* my);
+		static void buttonRestartTrial(button_t* my);
+		void openGameoverWindow();
+
+		class Menu_t
+		{
+			bool bWindowOpen = false;
+		public:
+			bool isOpen() { return bWindowOpen; }
+			void open();
+			void close() { bWindowOpen = false; }
+			void onClickEntry();
+			int windowScroll = 0;
+			int selectedMenuItem = -1;
+			std::string windowTitle = "";
+			std::string defaultHoverText = "";
+		} Menu;
+
+		class FirstTimePrompt_t
+		{
+			bool bWindowOpen = false;
+		public:
+			void createPrompt();
+			void drawDialogue();
+			bool isOpen() { return bWindowOpen; }
+			void close() { bWindowOpen = false; }
+			bool doButtonSkipPrompt = false;
+			bool showFirstTimePrompt = false;
+			static void buttonSkipPrompt(button_t* my);
+			static void buttonPromptEnterTutorialHub(button_t* my);
+		} FirstTimePrompt;
+
+		class Level_t
+		{
+		public:
+			Level_t()
+			{
+				std::string filename = "";
+				std::string title = "";
+				std::string description = "";
+				Uint32 completionTime = 0;
+			};
+			std::string filename;
+			std::string title;
+			std::string description;
+			Uint32 completionTime;
+		};
+		std::vector<Level_t> levels;
+
+		void readFromFile();
+		void writeToDocument();
+		void writeToFile(rapidjson::Document& d)
+		{
+			std::string outputPath = outputdir;
+			outputPath.append(PHYSFS_getDirSeparator());
+			std::string fileName = "data/tutorial_scores.json";
+			outputPath.append(fileName.c_str());
+
+			FILE* fp = fopen(outputPath.c_str(), "wb");
+			if ( !fp )
+			{
+				return;
+			}
+			char buf[65536];
+			rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
+			rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+			d.Accept(writer);
+
+			fclose(fp);
+		}
+	} Tutorial;
+};
+extern GameModeManager_t gameModeManager;

@@ -189,6 +189,7 @@ SDL_Rect interfaceMessageStatusBar;
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
 	std::make_pair(&title_bmp, "images/system/title.png"),
+	std::make_pair(&titleDefault_bmp, "images/system/title_default.png"),
 	std::make_pair(&logo_bmp, "images/system/logo.png"),
 	std::make_pair(&cursor_bmp, "images/system/cursor.png"),
 	std::make_pair(&cross_bmp, "images/system/cross.png"),
