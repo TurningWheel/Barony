@@ -368,7 +368,17 @@ class SummonProperties
 	//TODO: Store monster stats.
 public:
 	SummonProperties();
-	~SummonProperties();
+	~SummonProperties() noexcept;
+
+	SummonProperties(const SummonProperties& other) = default;
+	SummonProperties(SummonProperties&& other) noexcept = default;
+	SummonProperties& operator=(const SummonProperties& other) = default;
+	SummonProperties& operator=(SummonProperties&& other) noexcept = default;
+
+protected:
+
+private:
+
 };
 
 // inventory item structure
@@ -401,20 +411,20 @@ public:
 	//As it stands, no item destructor is called , so this would lead to a memory leak.
 	//And tracking down every time an item gets deleted and calling an item destructor would be quite a doozey.
 
-	char* description();
-	char* getName();
+	char* description() const;
+	char* getName() const;
 
 	//General Functions.
-	Sint32 weaponGetAttack(Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
-	Sint32 armorGetAC(Stat* wielder = nullptr) const;
-	bool canUnequip(Stat* wielder = nullptr); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
-	int buyValue(int player);
-	int sellValue(int player);
-	bool usableWhileShapeshifted(Stat* wielder = nullptr) const;
+	Sint32 weaponGetAttack(const Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
+	Sint32 armorGetAC(const Stat* wielder = nullptr) const;
+	bool canUnequip(const Stat* wielder = nullptr); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
+	int buyValue(int player) const;
+	int sellValue(int player) const;
+	bool usableWhileShapeshifted(const Stat* wielder = nullptr) const;
 	char* getScrollLabel() const;
 
 	void apply(int player, Entity* entity);
-	void applyLockpickToWall(int player, int x, int y);
+	void applyLockpickToWall(int player, int x, int y) const;
 
 	//Item usage functions.
 	void applySkeletonKey(int player, Entity& entity);
@@ -427,7 +437,7 @@ public:
 	 */
 	static bool isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave);
 	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave); //Also checks shields.
-	bool shouldItemStack(int player);
+	bool shouldItemStack(int player) const;
 
 	bool isShield() const;
 
@@ -454,7 +464,7 @@ public:
 	};
 	void applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity);
 	void applyTinkeringCreation(Entity* parent, Entity* thrown);
-	bool unableToEquipDueToSwapWeaponTimer();
+	bool unableToEquipDueToSwapWeaponTimer() const;
 	bool tinkeringBotIsMaxHealth() const;
 	bool isTinkeringItemWithThrownLimit() const;
 };
@@ -537,13 +547,13 @@ void addItemToMonsterInventory(Item &item, list_t& inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel);
-Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).
+Item* newItemFromEntity(const Entity* entity); //Make sure to call free(item).
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
 Item** itemSlot(Stat* myStats, Item* item);
 
 enum Category itemCategory(const Item* item);
-Sint32 itemModel(Item* item);
-Sint32 itemModelFirstperson(Item* item);
+Sint32 itemModel(const Item* item);
+Sint32 itemModelFirstperson(const Item* item);
 SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 bool dropItem(Item* item, int player, bool notifyMessage = true); // return true on free'd item
@@ -575,8 +585,8 @@ void clientUnequipSlotAndUpdateServer(EquipItemSendToServerSlot slot, Item* item
 EquipItemResult equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
-bool shouldInvertEquipmentBeatitude(Stat* wielder);
-bool isItemEquippableInShieldSlot(Item* item);
+bool shouldInvertEquipmentBeatitude(const Stat* wielder);
+bool isItemEquippableInShieldSlot(const Item* item);
 bool itemIsConsumableByAutomaton(const Item& item);
 
 extern const real_t potionDamageSkillMultipliers[6];
@@ -630,25 +640,25 @@ bool isMeleeWeapon(const Item& item);
 bool itemIsThrowableTinkerTool(const Item* item);
 
 void createCustomInventory(Stat* stats, int itemLimit);
-void copyItem(Item* itemToSet, Item* itemToCopy);
+void copyItem(Item* itemToSet, const Item* itemToCopy);
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed);
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
-node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
-node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFInd);
-node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff);
-node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
+node_t* itemNodeInInventory(const Stat* myStats, int32_t itemToFind, Category cat);
+node_t* spellbookNodeInInventory(const Stat* myStats, int spellIDToFind);
+node_t* getRangedWeaponItemNodeInInventory(const Stat* myStats, bool includeMagicstaff);
+node_t* getMeleeWeaponItemNodeInInventory(const Stat* myStats);
 ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue);
 bool itemSpriteIsQuiverThirdPersonModel(int sprite);
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
 bool itemTypeIsQuiver(ItemType type);
 bool itemSpriteIsBreastpiece(int sprite);
-real_t rangedAttackGetSpeedModifier(Stat* myStats);
-bool rangedWeaponUseQuiverOnAttack(Stat* myStats);
+real_t rangedAttackGetSpeedModifier(const Stat* myStats);
+bool rangedWeaponUseQuiverOnAttack(const Stat* myStats);
 real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount);
 void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten);
-bool playerCanSpawnMoreTinkeringBots(Stat* myStats);
-int maximumTinkeringBotsCanBeDeployed(Stat* myStats);
+bool playerCanSpawnMoreTinkeringBots(const Stat* myStats);
+int maximumTinkeringBotsCanBeDeployed(const Stat* myStats);
 extern bool overrideTinkeringLimit;
 extern int decoyBoxRange;
 

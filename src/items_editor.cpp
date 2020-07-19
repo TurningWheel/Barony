@@ -25,12 +25,12 @@ Creates a new item and places it in an inventory
 
 -------------------------------------------------------------------------------*/
 
-Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory)
+Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, const Sint16 count, const Uint32 appearance, const bool identified, list_t* const inventory)
 {
 	Item* item;
 
 	// allocate memory for the item
-	if ( (item = (Item*)malloc(sizeof(Item))) == NULL )
+	if ( (item = static_cast<Item*>(malloc(sizeof(Item)))) == nullptr )
 	{
 		printlog("failed to allocate memory for new item!\n");
 		exit(1);
@@ -39,7 +39,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	//item->captured_monster = nullptr;
 
 	// add the item to the inventory
-	if ( inventory != NULL )
+	if ( inventory != nullptr )
 	{
 		item->node = list_AddNodeLast(inventory);
 		item->node->element = item;
@@ -48,7 +48,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	}
 	else
 	{
-		item->node = NULL;
+		item->node = nullptr;
 	}
 
 	// now set all of my data elements
@@ -61,7 +61,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	item->uid = itemuids;
 	if ( inventory )
 	{
-		int x, y;
+		/*int x, y;
 		bool notfree = false, foundaspot = false;
 
 		bool is_spell = false;
@@ -70,7 +70,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 			is_spell = true;
 		}
 
-		x = 0;
+		x = 0;*/
 	}
 	else
 	{
@@ -90,7 +90,7 @@ Returns the category that a specified item belongs to
 
 -------------------------------------------------------------------------------*/
 
-Category itemCategory(const Item* item)
+Category itemCategory(const Item* const item)
 {
 	if ( !item )
 	{
@@ -107,7 +107,7 @@ returns a model index number based on the properties of the given item
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModel(Item* item)
+Sint32 itemModel(const Item* const item)
 {
 	if ( !item )
 	{
@@ -124,7 +124,7 @@ returns the first person model of the given item
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModelFirstperson(Item* item)
+Sint32 itemModelFirstperson(const Item* const item)
 {
 	if ( !item )
 	{
@@ -141,20 +141,20 @@ returns a pointer to the SDL_Surface used to represent the item
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* itemSprite(Item* item)
+SDL_Surface* itemSprite(Item* const item)
 {
 	if ( !item )
 	{
-		return NULL;
+		return nullptr;
 	}
-		node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
-		if ( !node )
-		{
-			return NULL;
-		}
-		SDL_Surface** surface = (SDL_Surface**)node->element;
-		return *surface;
-	return NULL;
+	node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
+	if ( !node )
+	{
+		return nullptr;
+	}
+	
+	auto** surface = static_cast<SDL_Surface**>(node->element);
+	return *surface;
 }
 
 /*-------------------------------------------------------------------------------
@@ -166,23 +166,22 @@ returns a pointer to an item struct from the given entity if it's an
 
 -------------------------------------------------------------------------------*/
 
-Item* newItemFromEntity(Entity* entity)
+Item* newItemFromEntity(const Entity* const entity)
 {
-	if ( entity == NULL )
+	if ( entity == nullptr )
 	{
-		return NULL;
+		return nullptr;
 	}
-	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], NULL);
+	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
 }
 
 int loadItems()
 {
 	int c, x;
 	char name[32];
-	FILE* fp;
 	// load item types
 	printlog("loading items...\n");
-	fp = openDataFile("items/items.txt", "r");
+	FILE* const fp = openDataFile("items/items.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		items[c].name_identified = language[1545 + c * 2];
@@ -269,12 +268,12 @@ int loadItems()
 		{
 			break;
 		}
-		items[c].images.first = NULL;
-		items[c].images.last = NULL;
-		while ( 1 )
+		items[c].images.first = nullptr;
+		items[c].images.last = nullptr;
+		while ( true )
 		{
-			string_t* string = (string_t*)malloc(sizeof(string_t));
-			string->data = (char*)malloc(sizeof(char) * 64);
+			auto* string = static_cast<string_t*>(malloc(sizeof(string_t)));
+			string->data = static_cast<char*>(malloc(sizeof(char) * 64));
 			string->lines = 1;
 
 			node_t* node = list_AddNodeLast(&items[c].images);
@@ -304,18 +303,18 @@ int loadItems()
 	}
 	for ( c = 0; c < NUMITEMS; c++ )
 	{
-		items[c].surfaces.first = NULL;
-		items[c].surfaces.last = NULL;
+		items[c].surfaces.first = nullptr;
+		items[c].surfaces.last = nullptr;
 		for ( x = 0; x < list_Size(&items[c].images); x++ )
 		{
-			SDL_Surface** surface = (SDL_Surface**)malloc(sizeof(SDL_Surface*));
+			auto** surface = static_cast<SDL_Surface**>(malloc(sizeof(SDL_Surface*)));
 			node_t* node = list_AddNodeLast(&items[c].surfaces);
 			node->element = surface;
 			node->deconstructor = &defaultDeconstructor;
 			node->size = sizeof(SDL_Surface*);
 
 			node_t* node2 = list_Node(&items[c].images, x);
-			string_t* string = (string_t*)node2->element;
+			auto* string = static_cast<string_t*>(node2->element);
 			*surface = loadImage(string->data);
 		}
 	}
