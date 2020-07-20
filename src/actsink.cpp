@@ -39,7 +39,7 @@ void actSink(Entity* my)
 	if ( SINK_AMBIENCE <= 0 )
 	{
 		SINK_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntityLocal( my, 149, 128 );
+		playSoundEntityLocal( my, 149, 64 );
 	}
 
 	if ( my->skill[2] > 0 )
