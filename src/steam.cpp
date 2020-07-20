@@ -21,12 +21,12 @@
 #include "interface/interface.hpp"
 #include <SDL_thread.h>
 #include "player.hpp"
+#include "mod_tools.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include <steam/steam_gameserver.h>
 #include "steam.hpp"
 #include "lobbies.hpp"
-#include "mod_tools.hpp"
 #endif
 
 #ifdef STEAMWORKS
