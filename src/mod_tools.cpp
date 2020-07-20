@@ -45,7 +45,7 @@ void GameModeManager_t::Tutorial_t::startTutorial(std::string mapToSet)
 {
 	if ( mapToSet.compare("") == 0 )
 	{
-		isFirstTimeLaunch ? setTutorialMap(std::string("tutorial1.lmp")) : launchHub();
+		launchHub();
 	}
 	else
 	{
@@ -346,17 +346,17 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::createPrompt()
 	bWindowOpen = true;
 	showFirstTimePrompt = false;
 
-	if ( !titleDefault_bmp )
+	if ( !title_bmp )
 	{
 		return;
 	}
 
 	// create window
 	subwindow = 1;
-	subx1 = xres / 2 - ((0.75 * titleDefault_bmp->w / 2) + 52);
-	subx2 = xres / 2 + ((0.75 * titleDefault_bmp->w / 2) + 52);
-	suby1 = yres / 2 - ((0.75 * titleDefault_bmp->h / 2) + 88);
-	suby2 = yres / 2 + ((0.75 * titleDefault_bmp->h / 2) + 88);
+	subx1 = xres / 2 - ((0.75 * title_bmp->w / 2) + 52);
+	subx2 = xres / 2 + ((0.75 * title_bmp->w / 2) + 52);
+	suby1 = yres / 2 - ((0.75 * title_bmp->h / 2) + 88);
+	suby2 = yres / 2 + ((0.75 * title_bmp->h / 2) + 88);
 	strcpy(subtext, "");
 
 	Uint32 centerWindowX = subx1 + (subx2 - subx1) / 2;
@@ -391,16 +391,16 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::drawDialogue()
 	Uint32 centerWindowX = subx1 + (subx2 - subx1) / 2;
 
 	SDL_Rect pos;
-	pos.x = centerWindowX - 0.75 * titleDefault_bmp->w / 2;
+	pos.x = centerWindowX - 0.75 * title_bmp->w / 2;
 	pos.y = suby1 + 4;
-	pos.w = 0.75 * titleDefault_bmp->w;
-	pos.h = 0.75 * titleDefault_bmp->h;
+	pos.w = 0.75 * title_bmp->w;
+	pos.h = 0.75 * title_bmp->h;
 	SDL_Rect scaled;
 	scaled.x = 0;
 	scaled.y = 0;
-	scaled.w = titleDefault_bmp->w * 0.75;
-	scaled.h = titleDefault_bmp->h * 0.75;
-	drawImageScaled(titleDefault_bmp, &scaled, &pos);
+	scaled.w = title_bmp->w * 0.75;
+	scaled.h = title_bmp->h * 0.75;
+	drawImageScaled(title_bmp, &scaled, &pos);
 	
 	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3936]);
 	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3967]);

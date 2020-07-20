@@ -646,7 +646,6 @@ int fmod_result;
 
 	// load extraneous game resources
 	title_bmp = loadImage("images/system/title.png");
-	titleDefault_bmp = loadImage("images/system/title_default.png");
 	logo_bmp = loadImage("images/system/logo.png");
 	cursor_bmp = loadImage("images/system/cursor.png");
 	cross_bmp = loadImage("images/system/cross.png");
@@ -752,10 +751,6 @@ void deinitGame()
 	if ( title_bmp != nullptr )
 	{
 		SDL_FreeSurface(title_bmp);
-	}
-	if ( titleDefault_bmp != nullptr )
-	{
-		SDL_FreeSurface(titleDefault_bmp);
 	}
 	if ( logo_bmp != nullptr )
 	{

@@ -2343,8 +2343,8 @@ Connecting to matchmaking lobby...
 
 1536 disable pop-up messages#
 1537 (direct ip)#
-1538 Host a multiplayer game without Steamworks, using a direct IP connection.#
-1539 Join a multiplayer game without Steamworks, using a direct IP connection.#
+1538 Host a multiplayer game without matchmaking, using a direct IP connection.#
+1539 Join a multiplayer game without matchmaking, using a direct IP connection.#
 1540 %s, level %d %s
 dungeon level %d, singleplayer, %s#
 1541 %s, level %d %s
@@ -2714,7 +2714,7 @@ dungeon level %d, client (player %d) (direct ip), %s#
 1918 100% certified Minotaur!#
 1919 Heart-Gold Version!#
 1920 Enhanced RNG!#
-1921 Now with Steamworks!#
+1921 Now with Crossplay!#
 1922 Baphomet Approved!#
 1923 By Popular Demand!#
 1924 Potato King's Pick!#
@@ -2742,7 +2742,7 @@ dungeon level %d, client (player %d) (direct ip), %s#
 # game/server flags tooltips
 
 # Cheats.
-1942 NOTE: Enabling cheats will disable Steam Achievements on your save files! #
+1942 NOTE: Enabling cheats will disable Achievements on your save files! #
 # Friendly fire.
 1943 NOTE: Enabling FF will allow you to damage your allies with attacks and magic! #
 # Minotaurs.
@@ -3741,7 +3741,7 @@ Enjoy the dungeon without having to loot your allies! #
 # Life Saving
 2924 Spawn at the start of the game with an amulet of life saving, granting you 
 an additional life.
-NOTE: Enabling this will disable Steam Achievements on your save files! #
+NOTE: Enabling this will disable Achievements on your save files! #
 
 # 2925 - 2957 New conducts.
 2925 Hardcore#
@@ -3809,7 +3809,7 @@ IDENTICAL MOD LISTS LOADED!#
 3002 Are you sure you want to delete this high score?
 
 #
-3003 Steam Achievements are disabled#
+3003 Achievements are disabled#
 3004 Loading modded language file...#
 3005 Unloading modded language file...#
 3006 Loading modded item sprites...#
@@ -5810,10 +5810,52 @@ before we deal!#
 3933 Unlock achievement "Bayou Baron" to unlock this class for every race!#
 3934 Unlock achievement "Buggar Baron" to unlock this class for every race!#
 3935 borderless#
+3936 Welcome to Barony!#
 3937 Logging in, please wait#
 3938 When logging in for the first time, check your browser#
 3939 to enable account integration with Barony.#
 3940 Account integration is required to use Barony.#
 3941 A login error has occurred (%d). Please retry.#
 3942 Account integration has been denied. Please restart Barony to retry.#
-3949 end#
+3943 (Steamworks)#
+3944 (Crossplay)#
+3945 Join a multiplayer game hosted by Steamworks or crossplay services.#
+3946 Host a multiplayer game using Steamworks.#
+3947 Host a multiplayer game using crossplay services.#
+3948 enable crossplay#
+3950  Filters #
+3951 Filters in use#
+3952 Filters disabled#
+3953 Filtered Search#
+3954 Search by lobby code:#
+3955 Show in-progress
+crossplay lobbies: [%c]#
+3956    Are you sure you want to
+  restart the current trial?#
+3957 Restart Trial#
+3958 Return to Hall of Trials#
+3959 Quit To Main Menu#
+3960    Are you sure you want to
+  exit the current trial and
+ return to the Hall of Trials?#
+3961    Are you sure you want to
+   return to the main menu?#
+3962 
+Changing this gameflag is disabled in current game mode.#
+3963 Achievements are disabled for current gamemode#
+3964 Hall of Trials#
+3965 Go to the Tutorial Trials#
+3966 Skip for now#
+3967                    Barony is a challenging game!                    #
+3968 
+             Would you like to go to the Hall of Trials
+                       to learn a few things?
+
+            You can always go back to the Hall of Trials
+                      later from the Main Menu.#
+3969 Reset Hall of Trials#
+3970    Are you sure you want to
+   reset the Hall of Trials
+    to its original state?#
+3971 Achievements#
+3999 end#
