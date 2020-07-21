@@ -3756,7 +3756,7 @@ void Entity::handleEffects(Stat* myStats)
 				net_packet->len = 6;
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
-			if ( rand() % 5 == 0 )
+			if ( rand() % 5 == 0 && getCON() >= -3 )
 			{
 				messagePlayer(player, language[641]);
 				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
