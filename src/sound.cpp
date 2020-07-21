@@ -237,12 +237,12 @@ void sound_update()
 				FMOD_ChannelGroup_SetVolume(soundAmbient_group, dynamicAmbientVolume * (sfxAmbientVolume / 128.f));
 				//messagePlayer(0, "Total: %3f - down: %f", sqrt(totalAudibility), dynamicAmbientVolume);
 			}
-			else if ( audibleDifference < (-0.05 * sfxAmbientVolume / 128.f) )
+			else if ( audibleDifference < (-0.025 * sfxAmbientVolume / 128.f) )
 			{
 				float currentVolume = 1.f;
 				FMOD_ChannelGroup_GetVolume(soundAmbient_group, &currentVolume);
 
-				// if sound volume > 0 and is less than 95% of nominal value, raise volume until normal is achieved.
+				// if sound volume > 0 and is less than 97.5% of nominal value, raise volume until normal is achieved.
 				if ( currentVolume > 0.001 && ((sfxAmbientVolume / 128.f) - currentVolume) > 0.01 ) 
 				{
 					dynamicAmbientVolume = std::min(1.0, dynamicAmbientVolume + 0.01);
@@ -286,12 +286,12 @@ void sound_update()
 				FMOD_ChannelGroup_SetVolume(soundEnvironment_group, dynamicEnvironmentVolume * (sfxEnvironmentVolume / 128.f));
 				//messagePlayer(0, "Total: %3f - down: %f", sqrt(totalAudibility), dynamicEnvironmentVolume);
 			}
-			else if ( audibleDifference < (-0.05 * sfxEnvironmentVolume / 128.f) )
+			else if ( audibleDifference < (-0.025 * sfxEnvironmentVolume / 128.f) )
 			{
 				float currentVolume = 1.f;
 				FMOD_ChannelGroup_GetVolume(soundEnvironment_group, &currentVolume);
 
-				// if sound volume > 0 and is less than 95% of nominal value, raise volume until normal is achieved.
+				// if sound volume > 0 and is less than 97.5% of nominal value, raise volume until normal is achieved.
 				if ( currentVolume > 0.001 && ((sfxEnvironmentVolume / 128.f) - currentVolume) > 0.01 )
 				{
 					dynamicEnvironmentVolume = std::min(1.0, dynamicEnvironmentVolume + 0.01);
