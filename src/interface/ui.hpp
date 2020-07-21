@@ -75,21 +75,24 @@ public:
 		UI_NOTIFICATION_CLOSE = 1,
 		UI_NOTIFICATION_ACTION_BUTTON = 2,
 		UI_NOTIFICATION_AUTO_HIDE = 4,
-		UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE = 8
+		UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE = 8,
+		UI_NOTIFICATION_REMOVABLE = 16,
 	};
 	enum CardType : Uint32
 	{
 		UI_CARD_DEFAULT,
 		UI_CARD_EOS_ACCOUNT,
 		UI_CARD_CROSSPLAY_ACCOUNT,
-		UI_CARD_COMMUNITY_LINK
+		UI_CARD_COMMUNITY_LINK,
+		UI_CARD_ACHIEVEMENT
 	};
 	CardType cardType = CardType::UI_CARD_DEFAULT;
 	enum CardState : Uint32
 	{
 		UI_CARD_STATE_SHOW,
 		UI_CARD_STATE_DOCKED,
-		UI_CARD_STATE_UPDATE
+		UI_CARD_STATE_UPDATE,
+		UI_CARD_STATE_REMOVED
 	};
 	void (*buttonAction)() = nullptr;
 
@@ -129,6 +132,7 @@ public:
 		idleTicksToHide = seconds * TICKS_PER_SECOND;
 	}
 	std::string& getMainText() { return mainCardText; };
+	CardState getCardState() { return static_cast<CardState>(cardState); }
 
 	void draw()
 	{
@@ -141,11 +145,11 @@ public:
 		{
 			if ( !fadeout && !(actionFlags & UI_NOTIFICATION_AUTO_HIDE) )
 			{
-				// don't hide.
+				// don't hide or close
 			}
 			else
 			{
-				temporaryCardHide = true;
+				temporaryCardHide = (actionFlags & UI_NOTIFICATION_AUTO_HIDE);
 				lastInteractedTick = ticks;
 				if ( cardState == UI_CARD_STATE_SHOW )
 				{
@@ -289,7 +293,7 @@ public:
 			animate(animx, anim_ticks, anim_duration, cardWidth, mainCardHide, mainCardIsHidden);
 			if ( mainCardHide && mainCardIsHidden )
 			{
-				cardState = UI_CARD_STATE_DOCKED;
+				cardState = actionFlags & UI_NOTIFICATION_REMOVABLE ? UI_CARD_STATE_REMOVED : UI_CARD_STATE_DOCKED;
 				if ( oldHiddenStatus != mainCardIsHidden && (actionFlags & UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE) )
 				{
 					setDisplayedText(mainCardText);
@@ -419,17 +423,13 @@ class UIToastNotificationManager_t
 public:
 	UIToastNotificationManager_t() {};
 	~UIToastNotificationManager_t() { SDL_FreeSurface(communityLink1); };
-	enum ImageTypes
+	SDL_Surface* getImage(SDL_Surface* image)
 	{
-		GENERIC_TOAST_IMAGE
-	};
-	SDL_Surface* getImage(ImageTypes image)
-	{
-		if ( image == GENERIC_TOAST_IMAGE )
+		if ( image == nullptr )
 		{
 			return communityLink1;
 		}
-		return nullptr;
+		return image;
 	};
 
 	bool bIsInit = false;
@@ -440,8 +440,11 @@ public:
 	}
 	void drawNotifications();
 	void createCommunityNotification();
+	void createAchievementNotification(const char* name);
 
-	UIToastNotification* addNotification(ImageTypes image);
+	/// @param image nullptr for default barony icon
+	UIToastNotification* addNotification(SDL_Surface* image);
+
 	UIToastNotification* getNotificationSingle(UIToastNotification::CardType cardType)
 	{
 		for ( auto& card : allNotifications )

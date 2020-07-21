@@ -102,6 +102,7 @@ void buttonGamemodsBaseDirectory(button_t* my);
 void buttonGamemodsSelectDirectoryForUpload(button_t* my);
 void buttonGamemodsOpenModifyExistingWindow(button_t* my);
 void buttonGamemodsStartModdedGame(button_t* my);
+void buttonInviteFriends(button_t* my);
 
 #ifdef STEAMWORKS
 void buttonGamemodsPrepareWorkshopItemUpload(button_t* my);
@@ -113,7 +114,6 @@ void buttonGamemodsOpenUploadWindow(button_t* my);
 void buttonGamemodsGetMyWorkshopItems(button_t* my);
 void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my);
 void buttonGamemodsCancelModifyFileContents(button_t* my);
-void buttonInviteFriends(button_t* my);
 void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
 void buttonGamemodsSubscribeToHostsModFiles(button_t* my);
@@ -133,6 +133,12 @@ extern char serialInputText[64];
 #endif
 
 #define SLIDERFONT font12x12_bmp
+
+// achievement window
+void openAchievementsWindow();
+void closeAchievementsWindow(button_t*);
+extern bool achievements_window;
+extern int achievements_window_page;
 
 // misc functions
 void openSettingsWindow();
