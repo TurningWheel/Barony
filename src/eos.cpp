@@ -2442,6 +2442,25 @@ void EOSFuncs::Accounts_t::handleLogin()
 #ifdef STEAMWORKS
 	return;
 #endif
+	if ( !initPopupWindow && popupType == POPUP_TOAST )
+	{
+		if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT) )
+		{
+			UIToastNotification* n = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
+			n->setHeaderText(std::string("Account Status"));
+			n->setMainText(std::string("Logging in..."));
+			n->setSecondaryText(std::string("An error has occurred!"));
+			n->setActionText(std::string("Retry"));
+			n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
+			n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+			n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+			n->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
+			n->buttonAction = &buttonRetryAuthorisation;
+			n->setIdleSeconds(5);
+		}
+		initPopupWindow = true;
+	}
+
 	if ( !waitingForCallback && (AccountAuthenticationStatus == EOS_EResult::EOS_Success || AccountAuthenticationCompleted == EOS_EResult::EOS_Success) )
 	{
 		firstTimeSetupCompleted = true;
@@ -2465,48 +2484,28 @@ void EOSFuncs::Accounts_t::handleLogin()
 	}
 	AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
 
-	if ( popupType == POPUP_TOAST )
+	// handle errors below...
+	if ( initPopupWindow && popupType == POPUP_TOAST )
 	{
-		if ( !initPopupWindow )
+		if ( !waitingForCallback )
 		{
-			if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT) )
+			if ( AccountAuthenticationStatus != EOS_EResult::EOS_NotConfigured )
 			{
-				UIToastNotification* n = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
-				n->setHeaderText(std::string("Account Status"));
-				n->setMainText(std::string("Logging in..."));
-				n->setSecondaryText(std::string("An error has occurred!"));
-				n->setActionText(std::string("Retry"));
-				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
-				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
-				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
-				n->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
-				n->buttonAction = &buttonRetryAuthorisation;
-				n->setIdleSeconds(5);
-			}
-			initPopupWindow = true;
-		}
-		else
-		{
-			if ( !waitingForCallback )
-			{
-				if ( AccountAuthenticationStatus != EOS_EResult::EOS_NotConfigured )
+				UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
+				// update the status here.
+				if ( n )
 				{
-					UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
-					// update the status here.
-					if ( n )
-					{
-						n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
-						n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
-						char buf[128] = "";
-						snprintf(buf, 128 - 1, "Login has failed.\nError code: %d", static_cast<int>(AccountAuthenticationStatus));
-						n->showMainCard();
-						n->setSecondaryText(std::string(buf));
-						n->updateCardEvent(false, true);
-						n->setIdleSeconds(10);
-					}
+					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
+					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+					char buf[128] = "";
+					snprintf(buf, 128 - 1, "Login has failed.\nError code: %d", static_cast<int>(AccountAuthenticationStatus));
+					n->showMainCard();
+					n->setSecondaryText(std::string(buf));
+					n->updateCardEvent(false, true);
+					n->setIdleSeconds(10);
 				}
-				AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
 			}
+			AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
 		}
 	}
 
