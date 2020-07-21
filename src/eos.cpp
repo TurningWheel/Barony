@@ -55,6 +55,7 @@ void EOS_CALL EOSFuncs::AuthLoginCompleteCallback(const EOS_Auth_LoginCallbackIn
 			EOS.getUserInfo(EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str()),
 				UserInfoQueryType::USER_INFO_QUERY_LOCAL, accIndex);
 			EOS.initConnectLogin();
+			EOS.queryDLCOwnership();
 		}
 		return;
 	}
@@ -2820,6 +2821,97 @@ Uint32 EOSFuncs::getGameKeyFromLobbyCode(std::string& code)
 		}
 	}
 	return result;
+}
+
+void EOSFuncs::queryDLCOwnership()
+{
+	EcomHandle = EOS_Platform_GetEcomInterface(PlatformHandle);
+
+	EOS_Ecom_QueryEntitlementsOptions options = {};
+	options.ApiVersion = EOS_ECOM_QUERYENTITLEMENTS_API_LATEST;
+	options.bIncludeRedeemed = true;
+	std::vector<EOS_Ecom_EntitlementName> entitlements;
+	entitlements.push_back("fced51d547714291869b8847fdd770e8");
+	entitlements.push_back("7ea3754f8bfa4069938fd0bee3e7197b");
+	
+	options.EntitlementNames = entitlements.data();
+	options.EntitlementNameCount = entitlements.size();
+	options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
+
+	EOS_Ecom_QueryEntitlements(EcomHandle, &options, nullptr, OnEcomQueryEntitlementsCallback);
+	//EOS_Ecom_QueryOwnershipOptions options = {};
+	//options.ApiVersion = EOS_ECOM_QUERYOWNERSHIP_API_LATEST;
+	//std::vector<EOS_Ecom_CatalogItemId> catalogIds;
+	//options.CatalogItemIdCount = catalogIds.size();
+	//options.CatalogItemIds = catalogIds.data();
+	//options.CatalogNamespace = "";
+	//options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
+	//EOS_Ecom_QueryOwnership(EcomHandle, &options, nullptr, OnEcomQueryOwnershipCallback);
+}
+
+void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEntitlementsCallbackInfo* data)
+{
+	if ( !data )
+	{
+		EOSFuncs::logError("OnEcomQueryEntitlementsCallback: null data");
+		return;
+	}
+	else if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+		EOSFuncs::logInfo("OnEcomQueryEntitlementsCallback: callback success");
+
+		EOS.EcomHandle = EOS_Platform_GetEcomInterface(EOS.PlatformHandle);
+		EOS_Ecom_GetEntitlementsCountOptions countOptions = {};
+		countOptions.ApiVersion = EOS_ECOM_GETENTITLEMENTSCOUNT_API_LATEST;
+		countOptions.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+
+		Uint32 numEntitlements = EOS_Ecom_GetEntitlementsCount(EOS.EcomHandle, &countOptions);
+		for ( int i = 0; i < numEntitlements; ++i )
+		{
+			EOS_Ecom_CopyEntitlementByIndexOptions copyOptions;
+			copyOptions.ApiVersion = EOS_ECOM_COPYENTITLEMENTBYINDEX_API_LATEST;
+			copyOptions.EntitlementIndex = i;
+			copyOptions.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+
+			EOS_Ecom_Entitlement* e = nullptr;
+			EOS_EResult result = EOS_Ecom_CopyEntitlementByIndex(EOS.EcomHandle, &copyOptions, &e);
+			if ( result == EOS_EResult::EOS_Success && e )
+			{
+				std::string id = e->EntitlementName;
+				if ( id.compare("fced51d547714291869b8847fdd770e8") == 0 )
+				{
+					enabledDLCPack1 = true;
+				}
+				else if ( id.compare("7ea3754f8bfa4069938fd0bee3e7197b") == 0 )
+				{
+					enabledDLCPack2 = true;
+				}
+				//EOSFuncs::logInfo("Index: %d | Id %s: | Entitlement Name: %s | CatalogItemId: %s | Redeemed: %d", i, e->EntitlementId, e->EntitlementName, e->CatalogItemId, (e->bRedeemed == EOS_TRUE) ? 1 : 0);
+				EOS_Ecom_Entitlement_Release(e);
+			}
+		}
+	}
+	else
+	{
+		EOSFuncs::logError("OnEcomQueryEntitlementsCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
+	}
+}
+
+void EOS_CALL EOSFuncs::OnEcomQueryOwnershipCallback(const EOS_Ecom_QueryOwnershipCallbackInfo* data)
+{
+	if ( !data )
+	{
+		EOSFuncs::logError("OnEcomQueryOwnershipCallback: null data");
+		return;
+	}
+	else if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+		EOSFuncs::logInfo("OnEcomQueryOwnershipCallback: Ownership status: %d", static_cast<int>(data->ItemOwnership->OwnershipStatus));
+	}
+	else
+	{
+		EOSFuncs::logError("OnEcomQueryOwnershipCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
+	}
 }
 
 #endif //USE_EOS

@@ -11,6 +11,7 @@
 #include "eos_lobby.h"
 #include "eos_p2p.h"
 #include "eos_ui.h"
+#include "eos_ecom.h"
 #include <vector>
 #include <iostream>
 #include <map>
@@ -117,6 +118,7 @@ public:
 	EOS_HLobbyModification LobbyModificationHandle = nullptr;
 	EOS_HLobbyModification LobbyMemberModificationHandle = nullptr;
 	EOS_HUI UIHandle = nullptr;
+	EOS_HEcom EcomHandle = nullptr;
 
 	class LobbyParameters_t {
 	public:
@@ -197,6 +199,8 @@ public:
 	static void EOS_CALL ShowFriendsCallback(const EOS_UI_ShowFriendsCallbackInfo* data);
 	static void EOS_CALL OnCreateUserCallback(const EOS_Connect_CreateUserCallbackInfo* data);
 	static void EOS_CALL OnCreateUserCrossplayCallback(const EOS_Connect_CreateUserCallbackInfo* data);
+	static void EOS_CALL OnEcomQueryOwnershipCallback(const EOS_Ecom_QueryOwnershipCallbackInfo* data);
+	static void EOS_CALL OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEntitlementsCallbackInfo* data);
 
 	class FriendInfo_t {
 	public:
@@ -674,6 +678,7 @@ public:
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);
 	void queryLocalExternalAccountId(EOS_EExternalAccountType accountType);
 	void showFriendsOverlay();
+	void queryDLCOwnership();
 	static void logInfo(const char* str, ...)
 	{
 		char newstr[1024] = { 0 };
