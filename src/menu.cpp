@@ -5033,8 +5033,30 @@ void handleMainMenu(bool mode)
 				tooltip_box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
 				tooltip_box.w = subx2 - subx1 - 30 - 8;
 				tooltip_box.h = 80 - 8;
-				drawTooltip(&tooltip_box);
-				ttfPrintText(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, item.second.c_str());
+				//drawTooltip(&tooltip_box); original ui
+				//ttfPrintText(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, item.second.c_str());
+
+				drawWindowFancy(tooltip_box.x + 12 + 64 + 12, tooltip_box.y, tooltip_box.x + tooltip_box.w, tooltip_box.y + tooltip_box.h);
+				drawWindowFancy(tooltip_box.x, tooltip_box.y, tooltip_box.x + 12 + 64 + 12, tooltip_box.y + tooltip_box.h);
+
+				SDL_Rect icon_box;
+				icon_box.x = tooltip_box.x + 2;
+				icon_box.y = tooltip_box.y + 2;
+				icon_box.w = 12 + 64 + 12 - 4;
+				icon_box.h = tooltip_box.h - 4;
+
+				if ( achievementUnlocked(item.first.c_str()) )
+				{
+					drawRect(&tooltip_box, uint32ColorBaronyBlue(*mainsurface), 64);
+					drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 1, 0, 16), 255);
+				}
+				else
+				{
+					drawRect(&tooltip_box, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+					drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
+				}
+
+				ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, item.second.c_str());
 				auto it = achievementDesc.find(item.first);
 				if (it != achievementDesc.end())
 				{
