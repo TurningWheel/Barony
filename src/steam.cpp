@@ -1058,6 +1058,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	g_SteamStatistics->StoreStats(); // update server's stat counter.
 #else
 #ifdef USE_EOS
+	EOS.ingestStat(statisticNum, value);
 #endif
 #endif
 	if ( indicateProgress )

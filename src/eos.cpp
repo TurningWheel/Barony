@@ -2419,6 +2419,19 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 	printlog("successfully loaded EOS achievement player status");
 }
 
+void EOSFuncs::OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+	if (data->ResultCode == EOS_EResult::EOS_Success)
+	{
+		printlog("successfully ingested EOS stat");
+	}
+	else
+	{
+		printlog("failed to ingest EOS stat");
+	}
+}
+
 bool EOSFuncs::initAchievements()
 {
 	printlog("initializing EOS achievements");
@@ -2426,6 +2439,9 @@ bool EOSFuncs::initAchievements()
 		return false;
 	}
 	if ((AchievementsHandle = EOS_Platform_GetAchievementsInterface(PlatformHandle)) == nullptr) {
+		return false;
+	}
+	if ((StatsHandle = EOS_Platform_GetStatsInterface(PlatformHandle)) == nullptr) {
 		return false;
 	}
 	return true;
@@ -2484,6 +2500,23 @@ void EOSFuncs::unlockAchievement(const char* name)
 	UnlockAchievementsOptions.AchievementIds = &name;
 	EOS_Achievements_UnlockAchievements(AchievementsHandle, &UnlockAchievementsOptions, nullptr, OnUnlockAchievement);
 	UIToastNotificationManager.createAchievementNotification(name);
+}
+
+void EOSFuncs::ingestStat(int stat_num, int value)
+{
+	printlog("updating EOS stat '%s'", g_SteamStats[stat_num].m_pchStatName);
+
+	EOS_Stats_IngestData StatsToIngest[1];
+	StatsToIngest[0].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
+	StatsToIngest[0].StatName = g_SteamStats[stat_num].m_pchStatName;
+	StatsToIngest[0].IngestAmount = value;
+
+	EOS_Stats_IngestStatOptions Options = {};
+	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
+	Options.Stats = StatsToIngest;
+	Options.StatsCount = sizeof(StatsToIngest) / sizeof(StatsToIngest[0]);
+	Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+	EOS_Stats_IngestStat(StatsHandle, &Options, nullptr, OnIngestStatComplete);
 }
 
 void EOS_CALL EOSFuncs::ShowFriendsCallback(const EOS_UI_ShowFriendsCallbackInfo* data)

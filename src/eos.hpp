@@ -12,6 +12,7 @@
 #include "eos_p2p.h"
 #include "eos_ui.h"
 #include "eos_achievements.h"
+#include "eos_stats.h"
 #include <vector>
 #include <iostream>
 #include <map>
@@ -120,6 +121,7 @@ public:
 	EOS_HLobbyModification LobbyMemberModificationHandle = nullptr;
 	EOS_HUI UIHandle = nullptr;
 	EOS_HAchievements AchievementsHandle = nullptr;
+	EOS_HStats StatsHandle = nullptr;
 
 	class LobbyParameters_t {
 	public:
@@ -202,6 +204,7 @@ public:
 	static void EOS_CALL OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data);
 	static void EOS_CALL OnAchievementQueryComplete(const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* data);
 	static void EOS_CALL OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data);
+	static void EOS_CALL OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data);
 	static void EOS_CALL OnCreateUserCrossplayCallback(const EOS_Connect_CreateUserCallbackInfo* data);
 
 	class FriendInfo_t {
@@ -683,6 +686,7 @@ public:
 	void showFriendsOverlay();
 	void unlockAchievement(const char* name);
 	void loadAchievementData();
+	void ingestStat(int stat_num, int value);
 	static std::string getLobbyJoinFailedConnectString(EOS_EResult result);
 	static void logInfo(const char* str, ...)
 	{
