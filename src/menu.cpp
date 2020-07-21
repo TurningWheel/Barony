@@ -5006,41 +5006,7 @@ void handleMainMenu(bool mode)
 			std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted(
 				achievementNames.begin(), achievementNames.end(), compFunctor);
 
-			// list achievements (text)
-			index = 0;
-			for (auto& item : achievementNamesSorted)
-			{
-				auto find = achievementHidden.find(item.first);
-				if (find != achievementHidden.end() && !achievementUnlocked(item.first.c_str()))
-				{
-					continue;
-				}
-				if (index < first_ach)
-				{
-					++index; continue;
-				}
-				SDL_Rect tooltip_box;
-				tooltip_box.x = subx1 + 4;
-				tooltip_box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
-				tooltip_box.w = subx2 - subx1 - 30 - 8;
-				tooltip_box.h = 80 - 8;
-				drawTooltip(&tooltip_box);
-				ttfPrintText(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, item.second.c_str());
-				auto it = achievementDesc.find(item.first);
-				if (it != achievementDesc.end())
-				{
-					auto item = *it;
-					std::string sub = item.second.length() > 60 ? item.second.substr(0, 60) + "..." : item.second;
-					ttfPrintText(ttf12, subx1 + 100, suby1 + 120 + (index - first_ach) * 80, sub.c_str());
-				}
-				++index;
-				if (index >= first_ach + 6)
-				{
-					break;
-				}
-			}
-
-			// list achievement images
+			// list achievements
 			index = 0;
 			for (auto& item : achievementNamesSorted)
 			{
@@ -5054,17 +5020,66 @@ void handleMainMenu(bool mode)
 				{
 					++index; continue;
 				}
-				std::string img = unlocked ? item.first + ".png" : item.first + "_l.png";
-				auto it = achievementImages.find(img);
-				if (it != achievementImages.end())
+
+				// draw box
+				SDL_Rect tooltip_box;
+				tooltip_box.x = subx1 + 4;
+				tooltip_box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
+				tooltip_box.w = subx2 - subx1 - 30 - 8;
+				tooltip_box.h = 80 - 8;
+				drawTooltip(&tooltip_box);
+
+				// draw name
+				Uint32 nameColor = unlocked ? SDL_MapRGB(mainsurface->format, 0, 255, 255) : SDL_MapRGB(mainsurface->format, 128, 128, 128);
+				ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, nameColor, true, item.second.c_str());
+
+				// draw description
 				{
-					SDL_Rect rect;
-					rect.x = subx1 + 16;
-					rect.y = suby1 + 88 + (index - first_ach) * 80;
-					rect.w = 64;
-					rect.h = 64;
-					drawImage((*it).second, NULL, &rect);
+					auto it = achievementDesc.find(item.first);
+					if (it != achievementDesc.end())
+					{
+						auto item = *it;
+						std::string sub = item.second.length() > 140 ? item.second.substr(0, 140) + "..." : item.second;
+						for (size_t c, offset = 0;;)
+						{
+							size_t lastoffset = offset;
+							for (c = lastoffset + 1; c < sub.size(); ++c)
+							{
+								if (sub[c] == ' ')
+								{
+									break;
+								}
+							}
+							offset = c;
+							if (offset > 70 && lastoffset)
+							{
+								sub[lastoffset] = '\n';
+								break;
+							}
+							if (offset >= sub.size())
+							{
+								break;
+							}
+						}
+						ttfPrintText(ttf12, subx1 + 100, suby1 + 120 + (index - first_ach) * 80, sub.c_str());
+					}
 				}
+
+				// draw image
+				{
+					std::string img = unlocked ? item.first + ".png" : item.first + "_l.png";
+					auto it = achievementImages.find(img);
+					if (it != achievementImages.end())
+					{
+						SDL_Rect rect;
+						rect.x = subx1 + 16;
+						rect.y = suby1 + 88 + (index - first_ach) * 80;
+						rect.w = 64;
+						rect.h = 64;
+						drawImage((*it).second, NULL, &rect);
+					}
+				}
+
 				++index;
 				if (index >= first_ach + 6)
 				{
