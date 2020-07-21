@@ -673,7 +673,7 @@ void EOS_CALL EOSFuncs::OnQueryAccountMappingsCallback(const EOS_Connect_QueryPr
 			for ( const EOS_ProductUserId& productId : EOS.ProductIdsAwaitingAccountMappingCallback )
 			{
 				EOS_Connect_GetProductUserIdMappingOptions Options = {};
-				Options.ApiVersion = EOS_CONNECT_GETEXTERNALACCOUNTMAPPINGS_API_LATEST;
+				Options.ApiVersion = EOS_CONNECT_GETPRODUCTUSERIDMAPPING_API_LATEST;
 				Options.AccountIdType = EOS_EExternalAccountType::EOS_EAT_EPIC;
 				Options.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 				Options.TargetProductUserId = productId;
