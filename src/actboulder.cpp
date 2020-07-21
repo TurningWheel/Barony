@@ -1116,11 +1116,14 @@ void actBoulderTrap(Entity* my)
 	int x, y;
 	int c;
 
-	BOULDERTRAP_AMBIENCE--;
-	if ( BOULDERTRAP_AMBIENCE <= 0 )
+	if ( !BOULDERTRAP_FIRED )
 	{
-		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntity(my, 149, 64);
+		BOULDERTRAP_AMBIENCE--;
+		if ( BOULDERTRAP_AMBIENCE <= 0 )
+		{
+			BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+			playSoundEntity(my, 149, 64);
+		}
 	}
 
 	if ( !my->skill[28] )
@@ -1221,11 +1224,14 @@ void actBoulderTrapEast(Entity* my)
 	int x, y;
 	int c;
 
-	my->boulderTrapAmbience--;
-	if ( my->boulderTrapAmbience <= 0 )
+	if ( !my->boulderTrapFired )
 	{
-		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-		playSoundEntity(my, 149, 64);
+		my->boulderTrapAmbience--;
+		if ( my->boulderTrapAmbience <= 0 )
+		{
+			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
+			playSoundEntity(my, 149, 64);
+		}
 	}
 
 	if ( my->boulderTrapRefireCounter > 0 )
@@ -1309,11 +1315,14 @@ void actBoulderTrapSouth(Entity* my)
 	int x, y;
 	int c;
 
-	my->boulderTrapAmbience--;
-	if ( my->boulderTrapAmbience <= 0 )
+	if ( !my->boulderTrapFired )
 	{
-		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-		playSoundEntity(my, 149, 64);
+		my->boulderTrapAmbience--;
+		if ( my->boulderTrapAmbience <= 0 )
+		{
+			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
+			playSoundEntity(my, 149, 64);
+		}
 	}
 
 	if ( my->boulderTrapRefireCounter > 0 )
@@ -1397,11 +1406,14 @@ void actBoulderTrapWest(Entity* my)
 	int x, y;
 	int c;
 
-	my->boulderTrapAmbience--;
-	if ( my->boulderTrapAmbience <= 0 )
+	if ( !my->boulderTrapFired )
 	{
-		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-		playSoundEntity(my, 149, 64);
+		my->boulderTrapAmbience--;
+		if ( my->boulderTrapAmbience <= 0 )
+		{
+			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
+			playSoundEntity(my, 149, 64);
+		}
 	}
 
 	if ( my->boulderTrapRefireCounter > 0 )
@@ -1486,11 +1498,14 @@ void actBoulderTrapNorth(Entity* my)
 	int x, y;
 	int c;
 
-	my->boulderTrapAmbience--;
-	if ( my->boulderTrapAmbience <= 0 )
+	if ( !my->boulderTrapFired )
 	{
-		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-		playSoundEntity(my, 149, 64);
+		my->boulderTrapAmbience--;
+		if ( my->boulderTrapAmbience <= 0 )
+		{
+			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
+			playSoundEntity(my, 149, 64);
+		}
 	}
 
 	if ( my->boulderTrapRefireCounter > 0 )
