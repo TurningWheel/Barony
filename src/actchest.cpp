@@ -50,7 +50,7 @@ void Entity::actChest()
 	if ( chestAmbience <= 0 )
 	{
 		chestAmbience = TICKS_PER_SECOND * 30;
-		playSoundEntityLocal(this, 149, 64);
+		playSoundEntityLocal(this, 149, 32);
 	}
 
 	if ( multiplayer == CLIENT )

@@ -113,19 +113,17 @@ void actLadder(Entity* my)
 
 void actLadderUp(Entity* my)
 {
-	int i;
-
-	LADDER_AMBIENCE--;
+	/*LADDER_AMBIENCE--;
 	if ( LADDER_AMBIENCE <= 0 )
 	{
 		LADDER_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 64 );
-	}
+	}*/
 
 	// use ladder
 	if ( multiplayer != CLIENT )
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		for (int i = 0; i < MAXPLAYERS; i++)
 		{
 			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
 			{

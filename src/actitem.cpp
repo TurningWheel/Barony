@@ -144,14 +144,8 @@ void actItem(Entity* my)
 		my->sprite = itemModel(item);
 		free(item);
 	}
-	//if( ITEM_LIFE==0 )
-	//	playSoundEntityLocal( my, 149, 64 );
+
 	ITEM_LIFE++;
-	/*ITEM_AMBIENCE++;
-	if( ITEM_AMBIENCE>=TICKS_PER_SECOND*30 ) {
-		ITEM_AMBIENCE=0;
-		playSoundEntityLocal( my, 149, 64 );
-	}*/
 
 	// pick up item
 	if (multiplayer != CLIENT)
