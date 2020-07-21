@@ -53,10 +53,6 @@ Uint32 clientplayer = 0;
 int numplayers = 0;
 int clientnum = 0;
 int multiplayer = -1;
-#ifdef STEAMWORKS
-bool directConnect = false;
-CSteamLeaderboards* g_SteamLeaderboards = NULL;
-CSteamWorkshop* g_SteamWorkshop = NULL;
 SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 {
 	{ 1, STEAM_STAT_INT, "STAT_BOULDER_DEATHS" },
@@ -109,6 +105,10 @@ SteamGlobalStat_t g_SteamGlobalStats[2] =
 	{ 1, STEAM_STAT_INT, "STAT_GAMES_STARTED" },
 	{ 2, STEAM_STAT_INT, "STAT_GAMES_WON" }
 };
+#ifdef STEAMWORKS
+bool directConnect = false;
+CSteamLeaderboards* g_SteamLeaderboards = NULL;
+CSteamWorkshop* g_SteamWorkshop = NULL;
 CSteamStatistics* g_SteamStatistics = NULL;
 #else
 bool directConnect = true;
@@ -263,6 +263,7 @@ SDL_Surface** tiles = nullptr;
 std::unordered_map<std::string, SDL_Surface*> achievementImages;
 std::unordered_map<std::string, std::string> achievementNames;
 std::unordered_map<std::string, std::string> achievementDesc;
+std::unordered_set<std::string> achievementHidden;
 Uint32 imgref = 1, vboref = 1;
 const Uint32 ttfTextCacheLimit = 9000;
 GLuint* texid = nullptr;

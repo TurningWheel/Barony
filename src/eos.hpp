@@ -201,6 +201,7 @@ public:
 	static void EOS_CALL OnCreateUserCallback(const EOS_Connect_CreateUserCallbackInfo* data);
 	static void EOS_CALL OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data);
 	static void EOS_CALL OnAchievementQueryComplete(const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* data);
+	static void EOS_CALL OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data);
 	static void EOS_CALL OnCreateUserCrossplayCallback(const EOS_Connect_CreateUserCallbackInfo* data);
 
 	class FriendInfo_t {

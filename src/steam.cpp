@@ -754,14 +754,7 @@ bool achievementUnlocked(const char* achName)
 			return true;
 		}
 	}
-#ifdef STEAMWORKS
-#else
-#ifdef USE_EOS
-
-#else
 	return false;
-#endif
-#endif
 }
 
 /*-------------------------------------------------------------------------------
@@ -884,9 +877,6 @@ void steamAchievementEntity(Entity* my, const char* achName)
 
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 {
-#ifndef STEAMWORKS
-	return;
-#else
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
 		|| gamemods_disableSteamAchievements )
@@ -1064,19 +1054,20 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		default:
 			break;
 	}
+#ifdef STEAMWORKS
 	g_SteamStatistics->StoreStats(); // update server's stat counter.
+#else
+#ifdef USE_EOS
+#endif
+#endif
 	if ( indicateProgress )
 	{
 		steamIndicateStatisticProgress(statisticNum, type);
 	}
-#endif
 }
 
 void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value)
 {
-#ifndef STEAMWORKS
-	return;
-#else
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
 		|| gamemods_disableSteamAchievements )
@@ -1121,7 +1112,6 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
-#endif
 }
 
 

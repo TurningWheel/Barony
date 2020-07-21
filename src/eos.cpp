@@ -2345,6 +2345,11 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 			return;
 		}
 
+		if (AchievementDef->bIsHidden)
+		{
+			achievementHidden.emplace(std::string(AchievementDef->AchievementId));
+		}
+
 		if (AchievementDef->UnlockedDisplayName)
 		{
 			achievementNames.emplace(std::make_pair(
@@ -2364,6 +2369,54 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 	}
 
 	printlog("successfully loaded EOS achievements");
+}
+
+void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+
+	if (data->ResultCode != EOS_EResult::EOS_Success)
+	{
+		printlog("failed to load player achievement status");
+		return;
+	}
+
+	EOS_Achievements_GetPlayerAchievementCountOptions AchievementsCountOptions = {};
+	AchievementsCountOptions.ApiVersion = EOS_ACHIEVEMENTS_GETPLAYERACHIEVEMENTCOUNT_API_LATEST;
+	AchievementsCountOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+
+	uint32_t AchievementsCount = EOS_Achievements_GetPlayerAchievementCount(EOS.AchievementsHandle, &AchievementsCountOptions);
+
+	EOS_Achievements_CopyPlayerAchievementByIndexOptions CopyOptions = {};
+	CopyOptions.ApiVersion = EOS_ACHIEVEMENTS_COPYPLAYERACHIEVEMENTBYINDEX_API_LATEST;
+	CopyOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+
+	for (CopyOptions.AchievementIndex = 0; CopyOptions.AchievementIndex < AchievementsCount; ++CopyOptions.AchievementIndex)
+	{
+		EOS_Achievements_PlayerAchievement* PlayerAchievement = NULL;
+
+		EOS_EResult CopyPlayerAchievementResult = EOS_Achievements_CopyPlayerAchievementByIndex(EOS.AchievementsHandle, &CopyOptions, &PlayerAchievement);
+		if (CopyPlayerAchievementResult != EOS_EResult::EOS_Success)
+		{
+			printlog("CopyPlayerAchievement Failure!");
+			return;
+		}
+
+		if (PlayerAchievement->UnlockTime != EOS_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKTIME_UNDEFINED)
+		{
+			size_t size = sizeof(char) * (strlen(PlayerAchievement->AchievementId) + 1);
+			char* ach = (char*) malloc(size);
+			strcpy(ach, PlayerAchievement->AchievementId);
+			node_t* node = list_AddNodeFirst(&steamAchievements);
+			node->element = ach;
+			node->size = size;
+			node->deconstructor = &defaultDeconstructor;
+		}
+
+		EOS_Achievements_PlayerAchievement_Release(PlayerAchievement);
+	}
+
+	printlog("successfully loaded EOS achievement player status");
 }
 
 bool EOSFuncs::initAchievements()
@@ -2399,15 +2452,26 @@ void EOSFuncs::loadAchievementData()
 	bAchievementsLoaded = true;
 	achievementNames.clear();
 	achievementDesc.clear();
+	achievementHidden.clear();
 
 	printlog("loading EOS achievements");
-	EOS_Achievements_QueryDefinitionsOptions Options = {};
-	Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
-	Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
-	Options.UserId = CurrentUserInfo.getProductUserIdHandle();
-	Options.HiddenAchievementsCount = 0;
-	Options.HiddenAchievementIds = nullptr;
-	EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
+	{
+		EOS_Achievements_QueryDefinitionsOptions Options = {};
+		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
+		Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+		Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+		Options.HiddenAchievementsCount = 0;
+		Options.HiddenAchievementIds = nullptr;
+		EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
+	}
+
+	printlog("loading player achievement status");
+	{
+		EOS_Achievements_QueryPlayerAchievementsOptions Options = {};
+		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYPLAYERACHIEVEMENTS_API_LATEST;
+		Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+		EOS_Achievements_QueryPlayerAchievements(AchievementsHandle, &Options, nullptr, OnPlayerAchievementQueryComplete);
+	}
 }
 
 void EOSFuncs::unlockAchievement(const char* name)

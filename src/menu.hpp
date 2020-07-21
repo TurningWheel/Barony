@@ -134,6 +134,12 @@ extern char serialInputText[64];
 
 #define SLIDERFONT font12x12_bmp
 
+// achievement window
+void openAchievementsWindow();
+void closeAchievementsWindow(button_t*);
+extern bool achievements_window;
+extern int achievements_window_page;
+
 // misc functions
 void openSettingsWindow();
 void openFailedConnectionWindow(int mode);
