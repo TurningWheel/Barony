@@ -498,10 +498,6 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/sfxvolume", 10) )
 	{
 		sfxvolume = atoi(&command_str[11]);
-		
-		// to upgrade config and keep sound settings the same, change to sfxvolume
-		sfxAmbientVolume = sfxvolume; 
-		sfxEnvironmentVolume = sfxvolume;
 	}
 	else if ( !strncmp(command_str, "/musvolume", 10) )
 	{
@@ -2835,6 +2831,18 @@ void consoleCommand(char* command_str)
 			else
 			{
 				messagePlayer(clientnum, "Dynamic ambient volume OFF");
+			}
+		}
+		else if ( !strncmp(command_str, "/sfxenvironmentdynamic", 22) )
+		{
+			sfxUseDynamicEnvironmentVolume = !sfxUseDynamicEnvironmentVolume;
+			if ( sfxUseDynamicEnvironmentVolume )
+			{
+				messagePlayer(clientnum, "Dynamic environment volume ON");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Dynamic environment volume OFF");
 			}
 		}
 		else if ( !strncmp(command_str, "/sfxenvironmentvolume", 21) )

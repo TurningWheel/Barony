@@ -108,7 +108,7 @@ void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume); //Aut
 void handleLevelMusic(); //Manages and updates the level music.
 
 extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
-extern bool sfxUseDynamicAmbientVolume;
+extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 
 #elif defined USE_OPENAL
 
