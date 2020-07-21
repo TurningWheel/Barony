@@ -3412,10 +3412,26 @@ void clientHandlePacket()
 		{
 			FMOD_ChannelGroup_Stop(sound_group);
 		}
+		if ( soundAmbient_group )
+		{
+			FMOD_ChannelGroup_Stop(soundAmbient_group);
+		}
+		if ( soundEnvironment_group )
+		{
+			FMOD_ChannelGroup_Stop(soundEnvironment_group);
+		}
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
 			OPENAL_ChannelGroup_Stop(sound_group);
+		}
+		if ( soundAmbient_group )
+		{
+			OPENAL_ChannelGroup_Stop(soundAmbient_group);
+		}
+		if ( soundEnvironment_group )
+		{
+			OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 		}
 #endif
 		if ( openedChest[clientnum] )

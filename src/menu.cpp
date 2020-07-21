@@ -171,6 +171,8 @@ int settings_fullscreen, settings_shaking, settings_bobbing;
 bool settings_borderless = false;
 real_t settings_gamma;
 int settings_sfxvolume, settings_musvolume;
+int settings_sfxAmbientVolume;
+int settings_sfxEnvironmentVolume;
 int settings_impulses[NUMIMPULSES];
 int settings_joyimpulses[NUM_JOY_IMPULSES];
 int settings_reversemouse;
@@ -4002,48 +4004,55 @@ void handleMainMenu(bool mode)
 		{
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1348]);
 			doSlider(subx1 + 24, suby1 + 84, 15, 0, 128, 0, &settings_sfxvolume);
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 108, language[1349]);
-			doSlider(subx1 + 24, suby1 + 132, 15, 0, 128, 0, &settings_musvolume);
+
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 108, language[3972]);
+			doSlider(subx1 + 24, suby1 + 132, 15, 0, 128, 0, &settings_sfxAmbientVolume);
+
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 156, language[3973]);
+			doSlider(subx1 + 24, suby1 + 180, 15, 0, 128, 0, &settings_sfxEnvironmentVolume);
+
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 204, language[1349]);
+			doSlider(subx1 + 24, suby1 + 228, 15, 0, 128, 0, &settings_musvolume);
 
 			if ( settings_minimap_ping_mute )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[x] %s", language[3012]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 264, "[x] %s", language[3012]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[ ] %s", language[3012]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 264, "[ ] %s", language[3012]);
 			}
 			if ( settings_mute_audio_on_focus_lost )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[x] %s", language[3158]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 288, "[x] %s", language[3158]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[ ] %s", language[3158]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 288, "[ ] %s", language[3158]);
 			}
 			if ( settings_mute_player_monster_sounds )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 216, "[x] %s", language[3371]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 312, "[x] %s", language[3371]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 216, "[ ] %s", language[3371]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 312, "[ ] %s", language[3371]);
 			}
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
 				{
-					if ( omousey >= suby1 + 168 && omousey < suby1 + 168 + 12 )
+					if ( omousey >= suby1 + 168 && omousey < suby1 + 264 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_minimap_ping_mute = (settings_minimap_ping_mute == false);
 					}
-					else if ( omousey >= suby1 + 192 && omousey < suby1 + 192 + 12 )
+					else if ( omousey >= suby1 + 192 && omousey < suby1 + 288 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_mute_audio_on_focus_lost = (settings_mute_audio_on_focus_lost == false);
 					}
-					else if ( omousey >= suby1 + 216 && omousey < suby1 + 216 + 12 )
+					else if ( omousey >= suby1 + 216 && omousey < suby1 + 312 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_mute_player_monster_sounds = (settings_mute_player_monster_sounds == false);
@@ -8887,10 +8896,26 @@ void handleMainMenu(bool mode)
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
+				if ( soundAmbient_group )
+				{
+					FMOD_ChannelGroup_Stop(soundAmbient_group);
+				}
+				if ( soundEnvironment_group )
+				{
+					FMOD_ChannelGroup_Stop(soundEnvironment_group);
+				}
 #elif defined USE_OPENAL
 				if ( sound_group )
 				{
 					OPENAL_ChannelGroup_Stop(sound_group);
+				}
+				if ( soundAmbient_group )
+				{
+					OPENAL_ChannelGroup_Stop(soundAmbient_group);
+				}
+				if ( soundEnvironment_group )
+				{
+					OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 				}
 #endif
 
@@ -9170,10 +9195,26 @@ void handleMainMenu(bool mode)
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
+				if ( soundAmbient_group )
+				{
+					FMOD_ChannelGroup_Stop(soundAmbient_group);
+				}
+				if ( soundEnvironment_group )
+				{
+					FMOD_ChannelGroup_Stop(soundEnvironment_group);
+				}
 #elif defined USE_OPENAL
 				if ( sound_group )
 				{
 					OPENAL_ChannelGroup_Stop(sound_group);
+				}
+				if ( soundAmbient_group )
+				{
+					OPENAL_ChannelGroup_Stop(soundAmbient_group);
+				}
+				if ( soundEnvironment_group )
+				{
+					OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 				}
 #endif
 				// load next level
@@ -9455,10 +9496,26 @@ void handleMainMenu(bool mode)
 			{
 				FMOD_ChannelGroup_Stop(sound_group);
 			}
+			if ( soundAmbient_group )
+			{
+				FMOD_ChannelGroup_Stop(soundAmbient_group);
+			}
+			if ( soundEnvironment_group )
+			{
+				FMOD_ChannelGroup_Stop(soundEnvironment_group);
+			}
 #elif defined USE_OPENAL
 			if ( sound_group )
 			{
 				OPENAL_ChannelGroup_Stop(sound_group);
+			}
+			if ( soundAmbient_group )
+			{
+				OPENAL_ChannelGroup_Stop(soundAmbient_group);
+			}
+			if ( soundEnvironment_group )
+			{
+				OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 			}
 #endif
 
@@ -11376,6 +11433,8 @@ void openSettingsWindow()
 	settings_gamma = vidgamma;
 	settings_fps = fpsLimit;
 	settings_sfxvolume = sfxvolume;
+	settings_sfxAmbientVolume = sfxAmbientVolume;
+	settings_sfxEnvironmentVolume = sfxEnvironmentVolume;
 	settings_musvolume = musvolume;
 	settings_minimap_ping_mute = minimapPingMute;
 	settings_mute_audio_on_focus_lost = mute_audio_on_focus_lost;
@@ -13251,6 +13310,8 @@ void applySettings()
 	}
 	// set audio options
 	sfxvolume = settings_sfxvolume;
+	sfxAmbientVolume = settings_sfxAmbientVolume;
+	sfxEnvironmentVolume = settings_sfxEnvironmentVolume;
 	musvolume = settings_musvolume;
 	minimapPingMute = settings_minimap_ping_mute;
 	mute_audio_on_focus_lost = settings_mute_audio_on_focus_lost;
@@ -13259,9 +13320,13 @@ void applySettings()
 #ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 #elif defined USE_OPENAL
 	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 #endif
 
 	// set keyboard options

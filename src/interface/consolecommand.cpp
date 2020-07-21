@@ -498,6 +498,10 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/sfxvolume", 10) )
 	{
 		sfxvolume = atoi(&command_str[11]);
+		
+		// to upgrade config and keep sound settings the same, change to sfxvolume
+		sfxAmbientVolume = sfxvolume; 
+		sfxEnvironmentVolume = sfxvolume;
 	}
 	else if ( !strncmp(command_str, "/musvolume", 10) )
 	{
@@ -2816,6 +2820,26 @@ void consoleCommand(char* command_str)
 #if (defined STEAMWORKS && defined USE_EOS)
 			EOS.CrossplayAccountManager.autologin = true;
 #endif // USE_EOS
+		}
+		else if ( !strncmp(command_str, "/sfxambientvolume", 17) )
+		{
+			sfxAmbientVolume = atoi(&command_str[18]);
+		}
+		else if ( !strncmp(command_str, "/sfxambientdynamic", 18) )
+		{
+			sfxUseDynamicAmbientVolume = !sfxUseDynamicAmbientVolume;
+			if ( sfxUseDynamicAmbientVolume )
+			{
+				messagePlayer(clientnum, "Dynamic ambient volume ON");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Dynamic ambient volume OFF");
+			}
+		}
+		else if ( !strncmp(command_str, "/sfxenvironmentvolume", 21) )
+		{
+			sfxEnvironmentVolume = atoi(&command_str[22]);
 		}
 		else
 		{

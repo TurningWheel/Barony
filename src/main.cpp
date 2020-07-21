@@ -296,6 +296,8 @@ Uint16 audio_format = AUDIO_S16;
 int audio_channels = 2;
 int audio_buffers = 512;
 int sfxvolume = 64;
+int sfxAmbientVolume = 64;
+int sfxEnvironmentVolume = 64;
 int musvolume = 48;
 
 // fun stuff

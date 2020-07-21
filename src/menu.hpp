@@ -202,6 +202,8 @@ extern int settings_fullscreen, settings_shaking, settings_bobbing;
 extern bool settings_borderless;
 extern real_t settings_gamma;
 extern int settings_sfxvolume, settings_musvolume;
+extern int settings_sfxAmbientVolume;
+extern int settings_sfxEnvironmentVolume;
 extern int settings_impulses[NUMIMPULSES];
 extern int settings_reversemouse;
 extern bool settings_smoothmouse;

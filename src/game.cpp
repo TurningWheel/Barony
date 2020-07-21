@@ -1035,10 +1035,26 @@ void gameLogic(void)
 					{
 						FMOD_ChannelGroup_Stop(sound_group);
 					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_Stop(soundAmbient_group);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_Stop(soundEnvironment_group);
+					}
 #elif defined USE_OPENAL
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_Stop(sound_group);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_Stop(soundAmbient_group);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 					}
 #endif
 					// stop combat music
@@ -2830,6 +2846,14 @@ void handleEvents(void)
 					{
 						FMOD_ChannelGroup_SetVolume(sound_group, 0.f);
 					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
+					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
 					if ( music_group )
@@ -2839,6 +2863,14 @@ void handleEvents(void)
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_SetVolume(sound_group, 0.f);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
 					}
 #endif
 				}
@@ -2853,6 +2885,14 @@ void handleEvents(void)
 					{
 						FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
 					if ( music_group )
@@ -2862,6 +2902,14 @@ void handleEvents(void)
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 					}
 #endif
 				}

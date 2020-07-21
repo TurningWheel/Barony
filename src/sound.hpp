@@ -84,6 +84,7 @@ extern FMOD_SOUND* hamletmusic;
 extern FMOD_CHANNEL* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 
 extern FMOD_CHANNELGROUP* sound_group, *music_group;
+extern FMOD_CHANNELGROUP* soundAmbient_group, *soundEnvironment_group;
 
 /*
  * Checks for FMOD errors. Store return value of all FMOD functions in fmod_result so that this funtion can access it and check for errors.
@@ -107,6 +108,7 @@ void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume); //Aut
 void handleLevelMusic(); //Manages and updates the level music.
 
 extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
+extern bool sfxUseDynamicAmbientVolume;
 
 #elif defined USE_OPENAL
 
@@ -170,6 +172,7 @@ extern OPENAL_BUFFER* hamletmusic;
 
 extern OPENAL_SOUND* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 extern OPENAL_CHANNELGROUP *sound_group, *music_group;
+extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group;
 
 int initOPENAL();
 int closeOPENAL();
