@@ -338,6 +338,11 @@ void GameModeManager_t::Tutorial_t::Menu_t::onClickEntry()
 
 	buttonStartSingleplayer(nullptr);
 	gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
+	if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
+	{
+		gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
+		gameModeManager.Tutorial.writeToDocument();
+	}
 	gameModeManager.Tutorial.startTutorial(gameModeManager.Tutorial.levels.at(this->selectedMenuItem).filename);
 }
 
