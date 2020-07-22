@@ -36,6 +36,7 @@
 #define BOULDER_BLOODTIME my->skill[10]
 #define BOULDER_INIT my->skill[11]
 #define BOULDER_LAVA_EXPLODE my->skill[12]
+#define BOULDER_SOUND_ON_PUSH my->skill[13]
 
 const int BOULDER_LAVA_SPRITE = 989;
 const int BOULDER_ARCANE_SPRITE = 990;
@@ -842,7 +843,8 @@ void actBoulder(Entity* my)
 						{
 							if (players[i] && players[i]->entity)
 							{
-								playSoundEntity(my, 151, 128);
+								//playSoundEntity(my, 151, 128);
+								BOULDER_SOUND_ON_PUSH = i + 1;
 								BOULDER_ROLLING = 1;
 								/*my->x = floor(my->x / 16) * 16 + 8;
 								my->y = floor(my->y / 16) * 16 + 8;*/
@@ -917,6 +919,11 @@ void actBoulder(Entity* my)
 				my->vel_x = 0.0;
 				my->vel_y = 0.0;
 				BOULDER_ROLLING = 0;
+				if ( BOULDER_SOUND_ON_PUSH > 0 )
+				{
+					messagePlayer(BOULDER_SOUND_ON_PUSH - 1, language[3974]);
+					BOULDER_SOUND_ON_PUSH = 0;
+				}
 			}
 			else
 			{
@@ -924,7 +931,10 @@ void actBoulder(Entity* my)
 				/*my->x += my->vel_x;
 				my->y += my->vel_y;*/
 				double dist = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
-				my->pitch += dist * .06;
+				if ( clipDist > 0.001 )
+				{
+					my->pitch += dist * .06;
+				}
 
 				if ( BOULDER_ROLLDIR == 0 )
 				{
@@ -975,7 +985,12 @@ void actBoulder(Entity* my)
 				{
 					dir += PI * 2;
 				}
-				my->yaw -= dir / 16;
+
+				if ( clipDist > 0.001 )
+				{
+					my->yaw -= dir / 16;
+				}
+
 				while ( my->yaw < 0 )
 				{
 					my->yaw += 2 * PI;
@@ -990,6 +1005,18 @@ void actBoulder(Entity* my)
 				{
 					if ( clipDist != dist )
 					{
+						if ( BOULDER_SOUND_ON_PUSH > 0 )
+						{
+							if ( clipDist > 0.001 )
+							{
+								playSoundEntity(my, 151, 128);
+							}
+							else
+							{
+								messagePlayer(BOULDER_SOUND_ON_PUSH - 1, language[3974]);
+							}
+							BOULDER_SOUND_ON_PUSH = 0;
+						}
 						if ( hit.entity && boulderCheckAgainstEntity(my, hit.entity, true) )
 						{
 							return;
@@ -1013,6 +1040,12 @@ void actBoulder(Entity* my)
 							}
 						}
 					}*/
+				}
+
+				if ( BOULDER_SOUND_ON_PUSH > 0 )
+				{
+					playSoundEntity(my, 151, 128);
+					BOULDER_SOUND_ON_PUSH = 0;
 				}
 			}
 		}
