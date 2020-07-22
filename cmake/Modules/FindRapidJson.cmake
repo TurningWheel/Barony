@@ -6,22 +6,21 @@
 
 if (NOT RAPID_JSON_INCLUDE_DIR OR NOT RAPID_JSON_LIBRARIES)
 	set(LIB_SEARCH_PATHS
+		$ENV{RAPID_JSONROOT}/SDK
+		$ENV{RAPID_JSON_ROOT}/SDK
+		$ENV{RAPID_JSON_DIR}/SDK
 		~/Library/Frameworks
 		/Library/Frameworks
 		/usr/lib
 		/usr/lib64
 		/usr/local/lib
 		/usr/local/lib64
-		$ENV{RAPID_JSONROOT}/SDK
-		$ENV{RAPID_JSON_ROOT}/SDK
-		$ENV{RAPID_JSON_DIR}/SDK
 	)
 	FIND_PATH(RAPID_JSON_INCLUDE_DIR rapidjson/rapidjson.h
-		/usr/include
-		/usr/local/include
-		$ENV{RAPID_JSONROOT}/include
-		$ENV{RAPID_JSON_ROOT}/include
-		$ENV{RAPID_JSON_DIR}/include
+		HINTS
+		$ENV{LIB_SEARCH_PATHS}
+		PATH_SUFFIXES include
+		PATHS ${LIB_SEARCH_PATHS}
 		DOC "Include path for Rapid JSON"
 	)
 
