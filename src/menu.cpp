@@ -11556,6 +11556,25 @@ void getResolutionList()
 		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
 	});
 	resolutions.unique();
+
+	const Uint32 kMaxResolutionsToDisplay = 22;
+	for ( auto it = resolutions.end(); it != resolutions.begin() && resolutions.size() >= kMaxResolutionsToDisplay; )
+	{
+		// cull some resolutions in smallest -> largest order.
+		--it;
+
+		int w = std::get<0>(*it);
+		int h = std::get<1>(*it);
+		int ratio = (w * 100) / h;
+		if ( ratio == 125 || ratio > 200 ) // 5x4, 32x15
+		{
+			it = resolutions.erase(it);
+		}
+		else if ( (w == 1152 && h == 864) || (w == 2048 && h == 1536) ) // explicit exclude for these odd 4x3 resolutions
+		{
+			it = resolutions.erase(it);
+		}
+	}
 }
 
 bool achievements_window = false;
