@@ -879,7 +879,8 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 {
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
-		|| gamemods_disableSteamAchievements )
+		|| gamemods_disableSteamAchievements
+		|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
@@ -1071,7 +1072,8 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 {
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
-		|| gamemods_disableSteamAchievements )
+		|| gamemods_disableSteamAchievements
+		|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
