@@ -949,12 +949,12 @@ void loadAllScores(const std::string& scoresfilename)
 		node->deconstructor = &scoreDeconstructor;
 		node->size = sizeof(score_t);
 
-		if ( versionNumber < 325 )
+		if ( versionNumber < 300 )
 		{
 			// legacy nummonsters
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
-				if ( c < 33 )
+				if ( c < 21 )
 				{
 					fread(&score->kills[c], sizeof(Sint32), 1, fp);
 				}
@@ -964,12 +964,12 @@ void loadAllScores(const std::string& scoresfilename)
 				}
 			}
 		}
-		else if ( versionNumber < 300 )
+		else if ( versionNumber < 325 )
 		{
 			// legacy nummonsters
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
-				if ( c < 21 )
+				if ( c < 33 )
 				{
 					fread(&score->kills[c], sizeof(Sint32), 1, fp);
 				}
