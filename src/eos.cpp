@@ -1004,7 +1004,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 {
 	EOS_InitializeOptions InitializeOptions;
 	InitializeOptions.ProductName = "Barony";
-	InitializeOptions.ProductVersion = "v3.3.3";
+	InitializeOptions.ProductVersion = VERSION;
 	InitializeOptions.ApiVersion = EOS_INITIALIZE_API_LATEST;
 	InitializeOptions.AllocateMemoryFunction = nullptr;
 	InitializeOptions.ReallocateMemoryFunction = nullptr;
@@ -1046,7 +1046,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.ClientCredentials.ClientSecret = ClientCredentialsSecret.c_str();
 	PlatformOptions.OverrideCountryCode = nullptr;
 	PlatformOptions.OverrideLocaleCode = nullptr;
-	PlatformOptions.bIsServer = EOS_FALSE;
+	PlatformOptions.bIsServer = EOS_TRUE;
 	PlatformOptions.Flags = EOS_PF_DISABLE_OVERLAY;
 	static std::string EncryptionKey(64, '1');
 	PlatformOptions.EncryptionKey = EncryptionKey.c_str();
@@ -2563,7 +2563,7 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 
 	EOS_Auth_LoginOptions LoginOptions = {};
 	LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
-	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile | EOS_EAuthScopeFlags::EOS_AS_FriendsList | EOS_EAuthScopeFlags::EOS_AS_Presence);
+	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile);
 	LoginOptions.Credentials = &Credentials;
 
 	EOS_Auth_Login(AuthHandle, &LoginOptions, NULL, AuthLoginCompleteCallback);
@@ -2764,6 +2764,8 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 	return;
 #endif // !STEAMWORKS
 
+	drawDialogue();
+
 	if ( logOut )
 	{
 		if ( awaitingAppTicketResponse || awaitingConnectCallback || awaitingCreateUserCallback )
@@ -2924,6 +2926,7 @@ void EOSFuncs::CrossplayAccounts_t::resetOnFailure()
 void buttonAcceptCrossplaySetup(button_t* my)
 {
 	EOS.CrossplayAccountManager.acceptedEula = true;
+	EOS.CrossplayAccountManager.closePrompt();
 	if ( EOS.CrossplayAccountManager.continuanceToken )
 	{
 		EOS_Connect_CreateUserOptions CreateUserOptions;
@@ -2946,9 +2949,78 @@ void buttonAcceptCrossplaySetup(button_t* my)
 void buttonDenyCrossplaySetup(button_t* my)
 {
 	EOS.CrossplayAccountManager.logOut = true;
+	EOS.CrossplayAccountManager.closePrompt();
 	EOS.CrossplayAccountManager.resetOnFailure();
 	buttonCloseSubwindow(nullptr);
 	EOSFuncs::logInfo("Crossplay account link has been denied by user");
+}
+
+void buttonViewPrivacyPolicy(button_t* my)
+{
+	openURLTryWithOverlay("http://www.baronygame.com/privacypolicy.html");
+}
+
+void EOSFuncs::CrossplayAccounts_t::drawDialogue()
+{
+	if ( getPromptStatus() == PROMPT_CLOSED )
+	{
+		return;
+	}
+
+	if ( getPromptStatus() == PROMPT_SETUP )
+	{
+		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow(*mainsurface), "%s", language[3979]);
+	}
+	else if ( getPromptStatus() == PROMPT_ABOUT )
+	{
+		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow(*mainsurface), "%s", language[3981]);
+	}
+}
+
+void buttonReopenCrossplaySetup(button_t* my)
+{
+	EOS.CrossplayAccountManager.createDialogue();
+}
+
+void buttonAboutCrossplay(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(NULL);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	EOS.CrossplayAccountManager.openPromptAbout();
+
+	// create new window
+	subwindow = 1;
+	subx1 = xres / 2 - 356;
+	subx2 = xres / 2 + 356;
+	suby1 = yres / 2 - 133;
+	suby2 = yres / 2 + 133;
+	strcpy(subtext, language[3980]);
+
+	button_t* button;
+	// privacy policy button
+	button = newButton();
+	strcpy(button->label, language[3978]);
+	button->sizex = strlen(language[3978]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 48;
+	button->visible = 1;
+	button->focused = 1;
+	button->action = &buttonViewPrivacyPolicy;
+
+	// return to previous button
+	button = newButton();
+	strcpy(button->label, language[3982]);
+	button->sizex = strlen(language[3982]) * 12 + 4;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 24;
+	button->visible = 1;
+	button->focused = 1;
+	button->action = &buttonReopenCrossplaySetup;
 }
 
 void EOSFuncs::CrossplayAccounts_t::createDialogue()
@@ -2958,37 +3030,49 @@ void EOSFuncs::CrossplayAccounts_t::createDialogue()
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
 
+	openPromptSetup();
+
 	// create new window
 	subwindow = 1;
-	subx1 = xres / 2 - (240);
-	subx2 = xres / 2 + (240);
-	suby1 = yres / 2 - (60);
-	suby2 = yres / 2 + (60);
-	strcpy(subtext, "Crossplay Setup");
+	subx1 = xres / 2 - 326;
+	subx2 = xres / 2 + 326;
+	suby1 = yres / 2 - 116;
+	suby2 = yres / 2 + 116;
+	strcpy(subtext, language[3975]);
 
-	// close button
 	button_t* button;
-	// retry button
+	// accept button
 	button = newButton();
-	strcpy(button->label, "Accept");
-	button->x = subx1 + 4;
-	button->y = suby2 - 24;
-	button->sizex = strlen("Accept") * 12 + 8;
+	strcpy(button->label, language[3976]);
+	button->sizex = strlen(language[3976]) * 12 + 8;
 	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 48;
 	button->visible = 1;
 	button->focused = 1;
 	button->action = &buttonAcceptCrossplaySetup;
 	
-	// qtd button
+	// deny button
 	button = newButton();
-	strcpy(button->label, "Cancel");
-	button->sizex = strlen("Cancel") * 12 + 4;
+	strcpy(button->label, language[3977]);
+	button->sizex = strlen(language[3977]) * 12 + 4;
 	button->sizey = 20;
-	button->x = subx2 - button->sizex - 8;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 	button->y = suby2 - 24;
 	button->visible = 1;
 	button->focused = 1;
 	button->action = &buttonDenyCrossplaySetup;
+
+	// about crossplay button
+	button = newButton();
+	strcpy(button->label, language[3983]);
+	button->sizex = strlen(language[3983]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 48 - 70;
+	button->visible = 1;
+	button->focused = 1;
+	button->action = &buttonAboutCrossplay;
 }
 
 std::string EOSFuncs::getLobbyCodeFromGameKey(Uint32 key)

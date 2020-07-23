@@ -72,6 +72,12 @@ public:
 
 	class CrossplayAccounts_t
 	{
+		enum PromptTypes : int
+		{
+			PROMPT_CLOSED,
+			PROMPT_SETUP,
+			PROMPT_ABOUT
+		};
 	public:
 		EOS_ContinuanceToken continuanceToken = nullptr;
 		EOS_EResult connectLoginStatus = EOS_EResult::EOS_NotConfigured;
@@ -85,9 +91,15 @@ public:
 		bool trySetupFromSettingsMenu = false;
 		bool logOut = false;
 		bool autologin = false;
+		PromptTypes promptStatus = PROMPT_CLOSED;
+		PromptTypes getPromptStatus() { return promptStatus; };
+		void openPromptSetup() { promptStatus = PROMPT_SETUP;  }
+		void openPromptAbout() { promptStatus = PROMPT_ABOUT; }
+		void closePrompt() { promptStatus = PROMPT_CLOSED; }
 
 		void handleLogin();
 		void createDialogue();
+		void drawDialogue();
 		void createNotification();
 
 		void resetOnFailure();
