@@ -67,26 +67,39 @@ UIToastNotification* UIToastNotificationManager_t::addNotification(SDL_Surface* 
 	return &notification;
 }
 
-void communityLinkAction()
+void openURLTryWithOverlay(std::string url)
 {
+	bool useSystemBrowser = false;
 #ifdef STEAMWORKS
 	if ( SteamUtils()->IsOverlayEnabled() )
 	{
-		SteamFriends()->ActivateGameOverlayToWebPage("https://discord.gg/P55tcYD");
+		SteamFriends()->ActivateGameOverlayToWebPage(url.c_str());
 	}
 	else
 	{
-#ifdef WINDOWS
-		//ShellExecute(NULL, TEXT("open"), TEXT("https://discord.gg/P55tcYD"), NULL, NULL, 0);
-#endif // WINDOWS
-		UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_COMMUNITY_LINK);
-		if ( n )
-		{
-			n->showMainCard();
-			n->updateCardEvent(false, true);
-		}
+		useSystemBrowser = true;
 	}
+#else
+	useSystemBrowser = true;
 #endif
+
+	if ( useSystemBrowser )
+	{
+#ifdef WINDOWS
+		ShellExecute(NULL, TEXT("open"), TEXT(url.c_str()), NULL, NULL, 0);
+#endif // WINDOWS
+	}
+}
+
+void communityLinkAction()
+{
+	openURLTryWithOverlay("https://discord.gg/P55tcYD");
+	/*UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_COMMUNITY_LINK);
+	if ( n )
+	{
+		n->showMainCard();
+		n->updateCardEvent(false, true);
+	}*/
 }
 
 void UIToastNotificationManager_t::createCommunityNotification()

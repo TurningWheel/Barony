@@ -459,3 +459,5 @@ public:
 	std::vector<UIToastNotification> allNotifications;
 };
 extern UIToastNotificationManager_t UIToastNotificationManager;
+
+void openURLTryWithOverlay(std::string url);
