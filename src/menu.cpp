@@ -1448,6 +1448,14 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
+#elif defined USE_EOS
+		if ( mode )
+		{
+			if ( ticks % 50 == 0 )
+			{
+				UIToastNotificationManager.createCommunityNotification();
+			}
+		}
 #endif
 		if ( mode )
 		{
@@ -2789,6 +2797,24 @@ void handleMainMenu(bool mode)
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
 										SteamFriends()->ActivateGameOverlayToStore(STEAM_APPID, k_EOverlayToStoreFlag_None);
+										mousestatus[SDL_BUTTON_LEFT] = 0;
+									}
+								}
+#endif
+#ifdef USE_EOS
+								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
+								{
+									if ( mousestatus[SDL_BUTTON_LEFT] )
+									{
+										openURLTryWithOverlay(language[3984]);
+										mousestatus[SDL_BUTTON_LEFT] = 0;
+									}
+								}
+								else
+								{
+									if ( mousestatus[SDL_BUTTON_LEFT] )
+									{
+										openURLTryWithOverlay(language[3985]);
 										mousestatus[SDL_BUTTON_LEFT] = 0;
 									}
 								}
