@@ -369,7 +369,7 @@ Sint32 LobbyHandler_t::getDisplayedResultLobbyIndex(int selection)
 void LobbyHandler_t::handleLobbyBrowser()
 {
 	// debug toggles
-	if ( keystatus[SDL_SCANCODE_F1] )
+	/*if ( keystatus[SDL_SCANCODE_F1] )
 	{
 		P2PType = LOBBY_STEAM;
 		searchType = LOBBY_COMBINED;
@@ -394,7 +394,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 	{
 		keystatus[SDL_SCANCODE_F4] = 0;
 		crossplayEnabled = !crossplayEnabled;
-	}
+	}*/
 
 	updateSearchResults();
 	drawLobbyFilters();

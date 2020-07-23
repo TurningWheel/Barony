@@ -57,6 +57,8 @@ void actSummonTrap(Entity* my)
 				bool useCustomMonsters = monsterCurveCustomManager.curveExistsForCurrentMapName(map.name);
 				bool fixedCustomMonster = true;
 				Monster customMonsterType = NOTHING;
+				bool pickedRandomMonsters = (SUMMONTRAP_MONSTER == -1);
+
 				if ( SUMMONTRAP_MONSTER > 0 && SUMMONTRAP_MONSTER < NUMMONSTERS )
 				{
 					// spawn the monster given to the trap.
@@ -139,6 +141,10 @@ void actSummonTrap(Entity* my)
 					SUMMONTRAP_INITIALIZED = 1; // trap is starting up for the first time.
 				}
 
+				if ( pickedRandomMonsters )
+				{
+					SUMMONTRAP_MONSTER = -1;
+				}
 
 				if ( (SUMMONTRAP_FAILURERATE != 0) && (rand() % 100 < SUMMONTRAP_FAILURERATE) )
 				{

@@ -99,7 +99,6 @@ enum SteamStatIndexes : int
 	STEAM_STAT_OVERCLOCKED
 };
 
-#ifdef STEAMWORKS
 static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] = 
 {
 	std::make_pair("BARONY_ACH_NONE", 0),					// STEAM_STAT_BOULDER_DEATHS,
@@ -146,7 +145,6 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_ITS_A_LIVING", 50),			// STEAM_STAT_ITS_A_LIVING,
 	std::make_pair("BARONY_ACH_OVERCLOCKED", 600)			// STEAM_STAT_OVERCLOCKED
 };
-#endif // STEAMWORKS
 
 typedef struct score_t
 {

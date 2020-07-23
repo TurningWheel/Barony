@@ -42,6 +42,7 @@
 #include "colors.hpp"
 #include <ctime>
 #include "sys/stat.h"
+#include "eos.hpp"
 #include "mod_tools.hpp"
 #include "interface/ui.hpp"
 #include "lobbies.hpp"
@@ -171,6 +172,8 @@ int settings_fullscreen, settings_shaking, settings_bobbing;
 bool settings_borderless = false;
 real_t settings_gamma;
 int settings_sfxvolume, settings_musvolume;
+int settings_sfxAmbientVolume;
+int settings_sfxEnvironmentVolume;
 int settings_impulses[NUMIMPULSES];
 int settings_joyimpulses[NUM_JOY_IMPULSES];
 int settings_reversemouse;
@@ -777,6 +780,9 @@ void handleInGamePauseMenu()
 	{
 		ttfPrintText(ttf16, 50, yres / 4 + 80, language[1309]);
 	}
+
+	UIToastNotificationManager.drawNotifications();
+
 	if ( ((omousex >= 50 && omousex < 50 + strlen(language[1306]) * 18 && omousey >= yres / 4 + 104 && omousey < yres / 4 + 104 + 18) || (menuselect == 2)) && subwindow == 0 && introstage == 1 )
 	{
 		// settings menu
@@ -1385,7 +1391,6 @@ void handleTutorialPauseMenu()
 
 void handleMainMenu(bool mode)
 {
-	SDL_Rect src, dest;
 	int x, c;
 	//int y;
 	bool b;
@@ -1416,6 +1421,7 @@ void handleMainMenu(bool mode)
 	if ( !movie )
 	{
 		// title pic
+		SDL_Rect src;
 		src.x = 20;
 		src.y = 20;
 		src.w = title_bmp->w * (230.0 / 240.0); // new banner scaled to old size.
@@ -1440,6 +1446,14 @@ void handleMainMenu(bool mode)
 				{
 					UIToastNotificationManager.createCommunityNotification();
 				}
+			}
+		}
+#elif defined USE_EOS
+		if ( mode )
+		{
+			if ( ticks % 50 == 0 )
+			{
+				UIToastNotificationManager.createCommunityNotification();
 			}
 		}
 #endif
@@ -1966,7 +1980,8 @@ void handleMainMenu(bool mode)
 				if ( mainMenuSelectInputIsPressed )
 				{
 					pauseMenuOnInputPressed();
-					// achievements menu here.
+
+					openAchievementsWindow();
 				}
 			}
 			else
@@ -2782,6 +2797,24 @@ void handleMainMenu(bool mode)
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
 										SteamFriends()->ActivateGameOverlayToStore(STEAM_APPID, k_EOverlayToStoreFlag_None);
+										mousestatus[SDL_BUTTON_LEFT] = 0;
+									}
+								}
+#endif
+#ifdef USE_EOS
+								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
+								{
+									if ( mousestatus[SDL_BUTTON_LEFT] )
+									{
+										openURLTryWithOverlay(language[3984]);
+										mousestatus[SDL_BUTTON_LEFT] = 0;
+									}
+								}
+								else
+								{
+									if ( mousestatus[SDL_BUTTON_LEFT] )
+									{
+										openURLTryWithOverlay(language[3985]);
 										mousestatus[SDL_BUTTON_LEFT] = 0;
 									}
 								}
@@ -4002,48 +4035,55 @@ void handleMainMenu(bool mode)
 		{
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1348]);
 			doSlider(subx1 + 24, suby1 + 84, 15, 0, 128, 0, &settings_sfxvolume);
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 108, language[1349]);
-			doSlider(subx1 + 24, suby1 + 132, 15, 0, 128, 0, &settings_musvolume);
+
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 108, language[3972]);
+			doSlider(subx1 + 24, suby1 + 132, 15, 0, 128, 0, &settings_sfxAmbientVolume);
+
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 156, language[3973]);
+			doSlider(subx1 + 24, suby1 + 180, 15, 0, 128, 0, &settings_sfxEnvironmentVolume);
+
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 204, language[1349]);
+			doSlider(subx1 + 24, suby1 + 228, 15, 0, 128, 0, &settings_musvolume);
 
 			if ( settings_minimap_ping_mute )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[x] %s", language[3012]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 264, "[x] %s", language[3012]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[ ] %s", language[3012]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 264, "[ ] %s", language[3012]);
 			}
 			if ( settings_mute_audio_on_focus_lost )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[x] %s", language[3158]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 288, "[x] %s", language[3158]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[ ] %s", language[3158]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 288, "[ ] %s", language[3158]);
 			}
 			if ( settings_mute_player_monster_sounds )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 216, "[x] %s", language[3371]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 312, "[x] %s", language[3371]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 216, "[ ] %s", language[3371]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 312, "[ ] %s", language[3371]);
 			}
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
 				{
-					if ( omousey >= suby1 + 168 && omousey < suby1 + 168 + 12 )
+					if ( omousey >= suby1 + 168 && omousey < suby1 + 264 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_minimap_ping_mute = (settings_minimap_ping_mute == false);
 					}
-					else if ( omousey >= suby1 + 192 && omousey < suby1 + 192 + 12 )
+					else if ( omousey >= suby1 + 192 && omousey < suby1 + 288 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_mute_audio_on_focus_lost = (settings_mute_audio_on_focus_lost == false);
 					}
-					else if ( omousey >= suby1 + 216 && omousey < suby1 + 216 + 12 )
+					else if ( omousey >= suby1 + 216 && omousey < suby1 + 312 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_mute_player_monster_sounds = (settings_mute_player_monster_sounds == false);
@@ -4941,6 +4981,151 @@ void handleMainMenu(bool mode)
 					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
 					drawTooltip(&tooltip_box);
 					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3157]);
+				}
+			}
+		}
+	}
+
+	// achievements window
+	if ( subwindow && achievements_window )
+	{
+		char page_str[128];
+		int num_achievements = achievementNames.size() - achievementHidden.size();
+		for (auto& item : achievementHidden)
+		{
+			if (achievementUnlocked(item.c_str()))
+			{
+				++num_achievements;
+			}
+		}
+		if (num_achievements)
+		{
+			int max_pages = num_achievements / 6 + ((num_achievements % 6) ? 1 : 0);
+
+			int num_unlocked = 0;
+			for (auto& item : achievementNames)
+			{
+				if (achievementUnlocked(item.first.c_str()))
+				{
+					++num_unlocked;
+				}
+			}
+
+			snprintf(page_str, sizeof(page_str), "page %d / %d\n\nUnlocked %d / %d achievements (%d%%)",
+				achievements_window_page, max_pages, num_unlocked, num_achievements, (num_unlocked * 100) / num_achievements);
+			ttfPrintText(ttf12, subx1 + 8, suby1 + 30, page_str);
+
+			int first_ach = (achievements_window_page - 1) * 6;
+			int index;
+
+			// sort achievement names
+			typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::string, std::string>)> Comparator;
+			Comparator compFunctor =
+				[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
+			{
+				bool ach1 = achievementUnlocked(lhs.first.c_str());
+				bool ach2 = achievementUnlocked(rhs.first.c_str());
+				if (ach1 && !ach2)
+				{
+					return true;
+				}
+				else if (!ach1 && ach2)
+				{
+					return false;
+				}
+				else
+				{
+					return lhs.second < rhs.second;
+				}
+			};
+			std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted(
+				achievementNames.begin(), achievementNames.end(), compFunctor);
+
+			// list achievements (text)
+			index = 0;
+			for (auto& item : achievementNamesSorted)
+			{
+				auto find = achievementHidden.find(item.first);
+				if (find != achievementHidden.end() && !achievementUnlocked(item.first.c_str()))
+				{
+					continue;
+				}
+				if (index < first_ach)
+				{
+					++index; continue;
+				}
+				SDL_Rect tooltip_box;
+				tooltip_box.x = subx1 + 4;
+				tooltip_box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
+				tooltip_box.w = subx2 - subx1 - 30 - 8;
+				tooltip_box.h = 80 - 8;
+				//drawTooltip(&tooltip_box); original ui
+				//ttfPrintText(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, item.second.c_str());
+
+				drawWindowFancy(tooltip_box.x + 12 + 64 + 12, tooltip_box.y, tooltip_box.x + tooltip_box.w, tooltip_box.y + tooltip_box.h);
+				drawWindowFancy(tooltip_box.x, tooltip_box.y, tooltip_box.x + 12 + 64 + 12, tooltip_box.y + tooltip_box.h);
+
+				SDL_Rect icon_box;
+				icon_box.x = tooltip_box.x + 2;
+				icon_box.y = tooltip_box.y + 2;
+				icon_box.w = 12 + 64 + 12 - 4;
+				icon_box.h = tooltip_box.h - 4;
+
+				if ( achievementUnlocked(item.first.c_str()) )
+				{
+					drawRect(&tooltip_box, uint32ColorBaronyBlue(*mainsurface), 64);
+					drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 1, 0, 16), 255);
+				}
+				else
+				{
+					drawRect(&tooltip_box, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+					drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
+				}
+
+				ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, item.second.c_str());
+				auto it = achievementDesc.find(item.first);
+				if (it != achievementDesc.end())
+				{
+					auto item = *it;
+					std::string sub = item.second.length() > 60 ? item.second.substr(0, 60) + "..." : item.second;
+					ttfPrintText(ttf12, subx1 + 100, suby1 + 120 + (index - first_ach) * 80, sub.c_str());
+				}
+				++index;
+				if (index >= first_ach + 6)
+				{
+					break;
+				}
+			}
+
+			// list achievement images
+			index = 0;
+			for (auto& item : achievementNamesSorted)
+			{
+				auto find = achievementHidden.find(item.first);
+				bool unlocked = achievementUnlocked(item.first.c_str());
+				if (find != achievementHidden.end() && !unlocked)
+				{
+					continue;
+				}
+				if (index < first_ach)
+				{
+					++index; continue;
+				}
+				std::string img = unlocked ? item.first + ".png" : item.first + "_l.png";
+				auto it = achievementImages.find(img);
+				if (it != achievementImages.end())
+				{
+					SDL_Rect rect;
+					rect.x = subx1 + 16;
+					rect.y = suby1 + 88 + (index - first_ach) * 80;
+					rect.w = 64;
+					rect.h = 64;
+					drawImage((*it).second, NULL, &rect);
+				}
+				++index;
+				if (index >= first_ach + 6)
+				{
+					break;
 				}
 			}
 		}
@@ -8887,10 +9072,26 @@ void handleMainMenu(bool mode)
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
+				if ( soundAmbient_group )
+				{
+					FMOD_ChannelGroup_Stop(soundAmbient_group);
+				}
+				if ( soundEnvironment_group )
+				{
+					FMOD_ChannelGroup_Stop(soundEnvironment_group);
+				}
 #elif defined USE_OPENAL
 				if ( sound_group )
 				{
 					OPENAL_ChannelGroup_Stop(sound_group);
+				}
+				if ( soundAmbient_group )
+				{
+					OPENAL_ChannelGroup_Stop(soundAmbient_group);
+				}
+				if ( soundEnvironment_group )
+				{
+					OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 				}
 #endif
 
@@ -9170,10 +9371,26 @@ void handleMainMenu(bool mode)
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
+				if ( soundAmbient_group )
+				{
+					FMOD_ChannelGroup_Stop(soundAmbient_group);
+				}
+				if ( soundEnvironment_group )
+				{
+					FMOD_ChannelGroup_Stop(soundEnvironment_group);
+				}
 #elif defined USE_OPENAL
 				if ( sound_group )
 				{
 					OPENAL_ChannelGroup_Stop(sound_group);
+				}
+				if ( soundAmbient_group )
+				{
+					OPENAL_ChannelGroup_Stop(soundAmbient_group);
+				}
+				if ( soundEnvironment_group )
+				{
+					OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 				}
 #endif
 				// load next level
@@ -9455,10 +9672,26 @@ void handleMainMenu(bool mode)
 			{
 				FMOD_ChannelGroup_Stop(sound_group);
 			}
+			if ( soundAmbient_group )
+			{
+				FMOD_ChannelGroup_Stop(soundAmbient_group);
+			}
+			if ( soundEnvironment_group )
+			{
+				FMOD_ChannelGroup_Stop(soundEnvironment_group);
+			}
 #elif defined USE_OPENAL
 			if ( sound_group )
 			{
 				OPENAL_ChannelGroup_Stop(sound_group);
+			}
+			if ( soundAmbient_group )
+			{
+				OPENAL_ChannelGroup_Stop(soundAmbient_group);
+			}
+			if ( soundEnvironment_group )
+			{
+				OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 			}
 #endif
 
@@ -10158,31 +10391,35 @@ void handleMainMenu(bool mode)
 		}
 		else if ( creditstage == 11 )
 		{
+
+			// title
+			SDL_Rect src;
+			src.x = 0;
+			src.y = 0;
+			src.w = title_bmp->w;
+			src.h = title_bmp->h;
+			SDL_Rect dest;
+			dest.x = xres / 2 - (title_bmp->w) / 2;
+			dest.y = yres / 2 - title_bmp->h / 2 - 96;
+			dest.w = xres;
+			dest.h = yres;
+			drawImage(title_bmp, &src, &dest);
+			// text
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[66]), yres / 2, language[66]);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[67]), yres / 2 + 20, language[67]);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[68]), yres / 2 + 40, language[68]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[69]), yres / 2 + 60, colorBlue, language[69]);
+
 			// logo
 			src.x = 0;
 			src.y = 0;
 			src.w = logo_bmp->w;
 			src.h = logo_bmp->h;
-			dest.x = xres / 2 - (logo_bmp->w + title_bmp->w) / 2 - 16;
-			dest.y = yres / 2 - logo_bmp->h / 2;
+			dest.x = xres / 2 - (logo_bmp->w) / 2;
+			dest.y = yres / 2 + 80;
 			dest.w = xres;
 			dest.h = yres;
 			drawImage(logo_bmp, &src, &dest);
-			// title
-			src.x = 0;
-			src.y = 0;
-			src.w = title_bmp->w;
-			src.h = title_bmp->h;
-			dest.x = xres / 2 - (logo_bmp->w + title_bmp->w) / 2 + logo_bmp->w + 16;
-			dest.y = yres / 2 - title_bmp->h / 2;
-			dest.w = xres;
-			dest.h = yres;
-			drawImage(title_bmp, &src, &dest);
-			// text
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[66]), yres / 2 + 96, language[66]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[67]), yres / 2 + 116, language[67]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[68]), yres / 2 + 136, language[68]);
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[69]), yres / 2 + 156, colorBlue, language[69]);
 		}
 		else if ( creditstage == 13 )
 		{
@@ -11345,6 +11582,114 @@ void getResolutionList()
 		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
 	});
 	resolutions.unique();
+
+	const Uint32 kMaxResolutionsToDisplay = 22;
+	for ( auto it = resolutions.end(); it != resolutions.begin() && resolutions.size() >= kMaxResolutionsToDisplay; )
+	{
+		// cull some resolutions in smallest -> largest order.
+		--it;
+
+		int w = std::get<0>(*it);
+		int h = std::get<1>(*it);
+		int ratio = (w * 100) / h;
+		if ( ratio == 125 || ratio > 200 ) // 5x4, 32x15
+		{
+			it = resolutions.erase(it);
+		}
+		else if ( (w == 1152 && h == 864) || (w == 2048 && h == 1536) ) // explicit exclude for these odd 4x3 resolutions
+		{
+			it = resolutions.erase(it);
+		}
+	}
+}
+
+bool achievements_window = false;
+int achievements_window_page = 1;
+
+void buttonAchievementsUp(button_t* my)
+{
+	achievements_window_page =
+		std::max(1, achievements_window_page - 1);
+}
+
+void buttonAchievementsDown(button_t* my)
+{
+	int num_achievements = achievementNames.size() - achievementHidden.size();
+	for (auto& item : achievementHidden)
+	{
+		if (achievementUnlocked(item.c_str()))
+		{
+			++num_achievements;
+		}
+	}
+	int max_pages = num_achievements / 6 + ((num_achievements % 6) ? 1 : 0);
+	achievements_window_page = std::min(max_pages, achievements_window_page + 1);
+}
+
+// sets up the achievements window
+void openAchievementsWindow()
+{
+	achievements_window = true;
+	achievements_window_page = 1;
+	subwindow = 1;
+	subx1 = xres/2 - 400;
+	subx2 = xres/2 + 400;
+	suby1 = yres/2 - 280;
+	suby2 = yres/2 + 280;
+	strcpy(subtext, language[3971]);
+
+	// close button
+	{
+		button_t* button = newButton();
+		strcpy(button->label, "x");
+		button->x = subx2 - 20;
+		button->y = suby1;
+		button->sizex = 20;
+		button->sizey = 20;
+		button->action = &closeAchievementsWindow;
+		button->visible = 1;
+		button->focused = 1;
+		button->key = SDL_SCANCODE_ESCAPE;
+		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+	}
+
+	// up / prev page button
+	{
+		button_t* button = newButton();
+		strcpy(button->label, u8"\u25B2");
+		button->x = subx2 - 30;
+		button->y = suby1 + 80;
+		button->sizex = 30;
+		button->sizey = 30;
+		button->action = &buttonAchievementsUp;
+		button->visible = 1;
+		button->focused = 1;
+		button->key = SDL_SCANCODE_UP;
+		button->joykey = joyimpulses[INJOY_MENU_SETTINGS_PREV];
+	}
+
+	// down / next page button
+	{
+		button_t* button = newButton();
+		strcpy(button->label, u8"\u25BC");
+		button->x = subx2 - 30;
+		button->y = suby2 - 30;
+		button->sizex = 30;
+		button->sizey = 30;
+		button->action = &buttonAchievementsDown;
+		button->visible = 1;
+		button->focused = 1;
+		button->key = SDL_SCANCODE_DOWN;
+		button->joykey = joyimpulses[INJOY_MENU_SETTINGS_NEXT];
+	}
+}
+
+// 
+void closeAchievementsWindow(button_t* my)
+{
+	achievements_window = false;
+	achievements_window_page = 1;
+	buttonCloseSubwindow(my);
 }
 
 // sets up the settings window
@@ -11372,6 +11717,8 @@ void openSettingsWindow()
 	settings_gamma = vidgamma;
 	settings_fps = fpsLimit;
 	settings_sfxvolume = sfxvolume;
+	settings_sfxAmbientVolume = sfxAmbientVolume;
+	settings_sfxEnvironmentVolume = sfxEnvironmentVolume;
 	settings_musvolume = musvolume;
 	settings_minimap_ping_mute = minimapPingMute;
 	settings_mute_audio_on_focus_lost = mute_audio_on_focus_lost;
@@ -13071,16 +13418,19 @@ void buttonStartServer(button_t* my)
 }
 
 // opens the steam dialog to invite friends
-#ifdef STEAMWORKS
 void buttonInviteFriends(button_t* my)
 {
+#ifdef STEAMWORKS
 	if (SteamUser()->BLoggedOn() && currentLobby)
 	{
 		SteamFriends()->ActivateGameOverlayInviteDialog(*static_cast<CSteamID*>(currentLobby));
 	}
-	return;
-}
+#else
+#ifdef USE_EOS
+	EOS.showFriendsOverlay();
 #endif
+#endif
+}
 
 // disconnects from whatever lobby the game is connected to
 void buttonDisconnect(button_t* my)
@@ -13247,6 +13597,8 @@ void applySettings()
 	}
 	// set audio options
 	sfxvolume = settings_sfxvolume;
+	sfxAmbientVolume = settings_sfxAmbientVolume;
+	sfxEnvironmentVolume = settings_sfxEnvironmentVolume;
 	musvolume = settings_musvolume;
 	minimapPingMute = settings_minimap_ping_mute;
 	mute_audio_on_focus_lost = settings_mute_audio_on_focus_lost;
@@ -13255,9 +13607,13 @@ void applySettings()
 #ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 #elif defined USE_OPENAL
 	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 #endif
 
 	// set keyboard options

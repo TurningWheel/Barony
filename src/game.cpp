@@ -38,6 +38,7 @@
 #include "player.hpp"
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
+#include "interface/ui.hpp"
 #include <limits>
 
 #ifdef LINUX
@@ -1035,10 +1036,26 @@ void gameLogic(void)
 					{
 						FMOD_ChannelGroup_Stop(sound_group);
 					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_Stop(soundAmbient_group);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_Stop(soundEnvironment_group);
+					}
 #elif defined USE_OPENAL
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_Stop(sound_group);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_Stop(soundAmbient_group);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 					}
 #endif
 					// stop combat music
@@ -2830,6 +2847,14 @@ void handleEvents(void)
 					{
 						FMOD_ChannelGroup_SetVolume(sound_group, 0.f);
 					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
+					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
 					if ( music_group )
@@ -2839,6 +2864,14 @@ void handleEvents(void)
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_SetVolume(sound_group, 0.f);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
 					}
 #endif
 				}
@@ -2853,6 +2886,14 @@ void handleEvents(void)
 					{
 						FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
 					if ( music_group )
@@ -2862,6 +2903,14 @@ void handleEvents(void)
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 					}
 #endif
 				}
@@ -3436,7 +3485,7 @@ int main(int argc, char** argv)
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 						fadealpha = 255;
-#ifndef STEAMWORKS
+#if (!defined STEAMWORKS && !defined USE_EOS)
 						introstage = 0;
 						fadeout = false;
 						fadefinished = false;
@@ -4330,6 +4379,8 @@ int main(int argc, char** argv)
 						printlog("Minimap draw time: %.5f", timeTaken);*/
 						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
+
+					UIToastNotificationManager.drawNotifications();
 
 					DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 

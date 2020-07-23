@@ -11,6 +11,9 @@
 #include "eos_lobby.h"
 #include "eos_p2p.h"
 #include "eos_ui.h"
+#include "eos_ecom.h"
+#include "eos_achievements.h"
+#include "eos_stats.h"
 #include <vector>
 #include <iostream>
 #include <map>
@@ -20,6 +23,7 @@
 
 class EOSFuncs
 {
+	bool bAchievementsLoaded = false;
 public:
 	std::string ProductId = "";
 	std::string SandboxId = "";
@@ -68,6 +72,12 @@ public:
 
 	class CrossplayAccounts_t
 	{
+		enum PromptTypes : int
+		{
+			PROMPT_CLOSED,
+			PROMPT_SETUP,
+			PROMPT_ABOUT
+		};
 	public:
 		EOS_ContinuanceToken continuanceToken = nullptr;
 		EOS_EResult connectLoginStatus = EOS_EResult::EOS_NotConfigured;
@@ -81,9 +91,15 @@ public:
 		bool trySetupFromSettingsMenu = false;
 		bool logOut = false;
 		bool autologin = false;
+		PromptTypes promptStatus = PROMPT_CLOSED;
+		PromptTypes getPromptStatus() { return promptStatus; };
+		void openPromptSetup() { promptStatus = PROMPT_SETUP;  }
+		void openPromptAbout() { promptStatus = PROMPT_ABOUT; }
+		void closePrompt() { promptStatus = PROMPT_CLOSED; }
 
 		void handleLogin();
 		void createDialogue();
+		void drawDialogue();
 		void createNotification();
 
 		void resetOnFailure();
@@ -117,6 +133,9 @@ public:
 	EOS_HLobbyModification LobbyModificationHandle = nullptr;
 	EOS_HLobbyModification LobbyMemberModificationHandle = nullptr;
 	EOS_HUI UIHandle = nullptr;
+	EOS_HEcom EcomHandle = nullptr;
+	EOS_HAchievements AchievementsHandle = nullptr;
+	EOS_HStats StatsHandle = nullptr;
 
 	class LobbyParameters_t {
 	public:
@@ -197,6 +216,12 @@ public:
 	static void EOS_CALL ShowFriendsCallback(const EOS_UI_ShowFriendsCallbackInfo* data);
 	static void EOS_CALL OnCreateUserCallback(const EOS_Connect_CreateUserCallbackInfo* data);
 	static void EOS_CALL OnCreateUserCrossplayCallback(const EOS_Connect_CreateUserCallbackInfo* data);
+	static void EOS_CALL OnEcomQueryOwnershipCallback(const EOS_Ecom_QueryOwnershipCallbackInfo* data);
+	static void EOS_CALL OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEntitlementsCallbackInfo* data);
+	static void EOS_CALL OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data);
+	static void EOS_CALL OnAchievementQueryComplete(const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* data);
+	static void EOS_CALL OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data);
+	static void EOS_CALL OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data);
 
 	class FriendInfo_t {
 	public:
@@ -447,6 +472,7 @@ public:
 	{
 		return initAuth(CredentialHost, CredentialName);
 	}
+	bool initAchievements();
 	bool initAuth(std::string hostname, std::string tokenName);
 	void initConnectLogin();
 
@@ -674,6 +700,10 @@ public:
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);
 	void queryLocalExternalAccountId(EOS_EExternalAccountType accountType);
 	void showFriendsOverlay();
+	void queryDLCOwnership();
+	void unlockAchievement(const char* name);
+	void loadAchievementData();
+	void ingestStat(int stat_num, int value);
 	static void logInfo(const char* str, ...)
 	{
 		char newstr[1024] = { 0 };

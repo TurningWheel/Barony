@@ -75,12 +75,18 @@ FMOD_CHANNEL* music_channel2 = NULL;
 FMOD_CHANNEL* music_resume = NULL;
 
 FMOD_CHANNELGROUP* sound_group = NULL;
+FMOD_CHANNELGROUP* soundAmbient_group = NULL;
+FMOD_CHANNELGROUP* soundEnvironment_group = NULL;
 FMOD_CHANNELGROUP* music_group = NULL;
 
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;
 float fadeout_increment = 0.005f;
 float default_fadeout_increment = 0.005f;
+float dynamicAmbientVolume = 1.f;
+float dynamicEnvironmentVolume = 1.f;
+bool sfxUseDynamicAmbientVolume = true;
+bool sfxUseDynamicEnvironmentVolume = true;
 
 bool FMODErrorCheck()
 {
@@ -197,8 +203,106 @@ void sound_update()
 		}
 	}
 
-	FMOD_System_Update(fmod_system);
+	if ( soundAmbient_group )
+	{
+		if ( !sfxUseDynamicAmbientVolume )
+		{
+			if ( abs(dynamicAmbientVolume - 1.f) > 0.01 )
+			{
+				dynamicAmbientVolume = 1.f;
+				FMOD_ChannelGroup_SetVolume(soundAmbient_group, (sfxAmbientVolume / 128.f));
+			}
+		}
+		else
+		{
+			int numChannels = 0;
+			FMOD_ChannelGroup_GetNumChannels(soundAmbient_group, &numChannels);
+			float totalAudibility = 0.f;
+			for ( int i = 0; i < numChannels; ++i )
+			{
+				FMOD_CHANNEL* c;
+				if ( FMOD_ChannelGroup_GetChannel(soundAmbient_group, i, &c) == FMOD_RESULT::FMOD_OK )
+				{
+					float audibility = 0.f;
+					FMOD_Channel_GetAudibility(c, &audibility);
+					totalAudibility += audibility;
+				}
+			}
+			float audibleDifference = sqrt(totalAudibility) - (sfxAmbientVolume / 128.f);
+			
+			// if audible sound value is > 20% nominal value, then reduce volume. (sound sources are stacking)
+			if ( audibleDifference > (0.2 * sfxAmbientVolume / 128.f) ) 
+			{
+				dynamicAmbientVolume = std::max(0.05, dynamicAmbientVolume - 0.05);
+				FMOD_ChannelGroup_SetVolume(soundAmbient_group, dynamicAmbientVolume * (sfxAmbientVolume / 128.f));
+				//messagePlayer(0, "Total: %3f - down: %f", sqrt(totalAudibility), dynamicAmbientVolume);
+			}
+			else if ( audibleDifference < (-0.025 * sfxAmbientVolume / 128.f) )
+			{
+				float currentVolume = 1.f;
+				FMOD_ChannelGroup_GetVolume(soundAmbient_group, &currentVolume);
 
+				// if sound volume > 0 and is less than 97.5% of nominal value, raise volume until normal is achieved.
+				if ( currentVolume > 0.001 && ((sfxAmbientVolume / 128.f) - currentVolume) > 0.01 ) 
+				{
+					dynamicAmbientVolume = std::min(1.0, dynamicAmbientVolume + 0.01);
+					FMOD_ChannelGroup_SetVolume(soundAmbient_group, dynamicAmbientVolume * (sfxAmbientVolume / 128.f));
+					//messagePlayer(0, "Total: %3f - up: %f", sqrt(totalAudibility), dynamicAmbientVolume);
+				}
+			}
+		}
+	}
+	if ( soundEnvironment_group )
+	{
+		if ( !sfxUseDynamicEnvironmentVolume )
+		{
+			if ( abs(dynamicEnvironmentVolume - 1.f) > 0.01 )
+			{
+				dynamicEnvironmentVolume = 1.f;
+				FMOD_ChannelGroup_SetVolume(soundEnvironment_group, (sfxEnvironmentVolume / 128.f));
+			}
+		}
+		else
+		{
+			int numChannels = 0;
+			FMOD_ChannelGroup_GetNumChannels(soundEnvironment_group, &numChannels);
+			float totalAudibility = 0.f;
+			for ( int i = 0; i < numChannels; ++i )
+			{
+				FMOD_CHANNEL* c;
+				if ( FMOD_ChannelGroup_GetChannel(soundEnvironment_group, i, &c) == FMOD_RESULT::FMOD_OK )
+				{
+					float audibility = 0.f;
+					FMOD_Channel_GetAudibility(c, &audibility);
+					totalAudibility += audibility;
+				}
+			}
+			float audibleDifference = sqrt(totalAudibility) - (sfxEnvironmentVolume / 128.f);
+
+			// if audible sound value is > 20% nominal value, then reduce volume. (sound sources are stacking)
+			if ( audibleDifference > (0.2 * sfxEnvironmentVolume / 128.f) )
+			{
+				dynamicEnvironmentVolume = std::max(0.05, dynamicEnvironmentVolume - 0.05);
+				FMOD_ChannelGroup_SetVolume(soundEnvironment_group, dynamicEnvironmentVolume * (sfxEnvironmentVolume / 128.f));
+				//messagePlayer(0, "Total: %3f - down: %f", sqrt(totalAudibility), dynamicEnvironmentVolume);
+			}
+			else if ( audibleDifference < (-0.025 * sfxEnvironmentVolume / 128.f) )
+			{
+				float currentVolume = 1.f;
+				FMOD_ChannelGroup_GetVolume(soundEnvironment_group, &currentVolume);
+
+				// if sound volume > 0 and is less than 97.5% of nominal value, raise volume until normal is achieved.
+				if ( currentVolume > 0.001 && ((sfxEnvironmentVolume / 128.f) - currentVolume) > 0.01 )
+				{
+					dynamicEnvironmentVolume = std::min(1.0, dynamicEnvironmentVolume + 0.01);
+					FMOD_ChannelGroup_SetVolume(soundEnvironment_group, dynamicEnvironmentVolume * (sfxEnvironmentVolume / 128.f));
+					//messagePlayer(0, "Total: %3f - up: %f", sqrt(totalAudibility), dynamicEnvironmentVolume);
+				}
+			}
+		}
+	}
+
+	FMOD_System_Update(fmod_system);
 	//TODO: Mute sound if focus lost.
 }
 #define SOUND
@@ -427,6 +531,8 @@ OPENAL_SOUND* music_channel2 = NULL;
 OPENAL_SOUND* music_resume = NULL;
 
 OPENAL_CHANNELGROUP *sound_group = NULL;
+OPENAL_CHANNELGROUP *soundAmbient_group = NULL;
+OPENAL_CHANNELGROUP *soundEnvironment_group = NULL;
 OPENAL_CHANNELGROUP *music_group = NULL;
 
 float fadein_increment = 0.002f;
@@ -513,10 +619,16 @@ int initOPENAL()
 
 	// creates channels groups
 	sound_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
+	soundAmbient_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
+	soundEnvironment_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
 	music_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
 	memset(sound_group, 0, sizeof(OPENAL_CHANNELGROUP));
+	memset(soundAmbient_group, 0, sizeof(OPENAL_CHANNELGROUP));
+	memset(soundEnvironment_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	memset(music_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	sound_group->volume = 1.0f;
+	soundAmbient_group->volume = 1.0f;
+	soundEnvironment_group->volume = 1.0f;
 	music_group->volume = 1.0f;
 
 	memset(openal_sounds, 0, sizeof(openal_sounds));

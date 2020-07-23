@@ -55,6 +55,7 @@ void EOS_CALL EOSFuncs::AuthLoginCompleteCallback(const EOS_Auth_LoginCallbackIn
 			EOS.getUserInfo(EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str()),
 				UserInfoQueryType::USER_INFO_QUERY_LOCAL, accIndex);
 			EOS.initConnectLogin();
+			EOS.queryDLCOwnership();
 		}
 		return;
 	}
@@ -96,6 +97,11 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
 		EOSFuncs::logInfo("Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
+
+		// load achievement data
+		if ( !EOS.bAchievementsLoaded ) {
+			EOS.loadAchievementData();
+		}
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
 	{
@@ -673,7 +679,7 @@ void EOS_CALL EOSFuncs::OnQueryAccountMappingsCallback(const EOS_Connect_QueryPr
 			for ( const EOS_ProductUserId& productId : EOS.ProductIdsAwaitingAccountMappingCallback )
 			{
 				EOS_Connect_GetProductUserIdMappingOptions Options = {};
-				Options.ApiVersion = EOS_CONNECT_GETEXTERNALACCOUNTMAPPINGS_API_LATEST;
+				Options.ApiVersion = EOS_CONNECT_GETPRODUCTUSERIDMAPPING_API_LATEST;
 				Options.AccountIdType = EOS_EExternalAccountType::EOS_EAT_EPIC;
 				Options.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 				Options.TargetProductUserId = productId;
@@ -998,7 +1004,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 {
 	EOS_InitializeOptions InitializeOptions;
 	InitializeOptions.ProductName = "Barony";
-	InitializeOptions.ProductVersion = "v3.3.3";
+	InitializeOptions.ProductVersion = VERSION;
 	InitializeOptions.ApiVersion = EOS_INITIALIZE_API_LATEST;
 	InitializeOptions.AllocateMemoryFunction = nullptr;
 	InitializeOptions.ReallocateMemoryFunction = nullptr;
@@ -1040,7 +1046,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.ClientCredentials.ClientSecret = ClientCredentialsSecret.c_str();
 	PlatformOptions.OverrideCountryCode = nullptr;
 	PlatformOptions.OverrideLocaleCode = nullptr;
-	PlatformOptions.bIsServer = EOS_FALSE;
+	PlatformOptions.bIsServer = EOS_TRUE;
 	PlatformOptions.Flags = EOS_PF_DISABLE_OVERLAY;
 	static std::string EncryptionKey(64, '1');
 	PlatformOptions.EncryptionKey = EncryptionKey.c_str();
@@ -2017,7 +2023,7 @@ void EOSFuncs::queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS
 	}
 	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions = {};
 	QueryOptions.ApiVersion = EOS_CONNECT_QUERYPRODUCTUSERIDMAPPINGS_API_LATEST;
-	QueryOptions.AccountIdType_DEPRECATED = EOS_EExternalAccountType::EOS_EAT_EPIC;
+	//QueryOptions.AccountIdType_DEPRECATED = EOS_EExternalAccountType::EOS_EAT_EPIC;
 	QueryOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 
 	QueryOptions.ProductUserIdCount = lobby->lobbyMembersQueueToMappingUpdate.size();
@@ -2293,6 +2299,209 @@ void EOSFuncs::LobbyData_t::UnsubscribeFromLobbyUpdates()
 	EOSFuncs::logInfo("UnsubscribeFromLobbyUpdates: %s", this->LobbyId.c_str());
 }
 
+void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+
+	if ( data->ResultCode != EOS_EResult::EOS_Success )
+	{
+		printlog("failed to load achievements");
+		return;
+	}
+
+	EOS_Achievements_GetAchievementDefinitionCountOptions AchievementDefinitionsCountOptions = {};
+	AchievementDefinitionsCountOptions.ApiVersion = EOS_ACHIEVEMENTS_GETACHIEVEMENTDEFINITIONCOUNT_API_LATEST;
+
+	uint32_t AchievementDefinitionsCount = EOS_Achievements_GetAchievementDefinitionCount(EOS.AchievementsHandle, &AchievementDefinitionsCountOptions);
+
+	EOS_Achievements_CopyAchievementDefinitionV2ByIndexOptions CopyOptions = {};
+	CopyOptions.ApiVersion = EOS_ACHIEVEMENTS_COPYDEFINITIONV2BYACHIEVEMENTID_API_LATEST;
+
+	for ( CopyOptions.AchievementIndex = 0; CopyOptions.AchievementIndex < AchievementDefinitionsCount; ++CopyOptions.AchievementIndex )
+	{
+		EOS_Achievements_DefinitionV2* AchievementDef = NULL;
+
+		EOS_EResult CopyAchievementDefinitionsResult = EOS_Achievements_CopyAchievementDefinitionV2ByIndex(EOS.AchievementsHandle, &CopyOptions, &AchievementDef);
+		if ( CopyAchievementDefinitionsResult != EOS_EResult::EOS_Success )
+		{
+			printlog("CopyAchievementDefinitions Failure!");
+			return;
+		}
+
+		if ( AchievementDef->bIsHidden )
+		{
+			achievementHidden.emplace(std::string(AchievementDef->AchievementId));
+		}
+
+		if ( AchievementDef->UnlockedDisplayName )
+		{
+			achievementNames.emplace(std::make_pair(
+				std::string(AchievementDef->AchievementId),
+				std::string(AchievementDef->UnlockedDisplayName)));
+		}
+
+		if ( AchievementDef->UnlockedDescription )
+		{
+			achievementDesc.emplace(std::make_pair(
+				std::string(AchievementDef->AchievementId),
+				std::string(AchievementDef->UnlockedDescription)));
+		}
+
+		// Release Achievement Definition
+		EOS_Achievements_DefinitionV2_Release(AchievementDef);
+	}
+
+	printlog("successfully loaded EOS achievements");
+}
+
+void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+
+	if ( data->ResultCode != EOS_EResult::EOS_Success )
+	{
+		printlog("failed to load player achievement status");
+		return;
+	}
+
+	EOS_Achievements_GetPlayerAchievementCountOptions AchievementsCountOptions = {};
+	AchievementsCountOptions.ApiVersion = EOS_ACHIEVEMENTS_GETPLAYERACHIEVEMENTCOUNT_API_LATEST;
+	AchievementsCountOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+
+	uint32_t AchievementsCount = EOS_Achievements_GetPlayerAchievementCount(EOS.AchievementsHandle, &AchievementsCountOptions);
+
+	EOS_Achievements_CopyPlayerAchievementByIndexOptions CopyOptions = {};
+	CopyOptions.ApiVersion = EOS_ACHIEVEMENTS_COPYPLAYERACHIEVEMENTBYINDEX_API_LATEST;
+	CopyOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+
+	for ( CopyOptions.AchievementIndex = 0; CopyOptions.AchievementIndex < AchievementsCount; ++CopyOptions.AchievementIndex )
+	{
+		EOS_Achievements_PlayerAchievement* PlayerAchievement = NULL;
+
+		EOS_EResult CopyPlayerAchievementResult = EOS_Achievements_CopyPlayerAchievementByIndex(EOS.AchievementsHandle, &CopyOptions, &PlayerAchievement);
+		if ( CopyPlayerAchievementResult != EOS_EResult::EOS_Success )
+		{
+			printlog("CopyPlayerAchievement Failure!");
+			return;
+		}
+
+		if ( PlayerAchievement->UnlockTime != EOS_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKTIME_UNDEFINED )
+		{
+			size_t size = sizeof(char) * (strlen(PlayerAchievement->AchievementId) + 1);
+			char* ach = (char*)malloc(size);
+			strcpy(ach, PlayerAchievement->AchievementId);
+			node_t* node = list_AddNodeFirst(&steamAchievements);
+			node->element = ach;
+			node->size = size;
+			node->deconstructor = &defaultDeconstructor;
+		}
+
+		EOS_Achievements_PlayerAchievement_Release(PlayerAchievement);
+	}
+
+	printlog("successfully loaded EOS achievement player status");
+}
+
+void EOSFuncs::OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+	if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+		printlog("successfully ingested EOS stat");
+	}
+	else
+	{
+		printlog("failed to ingest EOS stat");
+	}
+}
+
+bool EOSFuncs::initAchievements()
+{
+	printlog("initializing EOS achievements");
+	if ( !PlatformHandle ) {
+		return false;
+	}
+	if ( (AchievementsHandle = EOS_Platform_GetAchievementsInterface(PlatformHandle)) == nullptr ) {
+		return false;
+	}
+	if ( (StatsHandle = EOS_Platform_GetStatsInterface(PlatformHandle)) == nullptr ) {
+		return false;
+	}
+	return true;
+}
+
+void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+
+	if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+		printlog("EOS achievement successfully unlocked");
+		return;
+	}
+	else
+	{
+		printlog("EOSFuncs::OnUnlockAchievement() failure: %i", data->ResultCode);
+		return;
+	}
+}
+
+void EOSFuncs::loadAchievementData()
+{
+	bAchievementsLoaded = true;
+	achievementNames.clear();
+	achievementDesc.clear();
+	achievementHidden.clear();
+
+	printlog("loading EOS achievements");
+	{
+		EOS_Achievements_QueryDefinitionsOptions Options = {};
+		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
+		Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+		Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+		Options.HiddenAchievementsCount = 0;
+		Options.HiddenAchievementIds = nullptr;
+		EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
+	}
+
+	printlog("loading player achievement status");
+	{
+		EOS_Achievements_QueryPlayerAchievementsOptions Options = {};
+		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYPLAYERACHIEVEMENTS_API_LATEST;
+		Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+		EOS_Achievements_QueryPlayerAchievements(AchievementsHandle, &Options, nullptr, OnPlayerAchievementQueryComplete);
+	}
+}
+
+void EOSFuncs::unlockAchievement(const char* name)
+{
+	printlog("unlocking EOS achievement '%s'", name);
+	EOS_Achievements_UnlockAchievementsOptions UnlockAchievementsOptions = {};
+	UnlockAchievementsOptions.ApiVersion = EOS_ACHIEVEMENTS_UNLOCKACHIEVEMENTS_API_LATEST;
+	UnlockAchievementsOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
+	UnlockAchievementsOptions.AchievementsCount = 1;
+	UnlockAchievementsOptions.AchievementIds = &name;
+	EOS_Achievements_UnlockAchievements(AchievementsHandle, &UnlockAchievementsOptions, nullptr, OnUnlockAchievement);
+	UIToastNotificationManager.createAchievementNotification(name);
+}
+
+void EOSFuncs::ingestStat(int stat_num, int value)
+{
+	printlog("updating EOS stat '%s'", g_SteamStats[stat_num].m_pchStatName);
+
+	EOS_Stats_IngestData StatsToIngest[1];
+	StatsToIngest[0].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
+	StatsToIngest[0].StatName = g_SteamStats[stat_num].m_pchStatName;
+	StatsToIngest[0].IngestAmount = value;
+
+	EOS_Stats_IngestStatOptions Options = {};
+	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
+	Options.Stats = StatsToIngest;
+	Options.StatsCount = sizeof(StatsToIngest) / sizeof(StatsToIngest[0]);
+	Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+	EOS_Stats_IngestStat(StatsHandle, &Options, nullptr, OnIngestStatComplete);
+}
+
 void EOSFuncs::showFriendsOverlay()
 {
 	UIHandle = EOS_Platform_GetUIInterface(PlatformHandle);
@@ -2354,7 +2563,7 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 
 	EOS_Auth_LoginOptions LoginOptions = {};
 	LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
-	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile | EOS_EAuthScopeFlags::EOS_AS_FriendsList | EOS_EAuthScopeFlags::EOS_AS_Presence);
+	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile);
 	LoginOptions.Credentials = &Credentials;
 
 	EOS_Auth_Login(AuthHandle, &LoginOptions, NULL, AuthLoginCompleteCallback);
@@ -2391,6 +2600,8 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 	{
 		return false;
 	}*/
+	bool achResult = initAchievements();
+	assert(achResult == true);
 	return true;
 }
 
@@ -2441,6 +2652,25 @@ void EOSFuncs::Accounts_t::handleLogin()
 #ifdef STEAMWORKS
 	return;
 #endif
+	if ( !initPopupWindow && popupType == POPUP_TOAST )
+	{
+		if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT) )
+		{
+			UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
+			n->setHeaderText(std::string("Account Status"));
+			n->setMainText(std::string("Logging in..."));
+			n->setSecondaryText(std::string("An error has occurred!"));
+			n->setActionText(std::string("Retry"));
+			n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
+			n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+			n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+			n->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
+			n->buttonAction = &buttonRetryAuthorisation;
+			n->setIdleSeconds(5);
+		}
+		initPopupWindow = true;
+	}
+
 	if ( !waitingForCallback && (AccountAuthenticationStatus == EOS_EResult::EOS_Success || AccountAuthenticationCompleted == EOS_EResult::EOS_Success) )
 	{
 		firstTimeSetupCompleted = true;
@@ -2464,48 +2694,28 @@ void EOSFuncs::Accounts_t::handleLogin()
 	}
 	AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
 
-	if ( popupType == POPUP_TOAST )
+	// handle errors below...
+	if ( initPopupWindow && popupType == POPUP_TOAST )
 	{
-		if ( !initPopupWindow )
+		if ( !waitingForCallback )
 		{
-			if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT) )
+			if ( AccountAuthenticationStatus != EOS_EResult::EOS_NotConfigured )
 			{
-				UIToastNotification* n = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
-				n->setHeaderText(std::string("Account Status"));
-				n->setMainText(std::string("Logging in..."));
-				n->setSecondaryText(std::string("An error has occurred!"));
-				n->setActionText(std::string("Retry"));
-				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
-				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
-				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
-				n->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
-				n->buttonAction = &buttonRetryAuthorisation;
-				n->setIdleSeconds(5);
-			}
-			initPopupWindow = true;
-		}
-		else
-		{
-			if ( !waitingForCallback )
-			{
-				if ( AccountAuthenticationStatus != EOS_EResult::EOS_NotConfigured )
+				UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
+				// update the status here.
+				if ( n )
 				{
-					UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
-					// update the status here.
-					if ( n )
-					{
-						n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
-						n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
-						char buf[128] = "";
-						snprintf(buf, 128 - 1, "Login has failed.\nError code: %d", static_cast<int>(AccountAuthenticationStatus));
-						n->showMainCard();
-						n->setSecondaryText(std::string(buf));
-						n->updateCardEvent(false, true);
-						n->setIdleSeconds(10);
-					}
+					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
+					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+					char buf[128] = "";
+					snprintf(buf, 128 - 1, "Login has failed.\nError code: %d", static_cast<int>(AccountAuthenticationStatus));
+					n->showMainCard();
+					n->setSecondaryText(std::string(buf));
+					n->updateCardEvent(false, true);
+					n->setIdleSeconds(10);
 				}
-				AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
 			}
+			AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
 		}
 	}
 
@@ -2535,7 +2745,7 @@ void EOSFuncs::CrossplayAccounts_t::createNotification()
 {
 	if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT) )
 	{
-		UIToastNotification* n = UIToastNotificationManager.addNotification(UIToastNotificationManager_t::GENERIC_TOAST_IMAGE);
+		UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
 		n->setHeaderText(std::string("Crossplay Status"));
 		n->setMainText(std::string("Initializing..."));
 		n->setSecondaryText(std::string("An error has occurred!"));
@@ -2553,6 +2763,8 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 #ifndef STEAMWORKS
 	return;
 #endif // !STEAMWORKS
+
+	drawDialogue();
 
 	if ( logOut )
 	{
@@ -2714,6 +2926,7 @@ void EOSFuncs::CrossplayAccounts_t::resetOnFailure()
 void buttonAcceptCrossplaySetup(button_t* my)
 {
 	EOS.CrossplayAccountManager.acceptedEula = true;
+	EOS.CrossplayAccountManager.closePrompt();
 	if ( EOS.CrossplayAccountManager.continuanceToken )
 	{
 		EOS_Connect_CreateUserOptions CreateUserOptions;
@@ -2736,9 +2949,78 @@ void buttonAcceptCrossplaySetup(button_t* my)
 void buttonDenyCrossplaySetup(button_t* my)
 {
 	EOS.CrossplayAccountManager.logOut = true;
+	EOS.CrossplayAccountManager.closePrompt();
 	EOS.CrossplayAccountManager.resetOnFailure();
 	buttonCloseSubwindow(nullptr);
 	EOSFuncs::logInfo("Crossplay account link has been denied by user");
+}
+
+void buttonViewPrivacyPolicy(button_t* my)
+{
+	openURLTryWithOverlay("http://www.baronygame.com/privacypolicy.html");
+}
+
+void EOSFuncs::CrossplayAccounts_t::drawDialogue()
+{
+	if ( getPromptStatus() == PROMPT_CLOSED )
+	{
+		return;
+	}
+
+	if ( getPromptStatus() == PROMPT_SETUP )
+	{
+		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow(*mainsurface), "%s", language[3979]);
+	}
+	else if ( getPromptStatus() == PROMPT_ABOUT )
+	{
+		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow(*mainsurface), "%s", language[3981]);
+	}
+}
+
+void buttonReopenCrossplaySetup(button_t* my)
+{
+	EOS.CrossplayAccountManager.createDialogue();
+}
+
+void buttonAboutCrossplay(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(NULL);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	EOS.CrossplayAccountManager.openPromptAbout();
+
+	// create new window
+	subwindow = 1;
+	subx1 = xres / 2 - 356;
+	subx2 = xres / 2 + 356;
+	suby1 = yres / 2 - 133;
+	suby2 = yres / 2 + 133;
+	strcpy(subtext, language[3980]);
+
+	button_t* button;
+	// privacy policy button
+	button = newButton();
+	strcpy(button->label, language[3978]);
+	button->sizex = strlen(language[3978]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 48;
+	button->visible = 1;
+	button->focused = 1;
+	button->action = &buttonViewPrivacyPolicy;
+
+	// return to previous button
+	button = newButton();
+	strcpy(button->label, language[3982]);
+	button->sizex = strlen(language[3982]) * 12 + 4;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 24;
+	button->visible = 1;
+	button->focused = 1;
+	button->action = &buttonReopenCrossplaySetup;
 }
 
 void EOSFuncs::CrossplayAccounts_t::createDialogue()
@@ -2748,37 +3030,49 @@ void EOSFuncs::CrossplayAccounts_t::createDialogue()
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
 
+	openPromptSetup();
+
 	// create new window
 	subwindow = 1;
-	subx1 = xres / 2 - (240);
-	subx2 = xres / 2 + (240);
-	suby1 = yres / 2 - (60);
-	suby2 = yres / 2 + (60);
-	strcpy(subtext, "Crossplay Setup");
+	subx1 = xres / 2 - 326;
+	subx2 = xres / 2 + 326;
+	suby1 = yres / 2 - 116;
+	suby2 = yres / 2 + 116;
+	strcpy(subtext, language[3975]);
 
-	// close button
 	button_t* button;
-	// retry button
+	// accept button
 	button = newButton();
-	strcpy(button->label, "Accept");
-	button->x = subx1 + 4;
-	button->y = suby2 - 24;
-	button->sizex = strlen("Accept") * 12 + 8;
+	strcpy(button->label, language[3976]);
+	button->sizex = strlen(language[3976]) * 12 + 8;
 	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 48;
 	button->visible = 1;
 	button->focused = 1;
 	button->action = &buttonAcceptCrossplaySetup;
 	
-	// qtd button
+	// deny button
 	button = newButton();
-	strcpy(button->label, "Cancel");
-	button->sizex = strlen("Cancel") * 12 + 4;
+	strcpy(button->label, language[3977]);
+	button->sizex = strlen(language[3977]) * 12 + 4;
 	button->sizey = 20;
-	button->x = subx2 - button->sizex - 8;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 	button->y = suby2 - 24;
 	button->visible = 1;
 	button->focused = 1;
 	button->action = &buttonDenyCrossplaySetup;
+
+	// about crossplay button
+	button = newButton();
+	strcpy(button->label, language[3983]);
+	button->sizex = strlen(language[3983]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 48 - 70;
+	button->visible = 1;
+	button->focused = 1;
+	button->action = &buttonAboutCrossplay;
 }
 
 std::string EOSFuncs::getLobbyCodeFromGameKey(Uint32 key)
@@ -2820,6 +3114,97 @@ Uint32 EOSFuncs::getGameKeyFromLobbyCode(std::string& code)
 		}
 	}
 	return result;
+}
+
+void EOSFuncs::queryDLCOwnership()
+{
+	EcomHandle = EOS_Platform_GetEcomInterface(PlatformHandle);
+
+	EOS_Ecom_QueryEntitlementsOptions options = {};
+	options.ApiVersion = EOS_ECOM_QUERYENTITLEMENTS_API_LATEST;
+	options.bIncludeRedeemed = true;
+	std::vector<EOS_Ecom_EntitlementName> entitlements;
+	entitlements.push_back("fced51d547714291869b8847fdd770e8");
+	entitlements.push_back("7ea3754f8bfa4069938fd0bee3e7197b");
+	
+	options.EntitlementNames = entitlements.data();
+	options.EntitlementNameCount = entitlements.size();
+	options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
+
+	EOS_Ecom_QueryEntitlements(EcomHandle, &options, nullptr, OnEcomQueryEntitlementsCallback);
+	//EOS_Ecom_QueryOwnershipOptions options = {};
+	//options.ApiVersion = EOS_ECOM_QUERYOWNERSHIP_API_LATEST;
+	//std::vector<EOS_Ecom_CatalogItemId> catalogIds;
+	//options.CatalogItemIdCount = catalogIds.size();
+	//options.CatalogItemIds = catalogIds.data();
+	//options.CatalogNamespace = "";
+	//options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
+	//EOS_Ecom_QueryOwnership(EcomHandle, &options, nullptr, OnEcomQueryOwnershipCallback);
+}
+
+void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEntitlementsCallbackInfo* data)
+{
+	if ( !data )
+	{
+		EOSFuncs::logError("OnEcomQueryEntitlementsCallback: null data");
+		return;
+	}
+	else if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+		EOSFuncs::logInfo("OnEcomQueryEntitlementsCallback: callback success");
+
+		EOS.EcomHandle = EOS_Platform_GetEcomInterface(EOS.PlatformHandle);
+		EOS_Ecom_GetEntitlementsCountOptions countOptions = {};
+		countOptions.ApiVersion = EOS_ECOM_GETENTITLEMENTSCOUNT_API_LATEST;
+		countOptions.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+
+		Uint32 numEntitlements = EOS_Ecom_GetEntitlementsCount(EOS.EcomHandle, &countOptions);
+		for ( int i = 0; i < numEntitlements; ++i )
+		{
+			EOS_Ecom_CopyEntitlementByIndexOptions copyOptions;
+			copyOptions.ApiVersion = EOS_ECOM_COPYENTITLEMENTBYINDEX_API_LATEST;
+			copyOptions.EntitlementIndex = i;
+			copyOptions.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+
+			EOS_Ecom_Entitlement* e = nullptr;
+			EOS_EResult result = EOS_Ecom_CopyEntitlementByIndex(EOS.EcomHandle, &copyOptions, &e);
+			if ( result == EOS_EResult::EOS_Success && e )
+			{
+				std::string id = e->EntitlementName;
+				if ( id.compare("fced51d547714291869b8847fdd770e8") == 0 )
+				{
+					enabledDLCPack1 = true;
+				}
+				else if ( id.compare("7ea3754f8bfa4069938fd0bee3e7197b") == 0 )
+				{
+					enabledDLCPack2 = true;
+				}
+				//EOSFuncs::logInfo("Index: %d | Id %s: | Entitlement Name: %s | CatalogItemId: %s | Redeemed: %d", i, e->EntitlementId, e->EntitlementName, e->CatalogItemId, (e->bRedeemed == EOS_TRUE) ? 1 : 0);
+				EOS_Ecom_Entitlement_Release(e);
+			}
+		}
+	}
+	else
+	{
+		EOSFuncs::logError("OnEcomQueryEntitlementsCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
+	}
+}
+
+void EOS_CALL EOSFuncs::OnEcomQueryOwnershipCallback(const EOS_Ecom_QueryOwnershipCallbackInfo* data)
+{
+	if ( !data )
+	{
+		EOSFuncs::logError("OnEcomQueryOwnershipCallback: null data");
+		return;
+	}
+	else if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+		EOSFuncs::logInfo("OnEcomQueryOwnershipCallback: Ownership status: %d", static_cast<int>(data->ItemOwnership->OwnershipStatus));
+	}
+	else
+	{
+		EOSFuncs::logError("OnEcomQueryOwnershipCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
+	}
 }
 
 #endif //USE_EOS

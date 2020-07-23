@@ -21,12 +21,12 @@
 #include "interface/interface.hpp"
 #include <SDL_thread.h>
 #include "player.hpp"
+#include "mod_tools.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include <steam/steam_gameserver.h>
 #include "steam.hpp"
 #include "lobbies.hpp"
-#include "mod_tools.hpp"
 #endif
 
 #ifdef STEAMWORKS
@@ -744,10 +744,6 @@ void SteamServerClientWrapper::OnGetNumberOfCurrentPlayers(NumberOfCurrentPlayer
 
 bool achievementUnlocked(const char* achName)
 {
-#ifndef STEAMWORKS
-	return false;
-#else
-
 	// check internal achievement record
 	node_t* node;
 	for ( node = steamAchievements.first; node != NULL; node = node->next )
@@ -759,8 +755,6 @@ bool achievementUnlocked(const char* achName)
 		}
 	}
 	return false;
-
-#endif
 }
 
 /*-------------------------------------------------------------------------------
@@ -773,10 +767,6 @@ bool achievementUnlocked(const char* achName)
 
 void steamAchievement(const char* achName)
 {
-#ifndef STEAMWORKS
-	return;
-#else
-
 #ifdef DEBUG_ACHIEVEMENTS
 	messagePlayer(clientnum, "%s", achName);
 #endif
@@ -801,8 +791,15 @@ void steamAchievement(const char* achName)
 	if ( !achievementUnlocked(achName) )
 	{
 		//messagePlayer(clientnum, "You've unlocked an achievement!\n [%s]",c_SteamUserStats_GetAchievementDisplayAttribute(achName,"name"));
+
+#ifdef STEAMWORKS
 		SteamUserStats()->SetAchievement(achName);
 		SteamUserStats()->StoreStats();
+#else
+#ifdef USE_EOS
+		EOS.unlockAchievement(achName);
+#endif
+#endif
 
 		char* ach = (char*) malloc(sizeof(char) * (strlen(achName) + 1));
 		strcpy(ach, achName);
@@ -811,12 +808,13 @@ void steamAchievement(const char* achName)
 		node->size = sizeof(char) * (strlen(achName) + 1);
 		node->deconstructor = &defaultDeconstructor;
 	}
-
-#endif
 }
 
 void steamUnsetAchievement(const char* achName)
 {
+#ifdef USE_EOS
+	printlog("unset achievement not supported for epic online services");
+#endif
 #ifndef STEAMWORKS
 	return;
 #else
@@ -879,12 +877,10 @@ void steamAchievementEntity(Entity* my, const char* achName)
 
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 {
-#ifndef STEAMWORKS
-	return;
-#else
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
-		|| gamemods_disableSteamAchievements )
+		|| gamemods_disableSteamAchievements
+		|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
@@ -1059,22 +1055,25 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		default:
 			break;
 	}
+#ifdef STEAMWORKS
 	g_SteamStatistics->StoreStats(); // update server's stat counter.
+#else
+#ifdef USE_EOS
+	EOS.ingestStat(statisticNum, value);
+#endif
+#endif
 	if ( indicateProgress )
 	{
 		steamIndicateStatisticProgress(statisticNum, type);
 	}
-#endif
 }
 
 void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value)
 {
-#ifndef STEAMWORKS
-	return;
-#else
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
-		|| gamemods_disableSteamAchievements )
+		|| gamemods_disableSteamAchievements
+		|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
@@ -1116,7 +1115,6 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
-#endif
 }
 
 

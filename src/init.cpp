@@ -200,6 +200,18 @@ int initApp(char* title, int fullscreen)
 				printlog("Failed to create sound channel group.\n");
 				no_sound = true;
 			}
+			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundAmbient_group);
+			if ( FMODErrorCheck() )
+			{
+				printlog("Failed to create sound ambient channel group.\n");
+				no_sound = true;
+			}
+			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundEnvironment_group);
+			if ( FMODErrorCheck() )
+			{
+				printlog("Failed to create sound environment channel group.\n");
+				no_sound = true;
+			}
 			if (!no_sound)
 			{
 				fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &music_group);
@@ -604,6 +616,8 @@ int initApp(char* title, int fullscreen)
 	}
 	fclose(fp);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
 	printlog("loading sounds...\n");
@@ -636,6 +650,8 @@ int initApp(char* title, int fullscreen)
 	}
 	fclose(fp);
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif
 	return 0;
@@ -2160,6 +2176,12 @@ int deinitApp()
 		}
 		free(sprites);
 	}
+
+	// free achievement images
+	for (auto& item : achievementImages) {
+		SDL_FreeSurface(item.second);
+	}
+	achievementImages.clear();
 
 	// free models
 	printlog("freeing models...\n");

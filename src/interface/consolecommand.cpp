@@ -2817,6 +2817,38 @@ void consoleCommand(char* command_str)
 			EOS.CrossplayAccountManager.autologin = true;
 #endif // USE_EOS
 		}
+		else if ( !strncmp(command_str, "/sfxambientvolume", 17) )
+		{
+			sfxAmbientVolume = atoi(&command_str[18]);
+		}
+		else if ( !strncmp(command_str, "/sfxambientdynamic", 18) )
+		{
+			sfxUseDynamicAmbientVolume = !sfxUseDynamicAmbientVolume;
+			if ( sfxUseDynamicAmbientVolume )
+			{
+				messagePlayer(clientnum, "Dynamic ambient volume ON");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Dynamic ambient volume OFF");
+			}
+		}
+		else if ( !strncmp(command_str, "/sfxenvironmentdynamic", 22) )
+		{
+			sfxUseDynamicEnvironmentVolume = !sfxUseDynamicEnvironmentVolume;
+			if ( sfxUseDynamicEnvironmentVolume )
+			{
+				messagePlayer(clientnum, "Dynamic environment volume ON");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Dynamic environment volume OFF");
+			}
+		}
+		else if ( !strncmp(command_str, "/sfxenvironmentvolume", 21) )
+		{
+			sfxEnvironmentVolume = atoi(&command_str[22]);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

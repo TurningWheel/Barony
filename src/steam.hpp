@@ -278,28 +278,6 @@ public:
 	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
 };
 
-struct SteamStat_t
-{
-	int m_ID;
-	ESteamStatTypes m_eStatType;
-	const char *m_pchStatName;
-	int m_iValue;
-	float m_flValue;
-	float m_flAvgNumerator;
-	float m_flAvgDenominator;
-};
-
-struct SteamGlobalStat_t
-{
-	int m_ID;
-	ESteamStatTypes m_eStatType;
-	const char *m_pchStatName;
-	int64 m_iValue;
-	float m_flValue;
-	float m_flAvgNumerator;
-	float m_flAvgDenominator;
-};
-
 class CSteamStatistics
 {
 private:

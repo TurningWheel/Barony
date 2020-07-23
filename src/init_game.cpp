@@ -32,6 +32,7 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include "cppfuncs.hpp"
+#include "Directory.hpp"
 #include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
@@ -99,6 +100,14 @@ int initGame()
 	GO_SwapBuffers(screen);
 
 	initGameControllers();
+
+	// load achievement images
+	Directory achievementsDir("images/achievements");
+	for (auto& item : achievementsDir.list) {
+		std::string fullPath = achievementsDir.path + std::string("/") + item;
+		char* name = const_cast<char*>(fullPath.c_str()); // <- evil
+		achievementImages.emplace(std::make_pair(item, loadImage(name)));
+	}
 
 	// load model offsets
 	printlog( "loading model offsets...\n");
