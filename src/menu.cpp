@@ -8989,6 +8989,7 @@ void handleMainMenu(bool mode)
 		}
 		else if ( introstage == 3 )     // new game
 		{
+			bool bWasOnMainMenu = intro;
 			introstage = 1;
 			fadefinished = false;
 			fadeout = false;
@@ -9042,10 +9043,17 @@ void handleMainMenu(bool mode)
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 			gameplayCustomManager.readFromFile();
 
+			if ( !loadingsavegame && bWasOnMainMenu )
+			{
+				gameModeManager.currentSession.saveServerFlags();
+			}
+
 			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 			{
 				svFlags &= ~(SV_FLAG_HARDCORE);
+				svFlags &= ~(SV_FLAG_CHEATS);
 				svFlags |= SV_FLAG_HUNGER;
+				svFlags |= SV_FLAG_FRIENDLYFIRE;
 
 				if ( gameModeManager.Tutorial.dungeonLevel >= 0 )
 				{
@@ -9945,6 +9953,7 @@ void handleMainMenu(bool mode)
 				selected_spell_alternate[c] = NULL;
 				hotbarShapeshiftInit[c] = false;
 			}
+			gameModeManager.currentSession.restoreSavedServerFlags();
 			selected_spell = NULL; //So you don't start off with a spell when the game restarts.
 			selected_spell_last_appearance = -1;
 			client_classes[0] = 0;
@@ -12501,6 +12510,7 @@ void buttonCloseSubwindow(button_t* my)
 	{
 		return;
 	}
+
 	loadGameSaveShowRectangle = 0;
 	singleplayerSavegameFreeSlot = -1; // clear this value when closing window
 	multiplayerSavegameFreeSlot = -1;  // clear this value when closing window

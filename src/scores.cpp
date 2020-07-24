@@ -24,6 +24,7 @@
 #include "sys/stat.h"
 #include "paths.hpp"
 #include "collision.hpp"
+#include "mod_tools.hpp"
 
 // definitions
 list_t topscores;
@@ -1341,6 +1342,7 @@ int saveGame(int saveIndex)
 	{
 		fwrite(&gameStatistics[c], sizeof(Sint32), 1, fp);
 	}
+	fwrite(&svFlags, sizeof(Uint32), 1, fp);
 
 	// write hotbar items
 	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
@@ -2050,6 +2052,12 @@ int loadGame(int player, int saveIndex)
 		{
 			fread(&gameStatistics[c], sizeof(Sint32), 1, fp);
 		}
+	}
+	if ( versionNumber >= 335 )
+	{
+		gameModeManager.currentSession.saveServerFlags();
+		fread(&svFlags, sizeof(Uint32), 1, fp);
+		printlog("[SESSION]: Using savegame server flags");
 	}
 
 	// read hotbar item offsets
@@ -2913,6 +2921,10 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	{
 		fseek(fp, sizeof(Sint32) * NUM_CONDUCT_CHALLENGES, SEEK_CUR);
 		fseek(fp, sizeof(Sint32) * NUM_GAMEPLAY_STATISTICS, SEEK_CUR);
+	}
+	if ( versionNumber >= 335 )
+	{
+		fseek(fp, sizeof(Uint32), SEEK_CUR); // svFlags
 	}
 	fseek(fp, sizeof(Uint32)*NUM_HOTBAR_SLOTS, SEEK_CUR);
 	fseek(fp, sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), SEEK_CUR);
