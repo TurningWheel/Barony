@@ -1,0 +1,57 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Linux-CI_fmod_steam
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-20.04
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    # Actually does the build...
+    - name: Update apt repository
+      run: sudo apt-get update
+
+    # Actually does the build...
+    - name: Install Ubuntu package dependencies
+      run: sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev libz-dev libphysfs-dev rapidjson-dev
+
+    # Actually does the build...
+    - name: Compile
+      env:
+        DEPENDENCIES_ZIP_KEY: ${{ secrets.DEPENDENCIES_ZIP_KEY }}
+        DEPENDENCIES_ZIP_IV: ${{ secrets.DEPENDENCIES_ZIP_IV }}
+      run: |
+        echo Initiating build-linux_fmod_steam.sh
+        cd ci
+        ./build-linux_fmod_steam.sh
+        
+    - name: Upload Game Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        # Artifact name
+        name: Game_fmod_steam # optional
+        # A file, directory or wildcard pattern that describes what to upload
+        path: build/release/barony
+        
+    - name: Upload Editor Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        # Artifact name
+        name: Editor_fmod_steam # optional
+        # A file, directory or wildcard pattern that describes what to upload
+        path: build/release/editor
