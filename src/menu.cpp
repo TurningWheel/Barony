@@ -2781,12 +2781,14 @@ void handleMainMenu(bool mode)
 #if (defined STEAMWORKS || defined USE_EOS)
 								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
 								{
+									tooltip.h = TTF12_HEIGHT * 2 + 8;
 									tooltip.w = longestline(language[3917]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
 									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3917]);
 								}
 								else
 								{
+									tooltip.h = TTF12_HEIGHT * 2 + 8;
 									tooltip.w = longestline(language[3200]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
 									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3200]);
@@ -2806,7 +2808,7 @@ void handleMainMenu(bool mode)
 								{
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
-										openURLTryWithOverlay(language[3984]);
+										openURLTryWithOverlay(language[3985]);
 										mousestatus[SDL_BUTTON_LEFT] = 0;
 									}
 								}
@@ -2814,7 +2816,7 @@ void handleMainMenu(bool mode)
 								{
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
-										openURLTryWithOverlay(language[3985]);
+										openURLTryWithOverlay(language[3984]);
 										mousestatus[SDL_BUTTON_LEFT] = 0;
 									}
 								}

@@ -1046,7 +1046,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.ClientCredentials.ClientSecret = ClientCredentialsSecret.c_str();
 	PlatformOptions.OverrideCountryCode = nullptr;
 	PlatformOptions.OverrideLocaleCode = nullptr;
-	PlatformOptions.bIsServer = EOS_TRUE;
+	PlatformOptions.bIsServer = EOS_FALSE;
 	PlatformOptions.Flags = EOS_PF_DISABLE_OVERLAY;
 	static std::string EncryptionKey(64, '1');
 	PlatformOptions.EncryptionKey = EncryptionKey.c_str();
@@ -2563,7 +2563,7 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 
 	EOS_Auth_LoginOptions LoginOptions = {};
 	LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
-	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile);
+	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile | EOS_EAuthScopeFlags::EOS_AS_FriendsList | EOS_EAuthScopeFlags::EOS_AS_Presence);
 	LoginOptions.Credentials = &Credentials;
 
 	EOS_Auth_Login(AuthHandle, &LoginOptions, NULL, AuthLoginCompleteCallback);
@@ -3132,14 +3132,6 @@ void EOSFuncs::queryDLCOwnership()
 	options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
 
 	EOS_Ecom_QueryEntitlements(EcomHandle, &options, nullptr, OnEcomQueryEntitlementsCallback);
-	//EOS_Ecom_QueryOwnershipOptions options = {};
-	//options.ApiVersion = EOS_ECOM_QUERYOWNERSHIP_API_LATEST;
-	//std::vector<EOS_Ecom_CatalogItemId> catalogIds;
-	//options.CatalogItemIdCount = catalogIds.size();
-	//options.CatalogItemIds = catalogIds.data();
-	//options.CatalogNamespace = "";
-	//options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
-	//EOS_Ecom_QueryOwnership(EcomHandle, &options, nullptr, OnEcomQueryOwnershipCallback);
 }
 
 void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEntitlementsCallbackInfo* data)
@@ -3199,7 +3191,10 @@ void EOS_CALL EOSFuncs::OnEcomQueryOwnershipCallback(const EOS_Ecom_QueryOwnersh
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		EOSFuncs::logInfo("OnEcomQueryOwnershipCallback: Ownership status: %d", static_cast<int>(data->ItemOwnership->OwnershipStatus));
+		for ( int i = 0; i < data->ItemOwnershipCount; ++i )
+		{
+			EOSFuncs::logInfo("OnEcomQueryOwnershipCallback: Ownership status: %d, %d", static_cast<int>(data->ItemOwnership[i].OwnershipStatus), data->ItemOwnershipCount);
+		}
 	}
 	else
 	{
