@@ -805,7 +805,9 @@ void handleInGamePauseMenu()
 		ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
 	}
 	char* endgameText = NULL;
+	char* quitgameText = language[1313];
 	bool singleplayerAliveEndGameAndSave = false;
+	bool multiplayerAliveEndGameAndSave = false;
 	if ( multiplayer == SINGLE )
 	{
 		if ( stats[clientnum] && stats[clientnum]->HP > 0 )
@@ -819,12 +821,29 @@ void handleInGamePauseMenu()
 				// boss floor, no save scumming easily!
 				singleplayerAliveEndGameAndSave = false;
 				endgameText = language[1310];
+				quitgameText = language[3987];
 			}
 		}
 		else
 		{
 			endgameText = language[1310];
+			quitgameText = language[3987];
 			singleplayerAliveEndGameAndSave = false;
+		}
+	}
+	else if ( multiplayer == SERVER )
+	{
+		endgameText = language[1310];
+		quitgameText = language[3987];
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] && stats[i] && stats[i]->HP > 0 )
+			{
+				multiplayerAliveEndGameAndSave = true;
+				quitgameText = language[1313];
+				endgameText = language[3019];
+				break;
+			}
 		}
 	}
 	else
@@ -859,8 +878,8 @@ void handleInGamePauseMenu()
 					strcpy(subtext, language[3920]);
 					subx1 = xres / 2 - 188;
 					subx2 = xres / 2 + 188;
-					suby1 = yres / 2 - 92;
-					suby2 = yres / 2 + 92;
+					suby1 = yres / 2 - 64;
+					suby2 = yres / 2 + 64;
 
 					// add a cancel button
 					button_t* button = newButton();
@@ -875,6 +894,8 @@ void handleInGamePauseMenu()
 				}
 				else
 				{
+					subx1 = xres / 2 - 188;
+					subx2 = xres / 2 + 188;
 					strcpy(subtext, language[1129]);
 				}
 			}
@@ -884,9 +905,18 @@ void handleInGamePauseMenu()
 				subx2 = xres / 2 + 224;
 				if ( multiplayer == SERVER )
 				{
-					suby1 = yres / 2 - 100;
-					suby2 = yres / 2 + 100;
-					strcpy(subtext, language[3021]);
+					if ( multiplayerAliveEndGameAndSave )
+					{
+						suby1 = yres / 2 - 100;
+						suby2 = yres / 2 + 100;
+						strcpy(subtext, language[3021]);
+					}
+					else
+					{
+						suby1 = yres / 2 - 90;
+						suby2 = yres / 2 + 90;
+						strcpy(subtext, language[3986]);
+					}
 				}
 				else if ( multiplayer == CLIENT )
 				{
@@ -936,24 +966,23 @@ void handleInGamePauseMenu()
 			button->key = SDL_SCANCODE_RETURN;
 			button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
-			// no button
-			button = newButton();
-			strcpy(button->label, language[1315]);
-			button->x = subx2 - strlen(language[1315]) * 12 - 16;
-			button->y = suby2 - 28;
-			button->sizex = strlen(language[1315]) * 12 + 8;
-			button->sizey = 20;
 			if ( multiplayer == SINGLE && singleplayerAliveEndGameAndSave )
 			{
-				button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-				button->action = &buttonEndGameConfirm;
+				// noop - button created earlier.
 			}
 			else
 			{
+				// cancel button
+				button = newButton();
+				strcpy(button->label, language[1316]);
+				button->x = subx2 - strlen(language[1316]) * 12 - 16;
+				button->y = suby2 - 28;
+				button->sizex = strlen(language[1316]) * 12 + 8;
+				button->sizey = 20;
 				button->action = &buttonCloseSubwindow;
+				button->visible = 1;
+				button->focused = 1;
 			}
-			button->visible = 1;
-			button->focused = 1;
 		}
 	}
 	else
@@ -1035,11 +1064,11 @@ void handleInGamePauseMenu()
 			ttfPrintText(ttf16, 50, yres / 4 + 152, language[1312]);
 		}
 	}
-	if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (multiplayer != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (multiplayer != CLIENT)) || (menuselect == 4 + (multiplayer != CLIENT))) && subwindow == 0 && introstage == 1 )
+	if ( ((omousex >= 50 && omousex < 50 + strlen(quitgameText) * 18 && omousey >= yres / 4 + 152 + 24 * (multiplayer != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (multiplayer != CLIENT)) || (menuselect == 4 + (multiplayer != CLIENT))) && subwindow == 0 && introstage == 1 )
 	{
 		menuselect = 4 + (multiplayer != CLIENT);
 		// save & quit
-		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, language[1313]);
+		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, quitgameText);
 		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -1057,6 +1086,24 @@ void handleInGamePauseMenu()
 			suby1 = yres / 2 - 64;
 			suby2 = yres / 2 + 64;
 			strcpy(subtext, language[1131]);
+			if ( multiplayer == SINGLE )
+			{
+				if ( !singleplayerAliveEndGameAndSave )
+				{
+					strcpy(subtext, language[3988]);
+				}
+			}
+			else if ( multiplayer == SERVER )
+			{
+				if ( !multiplayerAliveEndGameAndSave )
+				{
+					subx1 = xres / 2 - 224;
+					subx2 = xres / 2 + 224;
+					suby1 = yres / 2 - 64;
+					suby2 = yres / 2 + 64;
+					strcpy(subtext, language[3989]);
+				}
+			}
 
 			// yes button
 			button_t* button = newButton();
@@ -1071,16 +1118,16 @@ void handleInGamePauseMenu()
 			button->key = SDL_SCANCODE_RETURN;
 			button->joykey = joyimpulses[INJOY_MENU_NEXT]; //TODO: Select which button to activate via dpad.
 
-															// no button
-			button = newButton();
-			strcpy(button->label, language[1315]);
-			button->sizex = strlen(language[1315]) * 12 + 8;
-			button->sizey = 20;
-			button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-			button->y = suby2 - 28;
-			button->action = &buttonQuitNoSaveConfirm;
-			button->visible = 1;
-			button->focused = 1;
+			// no button
+			// button = newButton();
+			// strcpy(button->label, language[1315]);
+			// button->sizex = strlen(language[1315]) * 12 + 8;
+			// button->sizey = 20;
+			// button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+			// button->y = suby2 - 28;
+			// button->action = &buttonQuitNoSaveConfirm;
+			// button->visible = 1;
+			// button->focused = 1;
 
 			// cancel button
 			button = newButton();
@@ -1109,7 +1156,7 @@ void handleInGamePauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), language[1313]);
+		ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), quitgameText);
 	}
 }
 
