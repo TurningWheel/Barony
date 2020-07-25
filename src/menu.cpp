@@ -5053,28 +5053,27 @@ void handleMainMenu(bool mode)
 					auto it = achievementProgress.find(item.first);
 					if (it != achievementProgress.end())
 					{
-						char percent_str[4] = { 0 };
+						char percent_str[32] = { 0 };
 						int percent = (int)floor(it->second * 100);
-						snprintf(percent_str, sizeof(percent_str), "%3d%%", percent);
-						ttfPrintText(ttf12, subx2 - 50, suby1 + 90 + (index - first_ach) * 80, percent_str);
+						snprintf(percent_str, sizeof(percent_str), "%3d%% complete", percent);
+						ttfPrintTextColor(ttf12, subx2 - 250, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, percent_str);
 					}
 				}
 
 				// draw unlock time
 				if (unlocked)
 				{
-					auto it = achievementProgress.find(item.first);
-					if (it != achievementProgress.end())
+					auto it = achievementUnlockTime.find(item.first);
+					if (it != achievementUnlockTime.end())
 					{
-
-						char buffer[32];
-						time_t t = time(NULL);
+						char buffer[64];
+						time_t t = (time_t)it->second;
 						struct tm* tm_info = localtime(&t);
-						strftime(buffer, 32, "%Y-%m-%d %H-%M-%S", tm_info);
+						strftime(buffer, sizeof(buffer), "Unlocked %Y/%m/%d at %H:%M:%S", tm_info);
 
 						char text[64];
-						snprintf(text, sizeof(text), "%32s", text);
-						ttfPrintText(ttf12, subx2 - 50, suby1 + 90 + (index - first_ach) * 80, text);
+						snprintf(text, sizeof(text), "%32s", buffer);
+						ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, text);
 					}
 				}
 
