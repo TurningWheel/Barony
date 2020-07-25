@@ -16,6 +16,7 @@
 #include <vector>
 #include <iostream>
 #include <map>
+#include <atomic>
 #include "net.hpp"
 #include "stat.hpp"
 #include "physfs.h"
@@ -23,6 +24,7 @@
 class EOSFuncs
 {
 	bool bAchievementsLoaded = false;
+	std::atomic<int> achievementsLoading { 0 };
 public:
 	std::string ProductId = "";
 	std::string SandboxId = "";

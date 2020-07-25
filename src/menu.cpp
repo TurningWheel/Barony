@@ -4984,27 +4984,9 @@ void handleMainMenu(bool mode)
 			int index;
 
 			// sort achievement names
-			typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::string, std::string>)> Comparator;
-			Comparator compFunctor =
-				[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
+			if (!achievementNamesSorted.size())
 			{
-				bool ach1 = achievementUnlocked(lhs.first.c_str());
-				bool ach2 = achievementUnlocked(rhs.first.c_str());
-				if (ach1 && !ach2)
-				{
-					return true;
-				}
-				else if (!ach1 && ach2)
-				{
-					return false;
-				}
-				else
-				{
-					return lhs.second < rhs.second;
-				}
-			};
-			std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted(
-				achievementNames.begin(), achievementNames.end(), compFunctor);
+			}
 
 			// list achievements
 			index = 0;
@@ -5022,12 +5004,12 @@ void handleMainMenu(bool mode)
 				}
 
 				// draw box
-				SDL_Rect tooltip_box;
-				tooltip_box.x = subx1 + 4;
-				tooltip_box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
-				tooltip_box.w = subx2 - subx1 - 30 - 8;
-				tooltip_box.h = 80 - 8;
-				drawTooltip(&tooltip_box);
+				SDL_Rect box;
+				box.x = subx1 + 4;
+				box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
+				box.w = subx2 - subx1 - 30 - 8;
+				box.h = 80 - 8;
+				drawWindowFancy(box.x, box.y, box.x + box.w, box.y + box.h);
 
 				// draw name
 				Uint32 nameColor = unlocked ? SDL_MapRGB(mainsurface->format, 0, 255, 255) : SDL_MapRGB(mainsurface->format, 128, 128, 128);
@@ -5065,6 +5047,37 @@ void handleMainMenu(bool mode)
 					}
 				}
 
+				// draw progress
+				if (!unlocked)
+				{
+					auto it = achievementProgress.find(item.first);
+					if (it != achievementProgress.end())
+					{
+						char percent_str[4] = { 0 };
+						int percent = (int)floor(it->second * 100);
+						snprintf(percent_str, sizeof(percent_str), "%3d%%", percent);
+						ttfPrintText(ttf12, subx2 - 50, suby1 + 90 + (index - first_ach) * 80, percent_str);
+					}
+				}
+
+				// draw unlock time
+				if (unlocked)
+				{
+					auto it = achievementProgress.find(item.first);
+					if (it != achievementProgress.end())
+					{
+
+						char buffer[32];
+						time_t t = time(NULL);
+						struct tm* tm_info = localtime(&t);
+						strftime(buffer, 32, "%Y-%m-%d %H-%M-%S", tm_info);
+
+						char text[64];
+						snprintf(text, sizeof(text), "%32s", text);
+						ttfPrintText(ttf12, subx2 - 50, suby1 + 90 + (index - first_ach) * 80, text);
+					}
+				}
+
 				// draw image
 				{
 					std::string img = unlocked ? item.first + ".png" : item.first + "_l.png";
@@ -5086,6 +5099,10 @@ void handleMainMenu(bool mode)
 					break;
 				}
 			}
+		}
+		else
+		{
+			ttfPrintText(ttf12, subx1 + 8, suby1 + 100, language[709]);
 		}
 	}
 
@@ -11525,6 +11542,28 @@ void openAchievementsWindow()
 	suby2 = yres/2 + 280;
 	strcpy(subtext, language[3971]);
 
+	// sort achievements list
+	Comparator compFunctor =
+		[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
+	{
+		bool ach1 = achievementUnlocked(lhs.first.c_str());
+		bool ach2 = achievementUnlocked(rhs.first.c_str());
+		if (ach1 && !ach2)
+		{
+			return true;
+		}
+		else if (!ach1 && ach2)
+		{
+			return false;
+		}
+		else
+		{
+			return lhs.second < rhs.second;
+		}
+	};
+	std::set<std::pair<std::string, std::string>, Comparator> sorted(achievementNames.begin(), achievementNames.end(), compFunctor);
+	achievementNamesSorted.swap(sorted);
+
 	// close button
 	{
 		button_t* button = newButton();
@@ -11576,6 +11615,7 @@ void closeAchievementsWindow(button_t* my)
 {
 	achievements_window = false;
 	achievements_window_page = 1;
+	achievementNamesSorted.clear();
 	buttonCloseSubwindow(my);
 }
 
