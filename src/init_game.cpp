@@ -823,7 +823,7 @@ void deinitGame()
 	}
 	else if ( multiplayer == SERVER )
 	{
-		for ( c = 0; c < numplayers; ++c )
+		for ( c = 0; c < MAXPLAYERS; ++c )
 		{
 			list_FreeAll(&channeledSpells[c]);
 		}
