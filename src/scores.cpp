@@ -4632,10 +4632,72 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 	}
 }
 
+void AchievementObserver::checkMapScriptsOnVariableSet()
+{
+	for ( auto it = textSourceScript.scriptVariables.begin(); it != textSourceScript.scriptVariables.end(); ++it )
+	{
+		size_t found = (*it).first.find("$ACH_TUTORIAL_SECRET");
+		if ( found != std::string::npos )
+		{
+			updatePlayerAchievement(clientnum, BARONY_ACH_EXTRA_CREDIT, EXTRA_CREDIT_SECRET);
+		}
+	}
+}
+
 void AchievementObserver::updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent)
 {
 	switch ( achievement )
 	{
+		case BARONY_ACH_BACK_TO_BASICS:
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				if ( g_SteamStats[STEAM_STAT_BACK_TO_BASICS].m_iValue == 1 )
+				{
+					awardAchievement(player, achievement);
+				}
+			}
+			break;
+		case BARONY_ACH_DIPLOMA:
+		case BARONY_ACH_EXTRA_CREDIT:
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				std::string mapname = map.name;
+				if ( mapname.find("Tutorial Hub") == std::string::npos
+					&& mapname.find("Tutorial ") != std::string::npos )
+				{
+					int levelnum = stoi(mapname.substr(mapname.find("Tutorial ") + strlen("Tutorial "), 2));
+					SteamStatIndexes statBitCounter = STEAM_STAT_DIPLOMA_LVLS;
+					SteamStatIndexes statLevelTotal = STEAM_STAT_DIPLOMA;
+					if ( achievement == BARONY_ACH_EXTRA_CREDIT )
+					{
+						statBitCounter = STEAM_STAT_EXTRA_CREDIT_LVLS;
+						statLevelTotal = STEAM_STAT_EXTRA_CREDIT;
+					}
+
+					if ( levelnum >= 1 && levelnum <= gameModeManager.Tutorial.getNumTutorialLevels() )
+					{
+						if ( !(g_SteamStats[statBitCounter].m_iValue & (1 << levelnum - 1)) ) // bit not set
+						{
+							// update with the difference in values.
+							steamStatisticUpdate(statBitCounter, STEAM_STAT_INT, (1 << levelnum - 1));
+						}
+
+						int levelsCompleted = 0;
+						for ( int i = 0; i < gameModeManager.Tutorial.getNumTutorialLevels(); ++i )
+						{
+							if ( g_SteamStats[statBitCounter].m_iValue & (1 << i) ) // count the bits
+							{
+								++levelsCompleted;
+							}
+						}
+						if ( levelsCompleted >= g_SteamStats[statLevelTotal].m_iValue )
+						{
+							steamStatisticUpdate(statLevelTotal, STEAM_STAT_INT, levelsCompleted - g_SteamStats[statLevelTotal].m_iValue);
+						}
+					}
+				}
+			}
+			break;
 		case BARONY_ACH_REAL_BOY:
 			if ( achEvent == REAL_BOY_HUMAN_RECRUIT )
 			{
@@ -4790,6 +4852,9 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 {
 	switch ( achievement )
 	{
+		case BARONY_ACH_BACK_TO_BASICS:
+			steamAchievementClient(player, "BARONY_ACH_BACK_TO_BASICS");
+			break;
 		case BARONY_ACH_TELEFRAG:
 			steamAchievementClient(player, "BARONY_ACH_TELEFRAG");
 			break;

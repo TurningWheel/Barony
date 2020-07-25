@@ -807,6 +807,7 @@ void handleInGamePauseMenu()
 	char* endgameText = NULL;
 	char* quitgameText = language[1313];
 	bool singleplayerAliveEndGameAndSave = false;
+	bool singleplayerBossLevelDisableSaveOnExit = false;
 	bool multiplayerAliveEndGameAndSave = false;
 	if ( multiplayer == SINGLE )
 	{
@@ -820,6 +821,7 @@ void handleInGamePauseMenu()
 			{
 				// boss floor, no save scumming easily!
 				singleplayerAliveEndGameAndSave = false;
+				singleplayerBossLevelDisableSaveOnExit = true;
 				endgameText = language[1310];
 				quitgameText = language[3987];
 			}
@@ -896,7 +898,14 @@ void handleInGamePauseMenu()
 				{
 					subx1 = xres / 2 - 188;
 					subx2 = xres / 2 + 188;
-					strcpy(subtext, language[1129]);
+					if ( singleplayerBossLevelDisableSaveOnExit )
+					{
+						strcpy(subtext, language[3990]);
+					}
+					else
+					{
+						strcpy(subtext, language[1129]);
+					}
 				}
 			}
 			else
@@ -1090,7 +1099,14 @@ void handleInGamePauseMenu()
 			{
 				if ( !singleplayerAliveEndGameAndSave )
 				{
-					strcpy(subtext, language[3988]);
+					if ( singleplayerBossLevelDisableSaveOnExit )
+					{
+						strcpy(subtext, language[3991]);
+					}
+					else
+					{
+						strcpy(subtext, language[3988]);
+					}
 				}
 			}
 			else if ( multiplayer == SERVER )
@@ -1492,6 +1508,19 @@ void handleMainMenu(bool mode)
 				if ( ticks % 50 == 0 )
 				{
 					UIToastNotificationManager.createCommunityNotification();
+				}
+
+				// upgrade steam achievement for existing hunters
+				if ( ticks % 250 == 0 )
+				{
+					bool unlocked = false;
+					if ( SteamUserStats()->GetAchievement("BARONY_ACH_GUDIPARIAN_BAZI", &unlocked) )
+					{
+						if ( unlocked )
+						{
+							steamAchievement("BARONY_ACH_RANGER_DANGER");
+						}
+					}
 				}
 			}
 		}
@@ -9042,6 +9071,7 @@ void handleMainMenu(bool mode)
 			minimapPings.clear(); // clear minimap pings
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 			gameplayCustomManager.readFromFile();
+			textSourceScript.scriptVariables.clear();
 
 			if ( !loadingsavegame && bWasOnMainMenu )
 			{
@@ -9890,6 +9920,7 @@ void handleMainMenu(bool mode)
 						}
 						else if ( client_classes[clientnum] == CLASS_HUNTER )
 						{
+							steamAchievement("BARONY_ACH_RANGER_DANGER");
 							if ( conductGameChallenges[CONDUCT_RANGED_ONLY] )
 							{
 								steamAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
@@ -9898,6 +9929,18 @@ void handleMainMenu(bool mode)
 						else if ( client_classes[clientnum] == CLASS_CONJURER )
 						{
 							steamAchievement("BARONY_ACH_TURN_UNDEAD");
+						}
+						else if ( client_classes[clientnum] == CLASS_SHAMAN )
+						{
+							steamAchievement("BARONY_ACH_MY_FINAL_FORM");
+						}
+						else if ( client_classes[clientnum] == CLASS_PUNISHER )
+						{
+							steamAchievement("BARONY_ACH_TIME_TO_SUFFER");
+						}
+						else if ( client_classes[clientnum] == CLASS_MACHINIST )
+						{
+							steamAchievement("BARONY_ACH_LIKE_CLOCKWORK");
 						}
 
 						if ( stats[clientnum] && stats[clientnum]->appearance == 0 )

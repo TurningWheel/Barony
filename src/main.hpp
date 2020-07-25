@@ -763,7 +763,7 @@ extern GLuint fbo_ren;
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
-static const int NUM_STEAM_STATISTICS = 43;
+static const int NUM_STEAM_STATISTICS = 48;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>

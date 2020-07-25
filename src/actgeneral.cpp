@@ -21,6 +21,7 @@
 #include "magic/magic.hpp"
 #include "interface/interface.hpp"
 #include "items.hpp"
+#include "scores.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -649,6 +650,22 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 		// look for comma or - symbol, e.g @power=15,16 or @power=15-20,16-21
 		if ( foundMapReference != std::string::npos )
 		{
+			if ( findTag.compare("@setvar=") == 0 )
+			{
+				std::string variableName = tagValue.substr(0, foundMapReference);
+				int value = std::stoi(tagValue.substr(foundMapReference + 1, tagValue.length() - foundMapReference));
+				if ( scriptVariables.find(variableName) != scriptVariables.end() )
+				{
+					scriptVariables[variableName] = value;
+				}
+				else
+				{
+					scriptVariables.insert(std::make_pair(variableName, value));
+				}
+				return 0;
+			}
+
+
 			std::string x_str = tagValue.substr(0, foundMapReference);
 			std::string y_str = tagValue.substr(foundMapReference + 1, tagValue.length() - foundMapReference);
 			int x1 = 0;
@@ -1649,6 +1666,19 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 						}
 					}
 				}
+			}
+		}
+		else if ( (*it).find("@setvar=") != std::string::npos )
+		{
+			std::string profTag = "@setvar=";
+			int result = textSourceProcessScriptTag(input, profTag);
+			if ( result != k_ScriptError )
+			{
+				achievementObserver.checkMapScriptsOnVariableSet();
+				/*for ( auto it = scriptVariables.begin(); it != scriptVariables.end(); ++it )
+				{
+					printlog("%s | %d", (*it).first.c_str(), (*it).second);
+				}*/
 			}
 		}
 		else if ( (*it).find("@addtochest=") != std::string::npos )

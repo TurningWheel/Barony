@@ -96,7 +96,12 @@ enum SteamStatIndexes : int
 	STEAM_STAT_GUERILLA_RADIO,
 	STEAM_STAT_FASCIST,
 	STEAM_STAT_ITS_A_LIVING,
-	STEAM_STAT_OVERCLOCKED
+	STEAM_STAT_OVERCLOCKED,
+	STEAM_STAT_BACK_TO_BASICS,
+	STEAM_STAT_EXTRA_CREDIT,
+	STEAM_STAT_EXTRA_CREDIT_LVLS,
+	STEAM_STAT_DIPLOMA,
+	STEAM_STAT_DIPLOMA_LVLS
 };
 
 static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] = 
@@ -143,7 +148,12 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_GUERILLA_RADIO", 20),        // STEAM_STAT_GUERILLA_RADIO
 	std::make_pair("BARONY_ACH_FASCIST", 50),				// STEAM_STAT_FASCIST,
 	std::make_pair("BARONY_ACH_ITS_A_LIVING", 50),			// STEAM_STAT_ITS_A_LIVING,
-	std::make_pair("BARONY_ACH_OVERCLOCKED", 600)			// STEAM_STAT_OVERCLOCKED
+	std::make_pair("BARONY_ACH_OVERCLOCKED", 600),			// STEAM_STAT_OVERCLOCKED
+	std::make_pair("BARONY_ACH_NONE", 1),					// STEAM_STAT_BACK_TO_BASICS,
+	std::make_pair("BARONY_ACH_EXTRA_CREDIT", 10),			// STEAM_STAT_EXTRA_CREDIT
+	std::make_pair("BARONY_ACH_NONE", 1023),				// STEAM_STAT_EXTRA_CREDIT_LVLS,
+	std::make_pair("BARONY_ACH_DIPLOMA", 10),				// STEAM_STAT_DIPLOMA
+	std::make_pair("BARONY_ACH_NONE", 1023)					// STEAM_STAT_DIPLOMA_LVLS,
 };
 
 typedef struct score_t
@@ -264,7 +274,10 @@ public:
 		BARONY_ACH_FLUTTERSHY,
 		BARONY_ACH_IF_YOU_LOVE_SOMETHING,
 		BARONY_ACH_COWBOY_FROM_HELL,
-		BARONY_ACH_TRASH_COMPACTOR
+		BARONY_ACH_TRASH_COMPACTOR,
+		BARONY_ACH_EXTRA_CREDIT,
+		BARONY_ACH_DIPLOMA,
+		BARONY_ACH_BACK_TO_BASICS
 	};
 	enum AchievementEvent : int
 	{
@@ -273,10 +286,59 @@ public:
 		REAL_BOY_SHOP,
 		FORUM_TROLL_BREAK_WALL,
 		FORUM_TROLL_RECRUIT_TROLL,
-		FORUM_TROLL_FEAR
+		FORUM_TROLL_FEAR,
+		EXTRA_CREDIT_SECRET,
+		DIPLOMA_LEVEL_COMPLETE,
+		BACK_TO_BASICS_LEVEL_COMPLETE
 	};
 	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
-
+	bool bIsAchievementAllowedDuringTutorial(std::string achievementStr)
+	{
+		if ( !achievementStr.compare("BARONY_ACH_TEACHABLE_MOMENT") )
+		{
+			return true;
+		}
+		if ( !achievementStr.compare("BARONY_ACH_MASTER") )
+		{
+			return true;
+		}
+		if ( !achievementStr.compare("BARONY_ACH_FAST_LEARNER") )
+		{
+			return true;
+		}
+		if ( !achievementStr.compare("BARONY_ACH_BACK_TO_BASICS") )
+		{
+			return true;
+		}
+		if ( !achievementStr.compare("BARONY_ACH_EXPELLED") )
+		{
+			return true;
+		}
+		if ( !achievementStr.compare("BARONY_ACH_EXTRA_CREDIT") )
+		{
+			return true;
+		}
+		if ( !achievementStr.compare("BARONY_ACH_DIPLOMA") )
+		{
+			return true;
+		}
+		return false;
+	}
+	bool bIsStatisticAllowedDuringTutorial(SteamStatIndexes statistic)
+	{
+		switch ( statistic )
+		{
+			case STEAM_STAT_EXTRA_CREDIT:
+			case STEAM_STAT_EXTRA_CREDIT_LVLS:
+			case STEAM_STAT_DIPLOMA:
+			case STEAM_STAT_DIPLOMA_LVLS:
+				return true;
+				break;
+			default:
+				return false;
+				break;
+		}
+	}
 	class PlayerAchievements
 	{
 	public:
@@ -318,6 +380,7 @@ public:
 	} playerAchievements[MAXPLAYERS];
 
 	void clearPlayerAchievementData();
+	void checkMapScriptsOnVariableSet();
 };
 extern AchievementObserver achievementObserver;
 

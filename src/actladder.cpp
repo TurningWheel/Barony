@@ -1112,6 +1112,8 @@ void actCustomPortal(Entity* my)
 					if ( mapname.find("Tutorial Hub") == std::string::npos
 						&& mapname.find("Tutorial ") != std::string::npos )
 					{
+						achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_DIPLOMA, AchievementObserver::DIPLOMA_LEVEL_COMPLETE);
+						achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_BACK_TO_BASICS, AchievementObserver::BACK_TO_BASICS_LEVEL_COMPLETE);
 						int number = stoi(mapname.substr(mapname.find("Tutorial ") + strlen("Tutorial "), 2));
 						auto& tutorialLevels = gameModeManager.Tutorial.levels;
 						if ( number >= 1 && number < tutorialLevels.size() )

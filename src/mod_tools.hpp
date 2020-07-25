@@ -2490,6 +2490,7 @@ public:
 		void startTutorial(std::string mapToSet);
 		static void buttonReturnToTutorialHub(button_t* my);
 		static void buttonRestartTrial(button_t* my);
+		const Uint32 getNumTutorialLevels() { return kNumTutorialLevels; }
 		void openGameoverWindow();
 
 		class Menu_t
