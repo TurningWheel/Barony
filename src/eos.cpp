@@ -99,7 +99,8 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 		EOSFuncs::logInfo("Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 
 		// load achievement data
-		if ( !EOS.bAchievementsLoaded ) {
+		if ( !EOS.bAchievementsLoaded )
+		{
 			EOS.loadAchievementData();
 		}
 	}
@@ -2307,7 +2308,7 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 
 	if ( data->ResultCode != EOS_EResult::EOS_Success )
 	{
-		logError("failed to load achievements");
+		logError("OnAchievementQueryComplete: Failed to load achievements");
 		return;
 	}
 
@@ -2360,6 +2361,8 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 	{
 		bool ach1 = achievementUnlocked(lhs.first.c_str());
 		bool ach2 = achievementUnlocked(rhs.first.c_str());
+		bool lhsAchIsHidden = (achievementHidden.find(lhs.first) != achievementHidden.end());
+		bool rhsAchIsHidden = (achievementHidden.find(rhs.first) != achievementHidden.end());
 		if ( ach1 && !ach2 )
 		{
 			return true;
@@ -2367,6 +2370,22 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 		else if ( !ach1 && ach2 )
 		{
 			return false;
+		}
+		else if ( !ach1 && !ach2 && (lhsAchIsHidden || rhsAchIsHidden) )
+		{
+			if ( lhsAchIsHidden && rhsAchIsHidden )
+			{
+				return lhs.second < rhs.second;
+			}
+			if ( !lhsAchIsHidden )
+			{
+				return true;
+			}
+			if ( !rhsAchIsHidden )
+			{
+				return false;
+			}
+			return lhs.second < rhs.second;
 		}
 		else
 		{
@@ -2376,7 +2395,7 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 	std::set<std::pair<std::string, std::string>, Comparator> sorted(achievementNames.begin(), achievementNames.end(), compFunctor);
 	achievementNamesSorted.swap(sorted);
 
-	logInfo("successfully loaded EOS achievements");
+	logInfo("Successfully loaded achievements");
 }
 
 void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data)
@@ -2387,7 +2406,7 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 
 	if ( data->ResultCode != EOS_EResult::EOS_Success )
 	{
-		logError("failed to load player achievement status");
+		logError("OnPlayerAchievementQueryComplete: Failed to load player achievement status");
 		return;
 	}
 
@@ -2406,36 +2425,32 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 		EOS_Achievements_PlayerAchievement* PlayerAchievement = NULL;
 
 		EOS_EResult CopyPlayerAchievementResult = EOS_Achievements_CopyPlayerAchievementByIndex(EOS.AchievementsHandle, &CopyOptions, &PlayerAchievement);
-		if ( CopyPlayerAchievementResult != EOS_EResult::EOS_Success )
+		if ( CopyPlayerAchievementResult == EOS_EResult::EOS_Success )
 		{
-			logError("CopyPlayerAchievement Failure!");
-			return;
-		}
-
-		if ( PlayerAchievement->UnlockTime != EOS_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKTIME_UNDEFINED )
-		{
-			size_t size = sizeof(char) * (strlen(PlayerAchievement->AchievementId) + 1);
-			char* ach = (char*)malloc(size);
-			strcpy(ach, PlayerAchievement->AchievementId);
-			node_t* node = list_AddNodeFirst(&steamAchievements);
-			node->element = ach;
-			node->size = size;
-			node->deconstructor = &defaultDeconstructor;
-
-			achievementUnlockTime.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->UnlockTime));
-		}
-		else
-		{
-			if ( PlayerAchievement->Progress > 0.0 )
+			if ( PlayerAchievement->UnlockTime != EOS_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKTIME_UNDEFINED )
 			{
-				achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->Progress));
+				size_t size = sizeof(char) * (strlen(PlayerAchievement->AchievementId) + 1);
+				char* ach = (char*)malloc(size);
+				strcpy(ach, PlayerAchievement->AchievementId);
+				node_t* node = list_AddNodeFirst(&steamAchievements);
+				node->element = ach;
+				node->size = size;
+				node->deconstructor = &defaultDeconstructor;
+
+				achievementUnlockTime.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->UnlockTime));
+			}
+			else
+			{
+				if ( PlayerAchievement->Progress > 0.0 )
+				{
+					achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->Progress));
+				}
 			}
 		}
-
 		EOS_Achievements_PlayerAchievement_Release(PlayerAchievement);
 	}
 
-	logInfo("successfully loaded EOS achievement player status");
+	logInfo("OnPlayerAchievementQueryComplete: success");
 }
 
 void EOSFuncs::OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data)
@@ -2443,24 +2458,27 @@ void EOSFuncs::OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackIn
 	assert(data != NULL);
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		logInfo("successfully ingested EOS stat");
+		logInfo("OnIngestStatComplete: success");
 	}
 	else
 	{
-		logError("failed to ingest EOS stat");
+		logError("OnIngestStatComplete: Callback failure: %d", static_cast<int>(data->ResultCode));
 	}
 }
 
 bool EOSFuncs::initAchievements()
 {
-	logInfo("initializing EOS achievements");
-	if ( !PlatformHandle ) {
+	logInfo("Initializing EOS achievements");
+	if ( !PlatformHandle ) 
+	{
 		return false;
 	}
-	if ( (AchievementsHandle = EOS_Platform_GetAchievementsInterface(PlatformHandle)) == nullptr ) {
+	if ( (AchievementsHandle = EOS_Platform_GetAchievementsInterface(PlatformHandle)) == nullptr ) 
+	{
 		return false;
 	}
-	if ( (StatsHandle = EOS_Platform_GetStatsInterface(PlatformHandle)) == nullptr ) {
+	if ( (StatsHandle = EOS_Platform_GetStatsInterface(PlatformHandle)) == nullptr ) 
+	{
 		return false;
 	}
 	return true;
@@ -2478,7 +2496,7 @@ void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchie
 	}
 	else
 	{
-		logInfo("EOSFuncs::OnUnlockAchievement() failure: %i", data->ResultCode);
+		logError("OnUnlockAchievement: Callback failure: %d", static_cast<int>(data->ResultCode));
 		return;
 	}
 }
@@ -2497,29 +2515,27 @@ void EOSFuncs::loadAchievementData()
 	achievementProgress.clear();
 	achievementUnlockTime.clear();
 
-	logInfo("loading EOS achievements");
-	{
-		EOS_Achievements_QueryDefinitionsOptions Options = {};
-		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
-		Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
-		Options.UserId = CurrentUserInfo.getProductUserIdHandle();
-		Options.HiddenAchievementsCount = 0;
-		Options.HiddenAchievementIds = nullptr;
-		EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
-	}
+	logInfo("Loading EOS achievements");
 
-	printlog("loading player achievement status");
-	{
-		EOS_Achievements_QueryPlayerAchievementsOptions Options = {};
-		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYPLAYERACHIEVEMENTS_API_LATEST;
-		Options.UserId = CurrentUserInfo.getProductUserIdHandle();
-		EOS_Achievements_QueryPlayerAchievements(AchievementsHandle, &Options, nullptr, OnPlayerAchievementQueryComplete);
-	}
+	EOS_Achievements_QueryDefinitionsOptions Options = {};
+	Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
+	Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+	Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+	Options.HiddenAchievementsCount = 0;
+	Options.HiddenAchievementIds = nullptr;
+	EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
+
+	EOS_Achievements_QueryPlayerAchievementsOptions PlayerAchievementOptions = {};
+	PlayerAchievementOptions.ApiVersion = EOS_ACHIEVEMENTS_QUERYPLAYERACHIEVEMENTS_API_LATEST;
+	PlayerAchievementOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
+	EOS_Achievements_QueryPlayerAchievements(AchievementsHandle, &PlayerAchievementOptions, nullptr, OnPlayerAchievementQueryComplete);
+
+	EOS.queryAllStats();
 }
 
 void EOSFuncs::unlockAchievement(const char* name)
 {
-	logInfo("unlocking EOS achievement '%s'", name);
+	//logInfo("unlocking EOS achievement '%s'", name);
 	EOS_Achievements_UnlockAchievementsOptions UnlockAchievementsOptions = {};
 	UnlockAchievementsOptions.ApiVersion = EOS_ACHIEVEMENTS_UNLOCKACHIEVEMENTS_API_LATEST;
 	UnlockAchievementsOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
@@ -2531,7 +2547,9 @@ void EOSFuncs::unlockAchievement(const char* name)
 
 void EOSFuncs::ingestStat(int stat_num, int value)
 {
-	logInfo("updating EOS stat '%s'", g_SteamStats[stat_num].m_pchStatName);
+	//logInfo("updating EOS stat '%s'", g_SteamStats[stat_num].m_pchStatName);
+
+	StatsHandle = EOS_Platform_GetStatsInterface(PlatformHandle);
 
 	EOS_Stats_IngestData StatsToIngest[1];
 	StatsToIngest[0].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
@@ -2544,6 +2562,106 @@ void EOSFuncs::ingestStat(int stat_num, int value)
 	Options.StatsCount = sizeof(StatsToIngest) / sizeof(StatsToIngest[0]);
 	Options.UserId = CurrentUserInfo.getProductUserIdHandle();
 	EOS_Stats_IngestStat(StatsHandle, &Options, nullptr, OnIngestStatComplete);
+}
+
+void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsCompleteCallbackInfo* data)
+{
+	if ( !data )
+	{
+		EOSFuncs::logError("OnQueryAllStatsCallback: null data");
+		return;
+	}
+	else if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+	
+		EOS.StatsHandle = EOS_Platform_GetStatsInterface(EOS.PlatformHandle);
+		EOS_Stats_GetStatCountOptions StatCountOptions = {};
+		StatCountOptions.ApiVersion = EOS_STATS_GETSTATCOUNT_API_LATEST;
+		StatCountOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+
+		Uint32 numStats = EOS_Stats_GetStatsCount(EOS.StatsHandle, &StatCountOptions);
+
+		EOSFuncs::logInfo("OnQueryAllStatsCallback: read %d stats", numStats);
+
+		EOS_Stats_CopyStatByIndexOptions CopyByIndexOptions = {};
+		CopyByIndexOptions.ApiVersion = EOS_STATS_COPYSTATBYINDEX_API_LATEST;
+		CopyByIndexOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+
+		EOS_Stats_Stat* copyStat = NULL;
+
+		for ( Uint32 i = 0; i < NUM_STEAM_STATISTICS; ++i )
+		{
+			g_SteamStats[i].m_iValue = 0;
+		}
+
+		for ( CopyByIndexOptions.StatIndex = 0; CopyByIndexOptions.StatIndex < numStats; ++CopyByIndexOptions.StatIndex )
+		{
+			EOS_EResult result = EOS_Stats_CopyStatByIndex(EOS.StatsHandle, &CopyByIndexOptions, &copyStat);
+			if ( result == EOS_EResult::EOS_Success && stat )
+			{
+				SteamStat_t* statLookup = nullptr;
+				if ( statLookup = EOS.getStatStructFromString(std::string(copyStat->Name)) )
+				{
+					statLookup->m_iValue = copyStat->Value;
+				}
+				EOSFuncs::logInfo("OnQueryAllStatsCallback: stat %s | %d", copyStat->Name, copyStat->Value);
+				EOS_Stats_Stat_Release(copyStat);
+			}
+		}
+	}
+	else
+	{
+		EOSFuncs::logError("OnQueryAllStatsCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
+	}
+}
+
+SteamStat_t* EOSFuncs::getStatStructFromString(const std::string& str)
+{
+	if ( !statMappings.size() )
+	{
+		EOSFuncs::logError("getStatStructFromString: Empty stat mappings");
+		return nullptr;
+	}
+
+	auto find = statMappings.find(str);
+	if ( find != statMappings.end() )
+	{
+		return (*find).second;
+	}
+	return nullptr;
+}
+
+void EOSFuncs::queryAllStats()
+{
+	if ( !statMappings.size() )
+	{
+		for ( Uint32 i = 0; i < NUM_STEAM_STATISTICS; ++i )
+		{
+			statMappings[g_SteamStats[i].m_pchStatName] = &g_SteamStats[i];
+		}
+	}
+
+	StatsHandle = EOS_Platform_GetStatsInterface(PlatformHandle);
+
+	// Query Player Stats
+	EOS_Stats_QueryStatsOptions StatsQueryOptions = {};
+	StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
+	StatsQueryOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
+
+	// Optional params
+	StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
+	StatsQueryOptions.EndTime = EOS_STATS_TIME_UNDEFINED;
+	
+	StatsQueryOptions.StatNamesCount = NUM_STEAM_STATISTICS;
+	StatsQueryOptions.StatNames = new const char*[NUM_STEAM_STATISTICS];
+	
+	for ( int i = 0; i < NUM_STEAM_STATISTICS; ++i )
+	{
+		StatsQueryOptions.StatNames[i] = g_SteamStats[i].m_pchStatName;
+	}
+
+	EOS_Stats_QueryStats(StatsHandle, &StatsQueryOptions, nullptr, OnQueryAllStatsCallback);
+	delete[] StatsQueryOptions.StatNames;
 }
 
 void EOSFuncs::showFriendsOverlay()

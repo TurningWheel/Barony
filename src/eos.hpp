@@ -26,6 +26,7 @@ class EOSFuncs
 {
 	bool bAchievementsLoaded = false;
 	std::atomic<int> achievementsLoading { 0 };
+	std::unordered_map<std::string, SteamStat_t*> statMappings;
 public:
 	std::string ProductId = "";
 	std::string SandboxId = "";
@@ -224,6 +225,7 @@ public:
 	static void EOS_CALL OnAchievementQueryComplete(const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* data);
 	static void EOS_CALL OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data);
 	static void EOS_CALL OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data);
+	static void EOS_CALL OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsCompleteCallbackInfo* data);
 
 	class FriendInfo_t {
 	public:
@@ -706,6 +708,8 @@ public:
 	void unlockAchievement(const char* name);
 	void loadAchievementData();
 	void ingestStat(int stat_num, int value);
+	void queryAllStats();
+	SteamStat_t* getStatStructFromString(const std::string& str);
 	static void logInfo(const char* str, ...)
 	{
 		char newstr[1024] = { 0 };
