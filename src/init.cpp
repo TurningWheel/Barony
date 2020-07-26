@@ -2178,7 +2178,8 @@ int deinitApp()
 	}
 
 	// free achievement images
-	for (auto& item : achievementImages) {
+	for (auto& item : achievementImages) 
+	{
 		SDL_FreeSurface(item.second);
 	}
 	achievementImages.clear();

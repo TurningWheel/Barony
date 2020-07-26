@@ -2345,9 +2345,16 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 
 		if ( AchievementDef->UnlockedDescription )
 		{
-			achievementDesc.emplace(std::make_pair(
+			auto& result = achievementDesc.emplace(std::make_pair(
 				std::string(AchievementDef->AchievementId),
 				std::string(AchievementDef->UnlockedDescription)));
+			if ( result.second == true ) // insertion success
+			{
+				if ( result.first->second.back() != '.' ) // add punctuation if missing.
+				{
+					result.first->second += '.';
+				}
+			}
 		}
 
 		// Release Achievement Definition
@@ -2441,9 +2448,16 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 			}
 			else
 			{
-				if ( PlayerAchievement->Progress > 0.0 )
+				if ( PlayerAchievement->StatInfoCount > 0 )
 				{
-					achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->Progress));
+					for ( int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum )
+					{
+						if ( steamStatAchStringsAndMaxVals[statNum].first.compare(PlayerAchievement->AchievementId) == 0 )
+						{
+							achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), statNum));
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -2487,8 +2501,8 @@ bool EOSFuncs::initAchievements()
 void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data)
 {
 	assert(data != NULL);
-	int64_t t = (int64_t)time(NULL);
-	achievementUnlockTime.emplace(std::make_pair(std::string((const char*)data->ClientData), t));
+	//int64_t t = (int64_t)time(NULL);
+	//achievementUnlockTime.emplace(std::make_pair(std::string((const char*)data->ClientData), t));
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
 		logInfo("EOS achievement successfully unlocked");

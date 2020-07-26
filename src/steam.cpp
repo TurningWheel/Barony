@@ -1184,7 +1184,7 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 
 void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 {
-#ifndef STEAMWORKS
+#if (!defined STEAMWORKS && !defined USE_EOS)
 	return;
 #else
 
@@ -1225,8 +1225,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 5 == 0) )
 					{
+#ifdef STEAMWORKS
 						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 						{
 							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
@@ -1247,8 +1249,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 4 == 0) )
 					{
+#ifdef STEAMWORKS
 						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 						{
 							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
@@ -1260,8 +1264,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_ALTER_EGO:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
+#ifdef STEAMWORKS
 					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 					{
 						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
@@ -1277,8 +1283,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_SUPER_SHREDDER:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
+#ifdef STEAMWORKS
 					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 					{
 						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
@@ -1289,8 +1297,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_OVERCLOCKED:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
+#ifdef STEAMWORKS
 					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 					{
 						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
@@ -1303,8 +1313,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				{
 					if ( iVal == 1 || iVal == 5 || (iVal > 0 && iVal % 10 == 0) || (iVal > 0 && iVal % 25 == 0) )
 					{
+#ifdef STEAMWORKS
 						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 						{
 							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
@@ -1319,8 +1331,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 2 == 0) )
 					{
+#ifdef STEAMWORKS
 						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 						{
 							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
@@ -1332,8 +1346,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_EXTRA_CREDIT:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
+#ifdef STEAMWORKS
 					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 					{
 						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
