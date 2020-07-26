@@ -61,10 +61,10 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is full.");
 			break;
 #ifdef USE_EOS
-		case EOS_EResult::EOS_NotFound:
+		case static_cast<int>(EOS_EResult::EOS_NotFound):
 			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby no longer exists.");
 			break;
-		case EOS_EResult::EOS_Lobby_TooManyPlayers:
+		case static_cast<int>(EOS_EResult::EOS_Lobby_TooManyPlayers):
 			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is full.");
 			break;
 #endif

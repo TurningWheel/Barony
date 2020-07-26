@@ -107,23 +107,23 @@ public:
 	{
 		posy = y;
 	}
-	void setMainText(std::string& text)
+	void setMainText(const std::string& text)
 	{
 		mainCardText = text;
 	}
-	void setSecondaryText(std::string& text)
+	void setSecondaryText(const std::string& text)
 	{
 		secondaryCardText = text;
 	}
-	void setHeaderText(std::string& text)
+	void setHeaderText(const std::string& text)
 	{
 		headerCardText = text;
 	}
-	void setDisplayedText(std::string& text)
+	void setDisplayedText(const std::string& text)
 	{
 		displayedText = text;
 	}
-	void setActionText(std::string& text)
+	void setActionText(const std::string& text)
 	{
 		actionText = text;
 	}
