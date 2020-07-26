@@ -1674,19 +1674,20 @@ Press 'Okay' to return to the main menu.#
      Are you sure you
        want to quit?#
 1129
-      Are you sure you
-    want to end this game?
-    
- Your singleplayer save file 
-       will be deleted.#
+            Are you sure you
+         want to end this game?
+
+       As you have perished, your
+       save file will be deleted.#
 1130
           Are you sure you
      want to restart this game?#
 1131
-       Do you wish to save before
-          you quit to desktop?
-      Progress will be saved up to
-          the last checkpoint.#
+         Are you sure you want
+          to quit to desktop?
+
+     Progress has been saved at the
+       start of the current level.#
 1132 Requesting lobby list...#
 1133 You have died. Gameover.
 
@@ -1832,7 +1833,7 @@ None#
 1346 Field of View (FOV)#
 1347 Gamma#
 
-1348 Game Volume#
+1348 General Sound Volume#
 1349 Music Volume#
 
 1350 Click to rebind. ESC cancels.#
@@ -3830,8 +3831,8 @@ IDENTICAL MOD LISTS LOADED!#
       Are you sure you want to disconnect
           and return to the main menu?
     
-    Your multiplayer progress will be saved
-           up to the last checkpoint.
+    Your multiplayer progress has been saved
+        at the start of the current level.
     
  NOTE: 
     If your current party members advance to 
@@ -3842,8 +3843,8 @@ IDENTICAL MOD LISTS LOADED!#
       Are you sure you want to disconnect
           and return to the main menu?
     
-    Your multiplayer progress will be saved
-           up to the last checkpoint.
+    Your multiplayer progress has been saved
+        at the start of the current level.
     
  NOTE: 
    This will disconnect all party members and
@@ -4055,7 +4056,8 @@ current food situation will last.#
 3198 But wait! Your summoned allies imbue you with new life!#
 
 3199 Locked - Myths & Outcasts DLC Required!#
-3200 Locked - Myths & Outcasts DLC Required! Left click to view on the store page in Steam overlay.#
+3200 Locked - Myths & Outcasts DLC Required!
+Left click to view on the store page.#
 
 3201 Bleh! Your body rejects the solids in your stomach!#
 3202 What a horrible night to have a curse...#
@@ -5783,17 +5785,16 @@ before we deal!#
 before we deal!#
 3916 Unhand thy lunch
 before we deal!#
-3917 Locked - Legends & Pariahs DLC Required! Left click to view on the store page in Steam overlay.#
+3917 Locked - Legends & Pariahs DLC Required!
+Left click to view on the store page.#
 3918 disable mouse rotation speed limit#
 3919 Return To Main Menu#
 3920
-       Do you wish to save before
-       returning to the main menu? 
-      Progress will be saved up to
-          the last checkpoint.
+        Are you sure to want to
+        return to the main menu?
 
-        Selecting No will delete
-      your singleplayer save file!#
+     Progress has been saved at the
+       start of the current level.#
 3921 Ranger-mode active, only non-melee weapons are allowed to attack!#
 3922 Ranger-mode deactivated, all weapons permitted.#
 3923 This weapon is disabled in Ranger-mode!#
@@ -5858,4 +5859,78 @@ Changing this gameflag is disabled in current game mode.#
    reset the Hall of Trials
     to its original state?#
 3971 Achievements#
+3972 Ambient Sound Volume#
+3973 Environment Sound Volume#
+3974 The boulder cannot be moved that way.#
+3975 
+
+ Enabling Crossplay allows joining and hosting of multiplayer lobbies
+  between different distributions of Barony without port forwarding.
+
+         For more information, click "About Crossplay" below.
+
+
+      By clicking accept, you agree to share your public Steam ID 
+    and display name with Barony and associated Crossplay services.#
+3976 Accept and Enable Crossplay#
+3977 Cancel Setup#
+3978 View Privacy Policy#
+3979                       Crossplay First-Time Setup#
+3980 About Crossplay
+
+           Barony uses Epic Online Services to facilitate Crossplay,
+           and will create a unique Crossplay ID within Barony that 
+              corresponds to your public facing Steam account ID.
+
+
+      Your public Steam account ID and display name will be shared with
+    the service and other players when using Crossplay features in Barony.
+      No third party account is required or created when using Crossplay.
+
+    Click "View Privacy Policy" below to see how Barony handles your data.#
+3981 
+                        Services In Use For Crossplay
+
+
+
+
+                            Data That You Provide#
+3982 Return to Setup#
+3983 About Crossplay#
+3984 https://www.epicgames.com/store/en-US/product/barony/myths-and-outcasts#
+3985 https://www.epicgames.com/store/en-US/product/barony/legends-and-pariahs#
+3986
+       Are you sure you want to disconnect
+           and return to the main menu?
+    
+     As the rest of your party has perished,
+  save data for this session has been deleted.
+
+ NOTE: 
+     This will disconnect all party members.#
+3987 Quit To Desktop#
+3988
+         Are you sure you want
+          to quit to desktop?
+
+       As you have perished, your
+       save file will be deleted.#
+3989
+              Are you sure you want
+               to quit to desktop?
+
+    As the rest of your party has perished,
+  save data for this session has been deleted.#
+3990
+            Are you sure you
+         want to end this game?
+
+    Saving on this floor is disabled,
+   exiting will delete your save file.#
+3991
+            Are you sure you
+        want to quit to desktop?
+
+    Saving on this floor is disabled,
+   exiting will delete your save file.#
 3999 end#
