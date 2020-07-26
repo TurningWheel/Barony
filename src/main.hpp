@@ -28,6 +28,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <functional>
 #include "Config.hpp"
 #include "physfs.h"
 
@@ -646,6 +647,10 @@ extern std::unordered_map<std::string, SDL_Surface*> achievementImages;
 extern std::unordered_map<std::string, std::string> achievementNames;
 extern std::unordered_map<std::string, std::string> achievementDesc;
 extern std::unordered_set<std::string> achievementHidden;
+typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::string, std::string>)> Comparator;
+extern std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
+extern std::unordered_map<std::string, double> achievementProgress;
+extern std::unordered_map<std::string, int64_t> achievementUnlockTime;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
 extern bool useModelCache;
