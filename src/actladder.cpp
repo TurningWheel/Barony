@@ -1129,6 +1129,7 @@ void actCustomPortal(Entity* my)
 						}
 						completionTime = 0;
 						gameModeManager.Tutorial.writeToDocument();
+						achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_FAST_LEARNER, AchievementObserver::FAST_LEARNER_TIME_UPDATE);
 					}
 					else if ( mapname.find("Tutorial Hub") != std::string::npos )
 					{

@@ -277,7 +277,9 @@ public:
 		BARONY_ACH_TRASH_COMPACTOR,
 		BARONY_ACH_EXTRA_CREDIT,
 		BARONY_ACH_DIPLOMA,
-		BARONY_ACH_BACK_TO_BASICS
+		BARONY_ACH_BACK_TO_BASICS,
+		BARONY_ACH_FAST_LEARNER,
+		BARONY_ACH_MASTER
 	};
 	enum AchievementEvent : int
 	{
@@ -289,7 +291,8 @@ public:
 		FORUM_TROLL_FEAR,
 		EXTRA_CREDIT_SECRET,
 		DIPLOMA_LEVEL_COMPLETE,
-		BACK_TO_BASICS_LEVEL_COMPLETE
+		BACK_TO_BASICS_LEVEL_COMPLETE,
+		FAST_LEARNER_TIME_UPDATE
 	};
 	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
 	bool bIsAchievementAllowedDuringTutorial(std::string achievementStr)

@@ -1637,9 +1637,9 @@ void handleMainMenu(bool mode)
 				if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
 				{
 					// disabled for current gamemode
-					int dummy = 0;
-					TTF_SizeUTF8(ttf8, language[3963], &w, &dummy);
-					ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3963]);
+					// int dummy = 0;
+					// TTF_SizeUTF8(ttf8, language[3963], &w, &dummy);
+					// ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3963]);
 				}
 				else
 				{

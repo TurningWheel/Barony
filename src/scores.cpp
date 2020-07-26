@@ -4639,7 +4639,15 @@ void AchievementObserver::checkMapScriptsOnVariableSet()
 		size_t found = (*it).first.find("$ACH_TUTORIAL_SECRET");
 		if ( found != std::string::npos )
 		{
-			updatePlayerAchievement(clientnum, BARONY_ACH_EXTRA_CREDIT, EXTRA_CREDIT_SECRET);
+			std::string mapname = map.name;
+			if ( mapname.find("Tutorial Hub") != std::string::npos )
+			{
+				updatePlayerAchievement(clientnum, BARONY_ACH_MASTER, EXTRA_CREDIT_SECRET);
+			}
+			else
+			{
+				updatePlayerAchievement(clientnum, BARONY_ACH_EXTRA_CREDIT, EXTRA_CREDIT_SECRET);
+			}
 		}
 	}
 }
@@ -4651,7 +4659,54 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 		case BARONY_ACH_BACK_TO_BASICS:
 			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 			{
-				if ( g_SteamStats[STEAM_STAT_BACK_TO_BASICS].m_iValue == 1 )
+				bool alternateUnlock = false;
+#ifdef STEAMWORKS
+				if ( SteamUser()->BLoggedOn() )
+				{
+					SteamUserStats()->GetAchievement("BARONY_ACH_LICH_HUNTER", &alternateUnlock);
+				}
+#endif
+				if ( g_SteamStats[STEAM_STAT_BACK_TO_BASICS].m_iValue == 1 || alternateUnlock )
+				{
+					awardAchievement(player, achievement);
+				}
+			}
+			break;
+		case BARONY_ACH_FAST_LEARNER:
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				if ( g_SteamStats[STEAM_STAT_DIPLOMA].m_iValue == 10 
+					&& gameModeManager.Tutorial.levels.size() == (gameModeManager.Tutorial.getNumTutorialLevels() + 1) ) // include the + 1 for hub
+				{
+					Uint32 totalTime = 0;
+					bool allLevelsCompleted = true;
+					for ( auto it = gameModeManager.Tutorial.levels.begin(); it != gameModeManager.Tutorial.levels.end(); ++it )
+					{
+						if ( it->completionTime > 0 )
+						{
+							totalTime += it->completionTime;
+						}
+						else
+						{
+							if ( it->filename.compare("tutorial_hub") != 0 )
+							{
+								allLevelsCompleted = false;
+								break;
+							}
+						}
+					}
+					if ( allLevelsCompleted && totalTime < TICKS_PER_SECOND * 20 * 60 )
+					{
+						awardAchievement(player, achievement);
+					}
+				}
+			}
+			break;
+		case BARONY_ACH_MASTER:
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				std::string mapname = map.name;
+				if ( mapname.find("Tutorial Hub") != std::string::npos )
 				{
 					awardAchievement(player, achievement);
 				}
@@ -4852,6 +4907,12 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 {
 	switch ( achievement )
 	{
+		case BARONY_ACH_MASTER:
+			steamAchievementClient(player, "BARONY_ACH_MASTER");
+			break;
+		case BARONY_ACH_FAST_LEARNER:
+			steamAchievementClient(player, "BARONY_ACH_FAST_LEARNER");
+			break;
 		case BARONY_ACH_BACK_TO_BASICS:
 			steamAchievementClient(player, "BARONY_ACH_BACK_TO_BASICS");
 			break;

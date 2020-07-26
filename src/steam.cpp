@@ -1083,7 +1083,11 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_EXTRA_CREDIT:
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
-					if ( oldValue == g_SteamStats[statisticNum].m_iValue )
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == g_SteamStats[statisticNum].m_iValue )
 					{
 						indicateProgress = false;
 					}
@@ -1106,7 +1110,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	g_SteamStatistics->StoreStats(); // update server's stat counter.
 #else
 #ifdef USE_EOS
-	EOS.ingestStat(statisticNum, value);
+	EOS.ingestStat(statisticNum, g_SteamStats[statisticNum].m_iValue);
 #endif
 #endif
 	if ( indicateProgress )
