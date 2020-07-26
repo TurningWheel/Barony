@@ -11793,9 +11793,9 @@ void openAchievementsWindow()
 	suby1 = yres / 2 - 280;
 	suby2 = yres / 2 + 280;
 	strcpy(subtext, language[3971]);
-
+#ifdef USE_EOS
 	EOS.loadAchievementData();
-
+#endif
 	// close button
 	{
 		button_t* button = newButton();
