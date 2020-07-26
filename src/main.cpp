@@ -97,7 +97,12 @@ SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 	{ 40, STEAM_STAT_INT, "STAT_GUERILLA_RADIO" },
 	{ 41, STEAM_STAT_INT, "STAT_FASCIST" },
 	{ 42, STEAM_STAT_INT, "STAT_ITS_A_LIVING" },
-	{ 43, STEAM_STAT_INT, "STAT_OVERCLOCKED" }
+	{ 43, STEAM_STAT_INT, "STAT_OVERCLOCKED" },
+	{ 44, STEAM_STAT_INT, "STAT_BACK_TO_BASICS" },
+	{ 45, STEAM_STAT_INT, "STAT_EXTRA_CREDIT" },
+	{ 46, STEAM_STAT_INT, "STAT_EXTRA_CREDIT_LVLS" },
+	{ 47, STEAM_STAT_INT, "STAT_DIPLOMA" },
+	{ 48, STEAM_STAT_INT, "STAT_DIPLOMA_LVLS" }
 
 };
 SteamGlobalStat_t g_SteamGlobalStats[2] =
@@ -264,6 +269,9 @@ std::unordered_map<std::string, SDL_Surface*> achievementImages;
 std::unordered_map<std::string, std::string> achievementNames;
 std::unordered_map<std::string, std::string> achievementDesc;
 std::unordered_set<std::string> achievementHidden;
+std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
+std::unordered_map<std::string, double> achievementProgress;
+std::unordered_map<std::string, int64_t> achievementUnlockTime;
 Uint32 imgref = 1, vboref = 1;
 const Uint32 ttfTextCacheLimit = 9000;
 GLuint* texid = nullptr;

@@ -842,7 +842,7 @@ Counts down effect timers and toggles effects whose timers reach zero
 void Entity::effectTimes()
 {
 	Stat* myStats = this->getStats();
-	int player, c;
+	int player;
 	spell_t* spell = NULL;
 	node_t* node = NULL;
 	int count = 0;
@@ -910,9 +910,9 @@ void Entity::effectTimes()
 				invisibility_hijacked = spell;
 				if ( !myStats->EFFECTS[EFF_INVISIBLE] )
 				{
-					for ( c = 0; c < numplayers; ++c )
+					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
-						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
 							messagePlayer(c, language[591]);    //If cure ailments or somesuch bombs the status effects.
 						}
@@ -935,9 +935,9 @@ void Entity::effectTimes()
 				levitation_hijacked = spell;
 				if ( !myStats->EFFECTS[EFF_LEVITATING] )
 				{
-					for ( c = 0; c < numplayers; ++c )
+					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
-						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
 							messagePlayer(c, language[592]);
 						}
@@ -960,9 +960,9 @@ void Entity::effectTimes()
 				reflectMagic_hijacked = spell;
 				if ( !myStats->EFFECTS[EFF_MAGICREFLECT] )
 				{
-					for ( c = 0; c < numplayers; ++c )
+					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
-						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
 							messagePlayer(c, language[2446]);
 						}
@@ -985,9 +985,9 @@ void Entity::effectTimes()
 				amplifyMagic_hijacked = spell;
 				if ( !myStats->EFFECTS[EFF_MAGICAMPLIFY] )
 				{
-					for ( c = 0; c < numplayers; ++c )
+					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
-						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
 							messagePlayer(c, language[3441]);
 						}
@@ -1010,9 +1010,9 @@ void Entity::effectTimes()
 				vampiricAura_hijacked = spell;
 				if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] )
 				{
-					for ( c = 0; c < numplayers; ++c )
+					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
-						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
 							messagePlayer(c, language[2447]);
 						}
@@ -1066,7 +1066,7 @@ void Entity::effectTimes()
 	bool updateClient = false;
 	spell_t* unsustainSpell = nullptr;
 
-	for ( c = 0; c < NUMEFFECTS; c++ )
+	for ( int c = 0; c < NUMEFFECTS; c++ )
 	{
 		if ( myStats->EFFECTS_TIMERS[c] > 0 )
 		{
@@ -2151,10 +2151,9 @@ void Entity::setHP(int amount)
 		entitystats->HP = 1; //Buddhas never die!
 	}
 
-	int i = 0;
 	if ( multiplayer == SERVER )
 	{
-		for ( i = 1; i < numplayers; i++ )
+		for ( int i = 1; i < MAXPLAYERS; i++ )
 		{
 			if ( players[i] && this == players[i]->entity )
 			{
@@ -2245,12 +2244,11 @@ void Entity::setMP(int amount, bool updateClients)
 	}
 	entitystats->MP = std::min(std::max(0, amount), entitystats->MAXMP);
 
-	int i = 0;
 	if ( multiplayer == SERVER && updateClients )
 	{
-		for ( i = 1; i < numplayers; i++ )
+		for ( int i = 1; i < MAXPLAYERS; i++ )
 		{
-			if ( this == players[i]->entity )
+			if ( players[i] && this == players[i]->entity )
 			{
 				// tell the client its MP just changed
 				strcpy((char*)net_packet->data, "UPMP");
@@ -2339,10 +2337,9 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 	int overdrawn = 0;
 	entitystats->MP -= amount;
 	int player = -1;
-	int i = 0;
-	for ( i = 0; i < numplayers; ++i )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( this == players[i]->entity )
+		if ( players[i] && this == players[i]->entity )
 		{
 			player = i; //Set the player.
 		}
@@ -2376,9 +2373,9 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 	if ( multiplayer == SERVER )
 	{
 		//First check if the entity is the player.
-		for ( i = 1; i < numplayers; ++i )
+		for ( int i = 1; i < MAXPLAYERS; ++i )
 		{
-			if ( this == players[i]->entity )
+			if ( players[i] && this == players[i]->entity )
 			{
 				//It is. Tell the client its MP just changed.
 				strcpy((char*)net_packet->data, "UPMP");
@@ -12220,9 +12217,9 @@ int getStatForProficiency(int skill)
 
 int Entity::isEntityPlayer() const
 {
-	for ( int i = 0; i < numplayers; ++i )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( this == players[i]->entity )
+		if ( players[i] && this == players[i]->entity )
 		{
 			return i;
 		}
@@ -13995,7 +13992,7 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 		return;
 	}
 
-	for ( int player = 1; player < numplayers; ++player )
+	for ( int player = 1; player < MAXPLAYERS; ++player )
 	{
 		if ( client_disconnected[player] )
 		{
@@ -14106,9 +14103,9 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 	myStats->EFFECTS_TIMERS[effect] = duration;
 
 	int player = -1;
-	for ( int i = 0; i < numplayers; ++i )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( players[i]->entity == this )
+		if ( players[i] && players[i]->entity == this )
 		{
 			player = i;
 			break;

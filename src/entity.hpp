@@ -1157,7 +1157,8 @@ public:
 		TRIGGER_ATTACHED_EXISTS,
 		TRIGGER_ATTACHED_INVIS,
 		TRIGGER_ATTACHED_VISIBLE,
-		TRIGGER_ATTACHED_ALWAYS
+		TRIGGER_ATTACHED_ALWAYS,
+		TRIGGER_ON_VARIABLE
 	};
 	/*enum TagAvailableToEntity : int
 	{
@@ -1235,5 +1236,6 @@ public:
 		}
 		return entities;
 	}
+	std::unordered_map<std::string, int> scriptVariables;
 };
 extern TextSourceScript textSourceScript;

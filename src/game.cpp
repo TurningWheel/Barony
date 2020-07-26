@@ -1236,6 +1236,7 @@ void gameLogic(void)
 					numplayers = 0;
 
 					gameplayCustomManager.readFromFile();
+					textSourceScript.scriptVariables.clear();
 
 					int checkMapHash = -1;
 					int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
@@ -1283,6 +1284,14 @@ void gameLogic(void)
 					if ( secretlevel && currentlevel == 8 )
 					{
 						steamAchievement("BARONY_ACH_TRICKS_AND_TRAPS");
+					}
+					// flag setting we've reached the lich
+					if ( !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Sanctum", 7) )
+					{
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							steamStatisticUpdateClient(c, STEAM_STAT_BACK_TO_BASICS, STEAM_STAT_INT, 1);
+						}
 					}
 
 					if ( !secretlevel )

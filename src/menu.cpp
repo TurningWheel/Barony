@@ -805,7 +805,10 @@ void handleInGamePauseMenu()
 		ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
 	}
 	char* endgameText = NULL;
+	char* quitgameText = language[1313];
 	bool singleplayerAliveEndGameAndSave = false;
+	bool singleplayerBossLevelDisableSaveOnExit = false;
+	bool multiplayerAliveEndGameAndSave = false;
 	if ( multiplayer == SINGLE )
 	{
 		if ( stats[clientnum] && stats[clientnum]->HP > 0 )
@@ -818,13 +821,31 @@ void handleInGamePauseMenu()
 			{
 				// boss floor, no save scumming easily!
 				singleplayerAliveEndGameAndSave = false;
+				singleplayerBossLevelDisableSaveOnExit = true;
 				endgameText = language[1310];
+				quitgameText = language[3987];
 			}
 		}
 		else
 		{
 			endgameText = language[1310];
+			quitgameText = language[3987];
 			singleplayerAliveEndGameAndSave = false;
+		}
+	}
+	else if ( multiplayer == SERVER )
+	{
+		endgameText = language[1310];
+		quitgameText = language[3987];
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] && stats[i] && stats[i]->HP > 0 )
+			{
+				multiplayerAliveEndGameAndSave = true;
+				quitgameText = language[1313];
+				endgameText = language[3019];
+				break;
+			}
 		}
 	}
 	else
@@ -859,8 +880,8 @@ void handleInGamePauseMenu()
 					strcpy(subtext, language[3920]);
 					subx1 = xres / 2 - 188;
 					subx2 = xres / 2 + 188;
-					suby1 = yres / 2 - 92;
-					suby2 = yres / 2 + 92;
+					suby1 = yres / 2 - 64;
+					suby2 = yres / 2 + 64;
 
 					// add a cancel button
 					button_t* button = newButton();
@@ -875,7 +896,16 @@ void handleInGamePauseMenu()
 				}
 				else
 				{
-					strcpy(subtext, language[1129]);
+					subx1 = xres / 2 - 188;
+					subx2 = xres / 2 + 188;
+					if ( singleplayerBossLevelDisableSaveOnExit )
+					{
+						strcpy(subtext, language[3990]);
+					}
+					else
+					{
+						strcpy(subtext, language[1129]);
+					}
 				}
 			}
 			else
@@ -884,9 +914,18 @@ void handleInGamePauseMenu()
 				subx2 = xres / 2 + 224;
 				if ( multiplayer == SERVER )
 				{
-					suby1 = yres / 2 - 100;
-					suby2 = yres / 2 + 100;
-					strcpy(subtext, language[3021]);
+					if ( multiplayerAliveEndGameAndSave )
+					{
+						suby1 = yres / 2 - 100;
+						suby2 = yres / 2 + 100;
+						strcpy(subtext, language[3021]);
+					}
+					else
+					{
+						suby1 = yres / 2 - 90;
+						suby2 = yres / 2 + 90;
+						strcpy(subtext, language[3986]);
+					}
 				}
 				else if ( multiplayer == CLIENT )
 				{
@@ -936,24 +975,23 @@ void handleInGamePauseMenu()
 			button->key = SDL_SCANCODE_RETURN;
 			button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
-			// no button
-			button = newButton();
-			strcpy(button->label, language[1315]);
-			button->x = subx2 - strlen(language[1315]) * 12 - 16;
-			button->y = suby2 - 28;
-			button->sizex = strlen(language[1315]) * 12 + 8;
-			button->sizey = 20;
 			if ( multiplayer == SINGLE && singleplayerAliveEndGameAndSave )
 			{
-				button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-				button->action = &buttonEndGameConfirm;
+				// noop - button created earlier.
 			}
 			else
 			{
+				// cancel button
+				button = newButton();
+				strcpy(button->label, language[1316]);
+				button->x = subx2 - strlen(language[1316]) * 12 - 16;
+				button->y = suby2 - 28;
+				button->sizex = strlen(language[1316]) * 12 + 8;
+				button->sizey = 20;
 				button->action = &buttonCloseSubwindow;
+				button->visible = 1;
+				button->focused = 1;
 			}
-			button->visible = 1;
-			button->focused = 1;
 		}
 	}
 	else
@@ -1035,11 +1073,11 @@ void handleInGamePauseMenu()
 			ttfPrintText(ttf16, 50, yres / 4 + 152, language[1312]);
 		}
 	}
-	if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (multiplayer != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (multiplayer != CLIENT)) || (menuselect == 4 + (multiplayer != CLIENT))) && subwindow == 0 && introstage == 1 )
+	if ( ((omousex >= 50 && omousex < 50 + strlen(quitgameText) * 18 && omousey >= yres / 4 + 152 + 24 * (multiplayer != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (multiplayer != CLIENT)) || (menuselect == 4 + (multiplayer != CLIENT))) && subwindow == 0 && introstage == 1 )
 	{
 		menuselect = 4 + (multiplayer != CLIENT);
 		// save & quit
-		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, language[1313]);
+		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, quitgameText);
 		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -1057,6 +1095,31 @@ void handleInGamePauseMenu()
 			suby1 = yres / 2 - 64;
 			suby2 = yres / 2 + 64;
 			strcpy(subtext, language[1131]);
+			if ( multiplayer == SINGLE )
+			{
+				if ( !singleplayerAliveEndGameAndSave )
+				{
+					if ( singleplayerBossLevelDisableSaveOnExit )
+					{
+						strcpy(subtext, language[3991]);
+					}
+					else
+					{
+						strcpy(subtext, language[3988]);
+					}
+				}
+			}
+			else if ( multiplayer == SERVER )
+			{
+				if ( !multiplayerAliveEndGameAndSave )
+				{
+					subx1 = xres / 2 - 224;
+					subx2 = xres / 2 + 224;
+					suby1 = yres / 2 - 64;
+					suby2 = yres / 2 + 64;
+					strcpy(subtext, language[3989]);
+				}
+			}
 
 			// yes button
 			button_t* button = newButton();
@@ -1071,16 +1134,16 @@ void handleInGamePauseMenu()
 			button->key = SDL_SCANCODE_RETURN;
 			button->joykey = joyimpulses[INJOY_MENU_NEXT]; //TODO: Select which button to activate via dpad.
 
-															// no button
-			button = newButton();
-			strcpy(button->label, language[1315]);
-			button->sizex = strlen(language[1315]) * 12 + 8;
-			button->sizey = 20;
-			button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-			button->y = suby2 - 28;
-			button->action = &buttonQuitNoSaveConfirm;
-			button->visible = 1;
-			button->focused = 1;
+			// no button
+			// button = newButton();
+			// strcpy(button->label, language[1315]);
+			// button->sizex = strlen(language[1315]) * 12 + 8;
+			// button->sizey = 20;
+			// button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+			// button->y = suby2 - 28;
+			// button->action = &buttonQuitNoSaveConfirm;
+			// button->visible = 1;
+			// button->focused = 1;
 
 			// cancel button
 			button = newButton();
@@ -1109,7 +1172,7 @@ void handleInGamePauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), language[1313]);
+		ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), quitgameText);
 	}
 }
 
@@ -1445,6 +1508,19 @@ void handleMainMenu(bool mode)
 				if ( ticks % 50 == 0 )
 				{
 					UIToastNotificationManager.createCommunityNotification();
+				}
+
+				// upgrade steam achievement for existing hunters
+				if ( ticks % 250 == 0 )
+				{
+					bool unlocked = false;
+					if ( SteamUserStats()->GetAchievement("BARONY_ACH_GUDIPARIAN_BAZI", &unlocked) )
+					{
+						if ( unlocked )
+						{
+							steamAchievement("BARONY_ACH_RANGER_DANGER");
+						}
+					}
 				}
 			}
 		}
@@ -2781,12 +2857,14 @@ void handleMainMenu(bool mode)
 #if (defined STEAMWORKS || defined USE_EOS)
 								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
 								{
+									tooltip.h = TTF12_HEIGHT * 2 + 8;
 									tooltip.w = longestline(language[3917]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
 									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3917]);
 								}
 								else
 								{
+									tooltip.h = TTF12_HEIGHT * 2 + 8;
 									tooltip.w = longestline(language[3200]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
 									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3200]);
@@ -2806,7 +2884,7 @@ void handleMainMenu(bool mode)
 								{
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
-										openURLTryWithOverlay(language[3984]);
+										openURLTryWithOverlay(language[3985]);
 										mousestatus[SDL_BUTTON_LEFT] = 0;
 									}
 								}
@@ -2814,7 +2892,7 @@ void handleMainMenu(bool mode)
 								{
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
-										openURLTryWithOverlay(language[3985]);
+										openURLTryWithOverlay(language[3984]);
 										mousestatus[SDL_BUTTON_LEFT] = 0;
 									}
 								}
@@ -5019,83 +5097,62 @@ void handleMainMenu(bool mode)
 			int index;
 
 			// sort achievement names
-			typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::string, std::string>)> Comparator;
-			Comparator compFunctor =
-				[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
-			{
-				bool ach1 = achievementUnlocked(lhs.first.c_str());
-				bool ach2 = achievementUnlocked(rhs.first.c_str());
-				if (ach1 && !ach2)
-				{
-					return true;
-				}
-				else if (!ach1 && ach2)
-				{
-					return false;
-				}
-				else
-				{
-					return lhs.second < rhs.second;
-				}
-			};
-			std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted(
-				achievementNames.begin(), achievementNames.end(), compFunctor);
 
-			// list achievements (text)
-			index = 0;
-			for (auto& item : achievementNamesSorted)
-			{
-				auto find = achievementHidden.find(item.first);
-				if (find != achievementHidden.end() && !achievementUnlocked(item.first.c_str()))
-				{
-					continue;
-				}
-				if (index < first_ach)
-				{
-					++index; continue;
-				}
-				SDL_Rect tooltip_box;
-				tooltip_box.x = subx1 + 4;
-				tooltip_box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
-				tooltip_box.w = subx2 - subx1 - 30 - 8;
-				tooltip_box.h = 80 - 8;
-				//drawTooltip(&tooltip_box); original ui
-				//ttfPrintText(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, item.second.c_str());
+			//// list achievements (text)
+			//index = 0;
+			//for (auto& item : achievementNamesSorted)
+			//{
+			//	auto find = achievementHidden.find(item.first);
+			//	if (find != achievementHidden.end() && !achievementUnlocked(item.first.c_str()))
+			//	{
+			//		continue;
+			//	}
+			//	if (index < first_ach)
+			//	{
+			//		++index; continue;
+			//	}
+			//	SDL_Rect tooltip_box;
+			//	tooltip_box.x = subx1 + 4;
+			//	tooltip_box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
+			//	tooltip_box.w = subx2 - subx1 - 30 - 8;
+			//	tooltip_box.h = 80 - 8;
+			//	//drawTooltip(&tooltip_box); original ui
+			//	//ttfPrintText(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, item.second.c_str());
 
-				drawWindowFancy(tooltip_box.x + 12 + 64 + 12, tooltip_box.y, tooltip_box.x + tooltip_box.w, tooltip_box.y + tooltip_box.h);
-				drawWindowFancy(tooltip_box.x, tooltip_box.y, tooltip_box.x + 12 + 64 + 12, tooltip_box.y + tooltip_box.h);
+			//	drawWindowFancy(tooltip_box.x + 12 + 64 + 12, tooltip_box.y, tooltip_box.x + tooltip_box.w, tooltip_box.y + tooltip_box.h);
+			//	drawWindowFancy(tooltip_box.x, tooltip_box.y, tooltip_box.x + 12 + 64 + 12, tooltip_box.y + tooltip_box.h);
 
-				SDL_Rect icon_box;
-				icon_box.x = tooltip_box.x + 2;
-				icon_box.y = tooltip_box.y + 2;
-				icon_box.w = 12 + 64 + 12 - 4;
-				icon_box.h = tooltip_box.h - 4;
+			//	SDL_Rect icon_box;
+			//	icon_box.x = tooltip_box.x + 2;
+			//	icon_box.y = tooltip_box.y + 2;
+			//	icon_box.w = 12 + 64 + 12 - 4;
+			//	icon_box.h = tooltip_box.h - 4;
 
-				if ( achievementUnlocked(item.first.c_str()) )
-				{
-					drawRect(&tooltip_box, uint32ColorBaronyBlue(*mainsurface), 64);
-					drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 1, 0, 16), 255);
-				}
-				else
-				{
-					drawRect(&tooltip_box, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
-					drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
-				}
+			//	if ( achievementUnlocked(item.first.c_str()) )
+			//	{
+			//		drawRect(&tooltip_box, uint32ColorBaronyBlue(*mainsurface), 64);
+			//		drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 1, 0, 16), 255);
+			//	}
+			//	else
+			//	{
+			//		drawRect(&tooltip_box, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+			//		drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
+			//	}
 
-				ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, item.second.c_str());
-				auto it = achievementDesc.find(item.first);
-				if (it != achievementDesc.end())
-				{
-					auto item = *it;
-					std::string sub = item.second.length() > 60 ? item.second.substr(0, 60) + "..." : item.second;
-					ttfPrintText(ttf12, subx1 + 100, suby1 + 120 + (index - first_ach) * 80, sub.c_str());
-				}
-				++index;
-				if (index >= first_ach + 6)
-				{
-					break;
-				}
-			}
+			//	ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, item.second.c_str());
+			//	auto it = achievementDesc.find(item.first);
+			//	if (it != achievementDesc.end())
+			//	{
+			//		auto item = *it;
+			//		std::string sub = item.second.length() > 60 ? item.second.substr(0, 60) + "..." : item.second;
+			//		ttfPrintText(ttf12, subx1 + 100, suby1 + 120 + (index - first_ach) * 80, sub.c_str());
+			//	}
+			//	++index;
+			//	if (index >= first_ach + 6)
+			//	{
+			//		break;
+			//	}
+			//}
 
 			// list achievement images
 			index = 0;
@@ -5103,31 +5160,115 @@ void handleMainMenu(bool mode)
 			{
 				auto find = achievementHidden.find(item.first);
 				bool unlocked = achievementUnlocked(item.first.c_str());
-				if (find != achievementHidden.end() && !unlocked)
+				if ( find != achievementHidden.end() && !unlocked )
 				{
 					continue;
 				}
-				if (index < first_ach)
+				if ( index < first_ach )
 				{
 					++index; continue;
 				}
-				std::string img = unlocked ? item.first + ".png" : item.first + "_l.png";
-				auto it = achievementImages.find(img);
-				if (it != achievementImages.end())
+
+				// draw box
+				SDL_Rect box;
+				box.x = subx1 + 4;
+				box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
+				box.w = subx2 - subx1 - 30 - 8;
+				box.h = 80 - 8;
+				drawWindowFancy(box.x, box.y, box.x + box.w, box.y + box.h);
+
+				// draw name
+				Uint32 nameColor = unlocked ? SDL_MapRGB(mainsurface->format, 0, 255, 255) : SDL_MapRGB(mainsurface->format, 128, 128, 128);
+				ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, nameColor, true, item.second.c_str());
+
+				// draw description
 				{
-					SDL_Rect rect;
-					rect.x = subx1 + 16;
-					rect.y = suby1 + 88 + (index - first_ach) * 80;
-					rect.w = 64;
-					rect.h = 64;
-					drawImage((*it).second, NULL, &rect);
+					auto it = achievementDesc.find(item.first);
+					if ( it != achievementDesc.end() )
+					{
+						auto item = *it;
+						std::string sub = item.second.length() > 140 ? item.second.substr(0, 140) + "..." : item.second;
+						for ( size_t c, offset = 0;;)
+						{
+							size_t lastoffset = offset;
+							for ( c = lastoffset + 1; c < sub.size(); ++c )
+							{
+								if ( sub[c] == ' ' )
+								{
+									break;
+								}
+							}
+							offset = c;
+							if ( offset > 70 && lastoffset )
+							{
+								sub[lastoffset] = '\n';
+								break;
+							}
+							if ( offset >= sub.size() )
+							{
+								break;
+							}
+						}
+						ttfPrintText(ttf12, subx1 + 100, suby1 + 120 + (index - first_ach) * 80, sub.c_str());
+					}
 				}
+
+				// draw progress
+				if ( !unlocked )
+				{
+					auto it = achievementProgress.find(item.first);
+					if ( it != achievementProgress.end() )
+					{
+						char percent_str[32] = { 0 };
+						int percent = (int)floor(it->second * 100);
+						snprintf(percent_str, sizeof(percent_str), "%3d%% complete", percent);
+						ttfPrintTextColor(ttf12, subx2 - 250, suby1 + 90 + (index - first_ach) * 80, uint32ColorGray(*mainsurface), true, percent_str);
+					}
+				}
+
+				// draw unlock time
+				if ( unlocked )
+				{
+					auto it = achievementUnlockTime.find(item.first);
+					if ( it != achievementUnlockTime.end() )
+					{
+						char buffer[64];
+						time_t t = (time_t)it->second;
+						struct tm* tm_info = localtime(&t);
+						strftime(buffer, sizeof(buffer), "Unlocked %Y/%m/%d at %H:%M:%S", tm_info);
+
+						char text[64];
+						snprintf(text, sizeof(text), "%32s", buffer);
+						ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, text);
+					}
+				}
+
+				// draw image
+				if ( unlocked )
+				{
+					std::string img = unlocked ? item.first + ".png" : item.first + "_l.png";
+					auto it = achievementImages.find(img);
+					if ( it != achievementImages.end() )
+					{
+						SDL_Rect rect;
+						rect.x = subx1 + 16;
+						rect.y = suby1 + 88 + (index - first_ach) * 80;
+						rect.w = 64;
+						rect.h = 64;
+						drawImage((*it).second, NULL, &rect);
+					}
+				}
+
 				++index;
 				if (index >= first_ach + 6)
 				{
 					break;
 				}
 			}
+		}
+		else
+		{
+			ttfPrintText(ttf12, subx1 + 8, suby1 + 100, language[709]);
 		}
 	}
 
@@ -8940,6 +9081,7 @@ void handleMainMenu(bool mode)
 		}
 		else if ( introstage == 3 )     // new game
 		{
+			bool bWasOnMainMenu = intro;
 			introstage = 1;
 			fadefinished = false;
 			fadeout = false;
@@ -8992,11 +9134,19 @@ void handleMainMenu(bool mode)
 			minimapPings.clear(); // clear minimap pings
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 			gameplayCustomManager.readFromFile();
+			textSourceScript.scriptVariables.clear();
+
+			if ( !loadingsavegame && bWasOnMainMenu )
+			{
+				gameModeManager.currentSession.saveServerFlags();
+			}
 
 			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 			{
 				svFlags &= ~(SV_FLAG_HARDCORE);
+				svFlags &= ~(SV_FLAG_CHEATS);
 				svFlags |= SV_FLAG_HUNGER;
+				svFlags |= SV_FLAG_FRIENDLYFIRE;
 
 				if ( gameModeManager.Tutorial.dungeonLevel >= 0 )
 				{
@@ -9833,6 +9983,7 @@ void handleMainMenu(bool mode)
 						}
 						else if ( client_classes[clientnum] == CLASS_HUNTER )
 						{
+							steamAchievement("BARONY_ACH_RANGER_DANGER");
 							if ( conductGameChallenges[CONDUCT_RANGED_ONLY] )
 							{
 								steamAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
@@ -9841,6 +9992,18 @@ void handleMainMenu(bool mode)
 						else if ( client_classes[clientnum] == CLASS_CONJURER )
 						{
 							steamAchievement("BARONY_ACH_TURN_UNDEAD");
+						}
+						else if ( client_classes[clientnum] == CLASS_SHAMAN )
+						{
+							steamAchievement("BARONY_ACH_MY_FINAL_FORM");
+						}
+						else if ( client_classes[clientnum] == CLASS_PUNISHER )
+						{
+							steamAchievement("BARONY_ACH_TIME_TO_SUFFER");
+						}
+						else if ( client_classes[clientnum] == CLASS_MACHINIST )
+						{
+							steamAchievement("BARONY_ACH_LIKE_CLOCKWORK");
 						}
 
 						if ( stats[clientnum] && stats[clientnum]->appearance == 0 )
@@ -9896,6 +10059,7 @@ void handleMainMenu(bool mode)
 				selected_spell_alternate[c] = NULL;
 				hotbarShapeshiftInit[c] = false;
 			}
+			gameModeManager.currentSession.restoreSavedServerFlags();
 			selected_spell = NULL; //So you don't start off with a spell when the game restarts.
 			selected_spell_last_appearance = -1;
 			client_classes[0] = 0;
@@ -11615,9 +11779,9 @@ void buttonAchievementsUp(button_t* my)
 void buttonAchievementsDown(button_t* my)
 {
 	int num_achievements = achievementNames.size() - achievementHidden.size();
-	for (auto& item : achievementHidden)
+	for ( auto& item : achievementHidden )
 	{
-		if (achievementUnlocked(item.c_str()))
+		if ( achievementUnlocked(item.c_str()) )
 		{
 			++num_achievements;
 		}
@@ -11632,11 +11796,13 @@ void openAchievementsWindow()
 	achievements_window = true;
 	achievements_window_page = 1;
 	subwindow = 1;
-	subx1 = xres/2 - 400;
-	subx2 = xres/2 + 400;
-	suby1 = yres/2 - 280;
-	suby2 = yres/2 + 280;
+	subx1 = xres / 2 - 400;
+	subx2 = xres / 2 + 400;
+	suby1 = yres / 2 - 280;
+	suby2 = yres / 2 + 280;
 	strcpy(subtext, language[3971]);
+
+	EOS.loadAchievementData();
 
 	// close button
 	{
@@ -11684,7 +11850,6 @@ void openAchievementsWindow()
 	}
 }
 
-// 
 void closeAchievementsWindow(button_t* my)
 {
 	achievements_window = false;
@@ -12452,6 +12617,7 @@ void buttonCloseSubwindow(button_t* my)
 	{
 		return;
 	}
+
 	loadGameSaveShowRectangle = 0;
 	singleplayerSavegameFreeSlot = -1; // clear this value when closing window
 	multiplayerSavegameFreeSlot = -1;  // clear this value when closing window

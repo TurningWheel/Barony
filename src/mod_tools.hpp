@@ -2423,6 +2423,27 @@ public:
 	GameModes currentMode = GAME_MODE_DEFAULT;
 	GameModes getMode() const { return currentMode; };
 	void setMode(const GameModes mode) { currentMode = mode; };
+	class CurrentSession_t
+	{
+	public:
+		Uint32 serverFlags = 0;
+		bool bHasSavedServerFlags = false;
+		void restoreSavedServerFlags()
+		{ 
+			if ( bHasSavedServerFlags )
+			{
+				bHasSavedServerFlags = false;
+				svFlags = serverFlags;
+				printlog("[SESSION]: Restoring server flags at stage: %d", introstage);
+			}
+		}
+		void saveServerFlags()
+		{
+			serverFlags = svFlags;
+			bHasSavedServerFlags = true;
+			printlog("[SESSION]: Saving server flags at stage: %d", introstage);
+		}
+	} currentSession;
 	bool isServerflagDisabledForCurrentMode(int i)
 	{
 		if ( getMode() == GAME_MODE_DEFAULT )
@@ -2436,6 +2457,7 @@ public:
 			{
 				case SV_FLAG_HARDCORE:
 				case SV_FLAG_HUNGER:
+				case SV_FLAG_FRIENDLYFIRE:
 					return true;
 					break;
 				default:
@@ -2468,6 +2490,7 @@ public:
 		void startTutorial(std::string mapToSet);
 		static void buttonReturnToTutorialHub(button_t* my);
 		static void buttonRestartTrial(button_t* my);
+		const Uint32 getNumTutorialLevels() { return kNumTutorialLevels; }
 		void openGameoverWindow();
 
 		class Menu_t

@@ -1829,7 +1829,7 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/numgold", 8) )
 	{
-		for ( unsigned i = 0; i < numplayers; ++i )
+		for ( unsigned i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( client_disconnected[i] )
 			{

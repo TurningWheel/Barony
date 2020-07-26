@@ -28,6 +28,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <functional>
 #include "Config.hpp"
 #include "physfs.h"
 
@@ -646,6 +647,10 @@ extern std::unordered_map<std::string, SDL_Surface*> achievementImages;
 extern std::unordered_map<std::string, std::string> achievementNames;
 extern std::unordered_map<std::string, std::string> achievementDesc;
 extern std::unordered_set<std::string> achievementHidden;
+typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::string, std::string>)> Comparator;
+extern std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
+extern std::unordered_map<std::string, double> achievementProgress;
+extern std::unordered_map<std::string, int64_t> achievementUnlockTime;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
 extern bool useModelCache;
@@ -763,7 +768,7 @@ extern GLuint fbo_ren;
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
-static const int NUM_STEAM_STATISTICS = 43;
+static const int NUM_STEAM_STATISTICS = 48;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>

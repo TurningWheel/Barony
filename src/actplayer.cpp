@@ -3685,6 +3685,20 @@ void actPlayer(Entity* my)
 							playmusic(sounds[209], false, true, false);
 #endif
 							combat = false;
+
+							if ( PLAYER_NUM == clientnum 
+								&& gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+							{
+								if ( !strncmp(map.name, "Tutorial Hub", 12) )
+								{
+									steamAchievement("BARONY_ACH_EXPELLED");
+								}
+								else
+								{
+									steamAchievement("BARONY_ACH_TEACHABLE_MOMENT");
+								}
+							}
+
 							if ( multiplayer == SINGLE || !(svFlags & SV_FLAG_KEEPINVENTORY) )
 							{
 								for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )

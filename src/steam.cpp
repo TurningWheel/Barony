@@ -771,15 +771,28 @@ void steamAchievement(const char* achName)
 	messagePlayer(clientnum, "%s", achName);
 #endif
 
-	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
-		|| conductGameChallenges[CONDUCT_LIFESAVING]
-		|| gamemods_disableSteamAchievements
-		|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
+		if ( !achievementObserver.bIsAchievementAllowedDuringTutorial(achName) )
+		{
+			return;
+		}
+		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+		{
+			return;
+		}
+	}
+	else
+	{
+		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
+			|| conductGameChallenges[CONDUCT_LIFESAVING]
+			|| gamemods_disableSteamAchievements )
+		{
 		// cheats/mods have been enabled on savefile, disallow achievements.
 #ifndef DEBUG_ACHIEVEMENTS
-		return;
+			return;
 #endif
+		}
 	}
 
 	if ( !strcmp(achName, "BARONY_ACH_BOOTS_OF_SPEED") )
@@ -877,21 +890,35 @@ void steamAchievementEntity(Entity* my, const char* achName)
 
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 {
-	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
-		|| conductGameChallenges[CONDUCT_LIFESAVING]
-		|| gamemods_disableSteamAchievements
-		|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
+		if ( !achievementObserver.bIsStatisticAllowedDuringTutorial(static_cast<SteamStatIndexes>(statisticNum)) )
+		{
+			return;
+		}
+		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+		{
+			return;
+		}
+	}
+	else
+	{
+		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+			|| conductGameChallenges[CONDUCT_LIFESAVING]
+			|| gamemods_disableSteamAchievements )
+		{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
 		return;
 #endif
+		}
 	}
 
 	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
 	{
 		return;
 	}
+
 	bool indicateProgress = true;
 	bool result = false;
 	switch ( type )
@@ -1045,6 +1072,26 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 						indicateProgress = true;
 					}
 					break;
+				case STEAM_STAT_DIPLOMA_LVLS:
+				case STEAM_STAT_EXTRA_CREDIT_LVLS:
+				case STEAM_STAT_BACK_TO_BASICS:
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					indicateProgress = false;
+					break;
+				case STEAM_STAT_DIPLOMA:
+				case STEAM_STAT_EXTRA_CREDIT:
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( oldValue == g_SteamStats[statisticNum].m_iValue )
+					{
+						indicateProgress = false;
+					}
+					else
+					{
+						indicateProgress = true;
+					}
+					break;
 				default:
 					break;
 			}
@@ -1070,15 +1117,28 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 
 void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value)
 {
-	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
-		|| conductGameChallenges[CONDUCT_LIFESAVING]
-		|| gamemods_disableSteamAchievements
-		|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
-		// cheats/mods have been enabled on savefile, disallow statistics update.
+		if ( !achievementObserver.bIsStatisticAllowedDuringTutorial(static_cast<SteamStatIndexes>(statisticNum)) )
+		{
+			return;
+		}
+		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+		{
+			return;
+		}
+	}
+	else
+	{
+		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
+			|| conductGameChallenges[CONDUCT_LIFESAVING]
+			|| gamemods_disableSteamAchievements )
+		{
+			// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
-		return;
+			return;
 #endif
+		}
 	}
 
 	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
@@ -1261,6 +1321,18 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 						{
 							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
 						}
+					}
+				}
+				break;
+			case STEAM_STAT_DIPLOMA:
+			case STEAM_STAT_EXTRA_CREDIT:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
+				{
+					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
 					}
 				}
 				break;

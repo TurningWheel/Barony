@@ -1046,7 +1046,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.ClientCredentials.ClientSecret = ClientCredentialsSecret.c_str();
 	PlatformOptions.OverrideCountryCode = nullptr;
 	PlatformOptions.OverrideLocaleCode = nullptr;
-	PlatformOptions.bIsServer = EOS_TRUE;
+	PlatformOptions.bIsServer = EOS_FALSE;
 	PlatformOptions.Flags = EOS_PF_DISABLE_OVERLAY;
 	static std::string EncryptionKey(64, '1');
 	PlatformOptions.EncryptionKey = EncryptionKey.c_str();
@@ -1596,7 +1596,7 @@ void EOSFuncs::createLobby()
 	EOS_Lobby_CreateLobbyOptions CreateOptions;
 	CreateOptions.ApiVersion = EOS_LOBBY_CREATELOBBY_API_LATEST;
 	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
-	CreateOptions.MaxLobbyMembers = 2;
+	CreateOptions.MaxLobbyMembers = MAXPLAYERS;
 	CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 	currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 
@@ -2303,9 +2303,11 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 {
 	assert(data != NULL);
 
+	EOS.achievementsLoading -= 1;
+
 	if ( data->ResultCode != EOS_EResult::EOS_Success )
 	{
-		printlog("failed to load achievements");
+		logError("failed to load achievements");
 		return;
 	}
 
@@ -2324,7 +2326,7 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 		EOS_EResult CopyAchievementDefinitionsResult = EOS_Achievements_CopyAchievementDefinitionV2ByIndex(EOS.AchievementsHandle, &CopyOptions, &AchievementDef);
 		if ( CopyAchievementDefinitionsResult != EOS_EResult::EOS_Success )
 		{
-			printlog("CopyAchievementDefinitions Failure!");
+			logError("CopyAchievementDefinitions Failure!");
 			return;
 		}
 
@@ -2351,16 +2353,41 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 		EOS_Achievements_DefinitionV2_Release(AchievementDef);
 	}
 
-	printlog("successfully loaded EOS achievements");
+	// sort achievements list
+	achievementNamesSorted.clear();
+	Comparator compFunctor =
+		[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
+	{
+		bool ach1 = achievementUnlocked(lhs.first.c_str());
+		bool ach2 = achievementUnlocked(rhs.first.c_str());
+		if ( ach1 && !ach2 )
+		{
+			return true;
+		}
+		else if ( !ach1 && ach2 )
+		{
+			return false;
+		}
+		else
+		{
+			return lhs.second < rhs.second;
+		}
+	};
+	std::set<std::pair<std::string, std::string>, Comparator> sorted(achievementNames.begin(), achievementNames.end(), compFunctor);
+	achievementNamesSorted.swap(sorted);
+
+	logInfo("successfully loaded EOS achievements");
 }
 
 void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data)
 {
 	assert(data != NULL);
 
+	EOS.achievementsLoading -= 1;
+
 	if ( data->ResultCode != EOS_EResult::EOS_Success )
 	{
-		printlog("failed to load player achievement status");
+		logError("failed to load player achievement status");
 		return;
 	}
 
@@ -2381,7 +2408,7 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 		EOS_EResult CopyPlayerAchievementResult = EOS_Achievements_CopyPlayerAchievementByIndex(EOS.AchievementsHandle, &CopyOptions, &PlayerAchievement);
 		if ( CopyPlayerAchievementResult != EOS_EResult::EOS_Success )
 		{
-			printlog("CopyPlayerAchievement Failure!");
+			logError("CopyPlayerAchievement Failure!");
 			return;
 		}
 
@@ -2394,12 +2421,21 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 			node->element = ach;
 			node->size = size;
 			node->deconstructor = &defaultDeconstructor;
+
+			achievementUnlockTime.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->UnlockTime));
+		}
+		else
+		{
+			if ( PlayerAchievement->Progress > 0.0 )
+			{
+				achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->Progress));
+			}
 		}
 
 		EOS_Achievements_PlayerAchievement_Release(PlayerAchievement);
 	}
 
-	printlog("successfully loaded EOS achievement player status");
+	logInfo("successfully loaded EOS achievement player status");
 }
 
 void EOSFuncs::OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data)
@@ -2407,17 +2443,17 @@ void EOSFuncs::OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackIn
 	assert(data != NULL);
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		printlog("successfully ingested EOS stat");
+		logInfo("successfully ingested EOS stat");
 	}
 	else
 	{
-		printlog("failed to ingest EOS stat");
+		logError("failed to ingest EOS stat");
 	}
 }
 
 bool EOSFuncs::initAchievements()
 {
-	printlog("initializing EOS achievements");
+	logInfo("initializing EOS achievements");
 	if ( !PlatformHandle ) {
 		return false;
 	}
@@ -2433,27 +2469,35 @@ bool EOSFuncs::initAchievements()
 void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data)
 {
 	assert(data != NULL);
-
+	int64_t t = (int64_t)time(NULL);
+	achievementUnlockTime.emplace(std::make_pair(std::string((const char*)data->ClientData), t));
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		printlog("EOS achievement successfully unlocked");
+		logInfo("EOS achievement successfully unlocked");
 		return;
 	}
 	else
 	{
-		printlog("EOSFuncs::OnUnlockAchievement() failure: %i", data->ResultCode);
+		logInfo("EOSFuncs::OnUnlockAchievement() failure: %i", data->ResultCode);
 		return;
 	}
 }
 
 void EOSFuncs::loadAchievementData()
 {
+	if ( achievementsLoading )
+	{
+		return;
+	}
 	bAchievementsLoaded = true;
+	achievementsLoading = 2;
 	achievementNames.clear();
 	achievementDesc.clear();
 	achievementHidden.clear();
+	achievementProgress.clear();
+	achievementUnlockTime.clear();
 
-	printlog("loading EOS achievements");
+	logInfo("loading EOS achievements");
 	{
 		EOS_Achievements_QueryDefinitionsOptions Options = {};
 		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
@@ -2475,7 +2519,7 @@ void EOSFuncs::loadAchievementData()
 
 void EOSFuncs::unlockAchievement(const char* name)
 {
-	printlog("unlocking EOS achievement '%s'", name);
+	logInfo("unlocking EOS achievement '%s'", name);
 	EOS_Achievements_UnlockAchievementsOptions UnlockAchievementsOptions = {};
 	UnlockAchievementsOptions.ApiVersion = EOS_ACHIEVEMENTS_UNLOCKACHIEVEMENTS_API_LATEST;
 	UnlockAchievementsOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
@@ -2487,7 +2531,7 @@ void EOSFuncs::unlockAchievement(const char* name)
 
 void EOSFuncs::ingestStat(int stat_num, int value)
 {
-	printlog("updating EOS stat '%s'", g_SteamStats[stat_num].m_pchStatName);
+	logInfo("updating EOS stat '%s'", g_SteamStats[stat_num].m_pchStatName);
 
 	EOS_Stats_IngestData StatsToIngest[1];
 	StatsToIngest[0].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
@@ -2563,7 +2607,7 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 
 	EOS_Auth_LoginOptions LoginOptions = {};
 	LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
-	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile);
+	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile | EOS_EAuthScopeFlags::EOS_AS_FriendsList | EOS_EAuthScopeFlags::EOS_AS_Presence);
 	LoginOptions.Credentials = &Credentials;
 
 	EOS_Auth_Login(AuthHandle, &LoginOptions, NULL, AuthLoginCompleteCallback);
@@ -3132,14 +3176,6 @@ void EOSFuncs::queryDLCOwnership()
 	options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
 
 	EOS_Ecom_QueryEntitlements(EcomHandle, &options, nullptr, OnEcomQueryEntitlementsCallback);
-	//EOS_Ecom_QueryOwnershipOptions options = {};
-	//options.ApiVersion = EOS_ECOM_QUERYOWNERSHIP_API_LATEST;
-	//std::vector<EOS_Ecom_CatalogItemId> catalogIds;
-	//options.CatalogItemIdCount = catalogIds.size();
-	//options.CatalogItemIds = catalogIds.data();
-	//options.CatalogNamespace = "";
-	//options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
-	//EOS_Ecom_QueryOwnership(EcomHandle, &options, nullptr, OnEcomQueryOwnershipCallback);
 }
 
 void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEntitlementsCallbackInfo* data)
@@ -3199,7 +3235,10 @@ void EOS_CALL EOSFuncs::OnEcomQueryOwnershipCallback(const EOS_Ecom_QueryOwnersh
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		EOSFuncs::logInfo("OnEcomQueryOwnershipCallback: Ownership status: %d", static_cast<int>(data->ItemOwnership->OwnershipStatus));
+		for ( int i = 0; i < data->ItemOwnershipCount; ++i )
+		{
+			EOSFuncs::logInfo("OnEcomQueryOwnershipCallback: Ownership status: %d, %d", static_cast<int>(data->ItemOwnership[i].OwnershipStatus), data->ItemOwnershipCount);
+		}
 	}
 	else
 	{

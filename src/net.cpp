@@ -4270,7 +4270,10 @@ void clientHandlePacket()
 	// delete multiplayer save
 	if (!strncmp((char*)net_packet->data, "DSAV", 4))
 	{
-		deleteSaveGame(multiplayer);
+		if ( multiplayer == CLIENT )
+		{
+			deleteSaveGame(multiplayer);
+		}
 		return;
 	}
 }
@@ -6013,10 +6016,26 @@ void deleteMultiplayerSaveGames()
 
 	//Only delete saves if no players are left alive.
 	bool lastAlive = true;
-	for ( int i = 0; i < numplayers; ++i )
+
+	//const int playersAtStartOfMap = numplayers;
+	//int currentPlayers = 0;
+	//for ( int i = 0; i < MAXPLAYERS; ++i )
+	//{
+	//	if ( !client_disconnected[i] )
+	//	{
+	//		++currentPlayers;
+	//	}
+	//}
+
+	//if ( currentPlayers != playersAtStartOfMap )
+	//{
+	//	return;
+	//}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		Stat* stat = nullptr;
-		if ( players[i]->entity && (stat = players[i]->entity->getStats()) && stat->HP > 0)
+		if ( players[i] && players[i]->entity && (stat = players[i]->entity->getStats()) && stat->HP > 0)
 		{
 			lastAlive = false;
 		}
@@ -6028,8 +6047,12 @@ void deleteMultiplayerSaveGames()
 
 	deleteSaveGame(multiplayer); // stops save scumming c:
 
-	for ( int i = 1; i < numplayers; ++i )
+	for ( int i = 1; i < MAXPLAYERS; ++i )
 	{
+		if ( client_disconnected[i] )
+		{
+			continue;
+		}
 		strcpy((char *)net_packet->data,"DSAV"); //Delete save game.
 		net_packet->address.host = net_clients[i - 1].host;
 		net_packet->address.port = net_clients[i - 1].port;
