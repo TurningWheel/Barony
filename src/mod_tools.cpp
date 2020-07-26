@@ -229,7 +229,7 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 
 		this->FirstTimePrompt.showFirstTimePrompt = d["first_time_prompt"].GetBool();
 
-		for ( auto& it = levels.begin(); it != levels.end(); ++it )
+		for ( auto it = levels.begin(); it != levels.end(); ++it )
 		{
 			if ( d["levels"].HasMember(it->filename.c_str()) && d["levels"][it->filename.c_str()].HasMember("completion_time") )
 			{
@@ -251,7 +251,7 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 
 		rapidjson::Value levelsObj(rapidjson::kObjectType);
 		CustomHelpers::addMemberToRoot(d, "levels", levelsObj);
-		for ( auto& it = levels.begin(); it != levels.end(); ++it )
+		for ( auto it = levels.begin(); it != levels.end(); ++it )
 		{
 			rapidjson::Value level(rapidjson::kObjectType);
 			level.AddMember("completion_time", rapidjson::Value(it->completionTime), d.GetAllocator());
@@ -293,7 +293,7 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 
 	d["first_time_prompt"].SetBool(this->FirstTimePrompt.showFirstTimePrompt);
 
-	for ( auto& it = levels.begin(); it != levels.end(); ++it )
+	for ( auto it = levels.begin(); it != levels.end(); ++it )
 	{
 		d["levels"][it->filename.c_str()]["completion_time"].SetUint(it->completionTime);
 	}
