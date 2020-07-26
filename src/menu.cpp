@@ -5056,7 +5056,7 @@ void handleMainMenu(bool mode)
 						char percent_str[32] = { 0 };
 						int percent = (int)floor(it->second * 100);
 						snprintf(percent_str, sizeof(percent_str), "%3d%% complete", percent);
-						ttfPrintTextColor(ttf12, subx2 - 250, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, percent_str);
+						ttfPrintTextColor(ttf12, subx2 - 250, suby1 + 90 + (index - first_ach) * 80, uint32ColorGray(*mainsurface), true, percent_str);
 					}
 				}
 
@@ -11541,27 +11541,7 @@ void openAchievementsWindow()
 	suby2 = yres/2 + 280;
 	strcpy(subtext, language[3971]);
 
-	// sort achievements list
-	Comparator compFunctor =
-		[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
-	{
-		bool ach1 = achievementUnlocked(lhs.first.c_str());
-		bool ach2 = achievementUnlocked(rhs.first.c_str());
-		if (ach1 && !ach2)
-		{
-			return true;
-		}
-		else if (!ach1 && ach2)
-		{
-			return false;
-		}
-		else
-		{
-			return lhs.second < rhs.second;
-		}
-	};
-	std::set<std::pair<std::string, std::string>, Comparator> sorted(achievementNames.begin(), achievementNames.end(), compFunctor);
-	achievementNamesSorted.swap(sorted);
+	EOS.loadAchievementData();
 
 	// close button
 	{
@@ -11614,7 +11594,6 @@ void closeAchievementsWindow(button_t* my)
 {
 	achievements_window = false;
 	achievements_window_page = 1;
-	achievementNamesSorted.clear();
 	buttonCloseSubwindow(my);
 }
 

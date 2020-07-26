@@ -2370,6 +2370,29 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 		EOS_Achievements_DefinitionV2_Release(AchievementDef);
 	}
 
+	// sort achievements list
+	achievementNamesSorted.clear();
+	Comparator compFunctor =
+		[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
+	{
+		bool ach1 = achievementUnlocked(lhs.first.c_str());
+		bool ach2 = achievementUnlocked(rhs.first.c_str());
+		if (ach1 && !ach2)
+		{
+			return true;
+		}
+		else if (!ach1 && ach2)
+		{
+			return false;
+		}
+		else
+		{
+			return lhs.second < rhs.second;
+		}
+	};
+	std::set<std::pair<std::string, std::string>, Comparator> sorted(achievementNames.begin(), achievementNames.end(), compFunctor);
+	achievementNamesSorted.swap(sorted);
+
 	logInfo("successfully loaded EOS achievements");
 }
 
