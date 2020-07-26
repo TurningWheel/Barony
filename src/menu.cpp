@@ -389,7 +389,7 @@ void initMenuOptions()
 
 void getPrevMenuOption(int& currentMenuOption)
 {
-	for ( auto& it = menuOptions.begin(); it != menuOptions.end(); )
+	for ( auto it = menuOptions.begin(); it != menuOptions.end(); )
 	{
 		if ( (*it).second == currentMenuOption )
 		{
@@ -410,7 +410,7 @@ void getPrevMenuOption(int& currentMenuOption)
 
 void getNextMenuOption(int& currentMenuOption)
 {
-	for ( auto& it = menuOptions.begin(); it != menuOptions.end(); )
+	for ( auto it = menuOptions.begin(); it != menuOptions.end(); )
 	{
 		if ( (*it).second == currentMenuOption )
 		{
