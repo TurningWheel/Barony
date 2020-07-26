@@ -1596,7 +1596,7 @@ void EOSFuncs::createLobby()
 	EOS_Lobby_CreateLobbyOptions CreateOptions;
 	CreateOptions.ApiVersion = EOS_LOBBY_CREATELOBBY_API_LATEST;
 	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
-	CreateOptions.MaxLobbyMembers = 2;
+	CreateOptions.MaxLobbyMembers = MAXPLAYERS;
 	CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 	currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 
