@@ -3359,12 +3359,19 @@ int main(int argc, char** argv)
 									"at http://www.baronygame.com/ for support.",
 				screen);
 #elif defined USE_EOS
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
-				"Barony has encountered a critical error and cannot start.\n\n"
-				"Please check the log.txt file in the game directory for additional info,\n"
-				"and verify the store is running. Alternatively, contact us through our website\n"
-				"at http://www.baronygame.com/ for support.",
-				screen);
+			if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
+			{
+				// restarting app from launcher.
+			}
+			else
+			{
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
+					"Barony has encountered a critical error and cannot start.\n\n"
+					"Please check the log.txt file in the game directory for additional info,\n"
+					"and verify the game is launched through the Epic Games Store. \n"
+					"Alternatively, contact us through our website at http://www.baronygame.com/ for support.",
+					screen);
+			}
 #else
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
 									"Barony has encountered a critical error and cannot start.\n\n"

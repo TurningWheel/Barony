@@ -81,16 +81,6 @@ int initGame()
  #endif //USE_EOS
 #endif
 
-#ifdef USE_EOS
-	EOS.readFromFile();
-	EOS.readFromCmdLineArgs();
-	if ( EOS.initPlatform(true) == false )
-	{
-		return 14;
-	}
-	EOS.initAuth();
-#endif // USE_EOS
-
 	// print a loading message
 	drawClearBuffers();
 	int w, h;
