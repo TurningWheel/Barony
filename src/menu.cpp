@@ -5208,7 +5208,7 @@ void handleMainMenu(bool mode)
 						SDL_Rect progressbar;
 						progressbar.x = subx2 - 330 + (4 * TTF12_WIDTH) + TTF12_WIDTH;
 						progressbar.y = suby1 + 92 + (index - first_ach) * 80 - 4;
-						progressbar.h = TTF12_HEIGHT + 3;
+						progressbar.h = TTF12_HEIGHT + 2;
 						progressbar.w = (bodyBox.x + bodyBox.w) - progressbar.x - 4;
 						drawWindowFancy(progressbar.x - 2, progressbar.y - 2, progressbar.x + progressbar.w + 2, progressbar.y + progressbar.h + 2);
 
