@@ -1073,12 +1073,14 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		logError("PlatformHandle: Platform failed to initialize - invalid handle");
 		return false;
 	}
+#ifndef STEAMWORKS
 #ifdef WINDOWS
-#ifndef NDEBUG
+#ifdef NDEBUG
 	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);
 #endif
 #else
 	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);
+#endif
 #endif
 	return true;
 }
@@ -2799,35 +2801,28 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 	AddConnectAuthExpirationNotification();
 
 	EOS.AccountManager.waitingForCallback = true;
-	//Uint32 startAuthTicks = SDL_GetTicks();
-	//Uint32 currentAuthTicks = startAuthTicks;
-	//while ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_NotConfigured )
-	//{
-//#ifdef APPLE
-	//	SDL_Event event;
-	//	while ( SDL_PollEvent(&event) != 0 )
-	//	{
-	//		//Makes Mac work because Apple had to do it different.
-	//	}
-//#endif
-	//	EOS_Platform_Tick(PlatformHandle);
-	//	SDL_Delay(50);
-	//	currentAuthTicks = SDL_GetTicks();
-	//	if ( currentAuthTicks - startAuthTicks >= 30000 ) // 30 second timeout.
-	//	{
-	//		AccountAuthenticationStatus = EOS_EResult::EOS_InvalidAuth;
-	//		logError("initAuth: timeout attempting to log in");
-	//		return false;
-	//	}
-	//}
-	/*if ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_Success )
+	Uint32 startAuthTicks = SDL_GetTicks();
+	Uint32 currentAuthTicks = startAuthTicks;
+#ifndef STEAMWORKS
+	while ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_NotConfigured )
 	{
-		return true;
+#ifdef APPLE
+		SDL_Event event;
+		while ( SDL_PollEvent(&event) != 0 )
+		{
+			//Makes Mac work because Apple had to do it different.
+		}
+#endif
+		EOS_Platform_Tick(PlatformHandle);
+		SDL_Delay(50);
+		currentAuthTicks = SDL_GetTicks();
+		if ( currentAuthTicks - startAuthTicks >= 3000 ) // spin the wheels for 3 seconds
+		{
+			break;
+		}
 	}
-	else
-	{
-		return false;
-	}*/
+#endif // !STEAMWORKS
+
 	bool achResult = initAchievements();
 	assert(achResult == true);
 	return true;

@@ -159,19 +159,23 @@ int initApp(char* title, int fullscreen)
 	g_SteamStatistics = new CSteamStatistics(g_SteamStats, g_SteamGlobalStats, NUM_STEAM_STATISTICS);
 	// Preloads mod content from a workshop fileID
 	//gamemodsWorkshopPreloadMod(YOUR WORKSHOP FILE ID HERE, "YOUR WORKSHOP TITLE HERE");
-#elif defined USE_EOS
+#endif
+#if defined USE_EOS
 	EOS.readFromFile();
 	EOS.readFromCmdLineArgs();
 	if ( EOS.initPlatform(true) == false )
 	{
 		return 14;
 	}
+#ifndef STEAMWORKS
 	if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
 	{
 		// restarting app
+		EOSFuncs::logInfo("App attempting restart through store...");
 		return 15;
 	}
 	EOS.initAuth();
+#endif // !STEAMWORKS
 #endif
 
 	window_title = title;
