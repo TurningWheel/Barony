@@ -22,6 +22,7 @@
 #include <SDL_thread.h>
 #include "player.hpp"
 #include "mod_tools.hpp"
+#include "interface/ui.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include <steam/steam_gameserver.h>
@@ -790,7 +791,7 @@ void steamAchievement(const char* achName)
 		{
 		// cheats/mods have been enabled on savefile, disallow achievements.
 #ifndef DEBUG_ACHIEVEMENTS
-			return;
+			//return;
 #endif
 		}
 	}
@@ -909,7 +910,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
-		return;
+		//return;
 #endif
 		}
 	}
@@ -1083,7 +1084,11 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_EXTRA_CREDIT:
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
-					if ( oldValue == g_SteamStats[statisticNum].m_iValue )
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == g_SteamStats[statisticNum].m_iValue )
 					{
 						indicateProgress = false;
 					}
@@ -1106,7 +1111,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	g_SteamStatistics->StoreStats(); // update server's stat counter.
 #else
 #ifdef USE_EOS
-	EOS.ingestStat(statisticNum, value);
+	EOS.ingestStat(statisticNum, g_SteamStats[statisticNum].m_iValue);
 #endif
 #endif
 	if ( indicateProgress )
@@ -1136,7 +1141,7 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		{
 			// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
-			return;
+			//return;
 #endif
 		}
 	}
@@ -1177,10 +1182,22 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 	}
 }
 
+void indicateAchievementProgressAndUnlock(const char* achName, int currentValue, int maxValue)
+{
+#ifdef STEAMWORKS
+	SteamUserStats()->IndicateAchievementProgress(achName, currentValue, maxValue);
+#elif defined USE_EOS
+	UIToastNotificationManager.createStatisticUpdateNotification(achName, currentValue, maxValue);
+#endif
+	if ( currentValue == maxValue )
+	{
+		steamAchievement(achName);
+	}
+}
 
 void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 {
-#ifndef STEAMWORKS
+#if (!defined STEAMWORKS && !defined USE_EOS)
 	return;
 #else
 
@@ -1221,12 +1238,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 5 == 0) )
 					{
-						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+						indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
-						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
-						{
-							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-						}
 					}
 				}
 				break;
@@ -1243,12 +1256,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 4 == 0) )
 					{
-						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+						indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
-						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
-						{
-							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-						}
 					}
 				}
 				break;
@@ -1256,12 +1265,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_ALTER_EGO:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
-					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+					indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
-					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
-					{
-						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-					}
 				}
 				break;
 			// below is 100 max value
@@ -1273,24 +1278,16 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_SUPER_SHREDDER:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
-					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+					indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
-					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
-					{
-						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-					}
 				}
 				break;
 			// below is 600 max value
 			case STEAM_STAT_OVERCLOCKED:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
-					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+					indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
-					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
-					{
-						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-					}
 				}
 				break;
 			// below are 100 max value
@@ -1299,12 +1296,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				{
 					if ( iVal == 1 || iVal == 5 || (iVal > 0 && iVal % 10 == 0) || (iVal > 0 && iVal % 25 == 0) )
 					{
-						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+						indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
-						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
-						{
-							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-						}
 					}
 				}
 				break;
@@ -1315,12 +1308,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 2 == 0) )
 					{
-						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+						indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
-						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
-						{
-							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-						}
 					}
 				}
 				break;
@@ -1328,12 +1317,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_EXTRA_CREDIT:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
-					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+					indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
-					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
-					{
-						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-					}
 				}
 				break;
 			default:

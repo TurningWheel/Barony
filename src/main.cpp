@@ -270,7 +270,7 @@ std::unordered_map<std::string, std::string> achievementNames;
 std::unordered_map<std::string, std::string> achievementDesc;
 std::unordered_set<std::string> achievementHidden;
 std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
-std::unordered_map<std::string, double> achievementProgress;
+std::unordered_map<std::string, int> achievementProgress; // ->second is the associated achievement stat index
 std::unordered_map<std::string, int64_t> achievementUnlockTime;
 Uint32 imgref = 1, vboref = 1;
 const Uint32 ttfTextCacheLimit = 9000;

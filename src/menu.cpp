@@ -1533,11 +1533,6 @@ void handleMainMenu(bool mode)
 			}
 		}
 #endif
-		if ( mode )
-		{
-			UIToastNotificationManager.drawNotifications();
-		}
-
 		// gray text color
 		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
 
@@ -1637,9 +1632,9 @@ void handleMainMenu(bool mode)
 				if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
 				{
 					// disabled for current gamemode
-					int dummy = 0;
-					TTF_SizeUTF8(ttf8, language[3963], &w, &dummy);
-					ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3963]);
+					// int dummy = 0;
+					// TTF_SizeUTF8(ttf8, language[3963], &w, &dummy);
+					// ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3963]);
 				}
 				else
 				{
@@ -5067,16 +5062,20 @@ void handleMainMenu(bool mode)
 	// achievements window
 	if ( subwindow && achievements_window )
 	{
-		char page_str[128];
-		int num_achievements = achievementNames.size() - achievementHidden.size();
-		for (auto& item : achievementHidden)
+		if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
 		{
-			if (achievementUnlocked(item.c_str()))
-			{
-				++num_achievements;
-			}
+			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+			buttonAchievementsDown(nullptr);
 		}
-		if (num_achievements)
+		if ( mousestatus[SDL_BUTTON_WHEELUP] )
+		{
+			mousestatus[SDL_BUTTON_WHEELUP] = 0;
+			buttonAchievementsUp(nullptr);
+		}
+
+		char page_str[128];
+		int num_achievements = achievementNames.size();
+		if ( num_achievements > 0 )
 		{
 			int max_pages = num_achievements / 6 + ((num_achievements % 6) ? 1 : 0);
 
@@ -5094,94 +5093,69 @@ void handleMainMenu(bool mode)
 			ttfPrintText(ttf12, subx1 + 8, suby1 + 30, page_str);
 
 			int first_ach = (achievements_window_page - 1) * 6;
-			int index;
-
-			// sort achievement names
-
-			//// list achievements (text)
-			//index = 0;
-			//for (auto& item : achievementNamesSorted)
-			//{
-			//	auto find = achievementHidden.find(item.first);
-			//	if (find != achievementHidden.end() && !achievementUnlocked(item.first.c_str()))
-			//	{
-			//		continue;
-			//	}
-			//	if (index < first_ach)
-			//	{
-			//		++index; continue;
-			//	}
-			//	SDL_Rect tooltip_box;
-			//	tooltip_box.x = subx1 + 4;
-			//	tooltip_box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
-			//	tooltip_box.w = subx2 - subx1 - 30 - 8;
-			//	tooltip_box.h = 80 - 8;
-			//	//drawTooltip(&tooltip_box); original ui
-			//	//ttfPrintText(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, item.second.c_str());
-
-			//	drawWindowFancy(tooltip_box.x + 12 + 64 + 12, tooltip_box.y, tooltip_box.x + tooltip_box.w, tooltip_box.y + tooltip_box.h);
-			//	drawWindowFancy(tooltip_box.x, tooltip_box.y, tooltip_box.x + 12 + 64 + 12, tooltip_box.y + tooltip_box.h);
-
-			//	SDL_Rect icon_box;
-			//	icon_box.x = tooltip_box.x + 2;
-			//	icon_box.y = tooltip_box.y + 2;
-			//	icon_box.w = 12 + 64 + 12 - 4;
-			//	icon_box.h = tooltip_box.h - 4;
-
-			//	if ( achievementUnlocked(item.first.c_str()) )
-			//	{
-			//		drawRect(&tooltip_box, uint32ColorBaronyBlue(*mainsurface), 64);
-			//		drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 1, 0, 16), 255);
-			//	}
-			//	else
-			//	{
-			//		drawRect(&tooltip_box, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
-			//		drawRect(&icon_box, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
-			//	}
-
-			//	ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, item.second.c_str());
-			//	auto it = achievementDesc.find(item.first);
-			//	if (it != achievementDesc.end())
-			//	{
-			//		auto item = *it;
-			//		std::string sub = item.second.length() > 60 ? item.second.substr(0, 60) + "..." : item.second;
-			//		ttfPrintText(ttf12, subx1 + 100, suby1 + 120 + (index - first_ach) * 80, sub.c_str());
-			//	}
-			//	++index;
-			//	if (index >= first_ach + 6)
-			//	{
-			//		break;
-			//	}
-			//}
-
 			// list achievement images
-			index = 0;
+			int index = 0;
 			for (auto& item : achievementNamesSorted)
 			{
-				auto find = achievementHidden.find(item.first);
+				bool hiddenAchievement = (achievementHidden.find(item.first) != achievementHidden.end());
 				bool unlocked = achievementUnlocked(item.first.c_str());
-				if ( find != achievementHidden.end() && !unlocked )
-				{
-					continue;
-				}
 				if ( index < first_ach )
 				{
 					++index; continue;
 				}
 
-				// draw box
-				SDL_Rect box;
-				box.x = subx1 + 4;
-				box.y = suby1 + 80 + 4 + (index - first_ach) * 80;
-				box.w = subx2 - subx1 - 30 - 8;
-				box.h = 80 - 8;
-				drawWindowFancy(box.x, box.y, box.x + box.w, box.y + box.h);
+				const int iconAreaWidth = 12 + 64 + 12;
+
+				SDL_Rect bodyBox;
+				bodyBox.x = subx1 + 4 + iconAreaWidth;
+				bodyBox.y = suby1 + 80 + 4 + (index - first_ach) * 80;
+				bodyBox.w = subx2 - subx1 - 30 - 8 - iconAreaWidth;
+				bodyBox.h = 80 - 8;
+				drawWindowFancy(bodyBox.x, bodyBox.y, bodyBox.x + bodyBox.w, bodyBox.y + bodyBox.h);
+
+				SDL_Rect iconBox;
+				iconBox.x = subx1 + 4;
+				iconBox.y = bodyBox.y;
+				iconBox.w = iconAreaWidth;
+				iconBox.h = bodyBox.h;
+				drawWindowFancy(iconBox.x, iconBox.y, iconBox.x + iconBox.w, iconBox.y + iconBox.h);
+
+				SDL_Rect bodyHighlight;
+				bodyHighlight.x = bodyBox.x + 2;
+				bodyHighlight.y = bodyBox.y + 2;
+				bodyHighlight.w = bodyBox.w - 4;
+				bodyHighlight.h = bodyBox.h - 4;
+
+				SDL_Rect iconHighlight;
+				iconHighlight.x = iconBox.x + 2;
+				iconHighlight.y = iconBox.y + 2;
+				iconHighlight.w = iconBox.w - 4;
+				iconHighlight.h = iconBox.h - 4;
+
+				if ( achievementUnlocked(item.first.c_str()) )
+				{
+					drawRect(&bodyHighlight, uint32ColorBaronyBlue(*mainsurface), 64);
+					drawRect(&iconHighlight, SDL_MapRGB(mainsurface->format, 1, 0, 16), 255);
+				}
+				else
+				{
+					drawRect(&bodyHighlight, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+					drawRect(&iconHighlight, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
+				}
 
 				// draw name
 				Uint32 nameColor = unlocked ? SDL_MapRGB(mainsurface->format, 0, 255, 255) : SDL_MapRGB(mainsurface->format, 128, 128, 128);
-				ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 90 + (index - first_ach) * 80, nameColor, true, item.second.c_str());
+				if ( hiddenAchievement && !unlocked )
+				{
+					ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 92 + (index - first_ach) * 80, nameColor, true, "Hidden Achievement");
+				}
+				else
+				{
+					ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 92 + (index - first_ach) * 80, nameColor, true, item.second.c_str());
+				}
 
 				// draw description
+				if ( !(hiddenAchievement && !unlocked) )
 				{
 					auto it = achievementDesc.find(item.first);
 					if ( it != achievementDesc.end() )
@@ -5219,10 +5193,29 @@ void handleMainMenu(bool mode)
 					auto it = achievementProgress.find(item.first);
 					if ( it != achievementProgress.end() )
 					{
-						char percent_str[32] = { 0 };
-						int percent = (int)floor(it->second * 100);
-						snprintf(percent_str, sizeof(percent_str), "%3d%% complete", percent);
-						ttfPrintTextColor(ttf12, subx2 - 250, suby1 + 90 + (index - first_ach) * 80, uint32ColorGray(*mainsurface), true, percent_str);
+						int maxValue = steamStatAchStringsAndMaxVals[it->second].second;
+						int currentValue = g_SteamStats[it->second].m_iValue;
+						int percent = (int)floor(currentValue * 100 / static_cast<double>(maxValue));
+						//char percent_str[32] = { 0 };
+						// snprintf(percent_str, sizeof(percent_str), "%3d%% complete", percent);
+						// ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 92 + (index - first_ach) * 80, uint32ColorWhite(*mainsurface), true, percent_str);
+
+						SDL_Rect progressbar;
+						progressbar.x = subx2 - 330 + (4 * TTF12_WIDTH) + TTF12_WIDTH;
+						progressbar.y = suby1 + 92 + (index - first_ach) * 80 - 4;
+						progressbar.h = TTF12_HEIGHT + 2;
+						progressbar.w = (bodyBox.x + bodyBox.w) - progressbar.x - 4;
+						drawWindowFancy(progressbar.x - 2, progressbar.y - 2, progressbar.x + progressbar.w + 2, progressbar.y + progressbar.h + 2);
+
+						drawRect(&progressbar, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
+						progressbar.w = std::min((bodyBox.x + bodyBox.w) - progressbar.x - 4, static_cast<int>(progressbar.w * percent / 100.0));
+						drawRect(&progressbar, uint32ColorBaronyBlue(*mainsurface), 92);
+						progressbar.w = (bodyBox.x + bodyBox.w) - progressbar.x - TTF12_WIDTH;
+
+						char progress_str[32] = { 0 };
+						snprintf(progress_str, sizeof(progress_str), "%d / %d", currentValue, maxValue);
+						ttfPrintTextColor(ttf12, progressbar.x + progressbar.w / 2 - (strlen(progress_str) * TTF12_WIDTH) / 2,
+							suby1 + 92 + (index - first_ach) * 80, uint32ColorWhite(*mainsurface), true, progress_str);
 					}
 				}
 
@@ -5239,24 +5232,25 @@ void handleMainMenu(bool mode)
 
 						char text[64];
 						snprintf(text, sizeof(text), "%32s", buffer);
-						ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 90 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, text);
+						ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 92 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, text);
 					}
 				}
 
 				// draw image
-				if ( unlocked )
+				std::string img = unlocked ? item.first + ".png" : item.first + "_l.png";
+				if ( !unlocked && hiddenAchievement )
 				{
-					std::string img = unlocked ? item.first + ".png" : item.first + "_l.png";
-					auto it = achievementImages.find(img);
-					if ( it != achievementImages.end() )
-					{
-						SDL_Rect rect;
-						rect.x = subx1 + 16;
-						rect.y = suby1 + 88 + (index - first_ach) * 80;
-						rect.w = 64;
-						rect.h = 64;
-						drawImage((*it).second, NULL, &rect);
-					}
+					img = "LOCKED_ACHIEVEMENT.png";
+				}
+				auto it = achievementImages.find(img);
+				if ( it != achievementImages.end() )
+				{
+					SDL_Rect rect;
+					rect.x = subx1 + 16;
+					rect.y = suby1 + 88 + (index - first_ach) * 80;
+					rect.w = 64;
+					rect.h = 64;
+					drawImage((*it).second, NULL, &rect);
 				}
 
 				++index;
@@ -11553,6 +11547,8 @@ void handleMainMenu(bool mode)
 			fadealpha = std::min(fadealpha + 2, 255);
 		}
 	}
+
+	UIToastNotificationManager.drawNotifications();
 }
 
 /*-------------------------------------------------------------------------------
@@ -11778,14 +11774,7 @@ void buttonAchievementsUp(button_t* my)
 
 void buttonAchievementsDown(button_t* my)
 {
-	int num_achievements = achievementNames.size() - achievementHidden.size();
-	for ( auto& item : achievementHidden )
-	{
-		if ( achievementUnlocked(item.c_str()) )
-		{
-			++num_achievements;
-		}
-	}
+	int num_achievements = achievementNames.size();
 	int max_pages = num_achievements / 6 + ((num_achievements % 6) ? 1 : 0);
 	achievements_window_page = std::min(max_pages, achievements_window_page + 1);
 }
@@ -11801,9 +11790,9 @@ void openAchievementsWindow()
 	suby1 = yres / 2 - 280;
 	suby2 = yres / 2 + 280;
 	strcpy(subtext, language[3971]);
-
+#ifdef USE_EOS
 	EOS.loadAchievementData();
-
+#endif
 	// close button
 	{
 		button_t* button = newButton();
@@ -11823,8 +11812,8 @@ void openAchievementsWindow()
 	{
 		button_t* button = newButton();
 		strcpy(button->label, u8"\u25B2");
-		button->x = subx2 - 30;
-		button->y = suby1 + 80;
+		button->x = subx2 - 33;
+		button->y = suby1 + 84;
 		button->sizex = 30;
 		button->sizey = 30;
 		button->action = &buttonAchievementsUp;
@@ -11838,8 +11827,8 @@ void openAchievementsWindow()
 	{
 		button_t* button = newButton();
 		strcpy(button->label, u8"\u25BC");
-		button->x = subx2 - 30;
-		button->y = suby2 - 30;
+		button->x = subx2 - 33;
+		button->y = suby2 - 34;
 		button->sizex = 30;
 		button->sizey = 30;
 		button->action = &buttonAchievementsDown;
@@ -11852,8 +11841,6 @@ void openAchievementsWindow()
 
 void closeAchievementsWindow(button_t* my)
 {
-	achievements_window = false;
-	achievements_window_page = 1;
 	buttonCloseSubwindow(my);
 }
 
@@ -12660,6 +12647,8 @@ void buttonCloseSubwindow(button_t* my)
 	gameModeManager.Tutorial.FirstTimePrompt.close();
 	savegames_window = 0;
 	savegames_window_scroll = 0;
+	achievements_window = false;
+	achievements_window_page = 1;
 	lobby_window = false;
 	settings_window = false;
 	connect_window = 0;

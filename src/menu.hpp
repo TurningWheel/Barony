@@ -139,6 +139,8 @@ void openAchievementsWindow();
 void closeAchievementsWindow(button_t*);
 extern bool achievements_window;
 extern int achievements_window_page;
+void buttonAchievementsUp(button_t* my);
+void buttonAchievementsDown(button_t* my);
 
 // misc functions
 void openSettingsWindow();

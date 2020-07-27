@@ -106,12 +106,12 @@ enum SteamStatIndexes : int
 
 static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] = 
 {
-	std::make_pair("BARONY_ACH_NONE", 0),					// STEAM_STAT_BOULDER_DEATHS,
+	std::make_pair("BARONY_ACH_NONE", 999999),				// STEAM_STAT_BOULDER_DEATHS,
 	std::make_pair("BARONY_ACH_RHINESTONE_COWBOY", 50),		// STEAM_STAT_RHINESTONE_COWBOY,
 	std::make_pair("BARONY_ACH_TOUGH_AS_NAILS", 50),		// STEAM_STAT_TOUGH_AS_NAILS,
 	std::make_pair("BARONY_ACH_UNSTOPPABLE_FORCE",50),		// STEAM_STAT_UNSTOPPABLE_FORCE,
-	std::make_pair("BARONY_ACH_NONE", 0),					// STEAM_STAT_GAMES_STARTED,
-	std::make_pair("BARONY_ACH_NONE", 0),					// STEAM_STAT_GAMES_WON,
+	std::make_pair("BARONY_ACH_NONE", 999999),				// STEAM_STAT_GAMES_STARTED,
+	std::make_pair("BARONY_ACH_NONE", 999999),				// STEAM_STAT_GAMES_WON,
 	std::make_pair("BARONY_ACH_BOMBARDIER", 50),			// STEAM_STAT_BOMBARDIER,
 	std::make_pair("BARONY_ACH_IN_THE_MIX", 50),			// STEAM_STAT_IN_THE_MIX,
 	std::make_pair("BARONY_ACH_FREE_REFILLS", 50),			// STEAM_STAT_FREE_REFILLS,
@@ -136,13 +136,13 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_SUPER_SHREDDER", 1000),      // STEAM_STAT_SUPER_SHREDDER
 	std::make_pair("BARONY_ACH_FIXER_UPPER", 100),          // STEAM_STAT_FIXER_UPPER
 	std::make_pair("BARONY_ACH_TORCHERER", 100),            // STEAM_STAT_TORCHERER
-	std::make_pair("BARONY_ACH_MANY_PEDI_PALP", 50),       // STEAM_STAT_MANY_PEDI_PALP
+	std::make_pair("BARONY_ACH_MANY_PEDI_PALP", 50),		// STEAM_STAT_MANY_PEDI_PALP
 	std::make_pair("BARONY_ACH_5000_SECOND_RULE", 50),      // STEAM_STAT_5000_SECOND_RULE
 	std::make_pair("BARONY_ACH_SOCIAL_BUTTERFLY", 50),      // STEAM_STAT_SOCIAL_BUTTERFLY
 	std::make_pair("BARONY_ACH_ROLL_THE_BONES", 50),        // STEAM_STAT_ROLL_THE_BONES
 	std::make_pair("BARONY_ACH_COWBOY_FROM_HELL", 50),      // STEAM_STAT_COWBOY_FROM_HELL
 	std::make_pair("BARONY_ACH_SELF_FLAGELLATION", 30),     // STEAM_STAT_SELF_FLAGELLATION
-	std::make_pair("BARONY_ACH_CHOPPING_BLOCK", 50),       // STEAM_STAT_CHOPPING_BLOCK
+	std::make_pair("BARONY_ACH_CHOPPING_BLOCK", 50),		// STEAM_STAT_CHOPPING_BLOCK
 	std::make_pair("BARONY_ACH_IF_YOU_LOVE_SOMETHING", 100),// STEAM_STAT_IF_YOU_LOVE_SOMETHING
 	std::make_pair("BARONY_ACH_RAGE_AGAINST", 20),          // STEAM_STAT_RAGE_AGAINST
 	std::make_pair("BARONY_ACH_GUERILLA_RADIO", 20),        // STEAM_STAT_GUERILLA_RADIO
@@ -277,7 +277,9 @@ public:
 		BARONY_ACH_TRASH_COMPACTOR,
 		BARONY_ACH_EXTRA_CREDIT,
 		BARONY_ACH_DIPLOMA,
-		BARONY_ACH_BACK_TO_BASICS
+		BARONY_ACH_BACK_TO_BASICS,
+		BARONY_ACH_FAST_LEARNER,
+		BARONY_ACH_MASTER
 	};
 	enum AchievementEvent : int
 	{
@@ -289,7 +291,8 @@ public:
 		FORUM_TROLL_FEAR,
 		EXTRA_CREDIT_SECRET,
 		DIPLOMA_LEVEL_COMPLETE,
-		BACK_TO_BASICS_LEVEL_COMPLETE
+		BACK_TO_BASICS_LEVEL_COMPLETE,
+		FAST_LEARNER_TIME_UPDATE
 	};
 	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
 	bool bIsAchievementAllowedDuringTutorial(std::string achievementStr)

@@ -26,7 +26,8 @@ void UIToastNotificationManager_t::drawNotifications()
 	int cardPosY = 110; // update the card y values if number of notifications change.
 	for ( auto& card : allNotifications )
 	{
-		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE)) {
+		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
+		{
 			continue;
 		}
 		card.setPosY(cardPosY);
@@ -38,7 +39,8 @@ void UIToastNotificationManager_t::drawNotifications()
 
 	for ( auto& card : allNotifications )
 	{
-		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE)) {
+		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE)) 
+		{
 			continue;
 		}
 		card.init();
@@ -132,6 +134,15 @@ void UIToastNotificationManager_t::createCommunityNotification()
 
 void UIToastNotificationManager_t::createAchievementNotification(const char* name)
 {
+	UIToastNotification* n = nullptr;
+	if ( n = getNotificationAchievementSingle(name) )
+	{
+		if ( n->actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_STATISTIC_UPDATE )
+		{
+			return; // don't create a new achievement card, since we have a statistic update present.
+		}
+	}
+
 	SDL_Surface* achievementImage = nullptr;
 	{
 		std::string imgName = name + std::string(".png");
@@ -150,12 +161,55 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 		}
 	}
 
-	UIToastNotification* n = UIToastNotificationManager.addNotification(achievementImage);
-	n->setHeaderText(std::string("Achievement unlocked!"));
+	n = UIToastNotificationManager.addNotification(achievementImage);
+	n->setHeaderText(std::string("Achievement Unlocked!"));
 	n->setMainText(std::string(achievementName));
+	n->setAchievementName(name);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
-	n->cardType = UIToastNotification::CardType::UI_CARD_COMMUNITY_LINK;
+	n->cardType = UIToastNotification::CardType::UI_CARD_ACHIEVEMENT;
+	n->setIdleSeconds(5);
+}
+
+void UIToastNotificationManager_t::createStatisticUpdateNotification(const char* name, int currentValue, int maxValue)
+{
+	UIToastNotification* n = nullptr;
+	if ( n = getNotificationAchievementSingle(name) )
+	{
+		n->setStatisticMaxValue(maxValue);
+		n->updateCardStatisticEvent(currentValue);
+		return;
+	}
+
+	SDL_Surface* achievementImage = nullptr;
+	{
+		std::string imgName = name + std::string("_l.png");
+		auto it = achievementImages.find(imgName.c_str());
+		if ( it != achievementImages.end() )
+		{
+			achievementImage = it->second;
+		}
+	}
+	const char* achievementName = "";
+	{
+		auto it = achievementNames.find(name);
+		if ( it != achievementNames.end() )
+		{
+			achievementName = it->second.c_str();
+		}
+	}
+
+	n = UIToastNotificationManager.addNotification(achievementImage);
+	n->setHeaderText(std::string("Achievement Updated!"));
+	n->setMainText(std::string(achievementName));
+	n->setAchievementName(name);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_STATISTIC_UPDATE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+	n->cardType = UIToastNotification::CardType::UI_CARD_ACHIEVEMENT;
+	n->setStatisticCurrentValue(currentValue);
+	n->setStatisticMaxValue(maxValue);
 	n->setIdleSeconds(5);
 }
