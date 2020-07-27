@@ -781,8 +781,6 @@ void handleInGamePauseMenu()
 		ttfPrintText(ttf16, 50, yres / 4 + 80, language[1309]);
 	}
 
-	UIToastNotificationManager.drawNotifications();
-
 	if ( ((omousex >= 50 && omousex < 50 + strlen(language[1306]) * 18 && omousey >= yres / 4 + 104 && omousey < yres / 4 + 104 + 18) || (menuselect == 2)) && subwindow == 0 && introstage == 1 )
 	{
 		// settings menu
@@ -5077,24 +5075,38 @@ void handleMainMenu(bool mode)
 		int num_achievements = achievementNames.size();
 		if ( num_achievements > 0 )
 		{
-			int max_pages = num_achievements / 6 + ((num_achievements % 6) ? 1 : 0);
-
 			int num_unlocked = 0;
+			int num_locked_and_hidden = 0;
+			int num_displayed = num_achievements;
 			for (auto& item : achievementNames)
 			{
 				if (achievementUnlocked(item.first.c_str()))
 				{
 					++num_unlocked;
 				}
+				else if ( achievementHidden.find(item.first.c_str()) != achievementHidden.end() )
+				{
+					++num_locked_and_hidden;
+					--num_displayed;
+				}
 			}
 
-			snprintf(page_str, sizeof(page_str), "page %d / %d\n\nUnlocked %d / %d achievements (%d%%)",
+			if ( num_locked_and_hidden > 0 )
+			{
+				++num_displayed; // add 1 hidden entry.
+			}
+
+			int max_pages = num_displayed / 6 + ((num_displayed % 6) ? 1 : 0);
+			achievements_window_page = std::min(achievements_window_page, max_pages);
+
+			snprintf(page_str, sizeof(page_str), "Page %d / %d\n\nUnlocked %d / %d achievements (%d%%)",
 				achievements_window_page, max_pages, num_unlocked, num_achievements, (num_unlocked * 100) / num_achievements);
 			ttfPrintText(ttf12, subx1 + 8, suby1 + 30, page_str);
 
 			int first_ach = (achievements_window_page - 1) * 6;
 			// list achievement images
 			int index = 0;
+			bool bFirstHiddenAchievement = true;
 			for (auto& item : achievementNamesSorted)
 			{
 				bool hiddenAchievement = (achievementHidden.find(item.first) != achievementHidden.end());
@@ -5102,6 +5114,14 @@ void handleMainMenu(bool mode)
 				if ( index < first_ach )
 				{
 					++index; continue;
+				}
+				if ( hiddenAchievement )
+				{
+					if ( !bFirstHiddenAchievement )
+					{
+						continue;
+					}
+					bFirstHiddenAchievement = false;
 				}
 
 				const int iconAreaWidth = 12 + 64 + 12;
@@ -5147,7 +5167,7 @@ void handleMainMenu(bool mode)
 				Uint32 nameColor = unlocked ? SDL_MapRGB(mainsurface->format, 0, 255, 255) : SDL_MapRGB(mainsurface->format, 128, 128, 128);
 				if ( hiddenAchievement && !unlocked )
 				{
-					ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 92 + (index - first_ach) * 80, nameColor, true, "Hidden Achievement");
+					ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 92 + (index - first_ach) * 80, nameColor, true, "Hidden Achievements");
 				}
 				else
 				{
@@ -5185,6 +5205,11 @@ void handleMainMenu(bool mode)
 						}
 						ttfPrintText(ttf12, subx1 + 100, suby1 + 120 + (index - first_ach) * 80, sub.c_str());
 					}
+				}
+				else if ( hiddenAchievement && !unlocked )
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 100, suby1 + 120 + (index - first_ach) * 80, 
+						"+%d hidden achievements remain...", num_locked_and_hidden);
 				}
 
 				// draw progress
@@ -11547,8 +11572,6 @@ void handleMainMenu(bool mode)
 			fadealpha = std::min(fadealpha + 2, 255);
 		}
 	}
-
-	UIToastNotificationManager.drawNotifications();
 }
 
 /*-------------------------------------------------------------------------------
@@ -11775,6 +11798,10 @@ void buttonAchievementsUp(button_t* my)
 void buttonAchievementsDown(button_t* my)
 {
 	int num_achievements = achievementNames.size();
+	if ( num_achievements == 0 )
+	{
+		return;
+	}
 	int max_pages = num_achievements / 6 + ((num_achievements % 6) ? 1 : 0);
 	achievements_window_page = std::min(max_pages, achievements_window_page + 1);
 }

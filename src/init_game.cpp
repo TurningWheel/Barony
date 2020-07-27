@@ -55,8 +55,6 @@ int initGame()
 	FILE* fp;
 
 	// setup some lists
-	steamAchievements.first = NULL;
-	steamAchievements.last = NULL;
 	booksRead.first = NULL;
 	booksRead.last = NULL;
 	lobbyChatboxMessages.first = NULL;
@@ -80,16 +78,6 @@ int initGame()
 	cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket = &steam_OnRequestEncryptedAppTicket;
  #endif //USE_EOS
 #endif
-
-#ifdef USE_EOS
-	EOS.readFromFile();
-	EOS.readFromCmdLineArgs();
-	if ( EOS.initPlatform(true) == false )
-	{
-		return 14;
-	}
-	EOS.initAuth();
-#endif // USE_EOS
 
 	// print a loading message
 	drawClearBuffers();
@@ -986,7 +974,6 @@ void deinitGame()
 	pathMapFlying = NULL;
 
 	// clear steam achievement list
-	list_FreeAll(&steamAchievements);
 	list_FreeAll(&booksRead);
 
 	// clear lobby chatbox data

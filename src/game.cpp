@@ -197,7 +197,6 @@ TileEntityListHandler TileEntityList;
 
 int game = 1;
 Uint32 uniqueGameKey = 0;
-list_t steamAchievements;
 DebugStatsClass DebugStats;
 Uint32 networkTickrate = 0;
 bool gameloopFreezeEntities = false;
@@ -3359,12 +3358,19 @@ int main(int argc, char** argv)
 									"at http://www.baronygame.com/ for support.",
 				screen);
 #elif defined USE_EOS
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
-				"Barony has encountered a critical error and cannot start.\n\n"
-				"Please check the log.txt file in the game directory for additional info,\n"
-				"and verify the store is running. Alternatively, contact us through our website\n"
-				"at http://www.baronygame.com/ for support.",
-				screen);
+			if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
+			{
+				// restarting app from launcher.
+			}
+			else
+			{
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
+					"Barony has encountered a critical error and cannot start.\n\n"
+					"Please check the log.txt file in the game directory for additional info,\n"
+					"and verify the game is launched through the Epic Games Store. \n"
+					"Alternatively, contact us through our website at http://www.baronygame.com/ for support.",
+					screen);
+			}
 #else
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
 									"Barony has encountered a critical error and cannot start.\n\n"
@@ -3757,6 +3763,8 @@ int main(int argc, char** argv)
 						}
 
 						handleMainMenu(intro);
+
+						UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
 
 						// draw mouse
 						if (!movie && draw_cursor)
@@ -4389,8 +4397,6 @@ int main(int argc, char** argv)
 						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
 
-					UIToastNotificationManager.drawNotifications();
-
 					DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
 					drawSustainedSpells();
@@ -4455,6 +4461,8 @@ int main(int argc, char** argv)
 					}
 
 					DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
+
+					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
 
 					// pointer in inventory screen
 					if (shootmode == false)
@@ -4666,6 +4674,11 @@ int main(int argc, char** argv)
 					}
 				}
 
+				if ( gamePaused ) // draw after main menu windows etc.
+				{
+					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+				}
+
 				if (((subwindow && !shootmode) || gamePaused) && draw_cursor)
 				{
 					pos.x = mousex - cursor_bmp->w / 2;
@@ -4724,6 +4737,8 @@ int main(int argc, char** argv)
 				}
 			}
 
+			UIToastNotificationManager.drawNotifications(movie, false);
+
 			// update screen
 			GO_SwapBuffers(screen);
 
@@ -4733,7 +4748,6 @@ int main(int argc, char** argv)
 				keystatus[SDL_SCANCODE_F6] = 0;
 				takeScreenshot();
 			}
-
 
 			// frame rate limiter
 			while ( frameRateLimit(fpsLimit, true) )

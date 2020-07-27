@@ -16,7 +16,7 @@
 #endif
 UIToastNotificationManager_t UIToastNotificationManager;
 
-void UIToastNotificationManager_t::drawNotifications()
+void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool beforeFadeout)
 {
 	if ( !bIsInit )
 	{
@@ -26,10 +26,12 @@ void UIToastNotificationManager_t::drawNotifications()
 	int cardPosY = 110; // update the card y values if number of notifications change.
 	for ( auto& card : allNotifications )
 	{
-		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
+		if ((isMoviePlaying || !intro) 
+			&& !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
 		{
 			continue;
 		}
+
 		card.setPosY(cardPosY);
 		SDL_Rect newPosition;
 		card.getDimensions(newPosition.x, newPosition.y, newPosition.w, newPosition.h);
@@ -37,12 +39,56 @@ void UIToastNotificationManager_t::drawNotifications()
 		cardPosY += (newPosition.h + 8);
 	}
 
+	const int kMaxAchievementCards = 3;
+	int currentNumAchievementCards = 0;
 	for ( auto& card : allNotifications )
 	{
-		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE)) 
+		if ( (isMoviePlaying || !intro) 
+			&& !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
 		{
 			continue;
 		}
+
+		if ( card.cardType == UIToastNotification::CardType::UI_CARD_ACHIEVEMENT )
+		{
+			// achievements are drawn AFTER the fadeout
+			if ( beforeFadeout )
+			{
+				// if fading, then skip this card.
+				if ( fadealpha > 0 )
+				{
+					continue;
+				}
+				// if we aren't fading, then draw BEFORE - makes sure the cursor is available
+			}
+			else
+			{
+				if ( fadealpha == 0 )
+				{
+					continue;
+				}
+				// if we are fading, then draw AFTER - we don't see the cursor anyway
+			}
+		}
+		else
+		{
+			// all other cards are drawn BEFORE the fadeout
+			if ( !beforeFadeout ) 
+			{
+				continue;
+			}
+		}
+
+		if ( card.cardType == UIToastNotification::CardType::UI_CARD_ACHIEVEMENT )
+		{
+			if ( currentNumAchievementCards >= kMaxAchievementCards )
+			{
+				card.cardForceTickUpdate(); // don't draw, but don't expire these.
+				continue;
+			}
+			++currentNumAchievementCards;
+		}
+
 		card.init();
 		card.draw();
 	}
@@ -132,6 +178,34 @@ void UIToastNotificationManager_t::createCommunityNotification()
 	}
 }
 
+void truncateMainText(std::string& str)
+{
+	if ( str.length() > 24 )
+	{
+		for ( size_t c, offset = 0;;)
+		{
+			size_t lastoffset = offset;
+			for ( c = lastoffset + 1; c < str.size(); ++c )
+			{
+				if ( str[c] == ' ' )
+				{
+					break;
+				}
+			}
+			offset = c;
+			if ( offset > 24 && lastoffset )
+			{
+				str[lastoffset] = '\n';
+				break;
+			}
+			if ( offset >= str.size() )
+			{
+				break;
+			}
+		}
+	}
+}
+
 void UIToastNotificationManager_t::createAchievementNotification(const char* name)
 {
 	UIToastNotification* n = nullptr;
@@ -163,7 +237,11 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 
 	n = UIToastNotificationManager.addNotification(achievementImage);
 	n->setHeaderText(std::string("Achievement Unlocked!"));
-	n->setMainText(std::string(achievementName));
+
+	std::string achStr = std::string(achievementName);
+	truncateMainText(achStr);
+	n->setMainText(achStr);
+
 	n->setAchievementName(name);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
@@ -182,9 +260,15 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 		return;
 	}
 
+	bool unlocked = (currentValue >= maxValue);
+
 	SDL_Surface* achievementImage = nullptr;
 	{
 		std::string imgName = name + std::string("_l.png");
+		if ( unlocked )
+		{
+			imgName = name + std::string(".png");
+		}
 		auto it = achievementImages.find(imgName.c_str());
 		if ( it != achievementImages.end() )
 		{
@@ -201,8 +285,18 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	}
 
 	n = UIToastNotificationManager.addNotification(achievementImage);
-	n->setHeaderText(std::string("Achievement Updated!"));
-	n->setMainText(std::string(achievementName));
+	if ( unlocked )
+	{
+		n->setHeaderText(std::string("Achievement Unlocked!"));
+	}
+	else
+	{
+		n->setHeaderText(std::string("Achievement Updated!"));
+	}
+
+	std::string achStr = std::string(achievementName);
+	truncateMainText(achStr);
+	n->setMainText(achStr);
 	n->setAchievementName(name);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_STATISTIC_UPDATE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
