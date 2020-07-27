@@ -169,6 +169,34 @@ void UIToastNotificationManager_t::createCommunityNotification()
 	}
 }
 
+void truncateMainText(std::string& str)
+{
+	if ( str.length() > 24 )
+	{
+		for ( size_t c, offset = 0;;)
+		{
+			size_t lastoffset = offset;
+			for ( c = lastoffset + 1; c < str.size(); ++c )
+			{
+				if ( str[c] == ' ' )
+				{
+					break;
+				}
+			}
+			offset = c;
+			if ( offset > 24 && lastoffset )
+			{
+				str[lastoffset] = '\n';
+				break;
+			}
+			if ( offset >= str.size() )
+			{
+				break;
+			}
+		}
+	}
+}
+
 void UIToastNotificationManager_t::createAchievementNotification(const char* name)
 {
 	UIToastNotification* n = nullptr;
@@ -200,7 +228,11 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 
 	n = UIToastNotificationManager.addNotification(achievementImage);
 	n->setHeaderText(std::string("Achievement Unlocked!"));
-	n->setMainText(std::string(achievementName));
+
+	std::string achStr = std::string(achievementName);
+	truncateMainText(achStr);
+	n->setMainText(achStr);
+
 	n->setAchievementName(name);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
@@ -252,7 +284,10 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	{
 		n->setHeaderText(std::string("Achievement Updated!"));
 	}
-	n->setMainText(std::string(achievementName));
+
+	std::string achStr = std::string(achievementName);
+	truncateMainText(achStr);
+	n->setMainText(achStr);
 	n->setAchievementName(name);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_STATISTIC_UPDATE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
