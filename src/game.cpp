@@ -4737,12 +4737,6 @@ int main(int argc, char** argv)
 				}
 			}
 
-			if ( keystatus[SDL_SCANCODE_F1] )
-			{
-				UIToastNotificationManager.createAchievementNotification("BARONY_ACH_BACK_TO_BASICS");
-				keystatus[SDL_SCANCODE_F1] = 0;
-			}
-
 			UIToastNotificationManager.drawNotifications(movie, false);
 
 			// update screen
