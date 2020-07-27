@@ -62,6 +62,11 @@ class UIToastNotification
 	std::string secondaryCardText;
 	std::string headerCardText;
 	std::string actionText;
+
+	int statisticUpdateCurrent = 0;
+	int statisticUpdateMax = 0;
+	int pendingStatisticUpdateCurrent = -1;
+	std::string achievementID = "";
 public:
 	UIToastNotification(SDL_Surface* image) {
 		notificationImage = image;
@@ -77,6 +82,7 @@ public:
 		UI_NOTIFICATION_AUTO_HIDE = 4,
 		UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE = 8,
 		UI_NOTIFICATION_REMOVABLE = 16,
+		UI_NOTIFICATION_STATISTIC_UPDATE = 32
 	};
 	enum CardType : Uint32
 	{
@@ -130,6 +136,22 @@ public:
 	void setIdleSeconds(Uint32 seconds)
 	{
 		idleTicksToHide = seconds * TICKS_PER_SECOND;
+	}
+	void setStatisticCurrentValue(int value)
+	{
+		statisticUpdateCurrent = value;
+	}
+	void setStatisticMaxValue(int value)
+	{
+		statisticUpdateMax = value;
+	}
+	void setAchievementName(const char* achName)
+	{
+		achievementID = achName;
+	}
+	bool matchesAchievementName(const char* achName)
+	{
+		return (achievementID.compare(achName) == 0);
 	}
 	std::string& getMainText() { return mainCardText; };
 	CardState getCardState() { return static_cast<CardState>(cardState); }
@@ -225,6 +247,11 @@ public:
 		lastInteractedTick = ticks;
 	}
 
+	void updateCardStatisticEvent(int updatedValue)
+	{
+		pendingStatisticUpdateCurrent = updatedValue;
+		updateCardEvent(true, false);
+	}
 	void updateCardEvent(bool updateMainText, bool updateSecondaryText)
 	{
 		lastInteractedTick = ticks;
@@ -241,6 +268,28 @@ public:
 		}
 	}
 
+	void drawProgressBar(SDL_Rect& imageDimensions)
+	{
+		int percent = (int)floor(statisticUpdateCurrent * 100 / static_cast<double>(statisticUpdateMax));
+
+		SDL_Rect progressbar;
+		progressbar.x = imageDimensions.x + imageDimensions.w + textx;
+		progressbar.h = TTF12_HEIGHT + 2;
+		progressbar.w = (xres - 8 + animx) - progressbar.x - 10;
+		progressbar.y = imageDimensions.y + imageDimensions.h - progressbar.h;
+		drawWindowFancy(progressbar.x - 2, progressbar.y - 2, progressbar.x + progressbar.w + 2, progressbar.y + progressbar.h + 2);
+
+		drawRect(&progressbar, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
+		progressbar.w = std::min((xres - 8 + animx) - progressbar.x - 4, static_cast<int>(progressbar.w * percent / 100.0));
+		drawRect(&progressbar, uint32ColorBaronyBlue(*mainsurface), 92);
+		progressbar.w = (xres - 8 + animx) - progressbar.x - TTF12_WIDTH;
+
+		char progress_str[32] = { 0 };
+		snprintf(progress_str, sizeof(progress_str), "%d / %d", statisticUpdateCurrent, statisticUpdateMax);
+		ttfPrintTextColor(ttf12, progressbar.x + progressbar.w / 2 - (strlen(progress_str) * TTF12_WIDTH) / 2,
+			progressbar.y + 4, uint32ColorWhite(*mainsurface), true, progress_str);
+	}
+
 	void drawMainCard()
 	{
 		SDL_Rect r;
@@ -255,8 +304,18 @@ public:
 
 		ttfPrintTextColor(ttf12, r.x + r.w + bodyx, r.y + bodyy, SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255), true,
 			displayedText.c_str());
+
+		if ( cardType == UI_CARD_ACHIEVEMENT )
+		{
+			drawWindowFancy(r.x - 2, r.y - 2, r.x + r.w + 2, r.y + r.h + 2);
+		}
 		drawImageScaled(notificationImage, nullptr, &r);
 		
+		if ( actionFlags & UI_NOTIFICATION_STATISTIC_UPDATE )
+		{
+			drawProgressBar(r);
+		}
+
 		if ( drawActionButton(&r) )
 		{
 			if ( buttonAction != nullptr )
@@ -285,6 +344,23 @@ public:
 				}
 				cardUpdateDisplayMainText = false;
 				cardUpdateDisplaySecondaryText = false;
+				if ( cardType == UI_CARD_ACHIEVEMENT && pendingStatisticUpdateCurrent != -1 )
+				{
+					setStatisticCurrentValue(pendingStatisticUpdateCurrent);
+					if ( statisticUpdateCurrent == statisticUpdateMax )
+					{
+						this->setHeaderText(std::string("Achievement Unlocked!"));
+						{
+							std::string imgName = this->achievementID + std::string(".png");
+							auto it = achievementImages.find(imgName.c_str());
+							if ( it != achievementImages.end() )
+							{
+								notificationImage = it->second;
+							}
+						}
+					}
+					pendingStatisticUpdateCurrent = -1;
+				}
 			}
 		}
 		else
@@ -312,7 +388,7 @@ public:
 	void animate(int& xout, int& current_ticks, int duration, int width, bool hideElement, bool& isHidden)
 	{
 		// scale duration to FPS - tested @ 144hz
-		double scaledDuration = (duration / (144.f / std::max(1.0, fps)));
+		double scaledDuration = (duration / (144.f / std::max(1U, fpsLimit)));
 
 		double t = current_ticks / static_cast<double>(scaledDuration);
 		double result = -width * t * t * (3.0f - 2.0f * t); // bezier from 0 to width as t (0-1)
@@ -441,7 +517,7 @@ public:
 	void drawNotifications();
 	void createCommunityNotification();
 	void createAchievementNotification(const char* name);
-
+	void createStatisticUpdateNotification(const char* name, int currentValue, int maxValue);
 	/// @param image nullptr for default barony icon
 	UIToastNotification* addNotification(SDL_Surface* image);
 
@@ -452,6 +528,20 @@ public:
 			if ( card.cardType == cardType )
 			{
 				return &card;
+			}
+		}
+		return nullptr;
+	}
+	UIToastNotification* getNotificationAchievementSingle(const char* achName)
+	{
+		for ( auto& card : allNotifications )
+		{
+			if ( card.cardType == UIToastNotification::CardType::UI_CARD_ACHIEVEMENT )
+			{
+				if ( card.matchesAchievementName(achName) )
+				{
+					return &card;
+				}
 			}
 		}
 		return nullptr;
