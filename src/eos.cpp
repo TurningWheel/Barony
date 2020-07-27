@@ -1,6 +1,12 @@
 
 #include "Config.hpp"
-
+#define STRINGIZE2(s) #s
+#define STRINGIZE(s) STRINGIZE2(s)
+#define BUILD_ENV_PR STRINGIZE(BUILD_PR)
+#define BUILD_ENV_SA STRINGIZE(BUILD_SA)
+#define BUILD_ENV_DE STRINGIZE(BUILD_DE)
+#define BUILD_ENV_CC STRINGIZE(BUILD_CC)
+#define BUILD_ENV_CS STRINGIZE(BUILD_CS)
 #ifdef USE_EOS
 
 #include "main.hpp"
@@ -992,11 +998,6 @@ void EOSFuncs::serialize(void* file) {
 	int version = 0;
 	FileInterface* fileInterface = static_cast<FileInterface*>(file);
 	fileInterface->property("version", version);
-	fileInterface->property("product", ProductId);
-	fileInterface->property("sandbox", SandboxId);
-	fileInterface->property("deployment", DeploymentId);
-	fileInterface->property("clientcredentials", ClientCredentialsId);
-	fileInterface->property("clientcredentialssecret", ClientCredentialsSecret);
 	fileInterface->property("credentialhost", CredentialHost);
 	fileInterface->property("credentialname", CredentialName);
 }
@@ -1040,11 +1041,11 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	EOS_Platform_Options PlatformOptions = {};
 	PlatformOptions.ApiVersion = EOS_PLATFORM_OPTIONS_API_LATEST;
 	PlatformOptions.Reserved = nullptr;
-	PlatformOptions.ProductId = ProductId.c_str();
-	PlatformOptions.SandboxId = SandboxId.c_str();
-	PlatformOptions.DeploymentId = DeploymentId.c_str();
-	PlatformOptions.ClientCredentials.ClientId = ClientCredentialsId.c_str();
-	PlatformOptions.ClientCredentials.ClientSecret = ClientCredentialsSecret.c_str();
+	PlatformOptions.ProductId = BUILD_ENV_PR;
+	PlatformOptions.SandboxId = BUILD_ENV_SA;
+	PlatformOptions.DeploymentId = BUILD_ENV_DE;
+	PlatformOptions.ClientCredentials.ClientId = BUILD_ENV_CC;
+	PlatformOptions.ClientCredentials.ClientSecret = BUILD_ENV_CS;
 	PlatformOptions.OverrideCountryCode = nullptr;
 	PlatformOptions.OverrideLocaleCode = nullptr;
 	PlatformOptions.bIsServer = EOS_FALSE;
@@ -1054,6 +1055,11 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.CacheDirectory = nullptr; // important - needs double slashes and absolute path
 
 	PlatformHandle = EOS_Platform_Create(&PlatformOptions);
+	PlatformOptions.ClientCredentials.ClientId = nullptr;
+	PlatformOptions.ClientCredentials.ClientSecret = nullptr;
+	PlatformOptions.ProductId = nullptr;
+	PlatformOptions.SandboxId = nullptr;
+	PlatformOptions.DeploymentId = nullptr;
 	if ( !PlatformHandle )
 	{
 		logError("PlatformHandle: Platform failed to initialize - invalid handle");
@@ -2611,7 +2617,7 @@ void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsComp
 		for ( CopyByIndexOptions.StatIndex = 0; CopyByIndexOptions.StatIndex < numStats; ++CopyByIndexOptions.StatIndex )
 		{
 			EOS_EResult result = EOS_Stats_CopyStatByIndex(EOS.StatsHandle, &CopyByIndexOptions, &copyStat);
-			if ( result == EOS_EResult::EOS_Success && stat )
+			if ( result == EOS_EResult::EOS_Success && copyStat )
 			{
 				SteamStat_t* statLookup = nullptr;
 				if ( statLookup = EOS.getStatStructFromString(std::string(copyStat->Name)) )

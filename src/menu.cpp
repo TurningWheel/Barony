@@ -1533,11 +1533,6 @@ void handleMainMenu(bool mode)
 			}
 		}
 #endif
-		if ( mode )
-		{
-			UIToastNotificationManager.drawNotifications();
-		}
-
 		// gray text color
 		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
 
@@ -11552,6 +11547,8 @@ void handleMainMenu(bool mode)
 			fadealpha = std::min(fadealpha + 2, 255);
 		}
 	}
+
+	UIToastNotificationManager.drawNotifications();
 }
 
 /*-------------------------------------------------------------------------------
