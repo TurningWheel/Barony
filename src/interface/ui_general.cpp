@@ -173,9 +173,15 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 		return;
 	}
 
+	bool unlocked = (currentValue >= maxValue);
+
 	SDL_Surface* achievementImage = nullptr;
 	{
 		std::string imgName = name + std::string("_l.png");
+		if ( unlocked )
+		{
+			imgName = name + std::string(".png");
+		}
 		auto it = achievementImages.find(imgName.c_str());
 		if ( it != achievementImages.end() )
 		{
@@ -192,7 +198,14 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	}
 
 	n = UIToastNotificationManager.addNotification(achievementImage);
-	n->setHeaderText(std::string("Achievement Updated!"));
+	if ( unlocked )
+	{
+		n->setHeaderText(std::string("Achievement Unlocked!"));
+	}
+	else
+	{
+		n->setHeaderText(std::string("Achievement Updated!"));
+	}
 	n->setMainText(std::string(achievementName));
 	n->setAchievementName(name);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_STATISTIC_UPDATE);

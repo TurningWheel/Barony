@@ -246,7 +246,6 @@ public:
 		dockedCardHide = true;
 		lastInteractedTick = ticks;
 	}
-
 	void updateCardStatisticEvent(int updatedValue)
 	{
 		pendingStatisticUpdateCurrent = updatedValue;
@@ -347,7 +346,7 @@ public:
 				if ( cardType == UI_CARD_ACHIEVEMENT && pendingStatisticUpdateCurrent != -1 )
 				{
 					setStatisticCurrentValue(pendingStatisticUpdateCurrent);
-					if ( statisticUpdateCurrent == statisticUpdateMax )
+					if ( statisticUpdateCurrent >= statisticUpdateMax )
 					{
 						this->setHeaderText(std::string("Achievement Unlocked!"));
 						{
