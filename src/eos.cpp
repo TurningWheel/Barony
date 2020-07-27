@@ -2419,13 +2419,7 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 		{
 			if ( PlayerAchievement->UnlockTime != EOS_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKTIME_UNDEFINED )
 			{
-				size_t size = sizeof(char) * (strlen(PlayerAchievement->AchievementId) + 1);
-				char* ach = (char*)malloc(size);
-				strcpy(ach, PlayerAchievement->AchievementId);
-				node_t* node = list_AddNodeFirst(&steamAchievements);
-				node->element = ach;
-				node->size = size;
-				node->deconstructor = &defaultDeconstructor;
+				achievementUnlockedLookup.insert(std::string(PlayerAchievement->AchievementId));
 
 				auto find = achievementUnlockTime.find(PlayerAchievement->AchievementId);
 				if ( find == achievementUnlockTime.end() )
@@ -2437,25 +2431,23 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 					find->second = PlayerAchievement->UnlockTime;
 				}
 			}
-			else
+
+			if ( PlayerAchievement->StatInfoCount > 0 )
 			{
-				if ( PlayerAchievement->StatInfoCount > 0 )
+				for ( int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum )
 				{
-					for ( int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum )
+					if ( steamStatAchStringsAndMaxVals[statNum].first.compare(PlayerAchievement->AchievementId) == 0 )
 					{
-						if ( steamStatAchStringsAndMaxVals[statNum].first.compare(PlayerAchievement->AchievementId) == 0 )
+						auto find = achievementProgress.find(PlayerAchievement->AchievementId);
+						if ( find == achievementProgress.end() )
 						{
-							auto find = achievementProgress.find(PlayerAchievement->AchievementId);
-							if ( find == achievementProgress.end() )
-							{
-								achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), statNum));
-							}
-							else
-							{
-								find->second = statNum;
-							}
-							break;
+							achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), statNum));
 						}
+						else
+						{
+							find->second = statNum;
+						}
+						break;
 					}
 				}
 			}
@@ -2466,7 +2458,7 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 	EOS.Achievements.playerDataLoaded = true;
 	EOS.Achievements.sortAchievementsForDisplay();
 
-	logInfo("OnPlayerAchievementQueryComplete: success, %d", list_Size(&steamAchievements));
+	logInfo("OnPlayerAchievementQueryComplete: success");
 }
 
 void EOSFuncs::Achievements_t::sortAchievementsForDisplay()

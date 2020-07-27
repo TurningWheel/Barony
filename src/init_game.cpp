@@ -55,8 +55,6 @@ int initGame()
 	FILE* fp;
 
 	// setup some lists
-	steamAchievements.first = NULL;
-	steamAchievements.last = NULL;
 	booksRead.first = NULL;
 	booksRead.last = NULL;
 	lobbyChatboxMessages.first = NULL;
@@ -976,7 +974,6 @@ void deinitGame()
 	pathMapFlying = NULL;
 
 	// clear steam achievement list
-	list_FreeAll(&steamAchievements);
 	list_FreeAll(&booksRead);
 
 	// clear lobby chatbox data

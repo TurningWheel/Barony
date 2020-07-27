@@ -651,6 +651,7 @@ typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::s
 extern std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
 extern std::unordered_map<std::string, int> achievementProgress;
 extern std::unordered_map<std::string, int64_t> achievementUnlockTime;
+extern std::unordered_set<std::string> achievementUnlockedLookup;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
 extern bool useModelCache;

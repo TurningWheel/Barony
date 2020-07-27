@@ -197,7 +197,6 @@ TileEntityListHandler TileEntityList;
 
 int game = 1;
 Uint32 uniqueGameKey = 0;
-list_t steamAchievements;
 DebugStatsClass DebugStats;
 Uint32 networkTickrate = 0;
 bool gameloopFreezeEntities = false;

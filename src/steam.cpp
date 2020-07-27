@@ -746,16 +746,7 @@ void SteamServerClientWrapper::OnGetNumberOfCurrentPlayers(NumberOfCurrentPlayer
 bool achievementUnlocked(const char* achName)
 {
 	// check internal achievement record
-	node_t* node;
-	for ( node = steamAchievements.first; node != NULL; node = node->next )
-	{
-		char* ach = (char*)node->element;
-		if ( !strcmp(ach, achName) )
-		{
-			return true;
-		}
-	}
-	return false;
+	return (achievementUnlockedLookup.find(achName) != achievementUnlockedLookup.end());
 }
 
 /*-------------------------------------------------------------------------------
@@ -814,13 +805,7 @@ void steamAchievement(const char* achName)
 		EOS.unlockAchievement(achName);
 #endif
 #endif
-
-		char* ach = (char*) malloc(sizeof(char) * (strlen(achName) + 1));
-		strcpy(ach, achName);
-		node_t* node = list_AddNodeFirst(&steamAchievements);
-		node->element = ach;
-		node->size = sizeof(char) * (strlen(achName) + 1);
-		node->deconstructor = &defaultDeconstructor;
+		achievementUnlockedLookup.insert(std::string(achName));
 	}
 }
 

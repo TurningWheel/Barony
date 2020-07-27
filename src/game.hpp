@@ -27,8 +27,6 @@
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
 class Entity;
 
-extern list_t steamAchievements;
-
 #define DEBUG 1
 #define ENTITY_PACKET_LENGTH 46
 #define NET_PACKET_SIZE 512
