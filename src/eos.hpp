@@ -24,8 +24,6 @@
 
 class EOSFuncs
 {
-	bool bAchievementsLoaded = false;
-	std::atomic<int> achievementsLoading { 0 };
 	std::unordered_map<std::string, SteamStat_t*> statMappings;
 public:
 	std::string ProductId = "";
@@ -125,6 +123,19 @@ public:
 	std::unordered_set<EOS_ProductUserId> ProductIdsAwaitingAccountMappingCallback;
 	std::unordered_map<EOS_ProductUserId, EOS_EpicAccountId> AccountMappings;
 	std::unordered_map<EOS_ProductUserId, std::string> ExternalAccountMappings;
+
+	EOS_EResult appRequiresRestart = EOS_EResult::EOS_NotConfigured;
+
+	class Achievements_t
+	{
+	public:
+		bool playerDataAwaitingCallback = false;
+		bool definitionsAwaitingCallback = false;
+		bool playerDataLoaded = false;
+		bool definitionsLoaded = false;
+		void sortAchievementsForDisplay();
+		bool bAchievementsInit = false;
+	} Achievements;
 
 	// actually all pointers...
 	EOS_HPlatform PlatformHandle = nullptr; 

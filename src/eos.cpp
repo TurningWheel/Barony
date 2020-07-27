@@ -105,7 +105,7 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 		EOSFuncs::logInfo("Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 
 		// load achievement data
-		if ( !EOS.bAchievementsLoaded )
+		if ( !EOS.Achievements.bAchievementsInit )
 		{
 			EOS.loadAchievementData();
 		}
@@ -197,6 +197,12 @@ void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbac
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
 		EOSFuncs::logInfo("OnCreateUserCallback success, new user: %s", EOS.CurrentUserInfo.getProductUserIdStr());
+
+		// load achievement data
+		if ( !EOS.Achievements.bAchievementsInit )
+		{
+			EOS.loadAchievementData();
+		}
 	}
 	else
 	{
@@ -1055,16 +1061,25 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.CacheDirectory = nullptr; // important - needs double slashes and absolute path
 
 	PlatformHandle = EOS_Platform_Create(&PlatformOptions);
+
 	PlatformOptions.ClientCredentials.ClientId = nullptr;
 	PlatformOptions.ClientCredentials.ClientSecret = nullptr;
 	PlatformOptions.ProductId = nullptr;
 	PlatformOptions.SandboxId = nullptr;
 	PlatformOptions.DeploymentId = nullptr;
+
 	if ( !PlatformHandle )
 	{
 		logError("PlatformHandle: Platform failed to initialize - invalid handle");
 		return false;
 	}
+#ifdef WINDOWS
+#ifndef NDEBUG
+	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);
+#endif
+#else
+	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);
+#endif
 	return true;
 }
 
@@ -2310,7 +2325,7 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 {
 	assert(data != NULL);
 
-	EOS.achievementsLoading -= 1;
+	EOS.Achievements.definitionsAwaitingCallback = false;
 
 	if ( data->ResultCode != EOS_EResult::EOS_Success )
 	{
@@ -2367,6 +2382,100 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 		EOS_Achievements_DefinitionV2_Release(AchievementDef);
 	}
 
+	EOS.Achievements.definitionsLoaded = true;
+	EOS.Achievements.sortAchievementsForDisplay();
+
+	logInfo("Successfully loaded achievements");
+}
+
+void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+
+	EOS.Achievements.playerDataAwaitingCallback = false;
+
+	if ( data->ResultCode != EOS_EResult::EOS_Success )
+	{
+		logError("OnPlayerAchievementQueryComplete: Failed to load player achievement status");
+		return;
+	}
+
+	EOS_Achievements_GetPlayerAchievementCountOptions AchievementsCountOptions = {};
+	AchievementsCountOptions.ApiVersion = EOS_ACHIEVEMENTS_GETPLAYERACHIEVEMENTCOUNT_API_LATEST;
+	AchievementsCountOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+
+	uint32_t AchievementsCount = EOS_Achievements_GetPlayerAchievementCount(EOS.AchievementsHandle, &AchievementsCountOptions);
+
+	EOS_Achievements_CopyPlayerAchievementByIndexOptions CopyOptions = {};
+	CopyOptions.ApiVersion = EOS_ACHIEVEMENTS_COPYPLAYERACHIEVEMENTBYINDEX_API_LATEST;
+	CopyOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+
+	for ( CopyOptions.AchievementIndex = 0; CopyOptions.AchievementIndex < AchievementsCount; ++CopyOptions.AchievementIndex )
+	{
+		EOS_Achievements_PlayerAchievement* PlayerAchievement = NULL;
+
+		EOS_EResult CopyPlayerAchievementResult = EOS_Achievements_CopyPlayerAchievementByIndex(EOS.AchievementsHandle, &CopyOptions, &PlayerAchievement);
+		if ( CopyPlayerAchievementResult == EOS_EResult::EOS_Success )
+		{
+			if ( PlayerAchievement->UnlockTime != EOS_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKTIME_UNDEFINED )
+			{
+				size_t size = sizeof(char) * (strlen(PlayerAchievement->AchievementId) + 1);
+				char* ach = (char*)malloc(size);
+				strcpy(ach, PlayerAchievement->AchievementId);
+				node_t* node = list_AddNodeFirst(&steamAchievements);
+				node->element = ach;
+				node->size = size;
+				node->deconstructor = &defaultDeconstructor;
+
+				auto find = achievementUnlockTime.find(PlayerAchievement->AchievementId);
+				if ( find == achievementUnlockTime.end() )
+				{
+					achievementUnlockTime.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->UnlockTime));
+				}
+				else
+				{
+					find->second = PlayerAchievement->UnlockTime;
+				}
+			}
+			else
+			{
+				if ( PlayerAchievement->StatInfoCount > 0 )
+				{
+					for ( int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum )
+					{
+						if ( steamStatAchStringsAndMaxVals[statNum].first.compare(PlayerAchievement->AchievementId) == 0 )
+						{
+							auto find = achievementProgress.find(PlayerAchievement->AchievementId);
+							if ( find == achievementProgress.end() )
+							{
+								achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), statNum));
+							}
+							else
+							{
+								find->second = statNum;
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+		EOS_Achievements_PlayerAchievement_Release(PlayerAchievement);
+	}
+
+	EOS.Achievements.playerDataLoaded = true;
+	EOS.Achievements.sortAchievementsForDisplay();
+
+	logInfo("OnPlayerAchievementQueryComplete: success, %d", list_Size(&steamAchievements));
+}
+
+void EOSFuncs::Achievements_t::sortAchievementsForDisplay()
+{
+	if ( !definitionsLoaded )
+	{
+		return;
+	}
+
 	// sort achievements list
 	achievementNamesSorted.clear();
 	Comparator compFunctor =
@@ -2407,70 +2516,6 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 	};
 	std::set<std::pair<std::string, std::string>, Comparator> sorted(achievementNames.begin(), achievementNames.end(), compFunctor);
 	achievementNamesSorted.swap(sorted);
-
-	logInfo("Successfully loaded achievements");
-}
-
-void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo* data)
-{
-	assert(data != NULL);
-
-	EOS.achievementsLoading -= 1;
-
-	if ( data->ResultCode != EOS_EResult::EOS_Success )
-	{
-		logError("OnPlayerAchievementQueryComplete: Failed to load player achievement status");
-		return;
-	}
-
-	EOS_Achievements_GetPlayerAchievementCountOptions AchievementsCountOptions = {};
-	AchievementsCountOptions.ApiVersion = EOS_ACHIEVEMENTS_GETPLAYERACHIEVEMENTCOUNT_API_LATEST;
-	AchievementsCountOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
-
-	uint32_t AchievementsCount = EOS_Achievements_GetPlayerAchievementCount(EOS.AchievementsHandle, &AchievementsCountOptions);
-
-	EOS_Achievements_CopyPlayerAchievementByIndexOptions CopyOptions = {};
-	CopyOptions.ApiVersion = EOS_ACHIEVEMENTS_COPYPLAYERACHIEVEMENTBYINDEX_API_LATEST;
-	CopyOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
-
-	for ( CopyOptions.AchievementIndex = 0; CopyOptions.AchievementIndex < AchievementsCount; ++CopyOptions.AchievementIndex )
-	{
-		EOS_Achievements_PlayerAchievement* PlayerAchievement = NULL;
-
-		EOS_EResult CopyPlayerAchievementResult = EOS_Achievements_CopyPlayerAchievementByIndex(EOS.AchievementsHandle, &CopyOptions, &PlayerAchievement);
-		if ( CopyPlayerAchievementResult == EOS_EResult::EOS_Success )
-		{
-			if ( PlayerAchievement->UnlockTime != EOS_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKTIME_UNDEFINED )
-			{
-				size_t size = sizeof(char) * (strlen(PlayerAchievement->AchievementId) + 1);
-				char* ach = (char*)malloc(size);
-				strcpy(ach, PlayerAchievement->AchievementId);
-				node_t* node = list_AddNodeFirst(&steamAchievements);
-				node->element = ach;
-				node->size = size;
-				node->deconstructor = &defaultDeconstructor;
-
-				achievementUnlockTime.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->UnlockTime));
-			}
-			else
-			{
-				if ( PlayerAchievement->StatInfoCount > 0 )
-				{
-					for ( int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum )
-					{
-						if ( steamStatAchStringsAndMaxVals[statNum].first.compare(PlayerAchievement->AchievementId) == 0 )
-						{
-							achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), statNum));
-							break;
-						}
-					}
-				}
-			}
-		}
-		EOS_Achievements_PlayerAchievement_Release(PlayerAchievement);
-	}
-
-	logInfo("OnPlayerAchievementQueryComplete: success");
 }
 
 void EOSFuncs::OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data)
@@ -2523,28 +2568,33 @@ void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchie
 
 void EOSFuncs::loadAchievementData()
 {
-	if ( achievementsLoading )
+	if ( Achievements.definitionsAwaitingCallback || Achievements.playerDataAwaitingCallback )
 	{
 		return;
 	}
-	bAchievementsLoaded = true;
-	achievementsLoading = 2;
-	achievementNames.clear();
-	achievementDesc.clear();
-	achievementHidden.clear();
-	achievementProgress.clear();
-	achievementUnlockTime.clear();
+
+	Achievements.bAchievementsInit = true;
 
 	logInfo("Loading EOS achievements");
 
-	EOS_Achievements_QueryDefinitionsOptions Options = {};
-	Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
-	Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
-	Options.UserId = CurrentUserInfo.getProductUserIdHandle();
-	Options.HiddenAchievementsCount = 0;
-	Options.HiddenAchievementIds = nullptr;
-	EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
+	if ( !Achievements.definitionsLoaded )
+	{
+		Achievements.definitionsAwaitingCallback = true;
+		achievementNames.clear();
+		achievementDesc.clear();
+		achievementHidden.clear();
+		EOS_Achievements_QueryDefinitionsOptions Options = {};
+		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
+		Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+		Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+		Options.HiddenAchievementsCount = 0;
+		Options.HiddenAchievementIds = nullptr;
+		EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
+	}
 
+	Achievements.playerDataAwaitingCallback = true;
+	//achievementProgress.clear();
+	//achievementUnlockTime.clear();
 	EOS_Achievements_QueryPlayerAchievementsOptions PlayerAchievementOptions = {};
 	PlayerAchievementOptions.ApiVersion = EOS_ACHIEVEMENTS_QUERYPLAYERACHIEVEMENTS_API_LATEST;
 	PlayerAchievementOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
@@ -2624,7 +2674,7 @@ void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsComp
 				{
 					statLookup->m_iValue = copyStat->Value;
 				}
-				EOSFuncs::logInfo("OnQueryAllStatsCallback: stat %s | %d", copyStat->Name, copyStat->Value);
+				//EOSFuncs::logInfo("OnQueryAllStatsCallback: stat %s | %d", copyStat->Name, copyStat->Value);
 				EOS_Stats_Stat_Release(copyStat);
 			}
 		}
