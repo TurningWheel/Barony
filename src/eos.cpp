@@ -2564,6 +2564,10 @@ void EOSFuncs::loadAchievementData()
 	{
 		return;
 	}
+	if ( !CurrentUserInfo.isValid() || !CurrentUserInfo.isLoggedIn() )
+	{
+		return;
+	}
 
 	Achievements.bAchievementsInit = true;
 

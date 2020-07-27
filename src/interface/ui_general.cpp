@@ -14,7 +14,7 @@
 #include <shellapi.h>
 UIToastNotificationManager_t UIToastNotificationManager;
 
-void UIToastNotificationManager_t::drawNotifications()
+void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool beforeFadeout)
 {
 	if ( !bIsInit )
 	{
@@ -24,10 +24,12 @@ void UIToastNotificationManager_t::drawNotifications()
 	int cardPosY = 110; // update the card y values if number of notifications change.
 	for ( auto& card : allNotifications )
 	{
-		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
+		if ((isMoviePlaying || !intro) 
+			&& !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
 		{
 			continue;
 		}
+
 		card.setPosY(cardPosY);
 		SDL_Rect newPosition;
 		card.getDimensions(newPosition.x, newPosition.y, newPosition.w, newPosition.h);
@@ -35,12 +37,56 @@ void UIToastNotificationManager_t::drawNotifications()
 		cardPosY += (newPosition.h + 8);
 	}
 
+	const int kMaxAchievementCards = 3;
+	int currentNumAchievementCards = 0;
 	for ( auto& card : allNotifications )
 	{
-		if (!intro && !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE)) 
+		if ( (isMoviePlaying || !intro) 
+			&& !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
 		{
 			continue;
 		}
+
+		if ( card.cardType == UIToastNotification::CardType::UI_CARD_ACHIEVEMENT )
+		{
+			// achievements are drawn AFTER the fadeout
+			if ( beforeFadeout )
+			{
+				// if fading, then skip this card.
+				if ( fadealpha > 0 )
+				{
+					continue;
+				}
+				// if we aren't fading, then draw BEFORE - makes sure the cursor is available
+			}
+			else
+			{
+				if ( fadealpha == 0 )
+				{
+					continue;
+				}
+				// if we are fading, then draw AFTER - we don't see the cursor anyway
+			}
+		}
+		else
+		{
+			// all other cards are drawn BEFORE the fadeout
+			if ( !beforeFadeout ) 
+			{
+				continue;
+			}
+		}
+
+		if ( card.cardType == UIToastNotification::CardType::UI_CARD_ACHIEVEMENT )
+		{
+			if ( currentNumAchievementCards >= kMaxAchievementCards )
+			{
+				card.cardForceTickUpdate(); // don't draw, but don't expire these.
+				continue;
+			}
+			++currentNumAchievementCards;
+		}
+
 		card.init();
 		card.draw();
 	}

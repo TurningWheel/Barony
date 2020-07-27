@@ -3764,6 +3764,8 @@ int main(int argc, char** argv)
 
 						handleMainMenu(intro);
 
+						UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+
 						// draw mouse
 						if (!movie && draw_cursor)
 						{
@@ -4395,8 +4397,6 @@ int main(int argc, char** argv)
 						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
 
-					UIToastNotificationManager.drawNotifications();
-
 					DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
 					drawSustainedSpells();
@@ -4461,6 +4461,8 @@ int main(int argc, char** argv)
 					}
 
 					DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
+
+					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
 
 					// pointer in inventory screen
 					if (shootmode == false)
@@ -4672,6 +4674,11 @@ int main(int argc, char** argv)
 					}
 				}
 
+				if ( gamePaused ) // draw after main menu windows etc.
+				{
+					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+				}
+
 				if (((subwindow && !shootmode) || gamePaused) && draw_cursor)
 				{
 					pos.x = mousex - cursor_bmp->w / 2;
@@ -4730,6 +4737,14 @@ int main(int argc, char** argv)
 				}
 			}
 
+			if ( keystatus[SDL_SCANCODE_F1] )
+			{
+				UIToastNotificationManager.createAchievementNotification("BARONY_ACH_BACK_TO_BASICS");
+				keystatus[SDL_SCANCODE_F1] = 0;
+			}
+
+			UIToastNotificationManager.drawNotifications(movie, false);
+
 			// update screen
 			GO_SwapBuffers(screen);
 
@@ -4739,7 +4754,6 @@ int main(int argc, char** argv)
 				keystatus[SDL_SCANCODE_F6] = 0;
 				takeScreenshot();
 			}
-
 
 			// frame rate limiter
 			while ( frameRateLimit(fpsLimit, true) )

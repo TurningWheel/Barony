@@ -169,6 +169,10 @@ public:
 			{
 				// don't hide or close
 			}
+			else if ( (fadeout && cardType == UI_CARD_ACHIEVEMENT) )
+			{
+				// don't hide or close
+			}
 			else
 			{
 				temporaryCardHide = (actionFlags & UI_NOTIFICATION_AUTO_HIDE);
@@ -239,11 +243,14 @@ public:
 		dockedCardHide = false;
 		lastInteractedTick = ticks;
 	}
-
 	void showMainCard()
 	{
 		mainCardHide = false;
 		dockedCardHide = true;
+		lastInteractedTick = ticks;
+	}
+	void cardForceTickUpdate()
+	{
 		lastInteractedTick = ticks;
 	}
 	void updateCardStatisticEvent(int updatedValue)
@@ -513,7 +520,7 @@ public:
 		bIsInit = true;
 		communityLink1 = loadImage("images/system/CommunityLink1.png");
 	}
-	void drawNotifications();
+	void drawNotifications(bool isMoviePlaying, bool beforeFadeout);
 	void createCommunityNotification();
 	void createAchievementNotification(const char* name);
 	void createStatisticUpdateNotification(const char* name, int currentValue, int maxValue);
