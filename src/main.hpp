@@ -771,12 +771,14 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 static const int NUM_STEAM_STATISTICS = 48;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
+static const int NUM_GLOBAL_STEAM_STATISTICS = 39;
+extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
+
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
 extern CSteamLeaderboards* g_SteamLeaderboards;
 extern CSteamWorkshop* g_SteamWorkshop;
-extern SteamGlobalStat_t g_SteamGlobalStats[2];
 extern CSteamStatistics* g_SteamStatistics;
 #endif // STEAMWORKS
 
