@@ -36,7 +36,7 @@ endif()
 if (DEFINED ENV{EDITOR_ENABLED})
   set (EDITOR_ENABLED $ENV{EDITOR_ENABLED})
 else()
-  set (EDITOR_ENABLED 0)
+  set (EDITOR_ENABLED 1)
 endif()
 
 #FMOD can be disabled in one of two ways:
