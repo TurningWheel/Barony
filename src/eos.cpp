@@ -2368,7 +2368,7 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 
 		if ( AchievementDef->UnlockedDescription )
 		{
-			auto& result = achievementDesc.emplace(std::make_pair(
+			auto result = achievementDesc.emplace(std::make_pair(
 				std::string(AchievementDef->AchievementId),
 				std::string(AchievementDef->UnlockedDescription)));
 			if ( result.second == true ) // insertion success
