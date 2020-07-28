@@ -352,7 +352,6 @@ void changeSettingsTab(int option)
 		button->outline = true;
 		int x = button->x + (button->sizex / 2);
 		int y = button->y + (button->sizey / 2);
-		SDL_WarpMouseInWindow(screen, x, y);
 	}
 }
 
@@ -2867,12 +2866,25 @@ void handleMainMenu(bool mode)
 								{
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
-										SteamFriends()->ActivateGameOverlayToStore(STEAM_APPID, k_EOverlayToStoreFlag_None);
+										if ( SteamUtils()->IsOverlayEnabled() )
+										{
+											SteamFriends()->ActivateGameOverlayToStore(STEAM_APPID, k_EOverlayToStoreFlag_None);
+										}
+										else
+										{
+											if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
+											{
+												openURLTryWithOverlay(language[3993]);
+											}
+											else
+											{
+												openURLTryWithOverlay(language[3992]);
+											}
+										}
 										mousestatus[SDL_BUTTON_LEFT] = 0;
 									}
 								}
-#endif
-#ifdef USE_EOS
+#elif defined USE_EOS
 								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
 								{
 									if ( mousestatus[SDL_BUTTON_LEFT] )
