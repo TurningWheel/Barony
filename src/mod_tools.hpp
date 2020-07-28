@@ -2458,6 +2458,11 @@ public:
 				case SV_FLAG_HARDCORE:
 				case SV_FLAG_HUNGER:
 				case SV_FLAG_FRIENDLYFIRE:
+				case SV_FLAG_LIFESAVING:
+				case SV_FLAG_TRAPS:
+				case SV_FLAG_CLASSIC:
+				case SV_FLAG_MINOTAURS:
+				case SV_FLAG_KEEPINVENTORY:
 					return true;
 					break;
 				default:
