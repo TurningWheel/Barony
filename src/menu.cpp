@@ -352,7 +352,6 @@ void changeSettingsTab(int option)
 		button->outline = true;
 		int x = button->x + (button->sizex / 2);
 		int y = button->y + (button->sizey / 2);
-		SDL_WarpMouseInWindow(screen, x, y);
 	}
 }
 
