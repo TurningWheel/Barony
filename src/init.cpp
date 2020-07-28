@@ -168,12 +168,20 @@ int initApp(char* title, int fullscreen)
 		return 14;
 	}
 #ifndef STEAMWORKS
+#ifdef APPLE
+	if ( EOS.CredentialName.compare("") == 0 )
+	{
+		EOSFuncs::logInfo("Error, attempting to launch outside of store...");
+		return 15;
+	}
+#else
 	if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
 	{
 		// restarting app
 		EOSFuncs::logInfo("App attempting restart through store...");
 		return 15;
 	}
+#endif
 	EOS.initAuth();
 #endif // !STEAMWORKS
 #endif
