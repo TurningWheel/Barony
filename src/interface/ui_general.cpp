@@ -11,7 +11,9 @@
 
 
 #include "ui.hpp"
+#ifdef WINDOWS
 #include <shellapi.h>
+#endif
 UIToastNotificationManager_t UIToastNotificationManager;
 
 void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool beforeFadeout)
@@ -136,6 +138,13 @@ void openURLTryWithOverlay(std::string url)
 #ifdef WINDOWS
 		ShellExecute(NULL, TEXT("open"), TEXT(url.c_str()), NULL, NULL, 0);
 #endif // WINDOWS
+#ifdef APPLE
+		//TODO: Mac equivalent.
+		system(std::string("open " + url).c_str());
+#endif // WINDOWS
+#ifdef LINUX
+		//TODO: Linux equivalent.
+#endif
 	}
 }
 
