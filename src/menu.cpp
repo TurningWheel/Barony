@@ -3409,7 +3409,7 @@ void handleMainMenu(bool mode)
 					int previousClassPicked = client_classes[0];
 					if ( client_classes[0] == 0 )
 					{
-						client_classes[0] = *(++availableClasses.rend());
+						client_classes[0] = *(availableClasses.rbegin());;
 					}
 					else
 					{
