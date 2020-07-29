@@ -416,6 +416,12 @@ void LobbyHandler_t::handleLobbyBrowser()
 				ttfPrintTextFormatted(ttf12, subx1 + 8 + (strlen(subtext) + 1) * TTF12_WIDTH, suby1 + 8, "(Filtered by lobby code: %s)", EOS.LobbySearchResults.lobbyLastSearchByCode);
 			}
 		}
+#ifdef STEAMWORKS
+		if ( !EOS.CurrentUserInfo.bUserLoggedIn )
+		{
+			ttfPrintTextFormatted(ttf12, subx2 - 8 - (strlen(language[3994]) + 1) * TTF12_WIDTH, suby2 - TTF12_HEIGHT - 10, language[3994]);
+		}
+#endif
 #endif
 
 		SDL_Rect listExtents;

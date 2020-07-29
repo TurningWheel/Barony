@@ -798,7 +798,7 @@ void EOSFuncs::getExternalAccountUserInfo(EOS_ProductUserId targetId, UserInfoQu
 		return;
 	}
 
-	EOSFuncs::logInfo("getExternalAccountUserInfo: Received info for product id: %s", EOSFuncs::Helpers_t::productIdToString(targetId));
+	EOSFuncs::logInfo("getExternalAccountUserInfo: Received info for product id: %s", EOSFuncs::Helpers_t::shortProductIdToString(targetId).c_str());
 
 	if ( queryType == UserInfoQueryType::USER_INFO_QUERY_LOCAL )
 	{
@@ -832,7 +832,7 @@ void EOSFuncs::getExternalAccountUserInfo(EOS_ProductUserId targetId, UserInfoQu
 			if ( !foundMember )
 			{
 				EOSFuncs::logInfo("getExternalAccountUserInfo: could not find player in current lobby with product id %s",
-					EOSFuncs::Helpers_t::productIdToString(targetId));
+					EOSFuncs::Helpers_t::shortProductIdToString(targetId).c_str());
 			}
 		}
 	}
@@ -846,7 +846,7 @@ void EOS_CALL EOSFuncs::OnMemberUpdateReceived(const EOS_Lobby_LobbyMemberUpdate
 		if ( EOS.CurrentLobbyData.LobbyId.compare(data->LobbyId) == 0 )
 		{
 			EOS.CurrentLobbyData.updateLobby();
-			EOSFuncs::logInfo("OnMemberUpdateReceived: received user: %s, updating lobby", EOSFuncs::Helpers_t::productIdToString(data->TargetUserId));
+			EOSFuncs::logInfo("OnMemberUpdateReceived: received user: %s, updating lobby", EOSFuncs::Helpers_t::shortProductIdToString(data->TargetUserId).c_str());
 		}
 		else
 		{
@@ -900,7 +900,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 					{
 						EOS.CurrentLobbyData.updateLobby();
 						EOSFuncs::logInfo("OnMemberStatusReceived: received user: %s, event: %d, updating lobby", 
-							EOSFuncs::Helpers_t::productIdToString(data->TargetUserId),
+							EOSFuncs::Helpers_t::shortProductIdToString(data->TargetUserId).c_str(),
 							static_cast<int>(data->CurrentStatus));
 						return;
 					}
@@ -912,7 +912,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 				{
 					EOS.CurrentLobbyData.updateLobby();
 					EOSFuncs::logInfo("OnMemberStatusReceived: received user: %s, event: %d, updating lobby", 
-						EOSFuncs::Helpers_t::productIdToString(data->TargetUserId),
+						EOSFuncs::Helpers_t::shortProductIdToString(data->TargetUserId).c_str(),
 						static_cast<int>(data->CurrentStatus));
 					return;
 				}
@@ -921,7 +921,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 				break;
 		}
 		EOSFuncs::logInfo("OnMemberStatusReceived: success, received user: %s | status: %d", 
-			EOSFuncs::Helpers_t::productIdToString(data->TargetUserId), static_cast<int>(data->CurrentStatus));
+			EOSFuncs::Helpers_t::shortProductIdToString(data->TargetUserId).c_str(), static_cast<int>(data->CurrentStatus));
 	}
 	else
 	{
@@ -1990,7 +1990,7 @@ void EOSFuncs::LobbyData_t::getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails)
 	{
 		MemberByIndexOptions.MemberIndex = i;
 		EOS_ProductUserId memberId = EOS_LobbyDetails_GetMemberByIndex(LobbyDetails, &MemberByIndexOptions);
-		EOSFuncs::logInfo("getLobbyMemberInfo: Lobby Player ID: %s", EOSFuncs::Helpers_t::productIdToString(memberId));
+		EOSFuncs::logInfo("getLobbyMemberInfo: Lobby Player ID: %s", EOSFuncs::Helpers_t::shortProductIdToString(memberId).c_str());
 
 		PlayerLobbyData_t newPlayer;
 		newPlayer.memberProductUserId = EOSFuncs::Helpers_t::productIdToString(memberId);
@@ -2679,6 +2679,11 @@ static void EOS_CALL OnIngestGlobalStatComplete(const EOS_Stats_IngestStatComple
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
 		EOSFuncs::logInfo("Successfully stored global stats");
+		for ( Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i )
+		{
+			g_SteamGlobalStats[i].m_iValue = 0;
+		}
+		return;
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_TooManyRequests )
 	{
@@ -2688,6 +2693,7 @@ static void EOS_CALL OnIngestGlobalStatComplete(const EOS_Stats_IngestStatComple
 	{
 		EOSFuncs::logError("OnIngestGlobalStatComplete: Callback failure: %d", static_cast<int>(data->ResultCode));
 	}
+	EOS.StatGlobalManager.bDataQueued = true;
 }
 
 void EOSFuncs::queueGlobalStatUpdate(int stat_num, int value)
@@ -2754,7 +2760,6 @@ void EOSFuncs::ingestGlobalStats()
 			//logInfo("Updated %s | %d", StatsToIngest[currentIndex].StatName, StatsToIngest[currentIndex].IngestAmount);
 			++currentIndex;
 		}
-		g_SteamGlobalStats[i].m_iValue = 0;
 	}
 
 	EOS_Stats_IngestStatOptions Options = {};

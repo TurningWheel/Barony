@@ -653,6 +653,18 @@ public:
 					return "Error";
 				}
 			}
+			static std::string shortProductIdToString(EOS_ProductUserId id)
+			{
+				std::string str = productIdToString(id);
+				if ( id && productIdIsValid(id) && str.compare("Error") )
+				{
+					std::string shortStr = str.substr(0, 3);
+					shortStr.append("...");
+					shortStr.append(str.substr(str.size() - 3));
+					return shortStr;
+				}
+				return str;
+			}
 			static bool epicIdIsValid(EOS_EpicAccountId id)
 			{
 				return (EOS_EpicAccountId_IsValid(id) == EOS_TRUE);
