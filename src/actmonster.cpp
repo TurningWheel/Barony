@@ -5957,6 +5957,7 @@ timeToGoAgain:
 			if ( my->monsterSpecialTimer > 180 )
 			{
 				lichDie(my);
+				return;
 			}
 		}
 		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_DIE 
@@ -6008,10 +6009,12 @@ timeToGoAgain:
 				if ( myStats->type == LICH_FIRE )
 				{
 					lichFireDie(my);
+					return;
 				}
 				else if ( myStats->type == LICH_ICE )
 				{
 					lichIceDie(my);
+					return;
 				}
 			}
 		}
@@ -6050,6 +6053,7 @@ timeToGoAgain:
 			if ( my->z > 96 )
 			{
 				devilDie(my);
+				return;
 			}
 		}
 		else if ( my->monsterState == MONSTER_STATE_DEVIL_TELEPORT )     // devil teleport state
