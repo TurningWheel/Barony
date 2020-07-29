@@ -3470,6 +3470,7 @@ int main(int argc, char** argv)
 #endif
 #ifdef USE_EOS
 			EOS_Platform_Tick(EOS.PlatformHandle);
+			EOS_Platform_Tick(EOS.ServerPlatformHandle);
 #endif // USE_EOS
 
 			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();

@@ -5103,6 +5103,10 @@ bool AchievementObserver::PlayerAchievements::checkTraditionKill(Entity* player,
 
 void AchievementObserver::updateGlobalStat(int index, int value)
 {
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
 		|| gamemods_disableSteamAchievements )
