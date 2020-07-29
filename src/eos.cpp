@@ -1,5 +1,9 @@
 
 #include "Config.hpp"
+
+#ifdef USE_EOS
+
+#ifdef WINDOWS
 #define STRINGIZE2(s) #s
 #define STRINGIZE(s) STRINGIZE2(s)
 #define BUILD_ENV_PR STRINGIZE(BUILD_PR)
@@ -8,7 +12,7 @@
 #define BUILD_ENV_CC STRINGIZE(BUILD_CC)
 #define BUILD_ENV_CS STRINGIZE(BUILD_CS)
 #define BUILD_ENV_GSE STRINGIZE(BUILD_GSE)
-#ifdef USE_EOS
+#endif
 
 #include "main.hpp"
 #include "menu.hpp"
@@ -1082,7 +1086,39 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);
 #endif
 #else
+	// #ifdef APPLE
+	// 	SDL_Event event;
+	// 	Uint32 startAuthTicks = SDL_GetTicks();
+	// 	Uint32 currentAuthTicks = startAuthTicks;
+	// 	while (1)
+	// 	{
+	// 		while ( SDL_PollEvent(&event) != 0 )
+	// 		{
+	// 			//Makes Mac work because Apple had to do it different.
+	// 		}
+	// 		EOS_Platform_Tick(PlatformHandle);
+	// 		SDL_Delay(50);
+
+	// 		currentAuthTicks = SDL_GetTicks();
+	// 		logInfo("*whirl*");
+	// 		if ( currentAuthTicks - startAuthTicks >= 5000 ) // spin the wheels for 5 seconds
+	// 		{
+	// 			break;
+	// 		}
+	// 	}
+	// #endif
 	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);
+	// printlog("See you on the other side!");
+	// while ( SDL_PollEvent(&event) != 0 )
+	// {
+	// 	//Makes Mac work because Apple had to do it different.
+	// }
+	// EOS_Platform_Tick(PlatformHandle);
+	// while ( SDL_PollEvent(&event) != 0 )
+	// {
+	// 	//Makes Mac work because Apple had to do it different.
+	// }
+	// exit(1);
 #endif
 #endif
 	return true;
@@ -2371,7 +2407,7 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 
 		if ( AchievementDef->UnlockedDescription )
 		{
-			auto& result = achievementDesc.emplace(std::make_pair(
+			auto result = achievementDesc.emplace(std::make_pair(
 				std::string(AchievementDef->AchievementId),
 				std::string(AchievementDef->UnlockedDescription)));
 			if ( result.second == true ) // insertion success
