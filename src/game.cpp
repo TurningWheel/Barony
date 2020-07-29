@@ -3264,9 +3264,21 @@ int main(int argc, char** argv)
 		strcpy(outputdir, "./");
 #else
 		char *basepath = getenv("HOME");
+ #ifdef USE_EOS
+		std::string firstDotdir(basepath);
+		firstDotdir += "/.barony/";
+		if (access(firstDotdir.c_str(), F_OK) == -1)
+		{
+			mkdir(firstDotdir.c_str(), 0777); //Since this mkdir is not equivalent to mkdir -p, have to create each part of the path manually.
+		}
+		snprintf(outputdir, sizeof(outputdir), "%s/epicgames", firstDotdir.c_str());
+ #else
 		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
+ #endif
 		if (access(outputdir, F_OK) == -1)
+		{
 			mkdir(outputdir, 0777);
+		}
 #endif
 		// read command line arguments
 		if ( argc > 1 )
