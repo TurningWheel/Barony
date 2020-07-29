@@ -782,7 +782,7 @@ void steamAchievement(const char* achName)
 		{
 		// cheats/mods have been enabled on savefile, disallow achievements.
 #ifndef DEBUG_ACHIEVEMENTS
-			//return;
+			return;
 #endif
 		}
 	}
@@ -895,7 +895,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
-		//return;
+		return;
 #endif
 		}
 	}
@@ -1135,7 +1135,7 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		{
 			// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
-			//return;
+			return;
 #endif
 		}
 	}

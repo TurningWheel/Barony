@@ -160,6 +160,7 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 		{
 			EOS.queryLocalExternalAccountId(EOS_EExternalAccountType::EOS_EAT_STEAM);
 		}
+		EOS.StatGlobalManager.queryGlobalStatUser();
 #endif
 		EOSFuncs::logInfo("Crossplay Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
@@ -1005,7 +1006,6 @@ void EOS_CALL EOSFuncs::ConnectAuthExpirationCallback(const EOS_Connect_AuthExpi
 }
 
 void EOSFuncs::serialize(void* file) {
-	// recommend you start with this because it makes versioning way easier down the road
 	int version = 0;
 	FileInterface* fileInterface = static_cast<FileInterface*>(file);
 	fileInterface->property("version", version);
@@ -1045,7 +1045,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		else
 		{
 			logInfo("SetLogCallbackResult: Logging Callback set");
-			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_VeryVerbose);
+			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Warning);
 		}
 	}
 
@@ -2556,7 +2556,7 @@ void EOSFuncs::OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackIn
 	assert(data != NULL);
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		logInfo("OnIngestStatComplete: success");
+		logInfo("Stats updated");
 	}
 	else
 	{
@@ -2678,7 +2678,7 @@ static void EOS_CALL OnIngestGlobalStatComplete(const EOS_Stats_IngestStatComple
 	assert(data != NULL);
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		EOSFuncs::logInfo("OnIngestGlobalStatComplete: success");
+		EOSFuncs::logInfo("Successfully stored global stats");
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_TooManyRequests )
 	{
@@ -2690,7 +2690,7 @@ static void EOS_CALL OnIngestGlobalStatComplete(const EOS_Stats_IngestStatComple
 	}
 }
 
-void EOSFuncs::ingestGlobalStat(int stat_num, int value)
+void EOSFuncs::queueGlobalStatUpdate(int stat_num, int value)
 {
 	if ( stat_num <= STEAM_GSTAT_INVALID || stat_num >= NUM_GLOBAL_STEAM_STATISTICS )
 	{
@@ -2700,18 +2700,72 @@ void EOSFuncs::ingestGlobalStat(int stat_num, int value)
 	{
 		return;
 	}
+	g_SteamGlobalStats[stat_num].m_iValue += value;
+	StatGlobalManager.bDataQueued = true;
+}
 
-	EOS_Stats_IngestData StatsToIngest[1];
-	StatsToIngest[0].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
-	StatsToIngest[0].StatName = g_SteamGlobalStats[stat_num].m_pchStatName;
-	StatsToIngest[0].IngestAmount = value;
+void EOSFuncs::StatGlobal_t::updateQueuedStats()
+{
+	if ( !bDataQueued || bIsDisabled )
+	{
+		return;
+	}
+	if ( (ticks - lastUpdateTicks) < TICKS_PER_SECOND * 120 )
+	{
+		return;
+	}
+	EOS.ingestGlobalStats();
+	lastUpdateTicks = ticks;
+	bDataQueued = false;
+}
+
+void EOSFuncs::ingestGlobalStats()
+{
+	if ( StatGlobalManager.bIsDisabled )
+	{
+		return;
+	}
+
+	Uint32 numStats = 0;
+	std::vector<std::string> StatNames;
+	for ( Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i )
+	{
+		if ( g_SteamGlobalStats[i].m_iValue > 0 )
+		{
+			StatNames.push_back(g_SteamGlobalStats[i].m_pchStatName);
+			++numStats;
+		}
+	}
+
+	if ( numStats == 0 )
+	{
+		return;
+	}
+
+	EOS_Stats_IngestData* StatsToIngest = new EOS_Stats_IngestData[numStats];
+	Uint32 currentIndex = 0;
+	for ( Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS && currentIndex < StatNames.size(); ++i )
+	{
+		if ( g_SteamGlobalStats[i].m_iValue > 0 )
+		{
+			StatsToIngest[currentIndex].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
+			StatsToIngest[currentIndex].StatName = StatNames[currentIndex].c_str();
+			StatsToIngest[currentIndex].IngestAmount = g_SteamGlobalStats[i].m_iValue;
+			//logInfo("Updated %s | %d", StatsToIngest[currentIndex].StatName, StatsToIngest[currentIndex].IngestAmount);
+			++currentIndex;
+		}
+		g_SteamGlobalStats[i].m_iValue = 0;
+	}
 
 	EOS_Stats_IngestStatOptions Options = {};
 	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
 	Options.Stats = StatsToIngest;
-	Options.StatsCount = sizeof(StatsToIngest) / sizeof(StatsToIngest[0]);
+	Options.StatsCount = numStats;
 	Options.UserId = StatGlobalManager.getProductUserIdHandle();
+
 	EOS_Stats_IngestStat(EOS_Platform_GetStatsInterface(ServerPlatformHandle), &Options, nullptr, OnIngestGlobalStatComplete);
+
+	delete[] StatsToIngest;
 }
 
 void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsCompleteCallbackInfo* data)
@@ -3531,11 +3585,6 @@ static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsComp
 
 		EOS_Stats_Stat* copyStat = NULL;
 
-		for ( Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i )
-		{
-			g_SteamGlobalStats[i].m_iValue = 0;
-		}
-
 		for ( CopyByIndexOptions.StatIndex = 0; CopyByIndexOptions.StatIndex < numStats; ++CopyByIndexOptions.StatIndex )
 		{
 			EOS_EResult result = EOS_Stats_CopyStatByIndex(EOS_Platform_GetStatsInterface(EOS.ServerPlatformHandle), 
@@ -3550,13 +3599,7 @@ static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsComp
 						EOS.StatGlobalManager.bIsDisabled = true;
 					}
 				}
-				/*for ( Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i )
-				{
-					if ( !strcmp(g_SteamGlobalStats[i].m_pchStatName, copyStat->Name) )
-					{
-						g_SteamGlobalStats[i].m_iValue = copyStat->Value;
-					}
-				}*/
+
 				EOSFuncs::logInfo("OnQueryGlobalStatsCallback: stat %s | %d", copyStat->Name, copyStat->Value);
 				EOS_Stats_Stat_Release(copyStat);
 			}

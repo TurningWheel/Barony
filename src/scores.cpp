@@ -5108,14 +5108,12 @@ void AchievementObserver::updateGlobalStat(int index, int value)
 		return;
 	}
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
-		|| conductGameChallenges[CONDUCT_LIFESAVING]
 		|| gamemods_disableSteamAchievements )
 	{
-		//return;
+		return;
 	}
-#ifdef STEAMWORKS
-#elif defined USE_EOS
-	EOS.ingestGlobalStat(index, value);
+#if defined USE_EOS
+	EOS.queueGlobalStatUpdate(index, value);
 #endif
 }
 

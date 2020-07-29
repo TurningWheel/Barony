@@ -141,11 +141,14 @@ public:
 	{
 		EOS_ProductUserId productUserId = nullptr;
 		bool bIsInit = false;
+		Uint32 lastUpdateTicks = 0;
 	public:
+		bool bDataQueued = false;
 		bool bIsDisabled = false;
 		EOS_ProductUserId getProductUserIdHandle() { return productUserId; }
 		void init();
 		void queryGlobalStatUser();
+		void updateQueuedStats();
 	} StatGlobalManager;
 
 	// actually all pointers...
@@ -733,7 +736,8 @@ public:
 	void unlockAchievement(const char* name);
 	void loadAchievementData();
 	void ingestStat(int stat_num, int value);
-	void ingestGlobalStat(int stat_num, int value);
+	void ingestGlobalStats();
+	void queueGlobalStatUpdate(int stat_num, int value);
 	void queryAllStats();
 	SteamStat_t* getStatStructFromString(const std::string& str);
 	static void logInfo(const char* str, ...)
