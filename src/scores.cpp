@@ -5100,3 +5100,97 @@ bool AchievementObserver::PlayerAchievements::checkTraditionKill(Entity* player,
 	}
 	return true;
 }
+
+void AchievementObserver::updateGlobalStat(int index, int value)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+		|| conductGameChallenges[CONDUCT_LIFESAVING]
+		|| gamemods_disableSteamAchievements )
+	{
+		//return;
+	}
+#ifdef STEAMWORKS
+#elif defined USE_EOS
+	EOS.ingestGlobalStat(index, value);
+#endif
+}
+
+SteamGlobalStatIndexes getIndexForDeathType(int type)
+{
+	switch ( static_cast<Monster>(type) )
+	{
+		case HUMAN:
+			return STEAM_GSTAT_DEATHS_HUMAN;
+		case RAT:
+			return STEAM_GSTAT_DEATHS_RAT;
+		case GOBLIN:
+			return STEAM_GSTAT_DEATHS_GOBLIN;
+		case SLIME:
+			return STEAM_GSTAT_DEATHS_SLIME;
+		case TROLL:
+			return STEAM_GSTAT_DEATHS_TROLL;
+		case SPIDER:
+			return STEAM_GSTAT_DEATHS_SPIDER;
+		case GHOUL:
+			return STEAM_GSTAT_DEATHS_GHOUL;
+		case SKELETON:
+			return STEAM_GSTAT_DEATHS_SKELETON;
+		case SCORPION:
+			return STEAM_GSTAT_DEATHS_SCORPION;
+		case CREATURE_IMP:
+			return STEAM_GSTAT_DEATHS_IMP;
+		case GNOME:
+			return STEAM_GSTAT_DEATHS_GNOME;
+		case DEMON:
+			return STEAM_GSTAT_DEATHS_DEMON;
+		case SUCCUBUS:
+			return STEAM_GSTAT_DEATHS_SUCCUBUS;
+		case LICH:
+			return STEAM_GSTAT_DEATHS_LICH;
+		case MINOTAUR:
+			return STEAM_GSTAT_DEATHS_MINOTAUR;
+		case DEVIL:
+			return STEAM_GSTAT_DEATHS_DEVIL;
+		case SHOPKEEPER:
+			return STEAM_GSTAT_DEATHS_SHOPKEEPER;
+		case KOBOLD:
+			return STEAM_GSTAT_DEATHS_KOBOLD;
+		case SCARAB:
+			return STEAM_GSTAT_DEATHS_SCARAB;
+		case CRYSTALGOLEM:
+			return STEAM_GSTAT_DEATHS_CRYSTALGOLEM;
+		case INCUBUS:
+			return STEAM_GSTAT_DEATHS_INCUBUS;
+		case VAMPIRE:
+			return STEAM_GSTAT_DEATHS_VAMPIRE;
+		case SHADOW:
+			return STEAM_GSTAT_DEATHS_SHADOW;
+		case COCKATRICE:
+			return STEAM_GSTAT_DEATHS_COCKATRICE;
+		case INSECTOID:
+			return STEAM_GSTAT_DEATHS_INSECTOID;
+		case GOATMAN:
+			return STEAM_GSTAT_DEATHS_GOATMAN;
+		case AUTOMATON:
+			return STEAM_GSTAT_DEATHS_AUTOMATON;
+		case LICH_ICE:
+			return STEAM_GSTAT_DEATHS_LICHICE;
+		case LICH_FIRE:
+			return STEAM_GSTAT_DEATHS_LICHICE;
+		case SENTRYBOT:
+			return STEAM_GSTAT_DEATHS_SENTRYBOT;
+		case SPELLBOT:
+			return STEAM_GSTAT_DEATHS_SPELLBOT;
+		case GYROBOT:
+			return STEAM_GSTAT_DEATHS_GYROBOT;
+		case DUMMYBOT:
+			return STEAM_GSTAT_DEATHS_DUMMYBOT;
+		default:
+			return STEAM_GSTAT_INVALID;
+	}
+	return STEAM_GSTAT_INVALID;
+}

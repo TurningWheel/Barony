@@ -233,6 +233,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						{
 							steamAchievementClient(BOULDER_PLAYERPUSHED, "BARONY_ACH_MOVED_ITSELF");
 						}
+						achievementObserver.updateGlobalStat(STEAM_GSTAT_BOULDER_DEATHS);
 					}
 				}
 

@@ -10493,6 +10493,42 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		}
 	}
 
+	if ( root ) // global stats
+	{
+		if ( src->behavior == &actPlayer && this->behavior == &actMonster )
+		{
+			achievementObserver.updateGlobalStat(getIndexForDeathType(destStats->type));
+		}
+		else if ( src->behavior == &actMonster && this->behavior == &actPlayer )
+		{
+			if ( srcStats->type == LICH )
+			{
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_HERX_SLAIN);
+			}
+			else if ( srcStats->type == LICH_FIRE )
+			{
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_TWINSFIRE_SLAIN);
+			}
+			else if ( srcStats->type == LICH_ICE )
+			{
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_TWINSICE_SLAIN);
+			}
+			else if ( srcStats->type == DEVIL )
+			{
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_BAPHOMET_SLAIN);
+			}
+			else if ( srcStats->type == MINOTAUR )
+			{
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_MINOTAURS_SLAIN);
+			}
+			else if ( srcStats->type == SHOPKEEPER )
+			{
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_SHOPKEEPERS_SLAIN);
+			}
+		}
+	}
+
+
 	// award bonus XP and update kill counters
 	if ( player >= 0 )
 	{

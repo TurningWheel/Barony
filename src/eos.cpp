@@ -11,6 +11,7 @@
 #define BUILD_ENV_DE STRINGIZE(BUILD_DE)
 #define BUILD_ENV_CC STRINGIZE(BUILD_CC)
 #define BUILD_ENV_CS STRINGIZE(BUILD_CS)
+#define BUILD_ENV_GSE STRINGIZE(BUILD_GSE)
 #endif
 
 #include "main.hpp"
@@ -1065,6 +1066,8 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.CacheDirectory = nullptr; // important - needs double slashes and absolute path
 
 	PlatformHandle = EOS_Platform_Create(&PlatformOptions);
+	PlatformOptions.bIsServer = EOS_TRUE;
+	ServerPlatformHandle = EOS_Platform_Create(&PlatformOptions);
 
 	PlatformOptions.ClientCredentials.ClientId = nullptr;
 	PlatformOptions.ClientCredentials.ClientSecret = nullptr;
@@ -1083,27 +1086,27 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);
 #endif
 #else
-// #ifdef APPLE
-// 	SDL_Event event;
-// 	Uint32 startAuthTicks = SDL_GetTicks();
-// 	Uint32 currentAuthTicks = startAuthTicks;
-// 	while (1)
-// 	{
-// 		while ( SDL_PollEvent(&event) != 0 )
-// 		{
-// 			//Makes Mac work because Apple had to do it different.
-// 		}
-// 		EOS_Platform_Tick(PlatformHandle);
-// 		SDL_Delay(50);
+	// #ifdef APPLE
+	// 	SDL_Event event;
+	// 	Uint32 startAuthTicks = SDL_GetTicks();
+	// 	Uint32 currentAuthTicks = startAuthTicks;
+	// 	while (1)
+	// 	{
+	// 		while ( SDL_PollEvent(&event) != 0 )
+	// 		{
+	// 			//Makes Mac work because Apple had to do it different.
+	// 		}
+	// 		EOS_Platform_Tick(PlatformHandle);
+	// 		SDL_Delay(50);
 
-// 		currentAuthTicks = SDL_GetTicks();
-// 		logInfo("*whirl*");
-// 		if ( currentAuthTicks - startAuthTicks >= 5000 ) // spin the wheels for 5 seconds
-// 		{
-// 			break;
-// 		}
-// 	}
-// #endif
+	// 		currentAuthTicks = SDL_GetTicks();
+	// 		logInfo("*whirl*");
+	// 		if ( currentAuthTicks - startAuthTicks >= 5000 ) // spin the wheels for 5 seconds
+	// 		{
+	// 			break;
+	// 		}
+	// 	}
+	// #endif
 	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);
 	// printlog("See you on the other side!");
 	// while ( SDL_PollEvent(&event) != 0 )
@@ -2624,6 +2627,8 @@ void EOSFuncs::loadAchievementData()
 		Options.HiddenAchievementsCount = 0;
 		Options.HiddenAchievementIds = nullptr;
 		EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
+
+		EOS.StatGlobalManager.queryGlobalStatUser();
 	}
 
 	Achievements.playerDataAwaitingCallback = true;
@@ -2668,6 +2673,47 @@ void EOSFuncs::ingestStat(int stat_num, int value)
 	EOS_Stats_IngestStat(StatsHandle, &Options, nullptr, OnIngestStatComplete);
 }
 
+static void EOS_CALL OnIngestGlobalStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data)
+{
+	assert(data != NULL);
+	if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+		EOSFuncs::logInfo("OnIngestGlobalStatComplete: success");
+	}
+	else if ( data->ResultCode == EOS_EResult::EOS_TooManyRequests )
+	{
+		return;
+	}
+	else
+	{
+		EOSFuncs::logError("OnIngestGlobalStatComplete: Callback failure: %d", static_cast<int>(data->ResultCode));
+	}
+}
+
+void EOSFuncs::ingestGlobalStat(int stat_num, int value)
+{
+	if ( stat_num <= STEAM_GSTAT_INVALID || stat_num >= NUM_GLOBAL_STEAM_STATISTICS )
+	{
+		return;
+	}
+	if ( StatGlobalManager.bIsDisabled )
+	{
+		return;
+	}
+
+	EOS_Stats_IngestData StatsToIngest[1];
+	StatsToIngest[0].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
+	StatsToIngest[0].StatName = g_SteamGlobalStats[stat_num].m_pchStatName;
+	StatsToIngest[0].IngestAmount = value;
+
+	EOS_Stats_IngestStatOptions Options = {};
+	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
+	Options.Stats = StatsToIngest;
+	Options.StatsCount = sizeof(StatsToIngest) / sizeof(StatsToIngest[0]);
+	Options.UserId = StatGlobalManager.getProductUserIdHandle();
+	EOS_Stats_IngestStat(EOS_Platform_GetStatsInterface(ServerPlatformHandle), &Options, nullptr, OnIngestGlobalStatComplete);
+}
+
 void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsCompleteCallbackInfo* data)
 {
 	if ( !data )
@@ -2677,7 +2723,7 @@ void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsComp
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-	
+
 		EOS.StatsHandle = EOS_Platform_GetStatsInterface(EOS.PlatformHandle);
 		EOS_Stats_GetStatCountOptions StatCountOptions = {};
 		StatCountOptions.ApiVersion = EOS_STATS_GETSTATCOUNT_API_LATEST;
@@ -2755,7 +2801,7 @@ void EOSFuncs::queryAllStats()
 	// Optional params
 	StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
 	StatsQueryOptions.EndTime = EOS_STATS_TIME_UNDEFINED;
-	
+
 	StatsQueryOptions.StatNamesCount = NUM_STEAM_STATISTICS;
 	StatsQueryOptions.StatNames = new const char*[NUM_STEAM_STATISTICS];
 	
@@ -3459,6 +3505,100 @@ void EOS_CALL EOSFuncs::OnEcomQueryOwnershipCallback(const EOS_Ecom_QueryOwnersh
 	{
 		EOSFuncs::logError("OnEcomQueryOwnershipCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
 	}
+}
+
+static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsCompleteCallbackInfo* data)
+{
+	if ( !data )
+	{
+		EOSFuncs::logError("OnQueryGlobalStatsCallback: null data");
+		return;
+	}
+	else if ( data->ResultCode == EOS_EResult::EOS_Success )
+	{
+		EOS_Stats_GetStatCountOptions StatCountOptions = {};
+		StatCountOptions.ApiVersion = EOS_STATS_GETSTATCOUNT_API_LATEST;
+		StatCountOptions.UserId = EOS.StatGlobalManager.getProductUserIdHandle();
+
+		Uint32 numStats = EOS_Stats_GetStatsCount(EOS_Platform_GetStatsInterface(EOS.ServerPlatformHandle), 
+			&StatCountOptions);
+
+		EOSFuncs::logInfo("OnQueryGlobalStatsCallback: read %d stats", numStats);
+
+		EOS_Stats_CopyStatByIndexOptions CopyByIndexOptions = {};
+		CopyByIndexOptions.ApiVersion = EOS_STATS_COPYSTATBYINDEX_API_LATEST;
+		CopyByIndexOptions.UserId = EOS.StatGlobalManager.getProductUserIdHandle();
+
+		EOS_Stats_Stat* copyStat = NULL;
+
+		for ( Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i )
+		{
+			g_SteamGlobalStats[i].m_iValue = 0;
+		}
+
+		for ( CopyByIndexOptions.StatIndex = 0; CopyByIndexOptions.StatIndex < numStats; ++CopyByIndexOptions.StatIndex )
+		{
+			EOS_EResult result = EOS_Stats_CopyStatByIndex(EOS_Platform_GetStatsInterface(EOS.ServerPlatformHandle), 
+				&CopyByIndexOptions, &copyStat);
+			if ( result == EOS_EResult::EOS_Success && copyStat )
+			{
+				if ( !strcmp(copyStat->Name, "STAT_GLOBAL_DISABLE") )
+				{
+					if ( copyStat->Value == 1 )
+					{
+						EOSFuncs::logInfo("OnQueryGlobalStatsCallback: disabled");
+						EOS.StatGlobalManager.bIsDisabled = true;
+					}
+				}
+				/*for ( Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i )
+				{
+					if ( !strcmp(g_SteamGlobalStats[i].m_pchStatName, copyStat->Name) )
+					{
+						g_SteamGlobalStats[i].m_iValue = copyStat->Value;
+					}
+				}*/
+				EOSFuncs::logInfo("OnQueryGlobalStatsCallback: stat %s | %d", copyStat->Name, copyStat->Value);
+				EOS_Stats_Stat_Release(copyStat);
+			}
+		}
+	}
+	else
+	{
+		EOSFuncs::logError("OnQueryGlobalStatsCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
+	}
+}
+
+void EOSFuncs::StatGlobal_t::init()
+{
+	bIsInit = true;
+	bIsDisabled = false;
+	productUserId = EOS_ProductUserId_FromString(BUILD_ENV_GSE);
+}
+
+void EOSFuncs::StatGlobal_t::queryGlobalStatUser()
+{
+	init();
+
+	// Query Player Stats
+	EOS_Stats_QueryStatsOptions StatsQueryOptions = {};
+	StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
+	StatsQueryOptions.UserId = getProductUserIdHandle();
+
+	// Optional params
+	StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
+	StatsQueryOptions.EndTime = EOS_STATS_TIME_UNDEFINED;
+
+	StatsQueryOptions.StatNamesCount = NUM_GLOBAL_STEAM_STATISTICS;
+	StatsQueryOptions.StatNames = new const char*[NUM_GLOBAL_STEAM_STATISTICS];
+
+	for ( int i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i )
+	{
+		StatsQueryOptions.StatNames[i] = g_SteamGlobalStats[i].m_pchStatName;
+	}
+
+	EOS_Stats_QueryStats(EOS_Platform_GetStatsInterface(EOS.ServerPlatformHandle), 
+		&StatsQueryOptions, nullptr, OnQueryGlobalStatsCallback);
+	delete[] StatsQueryOptions.StatNames;
 }
 
 #endif //USE_EOS

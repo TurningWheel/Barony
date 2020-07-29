@@ -137,8 +137,20 @@ public:
 		bool bAchievementsInit = false;
 	} Achievements;
 
+	class StatGlobal_t
+	{
+		EOS_ProductUserId productUserId = nullptr;
+		bool bIsInit = false;
+	public:
+		bool bIsDisabled = false;
+		EOS_ProductUserId getProductUserIdHandle() { return productUserId; }
+		void init();
+		void queryGlobalStatUser();
+	} StatGlobalManager;
+
 	// actually all pointers...
 	EOS_HPlatform PlatformHandle = nullptr; 
+	EOS_HPlatform ServerPlatformHandle = nullptr;
 	EOS_HAuth AuthHandle = nullptr;
 	EOS_HConnect ConnectHandle = nullptr;
 	EOS_HFriends FriendsHandle = nullptr;
@@ -471,7 +483,9 @@ public:
 		if ( PlatformHandle )
 		{
 			EOS_Platform_Release(PlatformHandle);
+			EOS_Platform_Release(ServerPlatformHandle);
 			PlatformHandle = nullptr;
+			ServerPlatformHandle = nullptr;
 		}
 		EOS_EResult result = EOS_Shutdown();
 		if ( result != EOS_EResult::EOS_Success )
@@ -719,6 +733,7 @@ public:
 	void unlockAchievement(const char* name);
 	void loadAchievementData();
 	void ingestStat(int stat_num, int value);
+	void ingestGlobalStat(int stat_num, int value);
 	void queryAllStats();
 	SteamStat_t* getStatStructFromString(const std::string& str);
 	static void logInfo(const char* str, ...)

@@ -1616,7 +1616,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 #if (defined STEAMWORKS || defined USE_EOS)
-			if ( gamemods_disableSteamAchievements || (intro == false && gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT)
+			if ( gamemods_disableSteamAchievements
 				|| (intro == false && 
 					(conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 					|| conductGameChallenges[CONDUCT_LIFESAVING])) )
@@ -1628,10 +1628,8 @@ void handleMainMenu(bool mode)
 				}
 				if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
 				{
-					// disabled for current gamemode
-					// int dummy = 0;
-					// TTF_SizeUTF8(ttf8, language[3963], &w, &dummy);
-					// ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3963]);
+					// achievements are disabled
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3003]);
 				}
 				else
 				{
@@ -9176,8 +9174,13 @@ void handleMainMenu(bool mode)
 			{
 				svFlags &= ~(SV_FLAG_HARDCORE);
 				svFlags &= ~(SV_FLAG_CHEATS);
+				svFlags &= ~(SV_FLAG_LIFESAVING);
+				svFlags &= ~(SV_FLAG_CLASSIC);
+				svFlags &= ~(SV_FLAG_KEEPINVENTORY);
 				svFlags |= SV_FLAG_HUNGER;
 				svFlags |= SV_FLAG_FRIENDLYFIRE;
+				svFlags |= SV_FLAG_MINOTAURS;
+				svFlags |= SV_FLAG_TRAPS;
 
 				if ( gameModeManager.Tutorial.dungeonLevel >= 0 )
 				{
@@ -9660,7 +9663,11 @@ void handleMainMenu(bool mode)
 				steamAchievement("BARONY_ACH_I_WANT_IT_ALL");
 			}
 
-			steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT && !loadingsavegame )
+			{
+				steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_STARTED);
+			}
 
 			// delete game data clutter
 			list_FreeAll(&messages);
@@ -9779,6 +9786,7 @@ void handleMainMenu(bool mode)
 					{
 						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 					}
+					achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
 				}
 			}
 

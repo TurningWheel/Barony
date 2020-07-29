@@ -83,6 +83,12 @@ void GameModeManager_t::Tutorial_t::buttonRestartTrial(button_t* my)
 		filename.append(".lmp");
 		gameModeManager.Tutorial.setTutorialMap(filename);
 		gameModeManager.Tutorial.dungeonLevel = currentlevel;
+
+		int tutorialNum = stoi(number);
+		if ( tutorialNum > 0 && tutorialNum <= gameModeManager.Tutorial.kNumTutorialLevels )
+		{
+			gameModeManager.Tutorial.onMapRestart(tutorialNum);
+		}
 		return;
 	}
 	buttonReturnToTutorialHub(nullptr);
@@ -335,7 +341,6 @@ void GameModeManager_t::Tutorial_t::Menu_t::onClickEntry()
 	{
 		return;
 	}
-
 	buttonStartSingleplayer(nullptr);
 	gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
 	if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
@@ -344,6 +349,7 @@ void GameModeManager_t::Tutorial_t::Menu_t::onClickEntry()
 		gameModeManager.Tutorial.writeToDocument();
 	}
 	gameModeManager.Tutorial.startTutorial(gameModeManager.Tutorial.levels.at(this->selectedMenuItem).filename);
+	steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
 }
 
 void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::createPrompt()
