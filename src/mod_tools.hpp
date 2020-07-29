@@ -20,6 +20,7 @@ See LICENSE for details.
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
 #include "net.hpp"
+#include "scores.hpp"
 
 class CustomHelpers
 {
@@ -2497,6 +2498,11 @@ public:
 		static void buttonRestartTrial(button_t* my);
 		const Uint32 getNumTutorialLevels() { return kNumTutorialLevels; }
 		void openGameoverWindow();
+		void onMapRestart(int levelNum)
+		{
+			achievementObserver.updateGlobalStat(
+				std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + levelNum, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+		}
 
 		class Menu_t
 		{

@@ -7,6 +7,7 @@
 #define BUILD_ENV_DE STRINGIZE(BUILD_DE)
 #define BUILD_ENV_CC STRINGIZE(BUILD_CC)
 #define BUILD_ENV_CS STRINGIZE(BUILD_CS)
+#define BUILD_ENV_GSE STRINGIZE(BUILD_GSE)
 #ifdef USE_EOS
 
 #include "main.hpp"
@@ -2590,6 +2591,8 @@ void EOSFuncs::loadAchievementData()
 		Options.HiddenAchievementsCount = 0;
 		Options.HiddenAchievementIds = nullptr;
 		EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
+
+		EOS.StatGlobalManager.queryGlobalStatUser();
 	}
 
 	Achievements.playerDataAwaitingCallback = true;
@@ -2657,6 +2660,10 @@ void EOSFuncs::ingestGlobalStat(int stat_num, int value)
 	{
 		return;
 	}
+	if ( StatGlobalManager.bIsDisabled )
+	{
+		return;
+	}
 
 	EOS_Stats_IngestData StatsToIngest[1];
 	StatsToIngest[0].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
@@ -2680,7 +2687,7 @@ void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsComp
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-	
+
 		EOS.StatsHandle = EOS_Platform_GetStatsInterface(EOS.PlatformHandle);
 		EOS_Stats_GetStatCountOptions StatCountOptions = {};
 		StatCountOptions.ApiVersion = EOS_STATS_GETSTATCOUNT_API_LATEST;
@@ -2758,7 +2765,7 @@ void EOSFuncs::queryAllStats()
 	// Optional params
 	StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
 	StatsQueryOptions.EndTime = EOS_STATS_TIME_UNDEFINED;
-	
+
 	StatsQueryOptions.StatNamesCount = NUM_STEAM_STATISTICS;
 	StatsQueryOptions.StatNames = new const char*[NUM_STEAM_STATISTICS];
 	
@@ -3499,6 +3506,14 @@ static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsComp
 				&CopyByIndexOptions, &copyStat);
 			if ( result == EOS_EResult::EOS_Success && copyStat )
 			{
+				if ( !strcmp(copyStat->Name, "STAT_GLOBAL_DISABLE") )
+				{
+					if ( copyStat->Value == 1 )
+					{
+						EOSFuncs::logInfo("OnQueryGlobalStatsCallback: disabled");
+						EOS.StatGlobalManager.bIsDisabled = true;
+					}
+				}
 				/*for ( Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i )
 				{
 					if ( !strcmp(g_SteamGlobalStats[i].m_pchStatName, copyStat->Name) )
@@ -3515,6 +3530,13 @@ static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsComp
 	{
 		EOSFuncs::logError("OnQueryGlobalStatsCallback: Callback failure: %d", static_cast<int>(data->ResultCode));
 	}
+}
+
+void EOSFuncs::StatGlobal_t::init()
+{
+	bIsInit = true;
+	bIsDisabled = false;
+	productUserId = EOS_ProductUserId_FromString(BUILD_ENV_GSE);
 }
 
 void EOSFuncs::StatGlobal_t::queryGlobalStatUser()

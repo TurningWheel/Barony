@@ -9663,7 +9663,11 @@ void handleMainMenu(bool mode)
 				steamAchievement("BARONY_ACH_I_WANT_IT_ALL");
 			}
 
-			steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT && !loadingsavegame )
+			{
+				steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_STARTED);
+			}
 
 			// delete game data clutter
 			list_FreeAll(&messages);
@@ -9782,6 +9786,7 @@ void handleMainMenu(bool mode)
 					{
 						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 					}
+					achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
 				}
 			}
 

@@ -142,12 +142,9 @@ public:
 		EOS_ProductUserId productUserId = nullptr;
 		bool bIsInit = false;
 	public:
+		bool bIsDisabled = false;
 		EOS_ProductUserId getProductUserIdHandle() { return productUserId; }
-		void init()
-		{
-			bIsInit = true;
-			productUserId = EOS_ProductUserId_FromString("000203a417634280868f3edd1022faa5");
-		}
+		void init();
 		void queryGlobalStatUser();
 	} StatGlobalManager;
 
