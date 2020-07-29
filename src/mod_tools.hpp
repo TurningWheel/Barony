@@ -20,6 +20,7 @@ See LICENSE for details.
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
 #include "net.hpp"
+#include "scores.hpp"
 
 class CustomHelpers
 {
@@ -2458,6 +2459,11 @@ public:
 				case SV_FLAG_HARDCORE:
 				case SV_FLAG_HUNGER:
 				case SV_FLAG_FRIENDLYFIRE:
+				case SV_FLAG_LIFESAVING:
+				case SV_FLAG_TRAPS:
+				case SV_FLAG_CLASSIC:
+				case SV_FLAG_MINOTAURS:
+				case SV_FLAG_KEEPINVENTORY:
 					return true;
 					break;
 				default:
@@ -2492,6 +2498,11 @@ public:
 		static void buttonRestartTrial(button_t* my);
 		const Uint32 getNumTutorialLevels() { return kNumTutorialLevels; }
 		void openGameoverWindow();
+		void onMapRestart(int levelNum)
+		{
+			achievementObserver.updateGlobalStat(
+				std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + levelNum, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+		}
 
 		class Menu_t
 		{

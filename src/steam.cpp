@@ -1082,6 +1082,15 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 						indicateProgress = true;
 					}
 					break;
+				case STEAM_STAT_TUTORIAL_ENTERED:
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( oldValue == 0 )
+					{
+						achievementObserver.updateGlobalStat(STEAM_GSTAT_TUTORIAL_ENTERED);
+					}
+					indicateProgress = false;
+					break;
 				default:
 					break;
 			}
