@@ -26,6 +26,7 @@
 	#define BUILD_ENV_DE "@BUILD_ENV_DE@"
 	#define BUILD_ENV_CC "@BUILD_ENV_CC@"
 	#define BUILD_ENV_CS "@BUILD_ENV_CS@"
+	#define BUILD_ENV_GSE "@BUILD_ENV_GSE@"
 #endif
 
 #if @FMOD@
