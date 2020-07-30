@@ -397,7 +397,6 @@ void LobbyHandler_t::handleLobbyBrowser()
 	}*/
 
 	updateSearchResults();
-	drawLobbyFilters();
 
 	// epic/steam lobby browser
 	if ( subwindow && !strcmp(subtext, language[1334]) )
@@ -523,10 +522,10 @@ void LobbyHandler_t::handleLobbyBrowser()
 				}
 			}
 
-			flagsBox.x = mousex + 8;
-			flagsBox.y = mousey + 8;
 			flagsBox.w = strlen(language[2919]) * 10 + 4;
 			flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
+			flagsBox.x = mousex + 8;
+			flagsBox.y = mousey + 8;
 			if ( serverNumModsLoaded > 0 )
 			{
 				flagsBox.h += TTF12_HEIGHT;
@@ -593,6 +592,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 #ifdef STEAMWORKS
 				selectedSteamLobby = std::max(0, getDisplayedResultLobbyIndex(this->selectedLobbyInList));
 				selectedSteamLobby = std::min(std::max(y2, selectedSteamLobby), std::min(std::max(numSearchResults - 1, 0), y2 + 17));
+				this->selectedLobbyInList = selectedSteamLobby;
 #endif
 			}
 			else if ( lobbyType == LOBBY_CROSSPLAY )
@@ -600,6 +600,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 #ifdef USE_EOS
 				EOS.LobbySearchResults.selectedLobby = std::max(0, getDisplayedResultLobbyIndex(this->selectedLobbyInList));
 				EOS.LobbySearchResults.selectedLobby = std::min(std::max(y2, EOS.LobbySearchResults.selectedLobby), std::min(std::max(static_cast<int>(numSearchResults) - 1, 0), y2 + 17));
+				this->selectedLobbyInList = EOS.LobbySearchResults.selectedLobby;
 #endif // USE_EOS
 			}
 

@@ -2376,10 +2376,12 @@ void handleMainMenu(bool mode)
 		EOS.CrossplayAccountManager.handleLogin();
 #endif // USE_EOS
 
-		LobbyHandler.handleLobbyBrowser();
+		LobbyHandler.drawLobbyFilters();
 
 		// process button actions
 		handleButtons();
+
+		LobbyHandler.handleLobbyBrowser();
 	}
 
 	// character creation screen

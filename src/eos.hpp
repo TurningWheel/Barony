@@ -14,6 +14,7 @@
 #include "eos_ecom.h"
 #include "eos_achievements.h"
 #include "eos_stats.h"
+#include "eos_metrics.h"
 #include <vector>
 #include <iostream>
 #include <map>
