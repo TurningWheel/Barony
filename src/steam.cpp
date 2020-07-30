@@ -444,10 +444,10 @@ void SteamServerClientWrapper::OnLobbyMemberUpdate(LobbyChatUpdate_t* pCallback)
 						{
 							if ( static_cast<CSteamID*>(steamIDRemote[i])->ConvertToUint64() == pCallback->m_ulSteamIDUserChanged )
 							{
-								printlog("[STEAM Lobbies]: Info: OnLobbyMemberUpdate Player has left, freeing player index %d", i);
-								SteamNetworking()->CloseP2PSessionWithUser(*static_cast<CSteamID*>(steamIDRemote[i]));
-								cpp_Free_CSteamID(steamIDRemote[i]);
-								steamIDRemote[i] = nullptr;
+								printlog("[STEAM Lobbies]: Info: OnLobbyMemberUpdate Player has left, NOT freeing player index %d", i);
+								//SteamNetworking()->CloseP2PSessionWithUser(*static_cast<CSteamID*>(steamIDRemote[i]));
+								//cpp_Free_CSteamID(steamIDRemote[i]);
+								//steamIDRemote[i] = nullptr;
 							}
 						}
 					}
