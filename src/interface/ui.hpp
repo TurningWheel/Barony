@@ -32,6 +32,11 @@ class UIToastNotification
 	int texty = 0;
 	int bodyx = 12;
 	int bodyy = 16;
+	
+	SDL_Rect padding;
+	int actionButtonOffsetY = 0;
+	int actionButtonOffsetW = 0;
+
 	int kImageBorderHeight = 256;
 	int kImageBorderWidth = 256;
 
@@ -71,6 +76,10 @@ public:
 	UIToastNotification(SDL_Surface* image) {
 		notificationImage = image;
 		showHeight = static_cast<int>(kImageBorderHeight * scaley + 16);
+		padding.x = 0;
+		padding.y = 0;
+		padding.w = 0;
+		padding.h = 0;
 	};
 	~UIToastNotification(){};
 
@@ -90,7 +99,8 @@ public:
 		UI_CARD_EOS_ACCOUNT,
 		UI_CARD_CROSSPLAY_ACCOUNT,
 		UI_CARD_COMMUNITY_LINK,
-		UI_CARD_ACHIEVEMENT
+		UI_CARD_ACHIEVEMENT,
+		UI_CARD_PROMO
 	};
 	CardType cardType = CardType::UI_CARD_DEFAULT;
 	enum CardState : Uint32
@@ -101,7 +111,8 @@ public:
 		UI_CARD_STATE_REMOVED
 	};
 	void (*buttonAction)() = nullptr;
-
+	bool skipDrawingCardThisTick = false;
+	bool bQueuedForUndock = false;
 	void getDimensions(int& outPosX, int& outPosY, int& outPosW, int& outPosH)
 	{
 		outPosX = posx;
@@ -109,9 +120,42 @@ public:
 		outPosW = cardWidth;
 		outPosH = showHeight;
 	}
+	void setDimensions(SDL_Rect& pos)
+	{
+		posx = pos.x;
+		posy = pos.y;
+		cardWidth = pos.w;
+		animx = cardWidth;
+		showHeight = pos.h;
+	}
+	void setPadding(SDL_Rect& pos)
+	{
+		padding.x = pos.x;
+		padding.y = pos.y;
+		padding.w = pos.w;
+		padding.h = pos.h;
+	}
+	void setImageDimensions(int width, int height)
+	{
+		kImageBorderWidth = width;
+		kImageBorderHeight = height;
+	}
+	void setImageScale(double x, double y)
+	{
+		scalex = x;
+		scaley = y;
+	}
 	void setPosY(int y)
 	{
 		posy = y;
+	}
+	void setActionButtonOffsetY(int y)
+	{
+		actionButtonOffsetY = y;
+	}
+	void setActionButtonOffsetW(int w)
+	{
+		actionButtonOffsetW = w;
 	}
 	void setMainText(const std::string& text)
 	{
@@ -199,13 +243,18 @@ public:
 		}
 	}
 
-
+	void undockCard()
+	{
+		dockedCardHide = true;
+		mainCardHide = false;
+		lastInteractedTick = ticks;
+	}
 
 	void drawDockedCard()
 	{
 		SDL_Rect r;
 		r.w = 32;
-		r.h = static_cast<int>(kImageBorderHeight * scaley);
+		r.h = static_cast<int>(kImageBorderHeight * scaley) + padding.h;
 		r.x = xres - r.w + docked_animx;
 		r.y = yres - r.h - posy;
 		drawWindowFancy(r.x, r.y - 8, xres + 16 + docked_animx, r.y + 24);
@@ -215,9 +264,7 @@ public:
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
-				dockedCardHide = true;
-				mainCardHide = false;
-				lastInteractedTick = ticks;
+				undockCard();
 			}
 		}
 		ttfPrintTextColor(ttf16, r.x + 8, r.y + texty,
@@ -300,21 +347,42 @@ public:
 	{
 		SDL_Rect r;
 		r.w = static_cast<int>(kImageBorderWidth * scalex);
-		r.h = static_cast<int>(kImageBorderHeight * scaley);
+		r.h = static_cast<int>(kImageBorderHeight * scaley) + padding.h;
 		r.x = xres - r.w - posx + animx + 12;
 		r.y = yres - r.h - posy;
 		drawWindowFancy(r.x - 8, r.y - 8, xres - 8 + animx, r.y + r.h + 8);
 		drawCloseButton(&r);
-		ttfPrintTextColor(ttf12, r.x + r.w + textx, r.y + texty, SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255), true,
-			headerCardText.c_str());
 
-		ttfPrintTextColor(ttf12, r.x + r.w + bodyx, r.y + bodyy, SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255), true,
-			displayedText.c_str());
+		if ( cardType == UI_CARD_PROMO )
+		{
+			// draw text centred
+			Uint32 centrex = r.x + (r.w / 2);
+			Uint32 textx = centrex - (headerCardText.length() * TTF12_WIDTH) / 2;
+			ttfPrintTextColor(ttf12, textx, r.y + texty + padding.y, SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255), true,
+				headerCardText.c_str());
+
+			char c[256] = "";
+			strcpy(c, displayedText.c_str());
+			textx = centrex - (longestline(c) * TTF12_WIDTH) / 2;
+			ttfPrintTextColor(ttf12, textx, r.y + bodyy + padding.y, SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255), true,
+				displayedText.c_str());
+		}
+		else
+		{
+			ttfPrintTextColor(ttf12, r.x + r.w + textx, r.y + texty, SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255), true,
+				headerCardText.c_str());
+
+			ttfPrintTextColor(ttf12, r.x + r.w + bodyx, r.y + bodyy, SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255), true,
+				displayedText.c_str());
+		}
 
 		if ( cardType == UI_CARD_ACHIEVEMENT )
 		{
 			drawWindowFancy(r.x - 2, r.y - 2, r.x + r.w + 2, r.y + r.h + 2);
 		}
+
+		r.w -= padding.w;
+		r.h -= padding.h;
 		drawImageScaled(notificationImage, nullptr, &r);
 		
 		if ( actionFlags & UI_NOTIFICATION_STATISTIC_UPDATE )
@@ -454,9 +522,9 @@ public:
 		}
 
 		SDL_Rect actionBtn;
-		actionBtn.x = src->x + 4;
-		actionBtn.y = src->y + src->h - 4 - TTF12_HEIGHT;
-		actionBtn.w = src->w - 8;
+		actionBtn.x = src->x + 4 - actionButtonOffsetW / 2;
+		actionBtn.y = src->y + src->h - 4 - TTF12_HEIGHT + actionButtonOffsetY;
+		actionBtn.w = src->w - 8 + actionButtonOffsetW;
 		actionBtn.h = 20;
 		Uint32 textx = actionBtn.x + (actionBtn.w / 2) - ((TTF12_WIDTH * actionText.length()) / 2) - 3;
 		if ( actionText.length() == 4 )
@@ -502,9 +570,17 @@ public:
 class UIToastNotificationManager_t
 {
 	SDL_Surface* communityLink1 = nullptr;
+	SDL_Surface* promoLink1 = nullptr;
+	Uint32 undockTicks = 0;
+	const Uint32 timeToUndock = 25;
+	Uint32 lastUndockTick = 0;
 public:
 	UIToastNotificationManager_t() {};
-	~UIToastNotificationManager_t() { SDL_FreeSurface(communityLink1); };
+	~UIToastNotificationManager_t()
+	{ 
+		SDL_FreeSurface(communityLink1);
+		SDL_FreeSurface(promoLink1);
+	};
 	SDL_Surface* getImage(SDL_Surface* image)
 	{
 		if ( image == nullptr )
@@ -519,11 +595,15 @@ public:
 	{
 		bIsInit = true;
 		communityLink1 = loadImage("images/system/CommunityLink1.png");
+		promoLink1 = loadImage("images/system/Promo1.png");
 	}
 	void drawNotifications(bool isMoviePlaying, bool beforeFadeout);
 	void createCommunityNotification();
+	void createPromoNotification();
 	void createAchievementNotification(const char* name);
 	void createStatisticUpdateNotification(const char* name, int currentValue, int maxValue);
+	void undockAllCards();
+	void processUndockingCards();
 	/// @param image nullptr for default barony icon
 	UIToastNotification* addNotification(SDL_Surface* image);
 
@@ -556,4 +636,4 @@ public:
 };
 extern UIToastNotificationManager_t UIToastNotificationManager;
 
-void openURLTryWithOverlay(std::string url);
+void openURLTryWithOverlay(std::string url, bool forceSystemBrowser = false);

@@ -1121,6 +1121,10 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	// exit(1);
 #endif
 #endif
+
+#ifdef STEAMWORKS
+	EOS.StatGlobalManager.queryGlobalStatUser();
+#endif
 	return true;
 }
 
@@ -3600,12 +3604,20 @@ static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsComp
 				{
 					if ( copyStat->Value == 1 )
 					{
-						EOSFuncs::logInfo("OnQueryGlobalStatsCallback: disabled");
+						//EOSFuncs::logInfo("OnQueryGlobalStatsCallback: disabled");
 						EOS.StatGlobalManager.bIsDisabled = true;
 					}
 				}
+				else if ( !strcmp(copyStat->Name, "STAT_GLOBAL_PROMO") )
+				{
+					if ( copyStat->Value == 1 )
+					{
+						EOS.StatGlobalManager.bPromoEnabled = true;
+						//EOSFuncs::logInfo("OnQueryGlobalStatsCallback: received");
+					}
+				}
 
-				EOSFuncs::logInfo("OnQueryGlobalStatsCallback: stat %s | %d", copyStat->Name, copyStat->Value);
+				//EOSFuncs::logInfo("OnQueryGlobalStatsCallback: stat %s | %d", copyStat->Name, copyStat->Value);
 				EOS_Stats_Stat_Release(copyStat);
 			}
 		}

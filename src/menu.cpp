@@ -1596,6 +1596,14 @@ void handleMainMenu(bool mode)
 			}
 		}
 #endif
+		if ( mode )
+		{
+			if ( ticks % 100 == 0 )
+			{
+				UIToastNotificationManager.createPromoNotification();
+			}
+		}
+
 		// gray text color
 		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
 

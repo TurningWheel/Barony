@@ -143,6 +143,7 @@ public:
 		bool bIsInit = false;
 		Uint32 lastUpdateTicks = 0;
 	public:
+		bool bPromoEnabled = false;
 		bool bDataQueued = false;
 		bool bIsDisabled = false;
 		EOS_ProductUserId getProductUserIdHandle() { return productUserId; }
