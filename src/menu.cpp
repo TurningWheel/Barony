@@ -1595,6 +1595,9 @@ void handleMainMenu(bool mode)
 				UIToastNotificationManager.createCommunityNotification();
 			}
 		}
+#endif
+
+#ifdef USE_EOS
 		if ( mode && EOS.StatGlobalManager.bPromoEnabled )
 		{
 			if ( ticks % 100 == 0 )
