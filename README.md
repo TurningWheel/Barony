@@ -1,4 +1,4 @@
-![Linux-CI_fmod_steam](https://github.com/addictgamer/Barony/workflows/Linux-CI_fmod_steam/badge.svg)
+![Linux-CI_fmod_steam](https://github.com/TurningWheel/Barony/workflows/Linux-CI_fmod_steam/badge.svg)
 
 Well here it is, as promised: the open source release of Barony. Keep in mind you still need a purchased copy of Barony to play this. I'd recommend that you thumb through all of the included text files to get a feeling of other things you'll need to build the game and check out the included licenses as well.
 
