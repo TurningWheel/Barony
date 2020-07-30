@@ -1595,14 +1595,14 @@ void handleMainMenu(bool mode)
 				UIToastNotificationManager.createCommunityNotification();
 			}
 		}
-#endif
-		if ( mode )
+		if ( mode && EOS.StatGlobalManager.bPromoEnabled )
 		{
 			if ( ticks % 100 == 0 )
 			{
 				UIToastNotificationManager.createPromoNotification();
 			}
 		}
+#endif
 
 		// gray text color
 		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
