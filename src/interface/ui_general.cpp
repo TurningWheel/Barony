@@ -26,20 +26,52 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 	int cardPosY = 110; // update the card y values if number of notifications change.
 	for ( auto& card : allNotifications )
 	{
+		card.skipDrawingCardThisTick = false;
+	}
+
+	bool bFirstDockedCard = true;
+
+	for ( auto& card : allNotifications )
+	{
 		if ((isMoviePlaying || !intro) 
 			&& !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
 		{
 			continue;
 		}
 
+		bool docked = false;
+		if ( !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE) )
+		{
+			docked = (card.getCardState() == UIToastNotification::CardState::UI_CARD_STATE_DOCKED);
+		}
+
 		card.setPosY(cardPosY);
 		SDL_Rect newPosition;
 		card.getDimensions(newPosition.x, newPosition.y, newPosition.w, newPosition.h);
 		// stack next card higher than the previous
-		cardPosY += (newPosition.h + 8);
+		if ( docked )
+		{
+			if ( !bFirstDockedCard )
+			{
+				card.skipDrawingCardThisTick = true;
+			}
+			else
+			{
+				cardPosY += (newPosition.h + 8);
+			}
+			bFirstDockedCard = false;
+		}
+		else
+		{
+			cardPosY += (newPosition.h + 8);
+		}
 	}
 
-	const int kMaxAchievementCards = 3;
+	int maxAchievementCards = 3;
+	if ( cardPosY >= yres )
+	{
+		maxAchievementCards = 1;
+	}
 	int currentNumAchievementCards = 0;
 	for ( auto& card : allNotifications )
 	{
@@ -81,12 +113,17 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 
 		if ( card.cardType == UIToastNotification::CardType::UI_CARD_ACHIEVEMENT )
 		{
-			if ( currentNumAchievementCards >= kMaxAchievementCards )
+			if ( currentNumAchievementCards >= maxAchievementCards )
 			{
 				card.cardForceTickUpdate(); // don't draw, but don't expire these.
 				continue;
 			}
 			++currentNumAchievementCards;
+		}
+
+		if ( card.skipDrawingCardThisTick )
+		{
+			continue;
 		}
 
 		card.init();
@@ -117,21 +154,28 @@ UIToastNotification* UIToastNotificationManager_t::addNotification(SDL_Surface* 
 	return &notification;
 }
 
-void openURLTryWithOverlay(std::string url)
+void openURLTryWithOverlay(std::string url, bool forceSystemBrowser)
 {
 	bool useSystemBrowser = false;
-#ifdef STEAMWORKS
-	if ( SteamUtils()->IsOverlayEnabled() )
+	if ( !forceSystemBrowser )
 	{
-		SteamFriends()->ActivateGameOverlayToWebPage(url.c_str());
+#ifdef STEAMWORKS
+		if ( SteamUtils()->IsOverlayEnabled() )
+		{
+			SteamFriends()->ActivateGameOverlayToWebPage(url.c_str());
+		}
+		else
+		{
+			useSystemBrowser = true;
+		}
+#else
+		useSystemBrowser = true;
+#endif
 	}
 	else
 	{
 		useSystemBrowser = true;
 	}
-#else
-	useSystemBrowser = true;
-#endif
 
 	if ( useSystemBrowser )
 	{
@@ -159,6 +203,11 @@ void communityLinkAction()
 	}*/
 }
 
+void promoLinkAction()
+{
+	openURLTryWithOverlay("https://www.kickstarter.com/projects/turningwheel/barony-for-the-nintendo-switch", true);
+}
+
 void UIToastNotificationManager_t::createCommunityNotification()
 {
 	if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_COMMUNITY_LINK) )
@@ -175,6 +224,52 @@ void UIToastNotificationManager_t::createCommunityNotification()
 		n->cardType = UIToastNotification::CardType::UI_CARD_COMMUNITY_LINK;
 		n->buttonAction = &communityLinkAction;
 		n->setIdleSeconds(8);
+	}
+}
+
+void UIToastNotificationManager_t::createPromoNotification()
+{
+	if ( !bIsInit )
+	{
+		init();
+	}
+	if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_PROMO) )
+	{
+		UIToastNotification* n = UIToastNotificationManager.addNotification(promoLink1);
+		n->setHeaderText(std::string("The Barony Kickstarter is live!"));
+		n->setMainText(std::string(" Help bring Barony to the Switch, plus\nsplit-screen, native controller support\nand new UI to all versions of the game!"));
+		n->setSecondaryText(std::string(""));
+		n->setActionText(std::string("Visit Page"));
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE);
+		n->cardType = UIToastNotification::CardType::UI_CARD_PROMO;
+		n->buttonAction = &promoLinkAction;
+		SDL_Rect d;
+		n->getDimensions(d.x, d.y, d.w, d.h);
+
+		int imagew = 1920;
+		int imageh = 1080;
+		double imagescale = 0.2;
+
+		n->setImageDimensions(1920, 1080);
+		n->setImageScale(imagescale, imagescale);
+
+		SDL_Rect padding;
+		padding.x = 0;
+		padding.y = imageh * imagescale + 8;
+		padding.w = 0;
+		padding.h = TTF12_HEIGHT * 4 + 8;
+		n->setPadding(padding);
+
+		d.x = 48;
+		d.w = d.x + imagew * imagescale + 8;
+		d.h = imageh * imagescale + 16 + padding.h;
+		n->setDimensions(d);
+		n->setActionButtonOffsetY(-4);
+		n->setActionButtonOffsetW(-224);
+		n->setIdleSeconds(10);
 	}
 }
 

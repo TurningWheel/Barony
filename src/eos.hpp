@@ -141,11 +141,15 @@ public:
 	{
 		EOS_ProductUserId productUserId = nullptr;
 		bool bIsInit = false;
+		Uint32 lastUpdateTicks = 0;
 	public:
+		bool bPromoEnabled = false;
+		bool bDataQueued = false;
 		bool bIsDisabled = false;
 		EOS_ProductUserId getProductUserIdHandle() { return productUserId; }
 		void init();
 		void queryGlobalStatUser();
+		void updateQueuedStats();
 	} StatGlobalManager;
 
 	// actually all pointers...
@@ -650,6 +654,18 @@ public:
 					return "Error";
 				}
 			}
+			static std::string shortProductIdToString(EOS_ProductUserId id)
+			{
+				std::string str = productIdToString(id);
+				if ( id && productIdIsValid(id) && str.compare("Error") )
+				{
+					std::string shortStr = str.substr(0, 3);
+					shortStr.append("...");
+					shortStr.append(str.substr(str.size() - 3));
+					return shortStr;
+				}
+				return str;
+			}
 			static bool epicIdIsValid(EOS_EpicAccountId id)
 			{
 				return (EOS_EpicAccountId_IsValid(id) == EOS_TRUE);
@@ -733,7 +749,8 @@ public:
 	void unlockAchievement(const char* name);
 	void loadAchievementData();
 	void ingestStat(int stat_num, int value);
-	void ingestGlobalStat(int stat_num, int value);
+	void ingestGlobalStats();
+	void queueGlobalStatUpdate(int stat_num, int value);
 	void queryAllStats();
 	SteamStat_t* getStatStructFromString(const std::string& str);
 	static void logInfo(const char* str, ...)

@@ -1,7 +1,7 @@
 
 #define WINDOWS
 
-#define STEAMWORKS
+//#define STEAMWORKS
 
 #define USE_FMOD
 
@@ -17,10 +17,4 @@
 #undef STEAMWORKS
 #endif // STEAMWORKS
 
-#endif
-
-#ifdef USE_EOS
-#ifdef STEAMWORKS
-#undef STEAMWORKS
-#endif // STEAMWORKS
 #endif

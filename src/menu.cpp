@@ -444,6 +444,10 @@ void navigateMainMenuItems(bool mode)
 		}
 	}
 
+#if defined USE_EOS && !defined STEAMWORKS
+	numInGameMenuOptions += 1;
+#endif
+
 	int warpx, warpy;
 	if (menuselect == 0)
 	{
@@ -754,52 +758,88 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	return INVALID_CHARACTER;
 }
 
+void inline pauseMenuOnInputPressed()
+{
+	mousestatus[SDL_BUTTON_LEFT] = 0;
+	keystatus[SDL_SCANCODE_RETURN] = 0;
+	playSound(139, 64);
+	if ( rebindaction == -1 )
+	{
+		*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+	}
+}
+
 void handleInGamePauseMenu()
 {
 	Uint32 colorGray = uint32ColorGray(*mainsurface);
+	const bool inputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1));
+	SDL_Rect text;
+	text.x = 50;
+	text.h = 18;
+	text.w = 18;
 
-	if ( ((omousex >= 50 && omousex < 50 + strlen(language[1309]) * 18 && omousey >= yres / 4 + 80 && omousey < yres / 4 + 80 + 18) || (menuselect == 1)) && subwindow == 0 && introstage == 1 )
+	int numOption = 1;
+
+	text.y = yres / 4 + 80;
+	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1309]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// resume game
 		menuselect = 1;
-		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 80, colorGray, language[1309]);
-		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1309]);
+		if ( inputIsPressed )
 		{
-			if ( rebindaction == -1 )
-			{
-				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-			}
-			mousestatus[SDL_BUTTON_LEFT] = 0;
-			keystatus[SDL_SCANCODE_RETURN] = 0;
-			playSound(139, 64);
+			pauseMenuOnInputPressed();
 			pauseGame(1, MAXPLAYERS);
 		}
 	}
 	else
 	{
-		ttfPrintText(ttf16, 50, yres / 4 + 80, language[1309]);
+		ttfPrintText(ttf16, text.x, text.y, language[1309]);
 	}
 
-	if ( ((omousex >= 50 && omousex < 50 + strlen(language[1306]) * 18 && omousey >= yres / 4 + 104 && omousey < yres / 4 + 104 + 18) || (menuselect == 2)) && subwindow == 0 && introstage == 1 )
+	bool achievementsMenu = false;
+#if !defined STEAMWORKS
+#ifdef USE_EOS
+	achievementsMenu = true;
+#endif
+#endif
+	text.y += 24;
+	++numOption;
+	if ( achievementsMenu )
+	{
+		if ( ((omousex >= text.x && omousex < text.x + strlen(language[3971]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+		{
+			// settings menu
+			menuselect = numOption;
+			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3971]);
+			if ( inputIsPressed )
+			{
+				pauseMenuOnInputPressed();
+				openAchievementsWindow();
+			}
+		}
+		else
+		{
+			ttfPrintText(ttf16, text.x, text.y, language[3971]);
+		}
+		text.y += 24;
+		++numOption;
+	}
+
+	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1306]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// settings menu
-		menuselect = 2;
-		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 104, colorGray, language[1306]);
-		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		menuselect = numOption;
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1306]);
+		if ( inputIsPressed )
 		{
-			mousestatus[SDL_BUTTON_LEFT] = 0;
-			keystatus[SDL_SCANCODE_RETURN] = 0;
-			if ( rebindaction == -1 )
-			{
-				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-			}
-			playSound(139, 64);
+			pauseMenuOnInputPressed();
 			openSettingsWindow();
 		}
 	}
 	else
 	{
-		ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
+		ttfPrintText(ttf16, text.x, text.y, language[1306]);
 	}
 	char* endgameText = NULL;
 	char* quitgameText = language[1313];
@@ -849,20 +889,17 @@ void handleInGamePauseMenu()
 	{
 		endgameText = language[3019];
 	}
-	if ( ((omousex >= 50 && omousex < 50 + strlen(endgameText) * 18 && omousey >= yres / 4 + 128 && omousey < yres / 4 + 128 + 18) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
+
+	text.y += 24;
+	++numOption;
+	if ( ((omousex >= text.x && omousex < text.x + strlen(endgameText) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// end game / return to main menu
-		menuselect = 3;
-		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 128, colorGray, endgameText);
-		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		menuselect = numOption;
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, endgameText);
+		if ( inputIsPressed )
 		{
-			mousestatus[SDL_BUTTON_LEFT] = 0;
-			keystatus[SDL_SCANCODE_RETURN] = 0;
-			if ( rebindaction == -1 )
-			{
-				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-			}
-			playSound(139, 64);
+			pauseMenuOnInputPressed();
 
 			// create confirmation window
 			subwindow = 1;
@@ -993,24 +1030,21 @@ void handleInGamePauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, 50, yres / 4 + 128, endgameText);
+		ttfPrintText(ttf16, text.x, text.y, endgameText);
 	}
+
 	if ( multiplayer != CLIENT )
 	{
-		if ( ((omousex >= 50 && omousex < 50 + strlen(language[1312]) * 18 && omousey >= yres / 4 + 152 && omousey < yres / 4 + 152 + 18) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
+		text.y += 24;
+		++numOption;
+		if ( ((omousex >= text.x && omousex < text.x + strlen(language[1312]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 		{
 			//restart game
-			menuselect = 4;
-			ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152, colorGray, language[1312]);
-			if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+			menuselect = numOption;
+			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1312]);
+			if ( inputIsPressed )
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				keystatus[SDL_SCANCODE_RETURN] = 0;
-				if ( rebindaction == -1 )
-				{
-					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-				}
-				playSound(139, 64);
+				pauseMenuOnInputPressed();
 
 				// create confirmation window
 				subwindow = 1;
@@ -1067,23 +1101,20 @@ void handleInGamePauseMenu()
 		}
 		else
 		{
-			ttfPrintText(ttf16, 50, yres / 4 + 152, language[1312]);
+			ttfPrintText(ttf16, text.x, text.y, language[1312]);
 		}
 	}
-	if ( ((omousex >= 50 && omousex < 50 + strlen(quitgameText) * 18 && omousey >= yres / 4 + 152 + 24 * (multiplayer != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (multiplayer != CLIENT)) || (menuselect == 4 + (multiplayer != CLIENT))) && subwindow == 0 && introstage == 1 )
+	
+	text.y += 24;
+	++numOption;
+	if ( ((omousex >= text.x && omousex < text.x + strlen(quitgameText) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
-		menuselect = 4 + (multiplayer != CLIENT);
+		menuselect = numOption;
 		// save & quit
-		ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, quitgameText);
-		if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, quitgameText);
+		if ( inputIsPressed )
 		{
-			mousestatus[SDL_BUTTON_LEFT] = 0;
-			keystatus[SDL_SCANCODE_RETURN] = 0;
-			if ( rebindaction == -1 )
-			{
-				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-			}
-			playSound(139, 64);
+			pauseMenuOnInputPressed();
 
 			// create confirmation window
 			subwindow = 1;
@@ -1169,18 +1200,7 @@ void handleInGamePauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), quitgameText);
-	}
-}
-
-void inline pauseMenuOnInputPressed()
-{
-	mousestatus[SDL_BUTTON_LEFT] = 0;
-	keystatus[SDL_SCANCODE_RETURN] = 0;
-	playSound(139, 64);
-	if ( rebindaction == -1 )
-	{
-		*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+		ttfPrintText(ttf16, text.x, text.y, quitgameText);
 	}
 }
 
@@ -1199,11 +1219,19 @@ void handleTutorialPauseMenu()
 		mapIsTutorialHub = true;
 	}
 
+	int numOption = 1;
+	bool achievementsMenu = false;
+#if !defined STEAMWORKS
+#ifdef USE_EOS
+	achievementsMenu = true;
+#endif
+#endif
+
 	text.y = yres / 4 + 80;
-	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1309]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 1)) && subwindow == 0 && introstage == 1 )
+	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1309]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// resume game
-		menuselect = 1;
+		menuselect = numOption;
 		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1309]);
 		if ( inputIsPressed )
 		{
@@ -1216,11 +1244,51 @@ void handleTutorialPauseMenu()
 		ttfPrintText(ttf16, text.x, text.y, language[1309]);
 	}
 
-	text.y = yres / 4 + 104;
-	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1306]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 2)) && subwindow == 0 && introstage == 1 )
+	//++numOption;
+	//text.y += 24;
+	//if ( ((omousex >= text.x && omousex < text.x + strlen(language[1306]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+	//{
+	//	// settings menu
+	//	menuselect = numOption;
+	//	ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1306]);
+	//	if ( inputIsPressed )
+	//	{
+	//		pauseMenuOnInputPressed();
+	//		gameModeManager.Tutorial.Menu.open();
+	//	}
+	//}
+	//else
+	//{
+	//	ttfPrintText(ttf16, text.x, text.y, language[1306]);
+	//}
+
+	if ( achievementsMenu )
+	{
+		++numOption;
+		text.y += 24;
+		if ( ((omousex >= text.x && omousex < text.x + strlen(language[3971]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+		{
+			// achievements menu
+			menuselect = numOption;
+			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3971]);
+			if ( inputIsPressed )
+			{
+				pauseMenuOnInputPressed();
+				openAchievementsWindow();
+			}
+		}
+		else
+		{
+			ttfPrintText(ttf16, text.x, text.y, language[3971]);
+		}
+	}
+
+	++numOption;
+	text.y += 24;
+	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1306]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// settings menu
-		menuselect = 2;
+		menuselect = numOption;
 		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1306]);
 		if ( inputIsPressed )
 		{
@@ -1233,17 +1301,18 @@ void handleTutorialPauseMenu()
 		ttfPrintText(ttf16, text.x, text.y, language[1306]);
 	}
 
-	text.y = yres / 4 + 128;
+	++numOption;
+	text.y += 24;
 	char* returnToHubOptionText = language[3958];
 	if ( mapIsTutorialHub )
 	{
 		returnToHubOptionText = language[3969];
 	}
 
-	if ( ((omousex >= text.x && omousex < text.x + strlen(returnToHubOptionText) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
+	if ( ((omousex >= text.x && omousex < text.x + strlen(returnToHubOptionText) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// return to hub
-		menuselect = 3;
+		menuselect = numOption;
 		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, returnToHubOptionText);
 		if ( inputIsPressed )
 		{
@@ -1308,13 +1377,14 @@ void handleTutorialPauseMenu()
 		ttfPrintText(ttf16, text.x, text.y, returnToHubOptionText);
 	}
 
-	text.y = yres / 4 + 152;
 	if ( !mapIsTutorialHub )
 	{
-		if ( ((omousex >= text.x && omousex < text.x + strlen(language[3957]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
+		++numOption;
+		text.y += 24;
+		if ( ((omousex >= text.x && omousex < text.x + strlen(language[3957]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 		{
 			//restart game
-			menuselect = 4;
+			menuselect = numOption;
 			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3957]);
 			if ( inputIsPressed )
 			{
@@ -1370,18 +1440,14 @@ void handleTutorialPauseMenu()
 		{
 			ttfPrintText(ttf16, text.x, text.y, language[3957]);
 		}
-
-		text.y = yres / 4 + 176;
 	}
 
-	int quitMenuOptionSelect = 5;
-	if ( mapIsTutorialHub )
+	text.y += 24;
+	++numOption;
+
+	if ( ((omousex >= 50 && omousex < 50 + strlen(language[3959]) * 18 && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
-		quitMenuOptionSelect = 4;
-	}
-	if ( ((omousex >= 50 && omousex < 50 + strlen(language[3959]) * 18 && omousey >= text.y && omousey < text.y + text.h) || (menuselect == quitMenuOptionSelect)) && subwindow == 0 && introstage == 1 )
-	{
-		menuselect = quitMenuOptionSelect;
+		menuselect = numOption;
 		// return to main menu
 		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3959]);
 		if ( inputIsPressed )
@@ -1530,6 +1596,14 @@ void handleMainMenu(bool mode)
 			}
 		}
 #endif
+		if ( mode )
+		{
+			if ( ticks % 100 == 0 )
+			{
+				UIToastNotificationManager.createPromoNotification();
+			}
+		}
+
 		// gray text color
 		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
 
@@ -12220,9 +12294,22 @@ void openSteamLobbyWaitWindow(button_t* my)
 	//SteamMatchmaking()->RequestLobbyList(); //TODO: Is this sufficient for it to work?
 	cpp_SteamMatchmaking_RequestLobbyList();
 #endif
+
 #if defined USE_EOS
+#ifdef STEAMWORKS
+	if ( EOS.CurrentUserInfo.bUserLoggedIn )
+	{
+		EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+			EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
+	}
+	else
+	{
+		EOS.bRequestingLobbies = false; // don't attempt search if not logged in
+	}
+#else
 	EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
 		EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
+#endif
 #endif // USE_EOS
 
 

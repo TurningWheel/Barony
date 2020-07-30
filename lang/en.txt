@@ -5854,10 +5854,10 @@ Changing this gameflag is disabled in current game mode.#
 
             You can always go back to the Hall of Trials
                       later from the Main Menu.#
-3969 Reset Hall of Trials#
+3969 Restart Map#
 3970    Are you sure you want to
    reset the Hall of Trials
-    to its original state?#
+  map to its original state?#
 3971 Achievements#
 3972 Ambient Sound Volume#
 3973 Environment Sound Volume#
@@ -5935,4 +5935,5 @@ Changing this gameflag is disabled in current game mode.#
    exiting will delete your save file.#
 3992 https://store.steampowered.com/app/1010820/Barony_Myths__Outcasts/#
 3993 https://store.steampowered.com/app/1010821/Barony_Legends__Pariahs/#
+3994 Crossplay search not enabled#
 3999 end#
