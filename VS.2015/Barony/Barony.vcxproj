@@ -234,7 +234,7 @@
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony_test</TargetName>
+    <TargetName>barony</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -255,7 +255,7 @@
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony_test</TargetName>
+    <TargetName>barony</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS|x64'">
     <LinkIncremental>false</LinkIncremental>
