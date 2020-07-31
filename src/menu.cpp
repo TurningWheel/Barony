@@ -9199,12 +9199,15 @@ void handleMainMenu(bool mode)
 			swapWeaponGimpTimer = 0;
 			pickaxeGimpTimer = 0;
 
-			if ( !mode )
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
 			{
-				// restarting game, make a highscore
-				saveScore();
-				deleteSaveGame(multiplayer);
-				loadingsavegame = 0;
+				if ( !mode )
+				{
+					// restarting game, make a highscore
+					saveScore();
+					deleteSaveGame(multiplayer);
+					loadingsavegame = 0;
+				}
 			}
 			camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
 
@@ -10004,7 +10007,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// delete save game
-			if ( !savethisgame )
+			if ( !savethisgame && !endTutorial )
 			{
 				deleteSaveGame(multiplayer);
 			}
