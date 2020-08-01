@@ -12303,6 +12303,8 @@ void openSteamLobbyWaitWindow(button_t* my)
 	cpp_SteamMatchmaking_RequestLobbyList();
 #endif
 
+	LobbyHandler.selectedLobbyInList = 0;
+
 #if defined USE_EOS
 #ifdef STEAMWORKS
 	if ( EOS.CurrentUserInfo.bUserLoggedIn )
@@ -12469,8 +12471,8 @@ void openSteamLobbyBrowserWindow(button_t* my)
 	subwindow = 1;
 	subx1 = xres / 2 - 280;
 	subx2 = xres / 2 + 280;
-	suby1 = yres / 2 - 192;
-	suby2 = yres / 2 + 192;
+	suby1 = yres / 2 - 198;
+	suby2 = yres / 2 + 198;
 	strcpy(subtext, language[1334]);
 
 	bool showCrossplayLobbyFilters = false;
