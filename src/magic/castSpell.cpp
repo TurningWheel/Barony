@@ -1682,6 +1682,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				caster->getStats()->EFFECTS[EFF_VAMPIRICAURA] = true;
 				caster->getStats()->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = 600;
 			}
+			else if ( caster->behavior == &actPlayer )
+			{
+				channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
+			}
 			//Also refactor the duration determining code.
 		}
 
