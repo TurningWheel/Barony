@@ -309,9 +309,11 @@ typedef enum ItemType
 	COMPOUND_BOW,
 	HEAVY_CROSSBOW,
 	BOOMERANG,
-	SCROLL_CONJUREARROW
+	SCROLL_CONJUREARROW,
+	ELIXIR_STATS,
+	ELIXIR_SKILLS
 } ItemType;
-const int NUMITEMS = 287;
+const int NUMITEMS = 289;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -540,6 +542,8 @@ void item_FoodTin(Item*& item, int player);
 void item_FoodAutomaton(Item*& item, int player);
 void item_Gem(Item* item, int player);
 void item_Spellbook(Item*& item, int player);
+void item_ElixirStats(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
+void item_ElixirSkills(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
 
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);

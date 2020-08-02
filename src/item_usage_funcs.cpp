@@ -4939,6 +4939,79 @@ void item_Spellbook(Item*& item, int player)
 	}
 }
 
+bool item_ElixirStats(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
+{
+	if (!entity)
+	{
+		return false;
+	}
+
+	// int skillLVL = 0;
+	// if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	// {
+	// 	Stat* usedByStats = usedBy->getStats();
+	// 	if ( usedByStats )
+	// 	{
+	// 		skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+	// 	}
+	// }
+
+	int player = -1;
+	Stat* stats;
+
+	if ( entity->behavior == &actPlayer )
+	{
+		player = entity->skill[2];
+	}
+	stats = entity->getStats();
+	if ( !stats )
+	{
+		return false;
+	}
+
+	if ( stats->amulet != nullptr )
+	{
+		if ( stats->amulet->type == AMULET_STRANGULATION )
+		{
+			if ( player == clientnum )
+			{
+				messagePlayer(player, language[750]);
+			}
+			return false;
+		}
+	}
+	if ( stats->EFFECTS[EFF_VOMITING] )
+	{
+		if ( player == clientnum )
+		{
+			messagePlayer(player, language[751]);
+		}
+		return false;
+	}
+	if ( multiplayer == CLIENT )
+	{
+		consumeItem(item, player);
+		return true;
+	}
+
+	//TODO: Update all the stats.
+
+	//TODO: Set each stat to something random... ////Set or add/sub??
+	stat->STR = (rand()%5) - 2;
+	//updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_ALL); //TODO: <-- Do this...?
+
+	// play drink sound
+	playSoundEntity(entity, 52, 64);
+	playSoundEntity(entity, 168, 128);
+	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+
+	messagePlayerColor(player, color, language[773]); //TODO: Update language!
+
+	consumeItem(item, player);
+	return true;
+}
+
 void item_FoodAutomaton(Item*& item, int player)
 {
 	if ( !stats[player] || !players[player] || !players[player]->entity )
