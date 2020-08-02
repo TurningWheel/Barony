@@ -1253,6 +1253,11 @@ void loadAllScores(const std::string& scoresfilename)
 
 int saveGame(int saveIndex)
 {
+	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+	{
+		return 1;
+	}
+
 	int player;
 	node_t* node;
 	FILE* fp;
