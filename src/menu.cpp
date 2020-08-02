@@ -624,6 +624,39 @@ bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
 	{
 		return unlocked;
 	}
+#elif defined USE_EOS
+	if ( enabledDLCPack1 && race == RACE_SKELETON && achievementUnlocked("BARONY_ACH_BONY_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack1 && race == RACE_VAMPIRE && achievementUnlocked("BARONY_ACH_BUCKTOOTH_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack1 && race == RACE_SUCCUBUS && achievementUnlocked("BARONY_ACH_BOMBSHELL_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack1 && race == RACE_GOATMAN && achievementUnlocked("BARONY_ACH_BLEATING_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack2 && race == RACE_AUTOMATON && achievementUnlocked("BARONY_ACH_BOILERPLATE_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack2 && race == RACE_INCUBUS && achievementUnlocked("BARONY_ACH_BAD_BOY_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack2 && race == RACE_GOBLIN && achievementUnlocked("BARONY_ACH_BAYOU_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack2 && race == RACE_INSECTOID && achievementUnlocked("BARONY_ACH_BUGGAR_BARON") )
+	{
+		return true;
+	}
 #else
 	return false;
 #endif // STEAMWORKS

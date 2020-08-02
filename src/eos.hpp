@@ -328,6 +328,7 @@ public:
 				int gameCurrentLevel = -1;
 				std::string gameJoinKey = "";
 				Uint32 PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
+				Uint32 maxplayersCompatible = MAXPLAYERS;
 				void ClearData()
 				{
 					lobbyName = "";
@@ -338,6 +339,7 @@ public:
 					numServerMods = 0;
 					lobbyCreationTime = 0;
 					gameCurrentLevel = -1;
+					maxplayersCompatible = MAXPLAYERS;
 					PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
 				}
 		} LobbyAttributes;
@@ -373,9 +375,10 @@ public:
 			CREATION_TIME,
 			GAME_CURRENT_LEVEL,
 			GAME_JOIN_KEY,
-			LOBBY_PERMISSION_LEVEL
+			LOBBY_PERMISSION_LEVEL,
+			GAME_MAXPLAYERS
 		};
-		const int kNumAttributes = 9;
+		const int kNumAttributes = 10;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;

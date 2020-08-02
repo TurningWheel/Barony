@@ -63,7 +63,4 @@ make -j
 RESULT=$?
 if [ $RESULT -ne 0 ]; then
   echo "Compilation failed. Aborting."
-  echo "But first, here's your Config.hpp!"
-  cat ../../src/Config.hpp
-  exit $RESULT
 fi
