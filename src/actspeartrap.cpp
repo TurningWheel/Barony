@@ -40,7 +40,7 @@ void actSpearTrap(Entity* my)
 	if ( SPEARTRAP_AMBIENCE <= 0 )
 	{
 		SPEARTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntityLocal( my, 149, 128 );
+		playSoundEntityLocal( my, 149, 64 );
 	}
 
 	if ( multiplayer != CLIENT )

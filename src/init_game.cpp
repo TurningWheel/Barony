@@ -32,6 +32,8 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include "cppfuncs.hpp"
+#include "Directory.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -53,8 +55,6 @@ int initGame()
 	FILE* fp;
 
 	// setup some lists
-	steamAchievements.first = NULL;
-	steamAchievements.last = NULL;
 	booksRead.first = NULL;
 	booksRead.last = NULL;
 	lobbyChatboxMessages.first = NULL;
@@ -74,6 +74,9 @@ int initGame()
 	cpp_SteamServerClientWrapper_OnLobbyMatchListCallback = &steam_OnLobbyMatchListCallback;
 	cpp_SteamServerClientWrapper_OnP2PSessionConnectFail = &steam_OnP2PSessionConnectFail;
 	cpp_SteamServerClientWrapper_OnLobbyDataUpdate = &steam_OnLobbyDataUpdatedCallback;
+ #ifdef USE_EOS
+	cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket = &steam_OnRequestEncryptedAppTicket;
+ #endif //USE_EOS
 #endif
 
 	// print a loading message
@@ -85,6 +88,15 @@ int initGame()
 	GO_SwapBuffers(screen);
 
 	initGameControllers();
+
+	// load achievement images
+	Directory achievementsDir("images/achievements");
+	for (auto& item : achievementsDir.list)
+	{
+		std::string fullPath = achievementsDir.path + std::string("/") + item;
+		char* name = const_cast<char*>(fullPath.c_str()); // <- evil
+		achievementImages.emplace(std::make_pair(item, loadImage(name)));
+	}
 
 	// load model offsets
 	printlog( "loading model offsets...\n");
@@ -331,7 +343,8 @@ int initGame()
 	randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
 	loadItemLists();
 
-#ifndef STEAMWORKS
+#if defined(USE_EOS) || defined(STEAMWORKS)
+#else
 	if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
 	{
 		std::string serial = PHYSFS_getRealDir("mythsandoutcasts.key");
@@ -384,7 +397,7 @@ int initGame()
 			fclose(fp);
 		}
 	}
-#endif // !STEAMWORKS
+#endif
 
 	// print a loading message
 	drawClearBuffers();
@@ -479,6 +492,7 @@ int fmod_result;
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/escape.ogg", FMOD_SOFTWARE, NULL, &escapemusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/devil.ogg", FMOD_SOFTWARE, NULL, &devilmusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/sanctum.ogg", FMOD_SOFTWARE, NULL, &sanctummusic);
+	fmod_result = FMOD_System_CreateStream(fmod_system, "music/tutorial.ogg", FMOD_SOFTWARE, NULL, &tutorialmusic);
 	if ( PHYSFS_getRealDir("music/gnomishmines.ogg") != NULL )
 	{
 		fmod_result = FMOD_System_CreateStream(fmod_system, "music/gnomishmines.ogg", FMOD_SOFTWARE, NULL, &gnomishminesmusic);
@@ -627,6 +641,7 @@ int fmod_result;
 
 	loadAllScores(SCORESFILE);
 	loadAllScores(SCORESFILE_MULTIPLAYER);
+	gameModeManager.Tutorial.init();
 	if (!loadInterfaceResources())
 	{
 		printlog("Failed to load interface resources.\n");
@@ -722,19 +737,19 @@ void deinitGame()
 	list_FreeAll(&topscoresMultiplayer);
 	deleteAllNotificationMessages();
 	list_FreeAll(&removedEntities);
-	if ( title_bmp != NULL )
+	if ( title_bmp != nullptr )
 	{
 		SDL_FreeSurface(title_bmp);
 	}
-	if ( logo_bmp != NULL )
+	if ( logo_bmp != nullptr )
 	{
 		SDL_FreeSurface(logo_bmp);
 	}
-	if ( cursor_bmp != NULL )
+	if ( cursor_bmp != nullptr )
 	{
 		SDL_FreeSurface(cursor_bmp);
 	}
-	if ( cross_bmp != NULL )
+	if ( cross_bmp != nullptr )
 	{
 		SDL_FreeSurface(cross_bmp);
 	}
@@ -797,7 +812,7 @@ void deinitGame()
 	}
 	else if ( multiplayer == SERVER )
 	{
-		for ( c = 0; c < numplayers; ++c )
+		for ( c = 0; c < MAXPLAYERS; ++c )
 		{
 			list_FreeAll(&channeledSpells[c]);
 		}
@@ -837,6 +852,7 @@ void deinitGame()
 		FMOD_Sound_Release(caveslairmusic);
 		FMOD_Sound_Release(bramscastlemusic);
 		FMOD_Sound_Release(hamletmusic);
+		FMOD_Sound_Release(tutorialmusic);
 		for ( c = 0; c < NUMMINESMUSIC; c++ )
 		{
 			FMOD_Sound_Release(minesmusic[c]);
@@ -958,7 +974,6 @@ void deinitGame()
 	pathMapFlying = NULL;
 
 	// clear steam achievement list
-	list_FreeAll(&steamAchievements);
 	list_FreeAll(&booksRead);
 
 	// clear lobby chatbox data
@@ -995,6 +1010,32 @@ void deinitGame()
 			lobbyIDs[c] = NULL;
 		}
 	}
+#endif
+#if defined USE_EOS
+	if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
+	{
+		EOS.leaveLobby();
+
+		Uint32 shutdownTicks = SDL_GetTicks();
+		while ( EOS.CurrentLobbyData.bAwaitingLeaveCallback )
+		{
+#ifdef APPLE
+			SDL_Event event;
+			while ( SDL_PollEvent(&event) != 0 )
+			{
+				//Makes Mac work because Apple had to do it different.
+			}
+#endif
+			EOS_Platform_Tick(EOS.PlatformHandle);
+			SDL_Delay(50);
+			if ( SDL_GetTicks() - shutdownTicks >= 3000 )
+			{
+				break;
+			}
+		}
+	}
+	EOS.AccountManager.deinit();
+	EOS.shutdown();
 #endif
 
 	//Close game controller

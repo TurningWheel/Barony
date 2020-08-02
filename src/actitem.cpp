@@ -144,14 +144,8 @@ void actItem(Entity* my)
 		my->sprite = itemModel(item);
 		free(item);
 	}
-	//if( ITEM_LIFE==0 )
-	//	playSoundEntityLocal( my, 149, 64 );
+
 	ITEM_LIFE++;
-	/*ITEM_AMBIENCE++;
-	if( ITEM_AMBIENCE>=TICKS_PER_SECOND*30 ) {
-		ITEM_AMBIENCE=0;
-		playSoundEntityLocal( my, 149, 64 );
-	}*/
 
 	// pick up item
 	if (multiplayer != CLIENT)
@@ -176,7 +170,14 @@ void actItem(Entity* my)
 						else
 						{
 							bool oldCount = list_Size(&monsterInteracting->getStats()->inventory);
-							monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 16, 2, my);
+							Entity* copyOfItem = newEntity(-1, 1, map.entities, nullptr);
+							copyOfItem->x = my->x;
+							copyOfItem->y = my->y;
+							copyOfItem->flags[PASSABLE] = true;
+							copyOfItem->flags[INVISIBLE] = true;
+							copyOfItem->flags[NOUPDATE] = true;
+
+							bool pickedUpItem = monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 16, 2, my);
 							if ( oldCount > 0 && list_Size(&monsterInteracting->getStats()->inventory) > oldCount )
 							{
 								// items didn't stack, throw out the new one.
@@ -203,18 +204,33 @@ void actItem(Entity* my)
 								Entity* leader = monsterInteracting->monsterAllyGetPlayerLeader();
 								if ( leader )
 								{
-									achievementObserver.playerAchievements[monsterInteracting->monsterAllyIndex].checkPathBetweenObjects(leader, my, AchievementObserver::BARONY_ACH_LEVITANT_LACKEY);
+									achievementObserver.playerAchievements[monsterInteracting->monsterAllyIndex].checkPathBetweenObjects(leader, copyOfItem, AchievementObserver::BARONY_ACH_LEVITANT_LACKEY);
 								}
+							}
+							list_RemoveNode(copyOfItem->mynode);
+							copyOfItem = nullptr;
+							if ( pickedUpItem )
+							{
+								FollowerMenu.entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
+								return;
 							}
 						}
 					}
 					else if ( items[my->skill[10]].category == Category::FOOD && monsterInteracting->getMonsterTypeFromSprite() != SLIME )
 					{
-						monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats());
+						if ( monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats()) )
+						{
+							FollowerMenu.entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
+							return;
+						}
 					}
 					else
 					{
-						monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my);
+						if ( monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my) )
+						{
+							FollowerMenu.entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
+							return;
+						}
 					}
 				}
 				my->clearMonsterInteract();

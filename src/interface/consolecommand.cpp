@@ -1829,7 +1829,7 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/numgold", 8) )
 	{
-		for ( unsigned i = 0; i < numplayers; ++i )
+		for ( unsigned i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( client_disconnected[i] )
 			{
@@ -2810,6 +2810,44 @@ void consoleCommand(char* command_str)
 		else if ( !strncmp(command_str, "/jsonexportmonstercurve", 23) )
 		{
 			monsterCurveCustomManager.writeSampleToDocument();
+		}
+		else if ( !strncmp(command_str, "/crossplay", 10) )
+		{
+#if (defined STEAMWORKS && defined USE_EOS)
+			EOS.CrossplayAccountManager.autologin = true;
+#endif // USE_EOS
+		}
+		else if ( !strncmp(command_str, "/sfxambientvolume", 17) )
+		{
+			sfxAmbientVolume = atoi(&command_str[18]);
+		}
+		else if ( !strncmp(command_str, "/sfxambientdynamic", 18) )
+		{
+			sfxUseDynamicAmbientVolume = !sfxUseDynamicAmbientVolume;
+			if ( sfxUseDynamicAmbientVolume )
+			{
+				messagePlayer(clientnum, "Dynamic ambient volume ON");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Dynamic ambient volume OFF");
+			}
+		}
+		else if ( !strncmp(command_str, "/sfxenvironmentdynamic", 22) )
+		{
+			sfxUseDynamicEnvironmentVolume = !sfxUseDynamicEnvironmentVolume;
+			if ( sfxUseDynamicEnvironmentVolume )
+			{
+				messagePlayer(clientnum, "Dynamic environment volume ON");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Dynamic environment volume OFF");
+			}
+		}
+		else if ( !strncmp(command_str, "/sfxenvironmentvolume", 21) )
+		{
+			sfxEnvironmentVolume = atoi(&command_str[22]);
 		}
 		else
 		{

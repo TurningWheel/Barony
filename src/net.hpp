@@ -52,6 +52,14 @@ void serverUpdatePlayerSummonStrength(int player);
 void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool guarantee = false);
 void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y);
 void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y, Uint32 targetUid = 0);
+enum NetworkingLobbyJoinRequestResult : int
+{
+	NET_LOBBY_JOIN_P2P_FAILURE,
+	NET_LOBBY_JOIN_P2P_SUCCESS,
+	NET_LOBBY_JOIN_DIRECTIP_FAILURE,
+	NET_LOBBY_JOIN_DIRECTIP_SUCCESS
+};
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult);
 Entity* receiveEntity(Entity* entity);
 void clientActions(Entity* entity);
 void clientHandleMessages(Uint32 framerateBreakInterval);
@@ -119,5 +127,6 @@ extern bool disableMultithreadedSteamNetworking;
 extern bool disableFPSLimitOnNetworkMessages;
 
 int steamPacketThread(void* data);
+int EOSPacketThread(void* data);
 
 void deleteMultiplayerSaveGames(); //Server function, deletes its own save and broadcasts delete packet to clients.

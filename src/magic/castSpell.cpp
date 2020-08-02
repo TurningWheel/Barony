@@ -53,10 +53,9 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 	}
 
 	int player = -1;
-	int i = 0;
-	for ( i = 0; i < numplayers; ++i )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( caster == players[i]->entity )
+		if ( players[i] && caster && (caster == players[i]->entity) )
 		{
 			player = i; //Set the player.
 		}
@@ -235,7 +234,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 #define PROPULSION_MISSILE 1
 #define PROPULSION_MISSILE_TRIO 2
-	int i = 0;
 	int chance = 0;
 	int propulsion = 0;
 	int traveltime = 0;
@@ -249,9 +247,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	Stat* stat = caster->getStats();
 
 	int player = -1;
-	for (i = 0; i < numplayers; ++i)
+	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
-		if (caster == players[i]->entity)
+		if ( players[i] && caster && (caster == players[i]->entity) )
 		{
 			player = i; //Set the player.
 		}
@@ -668,9 +666,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			caster->setEffect(EFF_INVISIBLE, true, duration, false);
 			bool isPlayer = false;
-			for (i = 0; i < numplayers; ++i)
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if (caster == players[i]->entity)
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					serverUpdateEffects(i);
 					isPlayer = true;
@@ -728,9 +726,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			caster->setEffect(EFF_LEVITATING, true, duration, false);
-			for (i = 0; i < numplayers; ++i)
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if (caster == players[i]->entity)
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					serverUpdateEffects(i);
 				}
@@ -865,9 +863,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->name, spellElement_identify.name))
 		{
-			for (i = 0; i < numplayers; ++i)
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if (caster == players[i]->entity)
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 					if (i != 0)
@@ -897,9 +895,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->name, spellElement_removecurse.name))
 		{
-			for (i = 0; i < numplayers; ++i)
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if (caster == players[i]->entity)
+				if ( players[i] && (caster == players[i]->entity) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 					if (i != 0)
@@ -928,9 +926,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->name, spellElement_magicmapping.name))
 		{
-			for (i = 0; i < numplayers; ++i)
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if (caster == players[i]->entity)
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 					spell_magicMap(i);
@@ -940,9 +938,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_detectFood.name) )
 		{
-			for ( i = 0; i < numplayers; ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if ( caster == players[i]->entity )
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 					spell_detectFoodEffectOnMap(i);
@@ -952,9 +950,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_salvageItem.name) )
 		{
-			for ( i = 0; i < numplayers; ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if ( caster == players[i]->entity )
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					int searchx = static_cast<int>(caster->x + 32 * cos(caster->yaw)) >> 4;
 					int searchy = static_cast<int>(caster->y + 32 * sin(caster->yaw)) >> 4;
@@ -1049,20 +1047,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 				}
 			}
-			/*for ( i = 0; i < numplayers; ++i )
-			{
-				if ( caster == players[i]->entity )
-				{
-					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					spell_detectFoodEffectOnMap(i);
-				}
-			}*/
 		}
 		else if ( !strcmp(element->name, spellElement_trollsBlood.name) )
 		{
-			for ( i = 0; i < numplayers; ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if ( caster == players[i]->entity )
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					int amount = element->duration;
 					amount += ((spellBookBonusPercent * 2 / 100.f) * amount); // 100-200%
@@ -1112,9 +1102,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_flutter.name) )
 		{
-			for ( i = 0; i < numplayers; ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if ( caster == players[i]->entity )
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					//Duration for flutter.
 					int duration = element->duration;
@@ -1136,9 +1126,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_dash.name) )
 		{
-			for ( i = 0; i < numplayers; ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if ( caster == players[i]->entity )
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					playSoundEntity(caster, 180, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
@@ -1173,9 +1163,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_speed.name) )
 		{
-			for ( i = 0; i < numplayers; ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if ( caster == players[i]->entity )
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					//Duration for speed.
 					int duration = element->duration;
@@ -1242,9 +1232,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->name, spellElement_heal.name))     //TODO: Make it work for NPCs.
 		{
-			for (i = 0; i < numplayers; ++i)
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if (caster == players[i]->entity)
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					int amount = element->damage * (((element->mana + extramagic_to_use) / static_cast<double>(element->base_mana)) * element->overload_multiplier); //Amount to heal.
 					if (newbie)
@@ -1416,9 +1406,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->name, spellElement_cure_ailment.name))     //TODO: Generalize it for NPCs too?
 		{
-			for (i = 0; i < numplayers; ++i)
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if (caster == players[i]->entity)
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 					messagePlayerColor(i, color, language[411]);
@@ -1621,9 +1611,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				duration /= getCostOfSpell((spell_t*)spellnode->element);
 				channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 				caster->setEffect(EFF_MAGICREFLECT, true, duration, true);
-				for ( i = 0; i < numplayers; ++i )
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( caster == players[i]->entity )
+					if ( players[i] && caster && (caster == players[i]->entity) )
 					{
 						serverUpdateEffects(i);
 					}
@@ -1670,9 +1660,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				duration /= getCostOfSpell((spell_t*)spellnode->element);
 				channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 				caster->setEffect(EFF_MAGICAMPLIFY, true, duration, true);
-				for ( i = 0; i < numplayers; ++i )
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( caster == players[i]->entity )
+					if ( players[i] && caster && (caster == players[i]->entity) )
 					{
 						serverUpdateEffects(i);
 						messagePlayer(i, language[3442]);
@@ -1691,6 +1681,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				serverSpawnMiscParticles(caster, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				caster->getStats()->EFFECTS[EFF_VAMPIRICAURA] = true;
 				caster->getStats()->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = 600;
+			}
+			else if ( caster->behavior == &actPlayer )
+			{
+				channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
 			}
 			//Also refactor the duration determining code.
 		}
@@ -2258,9 +2252,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					// light provides no levelling past 40 in both spellcasting and magic.
 					if ( rand() % 20 == 0 )
 					{
-						for ( i = 0; i < numplayers; ++i )
+						for ( int i = 0; i < MAXPLAYERS; ++i )
 						{
-							if ( caster == players[i]->entity )
+							if ( players[i] && caster && (caster == players[i]->entity) )
 							{
 								messagePlayer(i, language[2591]);
 							}
@@ -2340,9 +2334,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else
 		{
 			int target_client = 0;
-			for (i = 0; i < numplayers; ++i)
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if (players[i]->entity == caster)
+				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					target_client = i;
 				}

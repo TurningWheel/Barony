@@ -156,9 +156,34 @@ int initApp(char* title, int fullscreen)
 	steam_init = true;
 	g_SteamLeaderboards = new CSteamLeaderboards();
 	g_SteamWorkshop = new CSteamWorkshop();
-	g_SteamStatistics = new CSteamStatistics(g_SteamStats, g_SteamGlobalStats, NUM_STEAM_STATISTICS);
+	g_SteamStatistics = new CSteamStatistics(g_SteamStats, nullptr, NUM_STEAM_STATISTICS);
 	// Preloads mod content from a workshop fileID
 	//gamemodsWorkshopPreloadMod(YOUR WORKSHOP FILE ID HERE, "YOUR WORKSHOP TITLE HERE");
+#endif
+#if defined USE_EOS
+	EOS.readFromFile();
+	EOS.readFromCmdLineArgs();
+	if ( EOS.initPlatform(true) == false )
+	{
+		return 14;
+	}
+#ifndef STEAMWORKS
+#ifdef APPLE
+	if ( EOS.CredentialName.compare("") == 0 )
+	{
+		EOSFuncs::logInfo("Error, attempting to launch outside of store...");
+		return 15;
+	}
+#else
+	if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
+	{
+		// restarting app
+		EOSFuncs::logInfo("App attempting restart through store...");
+		return 15;
+	}
+#endif
+	EOS.initAuth();
+#endif // !STEAMWORKS
 #endif
 
 	window_title = title;
@@ -198,6 +223,18 @@ int initApp(char* title, int fullscreen)
 			if (FMODErrorCheck())
 			{
 				printlog("Failed to create sound channel group.\n");
+				no_sound = true;
+			}
+			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundAmbient_group);
+			if ( FMODErrorCheck() )
+			{
+				printlog("Failed to create sound ambient channel group.\n");
+				no_sound = true;
+			}
+			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundEnvironment_group);
+			if ( FMODErrorCheck() )
+			{
+				printlog("Failed to create sound environment channel group.\n");
 				no_sound = true;
 			}
 			if (!no_sound)
@@ -604,6 +641,8 @@ int initApp(char* title, int fullscreen)
 	}
 	fclose(fp);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
 	printlog("loading sounds...\n");
@@ -636,6 +675,8 @@ int initApp(char* title, int fullscreen)
 	}
 	fclose(fp);
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif
 	return 0;
@@ -888,7 +929,7 @@ int loadLanguage(char* lang)
 			items[c].name_unidentified = language[1546 + c * 2];
 		}
 	}
-
+	initMenuOptions();
 	return 0;
 }
 
@@ -2161,6 +2202,13 @@ int deinitApp()
 		free(sprites);
 	}
 
+	// free achievement images
+	for (auto& item : achievementImages) 
+	{
+		SDL_FreeSurface(item.second);
+	}
+	achievementImages.clear();
+
 	// free models
 	printlog("freeing models...\n");
 	if ( models != NULL )
@@ -2317,6 +2365,7 @@ int deinitApp()
 		SteamAPI_Shutdown();
 	}
 #endif
+
 
 	int numLogFilesToKeepInArchive = 30;
 	// archive logfiles.

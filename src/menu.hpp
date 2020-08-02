@@ -102,6 +102,7 @@ void buttonGamemodsBaseDirectory(button_t* my);
 void buttonGamemodsSelectDirectoryForUpload(button_t* my);
 void buttonGamemodsOpenModifyExistingWindow(button_t* my);
 void buttonGamemodsStartModdedGame(button_t* my);
+void buttonInviteFriends(button_t* my);
 
 #ifdef STEAMWORKS
 void buttonGamemodsPrepareWorkshopItemUpload(button_t* my);
@@ -113,11 +114,17 @@ void buttonGamemodsOpenUploadWindow(button_t* my);
 void buttonGamemodsGetMyWorkshopItems(button_t* my);
 void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my);
 void buttonGamemodsCancelModifyFileContents(button_t* my);
-void buttonInviteFriends(button_t* my);
 void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
 void buttonGamemodsSubscribeToHostsModFiles(button_t* my);
 void buttonGamemodsMountHostsModFiles(button_t* my);
+void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby);
+void* cpp_SteamMatchmaking_GetLobbyMember(void* steamIDLobby, int index);
+void openSteamLobbyWaitWindow(button_t* my);
+#elif defined USE_EOS
+void buttonSteamLobbyBrowserJoinGame(button_t* my);
+void buttonSteamLobbyBrowserRefresh(button_t* my);
+void openSteamLobbyWaitWindow(button_t* my);
 #else
 void windowEnterSerialPrompt();
 void windowSerialResult(int success);
@@ -126,6 +133,14 @@ extern char serialInputText[64];
 #endif
 
 #define SLIDERFONT font12x12_bmp
+
+// achievement window
+void openAchievementsWindow();
+void closeAchievementsWindow(button_t*);
+extern bool achievements_window;
+extern int achievements_window_page;
+void buttonAchievementsUp(button_t* my);
+void buttonAchievementsDown(button_t* my);
 
 // misc functions
 void openSettingsWindow();
@@ -195,6 +210,8 @@ extern int settings_fullscreen, settings_shaking, settings_bobbing;
 extern bool settings_borderless;
 extern real_t settings_gamma;
 extern int settings_sfxvolume, settings_musvolume;
+extern int settings_sfxAmbientVolume;
+extern int settings_sfxEnvironmentVolume;
 extern int settings_impulses[NUMIMPULSES];
 extern int settings_reversemouse;
 extern bool settings_smoothmouse;
@@ -216,7 +233,6 @@ extern int settings_minimap_scale;
 extern int settings_minimap_object_zoom;
 extern char portnumber_char[6];
 extern char connectaddress[64];
-extern int multiplayerselect;
 extern bool smoothmouse;
 extern bool usecamerasmoothing;
 extern bool disablemouserotationlimit;
@@ -271,3 +287,6 @@ void openConfirmResolutionWindow();
 void buttonAcceptResolution(button_t* my);
 void buttonRevertResolution(button_t* my);
 void revertResolution();
+
+extern std::vector<std::pair<std::string, int>> menuOptions;
+void initMenuOptions();

@@ -25,12 +25,13 @@ void steam_ConnectToLobby();
 void steam_OnLobbyEntered(void* pCallback, bool bIOFailure);
 void steam_GameServerPingOnServerResponded(void* steamID);
 void steam_OnP2PSessionConnectFail(void* pCallback);
+void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure);
 
 #define MAX_STEAM_LOBBIES 100
 
-extern int numSteamLobbies;
+extern Uint32 numSteamLobbies;
 extern int selectedSteamLobby;
-extern char lobbyText[MAX_STEAM_LOBBIES][48];
+extern char lobbyText[MAX_STEAM_LOBBIES][64];
 extern void* lobbyIDs[MAX_STEAM_LOBBIES];
 extern int lobbyPlayers[MAX_STEAM_LOBBIES];
 
@@ -42,23 +43,25 @@ extern bool serverLoadingSaveGame; // determines whether lobbyToConnectTo is loa
 extern void* currentLobby; // CSteamID to the current game lobby
 extern void* lobbyToConnectTo; // CSteamID of the game lobby that user has been invited to
 extern char pchCmdLine[1024]; // for game join requests
-extern char currentLobbyName[32];
 #ifdef STEAMWORKS
+extern char currentLobbyName[32];
 extern ELobbyType currentLobbyType;
-#endif
-
 extern bool connectingToLobby, connectingToLobbyWindow;
 extern bool stillConnectingToLobby;
+extern bool joinLobbyWaitingForHostResponse;
+extern bool denyLobbyJoinEvent;
+extern int connectingToLobbyStatus;
+#endif
+
 
 
 //These are all an utter bodge.
 //They should not exist, but potato.
 //TODO: Remove all of these wrappers and access the steam stuff directly.
 SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList();
-
 SteamAPICall_t cpp_SteamMatchmaking_JoinLobby(CSteamID steamIDLobby);
-
 SteamAPICall_t cpp_SteamMatchmaking_CreateLobby(ELobbyType eLobbyType, int cMaxMembers);
+SteamAPICall_t cpp_SteamMatchmaking_RequestAppTicket();
 
 void cpp_SteamServerWrapper_Instantiate();
 
@@ -273,28 +276,6 @@ public:
 	void OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bool bIOFailure);
 	void OnUnsubscribeItemRequest(RemoteStorageUnsubscribePublishedFileResult_t *pResult, bool bIOFailure);
 	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
-};
-
-struct SteamStat_t
-{
-	int m_ID;
-	ESteamStatTypes m_eStatType;
-	const char *m_pchStatName;
-	int m_iValue;
-	float m_flValue;
-	float m_flAvgNumerator;
-	float m_flAvgDenominator;
-};
-
-struct SteamGlobalStat_t
-{
-	int m_ID;
-	ESteamStatTypes m_eStatType;
-	const char *m_pchStatName;
-	int64 m_iValue;
-	float m_flValue;
-	float m_flAvgNumerator;
-	float m_flAvgDenominator;
 };
 
 class CSteamStatistics

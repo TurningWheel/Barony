@@ -35,6 +35,7 @@
 #include "scores.hpp"
 #include "colors.hpp"
 #include "mod_tools.hpp"
+#include "lobbies.hpp"
 
 NetHandler* net_handler = nullptr;
 
@@ -75,18 +76,27 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 	}
 	else
 	{
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		{
 #ifdef STEAMWORKS
-		if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
-		{
-			return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packet->data, packet->len, tryReliable? k_EP2PSendReliable : k_EP2PSendUnreliable, 0);
-		}
-		else
-		{
-			return 0;
-		}
-#else
-		return 0;
+			if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
+			{
+				return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packet->data, packet->len, tryReliable? k_EP2PSendReliable : k_EP2PSendUnreliable, 0);
+			}
+			else
+			{
+				return 0;
+			}
 #endif
+		}
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(hostnum), (char*)packet->data, packet->len);
+			return 0;
+#endif
+		}
+		return 0;
 	}
 }
 
@@ -145,18 +155,27 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 	}
 	else
 	{
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		{
 #ifdef STEAMWORKS
-		if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
-		{
-			return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packetsend->packet->data, packetsend->packet->len, k_EP2PSendReliable, 0);
-		}
-		else
-		{
-			return 0;
-		}
-#else
-		return 0;
+			if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
+			{
+				return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packetsend->packet->data, packetsend->packet->len, k_EP2PSendReliable, 0);
+			}
+			else
+			{
+				return 0;
+			}
 #endif
+		}
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(hostnum), packetsend->packet->data, packetsend->packet->len);
+			return 0;
+#endif
+		}
+		return 0;
 	}
 }
 
@@ -1288,6 +1307,156 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 	sendPacket(net_sock, -1, net_packet, 0);
 }
 
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
+{
+	int c = MAXPLAYERS;
+	if ( strcmp(VERSION, (char*)net_packet->data + 54) )
+	{
+		c = MAXPLAYERS + 1; // wrong version number
+	}
+	else
+	{
+		Uint32 clientlsg = SDLNet_Read32(&net_packet->data[68]);
+		Uint32 clientms = SDLNet_Read32(&net_packet->data[64]);
+		if ( net_packet->data[63] == 0 )
+		{
+			// client will enter any player spot
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				if ( client_disconnected[c] == true )
+				{
+					break;    // no more player slots
+				}
+			}
+		}
+		else
+		{
+			// client is joining a particular player spot
+			c = net_packet->data[63];
+			if ( !client_disconnected[c] )
+			{
+				c = MAXPLAYERS;  // client wants to fill a space that is already filled
+			}
+		}
+		if ( clientlsg != loadingsavegame && loadingsavegame == 0 )
+		{
+			c = MAXPLAYERS + 2;  // client shouldn't load save game
+		}
+		else if ( clientlsg == 0 && loadingsavegame != 0 )
+		{
+			c = MAXPLAYERS + 3;  // client is trying to join a save game without a save of their own
+		}
+		else if ( clientlsg != loadingsavegame )
+		{
+			c = MAXPLAYERS + 4;  // client is trying to join the game with an incompatible save
+		}
+		else if ( loadingsavegame && getSaveGameMapSeed(false) != clientms )
+		{
+			c = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
+		}
+	}
+	outResult = c;
+	if ( c >= MAXPLAYERS )
+	{
+		// on error, client gets a player number that is invalid (to be interpreted as an error code)
+		net_clients[MAXPLAYERS - 1].host = net_packet->address.host;
+		net_clients[MAXPLAYERS - 1].port = net_packet->address.port;
+		if ( directConnect )
+			while ( (net_tcpclients[MAXPLAYERS - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL );
+		net_packet->address.host = net_clients[MAXPLAYERS - 1].host;
+		net_packet->address.port = net_clients[MAXPLAYERS - 1].port;
+		net_packet->len = 4;
+		SDLNet_Write32(c, &net_packet->data[0]); // error code for client to interpret
+		printlog("sending error code %d to client.\n", c);
+		if ( directConnect )
+		{
+			SDLNet_TCP_Send(net_tcpclients[MAXPLAYERS - 1], net_packet->data, net_packet->len);
+			SDLNet_TCP_Close(net_tcpclients[MAXPLAYERS - 1]);
+			return NET_LOBBY_JOIN_DIRECTIP_FAILURE;
+		}
+		else
+		{
+			return NET_LOBBY_JOIN_P2P_FAILURE;
+		}
+	}
+	else
+	{
+		// on success, client gets legit player number
+		strcpy(stats[c]->name, (char*)(&net_packet->data[19]));
+		client_disconnected[c] = false;
+		client_classes[c] = (int)SDLNet_Read32(&net_packet->data[42]);
+		stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[46]));
+		Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[50]);
+		stats[c]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+		stats[c]->playerRace = (raceAndAppearance & 0xFF);
+		net_clients[c - 1].host = net_packet->address.host;
+		net_clients[c - 1].port = net_packet->address.port;
+		if ( directConnect )
+		{
+			while ( (net_tcpclients[c - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL );
+			const char* clientaddr = SDLNet_ResolveIP(&net_packet->address);
+			printlog("client %d connected from %s:%d\n", c, clientaddr, net_packet->address.port);
+		}
+		else
+		{
+			printlog("client %d connected.\n", c);
+		}
+		client_keepalive[c] = ticks;
+
+		// send existing clients info on new client
+		for ( int x = 1; x < MAXPLAYERS; x++ )
+		{
+			if ( client_disconnected[x] || c == x )
+			{
+				continue;
+			}
+			strcpy((char*)(&net_packet->data[0]), "NEWPLAYER");
+			net_packet->data[9] = c; // clientnum
+			net_packet->data[10] = client_classes[c]; // class
+			net_packet->data[11] = stats[c]->sex; // sex
+			net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
+			net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
+			char shortname[32] = "";
+			strncpy(shortname, stats[c]->name, 22);
+			strcpy((char*)(&net_packet->data[14]), shortname);  // name
+			net_packet->address.host = net_clients[x - 1].host;
+			net_packet->address.port = net_clients[x - 1].port;
+			net_packet->len = 14 + strlen(stats[c]->name) + 1;
+			sendPacketSafe(net_sock, -1, net_packet, x - 1);
+		}
+		char shortname[32] = { 0 };
+		strncpy(shortname, stats[c]->name, 22);
+
+		newString(&lobbyChatboxMessages, 0xFFFFFFFF, "\n***   %s has joined the game   ***\n", shortname);
+
+		// send new client their id number + info on other clients
+		SDLNet_Write32(c, &net_packet->data[0]);
+		for ( int x = 0; x < MAXPLAYERS; x++ )
+		{
+			net_packet->data[4 + x * (5 + 23)] = client_classes[x]; // class
+			net_packet->data[5 + x * (5 + 23)] = stats[x]->sex; // sex
+			net_packet->data[6 + x * (5 + 23)] = client_disconnected[x]; // connectedness :p
+			net_packet->data[7 + x * (5 + 23)] = (Uint8)stats[x]->appearance; // appearance
+			net_packet->data[8 + x * (5 + 23)] = (Uint8)stats[x]->playerRace; // player race
+			char shortname[32] = "";
+			strncpy(shortname, stats[x]->name, 22);
+			strcpy((char*)(&net_packet->data[9 + x * (5 + 23)]), shortname);  // name
+		}
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 4 + MAXPLAYERS * (5 + 23);
+		if ( directConnect )
+		{
+			SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
+			return NET_LOBBY_JOIN_DIRECTIP_SUCCESS;
+		}
+		else
+		{
+			return NET_LOBBY_JOIN_P2P_SUCCESS;
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	receiveEntity
@@ -1586,7 +1755,6 @@ void clientHandlePacket()
 	packetinfo[net_packet->len] = 0;
 	printlog("info: client packet: %s\n", packetinfo);
 #endif
-
 	if ( logCheckMainLoopTimers )
 	{
 		char packetinfo[NET_PACKET_SIZE];
@@ -3244,10 +3412,26 @@ void clientHandlePacket()
 		{
 			FMOD_ChannelGroup_Stop(sound_group);
 		}
+		if ( soundAmbient_group )
+		{
+			FMOD_ChannelGroup_Stop(soundAmbient_group);
+		}
+		if ( soundEnvironment_group )
+		{
+			FMOD_ChannelGroup_Stop(soundEnvironment_group);
+		}
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
 			OPENAL_ChannelGroup_Stop(sound_group);
+		}
+		if ( soundAmbient_group )
+		{
+			OPENAL_ChannelGroup_Stop(soundAmbient_group);
+		}
+		if ( soundEnvironment_group )
+		{
+			OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 		}
 #endif
 		if ( openedChest[clientnum] )
@@ -4086,7 +4270,10 @@ void clientHandlePacket()
 	// delete multiplayer save
 	if (!strncmp((char*)net_packet->data, "DSAV", 4))
 	{
-		deleteSaveGame(multiplayer);
+		if ( multiplayer == CLIENT )
+		{
+			deleteSaveGame(multiplayer);
+		}
 		return;
 	}
 }
@@ -4110,14 +4297,31 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 			net_handler->initializeMultithreadedPacketHandling();
 		}
 	}
+#elif defined USE_EOS
+	if ( !directConnect && !net_handler )
+	{
+		net_handler = new NetHandler();
+	}
 #endif
 
 	if (!directConnect)
 	{
-		//Steam stuff goes here.
-		if ( disableMultithreadedSteamNetworking )
+#if defined(STEAMWORKS) || defined(USE_EOS)
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
-			steamPacketThread(static_cast<void*>(net_handler));
+#ifdef STEAMWORKS
+			//Steam stuff goes here.
+			if ( disableMultithreadedSteamNetworking )
+			{
+				steamPacketThread(static_cast<void*>(net_handler));
+			}
+#endif
+		}
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			EOSPacketThread(static_cast<void*>(net_handler));
+#endif
 		}
 		SteamPacketWrapper* packet = nullptr;
 
@@ -4150,6 +4354,7 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 				break;
 			}
 		}
+#endif
 	}
 	else
 	{
@@ -4189,7 +4394,6 @@ void serverHandlePacket()
 	int c = 0;
 	Uint32 j;
 	Item* item;
-	char shortname[11];
 	double dx, dy, velx, vely, yaw, pitch, dist;
 	deleteent_t* deleteent;
 
@@ -4454,8 +4658,8 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "DISCONNECT", 10))
 	{
 		int playerDisconnected = net_packet->data[10];
-		strncpy(shortname, stats[playerDisconnected]->name, 10);
-		shortname[10] = 0;
+		char shortname[32] = { 0 };
+		strncpy(shortname, stats[playerDisconnected]->name, 22);
 		client_disconnected[playerDisconnected] = true;
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
@@ -5254,6 +5458,14 @@ void serverHandlePacket()
 		item_FoodAutomaton(item, net_packet->data[25]);
 		return;
 	}
+
+	else if ( !strncmp((char*)net_packet->data, "BARONY_JOIN_PROGRES", 19) )
+	{
+		if ( directConnect )
+		{
+			return;
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -5275,14 +5487,31 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 			net_handler->initializeMultithreadedPacketHandling();
 		}
 	}
+#elif defined USE_EOS
+	if ( !directConnect && !net_handler )
+	{
+		net_handler = new NetHandler();
+	}
 #endif
 
 	if (!directConnect)
 	{
-		//Steam stuff goes here.
-		if ( disableMultithreadedSteamNetworking )
+#if defined(STEAMWORKS) || defined(USE_EOS)
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
-			steamPacketThread(static_cast<void*>(net_handler));
+#ifdef STEAMWORKS
+			//Steam stuff goes here.
+			if ( disableMultithreadedSteamNetworking )
+			{
+				steamPacketThread(static_cast<void*>(net_handler));
+			}
+#endif
+		}
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			EOSPacketThread(static_cast<void*>(net_handler));
+#endif // USE_EOS
 		}
 		SteamPacketWrapper* packet = nullptr;
 
@@ -5315,6 +5544,7 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 				break;
 			}
 		}
+#endif
 	}
 	else
 	{
@@ -5628,6 +5858,74 @@ SteamPacketWrapper* NetHandler::getGamePacket()
 	return packet;
 }
 
+int EOSPacketThread(void* data)
+{
+#ifdef USE_EOS
+	if ( !EOS.CurrentUserInfo.isValid() )
+	{
+		//logError("EOSPacketThread: Invalid local user Id: %s", CurrentUserInfo.getProductUserIdStr());
+		return -1;
+	}
+
+	if ( !data )
+	{
+		return -1;    //Some generic error?
+	}
+
+	NetHandler& handler = *static_cast<NetHandler*>(data); //Basically, our this.
+	EOS_ProductUserId remoteId = nullptr;
+	Uint32 packetlen = 0;
+	Uint32 bytes_read = 0;
+	Uint8* packet = nullptr;
+	bool run = true;
+	std::queue<SteamPacketWrapper* > packets; //TODO: Expose to game? Use lock-free packets?
+
+	while ( run )   //1. Check if thread is supposed to be running.
+	{
+		//2. Game not over. Grab/poll for packet.
+
+		//while (handler.getContinueMultithreadingSteamPackets() && SteamNetworking()->IsP2PPacketAvailable(&packetlen)) //Burst read in a bunch of packets.
+		while (EOS.HandleReceivedMessages(&remoteId) )
+		{
+			packetlen = std::min<uint32_t>(net_packet->len, NET_PACKET_SIZE - 1);
+			//Read packets and push into queue.
+			packet = static_cast<Uint8*>(malloc(packetlen));
+			memcpy(packet, net_packet->data, packetlen);
+			if ( !EOSFuncs::Helpers_t::isMatchingProductIds(remoteId, EOS.CurrentUserInfo.getProductUserIdHandle())
+				&& net_packet->data[0] )
+			{
+				//Push packet into queue.
+				//TODO: Use lock-free queues?
+				packets.push(new SteamPacketWrapper(packet, packetlen));
+				packet = nullptr;
+			}
+			if ( packet )
+			{
+				free(packet);
+			}
+		}
+
+
+		//3. Now push our local packetstack onto the game's network stack.
+		//Well, that is: analyze packet.
+		//If packet is good, push into queue.
+		//If packet is bad, loop back to start of function.
+
+		while ( !packets.empty() )
+		{
+			//Copy over the packets read in so far, and expose them to the game.
+			SteamPacketWrapper* packet = packets.front();
+			packets.pop();
+			handler.addGamePacket(packet);
+		}
+
+		run = false; // only run thread once if multithreading disabled.
+	}
+#endif // USE_EOS
+
+	return 0;
+}
+
 int steamPacketThread(void* data)
 {
 #ifdef STEAMWORKS
@@ -5718,10 +6016,26 @@ void deleteMultiplayerSaveGames()
 
 	//Only delete saves if no players are left alive.
 	bool lastAlive = true;
-	for ( int i = 0; i < numplayers; ++i )
+
+	//const int playersAtStartOfMap = numplayers;
+	//int currentPlayers = 0;
+	//for ( int i = 0; i < MAXPLAYERS; ++i )
+	//{
+	//	if ( !client_disconnected[i] )
+	//	{
+	//		++currentPlayers;
+	//	}
+	//}
+
+	//if ( currentPlayers != playersAtStartOfMap )
+	//{
+	//	return;
+	//}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		Stat* stat = nullptr;
-		if ( players[i]->entity && (stat = players[i]->entity->getStats()) && stat->HP > 0)
+		if ( players[i] && players[i]->entity && (stat = players[i]->entity->getStats()) && stat->HP > 0)
 		{
 			lastAlive = false;
 		}
@@ -5733,8 +6047,12 @@ void deleteMultiplayerSaveGames()
 
 	deleteSaveGame(multiplayer); // stops save scumming c:
 
-	for ( int i = 1; i < numplayers; ++i )
+	for ( int i = 1; i < MAXPLAYERS; ++i )
 	{
+		if ( client_disconnected[i] )
+		{
+			continue;
+		}
 		strcpy((char *)net_packet->data,"DSAV"); //Delete save game.
 		net_packet->address.host = net_clients[i - 1].host;
 		net_packet->address.port = net_clients[i - 1].port;

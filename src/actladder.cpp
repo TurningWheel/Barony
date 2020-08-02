@@ -21,6 +21,8 @@
 #include "magic/magic.hpp"
 #include "menu.hpp"
 #include "files.hpp"
+#include "items.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -111,19 +113,17 @@ void actLadder(Entity* my)
 
 void actLadderUp(Entity* my)
 {
-	int i;
-
-	LADDER_AMBIENCE--;
+	/*LADDER_AMBIENCE--;
 	if ( LADDER_AMBIENCE <= 0 )
 	{
 		LADDER_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 64 );
-	}
+	}*/
 
 	// use ladder
 	if ( multiplayer != CLIENT )
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		for (int i = 0; i < MAXPLAYERS; i++)
 		{
 			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
 			{
@@ -1105,6 +1105,41 @@ void actCustomPortal(Entity* my)
 				}
 				loadnextlevel = true;
 				skipLevelsOnLoad = 0;
+
+				if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+				{
+					std::string mapname = map.name;
+					if ( mapname.find("Tutorial Hub") == std::string::npos
+						&& mapname.find("Tutorial ") != std::string::npos )
+					{
+						achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_DIPLOMA, AchievementObserver::DIPLOMA_LEVEL_COMPLETE);
+						achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_BACK_TO_BASICS, AchievementObserver::BACK_TO_BASICS_LEVEL_COMPLETE);
+						int number = stoi(mapname.substr(mapname.find("Tutorial ") + strlen("Tutorial "), 2));
+						auto& tutorialLevels = gameModeManager.Tutorial.levels;
+						if ( number >= 1 && number < tutorialLevels.size() )
+						{
+							if ( tutorialLevels.at(number).completionTime == 0 )
+							{
+								tutorialLevels.at(number).completionTime = completionTime; // first time score.
+							}
+							else
+							{
+								tutorialLevels.at(number).completionTime = std::min(tutorialLevels.at(number).completionTime, completionTime);
+							}
+							achievementObserver.updateGlobalStat(
+								std::min(STEAM_GSTAT_TUTORIAL1_COMPLETED - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_COMPLETED)));
+							achievementObserver.updateGlobalStat(
+								std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+						}
+						completionTime = 0;
+						gameModeManager.Tutorial.writeToDocument();
+						achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_FAST_LEARNER, AchievementObserver::FAST_LEARNER_TIME_UPDATE);
+					}
+					else if ( mapname.find("Tutorial Hub") != std::string::npos )
+					{
+						completionTime = 0;
+					}
+				}
 
 				if ( my->portalCustomLevelText1 != 0 )
 				{

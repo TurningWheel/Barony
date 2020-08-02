@@ -1,7 +1,7 @@
 
 #define WINDOWS
 
-#define STEAMWORKS
+//#define STEAMWORKS
 
 #define USE_FMOD
 

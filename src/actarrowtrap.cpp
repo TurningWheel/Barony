@@ -115,7 +115,7 @@ void actArrowTrap(Entity* my)
 	if ( ARROWTRAP_AMBIENCE <= 0 )
 	{
 		ARROWTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntity( my, 149, 128 );
+		playSoundEntity( my, 149, 64 );
 	}
 
 	if ( !my->skill[28] )

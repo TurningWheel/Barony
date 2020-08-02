@@ -25,6 +25,7 @@
 #include "menu.hpp"
 #include "items.hpp"
 #include "interface/interface.hpp"
+#include "mod_tools.hpp"
 
 std::vector<int> gamemods_modelsListModifiedIndexes;
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
@@ -65,8 +66,9 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "mine30.lmp", 36103 },
 	{ "mine31.lmp", 20880 },
 	{ "mine32.lmp", 10381 },
+	{ "mine33.lmp", 13668 },
 	{ "minetoswamp.lmp", 35867 },
-	{ "minesecret.lmp", 10316 },
+	{ "minesecret.lmp", 10531 },
 	{ "gnomishmines.lmp", 571896 },
 	{ "minetown.lmp", 1401309 },
 	{ "swamp.lmp", 13542615 },
@@ -87,8 +89,8 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "swamp14.lmp", 14215 },
 	{ "swamp15.lmp", 1092 },
 	{ "swamp16.lmp", 3977 },
-	{ "swamp17.lmp", 4683 },
-	{ "swamp18.lmp", 1524 },
+	{ "swamp17.lmp", 11776 },
+	{ "swamp18.lmp", 1484 },
 	{ "swamp19.lmp", 6366 },
 	{ "swamp20.lmp", 8541 },
 	{ "swamp21.lmp", 9036 },
@@ -101,7 +103,7 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "swamp28.lmp", 1223 },
 	{ "swamp29.lmp", 1136 },
 	{ "swamp30.lmp", 43685 },
-	{ "swamp31.lmp", 19612 },
+	{ "swamp31.lmp", 27215 },
 	{ "swamp32.lmp", 13342 },
 	{ "swamptolabyrinth.lmp", 63062 },
 	{ "swampsecret.lmp", 11316 },
@@ -113,23 +115,23 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "labyrinth02.lmp", 472 },
 	{ "labyrinth03.lmp", 24615 },
 	{ "labyrinth04.lmp", 8421 },
-	{ "labyrinth05.lmp", 5520 },
+	{ "labyrinth05.lmp", 5742 },
 	{ "labyrinth06.lmp", 4296 },
 	{ "labyrinth07.lmp", 4297 },
 	{ "labyrinth08.lmp", 4389 },
 	{ "labyrinth09.lmp", 9494 },
 	{ "labyrinth10.lmp", 10304 },
-	{ "labyrinth11.lmp", 96656 },
+	{ "labyrinth11.lmp", 89828 },
 	{ "labyrinth12.lmp", 39775 },
 	{ "labyrinth13.lmp", 9162 },
 	{ "labyrinth14.lmp", 40743 },
-	{ "labyrinth15.lmp", 38253 },
-	{ "labyrinth16.lmp", 13093 },
-	{ "labyrinth17.lmp", 10923 },
-	{ "labyrinth18.lmp", 4565 },
-	{ "labyrinth19.lmp", 6714 },
-	{ "labyrinth20.lmp", 10117 },
-	{ "labyrinth21.lmp", 6830 },
+	{ "labyrinth15.lmp", 35557 },
+	{ "labyrinth16.lmp", 12319 },
+	{ "labyrinth17.lmp", 11146 },
+	{ "labyrinth18.lmp", 6437 },
+	{ "labyrinth19.lmp", 7273 },
+	{ "labyrinth20.lmp", 10027 },
+	{ "labyrinth21.lmp", 6939 },
 	{ "labyrinth22.lmp", 5829 },
 	{ "labyrinth23.lmp", 13042 },
 	{ "labyrinth24.lmp", 14902 },
@@ -138,9 +140,9 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "labyrinth27.lmp", 1916 },
 	{ "labyrinth28.lmp", 1755 },
 	{ "labyrinth29.lmp", 5155 },
-	{ "labyrinth30.lmp", 163483 },
+	{ "labyrinth30.lmp", 21119 },
 	{ "labyrinth31.lmp", 28195 },
-	{ "labyrinth32.lmp", 23002 },
+	{ "labyrinth32.lmp", 28071 },
 	{ "labyrinthtoruins.lmp", 36433 },
 	{ "labyrinthsecret.lmp", 26508 },
 	{ "sokoban.lmp", 137949 },
@@ -165,13 +167,13 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "ruins16.lmp", 4681 },
 	{ "ruins17.lmp", 1848 },
 	{ "ruins18.lmp", 9066 },
-	{ "ruins19.lmp", 17940 },
+	{ "ruins19.lmp", 6897 },
 	{ "ruins20.lmp", 40374 },
 	{ "ruins21.lmp", 10664 },
 	{ "ruins22.lmp", 11523 },
 	{ "ruins23.lmp", 88 },
-	{ "ruins24.lmp", 39421 },
-	{ "ruins25.lmp", 290 },
+	{ "ruins24.lmp", 36565 },
+	{ "ruins25.lmp", 1218 },
 	{ "ruins26.lmp", 72992 },
 	{ "ruins27.lmp", 1430 },
 	{ "ruins28.lmp", 244 },
@@ -179,6 +181,8 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "ruins30.lmp", 39050 },
 	{ "ruins31.lmp", 46626 },
 	{ "ruins32.lmp", 32243 },
+	{ "ruins33.lmp", 1597 },
+	{ "ruins34.lmp", 381 },
 	{ "ruinssecret.lmp", 66694 },
 	{ "mysticlibrary.lmp", 55745 },
 	{ "boss.lmp", 588024 },
@@ -358,6 +362,10 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "citadel17b.lmp", 1729 },
 	{ "citadel17c.lmp", 4197 },
 	{ "citadel17d.lmp", 8339 },
+	{ "citadel18.lmp", 31650 },
+	{ "citadel19.lmp", 11786 },
+	{ "citadel20.lmp", 11905 },
+	{ "citadel21.lmp", 59257 },
 	{ "citadelsecret.lmp", 104229 },
 	{ "bramscastle.lmp", 2995692 },
 	{ "sanctum.lmp", 5630316 },
@@ -366,7 +374,18 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "shop01.lmp", 11521 },
 	{ "shop03.lmp", 11396 },
 	{ "shopcitadel.lmp", 23033 },
-	{  "warpzone.lmp", 3133088  }
+	{ "warpzone.lmp", 3133088 },
+	{ "tutorial_hub.lmp", -1 },
+	{ "tutorial1.lmp", -1 },
+	{ "tutorial2.lmp", -1 },
+	{ "tutorial3.lmp", -1 },
+	{ "tutorial4.lmp", -1 },
+	{ "tutorial5.lmp", -1 },
+	{ "tutorial6.lmp", -1 },
+	{ "tutorial7.lmp", -1 },
+	{ "tutorial8.lmp", -1 },
+	{ "tutorial9.lmp", -1 },
+	{ "tutorial10.lmp", -1 }
 };
 
 const std::vector<std::string> officialLevelsTxtOrder =
@@ -1171,7 +1190,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 #if defined (USE_FMOD) || defined(USE_OPENAL)
 		if ( strcmp(oldmapname, map.name) )
 		{
-			levelmusicplaying = false;
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
+			{
+				levelmusicplaying = false;
+			}
 		}
 #endif
 
@@ -1270,7 +1292,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			mapShortName = mapShortName.substr(found + 1);
 			std::unordered_map<std::string, int>::iterator it;
 			it = mapHashes.find(mapShortName);
-			if ( it != mapHashes.end() && (*it).second == mapHashData )
+			if ( it != mapHashes.end() && ((*it).second == mapHashData || (*it).second == -1) )
 			{
 				//printlog("MAP HASH SUCCESS");
 				*checkMapHash = 1;
@@ -1289,7 +1311,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 				mapShortName = mapShortName.substr(found2 + 1);
 				std::unordered_map<std::string, int>::iterator it;
 				it = mapHashes.find(mapShortName);
-				if ( it != mapHashes.end() && (*it).second == mapHashData )
+				if ( it != mapHashes.end() && ((*it).second == mapHashData || (*it).second == -1) )
 				{
 					//printlog("MAP HASH SUCCESS");
 					*checkMapHash = 1;

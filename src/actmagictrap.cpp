@@ -45,8 +45,8 @@ void Entity::actMagicTrapCeiling()
 	spellTrapAmbience--;
 	if ( spellTrapAmbience <= 0 )
 	{
-		spellTrapAmbience = TICKS_PER_SECOND * 120;
-		playSoundEntity(this, 149, 64);
+		spellTrapAmbience = TICKS_PER_SECOND * 30;
+		playSoundEntity(this, 149, 16);
 	}
 
 	if ( multiplayer == CLIENT )

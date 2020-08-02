@@ -354,8 +354,12 @@ void initHuman(Entity* my, Stat* myStats)
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
-			if ( specialMonsterVariant == 0 && my->monsterStoreType > 0 && isDefaultStats )
+			if ( specialMonsterVariant == 0 && isDefaultStats )
 			{
+				if ( my->monsterStoreType == 0 && currentlevel > 5 )
+				{
+					my->monsterStoreType = (currentlevel / 5) * 3 + (rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
+				}
 				myStats->EXP += 100 * my->monsterStoreType; // apply experience to level up the humans with floor depth.
 			}
 

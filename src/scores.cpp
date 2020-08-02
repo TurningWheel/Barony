@@ -24,6 +24,7 @@
 #include "sys/stat.h"
 #include "paths.hpp"
 #include "collision.hpp"
+#include "mod_tools.hpp"
 
 // definitions
 list_t topscores;
@@ -949,12 +950,12 @@ void loadAllScores(const std::string& scoresfilename)
 		node->deconstructor = &scoreDeconstructor;
 		node->size = sizeof(score_t);
 
-		if ( versionNumber < 325 )
+		if ( versionNumber < 300 )
 		{
 			// legacy nummonsters
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
-				if ( c < 33 )
+				if ( c < 21 )
 				{
 					fread(&score->kills[c], sizeof(Sint32), 1, fp);
 				}
@@ -964,12 +965,12 @@ void loadAllScores(const std::string& scoresfilename)
 				}
 			}
 		}
-		else if ( versionNumber < 300 )
+		else if ( versionNumber < 325 )
 		{
 			// legacy nummonsters
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
-				if ( c < 21 )
+				if ( c < 33 )
 				{
 					fread(&score->kills[c], sizeof(Sint32), 1, fp);
 				}
@@ -1341,6 +1342,7 @@ int saveGame(int saveIndex)
 	{
 		fwrite(&gameStatistics[c], sizeof(Sint32), 1, fp);
 	}
+	fwrite(&svFlags, sizeof(Uint32), 1, fp);
 
 	// write hotbar items
 	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
@@ -2050,6 +2052,12 @@ int loadGame(int player, int saveIndex)
 		{
 			fread(&gameStatistics[c], sizeof(Sint32), 1, fp);
 		}
+	}
+	if ( versionNumber >= 335 )
+	{
+		gameModeManager.currentSession.saveServerFlags();
+		fread(&svFlags, sizeof(Uint32), 1, fp);
+		printlog("[SESSION]: Using savegame server flags");
 	}
 
 	// read hotbar item offsets
@@ -2914,6 +2922,10 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		fseek(fp, sizeof(Sint32) * NUM_CONDUCT_CHALLENGES, SEEK_CUR);
 		fseek(fp, sizeof(Sint32) * NUM_GAMEPLAY_STATISTICS, SEEK_CUR);
 	}
+	if ( versionNumber >= 335 )
+	{
+		fseek(fp, sizeof(Uint32), SEEK_CUR); // svFlags
+	}
 	fseek(fp, sizeof(Uint32)*NUM_HOTBAR_SLOTS, SEEK_CUR);
 	fseek(fp, sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), SEEK_CUR);
 
@@ -3041,19 +3053,26 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		}
 	}
 #endif // WINDOWS
-	int oldRace = stats[plnum]->playerRace;
-	stats[plnum]->playerRace = playerRace;
+
+	int plnumTemp = plnum;
+	if ( plnumTemp >= MAXPLAYERS )
+	{
+		plnumTemp = MAXPLAYERS - 1; // fix for loading 16-player savefile in normal Barony. plnum might be out of index for stats[]
+	}
+	int oldRace = stats[plnumTemp]->playerRace;
+	stats[plnumTemp]->playerRace = playerRace;
+
 	if ( mul == DIRECTCLIENT || mul == CLIENT )
 	{
 		// include the player number in the printf.
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnum), dungeonlevel, plnum, timestamp);
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnumTemp), dungeonlevel, plnum, timestamp);
 	}
 	else
 	{
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnum), dungeonlevel, timestamp);
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnumTemp), dungeonlevel, timestamp);
 	}
 	// close file
-	stats[plnum]->playerRace = oldRace;
+	stats[plnumTemp]->playerRace = oldRace;
 	fclose(fp);
 
 	return tempstr;
@@ -4613,10 +4632,127 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 	}
 }
 
+void AchievementObserver::checkMapScriptsOnVariableSet()
+{
+	for ( auto it = textSourceScript.scriptVariables.begin(); it != textSourceScript.scriptVariables.end(); ++it )
+	{
+		size_t found = (*it).first.find("$ACH_TUTORIAL_SECRET");
+		if ( found != std::string::npos )
+		{
+			std::string mapname = map.name;
+			if ( mapname.find("Tutorial Hub") != std::string::npos )
+			{
+				updatePlayerAchievement(clientnum, BARONY_ACH_MASTER, EXTRA_CREDIT_SECRET);
+			}
+			else
+			{
+				updatePlayerAchievement(clientnum, BARONY_ACH_EXTRA_CREDIT, EXTRA_CREDIT_SECRET);
+			}
+		}
+	}
+}
+
 void AchievementObserver::updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent)
 {
 	switch ( achievement )
 	{
+		case BARONY_ACH_BACK_TO_BASICS:
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				bool alternateUnlock = false;
+#ifdef STEAMWORKS
+				if ( SteamUser()->BLoggedOn() )
+				{
+					SteamUserStats()->GetAchievement("BARONY_ACH_LICH_HUNTER", &alternateUnlock);
+				}
+#endif
+				if ( g_SteamStats[STEAM_STAT_BACK_TO_BASICS].m_iValue == 1 || alternateUnlock )
+				{
+					awardAchievement(player, achievement);
+				}
+			}
+			break;
+		case BARONY_ACH_FAST_LEARNER:
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				if ( g_SteamStats[STEAM_STAT_DIPLOMA].m_iValue == 10 
+					&& gameModeManager.Tutorial.levels.size() == (gameModeManager.Tutorial.getNumTutorialLevels() + 1) ) // include the + 1 for hub
+				{
+					Uint32 totalTime = 0;
+					bool allLevelsCompleted = true;
+					for ( auto it = gameModeManager.Tutorial.levels.begin(); it != gameModeManager.Tutorial.levels.end(); ++it )
+					{
+						if ( it->completionTime > 0 )
+						{
+							totalTime += it->completionTime;
+						}
+						else
+						{
+							if ( it->filename.compare("tutorial_hub") != 0 )
+							{
+								allLevelsCompleted = false;
+								break;
+							}
+						}
+					}
+					if ( allLevelsCompleted && totalTime < TICKS_PER_SECOND * 20 * 60 )
+					{
+						awardAchievement(player, achievement);
+					}
+				}
+			}
+			break;
+		case BARONY_ACH_MASTER:
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				std::string mapname = map.name;
+				if ( mapname.find("Tutorial Hub") != std::string::npos )
+				{
+					awardAchievement(player, achievement);
+				}
+			}
+			break;
+		case BARONY_ACH_DIPLOMA:
+		case BARONY_ACH_EXTRA_CREDIT:
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				std::string mapname = map.name;
+				if ( mapname.find("Tutorial Hub") == std::string::npos
+					&& mapname.find("Tutorial ") != std::string::npos )
+				{
+					int levelnum = stoi(mapname.substr(mapname.find("Tutorial ") + strlen("Tutorial "), 2));
+					SteamStatIndexes statBitCounter = STEAM_STAT_DIPLOMA_LVLS;
+					SteamStatIndexes statLevelTotal = STEAM_STAT_DIPLOMA;
+					if ( achievement == BARONY_ACH_EXTRA_CREDIT )
+					{
+						statBitCounter = STEAM_STAT_EXTRA_CREDIT_LVLS;
+						statLevelTotal = STEAM_STAT_EXTRA_CREDIT;
+					}
+
+					if ( levelnum >= 1 && levelnum <= gameModeManager.Tutorial.getNumTutorialLevels() )
+					{
+						if ( !(g_SteamStats[statBitCounter].m_iValue & (1 << levelnum - 1)) ) // bit not set
+						{
+							// update with the difference in values.
+							steamStatisticUpdate(statBitCounter, STEAM_STAT_INT, (1 << levelnum - 1));
+						}
+
+						int levelsCompleted = 0;
+						for ( int i = 0; i < gameModeManager.Tutorial.getNumTutorialLevels(); ++i )
+						{
+							if ( g_SteamStats[statBitCounter].m_iValue & (1 << i) ) // count the bits
+							{
+								++levelsCompleted;
+							}
+						}
+						if ( levelsCompleted >= g_SteamStats[statLevelTotal].m_iValue )
+						{
+							steamStatisticUpdate(statLevelTotal, STEAM_STAT_INT, levelsCompleted - g_SteamStats[statLevelTotal].m_iValue);
+						}
+					}
+				}
+			}
+			break;
 		case BARONY_ACH_REAL_BOY:
 			if ( achEvent == REAL_BOY_HUMAN_RECRUIT )
 			{
@@ -4771,6 +4907,15 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 {
 	switch ( achievement )
 	{
+		case BARONY_ACH_MASTER:
+			steamAchievementClient(player, "BARONY_ACH_MASTER");
+			break;
+		case BARONY_ACH_FAST_LEARNER:
+			steamAchievementClient(player, "BARONY_ACH_FAST_LEARNER");
+			break;
+		case BARONY_ACH_BACK_TO_BASICS:
+			steamAchievementClient(player, "BARONY_ACH_BACK_TO_BASICS");
+			break;
 		case BARONY_ACH_TELEFRAG:
 			steamAchievementClient(player, "BARONY_ACH_TELEFRAG");
 			break;
@@ -4954,4 +5099,96 @@ bool AchievementObserver::PlayerAchievements::checkTraditionKill(Entity* player,
 		}
 	}
 	return true;
+}
+
+void AchievementObserver::updateGlobalStat(int index, int value)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+		|| gamemods_disableSteamAchievements )
+	{
+		return;
+	}
+#if defined USE_EOS
+	EOS.queueGlobalStatUpdate(index, value);
+#endif
+}
+
+SteamGlobalStatIndexes getIndexForDeathType(int type)
+{
+	switch ( static_cast<Monster>(type) )
+	{
+		case HUMAN:
+			return STEAM_GSTAT_DEATHS_HUMAN;
+		case RAT:
+			return STEAM_GSTAT_DEATHS_RAT;
+		case GOBLIN:
+			return STEAM_GSTAT_DEATHS_GOBLIN;
+		case SLIME:
+			return STEAM_GSTAT_DEATHS_SLIME;
+		case TROLL:
+			return STEAM_GSTAT_DEATHS_TROLL;
+		case SPIDER:
+			return STEAM_GSTAT_DEATHS_SPIDER;
+		case GHOUL:
+			return STEAM_GSTAT_DEATHS_GHOUL;
+		case SKELETON:
+			return STEAM_GSTAT_DEATHS_SKELETON;
+		case SCORPION:
+			return STEAM_GSTAT_DEATHS_SCORPION;
+		case CREATURE_IMP:
+			return STEAM_GSTAT_DEATHS_IMP;
+		case GNOME:
+			return STEAM_GSTAT_DEATHS_GNOME;
+		case DEMON:
+			return STEAM_GSTAT_DEATHS_DEMON;
+		case SUCCUBUS:
+			return STEAM_GSTAT_DEATHS_SUCCUBUS;
+		case LICH:
+			return STEAM_GSTAT_DEATHS_LICH;
+		case MINOTAUR:
+			return STEAM_GSTAT_DEATHS_MINOTAUR;
+		case DEVIL:
+			return STEAM_GSTAT_DEATHS_DEVIL;
+		case SHOPKEEPER:
+			return STEAM_GSTAT_DEATHS_SHOPKEEPER;
+		case KOBOLD:
+			return STEAM_GSTAT_DEATHS_KOBOLD;
+		case SCARAB:
+			return STEAM_GSTAT_DEATHS_SCARAB;
+		case CRYSTALGOLEM:
+			return STEAM_GSTAT_DEATHS_CRYSTALGOLEM;
+		case INCUBUS:
+			return STEAM_GSTAT_DEATHS_INCUBUS;
+		case VAMPIRE:
+			return STEAM_GSTAT_DEATHS_VAMPIRE;
+		case SHADOW:
+			return STEAM_GSTAT_DEATHS_SHADOW;
+		case COCKATRICE:
+			return STEAM_GSTAT_DEATHS_COCKATRICE;
+		case INSECTOID:
+			return STEAM_GSTAT_DEATHS_INSECTOID;
+		case GOATMAN:
+			return STEAM_GSTAT_DEATHS_GOATMAN;
+		case AUTOMATON:
+			return STEAM_GSTAT_DEATHS_AUTOMATON;
+		case LICH_ICE:
+			return STEAM_GSTAT_DEATHS_LICHICE;
+		case LICH_FIRE:
+			return STEAM_GSTAT_DEATHS_LICHICE;
+		case SENTRYBOT:
+			return STEAM_GSTAT_DEATHS_SENTRYBOT;
+		case SPELLBOT:
+			return STEAM_GSTAT_DEATHS_SPELLBOT;
+		case GYROBOT:
+			return STEAM_GSTAT_DEATHS_GYROBOT;
+		case DUMMYBOT:
+			return STEAM_GSTAT_DEATHS_DUMMYBOT;
+		default:
+			return STEAM_GSTAT_INVALID;
+	}
+	return STEAM_GSTAT_INVALID;
 }

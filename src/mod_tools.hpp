@@ -19,6 +19,8 @@ See LICENSE for details.
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
+#include "net.hpp"
+#include "scores.hpp"
 
 class CustomHelpers
 {
@@ -2409,3 +2411,165 @@ public:
 	}
 };
 extern GameplayCustomManager gameplayCustomManager;
+
+class GameModeManager_t
+{
+public:
+	enum GameModes : int
+	{
+		GAME_MODE_DEFAULT,
+		GAME_MODE_TUTORIAL_INIT,
+		GAME_MODE_TUTORIAL
+	};
+	GameModes currentMode = GAME_MODE_DEFAULT;
+	GameModes getMode() const { return currentMode; };
+	void setMode(const GameModes mode) { currentMode = mode; };
+	class CurrentSession_t
+	{
+	public:
+		Uint32 serverFlags = 0;
+		bool bHasSavedServerFlags = false;
+		void restoreSavedServerFlags()
+		{ 
+			if ( bHasSavedServerFlags )
+			{
+				bHasSavedServerFlags = false;
+				svFlags = serverFlags;
+				printlog("[SESSION]: Restoring server flags at stage: %d", introstage);
+			}
+		}
+		void saveServerFlags()
+		{
+			serverFlags = svFlags;
+			bHasSavedServerFlags = true;
+			printlog("[SESSION]: Saving server flags at stage: %d", introstage);
+		}
+	} currentSession;
+	bool isServerflagDisabledForCurrentMode(int i)
+	{
+		if ( getMode() == GAME_MODE_DEFAULT )
+		{
+			return false;
+		}
+		else if ( getMode() == GAME_MODE_TUTORIAL )
+		{
+			int flag = power(2, i);
+			switch ( flag )
+			{
+				case SV_FLAG_HARDCORE:
+				case SV_FLAG_HUNGER:
+				case SV_FLAG_FRIENDLYFIRE:
+				case SV_FLAG_LIFESAVING:
+				case SV_FLAG_TRAPS:
+				case SV_FLAG_CLASSIC:
+				case SV_FLAG_MINOTAURS:
+				case SV_FLAG_KEEPINVENTORY:
+					return true;
+					break;
+				default:
+					break;
+			}
+			return false;
+		}
+		return false;
+	}
+	class Tutorial_t
+	{
+		std::string currentMap = "";
+		const Uint32 kNumTutorialLevels = 10;
+	public:
+		void init()
+		{
+			readFromFile();
+		}
+		int dungeonLevel = -1;
+		void setTutorialMap(std::string& mapname)
+		{
+			loadCustomNextMap = mapname;
+			currentMap = loadCustomNextMap;
+		}
+		void launchHub()
+		{
+			loadCustomNextMap = "tutorial_hub.lmp";
+			currentMap = loadCustomNextMap;
+		}
+		void startTutorial(std::string mapToSet);
+		static void buttonReturnToTutorialHub(button_t* my);
+		static void buttonRestartTrial(button_t* my);
+		const Uint32 getNumTutorialLevels() { return kNumTutorialLevels; }
+		void openGameoverWindow();
+		void onMapRestart(int levelNum)
+		{
+			achievementObserver.updateGlobalStat(
+				std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + levelNum, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+		}
+
+		class Menu_t
+		{
+			bool bWindowOpen = false;
+		public:
+			bool isOpen() { return bWindowOpen; }
+			void open();
+			void close() { bWindowOpen = false; }
+			void onClickEntry();
+			int windowScroll = 0;
+			int selectedMenuItem = -1;
+			std::string windowTitle = "";
+			std::string defaultHoverText = "";
+		} Menu;
+
+		class FirstTimePrompt_t
+		{
+			bool bWindowOpen = false;
+		public:
+			void createPrompt();
+			void drawDialogue();
+			bool isOpen() { return bWindowOpen; }
+			void close() { bWindowOpen = false; }
+			bool doButtonSkipPrompt = false;
+			bool showFirstTimePrompt = false;
+			static void buttonSkipPrompt(button_t* my);
+			static void buttonPromptEnterTutorialHub(button_t* my);
+		} FirstTimePrompt;
+
+		class Level_t
+		{
+		public:
+			Level_t()
+			{
+				filename = "";
+				title = "";
+				description = "";
+				completionTime = 0;
+			};
+			std::string filename;
+			std::string title;
+			std::string description;
+			Uint32 completionTime;
+		};
+		std::vector<Level_t> levels;
+
+		void readFromFile();
+		void writeToDocument();
+		void writeToFile(rapidjson::Document& d)
+		{
+			std::string outputPath = outputdir;
+			outputPath.append(PHYSFS_getDirSeparator());
+			std::string fileName = "data/tutorial_scores.json";
+			outputPath.append(fileName.c_str());
+
+			FILE* fp = fopen(outputPath.c_str(), "wb");
+			if ( !fp )
+			{
+				return;
+			}
+			char buf[65536];
+			rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
+			rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+			d.Accept(writer);
+
+			fclose(fp);
+		}
+	} Tutorial;
+};
+extern GameModeManager_t gameModeManager;

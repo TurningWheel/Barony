@@ -1207,9 +1207,9 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 	duration /= getCostOfSpell((spell_t*)spellnode->element);
 	channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 	caster->setEffect(EFF_VAMPIRICAURA, true, duration, true);
-	for ( int i = 0; i < numplayers; ++i )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( caster == players[i]->entity )
+		if ( players[i] && caster && (caster == players[i]->entity) )
 		{
 			serverUpdateEffects(i);
 			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);

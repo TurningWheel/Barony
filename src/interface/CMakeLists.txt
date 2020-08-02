@@ -14,6 +14,7 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/bookgui.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/shopgui.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/removecurse.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/ui_general.cpp"
 )
 list(APPEND EDITOR_SOURCES
 )

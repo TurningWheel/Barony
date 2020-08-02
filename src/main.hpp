@@ -24,15 +24,46 @@ typedef double real_t;
 #include <vector>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <functional>
 #include "Config.hpp"
 #include "physfs.h"
 
 #ifdef STEAMWORKS
 #define STEAM_APPID 371970
 #endif
+
+enum ESteamStatTypes
+{
+	STEAM_STAT_INT = 0,
+	STEAM_STAT_FLOAT = 1,
+	STEAM_STAT_AVGRATE = 2,
+};
+
+struct SteamStat_t
+{
+	int m_ID;
+	ESteamStatTypes m_eStatType;
+	const char *m_pchStatName;
+	int m_iValue;
+	float m_flValue;
+	float m_flAvgNumerator;
+	float m_flAvgDenominator;
+};
+
+struct SteamGlobalStat_t
+{
+	int m_ID;
+	ESteamStatTypes m_eStatType;
+	const char *m_pchStatName;
+	int64_t m_iValue;
+	float m_flValue;
+	float m_flAvgNumerator;
+	float m_flAvgDenominator;
+};
 
 extern bool spamming;
 extern bool showfirst;
@@ -561,9 +592,10 @@ extern int minotaurlevel;
 #define CLIENT 2
 #define DIRECTSERVER 3
 #define DIRECTCLIENT 4
+#define SERVERCROSSPLAY 5
 
 // language stuff
-#define NUMLANGENTRIES 3950
+#define NUMLANGENTRIES 4000
 extern char languageCode[32];
 extern char** language;
 
@@ -611,6 +643,15 @@ extern SDL_Surface* font16x16_bmp;
 extern SDL_Surface* fancyWindow_bmp;
 extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
+extern std::unordered_map<std::string, SDL_Surface*> achievementImages;
+extern std::unordered_map<std::string, std::string> achievementNames;
+extern std::unordered_map<std::string, std::string> achievementDesc;
+extern std::unordered_set<std::string> achievementHidden;
+typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::string, std::string>)> Comparator;
+extern std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
+extern std::unordered_map<std::string, int> achievementProgress;
+extern std::unordered_map<std::string, int64_t> achievementUnlockTime;
+extern std::unordered_set<std::string> achievementUnlockedLookup;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
 extern bool useModelCache;
@@ -628,6 +669,8 @@ extern Uint32 nummodels;
 extern Sint32 audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
 extern int sfxvolume;
+extern int sfxAmbientVolume;
+extern int sfxEnvironmentVolume;
 extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];
 static const int MINIMAP_MAX_DIMENSION = 512;
@@ -726,13 +769,19 @@ extern GLuint fbo_ren;
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
+static const int NUM_STEAM_STATISTICS = 49;
+extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
+static const int NUM_GLOBAL_STEAM_STATISTICS = 65;
+extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
+
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
-static const int NUM_STEAM_STATISTICS = 43;
 extern CSteamLeaderboards* g_SteamLeaderboards;
 extern CSteamWorkshop* g_SteamWorkshop;
-extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
-extern SteamGlobalStat_t g_SteamGlobalStats[2];
 extern CSteamStatistics* g_SteamStatistics;
 #endif // STEAMWORKS
+
+#ifdef USE_EOS
+#include "eos.hpp"
+#endif

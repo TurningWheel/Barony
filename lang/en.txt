@@ -1674,19 +1674,20 @@ Press 'Okay' to return to the main menu.#
      Are you sure you
        want to quit?#
 1129
-      Are you sure you
-    want to end this game?
-    
- Your singleplayer save file 
-       will be deleted.#
+            Are you sure you
+         want to end this game?
+
+       As you have perished, your
+       save file will be deleted.#
 1130
           Are you sure you
      want to restart this game?#
 1131
-       Do you wish to save before
-          you quit to desktop?
-      Progress will be saved up to
-          the last checkpoint.#
+         Are you sure you want
+          to quit to desktop?
+
+     Progress has been saved at the
+       start of the current level.#
 1132 Requesting lobby list...#
 1133 You have died. Gameover.
 
@@ -1832,7 +1833,7 @@ None#
 1346 Field of View (FOV)#
 1347 Gamma#
 
-1348 Game Volume#
+1348 General Sound Volume#
 1349 Music Volume#
 
 1350 Click to rebind. ESC cancels.#
@@ -1882,13 +1883,13 @@ use object, use item#
 Connection denied:
 #
 
-1378 the server is already full.#
-1379 game version mismatch.#
-1380 server is not running a saved game.#
-1381 server is running a saved game.#
-1382 client save does not match server save.#
-1383 client seed does not match server seed.#
-1384 bad response from server.#
+1378 The server is already full.#
+1379 Game version mismatch.#
+1380 Server is not running a saved game.#
+1381 Server is running a saved game.#
+1382 Client save does not match server save.#
+1383 Client seed does not match server seed.#
+1384 Bad response from server.#
 
 1385
 Waiting for the server to start the game.
@@ -2233,7 +2234,7 @@ The connection to the server was lost.
 1446  Refresh #
 
 1447
-Connecting to steam lobby...
+Connecting to matchmaking lobby...
 #
 
 1448
@@ -2294,7 +2295,7 @@ erase the previous save file!#
 1466 Random Character#
 
 1467
-Connecting to steam lobby...
+Connecting to matchmaking lobby...
 #
 
 
@@ -2343,8 +2344,8 @@ Connecting to steam lobby...
 
 1536 disable pop-up messages#
 1537 (direct ip)#
-1538 Host a multiplayer game without Steamworks, using a direct IP connection.#
-1539 Join a multiplayer game without Steamworks, using a direct IP connection.#
+1538 Host a multiplayer game without matchmaking, using a direct IP connection.#
+1539 Join a multiplayer game without matchmaking, using a direct IP connection.#
 1540 %s, level %d %s
 dungeon level %d, singleplayer, %s#
 1541 %s, level %d %s
@@ -2714,7 +2715,7 @@ dungeon level %d, client (player %d) (direct ip), %s#
 1918 100% certified Minotaur!#
 1919 Heart-Gold Version!#
 1920 Enhanced RNG!#
-1921 Now with Steamworks!#
+1921 Now with Crossplay!#
 1922 Baphomet Approved!#
 1923 By Popular Demand!#
 1924 Potato King's Pick!#
@@ -2742,7 +2743,7 @@ dungeon level %d, client (player %d) (direct ip), %s#
 # game/server flags tooltips
 
 # Cheats.
-1942 NOTE: Enabling cheats will disable Steam Achievements on your save files! #
+1942 NOTE: Enabling cheats will disable Achievements on your save files! #
 # Friendly fire.
 1943 NOTE: Enabling FF will allow you to damage your allies with attacks and magic! #
 # Minotaurs.
@@ -3741,7 +3742,7 @@ Enjoy the dungeon without having to loot your allies! #
 # Life Saving
 2924 Spawn at the start of the game with an amulet of life saving, granting you 
 an additional life.
-NOTE: Enabling this will disable Steam Achievements on your save files! #
+NOTE: Enabling this will disable Achievements on your save files! #
 
 # 2925 - 2957 New conducts.
 2925 Hardcore#
@@ -3809,7 +3810,7 @@ IDENTICAL MOD LISTS LOADED!#
 3002 Are you sure you want to delete this high score?
 
 #
-3003 Steam Achievements are disabled#
+3003 Achievements are disabled#
 3004 Loading modded language file...#
 3005 Unloading modded language file...#
 3006 Loading modded item sprites...#
@@ -3830,8 +3831,8 @@ IDENTICAL MOD LISTS LOADED!#
       Are you sure you want to disconnect
           and return to the main menu?
     
-    Your multiplayer progress will be saved
-           up to the last checkpoint.
+    Your multiplayer progress has been saved
+        at the start of the current level.
     
  NOTE: 
     If your current party members advance to 
@@ -3842,8 +3843,8 @@ IDENTICAL MOD LISTS LOADED!#
       Are you sure you want to disconnect
           and return to the main menu?
     
-    Your multiplayer progress will be saved
-           up to the last checkpoint.
+    Your multiplayer progress has been saved
+        at the start of the current level.
     
  NOTE: 
    This will disconnect all party members and
@@ -4055,7 +4056,8 @@ current food situation will last.#
 3198 But wait! Your summoned allies imbue you with new life!#
 
 3199 Locked - Myths & Outcasts DLC Required!#
-3200 Locked - Myths & Outcasts DLC Required! Left click to view on the store page in Steam overlay.#
+3200 Locked - Myths & Outcasts DLC Required!
+Left click to view on the store page.#
 
 3201 Bleh! Your body rejects the solids in your stomach!#
 3202 What a horrible night to have a curse...#
@@ -5783,17 +5785,16 @@ before we deal!#
 before we deal!#
 3916 Unhand thy lunch
 before we deal!#
-3917 Locked - Legends & Pariahs DLC Required! Left click to view on the store page in Steam overlay.#
+3917 Locked - Legends & Pariahs DLC Required!
+Left click to view on the store page.#
 3918 disable mouse rotation speed limit#
 3919 Return To Main Menu#
 3920
-       Do you wish to save before
-       returning to the main menu? 
-      Progress will be saved up to
-          the last checkpoint.
+        Are you sure to want to
+        return to the main menu?
 
-        Selecting No will delete
-      your singleplayer save file!#
+     Progress has been saved at the
+       start of the current level.#
 3921 Ranger-mode active, only non-melee weapons are allowed to attack!#
 3922 Ranger-mode deactivated, all weapons permitted.#
 3923 This weapon is disabled in Ranger-mode!#
@@ -5810,4 +5811,129 @@ before we deal!#
 3933 Unlock achievement "Bayou Baron" to unlock this class for every race!#
 3934 Unlock achievement "Buggar Baron" to unlock this class for every race!#
 3935 borderless#
-3949 end#
+3936 Welcome to Barony!#
+3937 Logging in, please wait#
+3938 When logging in for the first time, check your browser#
+3939 to enable account integration with Barony.#
+3940 Account integration is required to use Barony.#
+3941 A login error has occurred (%d). Please retry.#
+3942 Account integration has been denied. Please restart Barony to retry.#
+3943 (Steamworks)#
+3944 (Crossplay)#
+3945 Join a multiplayer game hosted by Steamworks or crossplay services.#
+3946 Host a multiplayer game using Steamworks.#
+3947 Host a multiplayer game using crossplay services.#
+3948 enable crossplay#
+3950  Filters #
+3951 Filters in use#
+3952 Filters disabled#
+3953 Filtered Search#
+3954 Search by lobby code:#
+3955 Show in-progress
+crossplay lobbies: [%c]#
+3956    Are you sure you want to
+  restart the current trial?#
+3957 Restart Trial#
+3958 Return to Hall of Trials#
+3959 Quit To Main Menu#
+3960    Are you sure you want to
+  exit the current trial and
+ return to the Hall of Trials?#
+3961    Are you sure you want to
+   return to the main menu?#
+3962 
+Changing this gameflag is disabled in current game mode.#
+3963 Achievements are disabled for current gamemode#
+3964 Hall of Trials#
+3965 Go to the Tutorial Trials#
+3966 Skip for now#
+3967                    Barony is a challenging game!                    #
+3968 
+             Would you like to go to the Hall of Trials
+                       to learn a few things?
+
+            You can always go back to the Hall of Trials
+                      later from the Main Menu.#
+3969 Restart Map#
+3970    Are you sure you want to
+   reset the Hall of Trials
+  map to its original state?#
+3971 Achievements#
+3972 Ambient Sound Volume#
+3973 Environment Sound Volume#
+3974 The boulder cannot be moved that way.#
+3975 
+
+ Enabling Crossplay allows joining and hosting of multiplayer lobbies
+  between different distributions of Barony without port forwarding.
+
+         For more information, click "About Crossplay" below.
+
+
+      By clicking accept, you agree to share your public Steam ID 
+    and display name with Barony and associated Crossplay services.#
+3976 Accept and Enable Crossplay#
+3977 Cancel Setup#
+3978 View Privacy Policy#
+3979                       Crossplay First-Time Setup#
+3980 About Crossplay
+
+           Barony uses Epic Online Services to facilitate Crossplay,
+           and will create a unique Crossplay ID within Barony that 
+              corresponds to your public facing Steam account ID.
+
+
+      Your public Steam account ID and display name will be shared with
+    the service and other players when using Crossplay features in Barony.
+      No third party account is required or created when using Crossplay.
+
+    Click "View Privacy Policy" below to see how Barony handles your data.#
+3981 
+                        Services In Use For Crossplay
+
+
+
+
+                            Data That You Provide#
+3982 Return to Setup#
+3983 About Crossplay#
+3984 https://www.epicgames.com/store/en-US/product/barony/myths-and-outcasts#
+3985 https://www.epicgames.com/store/en-US/product/barony/legends-and-pariahs#
+3986
+       Are you sure you want to disconnect
+           and return to the main menu?
+    
+     As the rest of your party has perished,
+  save data for this session has been deleted.
+
+ NOTE: 
+     This will disconnect all party members.#
+3987 Quit To Desktop#
+3988
+         Are you sure you want
+          to quit to desktop?
+
+       As you have perished, your
+       save file will be deleted.#
+3989
+              Are you sure you want
+               to quit to desktop?
+
+    As the rest of your party has perished,
+  save data for this session has been deleted.#
+3990
+            Are you sure you
+         want to end this game?
+
+    Saving on this floor is disabled,
+   exiting will delete your save file.#
+3991
+            Are you sure you
+        want to quit to desktop?
+
+    Saving on this floor is disabled,
+   exiting will delete your save file.#
+3992 https://store.steampowered.com/app/1010820/Barony_Myths__Outcasts/#
+3993 https://store.steampowered.com/app/1010821/Barony_Legends__Pariahs/#
+3994 Crossplay search not enabled#
+3999 end#

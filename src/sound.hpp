@@ -65,7 +65,7 @@ extern FMOD_SOUND** hellmusic;
 #define NUMHELLMUSIC 3
 extern FMOD_SOUND** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern FMOD_SOUND** minotaurmusic, *herxmusic, *templemusic;
-extern FMOD_SOUND* endgamemusic, *escapemusic, *devilmusic, *sanctummusic;
+extern FMOD_SOUND* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
 extern FMOD_SOUND* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern FMOD_SOUND** cavesmusic;
@@ -84,6 +84,7 @@ extern FMOD_SOUND* hamletmusic;
 extern FMOD_CHANNEL* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 
 extern FMOD_CHANNELGROUP* sound_group, *music_group;
+extern FMOD_CHANNELGROUP* soundAmbient_group, *soundEnvironment_group;
 
 /*
  * Checks for FMOD errors. Store return value of all FMOD functions in fmod_result so that this funtion can access it and check for errors.
@@ -107,6 +108,7 @@ void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume); //Aut
 void handleLevelMusic(); //Manages and updates the level music.
 
 extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
+extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 
 #elif defined USE_OPENAL
 
@@ -152,7 +154,7 @@ extern OPENAL_BUFFER** hellmusic;
 #define NUMHELLMUSIC 3
 extern OPENAL_BUFFER** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern OPENAL_BUFFER** minotaurmusic, *herxmusic, *templemusic;
-extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic, *sanctummusic;
+extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
 extern OPENAL_BUFFER* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern OPENAL_BUFFER** cavesmusic;
@@ -170,6 +172,7 @@ extern OPENAL_BUFFER* hamletmusic;
 
 extern OPENAL_SOUND* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 extern OPENAL_CHANNELGROUP *sound_group, *music_group;
+extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group;
 
 int initOPENAL();
 int closeOPENAL();

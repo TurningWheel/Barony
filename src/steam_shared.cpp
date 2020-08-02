@@ -361,6 +361,7 @@ bool CSteamStatistics::ClearAllStats()
 	{
 		return false;
 	}
+	return true;
 }
 
 #endif // STEAMWORKS

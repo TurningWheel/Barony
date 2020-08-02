@@ -30,6 +30,7 @@ See LICENSE for details.
 #define SUMMONTRAP_FAILURERATE my->skill[5]
 #define SUMMONTRAP_FIRED my->skill[6]
 #define SUMMONTRAP_INITIALIZED my->skill[7]
+#define SUMMONTRAP_TICKS_TO_FIRE my->skill[8]
 
 void actSummonTrap(Entity* my)
 {
@@ -41,14 +42,23 @@ void actSummonTrap(Entity* my)
 	// received on signal
 	if ( (my->skill[28] == 2 && !SUMMONTRAP_POWERTODISABLE) || my->skill[28] == 1 && SUMMONTRAP_POWERTODISABLE )
 	{
-		// if the time interval between between spawns is reached, or if the mechanism is switched on for the first time.
-		if ( ticks % (TICKS_PER_SECOND * SUMMONTRAP_INTERVAL) == 0 || !SUMMONTRAP_INITIALIZED )
+		if ( SUMMONTRAP_TICKS_TO_FIRE > 0 )
 		{
+			--SUMMONTRAP_TICKS_TO_FIRE;
+		}
+
+		// if the time interval between between spawns is reached, or if the mechanism is switched on for the first time.
+		if ( SUMMONTRAP_TICKS_TO_FIRE == 0 || !SUMMONTRAP_INITIALIZED )
+		{
+			SUMMONTRAP_TICKS_TO_FIRE = (TICKS_PER_SECOND * SUMMONTRAP_INTERVAL);
+
 			if ( !SUMMONTRAP_FIRED && SUMMONTRAP_SPAWNCYCLES > 0 )
 			{
 				bool useCustomMonsters = monsterCurveCustomManager.curveExistsForCurrentMapName(map.name);
 				bool fixedCustomMonster = true;
 				Monster customMonsterType = NOTHING;
+				bool pickedRandomMonsters = (SUMMONTRAP_MONSTER == -1);
+
 				if ( SUMMONTRAP_MONSTER > 0 && SUMMONTRAP_MONSTER < NUMMONSTERS )
 				{
 					// spawn the monster given to the trap.
@@ -90,21 +100,28 @@ void actSummonTrap(Entity* my)
 						typeToSpawn = customMonsterType;
 					}
 					monster = summonMonster(static_cast<Monster>(typeToSpawn), my->x, my->y);
-					if ( monster && useCustomMonsters )
+					if ( monster && monster->getStats() )
 					{
-						std::string variantName = "default";
-						if ( fixedCustomMonster )
+						if ( useCustomMonsters )
 						{
-							variantName = monsterCurveCustomManager.rollFixedMonsterVariant(map.name, typeToSpawn);
+							std::string variantName = "default";
+							if ( fixedCustomMonster )
+							{
+								variantName = monsterCurveCustomManager.rollFixedMonsterVariant(map.name, typeToSpawn);
+							}
+							else
+							{
+								variantName = monsterCurveCustomManager.rollMonsterVariant(map.name, typeToSpawn);
+							}
+							if ( variantName.compare("default") != 0 )
+							{
+								Monster tmp = NOTHING;
+								monsterCurveCustomManager.createMonsterFromFile(monster, monster->getStats(), variantName, tmp);
+							}
 						}
 						else
 						{
-							variantName = monsterCurveCustomManager.rollMonsterVariant(map.name, typeToSpawn);
-						}
-						if ( variantName.compare("default") != 0 )
-						{
-							Monster tmp = NOTHING;
-							monsterCurveCustomManager.createMonsterFromFile(monster, monster->getStats(), variantName, tmp);
+							monster->getStats()->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1; // disable champion normally.
 						}
 					}
 				}
@@ -123,7 +140,11 @@ void actSummonTrap(Entity* my)
 					}
 					SUMMONTRAP_INITIALIZED = 1; // trap is starting up for the first time.
 				}
-				
+
+				if ( pickedRandomMonsters )
+				{
+					SUMMONTRAP_MONSTER = -1;
+				}
 
 				if ( (SUMMONTRAP_FAILURERATE != 0) && (rand() % 100 < SUMMONTRAP_FAILURERATE) )
 				{
@@ -150,6 +171,9 @@ void actSummonTrap(Entity* my)
 			}
 		}
 	}
-
+	else
+	{
+		SUMMONTRAP_TICKS_TO_FIRE = 0;
+	}
 	return;
 }

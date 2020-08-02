@@ -29,6 +29,7 @@
 #include "../draw.hpp"
 #include "../scores.hpp"
 #include "../scrolls.hpp"
+#include "../lobbies.hpp"
 
 Uint32 svFlags = 30;
 SDL_Surface* backdrop_minotaur_bmp = nullptr;
@@ -789,6 +790,8 @@ void defaultConfig()
 	consoleCommand("/shaking");
 	consoleCommand("/bobbing");
 	consoleCommand("/sfxvolume 64");
+	consoleCommand("/sfxambientvolume 64");
+	consoleCommand("/sfxenvironmentvolume 64");
 	consoleCommand("/musvolume 32");
 #ifdef PANDORA
 	consoleCommand("/mousespeed 105");
@@ -1133,6 +1136,8 @@ int saveConfig(char* filename)
 		fprintf(fp, "/bobbing\n");
 	}
 	fprintf(fp, "/sfxvolume %d\n", sfxvolume);
+	fprintf(fp, "/sfxambientvolume %d\n", sfxAmbientVolume);
+	fprintf(fp, "/sfxenvironmentvolume %d\n", sfxEnvironmentVolume);
 	fprintf(fp, "/musvolume %d\n", musvolume);
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
@@ -1325,6 +1330,13 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/disablenetcodefpslimit\n");
 	}
+#ifdef USE_EOS
+	if ( LobbyHandler.crossplayEnabled )
+	{
+		fprintf(fp, "/crossplay\n");
+	}
+#endif // USE_EOS
+
 	if ( !gamemods_mountedFilepaths.empty() )
 	{
 		std::vector<std::pair<std::string, std::string>>::iterator it;

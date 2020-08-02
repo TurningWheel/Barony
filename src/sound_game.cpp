@@ -27,8 +27,21 @@
 	used by the server to instruct clients to play a certain sound.
 
 -------------------------------------------------------------------------------*/
-
 #ifdef USE_FMOD
+
+FMOD_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd)
+{
+	if ( snd == 155 || snd == 135 ) // water/lava
+	{
+		return soundEnvironment_group;
+	}
+	if ( snd == 149 )
+	{
+		return soundAmbient_group;
+	}
+	return sound_group;
+}
+
 FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol)
 {
 	if (no_sound)
@@ -125,18 +138,47 @@ FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 		return NULL;
 	}
 
+	FMOD_VECTOR position;
+	position.x = -y / 16; //Left/right.
+	position.y = 0; //Up/down. //Should be z, but that's not passed. Ignore? Ignoring. Useful for sounds in the floor and ceiling though.
+	position.z = -x / 16; //Forward/backward.
+
+	if ( soundAmbient_group && getChannelGroupForSoundIndex(snd) == soundAmbient_group )
+	{
+		int numChannels = 0;
+		FMOD_ChannelGroup_GetNumChannels(soundAmbient_group, &numChannels);
+		for ( int i = 0; i < numChannels; ++i )
+		{
+			FMOD_CHANNEL* c;
+			if ( FMOD_ChannelGroup_GetChannel(soundAmbient_group, i, &c) == FMOD_RESULT::FMOD_OK )
+			{
+				//float audibility = 0.f;
+				//FMOD_Channel_GetAudibility(c, &audibility);
+				float volume = 0.f;
+				FMOD_Channel_GetVolume(c, &volume);
+				FMOD_VECTOR playingPosition;
+				FMOD_Channel_Get3DAttributes(c, &playingPosition, nullptr);
+				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
+				if ( abs(volume - (vol / 128.f)) < 0.05 )
+				{
+					if ( sqrt(pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 1.5 )
+					{
+						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
+						return nullptr;
+					}
+				}
+			}
+		}
+	}
+
 	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel);
 	if (FMODErrorCheck())
 	{
 		return NULL;
 	}
 	FMOD_Channel_SetVolume(channel, vol / 128.f);
-	FMOD_VECTOR position;
-	position.x = -y / 16; //Left/right.
-	position.y = 0; //Up/down. //Should be z, but that's not passed. Ignore? Ignoring. Useful for sounds in the floor and ceiling though.
-	position.z = -x / 16; //Forward/backward.
 	FMOD_Channel_Set3DAttributes(channel, &position, NULL);
-	FMOD_Channel_SetChannelGroup(channel, sound_group);
+	FMOD_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd));
 	FMOD_Channel_SetPaused(channel, false);
 
 	return channel;
@@ -173,18 +215,47 @@ FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 		return NULL;
 	}
 
+	FMOD_VECTOR position;
+	position.x = -y / 16; //Left/right.
+	position.y = 0; //Up/down. //Should be z, but that's not passed. Ignore? Ignoring. Useful for sounds in the floor and ceiling though.
+	position.z = -x / 16; //Forward/backward.
+
+	if ( soundAmbient_group && getChannelGroupForSoundIndex(snd) == soundAmbient_group )
+	{
+		int numChannels = 0;
+		FMOD_ChannelGroup_GetNumChannels(soundAmbient_group, &numChannels);
+		for ( int i = 0; i < numChannels; ++i )
+		{
+			FMOD_CHANNEL* c;
+			if ( FMOD_ChannelGroup_GetChannel(soundAmbient_group, i, &c) == FMOD_RESULT::FMOD_OK )
+			{
+				//float audibility = 0.f;
+				//FMOD_Channel_GetAudibility(c, &audibility);
+				float volume = 0.f;
+				FMOD_Channel_GetVolume(c, &volume);
+				FMOD_VECTOR playingPosition;
+				FMOD_Channel_Get3DAttributes(c, &playingPosition, nullptr);
+				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
+				if ( abs(volume - (vol / 128.f)) < 0.05 )
+				{
+					if ( sqrt(pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 1.5 )
+					{
+						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
+						return nullptr;
+					}
+				}
+			}
+		}
+	}
+
 	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel);
 	if (FMODErrorCheck())
 	{
 		return NULL;
 	}
 	FMOD_Channel_SetVolume(channel, vol / 128.f);
-	FMOD_VECTOR position;
-	position.x = -y / 16; //Left/right.
-	position.y = 0; //Up/down. //Should be z, but that's not passed. Ignore? Ignoring. Useful for sounds in the floor and ceiling though.
-	position.z = -x / 16; //Forward/backward.
 	FMOD_Channel_Set3DAttributes(channel, &position, NULL);
-	FMOD_Channel_SetChannelGroup(channel, sound_group);
+	FMOD_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd));
 	FMOD_Channel_SetPaused(channel, false);
 
 	return channel;
@@ -240,7 +311,7 @@ FMOD_CHANNEL* playSound(Uint32 snd, int vol)
 #ifndef SOUND
 	return NULL;
 #endif
-	if (!fmod_system || snd < 0 || snd >= numsounds || !sound_group)
+	if (!fmod_system || snd < 0 || snd >= numsounds || !getChannelGroupForSoundIndex(snd) )
 	{
 		return NULL;
 	}
@@ -256,7 +327,7 @@ FMOD_CHANNEL* playSound(Uint32 snd, int vol)
 	position.y = 0;
 	position.z = 0;
 	FMOD_Channel_Set3DAttributes(channel, &position, NULL);
-	FMOD_Channel_SetChannelGroup(channel, sound_group);
+	FMOD_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd));
 	FMOD_Channel_SetVolume(channel, vol / 128.f);
 	FMOD_Channel_SetMode(channel, FMOD_3D_HEADRELATIVE);
 	if (FMODErrorCheck())
@@ -608,6 +679,10 @@ void handleLevelMusic()
 				playmusic(minesmusic[4], true, true, true);
 			}
 		}
+		else if ( !strncmp(map.name, "Tutorial ", 9) )
+		{
+			playmusic(tutorialmusic, true, true, true);
+		}
 		else
 		{
 			playmusic(intermissionmusic, true, true, true);
@@ -734,6 +809,19 @@ void handleLevelMusic()
 }
 
 #elif defined USE_OPENAL
+OPENAL_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd)
+{
+	if ( snd == 155 || snd == 135 ) // water/lava
+	{
+		return soundEnvironment_group;
+	}
+	if ( snd == 149 )
+	{
+		return soundAmbient_group;
+	}
+	return sound_group;
+}
+
 OPENAL_SOUND* playSoundPlayer(int player, Uint32 snd, int vol)
 {
 	if (no_sound)
@@ -833,7 +921,7 @@ OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	channel = OPENAL_CreateChannel(sounds[snd]);
 	OPENAL_Channel_SetVolume(channel, vol / 128.f);
 	OPENAL_Channel_Set3DAttributes(channel, -y / 16.0, 0, -x / 16.0);
-	OPENAL_Channel_SetChannelGroup(channel, sound_group);
+	OPENAL_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd));
 	OPENAL_Channel_Play(channel);
 
 	return channel;
@@ -873,7 +961,7 @@ OPENAL_SOUND* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 	channel = OPENAL_CreateChannel(sounds[snd]);
 	OPENAL_Channel_SetVolume(channel, vol / 128.f);
 	OPENAL_Channel_Set3DAttributes(channel, -y / 16.0, 0, -x / 16.0);
-	OPENAL_Channel_SetChannelGroup(channel, sound_group);
+	OPENAL_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd));
 	OPENAL_Channel_Play(channel);
 
 	return channel;
@@ -929,7 +1017,7 @@ OPENAL_SOUND* playSound(Uint32 snd, int vol)
 #ifndef SOUND
 	return NULL;
 #endif
-	if (!openal_context || snd < 0 || snd >= numsounds || !sound_group)
+	if (!openal_context || snd < 0 || snd >= numsounds || !getChannelGroupForSoundIndex(snd) )
 	{
 		return NULL;
 	}
@@ -940,7 +1028,7 @@ OPENAL_SOUND* playSound(Uint32 snd, int vol)
 	OPENAL_SOUND* channel = OPENAL_CreateChannel(sounds[snd]);
 	OPENAL_Channel_SetVolume(channel, vol / 128.f);
 
-	OPENAL_Channel_SetChannelGroup(channel, sound_group);
+	OPENAL_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd));
 
 	OPENAL_Channel_Play(channel);
 

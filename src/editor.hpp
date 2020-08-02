@@ -201,7 +201,14 @@ extern char itemName[128];
 extern int itemSelect;
 extern int itemSlotSelected;
 int loadItems();
-
+void buttonStartSingleplayer(button_t* my);
+void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value);
+class AchievementObserver
+{
+public:
+	void updateGlobalStat(int index, int value); // dummy :<
+};
+extern AchievementObserver achievementObserver;
 void propertyPageTextAndInput(int numProperties, int width);
 void propertyPageError(int rowIndex, int resetValue);
 void propertyPageCursorFlash(int rowSpacing);

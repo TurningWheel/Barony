@@ -734,8 +734,8 @@ public:
 	int devilGetNumMonstersInArena(Monster creature);
 	bool devilBoulderSummonIfPlayerIsHiding(int player);
 	void lichFireSummonMonster(Monster creature);
-	// check for nearby items to add to monster's inventory
-	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems, Entity* forcePickupItem = nullptr);
+	// check for nearby items to add to monster's inventory, returns true if picked up item
+	bool monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems, Entity* forcePickupItem = nullptr);
 	// degrade chosen armor piece by 1 on entity, update clients.
 	void degradeArmor(Stat& hitstats, Item& armor, int armornum);
 	// check stats if monster should "retreat" in actMonster
@@ -1157,7 +1157,8 @@ public:
 		TRIGGER_ATTACHED_EXISTS,
 		TRIGGER_ATTACHED_INVIS,
 		TRIGGER_ATTACHED_VISIBLE,
-		TRIGGER_ATTACHED_ALWAYS
+		TRIGGER_ATTACHED_ALWAYS,
+		TRIGGER_ON_VARIABLE
 	};
 	/*enum TagAvailableToEntity : int
 	{
@@ -1235,5 +1236,6 @@ public:
 		}
 		return entities;
 	}
+	std::unordered_map<std::string, int> scriptVariables;
 };
 extern TextSourceScript textSourceScript;

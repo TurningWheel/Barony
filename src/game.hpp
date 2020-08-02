@@ -21,13 +21,11 @@
 #endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.3.4"
+#define VERSION "v3.3.5"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
 class Entity;
-
-extern list_t steamAchievements;
 
 #define DEBUG 1
 #define ENTITY_PACKET_LENGTH 46
@@ -98,7 +96,7 @@ extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
-#define NUMCLASSES 21
+static const int NUMCLASSES = 21;
 #define NUMRACES 13
 #define NUMPLAYABLERACES 9
 extern char address[64];
@@ -113,6 +111,7 @@ extern bool darkmap;
 extern int shaking, bobbing;
 extern int musvolume;
 extern SDL_Surface* title_bmp;
+extern SDL_Surface* titleDefault_bmp;
 extern SDL_Surface* logo_bmp;
 extern SDL_Surface* cursor_bmp;
 extern SDL_Surface* cross_bmp;
@@ -159,13 +158,6 @@ enum PlayerRaces : int
 	RACE_TROLL,
 	RACE_SPIDER,
 	RACE_IMP
-};
-
-enum ESteamStatTypes
-{
-	STEAM_STAT_INT = 0,
-	STEAM_STAT_FLOAT = 1,
-	STEAM_STAT_AVGRATE = 2,
 };
 
 enum ESteamLeaderboardTitles : int

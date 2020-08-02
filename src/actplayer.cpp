@@ -61,13 +61,27 @@ void actDeathCam(Entity* my)
 		keystatus[SDL_SCANCODE_F4] = 0;
 	}*/
 	DEATHCAM_TIME++;
+
+	Uint32 deathcamGameoverPromptTicks = TICKS_PER_SECOND * 6;
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	{
+		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
+	}
+
 	if ( DEATHCAM_TIME == 1 )
 	{
 		DEATHCAM_PLAYERTARGET = -1;
 	}
-	else if ( DEATHCAM_TIME == TICKS_PER_SECOND * 6 )
+	else if ( DEATHCAM_TIME == deathcamGameoverPromptTicks )
 	{
-		openGameoverWindow();
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+		{
+			gameModeManager.Tutorial.openGameoverWindow();
+		}
+		else
+		{
+			openGameoverWindow();
+		}
 	}
 	if ( shootmode && !gamePaused )
 	{
@@ -1909,15 +1923,17 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	//if ( keystatus[SDL_SCANCODE_F1] )
+	//{
+	//	//gameloopFreezeEntities = !gameloopFreezeEntities;
+	//	cpp_SteamMatchmaking_RequestAppTicket();
+	//	keystatus[SDL_SCANCODE_F1] = 0;
+	//}
 	/*if ( my->ticks % 50 == 0 )
 	{
 		messagePlayer(clientnum, "%d", stats[clientnum]->HUNGER);
 	}*/
-	/*if ( keystatus[SDL_SCANCODE_F1] )
-	{
-		gameloopFreezeEntities = !gameloopFreezeEntities;
-		keystatus[SDL_SCANCODE_F1] = 0;
-	}
+	/*
 	if ( keystatus[SDL_SCANCODE_F2] )
 	{
 		if ( players[clientnum] != nullptr && players[clientnum]->entity != nullptr )
@@ -3662,9 +3678,27 @@ void actPlayer(Entity* my)
 							combatmusicplaying = false;
 							fadein_increment = default_fadein_increment * 4;
 							fadeout_increment = default_fadeout_increment * 4;
+							if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+							{
+								playmusic(tutorialmusic, true, true, true);
+							}
 							playmusic(sounds[209], false, true, false);
 #endif
 							combat = false;
+
+							if ( PLAYER_NUM == clientnum 
+								&& gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+							{
+								if ( !strncmp(map.name, "Tutorial Hub", 12) )
+								{
+									steamAchievement("BARONY_ACH_EXPELLED");
+								}
+								else
+								{
+									steamAchievement("BARONY_ACH_TEACHABLE_MOMENT");
+								}
+							}
+
 							if ( multiplayer == SINGLE || !(svFlags & SV_FLAG_KEEPINVENTORY) )
 							{
 								for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
@@ -6687,7 +6721,7 @@ void playerAnimateSpider(Entity* my)
 			case 21:
 				entity->x += cos(my->yaw) * 1 + cos(my->yaw + PI / 2) * 2.5 * (1 - 2 * (bodypart > 20));
 				entity->y += sin(my->yaw) * 1 + sin(my->yaw + PI / 2) * 2.5 * (1 - 2 * (bodypart > 20));
-				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) > 0.1 )
+				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) )
 				{
 					if ( !entity->skill[0] )
 					{
@@ -6733,7 +6767,7 @@ void playerAnimateSpider(Entity* my)
 			case 23:
 				entity->x += cos(my->yaw + PI / 2) * 3 * (1 - 2 * (bodypart > 20));
 				entity->y += sin(my->yaw + PI / 2) * 3 * (1 - 2 * (bodypart > 20));
-				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) > 0.1 )
+				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) )
 				{
 					if ( !entity->skill[0] )
 					{
@@ -6779,7 +6813,7 @@ void playerAnimateSpider(Entity* my)
 			case 25:
 				entity->x += cos(my->yaw) * -.5 + cos(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
 				entity->y += sin(my->yaw) * -.5 + sin(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
-				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) > 0.1 )
+				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) )
 				{
 					if ( !entity->skill[0] )
 					{
@@ -6825,7 +6859,7 @@ void playerAnimateSpider(Entity* my)
 			case 27:
 				entity->x += cos(my->yaw) * -.5 + cos(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
 				entity->y += sin(my->yaw) * -.5 + sin(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
-				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) > 0.1 )
+				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) )
 				{
 					if ( !entity->skill[0] )
 					{

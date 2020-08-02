@@ -37,6 +37,8 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include "mod_tools.hpp"
+#include "lobbies.hpp"
+#include "interface/ui.hpp"
 #include <limits>
 
 #ifdef LINUX
@@ -195,7 +197,6 @@ TileEntityListHandler TileEntityList;
 
 int game = 1;
 Uint32 uniqueGameKey = 0;
-list_t steamAchievements;
 DebugStatsClass DebugStats;
 Uint32 networkTickrate = 0;
 bool gameloopFreezeEntities = false;
@@ -617,6 +618,17 @@ void gameLogic(void)
 				}
 			}
 
+			if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+			{
+#ifdef USE_EOS
+				if ( multiplayer == SERVER && ticks % TICKS_PER_SECOND == 0 )
+				{
+					EOS.CurrentLobbyData.updateLobbyDuringGameLoop();
+				}
+#endif // USE_EOS
+			}
+
+
 			// animate tiles
 			if ( !gamePaused )
 			{
@@ -1023,10 +1035,26 @@ void gameLogic(void)
 					{
 						FMOD_ChannelGroup_Stop(sound_group);
 					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_Stop(soundAmbient_group);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_Stop(soundEnvironment_group);
+					}
 #elif defined USE_OPENAL
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_Stop(sound_group);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_Stop(soundAmbient_group);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 					}
 #endif
 					// stop combat music
@@ -1063,13 +1091,19 @@ void gameLogic(void)
 
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
+					bool bCopyFollowers = true;
+					if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+					{
+						bCopyFollowers = false;
+					}
+
 					for ( c = 0; c < MAXPLAYERS; ++c )
 					{
 						tempFollowers[c].first = nullptr;
 						tempFollowers[c].last = nullptr;
 
 						node_t* node;
-						for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
+						for ( node = stats[c]->FOLLOWERS.first; bCopyFollowers && node != nullptr; node = node->next )
 						{
 							Entity* follower = uidToEntity(*((Uint32*)node->element));
 							if ( follower )
@@ -1201,6 +1235,7 @@ void gameLogic(void)
 					numplayers = 0;
 
 					gameplayCustomManager.readFromFile();
+					textSourceScript.scriptVariables.clear();
 
 					int checkMapHash = -1;
 					int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
@@ -1248,6 +1283,14 @@ void gameLogic(void)
 					if ( secretlevel && currentlevel == 8 )
 					{
 						steamAchievement("BARONY_ACH_TRICKS_AND_TRAPS");
+					}
+					// flag setting we've reached the lich
+					if ( !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Sanctum", 7) )
+					{
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							steamStatisticUpdateClient(c, STEAM_STAT_BACK_TO_BASICS, STEAM_STAT_INT, 1);
+						}
 					}
 
 					if ( !secretlevel )
@@ -2518,6 +2561,7 @@ void handleButtons(void)
 								if ( deleteallbuttons )
 								{
 									deleteallbuttons = false;
+									button->pressed = false;
 									break;
 								}
 							}
@@ -2811,6 +2855,14 @@ void handleEvents(void)
 					{
 						FMOD_ChannelGroup_SetVolume(sound_group, 0.f);
 					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
+					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
 					if ( music_group )
@@ -2820,6 +2872,14 @@ void handleEvents(void)
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_SetVolume(sound_group, 0.f);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
 					}
 #endif
 				}
@@ -2834,6 +2894,14 @@ void handleEvents(void)
 					{
 						FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
 					if ( music_group )
@@ -2843,6 +2911,14 @@ void handleEvents(void)
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 					}
 #endif
 				}
@@ -3188,9 +3264,28 @@ int main(int argc, char** argv)
 		strcpy(outputdir, "./");
 #else
 		char *basepath = getenv("HOME");
+ #ifdef USE_EOS
+  #ifdef STEAMWORKS
+		//Steam + EOS
 		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
+  #else
+		//Just EOS.
+		std::string firstDotdir(basepath);
+		firstDotdir += "/.barony/";
+		if (access(firstDotdir.c_str(), F_OK) == -1)
+		{
+			mkdir(firstDotdir.c_str(), 0777); //Since this mkdir is not equivalent to mkdir -p, have to create each part of the path manually.
+		}
+		snprintf(outputdir, sizeof(outputdir), "%s/epicgames", firstDotdir.c_str());
+  #endif
+ #else //USE_EOS
+		//No EOS. Could be Steam though. Or could also not.
+		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
+ #endif
 		if (access(outputdir, F_OK) == -1)
+		{
 			mkdir(outputdir, 0777);
+		}
 #endif
 		// read command line arguments
 		if ( argc > 1 )
@@ -3239,6 +3334,12 @@ int main(int argc, char** argv)
 					{
 						no_sound = true;
 					}
+					else
+					{
+#ifdef USE_EOS
+						EOS.CommandLineArgs.push_back(argv[c]);
+#endif // USE_EOS
+					}
 				}
 			}
 		}
@@ -3275,6 +3376,20 @@ int main(int argc, char** argv)
 									"and verify Steam is running. Alternatively, contact us through our website\n"
 									"at http://www.baronygame.com/ for support.",
 				screen);
+#elif defined USE_EOS
+			if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
+			{
+				// restarting app from launcher.
+			}
+			else
+			{
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
+					"Barony has encountered a critical error and cannot start.\n\n"
+					"Please check the log.txt file in the game directory for additional info,\n"
+					"and verify the game is launched through the Epic Games Store. \n"
+					"Alternatively, contact us through our website at http://www.baronygame.com/ for support.",
+					screen);
+			}
 #else
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
 									"Barony has encountered a critical error and cannot start.\n\n"
@@ -3372,6 +3487,12 @@ int main(int argc, char** argv)
 			}
 			SteamAPI_RunCallbacks();
 #endif
+#ifdef USE_EOS
+			EOS_Platform_Tick(EOS.PlatformHandle);
+			EOS_Platform_Tick(EOS.ServerPlatformHandle);
+			EOS.StatGlobalManager.updateQueuedStats();
+#endif // USE_EOS
+
 			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
 			if ( intro )
 			{
@@ -3400,7 +3521,7 @@ int main(int argc, char** argv)
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 						fadealpha = 255;
-#ifndef STEAMWORKS
+#if (!defined STEAMWORKS && !defined USE_EOS)
 						introstage = 0;
 						fadeout = false;
 						fadefinished = false;
@@ -3663,6 +3784,8 @@ int main(int argc, char** argv)
 						}
 
 						handleMainMenu(intro);
+
+						UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
 
 						// draw mouse
 						if (!movie && draw_cursor)
@@ -4360,6 +4483,8 @@ int main(int argc, char** argv)
 
 					DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
 
+					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
+
 					// pointer in inventory screen
 					if (shootmode == false)
 					{
@@ -4570,6 +4695,11 @@ int main(int argc, char** argv)
 					}
 				}
 
+				if ( gamePaused ) // draw after main menu windows etc.
+				{
+					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+				}
+
 				if (((subwindow && !shootmode) || gamePaused) && draw_cursor)
 				{
 					pos.x = mousex - cursor_bmp->w / 2;
@@ -4628,6 +4758,8 @@ int main(int argc, char** argv)
 				}
 			}
 
+			UIToastNotificationManager.drawNotifications(movie, false);
+
 			// update screen
 			GO_SwapBuffers(screen);
 
@@ -4637,7 +4769,6 @@ int main(int argc, char** argv)
 				keystatus[SDL_SCANCODE_F6] = 0;
 				takeScreenshot();
 			}
-
 
 			// frame rate limiter
 			while ( frameRateLimit(fpsLimit, true) )
