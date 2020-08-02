@@ -397,7 +397,6 @@ void LobbyHandler_t::handleLobbyBrowser()
 	}*/
 
 	updateSearchResults();
-	drawLobbyFilters();
 
 	// epic/steam lobby browser
 	if ( subwindow && !strcmp(subtext, language[1334]) )
@@ -443,6 +442,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 
 		int numSearchResults = numLobbyDisplaySearchResults;
 		selectedLobbyInList = std::max(0, std::min(selectedLobbyInList, static_cast<int>(numLobbyDisplaySearchResults - 1)));
+
 		int maxLobbyResults = kNumSearchResults;
 
 		// slider
@@ -452,6 +452,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 
 		// directory list offset from slider
 		Sint32 y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSearchResults + 1);
+		Sint32 old_y2 = y2;
 		if ( mousestatus[SDL_BUTTON_LEFT] 
 			&& (omousex >= sliderExtents.x && omousex < sliderExtents.x + sliderExtents.w)
 			&& (omousey >= sliderExtents.y && omousey < sliderExtents.y + sliderExtents.h) )
@@ -471,6 +472,11 @@ void LobbyHandler_t::handleLobbyBrowser()
 		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
 		y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSearchResults + 1);
 
+		if ( old_y2 != y2 )
+		{
+			selectedLobbyInList = std::min(std::max(y2, selectedLobbyInList), std::min(std::max(numSearchResults - 1, 0), y2 + 17));
+		}
+
 		// server flags tooltip variables
 		SDL_Rect flagsBox;
 		char flagsBoxText[256] = "";
@@ -481,11 +487,11 @@ void LobbyHandler_t::handleLobbyBrowser()
 
 		// select/inspect lobbies
 		if ( (omousex >= listExtents.x && omousex < listExtents.x + listExtents.w)
-			&& (omousey >= listExtents.y + 2 && omousey < listExtents.y + listExtents.h) )
+			&& (omousey >= listExtents.y + 2 && omousey < listExtents.y + listExtents.h - 4) )
 		{
 			//Something is flawed somewhere in here, because commit 1bad2c5d9f67e0a503ca79f93b03101fbcc7c7ba had to fix the game using an inappropriate hoveringSelection.
 			//Perhaps it's as simple as setting hoveringSelection back to -1 if lobbyIDs[hoveringSelection] is in-fact null.
-			hoveringSelection = std::min(std::max(0, y2 + ((omousey - suby1 - 24) >> 4)), maxLobbyResults);
+			hoveringSelection = std::min(std::max(0, y2 + ((omousey - suby1 - 26) >> 4)), maxLobbyResults);
 
 			LobbyServiceType lobbyType = getDisplayedResultLobbyType(hoveringSelection);
 			Sint32 lobbyIndex = getDisplayedResultLobbyIndex(hoveringSelection);
@@ -523,10 +529,10 @@ void LobbyHandler_t::handleLobbyBrowser()
 				}
 			}
 
-			flagsBox.x = mousex + 8;
-			flagsBox.y = mousey + 8;
 			flagsBox.w = strlen(language[2919]) * 10 + 4;
 			flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
+			flagsBox.x = mousex + 8;
+			flagsBox.y = mousey + 8;
 			if ( serverNumModsLoaded > 0 )
 			{
 				flagsBox.h += TTF12_HEIGHT;
@@ -593,6 +599,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 #ifdef STEAMWORKS
 				selectedSteamLobby = std::max(0, getDisplayedResultLobbyIndex(this->selectedLobbyInList));
 				selectedSteamLobby = std::min(std::max(y2, selectedSteamLobby), std::min(std::max(numSearchResults - 1, 0), y2 + 17));
+				//this->selectedLobbyInList = selectedSteamLobby;
 #endif
 			}
 			else if ( lobbyType == LOBBY_CROSSPLAY )
@@ -600,6 +607,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 #ifdef USE_EOS
 				EOS.LobbySearchResults.selectedLobby = std::max(0, getDisplayedResultLobbyIndex(this->selectedLobbyInList));
 				EOS.LobbySearchResults.selectedLobby = std::min(std::max(y2, EOS.LobbySearchResults.selectedLobby), std::min(std::max(static_cast<int>(numSearchResults) - 1, 0), y2 + 17));
+				//this->selectedLobbyInList = EOS.LobbySearchResults.selectedLobby;
 #endif // USE_EOS
 			}
 
@@ -621,7 +629,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 		Sint32 y = suby1 + 28;
 		if ( numLobbyDisplaySearchResults > 0 )
 		{
-			int searchResultLowestVisibleEntry = std::min(numLobbyDisplaySearchResults, static_cast<Uint32>(18 + y2));
+			int searchResultLowestVisibleEntry = std::min(numLobbyDisplaySearchResults, static_cast<Uint32>(18 + y2)) + 1;
 			for ( Sint32 z = y2; z < searchResultLowestVisibleEntry; ++z )
 			{
 				LobbyServiceType lobbyType = getDisplayedResultLobbyType(z);

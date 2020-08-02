@@ -2376,10 +2376,12 @@ void handleMainMenu(bool mode)
 		EOS.CrossplayAccountManager.handleLogin();
 #endif // USE_EOS
 
-		LobbyHandler.handleLobbyBrowser();
+		LobbyHandler.drawLobbyFilters();
 
 		// process button actions
 		handleButtons();
+
+		LobbyHandler.handleLobbyBrowser();
 	}
 
 	// character creation screen
@@ -9197,12 +9199,15 @@ void handleMainMenu(bool mode)
 			swapWeaponGimpTimer = 0;
 			pickaxeGimpTimer = 0;
 
-			if ( !mode )
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
 			{
-				// restarting game, make a highscore
-				saveScore();
-				deleteSaveGame(multiplayer);
-				loadingsavegame = 0;
+				if ( !mode )
+				{
+					// restarting game, make a highscore
+					saveScore();
+					deleteSaveGame(multiplayer);
+					loadingsavegame = 0;
+				}
 			}
 			camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
 
@@ -10002,7 +10007,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// delete save game
-			if ( !savethisgame )
+			if ( !savethisgame && !endTutorial )
 			{
 				deleteSaveGame(multiplayer);
 			}
@@ -12298,6 +12303,8 @@ void openSteamLobbyWaitWindow(button_t* my)
 	cpp_SteamMatchmaking_RequestLobbyList();
 #endif
 
+	LobbyHandler.selectedLobbyInList = 0;
+
 #if defined USE_EOS
 #ifdef STEAMWORKS
 	if ( EOS.CurrentUserInfo.bUserLoggedIn )
@@ -12464,8 +12471,8 @@ void openSteamLobbyBrowserWindow(button_t* my)
 	subwindow = 1;
 	subx1 = xres / 2 - 280;
 	subx2 = xres / 2 + 280;
-	suby1 = yres / 2 - 192;
-	suby2 = yres / 2 + 192;
+	suby1 = yres / 2 - 198;
+	suby2 = yres / 2 + 198;
 	strcpy(subtext, language[1334]);
 
 	bool showCrossplayLobbyFilters = false;

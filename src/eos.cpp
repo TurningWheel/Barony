@@ -3519,6 +3519,7 @@ void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEnti
 		countOptions.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
 
 		Uint32 numEntitlements = EOS_Ecom_GetEntitlementsCount(EOS.EcomHandle, &countOptions);
+		//EOSFuncs::logInfo("OnEcomQueryEntitlementsCallback: %d entitlements", numEntitlements);
 		for ( int i = 0; i < numEntitlements; ++i )
 		{
 			EOS_Ecom_CopyEntitlementByIndexOptions copyOptions;
@@ -3528,20 +3529,24 @@ void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEnti
 
 			EOS_Ecom_Entitlement* e = nullptr;
 			EOS_EResult result = EOS_Ecom_CopyEntitlementByIndex(EOS.EcomHandle, &copyOptions, &e);
-			if ( result == EOS_EResult::EOS_Success && e )
+			//EOSFuncs::logInfo("%d:", static_cast<int>(result));
+			if ( (result == EOS_EResult::EOS_Success || result == EOS_EResult::EOS_Ecom_EntitlementStale) && e )
 			{
 				std::string id = e->EntitlementName;
 				if ( id.compare("fced51d547714291869b8847fdd770e8") == 0 )
 				{
 					enabledDLCPack1 = true;
+					EOSFuncs::logInfo("Myths & Outcasts DLC Enabled");
 				}
 				else if ( id.compare("7ea3754f8bfa4069938fd0bee3e7197b") == 0 )
 				{
 					enabledDLCPack2 = true;
+					EOSFuncs::logInfo("Legends & Pariahs DLC Enabled");
 				}
 				//EOSFuncs::logInfo("Index: %d | Id %s: | Entitlement Name: %s | CatalogItemId: %s | Redeemed: %d", i, e->EntitlementId, e->EntitlementName, e->CatalogItemId, (e->bRedeemed == EOS_TRUE) ? 1 : 0);
-				EOS_Ecom_Entitlement_Release(e);
 			}
+			EOS_Ecom_Entitlement_Release(e);
+
 		}
 	}
 	else
