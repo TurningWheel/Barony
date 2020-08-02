@@ -1340,6 +1340,7 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame(HostUpdateLobbyTypes upda
 		LobbyAttributes.serverFlags = svFlags;
 		LobbyAttributes.numServerMods = 0;
 		LobbyAttributes.PermissionLevel = static_cast<Uint32>(EOS.currentPermissionLevel);
+		LobbyAttributes.maxplayersCompatible = MAXPLAYERS;
 	}
 	else if ( updateType == LOBBY_UPDATE_DURING_GAME )
 	{
@@ -1420,7 +1421,7 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 	// build the list of attributes:
 	for ( int i = 0; i < EOSFuncs::LobbyData_t::kNumAttributes; ++i )
 	{
-		EOS_Lobby_AttributeData data;
+		EOS_Lobby_AttributeData data = {};
 		data.ApiVersion = EOS_LOBBY_ATTRIBUTEDATA_API_LATEST;
 		data.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
 		std::pair<std::string, std::string> dataPair = getAttributePair(static_cast<AttributeTypes>(i));
@@ -1435,6 +1436,12 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 		}
 		data.Key = dataPair.first.c_str();
 		data.Value.AsUtf8 = dataPair.second.c_str();
+
+		if ( dataPair.first.compare("MAXPLAYERS") == 0 )
+		{
+			data.Value.AsInt64 = LobbyAttributes.maxplayersCompatible;
+			data.ValueType = EOS_ELobbyAttributeType::EOS_AT_INT64;
+		}
 
 		EOS_LobbyModification_AddAttributeOptions addAttributeOptions;
 		addAttributeOptions.ApiVersion = EOS_LOBBYMODIFICATION_ADDATTRIBUTE_API_LATEST;
@@ -1855,6 +1862,12 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 	}
 
+	/*ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+	AttrData.Key = "MAXPLAYERS";
+	AttrData.Value.AsInt64 = MAXPLAYERS;
+	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_INT64;
+	resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+*/
 	if ( !LobbySearchResults.showLobbiesInProgress )
 	{
 		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
@@ -2142,6 +2155,10 @@ std::pair<std::string, std::string> EOSFuncs::LobbyData_t::getAttributePair(Attr
 			attributePair.first = "VER";
 			attributePair.second = this->LobbyAttributes.gameVersion;
 			break;
+		case GAME_MAXPLAYERS:
+			attributePair.first = "MAXPLAYERS";
+			attributePair.second = "";
+			break;
 		case SERVER_FLAGS:
 			attributePair.first = "SVFLAGS";
 			char svFlagsChar[32];
@@ -2190,6 +2207,10 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesAfterReading(EOS_Lobby_AttributeDa
 	else if ( keyName.compare("VER") == 0 )
 	{
 		this->LobbyAttributes.gameVersion = data->Value.AsUtf8;
+	}
+	else if ( keyName.compare("MAXPLAYERS") == 0 )
+	{
+		this->LobbyAttributes.maxplayersCompatible = data->Value.AsInt64;
 	}
 	else if ( keyName.compare("SVFLAGS") == 0 )
 	{
