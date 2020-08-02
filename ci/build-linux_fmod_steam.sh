@@ -42,7 +42,7 @@ fi
 # 1.d) Set dependencies search paths.
 export STEAMWORKS_ROOT="${DEPENDENCIES_DIR}/steamworks_sdk/"
 export STEAMWORKS_ENABLED=1
-export FMOD_DIR="${DEPENDENCIES_DIR}/fmodapi/"
+export FMOD_DIR="${DEPENDENCIES_DIR}/fmodapi/api/"
 
 # 2) Build from source
 
@@ -63,7 +63,4 @@ make -j
 RESULT=$?
 if [ $RESULT -ne 0 ]; then
   echo "Compilation failed. Aborting."
-  echo "But first, here's your Config.hpp!"
-  cat ../../src/Config.hpp
-  exit $RESULT
 fi
