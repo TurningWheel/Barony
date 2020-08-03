@@ -80,4 +80,5 @@ make -j
 RESULT=$?
 if [ $RESULT -ne 0 ]; then
   echo "Compilation failed. Aborting."
+  exit $RESULT
 fi
