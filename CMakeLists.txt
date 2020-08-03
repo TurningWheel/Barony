@@ -377,7 +377,7 @@ if (GAME_ENABLED)
     if(EOS_ENABLED)
       target_link_libraries(barony -lsteam_api) #TODO: Fix for Windows.
     endif()
-  else()
+  else(WIN32)
     if( ("${CMAKE_SIZEOF_VOID_P}" EQUAL "8") AND (NOT APPLE) )
       # 64 bit
       target_link_libraries(barony -L/usr/lib64 -lstdc++)
@@ -386,6 +386,9 @@ if (GAME_ENABLED)
     if (STEAMWORKS_ENABLED)
       target_link_libraries(barony ${STEAMWORKS_LIBRARY})
       #target_link_libraries(barony ${STEAMWORKS_CWRAPPER_LIBRARIES} -lstdc++)
+	endif()
+    if (EOS_ENABLED)
+      target_link_libraries(barony ${EOS_LIBRARIES})
     endif()
     if (APPLE)
       target_link_libraries(barony ${GLUT_LIBRARIES} ${PROJECT_SOURCE_DIR}/libpng16.16.dylib) #Wait...what? if(APPLE) in if(WIN32)? What was I thinking back then, haha.
@@ -422,10 +425,7 @@ if (GAME_ENABLED)
     if (FMOD_ENABLED)
       target_link_libraries(barony -lfmodex) #Finally manually link fmod for mac.
     endif()
-    if (EOS_ENABLED)
-      target_link_libraries(barony ${EOS_LIBRARY})
-    endif()
-  endif()
+  endif(APPLE)
   target_link_libraries(barony ${EXTRA_LIBS}) #Apple needs this for OpenGL to work.
 
   if (OPENAL)

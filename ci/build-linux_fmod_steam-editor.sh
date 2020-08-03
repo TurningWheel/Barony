@@ -59,7 +59,7 @@ export STEAMWORKS_ROOT="${DEPENDENCIES_DIR}/steamworks_sdk/"
 export STEAMWORKS_ENABLED=1
 export FMOD_DIR="${DEPENDENCIES_DIR}/fmodapi/api/"
 export EDITOR_ENABLED=1
-export GAME_ENABLED=1
+export GAME_ENABLED=0
 
 # 2) Build from source
 
