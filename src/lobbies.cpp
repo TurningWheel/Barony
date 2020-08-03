@@ -368,34 +368,6 @@ Sint32 LobbyHandler_t::getDisplayedResultLobbyIndex(int selection)
 
 void LobbyHandler_t::handleLobbyBrowser()
 {
-	// debug toggles
-	/*if ( keystatus[SDL_SCANCODE_F1] )
-	{
-		P2PType = LOBBY_STEAM;
-		searchType = LOBBY_COMBINED;
-		joiningType = LOBBY_STEAM;
-		hostingType = LOBBY_STEAM;
-	}
-	else if ( keystatus[SDL_SCANCODE_F2] )
-	{
-		P2PType = LOBBY_CROSSPLAY;
-		searchType = LOBBY_CROSSPLAY;
-		joiningType = LOBBY_CROSSPLAY;
-		hostingType = LOBBY_CROSSPLAY;
-	}
-	else if ( keystatus[SDL_SCANCODE_F3] )
-	{
-		P2PType = LOBBY_STEAM;
-		searchType = LOBBY_STEAM;
-		joiningType = LOBBY_STEAM;
-		hostingType = LOBBY_STEAM;
-	}
-	else if ( keystatus[SDL_SCANCODE_F4] )
-	{
-		keystatus[SDL_SCANCODE_F4] = 0;
-		crossplayEnabled = !crossplayEnabled;
-	}*/
-
 	updateSearchResults();
 
 	// epic/steam lobby browser
