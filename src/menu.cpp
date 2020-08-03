@@ -15172,8 +15172,40 @@ void buttonLoadSingleplayerGame(button_t* button)
 	{
 		directConnect = false;
 #if defined(USE_EOS) || defined(STEAMWORKS)
-		if ( mul == SERVER )
+		if ( mul == SERVERCROSSPLAY )
 		{
+			// if steamworks, the hosting type can change if crossplay is enabled or not.
+#ifdef STEAMWORKS
+			LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#ifdef USE_EOS
+			if ( LobbyHandler.crossplayEnabled )
+			{
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			}
+#endif
+#elif defined USE_EOS
+			// if just eos, then force hosting settings to default.
+			LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+#endif
+			buttonHostMultiplayer(button);
+		}
+		else if ( mul == SERVER )
+		{
+			if ( getSaveGameVersionNum(true) <= 335 )
+			{
+				// legacy support for steam ver not remembering if crossplay or not. no action. 
+				// starting with v3.3.6, (mul == SERVERCROSSPLAY) detects from the savefile.
+			}
+			else
+			{
+#ifdef STEAMWORKS
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#endif
+			}
 			buttonHostMultiplayer(button);
 		}
 		else if ( mul == CLIENT )
@@ -15265,8 +15297,40 @@ void buttonLoadMultiplayerGame(button_t* button)
 	{
 		directConnect = false;
 #if defined(USE_EOS) || defined(STEAMWORKS)
-		if ( mul == SERVER )
+		if ( mul == SERVERCROSSPLAY )
 		{
+			// if steamworks, the hosting type can change if crossplay is enabled or not.
+#ifdef STEAMWORKS
+			LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#ifdef USE_EOS
+			if ( LobbyHandler.crossplayEnabled )
+			{
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			}
+#endif
+#elif defined USE_EOS
+			// if just eos, then force hosting settings to default.
+			LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+#endif
+			buttonHostMultiplayer(button);
+		}
+		else if ( mul == SERVER )
+		{
+			if ( getSaveGameVersionNum(false) <= 335 )
+			{
+				// legacy support for steam ver not remembering if crossplay or not. no action. 
+				// starting with v3.3.6, (mul == SERVERCROSSPLAY) detects from the savefile.
+			}
+			else
+			{
+#ifdef STEAMWORKS
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#endif
+			}
 			buttonHostMultiplayer(button);
 		}
 		else if ( mul == CLIENT )

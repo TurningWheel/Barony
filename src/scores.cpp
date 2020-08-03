@@ -25,6 +25,7 @@
 #include "paths.hpp"
 #include "collision.hpp"
 #include "mod_tools.hpp"
+#include "lobbies.hpp"
 
 // definitions
 list_t topscores;
@@ -1291,7 +1292,7 @@ int saveGame(int saveIndex)
 	fprintf(fp, "BARONYSAVEGAME");
 	fprintf(fp, VERSION);
 	fwrite(&uniqueGameKey, sizeof(Uint32), 1, fp);
-	if ( multiplayer > SINGLE && directConnect)
+	if ( multiplayer > SINGLE && directConnect )
 	{
 		multiplayer += 2;
 		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
@@ -1299,7 +1300,16 @@ int saveGame(int saveIndex)
 	}
 	else
 	{
-		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
+		if ( multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+			multiplayer = SERVERCROSSPLAY;
+			fwrite(&multiplayer, sizeof(Uint32), 1, fp);
+			multiplayer = SERVER;
+		}
+		else
+		{
+			fwrite(&multiplayer, sizeof(Uint32), 1, fp);
+		}
 	}
 	Uint32 hash = 0;
 #ifdef WINDOWS
@@ -3074,6 +3084,10 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	}
 	else
 	{
+		if ( mul == SERVERCROSSPLAY )
+		{
+			mul = SERVER;
+		}
 		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnumTemp), dungeonlevel, timestamp);
 	}
 	// close file
@@ -3131,6 +3145,51 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex)
 	// close file
 	fclose(fp);
 	return gameKey;
+}
+
+/*-------------------------------------------------------------------------------
+
+getSaveGameVersionNum
+
+Returns the savefile version
+
+-------------------------------------------------------------------------------*/
+
+int getSaveGameVersionNum(bool singleplayer, int saveIndex)
+{
+	FILE* fp;
+	Uint32 gameKey;
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
+
+	// open file
+	if ( (fp = fopen(path, "rb")) == NULL )
+	{
+		printlog("error: failed to get map seed out of '%s'!\n", path);
+		return 0;
+	}
+
+	// read from file
+	char checkstr[64];
+	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
+	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
+	{
+		printlog("error: '%s' is corrupt!\n", path);
+		fclose(fp);
+		return 0;
+	}
+	fread(checkstr, sizeof(char), strlen(VERSION), fp);
+	int versionNumber = getSavegameVersion(checkstr);
+	if ( versionNumber == -1 )
+	{
+		printlog("error: '%s' is corrupt!\n", path);
+	}
+
+	// close file
+	fclose(fp);
+	return versionNumber;
 }
 
 /*-------------------------------------------------------------------------------
