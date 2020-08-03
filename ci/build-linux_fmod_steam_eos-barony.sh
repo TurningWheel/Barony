@@ -58,7 +58,10 @@ fi
 export STEAMWORKS_ROOT="${DEPENDENCIES_DIR}/steamworks_sdk/"
 export STEAMWORKS_ENABLED=1
 export FMOD_DIR="${DEPENDENCIES_DIR}/fmodapi/api/"
-export EDITOR_ENABLED=1
+source "${DEPENDENCIES_DIR}/eos-steam.env"
+export EOS_ENABLED=1
+export EOS_DIR="${DEPENDENCIES_DIR}/eos-sdk/"
+export EDITOR_ENABLED=0
 export GAME_ENABLED=1
 
 # 2) Build from source

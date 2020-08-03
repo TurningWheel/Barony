@@ -31,14 +31,14 @@ if (NOT EOS_INCLUDE_DIR OR NOT EOS_LIBRARIES)
 			FIND_LIBRARY(STEAMWORKS_LIBRARY NAMES steam_api
 				PATHS
 				$ENV{STEAMWORKS_ROOT}/sdk/redistributable_bin
-				DOC "Steamworks library name"
+				DOC "EOS library name"
 			)
 			MESSAGE("32 bit steam")
 		else ()
 			FIND_LIBRARY(STEAMWORKS_LIBRARY NAMES steam_api64
 				PATHS
 				$ENV{STEAMWORKS_ROOT}/sdk/redistributable_bin/win64
-				DOC "Steamworks library name"
+				DOC "EOS library name"
 			)
 			MESSAGE("64 bit steam")
 		endif()
@@ -50,9 +50,11 @@ if (NOT EOS_INCLUDE_DIR OR NOT EOS_LIBRARIES)
 			DOC "EOS library name"
 		)
 	else () # TODO: Technically, Linux portion. I don't know what the EOS Linux SDK looks like yet, since the launcher doesn't even run on Linux, but we'll probably get to this eventually?
-		FIND_LIBRARY(STEAMWORKS_LIBRARY NAMES steam_api
-			PATHS ${LIB_SEARCH_PATHS}
-			DOC "Steamworks library name"
+		FIND_LIBRARY(EOS_LIBRARY NAMES libEOSSDK-Linux-Shipping.so
+			PATHS
+			$ENV{EOS_ROOT}/SDK/Bin
+			$ENV{EOS_DIR}/SDK/Bin
+			DOC "EOS library name"
 		)
 	endif ()
 	if (EOS_LIBRARY)
