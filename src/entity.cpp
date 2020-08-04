@@ -6963,6 +6963,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				for ( node = hitstats->FOLLOWERS.first; node != nullptr && alertAllies; node = node->next )
 				{
 					Uint32* c = (Uint32*)node->element;
+					Entity* entity = nullptr;
 					if ( c )
 					{
 						entity = uidToEntity(*c);
