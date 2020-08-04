@@ -2806,6 +2806,10 @@ void actMagicParticle(Entity* my)
 
 Entity* spawnMagicParticle(Entity* parentent)
 {
+	if ( !parentent )
+	{
+		return nullptr;
+	}
 	Entity* entity;
 
 	entity = newEntity(parentent->sprite, 1, map.entities, nullptr); //Particle entity.
@@ -2839,6 +2843,10 @@ Entity* spawnMagicParticle(Entity* parentent)
 
 Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, real_t spreadReduce)
 {
+	if ( !parentent )
+	{
+		return nullptr;
+	}
 	Entity* entity;
 
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
@@ -2944,6 +2952,11 @@ void createParticle1(Entity* caster, int player)
 
 void createParticleCircling(Entity* parent, int duration, int sprite)
 {
+	if ( !parent )
+	{
+		return;
+	}
+
 	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
@@ -3093,6 +3106,10 @@ void actParticleCircle(Entity* my)
 
 void createParticleDot(Entity* parent)
 {
+	if ( !parent )
+	{
+		return;
+	}
 	for ( int c = 0; c < 50; c++ )
 	{
 		Entity* entity = newEntity(576, 1, map.entities, nullptr); //Particle entity.
@@ -3152,6 +3169,10 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 
 void createParticleRock(Entity* parent)
 {
+	if ( !parent )
+	{
+		return;
+	}
 	for ( int c = 0; c < 5; c++ )
 	{
 		Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
@@ -3253,12 +3274,15 @@ void actParticleAestheticOrbit(Entity* my)
 			my->y = parent->y + 2 * sin(parent->yaw);
 			my->z = parent->z - 1.5;
 			Entity* particle = spawnMagicParticle(my);
-			particle->x = my->x + (-10 + rand() % 21) / (50.f);
-			particle->y = my->y + (-10 + rand() % 21) / (50.f);
-			particle->z = my->z + (-10 + rand() % 21) / (50.f);
-			particle->scalex = my->scalex;
-			particle->scaley = my->scaley;
-			particle->scalez = my->scalez;
+			if ( particle )
+			{
+				particle->x = my->x + (-10 + rand() % 21) / (50.f);
+				particle->y = my->y + (-10 + rand() % 21) / (50.f);
+				particle->z = my->z + (-10 + rand() % 21) / (50.f);
+				particle->scalex = my->scalex;
+				particle->scaley = my->scaley;
+				particle->scalez = my->scalez;
+			}
 			//spawnMagicParticle(my);
 		}
 		else if ( my->skill[1] == PARTICLE_EFFECT_SPELL_WEB_ORBIT )
@@ -3297,6 +3321,11 @@ void actParticleTest(Entity* my)
 
 void createParticleErupt(Entity* parent, int sprite)
 {
+	if ( !parent )
+	{
+		return;
+	}
+
 	real_t yaw = 0;
 	int numParticles = 8;
 	for ( int c = 0; c < 8; c++ )
@@ -3531,6 +3560,11 @@ void createParticleSap(Entity* parent)
 
 void createParticleDropRising(Entity* parent, int sprite, double scale)
 {
+	if ( !parent )
+	{
+		return;
+	}
+
 	for ( int c = 0; c < 50; c++ )
 	{
 		// shoot drops to the sky
@@ -4066,9 +4100,12 @@ void actParticleSap(Entity* my)
 				z_accel = z_decel;
 			}
 			Entity* particle = spawnMagicParticleCustom(my, (rand() % 2) ? 943 : 979, 1, 10);
-			particle->focalx = 2;
-			particle->focaly = -2;
-			particle->focalz = 2.5;
+			if ( particle )
+			{
+				particle->focalx = 2;
+				particle->focaly = -2;
+				particle->focalz = 2.5;
+			}
 			if ( PARTICLE_LIFE < 100 && my->ticks % 6 == 0 )
 			{
 				if ( PARTICLE_LIFE < 70 )
@@ -4575,6 +4612,11 @@ void actParticleSapCenter(Entity* my)
 
 void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale)
 {
+	if ( !parent )
+	{
+		return;
+	}
+
 	for ( int c = 0; c < particleCount; c++ )
 	{
 		// shoot drops to the sky

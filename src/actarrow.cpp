@@ -135,7 +135,10 @@ void actArrow(Entity* my)
 			else
 			{
 				Entity* flame = spawnMagicParticleCustom(my, SPRITE_FLAME, 0.5, 4); // this looks nicer than the spawnFlame :)
-				flame->flags[SPRITE] = true;
+				if ( flame )
+				{
+					flame->flags[SPRITE] = true;
+				}
 			}
 		}
 	}
@@ -144,7 +147,10 @@ void actArrow(Entity* my)
 		if ( ARROW_STUCK == 0 )
 		{
 			Entity* particle = spawnMagicParticleCustom(my, 159, 0.5, 4);
-			particle->flags[SPRITE] = true;
+			if ( particle )
+			{
+				particle->flags[SPRITE] = true;
+			}
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_SILVER || my->sprite == PROJECTILE_SILVER_SPRITE )
@@ -152,7 +158,10 @@ void actArrow(Entity* my)
 		if ( ARROW_STUCK == 0 )
 		{
 			Entity* particle = spawnMagicParticleCustom(my, 160, 0.5, 4);
-			particle->flags[SPRITE] = true;
+			if ( particle )
+			{
+				particle->flags[SPRITE] = true;
+			}
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_CRYSTAL || my->sprite == PROJECTILE_CRYSTAL_SPRITE )
@@ -160,7 +169,10 @@ void actArrow(Entity* my)
 		if ( ARROW_STUCK == 0 )
 		{
 			Entity* particle = spawnMagicParticleCustom(my, 155, 0.5, 4);
-			particle->flags[SPRITE] = true;
+			if ( particle )
+			{
+				particle->flags[SPRITE] = true;
+			}
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE )
@@ -168,7 +180,10 @@ void actArrow(Entity* my)
 		if ( ARROW_STUCK == 0 )
 		{
 			Entity* particle = spawnMagicParticleCustom(my, 158, 0.5, 4);
-			particle->flags[SPRITE] = true;
+			if ( particle )
+			{
+				particle->flags[SPRITE] = true;
+			}
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_LIGHTWEIGHT || my->sprite == PROJECTILE_SWIFT_SPRITE )
@@ -176,7 +191,10 @@ void actArrow(Entity* my)
 		if ( ARROW_STUCK == 0 )
 		{
 			Entity* particle = spawnMagicParticleCustom(my, 156, 0.5, 4);
-			particle->flags[SPRITE] = true;
+			if ( particle )
+			{
+				particle->flags[SPRITE] = true;
+			}
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_HUNTING || my->sprite == PROJECTILE_HUNTING_SPRITE )
@@ -184,7 +202,10 @@ void actArrow(Entity* my)
 		if ( ARROW_STUCK == 0 )
 		{
 			Entity* particle = spawnMagicParticleCustom(my, 157, 0.5, 4);
-			particle->flags[SPRITE] = true;
+			if ( particle )
+			{
+				particle->flags[SPRITE] = true;
+			}
 		}
 	}
 
