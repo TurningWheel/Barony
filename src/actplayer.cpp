@@ -3591,7 +3591,11 @@ void actPlayer(Entity* my)
 						{
 							nextnode = node->next;
 							Uint32* c = (Uint32*)node->element;
-							Entity* myFollower = uidToEntity(*c);
+							Entity* myFollower = nullptr;
+							if ( c )
+							{
+								myFollower = uidToEntity(*c);
+							}
 							if ( myFollower )
 							{
 								if ( myFollower->monsterAllySummonRank != 0 )
@@ -5690,7 +5694,7 @@ void actPlayerLimb(Entity* my)
 		}
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( parent && multiplayer != CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{

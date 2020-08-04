@@ -509,6 +509,11 @@ void Entity::pedestalOrbInit()
 {
 	Entity* parent = uidToEntity(this->parent);
 
+	if ( !parent )
+	{
+		return;
+	}
+
 	if ( !orbInitialised && !parent->pedestalInGround )
 	{
 		x = parent->x;

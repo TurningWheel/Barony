@@ -4379,8 +4379,12 @@ void actParticleSapCenter(Entity* my)
 					// kill old summons.
 					for ( node_t* node = stats[caster->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
-						Entity* follower = uidToEntity(*((Uint32*)(node)->element));
-						if ( follower->monsterAllySummonRank != 0 )
+						Entity* follower = nullptr;
+						if ( (Uint32*)(node)->element )
+						{
+							follower = uidToEntity(*((Uint32*)(node)->element));
+						}
+						if ( follower && follower->monsterAllySummonRank != 0 )
 						{
 							Stat* followerStats = follower->getStats();
 							if ( followerStats && followerStats->HP > 0 )

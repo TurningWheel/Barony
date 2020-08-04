@@ -2446,8 +2446,12 @@ void FollowerRadialMenu::selectNextFollower()
 	int i = 0;
 	for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i)
 	{
-		Entity* follower = uidToEntity(*((Uint32*)node->element));
-		if ( follower == recentEntity )
+		Entity* follower = nullptr;
+		if ( (Uint32*)node->element )
+		{
+			follower = uidToEntity(*((Uint32*)node->element));
+		}
+		if ( follower && follower == recentEntity )
 		{
 			if ( node->next != nullptr )
 			{
@@ -2478,7 +2482,11 @@ void FollowerRadialMenu::selectNextFollower()
 			else
 			{
 				node2 = stats[clientnum]->FOLLOWERS.first; // loop around to first index.
-				follower = uidToEntity(*((Uint32*)(node2)->element));
+				follower = nullptr;
+				if ( (Uint32*)node2->element )
+				{
+					follower = uidToEntity(*((Uint32*)node2->element));
+				}
 				if ( follower )
 				{
 					recentEntity = follower;
@@ -2530,8 +2538,12 @@ void FollowerRadialMenu::updateScrollPartySheet()
 
 	for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
 	{
-		Entity* follower = uidToEntity(*((Uint32*)node->element));
-		if ( follower == recentEntity )
+		Entity* follower = nullptr;
+		if ( (Uint32*)node->element )
+		{
+			follower = uidToEntity(*((Uint32*)node->element));
+		}
+		if ( follower && follower == recentEntity )
 		{
 			if ( monstersToDraw > 1 )
 			{
