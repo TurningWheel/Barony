@@ -6968,10 +6968,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						entity = uidToEntity(*c);
 					}
-					else
-					{
-						entity = nullptr;
-					}
 					Entity* ohitentity = hit.entity;
 					if ( entity )
 					{
