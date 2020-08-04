@@ -1257,7 +1257,11 @@ void drawPartySheet()
 
 		for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
 		{
-			Entity* follower = uidToEntity(*((Uint32*)node->element));
+			Entity* follower = nullptr;
+			if ( (Uint32*)node->element )
+			{
+				follower = uidToEntity(*((Uint32*)node->element));
+			}
 			if ( follower )
 			{
 				Stat* followerStats = follower->getStats();
