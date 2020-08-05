@@ -70,6 +70,7 @@ void closeNetworkInterfaces();
 
 // server/game flags
 extern Uint32 svFlags;
+extern Uint32 settings_svFlags;
 const Uint32 NUM_SERVER_FLAGS =  9;
 const Uint32 SV_FLAG_CHEATS  = 1;
 const Uint32 SV_FLAG_FRIENDLYFIRE = 2;

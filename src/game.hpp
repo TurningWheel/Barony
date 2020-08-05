@@ -82,7 +82,6 @@ extern int assailantTimer[MAXPLAYERS];
 static const int COMBAT_MUSIC_COOLDOWN = 200; // 200 ticks of combat music before it fades away.
 extern list_t removedEntities;
 extern list_t entitiesToDelete[MAXPLAYERS];
-extern bool gamepaused;
 extern char maptoload[256], configtoload[256];
 extern bool loadingmap, loadingconfig;
 extern int startfloor;

@@ -4809,7 +4809,14 @@ void handleMainMenu(bool mode)
 				{
 					strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
 				}
-				if ( svFlags & power(2, i) )
+
+				bool flagEnabled = settings_svFlags & power(2, i);
+				if ( multiplayer == CLIENT )
+				{
+					flagEnabled = svFlags & power(2, i); // clients get the data from the server and don't cache it
+				}
+
+				if ( flagEnabled )
 				{
 					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", flagStringBuffer);
 				}
@@ -5030,28 +5037,7 @@ void handleMainMenu(bool mode)
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 
 							// toggle flag
-							svFlags ^= power(2, i);
-
-							if ( multiplayer == SERVER )
-							{
-								// update client flags
-								strcpy((char*)net_packet->data, "SVFL");
-								SDLNet_Write32(svFlags, &net_packet->data[4]);
-								net_packet->len = 8;
-
-								for ( int c = 1; c < MAXPLAYERS; ++c )
-								{
-									if ( client_disconnected[c] )
-									{
-										continue;
-									}
-									net_packet->address.host = net_clients[c - 1].host;
-									net_packet->address.port = net_clients[c - 1].port;
-									sendPacketSafe(net_sock, -1, net_packet, c - 1);
-									messagePlayer(c, language[276]);
-								}
-								messagePlayer(clientnum, language[276]);
-							}
+							settings_svFlags ^= power(2, i);
 						}
 					}
 				}
@@ -12018,6 +12004,7 @@ void openSettingsWindow()
 	settings_xres = xres;
 	settings_yres = yres;
 	settings_fov = fov;
+	settings_svFlags = svFlags;
 	settings_smoothlighting = smoothlighting;
 	settings_fullscreen = fullscreen;
 	settings_borderless = borderless;
@@ -13898,6 +13885,31 @@ void applySettings()
 	oldYres = yres;
 	xres = settings_xres;
 	yres = settings_yres;
+
+	if ( svFlags != settings_svFlags && multiplayer != CLIENT )
+	{
+		svFlags = settings_svFlags;
+		if ( !intro && multiplayer == SERVER )
+		{
+			// update client flags
+			strcpy((char*)net_packet->data, "SVFL");
+			SDLNet_Write32(svFlags, &net_packet->data[4]);
+			net_packet->len = 8;
+
+			for ( int c = 1; c < MAXPLAYERS; ++c )
+			{
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				messagePlayer(c, language[276]);
+			}
+			messagePlayer(clientnum, language[276]);
+		}
+	}
 
 	minimapTransparencyForeground = settings_minimap_transparency_foreground;
 	minimapTransparencyBackground = settings_minimap_transparency_background;
