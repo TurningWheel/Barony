@@ -269,7 +269,7 @@ void UIToastNotificationManager_t::createPromoNotification()
 		n->setDimensions(d);
 		n->setActionButtonOffsetY(-4);
 		n->setActionButtonOffsetW(-224);
-		n->setIdleSeconds(10);
+		n->setIdleSeconds(120);
 	}
 }
 
