@@ -743,6 +743,7 @@ void LobbyHandler_t::drawLobbyFilters()
 {
 #ifdef USE_EOS
 	button_t* buttonFilterSearch = nullptr;
+	button_t* buttonRefresh = nullptr;
 	for ( node_t* node = button_l.first; node != NULL; node = node->next )
 	{
 		if ( node->element == NULL )
@@ -750,10 +751,16 @@ void LobbyHandler_t::drawLobbyFilters()
 			continue;
 		}
 		button_t* button = (button_t*)node->element;
-		if ( button && !strcmp(button->label, language[3953]) )
+		if ( button )
 		{
-			buttonFilterSearch = button;
-			break;
+			if ( !buttonFilterSearch && !strcmp(button->label, language[3953]) )
+			{
+				buttonFilterSearch = button;
+			}
+			if ( !buttonRefresh && button->action == &buttonSteamLobbyBrowserJoinGame )
+			{
+				buttonRefresh = button;
+			}
 		}
 	}
 
@@ -763,6 +770,10 @@ void LobbyHandler_t::drawLobbyFilters()
 		{
 			buttonFilterSearch->visible = 0;
 			buttonFilterSearch->focused = 0;
+		}
+		if ( buttonRefresh )
+		{
+			buttonRefresh->key = SDL_SCANCODE_RETURN;
 		}
 		return;
 	}
@@ -778,6 +789,10 @@ void LobbyHandler_t::drawLobbyFilters()
 	pos.h = suby2 - pos.y;
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
 
+	if ( buttonRefresh )
+	{
+		buttonRefresh->key = 0;
+	}
 	if ( buttonFilterSearch )
 	{
 		buttonFilterSearch->x = pos.x + 8 + 4;
@@ -786,6 +801,7 @@ void LobbyHandler_t::drawLobbyFilters()
 		buttonFilterSearch->sizey = 20;
 		buttonFilterSearch->visible = 1;
 		buttonFilterSearch->focused = 1;
+		buttonFilterSearch->key = SDL_SCANCODE_RETURN;
 		strcpy(buttonFilterSearch->label, language[3953]);
 		buttonFilterSearch->action = &LobbyHandler.searchLobbyWithFilter;
 	}
