@@ -2741,7 +2741,7 @@ void EOSFuncs::StatGlobal_t::updateQueuedStats()
 	{
 		return;
 	}
-	if ( (ticks - lastUpdateTicks) < TICKS_PER_SECOND * 120 )
+	if ( (ticks - lastUpdateTicks) < TICKS_PER_SECOND * 30 )
 	{
 		return;
 	}
