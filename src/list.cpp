@@ -12,6 +12,7 @@
 #include "main.hpp"
 #include "entity.hpp"
 #include "items.hpp"
+#include "interface/interface.hpp"
 /*-------------------------------------------------------------------------------
 
 	list_FreeAll
@@ -55,10 +56,17 @@ void list_RemoveNode(node_t* node)
 	if ( stats[clientnum] && node->list && node->list == &stats[clientnum]->inventory )
 	{
 		Item* tmp = ((Item*)node->element);
-		if ( tmp == selectedItem )
+		if ( tmp )
 		{
-			selectedItem = nullptr; // important! crashes occur when deleting items you've selected...
-			// printlog("Reset selectedItem");
+			if ( tmp == selectedItem )
+			{
+				selectedItem = nullptr; // important! crashes occur when deleting items you've selected...
+				// printlog("Reset selectedItem");
+			}
+			if ( GenericGUI.isItemUsedForCurrentGUI(*tmp) )
+			{
+				GenericGUI.clearCurrentGUIFromItem(*tmp);
+			}
 		}
 	}
 	if ( node->list && node->list->first )
