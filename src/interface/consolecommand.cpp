@@ -1397,7 +1397,10 @@ void consoleCommand(char* command_str)
 		}
 		else
 		{
-			players[clientnum]->entity->setHP(0);
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				players[clientnum]->entity->setHP(0);
+			}
 		}
 	}
 	else if (!strncmp(command_str, "/segfault", 9))
