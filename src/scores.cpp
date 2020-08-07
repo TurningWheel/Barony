@@ -3862,6 +3862,8 @@ bool findVictory3()
 			return true;
 		}
 	}
+
+	return false;
 }
 
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit)
