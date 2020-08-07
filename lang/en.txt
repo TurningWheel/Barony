@@ -3277,7 +3277,7 @@ last of your magic is drained!#
 2551 ninja#
 2552 monk#
 2553 test#
-2554 blank#
+2554 Take A Chance!#
 2555 blank#
 2556 blank#
 2557 blank#
@@ -3295,8 +3295,9 @@ material goods, but can rely on their excellent fortitude and adaptability.
 Difficulty: Normal#
 2563 A blank.
 Difficulty: Normal#
-2564 A blank.
-Difficulty: Normal#
+2564 Quaff the potions to randomize your stats and skills!
+Toss the dice to test your fate (and starting loadout)!
+Difficulty: Not for the faint of heart...#
 2565 A blank.
 Difficulty: Normal#
 2566 A blank.
@@ -4889,6 +4890,10 @@ Increased Dexterity and movement speed#
 3585 boomerang#
 3586 scroll of conjure arrow#
 3587 scroll#
+3588 elixir of being#
+3589 potion#
+3590 elixir of knowledge#
+3591 potion#
 
 3600 You disarm the %s.#
 3601 The %s is whisked away!#
@@ -5936,4 +5941,11 @@ Changing this gameflag is disabled in current game mode.#
 3992 https://store.steampowered.com/app/1010820/Barony_Myths__Outcasts/#
 3993 https://store.steampowered.com/app/1010821/Barony_Legends__Pariahs/#
 3994 Crossplay search not enabled#
-3999 end#
+
+# ***** Chippie's mods!! 4000-4099??? *****
+
+4000 You feel somewhat different.#
+4001 You start thinking differently.#
+4002 Escape from the Citadel to unlock this class!#
+
+4099 end#

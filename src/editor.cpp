@@ -310,11 +310,15 @@ char* playerClassLangEntry(int classnum, int playernum)
 	{
 		return language[1900 + classnum];
 	}
+	else if ( classnum == CLASS_RANDO)
+	{ 
+		return language[2554];
+	}
 	else if ( classnum >= CLASS_CONJURER )
 	{
 		return language[3223 + classnum - CLASS_CONJURER];
 	}
-	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK )
+	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK || classnum == CLASS_RANDO )
 	{
 		return language[2550 + classnum - CLASS_SEXTON];
 	}

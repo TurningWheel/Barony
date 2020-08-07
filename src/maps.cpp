@@ -5785,23 +5785,7 @@ void mapFoodOnLevel(int player)
 
 int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 {
-	bool foundVictory = false;
-	for ( node_t* node = topscores.first; node != nullptr && !foundVictory; node = node->next )
-	{
-		score_t* score = (score_t*)node->element;
-		if ( score && score->victory == 3 )
-		{
-			foundVictory = true;
-		}
-	}
-	for ( node_t* node = topscoresMultiplayer.first; node != nullptr && !foundVictory; node = node->next )
-	{
-		score_t* score = (score_t*)node->element;
-		if ( score && score->victory == 3 )
-		{
-			foundVictory = true;
-		}
-	}
+	bool foundVictory = findVictory3();
 
 	std::string fullMapName;
 

@@ -2322,6 +2322,38 @@ void initClass(const int player)
 			free(item);
 		}
 	}
+	// a randomized class
+	else if ( client_classes[player] == CLASS_RANDO )
+	{
+		// attributes
+		stats[player]->MAXHP = 1;
+		stats[player]->HP = 1;
+		stats[player]->MAXMP = 1;
+		stats[player]->MP = 1;
+
+		// stats and skills are randomized by the starting "elixir of being" and "elixir of knowledge", respectively.
+
+		//TODO: Give them, like, 9 "dice of fate"
+
+
+		// elixir of stats
+		item = newItem(ELIXIR_STATS, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+
+		// elixir of skills
+		item = newItem(ELIXIR_SKILLS, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+		}
+	}
 
 	stats[player]->OLDHP = stats[player]->HP;
 

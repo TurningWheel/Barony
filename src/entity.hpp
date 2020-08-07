@@ -528,6 +528,9 @@ public:
 
 	void effectTimes();
 	void increaseSkill(int skill, bool notify = true);
+	void serverUpdateClientStats();
+	void serverUpdateClientSkill(int skill);
+	void serverUpdateAllClientSkills();
 
 	Stat* getStats() const;
 
