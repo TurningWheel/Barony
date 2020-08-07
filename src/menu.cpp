@@ -721,7 +721,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	{
 		return VALID_OK_CHARACTER; // aesthetic only option.
 	}
-	if ( characterClass <= CLASS_MONK )
+	if ( characterClass <= CLASS_MONK || characterClass == CLASS_RANDO )
 	{
 		return VALID_OK_CHARACTER;
 	}
@@ -3411,7 +3411,7 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				entriesToDisplay = CLASS_MONK + 1;
+				entriesToDisplay = CLASS_MONK + 2;
 			}
 
 			std::set<int> availableClasses;

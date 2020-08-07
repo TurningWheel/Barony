@@ -96,7 +96,7 @@ extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
-static const int NUMCLASSES = 21;
+static const int NUMCLASSES = 22;
 #define NUMRACES 13
 #define NUMPLAYABLERACES 9
 extern char address[64];
@@ -138,7 +138,8 @@ enum PlayerClasses : int
 	CLASS_MACHINIST,
 	CLASS_PUNISHER,
 	CLASS_SHAMAN,
-	CLASS_HUNTER
+	CLASS_HUNTER,
+	CLASS_RANDO
 };
 
 static const int CLASS_SHAMAN_NUM_STARTING_SPELLS = 15;

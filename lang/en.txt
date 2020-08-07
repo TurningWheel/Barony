@@ -3277,7 +3277,7 @@ last of your magic is drained!#
 2551 ninja#
 2552 monk#
 2553 test#
-2554 blank#
+2554 Take A Chance!#
 2555 blank#
 2556 blank#
 2557 blank#
@@ -3295,8 +3295,9 @@ material goods, but can rely on their excellent fortitude and adaptability.
 Difficulty: Normal#
 2563 A blank.
 Difficulty: Normal#
-2564 A blank.
-Difficulty: Normal#
+2564 Quaff the potions to randomize your stats and skills!
+Toss the dice to test your fate (and starting loadout)!
+Difficulty: Not for the faint of heart...#
 2565 A blank.
 Difficulty: Normal#
 2566 A blank.

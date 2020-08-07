@@ -16901,6 +16901,10 @@ char* playerClassLangEntry(int classnum, int playernum)
 	{
 		return language[1900 + classnum];
 	}
+	else if ( classnum == CLASS_RANDO)
+	{ 
+		return language[2554];
+	}
 	else if ( classnum >= CLASS_CONJURER )
 	{
 		return language[3223 + classnum - CLASS_CONJURER];
@@ -16927,6 +16931,10 @@ char* playerClassDescription(int classnum, int playernum)
 	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
 		return language[10 + classnum];
+	}
+	else if ( classnum == CLASS_RANDO)
+	{ 
+		return language[2564];
 	}
 	else if ( classnum >= CLASS_CONJURER )
 	{
