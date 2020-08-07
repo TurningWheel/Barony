@@ -4828,7 +4828,11 @@ bool playerCanSpawnMoreTinkeringBots(const Stat* const myStats)
 	int numBots = 0;
 	for ( node_t* node = myStats->FOLLOWERS.first; node != nullptr; node = node->next )
 	{
-		Entity* follower = uidToEntity(*static_cast<Uint32*>(node->element));
+		Entity* follower = nullptr;
+		if ( static_cast<Uint32*>(node->element) )
+		{
+			follower = uidToEntity(*static_cast<Uint32*>(node->element));
+		}
 		if ( follower )
 		{
 			Stat* followerStats = follower->getStats();

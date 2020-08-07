@@ -1354,12 +1354,19 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						for ( node_t* node = casterStats->FOLLOWERS.first; node != NULL; node = node->next )
 						{
 							Uint32* c = (Uint32*)node->element;
-							Entity* follower = uidToEntity(*c);
-							if ( Stat* followerStats = follower->getStats() )
+							Entity* follower = nullptr;
+							if ( c )
 							{
-								if ( followerStats->monsterIsCharmed == 1 )
+								follower = uidToEntity(*c);
+							}
+							if ( follower )
+							{
+								if ( Stat* followerStats = follower->getStats() )
 								{
-									++currentCharmedFollowerCount;
+									if ( followerStats->monsterIsCharmed == 1 )
+									{
+										++currentCharmedFollowerCount;
+									}
 								}
 							}
 						}

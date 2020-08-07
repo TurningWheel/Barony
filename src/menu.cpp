@@ -624,6 +624,39 @@ bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
 	{
 		return unlocked;
 	}
+#elif defined USE_EOS
+	if ( enabledDLCPack1 && race == RACE_SKELETON && achievementUnlocked("BARONY_ACH_BONY_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack1 && race == RACE_VAMPIRE && achievementUnlocked("BARONY_ACH_BUCKTOOTH_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack1 && race == RACE_SUCCUBUS && achievementUnlocked("BARONY_ACH_BOMBSHELL_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack1 && race == RACE_GOATMAN && achievementUnlocked("BARONY_ACH_BLEATING_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack2 && race == RACE_AUTOMATON && achievementUnlocked("BARONY_ACH_BOILERPLATE_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack2 && race == RACE_INCUBUS && achievementUnlocked("BARONY_ACH_BAD_BOY_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack2 && race == RACE_GOBLIN && achievementUnlocked("BARONY_ACH_BAYOU_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack2 && race == RACE_INSECTOID && achievementUnlocked("BARONY_ACH_BUGGAR_BARON") )
+	{
+		return true;
+	}
 #else
 	return false;
 #endif // STEAMWORKS
@@ -15139,8 +15172,40 @@ void buttonLoadSingleplayerGame(button_t* button)
 	{
 		directConnect = false;
 #if defined(USE_EOS) || defined(STEAMWORKS)
-		if ( mul == SERVER )
+		if ( mul == SERVERCROSSPLAY )
 		{
+			// if steamworks, the hosting type can change if crossplay is enabled or not.
+#ifdef STEAMWORKS
+			LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#ifdef USE_EOS
+			if ( LobbyHandler.crossplayEnabled )
+			{
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			}
+#endif
+#elif defined USE_EOS
+			// if just eos, then force hosting settings to default.
+			LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+#endif
+			buttonHostMultiplayer(button);
+		}
+		else if ( mul == SERVER )
+		{
+			if ( getSaveGameVersionNum(true) <= 335 )
+			{
+				// legacy support for steam ver not remembering if crossplay or not. no action. 
+				// starting with v3.3.6, (mul == SERVERCROSSPLAY) detects from the savefile.
+			}
+			else
+			{
+#ifdef STEAMWORKS
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#endif
+			}
 			buttonHostMultiplayer(button);
 		}
 		else if ( mul == CLIENT )
@@ -15232,8 +15297,40 @@ void buttonLoadMultiplayerGame(button_t* button)
 	{
 		directConnect = false;
 #if defined(USE_EOS) || defined(STEAMWORKS)
-		if ( mul == SERVER )
+		if ( mul == SERVERCROSSPLAY )
 		{
+			// if steamworks, the hosting type can change if crossplay is enabled or not.
+#ifdef STEAMWORKS
+			LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#ifdef USE_EOS
+			if ( LobbyHandler.crossplayEnabled )
+			{
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			}
+#endif
+#elif defined USE_EOS
+			// if just eos, then force hosting settings to default.
+			LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+#endif
+			buttonHostMultiplayer(button);
+		}
+		else if ( mul == SERVER )
+		{
+			if ( getSaveGameVersionNum(false) <= 335 )
+			{
+				// legacy support for steam ver not remembering if crossplay or not. no action. 
+				// starting with v3.3.6, (mul == SERVERCROSSPLAY) detects from the savefile.
+			}
+			else
+			{
+#ifdef STEAMWORKS
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#endif
+			}
 			buttonHostMultiplayer(button);
 		}
 		else if ( mul == CLIENT )

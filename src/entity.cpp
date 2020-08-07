@@ -4147,7 +4147,11 @@ void Entity::handleEffects(Stat* myStats)
 			for ( node_t* node = myStats->FOLLOWERS.first; node != nullptr; node = node->next )
 			{
 				Uint32* c = (Uint32*)node->element;
-				Entity* mySummon = uidToEntity(*c);
+				Entity* mySummon = nullptr;
+				if ( c )
+				{
+					mySummon = uidToEntity(*c);
+				}
 				if ( mySummon && mySummon->monsterAllySummonRank != 0 )
 				{
 					Stat* mySummonStats = mySummon->getStats();
@@ -5825,7 +5829,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 {
 	Stat* hitstats = nullptr;
 	Stat* myStats = nullptr;
-	Entity* entity = nullptr;
 	int player, playerhit = -1;
 	double dist;
 	int c, i;
@@ -6374,6 +6377,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 				}
+				Entity* entity = nullptr;
 				if ( myStats->weapon->type == SLING )
 				{
 					entity = newEntity(78, 1, map.entities, nullptr); // rock
@@ -6399,6 +6403,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					entity = newEntity(166, 1, map.entities, nullptr); // arrow
 					playSoundEntity(this, 239 + rand() % 3, 96);
+				}
+				if ( !entity )
+				{
+					return;
 				}
 				entity->parent = uid;
 				entity->x = x;
@@ -6486,6 +6494,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					playSoundEntity(this, 75, 64);
 				}
+				Entity* entity = nullptr;
 				if ( drankPotion )
 				{
 					Item* emptyBottle = newItem(POTION_EMPTY, myStats->weapon->status, myStats->weapon->beatitude, 1, myStats->weapon->appearance, myStats->weapon->appearance, nullptr);
@@ -6908,7 +6917,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Entity* ohitentity = hit.entity;
 						for ( node = map.creatures->first; node != nullptr && alertTarget; node = node->next ) //Only searching for monsters, so don't iterate full map.entities.
 						{
-							entity = (Entity*)node->element;
+							Entity* entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
 							{
 								Stat* buddystats = entity->getStats();
@@ -6954,7 +6963,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 				for ( node = hitstats->FOLLOWERS.first; node != nullptr && alertAllies; node = node->next )
 				{
 					Uint32* c = (Uint32*)node->element;
-					entity = uidToEntity(*c);
+					Entity* entity = nullptr;
+					if ( c )
+					{
+						entity = uidToEntity(*c);
+					}
 					Entity* ohitentity = hit.entity;
 					if ( entity )
 					{
@@ -9692,7 +9705,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								i = 8 + rand() % 4;
 								for ( c = 0; c < i; c++ )
 								{
-									entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
+									Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
 									entity->flags[INVISIBLE] = true;
 									entity->flags[UPDATENEEDED] = true;
 									entity->x = hit.mapx * 16 + 4 + rand() % 8;
@@ -10441,10 +10454,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					int numFollowers = list_Size(&stats[this->skill[2]]->FOLLOWERS);
 					for ( node = stats[this->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
-						Entity* follower = uidToEntity(*((Uint32*)node->element));
-						if ( entityDist(this, follower) < shareRange && follower != src )
+						Entity* follower = nullptr;
+						if ( (Uint32*)node->element )
 						{
-							if ( follower && follower->monsterIsTinkeringCreation() )
+							follower = uidToEntity(*((Uint32*)node->element));
+						}
+						if ( follower && entityDist(this, follower) < shareRange && follower != src )
+						{
+							if ( follower->monsterIsTinkeringCreation() )
 							{
 								--numFollowers; // tinkering creation don't penalise XP.
 								continue;

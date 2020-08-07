@@ -80,7 +80,10 @@ void startTradingServer(Entity* entity, int player)
 		shopinventorycategory = 7;
 		sellitem = NULL;
 		Entity* entity = uidToEntity(shopkeeper);
-		shopkeepertype = entity->monsterStoreType;
+		if ( entity )
+		{
+			shopkeepertype = entity->monsterStoreType;
+		}
 		shopkeepername = stats->name;
 		shopitemscroll = 0;
 

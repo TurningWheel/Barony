@@ -869,7 +869,7 @@ void actThrown(Entity* my)
 								if ( parentStats && parentStats->EFFECTS[EFF_DRUNK] )
 								{
 									steamAchievementEntity(parent, "BARONY_ACH_CHEERS");
-									if ( hit.entity->behavior == &actMonster && parent->behavior == &actPlayer )
+									if ( hit.entity->behavior == &actMonster && parent && parent->behavior == &actPlayer )
 									{
 										if ( parentStats->type == GOATMAN
 											&& (hitstats->type == HUMAN || hitstats->type == GOBLIN)
@@ -1055,7 +1055,7 @@ void actThrown(Entity* my)
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( hit.entity->behavior == &actMonster )
 								{
-									if ( parent->behavior == &actPlayer )
+									if ( parent && parent->behavior == &actPlayer )
 									{
 										if ( !strcmp(hitstats->name, "") )
 										{
@@ -1090,7 +1090,7 @@ void actThrown(Entity* my)
 					}
 					if ( THROWN_BOUNCES >= 3 && hitstats->HP <= 0 )
 					{
-						if ( parent->checkEnemy(hit.entity) )
+						if ( parent && parent->checkEnemy(hit.entity) )
 						{
 							steamAchievementEntity(parent, "BARONY_ACH_SEE_THAT");
 						}

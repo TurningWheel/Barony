@@ -295,6 +295,7 @@ int getSaveGameType(bool singleplayer, int saveIndex = savegameCurrentFileIndex)
 int getSaveGameClientnum(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+int getSaveGameVersionNum(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 int getSavegameVersion(char checkstr[64]); // returns -1 on invalid version, otherwise converts to 3 digit int
 void setDefaultPlayerConducts(); // init values for foodless, penniless etc.
 void updatePlayerConductsInMainLoop(); // check and update conduct flags throughout game that don't require a specific action. (tracking gold, server flags etc...)

@@ -2698,37 +2698,40 @@ void clientHandlePacket()
 	{
 		Entity* tmp = uidToEntity(SDLNet_Read32(&net_packet->data[6]));
 		int sfx = SDLNet_Read16(&net_packet->data[4]);
-		if ( tmp->behavior == &actPlayer && mute_player_monster_sounds )
+		if ( tmp )
 		{
-			switch ( sfx )
+			if ( tmp->behavior == &actPlayer && mute_player_monster_sounds )
 			{
-				case 95:
-				case 70:
-				case 322:
-				case 323:
-				case 324:
-				case 329:
-				case 332:
-				case 333:
-				case 291:
-				case 292:
-				case 293:
-				case 294:
-				case 60:
-				case 61:
-				case 62:
-				case 257:
-				case 258:
-				case 276:
-				case 277:
-				case 278:
-					// return early, don't play monster noises from players.
-					return;
-				default:
-					break;
+				switch ( sfx )
+				{
+					case 95:
+					case 70:
+					case 322:
+					case 323:
+					case 324:
+					case 329:
+					case 332:
+					case 333:
+					case 291:
+					case 292:
+					case 293:
+					case 294:
+					case 60:
+					case 61:
+					case 62:
+					case 257:
+					case 258:
+					case 276:
+					case 277:
+					case 278:
+						// return early, don't play monster noises from players.
+						return;
+					default:
+						break;
+				}
 			}
+			playSoundEntityLocal(tmp, sfx, SDLNet_Read16(&net_packet->data[10]));
 		}
-		playSoundEntityLocal(tmp, sfx, SDLNet_Read16(&net_packet->data[10]));
 		return;
 	}
 
@@ -3629,17 +3632,20 @@ void clientHandlePacket()
 		node->size = sizeof(Uint32);
 
 		Entity* monster = uidToEntity(*uidnum);
-		if ( !monster->clientsHaveItsStats )
+		if ( monster )
 		{
-			monster->giveClientStats();
-		}
-		if ( monster->clientStats )
-		{
-			strcpy(monster->clientStats->name, (char*)&net_packet->data[8]);
-		}
-		if ( !FollowerMenu.recentEntity )
-		{
-			FollowerMenu.recentEntity = monster;
+			if ( !monster->clientsHaveItsStats )
+			{
+				monster->giveClientStats();
+			}
+			if ( monster->clientStats )
+			{
+				strcpy(monster->clientStats->name, (char*)&net_packet->data[8]);
+			}
+			if ( !FollowerMenu.recentEntity )
+			{
+				FollowerMenu.recentEntity = monster;
+			}
 		}
 		return;
 	}
@@ -3652,7 +3658,7 @@ void clientHandlePacket()
 		{
 			for ( node_t* allyNode = stats[clientnum]->FOLLOWERS.first; allyNode != nullptr; allyNode = allyNode->next )
 			{
-				if ( *((Uint32*)allyNode->element) == uidnum )
+				if ( (Uint32*)allyNode->element && *((Uint32*)allyNode->element) == uidnum )
 				{
 					if ( FollowerMenu.recentEntity && (FollowerMenu.recentEntity->getUID() == 0
 						|| FollowerMenu.recentEntity->getUID() == uidnum) )

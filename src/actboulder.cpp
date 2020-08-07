@@ -256,7 +256,11 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 							for ( node_t* node = stats->FOLLOWERS.first; node != nullptr; node = node->next )
 							{
 								Uint32* c = (Uint32*)node->element;
-								Entity* mySummon = uidToEntity(*c);
+								Entity* mySummon = nullptr;
+								if ( c )
+								{
+									mySummon = uidToEntity(*c);
+								}
 								if ( mySummon && mySummon->monsterAllySummonRank != 0 )
 								{
 									Stat* mySummonStats = mySummon->getStats();

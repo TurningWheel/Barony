@@ -786,7 +786,11 @@ void gameLogic(void)
 					}
 					for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
-						Entity* follower = uidToEntity(*((Uint32*)node->element));
+						Entity* follower = nullptr;
+						if ( (Uint32*)node->element )
+						{
+							follower = uidToEntity(*((Uint32*)node->element));
+						}
 						if ( follower )
 						{
 							Stat* followerStats = follower->getStats();
@@ -1105,7 +1109,11 @@ void gameLogic(void)
 						node_t* node;
 						for ( node = stats[c]->FOLLOWERS.first; bCopyFollowers && node != nullptr; node = node->next )
 						{
-							Entity* follower = uidToEntity(*((Uint32*)node->element));
+							Entity* follower = nullptr;
+							if ( (Uint32*)node->element )
+							{
+								follower = uidToEntity(*((Uint32*)node->element));
+							}
 							if ( follower )
 							{
 								Stat* followerStats = follower->getStats();
