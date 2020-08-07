@@ -3506,7 +3506,13 @@ void handleMainMenu(bool mode)
 							tooltip.x = omousex + 16;
 							tooltip.y = omousey + 16;
 							tooltip.h = TTF12_HEIGHT + 8;
-							if ( classToPick > CLASS_MONK )
+							if ( classToPick == CLASS_RANDO )
+							{
+								int langline = 4002;
+								tooltip.w = longestline(language[langline]) * TTF12_WIDTH + 8;
+								drawLockedTooltip = langline;
+							}
+							else if ( classToPick > CLASS_MONK )
 							{
 								int langline = 3927 + classToPick - CLASS_CONJURER;
 								tooltip.w = longestline(language[langline]) * TTF12_WIDTH + 8;

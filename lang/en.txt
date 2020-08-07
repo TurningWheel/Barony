@@ -5946,5 +5946,6 @@ Changing this gameflag is disabled in current game mode.#
 
 4000 You feel somewhat different.#
 4001 You start thinking differently.#
+4002 Escape from the Citadel to unlock this class!#
 
 4099 end#
