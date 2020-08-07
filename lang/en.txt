@@ -4889,10 +4889,10 @@ Increased Dexterity and movement speed#
 3585 boomerang#
 3586 scroll of conjure arrow#
 3587 scroll#
-3588 potion#
-3589 elixir of being#
-3590 potion#
-3591 elixir of knowledge#
+3588 elixir of being#
+3589 potion#
+3590 elixir of knowledge#
+3591 potion#
 
 3600 You disarm the %s.#
 3601 The %s is whisked away!#
