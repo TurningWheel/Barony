@@ -665,6 +665,18 @@ bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
 
 int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 {
+	if ( characterClass == CLASS_RANDO )
+	{
+		if ( victory == 3 ) //Gotta beat the game to have fun!
+		{
+			return VALID_OK_CHARACTER;
+		}
+		else
+		{
+			return INVALID_REQUIRE_ACHIEVEMENT;
+		}
+	}
+
 	switch ( characterClass )
 	{
 		case CLASS_CONJURER:
@@ -721,7 +733,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	{
 		return VALID_OK_CHARACTER; // aesthetic only option.
 	}
-	if ( characterClass <= CLASS_MONK || characterClass == CLASS_RANDO )
+	if ( characterClass <= CLASS_MONK )
 	{
 		return VALID_OK_CHARACTER;
 	}
