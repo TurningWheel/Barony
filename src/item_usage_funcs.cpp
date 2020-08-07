@@ -5073,7 +5073,8 @@ bool item_ElixirSkills(Item*& item, Entity* entity, Entity* usedBy, bool shouldC
 	//Loop over all proficiencies and randomize them a bit.
 	for (unsigned skill = 0; skill < NUMPROFICIENCIES; ++skill)
 	{
-		stats->PROFICIENCIES[skill] = std::min(100, (stats->PROFICIENCIES[skill] + 10*rand()%5)); //TODO: Maybe some better distribution than completely even 0, 10, 20, 30, 40?
+		stats->PROFICIENCIES[skill] = std::min(100, (stats->PROFICIENCIES[skill] + 10*(rand()%5))); //TODO: Maybe some better distribution than completely even 0, 10, 20, 30, 40?
+		messagePlayer(player, "Set skill[%d] to %d.", skill, stats->PROFICIENCIES[skill]);
 	}
 
 	if (player >= 0 && multiplayer == SERVER)
