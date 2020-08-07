@@ -1684,9 +1684,31 @@ void Entity::increaseSkill(int skill, bool notify)
 	}
 
 
+	if ( player > 0 && multiplayer == SERVER )
+	{
+		// update SKILL
+		serverUpdateClientSkill(skill);
+
+		serverUpdateClientStats();
+	}
+}
+
+void Entity::serverUpdateClientSkill(int skill)
+{
+	int player = -1;
+	if ( this->behavior == &actPlayer )
+	{
+		player = this->skill[2];
+	}
 
 	if ( player > 0 && multiplayer == SERVER )
 	{
+		Stat* myStats = this->getStats();
+		if (!myStats)
+		{
+			return;
+		}
+
 		// update SKILL
 		strcpy((char*)net_packet->data, "SKIL");
 		net_packet->data[4] = clientnum;
@@ -1696,6 +1718,33 @@ void Entity::increaseSkill(int skill, bool notify)
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 7;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
+void Entity::serverUpdateAllClientSkills()
+{
+	//Loop over all proficiencies and send the server the latest value...
+	for (unsigned skill = 0; skill < NUMPROFICIENCIES; ++skill)
+	{
+		serverUpdateClientSkill(skill);
+	}
+}
+
+void Entity::serverUpdateClientStats()
+{
+	int player = -1;
+	if ( this->behavior == &actPlayer )
+	{
+		player = this->skill[2];
+	}
+
+	if ( player > 0 && multiplayer == SERVER )
+	{
+		Stat* myStats = this->getStats();
+		if (!myStats)
+		{
+			return;
+		}
 
 		// update EXP
 		strcpy((char*)net_packet->data, "ATTR");
@@ -6464,7 +6513,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				|| itemIsThrowableTinkerTool(myStats->weapon) )
 			{
 				bool drankPotion = false;
-				if ( behavior == &actMonster && myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
+				if ( behavior == &actMonster && myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION ) //TODO: Should goatmen chug elixirs of skill/stat? Maybe one of the NPCs...
 				{
 					//Goatmen chug potions & then toss them at you.
 					if ( myStats->weapon->type == POTION_BOOZE && !myStats->EFFECTS[EFF_DRUNK] )

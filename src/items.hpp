@@ -542,8 +542,8 @@ void item_FoodTin(Item*& item, int player);
 void item_FoodAutomaton(Item*& item, int player);
 void item_Gem(Item* item, int player);
 void item_Spellbook(Item*& item, int player);
-void item_ElixirStats(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
-void item_ElixirSkills(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
+bool item_ElixirStats(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
+bool item_ElixirSkills(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
 
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);

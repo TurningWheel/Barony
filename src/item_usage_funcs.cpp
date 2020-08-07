@@ -4963,6 +4963,7 @@ bool item_ElixirStats(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	{
 		player = entity->skill[2];
 	}
+
 	stats = entity->getStats();
 	if ( !stats )
 	{
@@ -4994,21 +4995,105 @@ bool item_ElixirStats(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 		return true;
 	}
 
-	//TODO: Update all the stats.
-
 	//TODO: Set each stat to something random... ////Set or add/sub??
-	stat->STR = (rand()%5) - 2;
+	stats->STR += (rand()%5) - 2;
+	stats->DEX += (rand()%5) - 2;
+	stats->CON += (rand()%5) - 2;
+	stats->INT += (rand()%5) - 2;
+	stats->PER += (rand()%5) - 2;
+	stats->CHR += (rand()%5) - 2;
 	//updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_ALL); //TODO: <-- Do this...?
+	if (player >= 0 && multiplayer == SERVER)
+	{
+		entity->serverUpdateClientStats();
+	}
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	playSoundEntity(entity, 168, 128);
+	playSoundEntity(entity, 251, 64);
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 
-	messagePlayerColor(player, color, language[773]); //TODO: Update language!
+	messagePlayerColor(player, color, language[4000]);
+	if (shouldConsumeItem)
+	{
+		consumeItem(item, player);
+	}
 
-	consumeItem(item, player);
+	return true;
+}
+
+bool item_ElixirSkills(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
+{
+	if (!entity)
+	{
+		return false;
+	}
+
+	int player = -1;
+	Stat* stats;
+
+	if ( entity->behavior == &actPlayer )
+	{
+		player = entity->skill[2];
+	}
+
+	stats = entity->getStats();
+	if ( !stats )
+	{
+		return false;
+	}
+
+	if ( stats->amulet != nullptr )
+	{
+		if ( stats->amulet->type == AMULET_STRANGULATION )
+		{
+			if ( player == clientnum )
+			{
+				messagePlayer(player, language[750]);
+			}
+			return false;
+		}
+	}
+	if ( stats->EFFECTS[EFF_VOMITING] )
+	{
+		if ( player == clientnum )
+		{
+			messagePlayer(player, language[751]);
+		}
+		return false;
+	}
+	if ( multiplayer == CLIENT )
+	{
+		consumeItem(item, player);
+		return true;
+	}
+
+	//Loop over all proficiencies and randomize them a bit.
+	for (unsigned skill = 0; skill < NUMPROFICIENCIES; ++skill)
+	{
+		stats->PROFICIENCIES[skill] = std::min(100, (stats->PROFICIENCIES[skill] + 10*rand()%5)); //TODO: Maybe some better distribution than completely even 0, 10, 20, 30, 40?
+	}
+
+	if (player >= 0 && multiplayer == SERVER)
+	{
+		entity->serverUpdateAllClientSkills();
+	}
+
+	// play drink sound
+	playSoundEntity(entity, 52, 64);
+	playSoundEntity(entity, 168, 128);
+	playSoundEntity(entity, 251, 64);
+	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+
+	messagePlayerColor(player, color, language[4001]);
+	if (shouldConsumeItem)
+	{
+		consumeItem(item, player);
+	}
+
 	return true;
 }
 

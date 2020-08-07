@@ -2215,6 +2215,12 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case POTION_STRENGTH:
 			drankPotion = item_PotionStrength(item, players[player]->entity, usedBy);
 			break;
+		case ELIXIR_STATS:
+			drankPotion = item_ElixirStats(item, players[player]->entity, usedBy);
+			break;
+		case ELIXIR_SKILLS:
+			drankPotion = item_ElixirSkills(item, players[player]->entity, usedBy);
+			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);
 			break;

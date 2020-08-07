@@ -1013,6 +1013,14 @@ void actThrown(Entity* my)
 								item_PotionParalysis(item, hit.entity, parent);
 								usedpotion = true;
 								break;
+							case ELIXIR_STATS:
+								item_ElixirStats(item, hit.entity, parent);
+								usedpotion = true;
+								break;
+							case ELIXIR_SKILLS:
+								item_ElixirSkills(item, hit.entity, parent);
+								usedpotion = true;
+								break;
 							case FOOD_CREAMPIE:
 							{
 								skipMessage = true;
