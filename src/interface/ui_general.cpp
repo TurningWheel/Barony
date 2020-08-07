@@ -11,6 +11,7 @@
 
 
 #include "ui.hpp"
+#include "../scores.hpp"
 #ifdef WINDOWS
 #include <shellapi.h>
 #endif
@@ -206,6 +207,7 @@ void communityLinkAction()
 void promoLinkAction()
 {
 	openURLTryWithOverlay("https://www.kickstarter.com/projects/turningwheel/barony-for-the-nintendo-switch", true);
+	achievementObserver.updateGlobalStat(STEAM_GSTAT_PROMO_INTERACT);
 }
 
 void UIToastNotificationManager_t::createCommunityNotification()
@@ -269,7 +271,7 @@ void UIToastNotificationManager_t::createPromoNotification()
 		n->setDimensions(d);
 		n->setActionButtonOffsetY(-4);
 		n->setActionButtonOffsetW(-224);
-		n->setIdleSeconds(10);
+		n->setIdleSeconds(120);
 	}
 }
 

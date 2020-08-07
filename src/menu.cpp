@@ -46,6 +46,7 @@
 #include "mod_tools.hpp"
 #include "interface/ui.hpp"
 #include "lobbies.hpp"
+#include <sstream>
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -4809,7 +4810,14 @@ void handleMainMenu(bool mode)
 				{
 					strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
 				}
-				if ( svFlags & power(2, i) )
+
+				bool flagEnabled = settings_svFlags & power(2, i);
+				if ( multiplayer == CLIENT )
+				{
+					flagEnabled = svFlags & power(2, i); // clients get the data from the server and don't cache it
+				}
+
+				if ( flagEnabled )
 				{
 					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", flagStringBuffer);
 				}
@@ -5030,28 +5038,7 @@ void handleMainMenu(bool mode)
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 
 							// toggle flag
-							svFlags ^= power(2, i);
-
-							if ( multiplayer == SERVER )
-							{
-								// update client flags
-								strcpy((char*)net_packet->data, "SVFL");
-								SDLNet_Write32(svFlags, &net_packet->data[4]);
-								net_packet->len = 8;
-
-								for ( int c = 1; c < MAXPLAYERS; ++c )
-								{
-									if ( client_disconnected[c] )
-									{
-										continue;
-									}
-									net_packet->address.host = net_clients[c - 1].host;
-									net_packet->address.port = net_clients[c - 1].port;
-									sendPacketSafe(net_sock, -1, net_packet, c - 1);
-									messagePlayer(c, language[276]);
-								}
-								messagePlayer(clientnum, language[276]);
-							}
+							settings_svFlags ^= power(2, i);
 						}
 					}
 				}
@@ -6230,10 +6217,19 @@ void handleMainMenu(bool mode)
 				}
 
 				// player disconnect
-				else if (!strncmp((char*)net_packet->data, "PLAYERDISCONNECT", 16))
+				else if (!strncmp((char*)net_packet->data, "PLAYERDISCONNECT", 16) || !strncmp((char*)net_packet->data, "KICK", 4) )
 				{
-					client_disconnected[net_packet->data[16]] = true;
-					if ( net_packet->data[16] == 0 )
+					int playerDisconnected = 0;
+					if ( !strncmp((char*)net_packet->data, "KICK", 4) )
+					{
+						playerDisconnected = clientnum;
+					}
+					else
+					{
+						playerDisconnected = net_packet->data[16];
+						client_disconnected[playerDisconnected] = true;
+					}
+					if ( playerDisconnected == clientnum || net_packet->data[16] == 0 )
 					{
 						// close lobby window
 						buttonCloseSubwindow(NULL);
@@ -6253,7 +6249,15 @@ void handleMainMenu(bool mode)
 						subx2 = xres / 2 + 256;
 						suby1 = yres / 2 - 40;
 						suby2 = yres / 2 + 40;
-						strcpy(subtext, language[1126]);
+
+						if ( playerDisconnected == clientnum )
+						{
+							strcpy(subtext, language[1127]);
+						}
+						else
+						{
+							strcpy(subtext, language[1126]);
+						}
 
 						// close button
 						button = newButton();
@@ -6916,6 +6920,47 @@ void handleMainMenu(bool mode)
 			{
 				newString(&lobbyChatboxMessages, 0xFFFFFFFF, msg);  // servers print their messages right away
 			}
+
+			int playerToKick = -1;
+			bool skipMessageRelayToClients = false;
+			if ( multiplayer == SERVER )
+			{
+				std::string chatboxStr = lobbyChatbox;
+				if ( (chatboxStr.size() > strlen("/kick ")) 
+					&& chatboxStr.find("/kick ") != std::string::npos && chatboxStr.find("/kick ") == size_t(0U) )
+				{
+					// find player num to kick
+					chatboxStr = chatboxStr.substr(chatboxStr.find("/kick ") + strlen("/kick "));
+					std::istringstream(chatboxStr) >> playerToKick;
+					playerToKick -= 1;
+					if ( playerToKick > 0 && playerToKick < MAXPLAYERS )
+					{
+						char kickMsg[LOBBY_CHATBOX_LENGTH + 32] = { 0 };
+						if ( !client_disconnected[playerToKick] )
+						{
+							char clientShortName[32] = { 0 };
+							strncpy(clientShortName, stats[playerToKick]->name, 22);
+							snprintf(kickMsg, LOBBY_CHATBOX_LENGTH, language[279], playerToKick + 1, clientShortName);
+							newString(&lobbyChatboxMessages, 0xFFFFFFFF, kickMsg);  // servers print their messages right away
+
+							strcpy(msg, kickMsg);
+						}
+						else
+						{
+							newString(&lobbyChatboxMessages, 0xFFFFFFFF, "***   Invalid player to kick   ***");
+							skipMessageRelayToClients = true;
+							playerToKick = -1;
+						}
+					}
+					else
+					{
+						newString(&lobbyChatboxMessages, 0xFFFFFFFF, "***   Invalid player to kick   ***");
+						skipMessageRelayToClients = true;
+						playerToKick = -1;
+					}
+				}
+			}
+
 			strcpy(lobbyChatbox, "");
 
 			// send the message
@@ -6931,16 +6976,52 @@ void handleMainMenu(bool mode)
 			}
 			else if ( multiplayer == SERVER )
 			{
-				int i;
-				for ( i = 1; i < MAXPLAYERS; i++ )
+				for ( int i = 1; i < MAXPLAYERS; i++ )
 				{
 					if ( client_disconnected[i] )
+					{
+						continue;
+					}
+					if ( playerToKick == i )
+					{
+						continue;
+					}
+					if ( skipMessageRelayToClients )
 					{
 						continue;
 					}
 					net_packet->address.host = net_clients[i - 1].host;
 					net_packet->address.port = net_clients[i - 1].port;
 					sendPacketSafe(net_sock, -1, net_packet, i - 1);
+				}
+
+				if ( playerToKick > 0 )
+				{
+					// send message to kicked player
+					strcpy((char*)net_packet->data, "KICK");
+					net_packet->address.host = net_clients[playerToKick - 1].host;
+					net_packet->address.port = net_clients[playerToKick - 1].port;
+					net_packet->len = 4;
+					sendPacketSafe(net_sock, -1, net_packet, playerToKick - 1);
+
+					client_disconnected[playerToKick] = true;
+					// notify everyone else.
+					for ( int i = 1; i < MAXPLAYERS; i++ )
+					{
+						if ( client_disconnected[i] )
+						{
+							continue;
+						}
+						strncpy((char*)(net_packet->data), "PLAYERDISCONNECT", 16);
+						net_packet->data[16] = playerToKick;
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 17;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+					char shortname[32] = { 0 };
+					strncpy(shortname, stats[playerToKick]->name, 22);
+					newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
 				}
 			}
 		}
@@ -12018,6 +12099,7 @@ void openSettingsWindow()
 	settings_xres = xres;
 	settings_yres = yres;
 	settings_fov = fov;
+	settings_svFlags = svFlags;
 	settings_smoothlighting = smoothlighting;
 	settings_fullscreen = fullscreen;
 	settings_borderless = borderless;
@@ -13898,6 +13980,31 @@ void applySettings()
 	oldYres = yres;
 	xres = settings_xres;
 	yres = settings_yres;
+
+	if ( svFlags != settings_svFlags && multiplayer != CLIENT )
+	{
+		svFlags = settings_svFlags;
+		if ( !intro && multiplayer == SERVER )
+		{
+			// update client flags
+			strcpy((char*)net_packet->data, "SVFL");
+			SDLNet_Write32(svFlags, &net_packet->data[4]);
+			net_packet->len = 8;
+
+			for ( int c = 1; c < MAXPLAYERS; ++c )
+			{
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				messagePlayer(c, language[276]);
+			}
+			messagePlayer(clientnum, language[276]);
+		}
+	}
 
 	minimapTransparencyForeground = settings_minimap_transparency_foreground;
 	minimapTransparencyBackground = settings_minimap_transparency_background;

@@ -1877,12 +1877,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							bool magicTrapReapplySleep = true;
 
-							if ( parent && parent->behavior == &actMagicTrap )
+							if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
 							{
 								if ( hitstats && hitstats->EFFECTS[EFF_ASLEEP] )
 								{
 									// check to see if we're reapplying the sleep effect.
-									if ( rand() % 4 - resistance <= 0 )
+									int preventSleepRoll = rand() % 4 - resistance;
+									if ( hit.entity->behavior == &actPlayer || (preventSleepRoll <= 0) )
 									{
 										magicTrapReapplySleep = false;
 										//messagePlayer(0, "Target already asleep!");

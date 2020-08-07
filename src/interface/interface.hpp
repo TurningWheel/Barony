@@ -482,6 +482,29 @@ public:
 		}
 		return (node->list == &scribingTotalItems);
 	};
+	inline bool isItemUsedForCurrentGUI(const Item& item)
+	{
+		if ( &item == scribingToolItem || &item == tinkeringKitItem || &item == alembicItem )
+		{
+			return true;
+		}
+		return false;
+	}
+	inline void clearCurrentGUIFromItem(const Item& item)
+	{
+		if ( &item == scribingToolItem )
+		{
+			scribingToolItem = nullptr;
+		}
+		if ( &item == tinkeringKitItem )
+		{
+			tinkeringKitItem = nullptr;
+		}
+		if ( &item == alembicItem )
+		{
+			alembicItem = nullptr;
+		}
+	}
 	bool isNodeFromPlayerInventory(node_t* node);
 };
 extern GenericGUIMenu GenericGUI;

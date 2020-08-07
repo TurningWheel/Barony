@@ -62,7 +62,7 @@ void AchievementObserver::updateGlobalStat(int index, int value) {}
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages; // dummy variable for files.cpp system resource reloading in Barony.
 void initMenuOptions() {}; // dummy
 int textInsertCaratPosition = -1;
-
+GenericGUIMenu GenericGUI;
 Item* selectedItem = nullptr; //Because it won't compile without this.
 
 map_t copymap;

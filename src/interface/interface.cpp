@@ -32,6 +32,7 @@
 #include "../lobbies.hpp"
 
 Uint32 svFlags = 30;
+Uint32 settings_svFlags = svFlags;
 SDL_Surface* backdrop_minotaur_bmp = nullptr;
 SDL_Surface* backdrop_blessed_bmp = nullptr;
 SDL_Surface* backdrop_cursed_bmp = nullptr;
