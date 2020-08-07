@@ -4998,10 +4998,16 @@ bool item_ElixirStats(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	//TODO: Set each stat to something random... ////Set or add/sub??
 	stats->STR += (rand()%5) - 2;
 	stats->DEX += (rand()%5) - 2;
-	stats->CON += (rand()%5) - 2;
-	stats->INT += (rand()%5) - 2;
+	int amountCon = (rand()%5) - 2;
+	stats->CON += amountCon;
+	int amountInt = (rand()%5) - 2;
+	stats->INT += amountInt;
 	stats->PER += (rand()%5) - 2;
 	stats->CHR += (rand()%5) - 2;
+	stats->MAXHP += std::max(10, (amountCon + 2) * 10);
+	stats->HP = stats->MAXHP;
+	stats->MAXMP += std::max(10, (amountInt + 2) * 10);
+	stats->MP = stats->MAXMP;
 	//updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_ALL); //TODO: <-- Do this...?
 	if (player >= 0 && multiplayer == SERVER)
 	{
