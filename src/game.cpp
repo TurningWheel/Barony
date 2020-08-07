@@ -4827,9 +4827,15 @@ int main(int argc, char** argv)
 		deinitGame();
 		return deinitApp();
 	}
+	catch (const std::exception &exc)
+	{
+		// catch anything thrown within try block that derives from std::exception
+		std::cerr << "UNHANDLED EXCEPTION CAUGHT: " << exc.what() << "\n";
+	}
 	catch (...)
 	{
 		//TODO:
+		std::cerr << "UNKNOWN EXCEPTION CAUGHT!\n";
 		return 1;
 	}
 }
