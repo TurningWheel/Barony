@@ -31,6 +31,7 @@
 list_t topscores;
 list_t topscoresMultiplayer;
 int victory = false;
+int actualScoreVictory = 0;
 Uint32 completionTime = 0;
 bool conductPenniless = true;
 bool conductFoodless = true;
@@ -1005,6 +1006,7 @@ void loadAllScores(const std::string& scoresfilename)
 		fread(&score->classnum, sizeof(Sint32), 1, fp);
 		fread(&score->dungeonlevel, sizeof(Sint32), 1, fp);
 		fread(&score->victory, sizeof(int), 1, fp);
+		actualScoreVictory = std::max(actualScoreVictory, score->victory);
 		fread(&score->stats->HP, sizeof(Sint32), 1, fp);
 		fread(&score->stats->MAXHP, sizeof(Sint32), 1, fp);
 		fread(&score->stats->MP, sizeof(Sint32), 1, fp);
@@ -3840,6 +3842,26 @@ bool anySaveFileExists()
 		}
 	}
 	return false;
+}
+
+bool findVictory3()
+{
+	for ( node_t* node = topscores.first; node != nullptr; node = node->next )
+	{
+		score_t* score = (score_t*)node->element;
+		if ( score && score->victory == 3 )
+		{
+			return true;
+		}
+	}
+	for ( node_t* node = topscoresMultiplayer.first; node != nullptr; node = node->next )
+	{
+		score_t* score = (score_t*)node->element;
+		if ( score && score->victory == 3 )
+		{
+			return true;
+		}
+	}
 }
 
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit)

@@ -249,6 +249,7 @@ typedef struct score_t
 extern list_t topscores;
 extern list_t topscoresMultiplayer;
 extern int victory;
+extern int actualScoreVictory; //This variable is loaded from scores.dat and not changed...it indicates the victory type achieved. The regular victory variable is also loaded from scores.dat, but its value can get overwritten later.
 
 extern Uint32 completionTime;
 extern bool conductPenniless;
@@ -289,6 +290,7 @@ list_t* loadGameFollowers(int saveIndex = savegameCurrentFileIndex);
 int deleteSaveGame(int gametype, int saveIndex = savegameCurrentFileIndex);
 bool saveGameExists(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 bool anySaveFileExists();
+bool findVictory3();
 
 char* getSaveGameName(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 int getSaveGameType(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
