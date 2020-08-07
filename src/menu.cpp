@@ -667,7 +667,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 {
 	if ( characterClass == CLASS_RANDO )
 	{
-		if ( victory == 3 ) //Gotta beat the game to have fun!
+		if ( actualScoreVictory == 3 ) //Gotta beat the game to have fun!
 		{
 			return VALID_OK_CHARACTER;
 		}
