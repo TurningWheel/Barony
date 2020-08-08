@@ -1862,12 +1862,12 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 	}
 
-	/*ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+	ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
 	AttrData.Key = "MAXPLAYERS";
 	AttrData.Value.AsInt64 = MAXPLAYERS;
 	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_INT64;
 	resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
-*/
+
 	if ( !LobbySearchResults.showLobbiesInProgress )
 	{
 		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
