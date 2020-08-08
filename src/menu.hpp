@@ -163,6 +163,7 @@ extern int settings_tab;
 extern int connect_window;
 extern bool lobby_window;
 extern int score_window;
+extern Uint32 lobbyWindowSvFlags;
 
 // gamemods window stuff
 extern int gamemods_window;

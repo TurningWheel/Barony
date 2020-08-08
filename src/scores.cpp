@@ -2071,7 +2071,14 @@ int loadGame(int player, int saveIndex)
 	if ( versionNumber >= 335 )
 	{
 		gameModeManager.currentSession.saveServerFlags();
-		fread(&svFlags, sizeof(Uint32), 1, fp);
+		if ( multiplayer == CLIENT )
+		{
+			fread(&lobbyWindowSvFlags, sizeof(Uint32), 1, fp);
+		}
+		else
+		{
+			fread(&svFlags, sizeof(Uint32), 1, fp);
+		}
 		printlog("[SESSION]: Using savegame server flags");
 	}
 

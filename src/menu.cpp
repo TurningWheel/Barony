@@ -77,6 +77,7 @@ int loadGameSaveShowRectangle = 0; // stores the current amount of savegames ava
 int singleplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists. 
 int multiplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists.
 int raceSelect = 0;
+Uint32 lobbyWindowSvFlags = 0;
 /*
  * settings_tab
  * valid values:
@@ -6187,7 +6188,7 @@ void handleMainMenu(bool mode)
 				// game start
 				if (!strncmp((char*)net_packet->data, "BARONY_GAME_START", 17))
 				{
-					svFlags = SDLNet_Read32(&net_packet->data[17]);
+					lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[17]);
 					uniqueGameKey = SDLNet_Read32(&net_packet->data[21]);
 					buttonCloseSubwindow(NULL);
 					numplayers = MAXPLAYERS;
@@ -6339,7 +6340,7 @@ void handleMainMenu(bool mode)
 				// update svFlags
 				else if (!strncmp((char*)net_packet->data, "SVFL", 4))
 				{
-					svFlags = SDLNet_Read32(&net_packet->data[4]);
+					lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
 					continue;
 				}
 
@@ -6665,7 +6666,14 @@ void handleMainMenu(bool mode)
 			{
 				strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
 			}
-			if ( svFlags & power(2, i) )
+
+			Uint32 displayedSvFlags = svFlags;
+			if ( multiplayer == CLIENT )
+			{
+				displayedSvFlags = lobbyWindowSvFlags;
+			}
+
+			if ( displayedSvFlags & power(2, i) )
 			{
 				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[x] %s", flagStringBuffer);
 			}
@@ -9361,7 +9369,12 @@ void handleMainMenu(bool mode)
 			gameplayCustomManager.readFromFile();
 			textSourceScript.scriptVariables.clear();
 
-			if ( !loadingsavegame && bWasOnMainMenu )
+			if ( multiplayer == CLIENT )
+			{
+				gameModeManager.currentSession.saveServerFlags();
+				svFlags = lobbyWindowSvFlags;
+			}
+			else if ( !loadingsavegame && bWasOnMainMenu )
 			{
 				gameModeManager.currentSession.saveServerFlags();
 			}
