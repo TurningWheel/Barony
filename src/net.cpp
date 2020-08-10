@@ -115,6 +115,28 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 Uint32 packetnum = 0;
 int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 {
+	if ( !directConnect )
+	{
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		{
+#ifdef STEAMWORKS
+			if ( !steamIDRemote[hostnum] )
+			{
+				return 0;
+			}
+#endif
+		}
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			if ( !EOS.P2PConnectionInfo.getPeerIdFromIndex(hostnum) )
+			{
+				return 0;
+			}
+#endif
+		}
+	}
+
 	packetsend_t* packetsend = (packetsend_t*) malloc(sizeof(packetsend_t));
 	if (!(packetsend->packet = SDLNet_AllocPacket(NET_PACKET_SIZE)))
 	{
