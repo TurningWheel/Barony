@@ -242,7 +242,7 @@ void actItem(Entity* my)
 		{
 			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my))
 			{
-				if (inrange[i])
+				if ( inrange[i] && players[i] && players[i]->entity )
 				{
 					bool trySalvage = false;
 					if ( static_cast<Uint32>(my->itemAutoSalvageByPlayer) == players[i]->entity->getUID() )
@@ -250,17 +250,14 @@ void actItem(Entity* my)
 						trySalvage = true;
 						my->itemAutoSalvageByPlayer = 0; // clear interact flag.
 					}
-					if ( !trySalvage && players[i] != nullptr && players[i]->entity != nullptr)
+					if ( !trySalvage )
 					{
 						playSoundEntity( players[i]->entity, 35 + rand() % 3, 64 );
 					}
 					Item* item2 = newItemFromEntity(my);
-					if ( players[i] && players[i]->entity )
+					if ( my->itemStolen == 1 && item2 && (static_cast<Uint32>(item2->ownerUid) == players[i]->entity->getUID()) )
 					{
-						if ( my->itemStolen == 1 && item2 && (static_cast<Uint32>(item2->ownerUid) == players[i]->entity->getUID()) )
-						{
-							steamAchievementClient(i, "BARONY_ACH_REPOSSESSION");
-						}
+						steamAchievementClient(i, "BARONY_ACH_REPOSSESSION");
 					}
 					//messagePlayer(i, "old owner: %d", item2->ownerUid);
 					if (item2)
@@ -279,15 +276,7 @@ void actItem(Entity* my)
 
 							if ( salvaged )
 							{
-								if ( players[i] != nullptr && players[i]->entity != nullptr )
-								{
-									//playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
-								}
 								free(item2);
-								/*if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
-								{
-									GenericGUI.tinkeringKitDegradeOnUse(i);
-								}*/
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
 								return;
