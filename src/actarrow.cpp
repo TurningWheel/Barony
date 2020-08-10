@@ -565,13 +565,16 @@ void actArrow(Entity* my)
 							}
 							else
 							{
-								strcpy((char*)net_packet->data, "SHAK");
-								net_packet->data[4] = 10; // turns into .1
-								net_packet->data[5] = 10;
-								net_packet->address.host = net_clients[hit.entity->skill[2] - 1].host;
-								net_packet->address.port = net_clients[hit.entity->skill[2] - 1].port;
-								net_packet->len = 6;
-								sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
+								if ( hit.entity->skill[2] > 0 )
+								{
+									strcpy((char*)net_packet->data, "SHAK");
+									net_packet->data[4] = 10; // turns into .1
+									net_packet->data[5] = 10;
+									net_packet->address.host = net_clients[hit.entity->skill[2] - 1].host;
+									net_packet->address.port = net_clients[hit.entity->skill[2] - 1].port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
+								}
 							}
 						}
 						if ( rand() % 10 == 0 && parent )
@@ -591,13 +594,16 @@ void actArrow(Entity* my)
 							}
 							else
 							{
-								strcpy((char*)net_packet->data, "SHAK");
-								net_packet->data[4] = 5; // turns into .05
-								net_packet->data[5] = 5;
-								net_packet->address.host = net_clients[hit.entity->skill[2] - 1].host;
-								net_packet->address.port = net_clients[hit.entity->skill[2] - 1].port;
-								net_packet->len = 6;
-								sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
+								if ( hit.entity->skill[2] > 0 )
+								{
+									strcpy((char*)net_packet->data, "SHAK");
+									net_packet->data[4] = 5; // turns into .05
+									net_packet->data[5] = 5;
+									net_packet->address.host = net_clients[hit.entity->skill[2] - 1].host;
+									net_packet->address.port = net_clients[hit.entity->skill[2] - 1].port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
+								}
 							}
 						}
 					}

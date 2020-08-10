@@ -109,8 +109,7 @@ void consoleCommand(char* command_str)
 				SDLNet_Write32(svFlags, &net_packet->data[4]);
 				net_packet->len = 8;
 
-				int c;
-				for ( c = 1; c < MAXPLAYERS; c++ )
+				for ( int c = 1; c < MAXPLAYERS; c++ )
 				{
 					if ( client_disconnected[c] )
 					{

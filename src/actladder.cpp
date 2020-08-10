@@ -465,7 +465,7 @@ void actWinningPortal(Entity* my)
 				victory = my->portalVictoryType;
 				if ( multiplayer == SERVER )
 				{
-					for ( c = 0; c < MAXPLAYERS; c++ )
+					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
 						if ( client_disconnected[c] == true )
 						{
@@ -605,7 +605,7 @@ void Entity::actExpansionEndGamePortal()
 				victory = portalVictoryType;
 				if ( multiplayer == SERVER )
 				{
-					for ( c = 0; c < MAXPLAYERS; c++ )
+					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
 						if ( client_disconnected[c] == true )
 						{
@@ -786,7 +786,7 @@ void Entity::actMidGamePortal()
 
 				if ( multiplayer == SERVER )
 				{
-					for ( c = 0; c < MAXPLAYERS; c++ )
+					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
 						if ( client_disconnected[c] == true )
 						{

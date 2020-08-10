@@ -138,13 +138,16 @@ void actSpearTrap(Entity* my)
 									}
 									else
 									{
-										strcpy((char*)net_packet->data, "SHAK");
-										net_packet->data[4] = 10; // turns into .1
-										net_packet->data[5] = 10;
-										net_packet->address.host = net_clients[entity->skill[2] - 1].host;
-										net_packet->address.port = net_clients[entity->skill[2] - 1].port;
-										net_packet->len = 6;
-										sendPacketSafe(net_sock, -1, net_packet, entity->skill[2] - 1);
+										if ( entity->skill[2] > 0 )
+										{
+											strcpy((char*)net_packet->data, "SHAK");
+											net_packet->data[4] = 10; // turns into .1
+											net_packet->data[5] = 10;
+											net_packet->address.host = net_clients[entity->skill[2] - 1].host;
+											net_packet->address.port = net_clients[entity->skill[2] - 1].port;
+											net_packet->len = 6;
+											sendPacketSafe(net_sock, -1, net_packet, entity->skill[2] - 1);
+										}
 									}
 								}
 								playSoundEntity(entity, 28, 64);

@@ -271,7 +271,7 @@ void messagePlayerColor(int player, Uint32 color, char* message, ...)
 			addMessage(color, str);
 		}
 	}
-	else if ( multiplayer == SERVER )
+	else if ( multiplayer == SERVER && player > 0 )
 	{
 		strcpy((char*)net_packet->data, "MSGS");
 		SDLNet_Write32(color, &net_packet->data[4]);
@@ -380,6 +380,10 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 		return;
 	}
 	if ( client_disconnected[c] == true )
+	{
+		return;
+	}
+	if ( c <= 0 )
 	{
 		return;
 	}
@@ -858,7 +862,7 @@ void serverUpdateEffects(int player)
 	{
 		return;
 	}
-	if ( player < 0 || player >= MAXPLAYERS )
+	if ( player <= 0 || player >= MAXPLAYERS )
 	{
 		return;
 	}
@@ -910,7 +914,7 @@ void serverUpdateHunger(int player)
 	{
 		return;
 	}
-	if ( player < 0 || player >= MAXPLAYERS )
+	if ( player <= 0 || player >= MAXPLAYERS )
 	{
 		return;
 	}
@@ -1123,7 +1127,7 @@ void serverUpdatePlayerLVL()
 
 void serverRemoveClientFollower(int player, Uint32 uidToRemove)
 {
-	if ( multiplayer != SERVER || player == 0 )
+	if ( multiplayer != SERVER || player <= 0 )
 	{
 		return;
 	}
@@ -1141,7 +1145,7 @@ void serverRemoveClientFollower(int player, Uint32 uidToRemove)
 
 void serverSendItemToPickupAndEquip(int player, Item* item)
 {
-	if ( multiplayer != SERVER || player == 0 )
+	if ( multiplayer != SERVER || player <= 0 )
 	{
 		return;
 	}
@@ -1166,7 +1170,7 @@ void serverSendItemToPickupAndEquip(int player, Item* item)
 
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type)
 {
-	if ( multiplayer != SERVER || player == 0 )
+	if ( multiplayer != SERVER || player <= 0 )
 	{
 		return;
 	}
@@ -1192,7 +1196,7 @@ void serverUpdatePlayerSummonStrength(int player)
 	{
 		return;
 	}
-	if ( player < 0 || player > MAXPLAYERS )
+	if ( player <= 0 || player > MAXPLAYERS )
 	{
 		return;
 	}
@@ -1216,6 +1220,10 @@ void serverUpdatePlayerSummonStrength(int player)
 void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool guarantee)
 {
 	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	if ( player <= 0 )
 	{
 		return;
 	}
@@ -4421,6 +4429,10 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "PING", 4))
 	{
 		j = net_packet->data[4];
+		if ( j <= 0 )
+		{
+			return;
+		}
 		if ( client_disconnected[j] )
 		{
 			return;
@@ -4455,6 +4467,10 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "ENTE", 4))
 	{
 		int x = net_packet->data[4];
+		if ( x <= 0 )
+		{
+			return;
+		}
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
@@ -4475,6 +4491,10 @@ void serverHandlePacket()
 	else if ( !strncmp((char*)net_packet->data, "ITMU", 4) )
 	{
 		int x = net_packet->data[4];
+		if ( x <= 0 )
+		{
+			return;
+		}
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
@@ -4547,13 +4567,16 @@ void serverHandlePacket()
 			// player encountered obstacle on path
 			// stop updating position on server side and send client corrected position
 			j = net_packet->data[4];
-			strcpy((char*)net_packet->data, "PMOV");
-			SDLNet_Write16((Sint16)(players[j]->entity->x * 32), &net_packet->data[4]);
-			SDLNet_Write16((Sint16)(players[j]->entity->y * 32), &net_packet->data[6]);
-			net_packet->address.host = net_clients[j - 1].host;
-			net_packet->address.port = net_clients[j - 1].port;
-			net_packet->len = 8;
-			sendPacket(net_sock, -1, net_packet, j - 1);
+			if ( j > 0 )
+			{
+				strcpy((char*)net_packet->data, "PMOV");
+				SDLNet_Write16((Sint16)(players[j]->entity->x * 32), &net_packet->data[4]);
+				SDLNet_Write16((Sint16)(players[j]->entity->y * 32), &net_packet->data[6]);
+				net_packet->address.host = net_clients[j - 1].host;
+				net_packet->address.port = net_clients[j - 1].port;
+				net_packet->len = 8;
+				sendPacket(net_sock, -1, net_packet, j - 1);
+			}
 		}
 
 		// clipMove sent any corrections to the client, now let's save the updated coordinates.
@@ -5614,8 +5637,11 @@ bool handleSafePacket()
 			}
 			else
 			{
-				net_packet->address.host = net_clients[j - 1].host;
-				net_packet->address.port = net_clients[j - 1].port;
+				if ( j > 0 )
+				{
+					net_packet->address.host = net_clients[j - 1].host;
+					net_packet->address.port = net_clients[j - 1].port;
+				}
 			}
 			c = net_packet->len;
 			net_packet->len = 9;
@@ -5625,7 +5651,10 @@ bool handleSafePacket()
 			}
 			else
 			{
-				sendPacket(net_sock, -1, net_packet, j - 1);
+				if ( j > 0 )
+				{
+					sendPacket(net_sock, -1, net_packet, j - 1);
+				}
 			}
 			net_packet->len = c - 9;
 			Uint8 bytedata[NET_PACKET_SIZE];
