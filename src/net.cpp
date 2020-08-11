@@ -115,6 +115,12 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 Uint32 packetnum = 0;
 int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 {
+	if ( hostnum < 0 )
+	{
+		printlog("[NET]: Error - attempt to send to negative hostnum: %d", hostnum);
+		return 0;
+	}
+
 	if ( !directConnect )
 	{
 		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
