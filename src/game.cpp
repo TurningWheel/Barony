@@ -428,6 +428,7 @@ void gameLogic(void)
 			nextnode = node->next;
 
 			packetsend_t* packet = (packetsend_t*)node->element;
+			//printlog("Packet resend: %d", packet->hostnum);
 			sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum, true);
 			packet->tries++;
 			if ( packet->tries >= MAXTRIES )
@@ -1690,7 +1691,7 @@ void gameLogic(void)
 			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
 			int backpack_sizey = 3;
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
-				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? stats[clientnum]->cloak->beatitude <= 0 : stats[clientnum]->cloak->beatitude >= 0) )
+				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
 			{
 				backpack_sizey = 4;
 			}
@@ -2266,7 +2267,7 @@ void gameLogic(void)
 			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
 			int backpack_sizey = 3;
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
-				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? stats[clientnum]->cloak->beatitude <= 0 : stats[clientnum]->cloak->beatitude >= 0) )
+				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
 			{
 				backpack_sizey = 4;
 			}
