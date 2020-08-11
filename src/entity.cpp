@@ -17442,7 +17442,7 @@ int Entity::getMagicResistance()
 
 void Entity::setHardcoreStats(Stat& stats)
 {
-	if ( (svFlags & SV_FLAG_HARDCORE) )
+	if ( (svFlags & SV_FLAG_HARDCORE) && stats.MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] == 0 )
 	{
 		// spice up some stats...
 		int statIncrease = ((abs(stats.HP) / 20 + 1) * 20); // each 20 HP add 20 random HP
@@ -17467,7 +17467,7 @@ void Entity::setHardcoreStats(Stat& stats)
 
 		int lvlIncrease = rand() % 4;
 		lvlIncrease = std::max(0, lvlIncrease - 1);
-		stats.LVL += (lvlIncrease - 1); // increase by 1 or 2 50%, else stay same.
+		stats.LVL += std::max(0, lvlIncrease - 1); // increase by 1 or 2 50%, else stay same.
 	}
 	//messagePlayer(0, "Set stats to: ");
 	//messagePlayer(0, "MAXHP: %d", stats.MAXHP);

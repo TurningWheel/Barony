@@ -1840,7 +1840,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent, 
 		summonedStats->RANDOM_CHR = 0;
 		summonedStats->RANDOM_LVL = 0;
 		summonedStats->RANDOM_GOLD = 0;
-
+		summonedStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 		summonedStats->leader_uid = targetStats->leader_uid;
 		if ( summonedStats->leader_uid != 0 && summonedStats->type != SHADOW )
 		{
