@@ -3669,13 +3669,16 @@ void actPlayer(Entity* my)
 							}
 							node_t* nextnode;
 
-							if ( multiplayer == SINGLE )
+							if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
 							{
-								deleteSaveGame(multiplayer); // stops save scumming c:
-							}
-							else
-							{
-								deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+								if ( multiplayer == SINGLE )
+								{
+									deleteSaveGame(multiplayer); // stops save scumming c:
+								}
+								else
+								{
+									deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+								}
 							}
 
 							closeBookGUI();
