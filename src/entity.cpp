@@ -884,7 +884,7 @@ void Entity::effectTimes()
 				temp = node->next;
 			}
 			spell->magic_effects_node = NULL; //To prevent recursive removal, which results in a crash.
-			if ( player > -1 && multiplayer == SERVER )
+			if ( player > 0 && multiplayer == SERVER )
 			{
 				strcpy((char*)net_packet->data, "UNCH");
 				net_packet->data[4] = player;
@@ -1040,7 +1040,7 @@ void Entity::effectTimes()
 		if ( unsustain )
 		{
 			// the node has been removed, tell the client to unsustain in their list.
-			if ( player > -1 && multiplayer == SERVER )
+			if ( player > 0 && multiplayer == SERVER )
 			{
 				strcpy((char*)net_packet->data, "UNCH");
 				net_packet->data[4] = player;
@@ -1520,7 +1520,7 @@ void Entity::effectTimes()
 		if ( unsustainSpell )
 		{
 			// we need to tell the client to un-sustain from their list.
-			if ( player > -1 && multiplayer == SERVER )
+			if ( player > 0 && multiplayer == SERVER )
 			{
 				strcpy((char*)net_packet->data, "UNCH");
 				net_packet->data[4] = player;
@@ -9738,7 +9738,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// send wall destroy info to clients
 								if ( multiplayer == SERVER )
 								{
-									for ( c = 0; c < MAXPLAYERS; c++ )
+									for ( c = 1; c < MAXPLAYERS; c++ )
 									{
 										if ( client_disconnected[c] == true )
 										{
@@ -17442,7 +17442,7 @@ int Entity::getMagicResistance()
 
 void Entity::setHardcoreStats(Stat& stats)
 {
-	if ( (svFlags & SV_FLAG_HARDCORE) )
+	if ( (svFlags & SV_FLAG_HARDCORE) && stats.MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] == 0 )
 	{
 		// spice up some stats...
 		int statIncrease = ((abs(stats.HP) / 20 + 1) * 20); // each 20 HP add 20 random HP
@@ -17467,7 +17467,7 @@ void Entity::setHardcoreStats(Stat& stats)
 
 		int lvlIncrease = rand() % 4;
 		lvlIncrease = std::max(0, lvlIncrease - 1);
-		stats.LVL += (lvlIncrease - 1); // increase by 1 or 2 50%, else stay same.
+		stats.LVL += std::max(0, lvlIncrease - 1); // increase by 1 or 2 50%, else stay same.
 	}
 	//messagePlayer(0, "Set stats to: ");
 	//messagePlayer(0, "MAXHP: %d", stats.MAXHP);

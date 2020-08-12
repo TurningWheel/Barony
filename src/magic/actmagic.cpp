@@ -140,7 +140,7 @@ void actMagiclightBall(Entity* my)
 				player = i;
 			}
 		}
-		if (player > -1 && multiplayer == SERVER)
+		if (player > 0 && multiplayer == SERVER)
 		{
 			strcpy( (char*)net_packet->data, "UNCH");
 			net_packet->data[4] = player;
@@ -183,7 +183,7 @@ void actMagiclightBall(Entity* my)
 								player = i;
 							}
 						}
-						if (player > -1 && multiplayer == SERVER)
+						if (player > 0 && multiplayer == SERVER)
 						{
 							strcpy( (char*)net_packet->data, "UNCH");
 							net_packet->data[4] = player;

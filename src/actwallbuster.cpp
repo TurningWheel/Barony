@@ -46,7 +46,7 @@ void actWallBuster(Entity* my)
 		spawnExplosion(my->x, my->y, my->z - 8);
 		if ( multiplayer == SERVER )
 		{
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
 				if ( client_disconnected[c] == true )
 				{
@@ -130,7 +130,7 @@ void actWallBuilder(Entity* my)
 		map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] = map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height];
 		if ( multiplayer == SERVER )
 		{
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
 				if ( client_disconnected[c] == true )
 				{

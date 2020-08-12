@@ -518,8 +518,7 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 			SDLNet_Write32(entity->getUID(), &net_packet->data[16]);
 			net_packet->len = 20;
 
-			int c;
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( int c = 1; c < MAXPLAYERS; c++ )
 			{
 				if ( client_disconnected[c] )
 				{
@@ -5856,7 +5855,7 @@ timeToGoAgain:
 					{
 						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 					}
-					else
+					else if ( player > 0 )
 					{
 						// inform client of abandonment
 						strcpy((char*)net_packet->data, "SHPC");

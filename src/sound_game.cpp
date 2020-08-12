@@ -60,7 +60,7 @@ FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol)
 	}
 	else if ( multiplayer == SERVER )
 	{
-		if ( client_disconnected[player] )
+		if ( client_disconnected[player] || player <= 0 )
 		{
 			return NULL;
 		}
@@ -840,7 +840,7 @@ OPENAL_SOUND* playSoundPlayer(int player, Uint32 snd, int vol)
 	}
 	else if ( multiplayer == SERVER )
 	{
-		if ( client_disconnected[player] )
+		if ( client_disconnected[player] || player <= 0 )
 		{
 			return NULL;
 		}
@@ -1573,7 +1573,7 @@ void* playSoundPlayer(int player, Uint32 snd, int vol)
 	}
 	else if ( multiplayer == SERVER )
 	{
-		if ( client_disconnected[player] )
+		if ( client_disconnected[player] || player <= 0 )
 		{
 			return NULL;
 		}

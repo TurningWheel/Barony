@@ -2689,13 +2689,16 @@ void actPlayer(Entity* my)
 						}
 						else if ( PLAYER_NUM != clientnum && multiplayer == SERVER )
 						{
-							strcpy((char*)net_packet->data, "SHAK");
-							net_packet->data[4] = 10; // turns into .1
-							net_packet->data[5] = 10;
-							net_packet->address.host = net_clients[PLAYER_NUM - 1].host;
-							net_packet->address.port = net_clients[PLAYER_NUM - 1].port;
-							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, PLAYER_NUM - 1);
+							if ( PLAYER_NUM > 0 )
+							{
+								strcpy((char*)net_packet->data, "SHAK");
+								net_packet->data[4] = 10; // turns into .1
+								net_packet->data[5] = 10;
+								net_packet->address.host = net_clients[PLAYER_NUM - 1].host;
+								net_packet->address.port = net_clients[PLAYER_NUM - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, PLAYER_NUM - 1);
+							}
 						}
 					}
 					else

@@ -4167,9 +4167,9 @@ Can appraise worthless glass:                %3s   #
 Player movement speed in water/lava:  %3.1f%% 
 #
 3260 
-Maximum followers (via [%-7s] recruiting):  %2.0f   
-Bonus movement speed for followers:       +%2.0f DEX
-Charm Monster spell base chance:             %3.0f%%
+Maximum followers (via [%-11s] recruiting):  %2.0f   
+Bonus movement speed for followers:           +%2.0f DEX
+Charm Monster spell base chance:                 %3.0f%%
 Available follower commands shown on NPC menu [%s]#
 3261 
 MP Regeneration base time:         1 MP / %1.1fs 

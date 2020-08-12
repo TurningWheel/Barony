@@ -1170,7 +1170,7 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 			}
 		}
 
-		if (multiplayer == SERVER)
+		if ( multiplayer == SERVER && player > 0 )
 		{
 			strcpy((char*)net_packet->data, "UPHP");
 			SDLNet_Write32((Uint32)stats[player]->HP, &net_packet->data[4]);

@@ -50,7 +50,7 @@ std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
 
 void startTradingServer(Entity* entity, int player)
 {
-	if (!entity)
+	if (!entity || player < 0)
 	{
 		return;
 	}
