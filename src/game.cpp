@@ -41,6 +41,8 @@
 #include "interface/ui.hpp"
 #include <limits>
 
+#include "UnicodeDecoder.h"
+
 #ifdef LINUX
 //Sigsegv catching stuff.
 #include <signal.h>
@@ -2689,16 +2691,43 @@ void handleEvents(void)
 				}
 				if ( SDL_IsTextInputActive() )
 				{
+					const size_t length = strlen(inputstr);
+
 #ifdef APPLE
-					if ( (event.key.keysym.sym == SDLK_DELETE || event.key.keysym.sym == SDLK_BACKSPACE) && strlen(inputstr) > 0 )
+					if ( (event.key.keysym.sym == SDLK_DELETE || event.key.keysym.sym == SDLK_BACKSPACE) && length > 0 )
 					{
-						inputstr[strlen(inputstr) - 1] = 0;
+						size_t utfOffset = 1;
+
+						if ( length > 1 )
+						{
+							const uint32_t result = UTFD::ValidateUTF8Character(inputstr[length - 1]);
+
+							if ( result > UTFD::UTF8_REJECT )
+							{
+								++utfOffset;
+							}
+						}
+
+						inputstr[length - utfOffset] = '\0';
 						cursorflash = ticks;
 					}
 #else
-					if ( event.key.keysym.sym == SDLK_BACKSPACE && strlen(inputstr) > 0 )
+
+					if ( event.key.keysym.sym == SDLK_BACKSPACE && length > 0 )
 					{
-						inputstr[strlen(inputstr) - 1] = 0;
+						size_t utfOffset = 1;
+
+						if ( length > 1 )
+						{
+							const uint32_t result = UTFD::ValidateUTF8Character(inputstr[length - 1]);
+
+							if ( result > UTFD::UTF8_REJECT )
+							{
+								++utfOffset;
+							}
+						}
+
+						inputstr[length - utfOffset] = '\0';
 						cursorflash = ticks;
 					}
 #endif
