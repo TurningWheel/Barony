@@ -2406,11 +2406,6 @@ void handleMainMenu(bool mode)
 			loadGameSaveShowRectangle = 0;
 		}
 
-#ifdef USE_EOS
-		EOS.AccountManager.handleLogin();
-		EOS.CrossplayAccountManager.handleLogin();
-#endif // USE_EOS
-
 		LobbyHandler.drawLobbyFilters();
 
 		// process button actions

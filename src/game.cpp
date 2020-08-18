@@ -3500,6 +3500,8 @@ int main(int argc, char** argv)
 			EOS_Platform_Tick(EOS.PlatformHandle);
 			EOS_Platform_Tick(EOS.ServerPlatformHandle);
 			EOS.StatGlobalManager.updateQueuedStats();
+			EOS.AccountManager.handleLogin();
+			EOS.CrossplayAccountManager.handleLogin();
 #endif // USE_EOS
 
 			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
