@@ -5953,7 +5953,7 @@ bool GenericGUIMenu::isNodeFromPlayerInventory(node_t* node)
 		return (node->list == &stats[clientnum]->inventory);
 	}
 	return false;
-};
+}
 
 bool GenericGUIMenu::isItemSalvageable(const Item* item, int player)
 {
