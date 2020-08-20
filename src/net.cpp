@@ -4745,7 +4745,12 @@ void serverHandlePacket()
 		client_keepalive[pnum] = ticks;
 		Uint32 color = SDLNet_Read32(&net_packet->data[5]);
 
-		strncpy(tempstr, stats[pnum]->name, std::min<size_t>(strlen(stats[pnum]->name), 10)); //TODO: Why are size_t and int being compared?
+		// strncpy() does not copy N bytes if a terminating null is encountered first
+		// see http://www.cplusplus.com/reference/cstring/strncpy/
+		// see https://en.cppreference.com/w/c/string/byte/strncpy
+		// GCC throws a warning (intended) when the length argument to strncpy() in
+		// any way depends on strlen(src) to discourage this (and related) construct(s).
+		strncpy(tempstr, stats[pnum]->name, 10);
 		tempstr[std::min<size_t>(strlen(stats[pnum]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
 		strcat(tempstr, ": ");
 		strcat(tempstr, (char*)(&net_packet->data[9]));
