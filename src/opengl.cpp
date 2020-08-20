@@ -594,7 +594,12 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		return;
 	}
 
-	strncpy(textToRetrieve, text.c_str(), std::min(static_cast<int>(strlen(text.c_str())), 22));
+	// strncpy() does not copy N bytes if a terminating null is encountered first
+	// see http://www.cplusplus.com/reference/cstring/strncpy/
+	// see https://en.cppreference.com/w/c/string/byte/strncpy
+	// GCC throws a warning (intended) when the length argument to strncpy()
+	// in any way depends on strlen(src) to discourage this (and related) construct(s).
+	strncpy(textToRetrieve, text.c_str(), 22);
 	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 22)] = '\0';
 	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
 	{
