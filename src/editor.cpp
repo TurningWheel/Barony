@@ -4709,7 +4709,11 @@ int main(int argc, char** argv)
 									else
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-										char tmpStr[32] = "";
+										// 32 is WAY TOO SMALL for this, wtf?
+										// spriteProperties is a string table, each entry 128 bytes long
+										// " Tiles to power in facing direction" = 35 bytes
+										// do not forget the null terminator
+										char tmpStr[128 + 35 + 1] = "";
 										strcpy(tmpStr, spriteProperties[i]); //reset
 										strcat(tmpStr, " Tiles to power in facing direction");
 										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
