@@ -304,7 +304,7 @@ char playerSpawnPropertyNames[1][35] =
 	"Spawn Facing Direction (-1 - 7)"
 };
 
-char* playerClassLangEntry(int classnum, int playernum)
+const char* playerClassLangEntry(int classnum, int playernum)
 {
 	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
