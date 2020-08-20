@@ -43,7 +43,7 @@ bool autoLimbReload = false;
 
 -------------------------------------------------------------------------------*/
 
-void consoleCommand(char* command_str)
+void consoleCommand(char const * const command_str)
 {
 	node_t* node;
 	Entity* entity;
@@ -1711,8 +1711,10 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{
-		command_str[8] = 0;
-		loadLanguage(command_str + 6);
+		char *lang = strdup(command_str);
+		lang[8] = 0;
+		loadLanguage(lang + 6);
+		free(lang);
 	}
 	else if ( !strncmp(command_str, "/mapseed", 8) )
 	{

@@ -1072,23 +1072,20 @@ int loadDefaultConfig()
 
 -------------------------------------------------------------------------------*/
 
-int saveConfig(char* filename)
+int saveConfig(char const * const _filename)
 {
 	char path[PATH_MAX];
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 	FILE* fp;
 	int c;
-	bool mallocd = false;
+	char *filename = strdup(_filename);
 
 	printlog("Saving config '%s'...\n", filename);
 
 	if ( strstr(filename, ".cfg") == NULL )
 	{
-		char* filename2 = filename;
-		filename = (char*) malloc(sizeof(char) * 256);
-		strcpy(filename, filename2);
-		mallocd = true;
+		filename = (char*) realloc(filename, sizeof(char) * (strlen(filename) + 5));
 		strcat(filename, ".cfg");
 	}
 
@@ -1359,10 +1356,7 @@ int saveConfig(char* filename)
 	}
 
 	fclose(fp);
-	if ( mallocd )
-	{
-		free(filename);
-	}
+	free(filename);
 	return 0;
 }
 
