@@ -532,7 +532,7 @@ extern SDL_GLContext renderer;
 extern SDL_Surface* mainsurface;
 extern SDL_Event event;
 extern bool firstmouseevent;
-extern char* window_title;
+extern char const * window_title;
 extern Sint32 fullscreen;
 extern bool borderless;
 extern bool smoothlighting;
@@ -691,7 +691,7 @@ enum LightModifierValues : int
 // function prototypes for main.c:
 int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
-int longestline(char* str);
+int longestline(char const * const str);
 int concatedStringLength(char* str, ...);
 void printlog(const char* str, ...);
 

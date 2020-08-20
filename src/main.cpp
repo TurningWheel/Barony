@@ -194,7 +194,7 @@ TCPsocket* net_tcpclients = nullptr;
 SDLNet_SocketSet tcpset = nullptr;
 list_t safePacketsSent, safePacketsReceived[MAXPLAYERS];
 bool receivedclientnum = false;
-char* window_title = nullptr;
+char const * window_title = nullptr;
 bool softwaremode = false;
 SDL_TimerID timer;
 SDL_Window* screen = nullptr;
@@ -412,7 +412,7 @@ hit_t hit;
 
 -------------------------------------------------------------------------------*/
 
-int longestline(char* str)
+int longestline(char const * const str)
 {
 	int c, x = 0, result = 0;
 	for ( c = 0; c < strlen(str); c++ )
