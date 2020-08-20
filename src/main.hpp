@@ -743,17 +743,17 @@ real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);
 
 // function prototypes for cursors.c:
-SDL_Cursor* newCursor(char* image[]);
+SDL_Cursor* newCursor(char const * const image[]);
 
 // function prototypes for maps.c:
 int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> mapParameters = std::make_tuple(-1, -1, -1, 0)); // secretLevelChance of -1 is default Barony generation.
 void assignActions(map_t* map);
 
 // Cursor bitmap definitions
-extern char* cursor_pencil[];
-extern char* cursor_point[];
-extern char* cursor_brush[];
-extern char* cursor_fill[];
+extern char const *cursor_pencil[];
+extern char const *cursor_point[];
+extern char const *cursor_brush[];
+extern char const *cursor_fill[];
 
 GLuint create_shader(const char* filename, GLenum type);
 
