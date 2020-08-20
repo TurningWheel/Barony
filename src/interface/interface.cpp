@@ -4035,7 +4035,12 @@ void GenericGUIMenu::updateGUI()
 							{
 								if ( isNodeTinkeringCraftableItem(item->node) )
 								{
-									strncpy(tempstr, language[3644], strlen(language[3644])); // craft
+									// if anything, these should be doing
+									// strncpy(tempstr, language[N], TEMPSTR_LEN - <extra space needed>)
+									// not strlen(language[N]). there is zero safety conferred from this
+									// anti-pattern. different story with memcpy(), but strcpy() is not
+									// memcpy().
+									strcpy(tempstr, language[3644]); // craft
 									strncat(tempstr, item->description(), 46 - strlen(language[3644]));
 									if ( !tinkeringPlayerCanAffordCraft(item) || (tinkeringPlayerHasSkillLVLToCraft(item) == -1) )
 									{
@@ -4044,7 +4049,7 @@ void GenericGUIMenu::updateGUI()
 								}
 								else if ( isItemSalvageable(item, clientnum) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
 								{
-									strncpy(tempstr, language[3645], strlen(language[3645])); // salvage
+									strcpy(tempstr, language[3645]); // salvage
 									strncat(tempstr, item->description(), 46 - strlen(language[3645]));
 								}
 								else if ( tinkeringIsItemRepairable(item, clientnum) )
@@ -4059,7 +4064,7 @@ void GenericGUIMenu::updateGUI()
 										{
 											color = uint32ColorGray(*mainsurface); // can't upgrade since no materials
 										}
-										strncpy(tempstr, language[3684], strlen(language[3684])); // upgrade
+										strcpy(tempstr, language[3684]); // upgrade
 										strncat(tempstr, item->description(), 46 - strlen(language[3684]));
 									}
 									else
@@ -4072,7 +4077,7 @@ void GenericGUIMenu::updateGUI()
 										{
 											color = uint32ColorGray(*mainsurface); // can't repair since no materials
 										}
-										strncpy(tempstr, language[3646], strlen(language[3646])); // repair
+										strcpy(tempstr, language[3646]); // repair
 										strncat(tempstr, item->description(), 46 - strlen(language[3646]));
 									}
 									if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT )
@@ -4096,12 +4101,12 @@ void GenericGUIMenu::updateGUI()
 								{
 									if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
 									{
-										strncpy(tempstr, language[3719], strlen(language[3719])); // repair
+										strcpy(tempstr, language[3719]); // repair
 										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
 									}
 									else
 									{
-										strncpy(tempstr, language[3718], strlen(language[3718])); // inscribe
+										strcpy(tempstr, language[3718]); // inscribe
 										int oldcount = item->count;
 										item->count = 1;
 										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
