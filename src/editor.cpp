@@ -57,10 +57,10 @@ float limbs[NUMMONSTERS][20][3]; // dummy variable for files.cpp limbs reloading
 void buttonStartSingleplayer(button_t* my) {} // dummy function for mod_tools.cpp
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value) {} // dummy function for mod_tools.cpp
 AchievementObserver achievementObserver; // dummy function for mod_tools.cpp
-void initClass(int i) {}; // dummy function for mod_tools.cpp
+void initClass(int i) {} // dummy function for mod_tools.cpp
 void AchievementObserver::updateGlobalStat(int index, int value) {}
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages; // dummy variable for files.cpp system resource reloading in Barony.
-void initMenuOptions() {}; // dummy
+void initMenuOptions() {} // dummy
 int textInsertCaratPosition = -1;
 GenericGUIMenu GenericGUI;
 Item* selectedItem = nullptr; //Because it won't compile without this.
