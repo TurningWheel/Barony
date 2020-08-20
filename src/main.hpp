@@ -729,7 +729,7 @@ void stringDeconstructor(void* data);
 void listDeconstructor(void* data);
 Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist, list_t* creaturelist);
 button_t* newButton(void);
-string_t* newString(list_t* list, Uint32 color, char* content, ...);
+string_t* newString(list_t* list, Uint32 color, char const * const content, ...);
 pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
 
 // function prototypes for opengl.c:
