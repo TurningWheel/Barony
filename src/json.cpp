@@ -6,7 +6,7 @@
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/error/en.h"
 
-const Uint32 BinaryFormatTag = 'spff';
+const Uint32 BinaryFormatTag = *"spff";
 
 class JsonFileWriter : public FileInterface {
 public:
