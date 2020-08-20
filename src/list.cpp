@@ -113,7 +113,7 @@ void list_RemoveNode(node_t* node)
 	}
 	else
 	{
-		delete (node->element);
+		free(node->element);
 	}
 	free(node);
 }
