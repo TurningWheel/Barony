@@ -4088,7 +4088,7 @@ void GenericGUIMenu::updateGUI()
 								else
 								{
 									messagePlayer(0, "%d", item->type);
-									strncat(tempstr, "invalid item", 12);
+									strncat(tempstr, "invalid item", 13);
 								}
 							}
 							else if ( guiType == GUI_TYPE_SCRIBING )
