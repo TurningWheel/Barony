@@ -1095,6 +1095,7 @@ int saveConfig(char const * const _filename)
 	if ( (fp = fopen(path, "wb")) == NULL )
 	{
 		printlog("ERROR: failed to save config file '%s'!\n", filename);
+		free(filename);
 		return 1;
 	}
 
