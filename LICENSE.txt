@@ -1,12 +1,15 @@
 Barony Open Source License:
 
-This open source release of Barony is licensed under the GNU General Public License (3.0). GPL.3.0.txt for details.
+This open source release of Barony is licensed under the BSD 2-Clause License:
 
-In general, you are free to copy, modify, distribute, or else use this software however you wish, though any derivative works must also be licensed under the same GPL. Since all of the Barony code will be GPL'd from here on out, that means we will all be able to share and build on each other's work freely.
+Copyright (c) 2013-2020, Turning Wheel LLC
 
-Note, however, that this open source release of Barony does not include the original game assets, so in order to create a working build of the game from this source, you will also have to supply a legally purchased copy of the original game assets, which are copyrighted by Turning Wheel LLC and may NOT be redistributed (see the original LICENSE.txt text accompanying the original game for details).
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
-Additional source components included with Barony use separate licenses which may be found below:
+1. Redistributions of source code must retain the above copyright notice, this list of conditions, and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions, and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 
