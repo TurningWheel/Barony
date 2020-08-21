@@ -1040,6 +1040,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\sound.hpp" />
     <ClInclude Include="..\..\src\stat.hpp" />
     <ClInclude Include="..\..\src\steam.hpp" />
+    <ClInclude Include="..\..\src\UnicodeDecoder.h" />
     <ClInclude Include="..\..\VS-includes\Config.hpp" />
   </ItemGroup>
   <ItemGroup>
