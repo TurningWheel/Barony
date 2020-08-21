@@ -35,7 +35,7 @@ int numbooks = 0;
 
 //book_t *book_space_ninjas = NULL;
 
-int getBook(char* const booktitle)
+int getBook(char const * const booktitle)
 {
 	for ( int c = 0; c < numbooks; c++ )
 	{

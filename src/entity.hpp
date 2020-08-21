@@ -1067,8 +1067,8 @@ static const int MSG_ATTACKS = 4;
 static const int MSG_STEAL_WEAPON = 5;
 static const int MSG_TOOL_BOMB = 6;
 void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType, Entity* optionalEntity = nullptr);
-char* playerClassLangEntry(int classnum, int playernum);
-char* playerClassDescription(int classnum, int playernum);
+char const * playerClassLangEntry(int classnum, int playernum);
+char const * playerClassDescription(int classnum, int playernum);
 
 //Some testing functions/commands.
 Entity* summonChest(long x, long y);

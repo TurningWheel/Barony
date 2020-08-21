@@ -3591,7 +3591,7 @@ int main(int argc, char** argv)
 
 					drawRect(NULL, 0, 255);
 					char* banner_text1 = language[738];
-					char* banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
+					char const * const banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
 					ttfPrintText(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, banner_text1);
 					Uint32 colorBlue = SDL_MapRGBA(mainsurface->format, 0, 92, 255, 255);
 					ttfPrintTextColor(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, colorBlue, true, banner_text2);
@@ -4297,7 +4297,13 @@ int main(int argc, char** argv)
 													continue;
 												}
 												strcpy((char*)net_packet->data, "MSGS");
-												strncpy(chatstring, stats[0]->name, std::min<size_t>(strlen(stats[0]->name), 10)); //TODO: Why are size_t and int being compared?
+												// strncpy() does not copy N bytes if a terminating null is encountered first
+												// see http://www.cplusplus.com/reference/cstring/strncpy/
+												// see https://en.cppreference.com/w/c/string/byte/strncpy
+												// GCC throws a warning (intended) when the length argument to strncpy() in any
+												// way depends on strlen(src) to discourage this (and related) construct(s).
+
+												strncpy(chatstring, stats[0]->name, 10);
 												chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
 												strcat(chatstring, ": ");
 												strcat(chatstring, command_str);
