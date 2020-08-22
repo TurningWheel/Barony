@@ -15,6 +15,10 @@
 	#define BSD
 #endif
 
+#if @Haiku@
+	#define HAIKU
+#endif
+
 #if @STEAMWORKS_ENABLED@
 	#define STEAMWORKS
 #endif

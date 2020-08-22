@@ -87,6 +87,12 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 #endif
 
+#ifdef HAIKU
+
+#include <FindDirectory.h>
+
+#endif
+
 #ifdef WINDOWS
 void make_minidump(EXCEPTION_POINTERS* e)
 {
@@ -3260,6 +3266,10 @@ int main(int argc, char** argv)
 		size_t buffsize = PATH_MAX;
 		char binarypath[buffsize];
 		int result = sysctl(mib, 4, binarypath, &buffsize, NULL, 0);
+#elif defined(HAIKU)
+		size_t buffsize = PATH_MAX;
+		char binarypath[buffsize];
+		int result = find_path(B_APP_IMAGE_SYMBOL, B_FIND_PATH_IMAGE_PATH, NULL, binarypath, sizeof(binarypath)); // B_OK is 0
 #endif
 		if (result == 0)   //It worked.
 		{
