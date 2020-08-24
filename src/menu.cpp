@@ -16182,11 +16182,15 @@ void buttonGamemodsStartUploadItem(button_t* my)
 	{
 		if ( gamemods_window == 5 )
 		{
-			g_SteamWorkshop->SubmitItemUpdate("Item updated.");
+			char *tmp = strdup("Item updated.");
+			g_SteamWorkshop->SubmitItemUpdate(tmp);
+			free(tmp);
 		}
 		else
 		{
-			g_SteamWorkshop->SubmitItemUpdate("First upload.");
+			char *tmp = strdup("First upload.");
+			g_SteamWorkshop->SubmitItemUpdate(tmp);
+			free(tmp);
 		}
 		gamemods_uploadStatus = 5;
 		my->visible = false;
