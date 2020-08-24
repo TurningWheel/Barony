@@ -1937,7 +1937,7 @@ void CSteamLeaderboards::FindLeaderboard(const char *pchLeaderboardName)
 	{
 		return;
 	}
-	m_CurrentLeaderboard = NULL;
+	m_CurrentLeaderboard = 0;
 	b_LeaderboardInit = false;
 	SteamAPICall_t hSteamAPICall = SteamUserStats()->FindLeaderboard(pchLeaderboardName);
 	m_callResultFindLeaderboard.Set(hSteamAPICall, this,
