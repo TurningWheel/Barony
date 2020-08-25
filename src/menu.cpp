@@ -9426,6 +9426,7 @@ void handleMainMenu(bool mode)
 			godmode = false;
 			buddhamode = false;
 			everybodyfriendly = false;
+			gameloopFreezeEntities = false;
 
 #ifdef STEAMWORKS
 			if ( !directConnect )
