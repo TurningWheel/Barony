@@ -261,7 +261,7 @@ public:
 	void StoreResultMessage(std::string message, EResult result);
 	void CreateItem();
 	void StartItemUpdate();
-	void SubmitItemUpdate(char* changeNote);
+	void SubmitItemUpdate(const char *const changeNote);
 	void StartItemExistingUpdate(PublishedFileId_t fileId);
 	void CreateQuerySubscribedItems(EUserUGCList itemListType, EUGCMatchingUGCType searchType, EUserUGCListSortOrder sortOrder);
 	void ReadSubscribedItems();
