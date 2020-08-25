@@ -16846,7 +16846,7 @@ get text string for the different player chosen classes.
 
 -------------------------------------------------------------------------------*/
 
-char* playerClassLangEntry(int classnum, int playernum)
+char const * playerClassLangEntry(int classnum, int playernum)
 {
 	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
@@ -16873,7 +16873,7 @@ get text string for the description of player chosen classes.
 
 -------------------------------------------------------------------------------*/
 
-char* playerClassDescription(int classnum, int playernum)
+char const * playerClassDescription(int classnum, int playernum)
 {
 	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{

@@ -41,6 +41,8 @@
 #include "interface/ui.hpp"
 #include <limits>
 
+#include "UnicodeDecoder.h"
+
 #ifdef LINUX
 //Sigsegv catching stuff.
 #include <signal.h>
@@ -2698,16 +2700,43 @@ void handleEvents(void)
 				}
 				if ( SDL_IsTextInputActive() )
 				{
+					const size_t length = strlen(inputstr);
+
 #ifdef APPLE
-					if ( (event.key.keysym.sym == SDLK_DELETE || event.key.keysym.sym == SDLK_BACKSPACE) && strlen(inputstr) > 0 )
+					if ( (event.key.keysym.sym == SDLK_DELETE || event.key.keysym.sym == SDLK_BACKSPACE) && length > 0 )
 					{
-						inputstr[strlen(inputstr) - 1] = 0;
+						size_t utfOffset = 1;
+
+						if ( length > 1 )
+						{
+							const uint32_t result = UTFD::ValidateUTF8Character(inputstr[length - 1]);
+
+							if ( result > UTFD::UTF8_REJECT )
+							{
+								++utfOffset;
+							}
+						}
+
+						inputstr[length - utfOffset] = '\0';
 						cursorflash = ticks;
 					}
 #else
-					if ( event.key.keysym.sym == SDLK_BACKSPACE && strlen(inputstr) > 0 )
+
+					if ( event.key.keysym.sym == SDLK_BACKSPACE && length > 0 )
 					{
-						inputstr[strlen(inputstr) - 1] = 0;
+						size_t utfOffset = 1;
+
+						if ( length > 1 )
+						{
+							const uint32_t result = UTFD::ValidateUTF8Character(inputstr[length - 1]);
+
+							if ( result > UTFD::UTF8_REJECT )
+							{
+								++utfOffset;
+							}
+						}
+
+						inputstr[length - utfOffset] = '\0';
 						cursorflash = ticks;
 					}
 #endif
@@ -3593,7 +3622,7 @@ int main(int argc, char** argv)
 
 					drawRect(NULL, 0, 255);
 					char* banner_text1 = language[738];
-					char* banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
+					char const * const banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
 					ttfPrintText(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, banner_text1);
 					Uint32 colorBlue = SDL_MapRGBA(mainsurface->format, 0, 92, 255, 255);
 					ttfPrintTextColor(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, colorBlue, true, banner_text2);
@@ -4299,7 +4328,13 @@ int main(int argc, char** argv)
 													continue;
 												}
 												strcpy((char*)net_packet->data, "MSGS");
-												strncpy(chatstring, stats[0]->name, std::min<size_t>(strlen(stats[0]->name), 10)); //TODO: Why are size_t and int being compared?
+												// strncpy() does not copy N bytes if a terminating null is encountered first
+												// see http://www.cplusplus.com/reference/cstring/strncpy/
+												// see https://en.cppreference.com/w/c/string/byte/strncpy
+												// GCC throws a warning (intended) when the length argument to strncpy() in any
+												// way depends on strlen(src) to discourage this (and related) construct(s).
+
+												strncpy(chatstring, stats[0]->name, 10);
 												chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
 												strcat(chatstring, ": ");
 												strcat(chatstring, command_str);
@@ -4830,9 +4865,15 @@ int main(int argc, char** argv)
 		deinitGame();
 		return deinitApp();
 	}
+	catch (const std::exception &exc)
+	{
+		// catch anything thrown within try block that derives from std::exception
+		std::cerr << "UNHANDLED EXCEPTION CAUGHT: " << exc.what() << "\n";
+	}
 	catch (...)
 	{
 		//TODO:
+		std::cerr << "UNKNOWN EXCEPTION CAUGHT!\n";
 		return 1;
 	}
 }

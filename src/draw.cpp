@@ -2370,7 +2370,7 @@ SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str )
 
 -------------------------------------------------------------------------------*/
 
-SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color, char* fmt, ... )
+SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color, char const * const fmt, ... )
 {
 	char str[1024] = { 0 };
 
@@ -2389,7 +2389,7 @@ SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color,
 	return ttfPrintTextColor(font, x, y, color, true, str);
 }
 
-SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... )
+SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char const * const fmt, ... )
 {
 	char str[1024] = { 0 };
 
@@ -2468,7 +2468,7 @@ void printText( SDL_Surface* font_bmp, int x, int y, const char* str )
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... )
+void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char const * const fmt, ... )
 {
 	int c;
 	int numbytes;
@@ -2519,7 +2519,7 @@ void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... )
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char* fmt, ...)
+void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char const * const fmt, ...)
 {
 	int c;
 	int numbytes;
@@ -2570,7 +2570,7 @@ void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, c
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char* fmt, ...)
+void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char const * const fmt, ...)
 {
 	int c;
 	int numbytes;

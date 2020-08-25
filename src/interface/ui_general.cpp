@@ -186,10 +186,10 @@ void openURLTryWithOverlay(std::string url, bool forceSystemBrowser)
 #ifdef APPLE
 		//TODO: Mac equivalent.
 		system(std::string("open " + url).c_str());
-#endif // WINDOWS
+#endif // APPLE
 #ifdef LINUX
-		//TODO: Linux equivalent.
-#endif
+		system(std::string("xdg-open " + url).c_str());
+#endif // LINUX
 	}
 }
 

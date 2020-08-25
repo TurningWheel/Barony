@@ -57,10 +57,10 @@ float limbs[NUMMONSTERS][20][3]; // dummy variable for files.cpp limbs reloading
 void buttonStartSingleplayer(button_t* my) {} // dummy function for mod_tools.cpp
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value) {} // dummy function for mod_tools.cpp
 AchievementObserver achievementObserver; // dummy function for mod_tools.cpp
-void initClass(int i) {}; // dummy function for mod_tools.cpp
+void initClass(int i) {} // dummy function for mod_tools.cpp
 void AchievementObserver::updateGlobalStat(int index, int value) {}
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages; // dummy variable for files.cpp system resource reloading in Barony.
-void initMenuOptions() {}; // dummy
+void initMenuOptions() {} // dummy
 int textInsertCaratPosition = -1;
 GenericGUIMenu GenericGUI;
 Item* selectedItem = nullptr; //Because it won't compile without this.
@@ -304,7 +304,7 @@ char playerSpawnPropertyNames[1][35] =
 	"Spawn Facing Direction (-1 - 7)"
 };
 
-char* playerClassLangEntry(int classnum, int playernum)
+const char* playerClassLangEntry(int classnum, int playernum)
 {
 	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
@@ -4709,7 +4709,11 @@ int main(int argc, char** argv)
 									else
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-										char tmpStr[32] = "";
+										// 32 is WAY TOO SMALL for this, wtf?
+										// spriteProperties is a string table, each entry 128 bytes long
+										// " Tiles to power in facing direction" = 35 bytes
+										// do not forget the null terminator
+										char tmpStr[128 + 35 + 1] = "";
 										strcpy(tmpStr, spriteProperties[i]); //reset
 										strcat(tmpStr, " Tiles to power in facing direction");
 										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);

@@ -565,7 +565,7 @@ void openLogFile() {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* loadImage(char* filename)
+SDL_Surface* loadImage(char const * const filename)
 {
 	char full_path[PATH_MAX];
 	completePath(full_path, filename);
@@ -1878,7 +1878,7 @@ std::list<std::string> physfsGetFileNamesInDirectory(const char* dir)
 	return filenames;
 }
 
-std::string physfsFormatMapName(char* levelfilename)
+std::string physfsFormatMapName(char const * const levelfilename)
 {
 	std::string fullMapPath;
 	std::string mapFileName = "maps/";

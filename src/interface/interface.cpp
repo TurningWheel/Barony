@@ -1072,23 +1072,20 @@ int loadDefaultConfig()
 
 -------------------------------------------------------------------------------*/
 
-int saveConfig(char* filename)
+int saveConfig(char const * const _filename)
 {
 	char path[PATH_MAX];
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 	FILE* fp;
 	int c;
-	bool mallocd = false;
+	char *filename = strdup(_filename);
 
 	printlog("Saving config '%s'...\n", filename);
 
 	if ( strstr(filename, ".cfg") == NULL )
 	{
-		char* filename2 = filename;
-		filename = (char*) malloc(sizeof(char) * 256);
-		strcpy(filename, filename2);
-		mallocd = true;
+		filename = (char*) realloc(filename, sizeof(char) * (strlen(filename) + 5));
 		strcat(filename, ".cfg");
 	}
 
@@ -1098,6 +1095,7 @@ int saveConfig(char* filename)
 	if ( (fp = fopen(path, "wb")) == NULL )
 	{
 		printlog("ERROR: failed to save config file '%s'!\n", filename);
+		free(filename);
 		return 1;
 	}
 
@@ -1359,10 +1357,7 @@ int saveConfig(char* filename)
 	}
 
 	fclose(fp);
-	if ( mallocd )
-	{
-		free(filename);
-	}
+	free(filename);
 	return 0;
 }
 
@@ -4041,7 +4036,12 @@ void GenericGUIMenu::updateGUI()
 							{
 								if ( isNodeTinkeringCraftableItem(item->node) )
 								{
-									strncpy(tempstr, language[3644], strlen(language[3644])); // craft
+									// if anything, these should be doing
+									// strncpy(tempstr, language[N], TEMPSTR_LEN - <extra space needed>)
+									// not strlen(language[N]). there is zero safety conferred from this
+									// anti-pattern. different story with memcpy(), but strcpy() is not
+									// memcpy().
+									strcpy(tempstr, language[3644]); // craft
 									strncat(tempstr, item->description(), 46 - strlen(language[3644]));
 									if ( !tinkeringPlayerCanAffordCraft(item) || (tinkeringPlayerHasSkillLVLToCraft(item) == -1) )
 									{
@@ -4050,7 +4050,7 @@ void GenericGUIMenu::updateGUI()
 								}
 								else if ( isItemSalvageable(item, clientnum) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
 								{
-									strncpy(tempstr, language[3645], strlen(language[3645])); // salvage
+									strcpy(tempstr, language[3645]); // salvage
 									strncat(tempstr, item->description(), 46 - strlen(language[3645]));
 								}
 								else if ( tinkeringIsItemRepairable(item, clientnum) )
@@ -4065,7 +4065,7 @@ void GenericGUIMenu::updateGUI()
 										{
 											color = uint32ColorGray(*mainsurface); // can't upgrade since no materials
 										}
-										strncpy(tempstr, language[3684], strlen(language[3684])); // upgrade
+										strcpy(tempstr, language[3684]); // upgrade
 										strncat(tempstr, item->description(), 46 - strlen(language[3684]));
 									}
 									else
@@ -4078,7 +4078,7 @@ void GenericGUIMenu::updateGUI()
 										{
 											color = uint32ColorGray(*mainsurface); // can't repair since no materials
 										}
-										strncpy(tempstr, language[3646], strlen(language[3646])); // repair
+										strcpy(tempstr, language[3646]); // repair
 										strncat(tempstr, item->description(), 46 - strlen(language[3646]));
 									}
 									if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT )
@@ -4089,7 +4089,7 @@ void GenericGUIMenu::updateGUI()
 								else
 								{
 									messagePlayer(0, "%d", item->type);
-									strncat(tempstr, "invalid item", 12);
+									strncat(tempstr, "invalid item", 13);
 								}
 							}
 							else if ( guiType == GUI_TYPE_SCRIBING )
@@ -4102,12 +4102,12 @@ void GenericGUIMenu::updateGUI()
 								{
 									if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
 									{
-										strncpy(tempstr, language[3719], strlen(language[3719])); // repair
+										strcpy(tempstr, language[3719]); // repair
 										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
 									}
 									else
 									{
-										strncpy(tempstr, language[3718], strlen(language[3718])); // inscribe
+										strcpy(tempstr, language[3718]); // inscribe
 										int oldcount = item->count;
 										item->count = 1;
 										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
@@ -5959,7 +5959,7 @@ bool GenericGUIMenu::isNodeFromPlayerInventory(node_t* node)
 		return (node->list == &stats[clientnum]->inventory);
 	}
 	return false;
-};
+}
 
 bool GenericGUIMenu::isItemSalvageable(const Item* item, int player)
 {

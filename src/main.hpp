@@ -532,7 +532,7 @@ extern SDL_GLContext renderer;
 extern SDL_Surface* mainsurface;
 extern SDL_Event event;
 extern bool firstmouseevent;
-extern char* window_title;
+extern char const * window_title;
 extern Sint32 fullscreen;
 extern bool borderless;
 extern bool smoothlighting;
@@ -691,7 +691,7 @@ enum LightModifierValues : int
 // function prototypes for main.c:
 int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
-int longestline(char* str);
+int longestline(char const * const str);
 int concatedStringLength(char* str, ...);
 void printlog(const char* str, ...);
 
@@ -729,7 +729,7 @@ void stringDeconstructor(void* data);
 void listDeconstructor(void* data);
 Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist, list_t* creaturelist);
 button_t* newButton(void);
-string_t* newString(list_t* list, Uint32 color, char* content, ...);
+string_t* newString(list_t* list, Uint32 color, char const * const content, ...);
 pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
 
 // function prototypes for opengl.c:
@@ -743,17 +743,17 @@ real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);
 
 // function prototypes for cursors.c:
-SDL_Cursor* newCursor(char* image[]);
+SDL_Cursor* newCursor(char const * const image[]);
 
 // function prototypes for maps.c:
 int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> mapParameters = std::make_tuple(-1, -1, -1, 0)); // secretLevelChance of -1 is default Barony generation.
 void assignActions(map_t* map);
 
 // Cursor bitmap definitions
-extern char* cursor_pencil[];
-extern char* cursor_point[];
-extern char* cursor_brush[];
-extern char* cursor_fill[];
+extern char const *cursor_pencil[];
+extern char const *cursor_point[];
+extern char const *cursor_brush[];
+extern char const *cursor_fill[];
 
 GLuint create_shader(const char* filename, GLenum type);
 

@@ -10,12 +10,12 @@
 -------------------------------------------------------------------------------*/
 #pragma once
 
-int initApp(char* title, int fullscreen);
+int initApp(char const * const title, int fullscreen);
 int deinitApp();
 bool initVideo();
 bool changeVideoMode();
 void generatePolyModels(int start, int end, bool forceCacheRebuild);
 void generateVBOs(int start, int end);
-int loadLanguage(char* lang);
+int loadLanguage(char const * const lang);
 int reloadLanguage();
 void freeLanguages();
