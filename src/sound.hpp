@@ -13,10 +13,10 @@
 
 
 #include <stdio.h>
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 #include "fmod.h"
 #endif
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 #ifdef APPLE
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
@@ -28,7 +28,7 @@
 
 
 //Pointer to the FMOD system.
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 
 #define SOUND
 #define MUSIC
@@ -52,9 +52,9 @@ extern bool olddarkmap;
 extern FMOD_SOUND** sounds;
 extern Uint32 numsounds;
 extern FMOD_SOUND** minesmusic;
-#define NUMMINESMUSIC 4
+#define NUMMINESMUSIC 5
 extern FMOD_SOUND** swampmusic;
-#define NUMSWAMPMUSIC 3
+#define NUMSWAMPMUSIC 4
 extern FMOD_SOUND** labyrinthmusic;
 #define NUMLABYRINTHMUSIC 3
 extern FMOD_SOUND** ruinsmusic;
@@ -63,16 +63,28 @@ extern FMOD_SOUND** underworldmusic;
 #define NUMUNDERWORLDMUSIC 3
 extern FMOD_SOUND** hellmusic;
 #define NUMHELLMUSIC 3
-extern FMOD_SOUND* intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
+extern FMOD_SOUND** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern FMOD_SOUND** minotaurmusic, *herxmusic, *templemusic;
-extern FMOD_SOUND* endgamemusic, *escapemusic, *devilmusic;
+extern FMOD_SOUND* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
 extern FMOD_SOUND* introductionmusic;
 #define NUMMINOTAURMUSIC 2
+extern FMOD_SOUND** cavesmusic;
+extern FMOD_SOUND** citadelmusic;
+extern FMOD_SOUND* gnomishminesmusic;
+extern FMOD_SOUND* greatcastlemusic;
+extern FMOD_SOUND* sokobanmusic;
+extern FMOD_SOUND* caveslairmusic;
+extern FMOD_SOUND* bramscastlemusic;
+extern FMOD_SOUND* hamletmusic;
+#define NUMCAVESMUSIC 3
+#define NUMCITADELMUSIC 3
+#define NUMINTROMUSIC 3
 //TODO: Automatically scan the music folder for a mines subdirectory and use all the music for the mines or something like that. I'd prefer something neat like for that loading music for a level, anyway. And I can just reuse the code I had for ORR.
 
 extern FMOD_CHANNEL* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 
 extern FMOD_CHANNELGROUP* sound_group, *music_group;
+extern FMOD_CHANNELGROUP* soundAmbient_group, *soundEnvironment_group;
 
 /*
  * Checks for FMOD errors. Store return value of all FMOD functions in fmod_result so that this funtion can access it and check for errors.
@@ -96,8 +108,9 @@ void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume); //Aut
 void handleLevelMusic(); //Manages and updates the level music.
 
 extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
+extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 
 #define SOUND
 #define MUSIC
@@ -139,15 +152,27 @@ extern OPENAL_BUFFER** underworldmusic;
 #define NUMUNDERWORLDMUSIC 3
 extern OPENAL_BUFFER** hellmusic;
 #define NUMHELLMUSIC 3
-extern OPENAL_BUFFER* intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
+extern OPENAL_BUFFER** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern OPENAL_BUFFER** minotaurmusic, *herxmusic, *templemusic;
-extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic;
+extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
 extern OPENAL_BUFFER* introductionmusic;
 #define NUMMINOTAURMUSIC 2
+extern OPENAL_BUFFER** cavesmusic;
+extern OPENAL_BUFFER** citadelmusic;
+extern OPENAL_BUFFER* gnomishminesmusic;
+extern OPENAL_BUFFER* greatcastlemusic;
+extern OPENAL_BUFFER* sokobanmusic;
+extern OPENAL_BUFFER* caveslairmusic;
+extern OPENAL_BUFFER* bramscastlemusic;
+extern OPENAL_BUFFER* hamletmusic;
+#define NUMCAVESMUSIC 3
+#define NUMCITADELMUSIC 3
+#define NUMINTROMUSIC 3
 //TODO: Automatically scan the music folder for a mines subdirectory and use all the music for the mines or something like that. I'd prefer something neat like for that loading music for a level, anyway. And I can just reuse the code I had for ORR.
 
 extern OPENAL_SOUND* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 extern OPENAL_CHANNELGROUP *sound_group, *music_group;
+extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group;
 
 int initOPENAL();
 int closeOPENAL();

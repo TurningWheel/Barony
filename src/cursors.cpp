@@ -55,6 +55,50 @@ char* cursor_pencil[] =
 	"0,0"
 };
 
+char* cursor_point[] =
+{
+	// width height num_colors chars_per_pixel
+	"    32    32        3            1",
+	// colors
+	"X c #000000",
+	". c #ffffff",
+	"  c None",
+	// pixels
+	"     XX                         ",
+	"    X..X                        ",
+	"    X..X                        ",
+	"    X..X                        ",
+	"    X..X                        ",
+	"    X..XXX                      ",
+	"    X..X..XXX                   ",
+	"    X..X..X..XX                 ",
+	"    X..X..X..X.X                ",
+	"XXX X..X..X..X..X               ",
+	"X..XX........X..X               ",
+	"X...X...........X               ",
+	"X...X...........X               ",
+	" X..X...........X               ",
+	"  X.X...........X               ",
+	"  X.............X               ",
+	"   X............X               ",
+	"   X...........X                ",
+	"    X..........X                ",
+	"    X..........X                ",
+	"     X........X                 ",
+	"     X........X                 ",
+	"     XXXXXXXXXX                 ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"5,0"
+};
+
 char* cursor_brush[] =
 {
 	// width height num_colors chars_per_pixel

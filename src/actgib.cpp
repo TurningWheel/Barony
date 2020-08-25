@@ -16,6 +16,7 @@
 #include "entity.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -46,6 +47,13 @@ void actGib(Entity* my)
 	{
 		list_RemoveNode(my->mynode);
 		return;
+	}
+
+	if ( my->flags[OVERDRAW] 
+		&& players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->skill[3] == 1 )
+	{
+		// debug cam, don't draw overdrawn.
+		my->flags[INVISIBLE] = true;
 	}
 
 	// horizontal motion
@@ -104,46 +112,74 @@ void actGib(Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-Entity* spawnGib(Entity* parentent)
+Entity* spawnGib(Entity* parentent, int customGibSprite)
 {
-	Entity* entity;
-	Stat* parentstats;
+	Entity* entity = nullptr;
+	Stat* parentstats = nullptr;
 	double vel;
 	int gibsprite = 5;
 
-	if ( parentent == NULL )
+	if ( !parentent )
 	{
-		return NULL;
+		return nullptr;
 	}
-	if ( (parentstats = parentent->getStats()) != NULL )
+
+	if ( (parentstats = parentent->getStats()) != nullptr )
 	{
-		switch ( gibtype[(int)parentstats->type] )
+		if ( multiplayer == CLIENT )
 		{
-			case 0:
-				return NULL;
-			case 1:
-				gibsprite = 5;
-				break;
-			case 2:
-				gibsprite = 211;
-				break;
-			case 3:
-				if ( parentent->sprite == 210 )
-				{
+			printlog("[%s:%d spawnGib()] spawnGib() called on client, got clientstats. Probably bad?", __FILE__, __LINE__);
+		}
+
+		if ( customGibSprite != -1 )
+		{
+			gibsprite = customGibSprite;
+		}
+		else
+		{
+			switch ( gibtype[(int)parentstats->type] )
+			{
+				case 0:
+					return nullptr;
+				case 1:
+					gibsprite = 5;
+					break;
+				case 2:
 					gibsprite = 211;
-				}
-				else
-				{
-					gibsprite = 215;
-				}
-				break;
-			default:
-				gibsprite = 5;
-				break;
+					break;
+				case 3:
+					if ( parentent->sprite == 210 )
+					{
+						gibsprite = 211;
+					}
+					else
+					{
+						gibsprite = 215;
+					}
+					break;
+				case 4:
+					gibsprite = 683;
+					break;
+				//TODO: Gear gibs for automatons, and crystal gibs for golem.
+				default:
+					gibsprite = 5;
+					break;
+			}
+		}
+	}
+	else if ( parentent->behavior == &actThrown )
+	{
+		if ( customGibSprite != -1 )
+		{
+			gibsprite = customGibSprite;
 		}
 	}
 
-	entity = newEntity(gibsprite, 1, map.entities);
+	entity = newEntity(gibsprite, 1, map.entities, nullptr); //Gib entity.
+	if ( !entity )
+	{
+		return nullptr;
+	}
 	entity->x = parentent->x;
 	entity->y = parentent->y;
 	entity->z = parentent->z;
@@ -162,7 +198,7 @@ Entity* spawnGib(Entity* parentent)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
-	if ( !spawn_blood )
+	if ( !spawn_blood && customGibSprite == -1 )
 	{
 		entity->flags[INVISIBLE] = true;
 	}
@@ -179,7 +215,7 @@ Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite)
 {
 	double vel;
 
-	Entity* entity = newEntity(sprite, 1, map.entities);
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Gib entity.
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;

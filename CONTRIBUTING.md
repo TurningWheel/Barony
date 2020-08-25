@@ -13,11 +13,14 @@ Basic guidelines for contributing:
 I hope for contributing to be as painless as possible. That said, we need to maintain some sort of standard of quality.
 Following the aforementioned contributing guidelines, the coding style guidelines, and refraining from haphazard changes to gameplay balance will increase the likelihood of your pull request being accepted.
 
+If you have questions you can ask them in the [open-source Barony channel on Discord](https://discord.gg/xPEfdWB).
+There is also channel for translations of Barony.
+
+Models can be created and edited with the open-source software [VoxelShop](https://blackflux.com/node/11) (export to VoxLap Format).
 
 ###Coding Style Guidelines
 
 I’ve uploaded the coding style guidelines to Google docs: https://docs.google.com/document/d/1Wx-tkiNORweFd6htDOn88QG5i4ecyulMGVdXQhxhQnw/edit?usp=sharing
-
 
 Last of all, thank you for taking an interest in contributing to Barony.
 

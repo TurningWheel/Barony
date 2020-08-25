@@ -11,6 +11,8 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
+#include "files.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "interface/interface.hpp"
@@ -29,6 +31,9 @@
 #include "menu.hpp"
 #include "paths.hpp"
 #include "player.hpp"
+#include "cppfuncs.hpp"
+#include "Directory.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -50,8 +55,6 @@ int initGame()
 	FILE* fp;
 
 	// setup some lists
-	steamAchievements.first = NULL;
-	steamAchievements.last = NULL;
 	booksRead.first = NULL;
 	booksRead.last = NULL;
 	lobbyChatboxMessages.first = NULL;
@@ -71,6 +74,9 @@ int initGame()
 	cpp_SteamServerClientWrapper_OnLobbyMatchListCallback = &steam_OnLobbyMatchListCallback;
 	cpp_SteamServerClientWrapper_OnP2PSessionConnectFail = &steam_OnP2PSessionConnectFail;
 	cpp_SteamServerClientWrapper_OnLobbyDataUpdate = &steam_OnLobbyDataUpdatedCallback;
+ #ifdef USE_EOS
+	cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket = &steam_OnRequestEncryptedAppTicket;
+ #endif //USE_EOS
 #endif
 
 	// print a loading message
@@ -82,6 +88,15 @@ int initGame()
 	GO_SwapBuffers(screen);
 
 	initGameControllers();
+
+	// load achievement images
+	Directory achievementsDir("images/achievements");
+	for (auto& item : achievementsDir.list)
+	{
+		std::string fullPath = achievementsDir.path + std::string("/") + item;
+		char* name = const_cast<char*>(fullPath.c_str()); // <- evil
+		achievementImages.emplace(std::make_pair(item, loadImage(name)));
+	}
 
 	// load model offsets
 	printlog( "loading model offsets...\n");
@@ -100,7 +115,7 @@ int initGame()
 		strcpy(filename, "models/creatures/");
 		strcat(filename, monstertypename[c]);
 		strcat(filename, "/limbs.txt");
-		if ( (fp = fopen(filename, "r")) == NULL )
+		if ( (fp = openDataFile(filename, "r")) == NULL )
 		{
 			continue;
 		}
@@ -146,13 +161,32 @@ int initGame()
 
 	GO_SwapBuffers(screen);
 
+	int newItems = 0;
+
 	// load item types
 	printlog( "loading items...\n");
-	fp = fopen("items/items.txt", "r");
-	for ( c = 0; !feof(fp); c++ )
+	std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
+	itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
+	fp = openDataFile(itemsDirectory.c_str(), "r");
+	for ( c = 0; !feof(fp); ++c )
 	{
-		items[c].name_identified = language[1545 + c * 2];
-		items[c].name_unidentified = language[1546 + c * 2];
+		if ( c > SPELLBOOK_DETECT_FOOD )
+		{
+			newItems = c - SPELLBOOK_DETECT_FOOD - 1;
+			items[c].name_identified = language[3500 + newItems * 2];
+			items[c].name_unidentified = language[3501 + newItems * 2];
+		}
+		else if ( c > ARTIFACT_BOW )
+		{
+			newItems = c - ARTIFACT_BOW - 1;
+			items[c].name_identified = language[2200 + newItems * 2];
+			items[c].name_unidentified = language[2201 + newItems * 2];
+		}
+		else
+		{
+			items[c].name_identified = language[1545 + c * 2];
+			items[c].name_unidentified = language[1546 + c * 2];
+		}
 		fscanf(fp, "%d", &items[c].index);
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
 			{
@@ -216,6 +250,10 @@ int initGame()
 		else if ( !strcmp(name, "BOOK") )
 		{
 			items[c].category = BOOK;
+		}
+		else if ( !strcmp(name, "THROWN") )
+		{
+			items[c].category = THROWN;
 		}
 		else if ( !strcmp(name, "SPELL_CAT") )
 		{
@@ -282,13 +320,84 @@ int initGame()
 
 			node_t* node2 = list_Node(&items[c].images, x);
 			string_t* string = (string_t*)node2->element;
-			*surface = loadImage(string->data);
+			std::string itemImgDir;
+			if ( PHYSFS_getRealDir(string->data) != NULL )
+			{
+				itemImgDir = PHYSFS_getRealDir(string->data);
+				itemImgDir.append(PHYSFS_getDirSeparator()).append(string->data);
+			}
+			else
+			{
+				itemImgDir = string->data;
+			}
+			char imgFileChar[256];
+			strncpy(imgFileChar, itemImgDir.c_str(), 255);
+			*surface = loadImage(imgFileChar);
 		}
 	}
 	fclose(fp);
-
 	createBooks();
 	setupSpells();
+
+	randomPlayerNamesMale = getLinesFromDataFile(PLAYERNAMES_MALE_FILE);
+	randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
+	loadItemLists();
+
+#if defined(USE_EOS) || defined(STEAMWORKS)
+#else
+	if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
+	{
+		std::string serial = PHYSFS_getRealDir("mythsandoutcasts.key");
+		serial.append(PHYSFS_getDirSeparator()).append("mythsandoutcasts.key");
+		// open the serial file
+		FILE* fp = nullptr;
+		if ( (fp = fopen(serial.c_str(), "rb")) != NULL )
+		{
+			char buf[64];
+			size_t len = fread(&buf, sizeof(char), 32, fp);
+			buf[len] = '\0';
+			serial = buf;
+			// compute hash
+			size_t DLCHash = serialHash(serial);
+			if ( DLCHash == 144425 )
+			{
+				printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
+				enabledDLCPack1 = true;
+			}
+			else
+			{
+				printlog("[LICENSE]: DLC license key invalid.");
+			}
+			fclose(fp);
+		}
+	}
+	if ( PHYSFS_getRealDir("legendsandpariahs.key") != NULL )
+	{
+		std::string serial = PHYSFS_getRealDir("legendsandpariahs.key");
+		serial.append(PHYSFS_getDirSeparator()).append("legendsandpariahs.key");
+		// open the serial file
+		FILE* fp = nullptr;
+		if ( (fp = fopen(serial.c_str(), "rb")) != NULL )
+		{
+			char buf[64];
+			size_t len = fread(&buf, sizeof(char), 32, fp);
+			buf[len] = '\0';
+			serial = buf;
+			// compute hash
+			size_t DLCHash = serialHash(serial);
+			if ( DLCHash == 135398 )
+			{
+				printlog("[LICENSE]: Legends and Pariahs DLC license key found.");
+				enabledDLCPack2 = true;
+			}
+			else
+			{
+				printlog("[LICENSE]: DLC license key invalid.");
+			}
+			fclose(fp);
+		}
+	}
+#endif
 
 	// print a loading message
 	drawClearBuffers();
@@ -297,9 +406,9 @@ int initGame()
 
 	GO_SwapBuffers(screen);
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 #endif
 	removedEntities.first = NULL;
@@ -313,15 +422,16 @@ int initGame()
 	}
 	topscores.first = NULL;
 	topscores.last = NULL;
+	topscoresMultiplayer.first = NULL;
+	topscoresMultiplayer.last = NULL;
 	messages.first = NULL;
 	messages.last = NULL;
 	chestInv.first = NULL;
 	chestInv.last = NULL;
 	command_history.first = NULL;
 	command_history.last = NULL;
-	for ( c = 0; c < 4; c++ )
+	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
-		invitems[c] = NULL;
 		invitemschest[c] = NULL;
 		openedChest[c] = NULL;
 	}
@@ -333,7 +443,8 @@ int initGame()
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
 		players[c] = new Player();
-		stats[c] = new Stat();
+		// Stat set to 0 as monster type not needed, values will be filled with default, then overwritten by savegame or the charclass.cpp file
+		stats[c] = new Stat(0);
 		if (c > 0)
 		{
 			client_disconnected[c] = true;
@@ -343,6 +454,7 @@ int initGame()
 		stats[c]->appearance = 0;
 		strcpy(stats[c]->name, "");
 		stats[c]->type = HUMAN;
+		stats[c]->playerRace = RACE_HUMAN;
 		stats[c]->FOLLOWERS.first = nullptr;
 		stats[c]->FOLLOWERS.last = nullptr;
 		stats[c]->inventory.first = nullptr;
@@ -358,7 +470,7 @@ int initGame()
 
 	// load music
 #ifdef SOUND
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 #define FMOD_ChannelGroup_SetVolume OPENAL_ChannelGroup_SetVolume
 #define fmod_system 0
 #define FMOD_SOFTWARE 0
@@ -368,7 +480,6 @@ int fmod_result;
 #endif
 
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/intro.ogg", FMOD_SOFTWARE, NULL, &intromusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/introduction.ogg", FMOD_SOFTWARE, NULL, &introductionmusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/intermission.ogg", FMOD_SOFTWARE, NULL, &intermissionmusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/minetown.ogg", FMOD_SOFTWARE, NULL, &minetownmusic);
@@ -380,6 +491,32 @@ int fmod_result;
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/endgame.ogg", FMOD_SOFTWARE, NULL, &endgamemusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/escape.ogg", FMOD_SOFTWARE, NULL, &escapemusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/devil.ogg", FMOD_SOFTWARE, NULL, &devilmusic);
+	fmod_result = FMOD_System_CreateStream(fmod_system, "music/sanctum.ogg", FMOD_SOFTWARE, NULL, &sanctummusic);
+	fmod_result = FMOD_System_CreateStream(fmod_system, "music/tutorial.ogg", FMOD_SOFTWARE, NULL, &tutorialmusic);
+	if ( PHYSFS_getRealDir("music/gnomishmines.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/gnomishmines.ogg", FMOD_SOFTWARE, NULL, &gnomishminesmusic);
+	}
+	if ( PHYSFS_getRealDir("music/greatcastle.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/greatcastle.ogg", FMOD_SOFTWARE, NULL, &greatcastlemusic);
+	}
+	if ( PHYSFS_getRealDir("music/sokoban.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/sokoban.ogg", FMOD_SOFTWARE, NULL, &sokobanmusic);
+	}
+	if ( PHYSFS_getRealDir("music/caveslair.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/caveslair.ogg", FMOD_SOFTWARE, NULL, &caveslairmusic);
+	}
+	if ( PHYSFS_getRealDir("music/bramscastle.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/bramscastle.ogg", FMOD_SOFTWARE, NULL, &bramscastlemusic);
+	}
+	if ( PHYSFS_getRealDir("music/hamlet.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/hamlet.ogg", FMOD_SOFTWARE, NULL, &hamletmusic);
+	}
 	//fmod_result = FMOD_System_CreateStream(fmod_system, "music/story.ogg", FMOD_SOFTWARE, NULL, &storymusic);
 
 	if ( NUMMINESMUSIC > 0 )
@@ -445,7 +582,41 @@ int fmod_result;
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minotaurmusic[c]);
 		}
 	}
-#ifdef HAVE_OPENAL
+	if ( NUMCAVESMUSIC > 0 )
+	{
+		cavesmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMCAVESMUSIC);
+		for ( c = 0; c < NUMCAVESMUSIC; c++ )
+		{
+			snprintf(tempstr, 1000, "music/caves%02d.ogg", c);
+			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &cavesmusic[c]);
+		}
+	}
+	if ( NUMCITADELMUSIC > 0 )
+	{
+		citadelmusic = (FMOD_SOUND**)malloc(sizeof(FMOD_SOUND*)*NUMCITADELMUSIC);
+		for ( c = 0; c < NUMCITADELMUSIC; c++ )
+		{
+			snprintf(tempstr, 1000, "music/citadel%02d.ogg", c);
+			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &citadelmusic[c]);
+		}
+	}
+	if ( NUMINTROMUSIC > 0 )
+	{
+		intromusic = (FMOD_SOUND**)malloc(sizeof(FMOD_SOUND*)*NUMINTROMUSIC);
+		for ( c = 0; c < NUMINTROMUSIC; c++ )
+		{
+			if ( c == 0 )
+			{
+				strcpy(tempstr, "music/intro.ogg");
+			}
+			else
+			{
+				snprintf(tempstr, 1000, "music/intro%02d.ogg", c);
+			}
+			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &intromusic[c]);
+		}
+	}
+#ifdef USE_OPENAL
 #undef FMOD_ChannelGroup_SetVolume
 #undef fmod_system
 #undef FMOD_SOFTWARE
@@ -468,7 +639,9 @@ int fmod_result;
 	cursor_bmp = loadImage("images/system/cursor.png");
 	cross_bmp = loadImage("images/system/cross.png");
 
-	loadAllScores();
+	loadAllScores(SCORESFILE);
+	loadAllScores(SCORESFILE_MULTIPLAYER);
+	gameModeManager.Tutorial.init();
 	if (!loadInterfaceResources())
 	{
 		printlog("Failed to load interface resources.\n");
@@ -491,7 +664,7 @@ void deinitGame()
 	int c, x;
 
 	// send disconnect messages
-	if (multiplayer == CLIENT)
+	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "DISCONNECT");
 		net_packet->data[10] = clientnum;
@@ -501,9 +674,9 @@ void deinitGame()
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		printlog("disconnected from server.\n");
 	}
-	else if (multiplayer == SERVER)
+	else if ( multiplayer == SERVER )
 	{
-		for (x = 1; x < MAXPLAYERS; x++)
+		for ( x = 1; x < MAXPLAYERS; x++ )
 		{
 			if ( client_disconnected[x] == true )
 			{
@@ -528,11 +701,11 @@ void deinitGame()
 		// handle network messages
 		if ( multiplayer == CLIENT )
 		{
-			clientHandleMessages();
+			clientHandleMessages(fpsLimit);
 		}
 		else if ( multiplayer == SERVER )
 		{
-			serverHandleMessages();
+			serverHandleMessages(fpsLimit);
 		}
 		if ( !(SDL_GetTicks() % 25) && multiplayer )
 		{
@@ -558,23 +731,25 @@ void deinitGame()
 		}
 	}
 
-	saveAllScores();
+	saveAllScores(SCORESFILE);
+	saveAllScores(SCORESFILE_MULTIPLAYER);
 	list_FreeAll(&topscores);
+	list_FreeAll(&topscoresMultiplayer);
 	deleteAllNotificationMessages();
 	list_FreeAll(&removedEntities);
-	if (title_bmp != NULL)
+	if ( title_bmp != nullptr )
 	{
 		SDL_FreeSurface(title_bmp);
 	}
-	if (logo_bmp != NULL)
+	if ( logo_bmp != nullptr )
 	{
 		SDL_FreeSurface(logo_bmp);
 	}
-	if (cursor_bmp != NULL)
+	if ( cursor_bmp != nullptr )
 	{
 		SDL_FreeSurface(cursor_bmp);
 	}
-	if (cross_bmp != NULL)
+	if ( cross_bmp != nullptr )
 	{
 		SDL_FreeSurface(cross_bmp);
 	}
@@ -588,28 +763,27 @@ void deinitGame()
 		{
 			if ( books[c] )
 			{
+				if ( books[c]->name )
+				{
+					free(books[c]->name);
+				}
 				if ( books[c]->text )
 				{
-					free( books[c]->text );
+					free(books[c]->text);
 				}
 				if ( books[c]->bookgui_render_title )
 				{
-					free( books[c]->bookgui_render_title );
+					free(books[c]->bookgui_render_title);
 				}
-				list_FreeAll( &books[c]->pages );
-				free( books[c] );
+				list_FreeAll(&books[c]->pages);
+				free(books[c]);
 			}
 		}
-		free( books );
-	}
-	if ( discoveredbooks )
-	{
-		list_FreeAll(discoveredbooks);
-		free(discoveredbooks);
+		free(books);
 	}
 	appraisal_timer = 0;
 	appraisal_item = 0;
-	for (c = 0; c < MAXPLAYERS; c++)
+	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		list_FreeAll(&stats[c]->inventory);
 	}
@@ -623,18 +797,22 @@ void deinitGame()
 		}
 	}
 	list_FreeAll(map.entities);
+	if ( map.creatures )
+	{
+		list_FreeAll(map.creatures); //TODO: Need to do this?
+	}
 	list_FreeAll(&messages);
-	if (multiplayer == SINGLE)
+	if ( multiplayer == SINGLE )
 	{
 		list_FreeAll(&channeledSpells[0]);
 	}
-	else if (multiplayer == CLIENT)
+	else if ( multiplayer == CLIENT )
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
-	else if (multiplayer == SERVER)
+	else if ( multiplayer == SERVER )
 	{
-		for (c = 0; c < numplayers; ++c)
+		for ( c = 0; c < MAXPLAYERS; ++c )
 		{
 			list_FreeAll(&channeledSpells[c]);
 		}
@@ -648,81 +826,115 @@ void deinitGame()
 		list_FreeAll(&safePacketsReceived[c]);
 	}
 #ifdef SOUND
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 #define FMOD_Channel_Stop OPENAL_Channel_Stop
 #define FMOD_Sound_Release OPENAL_Sound_Release
 #endif
-	FMOD_Channel_Stop(music_channel);
-	FMOD_Channel_Stop(music_channel2);
-	FMOD_Sound_Release(intromusic);
-	FMOD_Sound_Release(introductionmusic);
-	FMOD_Sound_Release(intermissionmusic);
-	FMOD_Sound_Release(minetownmusic);
-	FMOD_Sound_Release(splashmusic);
-	FMOD_Sound_Release(librarymusic);
-	FMOD_Sound_Release(shopmusic);
-	FMOD_Sound_Release(herxmusic);
-	FMOD_Sound_Release(templemusic);
-	FMOD_Sound_Release(endgamemusic);
-	FMOD_Sound_Release(escapemusic);
-	FMOD_Sound_Release(devilmusic);
-	for ( c = 0; c < NUMMINESMUSIC; c++ )
+	if ( !no_sound )
 	{
-		FMOD_Sound_Release(minesmusic[c]);
+		FMOD_Channel_Stop(music_channel);
+		FMOD_Channel_Stop(music_channel2);
+		FMOD_Sound_Release(introductionmusic);
+		FMOD_Sound_Release(intermissionmusic);
+		FMOD_Sound_Release(minetownmusic);
+		FMOD_Sound_Release(splashmusic);
+		FMOD_Sound_Release(librarymusic);
+		FMOD_Sound_Release(shopmusic);
+		FMOD_Sound_Release(herxmusic);
+		FMOD_Sound_Release(templemusic);
+		FMOD_Sound_Release(endgamemusic);
+		FMOD_Sound_Release(escapemusic);
+		FMOD_Sound_Release(devilmusic);
+		FMOD_Sound_Release(sanctummusic);
+		FMOD_Sound_Release(gnomishminesmusic);
+		FMOD_Sound_Release(greatcastlemusic);
+		FMOD_Sound_Release(sokobanmusic);
+		FMOD_Sound_Release(caveslairmusic);
+		FMOD_Sound_Release(bramscastlemusic);
+		FMOD_Sound_Release(hamletmusic);
+		FMOD_Sound_Release(tutorialmusic);
+		for ( c = 0; c < NUMMINESMUSIC; c++ )
+		{
+			FMOD_Sound_Release(minesmusic[c]);
+		}
+		if ( minesmusic )
+		{
+			free(minesmusic);
+		}
+		for ( c = 0; c < NUMSWAMPMUSIC; c++ )
+		{
+			FMOD_Sound_Release(swampmusic[c]);
+		}
+		if ( swampmusic )
+		{
+			free(swampmusic);
+		}
+		for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
+		{
+			FMOD_Sound_Release(labyrinthmusic[c]);
+		}
+		if ( labyrinthmusic )
+		{
+			free(labyrinthmusic);
+		}
+		for ( c = 0; c < NUMRUINSMUSIC; c++ )
+		{
+			FMOD_Sound_Release(ruinsmusic[c]);
+		}
+		if ( ruinsmusic )
+		{
+			free(ruinsmusic);
+		}
+		for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
+		{
+			FMOD_Sound_Release(underworldmusic[c]);
+		}
+		if ( underworldmusic )
+		{
+			free(underworldmusic);
+		}
+		for ( c = 0; c < NUMHELLMUSIC; c++ )
+		{
+			FMOD_Sound_Release(hellmusic[c]);
+		}
+		if ( hellmusic )
+		{
+			free(hellmusic);
+		}
+		for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
+		{
+			FMOD_Sound_Release(minotaurmusic[c]);
+		}
+		if ( minotaurmusic )
+		{
+			free(minotaurmusic);
+		}
+		for ( c = 0; c < NUMCAVESMUSIC; c++ )
+		{
+			FMOD_Sound_Release(cavesmusic[c]);
+		}
+		if ( cavesmusic )
+		{
+			free(cavesmusic);
+		}
+		for ( c = 0; c < NUMCITADELMUSIC; c++ )
+		{
+			FMOD_Sound_Release(citadelmusic[c]);
+		}
+		if ( citadelmusic )
+		{
+			free(citadelmusic);
+		}
+		for ( c = 0; c < NUMINTROMUSIC; c++ )
+		{
+			FMOD_Sound_Release(intromusic[c]);
+		}
+		if ( intromusic )
+		{
+			free(intromusic);
+		}
 	}
-	if ( minesmusic )
-	{
-		free(minesmusic);
-	}
-	for ( c = 0; c < NUMSWAMPMUSIC; c++ )
-	{
-		FMOD_Sound_Release(swampmusic[c]);
-	}
-	if ( swampmusic )
-	{
-		free(swampmusic);
-	}
-	for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
-	{
-		FMOD_Sound_Release(labyrinthmusic[c]);
-	}
-	if ( labyrinthmusic )
-	{
-		free(labyrinthmusic);
-	}
-	for ( c = 0; c < NUMRUINSMUSIC; c++ )
-	{
-		FMOD_Sound_Release(ruinsmusic[c]);
-	}
-	if ( ruinsmusic )
-	{
-		free(ruinsmusic);
-	}
-	for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
-	{
-		FMOD_Sound_Release(underworldmusic[c]);
-	}
-	if ( underworldmusic )
-	{
-		free(underworldmusic);
-	}
-	for ( c = 0; c < NUMHELLMUSIC; c++ )
-	{
-		FMOD_Sound_Release(hellmusic[c]);
-	}
-	if ( hellmusic )
-	{
-		free(hellmusic);
-	}
-	for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
-	{
-		FMOD_Sound_Release(minotaurmusic[c]);
-	}
-	if ( minotaurmusic )
-	{
-		free(minotaurmusic);
-	}
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 #undef FMOD_Channel_Stop
 #undef FMOD_Sound_Release
 #endif
@@ -747,28 +959,7 @@ void deinitGame()
 		list_FreeAll(&items[c].surfaces);
 	}
 
-	// free spell data
-	list_FreeAll(&spell_forcebolt.elements);
-	list_FreeAll(&spell_magicmissile.elements);
-	list_FreeAll(&spell_cold.elements);
-	list_FreeAll(&spell_fireball.elements);
-	list_FreeAll(&spell_lightning.elements);
-	list_FreeAll(&spell_removecurse.elements);
-	list_FreeAll(&spell_light.elements);
-	list_FreeAll(&spell_identify.elements);
-	list_FreeAll(&spell_magicmapping.elements);
-	list_FreeAll(&spell_sleep.elements);
-	list_FreeAll(&spell_confuse.elements);
-	list_FreeAll(&spell_slow.elements);
-	list_FreeAll(&spell_opening.elements);
-	list_FreeAll(&spell_locking.elements);
-	list_FreeAll(&spell_levitation.elements);
-	list_FreeAll(&spell_invisibility.elements);
-	list_FreeAll(&spell_teleportation.elements);
-	list_FreeAll(&spell_healing.elements);
-	list_FreeAll(&spell_extrahealing.elements);
-	list_FreeAll(&spell_cureailment.elements);
-	list_FreeAll(&spell_dig.elements);
+	freeSpells();
 
 	// pathmaps
 	if ( pathMapGrounded )
@@ -783,7 +974,6 @@ void deinitGame()
 	pathMapFlying = NULL;
 
 	// clear steam achievement list
-	list_FreeAll(&steamAchievements);
 	list_FreeAll(&booksRead);
 
 	// clear lobby chatbox data
@@ -821,6 +1011,32 @@ void deinitGame()
 		}
 	}
 #endif
+#if defined USE_EOS
+	if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
+	{
+		EOS.leaveLobby();
+
+		Uint32 shutdownTicks = SDL_GetTicks();
+		while ( EOS.CurrentLobbyData.bAwaitingLeaveCallback )
+		{
+#ifdef APPLE
+			SDL_Event event;
+			while ( SDL_PollEvent(&event) != 0 )
+			{
+				//Makes Mac work because Apple had to do it different.
+			}
+#endif
+			EOS_Platform_Tick(EOS.PlatformHandle);
+			SDL_Delay(50);
+			if ( SDL_GetTicks() - shutdownTicks >= 3000 )
+			{
+				break;
+			}
+		}
+	}
+	EOS.AccountManager.deinit();
+	EOS.shutdown();
+#endif
 
 	//Close game controller
 	/*if (game_controller)
@@ -831,6 +1047,11 @@ void deinitGame()
 	if (game_controller)
 	{
 		delete game_controller;
+	}
+
+	if ( shoparea )
+	{
+		free(shoparea);
 	}
 
 	for (int i = 0; i < MAXPLAYERS; ++i)

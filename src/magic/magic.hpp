@@ -13,33 +13,71 @@
 
 #pragma once
 
-#define SPELLCASTING_BEGINNER 40 //If the player's spellcasting skill is below this, they're a newbie and will suffer various penalties to their spellcasting.
+static const int SPELLCASTING_BEGINNER = 40; //If the player's spellcasting skill is below this, they're a newbie and will suffer various penalties to their spellcasting.
 
-#define SPELL_NONE 0 //This define is not meant to be used. Rather, it is to signify that a spell type of 0 means no spell, which is of particular use in the Spell struct.
-#define SPELL_FORCEBOLT 1
-#define SPELL_MAGICMISSILE 2
-#define SPELL_COLD 3
-#define SPELL_FIREBALL 4
-#define SPELL_LIGHTNING 5
-#define SPELL_REMOVECURSE 6
-#define SPELL_LIGHT 7
-#define SPELL_IDENTIFY 8
-#define SPELL_MAGICMAPPING 9
-#define SPELL_SLEEP 10
-#define SPELL_CONFUSE 11
-#define SPELL_SLOW 12
-#define SPELL_OPENING 13
-#define SPELL_LOCKING 14
-#define SPELL_LEVITATION 15
-#define SPELL_INVISIBILITY 16
-#define SPELL_TELEPORTATION 17
-#define SPELL_HEALING 18
-#define SPELL_EXTRAHEALING 19
+static const int SPELL_NONE = 0; //This define is not meant to be used. Rather, it is to signify that a spell type of 0 means no spell, which is of particular use in the Spell struct.
+static const int SPELL_FORCEBOLT = 1;
+static const int SPELL_MAGICMISSILE = 2;
+static const int SPELL_COLD = 3;
+static const int SPELL_FIREBALL = 4;
+static const int SPELL_LIGHTNING = 5;
+static const int SPELL_REMOVECURSE = 6;
+static const int SPELL_LIGHT = 7;
+static const int SPELL_IDENTIFY = 8;
+static const int SPELL_MAGICMAPPING = 9;
+static const int SPELL_SLEEP = 10;
+static const int SPELL_CONFUSE = 11;
+static const int SPELL_SLOW = 12;
+static const int SPELL_OPENING = 13;
+static const int SPELL_LOCKING = 14;
+static const int SPELL_LEVITATION = 15;
+static const int SPELL_INVISIBILITY = 16;
+static const int SPELL_TELEPORTATION = 17;
+static const int SPELL_HEALING = 18;
+static const int SPELL_EXTRAHEALING = 19;
 //#define SPELL_RESTOREABILITY 20
-#define SPELL_CUREAILMENT 20
-#define SPELL_DIG 21
+static const int SPELL_CUREAILMENT = 20;
+static const int SPELL_DIG = 21;
+static const int SPELL_SUMMON = 22;
+static const int SPELL_STONEBLOOD = 23;
+static const int SPELL_BLEED = 24;
+static const int SPELL_DOMINATE = 25;
+static const int SPELL_REFLECT_MAGIC = 26;
+static const int SPELL_ACID_SPRAY = 27;
+static const int SPELL_STEAL_WEAPON = 28;
+static const int SPELL_DRAIN_SOUL = 29;
+static const int SPELL_VAMPIRIC_AURA = 30;
+static const int SPELL_CHARM_MONSTER = 31;
+static const int SPELL_REVERT_FORM = 32;
+static const int SPELL_RAT_FORM = 33;
+static const int SPELL_SPIDER_FORM = 34;
+static const int SPELL_TROLL_FORM = 35;
+static const int SPELL_IMP_FORM = 36;
+static const int SPELL_SPRAY_WEB = 37;
+static const int SPELL_POISON = 38;
+static const int SPELL_SPEED = 39;
+static const int SPELL_FEAR = 40;
+static const int SPELL_STRIKE = 41;
+static const int SPELL_DETECT_FOOD = 42;
+static const int SPELL_WEAKNESS = 43;
+static const int SPELL_AMPLIFY_MAGIC = 44;
+static const int SPELL_SHADOW_TAG = 45;
+static const int SPELL_TELEPULL = 46;
+static const int SPELL_DEMON_ILLUSION = 47;
+static const int SPELL_TROLLS_BLOOD = 48;
+static const int SPELL_SALVAGE = 49;
+static const int SPELL_FLUTTER = 50;
+static const int SPELL_DASH = 51;
+static const int SPELL_SELF_POLYMORPH = 52;
+static const int SPELL_9 = 53;
+static const int SPELL_10 = 54;
+static const int NUM_SPELLS = 55;
+
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
+#define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
+#define SPELLELEMENT_STONEBLOOD_BASE_DURATION 5//In seconds.
+static const int SPELLELEMENT_ACIDSPRAY_BASE_DURATION = 5;
 
 //Definitions for actMagic(note that other functions may use this)
 #define MAGIC_TYPE (Item)my->skill[10] //TODO: OLD.
@@ -78,7 +116,45 @@
 
 #define HEAL_RADIUS 128
 
-void addSpell(int spell, int player); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
+/*** misc effect particles ***/
+static const int PARTICLE_EFFECT_ABILITY_ROCK = 1;
+static const int PARTICLE_EFFECT_ABILITY_PURPLE = 2;
+static const int PARTICLE_EFFECT_SAP = 3;
+static const int PARTICLE_EFFECT_SHADOW_INVIS = 4;
+static const int PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL = 5;
+static const int PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET = 6;
+static const int PARTICLE_EFFECT_ERUPT = 7;
+static const int PARTICLE_EFFECT_VAMPIRIC_AURA = 8;
+static const int PARTICLE_EFFECT_RISING_DROP = 9;
+static const int PARTICLE_EFFECT_PORTAL_SPAWN = 10;
+static const int PARTICLE_EFFECT_SHADOW_TELEPORT = 11;
+static const int PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY = 12;
+static const int PARTICLE_EFFECT_LICH_TELEPORT_ROAMING = 13;
+static const int PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY = 14;
+static const int PARTICLE_EFFECT_SUMMON_MONSTER = 15;
+static const int PARTICLE_EFFECT_CHARM_MONSTER = 16;
+static const int PARTICLE_EFFECT_SPELL_SUMMON = 17;
+static const int PARTICLE_EFFECT_SPELL_WEB_ORBIT = 18;
+static const int PARTICLE_EFFECT_TELEPORT_PULL = 19;
+static const int PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION = 20;
+static const int PARTICLE_EFFECT_SHADOW_TAG = 21;
+static const int PARTICLE_EFFECT_SPELLBOT_ORBIT = 22;
+static const int PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH = 23;
+static const int PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER = 24;
+
+// actmagicIsVertical constants
+static const int MAGIC_ISVERTICAL_NONE = 0;
+static const int MAGIC_ISVERTICAL_Z = 1;
+static const int MAGIC_ISVERTICAL_XYZ = 2;
+
+// misc particle timer actions
+static const int PARTICLE_TIMER_ACTION_SHOOT_PARTICLES = 1;
+static const int PARTICLE_TIMER_ACTION_SPAWN_PORTAL = 2;
+static const int PARTICLE_TIMER_ACTION_SUMMON_MONSTER = 3;
+static const int PARTICLE_TIMER_ACTION_SPELL_SUMMON = 4;
+static const int PARTICLE_TIMER_ACTION_DEVIL_SUMMON_MONSTER = 5;
+
+bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
 //TODO: Create a spell class which has the basic spell(s) involved, the mana to use etc. All of those important details. This should support vanilla spells and custom spells with just one data type. The addSpell function gives the player a vanilla spell if they don't already have it.
 
@@ -267,7 +343,56 @@ extern spellElement_t spellElement_magicmissile;
  */
 extern spellElement_t spellElement_removecurse;
 
+/*
+* Summons familiars.
+*/
+extern spellElement_t spellElement_summon;
+/*
+* Paralysis effect.
+*/
+extern spellElement_t spellElement_stoneblood;
+/*
+* Damage and bleed effect.
+*/
+extern spellElement_t spellElement_bleed;
 
+/*Dmg/Poison and degrade armor*/
+extern spellElement_t spellElement_acidSpray;
+
+/*
+* The missile element gives propulsion to a spell; it makes a spell a projectile.
+* Base cost: 1 mana.
+* Shoots 3 projectiles.
+* Overload: Every additional mana put into this spell increases speed & lifetime. //TODO: Separately control speed & lifetime? E.g. put mana into each separately, must have at least one in each
+*/
+extern spellElement_t spellElement_missile_trio;
+
+/*
+ * Turns a non-boss non-player creature into one of your followers.
+ */
+extern spellElement_t spellElement_dominate;
+extern spellElement_t spellElement_reflectMagic;
+extern spellElement_t spellElement_stealWeapon;
+extern spellElement_t spellElement_drainSoul;
+extern spellElement_t spellElement_vampiricAura;
+extern spellElement_t spellElement_charmMonster;
+extern spellElement_t spellElement_shapeshift;
+extern spellElement_t spellElement_sprayWeb;
+extern spellElement_t spellElement_poison;
+extern spellElement_t spellElement_speed;
+extern spellElement_t spellElement_fear;
+extern spellElement_t spellElement_strike;
+extern spellElement_t spellElement_detectFood;
+extern spellElement_t spellElement_weakness;
+extern spellElement_t spellElement_amplifyMagic;
+extern spellElement_t spellElement_shadowTag;
+extern spellElement_t spellElement_telePull;
+extern spellElement_t spellElement_demonIllusion;
+extern spellElement_t spellElement_trollsBlood;
+extern spellElement_t spellElement_salvageItem;
+extern spellElement_t spellElement_flutter;
+extern spellElement_t spellElement_dash;
+extern spellElement_t spellElement_selfPolymorph;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -296,7 +421,10 @@ typedef struct spell_t
 
 extern list_t spellList; //All of the player's spells are stored here.
 extern spell_t* selected_spell; //The spell the player's currently selected.
-extern list_t channeledSpells[4]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
+extern spell_t* selected_spell_alternate[5];
+extern list_t channeledSpells[MAXPLAYERS]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
+extern std::vector<spell_t*> allGameSpells; // to iterate over for quickly finding attributes of all spells.
+extern int selected_spell_last_appearance;
 
 //TODO: Add stock spells.
 
@@ -328,23 +456,88 @@ extern spell_t spell_extrahealing; //Done. //TODO: AoE heal? Or target modes (se
 //extern spell_t spell_restoreability; //--CUT--
 extern spell_t spell_cureailment; //Done. //TODO: Generalize for NPCs?
 extern spell_t spell_dig; //Done.
+extern spell_t spell_summon;
+extern spell_t spell_stoneblood;
+extern spell_t spell_bleed;
+extern spell_t spell_dominate;
+extern spell_t spell_reflectMagic;
+extern spell_t spell_acidSpray;
+extern spell_t spell_stealWeapon;
+extern spell_t spell_drainSoul;
+extern spell_t spell_vampiricAura;
+extern spell_t spell_charmMonster;
+extern spell_t spell_revertForm;
+extern spell_t spell_ratForm;
+extern spell_t spell_spiderForm;
+extern spell_t spell_trollForm;
+extern spell_t spell_impForm;
+extern spell_t spell_sprayWeb;
+extern spell_t spell_poison;
+extern spell_t spell_speed;
+extern spell_t spell_fear;
+extern spell_t spell_strike;
+extern spell_t spell_detectFood;
+extern spell_t spell_weakness;
+extern spell_t spell_amplifyMagic;
+extern spell_t spell_shadowTag;
+extern spell_t spell_telePull;
+extern spell_t spell_demonIllusion;
+extern spell_t spell_trollsBlood;
+extern spell_t spell_salvageItem;
+extern spell_t spell_flutter;
+extern spell_t spell_dash;
+extern spell_t spell_polymorph;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
 void setupSpells();
 
-void equipSpell(spell_t* spell, int playernum);
-Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap);
-void castSpellInit(Uint32 caster_uid, spell_t* spell); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
+void equipSpell(spell_t* spell, int playernum, Item* spellItem);
+Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook = false);
+void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
+int spellGetCastSound(spell_t* spell);
+bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
 
 void actMagicTrap(Entity* my);
-void actMagicStatuseffect(Entity* my);
+void actMagicStatusEffect(Entity* my);
 void actMagicMissile(Entity* my);
 void actMagicClient(Entity* my);
 void actMagicClientNoLight(Entity* my);
 void actMagicParticle(Entity* my);
 Entity* spawnMagicParticle(Entity* parentent);
+Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, real_t spreadReduce);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);
+void createParticle1(Entity* caster, int player);
+void createParticleCircling(Entity* parent, int duration, int sprite);
+void actParticleCircle(Entity* my);
+void actParticleDot(Entity* my);
+void actParticleRock(Entity* my);
+void actParticleTest(Entity* my);
+void actParticleErupt(Entity* my);
+void actParticleTimer(Entity* my);
+void actParticleSap(Entity* my);
+void actParticleSapCenter(Entity* my);
+void actParticleExplosionCharge(Entity* my);
+void actParticleFollowerCommand(Entity* my);
+void actParticleCharmMonster(Entity* my);
+void actParticleAestheticOrbit(Entity* my);
+void actParticleShadowTag(Entity* my);
+
+void createParticleDropRising(Entity* parent, int sprite, double scale);
+void createParticleDot(Entity* parent);
+Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, int particleType);
+void createParticleRock(Entity* parent);
+void createParticleErupt(Entity* parent, int sprite);
+Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
+Entity* createParticleTimer(Entity* parent, int duration, int sprite);
+void createParticleSap(Entity* parent);
+void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale);
+void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite);
+void createParticleCharmMonster(Entity* parent);
+void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
+
+void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
+void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
@@ -355,19 +548,22 @@ spellElement_t* copySpellElement(spellElement_t* spellElement);
 void spellElementConstructor(spellElement_t* element);
 void spellElementDeconstructor(void* data);
 
-int getCostOfSpell(spell_t* spell);
+int getCostOfSpell(spell_t* spell, Entity* caster = nullptr);
 int getCostOfSpellElement(spellElement_t* spellElement);
+real_t getBonusFromCasterOfSpellElement(Entity* caster, spellElement_t* spellElement = nullptr);
 bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);
 
 spell_t* getSpellFromID(int ID);
+int getSpellbookFromSpellID(int spellID);
 
 bool spellInList(list_t* list, spell_t* spell);
 
 //-----Implementations of spell effects-----
 void spell_magicMap(int player); //Magics the map. I mean maps the magic. I mean magically maps the level.
-
-void spell_changeHealth(Entity* entity, int amount); //This function changes an entity's health.
+void spell_detectFoodEffectOnMap(int player);
+void spell_summonFamiliar(int player); // summons some familiars.
+void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP = false); //This function changes an entity's health.
 
 //-----Spell Casting Animation-----
 //The two hand animation functions.
@@ -381,6 +577,7 @@ typedef struct spellcastingAnimationManager
 	Uint32 caster;
 
 	bool active;
+	bool active_spellbook;
 	int stage; //The current stage of the animation.
 	int circle_count; //How many times it's circled around in the circle stage.
 	int times_to_circle; //How many times to circle around in the circle stage.
@@ -389,6 +586,7 @@ typedef struct spellcastingAnimationManager
 	int consume_interval; //Every consume_interval ticks, eat a mana.
 	int consume_timer; //How many ticks left till next mana consume.
 	int mana_left; //How much mana is left to consume.
+	bool consumeMana; //If false, goes through the motions, even casts the spell -- just doesn't consume any mana.
 
 	float lefthand_movex;
 	float lefthand_movey;
@@ -396,7 +594,7 @@ typedef struct spellcastingAnimationManager
 } spellcasting_animation_manager_t;
 extern spellcasting_animation_manager_t cast_animation;
 
-void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell);
+void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook);
 extern Entity* magicLeftHand;
 extern Entity* magicRightHand;
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager);
@@ -405,3 +603,24 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 class Item;
 
 spell_t* getSpellFromItem(Item* item);
+int getSpellIDFromSpellbook(int spellbookType);
+int canUseShapeshiftSpellInCurrentForm(Item& item);
+
+//Spell implementation stuff.
+bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
+void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
+void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
+Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent, bool fromMagicSpell, int customDuration = 0); // returns nullptr if target was monster, otherwise returns pointer to new creature
+void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance);
+bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
+void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
+
+void freeSpells();
+int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src);
+void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellType[32], int value, int* spellInfoLines, real_t* sustainCostPerSecond);

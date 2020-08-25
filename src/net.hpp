@@ -22,7 +22,7 @@ extern list_t lobbyChatboxMessages;
 
 // function prototypes for net.c:
 int power(int a, int b);
-int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
+int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool tryReliable = false);
 int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
 void messagePlayer(int player, char* message, ...);
 void messagePlayerColor(int player, Uint32 color, char* message, ...);
@@ -32,27 +32,55 @@ void sendMapSeedTCP(int c);
 void sendMapTCP(int c);
 void serverUpdateEntitySprite(Entity* entity);
 void serverUpdateEntitySkill(Entity* entity, int skill);
+void serverUpdateEntityFSkill(Entity* entity, int fskill);
+void serverUpdateEntityStatFlag(Entity* entity, int flag);
+void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite, Uint32 optionalUid = 0);
+void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite);
 void serverUpdateEntityFlag(Entity* entity, int flag);
 void serverUpdateBodypartIDs(Entity* entity);
 void serverUpdateEntityBodypart(Entity* entity, int bodypart);
 void serverUpdateEffects(int player);
 void serverUpdateHunger(int player);
+void serverUpdatePlayerStats();
+void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval);
+void serverUpdatePlayerConduct(int player, int conduct, int value);
+void serverUpdatePlayerLVL();
+void serverRemoveClientFollower(int player, Uint32 uidToRemove);
+void serverSendItemToPickupAndEquip(int player, Item* item);
+void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type);
+void serverUpdatePlayerSummonStrength(int player);
+void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool guarantee = false);
+void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y);
+void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y, Uint32 targetUid = 0);
+enum NetworkingLobbyJoinRequestResult : int
+{
+	NET_LOBBY_JOIN_P2P_FAILURE,
+	NET_LOBBY_JOIN_P2P_SUCCESS,
+	NET_LOBBY_JOIN_DIRECTIP_FAILURE,
+	NET_LOBBY_JOIN_DIRECTIP_SUCCESS
+};
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult);
 Entity* receiveEntity(Entity* entity);
 void clientActions(Entity* entity);
-void clientHandleMessages();
-void serverHandleMessages();
+void clientHandleMessages(Uint32 framerateBreakInterval);
+void serverHandleMessages(Uint32 framerateBreakInterval);
 bool handleSafePacket();
 
 void closeNetworkInterfaces();
 
 // server/game flags
 extern Uint32 svFlags;
-const Uint32 NUM_SERVER_FLAGS =  5;
+extern Uint32 settings_svFlags;
+const Uint32 NUM_SERVER_FLAGS =  9;
 const Uint32 SV_FLAG_CHEATS  = 1;
 const Uint32 SV_FLAG_FRIENDLYFIRE = 2;
 const Uint32 SV_FLAG_MINOTAURS = 4;
 const Uint32 SV_FLAG_HUNGER  = 8;
 const Uint32 SV_FLAG_TRAPS = 16;
+const Uint32 SV_FLAG_HARDCORE = 32;
+const Uint32 SV_FLAG_CLASSIC = 64;
+const Uint32 SV_FLAG_KEEPINVENTORY = 128;
+const Uint32 SV_FLAG_LIFESAVING = 256;
 
 class SteamPacketWrapper
 {
@@ -71,16 +99,15 @@ class NetHandler
 {
 	SDL_Thread* steam_packet_thread;
 	bool continue_multithreading_steam_packets;
-
-	std::queue<SteamPacketWrapper* > game_packets;
-
 	SDL_mutex* game_packets_lock;
 public:
 	NetHandler();
 	~NetHandler();
+	std::queue<SteamPacketWrapper* > game_packets;
 
 	void initializeMultithreadedPacketHandling();
 	void stopMultithreadedPacketHandling();
+	void toggleMultithreading(bool disableMultithreading);
 
 	bool getContinueMultithreadingSteamPackets();
 
@@ -94,6 +121,13 @@ public:
 	SteamPacketWrapper* getGamePacket();
 
 	SDL_mutex* continue_multithreading_steam_packets_lock;
-} extern* net_handler;
+};
+extern NetHandler* net_handler;
+
+extern bool disableMultithreadedSteamNetworking;
+extern bool disableFPSLimitOnNetworkMessages;
 
 int steamPacketThread(void* data);
+int EOSPacketThread(void* data);
+
+void deleteMultiplayerSaveGames(); //Server function, deletes its own save and broadcasts delete packet to clients.

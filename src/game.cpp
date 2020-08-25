@@ -10,16 +10,19 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
 #include "sound.hpp"
 #include "items.hpp"
+#include "init.hpp"
 #include "shops.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
@@ -33,6 +36,9 @@
 #include "collision.hpp"
 #include "paths.hpp"
 #include "player.hpp"
+#include "mod_tools.hpp"
+#include "lobbies.hpp"
+#include "interface/ui.hpp"
 #include <limits>
 
 #ifdef LINUX
@@ -40,6 +46,7 @@
 #include <signal.h>
 #include <string.h>
 #include <execinfo.h>
+#include <sys/stat.h>
 
 const unsigned STACK_SIZE = 10;
 
@@ -65,6 +72,124 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 #endif
 
+#ifdef APPLE
+
+#include <sys/stat.h>
+
+#endif
+
+#ifdef BSD
+
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+#endif
+
+#ifdef WINDOWS
+void make_minidump(EXCEPTION_POINTERS* e)
+{
+	auto hDbgHelp = LoadLibraryA("dbghelp");
+	if ( hDbgHelp == nullptr )
+	{
+		return;
+	}
+	auto pMiniDumpWriteDump = (decltype(&MiniDumpWriteDump))GetProcAddress(hDbgHelp, "MiniDumpWriteDump");
+	if ( pMiniDumpWriteDump == nullptr )
+	{
+		return;
+	}
+
+	char name[PATH_MAX];
+	{
+		strcpy(name, "barony_crash");
+		auto nameEnd = name + strlen("barony_crash");
+		SYSTEMTIME t;
+		GetLocalTime(&t);
+		wsprintfA(nameEnd,
+			"_%4d%02d%02d_%02d%02d%02d.dmp",
+			t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+	}
+	std::string crashlogDir = outputdir;
+	crashlogDir.append(PHYSFS_getDirSeparator()).append("crashlogs");
+	if ( access(crashlogDir.c_str(), F_OK) == -1 )
+	{
+		// crashlog folder does not exist to write to.
+		printlog("Error accessing crashlogs folder, cannot create crash dump file.");
+		return;
+	}
+
+	// make a new crash folder.
+	char newCrashlogFolder[PATH_MAX] = "";
+	strncpy(newCrashlogFolder, name, strlen(name) - strlen(".dmp")); // folder name is the dmp file without .dmp
+	if ( PHYSFS_setWriteDir(crashlogDir.c_str()) ) // write to the crashlogs/ directory
+	{
+		if ( PHYSFS_mkdir(newCrashlogFolder) ) // make the folder to hold the .dmp file
+		{
+			// the full path of the .dmp file to create.
+			crashlogDir.append(PHYSFS_getDirSeparator()).append(newCrashlogFolder).append(PHYSFS_getDirSeparator());
+		}
+		else
+		{
+			printlog("[PhysFS]: unsuccessfully created %s folder. Error code: %d", newCrashlogFolder, PHYSFS_getLastErrorCode());
+			return;
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", outputdir, PHYSFS_getLastErrorCode());
+		return;
+	}
+
+	std::string crashDumpFile = crashlogDir + name;
+
+	auto hFile = CreateFileA(crashDumpFile.c_str(), GENERIC_ALL, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if ( hFile == INVALID_HANDLE_VALUE )
+	{
+		printlog("Error in file handle for %s, cannot create crash dump file.", crashDumpFile.c_str());
+		return;
+	}
+
+	MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
+	exceptionInfo.ThreadId = GetCurrentThreadId();
+	exceptionInfo.ExceptionPointers = e;
+	exceptionInfo.ClientPointers = FALSE;
+
+	auto dumped = pMiniDumpWriteDump(
+		GetCurrentProcess(),
+		GetCurrentProcessId(),
+		hFile,
+		MINIDUMP_TYPE(MiniDumpWithIndirectlyReferencedMemory | MiniDumpScanMemory),
+		e ? &exceptionInfo : nullptr,
+		nullptr,
+		nullptr);
+
+	CloseHandle(hFile);
+
+	printlog("CRITICAL ERROR: Barony has encountered a crash. Submit the crashlog folder in a .zip to the developers: %s", crashlogDir.c_str());
+	if ( logfile )
+	{
+		fclose(logfile);
+	}
+
+	// now copy the logfile into the crash folder.
+	char logfilePath[PATH_MAX];
+	completePath(logfilePath, "log.txt", outputdir);
+	std::string crashLogFile = crashlogDir + "log.txt";
+	CopyFileA(logfilePath, crashLogFile.c_str(), false);
+	return;
+}
+
+LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
+{
+	make_minidump(e);
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
+std::vector<std::string> randomPlayerNamesMale;
+std::vector<std::string> randomPlayerNamesFemale;
+std::vector<std::string> physFSFilesInDirectory;
+TileEntityListHandler TileEntityList;
 // recommended for valgrind debugging:
 // res of 480x270
 // /nohud
@@ -72,7 +197,11 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 int game = 1;
 Uint32 uniqueGameKey = 0;
-list_t steamAchievements;
+DebugStatsClass DebugStats;
+Uint32 networkTickrate = 0;
+bool gameloopFreezeEntities = false;
+Uint32 serverSchedulePlayerHealthUpdate = 0;
+Uint32 serverLastPlayerHealthUpdate = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -111,70 +240,141 @@ void gameLogic(void)
 	{
 		secondendmovietime++;
 	}
+	if ( thirdendmoviestage > 0 )
+	{
+		thirdendmovietime++;
+	}
+	if ( fourthendmoviestage > 0 )
+	{
+		fourthendmovietime++;
+	}
+	for ( int i = 0; i < 8; ++i )
+	{
+		if ( DLCendmovieStageAndTime[i][MOVIE_STAGE] > 0 )
+		{
+			DLCendmovieStageAndTime[i][MOVIE_TIME]++;
+		}
+	}
+
+	DebugStats.eventsT1 = std::chrono::high_resolution_clock::now();
 
 #ifdef SOUND
-	sound_update(); //Update FMOD and whatnot.
+	// sound_update(); //Update FMOD and whatnot.
 #endif
 
 	// camera shaking
-	if ( shaking )
+	for (int c = 0; c < MAXPLAYERS; ++c) 
 	{
-		camera_shakex2 = (camera_shakex2 + camera_shakex) * .8;
-		camera_shakey2 = (camera_shakey2 + camera_shakey) * .9;
-		if ( camera_shakex2 > 0 )
+		if ( !splitscreen && c != clientnum )
 		{
-			if ( camera_shakex2 < .02 && camera_shakex >= -.01 )
+			continue;
+		}
+
+		auto& camera_shakex = cameravars[c].shakex;
+		auto& camera_shakey = cameravars[c].shakey;
+		auto& camera_shakex2 = cameravars[c].shakex2;
+		auto& camera_shakey2 = cameravars[c].shakey2;
+		if ( shaking )
+		{
+			camera_shakex2 = (camera_shakex2 + camera_shakex) * .8;
+			camera_shakey2 = (camera_shakey2 + camera_shakey) * .9;
+			if ( camera_shakex2 > 0 )
 			{
-				camera_shakex2 = 0;
-				camera_shakex = 0;
+				if ( camera_shakex2 < .02 && camera_shakex >= -.01 )
+				{
+					camera_shakex2 = 0;
+					camera_shakex = 0;
+				}
+				else
+				{
+					camera_shakex -= .01;
+				}
 			}
-			else
+			else if ( camera_shakex2 < 0 )
 			{
-				camera_shakex -= .01;
+				if ( camera_shakex2 > -.02 && camera_shakex <= .01 )
+				{
+					camera_shakex2 = 0;
+					camera_shakex = 0;
+				}
+				else
+				{
+					camera_shakex += .01;
+				}
+			}
+			if ( camera_shakey2 > 0 )
+			{
+				camera_shakey -= 1;
+			}
+			else if ( camera_shakey2 < 0 )
+			{
+				camera_shakey += 1;
 			}
 		}
-		else if ( camera_shakex2 < 0 )
+		else
 		{
-			if ( camera_shakex2 > -.02 && camera_shakex <= .01 )
-			{
-				camera_shakex2 = 0;
-				camera_shakex = 0;
-			}
-			else
-			{
-				camera_shakex += .01;
-			}
-		}
-		if ( camera_shakey2 > 0 )
-		{
-			camera_shakey -= 1;
-		}
-		else if ( camera_shakey2 < 0 )
-		{
-			camera_shakey += 1;
+			camera_shakex = 0;
+			camera_shakey = 0;
+			camera_shakex2 = 0;
+			camera_shakey2 = 0;
 		}
 	}
 
 	// drunkenness
-	if ( stats[clientnum]->EFFECTS[EFF_DRUNK] && !intro )
+	if ( !intro )
 	{
-		if ( drunkextend < 0.5 )
+		if ( stats[clientnum]->EFFECTS[EFF_DRUNK] )
 		{
-			drunkextend += .005;
-			if ( drunkextend > 0.5 )
+			// goat/drunkards no spin!
+			if ( stats[clientnum]->type == GOATMAN )
 			{
-				drunkextend = 0.5;
+				// return to normal.
+				if ( drunkextend > 0 )
+				{
+					drunkextend -= .005;
+					if ( drunkextend < 0 )
+					{
+						drunkextend = 0;
+					}
+				}
+			}
+			else
+			{
+				if ( drunkextend < 0.5 )
+				{
+					drunkextend += .005;
+					if ( drunkextend > 0.5 )
+					{
+						drunkextend = 0.5;
+					}
+				}
 			}
 		}
-	}
-	else
-	{
-		if ( drunkextend > 0 )
+		else
 		{
-			drunkextend -= .005;
-			if ( drunkextend < 0 )
+			if ( stats[clientnum]->EFFECTS[EFF_WITHDRAWAL] || stats[clientnum]->EFFECTS[EFF_DISORIENTED] )
 			{
-				drunkextend = 0;
+				// special widthdrawal shakes
+				if ( drunkextend < 0.2 )
+				{
+					drunkextend += .005;
+					if ( drunkextend > 0.2 )
+					{
+						drunkextend = 0.2;
+					}
+				}
+			}
+			else
+			{
+				// return to normal.
+				if ( drunkextend > 0 )
+				{
+					drunkextend -= .005;
+					if ( drunkextend < 0 )
+					{
+						drunkextend = 0;
+					}
+				}
 			}
 		}
 	}
@@ -199,9 +399,17 @@ void gameLogic(void)
 				strcpy((char*)net_packet->data, "BARONY_GAME_START");
 				SDLNet_Write32(svFlags, &net_packet->data[17]);
 				SDLNet_Write32(uniqueGameKey, &net_packet->data[21]);
+				if ( loadingsavegame == 0 )
+				{
+					net_packet->data[25] = 0;
+				}
+				else
+				{
+					net_packet->data[25] = 1;
+				}
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 25;
+				net_packet->len = 26;
 				sendPacket(net_sock, -1, net_packet, c - 1);
 			}
 		}
@@ -215,12 +423,13 @@ void gameLogic(void)
 	if ( !(ticks % 4) )
 	{
 		j = 0;
-		for ( node = safePacketsSent.first; node != NULL; node = nextnode )
+		for ( node = safePacketsSent.first; node != nullptr; node = nextnode )
 		{
 			nextnode = node->next;
 
 			packetsend_t* packet = (packetsend_t*)node->element;
-			sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
+			//printlog("Packet resend: %d", packet->hostnum);
+			sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum, true);
 			packet->tries++;
 			if ( packet->tries >= MAXTRIES )
 			{
@@ -237,7 +446,7 @@ void gameLogic(void)
 	// spawn flame particles on burning objects
 	if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 	{
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
 			if ( entity->flags[BURNING] )
@@ -248,9 +457,9 @@ void gameLogic(void)
 					continue;
 				}
 				j = 1 + rand() % 4;
-				for ( c = 0; c < j; c++ )
+				for ( c = 0; c < j; ++c )
 				{
-					Entity* flame = spawnFlame(entity);
+					Entity* flame = spawnFlame(entity, SPRITE_FLAME);
 					flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
 					flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
 					flame->z += rand() % 5 - 2;
@@ -311,20 +520,20 @@ void gameLogic(void)
 		x = clientnum;
 		multiplayer = SINGLE;
 		clientnum = 0;
-		for ( node = map.entities->first; node != NULL; node = nextnode )
+		for ( node = map.entities->first; node != nullptr; node = nextnode )
 		{
 			nextnode = node->next;
 			entity = (Entity*)node->element;
-			if ( !entity->ranbehavior )
+			if ( entity && !entity->ranbehavior )
 			{
 				entity->ticks++;
-				if ( entity->behavior != NULL )
+				if ( entity->behavior != nullptr )
 				{
 					(*entity->behavior)(entity);
-					if ( entitiesdeleted.first != NULL )
+					if ( entitiesdeleted.first != nullptr )
 					{
 						entitydeletedself = false;
-						for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next )
+						for ( node2 = entitiesdeleted.first; node2 != nullptr; node2 = node2->next )
 						{
 							if ( entity == (Entity*)node2->element )
 							{
@@ -347,7 +556,7 @@ void gameLogic(void)
 				}
 			}
 		}
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
 			entity->ranbehavior = false;
@@ -393,12 +602,33 @@ void gameLogic(void)
 				}
 			}
 		}
+		DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 		if ( multiplayer != CLIENT )   // server/singleplayer code
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				assailant[c] = false;
+				if ( assailantTimer[c] > 0 )
+				{
+					--assailantTimer[c];
+					//messagePlayer(0, "music cd: %d", assailantTimer[c]);
+				}
+				if ( assailant[c] == true && assailantTimer[c] <= 0 )
+				{
+					assailant[c] = false;
+					assailantTimer[c] = 0;
+				}
 			}
+
+			if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+			{
+#ifdef USE_EOS
+				if ( multiplayer == SERVER && ticks % TICKS_PER_SECOND == 0 )
+				{
+					EOS.CurrentLobbyData.updateLobbyDuringGameLoop();
+				}
+#endif // USE_EOS
+			}
+
 
 			// animate tiles
 			if ( !gamePaused )
@@ -429,14 +659,14 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % TICKS_PER_SECOND == (y + x * map.height) % TICKS_PER_SECOND && rand() % 3 == 0 )
+									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && rand() % 3 == 0 )
 									{
 										if ( lavatiles[map.tiles[index]] )
 										{
 											// bubbling lava
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
 										}
-										else
+										else if ( swimmingtiles[map.tiles[index]] )
 										{
 											// running water
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
@@ -449,9 +679,9 @@ void gameLogic(void)
 										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
 										{
 											int c, j = 1 + rand() % 2;
-											for ( c = 0; c < j; c++ )
+											for ( c = 0; c < j; ++c )
 											{
-												Entity* entity = newEntity(42, 1, map.entities);
+												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
@@ -473,7 +703,7 @@ void gameLogic(void)
 												entity->roll = (rand() % 360) * PI / 180.0;
 												if ( multiplayer != CLIENT )
 												{
-													entity_uids--;
+													--entity_uids;
 												}
 												entity->setUID(-3);
 											}
@@ -495,56 +725,233 @@ void gameLogic(void)
 					{
 						continue;
 					}
-
-					if ( list_Size(&stats[c]->FOLLOWERS) >= 3 )
+					int followerCount = list_Size(&stats[c]->FOLLOWERS);
+					if ( followerCount >= 3 )
 					{
 						steamAchievementClient(c, "BARONY_ACH_NATURAL_BORN_LEADER");
 					}
 					if ( stats[c]->GOLD >= 10000 )
 					{
-						steamAchievementClient(i, "BARONY_ACH_FILTHY_RICH");
+						steamAchievementClient(c, "BARONY_ACH_FILTHY_RICH");
+					}
+					if ( stats[c]->GOLD >= 100000 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_GILDED");
+					}
+
+					if ( stats[c]->helmet && stats[c]->helmet->type == ARTIFACT_HELM
+						&& stats[c]->breastplate && stats[c]->breastplate->type == ARTIFACT_BREASTPIECE
+						&& stats[c]->gloves && stats[c]->gloves->type == ARTIFACT_GLOVES
+						&& stats[c]->cloak && stats[c]->cloak->type == ARTIFACT_CLOAK
+						&& stats[c]->shoes && stats[c]->shoes->type == ARTIFACT_BOOTS )
+					{
+						steamAchievementClient(c, "BARONY_ACH_GIFTS_ETERNALS");
+					}
+
+					if ( stats[c]->type == SKELETON 
+						&& stats[c]->weapon && stats[c]->weapon->type == ARTIFACT_AXE
+						&& stats[c]->cloak && stats[c]->cloak->type == CLOAK_PROTECTION
+						&& !stats[c]->gloves && !stats[c]->helmet && !stats[c]->shoes
+						&& !stats[c]->breastplate && !stats[c]->mask && !stats[c]->ring
+						&& !stats[c]->amulet && !stats[c]->shield )
+					{
+						// nothing but an axe and a cloak.
+						steamAchievementClient(c, "BARONY_ACH_COMEDIAN");
+					}
+
+					if ( stats[c]->EFFECTS[EFF_SHRINE_RED_BUFF]
+						&& stats[c]->EFFECTS[EFF_SHRINE_GREEN_BUFF]
+						&& stats[c]->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
+					{
+						steamAchievementClient(c, "BARONY_ACH_WELL_PREPARED");
+					}
+
+					if ( achievementStatusRhythmOfTheKnight[c] )
+					{
+						steamAchievementClient(c, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
+					}
+					if ( achievementStatusThankTheTank[c] )
+					{
+						steamAchievementClient(c, "BARONY_ACH_THANK_THE_TANK");
+					}
+
+					int bodyguards = 0;
+					int squadGhouls = 0;
+					int badRomance = 0;
+					int familyReunion = 0;
+					int machineHead = 0;
+
+					if ( followerCount >= 4 )
+					{
+						achievementObserver.playerAchievements[c].caughtInAMoshTargets.clear();
+					}
+					for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
+					{
+						Entity* follower = nullptr;
+						if ( (Uint32*)node->element )
+						{
+							follower = uidToEntity(*((Uint32*)node->element));
+						}
+						if ( follower )
+						{
+							Stat* followerStats = follower->getStats();
+							if ( followerStats )
+							{
+								if ( followerStats->type == CRYSTALGOLEM )
+								{
+									++bodyguards;
+								}
+								if ( followerStats->type == GHOUL && stats[c]->type == SKELETON )
+								{
+									++squadGhouls;
+								}
+								if ( stats[c]->type == SUCCUBUS && (followerStats->type == SUCCUBUS || followerStats->type == INCUBUS) )
+								{
+									++badRomance;
+								}
+								if ( stats[c]->type == GOATMAN && followerStats->type == GOATMAN )
+								{
+									++familyReunion;
+								}
+								if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+								{
+									machineHead |= (followerStats->type == GYROBOT);
+									machineHead |= (followerStats->type == SENTRYBOT) << 1;
+									machineHead |= (followerStats->type == SPELLBOT) << 2;
+
+									if ( followerCount >= 4 && !(achievementObserver.playerAchievements[c].caughtInAMosh) )
+									{
+										if ( follower->monsterTarget != 0 
+											&& (follower->monsterState == MONSTER_STATE_ATTACK || follower->monsterState == MONSTER_STATE_HUNT) &&
+											(followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT) )
+										{
+											auto it = achievementObserver.playerAchievements[c].caughtInAMoshTargets.find(follower->monsterTarget);
+											if ( it != achievementObserver.playerAchievements[c].caughtInAMoshTargets.end() )
+											{
+												// key exists.
+												achievementObserver.playerAchievements[c].caughtInAMoshTargets[follower->monsterTarget] += 1; // increase value
+												if ( achievementObserver.playerAchievements[c].caughtInAMoshTargets[follower->monsterTarget] >= 4 )
+												{
+													achievementObserver.awardAchievement(c, AchievementObserver::BARONY_ACH_CAUGHT_IN_A_MOSH);
+													achievementObserver.playerAchievements[c].caughtInAMosh = true;
+												}
+											}
+											else
+											{
+												achievementObserver.playerAchievements[c].caughtInAMoshTargets.insert(std::make_pair(static_cast<Uint32>(follower->monsterTarget), 1));
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					if ( bodyguards >= 2 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_BODYGUARDS");
+					}
+					if ( squadGhouls >= 4 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_SQUAD_GHOULS");
+					}
+					if ( badRomance >= 2 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_BAD_ROMANCE");
+					}
+					if ( familyReunion >= 3 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_FAMILY_REUNION");
+					}
+					if ( machineHead == 7 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_MACHINE_HEAD");
+					}
+					if ( achievementObserver.playerAchievements[c].ticksSpentOverclocked >= 250 )
+					{
+						Uint32 increase = achievementObserver.playerAchievements[c].ticksSpentOverclocked / TICKS_PER_SECOND;
+						steamStatisticUpdateClient(c, STEAM_STAT_OVERCLOCKED, STEAM_STAT_INT, increase);
+
+						// add the leftover sub-second ticks result back into the score.
+						achievementObserver.playerAchievements[c].ticksSpentOverclocked = increase % TICKS_PER_SECOND;
 					}
 				}
+				updateGameplayStatisticsInMainLoop();
 			}
-			if ( conductPenniless )
-			{
-				if ( stats[clientnum]->GOLD > 0 )
-				{
-					conductPenniless = false;
-				}
-			}
+
+			updatePlayerConductsInMainLoop();
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
-			for ( node = map.entities->first; node != NULL; node = nextnode )
+			DebugStats.eventsT3 = std::chrono::high_resolution_clock::now();
+			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
-				if ( !entity->ranbehavior )
+				if ( entity && !entity->ranbehavior )
 				{
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 					{
-						entity->ticks++;
+						++entity->ticks;
 					}
-					if ( entity->behavior != NULL )
+					if ( entity->behavior != nullptr )
 					{
+						if ( gameloopFreezeEntities 
+							&& entity->behavior != &actPlayer
+							&& entity->behavior != &actPlayerLimb
+							&& entity->behavior != &actHudWeapon
+							&& entity->behavior != &actHudShield
+							&& entity->behavior != &actHudAdditional
+							&& entity->behavior != &actHudArrowModel
+							&& entity->behavior != &actLeftHandMagic
+							&& entity->behavior != &actRightHandMagic )
+						{
+							continue;
+						}
+						int ox = -1;
+						int oy = -1;
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
+							ox = static_cast<int>(entity->x) >> 4;
+							oy = static_cast<int>(entity->y) >> 4;
+							if ( !entity->myTileListNode )
+							{
+								TileEntityList.addEntity(*entity);
+							}
+
+							/*if ( entity->getUID() >= 0 && entity->behavior != &actFlame && !entity->flags[INVISIBLE]
+								&& entity->behavior != &actDoor && entity->behavior != &actDoorFrame
+								&& entity->behavior != &actGate && entity->behavior != &actTorch
+								&& entity->behavior != &actSprite && !entity->flags[SPRITE]
+								&& entity->skill[28] == 0 )
+							{
+								printlog("DEBUG: Starting Entity sprite: %d", entity->sprite);
+							}*/
 							(*entity->behavior)(entity);
+
 						}
-						if ( entitiesdeleted.first != NULL )
+						if ( entitiesdeleted.first != nullptr )
 						{
 							entitydeletedself = false;
-							for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next )
+							for ( node2 = entitiesdeleted.first; node2 != nullptr; node2 = node2->next )
 							{
 								if ( entity == (Entity*)node2->element )
 								{
+									//printlog("DEBUG: Entity deleted self, sprite: %d", entity->sprite);
 									entitydeletedself = true;
 									break;
 								}
 							}
 							if ( entitydeletedself == false )
 							{
+								if ( ox != -1 && oy != -1 )
+								{
+									if ( ox != static_cast<int>(entity->x) >> 4
+										|| oy != static_cast<int>(entity->y) >> 4 )
+									{
+										// if entity moved into a new tile, update it's tile position in global tile list.
+										TileEntityList.updateEntity(*entity);
+									}
+								}
 								entity->ranbehavior = true;
 							}
 							nextnode = map.entities->first;
@@ -552,37 +959,131 @@ void gameLogic(void)
 						}
 						else
 						{
+							if ( ox != -1 && oy != -1 )
+							{
+								if ( ox != static_cast<int>(entity->x) >> 4
+									|| oy != static_cast<int>(entity->y) >> 4 )
+								{
+									// if entity moved into a new tile, update it's tile position in global tile list.
+									TileEntityList.updateEntity(*entity);
+								}
+							}
 							entity->ranbehavior = true;
 							nextnode = node->next;
 						}
 					}
 				}
+
 				if ( loadnextlevel == true )
 				{
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						entity = (Entity*)node->element;
 						entity->flags[NOUPDATE] = true;
+
+						if ( (entity->behavior == &actThrown || entity->behavior == &actParticleSapCenter) && entity->sprite == 977 )
+						{
+							// boomerang particle, make sure to return on level change.
+							Entity* parent = uidToEntity(entity->parent);
+							if ( parent && parent->behavior == &actPlayer && stats[parent->skill[2]] )
+							{
+								Item* item = newItemFromEntity(entity);
+								if ( !item )
+								{
+									continue;
+								}
+								item->ownerUid = parent->getUID();
+								Item* pickedUp = itemPickup(parent->skill[2], item);
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								messagePlayerColor(parent->skill[2], color, language[3746], items[item->type].name_unidentified);
+								if ( pickedUp )
+								{
+									if ( parent->skill[2] == 0 )
+									{
+										// pickedUp is the new inventory stack for server, free the original items
+										free(item);
+										item = nullptr;
+										if ( multiplayer != CLIENT && !stats[parent->skill[2]]->weapon )
+										{
+											useItem(pickedUp, parent->skill[2]);
+										}
+										if ( magicBoomerangHotbarSlot >= 0 )
+										{
+											hotbar[magicBoomerangHotbarSlot].item = pickedUp->uid;
+											for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+											{
+												if ( i != magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+												{
+													hotbar[i].item = 0;
+												}
+											}
+										}
+									}
+									else
+									{
+										free(pickedUp); // item is the picked up items (item == pickedUp)
+									}
+								}
+							}
+						}
 					}
 
 					// hack to fix these things from breaking everything...
-					hudarm = NULL;
-					hudweapon = NULL;
-					magicLeftHand = NULL;
-					magicRightHand = NULL;
+					hudarm = nullptr;
+					hudweapon = nullptr;
+					magicLeftHand = nullptr;
+					magicRightHand = nullptr;
 
 					// stop all sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 					if ( sound_group )
 					{
 						FMOD_ChannelGroup_Stop(sound_group);
 					}
-#elif defined HAVE_OPENAL
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_Stop(soundAmbient_group);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_Stop(soundEnvironment_group);
+					}
+#elif defined USE_OPENAL
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_Stop(sound_group);
 					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_Stop(soundAmbient_group);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_Stop(soundEnvironment_group);
+					}
 #endif
+					// stop combat music
+					// close chests
+					for ( c = 0; c < MAXPLAYERS; ++c )
+					{
+						assailantTimer[c] = 0;
+						if ( c > 0 && !client_disconnected[c] )
+						{
+							if ( openedChest[c] )
+							{
+								openedChest[c]->closeChestServer();
+							}
+						}
+						else if ( c == 0 )
+						{
+							if ( openedChest[c] )
+							{
+								openedChest[c]->closeChest();
+							}
+						}
+					}
+
+
 
 					// show loading message
 					loading = true;
@@ -595,15 +1096,25 @@ void gameLogic(void)
 
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
-					for ( c = 0; c < MAXPLAYERS; c++ )
+					bool bCopyFollowers = true;
+					if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 					{
-						tempFollowers[c].first = NULL;
-						tempFollowers[c].last = NULL;
+						bCopyFollowers = false;
+					}
+
+					for ( c = 0; c < MAXPLAYERS; ++c )
+					{
+						tempFollowers[c].first = nullptr;
+						tempFollowers[c].last = nullptr;
 
 						node_t* node;
-						for ( node = stats[c]->FOLLOWERS.first; node != NULL; node = node->next )
+						for ( node = stats[c]->FOLLOWERS.first; bCopyFollowers && node != nullptr; node = node->next )
 						{
-							Entity* follower = uidToEntity(*((Uint32*)node->element));
+							Entity* follower = nullptr;
+							if ( (Uint32*)node->element )
+							{
+								follower = uidToEntity(*((Uint32*)node->element));
+							}
 							if ( follower )
 							{
 								Stat* followerStats = follower->getStats();
@@ -628,89 +1139,167 @@ void gameLogic(void)
 							case 0:
 								steamAchievement("BARONY_ACH_ENTER_THE_DUNGEON");
 								break;
-							case 4:
-								steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
+							default:
 								break;
-							case 9:
-								steamAchievement("BARONY_ACH_JUNGLE_FEVER");
-								break;
-							case 14:
-								steamAchievement("BARONY_ACH_SANDMAN");
-								break;
-
 						}
 					}
 
 					// signal clients about level change
 					mapseed = rand();
 					lastEntityUIDs = entity_uids;
-					currentlevel++;
+					if ( forceMapSeed > 0 )
+					{
+						mapseed = forceMapSeed;
+						forceMapSeed = 0;
+					}
+
+					bool loadingTheSameFloorAsCurrent = false;
+					if ( skipLevelsOnLoad > 0 )
+					{
+						currentlevel += skipLevelsOnLoad;
+					}
+					else
+					{
+						if ( skipLevelsOnLoad < 0 )
+						{
+							currentlevel += skipLevelsOnLoad;
+							if ( skipLevelsOnLoad == -1 )
+							{
+								loadingTheSameFloorAsCurrent = true;
+							}
+						}
+						++currentlevel;
+					}
+					skipLevelsOnLoad = 0;
+
+					if ( !secretlevel )
+					{
+						switch ( currentlevel )
+						{
+							case 5:
+								steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
+								// the observer will send out to clients.
+								achievementObserver.updatePlayerAchievement(clientnum,
+									AchievementObserver::Achievement::BARONY_ACH_COOP_ESCAPE_MINES, AchievementObserver::ACH_EVENT_NONE);
+								break;
+							case 10:
+								steamAchievement("BARONY_ACH_JUNGLE_FEVER");
+								break;
+							case 15:
+								steamAchievement("BARONY_ACH_SANDMAN");
+								break;
+							case 30:
+								steamAchievement("BARONY_ACH_SPELUNKY");
+								break;
+							case 35:
+								if ( ((completionTime / TICKS_PER_SECOND) / 60) <= 45 )
+								{
+									conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] = 1;
+								}
+								break;
+							default:
+								break;
+						}
+					}
+
 					if ( multiplayer == SERVER )
 					{
-						for ( c = 1; c < MAXPLAYERS; c++ )
+						for ( c = 1; c < MAXPLAYERS; ++c )
 						{
 							if ( client_disconnected[c] == true )
 							{
 								continue;
 							}
-							strcpy((char*)net_packet->data, "LVLC");
+							if ( loadingSameLevelAsCurrent )
+							{
+								strcpy((char*)net_packet->data, "LVLR");
+							}
+							else
+							{
+								strcpy((char*)net_packet->data, "LVLC");
+							}
 							net_packet->data[4] = secretlevel;
 							SDLNet_Write32(mapseed, &net_packet->data[5]);
 							SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
 							net_packet->data[13] = currentlevel;
+
+							if ( loadCustomNextMap.compare("") != 0 )
+							{
+								strcpy((char*)(&net_packet->data[14]), loadCustomNextMap.c_str());
+								net_packet->data[14 + loadCustomNextMap.length()] = 0;
+								net_packet->len = 14 + loadCustomNextMap.length() + 1;
+							}
+							else
+							{
+								net_packet->data[14] = 0;
+								net_packet->len = 15;
+							}
 							net_packet->address.host = net_clients[c - 1].host;
 							net_packet->address.port = net_clients[c - 1].port;
-							net_packet->len = 14;
 							sendPacketSafe(net_sock, -1, net_packet, c - 1);
 						}
 					}
+					loadingSameLevelAsCurrent = false;
 					darkmap = false;
 					numplayers = 0;
-					if ( !secretlevel )
+
+					gameplayCustomManager.readFromFile();
+					textSourceScript.scriptVariables.clear();
+
+					int checkMapHash = -1;
+					int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+					if ( checkMapHash == 0 )
 					{
-						fp = fopen(LEVELSFILE, "r");
+						conductGameChallenges[CONDUCT_MODDED] = 1;
 					}
-					else
-					{
-						fp = fopen(SECRETLEVELSFILE, "r");
-					}
-					for ( i = 0; i < currentlevel; i++ )
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-					fscanf(fp, "%s", tempstr);
-					while ( fgetc(fp) != ' ' ) if ( feof(fp) )
-						{
-							break;
-						}
-					int result = 0;
-					if ( !strcmp(tempstr, "gen:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						result = generateDungeon(tempstr, mapseed);
-					}
-					else if ( !strcmp(tempstr, "map:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						result = loadMap(tempstr, &map, map.entities);
-					}
-					fclose(fp);
+
+					minimapPings.clear(); // clear minimap pings
+					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+
+					// clear follower menu entities.
+					FollowerMenu.closeFollowerMenuGUI(true);
+
 					assignActions(&map);
 					generatePathMaps();
+
+					achievementObserver.updateData();
+
+					if ( !strncmp(map.name, "Mages Guild", 11) )
+					{
+						for ( c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( players[c] && players[c]->entity )
+							{
+								players[c]->entity->modHP(999);
+								players[c]->entity->modMP(999);
+								if ( stats[c] && stats[c]->HUNGER < 1450 )
+								{
+									stats[c]->HUNGER = 1450;
+									serverUpdateHunger(c);
+								}
+							}
+						}
+						messagePlayer(clientnum, language[2599]);
+
+						// undo shopkeeper grudge
+						swornenemies[SHOPKEEPER][HUMAN] = false;
+						monsterally[SHOPKEEPER][HUMAN] = true;
+						swornenemies[SHOPKEEPER][AUTOMATON] = false;
+						monsterally[SHOPKEEPER][AUTOMATON] = true;
+					}
 
 					// (special) unlock temple achievement
 					if ( secretlevel && currentlevel == 8 )
 					{
 						steamAchievement("BARONY_ACH_TRICKS_AND_TRAPS");
+					}
+					// flag setting we've reached the lich
+					if ( !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Sanctum", 7) )
+					{
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							steamStatisticUpdateClient(c, STEAM_STAT_BACK_TO_BASICS, STEAM_STAT_INT, 1);
+						}
 					}
 
 					if ( !secretlevel )
@@ -753,6 +1342,18 @@ void gameLogic(void)
 								break;
 						}
 					}
+					if ( MFLAG_DISABLETELEPORT || MFLAG_DISABLEOPENING )
+					{
+						messagePlayer(clientnum, language[2382]);
+					}
+					if ( MFLAG_DISABLELEVITATION )
+					{
+						messagePlayer(clientnum, language[2383]);
+					}
+					if ( MFLAG_DISABLEDIGGING )
+					{
+						messagePlayer(clientnum, language[2450]);
+					}
 					loadnextlevel = false;
 					loading = false;
 					fadeout = false;
@@ -762,13 +1363,56 @@ void gameLogic(void)
 					{
 						if (players[c] && players[c]->entity && !client_disconnected[c])
 						{
+							if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+							{
+								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
+								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
+							}
+							if ( stats[c] && stats[c]->EFFECTS[EFF_SHAPESHIFT] && stats[c]->playerShapeshiftStorage != NOTHING )
+							{
+								players[c]->entity->effectShapeshift = stats[c]->playerShapeshiftStorage;
+								serverUpdateEntitySkill(players[c]->entity, 53); // update visual polymorph effect for clients.
+							}
+							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							{
+								players[c]->entity->playerVampireCurse = 1;
+								serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
+							}
+
 							node_t* node;
+							node_t* gyrobotNode = nullptr;
+							Entity* gyrobotEntity = nullptr;
+							std::vector<node_t*> allyRobotNodes;
+							for ( node = tempFollowers[c].first; node != NULL; node = node->next )
+							{
+								Stat* tempStats = (Stat*)node->element;
+								if ( tempStats && tempStats->type == GYROBOT )
+								{
+									gyrobotNode = node;
+									break;
+								}
+							}
 							for (node = tempFollowers[c].first; node != nullptr; node = node->next)
 							{
 								Stat* tempStats = (Stat*)node->element;
+								if ( tempStats && (tempStats->type == DUMMYBOT
+									|| tempStats->type == SENTRYBOT
+									|| tempStats->type == SPELLBOT) )
+								{
+									// gyrobot will pick up these guys into it's inventory, otherwise leave them behind.
+									if ( gyrobotNode )
+									{
+										allyRobotNodes.push_back(node);
+									}
+									continue;
+								}
 								Entity* monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
 								if (monster)
 								{
+									if ( node == gyrobotNode )
+									{
+										gyrobotEntity = monster;
+									}
 									monster->skill[3] = 1; // to mark this monster partially initialized
 									list_RemoveNode(monster->children.last);
 
@@ -779,24 +1423,33 @@ void gameLogic(void)
 
 									Stat* monsterStats = (Stat*)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->getUID();
-									if (strcmp(monsterStats->name, ""))
+									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *monsterStats, language[721], language[720], MSG_COMBAT);
+									monster->flags[USERFLAG2] = true;
+									serverUpdateEntityFlag(monster, USERFLAG2);
+									/*if (!monsterally[HUMAN][monsterStats->type])
 									{
-										messagePlayer(c, language[720], monsterStats->name);
+									}*/
+									monster->monsterAllyIndex = c;
+									if ( multiplayer == SERVER )
+									{
+										serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
 									}
-									else
+
+									if ( multiplayer != CLIENT )
 									{
-										if ( (int)monsterStats->type < 21 ) //Original monster count
+										monster->monsterAllyClass = monsterStats->allyClass;
+										monster->monsterAllyPickupItems = monsterStats->allyItemPickup;
+										if ( stats[c]->playerSummonPERCHR != 0 && !strcmp(monsterStats->name, "skeleton knight") )
 										{
-											messagePlayer(c, language[721], language[90 + (int)monsterStats->type]);
+											monster->monsterAllySummonRank = (stats[c]->playerSummonPERCHR & 0x0000FF00) >> 8;
 										}
-										else if ( (int)monsterStats->type >= 21 ) //New monsters
+										else if ( stats[c]->playerSummon2PERCHR != 0 && !strcmp(monsterStats->name, "skeleton sentinel") )
 										{
-											messagePlayer(c, language[721], language[2000 + ((int)monsterStats->type - 21)]);
+											monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
 										}
-									}
-									if (!monsterally[HUMAN][monsterStats->type])
-									{
-										monster->flags[USERFLAG2] = true;
+										serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
+										serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
+										serverUpdateEntitySkill(monster, 50); // update monsterAllySummonRank
 									}
 
 									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
@@ -805,31 +1458,65 @@ void gameLogic(void)
 									newNode->element = myuid;
 									*myuid = monster->getUID();
 
+									if ( monsterStats->type == HUMAN && currentlevel == 25 && !strncmp(map.name, "Mages Guild", 11) )
+									{
+										steamAchievementClient(c, "BARONY_ACH_ESCORT");
+									}
+
 									if ( c > 0 && multiplayer == SERVER )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
+										strcpy((char*)(&net_packet->data[8]), monsterStats->name);
+										net_packet->data[8 + strlen(monsterStats->name)] = 0;
 										net_packet->address.host = net_clients[c - 1].host;
 										net_packet->address.port = net_clients[c - 1].port;
-										net_packet->len = 8;
+										net_packet->len = 8 + strlen(monsterStats->name) + 1;
 										sendPacketSafe(net_sock, -1, net_packet, c - 1);
+
+										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
+									}
+
+									if ( !FollowerMenu.recentEntity && c == clientnum )
+									{
+										FollowerMenu.recentEntity = monster;
 									}
 								}
 								else
 								{
-									if ( strcmp(tempStats->name, "") )
+									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *tempStats, language[723], language[722], MSG_COMBAT);
+								}
+							}
+							if ( gyrobotEntity && !allyRobotNodes.empty() )
+							{
+								Stat* gyroStats = gyrobotEntity->getStats();
+								for ( auto it = allyRobotNodes.begin(); gyroStats && it != allyRobotNodes.end(); ++it )
+								{
+									node_t* botNode = *it;
+									if ( botNode )
 									{
-										messagePlayer(c, language[722], tempStats->name);
-									}
-									else
-									{
-										if ( (int)tempStats->type < 21 ) //Original monster count
+										Stat* tempStats = (Stat*)botNode->element;
+										if ( tempStats )
 										{
-											messagePlayer(c, language[723], language[90 + (int)tempStats->type]);
-										}
-										else if ( (int)tempStats->type >= 21 ) //New monsters
-										{
-											messagePlayer(c, language[723], language[2000 + ((int)tempStats->type - 21)]);
+											ItemType type = WOODEN_SHIELD;
+											if ( tempStats->type == SENTRYBOT )
+											{
+												type = TOOL_SENTRYBOT;
+											}
+											else if ( tempStats->type == SPELLBOT )
+											{
+												type = TOOL_SPELLBOT;
+											}
+											else if ( tempStats->type == DUMMYBOT )
+											{
+												type = TOOL_DUMMYBOT;
+											}
+											int appearance = monsterTinkeringConvertHPToAppearance(tempStats);
+											if ( type != WOODEN_SHIELD )
+											{
+												Item* item = newItem(type, static_cast<Status>(tempStats->monsterTinkeringStatus),
+													0, 1, appearance, true, &gyroStats->inventory);
+											}
 										}
 									}
 								}
@@ -842,12 +1529,12 @@ void gameLogic(void)
 					break;
 				}
 			}
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
 			}
-
+			DebugStats.eventsT4 = std::chrono::high_resolution_clock::now();
 			if ( multiplayer == SERVER )
 			{
 				// periodically remind clients of the current level
@@ -871,13 +1558,36 @@ void gameLogic(void)
 					}
 				}
 
+				bool updatePlayerHealth = false;
+				if ( serverSchedulePlayerHealthUpdate != 0 && (ticks - serverSchedulePlayerHealthUpdate) >= TICKS_PER_SECOND * 0.5 )
+				{
+					// update if 0.5s have passed since request of health update.
+					// the scheduled update needs to be reset to 0 to be set again.
+					updatePlayerHealth = true;
+				}
+				else if ( (ticks % (TICKS_PER_SECOND * 3) == 0) 
+					&& (serverLastPlayerHealthUpdate == 0 || ((ticks - serverLastPlayerHealthUpdate) >= 2 * TICKS_PER_SECOND)) 
+				)
+				{
+					// regularly update every 3 seconds, only if the last update was more than 2 seconds ago.
+					updatePlayerHealth = true;
+				}
+
+				if ( updatePlayerHealth )
+				{
+					// send update to all clients for global stats[NUMPLAYERS] struct
+					serverLastPlayerHealthUpdate = ticks;
+					serverSchedulePlayerHealthUpdate = 0;
+					serverUpdatePlayerStats();
+				}
+
 				// send entity info to clients
 				if ( ticks % (TICKS_PER_SECOND / 8) == 0 )
 				{
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						entity = (Entity*)node->element;
-						for ( c = 1; c < MAXPLAYERS; c++ )
+						for ( c = 1; c < MAXPLAYERS; ++c )
 						{
 							if ( !client_disconnected[c] )
 							{
@@ -954,19 +1664,21 @@ void gameLogic(void)
 			}
 
 			// update clients on assailant status
-			for ( c = 1; c < MAXPLAYERS; c++ )
-			{
-				if ( !client_disconnected[c] )
+			if (multiplayer != SINGLE) {
+				for ( c = 1; c < MAXPLAYERS; c++ )
 				{
-					if ( oassailant[c] != assailant[c] )
+					if ( !client_disconnected[c] )
 					{
-						oassailant[c] = assailant[c];
-						strcpy((char*)net_packet->data, "MUSM");
-						net_packet->address.host = net_clients[c - 1].host;
-						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->data[3] = assailant[c];
-						net_packet->len = 4;
-						sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						if ( oassailant[c] != assailant[c] )
+						{
+							oassailant[c] = assailant[c];
+							strcpy((char*)net_packet->data, "MUSM");
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->data[3] = assailant[c];
+							net_packet->len = 4;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						}
 					}
 				}
 			}
@@ -976,11 +1688,97 @@ void gameLogic(void)
 				client_selected[j] = NULL;
 			}
 
+			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
+			int backpack_sizey = 3;
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
+				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
+			{
+				backpack_sizey = 4;
+			}
+
+			if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+			}
+			else if ( backpack_sizey == 4 )
+			{
+				INVENTORY_SIZEY = 4;
+			}
+			else
+			{
+				if ( INVENTORY_SIZEY > 3 && !tooManySpells )
+				{
+					// we should rearrange our spells.
+					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+					{
+						int scanx = 0;
+						int scany = 0;
+						bool notfree = false;
+						bool foundaspot = false;
+						Item* item = (Item*)node->element;
+						if ( itemCategory(item) != SPELL_CAT )
+						{
+							continue;
+						}
+						if ( item->appearance >= 1000 )
+						{
+							continue; // shaman spells.
+						}
+						while ( 1 )
+						{
+							for ( scany = 0; scany < 3; scany++ )
+							{
+								node_t* node2;
+								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
+								{
+									Item* tempItem = (Item*)node2->element;
+									if ( tempItem == item )
+									{
+										continue;
+									}
+									if ( tempItem )
+									{
+										if ( tempItem->x == scanx && tempItem->y == scany )
+										{
+											if ( itemCategory(tempItem) == SPELL_CAT )
+											{
+												notfree = true;  //Both spells. Can't fit in the same slot.
+											}
+										}
+									}
+								}
+								if ( notfree )
+								{
+									notfree = false;
+									continue;
+								}
+								item->x = scanx;
+								item->y = scany;
+								foundaspot = true;
+								break;
+							}
+							if ( foundaspot )
+							{
+								break;
+							}
+							scanx++;
+						}
+					}
+				}
+				INVENTORY_SIZEY = 3;
+			}
+
+			DebugStats.eventsT5 = std::chrono::high_resolution_clock::now();
+
+			int bloodCount = 0;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
 				Item* item = (Item*)node->element;
-
+				if ( !item )
+				{
+					continue;
+				}
 				// unlock achievements for special collected items
 				switch ( item->type )
 				{
@@ -1000,15 +1798,40 @@ void gameLogic(void)
 						break;
 				}
 
+				if ( item->type == FOOD_BLOOD )
+				{
+					bloodCount += item->count;
+					if ( bloodCount >= 20 )
+					{
+						steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+					}
+				}
+
+				if ( itemCategory(item) == WEAPON )
+				{
+					if ( item->beatitude >= 10 )
+					{
+						steamAchievement("BARONY_ACH_BLESSED");
+					}
+				}
+
 				// drop any inventory items you don't have room for
-				if ( item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY )
+				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= backpack_sizey) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
-					while ( item->count > 1 )
+					bool droppedAll = false;
+					while ( item && item->count > 1 )
+					{
+						droppedAll = dropItem(item, clientnum);
+						if ( droppedAll )
+						{
+							item = nullptr;
+						}
+					}
+					if ( !droppedAll )
 					{
 						dropItem(item, clientnum);
 					}
-					dropItem(item, clientnum);
 				}
 				else
 				{
@@ -1024,6 +1847,8 @@ void gameLogic(void)
 				}
 			}
 
+			DebugStats.eventsT6 = std::chrono::high_resolution_clock::now();
+
 			if ( kills[SHOPKEEPER] >= 3 )
 			{
 				steamAchievement("BARONY_ACH_PROFESSIONAL_BURGLAR");
@@ -1036,7 +1861,7 @@ void gameLogic(void)
 		else if ( multiplayer == CLIENT )
 		{
 			// keep alives
-			if ( multiplayer == CLIENT )
+			if ( multiplayer == CLIENT ) //lol
 			{
 				if ( ticks % (TICKS_PER_SECOND * 1) == 0 )
 				{
@@ -1154,7 +1979,7 @@ void gameLogic(void)
 											// bubbling lava
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
 										}
-										else
+										else if ( swimmingtiles[map.tiles[index]] )
 										{
 											// running water
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
@@ -1169,7 +1994,7 @@ void gameLogic(void)
 											int c, j = 1 + rand() % 2;
 											for ( c = 0; c < j; c++ )
 											{
-												Entity* entity = newEntity(42, 1, map.entities);
+												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
@@ -1203,13 +2028,13 @@ void gameLogic(void)
 					}
 				}
 			}
-			if ( conductPenniless )
+
+			if ( ticks % TICKS_PER_SECOND == 0 )
 			{
-				if ( stats[clientnum]->GOLD > 0 )
-				{
-					conductPenniless = false;
-				}
+				updateGameplayStatisticsInMainLoop();
 			}
+
+			updatePlayerConductsInMainLoop();
 
 			// ask for entity delete update
 			if ( ticks % 4 == 0 && list_Size(map.entities) )
@@ -1235,11 +2060,11 @@ void gameLogic(void)
 			}
 
 			// run entity actions
-			for ( node = map.entities->first; node != NULL; node = nextnode )
+			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
-				if ( !entity->ranbehavior )
+				if ( entity && !entity->ranbehavior )
 				{
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 					{
@@ -1280,49 +2105,28 @@ void gameLogic(void)
 										// interpolate to new position
 										if ( entity->behavior != &actPlayerLimb || entity->skill[2] != clientnum )
 										{
+											double ox = 0, oy = 0, onewx = 0, onewy = 0;
+
+											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+											{
+												ox = entity->x;
+												oy = entity->y;
+												onewx = entity->new_x;
+												onewy = entity->new_y;
+											}
 											entity->x += (entity->new_x - entity->x) / 4;
 											entity->y += (entity->new_y - entity->y) / 4;
-											entity->z += (entity->new_z - entity->z) / 4;
-										}
-									}
-									// dead reckoning
-									if ( fabs(entity->vel_x) > 0 || fabs(entity->vel_y) > 0 )
-									{
-										double ox = 0, oy = 0, onewx = 0, onewy = 0;
-										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
-										{
-											ox = entity->x;
-											oy = entity->y;
-											onewx = entity->new_x;
-											onewy = entity->new_y;
-										}
-										clipMove(&entity->x, &entity->y, entity->vel_x, entity->vel_y, entity);
-										clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
-										if ( entity->behavior == &actPlayer )
-										{
-											node_t* node2;
-											for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
+											if ( entity->behavior != &actArrow )
 											{
-												Entity* bodypart = (Entity*)node2->element;
-												if ( bodypart->behavior == &actPlayerLimb )
-												{
-													if ( bodypart->skill[2] == entity->skill[2] )
-													{
-														bodypart->x += entity->x - ox;
-														bodypart->y += entity->y - oy;
-														bodypart->new_x += entity->new_x - onewx;
-														bodypart->new_y += entity->new_y - onewy;
-													}
-												}
+												// client handles z in actArrow.
+												entity->z += (entity->new_z - entity->z) / 4;
 											}
-										}
-										if ( entity->behavior == &actMonster )
-										{
-											node_t* node2;
-											for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
+
+											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
 											{
-												Entity* bodypart = (Entity*)node2->element;
-												if ( bodypart->skill[2] == entity->getUID() && bodypart->parent == entity->getUID() )
+												for ( Entity *bodypart : entity->bodyparts )
 												{
 													bodypart->x += entity->x - ox;
 													bodypart->y += entity->y - oy;
@@ -1332,20 +2136,48 @@ void gameLogic(void)
 											}
 										}
 									}
-									entity->z += entity->vel_z;
-									entity->new_z += entity->vel_z;
+									// dead reckoning
+									if ( fabs(entity->vel_x) > 0.0001 || fabs(entity->vel_y) > 0.0001 )
+									{
+										double ox = 0, oy = 0, onewx = 0, onewy = 0;
+										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+										{
+											ox = entity->x;
+											oy = entity->y;
+											onewx = entity->new_x;
+											onewy = entity->new_y;
+										}
+										real_t dist = clipMove(&entity->x, &entity->y, entity->vel_x, entity->vel_y, entity);
+										real_t new_dist = clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
+										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+										{
+											for (Entity *bodypart : entity->bodyparts)
+											{
+												bodypart->x += entity->x - ox;
+												bodypart->y += entity->y - oy;
+												bodypart->new_x += entity->new_x - onewx;
+												bodypart->new_y += entity->new_y - onewy;
+											}
+										}
+									}
+									if ( entity->behavior != &actArrow )
+									{
+										// client handles z in actArrow.
+										entity->z += entity->vel_z;
+										entity->new_z += entity->vel_z;
+									}
 
 									// rotate to new angles
-									double dir = entity->new_yaw - entity->yaw;
-									while ( dir >= PI )
+									double dirYaw = entity->new_yaw - entity->yaw;
+									while ( dirYaw >= PI )
 									{
-										dir -= PI * 2;
+										dirYaw -= PI * 2;
 									}
-									while ( dir < -PI )
+									while ( dirYaw < -PI )
 									{
-										dir += PI * 2;
+										dirYaw += PI * 2;
 									}
-									entity->yaw += dir / 3;
+									entity->yaw += dirYaw / 3;
 									while ( entity->yaw < 0 )
 									{
 										entity->yaw += 2 * PI;
@@ -1354,34 +2186,38 @@ void gameLogic(void)
 									{
 										entity->yaw -= 2 * PI;
 									}
-									dir = entity->new_pitch - entity->pitch;
-									while ( dir >= PI )
+									double dirPitch = entity->new_pitch - entity->pitch;
+									if ( entity->behavior != &actArrow )
 									{
-										dir -= PI * 2;
+										// client handles pitch in actArrow.
+										while ( dirPitch >= PI )
+										{
+											dirPitch -= PI * 2;
+										}
+										while ( dirPitch < -PI )
+										{
+											dirPitch += PI * 2;
+										}
+										entity->pitch += dirPitch / 3;
+										while ( entity->pitch < 0 )
+										{
+											entity->pitch += 2 * PI;
+										}
+										while ( entity->pitch >= 2 * PI )
+										{
+											entity->pitch -= 2 * PI;
+										}
 									}
-									while ( dir < -PI )
+									double dirRoll = entity->new_roll - entity->roll;
+									while ( dirRoll >= PI )
 									{
-										dir += PI * 2;
+										dirRoll -= PI * 2;
 									}
-									entity->pitch += dir / 3;
-									while ( entity->pitch < 0 )
+									while ( dirRoll < -PI )
 									{
-										entity->pitch += 2 * PI;
+										dirRoll += PI * 2;
 									}
-									while ( entity->pitch >= 2 * PI )
-									{
-										entity->pitch -= 2 * PI;
-									}
-									dir = entity->new_roll - entity->roll;
-									while ( dir >= PI )
-									{
-										dir -= PI * 2;
-									}
-									while ( dir < -PI )
-									{
-										dir += PI * 2;
-									}
-									entity->roll += dir / 3;
+									entity->roll += dirRoll / 3;
 									while ( entity->roll < 0 )
 									{
 										entity->roll += 2 * PI;
@@ -1390,23 +2226,132 @@ void gameLogic(void)
 									{
 										entity->roll -= 2 * PI;
 									}
+
+									if ( entity->behavior == &actPlayer && entity->skill[2] != clientnum )
+									{
+										node_t* tmpNode = nullptr;
+										int bodypartNum = 0;
+										for ( bodypartNum = 0, tmpNode = entity->children.first; tmpNode; tmpNode = tmpNode->next, bodypartNum++ )
+										{
+											if ( bodypartNum < 9 )
+											{
+												continue;
+											}
+											if ( bodypartNum > 10 )
+											{
+												break;
+											}
+											// update the players' head and mask as these will otherwise wait until actPlayer to update their rotation. stops clipping.
+											if ( bodypartNum == 9 || bodypartNum == 10 )
+											{
+												Entity* limb = (Entity*)tmpNode->element;
+												if ( limb )
+												{
+													limb->pitch = entity->pitch;
+													limb->yaw = entity->yaw;
+												}
+											}
+										}
+									}
 								}
 							}
 						}
 					}
 				}
 			}
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
+			}
+			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
+			int backpack_sizey = 3;
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
+				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
+			{
+				backpack_sizey = 4;
+			}
+
+			if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+			}
+			else if ( backpack_sizey == 4 )
+			{
+				INVENTORY_SIZEY = 4;
+			}
+			else
+			{
+				if ( INVENTORY_SIZEY > 3 && !tooManySpells )
+				{
+					// we should rearrange our spells.
+					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+					{
+						int scanx = 0;
+						int scany = 0;
+						bool notfree = false;
+						bool foundaspot = false;
+						Item* item = (Item*)node->element;
+						if ( itemCategory(item) != SPELL_CAT )
+						{
+							continue;
+						}
+						if ( item->appearance >= 1000 )
+						{
+							continue; // shaman spells.
+						}
+						while ( 1 )
+						{
+							for ( scany = 0; scany < 3; scany++ )
+							{
+								node_t* node2;
+								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
+								{
+									Item* tempItem = (Item*)node2->element;
+									if ( tempItem == item )
+									{
+										continue;
+									}
+									if ( tempItem )
+									{
+										if ( tempItem->x == scanx && tempItem->y == scany )
+										{
+											if ( itemCategory(tempItem) == SPELL_CAT )
+											{
+												notfree = true;  //Both spells. Can't fit in the same slot.
+											}
+										}
+									}
+								}
+								if ( notfree )
+								{
+									notfree = false;
+									continue;
+								}
+								item->x = scanx;
+								item->y = scany;
+								foundaspot = true;
+								break;
+							}
+							if ( foundaspot )
+							{
+								break;
+							}
+							scanx++;
+						}
+					}
+				}
+				INVENTORY_SIZEY = 3;
 			}
 
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
 				Item* item = (Item*)node->element;
-
+				if ( !item )
+				{
+					continue;
+				}
 				// unlock achievements for special collected items
 				switch ( item->type )
 				{
@@ -1426,15 +2371,36 @@ void gameLogic(void)
 						break;
 				}
 
+				if ( itemCategory(item) == WEAPON )
+				{
+					if ( item->beatitude >= 10 )
+					{
+						steamAchievement("BARONY_ACH_BLESSED");
+					}
+				}
+
+				if ( item->type == FOOD_BLOOD && item->count >= 20 )
+				{
+					steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+				}
+
 				// drop any inventory items you don't have room for
-				if ( item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY )
+				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= backpack_sizey) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
-					while ( item->count > 1 )
+					bool droppedAll = false;
+					while ( item && item->count > 1 )
+					{
+						droppedAll = dropItem(item, clientnum);
+						if ( droppedAll )
+						{
+							item = nullptr;
+						}
+					}
+					if ( !droppedAll )
 					{
 						dropItem(item, clientnum);
 					}
-					dropItem(item, clientnum);
 				}
 				else
 				{
@@ -1466,7 +2432,7 @@ void gameLogic(void)
 			//Cleanup identify GUI gamecontroller code here.
 			selectedIdentifySlot = -1;
 
-			identifygui_active = false;
+			//identifygui_active = false;
 			identifygui_appraising = true;
 			identifyGUIIdentify(auto_appraise_target);
 		}
@@ -1509,9 +2475,22 @@ void handleButtons(void)
 			list_RemoveNode(button->node);
 			continue;
 		}
+		//Hide "Random Character" button if not on first character creation step.
 		if (!strcmp(button->label, language[733]))
 		{
 			if (charcreation_step > 1)
+			{
+				button->visible = 0;
+			}
+			else
+			{
+				button->visible = 1;
+			}
+		}
+		//Hide "Random Name" button if not on character naming screen.
+		if ( !strcmp(button->label, language[2498]) )
+		{
+			if ( charcreation_step != 4 )
 			{
 				button->visible = 0;
 			}
@@ -1538,7 +2517,7 @@ void handleButtons(void)
 				button->pressed = true;
 				button->needclick = false;
 			}
-			if (button->joykey != -1 && *inputPressed(button->joykey))
+			if (button->joykey != -1 && *inputPressed(button->joykey) && rebindaction == -1 )
 			{
 				button->pressed = true;
 				button->needclick = false;
@@ -1591,6 +2570,7 @@ void handleButtons(void)
 								if ( deleteallbuttons )
 								{
 									deleteallbuttons = false;
+									button->pressed = false;
 									break;
 								}
 							}
@@ -1678,34 +2658,34 @@ void handleEvents(void)
 			case SDL_KEYDOWN: // if a key is pressed...
 				if ( command )
 				{
-					if (event.key.keysym.sym == SDLK_UP)
+					if ( event.key.keysym.sym == SDLK_UP )
 					{
-						if (!chosen_command && command_history.last)   //If no command is chosen (user has not tried to go up through the commands yet...
+						if ( !chosen_command && command_history.last )   //If no command is chosen (user has not tried to go up through the commands yet...
 						{
 							//Assign the chosen command as the last thing the user typed.
 							chosen_command = command_history.last;
-							strcpy(command_str, ((string_t* )chosen_command->element)->data);
+							strcpy(command_str, ((string_t*)chosen_command->element)->data);
 						}
-						else if (chosen_command)
+						else if ( chosen_command )
 						{
 							//Scroll up through the list. Do nothing if already at the top.
-							if (chosen_command->prev)
+							if ( chosen_command->prev )
 							{
 								chosen_command = chosen_command->prev;
-								strcpy(command_str, ((string_t* )chosen_command->element)->data);
+								strcpy(command_str, ((string_t*)chosen_command->element)->data);
 							}
 						}
 					}
-					else if (event.key.keysym.sym == SDLK_DOWN)
+					else if ( event.key.keysym.sym == SDLK_DOWN )
 					{
-						if (chosen_command)   //If a command is chosen...
+						if ( chosen_command )   //If a command is chosen...
 						{
 							//Scroll down through the history, back to the latest command.
-							if (chosen_command->next)
+							if ( chosen_command->next )
 							{
 								//Move on to the newer command.
 								chosen_command = chosen_command->next;
-								strcpy(command_str, ((string_t* )chosen_command->element)->data);
+								strcpy(command_str, ((string_t*)chosen_command->element)->data);
 							}
 							else
 							{
@@ -1744,13 +2724,15 @@ void handleEvents(void)
 				}
 #ifdef PANDORA
 				// Pandora Shoulder as Mouse Button handling
-				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+				if ( event.key.keysym.sym == SDLK_RCTRL ) { // L
 					mousestatus[SDL_BUTTON_LEFT] = 1; // set this mouse button to 1
 					lastkeypressed = 282 + SDL_BUTTON_LEFT;
-				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+				}
+				else if ( event.key.keysym.sym == SDLK_RSHIFT ) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 1; // set this mouse button to 1
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else 
+				}
+				else
 #endif
 				{
 					lastkeypressed = event.key.keysym.scancode;
@@ -1759,13 +2741,15 @@ void handleEvents(void)
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
 #ifdef PANDORA
-				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+				if ( event.key.keysym.sym == SDLK_RCTRL ) { // L
 					mousestatus[SDL_BUTTON_LEFT] = 0; // set this mouse button to 0
 					lastkeypressed = 282 + SDL_BUTTON_LEFT;
-				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+				}
+				else if ( event.key.keysym.sym == SDLK_RSHIFT ) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 0; // set this mouse button to 0
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else 
+				}
+				else
 #endif
 				{
 					keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
@@ -1794,12 +2778,12 @@ void handleEvents(void)
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
-					lastkeypressed = 287;
+					lastkeypressed = 286;
 				}
 				else if ( event.wheel.y < 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 1;
-					lastkeypressed = 288;
+					lastkeypressed = 287;
 				}
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...
@@ -1812,15 +2796,15 @@ void handleEvents(void)
 				mousex = event.motion.x;
 				mousey = event.motion.y;
 #ifdef PANDORA
-				if(xres!=800 || yres!=480) {	// SEB Pandora 
-					mousex = (mousex*xres)/800;
-					mousey = (mousey*yres)/480;
+				if ( xres != 800 || yres != 480 ) {	// SEB Pandora
+					mousex = (mousex*xres) / 800;
+					mousey = (mousey*yres) / 480;
 				}
 #endif
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 
-				if (!draw_cursor)
+				if ( !draw_cursor )
 				{
 					draw_cursor = true;
 				}
@@ -1828,7 +2812,7 @@ void handleEvents(void)
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
-				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ( (!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
+				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ((!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
 				{
 					//Generate a mouse click.
 					SDL_Event e;
@@ -1841,7 +2825,7 @@ void handleEvents(void)
 				break;
 			case SDL_CONTROLLERBUTTONUP: // if joystick button is released
 				joystatus[event.cbutton.button] = 0; // set this button's index to 0
-				if (event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK])
+				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] )
 				{
 					//Generate a mouse lift.
 					SDL_Event e;
@@ -1856,10 +2840,96 @@ void handleEvents(void)
 			case SDL_USEREVENT: // if the game timer has elapsed
 				if ( runtimes < 5 )
 				{
+					if ( runtimes == 0 )
+					{
+#ifdef SOUND
+						sound_update(); //Update FMOD and whatnot.
+#endif
+					}
 					runtimes++;
 					gameLogic();
 					mousexrel = 0;
 					mouseyrel = 0;
+				}
+				break;
+			case SDL_WINDOWEVENT:
+				if ( event.window.event == SDL_WINDOWEVENT_FOCUS_LOST && mute_audio_on_focus_lost )
+				{
+#ifdef USE_FMOD
+					if ( music_group )
+					{
+						FMOD_ChannelGroup_SetVolume(music_group, 0.f);
+					}
+					if ( sound_group )
+					{
+						FMOD_ChannelGroup_SetVolume(sound_group, 0.f);
+					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
+					}
+#endif // USE_FMOD
+#ifdef USE_OPENAL
+					if ( music_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(music_group, 0.f);
+					}
+					if ( sound_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(sound_group, 0.f);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
+					}
+#endif
+				}
+				else if ( event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED )
+				{
+#ifdef USE_FMOD
+					if ( music_group )
+					{
+						FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+					}
+					if ( sound_group )
+					{
+						FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+					}
+					if ( soundAmbient_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+					}
+#endif // USE_FMOD
+#ifdef USE_OPENAL
+					if ( music_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+					}
+					if ( sound_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+					}
+					if ( soundAmbient_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+					}
+					if ( soundEnvironment_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+					}
+#endif
 				}
 				break;
 				/*case SDL_CONTROLLERAXISMOTION:
@@ -1972,7 +3042,7 @@ void startMessages()
 {
 	newString(&messages, 0xFFFFFFFF, language[734], stats[clientnum]->name);
 	newString(&messages, 0xFFFFFFFF, language[735], getInputName(impulses[IN_STATUS]));
-	newString(&messages, 0xFFFFFFFF, language[736]);
+	newString(&messages, 0xFFFFFFFF, language[736], getInputName(impulses[IN_USE]));
 	newString(&messages, 0xFFFFFFFF, language[737]);
 }
 
@@ -1997,6 +3067,13 @@ void pauseGame(int mode, int ignoreplayer)
 		return;
 	}
 	if ( mode == 2 && gamePaused )
+	{
+		return;
+	}
+	if ( introstage == 9 
+		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
+		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
+		|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS )
 	{
 		return;
 	}
@@ -2082,30 +3159,28 @@ void pauseGame(int mode, int ignoreplayer)
 -------------------------------------------------------------------------------*/
 
 // records the SDL_GetTicks() value at the moment the mainloop restarted
-Uint32 lastGameTickCount = 0;
-
-bool frameRateLimit( Uint32 maxFrameRate )
+Uint64 lastGameTickCount = 0;
+float framerateAccumulatedTime = 0.f;
+bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator)
 {
-	float desiredFrameMilliseconds = 1000.0f / maxFrameRate;
-	Uint32 gameTickCount = SDL_GetTicks();
+	float desiredFrameMilliseconds = 1.0f / maxFrameRate;
+	Uint64 gameTickCount = SDL_GetPerformanceCounter();
+	Uint64 ticksPerSecond = SDL_GetPerformanceFrequency();
+	float millisecondsElapsed = (gameTickCount - lastGameTickCount) / static_cast<float>(ticksPerSecond);
+	lastGameTickCount = gameTickCount;
+	framerateAccumulatedTime += millisecondsElapsed;
 
-	float millisecondsElapsed = (float)(gameTickCount - lastGameTickCount);
-	if ( millisecondsElapsed < desiredFrameMilliseconds )
+	if ( framerateAccumulatedTime < desiredFrameMilliseconds )
 	{
-		// if enough time is left sleep, otherwise just keep spinning so we don't go over the limit...
-		if ( desiredFrameMilliseconds - millisecondsElapsed > 3.0f )
-		{
-#ifndef WINDOWS
-			usleep( 5000 );
-#else
-			Sleep( 5 );
-#endif
-		}
-
+		// if enough time is left wait, otherwise just keep spinning so we don't go over the limit...
 		return true;
 	}
 	else
 	{
+		if ( resetAccumulator )
+		{
+			framerateAccumulatedTime = 0.f;
+		}
 		return false;
 	}
 }
@@ -2115,7 +3190,7 @@ bool frameRateLimit( Uint32 maxFrameRate )
 	main
 
 	Initializes game resources, harbors main game loop, and cleans up
-	afterwords
+	afterwards
 
 -------------------------------------------------------------------------------*/
 
@@ -2128,6 +3203,9 @@ bool frameRateLimit( Uint32 maxFrameRate )
 
 int main(int argc, char** argv)
 {
+#ifdef WINDOWS
+	SetUnhandledExceptionFilter(unhandled_handler);
+#endif // WINDOWS
 
 #ifdef LINUX
 	//Catch segfault stuff.
@@ -2143,10 +3221,17 @@ int main(int argc, char** argv)
 
 	try
 	{
+#if defined(APPLE) || defined(BSD)
 #ifdef APPLE
 		uint32_t buffsize = 4096;
 		char binarypath[buffsize];
 		int result = _NSGetExecutablePath(binarypath, &buffsize);
+#elif defined(BSD)
+		int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
+		size_t buffsize = PATH_MAX;
+		char binarypath[buffsize];
+		int result = sysctl(mib, 4, binarypath, &buffsize, NULL, 0);
+#endif
 		if (result == 0)   //It worked.
 		{
 			printlog("Binary path: %s\n", binarypath);
@@ -2181,14 +3266,36 @@ int main(int argc, char** argv)
 		//SDL_Surface *sky_bmp;
 		light_t* light;
 
-		// load default language file (english)
-		if ( loadLanguage("en") )
+		size_t datadirsz = std::min(sizeof(datadir) - 1, strlen(BASE_DATA_DIR));
+		strncpy(datadir, BASE_DATA_DIR, datadirsz);
+		datadir[datadirsz] = '\0';
+#ifdef WINDOWS
+		strcpy(outputdir, "./");
+#else
+		char *basepath = getenv("HOME");
+ #ifdef USE_EOS
+  #ifdef STEAMWORKS
+		//Steam + EOS
+		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
+  #else
+		//Just EOS.
+		std::string firstDotdir(basepath);
+		firstDotdir += "/.barony/";
+		if (access(firstDotdir.c_str(), F_OK) == -1)
 		{
-			printlog("Fatal error: failed to load default language file!\n");
-			fclose(logfile);
-			exit(1);
+			mkdir(firstDotdir.c_str(), 0777); //Since this mkdir is not equivalent to mkdir -p, have to create each part of the path manually.
 		}
-
+		snprintf(outputdir, sizeof(outputdir), "%s/epicgames", firstDotdir.c_str());
+  #endif
+ #else //USE_EOS
+		//No EOS. Could be Steam though. Or could also not.
+		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
+ #endif
+		if (access(outputdir, F_OK) == -1)
+		{
+			mkdir(outputdir, 0777);
+		}
+#endif
 		// read command line arguments
 		if ( argc > 1 )
 		{
@@ -2226,8 +3333,35 @@ int main(int argc, char** argv)
 					{
 						strcpy(classtoquickstart, argv[c] + 12);
 					}
+					else if (!strncmp(argv[c], "-datadir=", 9))
+					{
+						datadirsz = std::min(sizeof(datadir) - 1, strlen(argv[c] + 9));
+						strncpy(datadir, argv[c] + 9, datadirsz);
+						datadir[datadirsz] = '\0';
+					}
+					else if ( !strcmp(argv[c], "-nosound") )
+					{
+						no_sound = true;
+					}
+					else
+					{
+#ifdef USE_EOS
+						EOS.CommandLineArgs.push_back(argv[c]);
+#endif // USE_EOS
+					}
 				}
 			}
+		}
+		printlog("Data path is %s", datadir);
+		printlog("Output path is %s", outputdir);
+
+
+		// load default language file (english)
+		if ( loadLanguage("en") )
+		{
+			printlog("Fatal error: failed to load default language file!\n");
+			fclose(logfile);
+			exit(1);
 		}
 
 		// load config file
@@ -2237,18 +3371,41 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			loadConfig("default.cfg");
+			loadDefaultConfig();
 		}
 
 		// initialize engine
 		if ( (c = initApp("Barony", fullscreen)) )
 		{
 			printlog("Critical error: %d\n", c);
+#ifdef STEAMWORKS
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
-			                         "Barony has encountered a critical error and cannot start.\n\n"
-			                         "Please check the log.txt file in the game directory for additional info,\n"
-			                         "or contact us through our website at http://www.baronygame.com/ for support.",
-			                         screen);
+									"Barony has encountered a critical error and cannot start.\n\n"
+									"Please check the log.txt file in the game directory for additional info\n"
+									"and verify Steam is running. Alternatively, contact us through our website\n"
+									"at http://www.baronygame.com/ for support.",
+				screen);
+#elif defined USE_EOS
+			if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
+			{
+				// restarting app from launcher.
+			}
+			else
+			{
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
+					"Barony has encountered a critical error and cannot start.\n\n"
+					"Please check the log.txt file in the game directory for additional info,\n"
+					"and verify the game is launched through the Epic Games Store. \n"
+					"Alternatively, contact us through our website at http://www.baronygame.com/ for support.",
+					screen);
+			}
+#else
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
+									"Barony has encountered a critical error and cannot start.\n\n"
+									"Please check the log.txt file in the game directory for additional info,\n"
+									"or contact us through our website at http://www.baronygame.com/ for support.",
+									screen);
+#endif
 			deinitApp();
 			exit(c);
 		}
@@ -2278,14 +3435,21 @@ int main(int argc, char** argv)
 		initialized = true;
 
 		// initialize map
-		map.tiles = NULL;
+		map.tiles = nullptr;
 		map.entities = (list_t*) malloc(sizeof(list_t));
-		map.entities->first = NULL;
-		map.entities->last = NULL;
+		map.entities->first = nullptr;
+		map.entities->last = nullptr;
+		map.creatures = new list_t;
+		map.creatures->first = nullptr;
+		map.creatures->last = nullptr;
+
+		// initialize player conducts
+		setDefaultPlayerConducts();
 
 		// instantiate a timer
 		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
 		srand(time(NULL));
+		fountainSeed.seed(rand());
 
 		// play splash sound
 #ifdef MUSIC
@@ -2296,34 +3460,55 @@ int main(int argc, char** argv)
 		int indev_timer = 0;
 
 		// main loop
+
 		printlog("running main loop.\n");
 		while (mainloop)
 		{
 			// record the time at the start of this cycle
-			lastGameTickCount = SDL_GetTicks();
-
+			lastGameTickCount = SDL_GetPerformanceCounter();
+			DebugStats.t1StartLoop = std::chrono::high_resolution_clock::now();
 			// game logic
 			if ( !intro )
 			{
 				// handle network messages
+				// only run up to % framerate interval (1 / (fps * networkTickrate))
+				if ( networkTickrate == 0 )
+				{
+					networkTickrate = 2;
+				}
 				if ( multiplayer == CLIENT )
 				{
-					clientHandleMessages();
+					clientHandleMessages(fpsLimit * networkTickrate);
 				}
 				else if ( multiplayer == SERVER )
 				{
-					serverHandleMessages();
+					serverHandleMessages(fpsLimit * networkTickrate);
 				}
 			}
+			DebugStats.t21PostHandleMessages = std::chrono::high_resolution_clock::now();
 			handleEvents();
-
+			DebugStats.t2PostEvents = std::chrono::high_resolution_clock::now();
 			// handle steam callbacks
 #ifdef STEAMWORKS
+			if ( g_SteamLeaderboards )
+			{
+				g_SteamLeaderboards->ProcessLeaderboardUpload();
+			}
 			SteamAPI_RunCallbacks();
 #endif
+#ifdef USE_EOS
+			EOS_Platform_Tick(EOS.PlatformHandle);
+			EOS_Platform_Tick(EOS.ServerPlatformHandle);
+			EOS.StatGlobalManager.updateQueuedStats();
+			EOS.AccountManager.handleLogin();
+			EOS.CrossplayAccountManager.handleLogin();
+#endif // USE_EOS
 
+			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
 			if ( intro )
 			{
+				globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+				shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
 				if ( introstage == -1 )
 				{
 					// hack to fix these things from breaking everything...
@@ -2347,40 +3532,23 @@ int main(int argc, char** argv)
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 						fadealpha = 255;
-#ifndef STEAMWORKS
+#if (!defined STEAMWORKS && !defined USE_EOS)
 						introstage = 0;
 						fadeout = false;
 						fadefinished = false;
 #else
-						switch ( rand() % 4 )
+						int menuMapType = 0;
+						switch ( rand() % 4 ) // STEAM VERSION INTRO
 						{
 							case 0:
-								loadMap("mainmenu1", &map, map.entities);
-								camera.x = 8;
-								camera.y = 4.5;
-								camera.z = 0;
-								camera.ang = 0.6;
-								break;
 							case 1:
-								loadMap("mainmenu2", &map, map.entities);
-								camera.x = 7;
-								camera.y = 4;
-								camera.z = -4;
-								camera.ang = 1.0;
-								break;
 							case 2:
-								loadMap("mainmenu3", &map, map.entities);
-								camera.x = 5;
-								camera.y = 3;
-								camera.z = 0;
-								camera.ang = 1.0;
+								menuMapType = loadMainMenuMap(true, false);
 								break;
 							case 3:
-								loadMap("mainmenu4", &map, map.entities);
-								camera.x = 6;
-								camera.y = 14.5;
-								camera.z = -24;
-								camera.ang = 5.0;
+								menuMapType = loadMainMenuMap(false, false);
+								break;
+							default:
 								break;
 						}
 						numplayers = 0;
@@ -2392,7 +3560,7 @@ int main(int argc, char** argv)
 						if ( !skipintro && !strcmp(classtoquickstart, "") )
 						{
 							introstage = 6;
-#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
+#if defined(USE_FMOD) || defined(USE_OPENAL)
 							playmusic(introductionmusic, true, false, false);
 #endif
 						}
@@ -2401,8 +3569,15 @@ int main(int argc, char** argv)
 							introstage = 1;
 							fadeout = false;
 							fadefinished = false;
-#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
-							playmusic(intromusic, true, false, false);
+#if defined(USE_FMOD) || defined(USE_OPENAL)
+							if ( menuMapType == 1 )
+							{
+								playmusic(intromusic[2], true, false, false);
+							}
+							else
+							{
+								playmusic(intromusic[1], true, false, false);
+							}
 #endif
 						}
 #endif
@@ -2432,38 +3607,21 @@ int main(int argc, char** argv)
 					old_sdl_ticks = SDL_GetTicks();
 					indev_timer += time_passed;
 
+					int menuMapType = 0;
 					//if( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || *inputPressed(joyimpulses[INJOY_BACK]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
 					if ( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout)
 					{
-						switch ( rand() % 4 )
+						switch ( rand() % 4 ) // DRM FREE VERSION INTRO
 						{
 							case 0:
-								loadMap("mainmenu1", &map, map.entities);
-								camera.x = 8;
-								camera.y = 4.5;
-								camera.z = 0;
-								camera.ang = 0.6;
-								break;
 							case 1:
-								loadMap("mainmenu2", &map, map.entities);
-								camera.x = 7;
-								camera.y = 4;
-								camera.z = -4;
-								camera.ang = 1.0;
-								break;
 							case 2:
-								loadMap("mainmenu3", &map, map.entities);
-								camera.x = 5;
-								camera.y = 3;
-								camera.z = 0;
-								camera.ang = 1.0;
+								menuMapType = loadMainMenuMap(true, false);
 								break;
 							case 3:
-								loadMap("mainmenu4", &map, map.entities);
-								camera.x = 6;
-								camera.y = 14.5;
-								camera.z = -24;
-								camera.ang = 5.0;
+								menuMapType = loadMainMenuMap(false, false);
+								break;
+							default:
 								break;
 						}
 						numplayers = 0;
@@ -2488,7 +3646,14 @@ int main(int argc, char** argv)
 							fadeout = false;
 							fadefinished = false;
 #ifdef MUSIC
-							playmusic(intromusic, true, false, false);
+							if ( menuMapType == 1 )
+							{
+								playmusic(intromusic[2], true, false, false);
+							}
+							else
+							{
+								playmusic(intromusic[1], true, false, false);
+							}
 #endif
 						}
 					}
@@ -2497,9 +3662,9 @@ int main(int argc, char** argv)
 				{
 					if (strcmp(classtoquickstart, ""))
 					{
-						for ( c = 0; c < 10; c++ )
+						for ( c = 0; c <= CLASS_MONK; c++ )
 						{
-							if ( !strcmp(classtoquickstart, language[1900 + c]) )
+							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) )
 							{
 								client_classes[0] = c;
 								break;
@@ -2526,6 +3691,10 @@ int main(int argc, char** argv)
 						stats[0]->appearance = rand() % NUMAPPEARANCES;
 						stats[0]->clearStats();
 						initClass(0);
+						if ( stats[0]->playerRace != RACE_HUMAN )
+						{
+							stats[0]->appearance = 0;
+						}
 
 						strcpy(stats[0]->name, "Avatar");
 						multiplayer = SINGLE;
@@ -2533,60 +3702,52 @@ int main(int argc, char** argv)
 						fadeout = false;
 						numplayers = 0;
 
+						//TODO: Replace all of this with centralized startGameRoutine().
 						// setup game
 						shootmode = true;
-
 						// make some messages
 						startMessages();
 
+						//gameplayCustomManager.writeAllToDocument();
+						gameplayCustomManager.readFromFile();
+
 						// load dungeon
-						mapseed = 0;
+						mapseed = rand(); //Use prng if decide to make a quickstart for MP...
 						lastEntityUIDs = entity_uids;
-						for ( node = map.entities->first; node != NULL; node = node->next )
+						for ( node = map.entities->first; node != nullptr; node = node->next )
 						{
 							entity = (Entity*)node->element;
 							entity->flags[NOUPDATE] = true;
 						}
 						if ( loadingmap == false )
 						{
-							if ( !secretlevel )
+							currentlevel = startfloor;
+							int checkMapHash = -1;
+							if ( startfloor )
 							{
-								fp = fopen(LEVELSFILE, "r");
+								physfsLoadMapFile(currentlevel, 0, true, &checkMapHash);
+								conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 							}
 							else
 							{
-								fp = fopen(SECRETLEVELSFILE, "r");
+								physfsLoadMapFile(0, 0, true, &checkMapHash);
 							}
-							fscanf(fp, "%s", tempstr);
-							while ( fgetc(fp) != ' ' ) if ( feof(fp) )
-								{
-									break;
-								}
-							if ( !strcmp(tempstr, "gen:") )
+							if ( checkMapHash == 0 )
 							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-									{
-										break;
-									}
-								generateDungeon(tempstr, rand());
+								conductGameChallenges[CONDUCT_MODDED] = 1;
 							}
-							else if ( !strcmp(tempstr, "map:") )
-							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-									{
-										break;
-									}
-								loadMap(tempstr, &map, map.entities);
-							}
-							fclose(fp);
 						}
 						else
 						{
 							if ( genmap == false )
 							{
-								loadMap(maptoload, &map, map.entities);
+								std::string fullMapName = physfsFormatMapName(maptoload);
+								int checkMapHash = -1;
+								loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
+								if ( checkMapHash == 0 )
+								{
+									conductGameChallenges[CONDUCT_MODDED] = 1;
+								}
 							}
 							else
 							{
@@ -2596,7 +3757,18 @@ int main(int argc, char** argv)
 						assignActions(&map);
 						generatePathMaps();
 
+						achievementObserver.updateData();
+
 						saveGame();
+
+						enchantedFeatherScrollSeed.seed(uniqueGameKey);
+						enchantedFeatherScrollsShuffled.clear();
+						enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
+						std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
+						//for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
+						//{
+						//	printlog("Sequence: %d", *it);
+						//}
 
 						// kick off the main loop!
 						strcpy(classtoquickstart, "");
@@ -2610,19 +3782,21 @@ int main(int argc, char** argv)
 						drawClearBuffers();
 						if ( movie == false )
 						{
-							camera.winx = 0;
-							camera.winy = 0;
-							camera.winw = xres;
-							camera.winh = yres;
-							light = lightSphere(camera.x, camera.y, 16, 64);
-							raycast(&camera, REALCOLORS);
-							glDrawWorld(&camera, REALCOLORS);
-							//drawFloors(&camera);
-							drawEntities3D(&camera, REALCOLORS);
+							menucam.winx = 0;
+							menucam.winy = 0;
+							menucam.winw = xres;
+							menucam.winh = yres;
+							light = lightSphere(menucam.x, menucam.y, 16, 64);
+							raycast(&menucam, REALCOLORS);
+							glDrawWorld(&menucam, REALCOLORS);
+							//drawFloors(&menucam);
+							drawEntities3D(&menucam, REALCOLORS);
 							list_RemoveNode(light->node);
 						}
 
 						handleMainMenu(intro);
+
+						UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
 
 						// draw mouse
 						if (!movie && draw_cursor)
@@ -2651,6 +3825,7 @@ int main(int argc, char** argv)
 #ifdef MUSIC
 				handleLevelMusic();
 #endif
+				DebugStats.t4Music = std::chrono::high_resolution_clock::now();
 
 				// toggling the game menu
 				if ( (keystatus[SDL_SCANCODE_ESCAPE] || (*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) && rebindaction == -1)) && !command )
@@ -2659,44 +3834,10 @@ int main(int argc, char** argv)
 					*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
 					if ( !shootmode )
 					{
-						shootmode = true;
+						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 						gui_mode = GUI_MODE_INVENTORY;
-						identifygui_active = false;
-						selectedIdentifySlot = -1;
-						closeRemoveCurseGUI();
-						if ( shopkeeper != 0 )
-						{
-							if ( multiplayer != CLIENT )
-							{
-								Entity* entity = uidToEntity(shopkeeper);
-								entity->skill[0] = 0;
-								if ( uidToEntity(entity->skill[1]) )
-								{
-									monsterMoveAside(entity, uidToEntity(entity->skill[1]));
-								}
-								entity->skill[1] = 0;
-							}
-							else
-							{
-								// inform server that we're done talking to shopkeeper
-								strcpy((char*)net_packet->data, "SHPC");
-								SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 8;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-								list_FreeAll(shopInv);
-							}
-							shopkeeper = 0;
-
-							//Clean up shopkeeper gamepad code here.
-							selectedShopSlot = -1;
-						}
 						attributespage = 0;
-						if (openedChest[clientnum])
-						{
-							openedChest[clientnum]->closeChest();
-						}
+						//proficienciesPage = 0;
 					}
 					else
 					{
@@ -2706,55 +3847,234 @@ int main(int argc, char** argv)
 
 				// main drawing
 				drawClearBuffers();
-				camera.ang += camera_shakex2;
-				camera.vang += camera_shakey2 / 200.0;
-				if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind())
+				for (int c = 0; c < MAXPLAYERS; ++c) 
+				{
+					auto& camera = cameras[c];
+					auto& cvars = cameravars[c];
+					camera.ang += cvars.shakex2;
+					camera.vang += cvars.shakey2 / 200.0;
+				}
+				if ( true )
 				{
 					// drunkenness spinning
 					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
 					double sinspin = sin(ticks % 360 * PI / 180.f) * 0.25;
 
-					//drawSky3D(&camera,sky_bmp);
-					camera.winx = 0;
-					camera.winy = 0;
-					camera.winw = xres;
-					camera.winh = yres;
-					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
+					int playercount = 0;
+					for (int c = 0; c < MAXPLAYERS; ++c) 
 					{
-						camera.ang += cosspin * drunkextend;
-						camera.vang += sinspin * drunkextend;
+						if (!client_disconnected[c]) 
+						{
+							++playercount;
+						}
 					}
-					raycast(&camera, REALCOLORS);
 
-					glDrawWorld(&camera, REALCOLORS);
-					//drawFloors(&camera);
-					drawEntities3D(&camera, REALCOLORS);
-					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
+					if (playercount >= 1) 
 					{
-						camera.ang -= cosspin * drunkextend;
-						camera.vang -= sinspin * drunkextend;
+						//int maximum = splitscreen ? MAXPLAYERS : 1;
+						for (int c = 0; c < MAXPLAYERS; ++c)
+						{
+							if (client_disconnected[c]) 
+							{
+								continue;
+							}
+							if ( !splitscreen && c != clientnum )
+							{
+								continue;
+							}
+							auto& camera = cameras[c];
+							if ( !splitscreen )
+							{
+								camera.winx = 0;
+								camera.winy = 0;
+								camera.winw = xres;
+								camera.winh = yres;
+							}
+							else
+							{
+								if (playercount == 1)
+								{
+									camera.winx = 0;
+									camera.winy = 0;
+									camera.winw = xres;
+									camera.winh = yres;
+								} 
+								else if (playercount == 2)
+								{
+									// divide screen horizontally
+									camera.winx = 0;
+									camera.winy = c * yres / 2;
+									camera.winw = xres;
+									camera.winh = yres / 2;
+								} 
+								else if (playercount >= 3) 
+								{
+									// divide screen into quadrants
+									camera.winx = (c % 2) * xres / 2;
+									camera.winy = (c / 2) * yres / 2;
+									camera.winw = xres / 2;
+									camera.winh = yres / 2;
+								}
+							}
+							if (shaking && players[c] && players[c]->entity && !gamePaused)
+							{
+								camera.ang += cosspin * drunkextend;
+								camera.vang += sinspin * drunkextend;
+							}
+
+							if ( players[c] && players[c]->entity )
+							{
+								if ( usecamerasmoothing )
+								{
+									real_t oldYaw = players[c]->entity->yaw;
+									//printText(font8x8_bmp, 20, 20, "using smooth camera");
+									handlePlayerCameraBobbing(players[c]->entity, c, true);
+									handlePlayerMovement(players[c]->entity, c, true);
+									handlePlayerCameraUpdate(players[c]->entity, c, true);
+									handlePlayerCameraPosition(players[c]->entity, c, true);
+									//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
+								}
+							}
+
+							if ( players[clientnum] && players[clientnum]->entity )
+							{
+								if ( players[clientnum]->entity->isBlind() )
+								{
+									if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_STOPPED 
+										|| (globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_DISSIPATING && globalLightModifier < 1.f) )
+									{
+										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
+										globalLightModifier = 0.f;
+										globalLightTelepathyModifier = 0.f;
+										if ( stats[clientnum]->mask && stats[clientnum]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+										{
+											for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+											{
+												Entity* mapCreature = (Entity*)mapNode->element;
+												if ( mapCreature )
+												{
+													mapCreature->monsterEntityRenderAsTelepath = 1;
+												}
+											}
+										}
+									}
+
+									int PERModifier = 0;
+									if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_BLIND]
+										&& !stats[clientnum]->EFFECTS[EFF_ASLEEP] && !stats[clientnum]->EFFECTS[EFF_MESSY] )
+									{
+										// blind but not messy or asleep = allow PER to let you see the world a little.
+										PERModifier = players[clientnum]->entity->getPER() / 5;
+										if ( PERModifier < 0 )
+										{
+											PERModifier = 0;
+										}
+									}
+
+									real_t limit = PERModifier * 0.01;
+									globalLightModifier = std::min(limit, globalLightModifier + 0.0005);
+
+									int telepathyLimit = std::min(64, 48 + players[clientnum]->entity->getPER());
+									globalLightTelepathyModifier = std::min(telepathyLimit / 255.0, globalLightTelepathyModifier + (0.2 / 255.0));
+								}
+								else
+								{
+									if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_INUSE )
+									{
+										for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+										{
+											Entity* mapCreature = (Entity*)mapNode->element;
+											if ( mapCreature )
+											{
+												mapCreature->monsterEntityRenderAsTelepath = 0;
+											}
+										}
+									}
+									globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
+									globalLightTelepathyModifier = 0.f;
+									if ( globalLightModifier < 1.f )
+									{
+										globalLightModifier += 0.01;
+									}
+									else
+									{
+										globalLightModifier = 1.01;
+										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+									}
+								}
+								raycast(&camera, REALCOLORS);
+								glDrawWorld(&camera, REALCOLORS);
+
+								if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
+								{
+									for ( int i = 0; i < MAXPLAYERS; ++i )
+									{
+										if ( i != clientnum && players[i] && players[i]->entity )
+										{
+											real_t x = camera.x;
+											real_t y = camera.y;
+											real_t ang = camera.ang;
+
+											camera.x = players[i]->entity->x / 16.0;
+											camera.y = players[i]->entity->y / 16.0;
+											camera.ang = players[i]->entity->yaw;
+											raycast(&camera, REALCOLORS, false);
+											camera.x = x;
+											camera.y = y;
+											camera.ang = ang;
+										}
+									}
+								}
+							}
+							else
+							{
+								raycast(&camera, REALCOLORS);
+								glDrawWorld(&camera, REALCOLORS);
+							}
+
+							//drawFloors(&camera);
+							drawEntities3D(&camera, REALCOLORS);
+							if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
+							{
+								camera.ang -= cosspin * drunkextend;
+								camera.vang -= sinspin * drunkextend;
+							}
+
+							auto& cvars = cameravars[c];
+							camera.ang -= cvars.shakex2;
+							camera.vang -= cvars.shakey2 / 200.0;
+						}
 					}
 				}
-				camera.ang -= camera_shakex2;
-				camera.vang -= camera_shakey2 / 200.0;
+
+				DebugStats.t5MainDraw = std::chrono::high_resolution_clock::now();
 
 				updateMessages();
 				if ( !nohud )
 				{
-					handleDamageIndicators();
+					if (splitscreen) 
+					{
+						for (int c = 0; c < MAXPLAYERS; ++c)
+						{
+							if (!client_disconnected[c]) 
+							{
+								handleDamageIndicators(c);
+							}
+						}
+					} 
+					else 
+					{
+						handleDamageIndicators(0);
+					}
 					drawMessages();
 				}
 
+				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
+
 				if ( !gamePaused )
 				{
-					// status bar
-					if ( !nohud )
-					{
-						drawStatus();
-					}
-
 					// interface
-					if ( (*inputPressed(impulses[IN_STATUS]) || *inputPressed(joyimpulses[INJOY_STATUS])) )
+					if ( !command && (*inputPressed(impulses[IN_STATUS]) || *inputPressed(joyimpulses[INJOY_STATUS])) )
 					{
 						*inputPressed(impulses[IN_STATUS]) = 0;
 						*inputPressed(joyimpulses[INJOY_STATUS]) = 0;
@@ -2765,52 +4085,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							shootmode = true;
-							identifygui_active = false;
-							selectedIdentifySlot = -1;
-							closeRemoveCurseGUI();
-						}
-
-						//What even is this code? When should it be run?
-						if ( shopkeeper != 0 )
-						{
-							if ( multiplayer != CLIENT )
-							{
-								Entity* entity = uidToEntity(shopkeeper);
-								entity->skill[0] = 0;
-								if ( uidToEntity(entity->skill[1]) )
-								{
-									monsterMoveAside(entity, uidToEntity(entity->skill[1]));
-								}
-								entity->skill[1] = 0;
-							}
-							else
-							{
-								// inform server that we're done talking to shopkeeper
-								strcpy((char*)net_packet->data, "SHPC");
-								SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 8;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-								list_FreeAll(shopInv);
-							}
-
-							shopkeeper = 0;
-
-							//Clean up shopkeeper gamepad code here.
-							selectedShopSlot = -1;
-						}
-						if ( shootmode == false )
-						{
-						}
-						else
-						{
-							if (openedChest[clientnum])
-							{
-								openedChest[clientnum]->closeChest();
-							}
-							gui_mode = GUI_MODE_NONE;
+							closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 						}
 					}
 					if (!command && (*inputPressed(impulses[IN_SPELL_LIST]) || *inputPressed(joyimpulses[INJOY_SPELL_LIST])))   //TODO: Move to function in interface or something?
@@ -2825,19 +4100,133 @@ int main(int argc, char** argv)
 						{
 							shootmode = false;
 							attributespage = 0;
+							//proficienciesPage = 0;
 						}
 					}
-					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))))
+					bool hasSpellbook = false;
+					if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
 					{
-						*inputPressed(impulses[IN_CAST_SPELL]) = 0;
-						if ( shootmode )
+						hasSpellbook = true;
+					}
+					if (!command && 
+						(*inputPressed(impulses[IN_CAST_SPELL]) 
+							|| (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))
+							|| (hasSpellbook && *inputPressed(impulses[IN_DEFEND])) 
+							|| (hasSpellbook && shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
+						)
+					{
+						bool allowCasting = true;
+						if ( *inputPressed(impulses[IN_CAST_SPELL]) || *inputPressed(impulses[IN_DEFEND]) )
 						{
-							*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
+							if (((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE || impulses[IN_DEFEND] == RIGHT_CLICK_IMPULSE)
+								&& gui_mode >= GUI_MODE_INVENTORY
+								&& (mouseInsidePlayerInventory() || mouseInsidePlayerHotbar()) 
+								))
+							{
+								allowCasting = false;
+							}
 						}
-						if (players[clientnum] && players[clientnum]->entity)
+
+						if ( (*inputPressed(impulses[IN_DEFEND]) || (*inputPressed(joyimpulses[INJOY_GAME_DEFEND]))) && hasSpellbook
+							&& players[clientnum] && players[clientnum]->entity )
 						{
-							castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+							if ( players[clientnum]->entity->effectShapeshift != NOTHING )
+							{
+								if ( players[clientnum]->entity->effectShapeshift == CREATURE_IMP )
+								{
+									// imp allowed to cast via spellbook.
+								}
+								else
+								{
+									allowCasting = false;
+								}
+							}
+
+							if ( *inputPressed(impulses[IN_DEFEND]) && impulses[IN_DEFEND] == 285 && itemMenuOpen ) // bound to right click, has context menu open.
+							{
+								allowCasting = false;
+							}
+							else
+							{
+								if ( allowCasting && stats[clientnum]->EFFECTS[EFF_BLIND] )
+								{
+									messagePlayer(clientnum, language[3863]); // prevent casting of spell.
+									allowCasting = false;
+									*inputPressed(impulses[IN_DEFEND]) = 0;
+									*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
+								}
+							}
 						}
+
+						if ( allowCasting )
+						{
+							*inputPressed(impulses[IN_CAST_SPELL]) = 0;
+							if ( shootmode )
+							{
+								*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
+							}
+							if (players[clientnum] && players[clientnum]->entity)
+							{
+								if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
+								{
+									if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
+									{
+										messagePlayer(clientnum, language[2999]); // prevent casting of spell.
+									}
+									else
+									{
+										if ( achievementBrawlerMode && selected_spell != nullptr )
+										{
+											messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still cast.
+										}
+										if ( hasSpellbook && (*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
+										{
+											castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
+										}
+										else
+										{
+											castSpellInit(players[clientnum]->entity->getUID(), selected_spell, false);
+										}
+										if ( selected_spell != nullptr )
+										{
+											conductGameChallenges[CONDUCT_BRAWLER] = 0;
+										}
+									}
+								}
+								else
+								{
+									if ( hasSpellbook && (*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
+									{
+										castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
+									}
+									else
+									{
+										castSpellInit(players[clientnum]->entity->getUID(), selected_spell, false);
+									}
+								}
+							}
+							*inputPressed(impulses[IN_DEFEND]) = 0;
+							*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
+						}
+					}
+					if ( !command && *inputPressed(impulses[IN_TOGGLECHATLOG]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG])) )
+					{
+						hide_statusbar = !hide_statusbar;
+						*inputPressed(impulses[IN_TOGGLECHATLOG]) = 0;
+						*inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG]) = 0;
+						playSound(139, 64);
+					}
+
+					if ( !command && (*inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE])) )
+					{
+						FollowerMenu.selectNextFollower();
+						proficienciesPage = 1;
+						if ( shootmode && !lock_right_sidebar )
+						{
+							openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+						}
+						*inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) = 0;
+						*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE]) = 0;
 					}
 
 					// commands
@@ -2857,6 +4246,8 @@ int main(int argc, char** argv)
 						inputstr = command_str;
 						*inputPressed(impulses[IN_COMMAND]) = 0;
 						SDL_StartTextInput();
+
+						FollowerMenu.closeFollowerMenuGUI();
 					}
 					if ( command )
 					{
@@ -2877,6 +4268,9 @@ int main(int argc, char** argv)
 						{
 							keystatus[SDL_SCANCODE_RETURN] = 0;
 							command = false;
+
+							strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
+
 							if ( multiplayer != CLIENT )
 							{
 								if ( command_str[0] == '/' )
@@ -3006,6 +4400,8 @@ int main(int argc, char** argv)
 							closeRemoveCurseGUI();
 						}
 
+						GenericGUI.closeGUI();
+
 						if ( book_open )
 						{
 							closeBookGUI();
@@ -3017,11 +4413,23 @@ int main(int argc, char** argv)
 						{
 							SDL_SetRelativeMouseMode(SDL_TRUE);
 						}
+
 					}
+
+					DebugStats.t7Inputs = std::chrono::high_resolution_clock::now();
+
+					// Draw the static HUD elements
 					if ( !nohud )
 					{
-						drawMinimap();
+						//auto tStartMinimapDraw = std::chrono::high_resolution_clock::now();
+						drawMinimap(); // Draw the Minimap
+						/*auto tEndMinimapDraw = std::chrono::high_resolution_clock::now();
+						double timeTaken = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(tEndMinimapDraw - tStartMinimapDraw).count();
+						printlog("Minimap draw time: %.5f", timeTaken);*/
+						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
+
+					DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
 					drawSustainedSpells();
 					updateAppraisalItemBox();
@@ -3036,13 +4444,10 @@ int main(int argc, char** argv)
 							updateChestInventory();
 							updateIdentifyGUI();
 							updateRemoveCurseGUI();
+							GenericGUI.updateGUI();
 							updateBookGUI();
 							//updateRightSidebar();
 
-							Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
-							Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
-							Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
-							printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
 						}
 						else if (gui_mode == GUI_MODE_MAGIC)
 						{
@@ -3055,7 +4460,41 @@ int main(int argc, char** argv)
 							updatePlayerInventory();
 							updateShopWindow();
 						}
+
+						if ( proficienciesPage == 1 )
+						{
+							drawPartySheet();
+						}
+						else
+						{
+							drawSkillsSheet();
+						}
 					}
+					else
+					{
+						if ( lock_right_sidebar )
+						{
+							if ( proficienciesPage == 1 )
+							{
+								drawPartySheet();
+							}
+							else
+							{
+								drawSkillsSheet();
+							}
+						}
+					}
+					if ( (shootmode == false && gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
+					{
+						Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
+						Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
+						Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
+						printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
+					}
+
+					DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
+
+					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
 
 					// pointer in inventory screen
 					if (shootmode == false)
@@ -3064,12 +4503,12 @@ int main(int argc, char** argv)
 						{
 							pos.x = mousex - 15;
 							pos.y = mousey - 15;
-							pos.w = 32;
-							pos.h = 32;
+							pos.w = 32 * uiscale_inventory;
+							pos.h = 32 * uiscale_inventory;
 							drawImageScaled(itemSprite(selectedItem), NULL, &pos);
 							if ( selectedItem->count > 1 )
 							{
-								ttfPrintTextFormatted(ttf8, pos.x + 24, pos.y + 24, "%d", selectedItem->count);
+								ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
 							}
 							if ( itemCategory(selectedItem) != SPELL_CAT )
 							{
@@ -3078,14 +4517,71 @@ int main(int argc, char** argv)
 									pos.y += 16;
 									drawImage(equipped_bmp, NULL, &pos);
 								}
+								else if ( selectedItem->status == BROKEN )
+								{
+									pos.y += 16;
+									drawImage(itembroken_bmp, NULL, &pos);
+								}
 							}
 							else
 							{
 								spell_t* spell = getSpellFromItem(selectedItem);
-								if ( selected_spell == spell )
+								if ( selected_spell == spell && 
+									(selected_spell_last_appearance == selectedItem->appearance || selected_spell_last_appearance == -1) )
 								{
 									pos.y += 16;
 									drawImage(equipped_bmp, NULL, &pos);
+								}
+							}
+						}
+						else if ( FollowerMenu.selectMoveTo &&
+							(FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+						{
+							pos.x = mousex - cursor_bmp->w / 2;
+							pos.y = mousey - cursor_bmp->h / 2;
+							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+							if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+							{
+								if ( FollowerMenu.followerToCommand
+									&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
+									)
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
+								}
+								else
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
+								}
+							}
+							else
+							{
+								if ( !strcmp(FollowerMenu.interactText, "") )
+								{
+									if ( FollowerMenu.followerToCommand )
+									{
+										int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
+										if ( FollowerMenu.allowedInteractItems(type)
+											|| FollowerMenu.allowedInteractFood(type)
+											|| FollowerMenu.allowedInteractWorld(type)
+										)
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+										}
+										else
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+										}
+									}
+									else
+									{
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+									}
+								}
+								else
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
 								}
 							}
 						}
@@ -3104,7 +4600,69 @@ int main(int argc, char** argv)
 						pos.y = yres / 2 - cross_bmp->h / 2;
 						pos.w = 0;
 						pos.h = 0;
-						drawImageAlpha(cross_bmp, NULL, &pos, 128);
+						if ( FollowerMenu.selectMoveTo && (FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+						{
+							pos.x = xres / 2 - cursor_bmp->w / 2;
+							pos.y = yres / 2 - cursor_bmp->h / 2;
+							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+							if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+							{
+								if ( FollowerMenu.followerToCommand
+									&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
+									)
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
+								}
+								else
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
+								}
+							}
+							else
+							{
+								if ( !strcmp(FollowerMenu.interactText, "") )
+								{
+									if ( FollowerMenu.followerToCommand )
+									{
+										int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
+										if ( FollowerMenu.allowedInteractItems(type)
+											|| FollowerMenu.allowedInteractFood(type)
+											|| FollowerMenu.allowedInteractWorld(type)
+											)
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+										}
+										else
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+										}
+									}
+									else
+									{
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+									}
+								}
+								else
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
+								}
+							}
+						}
+						else
+						{
+							if ( players[clientnum] && players[clientnum]->entity && stats[clientnum]
+								&& stats[clientnum]->defending )
+							{
+								bool foundTinkeringKit = false;
+								if ( stats[clientnum]->shield && stats[clientnum]->shield->type == TOOL_TINKERING_KIT )
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
+								}
+							}
+							drawImageAlpha(cross_bmp, NULL, &pos, 128);
+						}
 					}
 				}
 				else if ( !multiplayer )
@@ -3148,6 +4706,11 @@ int main(int argc, char** argv)
 					}
 				}
 
+				if ( gamePaused ) // draw after main menu windows etc.
+				{
+					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+				}
+
 				if (((subwindow && !shootmode) || gamePaused) && draw_cursor)
 				{
 					pos.x = mousex - cursor_bmp->w / 2;
@@ -3155,6 +4718,18 @@ int main(int argc, char** argv)
 					pos.w = 0;
 					pos.h = 0;
 					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				}
+
+				if ( !shootmode )
+				{
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					}
+					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+					{
+						*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					}
 				}
 			}
 
@@ -3174,6 +4749,28 @@ int main(int argc, char** argv)
 				printTextFormatted(font8x8_bmp, 8, 8, "fps = %3.1f", fps);
 			}
 
+			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();
+			if ( logCheckMainLoopTimers )
+			{
+				std::chrono::duration<double> time_span = 
+					std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t10FrameLimiter - DebugStats.t11End);
+				double timer = time_span.count() * 1000;
+				if ( timer > ((1000.f / (fps) * 1.4)) )
+				{
+					DebugStats.displayStats = true;
+					DebugStats.storeStats();
+					DebugStats.storeEventStats();
+					messagePlayer(clientnum, "Timers: %f total.", timer);
+				}
+				if ( DebugStats.displayStats )
+				{
+					printTextFormatted(font8x8_bmp, 8, 20, DebugStats.debugOutput);
+					printTextFormatted(font8x8_bmp, 8, 100, DebugStats.debugEventOutput);
+				}
+			}
+
+			UIToastNotificationManager.drawNotifications(movie, false);
+
 			// update screen
 			GO_SwapBuffers(screen);
 
@@ -3185,21 +4782,44 @@ int main(int argc, char** argv)
 			}
 
 			// frame rate limiter
-			while ( frameRateLimit(MAX_FPS_LIMIT) )
+			while ( frameRateLimit(fpsLimit, true) )
 			{
 				if ( !intro )
 				{
 					// handle network messages
 					if ( multiplayer == CLIENT )
 					{
-						clientHandleMessages();
+						clientHandleMessages(fpsLimit);
 					}
 					else if ( multiplayer == SERVER )
 					{
-						serverHandleMessages();
+						serverHandleMessages(fpsLimit);
 					}
 				}
 			}
+
+			// selectedEntityGimpTimer will only allow the game to process a right click entity click 1-2 times
+			// otherwise if we interacted with a menu the gimp timer does not increment. (it would have auto reset the status of IN_USE)
+			if ( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
+			{
+				selectedEntityGimpTimer = 0;
+			}
+			else
+			{
+				if ( selectedEntityGimpTimer >= 2 )
+				{
+					if ( *inputPressed(impulses[IN_USE]) )
+					{
+						*inputPressed(impulses[IN_USE]) = 0;
+					}
+					if ( *inputPressed(joyimpulses[INJOY_GAME_USE]) )
+					{
+						*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+					}
+				}
+			}
+
+			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count
 			cycles++;
@@ -3215,4 +4835,42 @@ int main(int argc, char** argv)
 		//TODO:
 		return 1;
 	}
+}
+
+void DebugStatsClass::storeStats()
+{
+	if ( !displayStats )
+	{
+		return;
+	}
+	storeOldTimePoints();
+	double out1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2Stored - t21Stored).count();
+	double out2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t3Stored - t2Stored).count();
+	double out3 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t5Stored - t4Stored).count();
+	double out4 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t6Stored - t5Stored).count();
+	double out5 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t7Stored - t6Messages).count();
+	double out6 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t8Stored - t7Stored).count();
+	double out7 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t9Stored - t8Stored).count();
+	double out8 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t10Stored - t9Stored).count();
+	double out9 = -1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t11Stored - t10Stored).count();
+	double out10 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t21Stored - t1Stored).count();
+	snprintf(debugOutput, 1023,
+		"Messages: %4.5fms\nEvents: %4.5fms\nSteamCallbacks: %4.5fms\nMainDraw: %4.5fms\nMessages: %4.5fms\nInputs: %4.5fms\nStatus: %4.5fms\nGUI: %4.5fms\nFrameLimiter: %4.5fms\nEnd: %4.5fms\n",
+		out10, out1, out2, out3, out4, out5, out6, out7, out8, out9);
+}
+
+void DebugStatsClass::storeEventStats()
+{
+	double out1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT2stored - eventsT1stored).count();
+	double out2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT3stored - eventsT2stored).count();
+	double out3 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT4stored - eventsT3stored).count();
+	double out4 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT5stored - eventsT4stored).count();
+	double out5 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT6stored - eventsT5stored).count();
+
+	double messages1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(messagesT1stored - t1StartLoop).count();
+	double messages2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t21Stored - messagesT1stored).count();
+
+	snprintf(debugEventOutput, 1023,
+		"Events1: %4.5fms\nEvents2: %4.5fms\nEvents3: %4.5fms\nEvents4: %4.5fms\nEvents5: %4.5fms\nMessagesT1: %4.5fms\nMessagesT2: %4.5fms\n",
+		out1, out2, out3, out4, out5, messages1, messages2);
 }

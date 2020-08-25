@@ -78,9 +78,11 @@ void entityDeconstructor(void* data)
 {
 	Entity* entity;
 
-	if (data != NULL)
+	if ( data != nullptr )
 	{
 		entity = (Entity*)data;
+
+		//TODO: If I am part of the creaturelist, remove my node from that list.)
 
 		//free(data);
 		delete entity;
@@ -134,14 +136,19 @@ void mapDeconstructor(void* data)
 {
 	map_t* map;
 
-	if (data != NULL)
+	if ( data != nullptr )
 	{
 		map = (map_t*)data;
-		if (map->tiles != NULL)
+		if ( map->tiles != nullptr )
 		{
 			free(map->tiles);
 		}
-		if (map->entities != NULL)
+		if ( map->creatures )
+		{
+			list_FreeAll(map->creatures); //TODO: This needed?
+			delete map->creatures;
+		}
+		if ( map->entities != nullptr )
 		{
 			list_FreeAll(map->entities);
 			free(map->entities);
@@ -178,22 +185,28 @@ void listDeconstructor(void* data)
 
 -------------------------------------------------------------------------------*/
 
-Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist)
+Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist, list_t* creaturelist)
 {
-	Entity* entity;
+	Entity* entity = nullptr;
 
 	// allocate memory for entity
 	/*if( (entity = (Entity *) malloc(sizeof(Entity)))==NULL ) {
 		printlog( "failed to allocate memory for new entity!\n" );
 		exit(1);
 	}*/
+	bool failedToAllocate = false;
 	try
 	{
-		entity = new Entity(sprite, pos, entlist);
+		entity = new Entity(sprite, pos, entlist, creaturelist);
 	}
 	catch (std::bad_alloc& ba)
 	{
-		printlog( "failed to allocate memory for new entity!\n" );
+		failedToAllocate = true;
+	}
+
+	if ( failedToAllocate || !entity )
+	{
+		printlog("failed to allocate memory for new entity!\n");
 		exit(1);
 	}
 

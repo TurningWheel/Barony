@@ -18,6 +18,7 @@ extern int current_player; //This may not be necessary. Consider this: Each Play
 
 //TODO: Move these into each and every individual player.
 extern Entity* selectedEntity;
+extern Entity* lastSelectedEntity;
 extern Sint32 mousex, mousey;
 extern Sint32 omousex, omousey;
 extern Sint32 mousexrel, mouseyrel;
@@ -154,6 +155,12 @@ public:
 	 * Returns true if moved.
 	 */
 	bool handleItemContextMenu(const Item& item);
+
+	/*
+	* Uses dpad to move the cursor through the item context menu and select entries.
+	* Returns true if moved.
+	*/
+	bool handleRepairGUIMovement();
 };
 
 extern GameController* game_controller;

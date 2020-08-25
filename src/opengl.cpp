@@ -10,7 +10,9 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 
 #ifdef WINDOWS
 PFNGLGENBUFFERSPROC SDL_glGenBuffers;
@@ -41,7 +43,7 @@ real_t getLightForEntity(real_t x, real_t y)
 	}
 	int u = x;
 	int v = y;
-	return std::min(std::max(0, lightmap[v + u * map.height]), 255) / 255.0;
+	return std::min(std::max(0, lightmapSmoothed[v + u * map.height]), 255) / 255.0;
 }
 
 /*-------------------------------------------------------------------------------
@@ -67,6 +69,11 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	GLfloat rotx, roty, rotz;
 	//GLuint uidcolor;
 
+	if (!entity)
+	{
+		return;
+	}
+
 	// assign model
 	if ( entity->sprite >= 0 && entity->sprite < nummodels )
 	{
@@ -84,6 +91,11 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	{
 		model = models[0];
 		modelindex = 0;
+	}
+
+	if ( model == models[0] )
+	{
+		return; // don't draw green balls
 	}
 
 	// model array indexes
@@ -136,7 +148,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		glDisable(GL_BLEND);
 	}
 
-	if ( entity->flags[OVERDRAW] )
+	if ( entity->flags[OVERDRAW] || entity->monsterEntityRenderAsTelepath == 1 )
 	{
 		glDepthRange(0, 0.1);
 	}
@@ -144,15 +156,31 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	// get shade factor
 	if (!entity->flags[BRIGHT])
 	{
-		if (!entity->flags[OVERDRAW])
+		if ( !entity->flags[OVERDRAW] )
 		{
-			s = getLightForEntity(entity->x / 16, entity->y / 16);
+			if ( entity->monsterEntityRenderAsTelepath == 1 )
+			{
+				if ( globalLightModifierActive )
+				{
+					s = globalLightTelepathyModifier;
+				}
+			}
+			else
+			{
+				s = getLightForEntity(entity->x / 16, entity->y / 16);
+			}
 		}
 		else
 		{
 			s = getLightForEntity(camera->x, camera->y);
 		}
 	}
+
+	if ( globalLightModifierActive && entity->monsterEntityRenderAsTelepath == 0 )
+	{
+		s *= globalLightModifier;
+	}
+
 	// Moved glBeign / glEnd outside the loops, to limit the number of calls (helps gl4es on Pandora)
 	if ( wholevoxels )
 	{
@@ -318,7 +346,16 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				{
 					if ( entity->flags[USERFLAG2] )
 					{
-						glColor3f((polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s, (polymodels[modelindex].faces[index].b / 255.f)*s );
+						if ( entity->behavior == &actMonster 
+							&& (entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
+						{
+							// dont invert human heads, or automaton heads.
+							glColor3f((polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s, (polymodels[modelindex].faces[index].b / 255.f)*s );
+						}
+						else
+						{
+							glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s);
+						}
 					}
 					else
 					{
@@ -352,7 +389,15 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				glEnableClientState(GL_COLOR_ARRAY); // enable the color array on the client side
 				if ( entity->flags[USERFLAG2] )
 				{
-					SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
+					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() 
+						|| entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
+					{
+						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+					}
+					else
+					{
+						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
+					}
 				}
 				else
 				{
@@ -495,11 +540,24 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 			{
 				s = getLightForEntity(camera->x, camera->y);
 			}
+
+			if ( globalLightModifierActive )
+			{
+				s *= globalLightModifier;
+			}
+
 			glColor4f(s, s, s, 1);
 		}
 		else
 		{
-			glColor4f(1.f, 1.f, 1.f, 1);
+			if ( globalLightModifierActive )
+			{
+				glColor4f(globalLightModifier, globalLightModifier, globalLightModifier, 1);
+			}
+			else
+			{
+				glColor4f(1.f, 1.f, 1.f, 1);
+			}
 		}
 	}
 	else
@@ -518,6 +576,163 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
 	glTexCoord2f(1, 0);
 	glVertex3f(0, sprite->h / 2, -sprite->w / 2);
+	glEnd();
+	glDepthRange(0, 1);
+	glPopMatrix();
+}
+
+void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
+{
+	//int x, y;
+	real_t s = 1;
+	SDL_Surface* image = sprites[0];
+	GLuint textureId = texid[sprites[0]->refcount];
+	char textToRetrieve[128];
+
+	if ( text.compare("") == 0 )
+	{
+		return;
+	}
+
+	strncpy(textToRetrieve, text.c_str(), std::min(static_cast<int>(strlen(text.c_str())), 22));
+	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 22)] = '\0';
+	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
+	{
+		textureId = texid[image->refcount];
+	}
+	else
+	{
+		// create the text outline surface
+		TTF_SetFontOutline(ttf12, 2);
+		SDL_Color sdlColorBlack = { 0, 0, 0, 255 };
+		image = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorBlack);
+
+		// create the text surface
+		TTF_SetFontOutline(ttf12, 0);
+		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
+		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorWhite);
+
+		// combine the surfaces
+		SDL_Rect pos;
+		pos.x = 2;
+		pos.y = 2;
+		pos.h = 0;
+		pos.w = 0;
+
+		SDL_BlitSurface(textSurf, NULL, image, &pos);
+		// load the text outline surface as a GL texture
+		allsurfaces[imgref] = image;
+		allsurfaces[imgref]->refcount = imgref;
+		glLoadTexture(allsurfaces[imgref], imgref);
+		imgref++;
+		// store the surface in the text surface cache
+		if ( !ttfTextHashStore(ttfTextHash, textToRetrieve, ttf12, true, image) )
+		{
+			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
+		}
+		textureId = texid[image->refcount];
+	}
+	// setup projection
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	glEnable(GL_DEPTH_TEST);
+	if ( !entity->flags[OVERDRAW] )
+	{
+		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
+		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
+		GLfloat rotz = 0; // get z rotation
+		glRotatef(rotx, 1, 0, 0); // rotate pitch
+		glRotatef(roty, 0, 1, 0); // rotate yaw
+		glRotatef(rotz, 0, 0, 1); // rotate roll
+		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+	}
+	else
+	{
+		glRotatef(90, 0, 1, 0);
+	}
+
+
+	// setup model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glPushMatrix();
+	if ( mode == REALCOLORS )
+	{
+		glEnable(GL_BLEND);
+	}
+	else
+	{
+		glDisable(GL_BLEND);
+	}
+
+	// assign texture
+	if ( mode == REALCOLORS )
+	{
+		glBindTexture(GL_TEXTURE_2D, textureId);
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	// translate sprite and rotate towards camera
+	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
+	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
+	if ( !entity->flags[OVERDRAW] )
+	{
+		real_t tangent = 180 - camera->ang * (180 / PI);
+		glRotatef(tangent, 0, 1, 0);
+	}
+	else
+	{
+		real_t tangent = 180;
+		glRotatef(tangent, 0, 1, 0);
+	}
+	glScalef(entity->scalex, entity->scalez, entity->scaley);
+
+	if ( entity->flags[OVERDRAW] )
+	{
+		glDepthRange(0, 0.1);
+	}
+
+	// get shade factor
+	if ( mode == REALCOLORS )
+	{
+		if ( !entity->flags[BRIGHT] )
+		{
+			if ( !entity->flags[OVERDRAW] )
+			{
+				s = getLightForEntity(entity->x / 16, entity->y / 16);
+			}
+			else
+			{
+				s = getLightForEntity(camera->x, camera->y);
+			}
+			glColor4f(s, s, s, 1);
+		}
+		else
+		{
+			glColor4f(1.f, 1.f, 1.f, 1);
+		}
+	}
+	else
+	{
+		Uint32 uid = entity->getUID();
+		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
+	}
+
+	// draw quad
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0);
+	glVertex3f(0, image->h / 2, image->w / 2);
+	glTexCoord2f(0, 1);
+	glVertex3f(0, -image->h / 2, image->w / 2);
+	glTexCoord2f(1, 1);
+	glVertex3f(0, -image->h / 2, -image->w / 2);
+	glTexCoord2f(1, 0);
+	glVertex3f(0, image->h / 2, -image->w / 2);
 	glEnd();
 	glDepthRange(0, 1);
 	glPopMatrix();
@@ -542,10 +757,16 @@ real_t getLightAt(int x, int y)
 		{
 			if ( u >= 0 && u < map.width && v >= 0 && v < map.height )
 			{
-				l += std::min(std::max(0, lightmap[v + u * map.height]), 255) / 255.0;
+				l += std::min(std::max(0, lightmapSmoothed[v + u * map.height]), 255) / 255.0;
 			}
 		}
 	}
+
+	if ( globalLightModifierActive )
+	{
+		l *= globalLightModifier;
+	}
+
 	return l / 4.f;
 }
 
@@ -563,16 +784,59 @@ void glDrawWorld(view_t* camera, int mode)
 	int index;
 	real_t s;
 	bool clouds = false;
+	int cloudtile = 0;
+	int mapceilingtile = 50;
 
 	if ( softwaremode == true )
 	{
 		return;
 	}
 
-	if ( !strncmp(map.name, "Hell", 4) && smoothlighting )
+	if ( (!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting )
 	{
 		clouds = true;
+		if ( !strncmp(map.name, "Hell", 4) )
+		{
+			cloudtile = 77;
+		}
+		else
+		{
+			cloudtile = map.skybox;
+		}
 	}
+
+	for ( int v = 0; v < map.height; v++ )
+	{
+		for ( int u = 0; u < map.width; u++ )
+		{
+			int smoothingRate = globalLightSmoothingRate;
+			int difference = abs(lightmapSmoothed[v + u * map.height] - lightmap[v + u * map.height]);
+			if ( difference > 64 )
+			{
+				smoothingRate *= 4;
+			}
+			else if ( difference > 32 )
+			{
+				smoothingRate *= 2;
+			}
+			if ( lightmapSmoothed[v + u * map.height] < lightmap[v + u * map.height] )
+			{
+				lightmapSmoothed[v + u * map.height] = std::min(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] + smoothingRate);
+			}
+			else if ( lightmapSmoothed[v + u * map.height] > lightmap[v + u * map.height] )
+			{
+				lightmapSmoothed[v + u * map.height] = std::max(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] - smoothingRate);
+			}
+		}
+	}
+
+	if ( map.flags[MAP_FLAG_CEILINGTILE] != 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles )
+	{
+		mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
+	}
+
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 
 	if ( clouds && mode == REALCOLORS )
 	{
@@ -595,7 +859,7 @@ void glDrawWorld(view_t* camera, int mode)
 
 		// first (higher) sky layer
 		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[77]->refcount]); // sky tile
+		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
 		glVertex3f(-CLIPFAR * 16, 64, -CLIPFAR * 16);
@@ -612,7 +876,7 @@ void glDrawWorld(view_t* camera, int mode)
 
 		// second (closer) sky layer
 		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[77]->refcount]); // sky tile
+		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
 		glVertex3f(-CLIPFAR * 16, 32, -CLIPFAR * 16);
@@ -754,7 +1018,11 @@ void glDrawWorld(view_t* camera, int mode)
 								{
 									if ( x < map.width - 1 )
 									{
-										s = std::min(std::max(0, lightmap[y + (x + 1) * map.height]), 255) / 255.0;
+										s = std::min(std::max(0, lightmapSmoothed[y + (x + 1) * map.height]), 255) / 255.0;
+										if ( globalLightModifierActive )
+										{
+											s *= globalLightModifier;
+										}
 									}
 									else
 									{
@@ -828,7 +1096,11 @@ void glDrawWorld(view_t* camera, int mode)
 								{
 									if ( y < map.height - 1 )
 									{
-										s = std::min(std::max(0, lightmap[(y + 1) + x * map.height]), 255) / 255.0;
+										s = std::min(std::max(0, lightmapSmoothed[(y + 1) + x * map.height]), 255) / 255.0;
+										if ( globalLightModifierActive )
+										{
+											s *= globalLightModifier;
+										}
 									}
 									else
 									{
@@ -898,7 +1170,11 @@ void glDrawWorld(view_t* camera, int mode)
 								{
 									if ( x > 0 )
 									{
-										s = std::min(std::max(0, lightmap[y + (x - 1) * map.height]), 255) / 255.0;
+										s = std::min(std::max(0, lightmapSmoothed[y + (x - 1) * map.height]), 255) / 255.0;
+										if ( globalLightModifierActive )
+										{
+											s *= globalLightModifier;
+										}
 									}
 									else
 									{
@@ -968,7 +1244,11 @@ void glDrawWorld(view_t* camera, int mode)
 								{
 									if ( y > 0 )
 									{
-										s = std::min(std::max(0, lightmap[(y - 1) + x * map.height]), 255) / 255.0;
+										s = std::min(std::max(0, lightmapSmoothed[(y - 1) + x * map.height]), 255) / 255.0;
+										if ( globalLightModifierActive )
+										{
+											s *= globalLightModifier;
+										}
 									}
 									else
 									{
@@ -997,7 +1277,7 @@ void glDrawWorld(view_t* camera, int mode)
 						// bind texture
 						if ( mode == REALCOLORS )
 						{
-							new_tex = texid[tiles[50]->refcount];
+							new_tex = texid[tiles[mapceilingtile]->refcount];
 							//glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
 							if (cur_tex!=new_tex)
 							{
@@ -1072,7 +1352,7 @@ void glDrawWorld(view_t* camera, int mode)
 						// unsmooth lighting
 						if ( mode == REALCOLORS )
 						{
-							s = std::min(std::max(0, lightmap[y + x * map.height]), 255) / 255.0;
+							s = std::min(std::max(0, lightmapSmoothed[y + x * map.height]), 255) / 255.0;
 							glColor3f(s, s, s);
 						}
 
@@ -1117,6 +1397,9 @@ void glDrawWorld(view_t* camera, int mode)
 		}
 	}
 	glEnd();
+
+	glDisable(GL_SCISSOR_TEST);
+	glScissor(0, 0, xres, yres);
 }
 
 /*GLuint create_shader(const char* filename, GLenum type)
@@ -1162,7 +1445,7 @@ static int dirty = 1;
 static int oldx = 0, oldy = 0;
 static unsigned int oldpix = 0;
 
-unsigned int GO_GetPixelU32(int x, int y)
+unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 {
 	if(!dirty && (oldx==x) && (oldy==y))
 		return oldpix;

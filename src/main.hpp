@@ -19,17 +19,60 @@ typedef double real_t;
 
 #include <algorithm> //For min and max, because the #define breaks everything in c++.
 #include <iostream>
+#include <list>
 #include <string>
+#include <vector>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
+#include <map>
 #include <unordered_map>
-
+#include <unordered_set>
+#include <set>
+#include <functional>
 #include "Config.hpp"
+#include "physfs.h"
 
 #ifdef STEAMWORKS
 #define STEAM_APPID 371970
 #endif
 
+enum ESteamStatTypes
+{
+	STEAM_STAT_INT = 0,
+	STEAM_STAT_FLOAT = 1,
+	STEAM_STAT_AVGRATE = 2,
+};
+
+struct SteamStat_t
+{
+	int m_ID;
+	ESteamStatTypes m_eStatType;
+	const char *m_pchStatName;
+	int m_iValue;
+	float m_flValue;
+	float m_flAvgNumerator;
+	float m_flAvgDenominator;
+};
+
+struct SteamGlobalStat_t
+{
+	int m_ID;
+	ESteamStatTypes m_eStatType;
+	const char *m_pchStatName;
+	int64_t m_iValue;
+	float m_flValue;
+	float m_flAvgNumerator;
+	float m_flAvgDenominator;
+};
+
+extern bool spamming;
+extern bool showfirst;
+extern bool logCheckObstacle;
+extern int logCheckObstacleCount;
+extern bool logCheckMainLoopTimers;
+extern bool autoLimbReload;
+
+#include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -37,12 +80,15 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #include <fcntl.h>
 #ifndef WINDOWS
 #include <unistd.h>
+#include <limits.h>
 #endif
 #include <string.h>
 #include <ctype.h>
 #ifdef WINDOWS
 #define GL_GLEXT_PROTOTYPES
+#define PATH_MAX 1024
 #include <windows.h>
+#include <Dbghelp.h>
 #undef min
 #undef max
 #endif
@@ -95,9 +141,9 @@ using std::string; //Instead of including an entire namespace, please explicitly
 
 #ifdef _MSC_VER
 #include <io.h>
-#define F_OK 0	// check for existence 
-#define X_OK 1	// check for execute permission 
-#define W_OK 2	// check for write permission 
+#define F_OK 0	// check for existence
+#define X_OK 1	// check for execute permission
+#define W_OK 2	// check for write permission
 #define R_OK 4	// check for read permission
 
 #if _MSC_VER != 1900 //Don't need this if running visual studio 2015.
@@ -109,6 +155,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define PI 3.14159265358979323846
 
 extern FILE* logfile;
+static const int MESSAGE_LIST_SIZE_CAP = 100; //Cap off the message in-game log to 100 messages. Otherwise, game will eat up more RAM and more CPU the longer it goes on.
 
 class Item;
 //enum Item;
@@ -157,51 +204,106 @@ extern bool stop;
 #define IN_DEFEND 13
 #define IN_ATTACK 14
 #define IN_USE 15
-#define NUMIMPULSES 16
+#define IN_AUTOSORT 16
+#define IN_MINIMAPSCALE 17
+#define IN_TOGGLECHATLOG 18
+#define IN_FOLLOWERMENU 19
+#define IN_FOLLOWERMENU_LASTCMD 20
+#define IN_FOLLOWERMENU_CYCLENEXT 21
+#define IN_HOTBAR_SCROLL_LEFT 22
+#define IN_HOTBAR_SCROLL_RIGHT 23
+#define IN_HOTBAR_SCROLL_SELECT 24
+#define NUMIMPULSES 25
+static const std::vector<std::string> impulseStrings =
+{
+	"IN_FORWARD",
+	"IN_LEFT",
+	"IN_BACK",
+	"IN_RIGHT",
+	"IN_TURNL",
+	"IN_TURNR",
+	"IN_UP",
+	"IN_DOWN",
+	"IN_CHAT",
+	"IN_COMMAND",
+	"IN_STATUS",
+	"IN_SPELL_LIST",
+	"IN_CAST_SPELL",
+	"IN_DEFEND",
+	"IN_ATTACK",
+	"IN_USE",
+	"IN_AUTOSORT",
+	"IN_MINIMAPSCALE",
+	"IN_TOGGLECHATLOG",
+	"IN_FOLLOWERMENU",
+	"IN_FOLLOWERMENU_LASTCMD",
+	"IN_FOLLOWERMENU_CYCLENEXT",
+	"IN_HOTBAR_SCROLL_LEFT",
+	"IN_HOTBAR_SCROLL_RIGHT",
+	"IN_HOTBAR_SCROLL_SELECT"
+};
 
 //Joystick/gamepad impulses
 //TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
 
 //Bifunctional:
-#define INJOY_STATUS 0
-#define INJOY_SPELL_LIST 1
-#define INJOY_PAUSE_MENU 6 //Also acts as the back key/escape key in limited situations.
-#define INJOY_DPAD_LEFT 8
-#define INJOY_DPAD_RIGHT 9
-#define INJOY_DPAD_UP 10
-#define INJOY_DPAD_DOWN 11
-#define INJOY_HOTBAR_NEXT 13
-#define INJOY_HOTBAR_PREV 14
+static const unsigned INJOY_STATUS = 0;
+static const unsigned INJOY_SPELL_LIST = 1;
+static const unsigned INJOY_PAUSE_MENU = 2; //Also acts as the back key/escape key in limited situations.
+static const unsigned INJOY_DPAD_LEFT = 3;
+static const unsigned INJOY_DPAD_RIGHT = 4;
+static const unsigned INJOY_DPAD_UP = 5;
+static const unsigned INJOY_DPAD_DOWN = 6;
 
 //Menu Exclusive:
-#define INJOY_MENU_LEFT_CLICK 7
-#define INJOY_MENU_NEXT 12
-#define INJOY_MENU_CANCEL 16 //Basically the "b" button. Go back, cancel things, close dialogues...etc.
-#define INJOY_MENU_USE 17 //Opens the context menu in the inventory. Also grabs the highlighted item from a chest.
-#define INJOY_MENU_HOTBAR_CLEAR 18 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_REFRESH_LOBBY 19 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_LOAD_SAVE 20 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_RANDOM_CHAR 21 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_DROP_ITEM 22
-#define INJOY_MENU_CHEST_GRAB_ALL 23
-#define INJOY_MENU_CYCLE_SHOP_LEFT 24
-#define INJOY_MENU_CYCLE_SHOP_RIGHT 25
-#define INJOY_MENU_BOOK_NEXT 26
-#define INJOY_MENU_BOOK_PREV 27
-#define INJOY_MENU_SETTINGS_NEXT 28
-#define INJOY_MENU_SETTINGS_PREV 29 //TODO: Only one "cycle tabs" binding?
-#define INJOY_MENU_INVENTORY_TAB 30 //Optimally, I'd like to just use one trigger to toggle between the two, but there's some issues with analog triggers.
-#define INJOY_MENU_MAGIC_TAB 31
+static const unsigned INJOY_MENU_LEFT_CLICK = 7;
+static const unsigned INJOY_MENU_NEXT = 8;
+static const unsigned INJOY_MENU_CANCEL = 9; //Basically the "b" button. Go back, cancel things, close dialogues...etc.
+static const unsigned INJOY_MENU_SETTINGS_NEXT = 10;
+static const unsigned INJOY_MENU_SETTINGS_PREV = 11; //TODO: Only one "cycle tabs" binding?
+static const unsigned INJOY_MENU_REFRESH_LOBBY = 12;
+static const unsigned INJOY_MENU_DONT_LOAD_SAVE = 13;
+static const unsigned INJOY_MENU_RANDOM_NAME = 14;
+static const unsigned INJOY_MENU_RANDOM_CHAR = 15; //Clears hotbar slot in-inventory.
+static const unsigned INJOY_MENU_INVENTORY_TAB = 16; //Optimally, I'd like to just use one trigger to toggle between the two, but there's some issues with analog triggers.
+static const unsigned INJOY_MENU_MAGIC_TAB = 17;
+static const unsigned INJOY_MENU_USE = 18; //Opens the context menu in the inventory. Also grabs the highlighted item from a chest.
+static const unsigned INJOY_MENU_HOTBAR_CLEAR = 19; //Clears hotbar slot in-inventory.
+static const unsigned INJOY_MENU_DROP_ITEM = 20;
+static const unsigned INJOY_MENU_CHEST_GRAB_ALL = 21;
+static const unsigned INJOY_MENU_CYCLE_SHOP_LEFT = 22;
+static const unsigned INJOY_MENU_CYCLE_SHOP_RIGHT = 23;
+static const unsigned INJOY_MENU_BOOK_PREV = 24;
+static const unsigned INJOY_MENU_BOOK_NEXT = 25;
+
+static const unsigned INDEX_JOYBINDINGS_START_MENU = 7;
 
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
-#define INJOY_GAME_CAST_SPELL 2
-#define INJOY_GAME_DEFEND 3
-#define INJOY_GAME_ATTACK 4
-#define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
-#define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
+static const unsigned INJOY_GAME_USE = 26; //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
+static const unsigned INJOY_GAME_DEFEND = 27;
+static const unsigned INJOY_GAME_ATTACK = 28;
+static const unsigned INJOY_GAME_CAST_SPELL = 29;
+static const unsigned INJOY_GAME_HOTBAR_ACTIVATE = 30; //Activates hotbar slot in-game.
+static const unsigned INJOY_GAME_HOTBAR_PREV = 31;
+static const unsigned INJOY_GAME_HOTBAR_NEXT = 32;
+static const unsigned INJOY_GAME_MINIMAPSCALE = 33;
+static const unsigned INJOY_GAME_TOGGLECHATLOG = 34;
+static const unsigned INJOY_GAME_FOLLOWERMENU = 35;
+static const unsigned INJOY_GAME_FOLLOWERMENU_LASTCMD = 36;
+static const unsigned INJOY_GAME_FOLLOWERMENU_CYCLE = 37;
 
-#define NUM_JOY_IMPULSES 32
+static const unsigned INDEX_JOYBINDINGS_START_GAME = 26;
+
+static const unsigned NUM_JOY_IMPULSES = 38;
+
+static const unsigned UNBOUND_JOYBINDING = 399;
+
+static const int NUM_HOTBAR_CATEGORIES = 12; // number of filters for auto add hotbar items
+
+static const int NUM_AUTOSORT_CATEGORIES = 12; // number of categories for autosort
+
+static const int RIGHT_CLICK_IMPULSE = 285; // right click
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
@@ -218,8 +320,6 @@ typedef struct view_t
 	real_t vang;
 	Sint32 winx, winy, winw, winh;
 } view_t;
-
-extern view_t camera;
 
 class Entity; //TODO: Bugger?
 
@@ -248,26 +348,53 @@ typedef struct map_t
 {
 	char name[32];   // name of the map
 	char author[32]; // author of the map
-	unsigned int width, height;  // size of the map
+	unsigned int width, height, skybox;  // size of the map + skybox
+	Sint32 flags[16];
 	Sint32* tiles;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
+	list_t* creatures; //A list of Entity* pointers.
 } map_t;
 
 #define MAPLAYERS 3 // number of layers contained in a single map
 #define OBSTACLELAYER 1 // obstacle layer in map
+#define MAPFLAGS 16 // map flags for custom properties
+#define MAPFLAGTEXTS 19 // map flags for custom properties
+// names for the flag indices
+static const int MAP_FLAG_CEILINGTILE = 0;
+static const int MAP_FLAG_DISABLETRAPS = 1;
+static const int MAP_FLAG_DISABLEMONSTERS = 2;
+static const int MAP_FLAG_DISABLELOOT = 3;
+static const int MAP_FLAG_GENBYTES1 = 4;
+static const int MAP_FLAG_GENBYTES2 = 5;
+static const int MAP_FLAG_GENBYTES3 = 6;
+static const int MAP_FLAG_GENBYTES4 = 7;
+static const int MAP_FLAG_GENBYTES5 = 8;
+static const int MAP_FLAG_GENBYTES6 = 9;
+// indices for mapflagtext, 4 of these are stored as bytes within the above GENBYTES
+static const int MAP_FLAG_GENTOTALMIN = 4;
+static const int MAP_FLAG_GENTOTALMAX = 5;
+static const int MAP_FLAG_GENMONSTERMIN = 6;
+static const int MAP_FLAG_GENMONSTERMAX = 7;
+static const int MAP_FLAG_GENLOOTMIN = 8;
+static const int MAP_FLAG_GENLOOTMAX = 9;
+static const int MAP_FLAG_GENDECORATIONMIN = 10;
+static const int MAP_FLAG_GENDECORATIONMAX = 11;
+static const int MAP_FLAG_DISABLEDIGGING = 12;
+static const int MAP_FLAG_DISABLETELEPORT = 13;
+static const int MAP_FLAG_DISABLELEVITATION = 14;
+static const int MAP_FLAG_GENADJACENTROOMS = 15;
+static const int MAP_FLAG_DISABLEOPENING = 16;
+static const int MAP_FLAG_DISABLEMESSAGES = 17;
+static const int MAP_FLAG_DISABLEHUNGER = 18;
 
-// light structure
-typedef struct light_t
-{
-	Sint32 x, y;
-	Sint32 radius;
-	Sint32 intensity;
-	Sint32* tiles;
-
-	// a pointer to the light's location in a list
-	node_t* node;
-} light_t;
+#define MFLAG_DISABLEDIGGING ((map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF) // first leftmost byte
+#define MFLAG_DISABLETELEPORT ((map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF) // second leftmost byte
+#define MFLAG_DISABLELEVITATION ((map.flags[MAP_FLAG_GENBYTES3] >> 8) & 0xFF) // third leftmost byte
+#define MFLAG_GENADJACENTROOMS ((map.flags[MAP_FLAG_GENBYTES3] >> 0) & 0xFF) // fourth leftmost byte
+#define MFLAG_DISABLEOPENING ((map.flags[MAP_FLAG_GENBYTES4] >> 24) & 0xFF) // first leftmost byte
+#define MFLAG_DISABLEMESSAGES ((map.flags[MAP_FLAG_GENBYTES4] >> 16) & 0xFF) // second leftmost byte
+#define MFLAG_DISABLEHUNGER ((map.flags[MAP_FLAG_GENBYTES4] >> 8) & 0xFF) // third leftmost byte
 
 // delete entity structure
 typedef struct deleteent_t
@@ -380,6 +507,18 @@ typedef struct door_t
 #define TEXTURESIZE 32
 #define TEXTUREPOWER 5 // power of 2 that texture size is, ie pow(2,TEXTUREPOWER) = TEXTURESIZE
 #define MAXPLAYERS 4
+#ifdef BARONY_SUPER_MULTIPLAYER
+#define MAXPLAYERS 16
+#endif
+
+// shaking/bobbing, that sort of thing
+struct cameravars_t {
+	real_t shakex;
+	real_t shakex2;
+	int shakey;
+	int shakey2;
+};
+extern cameravars_t cameravars[MAXPLAYERS];
 
 extern int game;
 extern bool loading;
@@ -395,6 +534,7 @@ extern SDL_Event event;
 extern bool firstmouseevent;
 extern char* window_title;
 extern Sint32 fullscreen;
+extern bool borderless;
 extern bool smoothlighting;
 extern Sint32 xres;
 extern Sint32 yres;
@@ -405,6 +545,10 @@ extern Sint8 keystatus[512];
 extern char* inputstr;
 extern int inputlen;
 extern string lastname;
+extern int lastCreatedCharacterClass;
+extern int lastCreatedCharacterAppearance;
+extern int lastCreatedCharacterSex;
+extern int lastCreatedCharacterRace;
 static const unsigned NUM_MOUSE_STATUS = 6;
 extern Sint8 mousestatus[NUM_MOUSE_STATUS];
 //extern Sint8 omousestatus[NUM_MOUSE_STATUS];
@@ -420,24 +564,38 @@ extern int subx1, subx2, suby1, suby2;
 extern char subtext[1024];
 extern int rscale;
 extern real_t vidgamma;
+extern bool verticalSync;
+extern bool showStatusEffectIcons;
+extern bool minimapPingMute;
+extern bool mute_audio_on_focus_lost;
+extern bool mute_player_monster_sounds;
+extern int minimapTransparencyForeground;
+extern int minimapTransparencyBackground;
+extern int minimapScale;
+extern int minimapObjectZoom;
+extern int minimapScaleQuickToggle;
 extern bool softwaremode;
 extern real_t* zbuffer;
 extern Sint32* lightmap;
+extern Sint32* lightmapSmoothed;
 extern bool* vismap;
 extern Entity** clickmap;
 extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
 extern bool directConnect;
 extern bool client_disconnected[MAXPLAYERS];
+extern view_t cameras[MAXPLAYERS];
+extern view_t menucam;
 extern int minotaurlevel;
 #define SINGLE 0
 #define SERVER 1
 #define CLIENT 2
 #define DIRECTSERVER 3
 #define DIRECTCLIENT 4
+#define SERVERCROSSPLAY 5
 
 // language stuff
-#define NUMLANGENTRIES 2500
+#define NUMLANGENTRIES 4000
 extern char languageCode[32];
 extern char** language;
 
@@ -485,12 +643,24 @@ extern SDL_Surface* font16x16_bmp;
 extern SDL_Surface* fancyWindow_bmp;
 extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
+extern std::unordered_map<std::string, SDL_Surface*> achievementImages;
+extern std::unordered_map<std::string, std::string> achievementNames;
+extern std::unordered_map<std::string, std::string> achievementDesc;
+extern std::unordered_set<std::string> achievementHidden;
+typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::string, std::string>)> Comparator;
+extern std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
+extern std::unordered_map<std::string, int> achievementProgress;
+extern std::unordered_map<std::string, int64_t> achievementUnlockTime;
+extern std::unordered_set<std::string> achievementUnlockedLookup;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
+extern bool useModelCache;
 extern Uint32 imgref, vboref;
+extern const Uint32 ttfTextCacheLimit;
 extern GLuint* texid;
 extern bool disablevbos;
 extern Uint32 fov;
+extern Uint32 fpsLimit;
 //extern GLuint *vboid, *vaoid;
 extern SDL_Surface** allsurfaces;
 extern Uint32 numsprites;
@@ -499,32 +669,47 @@ extern Uint32 nummodels;
 extern Sint32 audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
 extern int sfxvolume;
-extern bool* animatedtiles, *lavatiles;
+extern int sfxAmbientVolume;
+extern int sfxEnvironmentVolume;
+extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];
-extern Sint8 minimap[64][64];
+static const int MINIMAP_MAX_DIMENSION = 512;
+extern Sint8 minimap[MINIMAP_MAX_DIMENSION][MINIMAP_MAX_DIMENSION];
 extern Uint32 mapseed;
 extern bool* shoparea;
+extern real_t globalLightModifier;
+extern real_t globalLightTelepathyModifier;
+extern int globalLightModifierActive;
+extern int globalLightSmoothingRate;
+enum LightModifierValues : int
+{
+	GLOBAL_LIGHT_MODIFIER_STOPPED,
+	GLOBAL_LIGHT_MODIFIER_INUSE,
+	GLOBAL_LIGHT_MODIFIER_DISSIPATING
+};
 
 // function prototypes for main.c:
 int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
 int longestline(char* str);
 int concatedStringLength(char* str, ...);
-void printlog(char* str, ...);
-
-// function prototypes for init.c:
-int initApp(char* title, int fullscreen);
-int deinitApp();
-bool initVideo();
-bool changeVideoMode();
-void generatePolyModels();
-void generateVBOs();
-int loadLanguage(char* lang);
-int reloadLanguage();
+void printlog(const char* str, ...);
 
 // function prototypes for list.c:
 void list_FreeAll(list_t* list);
 void list_RemoveNode(node_t* node);
+template <typename T>
+void list_RemoveNodeWithElement(list_t &list, T element)
+{
+	for ( node_t *node = list.first; node != nullptr; node = node->next )
+	{
+		if ( *static_cast<T*>(node->element) == element )
+		{
+			list_RemoveNode(node);
+			return;
+		}
+	}
+}
 node_t* list_AddNodeFirst(list_t* list);
 node_t* list_AddNodeLast(list_t* list);
 node_t* list_AddNode(list_t* list, int index);
@@ -534,10 +719,6 @@ list_t* list_CopyNew(list_t* srclist);
 Uint32 list_Index(node_t* node);
 node_t* list_Node(list_t* list, int index);
 
-// function prototypes for light.c:
-light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
-light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
-
 // function prototypes for objects.c:
 void defaultDeconstructor(void* data);
 void emptyDeconstructor(void* data);
@@ -546,57 +727,10 @@ void lightDeconstructor(void* data);
 void mapDeconstructor(void* data);
 void stringDeconstructor(void* data);
 void listDeconstructor(void* data);
-Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist);
+Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist, list_t* creaturelist);
 button_t* newButton(void);
-light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
 string_t* newString(list_t* list, Uint32 color, char* content, ...);
 pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
-
-// function prototypes for draw.c:
-#define FLIP_VERTICAL 1
-#define FLIP_HORIZONTAL 2
-SDL_Surface* flipSurface(SDL_Surface* surface, int flags);
-void drawCircle(int x, int y, real_t radius, Uint32 color, Uint8 alpha);
-void drawArc(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha);
-void drawLine(int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha);
-int drawRect(SDL_Rect* src, Uint32 color, Uint8 alpha);
-int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha);
-void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation);
-void drawImage(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
-void drawImageScaled(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
-void drawImageAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha);
-void drawImageColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color);
-void drawImageFancy(SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* src, SDL_Rect* pos);
-void drawImageRotatedAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, real_t angle, Uint8 alpha);
-SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height);
-void drawSky3D(view_t* camera, SDL_Surface* tex);
-void drawLayer(long camx, long camy, int z, map_t* map);
-void drawBackground(long camx, long camy);
-void drawForeground(long camx, long camy);
-void drawClearBuffers();
-void raycast(view_t* camera, int mode);
-void drawFloors(view_t* camera);
-void drawSky(SDL_Surface* srfc);
-void drawVoxel(view_t* camera, Entity* entity);
-void drawEntities3D(view_t* camera, int mode);
-void drawPalette(voxel_t* model);
-void drawEntities2D(long camx, long camy);
-void drawGrid(long camx, long camy);
-void drawEditormap(long camx, long camy);
-void drawWindow(int x1, int y1, int x2, int y2);
-void drawDepressed(int x1, int y1, int x2, int y2);
-void drawWindowFancy(int x1, int y1, int x2, int y2);
-SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool outline, const char* str );
-SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str );
-SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color, char* fmt, ... );
-SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... );
-void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... );
-void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char* fmt, ...);
-void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char* fmt, ...);
-void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, real_t angle, real_t scale, char* fmt, ...);
-void printText( SDL_Surface* font_bmp, int x, int y, char* str );
-void drawSprite(view_t* camera, Entity* entity);
-void drawTooltip(SDL_Rect* src);
 
 // function prototypes for opengl.c:
 #define REALCOLORS 0
@@ -604,33 +738,24 @@ void drawTooltip(SDL_Rect* src);
 real_t getLightForEntity(real_t x, real_t y);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
+void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
 real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);
-
-// function prototypes for files.c:
-void glLoadTexture(SDL_Surface* image, int texnum);
-SDL_Surface* loadImage(char* filename);
-voxel_t* loadVoxel(char* filename2);
-int loadMap(char* filename, map_t* destmap, list_t* entlist);
-int loadConfig(char* filename);
-int saveMap(char* filename);
 
 // function prototypes for cursors.c:
 SDL_Cursor* newCursor(char* image[]);
 
 // function prototypes for maps.c:
-int generateDungeon(char* levelset, Uint32 seed);
+int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> mapParameters = std::make_tuple(-1, -1, -1, 0)); // secretLevelChance of -1 is default Barony generation.
 void assignActions(map_t* map);
 
-// cursor bitmap definitions
+// Cursor bitmap definitions
 extern char* cursor_pencil[];
+extern char* cursor_point[];
 extern char* cursor_brush[];
 extern char* cursor_fill[];
 
 GLuint create_shader(const char* filename, GLenum type);
-
-char* readFile(char* filename);
-list_t* directoryContents(char* directory);
 
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
@@ -642,4 +767,21 @@ extern GLuint fbo_tex;
 extern GLuint fbo_ren;
 #endif
 void GO_SwapBuffers(SDL_Window* screen);
-unsigned int GO_GetPixelU32(int x, int y);
+unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
+
+static const int NUM_STEAM_STATISTICS = 49;
+extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
+static const int NUM_GLOBAL_STEAM_STATISTICS = 66;
+extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
+
+#ifdef STEAMWORKS
+#include <steam/steam_api.h>
+#include "steam.hpp"
+extern CSteamLeaderboards* g_SteamLeaderboards;
+extern CSteamWorkshop* g_SteamWorkshop;
+extern CSteamStatistics* g_SteamStatistics;
+#endif // STEAMWORKS
+
+#ifdef USE_EOS
+#include "eos.hpp"
+#endif

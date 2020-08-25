@@ -1,23 +1,59 @@
 You will need the following libraries to build Barony:
 
- * libpng
- * SDL2
- * SDL2_image
- * SDL2_net
- * SDL2_ttf
+ * SDL2 (https://www.libsdl.org/download-2.0.php)
+ * SDL2_image (https://www.libsdl.org/projects/SDL_image/)
+ * SDL2_net (https://www.libsdl.org/projects/SDL_net/)
+ * SDL2_ttf (https://www.libsdl.org/projects/SDL_ttf/)
+ * libpng (http://www.libpng.org/pub/png/libpng.html)
+ * libz (https://zlib.net/) used by libpng
+ * PhysFS
+ * RapidJSON
+ 
+For Debian/Ubuntu you can install them with
+
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev libz-dev libphysfs-dev rapidjson-dev
+
+You will also need PhysFS v3.0.1 for Barony v3.1.5+ if not available in your distro's package repository.
+Linux Install (Navigate to somewhere to drop install files first):
+ * wget https://icculus.org/physfs/downloads/physfs-3.0.1.tar.bz2
+ * bzip2 -d physfs-3.0.1.tar.bz2
+ * tar -xvf physfs-3.0.1.tar
+ * cd physfs-3.0.1
+ * cmake ./
+ * make install
+You can then remove the installation files.
+
+Windows install:
+ * Download from https://icculus.org/physfs/downloads/physfs-3.0.1.tar.bz2
+ * Open with .7zip or similar, open up docs/INSTALL.txt inside the archive for instructions to read along with this short guide.
+ * Download/install cmake-gui for Windows (or use a command line version if you have it)
+ * Open up the physfs-3.0.1 directory in cmake-gui and select configure, then generate
+ * You will now get Visual Studio files to open up and build
+ * Open up files in Visual Studio, in Solution Explorer right click the 'physfs' solution and 'build'
+ * You will now see a physfs.lib file in physfs-3.0.1/Release/ to use when building Barony. Put this in one of the VCC++ Library Directories folder for the Barony project.
+ * Similarly you can find physfs-3.0.1/src/physfs.h to put in one of the VC++ Include Directories from the Barony project.
+ 
 
 Optional dependencies required for sound:
  * FMOD Ex - downloadable at http://www.fmod.org/download-previous-products/ (you do need an account to download it).
-You can disable FMOD by running cmake with -DFMOD_ENABLED=OFF.
-Building without FMOD Ex will result in no sound.
+You can disable FMOD by running cmake with -DFMOD_ENABLED=OFF (it's also disabled if not found).
+Use of FMOD in Barony is considered deprecated.
+OR
+* OpenAL
+You can enable OpenAL by running cmake with -DOPENAL_ENABLED=ON.
+* libvorbis OR Tremor
+You can enable Tremor by running cmake with -DTREMOR_ENABLED=ON, otherwise libvorbis will be used by default.
 
 You will also need the following tools:
 
- * A working C++ compiler (Visual Studio 2013/2015, MinGW, GCC, or xtools)
+ * A working C++ compiler (Visual Studio, MinGW, GCC, or xtools)
  * CMake (Windows optional)
 
 If you're using Visual Studio, simply open the relevant project file, configure the library and include paths for each project, and build the whole solution to generate the .exe files.
+(Make sure that the appropriate Platform Toolset is installed.)
 
-If you're using MinGW or GCC, you'll need to run CMake first, then make.
+If you're using MinGW or GCC, you'll need to run CMake first, then make: cmake . && make
 
-Keep in mind that there are a lot of references to Steamworks in the code. They should all be #ifdef'd out, but if you get any linker errors about Steamworks, make sure STEAMWORKS is undef'd in main.hpp and try again.
+Keep in mind that there are a lot of references to Steamworks (https://partner.steamgames.com/) in the code. They should all be #ifdef'd out, but if you get any linker errors about Steamworks, make sure STEAMWORKS is undef'd in main.hpp and try again.
+
+If you are missing GL header files like glext.h they are available from https://www.khronos.org/registry/OpenGL/api/GL/.

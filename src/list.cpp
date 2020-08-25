@@ -11,6 +11,8 @@
 
 #include "main.hpp"
 #include "entity.hpp"
+#include "items.hpp"
+#include "interface/interface.hpp"
 /*-------------------------------------------------------------------------------
 
 	list_FreeAll
@@ -43,9 +45,29 @@ void list_FreeAll(list_t* list)
 
 void list_RemoveNode(node_t* node)
 {
-
-	if (node->list == map.entities) {
+	if ( !node )
+	{
+		return;
+	}
+	if (node->list && node->list == map.entities)
+	{
 		map.entities_map.erase(((Entity*)node->element)->getUID());
+	}
+	if ( stats[clientnum] && node->list && node->list == &stats[clientnum]->inventory )
+	{
+		Item* tmp = ((Item*)node->element);
+		if ( tmp )
+		{
+			if ( tmp == selectedItem )
+			{
+				selectedItem = nullptr; // important! crashes occur when deleting items you've selected...
+				// printlog("Reset selectedItem");
+			}
+			if ( GenericGUI.isItemUsedForCurrentGUI(*tmp) )
+			{
+				GenericGUI.clearCurrentGUIFromItem(*tmp);
+			}
+		}
 	}
 	if ( node->list && node->list->first )
 	{
@@ -276,6 +298,11 @@ Uint32 list_Size(list_t* list)
 {
 	node_t* node;
 	int c;
+
+	if ( !list )
+	{
+		return 0;
+	}
 
 	for ( c = 0, node = list->first; node != NULL; node = node->next, c++ );
 	return c;

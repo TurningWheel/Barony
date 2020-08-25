@@ -16,6 +16,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -39,7 +40,7 @@ void actSpearTrap(Entity* my)
 	if ( SPEARTRAP_AMBIENCE <= 0 )
 	{
 		SPEARTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntityLocal( my, 149, 128 );
+		playSoundEntityLocal( my, 149, 64 );
 	}
 
 	if ( multiplayer != CLIENT )
@@ -115,7 +116,7 @@ void actSpearTrap(Entity* my)
 			else if ( SPEARTRAP_OUTTIME == 1 )
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Searching explicitly for players and monsters, so search only creature list, not map.entities.
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
@@ -123,33 +124,42 @@ void actSpearTrap(Entity* my)
 						Stat* stats = entity->getStats();
 						if ( stats )
 						{
-							if ( entityInsideEntity(my, entity) )
+							if ( !entity->flags[PASSABLE] && entityInsideEntity(my, entity) )
 							{
 								// do damage!
 								if ( entity->behavior == &actPlayer )
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									messagePlayerColor(entity->skill[2], color, language[586]);
-									if ( entity->skill[2] == clientnum )
+									if ( entity->skill[2] == clientnum || splitscreen )
 									{
-										camera_shakex += .1;
-										camera_shakey += 10;
+										cameravars[entity->skill[2]].shakex += .1;
+										cameravars[entity->skill[2]].shakey += 10;
 									}
 									else
 									{
-										strcpy((char*)net_packet->data, "SHAK");
-										net_packet->data[4] = 10; // turns into .1
-										net_packet->data[5] = 10;
-										net_packet->address.host = net_clients[entity->skill[2] - 1].host;
-										net_packet->address.port = net_clients[entity->skill[2] - 1].port;
-										net_packet->len = 6;
-										sendPacketSafe(net_sock, -1, net_packet, entity->skill[2] - 1);
+										if ( entity->skill[2] > 0 )
+										{
+											strcpy((char*)net_packet->data, "SHAK");
+											net_packet->data[4] = 10; // turns into .1
+											net_packet->data[5] = 10;
+											net_packet->address.host = net_clients[entity->skill[2] - 1].host;
+											net_packet->address.port = net_clients[entity->skill[2] - 1].port;
+											net_packet->len = 6;
+											sendPacketSafe(net_sock, -1, net_packet, entity->skill[2] - 1);
+										}
 									}
 								}
 								playSoundEntity(entity, 28, 64);
 								spawnGib(entity);
 								entity->modHP(-50);
-
+								if ( stats->HP <= 0 )
+								{
+									if ( stats->type == AUTOMATON )
+									{
+										entity->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
+									}
+								}
 								// set obituary
 								entity->setObituary(language[1507]);
 							}
