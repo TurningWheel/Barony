@@ -26,6 +26,7 @@ prowess.
 Difficulty: Normal#
 
 11 The trained soldier. They are heavily armored and make capable leaders.
+
 Difficulty: Beginner#
 
 12 A talented physician. Though they are poor fighters, they come stocked with medical
@@ -37,6 +38,7 @@ equipment.
 Difficulty: Hard#
 
 14 Hardened traveler. Low in armor and combat ability, but well-equipped for the dungeon.
+
 Difficulty: Normal#
 
 15 Students of the church. Fairly well equipped and able in many ways, they are
@@ -48,6 +50,7 @@ artifacts.
 Difficulty: Hard#
 
 17 The wise magician. Though frail, they are extremely well-versed in magic.
+
 Difficulty: Hard#
 
 18 A cunning spellcaster. Less magically adept than the Wizard, but hardier and better
@@ -98,7 +101,7 @@ Difficulty: Extreme#
 50 The practical appearance of a claymount.#
 51 The sleek profile of a stormward.#
 52 The brazen flair of a tradefall.#
-53 The exotic presence of a nighthill.#
+53 The bold presence of a nighthill.#
 54 The determined stoicism of a baytower.#
 55 The natural elegance of a whetsong.#
 
@@ -108,7 +111,7 @@ Difficulty: Extreme#
 56 Lead Design & Programming#
 57 Audio#
 58 Programming#
-59 Character & Texture Art#
+59 Art#
 60 Additional Art#
 61 Writing#
 62 Testing#
@@ -120,7 +123,7 @@ Difficulty: Extreme#
 # legalese
 
 66 Barony is a product of Turning Wheel LLC#
-67 Copyright (c) 2015, all rights reserved.#
+67 Copyright (c) 2018, all rights reserved.#
 68 For more information, please visit#
 69 http://www.baronygame.com/#
 
@@ -227,7 +230,7 @@ Difficulty: Extreme#
 # server flags
 
 153 Cheats#
-154 Friendly fire#
+154 Friendly Fire#
 155 Minotaurs#
 156 Hunger#
 157 Traps#
@@ -273,7 +276,7 @@ Difficulty: Extreme#
 189 Fine Staves#
 190 Delicatessen#
 191 Hardware Store#
-192 Lighting Store#
+192 Hunting Supplies#
 193 General Store#
 
 
@@ -286,7 +289,8 @@ Difficulty: Extreme#
 
 # shopkeeper sells item at an unfair price
 
-197 Thou hast received a good price for that!#
+197 Thou hast received a 
+good price for that!#
 198 Excellent choice!#
 199 That was a real bargain!#
 
@@ -294,15 +298,19 @@ Difficulty: Extreme#
 # shopkeeper sells item at a fair price
 
 200 That is a fair trade.#
-201 I suppose that I can part with it.#
-202 Alright, but not for a penny less!#
+201 I suppose that I can part 
+with it.#
+202 Alright, but not for
+a penny less!#
 
 
 # shopkeeper refuses a purchase
 
 203 No money, no item!#
-204 I shall not sell it for anything less.#
-205 Thou dost not have enough money!#
+204 I shall not sell it 
+for anything less.#
+205 Thou dost not have 
+enough money!#
 
 
 # shopkeeper buys item at an unfair price
@@ -314,7 +322,7 @@ Difficulty: Extreme#
 
 # shopkeeper buys item at a fair price
 
-209 I suppose I shall mbuy it.#
+209 I suppose I shall buy it.#
 210 I shall trade thee for that.#
 211 I shall buy that from thee.#
 
@@ -330,68 +338,69 @@ Difficulty: Extreme#
 
 215 I would buy it for %dG.
 
-Trade? (Right click)#
+Trade? (Right click from
+inventory)#
 
 
 # shopkeeper chit-chat
 
 216 They say rings of conflict
-create an aura of strife around a
-person.#
+create an aura of strife
+around a person.#
 
 217 Lamp oil? Rope? Bombs? Dost
 thou want it? It is thine my
-friend, so long as thou havest
-enough rubies!#
+friend, so long as thou
+havest enough rubies!#
 
 218 They say some items are
-enchanted with special magical
-effects.#
+enchanted with special
+magical effects.#
 
 219 Slimes may be found in two
-colors. It is said that the blue
-ones are stronger.#
+colors. It is said that the
+blue ones are stronger.#
 
-220 They say cursed items often do
-the opposite of what they were
-meant to do.#
+220 They say cursed items often
+do the opposite of what
+they were meant to do.#
 
 221 Trolls ignore thee if thou
 keepest thy distance!#
 
 222 Weapons come at different
-levels of effectiveness. Wood and
-bronze are weak, but steel is very
-strong.#
+levels of effectiveness. Wood
+and bronze are weak, but steel
+is very strong.#
 
 223 The effects of potions wear
 off over time.#
 
 224 Beware of picture books. I
-knew someone who touched one: the
-next thing they knew, they were
-all alone on a tiny island.#
+knew someone who touched one:
+thenext thing they knew, they
+were all alone on a tiny island.#
 
 225 Thy skills shall improve as
 thou makest use of them.#
 
 226 Goblins make good scavengers.
-Do not leave powerful items where
-they might find them!#
+Do not leave powerful items
+where they might find them!#
 
 227 I may look weak, but I'm
-actually a master of the mystic
-arts.#
+actually a master of the
+mystic arts.#
 
-228 Canned food can make thy hands
-greasy. Use a towel to keep
-thyself clean.#
+228 Canned food can make thy
+hands greasy. Use a towel to
+keep thyself clean.#
 
-229 Thou canst bind wounds with
-towels.#
+229 Thou canst bind wounds
+with towels.#
 
-230 Art thou hungry? Rat meat is a
-staple down here.#
+230 Art thou hungry? Rat meat 
+is a staple down here.#
 
 231 Scorpion stings can paralyze
 thee. Watch out for them.#
@@ -400,11 +409,11 @@ thee. Watch out for them.#
 to steal mens' clothes.#
 
 233 The older food is, the more
-likely it is to make one sick when
-eaten.#
+likely it is to make one
+sick when eaten.#
 
-234 Mirrors can do odd things at
-times.#
+234 Mirrors can do odd
+things at times.#
 
 235 Try to identify items before
 thou makest use of them.#
@@ -412,7 +421,7 @@ thou makest use of them.#
 
 # skill names
 
-236 Locks#
+236 Tinkering#
 237 Stealth#
 238 Trading#
 239 Appraise#
@@ -431,8 +440,8 @@ thou makest use of them.#
 # steam lobby type
 
 250 Private lobby#
-251 Friends-only lobby#
-252 Public lobby#
+251 Public lobby#
+252 Friends-only lobby#
 
 
 # Left-click (entity spotting) messages
@@ -570,23 +579,23 @@ thou makest use of them.#
 359 Level %d %s#
 360 Exp:%3d/100#
 361 Dungeon Level: %d#
-1200 STR:            %2d (%2d)#
-1201 DEX:            %2d (%2d)#
-1202 CON:            %2d (%2d)#
-1203 INT:            %2d (%2d)#
-1204 PER:            %2d (%2d)#
-1205 CHR:            %2d (%2d)#
+1200 STR:          %2d -> #
+1201 DEX:          %2d -> #
+1202 CON:          %2d -> #
+1203 INT:          %2d -> #
+1204 PER:          %2d -> #
+1205 CHR:          %2d -> #
 
 
 # skill levels
 
-363                 none#
-364               novice#
-365                basic#
-366              skilled#
-367               expert#
-368               master#
-369               legend#
+363                  none#
+364                novice#
+365                 basic#
+366               skilled#
+367                expert#
+368                master#
+369                legend#
 
 
 # rest of the character sheet
@@ -1058,7 +1067,7 @@ You should call a plumber!#
 
 652 But wait! Your amulet is glowing!#
 653 But wait! Your amulet feels warm!#
-654 You are brought back to life.#
+654 You are brought back to life and begin to float through the air!#
 655 However, your amulet crumbles to dust.#
 656 Whoops, sorry. Guess it was a dud.#
 657 See you in the next life.#
@@ -1090,7 +1099,7 @@ You should call a plumber!#
 683 Dyrnwyn sets you on fire!#
 684 The scorpion has stung you!#
 685 The venom is paralyzing!#
-686 The spiders injects venom into its bite!#
+686 The spider injects venom into its bite!#
 687 The poison seeps through your veins!#
 688 Hey! That succubus stole your %s!#
 689 You critically hit the %s!#
@@ -1154,7 +1163,7 @@ Press 'Okay' to return to the main menu.#
 733 Random Character#
 734 Welcome to Barony, %s.#
 735 Press <%s> to review your inventory.#
-736 Click the right mouse button to use objects.
+736 Press <%s> to use objects.
 #
 737 You have entered the dungeon.#
 738 Please do not pirate this game!
@@ -1270,6 +1279,10 @@ Thank you!#
 816 This is a letter:
 
  "A horse, a horse! My kingdom for a horse!"#
+
+817 This is a hand-written note:
+
+ "Alright everybody, let's mosey!"#
 
 818 This is a letter:
  "It is tradition to speak with the royal 'we',
@@ -1661,16 +1674,20 @@ Press 'Okay' to return to the main menu.#
      Are you sure you
        want to quit?#
 1129
-      Are you sure you
-   want to end this game?#
+            Are you sure you
+         want to end this game?
+
+       As you have perished, your
+       save file will be deleted.#
 1130
           Are you sure you
      want to restart this game?#
 1131
-       Do you wish to save before
-          you quit to desktop?
-      Progress will be saved up to
-          the last checkpoint.#
+         Are you sure you want
+          to quit to desktop?
+
+     Progress has been saved at the
+       start of the current level.#
 1132 Requesting lobby list...#
 1133 You have died. Gameover.
 
@@ -1679,7 +1696,7 @@ Press 'Okay' to return to the main menu.#
 #
 1135 Total score: #
 1136 Congratulations!
-You made the top ten.
+You made it into the high scores.
 
 #
 1137
@@ -1816,7 +1833,7 @@ None#
 1346 Field of View (FOV)#
 1347 Gamma#
 
-1348 Game Volume#
+1348 General Sound Volume#
 1349 Music Volume#
 
 1350 Click to rebind. ESC cancels.#
@@ -1833,7 +1850,7 @@ None#
 1361 Character Status#
 1362 Spell List#
 1363 Cast Spell#
-1364 Raise Shield#
+1364 Block / Sneak#
 
 1365 Mouse Sensitivity#
 1366 reverse mouse#
@@ -1866,13 +1883,13 @@ use object, use item#
 Connection denied:
 #
 
-1378 the server is already full.#
-1379 game version mismatch.#
-1380 server is not running a saved game.#
-1381 server is running a saved game.#
-1382 client save does not match server save.#
-1383 client seed does not match server seed.#
-1384 bad response from server.#
+1378 The server is already full.#
+1379 Game version mismatch.#
+1380 Server is not running a saved game.#
+1381 Server is running a saved game.#
+1382 Client save does not match server save.#
+1383 Client seed does not match server seed.#
+1384 Bad response from server.#
 
 1385
 Waiting for the server to start the game.
@@ -1895,7 +1912,7 @@ Player list:
 # highscore window
 
 1389 You have no highscores yet!#
-1390 Highscores#
+1390 Solo Highscores#
 1391 Long Live#
 1392 the Triumphant!#
 1393 the Eternal!#
@@ -1914,11 +1931,11 @@ Player list:
 1404 Total Score: %d#
 1405 Time#
 1406 Conduct#
-1407 Average#
-1408 Penniless, #
-1409 Foodless, #
-1410 Vegetarian, #
-1411 Illiterate, #
+1407 No awards#
+1408 Penniless#
+1409 Foodless#
+1410 Vegetarian#
+1411 Illiterate#
 1412 Kills:#
 1413 none#
 
@@ -2037,12 +2054,17 @@ lifted from this land.#
 
 
 
+
+
 Before you have time to think, you are suddenly standing before the mines
 once more. But something is different; the howls of distant monsters have
 vanished, and the skies, once a menacing black, are clearing to show the
 light of day once again.#
 
 1425
+
+
+
 
 
 
@@ -2068,16 +2090,24 @@ rush out to greet the one who destroyed the Baron.#
 
 
 
+
+
+
+
 The hellish source of the Baron's power remains a mystery to you, and some
 deliberation leads you to believe that a visit to the Magician's Guild is in
 order for some deeper investigation. But for now, you simply attend to the
 merriment of the people you just saved...#
 
-1427 Hacking your way through every demon in your path, you leap through the
+1427 
+
+
+Hacking your way through every demon in your path, you leap through the
 portal without a moment's hesitation. Anywhere is better than here - or so
 you think.#
 
 1428
+
 
 
 
@@ -2093,10 +2123,14 @@ exhaustion, you drop your weapons and step forward.#
 
 
 
+
+
 Surely, if anything were to happen now you would be finished; yet without
 explanation, you suddenly sense power coming back to you. A voice booms out:#
 
 1430
+
+
 
 
 
@@ -2126,11 +2160,17 @@ have a proposition for you..."#
 
 
 
+
+
+
 As the voice addresses you, you find yourself either unwilling or unable to
 reject what it tells you. Eventually, there is an inexplicable shift in your
 mortal being, and you feel yourself fading away...#
 
 1432
+
+
+
 
 
 
@@ -2194,7 +2234,7 @@ The connection to the server was lost.
 1446  Refresh #
 
 1447
-Connecting to steam lobby...
+Connecting to matchmaking lobby...
 #
 
 1448
@@ -2235,27 +2275,27 @@ Connecting to server. Please wait...
 #
 
 1460
-We've found a save file for a character:
+We've found save file(s) for a character:
 
 #
 
 1461
 
 
-Would you like to start a new game or continue this
+Would you like to start a new game or continue a
 save game?
 
+NOTE: Starting a new solo or multiplayer game will
+erase the previous save file!#
 
-NOTE: Starting a new game will erase this save file!#
-
-1462 Continue my saved game#
-1463 Start a new game#
+1462 Continue solo game#
+1463 Start a new game (Enter)#
 1464 Continue#
 1465 Back#
 1466 Random Character#
 
 1467
-Connecting to steam lobby...
+Connecting to matchmaking lobby...
 #
 
 
@@ -2304,18 +2344,18 @@ Connecting to steam lobby...
 
 1536 disable pop-up messages#
 1537 (direct ip)#
-1538 Host a multiplayer game without Steamworks, using a direct IP connection.#
-1539 Join a multiplayer game without Steamworks, using a direct IP connection.#
+1538 Host a multiplayer game without matchmaking, using a direct IP connection.#
+1539 Join a multiplayer game without matchmaking, using a direct IP connection.#
 1540 %s, level %d %s
-singleplayer#
+dungeon level %d, singleplayer, %s#
 1541 %s, level %d %s
-server#
+dungeon level %d, server, %s#
 1542 %s, level %d %s
-client (player %d)#
+dungeon level %d, client (player %d), %s#
 1543 %s, level %d %s
-server (direct ip)#
+dungeon level %d, server (direct ip), %s#
 1544 %s, level %d %s
-client (player %d) (direct ip)#
+dungeon level %d, client (player %d) (direct ip), %s#
 
 
 # item names
@@ -2675,7 +2715,7 @@ client (player %d) (direct ip)#
 1918 100% certified Minotaur!#
 1919 Heart-Gold Version!#
 1920 Enhanced RNG!#
-1921 Now with Steamworks!#
+1921 Now with Crossplay!#
 1922 Baphomet Approved!#
 1923 By Popular Demand!#
 1924 Potato King's Pick!#
@@ -2702,16 +2742,20 @@ client (player %d) (direct ip)#
 
 # game/server flags tooltips
 
-# Cheats. CURRENTLY UNUSED
-1942 #
-# Friendly fire. CURRENTLY UNUSED
-1943 #
-# Minotaurs. CURRENTLY UNUSED
-1944 #
-# Hunger. CURRENTLY UNUSED
-1945 #
+# Cheats.
+1942 NOTE: Enabling cheats will disable Achievements on your save files! #
+# Friendly fire.
+1943 NOTE: Enabling FF will allow you to damage your allies with attacks and magic! #
+# Minotaurs.
+1944 NOTE: Disabling this will prevent minotaurs from spawning in regular levels, 
+allowing you to take your time through each level.#
+# Hunger.
+1945 NOTE: Disabling hunger removes the need to eat food to prevent starvation. 
+Food will instead heal 5 HP each, and natural HP regeneration is disabled.#
 # Traps.
-1946 NOTE: Only removes generated traps#
+1946 NOTE: Only removes randomly generated traps, such as boulders and arrow traps along 
+the edges and hallways of levels. Traps will only be found inside rooms that have 
+been designed to contain them.#
 
 # Gamepad settings menu stuff.
 1947 Gamepad Bindings#
@@ -2738,8 +2782,8 @@ client (player %d) (direct ip)#
 1964 Previous Inventory Tab#
 1965 Next Inventory Tab#
 1966 Item Context Menu#
-1967 Clear Hotbar Slot#
-1968 Drop Item#
+1967 Drop Item#
+1968 Clear Hotbar Slot#
 1969 Grab All From Chest#
 1970 Previous Shop Category#
 1971 Next Shop Category#
@@ -2752,19 +2796,315 @@ client (player %d) (direct ip)#
 1976 Attack#
 1977 Cast Spell#
 1978 Activate Hotbar Slot#
-1979 Previous Hotbar Slot#
-1980 Next Hotbar Slot#
+1979 Next Hotbar Slot#
+1980 Previous Hotbar Slot#
+1981 Minimap Scale Toggle#
+1982 Toggle Chatlog#
+1983 NPC Menu Quick Access#
+1984 Repeat Last Follower Command#
+1985 Cycle Currently Selected Follower#
+
+# Other bindings.
+1986 Autosort Inventory#
+1987 Minimap Scale Toggle#
+1988 Toggle Chatlog#
+1989 NPC Menu Quick Access#
+1990 Repeat Last NPC Command#
+1991 Cycle Through NPCs#
 
 # More stuff on the gamepad bindings screen.
-1990 Menu exclusive bindings:#
-1991 Game exclusive bindings:#
-1992 Click to unbind. Click an unbound action to assign binding.#
+1994 Menu exclusive bindings:#
+1995 Game exclusive bindings:#
+1996 Click to unbind. Click an unbound action to assign binding.#
 
 
 1997 auto appraise items#
 1998 right click protection#
 
+# START DLC
+# monsters, reserve 2000-2049 for monster names, 2050 - 2099 for plurals, 2100-2150 for injury types
 
+2000 kobold#
+2001 scarab#
+2002 crystal golem#
+2003 incubus#
+2004 vampire#
+2005 shadow#
+2006 cockatrice#
+2007 insectoid#
+2008 goatman#
+2009 automaton#
+2010 frosty lich#
+2011 fiery lich#
+2012 sentrybot#
+2013 spellbot#
+2014 gyrobot#
+2015 dummybot#
+
+# monster plurals
+
+2050 kobolds#
+2051 scarabs#
+2052 crystal golems#
+2053 incubi#
+2054 vampires#
+2055 shadows#
+2056 cockatrices#
+2057 insectoids#
+2058 goatmen#
+2059 automatons#
+2060 frosty lich#
+2061 fiery lich#
+2062 sentry bots#
+2063 spell bots#
+2064 gyrobots#
+2065 dummybots#
+
+# injury types (2100-2149)
+
+2100 hits#
+2101 bites#
+2102 thumps#
+2103 slaps#
+2104 mauls#
+2105 strikes#
+2106 scratches#
+2107 stings#
+2108 pounds#
+2109 thumps#
+2110 hits#
+2111 hits#
+2112 hits#
+2113 hits#
+2114 hits#
+2115 hits#
+
+# additional obituary messages (2150-2199)
+2150 becomes a victim of kobold gang violence.#
+2151 underestimates the chewing power of scarab mandibles.#
+2152 gets stuck between a crystal golem and a hard place.#
+2153 forgot the safe word for an incubus.#
+2154 donates blood to the vampire.#
+2155 becomes a shadow of their former self.#
+2156 waits too long to fight back against the cockatrice.#
+2157 is assassinated by a crafty insectoid.#
+2158 gets beaten to death by a drunken goatman.#
+2159 gets terminated by an automaton.#
+2160 failed to foil Erudyce's plans.#
+2161 couldn't stand against Orpheus' power.#
+2162 gets terminated by a sentry bot.#
+2163 gets terminated by a spell bot.#
+2164 gets terminated by a gyrobot.#
+2165 gets terminated by a dummybot.#
+
+# items, reserve (2200-2349) for new items
+2200 Dragon's Mail#
+2201 artifact breastpiece#
+2202 Sphinx's Veil#
+2203 artifact helm#
+2204 Oracle's Treads#
+2205 artifact boots#
+2206 Wraith's Gown#
+2207 artifact cloak#
+2208 Djinni's Brace#
+2209 artifact gloves#
+2210 crystal breastpiece#
+2211 crystal breastpiece#
+2212 crystal helm#
+2213 crystal helm#
+2214 crystal boots#
+2215 crystal boots#
+2216 crystal shield#
+2217 crystal shield#
+2218 crystal gauntlets#
+2219 crystal gauntlets#
+2220 vampire doublet#
+2221 doublet#
+2222 wizard doublet#
+2223 doublet#
+2224 healer doublet#
+2225 doublet#
+2226 mirror shield#
+2227 mirror shield#
+2228 brass knuckles#
+2229 knuckles#
+2230 iron knuckles#
+2231 knuckles#
+2232 spiked gauntlets#
+2233 knuckles#
+2234 tomalley#
+2235 tomalley#
+2236 crystal shard#
+2237 crystal shard#
+2238 crystal sword#
+2239 crystal sword#
+2240 crystal spear#
+2241 crystal spear#
+2242 crystal axe#
+2243 crystal axe#
+2244 crystal mace#
+2245 crystal mace#
+2246 bronze tomahawk#
+2247 bronze tomahawk#
+2248 iron dagger#
+2249 iron dagger#
+2250 steel chakram#
+2251 steel chakram#
+2252 crystal shuriken#
+2253 crystal shuriken#
+2254 black cloak#
+2255 black cloak#
+2256 magicstaff of stoneblood#
+2257 magicstaff#
+2258 magicstaff of bloodletting#
+2259 magicstaff#
+2260 magicstaff of conjure skeleton#
+2261 magicstaff#
+2262 blindfold of focus#
+2263 blindfold#
+2264 blindfold of telepathy#
+2265 blindfold#
+2266 spellbook of conjure skeleton#
+2267 spellbook#
+2268 spellbook of stoneblood#
+2269 spellbook#
+2270 spellbook of bloodletting#
+2271 spellbook#
+2272 spellbook of reflect magic#
+2273 spellbook#
+2274 spellbook of spray acid#
+2275 spellbook#
+2276 spellbook of steal weapon#
+2277 spellbook#
+2278 spellbook of drain soul#
+2279 spellbook#
+2280 spellbook of vampiric aura#
+2281 spellbook#
+2282 spellbook of charm monster#
+2283 spellbook#
+2284 empty bottle#
+2285 empty bottle#
+2286 blue mystic orb#
+2287 blue mystic orb#
+2288 red mystic orb#
+2289 red mystic orb#
+2290 purple mystic orb#
+2291 purple mystic orb#
+2292 green mystic orb#
+2293 green mystic orb#
+2294 tunic#
+2295 tunic#
+2296 fez#
+2297 fez#
+2298 magicstaff of charm monster#
+2299 magicstaff#
+2300 potion of polymorph#
+2301 potion#
+2302 vial of blood#
+2303 potion#
+2304 backpack#
+2305 backpack#
+2306 alembic#
+2307 alembic#
+2308 potion of firestorm#
+2309 unstable potion#
+2310 potion of icestorm#
+2311 unstable potion#
+2312 potion of thunderstorm#
+2313 unstable potion#
+2314 potion of strength#
+2315 potion#
+2316 suede boots#
+2317 suede boots#
+2318 suede gloves#
+2319 suede gloves#
+2320 silver cloak#
+2321 silver cloak#
+2322 silver hood#
+2323 silver hood#
+2324 red hood#
+2325 red hood#
+2326 silver doublet#
+2327 silver doublet#
+2328 spellbook of revert form#
+2329 spellbook#
+2330 spellbook of rat form#
+2331 spellbook#
+2332 spellbook of spider form#
+2333 spellbook#
+2334 spellbook of troll form#
+2335 spellbook#
+2336 spellbook of imp form#
+2337 spellbook#
+2338 spellbook of spray web#
+2339 spellbook#
+2340 spellbook of poison#
+2341 spellbook#
+2342 spellbook of speed#
+2343 spellbook#
+2344 spellbook of fear#
+2345 spellbook#
+2346 spellbook of power strike#
+2347 spellbook#
+2348 spellbook of detect food#
+2349 spellbook#
+
+#Additional ingame text.
+2350 A fragment breaks away from your %s.#
+2351 Your %s shatters completely!#
+2352 You set off a %s trap!#
+2353 Number of monsters in level: %d#
+2354 WARNING: Experimental - May cause crashing on exit! For model testing only.#
+2355 Reloading models from index %d to %d#
+2356 You rotate the floating crystal.#
+2357 The crystal seems locked in place.#
+2358 The crystal begins to move!#
+2359 You can't drink an empty bottle!#
+2360 You pull the lever, but the mechanism still seems inactive.#
+2361 The lever grinds further along with resistance.#
+2362 You hear a click from the mechanism!#
+2363 You attempt to pull the lever back,
+but it retracts beyond your might!#
+2364 You pound the pedestal in frustration.#
+2365 You admire the intricate carving of the pedestal.#
+2366 The pedestal seems to require some sort of primordial artifact.#
+2367 The orb defies your grasp and is unable to be retrieved!#
+2368 You place the orb in the receptacle...#
+2369 But it had no effect.#
+2370 The orb starts floating!#
+2371 This item has no use here.#
+2372 This %s appears to be a missing part of some contraption.#
+2373 This %s looks shiny, must be useful! #
+2374 You retrieve the %s from the pedestal.#
+2375 You see a mysterious crystal.#
+2376 You see a pedestal.#
+2377 You see a mystical orb sitting atop a pedestal.#
+2378 You climb the ladder.#
+2379 Your ally %s gained a level!#
+2380 The wall is fortified! It doesn't even make a dent!#
+2381 An unseen force drags your feet to the floor!#
+2382 The air here feels like it's swirling gently around you.#
+2383 A tingle rolls over your body and through each of your footsteps.#
+
+#Equip Effects
+2384 This ring has you feeling quite confident about your appearance.#
+2385 The ring gives you a sense of calm when you wear it.#
+2386 The ring makes your whole body feel scaly.#
+2387 As you don the ring, you feel threads reaching into the darkness from your mind.#
+2388 You feel the ring feeding energy into your arms.#
+2389 You slip on the ring and feel your skin harden slightly.#
+
+#New spells (2390-2399)
+2390 Conjure Skeleton#
+2391 Stone Blood#
+2392 Bloodletting#
+2393 Dominate#
+2394 Reflect Magic#
+2395 Spray Acid#
+2396 Steal Weapon#
+2397 Drain Soul#
+2398 Vampiric Aura#
+2399 Charm Monster#
 
 2400 Gamepad#
 
@@ -2780,9 +3120,2820 @@ client (player %d) (direct ip)#
 2409 Menu X-Axis Sensitivity#
 2410 Menu Y-Axis Sensitivity#
 
+2411 Frames Per Second (FPS)#
 
+#Equip Effects
+
+2412 You slip the ring onto your finger and your body vanishes before your eyes.#
+2413 The ring slips on, radiating a fuzzy sensation all over your body.#
+2414 You put on the ring and are overwhelmed with paranoia.#
+2415 A hollow pulse flows from your fingers to your feet and you begin floating.#
+2416 You feel itchy all over when you wear the ring.#
+2417 The ring begins gently yanking at your finger.#
+2418 Your footsteps feel lighter in these boots.#
+2419 The footwear pushes you above the floor. You're levitating!#
+
+#New spell effects (2420-2440)
+2420 %s is paralyzed!#
+2421 The %s is paralyzed!#
+2422 Your limbs suddenly refuse to move!#
+2423 %s is severely wounded!#
+2424 The %s is severely wounded!#
+2425 You are severely wounded!#
+2426 Trio Missile#
+2427 You feel energy go out from you as you
+dominate %s into your service!#
+2428 You feel energy go out from you as you
+dominate the %s into your service!#
+2429 You are unable to dominate this one.#
+2430 %s is sprayed with corrosive acid!#
+2431 The %s is sprayed with corrosive acid!#
+2432 You are sprayed with corrosive acid!#
+2433 You magically coerce %s's %s out of their grasp!#
+2434 You magically coerce the %s's %s out of their grasp!#
+2435 Your %s is magically coerced from your grasp!#
+2436 %s is not wielding a weapon to steal!#
+2437 The %s is not wielding a weapon to steal!#
+2438 The spell fails to steal the non-existent weapon from your hand!#
+2439 %s's life force is drained!#
+2440 The %s's life force is drained!#
+2441 Your life force is drained!#
+2442 You fail to drain %s's life force.#
+2443 You fail to drain the %s's life force.#
+2444 You resist the spell's drain!#
+2445 You feel restored!#
+2446 Your spell (reflect magic) was interrupted!#
+2447 Your spell (vampiric aura) was interrupted!#
+2448 Failed to sustain spell (vampiric aura).#
+2449 Your thirst for blood settles...#
+2450 The craftsmanship of the walls here is immaculate.#
+
+#New effects (contd.)
+2451 You are bleeding heavily!#
+2452 The %s is bleeding heavily!#
+2453 %s's is bleeding heavily!#
+2454 Your wounds rupture further open!#
+2455 The %s's wounds rupture further open!#
+2456 %s's wounds rupture further open!#
+2457 The %s's blow bounces off!#
+2458 %s's blow bounces off!#
+2470 You no longer feel magic weaken against you.#
+2471 You no longer feel magic bounce off you.#
+2472 You feel magic weaken against you.#
+2473 You feel magic bounce off you.#
+2474 Failed to sustain spell (reflect magic).#
+2475 But you feel some energy go out and it bounces off!#
+2476 You feel the reflect magic spell fail as the
+last of your magic is drained!#
+2477 You are imbued with vampiric might!#
+
+# Equip effects
+2478 You feel a sense of great purpose when wearing the amulet.#
+2479 The air beyond the cord of the amulet smells crisp and sweet.#
+2480 The amulet makes your whole body tingle slightly.#
+2481 The hat seems to give you ideas.#
+2482 You get the urge to punch something.#
+2483 The hat seems to lift your mood.#
+2484 The inside of the boots are squishy with moisture.#
+2485 The comfortable boots seem to put pep in your step.#
+2486 The cloak whirls around your body and hides your form.#
+2487 The cloak is firm, but comfortable.#
+2488 The cloak buzzes gently against your body as you put it on.#
+2489 Your fingers feel more nimble as they slip into the gloves.#
+2490 You feel your skin harden slightly when you put the bracers on.#
+2491 The gauntlets are warm. You feel a tingling sensation flow up through to your shoulders.#
+2492 The amulet feels cool and pleasant against the veins of your neck.#
+
+# More misc text.
+2493 This is no time for sleep.#
+2494 Dibs on the top bunk.#
+2495 Dibs on the bottom bunk.#
+2496 This is no time for lecturing.#
+2497 You see a bed.#
 
 #More character creation screen stuff.
-2450 Random Name#
+2498 Random Name#
 
-2499 end#
+2499 You see a bunkbed.#
+2500 You see a podium.#
+2501 You see a set of pistons.#
+2502 You see a column.#
+2503 You see a stalagmite.#
+2504 You see a stalagtite.#
+2505 bed#
+2506 bunkbed#
+2507 podium#
+2508 Your spell destroys the %s!#
+2509 You hit the %s!#
+2510 The %s breaks into pieces!#
+2511 You are hit by a bolt!#
+2512 You are hit by a flying rock!#
+2513 You pierced the %s's armor!#
+2514 You pierced %s's armor!#
+2515 The shot pierced your armor!#
+
+## 2516 - 2528 More effect messages
+2516 You feel as if a part of your essence is seized!#
+2517 You feel as if a sliver of your essence is taken!#
+2518 You feel something tug at your essence and pull itself near...#
+2519 You summon an incubus!#
+2520 Your spell destroys the chest!#
+2521 You hear a beartrap trigger in the distance.#
+2522 You hear a beartrap trigger nearby!#
+2523 You are hit by an explosion!#
+2524 You rake your %s into some exposed gears of the %s...#
+2525 You are unable to find an entry inside the %s from this angle.#
+2526 A locked gear inside the %s breaks loose!#
+2527 The %s's gears seize and begin to grind and spark!#
+2528 Your %s has no effect right now.#
+
+# 2529- 2542 atk hover text
+2529 fists: #
+2530 ranged: #
+2531 thrown: #
+2532 melee: #
+2533 %+10d TOTAL ATTACK#
+2534 %+3d from attribute (STR)#
+2535 %+3d from attribute (DEX)#
+2536 %+3d from equipment#
+2537 %+3d from skill#
+2538 %+3d from weapon#
+2539 %3d%% variance from skill#
+2540 tool:  #
+2541 staff: #
+2542 Damage:%11d ATK#
+
+# 2543 - 2549 attacking text, misc
+2543 Your strike catches the %s unaware!#
+2544 Your strike catches %s unaware!#
+2545 Your strike flanks the %s's defenses!#
+2546 Your strike flanks %s's defenses!#
+2547 You assassinate the %s!#
+2548 You assassinate %s!#
+2549 Players online: %4d #
+
+# 2550 - 2560 new class names
+2550 sexton#
+2551 ninja#
+2552 monk#
+2553 test#
+2554 blank#
+2555 blank#
+2556 blank#
+2557 blank#
+2558 blank#
+2559 blank#
+# 2560 - 2570 new class descriptions
+2560 A temple officer who serves unseen, using stealth and magic to slip their way
+through the dungeon with the aid of a few rare tools.
+Difficulty: Hard#
+2561 A highly specialized assassin. They ambush foes with swords or ranged weapons,
+using a few other tricks to get out of bad situations.
+Difficulty: Hard#
+2562 Disciplined and hardy. They have little in the way of offensive training and
+material goods, but can rely on their excellent fortitude and adaptability.
+Difficulty: Normal#
+2563 A blank.
+Difficulty: Normal#
+2564 A blank.
+Difficulty: Normal#
+2565 A blank.
+Difficulty: Normal#
+2566 A blank.
+Difficulty: Normal#
+2567 A blank.
+Difficulty: Normal#
+2568 A blank.
+Difficulty: Normal#
+2569 A blank.
+Difficulty: Normal#
+
+# More misc.
+2570 https://docs.google.com/forms/d/e/1FAIpQLScywW5ROX4m8cp05PspI7xZNV0jkEPAWJu3lWegS9Tj9NBDOg/viewform#
+2571 Weapons#
+2572 Armor#
+2573 Jewelry#
+2574 Books#
+2575 Tools#
+2576 Thrown#
+2577 Gems#
+2578 Potions#
+2579 Scrolls#
+2580 Staves#
+2581 Food#
+2582 Spells#
+2583 Item Categories for Auto Hotbar:#
+2584 Click here to provide feedback for the Beta!#
+
+2585 A big shoutout to the open source community for their contributions!#
+2586 #
+2587 Report issues and checkout the code at:#
+2588 https://github.com/TurningWheel/Barony#
+2589 Your %s ally %s#
+2590 modify hotbar with numkeys#
+2591 You have nothing else to learn from this spell.#
+
+2592 The fountain blesses a piece of equipment.#
+2593 You have no gold!#
+2594 Dropped %d gold pieces.#
+2595 The spellbook deteriorates.#
+2596 The spellbook deteriorates and crumbles to ash!#
+2597 The doublet seems to tug your mind toward an ethereal force, and away from your mortal body.#
+2598 keep right sidebar active#
+2599 You feel refreshed!#
+
+2600 Having defeated the Baron and placed his violet orb on the pedestal, you 
+step into the portal. Powerful magic sends a tingle over your body, and you are 
+transported with a white flash.#
+
+2601
+
+
+
+
+
+You arrive outside the Hamlet mines and watch the cursed blackness peel away 
+from the land. Warm sunlight flows over the countryside. As the doors of the 
+mine open wide, people carefully spread into the streets, acclimating to 
+their freedom.#
+
+2602
+
+
+
+
+
+
+
+
+
+
+You march to the Magician's Guild for answers about Herx's power, but the 
+doorman there turns you away. 
+
+Seeing you haggard from your quest, he encourages you to take a rest. 
+"The answers you seek will still be here after you recover."#
+
+2603
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+You turn back to the streets and find a hundred people waiting for you, their
+hero. You join them in well-earned revelry, but resolve to revisit the 
+Magicians' Guild once the merriment dies down.#
+
+2604
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Now advance when you and your allies are ready!#
+
+2605
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Now wait for your leader to advance onward...#
+
+2606 Click to continue.#
+
+2607 Through the portal, a weak magic tugs you from the Citadel. Your feet 
+hover over the floor as it shakes violently. Pipes and pistons crash down 
+in a muffled racket. You have a detached sense of peace, and a moment to 
+ponder what has occurred.#
+
+2608 
+
+
+
+
+
+
+
+The lich siblings join the Baron in death, voiding their deals done with 
+devils.#
+2609 
+
+
+
+
+
+
+
+
+
+
+
+
+Is it for the best that you escaped death here? Through your trials, you've
+earned power greater than they, their shattered remains proving it.#
+
+2610 You open your eyes, standing in The Magician's Guild with a wizard and bishop. 
+Their faces relax in relief.#
+
+2611 
+
+
+
+In the following days, you work with them in secrecy to prevent the realms of
+hell from stepping foot in Hamlet again using the artifacts underground.#
+
+2612 
+
+
+
+
+
+
+
+
+Hamlet begins its ascent toward its former glory. The guilds unite under your 
+banner to clear out the straggling monsters and rebuild the city. The citizens 
+beg you to take the Baron's court and rule.#
+
+
+2613
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+You vow to keep the hellish source of the liches' power secret, to prevent 
+anyone seeking that power again, deep underground. #
+
+2614 Power you know will always be waiting.#
+
+# Orpheus and Erudyce chatter.
+2615 "Brother, I sense someone has arrived. Shall we greet them?"#
+2616 "No, we are too busy for formalities."#
+
+2617 "Sister, did you invite company?"#
+2618 "No, the Guild sent them."#
+2619 "Hm."#
+
+2620 "Sister, the Cave entrance is still sealed, is it not?"#
+2621 "It is. Why do you ask?"#
+2622 "Nevermind. It's nothing."#
+
+2623 "Is the Minotaur necessary, Brother?"#
+2624 "No, sister, but I do like the show."#
+
+2625 "Do you think, Sister, they'll flee from the Minotaur?"#
+2626 "I don't care, Brother. Send it anyway."#
+
+2627 "This Minotaur has been moping about ever since Herx died."#
+2628 "Send it away if it bothers you so much, Sister."#
+
+# Caves chatter.
+2629 "Brother, somebody's making their way through the Caves."#
+2630 "Are you concerned?"#
+2631 "Mmm. No."#
+
+2632 "The Kobolds guaranteed us better results in the Caves."#
+2633 "Don't worry, brother. There's still a ways to go, they may yet deliver."#
+
+2634 "Brother, I admit, I wish they'd hurry."#
+2635 "It would make things simpler, wouldn't it?"#
+
+# Caves transition.
+2636 "Herx couldn't handle the power he found. We tried to warn him."#
+2637 "His death was inevitable."#
+2652 "Our uninvited guests are nothing but commoners."#
+
+# Citadel chatter.
+2638 "This is all wrong. We created this place for immortals."#
+2639 "Immortals and their servants, Sister."#
+2653 "Let them come."#
+
+2640 "How much longer must I wait around?"#
+2641 "Go about your business, brother. There isn't much to prepare."#
+
+2642 "You were right to exclude the rest of the guild from our plans here, Brother."#
+2643 "Small minds always have small ambitions."#
+
+# Endgame.
+2644 "Our access to power has only increased since you removed Herx."#
+2645 "Allow us to thank you for giving his Barony over to us."#
+
+# Orpheus death.
+2646 "Impossible!!!"#
+2647 "Pest, I will use your soul to undo this offense!"#
+
+# Erudyce death.
+2648 "Curse you!!!"#
+2649 "Big mistake, cretin. Time to suffer."#
+
+# Orpheus giggles.
+2650 "Ah ha ha ha ha ha haah!!"#
+# Erudyce giggles.
+2651 "Ah ha ha ha ha ha ha hah haah!"#
+
+
+# NPC Chatter. Groups of 10 lines for each NPC type
+2700 type:seq#
+2701 The %s You are quite the party animal, %s. I couldn't keep up with you!#
+2702 The %s Are you sure you got enough rest, %s?#
+2703 The %s First you defeat the Baron, and you still out-party a joker like me!#
+2704 The %s You're going to take it easy now, though, right %s?#
+
+2710 type:rand#
+2711 The %s Everyone came back to their shops, like nothing happened.#
+2712 The %s Hamlet's Shopkeepers are tougher after surviving the Baron's dungeon.#
+
+2720 type:rand#
+2721 The %s How could I ever thank you %s? *hic!*#
+2722 The %s I love you, man. Like, seriously, %s, I love you. *hic!*#
+
+2730 type:seq#
+2731 %s It's a secret to everybody.#
+2732 %s This used to be the foyer to the Baron's mansion.#
+2733 %s We're remodeling the interior for our next ruler.#
+2734 %s We want to forget all about Herx.#
+2735 %s It's a secret to everybody.#
+
+2740 type:seq#
+2741 The %s I tried to get into the Crystal Caves, but a barrier stopped me.#
+2742 The %s Perhaps the Magician's Guild erected that barrier.#
+2743 The %s I'm from a distant city, and a member of the Hunter's Guild.#
+2744 The %s Hamlet's Hunters' Guild isn't in this district.#
+2745 The %s I guess Magicians and Hunters don't get along so well.#
+2746 The %s Hunters kill bad guys. Sometimes they're Magicians.#
+2747 The %s No grudges, just don't be a bad guy!#
+
+2750 type:rand#
+2751 The %s Is it strange that I am tempted to go back into the mine?#
+2752 The %s The sky out here is so large. I'm scared.#
+2753 The %s The mines, Herx's dungeon, is on the other side of this gate.#
+2754 The %s Maybe I'll just go back for a little while.#
+
+2760 type:seq#
+2761 The %s The Magician's Guild must be up to something.#
+2762 The %s Guilds always have too many secrets.#
+2763 The %s I heard that Merlin and the Magician's Guild had a falling out.#
+2764 The %s I bet Herx is in tight with Archmagisters Orpheus and Erudyce.#
+2765 The %s Don't get me started on the Hunters' Guild.#
+2766 The %s I heard the Masons Guild works for the Church.#
+2767 The %s The Church has secrets, but they also help the poor.#
+2768 The %s Is the Church a Guild? Asking for a friend.#
+
+2770 type:seq#
+2771 The %s Welcome back, %s. I hope you're rested.#
+2772 The %s The magicians inside can explain everything.#
+2773 The %s Me? No I'm just a doorman.#
+2774 The %s Many come and go, %s. No membership required.#
+2775 The %s Merlin used to come by a lot, but then he just stopped.#
+2776 The %s Come to think of it, Herx used to come by regularly.#
+2777 The %s Herx would always leave angry after every visit.#
+2778 The %s I wish I could've seen Herx's face when you showed up...#
+
+2780 type:seq#
+2781 The %s The Baron wanted to set up the mine in the Crystal Caves.#
+2782 The %s The Archmagisters refused to allow Herx to mine there.#
+2783 The %s Herx offered a lot of grants to the Magicians' Guild.#
+2784 The %s I think Herx expected favors from the Archmagisters.#
+2785 The %s Eventually Herx gave up on getting the help of the Guild.#
+2786 The %s Things turned out bad, but they could've been worse.#
+
+2790 type:seq#
+2791 The %s Merlin told us about the dangerous magic Herx found.#
+2792 The %s We never heard from Merlin again after he left to stop Herx.#
+2793 The %s I heard rumors about a new letter from Merlin, but I never saw it.#
+2794 The %s You know, Merlin was never an official member of the Magicians Guild.#
+2795 The %s Some people just need their independence. I respect that.#
+
+2800 type:seq#
+2801 The %s After Herx was locked away, the Archmagisters went to the Crystal Caves.#
+2802 The %s I guess they wanted to see what all the fuss was about.#
+2803 The %s If it wasn't for the Archmagisters, Herx would've built an army here.#
+2804 The %s We never would've been able to figure out how to lock Herx away. #
+2805 The %s I think Erudyce and Orpheus knew sealing up Herx wouldn't be enough.#
+
+2810 type:seq#
+2811 The %s Powerful monsters started coming from the Crystal Caves.#
+2812 The %s The Guild had to seal the Caves to keep Hamlet from being destroyed.#
+2813 The %s I hope that the Archmagisters inside are alright.#
+2814 The %s I really hope those monsters have nothing to do with their research.#
+2815 The %s Orpheus is so driven. Nothing can stop him.#
+2816 The %s Erudyce likes to influence things from behind the scenes.#
+
+2820 type:seq#
+2821 The %s I sensed power from the orb when you put it on that pedestal.#
+2822 The %s I wonder why Herx didn't use that power to escape the dungeon.#
+2823 The %s I was able to trap some of the power that Herx's orb released.#
+2824 The %s This portal pierces the seal to the Caves using the power of the orb.#
+2825 The %s Archmagisters Orpheus and Erudyce will help return things to normal.#
+2826 The %s They must have learned something about the power Herx found.#
+
+2830 type:seq#
+2831 The %s Don't worry %s, I know who you are.#
+2832 The %s I wanted to meet you before you left town.#
+2833 The %s Me? I am one of the esteemed members of the Merchant's guild.#
+2834 The %s I'm only interested in the rarest of artifacts in the land.
+ In particular, the Magician's orbs that were stolen by Herx.#
+2835 The %s If you happened to retrieve any of them, I'd be willing to
+ part with one of my prized possessions in return.#
+2836 The %s You see, a high ranking guild member such as myself can extort
+ those mages for every penny they own with their precious orbs!#
+2837 The %s I know you have too much of a heart to do the same yourself.#
+2838 The %s So it is up to you. Leave them with me and we'll say no more
+ about our little encounter.#
+
+2850 type:rand#
+2851 %s Response 1.#
+
+2860 type:rand#
+2861 %s Response 1.#
+
+# 2900 - 2949 More effects text:
+2900 Bluh, this potion was cursed!#
+2901 You feel heavier...#
+2902 You feel slower...#
+2903 There is an aftertaste of poison in your mouth.#
+2904 The shrine bestows fortitude and might!#
+2905 Your spell had no effect on the %s!#
+2906 Your spell had no effect on %s!#
+2907 "Do not be afraid to go slowly, be afraid of stopping."#
+2908 Your thoughts no longer reside in solitude as you wrap the blindfold.#
+2909 The shrine bestows marksmanship and haste!#
+2910 The shrine bestows arcane knowledge and resistance!#
+2911 the Baron!#
+
+# 2912-2916 Autosort text:
+2912 Item Categories for Inventory Autosort: (?)#
+2913 Use arrows to set priority for autosort. 0 has no priority.#
+2914 1 is lowest priority, 9 is highest priority to fill left to right.  #
+2915 -1 is lowest priority, -9 is highest priority to fill right to left.#
+2916 Equipped#
+
+# New server flags.
+2917 Hardcore#
+2918 Classic#
+2919 Keep Inventory On Death#
+2920 +1 Life#
+# Hardcore.
+2921 NOTE: Experimental! Increases the stats of all enemies and improves their reaction 
+time. For experienced adventurers who wish for a more difficult challenge! #
+# Classic
+2922 Cursed Edition levels only. For those wanting a shorter playthrough, or trying their 
+hand at conquering the Classic leaderboard categories.#
+# Keep Inventory
+2923 Disable players dropping inventory items on death. (Multiplayer only)
+Enjoy the dungeon without having to loot your allies! #
+# Life Saving
+2924 Spawn at the start of the game with an amulet of life saving, granting you 
+an additional life.
+NOTE: Enabling this will disable Achievements on your save files! #
+
+# 2925 - 2957 New conducts.
+2925 Hardcore#
+2926 Discreet#
+2927 Allied#
+2928 Classic#
+2929 Modded#
+2930 Brawler#
+2931 Ultra Speedrunner#
+2932 Speedrunner#
+2933 Inventory Keeper#
+2934 +1 Lifer#
+2935 Cursed#
+2936 Ranger#
+
+2958 Multiplayer Highscores#
+2959 Continue multiplayer game#
+2960 Autosort Inventory (%s)#
+2961 Delete file#
+2962 Cancel#
+2963 Are you sure you want to delete your singleplayer save file?
+
+#
+2964 Are you sure you want to delete your multiplayer save file?
+
+#
+2965 WARNING: CONTINUING WILL OVERWRITE YOUR OLDEST SINGLEPLAYER SAVEFILE!#
+2966 WARNING: CONTINUING WILL OVERWRITE YOUR OLDEST MULTIPLAYER SAVEFILE!#
+2967 light flicker#
+2968 press [%s] to drop gold#
+2969 The gods of Sokoban greatly reward your abilities!#
+2970 The gods of Sokoban were mildly entertained.#
+2971 The gods of Sokoban were less than impressed.#
+2972 The armor is warm against your heart.#
+2973 The helmet fills your mind with arcane whispers.#
+2974 Vibrations pulse through the earth from all around your feet when you wear the boots.#
+2975 The cape carries you above the ground and you feel its power surging through your body.#
+2976 The gauntlets fill you with otherworldly defiance.#
+2977 Cost: %d + ?? MP#
+2978 Custom Content#
+2979 Workshop#
+2980 Character Creation (Modded)#
+2981 WARNING: MAKE SURE ALL LOBBY MEMBERS HAVE
+IDENTICAL MOD LISTS LOADED!#
+2982 NOTE: Modded sessions use their own savegame files.#
+2983 keep game timer on HUD#
+2984 Subscribe to host mod list#
+2985 Mount host mod list#
+2986 Savefile has cheats enabled#
+2987 Loading modded sound files...#
+2988 Unloading modded sound files...#
+2989 Loading modded model files...#
+2990 Unloading modded model files...#
+2991 Loading modded book files...#
+2992 Unloading modded book files...#
+2993 Loading modded music files...#
+2994 Unloading modded music files...#
+2995 Brawler-mode active, only punches and throwing potions are allowed to attack!#
+2996 Brawler-mode deactivated, all weapons permitted.#
+2997 This tool is disabled in Brawler-mode!#
+2998 Player savefile is not eligible for Brawler Achievement. Restart game to reset.#
+2999 Spells are disabled in Brawler-mode!#
+3000 Use Previous Character#
+3001 Delete score#
+3002 Are you sure you want to delete this high score?
+
+#
+3003 Achievements are disabled#
+3004 Loading modded language file...#
+3005 Unloading modded language file...#
+3006 Loading modded item sprites...#
+3007 Unloading modded item sprites...#
+3008 Loading modded items.txt properties...#
+3009 Unloading modded items.txt properties...#
+3010 fell to their death.#
+3011 vertical sync#
+3012 mute minimap pings#
+3013 Loading modded monster limbs.txt files...#
+3014 Unloading modded monster limbs.txt files...#
+3015 Loading modded system resource image files...#
+3016 Unloading modded system resource image files...#
+3017 Loading modded game tiles...#
+3018 Unloading modded game tiles...#
+3019 Save & Disconnect#
+3020
+      Are you sure you want to disconnect
+          and return to the main menu?
+    
+    Your multiplayer progress has been saved
+        at the start of the current level.
+    
+ NOTE: 
+    If your current party members advance to 
+ the next dungeon floor without your character, 
+    your savefile will no longer be able to 
+              rejoin the session.#
+3021
+      Are you sure you want to disconnect
+          and return to the main menu?
+    
+    Your multiplayer progress has been saved
+        at the start of the current level.
+    
+ NOTE: 
+   This will disconnect all party members and
+          save their current progress.#
+3022 Minimap Options#
+3023 Foreground Transparency (%)#
+3024 Background Transparency (%)#
+3025 Map Scale#
+3026 Player/Ally Icon Zoom#
+3027 Character Sheet Zoom#
+3028 Skills/Party Sidebar Zoom#
+3029 Hotbar Zoom#
+3030 Chatlog Zoom#
+3031 Player HP/MP Zoom#
+3032 Inventory Zoom#
+3033 Hide Chatlog#
+3034 User Interface Options#
+3035 There's no ground beneath your feet to place that!#
+
+# Follower Radial Menu Text
+3036 Follower Options:#
+3037 Wait here#
+3038 Class:#
+3039 Move to...#
+3040 Pickup
+Items:#
+3041 Move aside#
+3042 Drop#
+3043 Interact...#
+3044 Rest#
+# Begin secondary option text.
+3045 Follow#
+3046 #
+3047 #
+3048 #
+3049 #
+3050 #
+3051 Interact /
+ Attack...#
+3052 #
+3053 [Mixed]#
+3054 [Melee]#
+3055 [Ranged]#
+3056 [Unowned]#
+3057 [None]#
+3058 [All]#
+3059 Weapon#
+3060 Equipment#
+3061 All#
+3062 You do not meet the Leadership and Charisma requirements
+for this option. (Required: %s, Current: %s)#
+3063 Cancel#
+3064 delete save file#
+3065 Start a new game, or continue from a save file:#
+3066 scroll with arrow keys or mouse wheel#
+3067 %2d / %2d singleplayer slots used#
+3068 %2d / %2d  multiplayer slots used#
+
+# Follower responses.
+3069 %s I'll stand ground here, %s.#
+3070 %s I'll sit tight.#
+3071 %s My %s cursed!#
+3072 %s This would suit you well, %s!#
+3073 %s I'll try find something better.#
+3074 %s I have no use for this.#
+3075 %s That hit the spot!#
+3076 %s Oof. I'm really full now.#
+3077 %s I cant reach that.#
+3078 %s There's something in the way.#
+3079 %s Advancing to point!#
+3080 %s Cover my retreat, %s!#
+3081 %s These may be due for repairs.#
+3082 %s Nothing's irreplacable here!#
+3083 %s You can really feel the breeze down here.#
+3084 %s I can't betray my allies like that.#
+3085 %s You have to keep what few friends you have down here.#
+3086 %s Hmm.#
+3087 %s Mm.#
+3088 %s That one was a little mouldy.#
+3089 %s I couldn't possibly eat any more.#
+3090 %s I'm not hungry now.#
+3091 %s Blecch! Rotten food!#
+3092 You may only use this command once per floor.#
+3093 Tinker with #
+3094 No interaction available.#
+# Follower responses end.
+
+# Misc
+3095 view Steam Leaderboards#
+3096 Your spell hits the %s!#
+3097 door#
+3098 gate#
+3099 chest#
+3100 An arcane protection holds the lock firmly in place!#
+3101 An arcane protection holds the door firmly in place!#
+3102 An arcane protection holds the gate firmly in place!#
+
+# Follower responses cont'd.
+3103 Command not available for %s.#
+3104 Attack...#
+3105 The %s waits patiently.#
+3106 %s waits patiently.#
+3107 weapon is#
+3108 helmet is#
+3109 hat is#
+3110 breastpiece is#
+3111 boots are#
+3112 shield is#
+3113 gloves are#
+3114 cloak is#
+3115 ring is#
+3116 amulet is#
+3117 equipment is#
+3118 %s cursed!#
+3119 The %s's #
+3120 %s's #
+3121 The %s #
+3122 %s #
+3123 stares at the %s dismissively.#
+3124 quickly eats the %s.#
+3125 surrenders their weapon.#
+3126 surrenders some of their equipment.#
+3127 surrenders their equipment.#
+3128 %s decides to follow you!#
+3129 The %s grunts.#
+3130 %s grunts.#
+3131 The %s can't reach that from here.#
+3132 %s can't reach that from here.#
+3133 There's something in the way of the %s.#
+3134 There's something in the way of %s.#
+3135 %s Apologies %s, but I won't let go of my keepsakes.#
+
+# Misc
+3136 Hide Player Nametags#
+3137 The %s is charmed into your service!#
+3138 %s is charmed into your service!#
+3139 The charm seizes the %s's will to fight!#
+3140 The charm seizes %s's will to fight!#
+3141 You resist the effects of the charm!#
+3142 The charm had no effect on the %s!#
+3143 The charm had no effect on %s!#
+3144 A magical charm seizes your will to fight!#
+3145 The slime envelops and consumes the %s!#
+
+3146 Networking#
+3147 disable multithreaded Steam networking#
+3148 Some clients may experience stuttering or poor framerates if enabled, 
+disable this or try direct-ip hosted lobbies to improve performance.#
+3149 Hides IP address when typing in the direct-ip connect window. #
+3150 Hides HUD elements in-game, such as hotbar, HP/MP, minimap etc. #
+3151 Picked up items will automatically be added to your hotbar if enabled. You can 
+specify which categories of items that get added in the options to the right.#
+3152 Automatically starts appraising unidentified items when you pick them up. 
+Will not interrupt any existing appraisal of an item.#
+3153 Disables game event messages on the left-hand side message log. Messages will 
+still appear in the bottom scrollable message log.#
+3154 If enabled, right clicking on an item in the inventory will not automatically equip or 
+use the item. The option must be selected from the right-click popup menu instead.#
+3155 If enabled, hovering over an item in the inventory or hotbar panels and pressing the 
+keyboard keys 0-9 will send that item to the numbered hotbar slot. If hovered over the
+hotbar, items will automatically swap positions if the specified slot is filled.#
+3156 Keeps the right-side skills/party HUD pages open when the inventory is closed. Locking 
+the party page is helpful when keeping track of follower or player ally health. Can be
+locked/unlocked in-game by left clicking the lock symbol on the HUD page.#
+3157 Always shows the in-game timer when the inventory is closed in the upper right-hand section of 
+the screen. Useful to track speedrun times, when the minotaur will arrive, or how long your
+current food situation will last.#
+
+3158 mute audio when game window focus is lost#
+3159 Show Numerical Skill Values#
+
+3160 Race:#
+3161 human#
+3162 skeleton#
+3163 vampire#
+3164 succubus#
+3165 goatman#
+3166 automaton#
+3167 incubus#
+3168 goblin#
+3169 insectoid#
+
+3175 Use left click or press left/right to toggle between active customization type.#
+
+3176 Gameplay Options:#
+3177 use %s abilities#
+3178 aesthetic skin only#
+
+3179 Skeletons have no use for food!#
+3180 But wait! You expend your mana into new life!#
+3181 You did not have enough mana to revive yourself...#
+3182 You struggle to fight the current as a skeleton!#
+3183 Your flesh sears in pain as you make contact with the water!#
+3184 Your bones sear in pain as you make contact with the water!#
+3185 The polymorph wears out and you return to your normal form.#
+3186 You polymorph into a %s!#
+3187 The %s polymorphs into a %s!#
+3188 %s polymorphs into a %s!#
+3189 But you feel no different...#
+3190 You quaff the potion of polymorph...#
+3191 The polymorph had no effect!#
+3192 The polymorph is washed away by the water!#
+3193 Your skin cracks as you feel the polymorph start to dissipate...#
+3194 Your %s's soul returns to you.#
+3195 %s's soul returns to you.#
+3196 Relinquish
+   soul#
+3197 Your summoned %s gained a new rank!#
+3198 But wait! Your summoned allies imbue you with new life!#
+
+3199 Locked - Myths & Outcasts DLC Required!#
+3200 Locked - Myths & Outcasts DLC Required!
+Left click to view on the store page.#
+
+3201 Bleh! Your body rejects the solids in your stomach!#
+3202 What a horrible night to have a curse...#
+3203 Blecch! This is disgusting!#
+3204 Unarmed#
+3205 %s is stunned from your blow!#
+3206 The %s is stunned from your blow!#
+3207 You are stunned from %s's blow!#
+3208 You are stunned from the %s's blow!#
+3209 %+3d from skill#
+3210 Your blade cuts deep into %s!#
+3211 Your blade cuts deep into the %s!#
+3212 %s's blade cuts deep into you!#
+3213 The %s's blade cuts deep into you!#
+3214 %s staggers backwards!#
+3215 The %s staggers backwards!#
+3216 You are knocked back!#
+3217 You can't remove the %s.
+ It's blessed!#
+3218 You can't. It's blessed!#
+3219 You can't sell the %s.
+ It's blessed!#
+3220 You ravage the tin of
+ %s.#
+3221 You awaken with no idea of your whereabouts...
+ accompanied by a splitting headache.#
+3222 Maybe a drink will take the edge off...#
+
+3223 conjurer#
+3224 accursed#
+3225 mesmer#
+3226 brewer#
+3227 mechanist#
+3228 punisher#
+3229 shaman#
+3230 hunter#
+
+3231 A frail but adept spellcaster able to conjure allies with mana.
+
+Difficulty: Normal#
+3232 The Accursed suffer from bestial hunger, but gain supernatural magic power and speed.
+An arcane library found deep within the dungeon may have a cure.
+Difficulty: Hard#
+3233 The Mesmer uses the Charm spell and leadership ability to enlist powerful allies.
+
+Difficulty: Hard#
+3234 A talented alchemist who is also comfortable with the relationships and bar-room
+brawls that a good brew will bring.
+Difficulty: Normal#
+
+3235 A skilled craftsman, the Mechanist uses a toolkit to make and maintain mechanical
+weapons, letting contraptions do the dirty work.
+Difficulty: Normal#
+
+3236 The Punisher picks unfair fights, toying with foes using dark magic and a whip before
+making the execution, or releasing one's inner demons to do the job.
+Difficulty: Very Hard#
+
+3237 The Shaman is a mystic whose connection to nature spirits allows them to shapeshift 
+into bestial forms. Each form's talents provide diverse advantages in the dungeon.
+Difficulty: Normal#
+
+3238 Equipped to track and bring down foes from afar, the Hunter uses special arrows and a
+magic boomerang to ensure they never have to fight toe-to-toe.
+Difficulty: Hard#
+
+3239 Skill number invalid!#
+3240 Your appraisal is not high enough to identify "%s".#
+3241 You feel the curse lift as you incant the spell...#
+3242 The tomes' knowledge grants you control over the curse!#
+3243 %s Begone from my shop, foul %s!#
+3244 learns about the "no %s allowed" policy of %s's shop.#
+3245 %d potions dropped from the fountain!#
+3246 A potion dropped from the fountain!#
+3247 You start breaking into a cold sweat...#
+3248 Your hands begin to feel unsteady...#
+3249 You feel a headache coming on...#
+3250 Your hangover feels better now.#
+3251 %s decides to be your drinking buddy!#
+3252 The %s decides to be your drinking buddy!#
+3253 Your health fades due to the curse!#
+3254 goes for a swim in some water.#
+
+# Skill tooltips
+3255 
+Chance to lockpick chests and doors:        %5.1f%%
+Scrap chance from unlocking chests:         %5.1f%%
+Scrap chance from lockpicking Automatons:   %5.1f%%
+Chance to disarm arrow traps:               %5.1f%%
+Chance for bonus salvaged scrap:            %5.1f%%
+Able to repair item with value (metal/magic): %4s
+Maximum deployed tinkering allies:           %5.0f
+Available robot ally commands shown on NPC menu [%s] #
+3256 
+Player current visibility:       %2.0f tile(s)
+Visibility reduction from skill:%3.0f%%
+Night vision when sneaking:     +%2.0f Light
+Backstab bonus damage:          +%2.0f ATK#
+3257 
+Item buy price from shop:  %3.2fx gold value
+Item sell price to shop:   %3.2fx gold value  #
+3258 
+Time to appraise per item gold value:      %3.2fs
+Max item gold value that can be appraised: %4.0fG
+Can appraise worthless glass:                %3s   #
+3259 
+Player movement speed in water/lava:  %3.1f%% 
+#
+3260 
+Maximum followers (via [%-11s] recruiting):  %2.0f   
+Bonus movement speed for followers:           +%2.0f DEX
+Charm Monster spell base chance:                 %3.0f%%
+Available follower commands shown on NPC menu [%s]#
+3261 
+MP Regeneration base time:         1 MP / %1.1fs 
+Spellcasting beginner:                     %3s
+(Beginners fumble spells and expend more mana)#
+3262 
+Highest skill level magic that can be learnt: %8s
+Current tier spells:                                     
+#
+3263 
+Ranged damage output:              %3.0f - 100%%
+Ranged weapon degrade chance on use:   %5.2f%%
+Armor piercing arrow chance:             %3.0f%%
+ (Piercing based on PER only)
+Thrown weapon damage:                    %3.0f%%#
+3264 
+Sword damage output:           %7.0f - 100%%
+Normal sword usage degrade chance:      %1.2f%% 
+Degrade chance when 0 damage is dealt: %5.2f%%#
+3265 
+Mace damage output:            %7.0f - 100%%
+Normal mace usage degrade chance:       %1.2f%% 
+Degrade chance when 0 damage is dealt: %5.2f%%#
+3266 
+Axe damage output:             %7.0f - 100%%
+Normal axe usage degrade chance:        %1.2f%% 
+Degrade chance when 0 damage is dealt: %5.2f%%#
+3267 
+Polearm damage output:         %7.0f - 100%%
+Normal polearm usage degrade chance:    %1.2f%% 
+Degrade chance when 0 damage is dealt: %5.2f%%#
+3268 
+Blocking armor increase:                +%3.0f AC 
+Shield normal degrade chance on hit:     %5.2f%%
+Shield degrade chance when defending:    %5.2f%%#
+3269 
+Unarmed damage output:             %7.0f - 100%%    
+Melee glove normal degrade chance:          %1.2f%%
+Degrade chance when 0 damage is dealt:     %5.2f%%
+Bonus unarmed ATK:                        +%2.0f ATK
+Knockback distance on fully charged strike:  %3.0f%%
+ (Requires melee gloves equipped)#
+
+# Additional skill tooltip text
+3270 
+
+
+
+
+
+
+
+
+Legendary: 
+ Bonus %d gold or an item when lockpicking chests 
+ Able to repair any item using the tinkering kit#
+3271 
+
+
+
+
+Legendary: 
+ Sneaking (using block key without a shield)
+  grants invisibility.
+ Backstab bonus damage is doubled#
+3272 
+
+
+Legendary: 
+ Sell item of any kind to any shop type#
+3273 
+
+
+
+Legendary: 
+ Appraise all items instantly#
+3274 
+
+Legendary: 
+ Permanent water-walking over water and lava#
+3275 
+
+
+
+
+Legendary: 
+ Can recruit goblins, goatmen and insectoids#
+3276 
+
+
+
+Legendary: 
+ Auto learn [Forcebolt] spell, mana cost is 0#
+3277 
+
+
+Legendary: 
+ Auto learn [Dominate] spell#
+3278 
+
+
+
+Legendary: 
+ +5 ATK and inflict 5s [bleeding] status 
+  on fully charged strike.
+ (Targets invulnerable to bleeding take 
+  +5 additional ATK)#
+3279 
+
+
+
+Legendary: 
+ +5 ATK and 25%% chance to inflict 1.5s
+  [paralyze] status on fully charged strike#
+3280 
+
+
+
+Legendary: 
+ +10 ATK and inflict 3s [slow] status 
+  on fully charged strike#
+3281 
+
+
+
+Legendary: 
+ +5 ATK and inflict [knockback] status 
+  on fully charged strike#
+3282 
+
+
+
+
+
+
+Legendary: 
+ +5 ATK and inflict 1s [paralyze] status 
+  on fully charged stealth backstab strike#
+3283 
+
+
+
+Legendary: 
+ Shields never degrade on hit#
+3284 
+
+
+
+
+
+Legendary: 
+ Ranged weapons never degrade on use#
+
+3285 The ZAP Brigade has arrived!
+ "The minotaur is coming! Let us slay any other foul beasts here as well!"#
+3286 Repair Item#
+3287 This %s
+ is unable to be repaired.#
+3288 You have no items able to be repaired!#
+3289 Deals %d magic damage#
+3290 Deals %d magic damage
+ and inflicts [%s] status#
+3291 Deals %d magic damage and inflicts
+ [%s] and [%s] status#
+3292 Inflicts [%s] status#
+3293 Deals %d magic damage
+ and inflicts [%s] status#
+3294 slow#
+3295 burning#
+3296 paralyze#
+3297 bleeding#
+3298 sleep#
+3299 confuse#
+3300 poison#
+3301 Type: Area#
+3302 Type: Sustained#
+3303 Type: Projectile#
+3304 Type: Short Projectile (x3)#
+3305 Type: Self#
+3306 Type: Point Target#
+3307 Restores %d HP to caster 
+ and nearby allies#
+3308 Grants magic reflection while sustained
+Magic damage reflected is subtracted from caster's MP#
+3309 Grants levitation while sustained#
+3310 Grants invisibility while sustained#
+3311 Grants light while sustained#
+3312 Removes a curse from an item#
+3313 Identifies an item#
+3314 Reveals the level layout on
+ the current dungeon floor#
+3315 Teleports caster to a random location#
+3316 Opens doors, gates and locked containers#
+3317 Locks doors and chests#
+3318 Removes status effects from
+ caster and nearby allies#
+3319 Breaks down a wall#
+3320 Summons a skeleton ally that can be recalled
+Expert Magic skill summons a second skeleton
+Summon level is kept between casts#
+3321 Dominates a target into servitude
+MP Cost is based on the target's current HP
+Caster's HP is consumed if spell cost is 
+ greater than the caster's MP#
+3322 Steals the weapon of a target and
+ adds it to the caster's inventory#
+3323 Deals %d magic damage to HP and MP 
+HP/MP damage inflicted is restored to the caster#
+3324 Grants unarmed attacks a chance to inflict
+ [lifesteal] and [bleeding] while sustained
+HP regeneration is paused
+Movement speed and hunger depletion is increased#
+3325 Cost: %d MP (1 MP / %1.2fs)#
+3326 Attempts to charm a monster into servitude
+Only 1 monster may be charmed at one time
+Inflicts [pacify] status on failure#
+3327 You are unable to charm any more monsters into your service!#
+3328 Alchemy: Choose a base potion#
+3329 Alchemy: Choose a potion to mix with#
+3330 a %+2d #
+3331 %d %+2d #
+3332 You combine the %s with a %s...#
+3333 You combine the unidentified potion with a %s...#
+3334 You combine the %s with the unidentified potion...#
+3335 You combine the 2 unidentified potions...#
+3336 The empty flask looks ideal for tapping liquids into.#
+3337 You have no familiar potions to combine!#
+3338 You have no familiar base potions to start mixing!#
+3339 Brew#
+3340 Alchemy#
+3341 Experiment#
+3342 You have no potions left to mix!#
+3343 You have no potions to mix!#
+3344 Experimenting Alchemy: Choose a base potion#
+3345 Experimenting Alchemy: Choose a potion to mix with#
+3346 You learn about the %s 
+ base alchemy ingredient.#
+3347 
+
+
+
+
+
+
+
+
+Legendary: 
+ Brewed potions have +2 blessing
+ Alembics never degrade#
+3348 
+Thrown potion impact damage:          %3.0f%%
+Potion effect damage:                 %3.0f%%
+Water brewing duplication chance:     %3.0f%%
+Empty bottle %% on consume:           %4.0f%%
+ (Plain or bubbly potions only)
+Empty bottle %% on brew:              %4.0f%%
+Learnt alchemy ingredients:
+ Base              Secondary
+#
+3349 You learn about the %s 
+ secondary alchemy ingredient.#
+3350 blew the brew.#
+3351 You recover an %s.#
+3352 Brewed %s.#
+3353 Bottled %s.#
+3354 You suddenly feel much stronger!#
+3355 Your strength returns back to normal.#
+3356 The brew dissolves into water...#
+
+3357 status effect icons#
+3358 You feel energized?#
+3359 the Triumphant %s!#
+3360 the Eternal %s!#
+3361 the %s Baron!#
+3362 the %s %s.#
+3363 Bony#
+3364 Bucktooth#
+3365 Bombshell#
+3366 Bleating#
+3367 Boilerplate#
+3368 Bad Boy#
+3369 Bayou#
+3370 Buggar#
+
+3371 mute player monster sounds#
+3372 Locked - Legends & Pariahs DLC Required!#
+3373 Show Race Info#
+3374 Hide Race Info#
+3375 Human
+
+Friendly with: 
+Humans, Automatons
+
+Weaknesses:
+None
+
+Resistances: 
+None
+
+Traits:
+None#
+
+3376 Skeleton
+
+Friendly with: 
+Ghouls, Automatons
+
+Weaknesses:
+Maces, polearms, blessed water
+
+Resistances: 
+Swords, ranged, axes, magic
+
+Traits:
+- Cannot starve, or eat
+   (Potions still apply as normal)
+- Self-resurrection at 75 MP
+- 25% HP/MP regeneration rate
+- 50% water movement speed
+- Immune to burning#
+
+3377 Vampire
+
+Friendly with: 
+Vampires, Automatons
+
+Weaknesses:
+Maces, polearms, water, solid foods
+
+Resistances: 
+Swords, ranged, axes, magic
+
+Traits:
+- Converts HP to MP when casting
+   spells at 0 MP
+- Starts with Bloodletting and
+   Levitation spells learnt
+- Can only consume vials of blood to
+   sustain hunger
+- Vials of blood drop on kills
+   (Higher chance if bleeding or 
+    landing sneak attacks)#
+
+3378 Succubus
+
+Friendly with: 
+Succubi, Incubi, Automatons
+
+Weaknesses:
+Swords
+
+Resistances: 
+Magic, polearms
+
+Traits:
+- Cursed equipment is removable
+   and provides bonuses each curse
+- Blessed gear is unremovable
+   (Still provides bonuses)
+- Starts with Teleportation spell
+   learnt
+- Can recruit drunk/confused humans#
+
+3379 Goatman
+
+Friendly with: 
+Goatmen, Automatons
+
+Weaknesses:
+Magic, axes, polearms, ranged
+
+Resistances: 
+Swords
+
+Traits:
+- Fountains have a chance to drop
+   1-3 random potions on use
+- Increased STR/CHR while drunk
+   (Immune to drunk dizziness)
+- Suffers intermittent hangovers that
+   that can be cured by intoxication
+- Can eat tin cans without an opener
+- Can recruit humans/goblins by
+   throwing booze while drunk#
+
+3380 Automaton
+
+Friendly with: 
+Humans, Automatons
+
+Weaknesses:
+Maces, axes, magic
+
+Resistances: 
+Ranged, unarmed
+
+Traits:
+- Require Heat (HT) to survive and
+   cast spells
+- Consuming gemstones, scrolls, 
+   non-spell books and scrap adds HT
+- Cursed items can be unequipped
+- Neutral to Incubi and Succubi
+- Immune to burning
+- Bonus +20 Tinkering to repairs
+- Starts with Salvage spell learnt#
+
+3381 Incubus
+
+Friendly with: 
+Incubi, Succubi, Automatons
+
+Weaknesses:
+Ranged, swords
+
+Resistances: 
+Magic, polearms
+
+Traits:
+- Cursed equipment is removable
+   and provides bonuses each curse
+- Blessed gear is unremovable
+   (Still provides bonuses)
+- Starts with Teleportation and
+   Arcane Mark spells learnt#
+
+3382 Goblin
+
+Friendly with: 
+Goblins, Automatons
+
+Weaknesses:
+Axes, polearms, ranged
+
+Resistances: 
+Unarmed, swords
+
+Traits:
+- All worn equipment has a 
+   reduced chance to degrade
+- Increasing a melee weapon skill
+   also increases other melee skills
+   at the same time
+- Weapon skills are slower to improve
+- Unable to permanently learn
+   magic spells from spellbooks
+   (Can still cast with book in hand)#
+
+3383 Insectoid
+
+Friendly with: 
+Insectoids, scarabs, scorpions
+
+Weaknesses:
+Axes, polearms, ranged
+
+Resistances: 
+Maces, unarmed
+
+Traits:
+- Require Energy (EN) to survive and
+   cast spells
+- Energy is regained through eating
+   and consuming sweet liquids
+- Immune to poison
+- Immune to sickness when eating 
+   spoiled food
+- Starts with Flutter, Dash
+   and Spray Acid spells learnt#
+
+3384 Slowed
+Reduced movement speed#
+3385 Bleeding
+Taking damage over time#
+3386 Asleep
+Unable to move or see#
+3387 Confused
+Movement is reversed#
+3388 Pacified
+Unable to attack#
+3389 Vampiric Aura
++ Strength and Dexterity
+Increased hunger rate
+Increased chance to inflict
+ [bleed] status while unarmed
+Chance to lifesteal on unarmed
+ lethal stealth attacks#
+3390 Vampiric Aura
++ Strength and Dexterity
+Increased hunger rate
+Increased chance to inflict
+ [bleed] status while unarmed
+Chance to lifesteal on all
+ unarmed attacks
+Natural HP regen is disabled#
+3391 Paralyzed
+ Unable to move#
+3392 Drunk
++ Strength
+- Dexterity#
+3393 Hungover
+- Dexterity
+Curable by intoxication#
+3394 Strength
++ Strength
+- Perception#
+3395 Levitating
+Able to float over chasms and
+ water/lava#
+3396 Invisible
+Unable to be detected by enemies
+ outside of melee range#
+3397 Reflect Magic
+Enemy spells are reflected
+Magic damage reflected is consumed
+ from MP#
+3398 Light
+Sustaining a magical source of light#
+3399 Polymorphed
+Disguised as another monster#
+
+3400 Expending your vitality weakened the spell!#
+3401 You sense the gods of Sokoban aiding your path...#
+3402 Enter DLC serial key#
+3403 Type in your serial key (case sensitive) and press submit:#
+3404 Success! Myths and Outcasts DLC is now available.
+Thank you for your support!#
+3405 Success! Legends and Pariahs DLC is now available.
+Thank you for your support!#
+3406 ERROR: Invalid serial key.#
+
+3407 Revert Form#
+3408 Rat Form#
+3409 Spider Form#
+3410 Troll Form#
+3411 Imp Form#
+3412 Spray Web#
+3413 Poison#
+3414 Speed#
+3415 Fear#
+3416 Power Strike#
+
+3417 Your shapeshift fades and you return to your normal form.#
+3418 The shapeshift is washed away by the water!#
+3419 You shapeshift into a %s!#
+3420 You feel no different...#
+3421 Detect Food#
+3422 Weakness#
+3423 You sense a lack of food nearby.#
+3424 Your nose starts to tingle and you smell food!#
+3425 Your nose twitches, but there are no new scents.#
+3426 %s is sprayed with poison!#
+3427 The %s is sprayed with poison!#
+3428 You are sprayed with poison!#
+3429 %s is entangled in a web!#
+3430 The %s is entangled in a web!#
+3431 You are entangled in a web!#
+3432 You are unable to use that in your current form!#
+3433 Shapeshifted
+Transformed into a creature
+ with special abilities#
+3434 The %s cowers in fear!#
+3435 %s cowers in fear!#
+3436 You cower in fear!#
+3437 You unleash a primordial roar!#
+3438 ...that went unheard.#
+3439 You regain your composure.#
+3440 Elemental Focus#
+3441 Your elemental spell power returns to normal.#
+3442 Your elemental spell power increases!#
+3443 Failed to sustain spell (elemental focus).#
+3444 You are unable to learn spells as a goblin!#
+3445 You are unable to learn spells in your current form!#
+3446 All of your melee abilities have improved!#
+3447 Arcane Mark#
+3448 Teleport Other#
+3449 Inner Demon#
+3450 Your magic draws the %s near!#
+3451 Your magic draws %s near!#
+3452 You are unable to teleport your ally in this area.#
+3453 There is no room to teleport your target!#
+3454 Your whip strikes the weapon of the %s!#
+3455 Your whip strikes the weapon of %s!#
+3456 Your whip strikes the shield of the %s!#
+3457 Your whip strikes the shield of %s!#
+3458 %+3d from attr. (50%% STR+DEX)#
+3459 Your %s crumbles to ash!#
+3460 You can't study a spellbook while it's equipped!#
+3461 A magical force relocates you!#
+3462 You feel disoriented for a moment...#
+3463 The %s is tracked by an arcane mark!#
+3464 %s is tracked by an arcane mark!#
+3465 You are tracked by an arcane mark!#
+3466 Your previous mark on the %s has vanished.#
+3467 Your previous mark on %s has vanished.#
+3468 An inner demon appears to taunt you!#
+3469 The %s is taunted by an inner demon!#
+3470 %s is taunted by an inner demon!#
+3471 There is no room to summon an inner demon!#
+3472 You are unable to coerce a demon out of the %s!#
+3473 You are unable to coerce a demon out of %s!#
+3474 HT#
+3475 Your skin cracks as you feel your shapeshift dissipate...#
+3476 Your health regeneration returns to normal.#
+3477 Your mana regeneration returns to normal.#
+3478 The %s is poisoned by your venom!#
+3479 %s is poisoned by your venom!#
+3480 Your leadership is too low to recruit any more followers!#
+3481 Your leadership is too low to recruit %s.#
+3482 You can't recruit any more followers!#
+3483 Your boiler is at capacity!#
+3484 Your boiler is generating lots of heat!#
+3485 Your boiler is slowly keeping you warm.#
+3486 Your boiler is barely keeping up.#
+3487 Consume#
+3488 Your level is not high enough to use that spell.#
+3489 Troll's Blood#
+3490 Your veins feel warm!#
+3491 Your bloodflow returns to normal.#
+3492 Troll's Blood
+HP Regeneration is increased#
+3493 Speed
+Increased Dexterity and movement speed#
+3494 You hear a trap trigger in the distance.#
+3495 You hear a trap trigger nearby!#
+3496 stumbles into a trap and dies.#
+3497 You stumble into a %s!#
+3498 The %s stumbles into your %s!#
+3499 %s stumbles into your %s!#
+
+# new new items (3500-3599)
+3500 spellbook of weakness#
+3501 spellbook#
+3502 shaman mask#
+3503 shaman mask#
+3504 spellbook of amplify magic#
+3505 spellbook#
+3506 spellbook of arcane mark#
+3507 spellbook#
+3508 spellbook of teleport other#
+3509 spellbook#
+3510 spellbook of inner demon#
+3511 spellbook#
+3512 spellbook of troll's blood#
+3513 spellbook#
+3514 spellbook of salvage#
+3515 spellbook#
+3516 whip#
+3517 whip#
+3518 spellbook of flutter#
+3519 spellbook#
+3520 spellbook of dash#
+3521 spellbook#
+3522 spellbook of polymorph#
+3523 spellbook#
+3524 spellbook of 9#
+3525 spellbook#
+3526 spellbook of 10#
+3527 spellbook#
+3528 magicstaff of poison#
+3529 magicstaff#
+3530 metal scrap#
+3531 scrap#
+3532 magic scrap#
+3533 scrap#
+3534 tinkering kit#
+3535 tinkering kit#
+3536 sentry bot#
+3537 sentry bot#
+3538 detonator#
+3539 detonator#
+3540 flame trap#
+3541 trap#
+3542 sleep trap#
+3543 trap#
+3544 freeze trap#
+3545 trap#
+3546 teleportation trap#
+3547 trap#
+3548 gyrobot#
+3549 gyrobot#
+3550 spellbot#
+3551 spellbot#
+3552 noisemaker#
+3553 noisemaker#
+3554 dummybot#
+3555 dummybot#
+3556 leather apron#
+3557 apron#
+3558 enchanted feather#
+3559 feather#
+3560 executioner hood#
+3561 hood#
+3562 scroll of charging#
+3563 scroll#
+3564 quiver of silver ammo#
+3565 quiver#
+3566 quiver of piercing ammo#
+3567 quiver#
+3568 quiver of swift ammo#
+3569 quiver#
+3570 quiver of fire ammo#
+3571 quiver#
+3572 quiver of springshot ammo#
+3573 quiver#
+3574 quiver of crystal ammo#
+3575 quiver#
+3576 quiver of hunting ammo#
+3577 quiver#
+3578 longbow#
+3579 longbow#
+3580 compound bow#
+3581 compound bow#
+3582 arbalest#
+3583 arbalest#
+3584 boomerang#
+3585 boomerang#
+3586 scroll of conjure arrow#
+3587 scroll#
+
+3600 You disarm the %s.#
+3601 The %s is whisked away!#
+3602 %s is whisked away!#
+3603 Your trap had no effect on the %s!#
+3604 Your trap had no effect on %s!#
+3605 You loosen the firing spring.#
+3606 Your allies' careful footsteps won't set it off now.#
+3607 You tighten the firing spring as far as it will go.#
+3608 Any creature could set it off!#
+3609 You begin tightening the firing spring...#
+3610 The trap starts pulling magical energy towards it!#
+3611 You are whisked away!#
+3612 You are hit by an exploding %s!#
+3613 The %s is hit by an exploding %s!#
+3614 %s is hit by an exploding %s!#
+3615 Your trap failed to teleport the %s!#
+3616 Your trap failed to teleport %s!#
+3617 Your %s destroys the %s!#
+3618 Your %s hits the the %s!#
+3619 Light:#
+3620 [Off]#
+3621 [Faint]#
+3622 [Bright]#
+3623 Detect:#
+3624 [None]#
+3625 [Metal]#
+3626 [Magic]#
+3627 [Traps]#
+3628 [Exits]#
+3629 [Monsters]#
+3630 [Valuable]#
+3631 returns to the ground.#
+3632 Free roam#
+3633 Drop#
+3634 item#
+3635 Return &
+  Land#
+3636 Detect
+items:#
+3637 Your gyrobot can't carry any more items!#
+3638 Your Leadership skill is not high enough to use the previous command on the %s.#
+3639 Your Tinkering skill is not high enough to use the previous command on the %s.#
+3640 Your previous command cannot be used on the %s.#
+3641 Return to#
+3642 Box#
+3643 returns to its box.#
+3644 Craft #
+3645 Salvage #
+3646 Repair #
+3647 Scrap available: %3d   %3d#
+3648 You do not have enough materials to craft a %s!#
+3649 Deactivate#
+3650 Look at...#
+3651 Your gyrobot retrieved some allies left behind!#
+3652 Your Tinkering skill is not high enough to craft a %s!#
+3653 a broken #
+3654 a simple #
+3655 a complex #
+3656 an intricate #
+3657 an artisan #
+3658 %d broken #
+3659 %d simple #
+3660 %d complex #
+3661 %d intricate #
+3662 %d artisan #
+3663 Auto salvage...#
+3664 You are unable to salvage %s.#
+3665 Salvaged %d %s.#
+3666 You have nothing else to learn from salvaging.#
+3667 You have nothing else to learn from crafting the %s.#
+3668 Crafted %s!#
+3669 You can't salvage equipped items!#
+3670 Tinker#
+3671 Your gyrobot detects curious footsteps towards your noisemaker!#
+3672 You do not meet the Tinkering and Perception requirements
+for this option. (Required: %s, Current: %s)#
+3673 Your %s needs to be higher quality to use this command.#
+3674 Hold aim#
+3675 Free look#
+3676 The %s locks its rotor.#
+3677 The %s returns to its patrol.#
+3678 Your %s needs to be higher quality detect more object types.#
+3679 Your Tinkering skill is not high enough to decipher 
+any more gyrobot findings.#
+3680 Your Tinkering skill is are not high enough to decipher 
+any gyrobot findings.#
+3681 You can't repair equipped items!#
+3682 You repair the %s.#
+3683 You upgrade the %s.#
+3684 Upgrade #
+3685 Your Tinkering skill is not high enough to upgrade the %s!#
+3686 You do not have enough materials to repair the %s!#
+3687 You do not have enough materials to upgrade the %s!#
+3688 Your Tinkering skill is not high enough to repair the %s!#
+3689 You have nothing else to learn from unlocking the %s.#
+3690 Tinkering#
+3691 Kit: %10s#
+3692 Decrepit#
+3693 Worn#
+3694 Servicable#
+3695 Excellent#
+3696 Your boiler is burning steady.#
+3697 But it fails to produce any more heat.#
+3698 You see your reflection.#
+3699 Your boiler superheats!#
+3700 The cool water steams up your boiler!#
+3701 The boiling water refreshes you!#
+3702 Cool water is flooding your boiler!#
+3703 The lava overheats your boiler!#
+3704 The fuel warms your boiler.#
+3705 Pieces of scrap useful for metalwork.#
+3706 Fragments that can add spark to an invention.#
+3707 The scrap fails to generate any more heat.#
+3708 Your boiler is out of fuel...#
+3709 You are losing heat rapidly!#
+3710 Your gears begin to seize!#
+3711 Salvage#
+3712 Your spell salvaged %d items!#
+3713 Your spell fails to salvage any nearby items.#
+3714 Your systems are failing...#
+3715 The spell had no effect!#
+3716 Scribing#
+3717 Charge: %8d%%%%#
+3718 Inscribe #
+3719 Repair #
+3720 Select a blank scroll
+to inscribe#
+3721 Write %s on the scroll#
+3722 Inscribing a         
+%+2d %s#
+3723 clear #
+3724 Inscribed %s!#
+3725 You trace over some of the faded text...#
+3726 Select a spellbook
+to repair#
+3727 Your %s is depleted!#
+3728 Your %s depletes before you can complete 
+ the inscription!#
+3729 Your %s begins to fade.#
+3730 Your %s gets charged up!#
+3731 You have no items able to be charged!#
+3732 Charge Item#
+3733 Your shot glances off the %s!#
+3734 Your shot glances off %s!#
+3735 The %s's demons have already been exorcised!#
+3736 %s's demons have already been exorcised!#
+3737 Your demeanor improves!#
+3738 a %+2d #
+3739 Your arrow sets the %s on fire!#
+3740 Your arrow sets %s on fire!#
+3741 You are set on fire by a flaming arrow!#
+3742 You are knocked back by a flying arrow!#
+3743 Your silver arrow smites the %s!#
+3744 Your silver arrow smites %s!#
+3745 You are smited by a silver arrow!#
+3746 Your %s returns!#
+3747 The %s is sedated by the arrow!#
+3748 %s is sedated by the arrow!#
+3749 You are sedated by a hunting arrow!#
+3750 Your hunting arrow plunges into the %s!#
+3751 Your hunting arrow plunges into %s!#
+3752 A hunting arrow plunges into your flesh!#
+3753 The bloodshed energizes you!#
+3754 Dyrnwyn smites the %s!#
+3755 Dyrnwyn smites %s!#
+3756 Dyrnwyn ignites the %s!#
+3757 Dyrnwyn ignites %s!#
+3758 Parashu critically strikes the %s!#
+3759 Parashu critically strikes %s!#
+3760 Gungnir pierced the %s's armor!#
+3761 Gungnir pierced %s's armor!#
+3762 A quiver suddenly appears before you!#
+3763 a #
+3764 Flutter#
+3765 Dash#
+3766 Flutter
+Levitating for a short duration#
+3767 Your wings part your feet with the floor!#
+3768 EN#
+3769 Your noisemaker needs rewinding!#
+3770 Your noisemaker breaks!#
+
+3771 You arrive outside the Hamlet mines and watch the cursed blackness peel away
+from the land. Warm sunlight flows over the countryside. As the doors of the
+mine open wide, people carefully spread into the streets, acclimating to
+their freedom.#
+3772 
+
+
+
+
+
+You rush to nearby buildings, looking for a place to hide and figure out your
+next move. There are too many humans and the sun is too bright for your liking.#
+3773 
+
+
+
+
+
+
+
+
+You break your way into what appears to be an inn. You spend the night under
+the sheets of a comfortable bed while the sounds of revelry surround you.#
+3774 
+
+
+
+
+
+
+
+
+
+
+
+
+
+Luckily you avoid detection. As humans party through the hostel you hear of
+a power even greater than Herx's, said to be held in the Magician's Guild.#
+3775 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A trapdoor in the bunkroom leads to a sewer. You wait for the humans to leave.#
+
+3776 Hacking your way through every demon in your path, you leap through the
+portal without a moment's hesitation. No entity, mortal or immortal, can
+challenge your power.#
+3777 
+
+
+
+Suddenly, you find yourself standing wearily in an endless white hall dotted
+with enormous pillars that stretch higher than you can see. The smell of
+blood is thick on your breath, but you suspect more will need to be spilled.#
+3778 
+
+
+
+
+
+
+
+
+Can this supernatural place compete with Minotaurs, Demons; Baphomet himself?
+You sense a great magic flow into the room. You are unnerved. A voice booms:#
+3779 
+
+
+
+
+
+
+
+
+
+
+
+"We have witnessed your strength and lust for power. You were not expected here.
+We are however impressed by your ferocity and focus. We ask you consider this
+proposition, mighty one..."#
+3780 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+As the voice addresses you, you find you are tempted by its words. It speaks
+of a power greater than Herx, or Baphomet. It claims that it is greater than
+you. The prospect of a competitor shall not stand.#
+3781 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+You find yourself standing inside a Hamlet inn, its denizens too drunk or 
+weary to notice you at first. You steal yourself into a backroom; a trapdoor
+leads to a sewer. A great magic from beyond there beckons you.#
+
+3782 Hacking your way through every demon in your path, you leap through the
+portal without a moment's hesitation. No entity, mortal or immortal, can
+challenge your power.#
+3783 
+
+
+
+Suddenly, you find yourself standing wearily in an endless white hall dotted
+with enormous pillars that stretch higher than you can see. Have you not
+defeated the source of Herx's vile power? You wonder what danger now awaits.#
+3784 
+
+
+
+
+
+
+
+
+A sense of peace overwhelms and refreshes you. You know that Herx's power has
+been removed. But Baphomet was just one devil. A voice comforts you:#
+3785 
+
+
+
+
+
+
+
+
+
+
+
+"The lich Herx has become dust, but cleverer foes draw upon hellish evil.
+Hamlet is free for now, but the world is not safe. In times such as these
+a mighty one must tip the scales. We have a proposition for you..."#
+3786 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+As the voice addresses you, you find yourself either unwilling or unable to
+reject what it tells you. You find your physical form shifting back into the
+mortal realm. "You must sever evil from Hamlet or there will be no peace."#
+3787 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+With renewed courage, you find yourself standing in Hamlet. Evidence of a
+massive party flows from the gates of the mines, now open, to a nearby hostel.
+You know the Magician's Guild will aid you in your quest.#
+
+3788 Victorious, you step into the portal. You know not what to expect, but 
+are awash with delight. You expect that the source of the Baron's power 
+is now within your reach.#
+
+3789 
+
+
+
+
+Before you have time to think, you are suddenly standing before the mines 
+once more. But something is different; the seductive power you sensed here 
+is further away. The black skies are clearing to show the light of day.#
+
+3790 
+
+
+
+
+
+
+
+
+
+Suddenly, the doors to the mine open wide. Sealed for centuries to contain 
+the evil within, they swing out from the inside, as a hundred grateful humans 
+rush out. It appears the Baron's power slipped through your grasp.#
+
+3791 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+The hellish source of that dark power remains a mystery to you, and some
+eavedropping from the shadows leads you to believe that the Magician's Guild
+may have a lead on some dark magic. For now, you resolve to leave this land
+and return another time to exploit the secrets of Hamlet.#
+
+3792 Hacking your way through every demon in your path, you leap through the
+portal without a moment's hesitation. It seems no entity, mortal or 
+immortal, can challenge your power.#
+3793 
+
+
+
+Suddenly, you find yourself standing wearily in an endless white hall dotted
+with enormous pillars that stretch higher than you can see. The smell of
+blood is thick on your breath, but you suspect more will need to be spilled.#
+3794 
+
+
+
+
+
+
+
+
+Can this supernatural place compete with Minotaurs, Demons; Baphomet himself?
+You sense a great magic flow into the room. You are unnerved. A voice booms:#
+3795 
+
+
+
+
+
+
+
+
+
+
+
+"We have witnessed your strength and lust for power. You were not expected here.
+We are however impressed by your ferocity and focus. We ask you consider this
+proposition, mighty one..."#
+3796 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+As the voice addresses you, you find yourself either unwilling or unable to
+reject what it tells you. Eventually, there is an inexplicable shift in your
+physical being, and you feel yourself fading away...#
+3797 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+You sense the supreme power of a great mind as you fade from the mortal world. 
+The first age comes to a close, and the age of chaos begins. You are sure that
+your time is emminent and your purpose will be fulfilled.#
+
+3798 Through the portal, a weak magic tugs you from the Citadel. Your feet 
+hover over the floor as it shakes violently. Pipes and pistons crash down 
+in a muffled racket. Your inputs are dulled and you observe the transferrence
+of your consciousness.#
+3799 
+
+
+
+
+
+
+
+It seems demonic evil has been destroyed, at least, as far as Hamlet knows.#
+3800 
+
+
+
+
+
+
+
+
+
+
+
+
+You consider its citizens are lucky to have you. They could not have survived
+without you, but alas, you would never have been invented without them.#
+3801 Your systems are nominal. You stand with a wizard and bishop. Their
+faces open into expressions of surprise.#
+3802 
+
+
+
+They are shocked to see that a humble slave, a servant... an automaton has
+rescued them from supernatural evil. Is your inhuman nature the reason?#
+3803 
+
+
+
+
+
+
+
+
+The guilds and the churches agree, there is no more perfect arbiter for the
+well being of humans. You are entrusted with the tasks of law, assumed to
+have perfect objectivity as the new Baron. Your rulings are infallible.#
+3804 
+
+
+
+
+
+
+
+
+
+
+
+
+
+But is that so? What is it that makes you conscious? You lead Hamlet to
+its former glory. But you think some problems may require more power.#
+3805 Through the portal, a weak magic tugs you from the Citadel. Your feet 
+hover over the floor as it shakes violently. Pipes and pistons crash down 
+in a muffled racket. You clench your eyes knowing magic holds you tight.
+You grimly await what it offers.#
+3806 
+
+
+
+
+
+
+
+If the liches gained their powers from devils, what does that make you
+who ended them? Is it now yours to bear? What use was it to them?#
+3807 
+
+
+
+
+
+
+
+
+
+
+
+
+It seems you got what you came here for, though not in the way you
+anticipated. Power cannot just be held, it must be used.#
+3808 You open your eyes and find yourself standing with two mortals. 
+They cower in your presence. You command them to bow before you.#
+3809 
+
+
+
+Through demonic magic, you bind their souls hostage in servitude, using
+their influence to bend factions to your secret purpose.#
+3810 
+
+
+
+
+
+
+
+
+The following years are not easy for the surface world. Eventually they learn
+that joy and glory is found in strength. You slaughter all who oppose you.
+Eventually they embrace your nature. The humans bear your banner.#
+3811 
+
+
+
+
+
+
+
+
+
+
+
+
+
+Can any empire challenge what you've built? Prophets teach that the
+human spirit is stronger than anything. You fear that power is real.#
+
+3812 Through the portal, a weak magic tugs you from the Citadel. Your feet 
+hover over the floor as it shakes violently. Pipes and pistons crash down
+in a muffled racket. You try to shake your terror and close your eyes.#
+3813 
+
+
+
+
+
+
+
+What have you to be afraid of? You have defeated mighty, evil masters.
+Who can challenge your people now?#
+3814 
+
+
+
+
+
+
+
+
+
+
+
+
+You fear nothing. No, it is others who should fear you. A moment of clarity
+causes you to wonder if fear is what you want from others.#
+
+3815 You open your eyes, standing in The Magician's Guild with a wizard and bishop. 
+Their faces are confused, but they await your reaction with patient wonder.#
+3816 
+
+
+
+You suspect things may've gone differently if wiser men had not awaited you.
+They recognized your heroism and offered gratitude for your deeds. Are these
+the same people who murdered your kind so recently?#
+3817 
+
+
+
+
+
+
+
+
+
+Though shaky at first, your peoples build an alliance toward peace.#
+3818 
+
+
+
+
+
+
+
+
+
+
+
+
+
+Through your example, insectoids, humans, goatmen and goblins embrace courage
+instead of fear. Trade prospers in Hamlet as people belay their lust for power.#
+3819 %s's Epilogue: %s#
+3820 %s's Interlude: %s#
+3821 Human#
+3822 Skeleton#
+3823 Vampire#
+3824 Succubus#
+3825 Goatman#
+3826 Automaton#
+3827 Incubus#
+3828 Goblin#
+3829 Insectoid#
+3830 Epilogue: %s#
+3831 Interlude: %s#
+3832 Now advance when you and your allies are ready!#
+3833 Now wait for your leader to advance onward...#
+
+# new spell tooltips
+3834 Inflicts an instance of [webbed] status
+Webbed targets are slowed and are knocked back
+ by melee strikes
+Each instance (max 3x) increases the effectiveness#
+3835 Grants [speed] status to caster
+ and nearby allies#
+3836 Inflicts [fear] status to all nearby enemies
+Feared targets are unable to attack and draw their
+ focus to the caster#
+3837 Inflicts [magic weakness] status
+Increases magic damage taken from other spells#
+3838 Charges a powerful physical strike that 
+ inflicts 4x ATK damage
+Caster is immobile while charging
+Breaks boulders, doors and walls on impact#
+3839 Reveals food sources left on the current dungeon floor#
+3840 Grants additional HP regeneration for a duration
+ to caster and nearby allies#
+3841 Grants levitation for a brief duration#
+3842 Propels the caster in their current moving direction
+Instantly breaks doors on impact
+Performs a backwards leap if stationary#
+3843 Marks a target with an arcane seal
+Nullifies innate damage resistances and weaknesses
+Teleportation magic is refocused around marked targets#
+3844 Teleports a target towards the caster
+Disorients the target for a duration proportional
+ to the distance travelled#
+3845 Exorcises an inner demon that provokes a target
+Damage dealt to the demon is returned to the attacker
+The caster's current stats are imbued into the demon#
+3846 Transmutes nearby items on the ground into metal
+ and magical scrap for crafting#
+3847 Shapeshift temporarily into a rat
+Grants bonus DEX, INT and PER while active#
+3848 Shapeshift temporarily into a spider
+Grants bonus STR, CON and PER while active#
+3849 Shapeshift temporarily into a troll
+Grants bonus STR and CON, lowers DEX while active#
+3850 Shapeshift temporarily into a flying imp
+Grants bonus INT and PER while active#
+3851 Removes active shapeshift effects from the caster#
+3852 Augments Fire, Cold, Lightning and Magic Missile spells
+ with increased damage and reduced range while sustained#
+3853 Cost: %d MP + 10%% Max HP#
+3854 Rat Form
++ DEX/INT/PER
+Higher chance to gain DEX/INT on level up
+Access to spells [Detect Food] and [Speed]#
+3855 Troll Form
++ STR/CON
+- DEX
+Higher chance to gain STR/CON on level up
+Access to spells [Power Strike], [Fear] and [Troll's Blood]#
+3856 Spider Form
++ PER/STR/CON
+Higher chance to gain PER/CON on level up
+Access to spells [Spray Web] and [Poison]#
+3857 Imp Form
+Provides levitation
++ INT/PER
+Higher chance to gain INT/DEX on level up
+Access to spells [Lightning], [Confuse] and [Elemental Focus]#
+3858 Arcane Mark (Active on %s)
+Nullifies damage resistances/weaknesses on target   
+Teleportation spells are refocused to target#
+3859 Webbed
+Reduced movement speed
+Knocked back when receiving melee strikes#
+3860 Elemental Focus
+Increased damage and shorter range when casting
+ [Fire], [Cold], [Lightning] or [Magic Missile] spells#
+3861 Fear
+Unable to attack#
+
+3862 labelled #
+3863 You can't read the spellbook while blind!#
+3864 diets for a little too long.#
+3865 The gyrobot loosens the firing spring.#
+3866 The gyrobot tightens the firing spring as far as it will go.#
+3867 The gyrobot begins tightening the firing spring...#
+3868 Your gyrobot isn't holding anything to drop.#
+3869 You manage to catch yourself before you fall!#
+
+3870 This trap has already been disarmed.#
+3871 Your lockpick fails to disarm the trap!#
+3872 You successfully disable the trap!#
+3873 This trap has already been emptied!#
+3874 You can't eat that while brandishing it!#
+3875 The pie hits the %s!
+ *SPLAT*#
+3876 The pie hits %s!
+ *SPLAT*#
+3877 You are hit by a flying pie!
+ *SPLAT*#
+3878 The %s is blinded!#
+3879 %s is blinded!#
+3880 Your %s ally is already fully rested.#
+3881 Your %s ally awakens fully rested.#
+3882 You hear footsteps drawn towards your noisemaker!#
+3883 You are unable to deploy any more tinkering machines with your current skill!#
+3884 You are unable to deploy any more tinkering machines.#
+3885 Polymorph#
+3886 Polymorphs the caster into a different creature for a duration
+Non-humans are always polymorphed into a human#
+3887 You are not skilled enough to empty the trap.#
+3888 The %s says: Oh! I must pay a visit to the goldsmith with this jewel!
+ Though I'm not sure if green is really my color.#
+3889 The %s says: Hmm. They say these were artificed from centuries of knowledge.
+ Would you believe most wizards lose their marbles?#
+3890 The %s says: Aha! A magnificent crimson specimen... if slightly damp.
+ Have you been jogging with this?#
+3891 %s has no use for that.#
+3892 The %s has no use for that.#
+3893 Hm. You've made the right
+choice dealing with me.#
+3894 Locally sourced for my
+newest customer.#
+3895 I trust you'll appreciate
+my fine wares.#
+3896 I'm not interested in that.#
+3897 You spot a hidden compartment inside the chest!#
+3898 fails to dodge the incoming flaming boulder.#
+3899 fails to dodge the incoming arcane boulder.#
+3900 You can't place that there!#
+
+# More keybinds
+3901 Hotbar Scroll Left#
+3902 Hotbar Scroll Right#
+3903 Hotbar Select#
+3904 #
+3905 #
+3906 #
+3907 #
+3908 #
+3909 #
+
+3910 Remove thy garment
+before we deal!#
+3911 Sheathe thy weapon
+before we deal!#
+3912 Stow away thy tool
+before we deal!#
+3913 Unhand thy potion
+before we deal!#
+3914 Unwield thy jewels
+before we deal!#
+3915 Set down thy parchment
+before we deal!#
+3916 Unhand thy lunch
+before we deal!#
+3917 Locked - Legends & Pariahs DLC Required!
+Left click to view on the store page.#
+3918 disable mouse rotation speed limit#
+3919 Return To Main Menu#
+3920
+        Are you sure to want to
+        return to the main menu?
+
+     Progress has been saved at the
+       start of the current level.#
+3921 Ranger-mode active, only non-melee weapons are allowed to attack!#
+3922 Ranger-mode deactivated, all weapons permitted.#
+3923 This weapon is disabled in Ranger-mode!#
+3924 Player savefile is not eligible for Ranger Achievement. Restart game to reset.#
+3925 Ranger-mode disabled for client %d.#
+3926 Ranger-mode enabled for client %d.#
+
+3927 Unlock achievement "Bony Baron" to unlock this class for every race!#
+3928 Unlock achievement "Bucktooth Baron" to unlock this class for every race!#
+3929 Unlock achievement "Bombshell Baron" to unlock this class for every race!#
+3930 Unlock achievement "Bleating Baron" to unlock this class for every race!#
+3931 Unlock achievement "Boilerplate Baron" to unlock this class for every race!#
+3932 Unlock achievement "Bad Boy Baron" to unlock this class for every race!#
+3933 Unlock achievement "Bayou Baron" to unlock this class for every race!#
+3934 Unlock achievement "Buggar Baron" to unlock this class for every race!#
+3935 borderless#
+3936 Welcome to Barony!#
+3937 Logging in, please wait#
+3938 When logging in for the first time, check your browser#
+3939 to enable account integration with Barony.#
+3940 Account integration is required to use Barony.#
+3941 A login error has occurred (%d). Please retry.#
+3942 Account integration has been denied. Please restart Barony to retry.#
+3943 (Steamworks)#
+3944 (Crossplay)#
+3945 Join a multiplayer game hosted by Steamworks or crossplay services.#
+3946 Host a multiplayer game using Steamworks.#
+3947 Host a multiplayer game using crossplay services.#
+3948 enable crossplay#
+3950  Filters #
+3951 Filters in use#
+3952 Filters disabled#
+3953 Filtered Search#
+3954 Search by lobby code:#
+3955 Show in-progress
+crossplay lobbies: [%c]#
+3956    Are you sure you want to
+  restart the current trial?#
+3957 Restart Trial#
+3958 Return to Hall of Trials#
+3959 Quit To Main Menu#
+3960    Are you sure you want to
+  exit the current trial and
+ return to the Hall of Trials?#
+3961    Are you sure you want to
+   return to the main menu?#
+3962 
+Changing this gameflag is disabled in current game mode.#
+3963 Achievements are disabled for current gamemode#
+3964 Hall of Trials#
+3965 Go to the Tutorial Trials#
+3966 Skip for now#
+3967                    Barony is a challenging game!                    #
+3968 
+             Would you like to go to the Hall of Trials
+                       to learn a few things?
+
+            You can always go back to the Hall of Trials
+                      later from the Main Menu.#
+3969 Restart Map#
+3970    Are you sure you want to
+   reset the Hall of Trials
+  map to its original state?#
+3971 Achievements#
+3972 Ambient Sound Volume#
+3973 Environment Sound Volume#
+3974 The boulder cannot be moved that way.#
+3975 
+
+ Enabling Crossplay allows joining and hosting of multiplayer lobbies
+  between different distributions of Barony without port forwarding.
+
+         For more information, click "About Crossplay" below.
+
+
+      By clicking accept, you agree to share your public Steam ID 
+    and display name with Barony and associated Crossplay services.#
+3976 Accept and Enable Crossplay#
+3977 Cancel Setup#
+3978 View Privacy Policy#
+3979                       Crossplay First-Time Setup#
+3980 About Crossplay
+
+           Barony uses Epic Online Services to facilitate Crossplay,
+           and will create a unique Crossplay ID within Barony that 
+              corresponds to your public facing Steam account ID.
+
+
+      Your public Steam account ID and display name will be shared with
+    the service and other players when using Crossplay features in Barony.
+      No third party account is required or created when using Crossplay.
+
+    Click "View Privacy Policy" below to see how Barony handles your data.#
+3981 
+                        Services In Use For Crossplay
+
+
+
+
+                            Data That You Provide#
+3982 Return to Setup#
+3983 About Crossplay#
+3984 https://www.epicgames.com/store/en-US/product/barony/myths-and-outcasts#
+3985 https://www.epicgames.com/store/en-US/product/barony/legends-and-pariahs#
+3986
+       Are you sure you want to disconnect
+           and return to the main menu?
+    
+     As the rest of your party has perished,
+  save data for this session has been deleted.
+
+ NOTE: 
+     This will disconnect all party members.#
+3987 Quit To Desktop#
+3988
+         Are you sure you want
+          to quit to desktop?
+
+       As you have perished, your
+       save file will be deleted.#
+3989
+              Are you sure you want
+               to quit to desktop?
+
+    As the rest of your party has perished,
+  save data for this session has been deleted.#
+3990
+            Are you sure you
+         want to end this game?
+
+    Saving on this floor is disabled,
+   exiting will delete your save file.#
+3991
+            Are you sure you
+        want to quit to desktop?
+
+    Saving on this floor is disabled,
+   exiting will delete your save file.#
+3992 https://store.steampowered.com/app/1010820/Barony_Myths__Outcasts/#
+3993 https://store.steampowered.com/app/1010821/Barony_Legends__Pariahs/#
+3994 Crossplay search not enabled#
+3999 end#

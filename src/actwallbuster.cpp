@@ -16,6 +16,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "paths.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -45,7 +46,7 @@ void actWallBuster(Entity* my)
 		spawnExplosion(my->x, my->y, my->z - 8);
 		if ( multiplayer == SERVER )
 		{
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
 				if ( client_disconnected[c] == true )
 				{
@@ -60,6 +61,7 @@ void actWallBuster(Entity* my)
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
+		generatePathMaps();
 		list_RemoveNode(my->mynode);
 	}
 }
@@ -76,13 +78,59 @@ void actWallBuilder(Entity* my)
 	// received on signal
 	if ( my->skill[28] == 2)
 	{
+		bool somebodyinside = false;
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
+		{
+			list_t* currentList = *it;
+			for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1 || (entity->behavior != &actMonster && entity->behavior != &actPlayer) )
+				{
+					continue;
+				}
+				if ( my->x + 8 > entity->x - entity->sizex )
+				{
+					if ( my->x - 8 < entity->x + entity->sizex )
+					{
+						if ( my->y + 8 > entity->y - entity->sizey )
+						{
+							if ( my->y - 8 < entity->y + entity->sizey )
+							{
+								somebodyinside = true;
+								if ( entity->behavior == &actMonster )
+								{
+									if ( !strncmp(map.name, "Sanctum", 7)
+										|| !strncmp(map.name, "Boss", 4) )
+									{
+										// on boss maps let monsters get stuck
+										somebodyinside = false;
+									}
+								}
+								if ( somebodyinside )
+								{
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if ( somebodyinside )
+		{
+			return;
+		}
+
 		playSoundEntity( my, 182, 64 );
 		Uint16 x = std::min<Uint16>(std::max<int>(0.0, my->x / 16), map.width - 1);
 		Uint16 y = std::min<Uint16>(std::max<int>(0.0, my->y / 16), map.height - 1);
 		map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] = map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height];
 		if ( multiplayer == SERVER )
 		{
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
 				if ( client_disconnected[c] == true )
 				{

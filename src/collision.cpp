@@ -50,12 +50,12 @@ real_t entityDist(Entity* my, Entity* your)
 
 -------------------------------------------------------------------------------*/
 
-Entity* entityClicked()
+Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 {
 	Uint32 uidnum;
 	GLubyte pixel[4];
 
-	if ( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
+	if ( !clickCheckOverride && !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
 	{
 		return NULL;
 	}
@@ -63,25 +63,45 @@ Entity* entityClicked()
 	{
 		if ( itemMenuOpen )
 		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
 			return NULL;
 		}
-		if ( omousex < camera.winx || omousex >= camera.winx + camera.winw || omousey < camera.winy || omousey >= camera.winy + camera.winh )
+		if ( omousex < 0 || omousex >= 0 + xres || omousey < 0 || omousey >= 0 + yres )
 		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
 			return NULL;
 		}
 		if (openedChest[clientnum])
 			if (omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
 			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;    //Click falls inside the chest inventory GUI.
 			}
 		if (identifygui_active)
 			if (omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h)
 			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;    //Click falls inside the identify item gui.
 			}
 		if (book_open)
 			if (mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h))
 			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;    //Click falls inside the book GUI.
 			}
 		if (gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP)
@@ -89,6 +109,10 @@ Entity* entityClicked()
 			if ( gui_mode == GUI_MODE_INVENTORY )
 				if (mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height))
 				{
+					if ( clickedOnGUI )
+					{
+						*clickedOnGUI = true;
+					}
 					return NULL;    //Click falls inside the right sidebar.
 				}
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
@@ -97,6 +121,10 @@ Entity* entityClicked()
 			if ( mouseInBounds(INVENTORY_STARTX, INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE, INVENTORY_STARTY, INVENTORY_STARTY + INVENTORY_SIZEY * INVENTORY_SLOTSIZE) )
 			{
 				// clicked in inventory
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;
 			}
 			if ( gui_mode == GUI_MODE_SHOP )
@@ -105,6 +133,10 @@ Entity* entityClicked()
 				int y1 = yres / 2 - SHOPWINDOW_SIZEY / 2, y2 = yres / 2 + SHOPWINDOW_SIZEY / 2;
 				if (mouseInBounds(x1, x2, y1, y2))
 				{
+					if ( clickedOnGUI )
+					{
+						*clickedOnGUI = true;
+					}
 					return NULL;
 				}
 			}
@@ -121,55 +153,208 @@ Entity* entityClicked()
 				{
 					numspells++;
 				}
-				int maxSpellsOnscreen = camera.winh / spell_list_gui_slot_bmp->h;
+				int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
 				numspells = std::min(numspells, maxSpellsOnscreen);
 				height += numspells * spell_list_gui_slot_bmp->h;
-				int spelllist_y = camera.winy + ((camera.winh / 2) - (height / 2)) + magicspell_list_offset_x;
+				int spelllist_y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
 
 				if (mouseInBounds(MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
 				{
+					if ( clickedOnGUI )
+					{
+						*clickedOnGUI = true;
+					}
 					return NULL;
 				}
 			}
 		}
-		if (mouseInBounds(0, 224, 0, 420))   // character sheet
+		if ( mouseInBounds(interfaceCharacterSheet.x, interfaceCharacterSheet.x + interfaceCharacterSheet.w,
+			interfaceCharacterSheet.y, interfaceCharacterSheet.y + interfaceCharacterSheet.h) )   // character sheet
 		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
 			return NULL;
 		}
-		int x = xres / 2 - (status_bmp->w / 2);
-		if (mouseInBounds(x, x + status_bmp->w, yres - status_bmp->h, yres))
+
+		if ( !hide_statusbar &&
+			mouseInBounds(interfaceMessageStatusBar.x, interfaceMessageStatusBar.x + interfaceMessageStatusBar.w,
+				interfaceMessageStatusBar.y, interfaceMessageStatusBar.y + interfaceMessageStatusBar.h) ) // bottom message log
 		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
 			return NULL;
 		}
-		*inputPressed(impulses[IN_USE]) = 0;
-		*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+
+		// ui code taken from drawSkillsSheet() and drawPartySheet().
+		if ( proficienciesPage == 0 )
+		{
+			if ( mouseInBounds(interfaceSkillsSheet.x, interfaceSkillsSheet.x + interfaceSkillsSheet.w,
+				interfaceSkillsSheet.y, interfaceSkillsSheet.y + interfaceSkillsSheet.h) )
+			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
+				return NULL;
+			}
+		}
+		else
+		{
+			if ( mouseInBounds(interfacePartySheet.x, interfacePartySheet.x + interfacePartySheet.w,
+				interfacePartySheet.y, interfacePartySheet.y + interfacePartySheet.h) )
+			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
+				return NULL;
+			}
+		}
+
+		if ( mouseInsidePlayerInventory() || mouseInsidePlayerHotbar() )
+		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
+			return NULL;
+		}
+
 		if ( softwaremode )
 		{
 			return clickmap[omousey + omousex * yres];
 		}
 		else
 		{
-			uidnum = GO_GetPixelU32(omousex, yres - omousey);
+			uidnum = GO_GetPixelU32(omousex, yres - omousey, cameras[player]);
 		}
 	}
 	else
 	{
-		*inputPressed(impulses[IN_USE]) = 0;
-		*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
 		if ( softwaremode )
 		{
 			return clickmap[(yres / 2) + (xres / 2) * yres];
 		}
 		else
 		{
-			uidnum = GO_GetPixelU32(xres / 2, yres / 2);
+			uidnum = GO_GetPixelU32(xres / 2, yres / 2, cameras[player]);
+		}
+	}
+
+	Entity* entity = uidToEntity(uidnum);
+
+	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride )
+	{
+		if ( players[clientnum] && players[clientnum]->entity && monsterEmoteGimpTimer == 0 )
+		{
+			monsterEmoteGimpTimer = TICKS_PER_SECOND * 5;
+			int sfx = 0;
+			int line = 0;
+			switch ( stats[clientnum]->type )
+			{
+				case SKELETON:
+					sfx = 95;
+					monsterEmoteGimpTimer = TICKS_PER_SECOND;
+					break;
+				case SUCCUBUS:
+					sfx = 70;
+					break;
+				case VAMPIRE:
+					if ( rand() % 4 == 0 )
+					{
+						sfx = 329;
+					}
+					else
+					{
+						sfx = 322 + rand() % 3;
+					}
+					break;
+				case GOATMAN:
+					sfx = 332 + rand() % 2;
+					break;
+				case INSECTOID:
+					sfx = 291 + rand() % 4;
+					break;
+				case GOBLIN:
+					sfx = 60 + rand() % 3;
+					break;
+				case AUTOMATON:
+					sfx = 257 + rand() % 2;
+					break;
+				case INCUBUS:
+					sfx = 276 + rand() % 3;
+					break;
+				case RAT:
+					sfx = 29;
+					break;
+				case TROLL:
+					if ( rand() % 3 == 0 )
+					{
+						sfx = 79;
+					}
+					break;
+				case SPIDER:
+					if ( rand() % 3 == 2 )
+					{
+						sfx = 235;
+					}
+					else
+					{
+						sfx = 230 + rand() % 2;
+					}
+					break;
+				case CREATURE_IMP:
+					sfx = 198 + rand() % 3;
+					break;
+				default:
+					sfx = 0;
+					break;
+			}
+
+			//Tell the server we made a noise.
+			if ( sfx != 0 )
+			{
+				if ( multiplayer == CLIENT )
+				{
+					playSound(sfx, 92);
+					strcpy((char*)net_packet->data, "EMOT");
+					net_packet->data[4] = clientnum;
+					SDLNet_Write16(sfx, &net_packet->data[5]);
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 7;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+				else if ( multiplayer != CLIENT )
+				{
+					playSound(sfx, 92);
+					for ( int c = 1; c < MAXPLAYERS; ++c )
+					{
+						if ( !client_disconnected[c] )
+						{
+							strcpy((char*)net_packet->data, "SNEL");
+							SDLNet_Write16(sfx, &net_packet->data[4]);
+							SDLNet_Write32((Uint32)players[clientnum]->entity->getUID(), &net_packet->data[6]);
+							SDLNet_Write16(92, &net_packet->data[10]);
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->len = 12;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						}
+					}
+				}
+			}
 		}
 	}
 
 	// pixel processing (opengl only)
 	if ( softwaremode == false)
 	{
-		return uidToEntity(uidnum);
+		return entity;
 	}
 	else
 	{
@@ -185,7 +370,7 @@ Entity* entityClicked()
 
 -------------------------------------------------------------------------------*/
 
-bool entityInsideTile(Entity* entity, int x, int y, int z)
+bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 {
 	if ( x < 0 || x >= map.width || y < 0 || y >= map.height || z < 0 || z >= MAPLAYERS )
 	{
@@ -208,7 +393,11 @@ bool entityInsideTile(Entity* entity, int x, int y, int z)
 					}
 					else if ( z == 0 )
 					{
-						if ( !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+						if ( !checkSafeTiles && !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+						{
+							return true;
+						}
+						else if ( checkSafeTiles && map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
 							return true;
 						}
@@ -218,7 +407,8 @@ bool entityInsideTile(Entity* entity, int x, int y, int z)
 							{
 								isMonster = true;
 							}
-						if ( animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster )
+						if ( (swimmingtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+							&& isMonster )
 						{
 							return true;
 						}
@@ -278,23 +468,30 @@ bool entityInsideSomething(Entity* entity)
 	y = (long)floor(entity->y / 16);
 	#endif
 	// test against the map
-	for ( z = 0; z < MAPLAYERS; z++ )
+	for ( z = 0; z < MAPLAYERS; ++z )
+	{
 		if ( entityInsideTile(entity, x, y, z) )
 		{
 			return true;
 		}
+	}
 
 	// test against entities
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(entity, 2);
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
-		Entity* testEntity = (Entity*)node->element;
-		if ( testEntity == entity || testEntity->flags[PASSABLE] )
+		list_t* currentList = *it;
+		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
-			continue;
-		}
-		if ( entityInsideEntity(entity, testEntity) )
-		{
-			return true;
+			Entity* testEntity = (Entity*)node->element;
+			if ( testEntity == entity || testEntity->flags[PASSABLE] )
+			{
+				continue;
+			}
+			if ( entityInsideEntity(entity, testEntity) )
+			{
+				return true;
+			}
 		}
 	}
 
@@ -330,37 +527,30 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	// moved static stuff outside of the loop
 	if ( stats )
 	{
-		if ( stats->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( stats->ring != NULL )
-			if ( stats->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if ( stats->shoes != NULL )
-			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		levitating = isLevitating(stats);
 	}
 	bool isMonster = false;
 	if ( my )
+	{
 		if ( my->behavior == &actMonster )
 		{
 			isMonster = true;
 		}
+	}
 	if ( isMonster && multiplayer == CLIENT )
-		if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
+	{
+		if ( my->sprite == 289 || my->sprite == 274 || my->sprite == 413 )   // imp and lich and cockatrice
 		{
 			levitating = true;
 		}
+	}
 	if ( my )
+	{
 		if ( my->behavior != &actPlayer && my->behavior != &actMonster )
 		{
 			levitating = true;
 		}
+	}
 
 	long ymin = floor((ty - my->sizey)/16), ymax = floor((ty + my->sizey)/16);
 	long xmin = floor((tx - my->sizex)/16), xmax = floor((tx + my->sizex)/16);
@@ -383,7 +573,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					return 0;
 				}
 	
-				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] || (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster)) )
+				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] 
+					|| ((swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+						&& isMonster)) )
 				{
 					// no floor
 					hit.x = x * 16 + 8;
@@ -396,120 +588,193 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 		}
 	}
-	for (node = map.entities->first; node != NULL; node = node->next)
+	std::vector<list_t*> entLists;
+	if ( multiplayer == CLIENT )
 	{
-		entity = (Entity*)node->element;
-		if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->getUID() )
+		entLists.push_back(map.entities); // clients use old map.entities method
+	}
+	else
+	{
+		entLists = TileEntityList.getEntitiesWithinRadius(static_cast<int>(tx) >> 4, static_cast<int>(ty) >> 4, 2);
+	}
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+	{
+		list_t* currentList = *it;
+		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
-			continue;
-		}
-		if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame )
-		{
-			continue;    // monsters don't have hard collision with door frames
-		}
-		Stat* myStats = stats; //my->getStats();	//SEB <<<
-		Stat* yourStats = entity->getStats();
-		if ( myStats && yourStats )
-		{
-			if ( yourStats->leader_uid == my->getUID() )
+			entity = (Entity*)node->element;
+			if ( entity == my || my->parent == entity->getUID() )
 			{
 				continue;
 			}
-			if ( myStats->leader_uid == entity->getUID() )
+			if ( entity->flags[PASSABLE] )
 			{
-				continue;
-			}
-			if ( monsterally[myStats->type][yourStats->type] )
-			{
-				continue;
-			}
-			if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
-			{
-				continue;
-			}
-		}
-		if ( multiplayer == CLIENT )
-		{
-			// fixes bug where clients can't move through humans
-			if ( (entity->sprite >= 113 && entity->sprite < 118) ||
-					(entity->sprite >= 125 && entity->sprite < 130) ||
-					(entity->sprite >= 332 && entity->sprite < 334) ||
-					(entity->sprite >= 341 && entity->sprite < 347) ||
-					(entity->sprite >= 354 && entity->sprite < 360) ||
-					(entity->sprite >= 367 && entity->sprite < 373) ||
-					(entity->sprite >= 380 && entity->sprite < 386) ||
-					entity->sprite == 217 )   // human heads
-			{
-				continue;
-			}
-			else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] )
-			{
-				continue; // fix clients not being able to walk through friendly monsters
-			}
-		}
-		const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
-		const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
-		if( (entity->sizex>0) && ((txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax)) )
-		{
-			if( (entity->sizey>0) && ((tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax)) )
-			{
-				tx2 = std::max(txmin, exmin);
-				ty2 = std::max(tymin, eymin);
-				hit.x = tx2;
-				hit.y = ty2;
-				hit.mapx = entity->x / 16;
-				hit.mapy = entity->y / 16;
-				hit.entity = entity;
-				if ( multiplayer != CLIENT )
+				if ( my->behavior == &actBoulder && entity->sprite == 886 )
 				{
-					if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
+					// 886 is gyrobot, as they are passable, force collision here.
+				}
+				else
+				{
+					continue;
+				}
+			}
+			if ( entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
+			{
+				continue;
+			}
+			if ( (my->behavior == &actMonster || my->behavior == &actBoulder) && entity->behavior == &actDoorFrame )
+			{
+				continue;    // monsters don't have hard collision with door frames
+			}
+			Stat* myStats = stats; //my->getStats();	//SEB <<<
+			Stat* yourStats = entity->getStats();
+			if ( my->behavior == &actPlayer && entity->behavior == &actPlayer )
+			{
+				continue;
+			}
+			if ( myStats && yourStats )
+			{
+				if ( yourStats->leader_uid == my->getUID() )
+				{
+					continue;
+				}
+				if ( myStats->leader_uid == entity->getUID() )
+				{
+					continue;
+				}
+				if ( entity->behavior == &actMonster && yourStats->type == NOTHING && multiplayer == CLIENT )
+				{
+					// client doesn't know about the type of the monster.
+					yourStats->type = static_cast<Monster>(entity->getMonsterTypeFromSprite());
+				}
+				if ( monsterally[myStats->type][yourStats->type] )
+				{
+					if ( my->behavior == &actPlayer && myStats->type != HUMAN )
 					{
-						bool dyrnwyn = false;
-						Stat* stats = hit.entity->getStats();
-						if ( stats )
-							if ( stats->weapon )
-								if ( stats->weapon->type == ARTIFACT_SWORD )
-								{
-									dyrnwyn = true;
-								}
-						if ( !dyrnwyn )
+						if ( my->checkFriend(entity) )
 						{
-							hit.entity->flags[BURNING] = true;
-							if ( hit.entity->behavior == &actPlayer)
-							{
-								messagePlayer(hit.entity->skill[2], language[590]);
-								if ( hit.entity->skill[2] > 0 )
-								{
-									serverUpdateEntityFlag(hit.entity, BURNING);
-								}
-							}
+							continue;
 						}
 					}
-					else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] )
+					else if ( my->behavior == &actMonster && entity->behavior == &actPlayer )
 					{
-						bool dyrnwyn = false;
-						Stat* stats = my->getStats();
-						if ( stats )
-							if ( stats->weapon )
-								if ( stats->weapon->type == ARTIFACT_SWORD )
-								{
-									dyrnwyn = true;
-								}
-						if ( !dyrnwyn )
+						if ( my->checkFriend(entity) )
 						{
-							my->flags[BURNING] = true;
-							if ( my->behavior == &actPlayer)
-							{
-								messagePlayer(my->skill[2], language[590]);
-								if ( my->skill[2] > 0 )
-								{
-									serverUpdateEntityFlag(my, BURNING);
-								}
-							}
+							continue;
+						}
+					}
+					else
+					{
+						if ( my->behavior == &actPlayer && yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY
+							|| entity->behavior == &actPlayer && myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+						{
+							// forced enemies.
+						}
+						else
+						{
+							continue;
 						}
 					}
 				}
-				return 0;
+				else if ( my->behavior == &actPlayer )
+				{
+					if ( my->checkFriend(entity) )
+					{
+						continue;
+					}
+				}
+				if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
+				{
+					continue;
+				}
+			}
+			if ( multiplayer == CLIENT )
+			{
+				// fixes bug where clients can't move through humans
+				if ( entity->isPlayerHeadSprite() ||
+					entity->sprite == 217 )   // human heads (217 is shopkeep)
+				{
+					continue;
+				}
+				else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] )
+				{
+					continue; // fix clients not being able to walk through friendly monsters
+				}
+			}
+			const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
+			const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
+			if ( (entity->sizex > 0) && ((txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax)) )
+			{
+				if ( (entity->sizey > 0) && ((tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax)) )
+				{
+					tx2 = std::max(txmin, exmin);
+					ty2 = std::max(tymin, eymin);
+					hit.x = tx2;
+					hit.y = ty2;
+					hit.mapx = entity->x / 16;
+					hit.mapy = entity->y / 16;
+					hit.entity = entity;
+					if ( multiplayer != CLIENT )
+					{
+						if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
+						{
+							bool dyrnwyn = false;
+							Stat* stats = hit.entity->getStats();
+							if ( stats )
+							{
+								if ( stats->weapon )
+								{
+									if ( stats->weapon->type == ARTIFACT_SWORD )
+									{
+										dyrnwyn = true;
+									}
+								}
+							}
+							if ( !dyrnwyn )
+							{
+								bool previouslyOnFire = hit.entity->flags[BURNING];
+
+								// Attempt to set the Entity on fire
+								hit.entity->SetEntityOnFire();
+
+								// If the Entity is now on fire, tell them
+								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
+								{
+									messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
+								}
+							}
+						}
+						else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] )
+						{
+							bool dyrnwyn = false;
+							Stat* stats = my->getStats();
+							if ( stats )
+							{
+								if ( stats->weapon )
+								{
+									if ( stats->weapon->type == ARTIFACT_SWORD )
+									{
+										dyrnwyn = true;
+									}
+								}
+							}
+							if ( !dyrnwyn )
+							{
+								bool previouslyOnFire = hit.entity->flags[BURNING];
+
+								// Attempt to set the Entity on fire
+								hit.entity->SetEntityOnFire();
+
+								// If the Entity is now on fire, tell them
+								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
+								{
+									messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
+								}
+							}
+						}
+					}
+					return 0;
+				}
 			}
 		}
 	}
@@ -593,21 +858,87 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		angle += PI * 2;
 	}
 
-	if ( angle >= PI / 2 && angle < PI )
+	int originx = static_cast<int>(my->x) >> 4;
+	int originy = static_cast<int>(my->y) >> 4;
+	std::vector<list_t*> entLists; // stores the possible entities to look through depending on the quadrant.
+	// start search from 1 tile behind facing direction in x/y position, extending to the edge of the map in the facing direction.
+
+	if ( multiplayer == CLIENT )
+	{
+		entLists.push_back(map.entities); // default to old map.entities if client (if they ever call this function...)
+	}
+
+	if ( angle >= PI / 2 && angle < PI ) // -x, +y
 	{
 		quadrant = 1;
+		/*messagePlayer(0, "drawing from x: %d - %d, y: %d- %d", 
+			0,	std::min(static_cast<int>(map.width) - 1, originx + 1),
+			std::max(0, originy - 1), map.height - 1);*/
+
+		if ( multiplayer != CLIENT )
+		{
+			for ( int ix = std::min(static_cast<int>(map.width) - 1, originx + 1); ix >= 0; --ix )
+			{
+				for ( int iy = std::max(0, originy - 1); iy < map.height; ++iy )
+				{
+					entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				}
+			}
+		}
 	}
-	else if ( angle >= 0 && angle < PI / 2 )
+	else if ( angle >= 0 && angle < PI / 2 ) // +x, +y
 	{
 		quadrant = 2;
+		/*messagePlayer(0, "drawing from x: %d - %d, y: %d- %d",
+			std::max(0, originx - 1), map.width - 1,
+			std::max(0, originy - 1), map.height - 1);*/
+
+		if ( multiplayer != CLIENT )
+		{
+			for ( int ix = std::max(0, originx - 1); ix < map.width; ++ix )
+			{
+				for ( int iy = std::max(0, originy - 1); iy < map.height; ++iy )
+				{
+					entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				}
+			}
+		}
 	}
-	else if ( angle >= 3 * (PI / 2) && angle < PI * 2 )
+	else if ( angle >= 3 * (PI / 2) && angle < PI * 2 ) // +x, -y
 	{
 		quadrant = 3;
+		/*messagePlayer(0, "drawing from x: %d - %d, y: %d- %d",
+			std::max(0, originx - 1), map.width - 1,
+			0, std::min(static_cast<int>(map.height) - 1, originy + 1));*/
+
+		if ( multiplayer != CLIENT )
+		{
+			for ( int ix = std::max(0, originx - 1); ix < map.width; ++ix )
+			{
+				for ( int iy = std::min(static_cast<int>(map.height) - 1, originy + 1); iy >= 0; --iy )
+				{
+					entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				}
+			}
+		}
 	}
-	else
+	else // -x, -y
 	{
 		quadrant = 4;
+		/*messagePlayer(0, "drawing from x: %d - %d, y: %d- %d",
+			0, std::min(static_cast<int>(map.width) - 1, originx + 1),
+			0, std::min(static_cast<int>(map.height) - 1, originy + 1));*/
+
+		if ( multiplayer != CLIENT )
+		{
+			for ( int ix = std::min(static_cast<int>(map.width) - 1, originx + 1); ix >= 0; --ix )
+			{
+				for ( int iy = std::min(static_cast<int>(map.height) - 1, originy + 1); iy >= 0; --iy )
+				{
+					entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				}
+			}
+		}
 	}
 
 	bool adjust = false;
@@ -627,109 +958,130 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		}
 	}
 
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	//std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
-		Entity* entity = (Entity*)node->element;
-		if ( (entity != target && target != NULL) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
+		list_t* currentList = *it;
+		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
-			continue;
-		}
-
-		if ( quadrant == 2 || quadrant == 4 )
-		{
-			// upper right and lower left
-			real_t upperX = entity->x + entity->sizex;
-			real_t upperY = entity->y - entity->sizey;
-			real_t lowerX = entity->x - entity->sizex;
-			real_t lowerY = entity->y + entity->sizey;
-			real_t upperTan = atan2(upperY - y1, upperX - x1);
-			real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
-			if ( adjust )
+			Entity* entity = (Entity*)node->element;
+			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my 
+				|| (entities && 
+						( (!entity->flags[BLOCKSIGHT] && entity->behavior != &actMonster) 
+							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE] && entity->sprite != 889) )
+						)
+					) 
+				)
 			{
-				if ( upperTan < 0 )
-				{
-					upperTan += PI * 2;
-				}
-				if ( lowerTan < 0 )
-				{
-					lowerTan += PI * 2;
-				}
+				// if entities == 1, then ignore entities that block sight.
+				// 16/11/19 - added exception to monsters. if monster, use the INVISIBLE flag to skip checking.
+				// 889 is dummybot "invisible" AI entity. so it's invisible, need to make it shown here.
+				continue;
+			}
+			if ( entity->behavior == &actParticleTimer )
+			{
+				continue;
 			}
 
-			// determine whether line intersects entity
-			if ( quadrant == 2 )
+			if ( quadrant == 2 || quadrant == 4 )
 			{
-				if ( angle >= upperTan && angle <= lowerTan )
+				// upper right and lower left
+				real_t upperX = entity->x + entity->sizex;
+				real_t upperY = entity->y - entity->sizey;
+				real_t lowerX = entity->x - entity->sizex;
+				real_t lowerY = entity->y + entity->sizey;
+				real_t upperTan = atan2(upperY - y1, upperX - x1);
+				real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
+				if ( adjust )
 				{
-					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if ( dist < lowestDist )
+					if ( upperTan < 0 )
 					{
-						lowestDist = dist;
-						result = entity;
+						upperTan += PI * 2;
+					}
+					if ( lowerTan < 0 )
+					{
+						lowerTan += PI * 2;
+					}
+				}
+
+				// determine whether line intersects entity
+				if ( quadrant == 2 )
+				{
+					if ( angle >= upperTan && angle <= lowerTan )
+					{
+						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+						if ( dist < lowestDist )
+						{
+							lowestDist = dist;
+							result = entity;
+						}
+					}
+				}
+				else
+				{
+					if ( angle <= upperTan && angle >= lowerTan )
+					{
+						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+						if ( dist < lowestDist )
+						{
+							lowestDist = dist;
+							result = entity;
+						}
 					}
 				}
 			}
 			else
 			{
-				if ( angle <= upperTan && angle >= lowerTan )
+				// upper left and lower right
+				real_t upperX = entity->x - entity->sizex;
+				real_t upperY = entity->y - entity->sizey;
+				real_t lowerX = entity->x + entity->sizex;
+				real_t lowerY = entity->y + entity->sizey;
+				real_t upperTan = atan2(upperY - y1, upperX - x1);
+				real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
+				if ( adjust )
 				{
-					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if ( dist < lowestDist )
+					if ( upperTan < 0 )
 					{
-						lowestDist = dist;
-						result = entity;
+						upperTan += PI * 2;
+					}
+					if ( lowerTan < 0 )
+					{
+						lowerTan += PI * 2;
 					}
 				}
-			}
-		}
-		else
-		{
-			// upper left and lower right
-			real_t upperX = entity->x - entity->sizex;
-			real_t upperY = entity->y - entity->sizey;
-			real_t lowerX = entity->x + entity->sizex;
-			real_t lowerY = entity->y + entity->sizey;
-			real_t upperTan = atan2(upperY - y1, upperX - x1);
-			real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
-			if ( adjust )
-			{
-				if ( upperTan < 0 )
-				{
-					upperTan += PI * 2;
-				}
-				if ( lowerTan < 0 )
-				{
-					lowerTan += PI * 2;
-				}
-			}
 
-			// determine whether line intersects entity
-			if ( quadrant == 3 )
-			{
-				if ( angle >= upperTan && angle <= lowerTan )
+				// determine whether line intersects entity
+				if ( quadrant == 3 )
 				{
-					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if ( dist < lowestDist )
+					if ( angle >= upperTan && angle <= lowerTan )
 					{
-						lowestDist = dist;
-						result = entity;
+						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+						if ( dist < lowestDist )
+						{
+							lowestDist = dist;
+							result = entity;
+						}
 					}
 				}
-			}
-			else
-			{
-				if ( angle <= upperTan && angle >= lowerTan )
+				else
 				{
-					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if ( dist < lowestDist )
+					if ( angle <= upperTan && angle >= lowerTan )
 					{
-						lowestDist = dist;
-						result = entity;
+						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+						if ( dist < lowestDist )
+						{
+							lowestDist = dist;
+							result = entity;
+						}
 					}
 				}
 			}
 		}
 	}
+	//std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+	//messagePlayer(0, "%lld", std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1));
 	return result;
 }
 
@@ -810,6 +1162,10 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 			{
 				ground = false;
 			}
+			else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT )
+			{
+				ground = false;
+			}
 		}
 	}
 
@@ -859,7 +1215,8 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				{
 					isMonster = true;
 				}
-			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
+			if ( !map.tiles[index] 
+				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -873,6 +1230,40 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 		// check against entity
 		if ( entity )
 		{
+			// debug particles.
+			//if ( entity->behavior == &actMonster && entities != 0 )
+			//{
+			//	Entity* particle = spawnMagicParticle(my);
+			//	particle->sprite = 576;
+			//	particle->x = ix;
+			//	particle->y = iy;
+			//	particle->z = 0;
+
+			//	particle = spawnMagicParticle(my);
+			//	particle->sprite = 942;
+			//	particle->x = entity->x + entity->sizex;
+			//	particle->y = entity->y + entity->sizey;
+			//	particle->z = 0;
+
+			//	particle = spawnMagicParticle(my);
+			//	particle->sprite = 942;
+			//	particle->x = entity->x - entity->sizex;
+			//	particle->y = entity->y + entity->sizey;
+			//	particle->z = 0;
+
+			//	particle = spawnMagicParticle(my);
+			//	particle->sprite = 942;
+			//	particle->x = entity->x + entity->sizex;
+			//	particle->y = entity->y - entity->sizey;
+			//	particle->z = 0;
+
+			//	particle = spawnMagicParticle(my);
+			//	particle->sprite = 942;
+			//	particle->x = entity->x - entity->sizex;
+			//	particle->y = entity->y - entity->sizey;
+			//	particle->z = 0;
+			//}
+
 			if ( ix >= entity->x - entity->sizex && ix <= entity->x + entity->sizex )
 			{
 				if ( iy >= entity->y - entity->sizey && iy <= entity->y + entity->sizey )
@@ -1000,7 +1391,8 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 				{
 					isMonster = true;
 				}
-			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
+			if ( !map.tiles[index] 
+				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -1054,26 +1446,9 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	bool levitating = false;
 
 	// get levitation status
-	if ( (my && (stats = my->getStats())) != NULL )
+	if ( my != NULL && (stats = my->getStats()) != NULL )
 	{
-		if ( stats->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( stats->ring != NULL )
-		{
-			if ( stats->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		}
-		if ( stats->shoes != NULL )
-		{
-			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
-		}
+		levitating = isLevitating(stats);
 	}
 	if ( my )
 	{
@@ -1088,21 +1463,6 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	{
 		if ( y >= 0 && y < map.height << 4 )
 		{
-			for ( node = map.entities->first; node != NULL; node = node->next )
-			{
-				entity = (Entity*)node->element;
-				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
-				{
-					continue;
-				}
-				if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
-				{
-					if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
-					{
-						return 1;
-					}
-				}
-			}
 			int index = (y >> 4) * MAPLAYERS + (x >> 4) * MAPLAYERS * map.height;
 			if (map.tiles[OBSTACLELAYER + index])   // wall
 			{
@@ -1116,11 +1476,44 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 					isMonster = true;
 				}
 			}
-			if ( !levitating && (!map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster)) )   // no floor
+			if ( !levitating
+					&& (!map.tiles[index]
+								   || ( (swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+										 && isMonster) ) )   // no floor
 			{
-				return 1;
+				return 1; // if there's no floor, or either water/lava then a non-levitating monster sees obstacle.
+			}
+
+			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(static_cast<int>(x) >> 4, static_cast<int>(y) >> 4, 2);
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+			{
+				list_t* currentList = *it;
+				for ( node = currentList->first; node != nullptr; node = node->next )
+				{
+					entity = (Entity*)node->element;
+					if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
+					{
+						continue;
+					}
+					if ( entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
+					{
+						continue;
+					}
+					if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
+					{
+						if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
+						{
+							return 1;
+						}
+					}
+				}
 			}
 		}
+	}
+
+	if ( logCheckObstacle )
+	{
+		++logCheckObstacleCount;
 	}
 
 	return 0;

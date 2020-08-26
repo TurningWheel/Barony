@@ -19,17 +19,15 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "scores.hpp"
+#include "magic/magic.hpp"
 
 void initDevil(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
-	my->sprite = 304;
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(304);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -40,69 +38,31 @@ void initDevil(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		strcpy(myStats->name, "Baphomet");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 1250 + 250 * numplayers;
-		myStats->MAXHP = myStats->HP;
-		myStats->MP = 2000;
-		myStats->MAXMP = 2000;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = -50;
-		myStats->DEX = -20;
-		myStats->CON = 10;
-		myStats->INT = 50;
-		myStats->PER = 500;
-		myStats->CHR = 50;
-		myStats->EXP = 0;
-		myStats->LVL = 30;
-		myStats->HUNGER = 900;
-		myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max<real_t>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		if ( myStats->HP == 1250 )
 		{
-			if ( c < NUMPROFICIENCIES )
+			for ( c = 0; c < MAXPLAYERS; ++c )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				if ( !client_disconnected[c] )
+				{
+					myStats->MAXHP += 250;
+				}
 			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
+			myStats->HP = myStats->MAXHP;
+			myStats->OLDHP = myStats->HP;
 		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
-		myStats->EFFECTS[EFF_LEVITATING] = true;
-		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
-
-		myStats->PROFICIENCIES[PRO_MAGIC] = 100;
-		myStats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 
 		if (players[0] && players[0]->entity)
 		{
-			MONSTER_TARGET = players[0]->entity->getUID();
-			MONSTER_TARGETX = players[0]->entity->x;
-			MONSTER_TARGETY = players[0]->entity->y;
+			my->monsterTarget = players[0]->entity->getUID();
+			my->monsterTargetX = players[0]->entity->x;
+			my->monsterTargetY = players[0]->entity->y;
 		}
+
+		my->setHardcoreStats(*myStats);
 	}
 
 	// head
-	Entity* entity = newEntity(303, 0, map.entities);
+	Entity* entity = newEntity(303, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -118,9 +78,10 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right bicep
-	entity = newEntity(305, 0, map.entities);
+	entity = newEntity(305, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -136,9 +97,10 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right forearm
-	entity = newEntity(306, 0, map.entities);
+	entity = newEntity(306, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -154,9 +116,10 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left bicep
-	entity = newEntity(307, 0, map.entities);
+	entity = newEntity(307, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -172,9 +135,10 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left forearm
-	entity = newEntity(308, 0, map.entities);
+	entity = newEntity(308, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -190,42 +154,17 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void actDevilLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void devilDie(Entity* my)
 {
-	node_t* node, *nextnode;
+	node_t* node;
 
 	int c;
 	for ( c = 0; c < 5; c++ )
@@ -234,19 +173,9 @@ void devilDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 	//playSoundEntity(my, 28, 128);
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	if ( multiplayer == SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
@@ -262,7 +191,8 @@ void devilDie(Entity* my)
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
-	int x, y;
+	unsigned int x = 0;
+	unsigned int y = 0;
 	for ( y = map.height / 2 - 1; y < map.height / 2 + 2; y++ )
 	{
 		for ( x = 3; x < map.width / 2; x++ )
@@ -285,33 +215,39 @@ void devilDie(Entity* my)
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		steamAchievementClient(c, "BARONY_ACH_EVIL_INCARNATE");
-		messagePlayer(c, language[1112]);
-		playSoundPlayer(c, 97, 128);
-		stats[c]->STR += 20;
-		stats[c]->DEX += 5;
-		stats[c]->CON += 20;
-		stats[c]->INT += 5;
-		if ( multiplayer == SERVER && c > 0 )
+		if ( completionTime < 20 * 60 * TICKS_PER_SECOND
+			&& currentlevel >= 24 )
 		{
-			strcpy((char*)net_packet->data, "ATTR");
-			net_packet->data[4] = clientnum;
-			net_packet->data[5] = (Sint8)stats[c]->STR;
-			net_packet->data[6] = (Sint8)stats[c]->DEX;
-			net_packet->data[7] = (Sint8)stats[c]->CON;
-			net_packet->data[8] = (Sint8)stats[c]->INT;
-			net_packet->data[9] = (Sint8)stats[c]->PER;
-			net_packet->data[10] = (Sint8)stats[c]->CHR;
-			net_packet->data[11] = (Sint8)stats[c]->EXP;
-			net_packet->data[12] = (Sint8)stats[c]->LVL;
-			SDLNet_Write16((Sint16)stats[c]->HP, &net_packet->data[13]);
-			SDLNet_Write16((Sint16)stats[c]->MAXHP, &net_packet->data[15]);
-			SDLNet_Write16((Sint16)stats[c]->MP, &net_packet->data[17]);
-			SDLNet_Write16((Sint16)stats[c]->MAXMP, &net_packet->data[19]);
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 21;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			//messagePlayer(c, "completion time: %d", completionTime);
+			steamAchievementClient(c, "BARONY_ACH_BOOTS_OF_SPEED");
 		}
+		//messagePlayer(c, language[1112]);
+		//playSoundPlayer(c, 97, 128);
+		//stats[c]->STR += 20;
+		//stats[c]->DEX += 5;
+		//stats[c]->CON += 20;
+		//stats[c]->INT += 5;
+		//if ( multiplayer == SERVER && c > 0 )
+		//{
+		//	strcpy((char*)net_packet->data, "ATTR");
+		//	net_packet->data[4] = clientnum;
+		//	net_packet->data[5] = (Sint8)stats[c]->STR;
+		//	net_packet->data[6] = (Sint8)stats[c]->DEX;
+		//	net_packet->data[7] = (Sint8)stats[c]->CON;
+		//	net_packet->data[8] = (Sint8)stats[c]->INT;
+		//	net_packet->data[9] = (Sint8)stats[c]->PER;
+		//	net_packet->data[10] = (Sint8)stats[c]->CHR;
+		//	net_packet->data[11] = (Sint8)stats[c]->EXP;
+		//	net_packet->data[12] = (Sint8)stats[c]->LVL;
+		//	SDLNet_Write16((Sint16)stats[c]->HP, &net_packet->data[13]);
+		//	SDLNet_Write16((Sint16)stats[c]->MAXHP, &net_packet->data[15]);
+		//	SDLNet_Write16((Sint16)stats[c]->MP, &net_packet->data[17]);
+		//	SDLNet_Write16((Sint16)stats[c]->MAXMP, &net_packet->data[19]);
+		//	net_packet->address.host = net_clients[c - 1].host;
+		//	net_packet->address.port = net_clients[c - 1].port;
+		//	net_packet->len = 21;
+		//	sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		//}
 	}
 	return;
 }
@@ -324,7 +260,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* leftbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
@@ -373,6 +309,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -514,8 +451,8 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				entity->z -= 16;
 				node_t* tempNode;
-				Entity* playertotrack = NULL;
-				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+				Entity* playertotrack = nullptr;
+				for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next ) //Searching for players only? Don't search full map.entities then.
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
@@ -679,4 +616,176 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 void actDevilTeleport(Entity* my)
 {
 	// dummy function
+	my->flags[PASSABLE] = true;
+}
+bool Entity::devilSummonMonster(Entity* summonOnEntity, Monster creature, int radiusFromCenter, int playerToTarget)
+{
+	Entity* target = nullptr;
+	if ( summonOnEntity )
+	{
+		target = summonOnEntity;
+	}
+	else
+	{
+		for ( node_t* searchNode = map.entities->first; searchNode != nullptr; searchNode = searchNode->next )
+		{
+			target = (Entity*)searchNode->element;
+			if ( target->behavior == &actDevilTeleport
+				&& target->sprite == 72 )
+			{
+				break; // found specified center of map
+			}
+			target = nullptr;
+		}
+	}
+	if ( target )
+	{
+		int hellArena_x0 = 17;
+		int hellArena_x1 = 47;
+		int hellArena_y0 = 17;
+		int hellArena_y1 = 47;
+		int spawn_x = static_cast<int>(target->x / 16);
+		int spawn_y = static_cast<int>(target->y / 16);
+		std::vector<std::pair<int, int>> goodspots;
+		for ( int j = std::max(hellArena_y0, spawn_y - radiusFromCenter); j <= std::min(hellArena_y1, spawn_y + radiusFromCenter); ++j )
+		{
+			for ( int i = std::max(hellArena_x0, spawn_x - radiusFromCenter); i <= std::min(hellArena_x1, spawn_x + radiusFromCenter); ++i )
+			{
+				int index = (j)* MAPLAYERS + (i)* MAPLAYERS * map.height;
+				if ( !map.tiles[OBSTACLELAYER + index] &&
+					((target->behavior == &actPlayer && !map.tiles[index])
+						|| (target->behavior != &actPlayer 
+								&& (map.tiles[index] || creature != DEMON) && !swimmingtiles[map.tiles[index]] && !lavatiles[map.tiles[index]] )
+					) 
+				)
+				{
+					// spawn on no floor, or lava if the target is a player.
+
+					// otherwise, spawn on solid ground.
+					real_t oldx = this->x;
+					real_t oldy = this->y;
+					this->x = i * 16 + 8;
+					this->y = j * 16 + 8;
+					goodspots.push_back(std::make_pair(i, j));
+					this->x = oldx;
+					this->y = oldy;
+				}
+			}
+		}
+		if ( goodspots.empty() )
+		{
+			return false;
+		}
+		std::pair<int,int> chosen = goodspots.at(rand() % goodspots.size());
+		Entity* timer = createParticleTimer(this, 70, 174);
+		timer->x = chosen.first * 16.0 + 8;
+		timer->y = chosen.second * 16.0 + 8;
+		timer->z = 0;
+		timer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_DEVIL_SUMMON_MONSTER;
+		timer->particleTimerCountdownSprite = 174;
+		timer->particleTimerEndAction = PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER;
+		timer->particleTimerVariable1 = creature;
+		timer->particleTimerVariable2 = playerToTarget;
+		serverSpawnMiscParticlesAtLocation(static_cast<Sint16>(chosen.first), static_cast<Sint16>(chosen.second), 0, PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER, 174);
+		return true;
+	}
+	return false;
+}
+
+int Entity::devilGetNumMonstersInArena(Monster creature)
+{
+	int hellArena_x0 = 15;
+	int hellArena_x1 = 49;
+	int hellArena_y0 = 15;
+	int hellArena_y1 = 49;
+	int numMonstersActiveInArena = 0;
+	node_t* tempNode;
+	for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next )
+	{
+		Entity* monster = (Entity*)tempNode->element;
+		if ( monster && monster->getMonsterTypeFromSprite() == creature )
+		{
+			if ( static_cast<int>(monster->x / 16) >= hellArena_x0 && static_cast<int>(monster->x / 16) <= hellArena_x1 )
+			{
+				if ( static_cast<int>(monster->y / 16) >= hellArena_y0 && static_cast<int>(monster->y / 16) <= hellArena_y1 )
+				{
+					++numMonstersActiveInArena;
+				}
+			}
+		}
+	}
+	return numMonstersActiveInArena;
+}
+
+bool Entity::devilBoulderSummonIfPlayerIsHiding(int player)
+{
+	if ( players[player] && players[player]->entity )
+	{
+		int player_x = static_cast<int>(players[player]->entity->x / 16);
+		int player_y = static_cast<int>(players[player]->entity->y / 16);
+		int doSummon = 0;
+		if ( entityDist(this, players[player]->entity) > 16 * 16 /*16 tiles*/ )
+		{
+			doSummon = 1;
+		}
+		else if ( !map.tiles[player_y * MAPLAYERS + player_x * MAPLAYERS * map.height] )
+		{
+			if ( entityDist(this, players[player]->entity) > 16 * 10 /*10 tiles*/ )
+			{
+				doSummon = 2;
+			}
+			else
+			{
+				// standing on no floor.
+				real_t tangent = atan2(players[player]->entity->y - this->y, players[player]->entity->x - this->x);
+				Entity* ohitentity = hit.entity;
+				lineTraceTarget(this, this->x, this->y, tangent, 1024, 0, false, players[player]->entity);
+				if ( hit.entity != players[player]->entity )
+				{
+					// can't see the player
+					doSummon = 2;
+				}
+				hit.entity = ohitentity;
+			}
+		}
+		//messagePlayer(0, "dosummon: %d, distance: %f", doSummon, entityDist(this, players[player]->entity));
+		if ( doSummon )
+		{
+			int numPlayers = 0;
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( !client_disconnected[c] )
+				{
+					++numPlayers;
+				}
+			}
+			if ( devilGetNumMonstersInArena(SHADOW) <= numPlayers && (rand() % 4 == 0) )
+			{
+				if ( !devilSummonMonster(players[player]->entity, SHADOW, 5, player) )
+				{
+					devilSummonMonster(players[player]->entity, SHADOW, 21, player);
+				}
+				return true;
+			}
+			else
+			{
+				int numImps = devilGetNumMonstersInArena(CREATURE_IMP);
+				if ( numImps <= (4 + numPlayers) && !devilSummonMonster(players[player]->entity, CREATURE_IMP, 5, player) )
+				{
+					devilSummonMonster(players[player]->entity, CREATURE_IMP, 21, player);
+				}
+				++numImps;
+				if ( doSummon == 1 && numImps <= (4 + numPlayers) )
+				{
+					// extra imp.
+					if ( !devilSummonMonster(players[player]->entity, CREATURE_IMP, 5, player) )
+					{
+						devilSummonMonster(players[player]->entity, CREATURE_IMP, 21, player);
+					}
+				}
+				return true;
+			}
+		}
+	}
+	return false;
 }

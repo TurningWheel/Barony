@@ -10,25 +10,13 @@
 
 -------------------------------------------------------------------------------*/
 
+#include "draw.hpp"
 #include "messages.hpp"
 #include "main.hpp"
+#include <regex>
 
 Uint32 old_sdl_ticks;
-
-/*
- * Removes the last message from the list of messages. Don't you worry yourself about this function, it's only needed in this file.
- * No generic remove message function needed, the only message that needs to be removed is the last one -- when it fades away or gets pushed off.
- * It's always the first to fade away and it's always the one pushed off when there are too many messages.
- */
-void removeLastMessage()
-{
-	if (!notification_messages.last)
-	{
-		return;
-	}
-
-	list_RemoveNode(notification_messages.last);
-}
+std::list<Message*> notification_messages;
 
 void messageDeconstructor(void* data)
 {
@@ -70,38 +58,26 @@ void addMessage(Uint32 color, char* content, ...)
 		}
 	}
 
-	node_t* node = NULL;
-
 	//First check number of lines all messages currently are contributing.
 	int line_count = 0;
-	if (notification_messages.first)
+	for (Message *m : notification_messages)
 	{
-		node = notification_messages.first;
-		Message* current = (Message* )node->element;
-		line_count += current->text->lines;
-
-		while (node->next)
-		{
-			node = node->next;
-			current = (Message* )node->element;
-			line_count += current->text->lines;
-		}
+		line_count += m->text->lines;
 	}
 
 	if (MESSAGE_MAX_TOTAL_LINES > 0)
 	{
-		while (line_count > (MESSAGE_MAX_TOTAL_LINES - lines_needed) && notification_messages.first)
-		{
-			//Too many lines. Remove messages until either there are enough lines or all messages are gone (the latter case occurs when the new message is more lines than the total lines allowed).
-			node = notification_messages.first;
-			while (node->next)
+		for (auto last_message = notification_messages.rbegin(); last_message != notification_messages.rend(); last_message++) {
+			if ( line_count < (MESSAGE_MAX_TOTAL_LINES - lines_needed) )
 			{
-				node = node->next;
+				break;
 			}
-			//TODO: Instead of just removing it, check to see if it's multiline. If it is, check to see if removing some of its lines, not the entire thing, will give enough space. If so, do that, rather than outright deleting the entire thing.
-			Message* last = (Message* )node->element;
-			line_count -= last->text->lines;
-			removeLastMessage(); //Remove last message, cause there's too many!
+			line_count -= (*last_message)->text->lines;
+			notification_messages.pop_back();
+			if ( last_message != notification_messages.rend() )
+			{
+				last_message++;
+			}
 		}
 	}
 	else
@@ -137,6 +113,11 @@ void addMessage(Uint32 color, char* content, ...)
 			va_start(argptr, content);
 			i = vsnprintf(str, 1023, content, argptr);
 			va_end(argptr);
+
+			int additionalCharacters = 0;
+			strncpy(str, messageSanitizePercentSign(str, &additionalCharacters).c_str(), ADD_MESSAGE_BUFFER_LENGTH - 1);
+			i += additionalCharacters;
+
 			new_message->text->data = (char*) malloc(sizeof(char) * (i + 1));
 			if (new_message->text->data == NULL)
 			{
@@ -187,28 +168,19 @@ void addMessage(Uint32 color, char* content, ...)
 	new_message->time_displayed = 0; //Currently been displayed for 0 seconds.
 	new_message->alpha = SDL_ALPHA_OPAQUE; //Set the initial alpha.
 	//Initialize these two to NULL values -- cause no neighbors yet!
-	new_message->node = NULL;
 
-	//Replace the root message.
-	node = list_AddNodeFirst(&notification_messages);
-	node->element = new_message;
-	node->deconstructor = &messageDeconstructor;
-	new_message->node = node;
+	notification_messages.push_front(new_message);
 
 	//Set the message location.
 	new_message->x = MESSAGE_X_OFFSET;
 	new_message->y = MESSAGE_Y_OFFSET - MESSAGE_FONT_SIZE * new_message->text->lines;
 
 	//Update the position of the other messages;
-	int count = 0;
-	Message* current = NULL;
-	node = notification_messages.first;
-	while (node->next)
+	Message *prev = nullptr;
+	for (Message *m : notification_messages)
 	{
-		count++;
-		node = node->next;
-		current = (Message* )node->element;
-		current->y = ((Message*)node->prev->element)->y - MESSAGE_FONT_SIZE * current->text->lines;
+		m->y = (prev ? prev->y : MESSAGE_Y_OFFSET) - MESSAGE_FONT_SIZE * m -> text->lines;
+		prev = m;
 	}
 }
 
@@ -223,67 +195,128 @@ void updateMessages()
 
 	time_passed = SDL_GetTicks() - old_sdl_ticks;
 	old_sdl_ticks = SDL_GetTicks();
-	node_t* node = NULL, *nextnode = NULL;
-	Message* current = NULL;
 
 	// limit the number of onscreen messages to reduce spam
 	int c = 0;
-	node_t* tempNode = notification_messages.last;
-	while ( list_Size(&notification_messages) - c > 10 )
+	for (auto it = notification_messages.begin(); it != notification_messages.end(); it++)
 	{
-		current = (Message*)tempNode->element;
-		current->time_displayed = MESSAGE_PREFADE_TIME;
-		tempNode = tempNode->prev;
-		c++;
-	}
+		Message *msg = *it;
 
-	for ( node = notification_messages.first; node != NULL; node = nextnode )
-	{
-		nextnode = node->next;
-		current = (Message* )node->element;
-		if (current->time_displayed < MESSAGE_PREFADE_TIME)
+		// Start fading all messages beyond index 10 immediately
+		c++;
+		if (c > 10 && msg->time_displayed < MESSAGE_PREFADE_TIME)
 		{
-			if (time_passed > 0)
-			{
-				current->time_displayed += time_passed; // less time before fade
-			}
+			msg->time_displayed = MESSAGE_PREFADE_TIME;
+		}
+
+		// Increase timer for message to start fading
+		msg->time_displayed += time_passed;
+
+		// Fade it if appropriate
+		if (msg->time_displayed >= MESSAGE_PREFADE_TIME)
+		{
+			msg->alpha -= MESSAGE_FADE_RATE;
+		}
+	}
+	// Remove all completely faded messages
+	for (auto it = notification_messages.begin(); it != notification_messages.end(); )
+	{
+		Message *msg = *it;
+		if (msg->alpha <= SDL_ALPHA_TRANSPARENT)
+		{
+			messageDeconstructor(msg);
+			it = notification_messages.erase(it);
 		}
 		else
 		{
-			if (current->alpha <= SDL_ALPHA_TRANSPARENT)
-			{
-				list_RemoveNode(node); // transparent message, deleted message :)
-			}
-			else
-			{
-				current->alpha -= MESSAGE_FADE_RATE; // fade message
-				if ( current->alpha < 0 )
-				{
-					current->alpha = 0;
-				}
-			}
+			++it;
 		}
 	}
 }
 
 void drawMessages()
 {
-	node_t* node;
-	Message* current;
-
-	for ( node = notification_messages.first; node != NULL; node = node->next )
+	for ( Message *current : notification_messages )
 	{
-		current = (Message*)node->element;
-
 		Uint32 color = current->text->color ^ mainsurface->format->Amask;
 		color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
-		ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, current->text->data);
+
+		// highlights in messages.
+		std::string data = current->text->data;
+		size_t findHighlight = data.find("[");
+		bool doHighlight = false;
+		if ( findHighlight != std::string::npos )
+		{
+			std::string highlightedWords = data;
+			for ( int i = 0; i < highlightedWords.size(); ++i )
+			{
+				if ( highlightedWords[i] != '\n' && highlightedWords[i] != '\0' )
+				{
+					highlightedWords[i] = ' '; // replace all characters with a space.
+				}
+			}
+			size_t highlightedIndex = 0;
+			while ( findHighlight != std::string::npos )
+			{
+				size_t findHighlightEnd = data.find("]", findHighlight);
+				if ( findHighlightEnd != std::string::npos )
+				{
+					doHighlight = true;
+					size_t numChars = findHighlightEnd - findHighlight + 1;
+
+					// add in the highlighed words.
+					highlightedWords.replace(findHighlight, numChars, data.substr(findHighlight, numChars));
+
+					std::string padding(numChars, ' ');
+					// replace the words in the old string with spacing.
+					data.replace(findHighlight, numChars, padding);
+					findHighlight += numChars;
+				}
+				else
+				{
+					break;
+				}
+				findHighlight = data.find("[", findHighlight);
+				highlightedIndex = findHighlight;
+			}
+			if ( doHighlight )
+			{
+				ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, "%s", data.c_str());
+
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 192, 255) ^ mainsurface->format->Amask;
+				color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
+				ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, "%s", highlightedWords.c_str());
+			}
+		}
+		if ( !doHighlight )
+		{
+			ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, current->text->data);
+		}
 	}
 }
 
 void deleteAllNotificationMessages()
 {
-	list_FreeAll(&notification_messages);
+	std::for_each(notification_messages.begin(), notification_messages.end(), messageDeconstructor);
+	notification_messages.clear();
 }
 
-list_t notification_messages;
+std::string messageSanitizePercentSign(std::string src, int* percentSignsFound)
+{
+	// sanitize input string for print commands.
+	std::string commandString = src;
+	std::size_t found = commandString.find('%');
+	if ( !commandString.empty() )
+	{
+		while ( found != std::string::npos )
+		{
+			commandString.insert(found, "%");
+			found = commandString.find('%', found + 2);
+			if ( percentSignsFound )
+			{
+				++(*percentSignsFound);
+			}
+		}
+	}
+	return commandString;
+}

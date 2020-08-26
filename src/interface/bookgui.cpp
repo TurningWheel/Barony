@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "../items.hpp"
@@ -148,21 +149,21 @@ void updateBookGUI()
 		{
 			bookgui_offset_x = (omousex - dragoffset_x) - (BOOK_GUI_X - bookgui_offset_x);
 			bookgui_offset_y = (omousey - dragoffset_y) - (BOOK_GUI_Y - bookgui_offset_y);
-			if (BOOK_GUI_X <= camera.winx)
+			if (BOOK_GUI_X <= 0)
 			{
-				bookgui_offset_x = camera.winx - (BOOK_GUI_X - bookgui_offset_x);
+				bookgui_offset_x = 0 - (BOOK_GUI_X - bookgui_offset_x);
 			}
-			if (BOOK_GUI_X > camera.winx + camera.winw - bookgui_img->w)
+			if (BOOK_GUI_X > 0 + xres - bookgui_img->w)
 			{
-				bookgui_offset_x = (camera.winx + camera.winw - bookgui_img->w) - (BOOK_GUI_X - bookgui_offset_x);
+				bookgui_offset_x = (0 + xres - bookgui_img->w) - (BOOK_GUI_X - bookgui_offset_x);
 			}
-			if (BOOK_GUI_Y <= camera.winy)
+			if (BOOK_GUI_Y <= 0)
 			{
-				bookgui_offset_y = camera.winy - (BOOK_GUI_Y - bookgui_offset_y);
+				bookgui_offset_y = 0 - (BOOK_GUI_Y - bookgui_offset_y);
 			}
-			if (BOOK_GUI_Y > camera.winy + camera.winh - bookgui_img->h)
+			if (BOOK_GUI_Y > 0 + yres - bookgui_img->h)
 			{
-				bookgui_offset_y = (camera.winy + camera.winh - bookgui_img->h) - (BOOK_GUI_Y - bookgui_offset_y);
+				bookgui_offset_y = (0 + yres - bookgui_img->h) - (BOOK_GUI_Y - bookgui_offset_y);
 			}
 		}
 		else
@@ -205,7 +206,7 @@ void openBook(book_t* book, Item* item)
 		return;
 	}
 
-	gui_mode = GUI_MODE_INVENTORY; //Yes, this is pretty much the main GUI screen.
+	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	shootmode = false;
 	book_page = book->pages.first;
 	book_open = true;

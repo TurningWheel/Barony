@@ -27,10 +27,9 @@ typedef struct book_t
 
 extern book_t** books;
 extern int numbooks;
-extern list_t* discoveredbooks;
 
 void createBooks();
 void createBook(book_t* book); //Take's a book and generates all of its pages.
 
-void formatTitle(book_t* book); //Prepares the book's title for rendering in the book GUI.
-int getBook(char* booktitle); // returns the appearance index number for the book with the given title
+//void formatTitle(book_t* book); //Prepares the book's title for rendering in the book GUI.
+int getBook(char const * const booktitle); // returns the appearance index number for the book with the given title

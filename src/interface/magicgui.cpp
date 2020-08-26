@@ -10,15 +10,18 @@
 -------------------------------------------------------------------------------*/
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "interface.hpp"
 #include "../items.hpp"
 #include "../magic/magic.hpp"
+#include "../player.hpp"
+#include "../colors.hpp"
 
 /*-------------------------------------------------------------------------------
 
-	renderMagicGUI
+	renderMagicGUI - DEPRECATED, called from updateRightSidebar()
 
 	draws all the magic related gui stuff
 
@@ -118,7 +121,7 @@ void renderMagicGUI(int winx, int winy, int winw, int winh)
 
 /*-------------------------------------------------------------------------------
 
-	updateMagicGUI
+	updateMagicGUI - DEPRECATED, called from updateRightSidebar()
 
 	Handles all buttons and such.
 	If the spell list is open, it "equips" spells the player clicks on.
@@ -134,7 +137,7 @@ void updateMagicGUI()
 	}*/
 	SDL_Rect pos;
 
-	renderMagicGUI(camera.winx, camera.winy, camera.winw, camera.winh);
+	renderMagicGUI(0, 0, xres, yres);
 	if (magic_GUI_state == 0)   //TODO: use defines, not numbers.
 	{
 		if (mousestatus[SDL_BUTTON_LEFT])
@@ -148,12 +151,12 @@ void updateMagicGUI()
 			{
 				numspells++;
 			}
-			int maxSpellsOnscreen = camera.winh / spell_list_gui_slot_bmp->h;
+			int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
 			numspells = std::min(numspells, maxSpellsOnscreen);
 			height += numspells * spell_list_gui_slot_bmp->h;
 			//Now calculate the position.
-			pos.x = camera.winx + (camera.winw / 2) - (spell_list_gui_slot_bmp->w / 2) + magicspell_list_offset_x;
-			pos.y = camera.winy + ((camera.winh / 2) - (height / 2)) + magicspell_list_offset_x;
+			pos.x = 0 + (xres / 2) - (spell_list_gui_slot_bmp->w / 2) + magicspell_list_offset_x;
+			pos.y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
 			magic_gui_pos.x = pos.x;
 			magic_gui_pos.y = pos.y;
 
@@ -178,7 +181,7 @@ void updateMagicGUI()
 						spell_t* spell = (spell_t*)node->element;
 						if (spell)
 						{
-							equipSpell(spell, clientnum);
+							//equipSpell(spell, clientnum);
 							//selected_spell = spell;
 						}
 					}
@@ -196,15 +199,10 @@ void updateMagicGUI()
 
 void drawSustainedSpells()
 {
-	if (!channeledSpells[clientnum].first)
-	{
-		return;    //No use continuing if there are no sustained spells.
-	}
-
 	SDL_Surface** sprite;
-
 	SDL_Rect pos;
 	pos.x = SUST_SPELLS_X;
+	pos.y = SUST_SPELLS_Y;
 	if (SUST_SPELLS_RIGHT_ALIGN)
 	{
 		//Alright, so, the list should be right-aligned.
@@ -215,20 +213,362 @@ void drawSustainedSpells()
 			return;
 		}
 		SDL_Surface** surface = (SDL_Surface**)node->element;
-		pos.x = camera.winw - (*surface)->w - SUST_SPELLS_X;
+		pos.x = xres - (*surface)->w - SUST_SPELLS_X;
+
+		//Draw under the skills sheet if inventory open or the sidebar lock has been enabled.
+		int iconHeightOffset = interfaceSkillsSheet.y + interfaceSkillsSheet.h;
+		if ( proficienciesPage == 1 )
+		{
+			iconHeightOffset = std::max(iconHeightOffset, interfacePartySheet.y + interfacePartySheet.h);
+		}
+
+		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (iconHeightOffset) : 0);
 	}
-	pos.y = SUST_SPELLS_Y;
+
+	bool isChanneled = false;
+	char* tooltipText = nullptr;
+	char* currentTooltip = nullptr;
+	TTF_Font* fontText = ttf12;
+	int fontHeight = TTF12_HEIGHT;
+	int fontWidth = TTF12_WIDTH;
+	if ( uiscale_skillspage )
+	{
+		fontText = ttf16;
+		fontHeight = TTF16_HEIGHT;
+		fontWidth = TTF16_WIDTH;
+	}
+
+	for ( int i = 0; showStatusEffectIcons && i <= NUMEFFECTS && stats[clientnum]; ++i )
+	{
+		node_t* effectImageNode = nullptr;
+		sprite = nullptr;
+		tooltipText = nullptr;
+
+		if ( i == NUMEFFECTS )
+		{
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				if ( players[clientnum]->entity->creatureShadowTaggedThisUid != 0
+					&& uidToEntity(players[clientnum]->entity->creatureShadowTaggedThisUid) )
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SHADOW_TAG);
+					Entity* tagged = uidToEntity(players[clientnum]->entity->creatureShadowTaggedThisUid);
+					if ( tagged->behavior == &actMonster )
+					{
+						int type = tagged->getMonsterTypeFromSprite();
+						if ( type != NOTHING )
+						{
+							if ( type >= KOBOLD )
+							{
+								snprintf(tempstr, 1023, language[3858], language[2000 + type - KOBOLD]);
+							}
+							else
+							{
+								snprintf(tempstr, 1023, language[3858], language[90 + type]);
+							}
+						}
+						else
+						{
+							strcpy(tempstr, "");
+						}
+					}
+					else if ( tagged->behavior == &actPlayer )
+					{
+						snprintf(tempstr, 1023, language[3858], stats[tagged->skill[2]]->name);
+					}
+					tooltipText = tempstr;
+				}
+			}
+		}
+		else if ( stats[clientnum]->EFFECTS[i] )
+		{
+			switch ( i )
+			{
+				case EFF_SLOW:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLOW);
+					tooltipText = language[3384];
+					break;
+				case EFF_BLEEDING:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_BLEED);
+					tooltipText = language[3385];
+					break;
+				case EFF_ASLEEP:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLEEP);
+					tooltipText = language[3386];
+					break;
+				case EFF_CONFUSED:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CONFUSE);
+					tooltipText = language[3387];
+					break;
+				case EFF_PACIFY:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
+					tooltipText = language[3388];
+					break;
+				case EFF_FEAR:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FEAR);
+					tooltipText = language[3861];
+					break;
+				case EFF_WEBBED:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPRAY_WEB);
+					tooltipText = language[3859];
+					break;
+				case EFF_MAGICAMPLIFY:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_AMPLIFY_MAGIC);
+					node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_AMPLIFY_MAGIC )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}
+					tooltipText = language[3860];
+					break;
+				}
+				case EFF_TROLLS_BLOOD:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLLS_BLOOD);
+					tooltipText = language[3492];
+					break;
+				case EFF_FLUTTER:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FLUTTER);
+					tooltipText = language[3766];
+					break;
+				case EFF_FAST:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPEED);
+					tooltipText = language[3493];
+					break;
+				case EFF_SHAPESHIFT:
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						switch ( players[clientnum]->entity->effectShapeshift )
+						{
+							case RAT:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_RAT_FORM);
+								tooltipText = language[3854];
+								break;
+							case TROLL:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLL_FORM);
+								tooltipText = language[3855];
+								break;
+							case SPIDER:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPIDER_FORM);
+								tooltipText = language[3856];
+								break;
+							case CREATURE_IMP:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_IMP_FORM);
+								tooltipText = language[3857];
+								break;
+							default:
+								break;
+						}
+					}
+					break;
+				case EFF_VAMPIRICAURA:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
+					tooltipText = language[3389];
+					node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
+						{
+							tooltipText = language[3390];
+							break;
+						}
+					}
+					break;
+				}
+				case EFF_PARALYZED:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LIGHTNING);
+					tooltipText = language[3391];
+					break;
+				case EFF_DRUNK:
+					if ( effect_drunk_bmp )
+					{
+						sprite = &effect_drunk_bmp;
+					}
+					tooltipText = language[3392];
+					break;
+				case EFF_POLYMORPH:
+					if ( effect_polymorph_bmp )
+					{
+						sprite = &effect_polymorph_bmp;
+					}
+					tooltipText = language[3399];
+					break;
+				case EFF_WITHDRAWAL:
+					if ( effect_hungover_bmp )
+					{
+						sprite = &effect_hungover_bmp;
+					}
+					tooltipText = language[3393];
+					break;
+				case EFF_POTION_STR:
+					sprite = &str_bmp64u;
+					tooltipText = language[3394];
+					break;
+				case EFF_LEVITATING:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LEVITATION);
+					node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_LEVITATION )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}
+					tooltipText = language[3395];
+					break;
+				}
+				case EFF_INVISIBLE:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_INVISIBILITY);
+					node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_INVISIBILITY )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}
+					tooltipText = language[3396];
+					break;
+				}
+				default:
+					effectImageNode = nullptr;
+					tooltipText = nullptr;
+					break;
+			}
+		}
+
+		if ( tooltipText && !shootmode && mouseInBounds(pos.x, pos.x + 32,
+			pos.y, pos.y + 32) )
+		{
+			// draw tooltip.
+			currentTooltip = tooltipText;
+		}
+
+		if ( effectImageNode || sprite )
+		{
+			if ( !sprite )
+			{
+				sprite = (SDL_Surface**)effectImageNode->element;
+			}
+
+			bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+			bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[i] > 0 && 
+				(stats[clientnum]->EFFECTS_TIMERS[i] < TICKS_PER_SECOND * 5);
+			if ( i == EFF_VAMPIRICAURA )
+			{
+				lowDuration = false;
+			}
+			if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+			{
+				if ( sprite == &str_bmp64u )
+				{
+					pos.h = 32;
+					pos.w = 32;
+					drawImageScaled(*sprite, NULL, &pos);
+				}
+				else
+				{
+					drawImage(*sprite, NULL, &pos);
+				}
+			}
+
+			if ( SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN )
+			{
+				pos.x += sustained_spell_generic_icon->w;
+			}
+			else
+			{
+				//Vertical.
+				pos.y += (*sprite)->h;
+			}
+			effectImageNode = nullptr;
+		}
+	}
+
+	if ( !channeledSpells[clientnum].first )
+	{
+		if ( currentTooltip )
+		{
+			SDL_Rect tooltip;
+			std::string str = currentTooltip;
+			size_t n = std::count(str.begin(), str.end(), '\n'); // count newlines
+			tooltip.w = ((longestline(currentTooltip) + 2) * fontWidth) + 8;
+			if ( n > 4 )
+			{
+				tooltip.h = fontHeight * (n + 1) + 16;
+			}
+			else
+			{
+				tooltip.h = fontHeight * (n + 1) + 12;
+			}
+			tooltip.x = mousex - 16 - tooltip.w;
+			tooltip.y = mousey + 8;
+			drawTooltip(&tooltip);
+			size_t found = str.find('\n');
+			if ( found != std::string::npos )
+			{
+				char buf[256] = "";
+				strncpy(buf, str.c_str(), found);
+				ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, buf);
+				str = str.substr(found);
+				strncpy(buf, str.c_str(), str.length());
+				ttfPrintTextFormattedColor(fontText, tooltip.x + 4, tooltip.y + 4, uint32ColorLightBlue(*mainsurface), buf);
+			}
+			else
+			{
+				ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, currentTooltip);
+			}
+		}
+		return;    //No use continuing if there are no sustained spells.
+	}
+
 
 	int count = 0; //This is just for debugging purposes.
 	node_t* node = channeledSpells[clientnum].first;
 	for (; node; node = node->next, count++)
 	{
+		tooltipText = nullptr;
 		spell_t* spell = (spell_t*)node->element;
 		if (!spell)
 		{
 			break;
 		}
 		//Grab the sprite/
+		if ( spell->ID == SPELL_VAMPIRIC_AURA )
+		{
+			continue;
+		}
+
+		if ( spell->ID == SPELL_INVISIBILITY )
+		{
+			tooltipText = language[3396];
+		}
+		else if ( spell->ID == SPELL_LEVITATION )
+		{
+			tooltipText = language[3395];
+		}
+		else if ( spell->ID == SPELL_REFLECT_MAGIC )
+		{
+			tooltipText = language[3397];
+		}
+		else if ( spell->ID == SPELL_LIGHT )
+		{
+			tooltipText = language[3398];
+		}
+
 		node_t* node = list_Node(&items[SPELL_ITEM].surfaces, spell->ID);
 		if (!node)
 		{
@@ -238,6 +578,12 @@ void drawSustainedSpells()
 
 		drawImage(*sprite, NULL, &pos);
 
+		if ( !shootmode && mouseInBounds(pos.x, pos.x + 32, pos.y, pos.y + 32) && tooltipText )
+		{
+			// draw tooltip.
+			currentTooltip = tooltipText;
+		}
+
 		if (SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN)
 		{
 			pos.x += sustained_spell_generic_icon->w;
@@ -246,6 +592,39 @@ void drawSustainedSpells()
 		{
 			//Vertical.
 			pos.y += (*sprite)->h;
+		}
+	}
+
+	if ( currentTooltip )
+	{
+		SDL_Rect tooltip;
+		std::string str = currentTooltip;
+		size_t n = std::count(str.begin(), str.end(), '\n'); // count newlines
+		tooltip.w = ((longestline(currentTooltip) + 1) * fontWidth) + 8;
+		if ( n > 4 )
+		{
+			tooltip.h = fontHeight * (n + 1) + 12;
+		}
+		else
+		{
+			tooltip.h = fontHeight * (n + 1) + 8;
+		}
+		tooltip.x = mousex - 16 - tooltip.w;
+		tooltip.y = mousey + 8;
+		drawTooltip(&tooltip);
+		size_t found = str.find('\n');
+		if ( found != std::string::npos )
+		{
+			char buf[256] = "";
+			strncpy(buf, str.c_str(), found);
+			ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, buf);
+			str = str.substr(found);
+			strncpy(buf, str.c_str(), str.length());
+			ttfPrintTextFormattedColor(fontText, tooltip.x + 4, tooltip.y + 4, uint32ColorLightBlue(*mainsurface), buf);
+		}
+		else
+		{
+			ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, currentTooltip);
 		}
 	}
 }

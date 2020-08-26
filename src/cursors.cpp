@@ -11,7 +11,7 @@
 
 #include "main.hpp"
 
-char* cursor_pencil[] =
+char const *cursor_pencil[] =
 {
 	// width height num_colors chars_per_pixel
 	"    32    32        3            1",
@@ -55,7 +55,51 @@ char* cursor_pencil[] =
 	"0,0"
 };
 
-char* cursor_brush[] =
+char const *cursor_point[] =
+{
+	// width height num_colors chars_per_pixel
+	"    32    32        3            1",
+	// colors
+	"X c #000000",
+	". c #ffffff",
+	"  c None",
+	// pixels
+	"     XX                         ",
+	"    X..X                        ",
+	"    X..X                        ",
+	"    X..X                        ",
+	"    X..X                        ",
+	"    X..XXX                      ",
+	"    X..X..XXX                   ",
+	"    X..X..X..XX                 ",
+	"    X..X..X..X.X                ",
+	"XXX X..X..X..X..X               ",
+	"X..XX........X..X               ",
+	"X...X...........X               ",
+	"X...X...........X               ",
+	" X..X...........X               ",
+	"  X.X...........X               ",
+	"  X.............X               ",
+	"   X............X               ",
+	"   X...........X                ",
+	"    X..........X                ",
+	"    X..........X                ",
+	"     X........X                 ",
+	"     X........X                 ",
+	"     XXXXXXXXXX                 ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"                                ",
+	"5,0"
+};
+
+char const *cursor_brush[] =
 {
 	// width height num_colors chars_per_pixel
 	"    32    32        3            1",
@@ -99,7 +143,7 @@ char* cursor_brush[] =
 	"1,0"
 };
 
-char* cursor_fill[] =
+char const *cursor_fill[] =
 {
 	// width height num_colors chars_per_pixel
 	"    32    32        3            1",
@@ -143,7 +187,7 @@ char* cursor_fill[] =
 	"3,17"
 };
 
-SDL_Cursor* newCursor(char* image[])
+SDL_Cursor* newCursor(char const * const image[])
 {
 	int i, row, col;
 	Uint8 data[128];

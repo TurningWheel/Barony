@@ -9,18 +9,30 @@
 
 -------------------------------------------------------------------------------*/
 
+#include <memory>
+#include <ctime>
+#include <sys/stat.h>
+#include <sstream>
+
 #include "main.hpp"
+#include "draw.hpp"
+#include "files.hpp"
 #include "sound.hpp"
 #include "prng.hpp"
 #include "hash.hpp"
+#include "init.hpp"
 #include "net.hpp"
+#include "editor.hpp"
+#include "menu.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
 #endif
 #include "player.hpp"
+#include "items.hpp"
+#include "cppfuncs.hpp"
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 #include "fmod.h"
 //#include <fmod_errors.h>
 #endif
@@ -49,7 +61,7 @@ GLuint fbo_ren = 0;
 FILE* logfile = nullptr;
 bool steam_init = false;
 
-int initApp(char* title, int fullscreen)
+int initApp(char const * const title, int fullscreen)
 {
 	char name[128];
 	FILE* fp;
@@ -58,7 +70,7 @@ int initApp(char* title, int fullscreen)
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	for (c = 0; c < NUM_JOY_STATUS; ++c)
@@ -83,7 +95,54 @@ int initApp(char* title, int fullscreen)
 		ttfTextHash[c].last = NULL;
 	}
 	map.entities = NULL;
+	map.creatures = nullptr;
 	map.tiles = NULL;
+
+	// init PHYSFS
+	PHYSFS_init("/");
+	if ( !PHYSFS_isInit() )
+	{
+		printlog("[PhysFS]: failed to initialize! Error code: %d", PHYSFS_getLastErrorCode());
+		return 13;
+	}
+	else
+	{
+		printlog("[PhysFS]: successfully initialized, returned: %d", PHYSFS_getLastErrorCode());
+	}
+	if ( !PHYSFS_mount(datadir, NULL, 1) )
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", datadir, PHYSFS_getLastErrorCode());
+		return 13;
+	}
+	if ( PHYSFS_mount(outputdir, NULL, 1) )
+	{
+		printlog("[PhysFS]: successfully mounted output %s folder", outputdir);
+		if ( PHYSFS_setWriteDir(outputdir) )
+		{
+			PHYSFS_mkdir("savegames");
+			PHYSFS_mkdir("crashlogs");
+			PHYSFS_mkdir("logfiles");
+			PHYSFS_mkdir("data");
+			PHYSFS_mkdir("data/custom-monsters");
+			if ( PHYSFS_mkdir("mods") )
+			{
+				std::string path = outputdir;
+				path.append(PHYSFS_getDirSeparator()).append("mods");
+				PHYSFS_setWriteDir(path.c_str());
+				printlog("[PhysFS]: successfully set write folder %s", path.c_str());
+			}
+			else
+			{
+				printlog("[PhysFS]: unsuccessfully created mods/ folder. Error code: %d", PHYSFS_getLastErrorCode());
+				return 13;
+			}
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", outputdir, PHYSFS_getLastErrorCode());
+		return 13;
+	}
 
 	// init steamworks
 #ifdef STEAMWORKS
@@ -95,6 +154,36 @@ int initApp(char* title, int fullscreen)
 		return 1;
 	}
 	steam_init = true;
+	g_SteamLeaderboards = new CSteamLeaderboards();
+	g_SteamWorkshop = new CSteamWorkshop();
+	g_SteamStatistics = new CSteamStatistics(g_SteamStats, nullptr, NUM_STEAM_STATISTICS);
+	// Preloads mod content from a workshop fileID
+	//gamemodsWorkshopPreloadMod(YOUR WORKSHOP FILE ID HERE, "YOUR WORKSHOP TITLE HERE");
+#endif
+#if defined USE_EOS
+	EOS.readFromFile();
+	EOS.readFromCmdLineArgs();
+	if ( EOS.initPlatform(true) == false )
+	{
+		return 14;
+	}
+#ifndef STEAMWORKS
+#ifdef APPLE
+	if ( EOS.CredentialName.compare("") == 0 )
+	{
+		EOSFuncs::logInfo("Error, attempting to launch outside of store...");
+		return 15;
+	}
+#else
+	if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
+	{
+		// restarting app
+		EOSFuncs::logInfo("App attempting restart through store...");
+		return 15;
+	}
+#endif
+	EOS.initAuth();
+#endif // !STEAMWORKS
 #endif
 
 	window_title = title;
@@ -111,7 +200,7 @@ int initApp(char* title, int fullscreen)
 		return 2;
 	}*/
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	printlog("initializing FMOD...\n");
 	fmod_result = FMOD_System_Create(&fmod_system);
 	if (FMODErrorCheck())
@@ -136,6 +225,18 @@ int initApp(char* title, int fullscreen)
 				printlog("Failed to create sound channel group.\n");
 				no_sound = true;
 			}
+			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundAmbient_group);
+			if ( FMODErrorCheck() )
+			{
+				printlog("Failed to create sound ambient channel group.\n");
+				no_sound = true;
+			}
+			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundEnvironment_group);
+			if ( FMODErrorCheck() )
+			{
+				printlog("Failed to create sound environment channel group.\n");
+				no_sound = true;
+			}
 			if (!no_sound)
 			{
 				fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &music_group);
@@ -147,7 +248,7 @@ int initApp(char* title, int fullscreen)
 			}
 		}
 	}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 	if (!no_sound)
 	{
 		initOPENAL();
@@ -276,6 +377,9 @@ int initApp(char* title, int fullscreen)
 #endif
 #endif
 
+	drawClearBuffers();
+	GO_SwapBuffers(screen);
+
 	// load resources
 	printlog("loading engine resources...\n");
 	if ((fancyWindow_bmp = loadImage("images/system/fancyWindow.png")) == NULL)
@@ -299,6 +403,25 @@ int initApp(char* title, int fullscreen)
 		return 5;
 	}
 
+	// cache language entries
+	bool cacheText = false;
+	if (cacheText) {
+		for (int c = 0; c < NUMLANGENTRIES; ++c) {
+			bool foundSpecialChar = false;
+			for (int i = 0; language[c][i] != '\0'; ++i) {
+				if (language[c][i] == '\\' || language[c][i] == '%') {
+					foundSpecialChar = true;
+				}
+			}
+			if (foundSpecialChar) {
+				continue;
+			}
+			ttfPrintText(ttf8, 0, -200, language[c]);
+			ttfPrintText(ttf12, 0, -200, language[c]);
+			ttfPrintText(ttf16, 0, -200, language[c]);
+		}
+	}
+
 	// print a loading message
 	drawClearBuffers();
 	int w, h;
@@ -309,7 +432,7 @@ int initApp(char* title, int fullscreen)
 
 	// load sprites
 	printlog("loading sprites...\n");
-	fp = fopen("images/sprites.txt", "r");
+	fp = openDataFile("images/sprites.txt", "r");
 	for ( numsprites = 0; !feof(fp); numsprites++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -324,7 +447,7 @@ int initApp(char* title, int fullscreen)
 		return 6;
 	}
 	sprites = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numsprites);
-	fp = fopen("images/sprites.txt", "r");
+	fp = openDataFile("images/sprites.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -339,10 +462,12 @@ int initApp(char* title, int fullscreen)
 			if ( c == 0 )
 			{
 				printlog("sprite 0 cannot be NULL!\n");
+				fclose(fp);
 				return 7;
 			}
 		}
 	}
+	fclose(fp);
 
 	// print a loading message
 	drawClearBuffers();
@@ -352,8 +477,11 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load models
-	printlog("loading models...\n");
-	fp = fopen("models/models.txt", "r");
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	printlog("loading models from directory %s...\n", modelsDirectory.c_str());
+
+	fp = openDataFile(modelsDirectory.c_str(), "r");
 	for ( nummodels = 0; !feof(fp); nummodels++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -368,7 +496,7 @@ int initApp(char* title, int fullscreen)
 		return 11;
 	}
 	models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
-	fp = fopen("models/models.txt", "r");
+	fp = openDataFile(modelsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -383,15 +511,16 @@ int initApp(char* title, int fullscreen)
 			if ( c == 0 )
 			{
 				printlog("model 0 cannot be NULL!\n");
+				fclose(fp);
 				return 12;
 			}
 		}
 	}
 	if ( !softwaremode )
 	{
-		generatePolyModels();
+		generatePolyModels(0, nummodels, false);
 	}
-
+	fclose(fp);
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, LOADSTR3, &w, &h);
@@ -400,8 +529,11 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load tiles
-	printlog("loading tiles...\n");
-	fp = fopen("images/tiles.txt", "r");
+	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
+	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+	printlog("loading tiles from directory %s...\n", tilesDirectory.c_str());
+
+	fp = openDataFile(tilesDirectory.c_str(), "r");
 	for ( numtiles = 0; !feof(fp); numtiles++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -418,7 +550,8 @@ int initApp(char* title, int fullscreen)
 	tiles = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numtiles);
 	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
-	fp = fopen("images/tiles.txt", "r");
+	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
+	fp = openDataFile(tilesDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -429,12 +562,14 @@ int initApp(char* title, int fullscreen)
 		tiles[c] = loadImage(name);
 		animatedtiles[c] = false;
 		lavatiles[c] = false;
+		swimmingtiles[c] = false;
 		if ( tiles[c] != NULL )
 		{
 			for (x = 0; x < strlen(name); x++)
 			{
-				if ( name[x] >= 48 && name[x] < 58 )
+				if ( name[x] >= '0' && name[x] <= '9' )
 				{
+					// animated tiles if the tile name ends in a number 0-9.
 					animatedtiles[c] = true;
 					break;
 				}
@@ -443,6 +578,10 @@ int initApp(char* title, int fullscreen)
 			{
 				lavatiles[c] = true;
 			}
+			if ( strstr(name, "Water") || strstr(name, "water") || strstr(name, "swimtile") || strstr(name, "Swimtile") )
+			{
+				swimmingtiles[c] = true;
+			}
 		}
 		else
 		{
@@ -450,10 +589,12 @@ int initApp(char* title, int fullscreen)
 			if ( c == 0 )
 			{
 				printlog("tile 0 cannot be NULL!\n");
+				fclose(fp);
 				return 9;
 			}
 		}
 	}
+	fclose(fp);
 
 	// print a loading message
 	drawClearBuffers();
@@ -463,9 +604,11 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load sound effects
-#ifdef HAVE_FMOD
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
+#ifdef USE_FMOD
 	printlog("loading sounds...\n");
-	fp = fopen("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -480,7 +623,7 @@ int initApp(char* title, int fullscreen)
 		return 10;
 	}
 	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
-	fp = fopen("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -498,10 +641,12 @@ int initApp(char* title, int fullscreen)
 	}
 	fclose(fp);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 	printlog("loading sounds...\n");
-	fp = fopen("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -516,7 +661,7 @@ int initApp(char* title, int fullscreen)
 		return 10;
 	}
 	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	fp = fopen("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -530,9 +675,10 @@ int initApp(char* title, int fullscreen)
 	}
 	fclose(fp);
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif
-
 	return 0;
 }
 
@@ -544,7 +690,7 @@ int initApp(char* title, int fullscreen)
 
 -------------------------------------------------------------------------------*/
 
-int loadLanguage(char* lang)
+int loadLanguage(char const * const lang)
 {
 	char filename[128] = { 0 };
 	FILE* fp;
@@ -553,17 +699,27 @@ int loadLanguage(char* lang)
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	// compose filename
 	snprintf(filename, 127, "lang/%s.txt", lang);
+	std::string langFilepath;
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL )
+	{
+		std::string langRealDir = PHYSFS_getRealDir(filename);
+		langFilepath = langRealDir + PHYSFS_getDirSeparator() + filename;
+	}
+	else
+	{
+		langFilepath = filename;
+	}
 
 	// check if language file is valid
-	if ( access( filename, F_OK ) == -1 )
+	if ( !dataPathExists(langFilepath.c_str()) )
 	{
 		// language file doesn't exist
-		printlog("error: unable to locate language file: '%s'", filename);
+		printlog("error: unable to locate language file: '%s'", langFilepath.c_str());
 		return 1;
 	}
 
@@ -586,21 +742,43 @@ int loadLanguage(char* lang)
 
 	// load fonts
 	char fontName[64] = { 0 };
+	char fontPath[1024];
 	snprintf(fontName, 63, "lang/%s.ttf", lang);
-	if ( access(fontName, F_OK) == -1 )
+	std::string fontFilepath;
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir(fontName) != NULL )
+	{
+		std::string fontRealDir = PHYSFS_getRealDir(fontName);
+		fontFilepath = fontRealDir + PHYSFS_getDirSeparator() + fontName;
+	}
+	else
+	{
+		fontFilepath = fontName;
+	}
+
+	if ( !dataPathExists(fontFilepath.c_str()) )
 	{
 		strncpy(fontName, "lang/en.ttf", 63);
+		if ( PHYSFS_isInit() && PHYSFS_getRealDir(fontName) != NULL )
+		{
+			std::string fontRealDir = PHYSFS_getRealDir(fontName);
+			fontFilepath = fontRealDir + PHYSFS_getDirSeparator() + fontName;
+		}
+		else
+		{
+			fontFilepath = fontName;
+		}
 	}
-	if ( access(fontName, F_OK) == -1 )
+	if ( !dataPathExists(fontFilepath.c_str()) )
 	{
 		printlog("error: default game font 'lang/en.ttf' not found");
 		return 1;
 	}
+	completePath(fontPath, fontFilepath.c_str());
 	if ( ttf8 )
 	{
 		TTF_CloseFont(ttf8);
 	}
-	if ((ttf8 = TTF_OpenFont(fontName, TTF8_HEIGHT)) == NULL )
+	if ((ttf8 = TTF_OpenFont(fontPath, TTF8_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 8 ttf: %s\n", TTF_GetError());
 		return 1;
@@ -611,7 +789,7 @@ int loadLanguage(char* lang)
 	{
 		TTF_CloseFont(ttf12);
 	}
-	if ((ttf12 = TTF_OpenFont(fontName, TTF12_HEIGHT)) == NULL )
+	if ((ttf12 = TTF_OpenFont(fontPath, TTF12_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 12 ttf: %s\n", TTF_GetError());
 		return 1;
@@ -622,7 +800,7 @@ int loadLanguage(char* lang)
 	{
 		TTF_CloseFont(ttf16);
 	}
-	if ((ttf16 = TTF_OpenFont(fontName, TTF16_HEIGHT)) == NULL )
+	if ((ttf16 = TTF_OpenFont(fontPath, TTF16_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 16 ttf: %s\n", TTF_GetError());
 		return 1;
@@ -631,25 +809,14 @@ int loadLanguage(char* lang)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
-	if ( (fp = fopen(filename, "r")) == NULL )
+	if ( (fp = openDataFile(langFilepath.c_str(), "r")) == NULL )
 	{
-		printlog("error: unable to load language file: '%s'", filename);
+		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
 		return 1;
 	}
 
 	// free currently loaded language if any
-	if ( language )
-	{
-		for ( c = 0; c < NUMLANGENTRIES; c++ )
-		{
-			char* entry = language[c];
-			if ( entry )
-			{
-				free(entry);
-			}
-		}
-		free(language);
-	}
+	freeLanguages();
 
 	// store the new language code
 	strcpy(languageCode, lang);
@@ -717,12 +884,12 @@ int loadLanguage(char* lang)
 		// process line
 		if ( (entry = atoi(data)) == 0 )
 		{
-			printlog( "warning: syntax error in '%s':%d\n bad syntax!\n", filename, line);
+			printlog( "warning: syntax error in '%s':%d\n bad syntax!\n", langFilepath.c_str(), line);
 			continue;
 		}
 		else if ( entry >= NUMLANGENTRIES || entry < 0 )
 		{
-			printlog( "warning: syntax error in '%s':%d\n invalid language entry!\n", filename, line);
+			printlog( "warning: syntax error in '%s':%d\n invalid language entry!\n", langFilepath.c_str(), line);
 			continue;
 		}
 		//printlog( "loading entry %d...\n", entry);
@@ -730,7 +897,7 @@ int loadLanguage(char* lang)
 		snprintf(entryText, 15, "%d", entry);
 		if ( language[entry][0] )
 		{
-			printlog( "warning: duplicate entry %d in '%s':%d\n", entry, filename, line);
+			printlog( "warning: duplicate entry %d in '%s':%d\n", entry, langFilepath.c_str(), line);
 			free(language[entry]);
 		}
 		language[entry] = (char*) calloc(strlen((char*)(data + strlen(entryText) + 1)) + 1, sizeof(char));
@@ -739,7 +906,30 @@ int loadLanguage(char* lang)
 
 	// close file
 	fclose(fp);
-	printlog( "successfully loaded language file '%s'\n", filename);
+	printlog( "successfully loaded language file '%s'\n", langFilepath.c_str());
+
+	// update item internal language entries.
+	for ( int c = 0; c < NUMITEMS; ++c )
+	{
+		if ( c > SPELLBOOK_DETECT_FOOD )
+		{
+			int newItems = c - SPELLBOOK_DETECT_FOOD - 1;
+			items[c].name_identified = language[3500 + newItems * 2];
+			items[c].name_unidentified = language[3501 + newItems * 2];
+		}
+		else if ( c > ARTIFACT_BOW )
+		{
+			int newItems = c - ARTIFACT_BOW - 1;
+			items[c].name_identified = language[2200 + newItems * 2];
+			items[c].name_unidentified = language[2201 + newItems * 2];
+		}
+		else
+		{
+			items[c].name_identified = language[1545 + c * 2];
+			items[c].name_unidentified = language[1546 + c * 2];
+		}
+	}
+	initMenuOptions();
 	return 0;
 }
 
@@ -761,6 +951,32 @@ int reloadLanguage()
 }
 
 /*-------------------------------------------------------------------------------
+ *
+       freeLanguages
+
+	free languages string resources
+
+--------------------------------------------------------------------------------*/
+
+void freeLanguages()
+{
+	int c;
+
+	if ( language )
+	{
+		for ( c = 0; c < NUMLANGENTRIES; c++ )
+		{
+			char* entry = language[c];
+			if ( entry )
+			{
+				free(entry);
+			}
+		}
+		free(language);
+	}
+}
+
+/*-------------------------------------------------------------------------------
 
 	generatePolyModels
 
@@ -769,7 +985,7 @@ int reloadLanguage()
 
 -------------------------------------------------------------------------------*/
 
-void generatePolyModels()
+void generatePolyModels(int start, int end, bool forceCacheRebuild)
 {
 	Sint32 x, y, z;
 	Sint32 c, i;
@@ -779,25 +995,80 @@ void generatePolyModels()
 	polyquad_t* quad1, *quad2;
 	Uint32 numquads;
 	list_t quads;
+	FILE *model_cache;
+	bool generateAll = start == 0 && end == nummodels;
 
 	quads.first = NULL;
 	quads.last = NULL;
 
 	printlog("generating poly models...\n");
-	polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
-	for ( c = 0; c < nummodels; ++c )
+	if ( generateAll )
+	{
+		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
+		if ( useModelCache )
+		{
+			model_cache = openDataFile("models.cache", "rb");
+			if ( model_cache ) 
+			{
+				char polymodelsVersionStr[7] = "v0.0.0";
+				char modelsCacheHeader[7] = "000000";
+				fread(&modelsCacheHeader, sizeof(char), strlen("BARONY"), model_cache);
+
+				if ( !strcmp(modelsCacheHeader, "BARONY") )
+				{
+					// we're using the new polymodels file.
+					fread(&polymodelsVersionStr, sizeof(char), strlen(VERSION), model_cache);
+					printlog("[MODEL CACHE]: Using updated version format %s.", polymodelsVersionStr);
+					if ( strncmp(polymodelsVersionStr, VERSION, strlen(VERSION)) )
+					{
+						// different version.
+						forceCacheRebuild = true;
+						printlog("[MODEL CACHE]: Detected outdated version number %s - current is %s. Upgrading cache...", polymodelsVersionStr, VERSION);
+					}
+				}
+				else
+				{
+					printlog("[MODEL CACHE]: Detected legacy cache without embedded version data, upgrading cache to %s...", VERSION);
+					rewind(model_cache);
+					forceCacheRebuild = true; // upgrade from legacy cache
+				}
+				if ( !forceCacheRebuild )
+				{
+					for (size_t model_index = 0; model_index < nummodels; model_index++) {
+						polymodel_t *cur = &polymodels[model_index];
+						fread(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
+						cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
+						fread(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+					}
+					fclose(model_cache);
+					return generateVBOs(start, end);
+				}
+				else
+				{
+					fclose(model_cache);
+				}
+			}
+		}
+	}
+
+	for ( c = start; c < end; ++c )
 	{
 		char loadText[128];
 		snprintf(loadText, 127, language[745], c, nummodels);
 
 		// print a loading message
-		drawClearBuffers();
-		int w, h;
-		TTF_SizeUTF8(ttf16, loadText, &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
+		if ( start == 0 && end == nummodels )
+		{
+			if ( c % 50 == 0 )
+			{
+				drawClearBuffers();
+				int w, h;
+				TTF_SizeUTF8(ttf16, loadText, &w, &h);
+				ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
 
-		GO_SwapBuffers(screen);
-
+				GO_SwapBuffers(screen);
+			}
+		}
 		numquads = 0;
 		polymodels[c].numfaces = 0;
 		voxel_t* model = models[c];
@@ -1709,11 +1980,24 @@ void generatePolyModels()
 		// free up quads for the next model
 		list_FreeAll(&quads);
 	}
+	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) 
+	{
+		char modelCacheHeader[32] = "BARONY";
+		strcat(modelCacheHeader, VERSION);
+		fwrite(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader), model_cache);
+		for (size_t model_index = 0; model_index < nummodels; model_index++)
+		{
+			polymodel_t *cur = &polymodels[model_index];
+			fwrite(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
+			fwrite(cur->faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+		}
+		fclose(model_cache);
+	}
 
 	// now store models into VBOs
 	if ( !disablevbos )
 	{
-		generateVBOs();
+		generateVBOs(start, end);
 	}
 }
 
@@ -1725,85 +2009,67 @@ void generatePolyModels()
 
 -------------------------------------------------------------------------------*/
 
-void generateVBOs()
+void generateVBOs(int start, int end)
 {
-	int i, c;
+	int count = end - start;
 
-	for ( c = 0; c < nummodels; ++c )
+	std::unique_ptr<GLuint[]> vas(new GLuint[count]);
+	SDL_glGenVertexArrays(count, vas.get());
+
+	std::unique_ptr<GLuint[]> vbos(new GLuint[count]);
+	SDL_glGenBuffers(count, vbos.get());
+
+	std::unique_ptr<GLuint[]> color_buffers(new GLuint[count]);
+	SDL_glGenBuffers(count, color_buffers.get());
+
+	std::unique_ptr<GLuint[]> color_shifted_buffers(new GLuint[count]);
+	SDL_glGenBuffers(count, color_shifted_buffers.get());
+
+	for ( int c = start; c < end; ++c )
 	{
-		/*if( c>0 )
-			break;*/
-		GLfloat* points = (GLfloat*) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
-		GLfloat* colors = (GLfloat*) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
-		GLfloat* colors_shifted = (GLfloat*) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
-		for ( i = 0; i < polymodels[c].numfaces; i++ )
+		polymodel_t *model = &polymodels[c];
+		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> colors(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> colors_shifted(new GLfloat[9 * model->numfaces]);
+		for ( int i = 0; i < model->numfaces; i++ )
 		{
-			points[i * 9] = polymodels[c].faces[i].vertex[0].x;
-			colors[i * 9] = polymodels[c].faces[i].r / 255.f;
-			colors_shifted[i * 9] = polymodels[c].faces[i].b / 255.f;
+			const polytriangle_t *face = &model->faces[i];
+			for (int vert_index = 0; vert_index < 3; vert_index++)
+			{
+				int data_index = i * 9 + vert_index * 3;
+				const vertex_t *vert = &face->vertex[vert_index];
 
-			points[i * 9 + 1] = -polymodels[c].faces[i].vertex[0].z;
-			colors[i * 9 + 1] = polymodels[c].faces[i].g / 255.f;
-			colors_shifted[i * 9 + 1] = polymodels[c].faces[i].r / 255.f;
+				points[data_index] = vert->x;
+				points[data_index + 1] = -vert->z;
+				points[data_index + 2] = vert->y;
 
-			points[i * 9 + 2] = polymodels[c].faces[i].vertex[0].y;
-			colors[i * 9 + 2] = polymodels[c].faces[i].b / 255.f;
-			colors_shifted[i * 9 + 2] = polymodels[c].faces[i].g / 255.f;
+				colors[data_index] = face->r / 255.f;
+				colors[data_index + 1] = face->g / 255.f;
+				colors[data_index + 2] = face->b / 255.f;
 
-			points[i * 9 + 3] = polymodels[c].faces[i].vertex[1].x;
-			colors[i * 9 + 3] = polymodels[c].faces[i].r / 255.f;
-			colors_shifted[i * 9 + 3] = polymodels[c].faces[i].b / 255.f;
-
-			points[i * 9 + 4] = -polymodels[c].faces[i].vertex[1].z;
-			colors[i * 9 + 4] = polymodels[c].faces[i].g / 255.f;
-			colors_shifted[i * 9 + 4] = polymodels[c].faces[i].r / 255.f;
-
-			points[i * 9 + 5] = polymodels[c].faces[i].vertex[1].y;
-			colors[i * 9 + 5] = polymodels[c].faces[i].b / 255.f;
-			colors_shifted[i * 9 + 5] = polymodels[c].faces[i].g / 255.f;
-
-			points[i * 9 + 6] = polymodels[c].faces[i].vertex[2].x;
-			colors[i * 9 + 6] = polymodels[c].faces[i].r / 255.f;
-			colors_shifted[i * 9 + 6] = polymodels[c].faces[i].b / 255.f;
-
-			points[i * 9 + 7] = -polymodels[c].faces[i].vertex[2].z;
-			colors[i * 9 + 7] = polymodels[c].faces[i].g / 255.f;
-			colors_shifted[i * 9 + 7] = polymodels[c].faces[i].r / 255.f;
-
-			points[i * 9 + 8] = polymodels[c].faces[i].vertex[2].y;
-			colors[i * 9 + 8] = polymodels[c].faces[i].b / 255.f;
-			colors_shifted[i * 9 + 8] = polymodels[c].faces[i].g / 255.f;
+				colors_shifted[data_index] = face->b / 255.f;
+				colors_shifted[data_index + 1] = face->r / 255.f;
+				colors_shifted[data_index + 2] = face->g / 255.f;
+			}
 		}
-		SDL_glGenVertexArrays(1, &polymodels[c].va);
-		SDL_glGenBuffers(1, &polymodels[c].vbo);
-		SDL_glGenBuffers(1, &polymodels[c].colors);
-		SDL_glGenBuffers(1, &polymodels[c].colors_shifted);
-		SDL_glBindVertexArray(polymodels[c].va);
+		model->va = vas[c - start];
+		model->vbo = vbos[c - start];
+		model->colors = color_buffers[c - start];
+		model->colors_shifted = color_shifted_buffers[c - start];
+		SDL_glBindVertexArray(model->va);
 
 		// vertex data
 		// Well, the generic vertex array are not used, so disabled (making it run on any OpenGL 1.5 hardware)
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].vbo);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * polymodels[c].numfaces, points, GL_STATIC_DRAW);
-		//SDL_glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		//SDL_glEnableVertexAttribArray(0);
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->vbo);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW);
 
 		// color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].colors);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * polymodels[c].numfaces, colors, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-		//SDL_glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glColorPointer(3, GL_FLOAT, 0, 0);
-		//SDL_glEnableVertexAttribArray(1);
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 
 		// shifted color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].colors_shifted);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * polymodels[c].numfaces, colors_shifted, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-		//SDL_glVertexAttribPointer((GLuint)2, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glColorPointer(3, GL_FLOAT, 0, 0);
-		//SDL_glEnableVertexAttribArray(2);
-
-		free(points);
-		free(colors);
-		free(colors_shifted);
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 	}
 }
 
@@ -1817,7 +2083,7 @@ void generateVBOs()
 int deinitApp()
 {
 	Uint32 c;
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 	closeOPENAL();
 #endif
 	// close engine
@@ -1865,6 +2131,11 @@ int deinitApp()
 		list_FreeAll(map.entities);
 		free(map.entities);
 	}
+	if ( map.creatures != nullptr)
+	{
+		list_FreeAll(map.creatures); //TODO: Need to call this? Entities are only pointed to by the thing, not owned.
+		delete map.creatures;
+	}
 	list_FreeAll(&light_l);
 	if ( map.tiles != NULL )
 	{
@@ -1873,6 +2144,10 @@ int deinitApp()
 	if ( lightmap != NULL )
 	{
 		free(lightmap);
+	}
+	if ( lightmapSmoothed )
+	{
+		free(lightmapSmoothed);
 	}
 	if ( vismap != NULL )
 	{
@@ -1900,12 +2175,17 @@ int deinitApp()
 	if ( animatedtiles )
 	{
 		free(animatedtiles);
-		animatedtiles = NULL;
+		animatedtiles = nullptr;
 	}
 	if ( lavatiles )
 	{
 		free(lavatiles);
-		lavatiles = NULL;
+		lavatiles = nullptr;
+	}
+	if ( swimmingtiles )
+	{
+		free(swimmingtiles);
+		swimmingtiles = nullptr;
 	}
 
 	// free sprites
@@ -1921,6 +2201,13 @@ int deinitApp()
 		}
 		free(sprites);
 	}
+
+	// free achievement images
+	for (auto& item : achievementImages) 
+	{
+		SDL_FreeSurface(item.second);
+	}
+	achievementImages.clear();
 
 	// free models
 	printlog("freeing models...\n");
@@ -1970,11 +2257,11 @@ int deinitApp()
 	}
 
 	// free sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	printlog("freeing sounds...\n");
 	if ( sounds != NULL )
 	{
-		for ( c = 0; c < numsounds; c++ )
+		for ( c = 0; c < numsounds && !no_sound; c++ )
 		{
 			if (sounds[c] != NULL)
 			{
@@ -2017,7 +2304,7 @@ int deinitApp()
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	if ( fmod_system )
 	{
 		FMOD_System_Close(fmod_system);
@@ -2063,26 +2350,116 @@ int deinitApp()
 	{
 		printlog("storing user stats to Steam...\n");
 		SteamUserStats()->StoreStats();
+		if ( g_SteamLeaderboards )
+		{
+			delete g_SteamLeaderboards;
+		}
+		if ( g_SteamWorkshop )
+		{
+			delete g_SteamWorkshop;
+		}
+		if ( g_SteamStatistics )
+		{
+			delete g_SteamStatistics;
+		}
 		SteamAPI_Shutdown();
 	}
 #endif
 
-	// free currently loaded language if any
-	if ( language )
+
+	int numLogFilesToKeepInArchive = 30;
+	// archive logfiles.
+	char lognamewithTimestamp[128];
+	std::time_t timeNow = std::time(nullptr);
+	struct tm *localTimeNow = nullptr;
+	localTimeNow = std::localtime(&timeNow);
+
+	snprintf(lognamewithTimestamp, 127, "log_%4d%02d%02d_%02d%02d%02d.txt", 
+		localTimeNow->tm_year + 1900, localTimeNow->tm_mon + 1, localTimeNow->tm_mday, localTimeNow->tm_hour, localTimeNow->tm_min, localTimeNow->tm_sec);
+
+	std::string logarchivePath = outputdir;
+	logarchivePath.append(PHYSFS_getDirSeparator()).append("logfiles").append(PHYSFS_getDirSeparator());
+	std::string logarchiveFilePath = logarchivePath + lognamewithTimestamp;
+
+	
+	// prune any old logfiles if qty >= numLogFilesToKeepInArchive 
+	std::vector<std::pair<int, std::string>> sortedLogFiles;
+	auto archivedFiles = directoryContents(logarchivePath.c_str(), false, true);
+	if ( !archivedFiles.empty() && archivedFiles.size() >= numLogFilesToKeepInArchive )
 	{
-		for ( c = 0; c < NUMLANGENTRIES; c++ )
+		// first find the date modified of log files.
+		for ( auto file : archivedFiles )
 		{
-			char* entry = language[c];
-			if ( entry )
+			struct tm *tm = nullptr;
+//#ifdef WINDOWS
+			std::string filePath = logarchivePath + file;
+#ifdef WINDOWS
+			struct _stat fileDateModified;
+			if ( _stat(filePath.c_str(), &fileDateModified) == 0 )
+#else
+			struct stat fileDateModified;
+			if ( stat(filePath.c_str(), &fileDateModified) == 0 )
+#endif
 			{
-				free(entry);
+				tm = localtime(&fileDateModified.st_mtime);
+			}
+//#else
+			// UNIX/MAC
+			/*struct stat fileDateModified;
+			if ( stat(filePath.c_str(), &fileDateModified) == 0 )
+			{
+			tm = localtime(&fileDateModified.st_mtime);
+			}*/
+//#endif
+			if ( tm )
+			{
+				int timeDifference = std::difftime(timeNow, mktime(tm));
+				sortedLogFiles.push_back(std::make_pair(timeDifference, file));
 			}
 		}
-		free(language);
+	}
+	std::sort(sortedLogFiles.begin(), sortedLogFiles.end()); // sort most recent to oldest.
+	while ( sortedLogFiles.size() >= numLogFilesToKeepInArchive )
+	{
+		std::string logToRemove = logarchivePath + sortedLogFiles.back().second;
+		printlog("notice: Deleting archived log file %s due to number of old log files (%d) exceeds limit of %d.", logToRemove.c_str(), sortedLogFiles.size(), numLogFilesToKeepInArchive);
+		if ( access(logToRemove.c_str(), F_OK) != -1 )
+		{
+			int result = remove(logToRemove.c_str());
+			if ( result )
+			{
+				printlog("warning: failed to delete logfile %s", logToRemove.c_str());
+			}
+		}
+		else
+		{
+			printlog("warning: could not access logfile %s", logToRemove.c_str());
+		}
+		sortedLogFiles.pop_back();
 	}
 
+	if ( PHYSFS_isInit() )
+	{
+		PHYSFS_deinit();
+		printlog("[PhysFS]: De-initializing...\n");
+	}
+
+	// free currently loaded language if any
+	freeLanguages();
+	printlog("notice: archiving log file as %s...\n", logarchiveFilePath.c_str());
 	printlog("success\n");
 	fclose(logfile);
+
+	// copy the log file into the archives.
+	char logToArchive[PATH_MAX];
+	completePath(logToArchive, "log.txt", outputdir);
+#ifdef WINDOWS
+	CopyFileA(logToArchive, logarchiveFilePath.c_str(), false);
+#else //LINUX & APPLE
+	std::stringstream ss;
+	ss << "cp " << logToArchive << " " << logarchiveFilePath.c_str();
+	system(ss.str().c_str());
+#endif // WINDOWS
 	return 0;
 }
 
@@ -2162,6 +2539,10 @@ bool initVideo()
 	{
 		flags |= SDL_WINDOW_FULLSCREEN;
 	}
+	if ( borderless )
+	{
+		flags |= SDL_WINDOW_BORDERLESS;
+	}
 	if ( !game )
 	{
 		flags |= SDL_WINDOW_RESIZABLE;
@@ -2183,10 +2564,6 @@ bool initVideo()
 #else
 	int screen_width = xres;
 #endif
-	if (splitscreen)
-	{
-		screen_width *= 2;
-	}
 	if ( !screen )
 	{
 #ifdef PANDORA
@@ -2214,6 +2591,15 @@ bool initVideo()
 		{
 			SDL_SetWindowFullscreen(screen, 0);
 		}
+		if ( borderless )
+		{
+			SDL_SetWindowBordered(screen, SDL_bool::SDL_FALSE);
+		}
+		else
+		{
+			SDL_SetWindowBordered(screen, SDL_bool::SDL_TRUE);
+		}
+		SDL_SetWindowPosition(screen, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	}
 	if ( !renderer )
 	{
@@ -2265,6 +2651,15 @@ bool initVideo()
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
 		glClearColor( 0, 0, 0, 0 );
+	}
+
+	if ( verticalSync )
+	{
+		SDL_GL_SetSwapInterval(1);
+	}
+	else
+	{
+		SDL_GL_SetSwapInterval(0);
 	}
 	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
 	{
@@ -2333,6 +2728,7 @@ bool changeVideoMode()
 		xres = 960;
 		yres = 600;
 		fullscreen = 0;
+		borderless = false;
 		printlog("defaulting to safe video mode...\n");
 		if ( !initVideo() )
 		{
@@ -2350,9 +2746,72 @@ bool changeVideoMode()
 	// regenerate vbos
 	if ( !disablevbos )
 	{
-		generateVBOs();
+		generateVBOs(0, nummodels);
 	}
 #endif
 	// success
+	return true;
+}
+
+/*-------------------------------------------------------------------------------
+
+loadItemLists()
+
+loads the global item whitelist/blacklists and level curve.
+
+-------------------------------------------------------------------------------*/
+
+bool loadItemLists()
+{
+	//FILE* fp;
+	int c;
+
+	// open log file
+	if ( !logfile )
+	{
+		openLogFile();
+	}
+
+	// compose filename
+	//char filename[128] = "items/items_global.txt";
+	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items_global.txt");
+	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items_global.txt");
+	// check if item list is valid
+	if ( !dataPathExists(itemsTxtDirectory.c_str()) )
+	{
+		// file doesn't exist
+		printlog("error: unable to locate global item list file: '%s'", itemsTxtDirectory.c_str());
+		return false;
+	}
+
+	std::vector<std::string> itemLevels = getLinesFromDataFile(itemsTxtDirectory);
+	std::string line;
+	int itemIndex = 0;
+
+	for ( std::vector<std::string>::const_iterator i = itemLevels.begin(); i != itemLevels.end(); ++i ) {
+		// process i
+		line = *i;
+		if ( line[0] == '#' || line[0] == '\n' )
+		{
+			continue;
+		}
+		std::size_t found = line.find('#');
+		if ( found != std::string::npos )
+		{
+			char tmp[128];
+			std::string sub = line.substr(0, found);
+			strncpy(tmp, sub.c_str(), sub.length());
+			tmp[sub.length()] = '\0';
+			//printlog("%s", tmp);
+			items[itemIndex].level = atoi(tmp);
+			++itemIndex;
+		}
+	}
+
+	printlog("successfully loaded global item list '%s' \n", itemsTxtDirectory.c_str());
+	/*for ( c = 0; c < NUMITEMS; ++c )
+	{
+		printlog("%s level: %d", items[c].name_identified, items[c].level);
+	}*/
 	return true;
 }

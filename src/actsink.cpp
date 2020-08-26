@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -30,6 +31,7 @@
 -------------------------------------------------------------------------------*/
 
 #define SINK_AMBIENCE my->skill[7]
+#define SINK_DISABLE_POLYMORPH_WASHING my->skill[8]
 
 void actSink(Entity* my)
 {
@@ -37,7 +39,7 @@ void actSink(Entity* my)
 	if ( SINK_AMBIENCE <= 0 )
 	{
 		SINK_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntityLocal( my, 149, 128 );
+		playSoundEntityLocal( my, 149, 32 );
 	}
 
 	if ( my->skill[2] > 0 )
@@ -82,15 +84,45 @@ void actSink(Entity* my)
 				if (my->skill[0] == 0)
 				{
 					messagePlayer(i, language[580]);
-					playSoundEntity(my, 140 + rand(), 64);
+					playSoundEntity(my, 140 + rand() % 2, 64);
 				}
 				else
 				{
+					if ( players[i]->entity->flags[BURNING] )
+					{
+						messagePlayer(i, language[468]);
+						players[i]->entity->flags[BURNING] = false;
+						serverUpdateEntityFlag(players[i]->entity, BURNING);
+						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
+					}
+					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] && (SINK_DISABLE_POLYMORPH_WASHING == 0) )
+					{
+						if ( stats[i]->EFFECTS[EFF_POLYMORPH] )
+						{
+							players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
+							players[i]->entity->effectPolymorph = 0;
+							serverUpdateEntitySkill(players[i]->entity, 50);
+							messagePlayer(i, language[3192]);
+							messagePlayer(i, language[3185]);
+						}
+						/*if ( stats[i]->EFFECTS[EFF_SHAPESHIFT] )
+						{
+							players[i]->entity->setEffect(EFF_SHAPESHIFT, false, 0, true);
+							players[i]->entity->effectShapeshift = 0;
+							serverUpdateEntitySkill(players[i]->entity, 53);
+							messagePlayer(i, language[3418]);
+							messagePlayer(i, language[3417]);
+						}*/
+
+						playSoundEntity(players[i]->entity, 400, 92);
+						createParticleDropRising(players[i]->entity, 593, 1.f);
+						serverSpawnMiscParticles(players[i]->entity, PARTICLE_EFFECT_RISING_DROP, 593);
+					}
 					switch (my->skill[3])
 					{
 						case 0:
 						{
-							playSoundEntity(players[i]->entity, 52, 64);
+							//playSoundEntity(players[i]->entity, 52, 64);
 							messagePlayer(i, language[581]);
 
 							//Randomly choose a ring.
@@ -134,7 +166,7 @@ void actSink(Entity* my)
 						}
 						case 1:
 						{
-							playSoundEntity(players[i]->entity, 52, 64);
+							//playSoundEntity(players[i]->entity, 52, 64);
 
 							// spawn slime
 							Entity* monster = summonMonster(SLIME, my->x, my->y);
@@ -150,15 +182,97 @@ void actSink(Entity* my)
 							break;
 						}
 						case 2:
-							playSoundEntity(players[i]->entity, 52, 64);
-							messagePlayer(i, language[583]);
-							stats[i]->HUNGER += 30; //Less nutrition than the refreshing fountain.
+						{
+							if ( stats[i]->type == AUTOMATON )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+								messagePlayerColor(i, color, language[3700]);
+								playSoundEntity(players[i]->entity, 52, 64);
+								stats[i]->HUNGER -= 200; //Lose boiler
+								players[i]->entity->modMP(5 + rand() % 6); //Raise temperature because steam.
+								serverUpdateHunger(i);
+							}
+							else if ( stats[i]->type != VAMPIRE )
+							{
+								messagePlayer(i, language[583]);
+								playSoundEntity(players[i]->entity, 52, 64);
+								stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
+								players[i]->entity->modHP(1);
+							}
+							else
+							{
+								players[i]->entity->modHP(-2);
+								playSoundEntity(players[i]->entity, 28, 64);
+								playSoundEntity(players[i]->entity, 249, 128);
+								players[i]->entity->setObituary(language[1533]);
+
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								messagePlayerColor(i, color, language[3183]);
+								if ( i == 0 || splitscreen )
+								{
+									cameravars[i].shakex += .1;
+									cameravars[i].shakey += 10;
+								}
+								else if ( multiplayer == SERVER && i > 0 )
+								{
+									strcpy((char*)net_packet->data, "SHAK");
+									net_packet->data[4] = 10; // turns into .1
+									net_packet->data[5] = 10;
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
 							break;
+						}
 						case 3:
-							playSoundEntity(players[i]->entity, 52, 64);
-							messagePlayer(i, language[584]);
-							players[i]->entity->modHP(-1);
+						{
+							if ( stats[i]->type == AUTOMATON )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+								messagePlayerColor(i, color, language[3701]);
+								playSoundEntity(players[i]->entity, 52, 64);
+								stats[i]->HUNGER += 200; //Gain boiler
+								players[i]->entity->modMP(2);
+								serverUpdateHunger(i);
+								break;
+							}
+							else
+							{
+								if ( stats[i]->type != VAMPIRE )
+								{
+									players[i]->entity->modHP(-2);
+								}
+								else
+								{
+									players[i]->entity->modHP(-2);
+									playSoundEntity(players[i]->entity, 249, 128);
+								}
+								playSoundEntity(players[i]->entity, 28, 64);
+								players[i]->entity->setObituary(language[1533]);
+
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								messagePlayerColor(i, color, language[584]);
+
+								if ( i == 0 || splitscreen )
+								{
+									cameravars[i].shakex += .1;
+									cameravars[i].shakey += 10;
+								}
+								else if ( multiplayer == SERVER && i > 0 )
+								{
+									strcpy((char*)net_packet->data, "SHAK");
+									net_packet->data[4] = 10; // turns into .1
+									net_packet->data[5] = 10;
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
 							break;
+						}
 						default:
 							break;
 					}
@@ -206,6 +320,7 @@ void actSink(Entity* my)
 						messagePlayer(i, language[585]);
 						playSoundEntity(my, 132, 64);
 					}
+					serverUpdateEntitySkill(my, 0);
 				}
 			}
 		}

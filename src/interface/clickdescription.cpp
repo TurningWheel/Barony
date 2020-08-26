@@ -40,7 +40,11 @@ void clickDescription(int player, Entity* entity)
 			return;
 		}
 		//One of either IN_ATTACK or INJOY_MENU_LEFT_CLICK is true, && shootmode == false;
-		if ( omousex < camera.winx || omousex >= camera.winx + camera.winw || omousey < camera.winy || omousey >= camera.winy + camera.winh )
+		if ( omousex < 0 || omousex >= 0 + xres || omousey < 0 || omousey >= 0 + yres )
+		{
+			return;
+		}
+		if ( FollowerMenu.followerMenuIsOpen() )
 		{
 			return;
 		}
@@ -96,10 +100,10 @@ void clickDescription(int player, Entity* entity)
 				{
 					numspells++;
 				}
-				int maxSpellsOnscreen = camera.winh / spell_list_gui_slot_bmp->h;
+				int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
 				numspells = std::min(numspells, maxSpellsOnscreen);
 				height += numspells * spell_list_gui_slot_bmp->h;
-				int spelllist_y = camera.winy + ((camera.winh / 2) - (height / 2)) + magicspell_list_offset_x;
+				int spelllist_y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
 
 				if (mouseInBounds(MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
 				{
@@ -107,18 +111,48 @@ void clickDescription(int player, Entity* entity)
 				}
 			}
 		}
-		if (mouseInBounds(0, 224, 0, 420))   // character sheet
+
+		if ( mouseInBounds(interfaceCharacterSheet.x, interfaceCharacterSheet.x + interfaceCharacterSheet.w,
+			interfaceCharacterSheet.y, interfaceCharacterSheet.y + interfaceCharacterSheet.h) )
 		{
+			// character sheet
 			return;
 		}
-		int x = xres / 2 - (status_bmp->w / 2);
-		if (mouseInBounds(x, x + status_bmp->w, yres - status_bmp->h - hotbar_img->h, yres))
+
+		if (!hide_statusbar && 
+			mouseInBounds(interfaceMessageStatusBar.x, interfaceMessageStatusBar.x + interfaceMessageStatusBar.w,
+				interfaceMessageStatusBar.y, interfaceMessageStatusBar.y + interfaceMessageStatusBar.h) )
 		{
+			// bottom message log
 			return;
 		}
+
 		if ( selectedItem || itemMenuOpen )
 		{
 			//Will bugger up GUI item interaction if this function continues to run.
+			return;
+		}
+
+		// ui code taken from drawSkillsSheet() and drawPartySheet().
+		if ( proficienciesPage == 0 )
+		{
+			if ( mouseInBounds(interfaceSkillsSheet.x, interfaceSkillsSheet.x + interfaceSkillsSheet.w,
+				interfaceSkillsSheet.y, interfaceSkillsSheet.y + interfaceSkillsSheet.h) )
+			{
+				return;
+			}
+		}
+		else
+		{
+			if ( mouseInBounds(interfacePartySheet.x, interfacePartySheet.x + interfacePartySheet.w,
+				interfacePartySheet.y, interfacePartySheet.y + interfacePartySheet.h) )
+			{
+				return;
+			}
+		}
+
+		if ( mouseInsidePlayerInventory() || mouseInsidePlayerHotbar() )
+		{
 			return;
 		}
 
@@ -131,7 +165,7 @@ void clickDescription(int player, Entity* entity)
 		}
 		else
 		{
-			uidnum = GO_GetPixelU32(omousex, yres - omousey);
+			uidnum = GO_GetPixelU32(omousex, yres - omousey, cameras[player]);
 			entity = uidToEntity(uidnum);
 		}
 	}
@@ -152,14 +186,7 @@ void clickDescription(int player, Entity* entity)
 							Stat* stats = parent->getStats();
 							if ( stats )
 							{
-								if ( strcmp(stats->name, "") )
-								{
-									messagePlayer(player, language[253], language[90 + stats->type], stats->name);
-								}
-								else
-								{
-									messagePlayer(player, language[254], language[90 + stats->type]);
-								}
+								messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stats, language[254], language[253], MSG_DESCRIPTION, parent);
 							}
 						}
 					}
@@ -183,13 +210,13 @@ void clickDescription(int player, Entity* entity)
 				}
 				else if ( entity->behavior == &actGoldBag )
 				{
-					if ( entity->skill[0] == 1 )
+					if ( entity->goldAmount == 1 )
 					{
 						messagePlayer(player, language[258]);
 					}
 					else
 					{
-						messagePlayer(player, language[259], entity->skill[0]);
+						messagePlayer(player, language[259], entity->goldAmount);
 					}
 				}
 				else if ( entity->behavior == &actCampfire)
@@ -236,31 +263,78 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, language[271]);
 				}
-				else if ( entity->behavior == &actPortal || entity->behavior == &actWinningPortal )
+				else if ( entity->behavior == &actPortal || entity->behavior == &actWinningPortal
+					|| entity->behavior == &actMidGamePortal )
 				{
 					messagePlayer(player, language[272]);
 				}
 				else if ( entity->behavior == &actFurniture )
 				{
-					if ( entity->skill[0] )
+					switch ( entity->furnitureType )
 					{
-						messagePlayer(player, language[273]);
+						case FURNITURE_CHAIR:
+							messagePlayer(player, language[273]);
+							break;
+						case FURNITURE_TABLE:
+							messagePlayer(player, language[274]);
+							break;
+						case FURNITURE_BED:
+							messagePlayer(player, language[2497]);
+							break;
+						case FURNITURE_BUNKBED:
+							messagePlayer(player, language[2499]);
+							break;
+						case FURNITURE_PODIUM:
+							messagePlayer(player, language[2500]);
+							break;
+						default:
+							messagePlayer(player, language[273]);
+							break;
 					}
-					else
-					{
-						messagePlayer(player, language[274]);
-					}
+				}
+				// need to check the sprite since these are all empty behaviors.
+				else if ( entity->sprite >= 631 && entity->sprite <= 633 ) // piston
+				{
+					messagePlayer(player, language[2501]);
+				}
+				else if  (entity->sprite == 629 || entity->sprite == 580 ) // column
+				{
+					messagePlayer(player, language[2502]);
+				}
+				else if ( entity->sprite == 581 || entity->sprite == 582 ) // floor stalag
+				{
+					messagePlayer(player, language[2503]);
+				}
+				else if ( entity->sprite == 583 || entity->sprite == 584 ) // ceiling stalag
+				{
+					messagePlayer(player, language[2504]);
+				}
+				else if ( entity->behavior == &actPowerCrystal || entity->behavior == &actPowerCrystalBase )
+				{
+					messagePlayer(player, language[2375]);
+				}
+				else if ( entity->behavior == &actPedestalBase )
+				{
+					messagePlayer(player, language[2376]);
+				}
+				else if ( entity->behavior == &actPedestalOrb )
+				{
+					messagePlayer(player, language[2377]);
 				}
 			}
 			else
 			{
-				if ( !strcmp(stat->name, "") )
+				if ( entity->behavior == &actPlayerLimb )
 				{
-					messagePlayer(player, language[254], language[90 + stat->type]);
+					Entity* parent = uidToEntity(entity->parent);
+					if ( parent )
+					{
+						messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stat, language[254], language[253], MSG_DESCRIPTION, parent);
+					}
 				}
 				else
 				{
-					messagePlayer(player, language[253], language[90 + stat->type], stat->name);
+					messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stat, language[254], language[253], MSG_DESCRIPTION, entity);
 				}
 			}
 		}

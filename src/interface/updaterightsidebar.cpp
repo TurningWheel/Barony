@@ -12,6 +12,7 @@
 // note: as of some prealpha version I've since forgotten, this module is totally deprecated
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "interface.hpp"
@@ -63,11 +64,12 @@ void updateRightSidebar()
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			identifygui_active = true;
 			identifygui_appraising = true;
-			gui_mode = GUI_MODE_INVENTORY;
+			openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 			if ( removecursegui_active )
 			{
 				closeRemoveCurseGUI();
 			}
+			GenericGUI.closeGUI();
 			if ( openedChest[clientnum] )
 			{
 				openedChest[clientnum]->closeChest();
@@ -105,6 +107,7 @@ void updateRightSidebar()
 			{
 				shootmode = false;
 				attributespage = 0;
+				proficienciesPage = 0;
 			}
 		}
 	}
