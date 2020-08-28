@@ -560,33 +560,34 @@ void serverUpdateBodypartIDs(Entity* entity)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "BDYI");
-			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
-			node_t* node;
-			int i;
-			for ( i = 0, node = entity->children.first; node != NULL; node = node->next, i++ )
-			{
-				if ( i < 1 || (i < 2 && entity->behavior == &actMonster) )
-				{
-					continue;
-				}
-				Entity* tempEntity = (Entity*)node->element;
-				if ( entity->behavior == &actMonster )
-				{
-					SDLNet_Write32(tempEntity->getUID(), &net_packet->data[8 + 4 * (i - 2)]);
-				}
-				else
-				{
-					SDLNet_Write32(tempEntity->getUID(), &net_packet->data[8 + 4 * (i - 1)]);
-				}
-			}
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 8 + (list_Size(&entity->children) - 2) * 4;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "BDYI");
+		SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+		node_t* node;
+		int i;
+		for ( i = 0, node = entity->children.first; node != NULL; node = node->next, i++ )
+		{
+			if ( i < 1 || (i < 2 && entity->behavior == &actMonster) )
+			{
+				continue;
+			}
+			Entity* tempEntity = (Entity*)node->element;
+			if ( entity->behavior == &actMonster )
+			{
+				SDLNet_Write32(tempEntity->getUID(), &net_packet->data[8 + 4 * (i - 2)]);
+			}
+			else
+			{
+				SDLNet_Write32(tempEntity->getUID(), &net_packet->data[8 + 4 * (i - 1)]);
+			}
+		}
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 8 + (list_Size(&entity->children) - 2) * 4;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -611,23 +612,25 @@ void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "ENTB");
-			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
-			net_packet->data[8] = bodypart;
-			node_t* node = list_Node(&entity->children, bodypart);
-			if ( node )
-			{
-				Entity* tempEntity = (Entity*)node->element;
-				SDLNet_Write32(tempEntity->sprite, &net_packet->data[9]);
-				net_packet->data[13] = tempEntity->flags[INVISIBLE];
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 14;
-				sendPacketSafe(net_sock, -1, net_packet, c - 1);
-			}
+			continue;
 		}
+		strcpy((char*)net_packet->data, "ENTB");
+		SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+		net_packet->data[8] = bodypart;
+		node_t* node = list_Node(&entity->children, bodypart);
+		if ( !node )
+		{
+			continue;
+		}
+		Entity* tempEntity = (Entity*)node->element;
+		SDLNet_Write32(tempEntity->sprite, &net_packet->data[9]);
+		net_packet->data[13] = tempEntity->flags[INVISIBLE];
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 14;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 	//if ( entity->behavior == &actPlayer )
 	//{
@@ -667,16 +670,17 @@ void serverUpdateEntitySprite(Entity* entity)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "ENTA");
-			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
-			SDLNet_Write32(entity->sprite, &net_packet->data[8]);
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 12;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "ENTA");
+		SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+		SDLNet_Write32(entity->sprite, &net_packet->data[8]);
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 12;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -697,17 +701,18 @@ void serverUpdateEntitySkill(Entity* entity, int skill)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "ENTS");
-			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
-			net_packet->data[8] = skill;
-			SDLNet_Write32(entity->skill[skill], &net_packet->data[9]);
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 13;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "ENTS");
+		SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+		net_packet->data[8] = skill;
+		SDLNet_Write32(entity->skill[skill], &net_packet->data[9]);
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 13;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -732,17 +737,18 @@ void serverUpdateEntityStatFlag(Entity* entity, int flag)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "ENSF");
-			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
-			net_packet->data[8] = flag;
-			SDLNet_Write32(entity->getStats()->MISC_FLAGS[flag], &net_packet->data[9]);
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 13;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "ENSF");
+		SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+		net_packet->data[8] = flag;
+		SDLNet_Write32(entity->getStats()->MISC_FLAGS[flag], &net_packet->data[9]);
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 13;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -763,17 +769,18 @@ void serverUpdateEntityFSkill(Entity* entity, int fskill)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "ENFS");
-			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
-			net_packet->data[8] = fskill;
-			SDLNet_Write16(static_cast<Sint16>(entity->fskill[fskill] * 256), &net_packet->data[9]);
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 11;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "ENFS");
+		SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+		net_packet->data[8] = fskill;
+		SDLNet_Write16(static_cast<Sint16>(entity->fskill[fskill] * 256), &net_packet->data[9]);
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 11;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -794,18 +801,19 @@ void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSpri
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "SPPE");
-			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
-			net_packet->data[8] = particleType;
-			SDLNet_Write16(particleSprite, &net_packet->data[9]);
-			SDLNet_Write32(optionalUid, &net_packet->data[11]);
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 16;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "SPPE");
+		SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+		net_packet->data[8] = particleType;
+		SDLNet_Write16(particleSprite, &net_packet->data[9]);
+		SDLNet_Write32(optionalUid, &net_packet->data[11]);
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 16;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -826,19 +834,20 @@ void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int partic
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "SPPL");
-			SDLNet_Write16(x, &net_packet->data[4]);
-			SDLNet_Write16(y, &net_packet->data[6]);
-			SDLNet_Write16(z, &net_packet->data[8]);
-			net_packet->data[10] = particleType;
-			SDLNet_Write16(particleSprite, &net_packet->data[11]);
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 14;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "SPPL");
+		SDLNet_Write16(x, &net_packet->data[4]);
+		SDLNet_Write16(y, &net_packet->data[6]);
+		SDLNet_Write16(z, &net_packet->data[8]);
+		net_packet->data[10] = particleType;
+		SDLNet_Write16(particleSprite, &net_packet->data[11]);
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 14;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -859,17 +868,18 @@ void serverUpdateEntityFlag(Entity* entity, int flag)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "ENTF");
-			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
-			net_packet->data[8] = flag;
-			net_packet->data[9] = entity->flags[flag];
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 10;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "ENTF");
+		SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+		net_packet->data[8] = flag;
+		net_packet->data[9] = entity->flags[flag];
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 10;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -976,30 +986,31 @@ void serverUpdatePlayerStats()
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "STAT");
-			Sint32 playerHP = 0;
-			Sint32 playerMP = 0;
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( stats[i] )
-				{
-					playerHP = static_cast<Sint16>(stats[i]->MAXHP);
-					playerHP |= static_cast<Sint16>(stats[i]->HP) << 16;
-					playerMP = static_cast<Sint16>(stats[i]->MAXMP);
-					playerMP |= static_cast<Sint16>(stats[i]->MP) << 16;
-				}
-				SDLNet_Write32(playerHP, &net_packet->data[4 + i * 8]); // 4/12/20/28 data
-				SDLNet_Write32(playerMP, &net_packet->data[8 + i * 8]); // 8/16/24/32 data
-				playerHP = 0;
-				playerMP = 0;
-			}
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 4 + 8 * MAXPLAYERS;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "STAT");
+		Sint32 playerHP = 0;
+		Sint32 playerMP = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( stats[i] )
+			{
+				playerHP = static_cast<Sint16>(stats[i]->MAXHP);
+				playerHP |= static_cast<Sint16>(stats[i]->HP) << 16;
+				playerMP = static_cast<Sint16>(stats[i]->MAXMP);
+				playerMP |= static_cast<Sint16>(stats[i]->MP) << 16;
+			}
+			SDLNet_Write32(playerHP, &net_packet->data[4 + i * 8]); // 4/12/20/28 data
+			SDLNet_Write32(playerMP, &net_packet->data[8 + i * 8]); // 8/16/24/32 data
+			playerHP = 0;
+			playerMP = 0;
+		}
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 4 + 8 * MAXPLAYERS;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -1133,23 +1144,24 @@ void serverUpdatePlayerLVL()
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( !client_disconnected[c] )
+		if ( client_disconnected[c] )
 		{
-			strcpy((char*)net_packet->data, "UPLV");
-			Sint32 playerLevels = 0;
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( stats[i] )
-				{
-					playerLevels |= static_cast<Uint8>(stats[i]->LVL) << (8 * i); // store uint8 in data, highest bits for player 4.
-				}
-			}
-			SDLNet_Write32(playerLevels, &net_packet->data[4]);
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 8;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			continue;
 		}
+		strcpy((char*)net_packet->data, "UPLV");
+		Sint32 playerLevels = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( stats[i] )
+			{
+				playerLevels |= static_cast<Uint8>(stats[i]->LVL) << (8 * i); // store uint8 in data, highest bits for player 4.
+			}
+		}
+		SDLNet_Write32(playerLevels, &net_packet->data[4]);
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 8;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
 
@@ -1159,16 +1171,17 @@ void serverRemoveClientFollower(int player, Uint32 uidToRemove)
 	{
 		return;
 	}
-
-	if ( !client_disconnected[player] )
+	if ( client_disconnected[player] )
 	{
-		strcpy((char*)net_packet->data, "LDEL");
-		SDLNet_Write32(uidToRemove, &net_packet->data[4]);
-		net_packet->address.host = net_clients[player - 1].host;
-		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 8;
-		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return;
 	}
+
+	strcpy((char*)net_packet->data, "LDEL");
+	SDLNet_Write32(uidToRemove, &net_packet->data[4]);
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 8;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
 void serverSendItemToPickupAndEquip(int player, Item* item)
@@ -1177,23 +1190,24 @@ void serverSendItemToPickupAndEquip(int player, Item* item)
 	{
 		return;
 	}
-
-	if ( !client_disconnected[player] )
+	if ( client_disconnected[player] )
 	{
-		// send the client info on the item it just picked up
-		strcpy((char*)net_packet->data, "ITEQ");
-		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-		SDLNet_Write32((Uint32)item->ownerUid, &net_packet->data[24]);
-		net_packet->data[28] = item->identified;
-		net_packet->address.host = net_clients[player - 1].host;
-		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 29;
-		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return;
 	}
+
+	// send the client info on the item it just picked up
+	strcpy((char*)net_packet->data, "ITEQ");
+	SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+	SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+	SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+	SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+	SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+	SDLNet_Write32((Uint32)item->ownerUid, &net_packet->data[24]);
+	net_packet->data[28] = item->identified;
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 29;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type)
@@ -1202,20 +1216,21 @@ void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int M
 	{
 		return;
 	}
-
-	if ( !client_disconnected[player] )
+	if ( client_disconnected[player] )
 	{
-		strcpy((char*)net_packet->data, "NPCI");
-		SDLNet_Write32(uidToUpdate, &net_packet->data[4]);
-		net_packet->data[8] = static_cast<Uint8>(LVL);
-		SDLNet_Write16(HP, &net_packet->data[9]);
-		SDLNet_Write16(MAXHP, &net_packet->data[11]);
-		net_packet->data[13] = static_cast<Uint8>(type);
-		net_packet->address.host = net_clients[player - 1].host;
-		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 14;
-		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return;
 	}
+
+	strcpy((char*)net_packet->data, "NPCI");
+	SDLNet_Write32(uidToUpdate, &net_packet->data[4]);
+	net_packet->data[8] = static_cast<Uint8>(LVL);
+	SDLNet_Write16(HP, &net_packet->data[9]);
+	SDLNet_Write16(MAXHP, &net_packet->data[11]);
+	net_packet->data[13] = static_cast<Uint8>(type);
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 14;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
 void serverUpdatePlayerSummonStrength(int player)
@@ -1228,21 +1243,22 @@ void serverUpdatePlayerSummonStrength(int player)
 	{
 		return;
 	}
-	
-	if ( !client_disconnected[player] && stats[player] )
+	if ( client_disconnected[player] || !stats[player] )
 	{
-		strcpy((char*)net_packet->data, "SUMS");
-		SDLNet_Write32(stats[player]->playerSummonLVLHP, &net_packet->data[4]);
-		SDLNet_Write32(stats[player]->playerSummonSTRDEXCONINT, &net_packet->data[8]);
-		SDLNet_Write32(stats[player]->playerSummonPERCHR, &net_packet->data[12]);
-		SDLNet_Write32(stats[player]->playerSummon2LVLHP, &net_packet->data[16]);
-		SDLNet_Write32(stats[player]->playerSummon2STRDEXCONINT, &net_packet->data[20]);
-		SDLNet_Write32(stats[player]->playerSummon2PERCHR, &net_packet->data[24]);
-		net_packet->address.host = net_clients[player - 1].host;
-		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 28;
-		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return;
 	}
+
+	strcpy((char*)net_packet->data, "SUMS");
+	SDLNet_Write32(stats[player]->playerSummonLVLHP, &net_packet->data[4]);
+	SDLNet_Write32(stats[player]->playerSummonSTRDEXCONINT, &net_packet->data[8]);
+	SDLNet_Write32(stats[player]->playerSummonPERCHR, &net_packet->data[12]);
+	SDLNet_Write32(stats[player]->playerSummon2LVLHP, &net_packet->data[16]);
+	SDLNet_Write32(stats[player]->playerSummon2STRDEXCONINT, &net_packet->data[20]);
+	SDLNet_Write32(stats[player]->playerSummon2PERCHR, &net_packet->data[24]);
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 28;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
 void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool guarantee)
@@ -1255,24 +1271,25 @@ void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool 
 	{
 		return;
 	}
-
-	if ( !client_disconnected[player] )
+	if ( client_disconnected[player] )
 	{
-		strcpy((char*)net_packet->data, "NPCU");
-		SDLNet_Write32(uidToUpdate, &net_packet->data[4]);
-		SDLNet_Write16(HP, &net_packet->data[8]);
-		SDLNet_Write16(MAXHP, &net_packet->data[10]);
-		net_packet->address.host = net_clients[player - 1].host;
-		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 12;
-		if ( !guarantee )
-		{
-			sendPacket(net_sock, -1, net_packet, player - 1);
-		}
-		else
-		{
-			sendPacketSafe(net_sock, -1, net_packet, player - 1);
-		}
+		return;
+	}
+
+	strcpy((char*)net_packet->data, "NPCU");
+	SDLNet_Write32(uidToUpdate, &net_packet->data[4]);
+	SDLNet_Write16(HP, &net_packet->data[8]);
+	SDLNet_Write16(MAXHP, &net_packet->data[10]);
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 12;
+	if ( !guarantee )
+	{
+		sendPacket(net_sock, -1, net_packet, player - 1);
+	}
+	else
+	{
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 }
 
@@ -1300,19 +1317,20 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 	{
 		for ( int c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( !client_disconnected[c] )
+			if ( client_disconnected[c] )
 			{
-				// send to all clients.
-				strcpy((char*)net_packet->data, "PMAP");
-				net_packet->data[4] = player;
-				net_packet->data[5] = x;
-				net_packet->data[6] = y;
-
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 7;
-				sendPacket(net_sock, -1, net_packet, c - 1);
+				continue;
 			}
+			// send to all clients.
+			strcpy((char*)net_packet->data, "PMAP");
+			net_packet->data[4] = player;
+			net_packet->data[5] = x;
+			net_packet->data[6] = y;
+
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 7;
+			sendPacket(net_sock, -1, net_packet, c - 1);
 		}
 	}
 }
