@@ -430,9 +430,12 @@ int initGame()
 	chestInv.last = NULL;
 	command_history.first = NULL;
 	command_history.last = NULL;
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	for ( c = 0; c < kNumChestItemsToDisplay; c++ )
 	{
 		invitemschest[c] = NULL;
+	}
+	for ( c = 0; c < MAXPLAYERS; c++ )
+	{
 		openedChest[c] = NULL;
 	}
 	mousex = xres / 2;
