@@ -2406,11 +2406,6 @@ void handleMainMenu(bool mode)
 			loadGameSaveShowRectangle = 0;
 		}
 
-#ifdef USE_EOS
-		EOS.AccountManager.handleLogin();
-		EOS.CrossplayAccountManager.handleLogin();
-#endif // USE_EOS
-
 		LobbyHandler.drawLobbyFilters();
 
 		// process button actions
@@ -9431,6 +9426,7 @@ void handleMainMenu(bool mode)
 			godmode = false;
 			buddhamode = false;
 			everybodyfriendly = false;
+			gameloopFreezeEntities = false;
 
 #ifdef STEAMWORKS
 			if ( !directConnect )
