@@ -112,12 +112,12 @@ public:
 	static const int k_numEntriesToRetrieve = 50;
 	LeaderboardEntry_t m_leaderboardEntries[k_numEntriesToRetrieve]; // The entries
 	std::string leaderBoardSteamUsernames[k_numEntriesToRetrieve];
-	int currentLeaderBoardIndex;
 	static const int k_numLeaderboardTags = 64;
 	int downloadedTags[k_numEntriesToRetrieve][k_numLeaderboardTags];
 
 	bool b_ScoresDownloaded;
 	bool b_LeaderboardInit;
+	int currentLeaderBoardIndex;
 	bool b_ScoreUploaded;
 	bool b_ShowDLCScores;
 
