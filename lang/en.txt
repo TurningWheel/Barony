@@ -4550,7 +4550,7 @@ Traits:
 - Increased STR/CHR while drunk
    (Immune to drunk dizziness)
 - Suffers intermittent hangovers that
-   that can be cured by intoxication
+   can be cured by intoxication
 - Can eat tin cans without an opener
 - Can recruit humans/goblins by
    throwing booze while drunk#
