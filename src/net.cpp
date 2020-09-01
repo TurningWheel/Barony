@@ -1999,13 +1999,16 @@ void clientHandlePacket()
 					continue;
 				}
 				Entity* tempEntity = (Entity*)childNode->element;
-				if ( entity->behavior == &actMonster )
+				if ( tempEntity )
 				{
-					tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 2)]));
-				}
-				else
-				{
-					tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 1)]));
+					if ( entity->behavior == &actMonster )
+					{
+						tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 2)]));
+					}
+					else
+					{
+						tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 1)]));
+					}
 				}
 			}
 		}
