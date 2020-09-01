@@ -74,6 +74,8 @@ if(PANDORA_ENABLED)
   set(PANDORA 1)
 endif()
 
+set(Haiku 0)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_OSX_ARCHITECTURES x86_64)
