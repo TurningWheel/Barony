@@ -3256,7 +3256,7 @@ int main(int argc, char** argv)
 
 	try
 	{
-#if defined(APPLE) || defined(BSD)
+#if defined(APPLE) || defined(BSD) || defined(HAIKU)
 #ifdef APPLE
 		uint32_t buffsize = 4096;
 		char binarypath[buffsize];
