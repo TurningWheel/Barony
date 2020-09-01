@@ -475,7 +475,15 @@ void actBoulder(Entity* my)
 {
 	int i;
 
-	my->skill[2] = -7; // invokes actEmpty() on clients
+	if ( multiplayer == CLIENT )
+	{
+		if ( my->sprite == 989 ) // boulder_lava.vox
+		{
+			my->flags[BURNABLE] = true;
+		}
+		return;
+	}
+	my->skill[2] = -16; // invokes actBoulder() on clients
 	my->flags[UPDATENEEDED] = true;
 
 	bool noground = false;

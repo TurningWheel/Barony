@@ -9880,7 +9880,7 @@ void handleMainMenu(bool mode)
 			list_FreeAll(&safePacketsSent);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				list_FreeAll(&safePacketsReceived[c]);
+				safePacketsReceivedMap[c].clear();
 			}
 			deleteAllNotificationMessages();
 			if ( !loadingsavegame ) // don't delete the followers we just created!
@@ -10316,7 +10316,7 @@ void handleMainMenu(bool mode)
 			list_FreeAll(&safePacketsSent);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				list_FreeAll(&safePacketsReceived[c]);
+				safePacketsReceivedMap[c].clear();
 			}
 			deleteAllNotificationMessages();
 			for (c = 0; c < MAXPLAYERS; c++)

@@ -368,7 +368,7 @@ void Entity::actLightSource()
 
 		if ( multiplayer != CLIENT )
 		{
-			if ( (circuit_status == CIRCUIT_OFF && !lightSourceInvertPower)
+			if ( !lightSourceAlwaysOn && (circuit_status == CIRCUIT_OFF && !lightSourceInvertPower)
 				|| (circuit_status == CIRCUIT_ON && lightSourceInvertPower == 1) )
 			{
 				if ( LIGHTSOURCE_ENABLED == 1 && lightSourceLatchOn < 2 + lightSourceInvertPower )

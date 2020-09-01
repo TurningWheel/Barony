@@ -21,7 +21,7 @@
 #endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.3.6"
+#define VERSION "v3.3.7"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
@@ -50,7 +50,8 @@ typedef struct packetsend_t
 	int tries;
 	int hostnum;
 } packetsend_t;
-extern list_t safePacketsSent, safePacketsReceived[MAXPLAYERS];
+extern list_t safePacketsSent;
+extern std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 extern bool receivedclientnum;
 
 extern Entity* hudweapon, *hudarm;
