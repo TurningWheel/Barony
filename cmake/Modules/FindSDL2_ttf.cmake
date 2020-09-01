@@ -33,7 +33,7 @@ find_path(SDL2_TTF_INCLUDE_DIR SDL_ttf.h
   HINTS
     ENV SDLTTFDIR
     ENV SDLDIR
-  PATH_SUFFIXES include/SDL2 include
+    PATH_SUFFIXES include/SDL2 include headers/SDL2 headers
 )
 
 if(NOT SDL2_TTF_LIBRARY AND SDL2TTF_LIBRARY)
