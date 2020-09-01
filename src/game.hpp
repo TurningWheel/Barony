@@ -50,7 +50,8 @@ typedef struct packetsend_t
 	int tries;
 	int hostnum;
 } packetsend_t;
-extern list_t safePacketsSent, safePacketsReceived[MAXPLAYERS];
+extern list_t safePacketsSent;
+extern std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 extern bool receivedclientnum;
 
 extern Entity* hudweapon, *hudarm;
