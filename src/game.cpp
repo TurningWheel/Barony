@@ -4869,6 +4869,7 @@ int main(int argc, char** argv)
 	{
 		// catch anything thrown within try block that derives from std::exception
 		std::cerr << "UNHANDLED EXCEPTION CAUGHT: " << exc.what() << "\n";
+		return 1;
 	}
 	catch (...)
 	{
