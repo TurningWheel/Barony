@@ -128,6 +128,7 @@ extern bool minotaurmusicplaying;
 extern bool herxmusicplaying;
 extern bool devilmusicplaying;
 extern bool olddarkmap;
+extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 
 struct OPENAL_CHANNELGROUP;
 

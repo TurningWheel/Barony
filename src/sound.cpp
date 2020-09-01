@@ -487,6 +487,9 @@ static int openal_streamupdate(OPENAL_SOUND* self) {
 	return active;
 }
 
+bool sfxUseDynamicAmbientVolume = true;
+bool sfxUseDynamicEnvironmentVolume = true;
+
 ALCcontext *openal_context = NULL;
 ALCdevice  *openal_device = NULL;
 
