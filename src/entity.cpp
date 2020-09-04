@@ -11165,6 +11165,11 @@ bool Entity::checkFriend(Entity* your)
 		return false;
 	}
 
+	if ( everybodyfriendly )   // friendly monsters mode
+	{
+		return true;
+	}
+
 	if ( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) )
 	{
 		return true;
