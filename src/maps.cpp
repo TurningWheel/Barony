@@ -1048,6 +1048,34 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						y = 2 + (prng_get_uint() % 7) * 7;
 					}
 				}
+				else
+				{
+					if ( c == 0 )
+					{
+						// pick random location across all map.
+						x = 2 + (prng_get_uint() % tempMap->width) * tempMap->width;
+						y = 2 + (prng_get_uint() % tempMap->height) * tempMap->height;
+					}
+					else if ( secretlevelexit && c == 1 )
+					{
+						x = 2 + (prng_get_uint() % tempMap->width) * tempMap->width;
+						y = 2 + (prng_get_uint() % tempMap->height) * tempMap->height;
+						while ( x + tempMap->width >= map.width )
+						{
+							x = 2 + (prng_get_uint() % tempMap->width) * tempMap->width;
+						}
+						while ( y + tempMap->height >= map.height )
+						{
+							y = 2 + (prng_get_uint() % tempMap->height) * tempMap->height;
+						}
+					}
+					else if ( c == 2 && shoplevel )
+					{
+						// pick random location across all map.
+						x = 2 + (prng_get_uint() % tempMap->width) * tempMap->width;
+						y = 2 + (prng_get_uint() % tempMap->height) * tempMap->height;
+					}
+				}
 
 				while ( 1 )
 				{

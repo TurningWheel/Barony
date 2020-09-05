@@ -100,6 +100,7 @@ int initApp(char const * const title, int fullscreen)
 
 	// init PHYSFS
 	PHYSFS_init("/");
+	PHYSFS_permitSymbolicLinks(1);
 	if ( !PHYSFS_isInit() )
 	{
 		printlog("[PhysFS]: failed to initialize! Error code: %d", PHYSFS_getLastErrorCode());

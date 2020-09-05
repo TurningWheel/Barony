@@ -417,8 +417,7 @@ int initGame()
 	safePacketsSent.last = NULL;
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
-		safePacketsReceived[c].first = NULL;
-		safePacketsReceived[c].last = NULL;
+		safePacketsReceivedMap[c].clear();
 	}
 	topscores.first = NULL;
 	topscores.last = NULL;
@@ -826,7 +825,7 @@ void deinitGame()
 	list_FreeAll(&safePacketsSent);
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
-		list_FreeAll(&safePacketsReceived[c]);
+		safePacketsReceivedMap[c].clear();
 	}
 #ifdef SOUND
 #ifdef USE_OPENAL

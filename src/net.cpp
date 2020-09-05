@@ -1701,6 +1701,9 @@ void clientActions(Entity* entity)
 			entity->behavior = &actPistonCam;
 			entity->flags[NOUPDATE] = true;
 			break;
+		case 130:
+			entity->behavior = &actGoldBag;
+			break;
 		default:
 			if ( entity->isPlayerHeadSprite() )
 			{
@@ -1766,6 +1769,9 @@ void clientActions(Entity* entity)
 					break;
 				case -15:
 					entity->behavior = &actBomb;
+					break;
+				case -16:
+					entity->behavior = &actBoulder;
 					break;
 				default:
 					if ( c < -1000 && c > -2000 )
@@ -5663,19 +5669,38 @@ bool handleSafePacket()
 	{
 		if ( net_packet->data[4] != MAXPLAYERS )
 		{
-			for ( node = safePacketsReceived[net_packet->data[4]].first; node != NULL; node = node->next )
+			int receivedPacketNum = SDLNet_Read32(&net_packet->data[5]);
+			Uint8 fromClientnum = net_packet->data[4];
+
+			if ( ticks > (60 * TICKS_PER_SECOND) && (ticks % (TICKS_PER_SECOND / 2) == 0) )
 			{
-				packet = (packetsend_t*)node->element;
-				if ( packet->num == SDLNet_Read32(&net_packet->data[5]) )
+				// clear old packets > 60 secs
+				for ( auto it = safePacketsReceivedMap[fromClientnum].begin(); it != safePacketsReceivedMap[fromClientnum].end(); )
 				{
-					return true;
+					if ( it->second < (ticks - 60 * TICKS_PER_SECOND) )
+					{
+						it = safePacketsReceivedMap[fromClientnum].erase(it);
+					}
+					else
+					{
+						++it;
+					}
 				}
 			}
-			node = list_AddNodeFirst(&safePacketsReceived[net_packet->data[4]]);
-			packet = (packetsend_t*) malloc(sizeof(packetsend_t));
-			packet->num = SDLNet_Read32(&net_packet->data[5]);
-			node->element = packet;
-			node->deconstructor = &defaultDeconstructor;
+
+			//auto tmp1 = std::chrono::high_resolution_clock::now();
+			auto find = safePacketsReceivedMap[fromClientnum].find(receivedPacketNum);
+			if ( find != safePacketsReceivedMap[fromClientnum].end() )
+			{
+				return true;
+			}
+
+			/*auto tmp2 = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> time_span =
+				std::chrono::duration_cast<std::chrono::duration<double>>(tmp2 - tmp1);
+			double timer = time_span.count() * 1000;*/
+
+			safePacketsReceivedMap[fromClientnum].insert(std::make_pair(receivedPacketNum, ticks));
 
 			// send an ack
 			j = net_packet->data[4];
@@ -5711,6 +5736,34 @@ bool handleSafePacket()
 			Uint8 bytedata[NET_PACKET_SIZE];
 			memcpy(&bytedata, net_packet->data + 9, net_packet->len);
 			memcpy(net_packet->data, &bytedata, net_packet->len);
+
+			/*int sprite = -9999;
+			char chr[5];
+			chr[0] = '\0';
+			strncpy(chr, (char*)net_packet->data, 4);
+			chr[4] = '\0';
+			if ( !strncmp((char*)net_packet->data, "ENTU", 4) )
+			{
+				Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+				if ( entity )
+				{
+					sprite = entity->sprite;
+				}
+			}
+
+			if ( !strncmp((char*)net_packet->data, "ENTS", 4) )
+			{
+				Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+				if ( entity )
+				{
+					messagePlayer(clientnum, "%s | %d : %d - %d | %d %.8f", chr, entity->sprite, net_packet->data[8],
+						SDLNet_Read32(&net_packet->data[9]), safePacketsReceivedMap[fromClientnum].size(), timer);
+				}
+			}
+			else
+			{
+				messagePlayer(clientnum, "%s | %d %.8f", chr, safePacketsReceivedMap[fromClientnum].size(), timer);
+			}*/
 		}
 	}
 
