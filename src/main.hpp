@@ -506,8 +506,9 @@ typedef struct door_t
 #define CLIPFAR 1024
 #define TEXTURESIZE 32
 #define TEXTUREPOWER 5 // power of 2 that texture size is, ie pow(2,TEXTUREPOWER) = TEXTURESIZE
+#ifndef BARONY_SUPER_MULTIPLAYER
 #define MAXPLAYERS 4
-#ifdef BARONY_SUPER_MULTIPLAYER
+#else
 #define MAXPLAYERS 16
 #endif
 
