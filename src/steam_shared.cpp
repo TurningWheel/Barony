@@ -85,7 +85,7 @@ void CSteamWorkshop::StartItemExistingUpdate(PublishedFileId_t fileId)
 	StoreResultMessage("Item Update Initialise: ERROR", static_cast<EResult>(0));
 }
 
-void CSteamWorkshop::SubmitItemUpdate(char* changeNote)
+void CSteamWorkshop::SubmitItemUpdate(const char *const changeNote)
 {
 	if ( UGCUpdateHandle != 0 )
 	{

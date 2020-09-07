@@ -37,6 +37,7 @@ bool swimDebuffMessageHasPlayed = false;
 int monsterEmoteGimpTimer = 0;
 int selectedEntityGimpTimer = 0;
 bool insectoidLevitating[MAXPLAYERS] = { false, false, false, false };
+bool partymode = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -1923,6 +1924,311 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	//if ( keystatus[SDL_SCANCODE_F1] )
+	//{
+	//	keystatus[SDL_SCANCODE_F1] = 0;
+	//	auto potion = potionStandardAppearanceMap[rand() % 3];
+	//	Item* item = newItem(static_cast<ItemType>(potion.first), static_cast<Status>(4), -1 + rand() % 3, 1, 0, false, NULL);
+	//	useItem(item, clientnum, my);
+	//}
+	//if ( keystatus[SDL_SCANCODE_F2] )
+	//{
+	//	keystatus[SDL_SCANCODE_F2] = 0;
+	//	auto potion = potionStandardAppearanceMap[rand() % potionStandardAppearanceMap.size()];
+	//	if ( potion.first >= POTION_FIRESTORM && potion.first <= POTION_ICESTORM && rand() % 10 <= 7 )
+	//	{
+	//		potion = potionStandardAppearanceMap[rand() % potionStandardAppearanceMap.size() - 4];
+	//	}
+	//	Item* item = newItem(static_cast<ItemType>(potion.first), static_cast<Status>(4), -1 + rand() % 3, 1, 0, false, NULL);
+	//	useItem(item, clientnum, my);
+	//}
+	//if ( keystatus[SDL_SCANCODE_F3] )
+	//{
+	//	keystatus[SDL_SCANCODE_F3] = 0;
+	//	int limitX = map.width;
+	//	int limitY = map.height;
+	//	if ( !strncmp(map.name, "Mages Guild", 11) )
+	//	{
+	//		limitX = map.width / 2;
+	//		limitY = map.height / 2;
+	//	}
+	//	for ( int y = 1; y < limitY; ++y )
+	//	{
+	//		for ( int x = 1; x < limitX; ++x )
+	//		{
+	//			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * map.height * MAPLAYERS] == 0
+	//				&& map.tiles[y * MAPLAYERS + x * map.height * MAPLAYERS] != 0 )
+	//			{
+	//				if ( rand() % 20 == 0 )
+	//				{
+	//					Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
+	//					//rock->flags[INVISIBLE] = true;
+	//					rock->flags[UPDATENEEDED] = true;
+	//					rock->x = x * 16 + 4 + rand() % 8;
+	//					rock->y = y * 16 + 4 + rand() % 8;
+	//					rock->z = -20 + rand() % 12;
+	//					rock->sizex = 4;
+	//					rock->sizey = 4;
+	//					rock->yaw = rand() % 360 * PI / 180;
+	//					rock->vel_x = (rand() % 20 - 10) / 10.0;
+	//					rock->vel_y = (rand() % 20 - 10) / 10.0;
+	//					rock->vel_z = -.25 - (rand() % 5) / 10.0;
+	//					rock->flags[PASSABLE] = true;
+	//					rock->behavior = &actItem;
+	//					rock->flags[USERFLAG1] = true; // no collision: helps performance
+	//					rock->skill[10] = POTION_BOOZE;    // type
+	//					switch ( rand() % 6 )
+	//					{
+	//						case 4:
+	//							rock->skill[10] = FOOD_CHEESE;    // type
+	//							break;
+	//						case 5:
+	//							rock->skill[10] = FOOD_MEAT;    // type
+	//							break;
+	//						default:
+	//							break;
+	//					}
+	//					rock->skill[11] = WORN;        // status
+	//					rock->skill[12] = 0;           // beatitude
+	//					rock->skill[13] = 1;           // count
+	//					rock->skill[14] = rand();      // appearance
+	//					rock->skill[15] = 1;		   // identified
+	//				}
+	//				else
+	//				{
+	//					Entity* entity = newEntity(items[POTION_BOOZE].index + (rand() % items[POTION_BOOZE].variations), 1, map.entities, nullptr); //Particle entity.
+	//					switch ( rand() % 6 )
+	//					{
+	//						case 4:
+	//							entity->sprite = items[FOOD_CHEESE].index;    // type
+	//							break;
+	//						case 5:
+	//							entity->sprite = items[FOOD_MEAT].index;    // type
+	//							break;
+	//						default:
+	//							break;
+	//					}
+	//					entity->sizex = 1;
+	//					entity->sizey = 1;
+	//					entity->x = x * 16 + (-4 + rand() % 9);
+	//					entity->y = y * 16 + (-4 + rand() % 9);
+	//					entity->z = -20 + rand() % 12;
+	//					entity->yaw = (rand() % 360) * PI / 180.0;
+	//					entity->roll = (rand() % 360) * PI / 180.0;
+
+	//					entity->vel_x = 0.2 * cos(entity->yaw);
+	//					entity->vel_y = 0.2 * sin(entity->yaw);
+	//					entity->vel_z = 16;// 0.25 - (rand() % 5) / 10.0;
+
+	//					entity->skill[0] = 1500; // particle life
+	//					entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
+
+	//					entity->behavior = &actParticleRock;
+	//					entity->flags[PASSABLE] = true;
+	//					entity->flags[NOUPDATE] = true;
+	//					entity->flags[UNCLICKABLE] = true;
+	//					if ( multiplayer != CLIENT )
+	//					{
+	//						entity_uids--;
+	//					}
+	//					entity->setUID(-3);
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+	//if ( keystatus[SDL_SCANCODE_F4] )
+	//{
+	//	keystatus[SDL_SCANCODE_F4] = 0;
+	//	everybodyfriendly = true;
+	//	buddhamode = true;
+	//	std::vector<std::pair<int, int>> goodspots;
+	//	if ( !strncmp(map.name, "Mages Guild", 11) )
+	//	{
+	//		for ( int y = 1; y < map.height / 2; ++y )
+	//		{
+	//			for ( int x = 1; x < map.width / 4; ++x )
+	//			{
+	//				if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * map.height * MAPLAYERS] == 0
+	//					&& map.tiles[y * MAPLAYERS + x * map.height * MAPLAYERS] != 0 )
+	//				{
+	//					goodspots.push_back(std::make_pair(x * 16 + 8, y * 16 + 8));
+	//				}
+	//			}
+	//		}
+	//	}
+	//	else
+	//	{
+	//		for ( int y = 1; y < map.height; ++y )
+	//		{
+	//			for ( int x = 1; x < map.width; ++x )
+	//			{
+	//				if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * map.height * MAPLAYERS] == 0
+	//					&& map.tiles[y * MAPLAYERS + x * map.height * MAPLAYERS] != 0 )
+	//				{
+	//					goodspots.push_back(std::make_pair(x * 16 + 8, y * 16 + 8));
+	//				}
+	//			}
+	//		}
+	//	}
+	//	for ( int i = 40; i > 0 && goodspots.size() > 0; --i )
+	//	{
+	//		Monster type = static_cast<Monster>(rand() % NUMMONSTERS);
+	//		while ( type == DEVIL || type == LICH || type == LICH_FIRE || type == LICH_ICE || type == COCKATRICE || type == SPIDER || type == CRYSTALGOLEM
+	//			|| type == SCARAB || type == SPELLBOT || type == SENTRYBOT
+	//			|| type == MIMIC || type == BUGBEAR || type == OCTOPUS || type == MINOTAUR || type == GHOUL || type == DEMON || type == CREATURE_IMP
+	//			|| type == NOTHING )
+	//		{
+	//			type = static_cast<Monster>(rand() % NUMMONSTERS);
+	//		}
+	//		int element = rand() % goodspots.size();
+	//		auto iter = goodspots.begin();
+	//		std::advance(iter, element);
+	//		Entity* monster = summonMonster(type, iter->first, iter->second, false);
+	//		if ( monster )
+	//		{
+	//			//messagePlayer(clientnum, "%d, %d", static_cast<int>(monster->x) >> 4, static_cast<int>(monster->y) >> 4);
+	//			Stat* monsterStats = monster->getStats();
+	//			std::string name = "Party ";
+	//			name += monstertypename[monsterStats->type];
+	//			strcpy(monsterStats->name, name.c_str());
+	//			monsterStats->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ALLY;
+	//			std::vector<int> helms;
+	//			helms.push_back(HAT_HOOD);
+	//			helms.push_back(HAT_JESTER);
+	//			helms.push_back(HAT_PHRYGIAN);
+	//			helms.push_back(HAT_WIZARD);
+	//			helms.push_back(HAT_FEZ);
+	//			helms.push_back(HAT_HOOD_RED);
+	//			helms.push_back(MASK_SHAMAN);
+	//			helms.push_back(PUNISHER_HOOD);
+	//			if ( !monsterStats->helmet )
+	//			{
+	//				monsterStats->helmet = newItem(static_cast<ItemType>(helms[rand() % helms.size()]), EXCELLENT, 0, 1, rand(), true, nullptr);
+	//			}
+	//			else
+	//			{
+	//				monsterStats->helmet->type = static_cast<ItemType>(helms[rand() % helms.size()]);
+	//			}
+	//			monsterStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 0;
+
+	//			Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
+	//			rock->x = monster->x;
+	//			rock->y = monster->y;
+	//			rock->sprite = 990;
+	//			rock->sizex = 7;
+	//			rock->sizey = 7;
+	//			rock->behavior = &actBoulder;
+	//			rock->skill[0] = 1; // BOULDER_STOPPED
+	//		}
+	//		goodspots.erase(iter);
+	//	}
+	//}
+	//if ( keystatus[SDL_SCANCODE_F5] )
+	//{
+	//	keystatus[SDL_SCANCODE_F5] = 0;
+	//	partymode = !partymode;
+	//}
+	//if ( keystatus[SDL_SCANCODE_F7] )
+	//{
+	//	keystatus[SDL_SCANCODE_F7] = 0;
+	//	//playmusic(endgamemusic, true, false, false);
+	//	for ( node_t* node = map.entities->first; node; )
+	//	{
+	//		Entity* entity = (Entity*)node->element;
+	//		node = node->next;
+	//		if ( entity && entity->behavior == &actBoulder )
+	//		{
+	//			Entity* ohitentity = hit.entity;
+	//			hit.entity = entity;
+	//			magicDig(nullptr, nullptr, -4, 0);
+	//			hit.entity = ohitentity;
+	//		}
+	//	}
+	//	for ( node_t* node = map.entities->first; node; node = node->next )
+	//	{
+	//		Entity* entity = (Entity*)node->element;
+	//		if ( entity && entity->behavior == &actMonster )
+	//		{
+	//			if ( entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2, true) )
+	//			{
+	//				entity->monsterState = MONSTER_STATE_HUNT;
+	//				serverUpdateEntitySkill(entity, 0);
+	//			}
+	//		}
+	//	}
+	//}
+	//if ( keystatus[SDL_SCANCODE_F8] )
+	//{
+	//	keystatus[SDL_SCANCODE_F8] = 0;
+	//	playmusic(librarymusic, true, false, false);
+	//	FMOD_ChannelGroup_SetVolume(music_group, (musvolume + 20) / 128.f);
+	//}
+	//if ( keystatus[SDL_SCANCODE_F9] )
+	//{
+	//	keystatus[SDL_SCANCODE_F9] = 0;
+	//	everybodyfriendly = true;
+	//	buddhamode = true;
+	//	real_t x = my->x - 32.0 * cos(my->yaw);
+	//	real_t y = my->y - 32.0 * sin(my->yaw);
+	//	Entity* monster = summonMonster(HUMAN, x, y, true);
+	//	if ( monster )
+	//	{
+	//		monster->getStats()->MISC_FLAGS[STAT_FLAG_NPC] = 16;
+	//		monster->getStats()->EDITOR_ITEMS[ITEM_SLOT_HELM] = 0;
+	//		Entity* portal = newEntity(254, 1, map.entities, nullptr); //Rock entity.
+	//		portal->x = my->x - 16.0 * cos(my->yaw);
+	//		portal->y = my->y - 16.0 * sin(my->yaw);
+	//		spawnExplosion(portal->x, portal->y, -4);
+	//		portal->sizex = 4;
+	//		portal->sizey = 4;
+	//		portal->yaw = PI / 2;
+	//		portal->behavior = &actPortal;
+	//		portal->skill[3] = 1; // not secret portal, just aesthetic.
+	//		portal->flags[PASSABLE] = true;
+	//		portal->flags[BRIGHT] = true;
+	//		skipLevelsOnLoad = 25 - currentlevel;
+	//	}
+	//}
+	//if ( partymode && ticks % 2 == 0 )
+	//{
+	//	std::vector<std::pair<int, int>> goodspots;
+	//	for ( int y = 1; y < map.height; ++y )
+	//	{
+	//		for ( int x = 1; x < map.width; ++x )
+	//		{
+	//			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * map.height * MAPLAYERS] == 0 )
+	//			{
+	//				goodspots.push_back(std::make_pair(x * 16 + 8, y * 16 + 8));
+	//			}
+	//		}
+	//	}
+	//	for ( int i = 3; i > 0; --i )
+	//	{
+	//		int element = rand() % goodspots.size();
+	//		auto iter = goodspots.begin();
+	//		std::advance(iter, element);
+
+	//		switch ( rand() % 5 )
+	//		{
+	//			case 0:
+	//			case 1:
+	//			case 2:
+	//				spawnExplosionFromSprite(145, iter->first, iter->second, -40 - (rand() % 20));
+	//				break;
+	//			case 3:
+	//				spawnExplosionFromSprite(135, iter->first, iter->second, -40 - (rand() % 20));
+	//				break;
+	//			case 4:
+	//				spawnExplosionFromSprite(49, iter->first, iter->second, -40 - (rand() % 20));
+	//				break;
+	//			default:
+	//				break;
+	//		}
+
+	//		goodspots.erase(iter);
+	//	}
+	//}
 	//if ( keystatus[SDL_SCANCODE_F1] )
 	//{
 	//	//gameloopFreezeEntities = !gameloopFreezeEntities;

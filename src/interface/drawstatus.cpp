@@ -623,7 +623,7 @@ void drawStatus()
 
 	// Change the color depending on if you are poisoned
 	Uint32 color = 0;
-	if ( stats[clientnum]->EFFECTS[EFF_POISONED] )
+	if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_POISONED] )
 	{
 		if ( colorblind )
 		{
@@ -643,7 +643,7 @@ void drawStatus()
 	drawRect(&pos, color, 255);
 
 	// If the Player is alive, base the size of the actual Health bar off remaining HP
-	if ( stats[clientnum]->HP > 0 )
+	if ( stats[clientnum] && stats[clientnum]->HP > 0 )
 	{
 		//pos.x = 80;
 		pos.w = playerStatusBarWidth - 5;
@@ -671,7 +671,14 @@ void drawStatus()
 	}
 
 	// Print out the amount of HP the Player currently has
-	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
+	if ( stats[clientnum] )
+	{
+		snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
+	}
+	else
+	{
+		snprintf(tempstr, 4, "%d", 0);
+	}
 	if ( uiscale_playerbars >= 1.5 )
 	{
 		pos.x += uiscale_playerbars * 2;
@@ -680,7 +687,7 @@ void drawStatus()
 	int xoffset = pos.x;
 
 	// hunger icon
-	if ( stats[clientnum]->type != AUTOMATON 
+	if ( stats[clientnum] && stats[clientnum]->type != AUTOMATON
 		&& (svFlags & SV_FLAG_HUNGER) && stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
 	{
 		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
@@ -697,7 +704,7 @@ void drawStatus()
 		}
 	}
 
-	if ( stats[clientnum]->type == AUTOMATON )
+	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON )
 	{
 		if ( stats[clientnum]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
 		{
@@ -816,7 +823,7 @@ void drawStatus()
 	drawRect(&pos, mpColorBG, 255); // Display blue
 
 	// If the Player has MP, base the size of the actual Magic bar off remaining MP
-	if ( stats[clientnum]->MP > 0 )
+	if ( stats[clientnum] && stats[clientnum]->MP > 0 )
 	{
 		//pos.x = 16;
 		pos.w = playerStatusBarWidth - 5;
@@ -828,7 +835,14 @@ void drawStatus()
 	}
 
 	// Print out the amount of MP the Player currently has
-	snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
+	if ( stats[clientnum] )
+	{
+		snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
+	}
+	else
+	{
+		snprintf(tempstr, 4, "%d", 0);
+	}
 	printTextFormatted(font12x12_bmp, 32 * uiscale_playerbars - strlen(tempstr) * 6, yres - (playerStatusBarHeight / 2 + 8), tempstr);
 
 	Item* item = nullptr;
@@ -918,7 +932,7 @@ void drawStatus()
 				}
 			}
 
-			if ( stats[clientnum]->HP > 0 )
+			if ( stats[clientnum] && stats[clientnum]->HP > 0 )
 			{
 				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 				{
@@ -1376,7 +1390,7 @@ void drawStatus()
 							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, SDL_MapRGB(mainsurface->format, 0, 255, 255), spellEffectText);
 						}
 
-						if ( item->identified )
+						if ( item->identified && stats[clientnum] )
 						{
 							if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN
 								|| itemTypeIsQuiver(item->type) )
@@ -1559,7 +1573,7 @@ void drawStatus()
 	}
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.
-	if ( !command && stats[clientnum]->HP > 0 )
+	if ( !command && stats[clientnum] && stats[clientnum]->HP > 0 )
 	{
 		Item* item = NULL;
 		if ( !(!shootmode && hotbar_numkey_quick_add &&
@@ -1791,7 +1805,7 @@ void drawStatus()
 			{
 				learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
 				spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-				if ( currentSpell )
+				if ( currentSpell && stats[clientnum] )
 				{
 					int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity);
 					if ( stats[clientnum]->PROFICIENCIES[PRO_MAGIC] >= 100 )
@@ -1918,7 +1932,7 @@ void drawStatus()
 
 	for ( i = 0; i < NUMSTATS; i++ )
 	{
-		if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
+		if ( stats[clientnum] && stats[clientnum]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
 		{
 			stats[clientnum]->PLAYER_LVL_STAT_TIMER[i]--;
 
