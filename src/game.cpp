@@ -3276,6 +3276,7 @@ int main(int argc, char** argv)
 			printlog("Binary path: %s\n", binarypath);
 			char* last = strrchr(binarypath, '/');
 			*last = '\0';
+#ifdef APPLE
 			char execpath[buffsize];
 			strcpy(execpath, binarypath);
 			//char* last = strrchr(execpath, '/');
@@ -3289,6 +3290,7 @@ int main(int argc, char** argv)
 			chdir("Resources");
 			//chdir("..");
 			//chdir("..");
+#endif
 		}
 		else
 		{
