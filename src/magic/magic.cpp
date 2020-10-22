@@ -1569,7 +1569,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 							updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 						}
 					}
-					if ( hitstats->type == SHOPKEEPER && player >= 0 )
+					if ( hitstats->type == SHOPKEEPER && parent && parent->behavior == &actPlayer )
 					{
 						// reverses shop keeper grudges.
 						swornenemies[SHOPKEEPER][HUMAN] = false;
