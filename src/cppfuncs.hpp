@@ -20,10 +20,17 @@
 template<typename T>
 T randomEntryFromVector(std::vector<T> vector)
 {
+#ifndef NINTENDO
 	if ( !vector.size() )
 	{
 		throw "Empty vector!";
 	}
+#else
+	if (!vector.size())
+	{
+		return T();
+	}
+#endif
 
 	return vector[rand() % vector.size()];
 }

@@ -15,6 +15,9 @@
 #include <sstream>
 
 #include "main.hpp"
+#ifdef NINTENDO
+ #include "nintendo/nxplatform.hpp"
+#endif // NINTENDO
 #include "draw.hpp"
 #include "files.hpp"
 #include "sound.hpp"
@@ -22,20 +25,22 @@
 #include "hash.hpp"
 #include "init.hpp"
 #include "net.hpp"
-#include "editor.hpp"
+#ifndef NINTENDO
+ #include "editor.hpp"
+#endif // NINTENDO
 #include "menu.hpp"
 #ifdef STEAMWORKS
-#include <steam/steam_api.h>
-#include "steam.hpp"
-#endif
+ #include <steam/steam_api.h>
+ #include "steam.hpp"
+#endif // STEAMWORKS
 #include "player.hpp"
 #include "items.hpp"
 #include "cppfuncs.hpp"
 
 #ifdef USE_FMOD
-#include "fmod.h"
-//#include <fmod_errors.h>
-#endif
+ #include "fmod.h"
+ //#include <fmod_errors.h>
+#endif // USE_FMOD
 
 /*-------------------------------------------------------------------------------
 
@@ -64,7 +69,7 @@ bool steam_init = false;
 int initApp(char const * const title, int fullscreen)
 {
 	char name[128];
-	FILE* fp;
+	File* fp;
 	Uint32 x, c;
 
 	// open log file
@@ -99,32 +104,45 @@ int initApp(char const * const title, int fullscreen)
 	map.tiles = NULL;
 
 	// init PHYSFS
+#ifndef NINTENDO
 	PHYSFS_init("/");
 	PHYSFS_permitSymbolicLinks(1);
+#endif // NINTENDO
+
 	if ( !PHYSFS_isInit() )
 	{
-		printlog("[PhysFS]: failed to initialize! Error code: %d", PHYSFS_getLastErrorCode());
+		printlog("[PhysFS]: failed to initialize! Error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		return 13;
 	}
 	else
 	{
-		printlog("[PhysFS]: successfully initialized, returned: %d", PHYSFS_getLastErrorCode());
+		printlog("[PhysFS]: successfully initialized, last error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
+
 	if ( !PHYSFS_mount(datadir, NULL, 1) )
 	{
-		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", datadir, PHYSFS_getLastErrorCode());
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s", datadir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		return 13;
 	}
+
 	if ( PHYSFS_mount(outputdir, NULL, 1) )
 	{
 		printlog("[PhysFS]: successfully mounted output %s folder", outputdir);
 		if ( PHYSFS_setWriteDir(outputdir) )
 		{
 			PHYSFS_mkdir("savegames");
+			//TODO: Will these need special NINTENDO handling?
 			PHYSFS_mkdir("crashlogs");
 			PHYSFS_mkdir("logfiles");
 			PHYSFS_mkdir("data");
 			PHYSFS_mkdir("data/custom-monsters");
+#ifdef NINTENDO
+			PHYSFS_mkdir("mods");
+			std::string path = outputdir;
+			path.append(PHYSFS_getDirSeparator()).append("mods");
+			PHYSFS_setWriteDir(path.c_str());
+			printlog("[PhysFS]: successfully set write folder %s", path.c_str());
+#else // NINTENDO
 			if ( PHYSFS_mkdir("mods") )
 			{
 				std::string path = outputdir;
@@ -134,14 +152,15 @@ int initApp(char const * const title, int fullscreen)
 			}
 			else
 			{
-				printlog("[PhysFS]: unsuccessfully created mods/ folder. Error code: %d", PHYSFS_getLastErrorCode());
+				printlog("[PhysFS]: unsuccessfully created mods/ folder. Error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 				return 13;
 			}
+#endif // !NINTENDO
 		}
 	}
 	else
 	{
-		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", outputdir, PHYSFS_getLastErrorCode());
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s", outputdir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		return 13;
 	}
 
@@ -426,7 +445,7 @@ int initApp(char const * const title, int fullscreen)
 	// print a loading message
 	drawClearBuffers();
 	int w, h;
-	TTF_SizeUTF8(ttf16, LOADSTR1, &w, &h);
+	getSizeOfText(ttf16, LOADSTR1, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR1);
 
 	GO_SwapBuffers(screen);
@@ -434,14 +453,14 @@ int initApp(char const * const title, int fullscreen)
 	// load sprites
 	printlog("loading sprites...\n");
 	fp = openDataFile("images/sprites.txt", "r");
-	for ( numsprites = 0; !feof(fp); numsprites++ )
+	for ( numsprites = 0; !fp->eof(); numsprites++ )
 	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		while ( fp->getc() != '\n' ) if ( fp->eof() )
 			{
 				break;
 			}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	if ( numsprites == 0 )
 	{
 		printlog("failed to identify any sprites in sprites.txt\n");
@@ -449,13 +468,9 @@ int initApp(char const * const title, int fullscreen)
 	}
 	sprites = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numsprites);
 	fp = openDataFile("images/sprites.txt", "r");
-	for ( c = 0; !feof(fp); c++ )
+	for ( c = 0; !fp->eof(); c++ )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
+		fp->gets2(name, 128);
 		sprites[c] = loadImage(name);
 		if ( sprites[c] == NULL )
 		{
@@ -463,16 +478,16 @@ int initApp(char const * const title, int fullscreen)
 			if ( c == 0 )
 			{
 				printlog("sprite 0 cannot be NULL!\n");
-				fclose(fp);
+				FileIO::close(fp);
 				return 7;
 			}
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 
 	// print a loading message
 	drawClearBuffers();
-	TTF_SizeUTF8(ttf16, LOADSTR2, &w, &h);
+	getSizeOfText(ttf16, LOADSTR2, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR2);
 
 	GO_SwapBuffers(screen);
@@ -483,14 +498,14 @@ int initApp(char const * const title, int fullscreen)
 	printlog("loading models from directory %s...\n", modelsDirectory.c_str());
 
 	fp = openDataFile(modelsDirectory.c_str(), "r");
-	for ( nummodels = 0; !feof(fp); nummodels++ )
+	for ( nummodels = 0; !fp->eof(); nummodels++ )
 	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		while ( fp->getc() != '\n' ) if ( fp->eof() )
 			{
 				break;
 			}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	if ( nummodels == 0 )
 	{
 		printlog("failed to identify any models in models.txt\n");
@@ -498,13 +513,9 @@ int initApp(char const * const title, int fullscreen)
 	}
 	models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
 	fp = openDataFile(modelsDirectory.c_str(), "r");
-	for ( c = 0; !feof(fp); c++ )
+	for ( c = 0; !fp->eof(); c++ )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
+		fp->gets2(name, 128);
 		models[c] = loadVoxel(name);
 		if ( models[c] == NULL )
 		{
@@ -512,7 +523,7 @@ int initApp(char const * const title, int fullscreen)
 			if ( c == 0 )
 			{
 				printlog("model 0 cannot be NULL!\n");
-				fclose(fp);
+				FileIO::close(fp);
 				return 12;
 			}
 		}
@@ -521,10 +532,10 @@ int initApp(char const * const title, int fullscreen)
 	{
 		generatePolyModels(0, nummodels, false);
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	// print a loading message
 	drawClearBuffers();
-	TTF_SizeUTF8(ttf16, LOADSTR3, &w, &h);
+	getSizeOfText(ttf16, LOADSTR3, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR3);
 
 	GO_SwapBuffers(screen);
@@ -535,14 +546,14 @@ int initApp(char const * const title, int fullscreen)
 	printlog("loading tiles from directory %s...\n", tilesDirectory.c_str());
 
 	fp = openDataFile(tilesDirectory.c_str(), "r");
-	for ( numtiles = 0; !feof(fp); numtiles++ )
+	for ( numtiles = 0; !fp->eof(); numtiles++ )
 	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		while ( fp->getc() != '\n' ) if ( fp->eof() )
 			{
 				break;
 			}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	if ( numtiles == 0 )
 	{
 		printlog("failed to identify any tiles in tiles.txt\n");
@@ -553,13 +564,9 @@ int initApp(char const * const title, int fullscreen)
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
 	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
 	fp = openDataFile(tilesDirectory.c_str(), "r");
-	for ( c = 0; !feof(fp); c++ )
+	for ( c = 0; !fp->eof(); c++ )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
+		fp->gets2(name, 128);
 		tiles[c] = loadImage(name);
 		animatedtiles[c] = false;
 		lavatiles[c] = false;
@@ -590,16 +597,16 @@ int initApp(char const * const title, int fullscreen)
 			if ( c == 0 )
 			{
 				printlog("tile 0 cannot be NULL!\n");
-				fclose(fp);
+				FileIO::close(fp);
 				return 9;
 			}
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 
 	// print a loading message
 	drawClearBuffers();
-	TTF_SizeUTF8(ttf16, LOADSTR4, &w, &h);
+	getSizeOfText(ttf16, LOADSTR4, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR4);
 
 	GO_SwapBuffers(screen);
@@ -610,14 +617,17 @@ int initApp(char const * const title, int fullscreen)
 #ifdef USE_FMOD
 	printlog("loading sounds...\n");
 	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( numsounds = 0; !feof(fp); numsounds++ )
+	for ( numsounds = 0; !fp->eof(); ++numsounds )
 	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		while ( fp->getc() != '\n' )
+		{
+			if ( fp->eof() )
 			{
 				break;
 			}
+		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	if ( numsounds == 0 )
 	{
 		printlog("failed to identify any sounds in sounds.txt\n");
@@ -625,13 +635,9 @@ int initApp(char const * const title, int fullscreen)
 	}
 	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
 	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( c = 0; !feof(fp); c++ )
+	for ( c = 0; !fp->eof(); ++c )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
+		fp->gets2(name, 128);
 		//TODO: Might need to malloc the sounds[c]->sound
 		fmod_result = FMOD_System_CreateSound(fmod_system, name, (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
 		if (FMODErrorCheck())
@@ -640,46 +646,40 @@ int initApp(char const * const title, int fullscreen)
 		}
 		//TODO: set sound volume? Or otherwise handle sound volume.
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-#elif defined USE_OPENAL
+#elif defined USE_OPENAL // USE_FMOD
 	printlog("loading sounds...\n");
 	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( numsounds = 0; !feof(fp); numsounds++ )
+	for ( numsounds = 0; !fp->eof(); numsounds++ )
 	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		while ( fp->getc() != '\n' ) if ( fp->eof() )
 			{
 				break;
 			}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	if ( numsounds == 0 )
 	{
 		printlog("failed to identify any sounds in sounds.txt\n");
 		return 10;
 	}
 	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( c = 0; !feof(fp); c++ )
+	for (c = 0, fp = openDataFile(soundsDirectory.c_str(), "r"); fp->gets2(name, 128); ++c)
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
 		//TODO: Might need to malloc the sounds[c]->sound
 		OPENAL_CreateSound(name, true, &sounds[c]);
 		//TODO: set sound volume? Or otherwise handle sound volume.
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
 	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
-#endif
+#endif // defined USE_OPENAL
 	return 0;
 }
 
@@ -694,7 +694,7 @@ int initApp(char const * const title, int fullscreen)
 int loadLanguage(char const * const lang)
 {
 	char filename[128] = { 0 };
-	FILE* fp;
+	File* fp;
 	int c;
 
 	// open log file
@@ -833,20 +833,19 @@ int loadLanguage(char const * const lang)
 
 	// read file
 	Uint32 line;
-	for ( line = 1; !feof(fp); )
+	for ( line = 1; !fp->eof(); )
 	{
 		//printlog( "loading line %d...\n", line);
 		char data[1024];
 		int entry = NUMLANGENTRIES;
-		int dummy;
 
 		// read line from file
 		int i;
 		bool fileEnd = false;
 		for ( i = 0; ; i++ )
 		{
-			data[i] = fgetc(fp);
-			if ( feof(fp) )
+			data[i] = fp->getc();
+			if ( fp->eof() )
 			{
 				fileEnd = true;
 				break;
@@ -856,14 +855,14 @@ int loadLanguage(char const * const lang)
 			if ( data[i] == '\n' )
 			{
 				line++;
-				if ( data[0] == '\n' || data[0] == '#' )
+				if (data[0] == '\r' || data[0] == '\n' || data[0] == '#')
 				{
 					break;
 				}
 			}
-			if ( data[i] == '#' )
+			if (data[i] == '#')
 			{
-				if ( data[0] != '\n' && data[0] != '#' )
+				if (data[0] != '\n' && data[0] != '\r' && data[0] != '#')
 				{
 					break;
 				}
@@ -875,7 +874,7 @@ int loadLanguage(char const * const lang)
 		}
 
 		// skip blank and comment lines
-		if ( data[0] == '\n' || data[0] == '#' )
+		if ( data[0] == '\r' || data[0] == '\n' || data[0] == '#' )
 		{
 			continue;
 		}
@@ -906,7 +905,7 @@ int loadLanguage(char const * const lang)
 	}
 
 	// close file
-	fclose(fp);
+	FileIO::close(fp);
 	printlog( "successfully loaded language file '%s'\n", langFilepath.c_str());
 
 	// update item internal language entries.
@@ -996,7 +995,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 	polyquad_t* quad1, *quad2;
 	Uint32 numquads;
 	list_t quads;
-	FILE *model_cache;
+	File *model_cache;
 	bool generateAll = start == 0 && end == nummodels;
 
 	quads.first = NULL;
@@ -1009,16 +1008,16 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		if ( useModelCache )
 		{
 			model_cache = openDataFile("models.cache", "rb");
-			if ( model_cache ) 
+			if ( model_cache ) //TODO: Needs updating to the new File I/O stuff.
 			{
 				char polymodelsVersionStr[7] = "v0.0.0";
 				char modelsCacheHeader[7] = "000000";
-				fread(&modelsCacheHeader, sizeof(char), strlen("BARONY"), model_cache);
+				model_cache->read(&modelsCacheHeader, sizeof(char), strlen("BARONY"));
 
 				if ( !strcmp(modelsCacheHeader, "BARONY") )
 				{
 					// we're using the new polymodels file.
-					fread(&polymodelsVersionStr, sizeof(char), strlen(VERSION), model_cache);
+					model_cache->read(&polymodelsVersionStr, sizeof(char), strlen(VERSION));
 					printlog("[MODEL CACHE]: Using updated version format %s.", polymodelsVersionStr);
 					if ( strncmp(polymodelsVersionStr, VERSION, strlen(VERSION)) )
 					{
@@ -1030,23 +1029,23 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 				else
 				{
 					printlog("[MODEL CACHE]: Detected legacy cache without embedded version data, upgrading cache to %s...", VERSION);
-					rewind(model_cache);
+					model_cache->rewind();
 					forceCacheRebuild = true; // upgrade from legacy cache
 				}
 				if ( !forceCacheRebuild )
 				{
 					for (size_t model_index = 0; model_index < nummodels; model_index++) {
 						polymodel_t *cur = &polymodels[model_index];
-						fread(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
+						model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
 						cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
-						fread(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+						model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
 					}
-					fclose(model_cache);
+					FileIO::close(model_cache);
 					return generateVBOs(start, end);
 				}
 				else
 				{
-					fclose(model_cache);
+					FileIO::close(model_cache);
 				}
 			}
 		}
@@ -1057,6 +1056,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		char loadText[128];
 		snprintf(loadText, 127, language[745], c, nummodels);
 
+#ifndef NINTENDO
 		// print a loading message
 		if ( start == 0 && end == nummodels )
 		{
@@ -1064,12 +1064,14 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 			{
 				drawClearBuffers();
 				int w, h;
-				TTF_SizeUTF8(ttf16, loadText, &w, &h);
+				getSizeOfText(ttf16, loadText, &w, &h);
 				ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
 
 				GO_SwapBuffers(screen);
 			}
 		}
+#endif
+
 		numquads = 0;
 		polymodels[c].numfaces = 0;
 		voxel_t* model = models[c];
@@ -1985,14 +1987,14 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 	{
 		char modelCacheHeader[32] = "BARONY";
 		strcat(modelCacheHeader, VERSION);
-		fwrite(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader), model_cache);
+		model_cache->write(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader));
 		for (size_t model_index = 0; model_index < nummodels; model_index++)
 		{
 			polymodel_t *cur = &polymodels[model_index];
-			fwrite(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
-			fwrite(cur->faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+			model_cache->write(&cur->numfaces, sizeof(cur->numfaces), 1);
+			model_cache->write(cur->faces, sizeof(polytriangle_t), cur->numfaces);
 		}
-		fclose(model_cache);
+		FileIO::close(model_cache);
 	}
 
 	// now store models into VBOs
@@ -2301,7 +2303,9 @@ int deinitApp()
 
 	// shutdown SDL subsystems
 	printlog("shutting down SDL and its subsystems...\n");
+#ifndef NINTENDO
 	SDLNet_Quit();
+#endif
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
@@ -2449,7 +2453,11 @@ int deinitApp()
 	freeLanguages();
 	printlog("notice: archiving log file as %s...\n", logarchiveFilePath.c_str());
 	printlog("success\n");
-	fclose(logfile);
+	if (logfile)
+	{
+		fclose(logfile);
+		logfile = nullptr;
+	}
 
 	// copy the log file into the archives.
 	char logToArchive[PATH_MAX];
@@ -2522,6 +2530,13 @@ void GO_InitFBO()
 
 bool initVideo()
 {
+#ifdef NINTENDO
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
+	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+#else
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1/*3*/ ); //Why GL 3.0? using only fixed pipeline stuff here
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
 	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
@@ -2530,12 +2545,16 @@ bool initVideo()
 	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
 	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4 );
+#endif
 
 	printlog("setting display mode to %dx%d...\n", xres, yres);
 	Uint32 flags = 0;
 #ifdef PANDORA
 	fullscreen = true;
 #endif
+#ifdef NINTENDO
+	flags = SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
+#else
 	if ( fullscreen )
 	{
 		flags |= SDL_WINDOW_FULLSCREEN;
@@ -2552,6 +2571,7 @@ bool initVideo()
 	{
 		flags |= SDL_WINDOW_OPENGL;
 	}
+#endif
 #ifdef APPLE
 	if ( fullscreen )
 	{
@@ -2584,6 +2604,7 @@ bool initVideo()
 #else
 		SDL_SetWindowSize(screen, screen_width, yres);
 #endif
+#ifndef NINTENDO
 		if ( fullscreen )
 		{
 			SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
@@ -2592,6 +2613,7 @@ bool initVideo()
 		{
 			SDL_SetWindowFullscreen(screen, 0);
 		}
+
 		if ( borderless )
 		{
 			SDL_SetWindowBordered(screen, SDL_bool::SDL_FALSE);
@@ -2601,7 +2623,9 @@ bool initVideo()
 			SDL_SetWindowBordered(screen, SDL_bool::SDL_TRUE);
 		}
 		SDL_SetWindowPosition(screen, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+#endif // !NINTENDO
 	}
+
 	if ( !renderer )
 	{
 #ifdef APPLE
@@ -2640,6 +2664,9 @@ bool initVideo()
 #ifdef PANDORA
 		GO_InitFBO();
 #endif
+#ifdef NINTENDO
+		initNxGL();
+#endif // NINTENDO
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_CULL_FACE);
@@ -2662,11 +2689,13 @@ bool initVideo()
 	{
 		SDL_GL_SetSwapInterval(0);
 	}
+#ifndef NINTENDO
 	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
 	{
 		printlog("warning: failed to change gamma setting:\n%s\n", SDL_GetError());
 		return true;
 	}
+#endif
 	printlog("display changed successfully.\n");
 	return true;
 }
@@ -2764,7 +2793,6 @@ loads the global item whitelist/blacklists and level curve.
 
 bool loadItemLists()
 {
-	//FILE* fp;
 	int c;
 
 	// open log file

@@ -326,6 +326,10 @@ bool mouseInBoundsRealtimeCoords(int, int, int, int); //Defined in playerinvento
 
 void warpMouseToSelectedHotbarSlot()
 {
+	if (shootmode == true)
+	{
+		return;
+	}
 	SDL_Rect pos;
 	pos.x = ((xres / 2) - 5 * hotbar_img->w * uiscale_hotbar) + (current_hotbar * hotbar_img->w * uiscale_hotbar) + (hotbar_img->w * uiscale_hotbar / 2);
 	pos.y = STATUS_Y - (hotbar_img->h * uiscale_hotbar / 2);

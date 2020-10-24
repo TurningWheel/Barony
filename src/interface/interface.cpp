@@ -885,6 +885,9 @@ void defaultConfig()
 	consoleCommand("/gamepad_menux_sensitivity 1400");
 	consoleCommand("/gamepad_menuy_sensitivity 1400");
 	consoleCommand("/autoappraisenewitems");
+#ifdef NINTENDO
+	nxDefaultConfig();
+#endif
 	return;
 }
 
@@ -991,7 +994,7 @@ int loadConfig(char* filename)
 	defaultImpulses(); //So that a config file that's missing impulses can get all them.
 
 	char str[1024];
-	FILE* fp;
+	File* fp;
 	bool mallocd = false;
 
 	printlog("Loading config '%s'...\n", filename);
@@ -1006,7 +1009,7 @@ int loadConfig(char* filename)
 	}
 
 	// open the config file
-	if ( (fp = fopen(filename, "rb")) == NULL )
+	if ( (fp = FileIO::open(filename, "rb")) == NULL )
 	{
 		printlog("warning: config file '%s' does not exist!\n", filename);
 		defaultConfig(); //Set up the game with the default config.
@@ -1014,7 +1017,7 @@ int loadConfig(char* filename)
 	}
 
 	// read commands from it
-	while ( fgets(str, 1024, fp) != NULL )
+	while ( fp->gets(str, 1024) != NULL )
 	{
 		if ( str[0] != '#' && str[0] != '\n' && str[0] != '\r' )   // if this line is not white space or a comment
 		{
@@ -1022,7 +1025,7 @@ int loadConfig(char* filename)
 			consoleCommand(str);
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	if ( mallocd )
 	{
 		free(filename);
@@ -1077,7 +1080,7 @@ int saveConfig(char const * const _filename)
 	char path[PATH_MAX];
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
-	FILE* fp;
+	File* fp;
 	int c;
 	char *filename = strdup(_filename);
 
@@ -1092,7 +1095,7 @@ int saveConfig(char const * const _filename)
 	completePath(path, filename, outputdir);
 
 	// open the config file
-	if ( (fp = fopen(path, "wb")) == NULL )
+	if ( (fp = FileIO::open(path, "wb")) == NULL )
 	{
 		printlog("ERROR: failed to save config file '%s'!\n", filename);
 		free(filename);
@@ -1100,239 +1103,239 @@ int saveConfig(char const * const _filename)
 	}
 
 	// write config header
-	fprintf(fp, "# %s\n", filename);
-	fprintf(fp, "# this file was auto-generated on %d-%02d-%02d at %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	fp->printf("# %s\n", filename);
+	fp->printf("# this file was auto-generated on %d-%02d-%02d at %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
 	// write contents of config
-	fprintf(fp, "/lang %s\n", languageCode);
-	fprintf(fp, "/res %dx%d\n", xres, yres);
-	fprintf(fp, "/gamma %3.3f\n", vidgamma);
-	fprintf(fp, "/fov %d\n", fov);
-	fprintf(fp, "/fps %d\n", fpsLimit);
-	fprintf(fp, "/svflags %d\n", svFlags);
+	fp->printf("/lang %s\n", languageCode);
+	fp->printf("/res %dx%d\n", xres, yres);
+	fp->printf("/gamma %3.3f\n", vidgamma);
+	fp->printf("/fov %d\n", fov);
+	fp->printf("/fps %d\n", fpsLimit);
+	fp->printf("/svflags %d\n", svFlags);
 	if ( lastname != "" )
 	{
-		fprintf(fp, "/lastname %s\n", lastname.c_str());
+		fp->printf("/lastname %s\n", lastname.c_str());
 	}
 	if ( smoothlighting )
 	{
-		fprintf(fp, "/smoothlighting\n");
+		fp->printf("/smoothlighting\n");
 	}
 	if ( fullscreen )
 	{
-		fprintf(fp, "/fullscreen\n");
+		fp->printf("/fullscreen\n");
 	}
 	if ( borderless )
 	{
-		fprintf(fp, "/borderless\n");
+		fp->printf("/borderless\n");
 	}
 	if ( shaking )
 	{
-		fprintf(fp, "/shaking\n");
+		fp->printf("/shaking\n");
 	}
 	if ( bobbing )
 	{
-		fprintf(fp, "/bobbing\n");
+		fp->printf("/bobbing\n");
 	}
-	fprintf(fp, "/sfxvolume %d\n", sfxvolume);
-	fprintf(fp, "/sfxambientvolume %d\n", sfxAmbientVolume);
-	fprintf(fp, "/sfxenvironmentvolume %d\n", sfxEnvironmentVolume);
-	fprintf(fp, "/musvolume %d\n", musvolume);
+	fp->printf("/sfxvolume %d\n", sfxvolume);
+	fp->printf("/sfxambientvolume %d\n", sfxAmbientVolume);
+	fp->printf("/sfxenvironmentvolume %d\n", sfxEnvironmentVolume);
+	fp->printf("/musvolume %d\n", musvolume);
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
-		fprintf(fp, "/bind %d IN_%s\n", impulses[c], impulsenames[c]);
+		fp->printf("/bind %d IN_%s\n", impulses[c], impulsenames[c]);
 	}
 	for (c = 0; c < NUM_JOY_IMPULSES; c++)
 	{
-		fprintf(fp, "/joybind %d INJOY_%s\n", joyimpulses[c], joyimpulsenames[c]);
+		fp->printf("/joybind %d INJOY_%s\n", joyimpulses[c], joyimpulsenames[c]);
 	}
-	fprintf(fp, "/mousespeed %d\n", (int)(mousespeed));
+	fp->printf("/mousespeed %d\n", (int)(mousespeed));
 	if ( reversemouse )
 	{
-		fprintf(fp, "/reversemouse\n");
+		fp->printf("/reversemouse\n");
 	}
 	if ( smoothmouse )
 	{
-		fprintf(fp, "/smoothmouse\n");
+		fp->printf("/smoothmouse\n");
 	}
 	if ( disablemouserotationlimit )
 	{
-		fprintf(fp, "/disablemouserotationlimit\n");
+		fp->printf("/disablemouserotationlimit\n");
 	}
 	if (last_ip[0])
 	{
-		fprintf(fp, "/ip %s\n", last_ip);
+		fp->printf("/ip %s\n", last_ip);
 	}
 	if (last_port[0])
 	{
-		fprintf(fp, "/port %s\n", last_port);
+		fp->printf("/port %s\n", last_port);
 	}
 	if (!spawn_blood)
 	{
-		fprintf(fp, "/noblood\n");
+		fp->printf("/noblood\n");
 	}
 	if ( !flickerLights )
 	{
-		fprintf(fp, "/nolightflicker\n");
+		fp->printf("/nolightflicker\n");
 	}
 	if ( verticalSync )
 	{
-		fprintf(fp, "/vsync\n");
+		fp->printf("/vsync\n");
 	}
 	if ( !showStatusEffectIcons )
 	{
-		fprintf(fp, "/hidestatusicons\n");
+		fp->printf("/hidestatusicons\n");
 	}
 	if ( minimapPingMute )
 	{
-		fprintf(fp, "/muteping\n");
+		fp->printf("/muteping\n");
 	}
 	if ( mute_audio_on_focus_lost )
 	{
-		fprintf(fp, "/muteaudiofocuslost\n");
+		fp->printf("/muteaudiofocuslost\n");
 	}
 	if ( mute_player_monster_sounds )
 	{
-		fprintf(fp, "/muteplayermonstersounds\n");
+		fp->printf("/muteplayermonstersounds\n");
 	}
 	if (colorblind)
 	{
-		fprintf(fp, "/colorblind\n");
+		fp->printf("/colorblind\n");
 	}
 	if (!capture_mouse)
 	{
-		fprintf(fp, "/nocapturemouse\n");
+		fp->printf("/nocapturemouse\n");
 	}
 	if (broadcast)
 	{
-		fprintf(fp, "/broadcast\n");
+		fp->printf("/broadcast\n");
 	}
 	if (nohud)
 	{
-		fprintf(fp, "/nohud\n");
+		fp->printf("/nohud\n");
 	}
 	if (!auto_hotbar_new_items)
 	{
-		fprintf(fp, "/disablehotbarnewitems\n");
+		fp->printf("/disablehotbarnewitems\n");
 	}
 	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
 	{
-		fprintf(fp, "/hotbarenablecategory %d %d\n", c, auto_hotbar_categories[c]);
+		fp->printf("/hotbarenablecategory %d %d\n", c, auto_hotbar_categories[c]);
 	}
 	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
 	{
-		fprintf(fp, "/autosortcategory %d %d\n", c, autosort_inventory_categories[c]);
+		fp->printf("/autosortcategory %d %d\n", c, autosort_inventory_categories[c]);
 	}
 	if ( hotbar_numkey_quick_add )
 	{
-		fprintf(fp, "/quickaddtohotbar\n");
+		fp->printf("/quickaddtohotbar\n");
 	}
 	if ( lock_right_sidebar )
 	{
-		fprintf(fp, "/locksidebar\n");
+		fp->printf("/locksidebar\n");
 	}
 	if ( show_game_timer_always )
 	{
-		fprintf(fp, "/showgametimer\n");
+		fp->printf("/showgametimer\n");
 	}
 	if (disable_messages)
 	{
-		fprintf(fp, "/disablemessages\n");
+		fp->printf("/disablemessages\n");
 	}
 	if (right_click_protect)
 	{
-		fprintf(fp, "/right_click_protect\n");
+		fp->printf("/right_click_protect\n");
 	}
 	if (auto_appraise_new_items)
 	{
-		fprintf(fp, "/autoappraisenewitems\n");
+		fp->printf("/autoappraisenewitems\n");
 	}
 	if (startfloor)
 	{
-		fprintf(fp, "/startfloor %d\n", startfloor);
+		fp->printf("/startfloor %d\n", startfloor);
 	}
 	if (splitscreen)
 	{
-		fprintf(fp, "/splitscreen\n");
+		fp->printf("/splitscreen\n");
 	}
 	if ( useModelCache )
 	{
-		fprintf(fp, "/usemodelcache\n");
+		fp->printf("/usemodelcache\n");
 	}
-	fprintf(fp, "/lastcharacter %d %d %d %d\n", lastCreatedCharacterSex, lastCreatedCharacterClass, lastCreatedCharacterAppearance, lastCreatedCharacterRace);
-	fprintf(fp, "/gamepad_deadzone %d\n", gamepad_deadzone);
-	fprintf(fp, "/gamepad_trigger_deadzone %d\n", gamepad_trigger_deadzone);
-	fprintf(fp, "/gamepad_leftx_sensitivity %d\n", gamepad_leftx_sensitivity);
-	fprintf(fp, "/gamepad_lefty_sensitivity %d\n", gamepad_lefty_sensitivity);
-	fprintf(fp, "/gamepad_rightx_sensitivity %d\n", gamepad_rightx_sensitivity);
-	fprintf(fp, "/gamepad_righty_sensitivity %d\n", gamepad_righty_sensitivity);
-	fprintf(fp, "/gamepad_menux_sensitivity %d\n", gamepad_menux_sensitivity);
-	fprintf(fp, "/gamepad_menuy_sensitivity %d\n", gamepad_menuy_sensitivity);
+	fp->printf("/lastcharacter %d %d %d %d\n", lastCreatedCharacterSex, lastCreatedCharacterClass, lastCreatedCharacterAppearance, lastCreatedCharacterRace);
+	fp->printf("/gamepad_deadzone %d\n", gamepad_deadzone);
+	fp->printf("/gamepad_trigger_deadzone %d\n", gamepad_trigger_deadzone);
+	fp->printf("/gamepad_leftx_sensitivity %d\n", gamepad_leftx_sensitivity);
+	fp->printf("/gamepad_lefty_sensitivity %d\n", gamepad_lefty_sensitivity);
+	fp->printf("/gamepad_rightx_sensitivity %d\n", gamepad_rightx_sensitivity);
+	fp->printf("/gamepad_righty_sensitivity %d\n", gamepad_righty_sensitivity);
+	fp->printf("/gamepad_menux_sensitivity %d\n", gamepad_menux_sensitivity);
+	fp->printf("/gamepad_menuy_sensitivity %d\n", gamepad_menuy_sensitivity);
 	if (gamepad_rightx_invert)
 	{
-		fprintf(fp, "/gamepad_rightx_invert\n");
+		fp->printf("/gamepad_rightx_invert\n");
 	}
 	if (gamepad_righty_invert)
 	{
-		fprintf(fp, "/gamepad_righty_invert\n");
+		fp->printf("/gamepad_righty_invert\n");
 	}
 	if (gamepad_leftx_invert)
 	{
-		fprintf(fp, "/gamepad_leftx_invert\n");
+		fp->printf("/gamepad_leftx_invert\n");
 	}
 	if (gamepad_lefty_invert)
 	{
-		fprintf(fp, "/gamepad_lefty_invert\n");
+		fp->printf("/gamepad_lefty_invert\n");
 	}
 	if (gamepad_menux_invert)
 	{
-		fprintf(fp, "/gamepad_menux_invert\n");
+		fp->printf("/gamepad_menux_invert\n");
 	}
 	if (gamepad_menuy_invert)
 	{
-		fprintf(fp, "/gamepad_menuy_invert\n");
+		fp->printf("/gamepad_menuy_invert\n");
 	}
-	fprintf(fp, "/skipintro\n");
-	fprintf(fp, "/minimaptransparencyfg %d\n", minimapTransparencyForeground);
-	fprintf(fp, "/minimaptransparencybg %d\n", minimapTransparencyBackground);
-	fprintf(fp, "/minimapscale %d\n", minimapScale);
-	fprintf(fp, "/minimapobjectzoom %d\n", minimapObjectZoom);
+	fp->printf("/skipintro\n");
+	fp->printf("/minimaptransparencyfg %d\n", minimapTransparencyForeground);
+	fp->printf("/minimaptransparencybg %d\n", minimapTransparencyBackground);
+	fp->printf("/minimapscale %d\n", minimapScale);
+	fp->printf("/minimapobjectzoom %d\n", minimapObjectZoom);
 	if ( uiscale_charactersheet )
 	{
-		fprintf(fp, "/uiscale_charsheet\n");
+		fp->printf("/uiscale_charsheet\n");
 	}
 	if ( uiscale_skillspage )
 	{
-		fprintf(fp, "/uiscale_skillsheet\n");
+		fp->printf("/uiscale_skillsheet\n");
 	}
-	fprintf(fp, "/uiscale_inv %f\n", uiscale_inventory);
-	fprintf(fp, "/uiscale_hotbar %f\n", uiscale_hotbar);
-	fprintf(fp, "/uiscale_chatbox %f\n", uiscale_chatlog);
-	fprintf(fp, "/uiscale_playerbars %f\n", uiscale_playerbars);
+	fp->printf("/uiscale_inv %f\n", uiscale_inventory);
+	fp->printf("/uiscale_hotbar %f\n", uiscale_hotbar);
+	fp->printf("/uiscale_chatbox %f\n", uiscale_chatlog);
+	fp->printf("/uiscale_playerbars %f\n", uiscale_playerbars);
 	if ( hide_playertags )
 	{
-		fprintf(fp, "/hideplayertags\n");
+		fp->printf("/hideplayertags\n");
 	}
 	if ( hide_statusbar )
 	{
-		fprintf(fp, "/hidestatusbar\n");
+		fp->printf("/hidestatusbar\n");
 	}
 	if ( show_skill_values )
 	{
-		fprintf(fp, "/showskillvalues\n");
+		fp->printf("/showskillvalues\n");
 	}
 	if ( disableMultithreadedSteamNetworking )
 	{
-		fprintf(fp, "/disablenetworkmultithreading\n");
+		fp->printf("/disablenetworkmultithreading\n");
 	}
 	if ( disableFPSLimitOnNetworkMessages )
 	{
-		fprintf(fp, "/disablenetcodefpslimit\n");
+		fp->printf("/disablenetcodefpslimit\n");
 	}
 #ifdef USE_EOS
 	if ( LobbyHandler.crossplayEnabled )
 	{
-		fprintf(fp, "/crossplay\n");
+		fp->printf("/crossplay\n");
 	}
 #endif // USE_EOS
 
@@ -1341,22 +1344,22 @@ int saveConfig(char const * const _filename)
 		std::vector<std::pair<std::string, std::string>>::iterator it;
 		for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
 		{
-			fprintf(fp, "/loadmod dir:%s name:%s", (*it).first.c_str(), (*it).second.c_str());
+			fp->printf("/loadmod dir:%s name:%s", (*it).first.c_str(), (*it).second.c_str());
 #ifdef STEAMWORKS
 			for ( std::vector<std::pair<std::string, uint64>>::iterator itId = gamemods_workshopLoadedFileIDMap.begin();
 				itId != gamemods_workshopLoadedFileIDMap.end(); ++itId )
 			{
 				if ( itId->first.compare((*it).second) == 0 )
 				{
-					fprintf(fp, " fileid:%lld", (*itId).second);
+					fp->printf(" fileid:%lld", (*itId).second);
 				}
 			}
 #endif // STEAMWORKS
-			fprintf(fp, "\n");
+			fp->printf("\n");
 		}
 	}
 
-	fclose(fp);
+	FileIO::close(fp);
 	free(filename);
 	return 0;
 }
@@ -1962,7 +1965,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		int i = 0;
 
 		int width = 0;
-		TTF_SizeUTF8(ttf12, language[3036], &width, nullptr);
+		getSizeOfText(ttf12, language[3036], &width, nullptr);
 		if ( yres < 768 )
 		{
 			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 14, language[3036]);
@@ -2057,23 +2060,23 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 				{
-					TTF_SizeUTF8(ttf12, language[3675], &width, nullptr);
+					getSizeOfText(ttf12, language[3675], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3675]);
 				}
 				else
 				{
-					TTF_SizeUTF8(ttf12, language[3037 + i + 8], &width, nullptr);
+					getSizeOfText(ttf12, language[3037 + i + 8], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
 				}
 			}
 			else
 			{
-				TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+				getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 				if ( i == ALLY_CMD_DEFEND 
 					&& followerToCommand->monsterAllyState == ALLY_STATE_DEFAULT
 					&& (followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT) )
 				{
-					TTF_SizeUTF8(ttf12, language[3674], &width, nullptr);
+					getSizeOfText(ttf12, language[3674], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3674]);
 				}
 				else if ( i == ALLY_CMD_CLASS_TOGGLE )
@@ -2081,21 +2084,21 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( followerStats->type == GYROBOT )
 					{
 						// draw higher.
-						TTF_SizeUTF8(ttf12, language[3619], &width, nullptr);
+						getSizeOfText(ttf12, language[3619], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3619]);
-						TTF_SizeUTF8(ttf12, language[3620 + followerToCommand->monsterAllyClass], &width, nullptr);
+						getSizeOfText(ttf12, language[3620 + followerToCommand->monsterAllyClass], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3620 + followerToCommand->monsterAllyClass]);
 					}
 					else if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
 					{
-						TTF_SizeUTF8(ttf12, "Relinquish ", &width, nullptr);
+						getSizeOfText(ttf12, "Relinquish ", &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3196]);
 					}
 					else
 					{
 						// draw higher.
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
-						TTF_SizeUTF8(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
+						getSizeOfText(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]);
 					}
 				}
@@ -2107,25 +2110,25 @@ void FollowerRadialMenu::drawFollowerMenu()
 							|| followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_MAGIC
 							|| followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE )
 						{
-							TTF_SizeUTF8(ttf12, "Detect", &width, nullptr);
+							getSizeOfText(ttf12, "Detect", &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3636]);
-							TTF_SizeUTF8(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+							getSizeOfText(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3624 + followerToCommand->monsterAllyPickupItems]);
 						}
 						else
 						{
-							TTF_SizeUTF8(ttf12, language[3623], &width, nullptr);
+							getSizeOfText(ttf12, language[3623], &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3623]);
-							TTF_SizeUTF8(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+							getSizeOfText(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3624 + followerToCommand->monsterAllyPickupItems]);
 						}
 					}
 					else
 					{
 						// draw higher.
-						TTF_SizeUTF8(ttf12, "Pickup", &width, nullptr);
+						getSizeOfText(ttf12, "Pickup", &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
-						TTF_SizeUTF8(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+						getSizeOfText(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]);
 					}
 				}
@@ -2133,9 +2136,9 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( followerStats->type == GYROBOT )
 					{
-						TTF_SizeUTF8(ttf12, language[3633], &width, nullptr);
+						getSizeOfText(ttf12, language[3633], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3633]);
-						TTF_SizeUTF8(ttf12, language[3634], &width, nullptr);
+						getSizeOfText(ttf12, language[3634], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3634]);
 					}
 					else
@@ -2143,17 +2146,17 @@ void FollowerRadialMenu::drawFollowerMenu()
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
 						if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
 						{
-							TTF_SizeUTF8(ttf12, language[3061], &width, nullptr);
+							getSizeOfText(ttf12, language[3061], &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]);
 						}
 						else if ( skillLVL >= SKILL_LEVEL_MASTER )
 						{
-							TTF_SizeUTF8(ttf12, language[3060], &width, nullptr);
+							getSizeOfText(ttf12, language[3060], &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]);
 						}
 						else
 						{
-							TTF_SizeUTF8(ttf12, language[3059], &width, nullptr);
+							getSizeOfText(ttf12, language[3059], &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
 						}
 					}
@@ -2162,24 +2165,24 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( followerStats->type == GYROBOT )
 					{
-						TTF_SizeUTF8(ttf12, "Return &", &width, nullptr);
+						getSizeOfText(ttf12, "Return &", &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3635]);
 					}
 					else if ( followerStats->type == DUMMYBOT )
 					{
-						TTF_SizeUTF8(ttf12, language[3641], &width, nullptr);
+						getSizeOfText(ttf12, language[3641], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3641]);
-						TTF_SizeUTF8(ttf12, language[3642], &width, nullptr);
+						getSizeOfText(ttf12, language[3642], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3642]);
 					}
 					else if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 					{
-						TTF_SizeUTF8(ttf12, language[3649], &width, nullptr);
+						getSizeOfText(ttf12, language[3649], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3649]);
 					}
 					else
 					{
-						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+						getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
 					}
 				}
@@ -2189,18 +2192,18 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						if ( optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0 )
 						{
-							TTF_SizeUTF8(ttf12, "Interact / ", &width, nullptr);
+							getSizeOfText(ttf12, "Interact / ", &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]);
 						}
 						else
 						{
-							TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+							getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3037 + i]);
 						}
 					}
 					else
 					{
-						TTF_SizeUTF8(ttf12, language[3104], &width, nullptr); // print just attack if no world interaction.
+						getSizeOfText(ttf12, language[3104], &width, nullptr); // print just attack if no world interaction.
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3104]);
 					}
 				}
@@ -2208,18 +2211,18 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 					{
-						TTF_SizeUTF8(ttf12, language[3650], &width, nullptr);
+						getSizeOfText(ttf12, language[3650], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3650]);
 					}
 					else
 					{
-						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+						getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
 					}
 				}
 				else
 				{
-					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+					getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
 				}
 			}
@@ -2234,7 +2237,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			highlight = -1;
 			//drawImageRing(fancyWindow_bmp, nullptr, 35, 35, 40, 0, 2 * PI, 192);
 			drawCircle(xres / 2, yres / 2, radius - thickness, uint32ColorBaronyBlue(*mainsurface), 192);
-			//TTF_SizeUTF8(ttf12, language[3063], &width, nullptr);
+			//getSizeOfText(ttf12, language[3063], &width, nullptr);
 			//ttfPrintText(ttf12, xres / 2 - width / 2, yres / 2 - 8, language[3063]);
 		}
 
@@ -3556,12 +3559,12 @@ void GenericGUIMenu::updateGUI()
 			int txtHeight = 0;
 			int charWidth = 0;
 			TTF_Font* font = ttf8;
-			TTF_SizeUTF8(font, "a", &charWidth, nullptr); // get 1 character width.
+			getSizeOfText(font, "a", &charWidth, nullptr); // get 1 character width.
 			int textstartx = pos.x + 2 * charWidth + 4;
 
 			SDL_Rect highlightBtn;
 			// Craft
-			TTF_SizeUTF8(ttf8, language[3644], &txtWidth, &txtHeight);
+			getSizeOfText(ttf8, language[3644], &txtWidth, &txtHeight);
 			highlightBtn.x = textstartx;
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
@@ -3580,7 +3583,7 @@ void GenericGUIMenu::updateGUI()
 			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3644]);
 
 			// Salvage
-			TTF_SizeUTF8(font, language[3645], &txtWidth, &txtHeight);
+			getSizeOfText(font, language[3645], &txtWidth, &txtHeight);
 			highlightBtn.x += highlightBtn.w;
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
@@ -3599,7 +3602,7 @@ void GenericGUIMenu::updateGUI()
 			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3645]);
 
 			// Repair
-			TTF_SizeUTF8(font, language[3646], &txtWidth, &txtHeight);
+			getSizeOfText(font, language[3646], &txtWidth, &txtHeight);
 			highlightBtn.x += highlightBtn.w;
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
@@ -3618,7 +3621,7 @@ void GenericGUIMenu::updateGUI()
 			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3646]);
 
 			// Filter include all (*)
-			TTF_SizeUTF8(font, language[356], &txtWidth, &txtHeight);
+			getSizeOfText(font, language[356], &txtWidth, &txtHeight);
 			highlightBtn.x += highlightBtn.w;
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = 2 * charWidth + 4;
@@ -3710,12 +3713,12 @@ void GenericGUIMenu::updateGUI()
 			int txtHeight = 0;
 			int charWidth = 0;
 			TTF_Font* font = ttf8;
-			TTF_SizeUTF8(font, "a", &charWidth, nullptr); // get 1 character width.
+			getSizeOfText(font, "a", &charWidth, nullptr); // get 1 character width.
 			int textstartx = pos.x + 2 * charWidth + 4;
 
 			SDL_Rect highlightBtn;
 			// Inscribe
-			TTF_SizeUTF8(ttf8, language[3718], &txtWidth, &txtHeight);
+			getSizeOfText(ttf8, language[3718], &txtWidth, &txtHeight);
 			highlightBtn.x = textstartx;
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
@@ -3734,7 +3737,7 @@ void GenericGUIMenu::updateGUI()
 			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3718]);
 
 			// Repair
-			TTF_SizeUTF8(font, language[3719], &txtWidth, &txtHeight);
+			getSizeOfText(font, language[3719], &txtWidth, &txtHeight);
 			highlightBtn.x += highlightBtn.w;
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;

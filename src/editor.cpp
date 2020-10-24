@@ -1169,7 +1169,7 @@ loads the tile palette file for the editor.
 int loadTilePalettes()
 {
 	char filename[128] = { 0 };
-	FILE* fp;
+	File* fp;
 	int c;
 
 	// open log file
@@ -1200,7 +1200,7 @@ int loadTilePalettes()
 	int paletteNumber = 0;
 	int paletteTile = 0;
 	bool lockValueEntry = 0;
-	for (; !feof(fp); )
+	for (; !(fp->eof()); )
 	{
 		//printlog( "loading line %d...\n", line);
 		char data[1024];
@@ -1210,8 +1210,8 @@ int loadTilePalettes()
 		bool fileEnd = false;
 		for ( i = 0; ; i++ )
 		{
-			data[i] = fgetc(fp);
-			if ( feof(fp) )
+			data[i] = fp->getc();
+			if ( fp->eof() )
 			{
 				fileEnd = true;
 				break;
@@ -1257,7 +1257,7 @@ int loadTilePalettes()
 	}
 
 	// close file
-	fclose(fp);
+	FileIO::close(fp);
 	printlog("successfully loaded tile palette file '%s'\n", filename);
 	return 0;
 }
@@ -1273,7 +1273,7 @@ saves the tile palette file for the editor.
 int saveTilePalettes()
 {
 	char filename[128] = { 0 };
-	FILE* fp;
+	File* fp;
 	int c;
 
 	// open log file
@@ -1306,39 +1306,39 @@ int saveTilePalettes()
 	bool lockValueEntry = 0;
 	char data[128];
 
-	fputs("# Tile palette file\n", fp);
-	fputs("# lines beginning with pound character are a comment\n", fp);
-	fputs("# blank lines are ignored\n", fp);
-	fputs("", fp);
+	fp->puts("# Tile palette file\n");
+	fp->puts("# lines beginning with pound character are a comment\n");
+	fp->puts("# blank lines are ignored\n");
+	fp->puts("");
 
 	for ( paletteNumber = 0; paletteNumber < 9; paletteNumber++ )
 	{
 		paletteTile = 0;
 		snprintf(data, sizeof(data), "# palette %d tiles\n", paletteNumber + 1);
-		fputs(data, fp);
-		fputs("\n", fp);
+		fp->puts(data);
+		fp->puts("\n");
 		for ( paletteTile = 0; paletteTile < 9; paletteTile++ )
 		{
 			if ( paletteTile == 3 || paletteTile == 6 )
 			{
-				fputs("\n", fp);
+				fp->puts("\n");
 			}
 			snprintf(data, sizeof(data), "%d\n", recentUsedTiles[paletteNumber][paletteTile]);
-			fputs(data, fp);
+			fp->puts(data);
 		}
-		fputs("\n", fp);
+		fp->puts("\n");
 		snprintf(data, sizeof(data), "# palette %d locked (1) or unlocked (0)\n", paletteNumber + 1);
-		fputs(data, fp);
-		fputs("\n", fp);
+		fp->puts(data);
+		fp->puts("\n");
 		snprintf(data, sizeof(data), "%d\n", lockTilePalette[paletteNumber]);
-		fputs(data, fp);
-		fputs("\n", fp);
+		fp->puts(data);
+		fp->puts("\n");
 	}
 
-	fputs("# end\n", fp);
+	fp->puts("# end\n");
 
 	// close file
-	fclose(fp);
+	FileIO::close(fp);
 	printlog("saved tile palette file '%s'\n", filename);
 	return 0;
 }

@@ -1807,7 +1807,6 @@ void clientHandlePacket()
 	int c = 0;
 	Uint32 i = 0, j;
 	Item* item = NULL;
-	FILE* fp;
 
 #ifdef PACKETINFO
 	char packetinfo[NET_PACKET_SIZE];
@@ -3510,7 +3509,7 @@ void clientHandlePacket()
 		loading = true;
 		drawClearBuffers();
 		int w, h;
-		TTF_SizeUTF8(ttf16, LOADSTR, &w, &h);
+		getSizeOfText(ttf16, LOADSTR, &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR);
 
 		GO_SwapBuffers(screen);

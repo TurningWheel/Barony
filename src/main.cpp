@@ -197,7 +197,11 @@ std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 bool receivedclientnum = false;
 char const * window_title = nullptr;
 bool softwaremode = false;
-SDL_TimerID timer;
+#ifdef NINTENDO
+ std::chrono::time_point<std::chrono::steady_clock> lastTick;
+#else
+ SDL_TimerID timer;
+#endif // NINTENDO
 SDL_Window* screen = nullptr;
 #ifdef APPLE
 SDL_Renderer* renderer = nullptr;

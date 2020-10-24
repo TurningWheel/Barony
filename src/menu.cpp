@@ -1559,7 +1559,6 @@ void handleMainMenu(bool mode)
 	//Mix_Music **music, *intromusic, *splashmusic, *creditsmusic;
 	node_t* node, *nextnode;
 	Entity* entity;
-	FILE* fp;
 	//SDL_Surface *sky_bmp;
 	button_t* button;
 
@@ -1711,10 +1710,10 @@ void handleMainMenu(bool mode)
 				strncat(version, __DATE__ + 5, 1);
 			}
 			int w, h;
-			TTF_SizeUTF8(ttf8, version, &w, &h);
+			getSizeOfText(ttf8, version, &w, &h);
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 4 - h, "%s", version);
 			int h2 = h;
-			TTF_SizeUTF8(ttf8, VERSION, &w, &h);
+			getSizeOfText(ttf8, VERSION, &w, &h);
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
 			if ( gamemods_numCurrentModsLoaded >= 0 || conductGameChallenges[CONDUCT_MODDED] )
 			{
@@ -1733,7 +1732,7 @@ void handleMainMenu(bool mode)
 					(conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 					|| conductGameChallenges[CONDUCT_LIFESAVING])) )
 			{
-				TTF_SizeUTF8(ttf8, language[3003], &w, &h);
+				getSizeOfText(ttf8, language[3003], &w, &h);
 				if ( gamemods_numCurrentModsLoaded < 0 && !conductGameChallenges[CONDUCT_MODDED] )
 				{
 					h = -4;
@@ -1752,7 +1751,7 @@ void handleMainMenu(bool mode)
 #endif
 
 #ifdef STEAMWORKS
-			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
+			getSizeOfText(ttf8, language[2549], &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
 				&& subwindow == 0
 				&& introstage == 1
@@ -1774,7 +1773,7 @@ void handleMainMenu(bool mode)
 			{
 				if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
 				{
-					TTF_SizeUTF8(ttf8, language[2986], &w, &h);
+					getSizeOfText(ttf8, language[2986], &w, &h);
 					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
 				}
 			}
@@ -1796,7 +1795,7 @@ void handleMainMenu(bool mode)
 #else
 			if ( intro && introstage == 1 )
 			{
-				TTF_SizeUTF8(ttf8, language[3402], &w, &h);
+				getSizeOfText(ttf8, language[3402], &w, &h);
 				if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
 					&& subwindow == 0 )
 				{
@@ -1912,7 +1911,7 @@ void handleMainMenu(bool mode)
 						// print a loading message
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[2990], &w, &h);
+						getSizeOfText(ttf16, language[2990], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2990]);
 						GO_SwapBuffers(screen);
 
@@ -1925,7 +1924,7 @@ void handleMainMenu(bool mode)
 						// print a loading message
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[2988], &w, &h);
+						getSizeOfText(ttf16, language[2988], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2988]);
 						GO_SwapBuffers(screen);
 						physfsReloadSounds(true);
@@ -1936,7 +1935,7 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[3018], &w, &h);
+						getSizeOfText(ttf16, language[3018], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3018]);
 						GO_SwapBuffers(screen);
 						physfsReloadTiles(true);
@@ -1947,7 +1946,7 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[2992], &w, &h);
+						getSizeOfText(ttf16, language[2992], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2992]);
 						GO_SwapBuffers(screen);
 						physfsReloadBooks();
@@ -1959,7 +1958,7 @@ void handleMainMenu(bool mode)
 						gamemodsUnloadCustomThemeMusic();
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[2994], &w, &h);
+						getSizeOfText(ttf16, language[2994], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2994]);
 						GO_SwapBuffers(screen);
 						bool reloadIntroMusic = false;
@@ -1977,7 +1976,7 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[3005], &w, &h);
+						getSizeOfText(ttf16, language[3005], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3005]);
 						GO_SwapBuffers(screen);
 						reloadLanguage();
@@ -1988,7 +1987,7 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[3009], &w, &h);
+						getSizeOfText(ttf16, language[3009], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3009]);
 						GO_SwapBuffers(screen);
 						physfsReloadItemsTxt();
@@ -1999,7 +1998,7 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[3007], &w, &h);
+						getSizeOfText(ttf16, language[3007], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3007]);
 						GO_SwapBuffers(screen);
 						physfsReloadItemSprites(true);
@@ -2010,7 +2009,7 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[3016], &w, &h);
+						getSizeOfText(ttf16, language[3016], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3016]);
 						GO_SwapBuffers(screen);
 						physfsReloadSprites(true);
@@ -2028,7 +2027,7 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[3014], &w, &h);
+						getSizeOfText(ttf16, language[3014], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3014]);
 						GO_SwapBuffers(screen);
 						physfsReloadMonsterLimbFiles();
@@ -2039,7 +2038,7 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[3016], &w, &h);
+						getSizeOfText(ttf16, language[3016], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3016]);
 						GO_SwapBuffers(screen);
 						physfsReloadSystemImages();
@@ -3656,7 +3655,18 @@ void handleMainMenu(bool mode)
 			// enter character name
 			if ( !SDL_IsTextInputActive() )
 			{
-				inputstr = stats[0]->name;
+				if (inputstr != stats[0]->name) //TODO: NX PORT: Not sure if this portion is correct...the PC version of this chunk has changed significantly in the interleaving time.
+				{
+					inputstr = stats[0]->name;
+#ifdef NINTENDO
+					auto result = nxKeyboard("Enter your character's name");
+					if (result.success)
+					{
+						strncpy(inputstr, result.str.c_str(), 21);
+						inputstr[21] = '\0';
+					}
+#endif
+				}
 				SDL_StartTextInput();
 			}
 			//strncpy(stats[0]->name,inputstr,16);
@@ -3670,7 +3680,7 @@ void handleMainMenu(bool mode)
 			if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 			{
 				int x;
-				TTF_SizeUTF8(ttf16, stats[0]->name, &x, NULL);
+				getSizeOfText(ttf16, stats[0]->name, &x, NULL);
 				ttfPrintText(ttf16, subx1 + 48 + x, suby1 + 64, "_");
 			}
 		}
@@ -3841,7 +3851,18 @@ void handleMainMenu(bool mode)
 		// enter character name
 		if ( serialVerifyWindow == 0 && !SDL_IsTextInputActive() )
 		{
-			inputstr = serialInputText;
+			if (inputstr != serialInputText)
+			{
+				inputstr = serialInputText;
+#ifdef NINTENDO
+				auto result = nxKeyboard("Enter your character's name");
+				if (result.success)
+				{
+					strncpy(inputstr, result.str.c_str(), 21);
+					inputstr[21] = '\0'; //TODO: NX Port: The inputlen below names 63...? Should this be modified to match? Everywhere else, we operate on inputstr[21] when inputlen = 22.
+				}
+#endif
+			}
 			SDL_StartTextInput();
 		}
 		//strncpy(stats[0]->name,inputstr,16);
@@ -3904,7 +3925,7 @@ void handleMainMenu(bool mode)
 		else if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 		{
 			int x;
-			TTF_SizeUTF8(ttf12, serialInputText, &x, NULL);
+			getSizeOfText(ttf12, serialInputText, &x, NULL);
 			ttfPrintText(ttf12, subx1 + 16 + x, suby1 + 40, "_");
 		}
 	}
@@ -5407,15 +5428,26 @@ void handleMainMenu(bool mode)
 			// enter port number
 			if ( !SDL_IsTextInputActive() )
 			{
-				SDL_StartTextInput();
-				inputstr = portnumber_char;
+				SDL_StartTextInput(); //TODO: NX PORT: Why is the order different in some of these chunks? For example, some of them start text input first, others start it after the below chunk of code.
+				if (inputstr != portnumber_char)
+				{
+					inputstr = portnumber_char;
+#ifdef NINTENDO
+					auto result = nxKeyboard("Enter port number");
+					if (result.success)
+					{
+						strncpy(inputstr, result.str.c_str(), 21);
+						inputstr[21] = '\0'; //TODO: NX PORT: Why 21? inputlen = 5 down there, shouldn't this be inputstr[4]?
+					}
+#endif
+				}
 			}
 			//strncpy(portnumber_char,inputstr,5);
 			inputlen = 5;
 			if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 			{
 				int x;
-				TTF_SizeUTF8(ttf12, portnumber_char, &x, NULL);
+				getSizeOfText(ttf12, portnumber_char, &x, NULL);
 				ttfPrintText(ttf12, subx1 + 12 + x, suby1 + 46, "_");
 			}
 		}
@@ -5439,14 +5471,26 @@ void handleMainMenu(bool mode)
 			if ( !SDL_IsTextInputActive() )
 			{
 				SDL_StartTextInput();
-				inputstr = connectaddress;
+
+				if (inputstr != connectaddress)
+				{
+					inputstr = connectaddress;
+#ifdef NINTENDO
+					auto result = nxKeyboard("Enter address");
+					if (result.success)
+					{
+						strncpy(inputstr, result.str.c_str(), 21);
+						inputstr[21] = '\0'; //TODO: NX PORT: Why not inputstr[30], since inputlen = 31?
+					}
+#endif
+				}
 			}
 			//strncpy(connectaddress,inputstr,31);
 			inputlen = 31;
 			if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 			{
 				int x;
-				TTF_SizeUTF8(ttf12, connectaddress, &x, NULL);
+				getSizeOfText(ttf12, connectaddress, &x, NULL);
 				ttfPrintText(ttf12, subx1 + 12 + x, suby1 + 46, "_");
 			}
 		}
@@ -6770,7 +6814,7 @@ void handleMainMenu(bool mode)
 				if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 				{
 					int x;
-					TTF_SizeUTF8(ttf12, currentLobbyName, &x, NULL);
+					getSizeOfText(ttf12, currentLobbyName, &x, NULL);
 					ttfPrintTextFormatted(ttf12, xres / 2 + 2 + x, suby1 + 58, "_");
 				}
 			}
@@ -6824,7 +6868,7 @@ void handleMainMenu(bool mode)
 				if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 				{
 					int x;
-					TTF_SizeUTF8(ttf12, EOS.currentLobbyName, &x, NULL);
+					getSizeOfText(ttf12, EOS.currentLobbyName, &x, NULL);
 					ttfPrintTextFormatted(ttf12, xres / 2 + 2 + x, suby1 + 58, "_");
 				}
 			}
@@ -6891,6 +6935,7 @@ void handleMainMenu(bool mode)
 		// handle chatbox text entry
 		if ( !SDL_IsTextInputActive() )
 		{
+			//TODO: NX PORT: Does this need to be updated for the Switch? Even if only to just disable this feature entirely?
 			// this is the default text entry box in this window.
 			inputstr = lobbyChatbox;
 			inputlen = LOBBY_CHATBOX_LENGTH - 1;
@@ -7036,7 +7081,7 @@ void handleMainMenu(bool mode)
 			if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 			{
 				int x;
-				TTF_SizeUTF8(ttf12, lobbyChatbox, &x, NULL);
+				getSizeOfText(ttf12, lobbyChatbox, &x, NULL);
 				ttfPrintTextFormatted(ttf12, subx1 + 18 + x + TTF12_WIDTH, suby2 - 46, "_");
 			}
 		}
@@ -7568,13 +7613,13 @@ void handleMainMenu(bool mode)
 		{
 			if ( !scoreDisplayMultiplayer )
 			{
-				TTF_SizeUTF8(ttf12, "show multiplayer", &w, &h);
+				getSizeOfText(ttf12, "show multiplayer", &w, &h);
 				ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show multiplayer");
 			}
 			else
 			{
 				scoresPtr = &topscoresMultiplayer;
-				TTF_SizeUTF8(ttf12, "show solo", &w, &h);
+				getSizeOfText(ttf12, "show solo", &w, &h);
 				ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show solo");
 			}
 		}
@@ -8005,7 +8050,7 @@ void handleMainMenu(bool mode)
 		int numMultiplayerSaves = 0;
 
 		// draw the content
-		for ( int i = 0; i < numSaves && !savegamesList.empty(); ++i )
+		for ( int i = 0; i < numSaves && !savegamesList.empty(); ++i ) //TODO: Why did this line add `&& !savegamesList.empty()` ?
 		{
 			filename_padx = subx1 + 16;
 
@@ -8367,7 +8412,7 @@ void handleMainMenu(bool mode)
 									&& (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 								{
 									int x;
-									TTF_SizeUTF8(ttf12, inputstr, &x, NULL);
+									getSizeOfText(ttf12, inputstr, &x, NULL);
 									ttfPrintText(ttf12, status_padx + x + 8, status_pady, "_");
 								}
 								status_pady += 2 * TTF12_HEIGHT;
@@ -8904,7 +8949,7 @@ void handleMainMenu(bool mode)
 		}
 #endif //STEAMWORKS
 
-		if ( gamemods_window == 6 )
+		if ( gamemods_window == 6 ) //TODO: NX PORT: Does this need any changes for the switch? Even if only to entirely disable the feature?
 		{
 			// create blank file structure for a mod.
 			filename_padx = subx1 + 16;
@@ -8923,7 +8968,7 @@ void handleMainMenu(bool mode)
 				&& (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 			{
 				int x;
-				TTF_SizeUTF8(ttf12, inputstr, &x, NULL);
+				getSizeOfText(ttf12, inputstr, &x, NULL);
 				ttfPrintText(ttf12, filename_padx + x, filename_pady, "_");
 			}
 			filename_pady += TTF12_HEIGHT + 8;
@@ -12987,7 +13032,18 @@ void buttonContinue(button_t* my)
 	}
 	if ( charcreation_step == 4 )
 	{
-		inputstr = stats[0]->name;
+		if (inputstr != stats[0]->name)
+		{
+			inputstr = stats[0]->name;
+#ifdef NINTENDO
+			auto result = nxKeyboard("Enter your character's name");
+			if (result.success)
+			{
+				strncpy(inputstr, result.str.c_str(), 21);
+				inputstr[21] = '\0';
+			}
+#endif
+		}
 		SDL_StartTextInput();
 		inputlen = 22;
 	}
@@ -15663,6 +15719,7 @@ void buttonRandomName(button_t* my)
 		return;
 	}
 	std::string name;
+#ifndef NINTENDO
 	try
 	{
 		name = randomEntryFromVector(*names);
@@ -15677,6 +15734,9 @@ void buttonRandomName(button_t* my)
 		printlog("Error: Failed to choose random name.");
 		return;
 	}
+#else
+	name = randomEntryFromVector(*names);
+#endif
 
 	strncpy(inputstr, name.c_str(), std::min<size_t>(name.length(), inputlen));
 	inputstr[std::min<size_t>(name.length(), inputlen)] = '\0';
@@ -16792,7 +16852,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		{
 			// print a loading message
 			drawClearBuffers();
-			TTF_SizeUTF8(ttf16, language[2989], &w, &h);
+			getSizeOfText(ttf16, language[2989], &w, &h);
 			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
 			GO_SwapBuffers(screen);
 			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
@@ -16806,7 +16866,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		{
 			// print a loading message
 			drawClearBuffers();
-			TTF_SizeUTF8(ttf16, language[2987], &w, &h);
+			getSizeOfText(ttf16, language[2987], &w, &h);
 			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
 			GO_SwapBuffers(screen);
 			physfsReloadSounds(true);
@@ -16818,7 +16878,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[3017], &w, &h);
+		getSizeOfText(ttf16, language[3017], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3017]);
 		GO_SwapBuffers(screen);
 		physfsReloadTiles(false);
@@ -16829,7 +16889,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[3015], &w, &h);
+		getSizeOfText(ttf16, language[3015], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
 		GO_SwapBuffers(screen);
 		physfsReloadSprites(false);
@@ -16840,7 +16900,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[2991], &w, &h);
+		getSizeOfText(ttf16, language[2991], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
 		GO_SwapBuffers(screen);
 		physfsReloadBooks();
@@ -16853,7 +16913,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[2993], &w, &h);
+		getSizeOfText(ttf16, language[2993], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
 		GO_SwapBuffers(screen);
 		bool reloadIntroMusic = false;
@@ -16872,7 +16932,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[3004], &w, &h);
+		getSizeOfText(ttf16, language[3004], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
 		GO_SwapBuffers(screen);
 		if ( reloadLanguage() != 0 )
@@ -16890,7 +16950,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[3008], &w, &h);
+		getSizeOfText(ttf16, language[3008], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3008]);
 		GO_SwapBuffers(screen);
 		physfsReloadItemsTxt();
@@ -16901,7 +16961,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[3006], &w, &h);
+		getSizeOfText(ttf16, language[3006], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3006]);
 		GO_SwapBuffers(screen);
 		physfsReloadItemSprites(false);
@@ -16918,7 +16978,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[3013], &w, &h);
+		getSizeOfText(ttf16, language[3013], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3013]);
 		GO_SwapBuffers(screen);
 		physfsReloadMonsterLimbFiles();
@@ -16929,7 +16989,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[3015], &w, &h);
+		getSizeOfText(ttf16, language[3015], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
 		GO_SwapBuffers(screen);
 		physfsReloadSystemImages();
@@ -17202,15 +17262,15 @@ void windowSerialResult(int success)
 		}
 
 		// open the serial file
-		FILE* fp = nullptr;
-		if ( (fp = fopen(path, "wb")) == NULL )
+		File* fp = nullptr;
+		if ( (fp = FileIO::open(path, "wb")) == NULL )
 		{
 			printlog("ERROR: failed to save license file!\n");
 		}
 		else
 		{
-			fwrite(serialInputText, sizeof(char), strlen(serialInputText), fp); // write out serial to file.
-			fclose(fp);
+			fp->write(serialInputText, sizeof(char), strlen(serialInputText));
+			FileIO::close(fp);
 		}
 	}
 	buttonCloseSubwindow(nullptr);

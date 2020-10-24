@@ -508,6 +508,12 @@ bool completePath(char *dest, const char * const filename, const char *base) {
 		strncpy(dest, filename, PATH_MAX);
 		return true;
 	}
+#ifdef NINTENDO
+	if (strncmp(filename, base, strlen(base)) == 0) {
+		strncpy(dest, filename, PATH_MAX);
+		return true;
+	}
+#endif
 
 #ifdef WINDOWS
 	// Already absolute (drive letter in path)
@@ -521,10 +527,10 @@ bool completePath(char *dest, const char * const filename, const char *base) {
 	return true;
 }
 
-FILE* openDataFile(const char * const filename, const char * const mode) {
+File* openDataFile(const char * const filename, const char * const mode) {
 	char path[PATH_MAX];
 	completePath(path, filename);
-	FILE * result = fopen(path, mode);
+	File* result = FileIO::open(path, mode);
 	if (!result) {
 		printlog("Could not open '%s': %s", path, strerror(errno));
 	}
@@ -543,12 +549,18 @@ DIR* openDataDir(const char * const name) {
 
 
 bool dataPathExists(const char * const path) {
+#ifdef NINTENDO
+	return true;
+#endif
 	char full_path[PATH_MAX];
 	completePath(full_path, path);
 	return access(full_path, F_OK) != -1;
 }
 
 void openLogFile() {
+#ifdef NINTENDO
+	return;
+#endif
 	char path[PATH_MAX];
 	completePath(path, "log.txt", outputdir);
 
@@ -612,7 +624,7 @@ SDL_Surface* loadImage(char const * const filename)
 voxel_t* loadVoxel(char* filename)
 {
 	//char filename2[1024];
-	FILE* file;
+	File* file;
 	voxel_t* model;
 
 	if (filename != NULL)
@@ -628,15 +640,15 @@ voxel_t* loadVoxel(char* filename)
 		}
 		model = (voxel_t*) malloc(sizeof(voxel_t));
 		model->sizex = 0;
-		fread(&model->sizex, sizeof(Sint32), 1, file);
+		file->read(&model->sizex, sizeof(Sint32), 1);
 		model->sizey = 0;
-		fread(&model->sizey, sizeof(Sint32), 1, file);
+		file->read(&model->sizey, sizeof(Sint32), 1);
 		model->sizez = 0;
-		fread(&model->sizez, sizeof(Sint32), 1, file);
+		file->read(&model->sizez, sizeof(Sint32), 1);
 		model->data = (Uint8*) malloc(sizeof(Uint8) * model->sizex * model->sizey * model->sizez);
 		memset(model->data, 0, sizeof(Uint8)*model->sizex * model->sizey * model->sizez);
-		fread(model->data, sizeof(Uint8), model->sizex * model->sizey * model->sizez, file);
-		fread(&model->palette, sizeof(Uint8), 256 * 3, file);
+		file->read(model->data, sizeof(Uint8), model->sizex * model->sizey * model->sizez);
+		file->read(&model->palette, sizeof(Uint8), 256 * 3);
 		int c;
 		for ( c = 0; c < 256; c++ )
 		{
@@ -644,7 +656,7 @@ voxel_t* loadVoxel(char* filename)
 			model->palette[c][1] = model->palette[c][1] << 2;
 			model->palette[c][2] = model->palette[c][2] << 2;
 		}
-		fclose(file);
+		FileIO::close(file);
 
 		return model;
 	}
@@ -664,7 +676,7 @@ voxel_t* loadVoxel(char* filename)
 
 int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* creatureList, int *checkMapHash)
 {
-	FILE* fp;
+	File* fp;
 	char valid_data[16];
 	Uint32 numentities;
 	Uint32 c;
@@ -723,7 +735,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	}
 
 	// read map version number
-	fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
+	fp->read(valid_data, sizeof(char), strlen("BARONY LMPV2.0"));
 	if ( strncmp(valid_data, "BARONY LMPV2.6", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// V2.6 version of editor - player starts/doors/gates
@@ -761,8 +773,8 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	}
 	else
 	{
-		rewind(fp);
-		fread(valid_data, sizeof(char), strlen("BARONY"), fp);
+		fp->seek(0, File::SeekMode::SET);
+		fp->read(valid_data, sizeof(char), strlen("BARONY"));
 		if ( strncmp(valid_data, "BARONY", strlen("BARONY")) == 0 )
 		{
 			// V1.0 version of editor
@@ -771,7 +783,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		else
 		{
 			printlog("warning: file '%s' is an invalid map file.\n", filename);
-			fclose(fp);
+			FileIO::close(fp);
 			if ( destmap == &map && game )
 			{
 				printlog("error: main map failed to load, aborting.\n");
@@ -791,10 +803,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	{
 		free(destmap->tiles);
 	}
-	fread(destmap->name, sizeof(char), 32, fp); // map name
-	fread(destmap->author, sizeof(char), 32, fp); // map author
-	fread(&destmap->width, sizeof(Uint32), 1, fp); // map width
-	fread(&destmap->height, sizeof(Uint32), 1, fp); // map height
+	fp->read(destmap->name, sizeof(char), 32); // map name
+	fp->read(destmap->author, sizeof(char), 32); // map author
+	fp->read(&destmap->width, sizeof(Uint32), 1); // map width
+	fp->read(&destmap->height, sizeof(Uint32), 1); // map height
 
 	mapHashData += destmap->width + destmap->height;
 
@@ -812,7 +824,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	}
 	else
 	{
-		fread(&destmap->skybox, sizeof(Uint32), 1, fp); // map skybox
+		fp->read(&destmap->skybox, sizeof(Uint32), 1); // map skybox
 	}
 
 	// misc map flags
@@ -825,11 +837,11 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	}
 	else
 	{
-		fread(destmap->flags, sizeof(Sint32), MAPFLAGS, fp); // map flags
+		fp->read(destmap->flags, sizeof(Sint32), MAPFLAGS); // map flags
 	}
 	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
-	fread(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS, fp);
-	fread(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
+	fp->read(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS);
+	fp->read(&numentities, sizeof(Uint32), 1); // number of entities on the map
 
 	for ( c = 0; c < destmap->width * destmap->height * MAPLAYERS; ++c )
 	{
@@ -838,7 +850,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	for (c = 0; c < numentities; c++)
 	{
-		fread(&sprite, sizeof(Sint32), 1, fp);
+		fp->read(&sprite, sizeof(Sint32), 1);
 		entity = newEntity(sprite, 0, entlist, nullptr); //TODO: Figure out when we need to assign an entity to the global monster list. And do it!
 		switch( editorVersion )
 		{	case 1:
@@ -888,130 +900,130 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 							// advance the fp since we read in 0 always.
 							// otherwise it would overwrite the value of a handplaced succubus or a certain icey lich.
 							// certainly were a lot of male adventurers locked in cells...
-							fread(&dummyVar, sizeof(sex_t), 1, fp);
-							fread(&myStats->name, sizeof(char[128]), 1, fp);
-							fread(&myStats->HP, sizeof(Sint32), 1, fp);
-							fread(&myStats->MAXHP, sizeof(Sint32), 1, fp);
-							fread(&myStats->OLDHP, sizeof(Sint32), 1, fp);
-							fread(&myStats->MP, sizeof(Sint32), 1, fp);
-							fread(&myStats->MAXMP, sizeof(Sint32), 1, fp);
-							fread(&myStats->STR, sizeof(Sint32), 1, fp);
-							fread(&myStats->DEX, sizeof(Sint32), 1, fp);
-							fread(&myStats->CON, sizeof(Sint32), 1, fp);
-							fread(&myStats->INT, sizeof(Sint32), 1, fp);
-							fread(&myStats->PER, sizeof(Sint32), 1, fp);
-							fread(&myStats->CHR, sizeof(Sint32), 1, fp);
-							fread(&myStats->LVL, sizeof(Sint32), 1, fp);
-							fread(&myStats->GOLD, sizeof(Sint32), 1, fp);
+							fp->read(&dummyVar, sizeof(sex_t), 1);
+							fp->read(&myStats->name, sizeof(char[128]), 1);
+							fp->read(&myStats->HP, sizeof(Sint32), 1);
+							fp->read(&myStats->MAXHP, sizeof(Sint32), 1);
+							fp->read(&myStats->OLDHP, sizeof(Sint32), 1);
+							fp->read(&myStats->MP, sizeof(Sint32), 1);
+							fp->read(&myStats->MAXMP, sizeof(Sint32), 1);
+							fp->read(&myStats->STR, sizeof(Sint32), 1);
+							fp->read(&myStats->DEX, sizeof(Sint32), 1);
+							fp->read(&myStats->CON, sizeof(Sint32), 1);
+							fp->read(&myStats->INT, sizeof(Sint32), 1);
+							fp->read(&myStats->PER, sizeof(Sint32), 1);
+							fp->read(&myStats->CHR, sizeof(Sint32), 1);
+							fp->read(&myStats->LVL, sizeof(Sint32), 1);
+							fp->read(&myStats->GOLD, sizeof(Sint32), 1);
 
-							fread(&myStats->RANDOM_MAXHP, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_HP, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_MAXMP, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_MP, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_STR, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_CON, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_DEX, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_INT, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_PER, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_CHR, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
-							fread(&myStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
+							fp->read(&myStats->RANDOM_MAXHP, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_HP, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_MAXMP, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_MP, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_STR, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_CON, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_DEX, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_INT, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_PER, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_CHR, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_LVL, sizeof(Sint32), 1);
+							fp->read(&myStats->RANDOM_GOLD, sizeof(Sint32), 1);
 
 							if ( editorVersion >= 22 )
 							{
-								fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
+								fp->read(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM);
 							}
 							else
 							{
 								// read old map formats
-								fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+								fp->read(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96);
 							}
-							fread(&myStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
+							fp->read(&myStats->MISC_FLAGS, sizeof(Sint32), 32);
 						}
 						//Read dummy values to move fp for the client
 						else
 						{
 							dummyStats = new Stat(entity->sprite);
-							fread(&dummyStats->sex, sizeof(sex_t), 1, fp);
-							fread(&dummyStats->name, sizeof(char[128]), 1, fp);
-							fread(&dummyStats->HP, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->MAXHP, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->OLDHP, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->MP, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->MAXMP, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->STR, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->DEX, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->CON, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->INT, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->PER, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->CHR, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->LVL, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->GOLD, sizeof(Sint32), 1, fp);
+							fp->read(&dummyStats->sex, sizeof(sex_t), 1);
+							fp->read(&dummyStats->name, sizeof(char[128]), 1);
+							fp->read(&dummyStats->HP, sizeof(Sint32), 1);
+							fp->read(&dummyStats->MAXHP, sizeof(Sint32), 1);
+							fp->read(&dummyStats->OLDHP, sizeof(Sint32), 1);
+							fp->read(&dummyStats->MP, sizeof(Sint32), 1);
+							fp->read(&dummyStats->MAXMP, sizeof(Sint32), 1);
+							fp->read(&dummyStats->STR, sizeof(Sint32), 1);
+							fp->read(&dummyStats->DEX, sizeof(Sint32), 1);
+							fp->read(&dummyStats->CON, sizeof(Sint32), 1);
+							fp->read(&dummyStats->INT, sizeof(Sint32), 1);
+							fp->read(&dummyStats->PER, sizeof(Sint32), 1);
+							fp->read(&dummyStats->CHR, sizeof(Sint32), 1);
+							fp->read(&dummyStats->LVL, sizeof(Sint32), 1);
+							fp->read(&dummyStats->GOLD, sizeof(Sint32), 1);
 
-							fread(&dummyStats->RANDOM_MAXHP, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_HP, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_MAXMP, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_MP, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_STR, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_CON, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_DEX, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_INT, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_PER, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_CHR, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
-							fread(&dummyStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
+							fp->read(&dummyStats->RANDOM_MAXHP, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_HP, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_MAXMP, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_MP, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_STR, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_CON, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_DEX, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_INT, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_PER, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_CHR, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_LVL, sizeof(Sint32), 1);
+							fp->read(&dummyStats->RANDOM_GOLD, sizeof(Sint32), 1);
 
 							if ( editorVersion >= 22 )
 							{
-								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
+								fp->read(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM);
 							}
 							else
 							{
-								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+								fp->read(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96);
 							}
-							fread(&dummyStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
+							fp->read(&dummyStats->MISC_FLAGS, sizeof(Sint32), 32);
 							delete dummyStats;
 						}
 						break;
 					case 2:
-						fread(&entity->yaw, sizeof(real_t), 1, fp);
-						fread(&entity->skill[9], sizeof(Sint32), 1, fp);
-						fread(&entity->chestLocked, sizeof(Sint32), 1, fp);
+						fp->read(&entity->yaw, sizeof(real_t), 1);
+						fp->read(&entity->skill[9], sizeof(Sint32), 1);
+						fp->read(&entity->chestLocked, sizeof(Sint32), 1);
 						break;
 					case 3:
-						fread(&entity->skill[10], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[11], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[12], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[13], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[15], sizeof(Sint32), 1, fp);
+						fp->read(&entity->skill[10], sizeof(Sint32), 1);
+						fp->read(&entity->skill[11], sizeof(Sint32), 1);
+						fp->read(&entity->skill[12], sizeof(Sint32), 1);
+						fp->read(&entity->skill[13], sizeof(Sint32), 1);
+						fp->read(&entity->skill[15], sizeof(Sint32), 1);
 						if ( editorVersion >= 22 )
 						{
-							fread(&entity->skill[16], sizeof(Sint32), 1, fp);
+							fp->read(&entity->skill[16], sizeof(Sint32), 1);
 						}
 						break;
 					case 4:
-						fread(&entity->skill[0], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[1], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[2], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[3], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[4], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[5], sizeof(Sint32), 1, fp);
+						fp->read(&entity->skill[0], sizeof(Sint32), 1);
+						fp->read(&entity->skill[1], sizeof(Sint32), 1);
+						fp->read(&entity->skill[2], sizeof(Sint32), 1);
+						fp->read(&entity->skill[3], sizeof(Sint32), 1);
+						fp->read(&entity->skill[4], sizeof(Sint32), 1);
+						fp->read(&entity->skill[5], sizeof(Sint32), 1);
 						break;
 					case 5:
-						fread(&entity->yaw, sizeof(real_t), 1, fp);
-						fread(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1, fp);
-						fread(&entity->crystalTurnReverse, sizeof(Sint32), 1, fp);
-						fread(&entity->crystalSpellToActivate, sizeof(Sint32), 1, fp);
+						fp->read(&entity->yaw, sizeof(real_t), 1);
+						fp->read(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1);
+						fp->read(&entity->crystalTurnReverse, sizeof(Sint32), 1);
+						fp->read(&entity->crystalSpellToActivate, sizeof(Sint32), 1);
 						break;
 					case 6:
-						fread(&entity->leverTimerTicks, sizeof(Sint32), 1, fp);
+						fp->read(&entity->leverTimerTicks, sizeof(Sint32), 1);
 						break;
 					case 7:
 						if ( editorVersion >= 24 )
 						{
-							fread(&entity->boulderTrapRefireAmount, sizeof(Sint32), 1, fp);
-							fread(&entity->boulderTrapRefireDelay, sizeof(Sint32), 1, fp);
-							fread(&entity->boulderTrapPreDelay, sizeof(Sint32), 1, fp);
+							fp->read(&entity->boulderTrapRefireAmount, sizeof(Sint32), 1);
+							fp->read(&entity->boulderTrapRefireDelay, sizeof(Sint32), 1);
+							fp->read(&entity->boulderTrapPreDelay, sizeof(Sint32), 1);
 						}
 						else
 						{
@@ -1019,33 +1031,33 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						}
 						break;
 					case 8:
-						fread(&entity->pedestalOrbType, sizeof(Sint32), 1, fp);
-						fread(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
-						fread(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
-						fread(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
-						fread(&entity->pedestalLockOrb, sizeof(Sint32), 1, fp);
+						fp->read(&entity->pedestalOrbType, sizeof(Sint32), 1);
+						fp->read(&entity->pedestalHasOrb, sizeof(Sint32), 1);
+						fp->read(&entity->pedestalInvertedPower, sizeof(Sint32), 1);
+						fp->read(&entity->pedestalInGround, sizeof(Sint32), 1);
+						fp->read(&entity->pedestalLockOrb, sizeof(Sint32), 1);
 						break;
 					case 9:
-						fread(&entity->teleporterX, sizeof(Sint32), 1, fp);
-						fread(&entity->teleporterY, sizeof(Sint32), 1, fp);
-						fread(&entity->teleporterType, sizeof(Sint32), 1, fp);
+						fp->read(&entity->teleporterX, sizeof(Sint32), 1);
+						fp->read(&entity->teleporterY, sizeof(Sint32), 1);
+						fp->read(&entity->teleporterType, sizeof(Sint32), 1);
 						break;
 					case 10:
-						fread(&entity->ceilingTileModel, sizeof(Sint32), 1, fp);
+						fp->read(&entity->ceilingTileModel, sizeof(Sint32), 1);
 						break;
 					case 11:
-						fread(&entity->spellTrapType, sizeof(Sint32), 1, fp);
-						fread(&entity->spellTrapRefire, sizeof(Sint32), 1, fp);
-						fread(&entity->spellTrapLatchPower, sizeof(Sint32), 1, fp);
-						fread(&entity->spellTrapFloorTile, sizeof(Sint32), 1, fp);
-						fread(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
+						fp->read(&entity->spellTrapType, sizeof(Sint32), 1);
+						fp->read(&entity->spellTrapRefire, sizeof(Sint32), 1);
+						fp->read(&entity->spellTrapLatchPower, sizeof(Sint32), 1);
+						fp->read(&entity->spellTrapFloorTile, sizeof(Sint32), 1);
+						fp->read(&entity->spellTrapRefireRate, sizeof(Sint32), 1);
 						break;
 					case 12:
 						if ( entity->sprite == 60 ) // chair
 						{
 							if ( editorVersion >= 25 )
 							{
-								fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+								fp->read(&entity->furnitureDir, sizeof(Sint32), 1);
 							}
 							else
 							{
@@ -1055,76 +1067,76 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						}
 						else
 						{
-							fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+							fp->read(&entity->furnitureDir, sizeof(Sint32), 1);
 						}
 						break;
 					case 13:
-						fread(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
-						fread(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
-						fread(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
+						fp->read(&entity->floorDecorationModel, sizeof(Sint32), 1);
+						fp->read(&entity->floorDecorationRotation, sizeof(Sint32), 1);
+						fp->read(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1);
 						if ( editorVersion >= 25 )
 						{
-							fread(&entity->floorDecorationXOffset, sizeof(Sint32), 1, fp);
-							fread(&entity->floorDecorationYOffset, sizeof(Sint32), 1, fp);
+							fp->read(&entity->floorDecorationXOffset, sizeof(Sint32), 1);
+							fp->read(&entity->floorDecorationYOffset, sizeof(Sint32), 1);
 							for ( int i = 8; i < 60; ++i )
 							{
-								fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+								fp->read(&entity->skill[i], sizeof(Sint32), 1);
 							}
 						}
 						break;
 					case 14:
-						fread(&entity->soundSourceToPlay, sizeof(Sint32), 1, fp);
-						fread(&entity->soundSourceVolume, sizeof(Sint32), 1, fp);
-						fread(&entity->soundSourceLatchOn, sizeof(Sint32), 1, fp);
-						fread(&entity->soundSourceDelay, sizeof(Sint32), 1, fp);
-						fread(&entity->soundSourceOrigin, sizeof(Sint32), 1, fp);
+						fp->read(&entity->soundSourceToPlay, sizeof(Sint32), 1);
+						fp->read(&entity->soundSourceVolume, sizeof(Sint32), 1);
+						fp->read(&entity->soundSourceLatchOn, sizeof(Sint32), 1);
+						fp->read(&entity->soundSourceDelay, sizeof(Sint32), 1);
+						fp->read(&entity->soundSourceOrigin, sizeof(Sint32), 1);
 						break;
 					case 15:
-						fread(&entity->lightSourceAlwaysOn, sizeof(Sint32), 1, fp);
-						fread(&entity->lightSourceBrightness, sizeof(Sint32), 1, fp);
-						fread(&entity->lightSourceInvertPower, sizeof(Sint32), 1, fp);
-						fread(&entity->lightSourceLatchOn, sizeof(Sint32), 1, fp);
-						fread(&entity->lightSourceRadius, sizeof(Sint32), 1, fp);
-						fread(&entity->lightSourceFlicker, sizeof(Sint32), 1, fp);
-						fread(&entity->lightSourceDelay, sizeof(Sint32), 1, fp);
+						fp->read(&entity->lightSourceAlwaysOn, sizeof(Sint32), 1);
+						fp->read(&entity->lightSourceBrightness, sizeof(Sint32), 1);
+						fp->read(&entity->lightSourceInvertPower, sizeof(Sint32), 1);
+						fp->read(&entity->lightSourceLatchOn, sizeof(Sint32), 1);
+						fp->read(&entity->lightSourceRadius, sizeof(Sint32), 1);
+						fp->read(&entity->lightSourceFlicker, sizeof(Sint32), 1);
+						fp->read(&entity->lightSourceDelay, sizeof(Sint32), 1);
 						break;
 					case 16:
 					{
-						fread(&entity->textSourceColorRGB, sizeof(Sint32), 1, fp);
-						fread(&entity->textSourceVariables4W, sizeof(Sint32), 1, fp);
-						fread(&entity->textSourceDelay, sizeof(Sint32), 1, fp);
-						fread(&entity->textSourceIsScript, sizeof(Sint32), 1, fp);
+						fp->read(&entity->textSourceColorRGB, sizeof(Sint32), 1);
+						fp->read(&entity->textSourceVariables4W, sizeof(Sint32), 1);
+						fp->read(&entity->textSourceDelay, sizeof(Sint32), 1);
+						fp->read(&entity->textSourceIsScript, sizeof(Sint32), 1);
 						for ( int i = 4; i < 60; ++i )
 						{
-							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+							fp->read(&entity->skill[i], sizeof(Sint32), 1);
 						}
 						break;
 					}
 					case 17:
-						fread(&entity->signalInputDirection, sizeof(Sint32), 1, fp);
-						fread(&entity->signalActivateDelay, sizeof(Sint32), 1, fp);
-						fread(&entity->signalTimerInterval, sizeof(Sint32), 1, fp);
-						fread(&entity->signalTimerRepeatCount, sizeof(Sint32), 1, fp);
-						fread(&entity->signalTimerLatchInput, sizeof(Sint32), 1, fp);
+						fp->read(&entity->signalInputDirection, sizeof(Sint32), 1);
+						fp->read(&entity->signalActivateDelay, sizeof(Sint32), 1);
+						fp->read(&entity->signalTimerInterval, sizeof(Sint32), 1);
+						fp->read(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
+						fp->read(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
 						break;
 					case 18:
-						fread(&entity->portalCustomSprite, sizeof(Sint32), 1, fp);
-						fread(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1, fp);
-						fread(&entity->portalCustomZOffset, sizeof(Sint32), 1, fp);
-						fread(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1, fp);
-						fread(&entity->portalNotSecret, sizeof(Sint32), 1, fp);
-						fread(&entity->portalCustomRequiresPower, sizeof(Sint32), 1, fp);
+						fp->read(&entity->portalCustomSprite, sizeof(Sint32), 1);
+						fp->read(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1);
+						fp->read(&entity->portalCustomZOffset, sizeof(Sint32), 1);
+						fp->read(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1);
+						fp->read(&entity->portalNotSecret, sizeof(Sint32), 1);
+						fp->read(&entity->portalCustomRequiresPower, sizeof(Sint32), 1);
 						for ( int i = 11; i <= 18; ++i )
 						{
-							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+							fp->read(&entity->skill[i], sizeof(Sint32), 1);
 						}
 						break;
 					case 19:
 						if ( editorVersion >= 25 )
 						{
-							fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
-							fread(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1, fp);
-							fread(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1, fp);
+							fp->read(&entity->furnitureDir, sizeof(Sint32), 1);
+							fp->read(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1);
+							fp->read(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1);
 						}
 						else
 						{
@@ -1133,32 +1145,32 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						}
 						break;
 					case 20:
-						fread(&entity->skill[11], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[12], sizeof(Sint32), 1, fp);
-						fread(&entity->skill[15], sizeof(Sint32), 1, fp);
+						fp->read(&entity->skill[11], sizeof(Sint32), 1);
+						fp->read(&entity->skill[12], sizeof(Sint32), 1);
+						fp->read(&entity->skill[15], sizeof(Sint32), 1);
 						for ( int i = 40; i <= 52; ++i )
 						{
-							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+							fp->read(&entity->skill[i], sizeof(Sint32), 1);
 						}
 						break;
 					case 21:
 						if ( editorVersion >= 26 )
 						{
-							fread(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1, fp);
-							fread(&entity->doorDisableLockpicks, sizeof(Sint32), 1, fp);
-							fread(&entity->doorDisableOpening, sizeof(Sint32), 1, fp);
+							fp->read(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1);
+							fp->read(&entity->doorDisableLockpicks, sizeof(Sint32), 1);
+							fp->read(&entity->doorDisableOpening, sizeof(Sint32), 1);
 						}
 						break;
 					case 22:
 						if ( editorVersion >= 26 )
 						{
-							fread(&entity->gateDisableOpening, sizeof(Sint32), 1, fp);
+							fp->read(&entity->gateDisableOpening, sizeof(Sint32), 1);
 						}
 						break;
 					case 23:
 						if ( editorVersion >= 26 )
 						{
-							fread(&entity->playerStartDir, sizeof(Sint32), 1, fp);
+							fp->read(&entity->playerStartDir, sizeof(Sint32), 1);
 						}
 						break;
 					default:
@@ -1173,14 +1185,14 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			entity->addToCreatureList(creatureList);
 		}
 
-		fread(&x, sizeof(Sint32), 1, fp);
-		fread(&y, sizeof(Sint32), 1, fp);
+		fp->read(&x, sizeof(Sint32), 1);
+		fp->read(&y, sizeof(Sint32), 1);
 		entity->x = x;
 		entity->y = y;
 		mapHashData += (sprite * c);
 	}
 
-	fclose(fp);
+	FileIO::close(fp);
 
 	if ( destmap == &map )
 	{
@@ -1338,7 +1350,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 int saveMap(const char* filename2)
 {
-	FILE* fp;
+	File* fp;
 	Uint32 numentities = 0;
 	node_t* node;
 	Entity* entity;
@@ -1369,205 +1381,205 @@ int saveMap(const char* filename2)
 			return 1;
 		}
 
-		fwrite("BARONY LMPV2.6", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
-		fwrite(map.name, sizeof(char), 32, fp); // map filename
-		fwrite(map.author, sizeof(char), 32, fp); // map author
-		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
-		fwrite(&map.height, sizeof(Uint32), 1, fp); // map height
-		fwrite(&map.skybox, sizeof(Uint32), 1, fp); // map skybox
-		fwrite(map.flags, sizeof(Sint32), MAPFLAGS, fp); // map flags
-		fwrite(map.tiles, sizeof(Sint32), map.width * map.height * MAPLAYERS, fp);
+		fp->write("BARONY LMPV2.6", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
+		fp->write(map.name, sizeof(char), 32); // map filename
+		fp->write(map.author, sizeof(char), 32); // map author
+		fp->write(&map.width, sizeof(Uint32), 1); // map width
+		fp->write(&map.height, sizeof(Uint32), 1); // map height
+		fp->write(&map.skybox, sizeof(Uint32), 1); // map skybox
+		fp->write(map.flags, sizeof(Sint32), MAPFLAGS); // map flags
+		fp->write(map.tiles, sizeof(Sint32), map.width * map.height * MAPLAYERS);
 		for (node = map.entities->first; node != nullptr; node = node->next)
 		{
 			++numentities;
 		}
-		fwrite(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
+		fp->write(&numentities, sizeof(Uint32), 1); // number of entities on the map
 		for (node = map.entities->first; node != nullptr; node = node->next)
 		{
 			entity = (Entity*) node->element;
-			fwrite(&entity->sprite, sizeof(Sint32), 1, fp);
+			fp->write(&entity->sprite, sizeof(Sint32), 1);
 
 			switch ( checkSpriteType(entity->sprite) )
 			{
 				case 1:
 					// monsters
 					myStats = entity->getStats();
-					fwrite(&myStats->sex, sizeof(sex_t), 1, fp);
-					fwrite(&myStats->name, sizeof(char[128]), 1, fp);
-					fwrite(&myStats->HP, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->MAXHP, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->OLDHP, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->MP, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->MAXMP, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->STR, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->DEX, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->CON, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->INT, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->PER, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->CHR, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->LVL, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->GOLD, sizeof(Sint32), 1, fp);
+					fp->write(&myStats->sex, sizeof(sex_t), 1);
+					fp->write(&myStats->name, sizeof(char[128]), 1);
+					fp->write(&myStats->HP, sizeof(Sint32), 1);
+					fp->write(&myStats->MAXHP, sizeof(Sint32), 1);
+					fp->write(&myStats->OLDHP, sizeof(Sint32), 1);
+					fp->write(&myStats->MP, sizeof(Sint32), 1);
+					fp->write(&myStats->MAXMP, sizeof(Sint32), 1);
+					fp->write(&myStats->STR, sizeof(Sint32), 1);
+					fp->write(&myStats->DEX, sizeof(Sint32), 1);
+					fp->write(&myStats->CON, sizeof(Sint32), 1);
+					fp->write(&myStats->INT, sizeof(Sint32), 1);
+					fp->write(&myStats->PER, sizeof(Sint32), 1);
+					fp->write(&myStats->CHR, sizeof(Sint32), 1);
+					fp->write(&myStats->LVL, sizeof(Sint32), 1);
+					fp->write(&myStats->GOLD, sizeof(Sint32), 1);
 
-					fwrite(&myStats->RANDOM_MAXHP, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_HP, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_MAXMP, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_MP, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_STR, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_CON, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_DEX, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_INT, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_PER, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_CHR, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
-					fwrite(&myStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
+					fp->write(&myStats->RANDOM_MAXHP, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_HP, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_MAXMP, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_MP, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_STR, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_CON, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_DEX, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_INT, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_PER, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_CHR, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_LVL, sizeof(Sint32), 1);
+					fp->write(&myStats->RANDOM_GOLD, sizeof(Sint32), 1);
 
-					fwrite(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
-					fwrite(&myStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
+					fp->write(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM);
+					fp->write(&myStats->MISC_FLAGS, sizeof(Sint32), 32);
 					break;
 				case 2:
 					// chests
-					fwrite(&entity->yaw, sizeof(real_t), 1, fp);
-					fwrite(&entity->skill[9], sizeof(Sint32), 1, fp);
-					fwrite(&entity->chestLocked, sizeof(Sint32), 1, fp);
+					fp->write(&entity->yaw, sizeof(real_t), 1);
+					fp->write(&entity->skill[9], sizeof(Sint32), 1);
+					fp->write(&entity->chestLocked, sizeof(Sint32), 1);
 					break;
 				case 3:
 					// items
-					fwrite(&entity->skill[10], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[11], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[12], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[13], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[15], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[16], sizeof(Sint32), 1, fp);
+					fp->write(&entity->skill[10], sizeof(Sint32), 1);
+					fp->write(&entity->skill[11], sizeof(Sint32), 1);
+					fp->write(&entity->skill[12], sizeof(Sint32), 1);
+					fp->write(&entity->skill[13], sizeof(Sint32), 1);
+					fp->write(&entity->skill[15], sizeof(Sint32), 1);
+					fp->write(&entity->skill[16], sizeof(Sint32), 1);
 					break;
 				case 4:
-					fwrite(&entity->skill[0], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[1], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[2], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[3], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[4], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[5], sizeof(Sint32), 1, fp);
+					fp->write(&entity->skill[0], sizeof(Sint32), 1);
+					fp->write(&entity->skill[1], sizeof(Sint32), 1);
+					fp->write(&entity->skill[2], sizeof(Sint32), 1);
+					fp->write(&entity->skill[3], sizeof(Sint32), 1);
+					fp->write(&entity->skill[4], sizeof(Sint32), 1);
+					fp->write(&entity->skill[5], sizeof(Sint32), 1);
 					break;
 				case 5:
-					fwrite(&entity->yaw, sizeof(real_t), 1, fp);
-					fwrite(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1, fp);
-					fwrite(&entity->crystalTurnReverse, sizeof(Sint32), 1, fp);
-					fwrite(&entity->crystalSpellToActivate, sizeof(Sint32), 1, fp);
+					fp->write(&entity->yaw, sizeof(real_t), 1);
+					fp->write(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1);
+					fp->write(&entity->crystalTurnReverse, sizeof(Sint32), 1);
+					fp->write(&entity->crystalSpellToActivate, sizeof(Sint32), 1);
 					break;
 				case 6:
-					fwrite(&entity->leverTimerTicks, sizeof(Sint32), 1, fp);
+					fp->write(&entity->leverTimerTicks, sizeof(Sint32), 1);
 					break;
 				case 7:
-					fwrite(&entity->boulderTrapRefireAmount, sizeof(Sint32), 1, fp);
-					fwrite(&entity->boulderTrapRefireDelay, sizeof(Sint32), 1, fp);
-					fwrite(&entity->boulderTrapPreDelay, sizeof(Sint32), 1, fp);
+					fp->write(&entity->boulderTrapRefireAmount, sizeof(Sint32), 1);
+					fp->write(&entity->boulderTrapRefireDelay, sizeof(Sint32), 1);
+					fp->write(&entity->boulderTrapPreDelay, sizeof(Sint32), 1);
 					break;
 				case 8:
-					fwrite(&entity->pedestalOrbType, sizeof(Sint32), 1, fp);
-					fwrite(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
-					fwrite(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
-					fwrite(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
-					fwrite(&entity->pedestalLockOrb, sizeof(Sint32), 1, fp);
+					fp->write(&entity->pedestalOrbType, sizeof(Sint32), 1);
+					fp->write(&entity->pedestalHasOrb, sizeof(Sint32), 1);
+					fp->write(&entity->pedestalInvertedPower, sizeof(Sint32), 1);
+					fp->write(&entity->pedestalInGround, sizeof(Sint32), 1);
+					fp->write(&entity->pedestalLockOrb, sizeof(Sint32), 1);
 					break;
 				case 9:
-					fwrite(&entity->teleporterX, sizeof(Sint32), 1, fp);
-					fwrite(&entity->teleporterY, sizeof(Sint32), 1, fp);
-					fwrite(&entity->teleporterType, sizeof(Sint32), 1, fp);
+					fp->write(&entity->teleporterX, sizeof(Sint32), 1);
+					fp->write(&entity->teleporterY, sizeof(Sint32), 1);
+					fp->write(&entity->teleporterType, sizeof(Sint32), 1);
 					break;
 				case 10:
-					fwrite(&entity->ceilingTileModel, sizeof(Sint32), 1, fp);
+					fp->write(&entity->ceilingTileModel, sizeof(Sint32), 1);
 					break;
 				case 11:
-					fwrite(&entity->spellTrapType, sizeof(Sint32), 1, fp);
-					fwrite(&entity->spellTrapRefire, sizeof(Sint32), 1, fp);
-					fwrite(&entity->spellTrapLatchPower, sizeof(Sint32), 1, fp);
-					fwrite(&entity->spellTrapFloorTile, sizeof(Sint32), 1, fp);
-					fwrite(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
+					fp->write(&entity->spellTrapType, sizeof(Sint32), 1);
+					fp->write(&entity->spellTrapRefire, sizeof(Sint32), 1);
+					fp->write(&entity->spellTrapLatchPower, sizeof(Sint32), 1);
+					fp->write(&entity->spellTrapFloorTile, sizeof(Sint32), 1);
+					fp->write(&entity->spellTrapRefireRate, sizeof(Sint32), 1);
 					break;
 				case 12:
-					fwrite(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+					fp->write(&entity->furnitureDir, sizeof(Sint32), 1);
 					break;
 				case 13:
-					fwrite(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
-					fwrite(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
-					fwrite(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
-					fwrite(&entity->floorDecorationXOffset, sizeof(Sint32), 1, fp);
-					fwrite(&entity->floorDecorationYOffset, sizeof(Sint32), 1, fp);
+					fp->write(&entity->floorDecorationModel, sizeof(Sint32), 1);
+					fp->write(&entity->floorDecorationRotation, sizeof(Sint32), 1);
+					fp->write(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1);
+					fp->write(&entity->floorDecorationXOffset, sizeof(Sint32), 1);
+					fp->write(&entity->floorDecorationYOffset, sizeof(Sint32), 1);
 					for ( int i = 8; i < 60; ++i )
 					{
-						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+						fp->write(&entity->skill[i], sizeof(Sint32), 1);
 					}
 					break;
 				case 14:
-					fwrite(&entity->soundSourceToPlay, sizeof(Sint32), 1, fp);
-					fwrite(&entity->soundSourceVolume, sizeof(Sint32), 1, fp);
-					fwrite(&entity->soundSourceLatchOn, sizeof(Sint32), 1, fp);
-					fwrite(&entity->soundSourceDelay, sizeof(Sint32), 1, fp);
-					fwrite(&entity->soundSourceOrigin, sizeof(Sint32), 1, fp);
+					fp->write(&entity->soundSourceToPlay, sizeof(Sint32), 1);
+					fp->write(&entity->soundSourceVolume, sizeof(Sint32), 1);
+					fp->write(&entity->soundSourceLatchOn, sizeof(Sint32), 1);
+					fp->write(&entity->soundSourceDelay, sizeof(Sint32), 1);
+					fp->write(&entity->soundSourceOrigin, sizeof(Sint32), 1);
 					break;
 				case 15:
-					fwrite(&entity->lightSourceAlwaysOn, sizeof(Sint32), 1, fp);
-					fwrite(&entity->lightSourceBrightness, sizeof(Sint32), 1, fp);
-					fwrite(&entity->lightSourceInvertPower, sizeof(Sint32), 1, fp);
-					fwrite(&entity->lightSourceLatchOn, sizeof(Sint32), 1, fp);
-					fwrite(&entity->lightSourceRadius, sizeof(Sint32), 1, fp);
-					fwrite(&entity->lightSourceFlicker, sizeof(Sint32), 1, fp);
-					fwrite(&entity->lightSourceDelay, sizeof(Sint32), 1, fp);
+					fp->write(&entity->lightSourceAlwaysOn, sizeof(Sint32), 1);
+					fp->write(&entity->lightSourceBrightness, sizeof(Sint32), 1);
+					fp->write(&entity->lightSourceInvertPower, sizeof(Sint32), 1);
+					fp->write(&entity->lightSourceLatchOn, sizeof(Sint32), 1);
+					fp->write(&entity->lightSourceRadius, sizeof(Sint32), 1);
+					fp->write(&entity->lightSourceFlicker, sizeof(Sint32), 1);
+					fp->write(&entity->lightSourceDelay, sizeof(Sint32), 1);
 					break;
 				case 16:
 				{
-					fwrite(&entity->textSourceColorRGB, sizeof(Sint32), 1, fp);
-					fwrite(&entity->textSourceVariables4W, sizeof(Sint32), 1, fp);
-					fwrite(&entity->textSourceDelay, sizeof(Sint32), 1, fp);
-					fwrite(&entity->textSourceIsScript, sizeof(Sint32), 1, fp);
+					fp->write(&entity->textSourceColorRGB, sizeof(Sint32), 1);
+					fp->write(&entity->textSourceVariables4W, sizeof(Sint32), 1);
+					fp->write(&entity->textSourceDelay, sizeof(Sint32), 1);
+					fp->write(&entity->textSourceIsScript, sizeof(Sint32), 1);
 					for ( int i = 4; i < 60; ++i )
 					{
-						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+						fp->write(&entity->skill[i], sizeof(Sint32), 1);
 					}
 					break;
 				}
 				case 17:
-					fwrite(&entity->signalInputDirection, sizeof(Sint32), 1, fp);
-					fwrite(&entity->signalActivateDelay, sizeof(Sint32), 1, fp);
-					fwrite(&entity->signalTimerInterval, sizeof(Sint32), 1, fp);
-					fwrite(&entity->signalTimerRepeatCount, sizeof(Sint32), 1, fp);
-					fwrite(&entity->signalTimerLatchInput, sizeof(Sint32), 1, fp);
+					fp->write(&entity->signalInputDirection, sizeof(Sint32), 1);
+					fp->write(&entity->signalActivateDelay, sizeof(Sint32), 1);
+					fp->write(&entity->signalTimerInterval, sizeof(Sint32), 1);
+					fp->write(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
+					fp->write(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
 					break;
 				case 18:
-					fwrite(&entity->portalCustomSprite, sizeof(Sint32), 1, fp);
-					fwrite(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1, fp);
-					fwrite(&entity->portalCustomZOffset, sizeof(Sint32), 1, fp);
-					fwrite(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1, fp);
-					fwrite(&entity->portalNotSecret, sizeof(Sint32), 1, fp);
-					fwrite(&entity->portalCustomRequiresPower, sizeof(Sint32), 1, fp);
+					fp->write(&entity->portalCustomSprite, sizeof(Sint32), 1);
+					fp->write(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1);
+					fp->write(&entity->portalCustomZOffset, sizeof(Sint32), 1);
+					fp->write(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1);
+					fp->write(&entity->portalNotSecret, sizeof(Sint32), 1);
+					fp->write(&entity->portalCustomRequiresPower, sizeof(Sint32), 1);
 					for ( int i = 11; i <= 18; ++i )
 					{
-						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+						fp->write(&entity->skill[i], sizeof(Sint32), 1);
 					}
 					break;
 				case 19:
-					fwrite(&entity->furnitureDir, sizeof(Sint32), 1, fp);
-					fwrite(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1, fp);
-					fwrite(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1, fp);
+					fp->write(&entity->furnitureDir, sizeof(Sint32), 1);
+					fp->write(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1);
+					fp->write(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1);
 					break;
 				case 20:
-					fwrite(&entity->skill[11], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[12], sizeof(Sint32), 1, fp);
-					fwrite(&entity->skill[15], sizeof(Sint32), 1, fp);
+					fp->write(&entity->skill[11], sizeof(Sint32), 1);
+					fp->write(&entity->skill[12], sizeof(Sint32), 1);
+					fp->write(&entity->skill[15], sizeof(Sint32), 1);
 					for ( int i = 40; i <= 52; ++i )
 					{
-						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+						fp->write(&entity->skill[i], sizeof(Sint32), 1);
 					}
 					break;
 				case 21:
-					fwrite(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1, fp);
-					fwrite(&entity->doorDisableLockpicks, sizeof(Sint32), 1, fp);
-					fwrite(&entity->doorDisableOpening, sizeof(Sint32), 1, fp);
+					fp->write(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1);
+					fp->write(&entity->doorDisableLockpicks, sizeof(Sint32), 1);
+					fp->write(&entity->doorDisableOpening, sizeof(Sint32), 1);
 					break;
 				case 22:
-					fwrite(&entity->gateDisableOpening, sizeof(Sint32), 1, fp);
+					fp->write(&entity->gateDisableOpening, sizeof(Sint32), 1);
 					break;
 				case 23:
-					fwrite(&entity->playerStartDir, sizeof(Sint32), 1, fp);
+					fp->write(&entity->playerStartDir, sizeof(Sint32), 1);
 					break;
 				default:
 					break;
@@ -1575,10 +1587,10 @@ int saveMap(const char* filename2)
 
 			x = entity->x;
 			y = entity->y;
-			fwrite(&x, sizeof(Sint32), 1, fp);
-			fwrite(&y, sizeof(Sint32), 1, fp);
+			fp->write(&x, sizeof(Sint32), 1);
+			fp->write(&y, sizeof(Sint32), 1);
 		}
-		fclose(fp);
+		FileIO::close(fp);
 		return 0;
 	}
 	else
@@ -1597,36 +1609,27 @@ int saveMap(const char* filename2)
 
 char* readFile(char* filename)
 {
+	long input_file_size = 0;
 	char* file_contents = NULL;
-	long input_file_size;
-	FILE* input_file = openDataFile(filename, "rb");
+	File* input_file = openDataFile(filename, "rb");
 	if (!input_file) {
 		printlog("Open failed: %s", strerror(errno));
 		goto out_input_file;
 	}
 
-	if (fseek(input_file, 0, SEEK_END) != 0) {
-		printlog("Seek failed");
-		goto out_input_file;
-	}
-
-	if ((input_file_size = ftell(input_file)) == -1) {
-		printlog("ftell failed");
-		goto out_input_file;
-	}
-
+	input_file_size = input_file->size();
 	if (input_file_size > (1<<30)) {
 		printlog("Unreasonable size: %ld", input_file_size);
 		goto out_input_file;
 	}
 	
-	rewind(input_file);
+	input_file->seek(0, File::SeekMode::SET);
 	file_contents = static_cast<char*>(malloc((input_file_size + 1) * sizeof(char)));
-	fread(file_contents, sizeof(char), input_file_size, input_file);
+	input_file->read(file_contents, sizeof(char), input_file_size);
 	file_contents[input_file_size] = 0;
 
 out_input_file:
-	fclose(input_file);
+	FileIO::close(input_file);
 	return file_contents;
 }
 
@@ -1687,9 +1690,13 @@ std::list<std::string> directoryContents(const char* directory, bool includeSubd
 std::vector<std::string> getLinesFromDataFile(std::string filename)
 {
 	std::vector<std::string> lines;
+#ifdef NINTENDO
+	std::string filepath(filename);
+#else
 	std::string filepath(datadir);
 	filepath += "/";
 	filepath += filename;
+#endif
 	std::ifstream file(filepath);
 	if ( !file )
 	{
@@ -1861,9 +1868,9 @@ std::list<std::string> physfsGetFileNamesInDirectory(const char* dir)
 {
 	std::list<std::string> filenames;
 	char **rc = PHYSFS_enumerateFiles(dir);
-	if ( *rc == NULL )
+	if ( rc == NULL )
 	{
-		printlog("[PhysFS]: Error: Failed to enumerate filenames in directory '%s'", dir);
+		printlog("[PhysFS]: Error: Failed to enumerate filenames in directory '%s': %s", dir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		return filenames;
 	}
 	char **i;
@@ -1901,28 +1908,23 @@ bool physfsSearchModelsToUpdate()
 {
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-	FILE* fp = openDataFile(modelsDirectory.c_str(), "r");
+	File* fp = openDataFile(modelsDirectory.c_str(), "r");
 	char name[128];
 
-	for ( int c = 0; !feof(fp); c++ )
+	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-
+		fp->gets2(name, 128);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string modelRealDir = PHYSFS_getRealDir(name);
 			if ( modelRealDir.compare("./") != 0 )
 			{
-				fclose(fp);
+				FileIO::close(fp);
 				return true;
 			}
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	return false;
 }
 
@@ -1933,15 +1935,10 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 	int startnum = 0;
 	int endnum = nummodels;
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-	FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
-	for ( int c = 0; !feof(fp); c++ )
+	File *fp = openDataFile(modelsDirectory.c_str(), "r");
+	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fscanf(fp, "%s", modelName);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-
+		fp->gets2(modelName, 128);
 		bool modelHasBeenModified = false;
 		// has this model index been modified?
 		std::vector<int>::iterator it = gamemods_modelsListModifiedIndexes.end();
@@ -2044,7 +2041,7 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 		}
 	}
 
-	fclose(fp);
+	FileIO::close(fp);
 	return true;
 }
 
@@ -2060,28 +2057,23 @@ bool physfsSearchSoundsToUpdate()
 		return true;
 	}
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
-	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
+	File* fp = openDataFile(soundsDirectory.c_str(), "r");
 	char name[128];
 
-	for ( int c = 0; !feof(fp); c++ )
+	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-
+		fp->gets2(name, 128);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string soundRealDir = PHYSFS_getRealDir(name);
 			if ( soundRealDir.compare("./") != 0 )
 			{
-				fclose(fp);
+				FileIO::close(fp);
 				return true;
 			}
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	return false;
 }
 
@@ -2093,7 +2085,7 @@ void physfsReloadSounds(bool reloadAll)
 	}
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
-	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
+	File* fp = openDataFile(soundsDirectory.c_str(), "r");
 	char name[128];
 
 	printlog("freeing sounds and loading modded sounds...\n");
@@ -2118,14 +2110,9 @@ void physfsReloadSounds(bool reloadAll)
 #endif
 	}
 
-	for ( int c = 0; !feof(fp); c++ )
+	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-		
+		fp->gets2(name, 128);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string soundRealDir = PHYSFS_getRealDir(name);
@@ -2154,55 +2141,62 @@ void physfsReloadSounds(bool reloadAll)
 			}
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 }
 
-bool physfsSearchSpritesToUpdate()
+bool physfsSearchSpritesToUpdate() //TODO: NX PORT: Any changes needed here?
 {
 	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
 	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
-	FILE* fp = openDataFile(spritesDirectory.c_str(), "r");
+	File* fp = openDataFile(spritesDirectory.c_str(), "r");
 	char name[128];
 
-	for ( int c = 0; !feof(fp); c++ )
+	for ( int c = 0; !fp->eof(); ++c )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		fp->gets2(name, 128);
+		while ( fp->getc() != '\n' )
 		{
-			break;
+			if ( fp->eof() )
+			{
+				break;
+			}
 		}
 
-		if ( PHYSFS_getRealDir(name) != NULL )
+		if ( PHYSFS_getRealDir(name) != nullptr )
 		{
 			std::string spritesRealDir = PHYSFS_getRealDir(name);
 			if ( spritesRealDir.compare("./") != 0 )
 			{
-				fclose(fp);
+				FileIO::close(fp);
 				printlog("[PhysFS]: Found modified sprite in sprites/ directory, reloading all sprites...");
 				return true;
 			}
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	return false;
 }
 
-void physfsReloadSprites(bool reloadAll)
+void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed here?
 {
 	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
 	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
 	printlog("[PhysFS]: Loading sprites from directory %s...\n", spritesDirectory.c_str());
-	FILE* fp = openDataFile(spritesDirectory.c_str(), "r");
+	File* fp = openDataFile(spritesDirectory.c_str(), "r");
 	char name[128];
 
-	for ( int c = 0; !feof(fp); c++ )
+	for ( int c = 0; !fp->eof(); ++c )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		fp->gets2(name, 128);
+		while ( fp->getc() != '\n' )
 		{
-			break;
+			if ( fp->eof() )
+			{
+				break;
+			}
 		}
-		if ( PHYSFS_getRealDir(name) != NULL )
+
+		if ( PHYSFS_getRealDir(name) != nullptr )
 		{
 			std::string spritesRealDir = PHYSFS_getRealDir(name);
 			if ( reloadAll || spritesRealDir.compare("./") != 0 )
@@ -2216,52 +2210,48 @@ void physfsReloadSprites(bool reloadAll)
 				char fullname[128];
 				strncpy(fullname, spriteFile.c_str(), 127);
 				sprites[c] = loadImage(fullname);
-				if ( sprites[c] != NULL )
+				if ( nullptr != sprites[c]  )
 				{
+					//Whee
 				}
 				else
 				{
 					printlog("warning: failed to load '%s' listed at line %d in %s\n", name, c + 1, spritesDirectory.c_str());
-					if ( c == 0 )
+					if ( 0 == c )
 					{
 						printlog("sprite 0 cannot be NULL!\n");
-						fclose(fp);
+						FileIO::close(fp);
 						return;
 					}
 				}
 			}
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 }
 
 bool physfsSearchTilesToUpdate()
 {
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
-	FILE* fp = openDataFile(tilesDirectory.c_str(), "r");
+	File* fp = openDataFile(tilesDirectory.c_str(), "r");
 	char name[128];
 
-	for ( int c = 0; !feof(fp); c++ )
+	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-
+		fp->gets2(name, 128);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string tileRealDir = PHYSFS_getRealDir(name);
 			if ( tileRealDir.compare("./") != 0 )
 			{
-				fclose(fp);
+				FileIO::close(fp);
 				printlog("[PhysFS]: Found modified tile in tiles/ directory, reloading all tiles...");
 				return true;
 			}
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	return false;
 }
 
@@ -2270,16 +2260,12 @@ void physfsReloadTiles(bool reloadAll)
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	printlog("[PhysFS]: Loading tiles from directory %s...\n", tilesDirectory.c_str());
-	FILE* fp = openDataFile(tilesDirectory.c_str(), "r");
+	File* fp = openDataFile(tilesDirectory.c_str(), "r");
 	char name[128];
 
-	for ( int c = 0; !feof(fp); c++ )
+	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
+		fp->gets2(name, 128);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string tileRealDir = PHYSFS_getRealDir(name);
@@ -2323,14 +2309,14 @@ void physfsReloadTiles(bool reloadAll)
 					if ( c == 0 )
 					{
 						printlog("tile 0 cannot be NULL!\n");
-						fclose(fp);
+						FileIO::close(fp);
 						return;
 					}
 				}
 			}
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 }
 
 bool physfsIsMapLevelListModded()
@@ -2562,10 +2548,10 @@ void physfsReloadItemsTxt()
 {
 	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
 	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
-	FILE* fp = openDataFile(itemsTxtDirectory.c_str(), "r");
+	File* fp = openDataFile(itemsTxtDirectory.c_str(), "r");
 	char buffer[128];
 
-	for ( int c = 0; !feof(fp) && c < NUMITEMS; ++c )
+	for ( int c = 0; !fp->eof() && c < NUMITEMS; ++c )
 	{
 		//if ( c > ARTIFACT_BOW )
 		//{
@@ -2578,25 +2564,14 @@ void physfsReloadItemsTxt()
 		//	items[c].name_identified = language[1545 + c * 2];
 		//	items[c].name_unidentified = language[1546 + c * 2];
 		//}
-		fscanf(fp, "%d", &items[c].index);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		items[c].index = fp->geti();
+		items[c].fpindex = fp->geti();
+		items[c].variations = fp->geti();
+		fp->gets2(buffer, 128);
+		size_t len = strlen(buffer) - 1U;
+		if (buffer[len] == '\n' || buffer[len] == '\r')
 		{
-			break;
-		}
-		fscanf(fp, "%d", &items[c].fpindex);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-		fscanf(fp, "%d", &items[c].variations);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-		fscanf(fp, "%s", buffer);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
+			buffer[len] = '\0';
 		}
 		if ( !strcmp(buffer, "WEAPON") )
 		{
@@ -2654,16 +2629,8 @@ void physfsReloadItemsTxt()
 		{
 			items[c].category = GEM;
 		}
-		fscanf(fp, "%d", &items[c].weight);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-		fscanf(fp, "%d", &items[c].value);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
+		items[c].weight = fp->geti();
+		items[c].value = fp->geti();
 
 		list_FreeAll(&items[c].images);
 
@@ -2681,9 +2648,9 @@ void physfsReloadItemsTxt()
 
 			int x = 0;
 			bool fileend = false;
-			while ( (string->data[x] = fgetc(fp)) != '\n' )
+			while ( (string->data[x] = fp->getc()) != '\n' )
 			{
-				if ( feof(fp) )
+				if ( fp->eof() )
 				{
 					fileend = true;
 					break;
@@ -2699,7 +2666,7 @@ void physfsReloadItemsTxt()
 		}
 	}
 
-	fclose(fp);
+	FileIO::close(fp);
 }
 
 bool physfsSearchMonsterLimbFilesToUpdate()
@@ -2728,7 +2695,7 @@ bool physfsSearchMonsterLimbFilesToUpdate()
 void physfsReloadMonsterLimbFiles()
 {
 	int x;
-	FILE* fp;
+	File* fp;
 	for ( int c = 1; c < NUMMONSTERS; c++ )
 	{
 		// initialize all offsets to zero
@@ -2757,14 +2724,14 @@ void physfsReloadMonsterLimbFiles()
 
 		// read file
 		int line;
-		for ( line = 1; feof(fp) == 0; line++ )
+		for ( line = 1; fp->eof() == 0; line++ )
 		{
 			char data[256];
 			int limb = 20;
 			int dummy;
 
 			// read line from file
-			fgets(data, 256, fp);
+			fp->gets2(data, 256);
 
 			// skip blank and comment lines
 			if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
@@ -2785,7 +2752,7 @@ void physfsReloadMonsterLimbFiles()
 			}
 		}
 		// close file
-		fclose(fp);
+		FileIO::close(fp);
 	}
 }
 
@@ -2838,4 +2805,31 @@ void physfsReloadSystemImages()
 			}
 		}
 	}
+}
+
+size_t FileBase::write(const void* src, size_t size, size_t count)
+{
+	if (mode != FileMode::WRITE || nullptr == src)
+	{
+		return 0U;
+	}
+	return 1U; //Input validation passed.
+}
+
+size_t FileBase::read(void* buffer, size_t size, size_t count)
+{
+	if (mode != FileMode::READ || nullptr == buffer)
+	{
+		return 0U;
+	}
+	return 1U; //Input validation passed.
+}
+
+char* FileBase::gets(char* buf, int size)
+{
+	if (!buf)
+	{
+		return nullptr;
+	}
+	return buf; //Input validation passed.
 }

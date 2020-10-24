@@ -1308,14 +1308,10 @@ void consoleCommand(char const * const command_str)
 
 		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-		FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
-		for ( c = 0; !feof(fp); c++ )
+		File *fp = openDataFile(modelsDirectory.c_str(), "r");
+		for ( c = 0; !fp->eof(); c++ )
 		{
-			fscanf(fp, "%s", name2);
-			while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
+			fp->gets2(name2, 128);
 			if ( c >= startIndex && c < endIndex )
 			{
 				if ( models[c] != NULL )
@@ -1349,7 +1345,7 @@ void consoleCommand(char const * const command_str)
 				models[c] = loadVoxel(name2);
 			}
 		}
-		fclose(fp);
+		FileIO::close(fp);
 		//messagePlayer(clientnum, language[2354]);
 		messagePlayer(clientnum, language[2355], startIndex, endIndex);
 		generatePolyModels(startIndex, endIndex, true);
@@ -2063,7 +2059,7 @@ void consoleCommand(char const * const command_str)
 	else if ( !strncmp(command_str, "/reloadlimbs", 12) )
 	{
 		int x;
-		FILE* fp;
+		File* fp;
 		bool success = true;
 
 		if ( !autoLimbReload )
@@ -2093,14 +2089,14 @@ void consoleCommand(char const * const command_str)
 
 			// read file
 			int line;
-			for ( line = 1; feof(fp) == 0; line++ )
+			for ( line = 1; !fp->eof(); line++ )
 			{
 				char data[256];
 				int limb = 20;
 				int dummy;
 
 				// read line from file
-				fgets(data, 256, fp);
+				fp->gets(data, 256);
 
 				// skip blank and comment lines
 				if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
@@ -2126,7 +2122,7 @@ void consoleCommand(char const * const command_str)
 			}
 
 			// close file
-			fclose(fp);
+			FileIO::close(fp);
 		}
 		if ( success && !autoLimbReload )
 		{

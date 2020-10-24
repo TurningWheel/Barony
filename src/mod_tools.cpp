@@ -165,6 +165,7 @@ void GameModeManager_t::Tutorial_t::openGameoverWindow()
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 
+//TODO: NX PORT: Update for the Switch?
 void GameModeManager_t::Tutorial_t::readFromFile()
 {
 	levels.clear();

@@ -226,7 +226,6 @@ void gameLogic(void)
 	Entity* entity;
 	int c = 0;
 	Uint32 i = 0, j;
-	FILE* fp;
 	deleteent_t* deleteent;
 	bool entitydeletedself;
 	int auto_appraise_lowest_time = std::numeric_limits<int>::max();
@@ -1097,7 +1096,7 @@ void gameLogic(void)
 					loading = true;
 					drawClearBuffers();
 					int w, h;
-					TTF_SizeUTF8(ttf16, language[709], &w, &h);
+					getSizeOfText(ttf16, language[709], &w, &h);
 					ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[709]);
 
 					GO_SwapBuffers(screen);
@@ -2511,7 +2510,7 @@ void handleButtons(void)
 		{
 			continue;    // invisible buttons are not processed
 		}
-		TTF_SizeUTF8(ttf12, button->label, &w, &h);
+		getSizeOfText(ttf12, button->label, &w, &h);
 		if ( subwindow && !button->focused )
 		{
 			// unfocused buttons do not work when a subwindow is active
@@ -2628,6 +2627,19 @@ void handleEvents(void)
 	double d;
 	int j;
 	int runtimes = 0;
+
+#ifdef NINTENDO
+	// do timer
+	std::chrono::duration<double> msInterval(1.0 / TICKS_PER_SECOND);
+	auto now = std::chrono::steady_clock::now();
+	int framesToDo = (now - lastTick) / msInterval;
+	if (framesToDo) {
+		lastTick = now;
+		for (int c = 0; c < framesToDo; ++c) {
+			timerCallback(0, NULL);
+		}
+	}
+#endif // NINTENDO
 
 	// calculate app rate
 	t = SDL_GetTicks();
@@ -2881,11 +2893,15 @@ void handleEvents(void)
 						sound_update(); //Update FMOD and whatnot.
 #endif
 					}
-					runtimes++;
 					gameLogic();
 					mousexrel = 0;
 					mouseyrel = 0;
 				}
+				else
+				{
+					printlog("overloaded timer! %d", runtimes);
+				}
+				++runtimes;
 				break;
 			case SDL_WINDOWEVENT:
 				if ( event.window.event == SDL_WINDOWEVENT_FOCUS_LOST && mute_audio_on_focus_lost )
@@ -2965,6 +2981,26 @@ void handleEvents(void)
 						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 					}
 #endif
+				}
+				else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+				{
+					xres = event.window.data1;
+					yres = event.window.data2;
+					if (!changeVideoMode())
+					{
+						printlog("critical error! Attempting to abort safely...\n");
+						mainloop = 0;
+					}
+					if (zbuffer != NULL)
+					{
+						free(zbuffer);
+					}
+					zbuffer = (real_t*)malloc(sizeof(real_t) * xres * yres);
+					if (clickmap != NULL)
+					{
+						free(clickmap);
+					}
+					clickmap = (Entity**)malloc(sizeof(Entity*)*xres * yres);
 				}
 				break;
 				/*case SDL_CONTROLLERAXISMOTION:
@@ -3241,6 +3277,10 @@ int main(int argc, char** argv)
 #ifdef WINDOWS
 	SetUnhandledExceptionFilter(unhandled_handler);
 #endif // WINDOWS
+#ifdef NINTENDO
+	nxInit();
+	PHYSFS_init(nullptr);
+#endif // NINTENDO
 
 #ifdef LINUX
 	//Catch segfault stuff.
@@ -3254,7 +3294,9 @@ int main(int argc, char** argv)
 	sigaction(SIGSEGV, &sa, NULL);
 #endif
 
+#ifndef NINTENDO
 	try
+#endif
 	{
 #if defined(APPLE) || defined(BSD) || defined(HAIKU)
 #ifdef APPLE
@@ -3301,7 +3343,6 @@ int main(int argc, char** argv)
 		//Mix_Music **music, *intromusic, *splashmusic, *creditsmusic;
 		node_t* node;
 		Entity* entity;
-		FILE* fp;
 		//SDL_Surface *sky_bmp;
 		light_t* light;
 
@@ -3311,12 +3352,13 @@ int main(int argc, char** argv)
 #ifdef WINDOWS
 		strcpy(outputdir, "./");
 #else
+ #ifndef NINTENDO
 		char *basepath = getenv("HOME");
- #ifdef USE_EOS
-  #ifdef STEAMWORKS
+  #ifdef USE_EOS
+   #ifdef STEAMWORKS
 		//Steam + EOS
 		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
-  #else
+   #else
 		//Just EOS.
 		std::string firstDotdir(basepath);
 		firstDotdir += "/.barony/";
@@ -3325,15 +3367,18 @@ int main(int argc, char** argv)
 			mkdir(firstDotdir.c_str(), 0777); //Since this mkdir is not equivalent to mkdir -p, have to create each part of the path manually.
 		}
 		snprintf(outputdir, sizeof(outputdir), "%s/epicgames", firstDotdir.c_str());
-  #endif
- #else //USE_EOS
+   #endif
+  #else //USE_EOS
 		//No EOS. Could be Steam though. Or could also not.
 		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
- #endif
+  #endif
 		if (access(outputdir, F_OK) == -1)
 		{
 			mkdir(outputdir, 0777);
 		}
+ #else // !NINTENDO
+		strcpy(outputdir, "save:");
+ #endif // NINTENDO
 #endif
 		// read command line arguments
 		if ( argc > 1 )
@@ -3394,12 +3439,18 @@ int main(int argc, char** argv)
 		printlog("Data path is %s", datadir);
 		printlog("Output path is %s", outputdir);
 
+#ifdef NINTENDO
+//		strcpy(classtoquickstart, "warrior");
+#endif
 
 		// load default language file (english)
 		if ( loadLanguage("en") )
 		{
 			printlog("Fatal error: failed to load default language file!\n");
-			fclose(logfile);
+			if (logfile)
+			{
+				fclose(logfile);
+			}
 			exit(1);
 		}
 
@@ -3486,7 +3537,11 @@ int main(int argc, char** argv)
 		setDefaultPlayerConducts();
 
 		// instantiate a timer
+#ifdef NINTENDO
+		lastTick = std::chrono::steady_clock::now();
+#else
 		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
+#endif // NINTENDO
 		srand(time(NULL));
 		fountainSeed.seed(rand());
 
@@ -3865,6 +3920,28 @@ int main(int argc, char** argv)
 				handleLevelMusic();
 #endif
 				DebugStats.t4Music = std::chrono::high_resolution_clock::now();
+
+#ifdef NINTENDO
+				// activate console
+				if ((*inputPressed(joyimpulses[INJOY_PAUSE_MENU])) &&
+					(*inputPressed(joyimpulses[INJOY_GAME_DEFEND])) &&
+					(*inputPressed(joyimpulses[INJOY_GAME_ATTACK])))
+				{
+					*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
+					*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
+					*inputPressed(joyimpulses[INJOY_GAME_ATTACK]) = 0;
+
+					auto result = nxKeyboard("Enter console command");
+					if (result.success)
+					{
+						char temp[128];
+						strncpy(temp, result.str.c_str(), 128);
+						temp[127] = '\0';
+						messagePlayer(clientnum, temp);
+						consoleCommand(temp);
+					}
+				}
+#endif
 
 				// toggling the game menu
 				if ( (keystatus[SDL_SCANCODE_ESCAPE] || (*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) && rebindaction == -1)) && !command )
@@ -4409,7 +4486,7 @@ int main(int argc, char** argv)
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
 							int x;
-							TTF_SizeUTF8(ttf16, command_str, &x, NULL);
+							getSizeOfText(ttf16, command_str, &x, NULL);
 							ttfPrintTextFormatted(ttf16, MESSAGE_X_OFFSET + x + TTF16_WIDTH, MESSAGE_Y_OFFSET, "_");
 						}
 					}
@@ -4875,6 +4952,7 @@ int main(int argc, char** argv)
 		deinitGame();
 		return deinitApp();
 	}
+#ifndef NINTENDO
 	catch (const std::exception &exc)
 	{
 		// catch anything thrown within try block that derives from std::exception
@@ -4887,6 +4965,11 @@ int main(int argc, char** argv)
 		std::cerr << "UNKNOWN EXCEPTION CAUGHT!\n";
 		return 1;
 	}
+#endif // NINTENDO
+
+#ifdef NINTENDO
+	nxTerm();
+#endif // NINTENDO
 }
 
 void DebugStatsClass::storeStats()

@@ -47,6 +47,23 @@ int getBook(char const * const booktitle)
 	return 0;
 }
 
+//Local helper function to make getting the list of books cross-platform easier.
+std::list<std::string> getListOfBooks()
+{
+	std::list<std::string> books;
+#ifdef NINTENDO
+	File* fp = FileIO::open(NINTENDO_LIST_OF_BOOKS_FILEPATH, "r");
+	for (char buf[64]; fp->gets2(buf, 64);)
+	{
+		books.push_back(std::string(buf));
+	}
+	FileIO::close(fp);
+#else
+	books = physfsGetFileNamesInDirectory("books/");
+#endif
+	return books;
+}
+
 void createBooks()
 {
 	int i = 0;
@@ -54,8 +71,10 @@ void createBooks()
 	//TODO: Read the books/ inventory for all *.txt files.
 	//TODO: Then create a book for each file there and add it to a books array.
 	//auto discoveredbooks = directoryContents("books/", false, true);
-	std::list<std::string> discoveredbooks = physfsGetFileNamesInDirectory("books/");
+	std::list<std::string> discoveredbooks = getListOfBooks();
 
+#ifndef NINTENDO
+	//TODO: We will need to enable this on NINTENDO if we want mod support. Realistically, that just means adding JSON support and making ignoreBooksPath a static const definition in a header somewhere. (2 headers, actually: define it once for PC, definite it differently for Switch) ...we'll probably also need to update thet PHYSFS_getRealDir() call as well, something akin to the getListOfBooks() function. I.e. NINTENDO ROM reading or whatever.
 	std::string ignoreBooksPath = "books/ignored_books.json";
 	std::unordered_set<std::string> ignoredBooks;
 	bool foundIgnoreBookFile = false;
@@ -67,12 +86,14 @@ void createBooks()
 		path.append(PHYSFS_getDirSeparator());
 		ignoreBooksPath = path + ignoreBooksPath;
 
-		FILE* fp = fopen(ignoreBooksPath.c_str(), "rb");
+		File* fp = FileIO::open(ignoreBooksPath.c_str(), "rb");
 		if ( fp )
 		{
 			char buf[65536];
-			rapidjson::FileReadStream is(fp, buf, sizeof(buf));
-			fclose(fp);
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
 
 			rapidjson::Document d;
 			d.ParseStream(is);
@@ -89,6 +110,7 @@ void createBooks()
 			}
 		}
 	}
+#endif //ifndef NINTENDO
 
 	if (!discoveredbooks.empty())
 	{
@@ -469,7 +491,7 @@ void createBook(book_t* const book)
 
 bool physfsSearchBooksToUpdate()
 {
-	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	std::list<std::string> booklist = getListOfBooks();
 	if ( !booklist.empty() )
 	{
 		for ( auto& bookTitle : booklist )
@@ -492,7 +514,7 @@ bool physfsSearchBooksToUpdate()
 
 void physfsReloadBooks()
 {
-	const std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	const std::list<std::string> booklist = getListOfBooks();
 	if ( !booklist.empty() )
 	{
 		// clear the previous book memory..

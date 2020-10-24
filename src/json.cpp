@@ -1,4 +1,5 @@
 #include "main.hpp"
+#include "files.hpp"
 #include "json.hpp"
 
 #include "rapidjson/document.h"
@@ -17,7 +18,7 @@ public:
 	{
 	}
 
-	static bool writeObject(FILE * file, const FileHelper::SerializationFunc& serialize) {
+	static bool writeObject(File* file, const FileHelper::SerializationFunc& serialize) {
 		JsonFileWriter jfw;
 
 		jfw.beginObject();
@@ -70,12 +71,12 @@ public:
 
 private:
 
-	void save(FILE * file) {
+	void save(File* file) {
 		buffer.Flush();
-		fputs(buffer.GetString(), file);
+		file->puts(buffer.GetString());
 	}
 
-	FILE * fp;
+	File * fp;
 	rapidjson::StringBuffer buffer;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer;
 };
@@ -83,7 +84,7 @@ private:
 class JsonFileReader : public FileInterface {
 public:
 
-	static bool readObject(FILE * fp, const FileHelper::SerializationFunc & serialize) {
+	static bool readObject(File * fp, const FileHelper::SerializationFunc & serialize) {
 		JsonFileReader jfr;
 
 		if (!jfr.readAllFileData(fp)) {
@@ -180,14 +181,14 @@ protected:
 		return result;
 	}
 
-	bool readAllFileData(FILE * fp) {
-		if (fseek(fp, 0, SEEK_END)) {
+	bool readAllFileData(File * fp) {
+		if (fp->seek(0, FileBase::SeekMode::SETEND)) {
 			printlog("JsonFileReader: failed to seek end (%d)", errno);
 			return false;
 		}
 
-		long size = ftell(fp);
-		if (fseek(fp, 0, SEEK_SET)) {
+		long size = fp->tell();
+		if (fp->seek(0, FileBase::SeekMode::SET)) {
 			printlog("JsonFileReader: failed to seek beg (%d)", errno);
 			return false;
 		}
@@ -196,7 +197,7 @@ protected:
 		char * data = (char *)calloc(sizeof(char), size + 1);
 		assert(data);
 
-		size_t bytesRead = fread(data, sizeof(char), size, fp);
+		size_t bytesRead = fp->read(data, sizeof(char), size);
 		if (bytesRead != size) {
 			printlog("JsonFileReader: failed to read data (%d)", errno);
 			free(data);
@@ -231,7 +232,7 @@ protected:
 class BinaryFileWriter : public FileInterface {
 public:
 
-	BinaryFileWriter(FILE * file)
+	BinaryFileWriter(File * file)
 	: fp(file)
 	{
 	}
@@ -239,7 +240,7 @@ public:
 	~BinaryFileWriter() {
 	}
 
-	static bool writeObject(FILE * fp, const FileHelper::SerializationFunc & serialize) {
+	static bool writeObject(File * fp, const FileHelper::SerializationFunc & serialize) {
 		BinaryFileWriter bfw(fp);
 
 		bfw.writeHeader();
@@ -260,7 +261,7 @@ public:
 	}
 
 	virtual void beginArray(Uint32 & size) override {
-		fwrite(&size, sizeof(size), 1, fp);
+		fp->write(&size, sizeof(size), 1);
 	}
 
 	virtual void endArray() override {
@@ -270,19 +271,19 @@ public:
 	}
 
 	virtual void value(Uint32& v) override {
-		fwrite(&v, sizeof(v), 1, fp);
+		fp->write(&v, sizeof(v), 1);
 	}
 	virtual void value(Sint32& v) override {
-		fwrite(&v, sizeof(v), 1, fp);
+		fp->write(&v, sizeof(v), 1);
 	}
 	virtual void value(float& v) override {
-		fwrite(&v, sizeof(v), 1, fp);
+		fp->write(&v, sizeof(v), 1);
 	}
 	virtual void value(double& v) override {
-		fwrite(&v, sizeof(v), 1, fp);
+		fp->write(&v, sizeof(v), 1);
 	}
 	virtual void value(bool& v) override {
-		fwrite(&v, sizeof(v), 1, fp);
+		fp->write(&v, sizeof(v), 1);
 	}
 	virtual void value(std::string& v, Uint32 maxLength) override {
 		assert(maxLength == 0 || v.size() <= maxLength);
@@ -292,29 +293,29 @@ public:
 private:
 
 	void writeHeader() {
-		fwrite(&BinaryFormatTag, sizeof(BinaryFormatTag), 1, fp);
+		fp->write(&BinaryFormatTag, sizeof(BinaryFormatTag), 1);
 	}
 
 	void writeStringInternal(const std::string& v) {
 		Uint32 len = (Uint32)v.size();
-		fwrite(&len, sizeof(len), 1, fp);
+		fp->write(&len, sizeof(len), 1);
 		if (len) {
-			fwrite(v.c_str(), sizeof(char), len, fp);
+			fp->write(v.c_str(), sizeof(char), len);
 		}
 	}
 
-	FILE* fp = nullptr;
+	File* fp = nullptr;
 };
 
 class BinaryFileReader : public FileInterface {
 public:
 
-	BinaryFileReader(FILE * file)
+	BinaryFileReader(File * file)
 		: fp(file)
 	{
 	}
 
-	static bool readObject(FILE * fp, const FileHelper::SerializationFunc & serialize) {
+	static bool readObject(File * fp, const FileHelper::SerializationFunc & serialize) {
 		BinaryFileReader bfr(fp);
 
 		if (!bfr.readHeader()) {
@@ -337,7 +338,7 @@ public:
 	}
 
 	virtual void beginArray(Uint32 & size) override {
-		size_t read = fread(&size, sizeof(size), 1, fp);
+		size_t read = fp->read(&size, sizeof(size), 1);
 		assert(read == 1);
 	}
 
@@ -348,23 +349,23 @@ public:
 	}
 
 	virtual void value(Uint32& v) override {
-		size_t read = fread(&v, sizeof(v), 1, fp);
+		size_t read = fp->read(&v, sizeof(v), 1);
 		assert(read == 1);
 	}
 	virtual void value(Sint32& v) override {
-		size_t read = fread(&v, sizeof(v), 1, fp);
+		size_t read = fp->read(&v, sizeof(v), 1);
 		assert(read == 1);
 	}
 	virtual void value(float& v) override {
-		size_t read = fread(&v, sizeof(v), 1, fp);
+		size_t read = fp->read(&v, sizeof(v), 1);
 		assert(read == 1);
 	}
 	virtual void value(double& v) override {
-		size_t read = fread(&v, sizeof(v), 1, fp);
+		size_t read = fp->read(&v, sizeof(v), 1);
 		assert(read == 1);
 	}
 	virtual void value(bool& v) override {
-		size_t read = fread(&v, sizeof(v), 1, fp);
+		size_t read = fp->read(&v, sizeof(v), 1);
 		assert(read == 1);
 	}
 	virtual void value(std::string& v, Uint32 maxLength) override {
@@ -376,7 +377,7 @@ private:
 
 	bool readHeader() {
 		Uint32 fileFormatTag;
-		size_t read = fread(&fileFormatTag, sizeof(fileFormatTag), 1, fp);
+		size_t read = fp->read(&fileFormatTag, sizeof(fileFormatTag), 1);
 		if (read != 1) {
 			printlog("BinaryFileReader: failed to read format tag (%d)", errno);
 			return false;
@@ -392,23 +393,23 @@ private:
 
 	void readStringInternal(std::string & v) {
 		Uint32 len;
-		size_t read = fread(&len, sizeof(len), 1, fp);
+		size_t read = fp->read(&len, sizeof(len), 1);
 		assert(read == 1);
 
 		if (len) {
 			v.reserve(len);
-			read = fread(&v[0u], sizeof(char), len, fp);
+			read = fp->read(&v[0u], sizeof(char), len);
 			assert(read == len);
 		}
 	}
 
-	FILE* fp;
+	File* fp;
 };
 
-static EFileFormat GetFileFormat(FILE * file) {
+static EFileFormat GetFileFormat(File * file) {
 	Uint32 fileFormatTag = 0;
-	fread(&fileFormatTag, sizeof(fileFormatTag), 1, file);
-	fseek(file, 0, SEEK_SET);
+	file->read(&fileFormatTag, sizeof(fileFormatTag), 1);
+	file->seek(0, FileBase::SeekMode::SET);
 
 	if (fileFormatTag == BinaryFormatTag) {
 		return EFileFormat::Binary;
@@ -418,8 +419,9 @@ static EFileFormat GetFileFormat(FILE * file) {
 	}
 }
 
+//TODO: NX PORT: Update for the Switch?
 bool FileHelper::writeObjectInternal(const char * filename, EFileFormat format, const SerializationFunc& serialize) {
-	FILE * file = fopen(filename, "wb");
+	File * file = FileIO::open(filename, "wb");
 #ifndef NDEBUG
 	printlog("Opening file '%s' for write", filename);
 #endif
@@ -439,13 +441,13 @@ bool FileHelper::writeObjectInternal(const char * filename, EFileFormat format, 
 		assert(false);
 	}
 
-	fclose(file);
+	FileIO::close(file);
 
 	return success;
 }
 
 bool FileHelper::readObjectInternal(const char * filename, const SerializationFunc& serialize) {
-	FILE * file = fopen(filename, "rb");
+	File * file = FileIO::open(filename, "rb");
 #ifndef NDEBUG
 	printlog("Opening file '%s' for read", filename);
 #endif
@@ -467,7 +469,7 @@ bool FileHelper::readObjectInternal(const char * filename, const SerializationFu
 		assert(false);
 	}
 
-	fclose(file);
+	FileIO::close(file);
 
 	return success;
 }
