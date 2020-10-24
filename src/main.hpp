@@ -29,8 +29,12 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #include <unordered_set>
 #include <set>
 #include <functional>
-#include "Config.hpp"
 #include "physfs.h"
+#include "Config.hpp"
+
+#ifdef NINTENDO
+#include "nintendo/baronynx.hpp"
+#endif
 
 #ifdef STEAMWORKS
 #define STEAM_APPID 371970
@@ -92,21 +96,25 @@ extern bool autoLimbReload;
 #undef min
 #undef max
 #endif
+
 #ifdef APPLE
-#include <Cocoa/Cocoa.h>
-//#include <OpenGL/OpenGL.h>
-#define GL_GLEXT_PROTOTYPES
-#include <GLUT/glut.h>
-#include <OpenGL/gl3ext.h>
-#include <OpenGL/gl3.h>
-#include <SDL2/SDL_opengl.h>
-#else
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glext.h>
-#include "SDL_opengl.h"
-#endif
+ #include <Cocoa/Cocoa.h>
+ //#include <OpenGL/OpenGL.h>
+ #define GL_GLEXT_PROTOTYPES
+ #include <GLUT/glut.h>
+ #include <OpenGL/gl3ext.h>
+ #include <OpenGL/gl3.h>
+ #include <SDL2/SDL_opengl.h>
+#else // APPLE
+ #ifndef NINTENDO
+  #define GL_GLEXT_PROTOTYPES
+  #include <GL/gl.h>
+  #include <GL/glu.h>
+ #endif
+ #include <GL/glext.h>
+ #include "SDL_opengl.h"
+#endif // !APPLE
+
 #ifdef APPLE
 #include <SDL2/SDL.h>
 #else
@@ -116,15 +124,18 @@ extern bool autoLimbReload;
 #include "SDL_syswm.h"
 #endif
 #ifdef APPLE
-#include <SDL2_image/SDL_image.h>
-#else
-#include "SDL_image.h"
-#endif
-//#include "SDL_mixer.h"
+ #include <SDL2_image/SDL_image.h>
+#else // APPLE
+ #ifndef NINTENDO
+  #include "SDL_image.h"
+ #endif // NINTENDO
+#endif // !APPLE
 #ifdef APPLE
 #include <SDL2_net/SDL_net.h>
 #else
+#ifndef NINTENDO
 #include "SDL_net.h"
+#endif
 #endif
 #ifdef APPLE
 #include <SDL2_ttf/SDL_ttf.h>
@@ -139,7 +150,7 @@ extern bool autoLimbReload;
 //#include <steamworks_cwrapper/steam_wrapper.h>
 #endif
 
-#ifdef _MSC_VER
+#ifdef WINDOWS
 #include <io.h>
 #define F_OK 0	// check for existence
 #define X_OK 1	// check for execute permission
@@ -523,7 +534,6 @@ extern cameravars_t cameravars[MAXPLAYERS];
 
 extern int game;
 extern bool loading;
-extern SDL_TimerID timer;
 extern SDL_Window* screen;
 #ifdef APPLE
 extern SDL_Renderer* renderer;
@@ -576,6 +586,11 @@ extern int minimapScale;
 extern int minimapObjectZoom;
 extern int minimapScaleQuickToggle;
 extern bool softwaremode;
+#ifdef NINTENDO
+ extern std::chrono::time_point<std::chrono::steady_clock> lastTick;
+#else
+ extern SDL_TimerID timer;
+#endif // NINTENDO
 extern real_t* zbuffer;
 extern Sint32* lightmap;
 extern Sint32* lightmapSmoothed;
@@ -762,11 +777,11 @@ extern bool no_sound; //False means sound initialized properly. True means sound
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
 
 #ifdef PANDORA
-// Pandora: FBO variables
-extern GLuint fbo_fbo;
-extern GLuint fbo_tex;
-extern GLuint fbo_ren;
-#endif
+ // Pandora: FBO variables
+ extern GLuint fbo_fbo;
+ extern GLuint fbo_tex;
+ extern GLuint fbo_ren;
+#endif // PANDORA
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
@@ -776,13 +791,18 @@ static const int NUM_GLOBAL_STEAM_STATISTICS = 66;
 extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
 
 #ifdef STEAMWORKS
-#include <steam/steam_api.h>
-#include "steam.hpp"
-extern CSteamLeaderboards* g_SteamLeaderboards;
-extern CSteamWorkshop* g_SteamWorkshop;
-extern CSteamStatistics* g_SteamStatistics;
+ #include <steam/steam_api.h>
+ #include "steam.hpp"
+ extern CSteamLeaderboards* g_SteamLeaderboards;
+ extern CSteamWorkshop* g_SteamWorkshop;
+ extern CSteamStatistics* g_SteamStatistics;
 #endif // STEAMWORKS
 
 #ifdef USE_EOS
-#include "eos.hpp"
-#endif
+ #include "eos.hpp"
+#endif // USE_EOS
+
+#ifndef NINTENDO
+ #define getSizeOfText(A, B, C, D) TTF_SizeUTF8(A, B, C, D)
+ #define getHeightOfFont(A) TTF_FontHeight(A)
+#endif // NINTENDO

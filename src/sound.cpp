@@ -312,7 +312,7 @@ void sound_update()
 struct OPENAL_BUFFER {
 	ALuint id;
 	bool stream;
-	char oggfile[256];
+	char oggfile[64];
 };
 struct OPENAL_SOUND {
 	ALuint id;
@@ -321,7 +321,7 @@ struct OPENAL_SOUND {
 	OPENAL_BUFFER *buffer;
 	bool active;
 	char* oggdata;
-	int oggdata_lenght;
+	int oggdata_length;
 	int ogg_seekoffset;
 	OggVorbis_File oggStream;
 	vorbis_info* vorbisInfo;
@@ -345,7 +345,7 @@ static size_t openal_oggread(void* ptr, size_t size, size_t nmemb, void* datasou
 	OPENAL_SOUND* self = (OPENAL_SOUND*)datasource;
 
 	int bytes = size*nmemb;
-	int remain = self->oggdata_lenght - self->ogg_seekoffset - bytes;
+	int remain = self->oggdata_length - self->ogg_seekoffset - bytes;
 	if(remain < 0) bytes += remain;
 
 	memcpy(ptr, self->oggdata + self->ogg_seekoffset, bytes);
@@ -363,7 +363,7 @@ static int openal_oggseek(void* datasource, ogg_int64_t offset, int whence) {
 		seek_offset = self->ogg_seekoffset + offset;
 		break;
 	case SEEK_END:
-		seek_offset = self->oggdata_lenght + offset;
+		seek_offset = self->oggdata_length + offset;
 		break;
 	case SEEK_SET:
 		seek_offset = offset;
@@ -371,7 +371,7 @@ static int openal_oggseek(void* datasource, ogg_int64_t offset, int whence) {
 	/*default:
 		exit(1);*/
 	}
-	if(seek_offset > self->oggdata_lenght) return -1;
+	if(seek_offset > self->oggdata_length) return -1;
 
 	self->ogg_seekoffset = seek_offset;
 	return 0;
@@ -387,7 +387,7 @@ static long int openal_oggtell(void* datasource) {
 }
 
 static int openal_oggopen(OPENAL_SOUND *self, const char* oggfile) {
-	FILE *f = openDataFile(oggfile, "rb");
+	File *f = openDataFile(oggfile, "rb");
 	int err;
 
 	ov_callbacks oggcb = {openal_oggread, openal_oggseek, openal_oggclose, openal_oggtell};
@@ -397,13 +397,11 @@ static int openal_oggopen(OPENAL_SOUND *self, const char* oggfile) {
 	}
 
 	self->ogg_seekoffset = 0;
-	fseek(f, 0, SEEK_END);
-	self->oggdata_lenght = ftell(f);
-	fseek(f, 0, SEEK_SET);
+	self->oggdata_length = f->size();
 
-	self->oggdata = (char*)malloc(self->oggdata_lenght);
-	fread(self->oggdata, sizeof(char), self->oggdata_lenght, f);
-	fclose(f);
+	self->oggdata = (char*)malloc(self->oggdata_length);
+	f->read(self->oggdata, sizeof(char), self->oggdata_length);
+	FileIO::close(f);
 
 	if(ov_open_callbacks(self, &self->oggStream, 0, 0, oggcb)) {
 		printf("Issues with OGG callbacks\n");
@@ -644,6 +642,17 @@ int initOPENAL()
 
 	initialized = 1;
 
+#ifdef NINTENDO
+	//TODO: Do we also want this on other platforms?
+	// print source limit
+	ALCint size = -1;
+	alcGetIntegerv(openal_device, ALC_MONO_SOURCES, 1, &size);
+	printlog("openAL: max mono sources: %d", size);
+	size = -1;
+	alcGetIntegerv(openal_device, ALC_STEREO_SOURCES, 1, &size);
+	printlog("openAL: max stereo sources: %d", size);
+#endif // NINTENDO
+
 	return 1;
 }
 
@@ -847,18 +856,56 @@ void OPENAL_RemoveChannelGroup(OPENAL_SOUND *channel, OPENAL_CHANNELGROUP *group
 	group->num--;
 }
 
+#ifdef NINTENDO
+static size_t openal_file_oggread(void* ptr, size_t size, size_t nmemb, void* datasource) {
+	File* file = (File*)datasource;
+	return file->read(ptr, size, nmemb);
+}
+
+static int openal_file_oggseek(void* datasource, ogg_int64_t offset, int whence) {
+	File* file = (File*)datasource;
+	switch (whence) {
+	case SEEK_CUR:
+		return file->seek((ptrdiff_t)offset, File::SeekMode::ADD);
+	case SEEK_END:
+		return file->seek((ptrdiff_t)offset, File::SeekMode::SETEND);
+	case SEEK_SET:
+		return file->seek((ptrdiff_t)offset, File::SeekMode::SET);
+	}
+	return 0;
+}
+
+static int openal_file_oggclose(void* datasource) {
+	return 0;
+}
+
+static long int openal_file_oggtell(void* datasource) {
+	File* file = (File*)datasource;
+	return file->tell();
+}
+#endif // ifdef NINTENDO
+
 int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 	*buffer = (OPENAL_BUFFER*)malloc(sizeof(OPENAL_BUFFER));
-	strcpy((*buffer)->oggfile, name);	// for debugging purpose
+	strncpy((*buffer)->oggfile, name, 64);	// for debugging purpose
 	(*buffer)->stream = false;
-	FILE *f = openDataFile(name, "rb");
+	File *f = openDataFile(name, "rb");
 	if(!f) {
 		printlog("Error loading sound %s\n", name);
 		return 0;
 	}
+
+#ifdef NINTENDO
+	ov_callbacks oggcb = { openal_file_oggread, openal_file_oggseek, openal_file_oggclose, openal_file_oggtell };
+#endif
+
 	vorbis_info * pInfo;
 	OggVorbis_File oggFile;
+#ifdef NINTENDO
+	ov_open_callbacks(f, &oggFile, NULL, 0, oggcb);
+#else
 	ov_open(f, &oggFile, NULL, 0);
+#endif
 	pInfo = ov_info(&oggFile, -1);
 
 	int channels = pInfo->channels;
@@ -901,6 +948,7 @@ int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 	if(data2!=data)
 		free(data2);
 	free(data);
+	FileIO::close(f);
 	return 1;
 }
 

@@ -279,8 +279,8 @@ void updateAppraisalItemBox()
 			pos.y = 16;
 		}
 		int w1, w2;
-		TTF_SizeUTF8(ttf12, language[340], &w1, NULL);
-		TTF_SizeUTF8(ttf12, item->getName(), &w2, NULL);
+		getSizeOfText(ttf12, language[340], &w1, NULL);
+		getSizeOfText(ttf12, item->getName(), &w2, NULL);
 		w2 += 48;
 		pos.w = std::max(w1, w2) + 8;
 		pos.h = 68;
@@ -1638,14 +1638,14 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 inline void drawOptionStoreInChest(int x, int y)
 {
 	int width = 0;
-	TTF_SizeUTF8(ttf12, language[344], &width, nullptr);
+	getSizeOfText(ttf12, language[344], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[344]);
 }
 
 inline void drawOptionSell(int x, int y)
 {
 	int width = 0;
-	TTF_SizeUTF8(ttf12, language[345], &width, nullptr);
+	getSizeOfText(ttf12, language[345], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[345]);
 }
 
@@ -1658,28 +1658,28 @@ inline void drawOptionUse(const Item& item, int x, int y)
 inline void drawOptionUnwield(int x, int y)
 {
 	int width = 0;
-	TTF_SizeUTF8(ttf12, language[323], &width, nullptr);
+	getSizeOfText(ttf12, language[323], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[323]);
 }
 
 inline void drawOptionWield(int x, int y)
 {
 	int width = 0;
-	TTF_SizeUTF8(ttf12, language[324], &width, nullptr);
+	getSizeOfText(ttf12, language[324], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[324]);
 }
 
 inline void drawOptionAppraise(int x, int y)
 {
 	int width = 0;
-	TTF_SizeUTF8(ttf12, language[1161], &width, nullptr);
+	getSizeOfText(ttf12, language[1161], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1161]);
 }
 
 inline void drawOptionDrop(int x, int y)
 {
 	int width = 0;
-	TTF_SizeUTF8(ttf12, language[1162], &width, nullptr);
+	getSizeOfText(ttf12, language[1162], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1162]);
 }
 
@@ -1762,12 +1762,12 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 		{
 			if ( item.type == TOOL_ALEMBIC )
 			{
-				TTF_SizeUTF8(ttf12, language[3341], &width, nullptr);
+				getSizeOfText(ttf12, language[3341], &width, nullptr);
 				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3341]);
 			}
 			else if ( item.type == TOOL_TINKERING_KIT )
 			{
-				TTF_SizeUTF8(ttf12, language[3670], &width, nullptr);
+				getSizeOfText(ttf12, language[3670], &width, nullptr);
 				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3670]);
 			}
 			else if (itemIsEquipped(&item, clientnum))
@@ -1817,7 +1817,7 @@ inline void drawItemMenuOptionAutomaton(const Item& item, int x, int y, int heig
 			}
 			else
 			{
-				TTF_SizeUTF8(ttf12, language[3487], &width, nullptr);
+				getSizeOfText(ttf12, language[3487], &width, nullptr);
 				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3487]);
 			}
 		}
@@ -1838,13 +1838,13 @@ inline void drawItemMenuOptionAutomaton(const Item& item, int x, int y, int heig
 	//Option 1.
 	if ( item.type == TOOL_METAL_SCRAP || item.type == TOOL_MAGIC_SCRAP )
 	{
-		TTF_SizeUTF8(ttf12, language[1881], &width, nullptr);
+		getSizeOfText(ttf12, language[1881], &width, nullptr);
 		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1881]);
 		y += height;
 	}
 	else if ( itemCategory(&item) != FOOD )
 	{
-		TTF_SizeUTF8(ttf12, language[3487], &width, nullptr);
+		getSizeOfText(ttf12, language[3487], &width, nullptr);
 		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3487]);
 		y += height;
 	}

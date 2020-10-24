@@ -15,7 +15,9 @@
 #include "hash.hpp"
 #include "entity.hpp"
 #include "player.hpp"
+#ifndef NINTENDO
 #include "editor.hpp"
+#endif
 #include "items.hpp"
 
 /*-------------------------------------------------------------------------------
@@ -1561,7 +1563,15 @@ void drawEntities2D(long camx, long camy)
 	}
 
 	// draw hover text for entities over the top of sprites.
-	for ( node = map.entities->first; node != nullptr && (openwindow == 0 && savewindow == 0); node = node->next )
+	for ( node = map.entities->first;
+		  node != nullptr
+#ifndef NINTENDO
+			&& (openwindow == 0
+			&& savewindow == 0)
+#endif
+		  ;
+		  node = node->next
+		)
 	{
 		entity = (Entity*)node->element;
 		if ( entity->flags[INVISIBLE] )
@@ -1974,8 +1984,13 @@ void drawEntities2D(long camx, long camy)
 
 					}
 				}
-				else if ( (omousex / TEXTURESIZE) * 32 == pos.x && (omousey / TEXTURESIZE) * 32 == pos.y &&
-					selectedEntity == NULL && hovertext )
+				else if ( (omousex / TEXTURESIZE) * 32 == pos.x
+						&& (omousey / TEXTURESIZE) * 32 == pos.y
+						&& selectedEntity == NULL
+#ifndef NINTENDO
+						&& hovertext
+#endif
+						)
 				{
 					// handle mouseover sprite name tooltip in main editor screen
 					int padx = pos.x + 10;
@@ -2213,6 +2228,21 @@ SDL_Rect errorRect = { 0 };
 
 SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool outline, const char* str )
 {
+#ifdef NINTENDO
+	if (font == ttf8)
+	{
+		printTextFormattedColor(font8x8_bmp, x, y, color, const_cast<char*>(str));
+	}
+	if (font == ttf12)
+	{
+		printTextFormattedColor(font12x12_bmp, x, y, color, const_cast<char*>(str));
+	}
+	if (font == ttf16)
+	{
+		printTextFormattedColor(font16x16_bmp, x, y, color, const_cast<char*>(str));
+	}
+	return errorRect;
+#endif
 	SDL_Rect pos = { x, y, 0, 0 };
 	SDL_Surface* surf;
 	int c;
@@ -2232,7 +2262,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 			int offY = 0;
 			if ( newStr[c] == '\n' )
 			{
-				offY = TTF_FontHeight(font);
+				offY = getHeightOfFont(font);
 			}
 			newStr[c] = 0;
 			ttfPrintTextColor(font, x, y + offY, color, outline, (char*)&newStr[c + 1]);
@@ -2275,7 +2305,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 		else
 		{
 			int w, h;
-			TTF_SizeUTF8(font, newStr, &w, &h);
+			getSizeOfText(font, newStr, &w, &h);
 			if ( font == ttf8 )
 			{
 				surf = SDL_CreateRGBSurface(0, w + 2, h + 2,

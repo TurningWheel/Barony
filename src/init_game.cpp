@@ -52,7 +52,7 @@ int initGame()
 {
 	int c, x;
 	char name[32];
-	FILE* fp;
+	File* fp;
 
 	// setup some lists
 	booksRead.first = NULL;
@@ -82,7 +82,7 @@ int initGame()
 	// print a loading message
 	drawClearBuffers();
 	int w, h;
-	TTF_SizeUTF8(ttf16, _LOADSTR1, &w, &h);
+	getSizeOfText(ttf16, _LOADSTR1, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR1);
 
 	GO_SwapBuffers(screen);
@@ -122,14 +122,14 @@ int initGame()
 
 		// read file
 		int line;
-		for ( line = 1; feof(fp) == 0; line++ )
+		for ( line = 1; !fp->eof(); line++ )
 		{
 			char data[256];
 			int limb = 20;
 			int dummy;
 
 			// read line from file
-			fgets( data, 256, fp );
+			fp->gets( data, 256 );
 
 			// skip blank and comment lines
 			if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
@@ -151,12 +151,12 @@ int initGame()
 		}
 
 		// close file
-		fclose(fp);
+		FileIO::close(fp);
 	}
 
 	// print a loading message
 	drawClearBuffers();
-	TTF_SizeUTF8(ttf16, _LOADSTR2, &w, &h);
+	getSizeOfText(ttf16, _LOADSTR2, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR2);
 
 	GO_SwapBuffers(screen);
@@ -168,7 +168,7 @@ int initGame()
 	std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
 	itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
 	fp = openDataFile(itemsDirectory.c_str(), "r");
-	for ( c = 0; !feof(fp); ++c )
+	for ( c = 0; !fp->eof(); ++c )
 	{
 		if ( c > SPELLBOOK_DETECT_FOOD )
 		{
@@ -187,26 +187,10 @@ int initGame()
 			items[c].name_identified = language[1545 + c * 2];
 			items[c].name_unidentified = language[1546 + c * 2];
 		}
-		fscanf(fp, "%d", &items[c].index);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-		fscanf(fp, "%d", &items[c].fpindex);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-		fscanf(fp, "%d", &items[c].variations);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
+		items[c].index = fp->geti();
+		items[c].fpindex = fp->geti();
+		items[c].variations = fp->geti();
+		fp->gets2(name, 32);
 		if ( !strcmp(name, "WEAPON") )
 		{
 			items[c].category = WEAPON;
@@ -263,16 +247,8 @@ int initGame()
 		{
 			items[c].category = GEM;
 		}
-		fscanf(fp, "%d", &items[c].weight);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-		fscanf(fp, "%d", &items[c].value);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
+		items[c].weight = fp->geti();
+		items[c].value = fp->geti();
 		items[c].images.first = NULL;
 		items[c].images.last = NULL;
 		while ( 1 )
@@ -289,9 +265,9 @@ int initGame()
 
 			x = 0;
 			bool fileend = false;
-			while ( (string->data[x] = fgetc(fp)) != '\n' )
+			while ( (string->data[x] = fp->getc()) != '\n' )
 			{
-				if ( feof(fp) )
+				if ( fp->eof() )
 				{
 					fileend = true;
 					break;
@@ -335,26 +311,38 @@ int initGame()
 			*surface = loadImage(imgFileChar);
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	createBooks();
 	setupSpells();
 
+#ifdef NINTENDO
+	std::string maleNames, femaleNames;
+	maleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_MALE_FILE;
+	femaleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_FEMALE_FILE;
+	randomPlayerNamesMale = getLinesFromDataFile(maleNames);
+	randomPlayerNamesFemale = getLinesFromDataFile(femaleNames);
+#else // NINTENDO
 	randomPlayerNamesMale = getLinesFromDataFile(PLAYERNAMES_MALE_FILE);
 	randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
+#endif // !NINTENDO
+
 	loadItemLists();
 
 #if defined(USE_EOS) || defined(STEAMWORKS)
 #else
+ #ifdef NINTENDO
+	#error "No DLC support on SWITCH yet :(" //TODO: Resolve this.
+ #else // NINTENDO
 	if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
 	{
 		std::string serial = PHYSFS_getRealDir("mythsandoutcasts.key");
 		serial.append(PHYSFS_getDirSeparator()).append("mythsandoutcasts.key");
 		// open the serial file
-		FILE* fp = nullptr;
-		if ( (fp = fopen(serial.c_str(), "rb")) != NULL )
+		File* fp = nullptr;
+		if ( (fp = FileIO::open(serial.c_str(), "rb")) != NULL )
 		{
 			char buf[64];
-			size_t len = fread(&buf, sizeof(char), 32, fp);
+			size_t len = fp->read(&buf, sizeof(char), 32);
 			buf[len] = '\0';
 			serial = buf;
 			// compute hash
@@ -368,19 +356,19 @@ int initGame()
 			{
 				printlog("[LICENSE]: DLC license key invalid.");
 			}
-			fclose(fp);
+			FileIO::close(fp);
 		}
 	}
-	if ( PHYSFS_getRealDir("legendsandpariahs.key") != NULL )
+	if ( PHYSFS_getRealDir("legendsandpariahs.key") != NULL ) //TODO: NX PORT: Update for the Switch?
 	{
 		std::string serial = PHYSFS_getRealDir("legendsandpariahs.key");
 		serial.append(PHYSFS_getDirSeparator()).append("legendsandpariahs.key");
 		// open the serial file
-		FILE* fp = nullptr;
-		if ( (fp = fopen(serial.c_str(), "rb")) != NULL )
+		File* fp = nullptr;
+		if ( (fp = FileIO::open(serial.c_str(), "rb")) != NULL )
 		{
 			char buf[64];
-			size_t len = fread(&buf, sizeof(char), 32, fp);
+			size_t len = fp->read(&buf, sizeof(char), 32);
 			buf[len] = '\0';
 			serial = buf;
 			// compute hash
@@ -394,14 +382,15 @@ int initGame()
 			{
 				printlog("[LICENSE]: DLC license key invalid.");
 			}
-			fclose(fp);
+			FileIO::close(fp);
 		}
 	}
+ #endif // !NINTENDO
 #endif
 
 	// print a loading message
 	drawClearBuffers();
-	TTF_SizeUTF8(ttf16, _LOADSTR3, &w, &h);
+	getSizeOfText(ttf16, _LOADSTR3, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR3);
 
 	GO_SwapBuffers(screen);
@@ -630,7 +619,7 @@ int fmod_result;
 
 	// print a loading message
 	drawClearBuffers();
-	TTF_SizeUTF8(ttf16, _LOADSTR4, &w, &h);
+	getSizeOfText(ttf16, _LOADSTR4, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR4);
 
 	GO_SwapBuffers(screen);

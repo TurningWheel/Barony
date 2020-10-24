@@ -16,6 +16,10 @@
 #include "items.hpp"
 #include "shops.hpp"
 
+#ifdef NINTENDO
+#include "nintendo/baronynx.hpp"
+#endif
+
 Player** players = nullptr;
 
 Entity* selectedEntity = nullptr;
@@ -813,7 +817,11 @@ bool GameController::handleItemContextMenu(const Item& item)
 
 void initGameControllers()
 {
+#ifdef NINTENDO
+	SDL_GameControllerAddMappingsFromFile(GAME_CONTROLLER_DB_FILEPATH);
+#else
 	SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+#endif
 
 	int c = 0;
 	bool found = false; //TODO: Bugger this and implement multi-controller support.

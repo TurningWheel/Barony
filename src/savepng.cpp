@@ -4,6 +4,8 @@
  * This code is free software, available under zlib/libpng license.
  * http://www.libpng.org/pub/png/src/libpng-LICENSE.txt
  */
+#include "Config.hpp"
+#ifndef NINTENDO
 #include <SDL.h>
 #include <stdlib.h>
 #include "png.h"
@@ -197,3 +199,5 @@ int SDL_SavePNG_RW(SDL_Surface* surface, SDL_RWops* dst, int freedst)
 	}
 	return (SUCCESS);
 }
+
+#endif

@@ -181,31 +181,15 @@ int loadItems()
 	char name[32];
 	// load item types
 	printlog("loading items...\n");
-	FILE* const fp = openDataFile("items/items.txt", "r");
-	for ( c = 0; !feof(fp); c++ )
+	File* const fp = openDataFile("items/items.txt", "r");
+	for ( c = 0; !fp->eof(); c++ )
 	{
 		items[c].name_identified = language[1545 + c * 2];
 		items[c].name_unidentified = language[1546 + c * 2];
-		fscanf(fp, "%d", &items[c].index);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-		fscanf(fp, "%d", &items[c].fpindex);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-		fscanf(fp, "%d", &items[c].variations);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
+		items[c].index = fp->geti();
+		items[c].fpindex = fp->geti();
+		items[c].variations = fp->geti();
+		fp->gets(name, sizeof(name));
 		if ( !strcmp(name, "WEAPON") )
 		{
 			items[c].category = WEAPON;
@@ -258,16 +242,8 @@ int loadItems()
 		{
 			items[c].category = GEM;
 		}
-		fscanf(fp, "%d", &items[c].weight);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
-		fscanf(fp, "%d", &items[c].value);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
+		items[c].weight = fp->geti();
+		items[c].value = fp->geti();
 		items[c].images.first = nullptr;
 		items[c].images.last = nullptr;
 		while ( true )
@@ -284,9 +260,9 @@ int loadItems()
 
 			x = 0;
 			bool fileend = false;
-			while ( (string->data[x] = fgetc(fp)) != '\n' )
+			while ( (string->data[x] = fp->getc()) != '\n' )
 			{
-				if ( feof(fp) )
+				if ( fp->eof() )
 				{
 					fileend = true;
 					break;
@@ -318,6 +294,6 @@ int loadItems()
 			*surface = loadImage(string->data);
 		}
 	}
-	fclose(fp);
+	FileIO::close(fp);
 	return 1;
 }

@@ -26,6 +26,16 @@ PFNGLENABLEVERTEXATTRIBARRAYPROC SDL_glEnableVertexAttribArray;
 PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
 #endif
 
+void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
+{
+	GLdouble fW, fH;
+
+	fH = tan(fovY / 360 * PI) * zNear;
+	fW = fH * aspect;
+
+	glFrustum(-fW, fW, -fH, fH, zNear, zFar);
+}
+
 /*-------------------------------------------------------------------------------
 
 	getLightForEntity
@@ -109,7 +119,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
 	if ( !entity->flags[OVERDRAW] )
 	{
@@ -451,7 +461,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
 	if (!entity->flags[OVERDRAW])
 	{
@@ -641,7 +651,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable(GL_DEPTH_TEST);
 	if ( !entity->flags[OVERDRAW] )
 	{
@@ -849,7 +859,7 @@ void glDrawWorld(view_t* camera, int mode)
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
 		glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-		gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 16);
+		perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 16);
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 		GLfloat rotz = 0; // get z rotation
@@ -901,7 +911,7 @@ void glDrawWorld(view_t* camera, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	GLfloat rotz = 0; // get z rotation
@@ -1406,45 +1416,6 @@ void glDrawWorld(view_t* camera, int mode)
 	glDisable(GL_SCISSOR_TEST);
 	glScissor(0, 0, xres, yres);
 }
-
-/*GLuint create_shader(const char* filename, GLenum type)
-{
-	FILE* input = fopen(filename, "rb");
-	if( !input ) {
-		printlog("Couldn't open shader file \"%s\"", filename);
-		return 0;
-		//TODO: Error.
-	}
-	fclose(input);
-	const GLchar* source=NULL;
-	if (source == NULL) {
-		printlog("Error opening %s: ", filename); perror("");
-		return 0;
-	}
-	GLuint res = glCreateShader(type);
-	const GLchar* sources[2] = {
-#ifdef GL_ES_VERSION_2_0
-	"#version 100\n"
-	"#define GLES2\n",
-#else
-	"#version 120\n",
-#endif
-	source };
-	glShaderSource(res, 2, sources, NULL);
-	free((void*)source);
-
-	glCompileShader(res);
-	GLint compile_ok = GL_FALSE;
-	glGetShaderiv(res, GL_COMPILE_STATUS, &compile_ok);
-	if (compile_ok == GL_FALSE) {
-		printlog("%s:", filename);
-		glDeleteShader(res);
-		return 0;
-	}
-
-	return res;
-}
-*/
 
 static int dirty = 1;
 static int oldx = 0, oldy = 0;

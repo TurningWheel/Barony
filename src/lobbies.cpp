@@ -502,7 +502,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 			}
 
 			flagsBox.w = strlen(language[2919]) * 10 + 4;
-			flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
+			flagsBox.h = 4 + (getHeightOfFont(ttf12) * (std::max(2, numSvFlags + 2)));
 			flagsBox.x = mousex + 8;
 			flagsBox.y = mousey + 8;
 			if ( serverNumModsLoaded > 0 )
@@ -524,7 +524,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 				{
 					if ( lobbySvFlags & power(2, c) )
 					{
-						y += TTF_FontHeight(ttf12);
+						y += getHeightOfFont(ttf12);
 						strcat(flagsBoxText, "\n");
 						char flagStringBuffer[256] = "";
 						if ( c < 5 )

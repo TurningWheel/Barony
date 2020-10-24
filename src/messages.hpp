@@ -26,7 +26,7 @@
  * Currently calculated as the maximum number of messages from the top of the screen to the status panel.
  */
 #define MESSAGE_FONT ttf16
-#define MESSAGE_FONT_SIZE TTF_FontHeight(MESSAGE_FONT)
+#define MESSAGE_FONT_SIZE getHeightOfFont(MESSAGE_FONT)
 #define MESSAGE_MAX_TOTAL_LINES ((yres - (status_bmp->h * uiscale_chatlog)) / MESSAGE_FONT_SIZE)
 //Number of pixels from the left edge of the screen the messages are.
 #define MESSAGE_X_OFFSET 5
