@@ -3304,10 +3304,16 @@ int main(int argc, char** argv)
 		char binarypath[buffsize];
 		int result = _NSGetExecutablePath(binarypath, &buffsize);
 #elif defined(BSD)
+#if defined(__FreeBSD__)
 		int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
 		size_t buffsize = PATH_MAX;
 		char binarypath[buffsize];
 		int result = sysctl(mib, 4, binarypath, &buffsize, NULL, 0);
+#elif defined(__NetBSD__)
+		constexpr size_t buffsize = PATH_MAX;
+		char binarypath[buffsize];
+		int result = (readlink("/proc/curproc/exe", binarypath, buffsize) > 0 ? 0 : -1);
+#endif
 #elif defined(HAIKU)
 		size_t buffsize = PATH_MAX;
 		char binarypath[buffsize];
