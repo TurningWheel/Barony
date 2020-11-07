@@ -142,7 +142,7 @@ if( NOT WIN32 )
   else()
     set (Apple 0)
     set (Linux 1) #TODO: Should not assume this? What if BSD/DOS/whatever-have-you?
-    if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD" OR ${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
+    if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|NetBSD|DragonFly")
        set(Bsd 1)
     endif()
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
@@ -398,7 +398,7 @@ if (GAME_ENABLED)
     if (APPLE)
       target_link_libraries(barony ${GLUT_LIBRARIES} ${PROJECT_SOURCE_DIR}/libpng16.16.dylib) #Wait...what? if(APPLE) in if(WIN32)? What was I thinking back then, haha.
     endif()
-    if (${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
+    if (${CMAKE_SYSTEM_NAME} MATCHES "BSD|DragonFly" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
       # For backtrace
       find_path(EXECINFO_INC NAMES execinfo.h)
       find_library(EXECINFO_LIB NAMES execinfo)
