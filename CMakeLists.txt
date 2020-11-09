@@ -142,7 +142,7 @@ if( NOT WIN32 )
   else()
     set (Apple 0)
     set (Linux 1) #TODO: Should not assume this? What if BSD/DOS/whatever-have-you?
-    if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|NetBSD|DragonFly")
+    if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|NetBSD|DragonFly") # OpenBSD is purposely discarded at it lacks for now current exe path retrieval feature
        set(Bsd 1)
     endif()
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
