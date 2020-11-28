@@ -1,8 +1,3 @@
-if( WIN32 )
-	list(APPEND GAME_SOURCES
-		"${CMAKE_CURRENT_SOURCE_DIR}/wingameicon.o"
-	)
-endif()
 list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/init.cpp"
@@ -109,11 +104,6 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/lobbies.cpp"
 )
 
-if( WIN32 )
-	list(APPEND EDITOR_SOURCES
-		"${CMAKE_CURRENT_SOURCE_DIR}/wineditoricon.o"
-	)
-endif()
 list(APPEND EDITOR_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/init.cpp"
