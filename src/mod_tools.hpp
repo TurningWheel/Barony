@@ -1070,17 +1070,25 @@ public:
 		outputPath.append(fileName.c_str());
 
 
-		FILE* fp = fopen(outputPath.c_str(), "wb");
+		File* fp = FileIO::open(outputPath.c_str(), "wb");
 		if ( !fp )
 		{
 			return;
 		}
 		char buf[65536];
-		rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
-		rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		buf[count] = '\0';
+		rapidjson::StringStream os(buf);
+		rapidjson::PrettyWriter<rapidjson::StringStream> writer(os);
 		d.Accept(writer);
+		for (int c = 0;;++c) {
+			if (buf[c] == '\0') {
+				break;
+			}
+			fp->write(&(buf[c]), sizeof(char), 1);
+		}
 
-		fclose(fp);
+		FileIO::close(fp);
 	}
 
 	StatEntry* readFromFile(std::string monsterFileName)
@@ -1096,15 +1104,17 @@ public:
 			std::string inputPath = PHYSFS_getRealDir(filePath.c_str());
 			inputPath.append(filePath);
 
-			FILE* fp = fopen(inputPath.c_str(), "rb");
+			File* fp = FileIO::open(inputPath.c_str(), "rb");
 			if ( !fp )
 			{
 				printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 				return nullptr;
 			}
 			char buf[65536];
-			rapidjson::FileReadStream is(fp, buf, sizeof(buf));
-			fclose(fp);
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
 
 			rapidjson::Document d;
 			d.ParseStream(is);
@@ -1391,15 +1401,17 @@ public:
 			std::string inputPath = PHYSFS_getRealDir("/data/monstercurve.json");
 			inputPath.append("/data/monstercurve.json");
 
-			FILE* fp = fopen(inputPath.c_str(), "rb");
+			File* fp = FileIO::open(inputPath.c_str(), "rb");
 			if ( !fp )
 			{
 				printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 				return;
 			}
 			char buf[65536];
-			rapidjson::FileReadStream is(fp, buf, sizeof(buf));
-			fclose(fp);
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
 
 			rapidjson::Document d;
 			d.ParseStream(is);
@@ -1795,17 +1807,18 @@ public:
 		std::string fileName = "data/monstercurve_export" + std::to_string(filenum) + ".json";
 		outputPath.append(fileName.c_str());
 
-		FILE* fp = fopen(outputPath.c_str(), "wb");
+		File* fp = FileIO::open(outputPath.c_str(), "wb");
 		if ( !fp )
 		{
 			return;
 		}
 		char buf[65536];
-		rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
-		rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+		rapidjson::StringStream os(buf);
+		rapidjson::PrettyWriter<rapidjson::StringStream> writer(os);
 		d.Accept(writer);
+		fp->write(buf, sizeof(char), os.Tell());
 
-		fclose(fp);
+		FileIO::close(fp);
 	}
 };
 extern MonsterCurveCustomManager monsterCurveCustomManager;
@@ -2005,17 +2018,18 @@ public:
 		std::string fileName = "data/gameplaymodifiers_export" + std::to_string(filenum) + ".json";
 		outputPath.append(fileName.c_str());
 
-		FILE* fp = fopen(outputPath.c_str(), "wb");
+		File* fp = FileIO::open(outputPath.c_str(), "wb");
 		if ( !fp )
 		{
 			return;
 		}
 		char buf[65536];
-		rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
-		rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+		rapidjson::StringStream os(buf);
+		rapidjson::PrettyWriter<rapidjson::StringStream> writer(os);
 		d.Accept(writer);
+		fp->write(buf, sizeof(char), os.Tell());
 
-		fclose(fp);
+		FileIO::close(fp);
 	}
 
 	void readFromFile()
@@ -2026,15 +2040,17 @@ public:
 			std::string inputPath = PHYSFS_getRealDir("/data/gameplaymodifiers.json");
 			inputPath.append("/data/gameplaymodifiers.json");
 
-			FILE* fp = fopen(inputPath.c_str(), "rb");
+			File* fp = FileIO::open(inputPath.c_str(), "rb");
 			if ( !fp )
 			{
 				printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 				return;
 			}
 			char buf[65536];
-			rapidjson::FileReadStream is(fp, buf, sizeof(buf));
-			fclose(fp);
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
 
 			rapidjson::Document d;
 			d.ParseStream(is);
@@ -2558,17 +2574,18 @@ public:
 			std::string fileName = "data/tutorial_scores.json";
 			outputPath.append(fileName.c_str());
 
-			FILE* fp = fopen(outputPath.c_str(), "wb");
+			File* fp = FileIO::open(outputPath.c_str(), "wb");
 			if ( !fp )
 			{
 				return;
 			}
 			char buf[65536];
-			rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
-			rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+			rapidjson::StringStream os(buf);
+			rapidjson::PrettyWriter<rapidjson::StringStream> writer(os);
 			d.Accept(writer);
+			fp->write(buf, sizeof(char), os.Tell());
 
-			fclose(fp);
+			FileIO::close(fp);
 		}
 	} Tutorial;
 };

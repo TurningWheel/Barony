@@ -174,15 +174,17 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 		std::string inputPath = PHYSFS_getRealDir("/data/tutorial_strings.json");
 		inputPath.append("/data/tutorial_strings.json");
 
-		FILE* fp = fopen(inputPath.c_str(), "rb");
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
 		if ( !fp )
 		{
 			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 			return;
 		}
 		char buf[65536];
-		rapidjson::FileReadStream is(fp, buf, sizeof(buf));
-		fclose(fp);
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
 
 		rapidjson::Document d;
 		d.ParseStream(is);
@@ -215,15 +217,17 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 		std::string inputPath = PHYSFS_getRealDir("/data/tutorial_scores.json");
 		inputPath.append("/data/tutorial_scores.json");
 
-		FILE* fp = fopen(inputPath.c_str(), "rb");
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
 		if ( !fp )
 		{
 			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 			return;
 		}
 		char buf[65536];
-		rapidjson::FileReadStream is(fp, buf, sizeof(buf));
-		fclose(fp);
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
 
 		rapidjson::Document d;
 		d.ParseStream(is);
@@ -285,15 +289,17 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 	std::string inputPath = PHYSFS_getRealDir("/data/tutorial_scores.json");
 	inputPath.append("/data/tutorial_scores.json");
 
-	FILE* fp = fopen(inputPath.c_str(), "rb");
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
 	if ( !fp )
 	{
 		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 		return;
 	}
 	char buf[65536];
-	rapidjson::FileReadStream is(fp, buf, sizeof(buf));
-	fclose(fp);
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
 
 	rapidjson::Document d;
 	d.ParseStream(is);
