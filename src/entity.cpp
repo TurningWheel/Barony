@@ -9007,7 +9007,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 						}
 					}
-					else if ( playerhit == 0 || splitscreen )
+					else if ( playerhit == 0 || (splitscreen && playerhit > 0) )
 					{
 						if ( pose == MONSTER_POSE_GOLEM_SMASH || pose == PLAYER_POSE_GOLEM_SMASH )
 						{
