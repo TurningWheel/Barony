@@ -916,6 +916,10 @@ void gameLogic(void)
 						}
 						int ox = -1;
 						int oy = -1;
+						if ( light_l.first )
+						{
+							messagePlayer(0, "err");
+						}
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
 							ox = static_cast<int>(entity->x) >> 4;
@@ -935,6 +939,10 @@ void gameLogic(void)
 							}*/
 							(*entity->behavior)(entity);
 
+						}
+						if ( light_l.first )
+						{
+							messagePlayer(0, "err2");
 						}
 						if ( entitiesdeleted.first != nullptr )
 						{
@@ -3888,12 +3896,12 @@ int main(int argc, char** argv)
 							menucam.winy = 0;
 							menucam.winw = xres;
 							menucam.winh = yres;
-							light = lightSphere(menucam.x, menucam.y, 16, 64);
+							//light = lightSphere(menucam.x, menucam.y, 16, 64);
 							raycast(&menucam, REALCOLORS);
 							glDrawWorld(&menucam, REALCOLORS);
 							//drawFloors(&menucam);
 							drawEntities3D(&menucam, REALCOLORS);
-							list_RemoveNode(light->node);
+							//list_RemoveNode(light->node);
 						}
 
 						handleMainMenu(intro);

@@ -3648,7 +3648,7 @@ void actPlayer(Entity* my)
 
 	if ( PLAYER_TORCH && my->light == NULL )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, 50 + 15 * PLAYER_TORCH);
+		//my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, 50 + 15 * PLAYER_TORCH);
 	}
 
 	// server controls players primarily

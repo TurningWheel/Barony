@@ -1223,6 +1223,11 @@ void actMonster(Entity* my)
 		return;
 	}
 
+	if ( light_l.first )
+	{
+		messagePlayer(0, "err3");
+	}
+
 	// this is mostly a SERVER function.
 	// however, there is a small part for clients:
 	if ( multiplayer == CLIENT )
@@ -1530,6 +1535,10 @@ void actMonster(Entity* my)
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 		}
+		if ( light_l.first )
+		{
+			messagePlayer(0, "err3");
+		}
 		return;
 	}
 
@@ -1720,7 +1729,10 @@ void actMonster(Entity* my)
 		/*node = list_AddNodeLast(my->children); //ASSUMING THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node->element = myStats;
 		node->deconstructor = &defaultDeconstructor;*/
-
+		if ( light_l.first )
+		{
+			messagePlayer(0, "err3");
+		}
 		return;
 	}
 
@@ -2334,6 +2346,11 @@ void actMonster(Entity* my)
 		}
 	}
 
+	if ( light_l.first )
+	{
+		messagePlayer(0, "err4");
+	}
+
 	// hunger, regaining hp/mp, poison, etc.
 	if ( !intro )
 	{
@@ -2446,6 +2463,11 @@ void actMonster(Entity* my)
 			}
 		}
 
+		if ( light_l.first )
+		{
+			messagePlayer(0, "err5");
+		}
+
 		// broadcast my player allies about my death
 		int playerFollower = MAXPLAYERS;
 		for (c = 0; c < MAXPLAYERS; c++)
@@ -2528,6 +2550,11 @@ void actMonster(Entity* my)
 				entity->behavior = &actGoldBag;
 				entity->skill[0] = myStats->GOLD; // amount
 			}
+		}
+
+		if ( light_l.first )
+		{
+			messagePlayer(0, "err3");
 		}
 
 		// die
@@ -2693,7 +2720,16 @@ void actMonster(Entity* my)
 			default:
 				break; //This should never be reached.
 		}
+		if ( light_l.first )
+		{
+			messagePlayer(0, "err8");
+		}
 		return;
+	}
+
+	if ( light_l.first )
+	{
+		messagePlayer(0, "err3");
 	}
 
 	if ( multiplayer != CLIENT )
@@ -2754,6 +2790,11 @@ void actMonster(Entity* my)
 			}
 		}
 #endif
+	}
+
+	if ( light_l.first )
+	{
+		messagePlayer(0, "err9");
 	}
 
 	// remove broken equipment
@@ -3211,6 +3252,10 @@ void actMonster(Entity* my)
 					my->z = -.25;
 				}
 				ghoulMoveBodyparts(my, myStats, 0);
+				if ( light_l.first )
+				{
+					messagePlayer(0, "err3");
+				}
 				return;
 			}
 		}
@@ -3413,6 +3458,10 @@ void actMonster(Entity* my)
 						if ( previousMonsterState != my->monsterState )
 						{
 							serverUpdateEntitySkill(my, 0);
+						}
+						if ( light_l.first )
+						{
+							messagePlayer(0, "err3");
 						}
 						return;
 					}
@@ -3655,6 +3704,10 @@ void actMonster(Entity* my)
 						{
 							serverUpdateEntitySkill(my, 0);
 						}
+						if ( light_l.first )
+						{
+							messagePlayer(0, "err3");
+						}
 						return;
 					}
 				}
@@ -3665,6 +3718,10 @@ void actMonster(Entity* my)
 					//my->monsterTargetX = my->monsterTarget.x;
 					//my->monsterTargetY = my->monsterTarget.y;
 					serverUpdateEntitySkill(my, 0); //Update monster state because it changed.
+					if ( light_l.first )
+					{
+						messagePlayer(0, "err3");
+					}
 					return;
 				}
 			}
@@ -3741,6 +3798,10 @@ void actMonster(Entity* my)
 									serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
 								}
 							}
+							if ( light_l.first )
+							{
+								messagePlayer(0, "err3");
+							}
 							return;
 						}
 					}
@@ -3769,6 +3830,10 @@ void actMonster(Entity* my)
 									{
 										serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
 									}
+								}
+								if ( light_l.first )
+								{
+									messagePlayer(0, "err3");
 								}
 								return;
 							}
@@ -4001,6 +4066,10 @@ void actMonster(Entity* my)
 					my->monsterReleaseAttackTarget(true);
 					my->monsterState = MONSTER_STATE_WAIT;
 					serverUpdateEntitySkill(my, 0); //Update state.
+				}
+				if ( light_l.first )
+				{
+					messagePlayer(0, "err3");
 				}
 				return;
 			}
@@ -4713,6 +4782,10 @@ timeToGoAgain:
 				{
 					serverUpdateEntitySkill(my, 0);
 				}
+				if ( light_l.first )
+				{
+					messagePlayer(0, "err3");
+				}
 				return;
 			}
 
@@ -5195,6 +5268,10 @@ timeToGoAgain:
 							{
 								serverUpdateEntitySkill(my, 0);
 							}
+							if ( light_l.first )
+							{
+								messagePlayer(0, "err3");
+							}
 							return;
 						}
 					}
@@ -5247,6 +5324,10 @@ timeToGoAgain:
 								if ( previousMonsterState != my->monsterState )
 								{
 									serverUpdateEntitySkill(my, 0);
+								}
+								if ( light_l.first )
+								{
+									messagePlayer(0, "err3");
 								}
 								return;
 							}
