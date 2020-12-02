@@ -4375,7 +4375,7 @@ void actParticleSapCenter(Entity* my)
 			{
 				spawnMagicEffectParticles(my->skill[8], my->skill[9], 0, my->skill[5]);
 				Entity* caster = uidToEntity(my->skill[7]);
-				if ( caster && caster->behavior == &actPlayer )
+				if ( caster && caster->behavior == &actPlayer && stats[caster->skill[2]] )
 				{
 					// kill old summons.
 					for ( node_t* node = stats[caster->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
@@ -4405,17 +4405,15 @@ void actParticleSapCenter(Entity* my)
 						if ( monsterStats )
 						{
 							int magicLevel = 1;
-							if ( stats[caster->skill[2]] )
-							{
-								magicLevel = std::min(7, 1 + (stats[caster->skill[2]]->playerSummonLVLHP >> 16) / 5);
-							}
+							magicLevel = std::min(7, 1 + (stats[caster->skill[2]]->playerSummonLVLHP >> 16) / 5);
+
 							monster->monsterAllySummonRank = magicLevel;
 							strcpy(monsterStats->name, "skeleton knight");
 							forceFollower(*caster, *monster);
 
 							monster->setEffect(EFF_STUNNED, true, 20, false);
 							bool spawnSecondAlly = false;
-							 
+							
 							if ( (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
 							{
 								spawnSecondAlly = true;

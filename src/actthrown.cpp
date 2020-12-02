@@ -600,6 +600,10 @@ void actThrown(Entity* my)
 	if ( processXYCollision && result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
 		item = newItemFromEntity(my);
+		if ( !item )
+		{
+			return;
+		}
 		if ( itemCategory(item) == THROWN 
 			&& (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
 		{

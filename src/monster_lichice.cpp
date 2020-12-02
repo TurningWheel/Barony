@@ -187,6 +187,11 @@ void initLichIce(Entity* my, Stat* myStats)
 
 void lichIceDie(Entity* my)
 {
+	if ( !my )
+	{
+		return;
+	}
+
 	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 20; c++ )

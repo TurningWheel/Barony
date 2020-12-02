@@ -183,6 +183,10 @@ void actSink(Entity* my)
 						}
 						case 2:
 						{
+							if ( !stats[i] )
+							{
+								break;
+							}
 							if ( stats[i]->type == AUTOMATON )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
@@ -228,6 +232,10 @@ void actSink(Entity* my)
 						}
 						case 3:
 						{
+							if ( !stats[i] )
+							{
+								break;
+							}
 							if ( stats[i]->type == AUTOMATON )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);

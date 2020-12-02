@@ -3783,7 +3783,7 @@ void item_ToolTinOpener(Item* item, int player)
 
 void item_ToolMirror(Item*& item, int player)
 {
-	if (players[player] == nullptr || players[player]->entity == nullptr)
+	if (players[player] == nullptr || players[player]->entity == nullptr || stats[player] == nullptr )
 	{
 		return;
 	}
@@ -3792,7 +3792,7 @@ void item_ToolMirror(Item*& item, int player)
 	{
 		messagePlayer(player, language[889]);
 	}
-	if ( players[player]->entity->isInvisible() || (stats[player] && stats[player]->type == VAMPIRE) )
+	if ( players[player]->entity->isInvisible() || (stats[player]->type == VAMPIRE) )
 	{
 		if ( player == clientnum )
 		{
@@ -3800,7 +3800,7 @@ void item_ToolMirror(Item*& item, int player)
 		}
 		return;
 	}
-	else if ( stats[player] && stats[player]->type == AUTOMATON )
+	else if ( stats[player]->type == AUTOMATON )
 	{
 		messagePlayer(player, language[3698]);
 	}
@@ -3911,8 +3911,6 @@ void item_ToolMirror(Item*& item, int player)
 
 void item_ToolBeartrap(Item*& item, int player)
 {
-	Entity* entity;
-
 	int u, v;
 	if ( players[player] && players[player]->entity )
 	{
@@ -3969,18 +3967,25 @@ void item_ToolBeartrap(Item*& item, int player)
 		{
 			messagePlayer(player, language[905]);
 		}
-		if (multiplayer != CLIENT)
+		if (multiplayer != CLIENT && players[player] )
 		{
 			playSoundEntity(players[player]->entity, 76, 64);
 		}
 		consumeItem(item, player);
 		return;
 	}
-	if ( multiplayer != CLIENT )
+	if ( multiplayer != CLIENT && players[player] )
 	{
 		playSoundEntity(players[player]->entity, 253, 64);
 	}
-	entity = newEntity(668, 1, map.entities, nullptr); //Beartrap entity.
+
+	if ( players[player] == nullptr || players[player]->entity == nullptr )
+	{
+		consumeItem(item, player);
+		return;
+	}
+
+	Entity* entity = newEntity(668, 1, map.entities, nullptr); //Beartrap entity.
 	entity->behavior = &actBeartrap;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;
@@ -4420,7 +4425,10 @@ void item_FoodTin(Item*& item, int player)
 	item->count = oldcount;
 
 	// eating sound
-	playSoundEntity(players[player]->entity, 50 + rand() % 2, 64);
+	if ( players[player] )
+	{
+		playSoundEntity(players[player]->entity, 50 + rand() % 2, 64);
+	}
 
 	serverUpdatePlayerGameplayStats(player, STATISTICS_YES_WE_CAN, 1);
 
@@ -4505,13 +4513,13 @@ void item_FoodTin(Item*& item, int player)
 		if (players[player] && players[player]->entity)
 		{
 			players[player]->entity->modHP(5);
-		}
-		messagePlayer(player, language[911]);
-		if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
-		{
-			real_t manaRegenPercent = 0.6;
-			int manaAmount = stats[player]->MAXMP * manaRegenPercent;
-			players[player]->entity->modMP(manaAmount);
+			messagePlayer(player, language[911]);
+			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+			{
+				real_t manaRegenPercent = 0.6;
+				int manaAmount = stats[player]->MAXMP * manaRegenPercent;
+				players[player]->entity->modMP(manaAmount);
+			}
 		}
 	}
 

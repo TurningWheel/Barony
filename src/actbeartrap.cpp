@@ -507,7 +507,11 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	{
 		damage *= triggered->getDamageTableMultiplier(*stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
 	}
-	bool wasAsleep = stat->EFFECTS[EFF_ASLEEP];
+	bool wasAsleep = false;
+	if ( stat )
+	{
+		wasAsleep = stat->EFFECTS[EFF_ASLEEP];
+	}
 	triggered->modHP(-damage);
 	triggered->setObituary(language[3496]);
 

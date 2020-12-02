@@ -304,7 +304,7 @@ void actFountain(Entity* my)
 							break;
 						}
 						case 1:
-							if ( stats[i]->type != VAMPIRE )
+							if ( stats[i] && stats[i]->type != VAMPIRE )
 							{
 								messagePlayer(i, language[470]);
 								messagePlayer(i, language[471]);
@@ -356,6 +356,12 @@ void actFountain(Entity* my)
 							messagePlayerColor(i, textcolor, language[471]);
 							messagePlayerColor(i, textcolor, language[473]);
 							bool stuckOnYouSuccess = false;
+
+							if ( !stats[i] )
+							{
+								break;
+							}
+
 							if ( stats[i]->helmet )
 							{
 								if ( stats[i]->type == SUCCUBUS && stats[i]->helmet->beatitude == 0 )
@@ -458,6 +464,11 @@ void actFountain(Entity* my)
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 							messagePlayerColor(i, textcolor, language[471]);
 							//Choose only one piece of equipment to bless.
+
+							if ( !stats[i] )
+							{
+								break;
+							}
 
 							//First, Figure out what equipment is available.
 							std::vector<std::pair<Item*, Uint32>> items;

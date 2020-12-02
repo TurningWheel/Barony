@@ -232,7 +232,7 @@ void actPortal(Entity* my)
 			{
 				entity = (Entity*)node->element;
 				node = node->next;
-				if ( entity->behavior == &actMagicTrap )
+				if ( entity && entity->behavior == &actMagicTrap )
 				{
 					list_RemoveNode(entity->mynode);
 				}

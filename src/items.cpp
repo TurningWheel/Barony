@@ -227,9 +227,9 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		}
 
 		// add the item to the hotbar automatically
-		if ( !intro && auto_hotbar_new_items)
+		if ( !intro && auto_hotbar_new_items )
 		{
-			if ( inventory == &stats[clientnum]->inventory )
+			if ( stats[clientnum] && inventory == &stats[clientnum]->inventory )
 			{
 				for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 				{
