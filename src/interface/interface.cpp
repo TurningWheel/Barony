@@ -1254,10 +1254,10 @@ int saveConfig(char const * const _filename)
 	{
 		fp->printf("/startfloor %d\n", startfloor);
 	}
-	if (splitscreen)
+	/*if (splitscreen)
 	{
 		fp->printf("/splitscreen\n");
-	}
+	}*/
 	if ( useModelCache )
 	{
 		fp->printf("/usemodelcache\n");
