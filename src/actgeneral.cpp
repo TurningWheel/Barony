@@ -174,7 +174,7 @@ void Entity::actFurniture()
 	if ( !furnitureInit )
 	{
 		furnitureInit = 1;
-		if ( furnitureType == FURNITURE_TABLE || FURNITURE_BUNKBED || FURNITURE_BED || FURNITURE_PODIUM )
+		if ( furnitureType == FURNITURE_TABLE || furnitureType == FURNITURE_BUNKBED || furnitureType == FURNITURE_BED || furnitureType == FURNITURE_PODIUM )
 		{
 			furnitureHealth = 15 + rand() % 5;
 		}

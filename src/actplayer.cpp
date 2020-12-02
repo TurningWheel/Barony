@@ -1097,7 +1097,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM == clientnum || splitscreen )
+	if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) ) // TODO: hotbar code splitscreen
 	{
 		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
 		{
@@ -1191,7 +1191,7 @@ void actPlayer(Entity* my)
 		nametag->setUID(-3);
 
 		// hud weapon
-		if ( PLAYER_NUM == clientnum || splitscreen )
+		if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
 		{
 			if ( multiplayer == CLIENT )
 			{
@@ -1578,7 +1578,7 @@ void actPlayer(Entity* my)
 	if ( !intro )
 	{
 		PLAYER_ALIVETIME++;
-		if ( PLAYER_NUM == clientnum || splitscreen )
+		if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
 		{
 			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
@@ -2725,7 +2725,7 @@ void actPlayer(Entity* my)
 	// invisibility
 	if ( !intro )
 	{
-		if ( PLAYER_NUM == clientnum || multiplayer == SERVER || splitscreen )
+		if ( PLAYER_NUM == clientnum || multiplayer == SERVER || (splitscreen && PLAYER_NUM > 0) )
 		{
 			if ( stats[PLAYER_NUM]->ring != NULL )
 				if ( stats[PLAYER_NUM]->ring->type == RING_INVISIBILITY )
@@ -2988,7 +2988,7 @@ void actPlayer(Entity* my)
 						}
 						clipMove(&my->x, &my->y, velx, vely, my);
 						messagePlayer(PLAYER_NUM, language[3869]);
-						if ( PLAYER_NUM == clientnum || splitscreen )
+						if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
 						{
 							cameravars[PLAYER_NUM].shakex += .1;
 							cameravars[PLAYER_NUM].shakey += 10;
@@ -3046,7 +3046,7 @@ void actPlayer(Entity* my)
 			waterwalkingboots = true;
 		}
 	bool swimming = isPlayerSwimming(my);
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || splitscreen )
+	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || (splitscreen && PLAYER_NUM > 0) )
 	{
 		if ( swimming )
 		{
@@ -3061,7 +3061,7 @@ void actPlayer(Entity* my)
 			{
 				my->z += 1;
 			}
-			if ( !PLAYER_INWATER && (PLAYER_NUM == clientnum || splitscreen) )
+			if ( !PLAYER_INWATER && (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) )
 			{
 				PLAYER_INWATER = 1;
 				if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
@@ -3196,7 +3196,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if (PLAYER_NUM == clientnum || splitscreen)
+	if (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
 	{
 		players[PLAYER_NUM]->entity = my;
 
@@ -3478,7 +3478,7 @@ void actPlayer(Entity* my)
 						{
 							foundTinkeringKit = true;
 						}
-						if ( foundTinkeringKit && (clientnum == 0 || splitscreen) )
+						if ( foundTinkeringKit && (clientnum == 0 || (splitscreen && clientnum > 0)) )
 						{
 							selectedEntity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[PLAYER_NUM]->entity->getUID());
 						}
@@ -3569,11 +3569,11 @@ void actPlayer(Entity* my)
 	// torch light
 	if ( !intro )
 	{
-		if ( multiplayer == SERVER || PLAYER_NUM == clientnum || splitscreen )
+		if ( multiplayer == SERVER || PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
 		{
 			if ( stats[PLAYER_NUM]->shield != NULL && (showEquipment && isHumanoid) && !itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
 			{
-				if ( PLAYER_NUM == clientnum || splitscreen)
+				if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
 				{
 					if ( stats[PLAYER_NUM]->shield->type == TOOL_TORCH )
 					{
@@ -3618,7 +3618,7 @@ void actPlayer(Entity* my)
 			}
 			else
 			{
-				if ( (PLAYER_NUM == clientnum || splitscreen) && !PLAYER_DEBUGCAM )
+				if ( (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) && !PLAYER_DEBUGCAM )
 				{
 					PLAYER_TORCH = 3 + (my->getPER() / 3);
 					if ( playerRace == RAT )
@@ -3652,7 +3652,7 @@ void actPlayer(Entity* my)
 	}
 
 	// server controls players primarily
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || splitscreen )
+	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || (splitscreen && PLAYER_NUM > 0) )
 	{
 		// set head model
 		if ( playerRace != HUMAN )
@@ -3783,7 +3783,7 @@ void actPlayer(Entity* my)
 					{
 						my->flags[PASSABLE] = true;
 						serverUpdateEntityFlag(my, PASSABLE);
-						if ( clientnum == PLAYER_NUM || splitscreen )
+						if ( clientnum == PLAYER_NUM || (splitscreen && PLAYER_NUM > 0) )
 						{
 							// deathcam
 							entity = newEntity(-1, 1, map.entities, nullptr); //Deathcam entity.
@@ -3955,7 +3955,7 @@ void actPlayer(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, player-1);
 						}
 						*/
-						if ( clientnum == PLAYER_NUM || splitscreen )
+						if ( clientnum == PLAYER_NUM || (splitscreen && PLAYER_NUM > 0) )
 						{
 							if ( (stats[PLAYER_NUM]->type != AUTOMATON) 
 								|| (stats[PLAYER_NUM]->type == AUTOMATON && my->playerCreatedDeathCam == 0) )
@@ -4268,7 +4268,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( (PLAYER_NUM == clientnum || splitscreen) && intro == false )
+	if ( (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) && intro == false )
 	{
 		// effects of drunkenness
 		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN))
@@ -4299,7 +4299,7 @@ void actPlayer(Entity* my)
 
 		if ( !my->isMobile() )
 		{
-			if ( (clientnum == PLAYER_NUM || splitscreen) && openedChest[PLAYER_NUM] )
+			if ( (clientnum == PLAYER_NUM || (splitscreen && PLAYER_NUM > 0)) && openedChest[PLAYER_NUM] )
 			{
 				openedChest[PLAYER_NUM]->closeChest();
 			}
@@ -4431,7 +4431,7 @@ void actPlayer(Entity* my)
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 	}
 
-	if ( (PLAYER_NUM == clientnum || splitscreen) && ticks % 65 == 0 )
+	if ( (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) && ticks % 65 == 0 )
 	{
 		for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 		{
@@ -4702,7 +4702,7 @@ void actPlayer(Entity* my)
 							}
 						}
 
-						if ( PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH && (PLAYER_NUM == clientnum || splitscreen) )
+						if ( PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH && (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) )
 						{
 							if ( my->pitch < PI / 32 )
 							{
@@ -4813,7 +4813,7 @@ void actPlayer(Entity* my)
 						{
 							// move the head.
 							//limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.1);
-							if ( (PLAYER_NUM == clientnum || splitscreen) && PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
+							if ( (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) && PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
 							{
 								if ( my->pitch > -PI / 12 )
 								{

@@ -78,9 +78,12 @@ int numItemsInChest()
 
 	int i = 0;
 
-	for (node = chestInventory->first; node != nullptr; node = node->next)
+	if ( chestInventory )
 	{
-		++i;
+		for (node = chestInventory->first; node != nullptr; node = node->next)
+		{
+			++i;
+		}
 	}
 
 	return i;

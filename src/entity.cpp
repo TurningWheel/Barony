@@ -835,7 +835,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 
 Entity::effectTimes
 
-Counts down effect timers and toggles effects whose timers reach zero
+Counts down effect timers and toggles effects whose timers reach zero - server only function
 
 -------------------------------------------------------------------------------*/
 
@@ -5978,7 +5978,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									net_packet->len = 6;
 									sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 								}
-								else if ( playerhit == 0 || splitscreen )
+								else if ( playerhit == 0 || (splitscreen && playerhit > 0) )
 								{
 									cameravars[playerhit].shakex += 0.2;
 									cameravars[playerhit].shakey += 20;
@@ -9007,7 +9007,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 						}
 					}
-					else if ( playerhit == 0 || splitscreen )
+					else if ( playerhit == 0 || (splitscreen && playerhit > 0) )
 					{
 						if ( pose == MONSTER_POSE_GOLEM_SMASH || pose == PLAYER_POSE_GOLEM_SMASH )
 						{
@@ -9155,7 +9155,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								net_packet->len = 6;
 								sendPacketSafe(net_sock, -1, net_packet, player - 1);
 							}
-							else if ( player == 0 || splitscreen )
+							else if ( player == 0 || (splitscreen && player > 0) )
 							{
 								cameravars[player].shakex += 0.1;
 								cameravars[player].shakey += 10;

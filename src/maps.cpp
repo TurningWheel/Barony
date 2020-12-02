@@ -2589,6 +2589,10 @@ void assignActions(map_t* map)
 	{
 		entity = (Entity*)node->element;
 		nextnode = node->next;
+		if ( !entity )
+		{
+			continue;
+		}
 		switch ( entity->sprite )
 		{
 			// null:

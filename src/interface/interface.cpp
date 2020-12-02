@@ -1254,10 +1254,10 @@ int saveConfig(char const * const _filename)
 	{
 		fp->printf("/startfloor %d\n", startfloor);
 	}
-	if (splitscreen)
+	/*if (splitscreen)
 	{
 		fp->printf("/splitscreen\n");
-	}
+	}*/
 	if ( useModelCache )
 	{
 		fp->printf("/usemodelcache\n");
@@ -6913,7 +6913,7 @@ bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
 
 int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 {
-	if ( !item )
+	if ( !item || !stats[clientnum] )
 	{
 		return -1;
 	}
@@ -7794,7 +7794,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		{
 			// the client needs to inform the server that their equipment was repaired.
 			int armornum = 0;
-			if ( item == stats[clientnum]->shield )
+			if ( stats[clientnum] && item == stats[clientnum]->shield )
 			{
 				armornum = 5;
 			}

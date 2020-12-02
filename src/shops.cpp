@@ -198,26 +198,30 @@ void buyItemFromShop(Item* item)
 				Stat* shopstats = entity->getStats();
 				shopstats->GOLD += item->buyValue(clientnum);
 			}
-			if ( rand() % 2 )
+
+			if ( players[clientnum] && players[clientnum]->entity )
 			{
-				if ( item->buyValue(clientnum) <= 1 )
+				if ( rand() % 2 )
 				{
-					// buying cheap items does not increase trading past basic
-					if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+					if ( item->buyValue(clientnum) <= 1 )
+					{
+						// buying cheap items does not increase trading past basic
+						if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+						{
+							players[clientnum]->entity->increaseSkill(PRO_TRADING);
+						}
+					}
+					else
 					{
 						players[clientnum]->entity->increaseSkill(PRO_TRADING);
 					}
 				}
-				else
+				else if ( item->buyValue(clientnum) >= 150 )
 				{
-					players[clientnum]->entity->increaseSkill(PRO_TRADING);
-				}
-			}
-			else if ( item->buyValue(clientnum) >= 150 )
-			{
-				if ( item->buyValue(clientnum) >= 300 || rand() % 2 )
-				{
-					players[clientnum]->entity->increaseSkill(PRO_TRADING);
+					if ( item->buyValue(clientnum) >= 300 || rand() % 2 )
+					{
+						players[clientnum]->entity->increaseSkill(PRO_TRADING);
+					}
 				}
 			}
 		}
@@ -461,19 +465,22 @@ void sellItemToShop(Item* item)
 	item->count = ocount;
 	if ( multiplayer != CLIENT )
 	{
-		if ( rand() % 2 )
+		if ( players[clientnum] && players[clientnum]->entity )
 		{
-			if ( item->sellValue(clientnum) <= 1 )
+			if ( rand() % 2 )
 			{
-				// selling cheap items does not increase trading past basic
-				if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+				if ( item->sellValue(clientnum) <= 1 )
+				{
+					// selling cheap items does not increase trading past basic
+					if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+					{
+						players[clientnum]->entity->increaseSkill(PRO_TRADING);
+					}
+				}
+				else
 				{
 					players[clientnum]->entity->increaseSkill(PRO_TRADING);
 				}
-			}
-			else
-			{
-				players[clientnum]->entity->increaseSkill(PRO_TRADING);
 			}
 		}
 	}

@@ -68,43 +68,49 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 			messagePlayer(player, language[407]);
 			return;
 		}
-		if (spell_isChanneled(spell))
+		if ( spell_isChanneled(spell))
 		{
-			if (channeledSpells[clientnum], spell)
+			bool removedSpell = false;
+			node_t* nextnode;
+			for (node = channeledSpells[player].first; node; node = nextnode)
 			{
-				bool removedSpell = false;
-				node_t* nextnode;
-				for (node = channeledSpells[player].first; node; node = nextnode)
+				nextnode = node->next;
+				spell_t* spell_search = (spell_t*)node->element;
+				if (spell_search->ID == spell->ID)
 				{
-					nextnode = node->next;
-					spell_t* spell_search = (spell_t*)node->element;
-					if (spell_search->ID == spell->ID)
+					//list_RemoveNode(node);
+					//node = NULL;
+
+					if ( multiplayer != CLIENT )
 					{
-						//list_RemoveNode(node);
-						//node = NULL;
-						spell_search->sustain = false;
-						//if (spell->magic_effects)
-						//	list_RemoveNode(spell->magic_effects);
-						messagePlayer(player, language[408], spell->name);
-						if (multiplayer == CLIENT)
-						{
-							list_RemoveNode(node);
-							node = nullptr;
-							strcpy( (char*)net_packet->data, "UNCH");
-							net_packet->data[4] = clientnum;
-							SDLNet_Write32(spell->ID, &net_packet->data[5]);
-							net_packet->address.host = net_server.host;
-							net_packet->address.port = net_server.port;
-							net_packet->len = 9;
-							sendPacketSafe(net_sock, -1, net_packet, 0);
-						}
-						removedSpell = true;
+						// 02/12/20 - BP
+						// spell_search refers to actual spell definitions for client, like spell_light* 
+						// server uses copies of spell elements, so it works as intended
+						// clients don't read spell_search->sustain status to know when to stop anyway
+						spell_search->sustain = false; 
 					}
+
+					//if (spell->magic_effects)
+					//	list_RemoveNode(spell->magic_effects);
+					messagePlayer(player, language[408], spell->name);
+					if (multiplayer == CLIENT)
+					{
+						list_RemoveNode(node);
+						node = nullptr;
+						strcpy( (char*)net_packet->data, "UNCH");
+						net_packet->data[4] = clientnum;
+						SDLNet_Write32(spell->ID, &net_packet->data[5]);
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 9;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					removedSpell = true;
 				}
-				if ( removedSpell )
-				{
-					return;
-				}
+			}
+			if ( removedSpell )
+			{
+				return;
 			}
 			if ( spell->ID == SPELL_VAMPIRIC_AURA && client_classes[player] == CLASS_ACCURSED && 
 				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
@@ -331,7 +337,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						playSoundPlayer(player, 28, 92);
 					}
-					else if ( player == 0 || splitscreen )
+					else if ( player == 0 || (splitscreen && player > 0) )
 					{
 						cameravars[player].shakex += 0.1;
 						cameravars[player].shakey += 10;

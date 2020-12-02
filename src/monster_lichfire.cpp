@@ -186,6 +186,11 @@ void initLichFire(Entity* my, Stat* myStats)
 
 void lichFireDie(Entity* my)
 {
+	if ( !my )
+	{
+		return;
+	}
+
 	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 20; c++ )
@@ -511,7 +516,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
-					if ( head->pitch > PI )
+					if ( head && head->pitch > PI )
 					{
 						limbAnimateToLimit(head, ANIMATE_PITCH, 0.1, 0, false, 0.0); // return head to a neutral position.
 					}

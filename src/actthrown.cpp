@@ -600,6 +600,10 @@ void actThrown(Entity* my)
 	if ( processXYCollision && result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
 		item = newItemFromEntity(my);
+		if ( !item )
+		{
+			return;
+		}
 		if ( itemCategory(item) == THROWN 
 			&& (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
 		{
@@ -1179,7 +1183,7 @@ void actThrown(Entity* my)
 					playSoundEntity(hit.entity, 28, 64);
 					if ( hit.entity->behavior == &actPlayer )
 					{
-						if ( hit.entity->skill[2] == clientnum || splitscreen )
+						if ( hit.entity->skill[2] == clientnum || (splitscreen && hit.entity->skill[2] > 0) )
 						{
 							cameravars[hit.entity->skill[2]].shakex += .1;
 							cameravars[hit.entity->skill[2]].shakey += 10;
