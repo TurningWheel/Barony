@@ -2622,7 +2622,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								net_packet->len = 6;
 								sendPacketSafe(net_sock, -1, net_packet, player - 1);
 							}
-							else if (player == 0 || splitscreen)
+							else if (player == 0 || (splitscreen && player > 0) )
 							{
 								cameravars[player].shakex += .1;
 								cameravars[player].shakey += 10;

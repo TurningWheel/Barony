@@ -208,7 +208,7 @@ void actSink(Entity* my)
 
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								messagePlayerColor(i, color, language[3183]);
-								if ( i == 0 || splitscreen )
+								if ( i == 0 || (splitscreen && i > 0) )
 								{
 									cameravars[i].shakex += .1;
 									cameravars[i].shakey += 10;
@@ -255,7 +255,7 @@ void actSink(Entity* my)
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								messagePlayerColor(i, color, language[584]);
 
-								if ( i == 0 || splitscreen )
+								if ( i == 0 || (splitscreen && i > 0) )
 								{
 									cameravars[i].shakex += .1;
 									cameravars[i].shakey += 10;

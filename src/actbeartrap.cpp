@@ -164,7 +164,7 @@ void actBeartrap(Entity* my)
 						{
 							serverUpdateEffects(player);
 						}
-						if ( player == clientnum || splitscreen )
+						if ( player == clientnum || (splitscreen && player > 0) )
 						{
 							cameravars[entity->skill[2]].shakex += .1;
 							cameravars[entity->skill[2]].shakey += 10;
@@ -537,7 +537,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	{
 		int player = triggered->skill[2];
 		
-		if ( player == clientnum || splitscreen )
+		if ( player == clientnum || (splitscreen && player > 0) )
 		{
 			cameravars[triggered->skill[2]].shakex += .1;
 			cameravars[triggered->skill[2]].shakey += 10;
