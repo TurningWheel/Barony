@@ -3525,7 +3525,7 @@ void createParticleSap(Entity* parent)
 		}
 		entity->setUID(-3);
 
-		if ( sprite = 977 ) // boomerang
+		if ( sprite == 977 ) // boomerang
 		{
 			entity->z = parent->z;
 			entity->scalex = 1.f;
