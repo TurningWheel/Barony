@@ -609,7 +609,6 @@ void drawSkillsSheet()
 					{
 						PER = statGetPER(stats[clientnum], players[clientnum]->entity);
 					}
-					statGetPER(stats[clientnum], players[clientnum]->entity);
 					skillDetails[0] = stats[clientnum]->PROFICIENCIES[i] / 2.f; // lockpick chests/doors
 					if ( stats[clientnum]->PROFICIENCIES[i] == SKILL_LEVEL_LEGENDARY )
 					{
