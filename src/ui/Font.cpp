@@ -6,15 +6,17 @@
 const char* Font::defaultFont = "fonts/mono.ttf#16";
 
 Font::Font(const char* _name) {
+	name = _name;
 	Uint32 index = name.find('#');
-	if (index != String::npos) {
-		path = mainEngine->buildPath(name.substr(0, index).get());
-		pointSize = name.substr(index + 1, name.length()).toInt();
+	std::string path;
+	if (index != std::string::npos) {
+		path = name.substr(0, index);
+		pointSize = std::stoi(name.substr(index + 1, name.length()));
 	} else {
-		path = mainEngine->buildPath(name.get());
+		path = name;
 	}
-	if ((font = TTF_OpenFont(path.get(), pointSize)) == NULL) {
-		mainEngine->fmsg(Engine::MSG_ERROR, "failed to load '%s': %s", path.get(), TTF_GetError());
+	if ((font = TTF_OpenFont(path.c_str(), pointSize)) == NULL) {
+		printlog("failed to load '%s': %s", path.c_str(), TTF_GetError());
 		return;
 	}
 	TTF_SetFontHinting(font, TTF_HINTING_MONO);

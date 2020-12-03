@@ -36,6 +36,7 @@ public:
 	//! delete static geometry data for rendering images
 	static void deleteStaticData();
 
+	const char*				getName() const { return name.c_str(); }
 	virtual const bool		isStreamable() const { return true; }
 	const GLuint			getTexID() const { return texid; }
 	const SDL_Surface*		getSurf() const { return surf; }
@@ -43,6 +44,7 @@ public:
 	const unsigned int		getHeight()	const { return surf ? surf->h : 0U; }
 
 private:
+	std::string name;
 	GLuint texid = 0;
 	SDL_Surface* surf = nullptr;
 

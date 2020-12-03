@@ -25,12 +25,13 @@ const GLuint Image::indices[6]{
 	0, 2, 3
 };
 
-Image::Image(const char* _name) : Asset(_name) {
-	path = mainEngine->buildPath(_name).get();
+Image::Image(const char* _name) {
+	name = _name;
 
-	mainEngine->fmsg(Engine::MSG_DEBUG, "loading image '%s'...", _name);
-	if ((surf = IMG_Load(path.get())) == NULL) {
-		mainEngine->fmsg(Engine::MSG_ERROR, "failed to load image '%s'", _name);
+	std::string path = _name;
+	printlog("loading image '%s'...", _name);
+	if ((surf = IMG_Load(path.c_str())) == NULL) {
+		printlog("failed to load image '%s'", _name);
 		return;
 	}
 
@@ -40,8 +41,6 @@ Image::Image(const char* _name) : Asset(_name) {
 	SDL_FreeSurface(surf);
 	surf = newSurf;
 }
-
-static Cvar cvar_anisotropy("render.anisotropy", "anisotropy applied on textures", "4.0");
 
 bool Image::finalize() {
 	if (surf) {
@@ -72,7 +71,7 @@ bool Image::finalize() {
 		}
 		SDL_UnlockSurface(surf);
 
-		return loaded = true;
+		return true;
 	} else {
 		return false;
 	}
@@ -134,34 +133,21 @@ void Image::deleteStaticData() {
 	}
 }
 
-void Image::draw(const Rect<int>* src, const Rect<int>& dest) const {
-	drawColor(src, dest, glm::vec4(1.f));
+void Image::draw(const SDL_Rect* src, const SDL_Rect& dest) const {
+	drawColor(src, dest, 0xffffffff);
 }
 
-void Image::drawColor(const Rect<int>* src, const Rect<int>& dest, const glm::vec4& color) const {
-	if (!loaded) {
-		return;
-	}
-
-	Client* client = mainEngine->getLocalClient(); assert(client);
-	Renderer* renderer = client->getRenderer(); assert(renderer);
-	int xres = renderer->getXres();
-	int yres = renderer->getYres();
-
-	// load shader
-	Material* mat = mainEngine->getMaterialResource().dataForString("shaders/basic/2D.json");
-	if (!mat) {
-		return;
-	}
-	ShaderProgram& shader = mat->getShader().mount();
-
-	glViewport(0, 0, xres, yres);
+void Image::drawColor(const SDL_Rect* src, const SDL_Rect& dest, const Uint32& color) const {
 	glDisable(GL_DEPTH_TEST);
-	//glDisable(GL_LIGHTING);
-	glEnable(GL_BLEND);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(0, 0, xres, yres);
+	glLoadIdentity();
+	glOrtho(0, xres, 0, yres, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
 
 	// for the use of a whole image
-	Rect<int> secondsrc;
+	SDL_Rect secondsrc;
 	if (src == nullptr) {
 		secondsrc.x = 0;
 		secondsrc.y = 0;
@@ -170,42 +156,29 @@ void Image::drawColor(const Rect<int>* src, const Rect<int>& dest, const glm::ve
 		src = &secondsrc;
 	}
 
-	// create view matrix
-	glm::mat4 viewMatrix = glm::ortho(0.f, (float)xres, 0.f, (float)yres, 1.f, -1.f);
-
 	// bind texture
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texid);
 
-	// upload uniform variables
-	glUniformMatrix4fv(shader.getUniformLocation("gView"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
-	glUniform4fv(shader.getUniformLocation("gColor"), 1, glm::value_ptr(color));
-	glUniform1i(shader.getUniformLocation("gTexture"), 0);
+	// consume color
+	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
+	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
+	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
+	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
+	glColor4f(r, g, b, a);
 
-	// bind vertex array
-	glBindVertexArray(vao);
+	// draw quad
+	glBegin(GL_QUADS);
+	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
+	glVertex2f(dest.x, yres - dest.y);
+	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
+	glVertex2f(dest.x, yres - dest.y - src->h);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
+	glVertex2f(dest.x + src->w, yres - dest.y - src->h);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
+	glVertex2f(dest.x + src->w, yres - dest.y);
+	glEnd();
 
-	// upload positions
-	GLfloat positions[8] = {
-		(GLfloat)(dest.x), (GLfloat)(yres - dest.y),
-		(GLfloat)(dest.x), (GLfloat)(yres - dest.y - dest.h),
-		(GLfloat)(dest.x + dest.w), (GLfloat)(yres - dest.y - dest.h),
-		(GLfloat)(dest.x + dest.w), (GLfloat)(yres - dest.y)
-	};
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[VERTEX_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(GLfloat), positions, GL_DYNAMIC_DRAW);
-
-	// upload texcoords
-	GLfloat texcoords[8] = {
-		(GLfloat)src->x / (GLfloat)surf->w, (GLfloat)src->y / (GLfloat)surf->h,
-		(GLfloat)src->x / (GLfloat)surf->w, ((GLfloat)src->y + (GLfloat)src->h) / (GLfloat)surf->h,
-		((GLfloat)src->x + (GLfloat)src->w) / (GLfloat)surf->w, ((GLfloat)src->y + (GLfloat)src->h) / (GLfloat)surf->h,
-		((GLfloat)src->x + (GLfloat)src->w) / (GLfloat)surf->w, (GLfloat)src->y / (GLfloat)surf->h
-	};
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[TEXCOORD_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(GLfloat), texcoords, GL_DYNAMIC_DRAW);
-
-	// draw
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-	glBindVertexArray(0);
+	// unbind texture
+	glBindTexture(GL_TEXTURE_2D, 0);
 }

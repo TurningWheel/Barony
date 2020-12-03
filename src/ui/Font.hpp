@@ -19,6 +19,7 @@ public:
 	static const char* defaultFont;
 
 	//! get ttf font
+	const char* getName() const { return name.c_str(); }
 	TTF_Font* getTTF() { return font; }
 
 	//! get the size of the given text string in pixels
@@ -33,6 +34,7 @@ public:
 	int height() const;
 
 private:
+	std::string name;
 	TTF_Font* font = nullptr;
 	int pointSize = 16;
 };
