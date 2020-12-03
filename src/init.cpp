@@ -78,14 +78,14 @@ int initApp(char const * const title, int fullscreen)
 		openLogFile();
 	}
 
-	for (c = 0; c < NUM_JOY_STATUS; ++c)
+	/*for (c = 0; c < NUM_JOY_STATUS; ++c)
 	{
 		joystatus[c] = 0;
 	}
 	for (c = 0; c < NUM_JOY_TRIGGER_STATUS; ++c)
 	{
 		joy_trigger_status[c] = 0;
-	}
+	}*/
 
 	// init some lists
 	button_l.first = NULL;

@@ -66,6 +66,55 @@ public:
 	GameController();
 	~GameController();
 
+	struct Binding_t {
+		float analog = 0.f;
+		float deadzone = 0.f;
+		bool binary = false;
+		bool consumed = false;
+
+		enum Bindtype_t 
+		{
+			INVALID,
+			KEYBOARD,
+			CONTROLLER_AXIS,
+			CONTROLLER_BUTTON,
+			MOUSE_BUTTON,
+			JOYSTICK_AXIS,
+			JOYSTICK_BUTTON,
+			JOYSTICK_HAT,
+			//JOYSTICK_BALL,
+			NUM
+		};
+		Bindtype_t type = INVALID;
+
+		SDL_GameControllerAxis padAxis = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID;
+		SDL_GameControllerButton padButton = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID;
+		bool padAxisNegative = false;
+	};
+
+	void updateButtons();
+	void updateAxis();
+	static SDL_GameControllerButton getSDLButtonFromImpulse(const unsigned controllerImpulse);
+	static SDL_GameControllerAxis getSDLTriggerFromImpulse(const unsigned controllerImpulse);
+
+	Binding_t buttons[NUM_JOY_STATUS];
+	Binding_t axis[NUM_JOY_AXIS_STATUS];
+
+	bool binary(SDL_GameControllerButton binding) const;
+	bool binaryToggle(SDL_GameControllerButton binding) const;
+	void consumeBinaryToggle(SDL_GameControllerButton binding);
+	float analog(SDL_GameControllerButton binding) const;
+	bool binary(SDL_GameControllerAxis binding) const;
+	bool binaryToggle(SDL_GameControllerAxis binding) const;
+	void consumeBinaryToggle(SDL_GameControllerAxis binding);
+	float analog(SDL_GameControllerAxis binding) const;
+
+
+	//! converts the given input to a boolean/analog value
+	bool binaryOf(Binding_t& binding);
+	float analogOf(Binding_t& binding);
+
+
 	//Closes the SDL device.
 	void close();
 
@@ -73,7 +122,10 @@ public:
 	//If c < 0 or c >= SDL_NumJoysticks() or c is not a game controller, then returns false.
 	bool open(int c);
 
-	bool isActive();
+	void initBindings();
+	const int getID() { return id; }
+	const SDL_GameController* getControllerDevice() { return sdl_device; }
+	const bool isActive();
 
 	/*
 	 * Moves the player's head around.
@@ -162,9 +214,78 @@ public:
 	*/
 	bool handleRepairGUIMovement();
 };
+const int MAX_GAME_CONTROLLERS = 16;
+extern std::array<GameController, MAX_GAME_CONTROLLERS> game_controllers;
 
-extern GameController* game_controller;
+class Inputs
+{
+	int playerControllerIds[MAXPLAYERS];
+public:
+	Inputs() 
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			playerControllerIds[i] = -1;
+		}
+	};
+	~Inputs() {};
+	const bool bControllerInputPressed(int player, const unsigned controllerImpulse) const;
+	void controllerClearInput(int player, const unsigned controllerImpulse);
+	const void removeControllerWithDeviceID(int id)
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( playerControllerIds[i] == id )
+			{
+				playerControllerIds[i] = -1;
+				printlog("[INPUTS]: Removed controller id %d from player index %d.", id, i);
+			}
+		}
+	}
 
+	const int getControllerID(int player) const
+	{
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			printlog("[INPUTS]: Warning: player index %d out of range.", player);
+			return -1;
+		}
+		return playerControllerIds[player];
+	}
+	GameController* getController(int player) const;
+
+	const bool hasController(int player) const 
+	{
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			printlog("[INPUTS]: Warning: player index %d out of range.", player);
+			return false;
+		}
+		return playerControllerIds[player] != -1;
+	}
+	void setControllerID(int player, const int id) 
+	{
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			printlog("[INPUTS]: Warning: player index %d out of range.", player);
+		}
+		playerControllerIds[player] = id;
+	}
+	void addControllerIDToNextAvailableInput(const int id)
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( playerControllerIds[i] == -1 )
+			{
+				playerControllerIds[i] = id;
+				printlog("[INPUTS]: Automatically assigned controller id %d to player index %d.", id, i);
+				break;
+			}
+		}
+	}
+	const bool bPlayerIsControllable(int player) const;
+};
+extern Inputs inputs;
 void initGameControllers();
 
 class Player

@@ -1501,11 +1501,17 @@ Sint8* inputPressed(Uint32 scancode)
 	else if (scancode < 301)
 	{
 		//Analog joystick triggers are mapped to digital status (0 = not pressed, 1 = pressed).
-		return &joy_trigger_status[scancode - 299];
+		//return &joy_trigger_status[scancode - 299];
+		// WIP SPLITSCREEN - DEPRECATE THIS
+		dummy_value = 0;
+		return &dummy_value;
 	}
 	else if (scancode < 318)
 	{
-		return &joystatus[scancode - 301];
+		//return &joystatus[scancode - 301];
+		// WIP SPLITSCREEN - DEPRECATE THIS
+		dummy_value = 0;
+		return &dummy_value;
 	}
 	else
 	{

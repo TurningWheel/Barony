@@ -492,7 +492,7 @@ void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDel
 		else if ( ((*inputPressed(impulses[IN_FORWARD]) 
 				|| *inputPressed(impulses[IN_BACK])) 
 				|| (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) 
-				|| (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) 
+				|| (game_controllers[0].isActive() && (game_controllers[0].getLeftXPercent() || game_controllers[0].getLeftYPercent())))
 			&& !command && !swimming )
 		{
 			if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
@@ -732,18 +732,18 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 				y_force = (*inputPressed(impulses[IN_BACK]) - (double)* inputPressed(impulses[IN_FORWARD]) * backpedalMultiplier);
 			}
 
-			if ( game_controller && !*inputPressed(impulses[IN_LEFT]) && !*inputPressed(impulses[IN_RIGHT]) )
+			if ( game_controllers[0].isActive() && !*inputPressed(impulses[IN_LEFT]) && !*inputPressed(impulses[IN_RIGHT]) )
 			{
-				x_force = game_controller->getLeftXPercent();
+				x_force = game_controllers[0].getLeftXPercent();
 
 				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				{
 					x_force *= -1;
 				}
 			}
-			if ( game_controller && !*inputPressed(impulses[IN_FORWARD]) && !*inputPressed(impulses[IN_BACK]) )
+			if ( game_controllers[0].isActive() && !*inputPressed(impulses[IN_FORWARD]) && !*inputPressed(impulses[IN_BACK]) )
 			{
-				y_force = game_controller->getLeftYPercent();
+				y_force = game_controllers[0].getLeftYPercent();
 
 				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				{
@@ -3478,7 +3478,7 @@ void actPlayer(Entity* my)
 						{
 							foundTinkeringKit = true;
 						}
-						if ( foundTinkeringKit && (clientnum == 0 || (splitscreen && clientnum > 0)) )
+						if ( foundTinkeringKit && (clientnum == 0 || (splitscreen && PLAYER_NUM > 0)) )
 						{
 							selectedEntity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[PLAYER_NUM]->entity->getUID());
 						}

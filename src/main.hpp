@@ -22,6 +22,7 @@ typedef double real_t;
 #include <list>
 #include <string>
 #include <vector>
+#include <array>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
 #include <map>
@@ -563,10 +564,10 @@ extern int lastCreatedCharacterRace;
 static const unsigned NUM_MOUSE_STATUS = 6;
 extern Sint8 mousestatus[NUM_MOUSE_STATUS];
 //extern Sint8 omousestatus[NUM_MOUSE_STATUS];
-const int NUM_JOY_STATUS = 32;
-extern Sint8 joystatus[NUM_JOY_STATUS];
-const int NUM_JOY_TRIGGER_STATUS = 2;
-extern Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS]; //0 = left, 1 = right.
+const int NUM_JOY_STATUS = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX;
+//extern Sint8 joystatus[NUM_JOY_STATUS];
+const int NUM_JOY_AXIS_STATUS = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX;
+//extern Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS]; //0 = left, 1 = right.
 extern Uint32 cursorflash;
 extern Sint32 camx, camy;
 extern Sint32 newcamx, newcamy;

@@ -1666,7 +1666,10 @@ void drawStatus()
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if ( (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT])) )
+
+		if ( inputs.bControllerInputPressed(0, INJOY_GAME_HOTBAR_NEXT)
+			|| *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+		//if ( (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT])) )
 		{
 			if ( shootmode && !itemMenuOpen && !openedChest[clientnum] 
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
@@ -1680,7 +1683,8 @@ void drawStatus()
 				}
 				else
 				{
-					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
+					//*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
+					inputs.controllerClearInput(0, INJOY_GAME_HOTBAR_NEXT);
 					bumper_moved = true;
 				}
 				selectHotbarSlot(current_hotbar + 1);
@@ -1697,7 +1701,7 @@ void drawStatus()
 				}*/
 			}
 		}
-		if ( *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+		if ( inputs.bControllerInputPressed(0, INJOY_GAME_HOTBAR_PREV) || *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
 		{
 			if ( shootmode && !itemMenuOpen && !openedChest[clientnum] 
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
@@ -1711,7 +1715,7 @@ void drawStatus()
 				}
 				else
 				{
-					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
+					inputs.controllerClearInput(0, INJOY_GAME_HOTBAR_PREV);
 					bumper_moved = true;
 				}
 				selectHotbarSlot(current_hotbar - 1);

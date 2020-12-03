@@ -2662,9 +2662,9 @@ void handleEvents(void)
 	}
 	fps = (d / AVERAGEFRAMES) * 1000;
 
-	if (game_controller && game_controller->isActive())
+	if ( game_controllers[0].isActive())
 	{
-		game_controller->handleAnalog();
+		game_controllers[0].handleAnalog();
 	}
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events
@@ -2857,7 +2857,7 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
-				joystatus[event.cbutton.button] = 1; // set this button's index to 1
+				//joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
 				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ((!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
 				{
@@ -2871,7 +2871,7 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_CONTROLLERBUTTONUP: // if joystick button is released
-				joystatus[event.cbutton.button] = 0; // set this button's index to 0
+				//joystatus[event.cbutton.button] = 0; // set this button's index to 0
 				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] )
 				{
 					//Generate a mouse lift.
@@ -2882,6 +2882,72 @@ void handleEvents(void)
 					SDL_PushEvent(&e);
 				}
 				break;
+			case SDL_CONTROLLERDEVICEADDED:
+			{
+				const int id = event.cdevice.which;
+				if ( !SDL_IsGameController(id) )
+				{
+					printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", id);
+					break;
+				}
+
+				bool deviceAlreadyAdded = false;
+				for ( auto& controller : game_controllers )
+				{
+					if ( controller.isActive() && controller.getID() == id )
+					{
+						printlog("(Device %d added, but already in use as game controller.)\n", id);
+						deviceAlreadyAdded = true;
+						break;
+					}
+				}
+
+				if ( deviceAlreadyAdded )
+				{
+					break;
+				}
+
+				// now find a free controller slot.
+				for ( auto& controller : game_controllers )
+				{
+					if ( controller.isActive() )
+					{
+						continue;
+					}
+
+					if ( SDL_IsGameController(id) && controller.open(id) )
+					{
+						printlog("(Device %d successfully initialized as game controller.)\n", id);
+						inputs.addControllerIDToNextAvailableInput(id);
+					}
+					else
+					{
+						printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", id);
+					}
+					break;
+				}
+				break;
+			}
+			case SDL_CONTROLLERDEVICEREMOVED:
+			{
+				// device removed uses a 'joystick id', different to the device added event
+				const int instanceID = event.cdevice.which;
+				SDL_GameController* pad = SDL_GameControllerFromInstanceID(instanceID);
+				if ( !pad )
+				{
+					printlog("(Unknown device removed as game controller, null controller returned.)\n");
+				}
+				for ( auto& controller : game_controllers )
+				{
+					if ( controller.isActive() && controller.getControllerDevice() == pad )
+					{
+						inputs.removeControllerWithDeviceID(controller.getID());
+						printlog("(Device %d removed as game controller, instance id: %d.)\n", controller.getID(), instanceID);
+						controller.close();
+					}
+				}
+				break;
+			}
 			case SDL_JOYHATMOTION:
 				break;
 			case SDL_USEREVENT: // if the game timer has elapsed
@@ -3058,6 +3124,13 @@ void handleEvents(void)
 		omousex = mousex;
 		omousey = mousey;
 	}
+
+	for ( auto& controller : game_controllers )
+	{
+		controller.updateButtons();
+		controller.updateAxis();
+	}
+
 }
 
 /*-------------------------------------------------------------------------------

@@ -47,7 +47,8 @@ bool gamepad_menux_invert = false;
 bool gamepad_menuy_invert = false;
 
 
-GameController* game_controller = nullptr;
+std::array<GameController, MAX_GAME_CONTROLLERS> game_controllers;
+Inputs inputs;
 
 GameController::GameController()
 {
@@ -74,6 +75,12 @@ void GameController::close()
 		SDL_GameControllerClose(sdl_device);
 		sdl_device = nullptr;
 	}
+	id = -1;
+
+	initBindings(); // clear status of all values
+
+	oldLeftTrigger = 0;
+	oldRightTrigger = 0;
 }
 
 bool GameController::open(int c)
@@ -111,7 +118,27 @@ bool GameController::open(int c)
 	return (sdl_device != nullptr);
 }
 
-bool GameController::isActive()
+void GameController::initBindings() 
+{
+	for ( int i = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A; i < SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX; ++i )
+	{
+		this->buttons[i].type = Binding_t::Bindtype_t::CONTROLLER_BUTTON;
+		this->buttons[i].padButton = static_cast<SDL_GameControllerButton>(i);
+		this->buttons[i].analog = 0.f;
+		this->buttons[i].binary = 0.f;
+		this->buttons[i].consumed = 0.f;
+	}
+	for ( int i = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX; i < SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX; ++i )
+	{
+		this->axis[i].type = Binding_t::Bindtype_t::CONTROLLER_AXIS;
+		this->axis[i].padAxis = static_cast<SDL_GameControllerAxis>(i);
+		this->axis[i].analog = 0.f;
+		this->axis[i].binary = 0.f;
+		this->axis[i].consumed = 0.f;
+	}
+}
+
+const bool GameController::isActive()
 {
 	return (sdl_device != nullptr);
 }
@@ -179,14 +206,14 @@ void GameController::handleAnalog()
 		if ( !oldLeftTrigger )
 		{
 			oldLeftTrigger = 1;
-			joy_trigger_status[0] = 1;
+			//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT].binary = 1;
 			lastkeypressed = 299;
 		}
 	}
 	else
 	{
 		oldLeftTrigger = 0;
-		joy_trigger_status[0] = 0;
+		//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT].binary = 0;
 	}
 
 	if (getRightTrigger())
@@ -194,14 +221,14 @@ void GameController::handleAnalog()
 		if ( !oldRightTrigger )
 		{
 			oldRightTrigger = 1;
-			joy_trigger_status[1] = 1;
+			//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT].binary = 1;
 			lastkeypressed = 300;
 		}
 	}
 	else
 	{
 		oldRightTrigger = 0;
-		joy_trigger_status[1] = 0;
+		//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT].binary = 0;
 	}
 }
 
@@ -822,26 +849,84 @@ void initGameControllers()
 #else
 	SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
 #endif
+	for ( auto& controller : game_controllers )
+	{
+		controller.close();
+		controller.initBindings();
+	}
 
 	int c = 0;
-	bool found = false; //TODO: Bugger this and implement multi-controller support.
-	game_controller = new GameController();
-	for (c = 0; c < SDL_NumJoysticks() && !found; ++c)   //TODO: Bugger this and implement multi-controller support on a player-by-player basis.
+	bool found = false;
+
+	if ( c == 0 && !inputs.hasController(c) )
 	{
-		if (SDL_IsGameController(c) && game_controller->open(c))
+		for ( auto& controller : game_controllers )
+		{
+			if ( controller.isActive() )
+			{
+				inputs.setControllerID(c, controller.getID());
+				break;
+			}
+		}
+	}
+
+
+	auto controller_itr = game_controllers.begin();
+	for ( c = 0; c < SDL_NumJoysticks(); ++c )
+	{
+		if (SDL_IsGameController(c) && controller_itr->open(c))
 		{
 			printlog("(Device %d successfully initialized as game controller.)\n", c);
-			found = true; //TODO: Bugger this and implement multi-controller support.
+			inputs.setControllerID(c, controller_itr->getID());
+			found = true;
+
+			controller_itr = std::next(controller_itr);
+			if ( controller_itr == game_controllers.end() )
+			{
+				printlog("Info: Max controller limit reached.");
+				break;
+			}
 		}
 		else
 		{
 			printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", c);
 		}
 	}
+
 	if (!found)
 	{
 		printlog("Info: No game controller detected!");
 	}
+}
+
+SDL_GameControllerButton GameController::getSDLButtonFromImpulse(const unsigned controllerImpulse)
+{
+	if ( controllerImpulse >= NUM_JOY_IMPULSES )
+	{
+		return SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID;
+	}
+
+	if ( joyimpulses[controllerImpulse] < 0 || joyimpulses[controllerImpulse] == SCANCODE_UNASSIGNED_BINDING )
+	{
+		return SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID;
+	}
+
+	return static_cast<SDL_GameControllerButton>(joyimpulses[controllerImpulse] - 301);
+}
+
+SDL_GameControllerAxis GameController::getSDLTriggerFromImpulse(const unsigned controllerImpulse)
+{
+	if ( controllerImpulse >= NUM_JOY_IMPULSES )
+	{
+		return SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID;
+	}
+
+	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 )
+	{
+		return static_cast<SDL_GameControllerAxis>(joyimpulses[controllerImpulse] - 299 + SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+	}
+
+	return SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID;
 }
 
 Player::Player(int in_playernum, bool in_local_host)
@@ -863,6 +948,104 @@ Player::~Player()
 	{
 		delete entity;
 	}
+}
+
+GameController* Inputs::getController(int player) const
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		printlog("[INPUTS]: Warning: player index %d out of range.", player);
+		return nullptr;
+	}
+	if ( !hasController(player) )
+	{
+		return nullptr;
+	}
+
+	for ( auto& controller : game_controllers )
+	{
+		if ( controller.getID() == getControllerID(player) )
+		{
+			return &controller;
+		}
+	}
+	return nullptr;
+}
+
+const bool Inputs::bControllerInputPressed(int player, const unsigned controllerImpulse) const
+{
+	if ( controllerImpulse >= NUM_JOY_IMPULSES )
+	{
+		return false;
+	}
+	if ( !bPlayerIsControllable(player) )
+	{
+		return false;
+	}
+	const GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return false;
+	}
+
+	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 )
+	{
+		return controller->binaryToggle(GameController::getSDLTriggerFromImpulse(controllerImpulse));
+	}
+	else
+	{
+		return controller->binaryToggle(GameController::getSDLButtonFromImpulse(controllerImpulse));
+	}
+}
+
+void Inputs::controllerClearInput(int player, const unsigned controllerImpulse)
+{
+	if ( controllerImpulse >= NUM_JOY_IMPULSES )
+	{
+		return;
+	}
+	if ( !bPlayerIsControllable(player) )
+	{
+		return;
+	}
+	GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return;
+	}
+
+	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 )
+	{
+		controller->consumeBinaryToggle(GameController::getSDLTriggerFromImpulse(controllerImpulse));
+	}
+	else
+	{
+		controller->consumeBinaryToggle(GameController::getSDLButtonFromImpulse(controllerImpulse));
+	}
+}
+
+const bool Inputs::bPlayerIsControllable(int player) const
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		printlog("[INPUTS]: Warning: player index %d out of range.", player);
+		return false;
+	}
+	if ( player == clientnum )
+	{
+		return true;
+	}
+	if ( player != clientnum )
+	{
+		if ( splitscreen )
+		{
+			// do some additional logic for 2/3 player here, otherwise all 4 players valid
+			return true;
+		}
+	}
+
+	printlog("[INPUTS]: Warning: player index %d invalid.", player);
+	return false;
 }
 
 void initIdentifyGUIControllerCode()
@@ -891,3 +1074,174 @@ void initRemoveCurseGUIControllerCode()
 	}
 }
 
+bool GameController::binaryOf(Binding_t& binding) 
+{
+	if ( binding.type == Binding_t::CONTROLLER_AXIS || binding.type == Binding_t::CONTROLLER_BUTTON ) 
+	{
+		SDL_GameController* pad = sdl_device;
+		if ( binding.type == Binding_t::CONTROLLER_BUTTON ) 
+		{
+			return SDL_GameControllerGetButton(pad, binding.padButton) == 1;
+		}
+		else 
+		{
+			if ( binding.padAxisNegative ) 
+			{
+				return SDL_GameControllerGetAxis(pad, binding.padAxis) < -16384;
+			}
+			else 
+			{
+				return SDL_GameControllerGetAxis(pad, binding.padAxis) > 16384;
+			}
+		}
+	}
+
+	return false;
+}
+
+float GameController::analogOf(Binding_t& binding) 
+{
+	if ( binding.type == Binding_t::CONTROLLER_AXIS || binding.type == Binding_t::CONTROLLER_BUTTON ) 
+	{
+		SDL_GameController* pad = sdl_device;
+		if ( binding.type == Binding_t::CONTROLLER_BUTTON ) 
+		{
+			return SDL_GameControllerGetButton(pad, binding.padButton) ? 1.f : 0.f;
+		}
+		else 
+		{
+			if ( binding.padAxisNegative )
+			{
+				float result = std::min(SDL_GameControllerGetAxis(pad, binding.padAxis) / 32768.f, 0.f) * -1.f;
+				return (fabs(result) > binding.deadzone) ? result : 0.f;
+			}
+			else 
+			{
+				float result = std::max(SDL_GameControllerGetAxis(pad, binding.padAxis) / 32767.f, 0.f);
+				return (fabs(result) > binding.deadzone) ? result : 0.f;
+			}
+		}
+	}
+
+	return 0.f;
+}
+
+void GameController::updateButtons()
+{
+	if ( !isActive() )
+	{
+		return;
+	}
+
+	for ( int i = 0; i < NUM_JOY_STATUS; ++i )
+	{
+		buttons[i].analog = analogOf(buttons[i]);
+
+		bool oldBinary = buttons[i].binary;
+		buttons[i].binary = binaryOf(buttons[i]);
+		if ( oldBinary != buttons[i].binary ) {
+			// unconsume the input whenever it's released or pressed again.
+			//messagePlayer(0, "%d: %d", i, buttons[i].binary ? 1 : 0);
+			buttons[i].consumed = false;
+		}
+	}
+}
+
+void GameController::updateAxis()
+{
+	if ( !isActive() )
+	{
+		return;
+	}
+
+	for ( int i = 0; i < NUM_JOY_AXIS_STATUS; ++i )
+	{
+		axis[i].analog = analogOf(axis[i]);
+
+		bool oldBinary = axis[i].binary;
+		axis[i].binary = binaryOf(axis[i]);
+		if ( oldBinary != axis[i].binary ) {
+			// unconsume the input whenever it's released or pressed again.
+			messagePlayer(0, "%d: %d", i, axis[i].binary ? 1 : 0);
+			axis[i].consumed = false;
+		}
+	}
+}
+
+float GameController::analog(SDL_GameControllerButton binding) const
+{
+	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return 0.f;
+	}
+	return buttons[binding].analog;
+}
+
+bool GameController::binaryToggle(SDL_GameControllerButton binding) const
+{
+	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return false;
+	}
+	return (buttons[binding].binary && !buttons[binding].consumed);
+}
+
+bool GameController::binary(SDL_GameControllerButton binding) const
+{
+	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return false;
+	}
+	return buttons[binding].binary;
+}
+
+void GameController::consumeBinaryToggle(SDL_GameControllerButton binding)
+{
+	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return;
+	}
+	if ( buttons[binding].binary )
+	{
+		buttons[binding].consumed = true;
+	}
+}
+
+float GameController::analog(SDL_GameControllerAxis binding) const
+{
+	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	{
+		return 0.f;
+	}
+	return axis[binding].analog;
+}
+
+bool GameController::binaryToggle(SDL_GameControllerAxis binding) const
+{
+	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	{
+		return false;
+	}
+	return (axis[binding].binary && !axis[binding].consumed);
+}
+
+bool GameController::binary(SDL_GameControllerAxis binding) const
+{
+	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	{
+		return false;
+	}
+	return axis[binding].binary;
+}
+
+void GameController::consumeBinaryToggle(SDL_GameControllerAxis binding)
+{
+	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	{
+		return;
+	}
+	if ( axis[binding].binary )
+	{
+		axis[binding].consumed = true;
+	}
+}

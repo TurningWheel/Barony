@@ -720,7 +720,7 @@ void updatePlayerInventory()
 	pos.h = INVENTORY_SIZEY * INVENTORY_SLOTSIZE;
 	drawRect(&pos, 0, 224);
 
-	if ( game_controller )
+	if ( game_controllers[0].isActive() )
 	{
 		if ( gui_mode == GUI_MODE_SHOP )
 		{
@@ -738,7 +738,7 @@ void updatePlayerInventory()
 
 		if ( selectedChestSlot < 0 && selectedShopSlot < 0 
 			&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 
-			&& !itemMenuOpen && game_controller->handleInventoryMovement()
+			&& !itemMenuOpen && game_controllers[0].handleInventoryMovement()
 			&& GenericGUI.selectedSlot < 0 )
 		{
 			if ( selectedChestSlot < 0 && selectedShopSlot < 0 
@@ -755,7 +755,7 @@ void updatePlayerInventory()
 				}
 			}
 		}
-		else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controller->handleChestMovement() )
+		else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controllers[0].handleChestMovement() )
 		{
 			if ( selectedChestSlot < 0 )
 			{
@@ -763,28 +763,28 @@ void updatePlayerInventory()
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( selectedShopSlot >= 0 && !itemMenuOpen && game_controller->handleShopMovement() )
+		else if ( selectedShopSlot >= 0 && !itemMenuOpen && game_controllers[0].handleShopMovement() )
 		{
 			if ( selectedShopSlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && game_controller->handleIdentifyMovement() )
+		else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && game_controllers[0].handleIdentifyMovement() )
 		{
 			if ( selectedIdentifySlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( selectedRemoveCurseSlot >= 0 && !itemMenuOpen && game_controller->handleRemoveCurseMovement() )
+		else if ( selectedRemoveCurseSlot >= 0 && !itemMenuOpen && game_controllers[0].handleRemoveCurseMovement() )
 		{
 			if ( selectedRemoveCurseSlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( GenericGUI.selectedSlot >= 0 && !itemMenuOpen && game_controller->handleRepairGUIMovement() )
+		else if ( GenericGUI.selectedSlot >= 0 && !itemMenuOpen && game_controllers[0].handleRepairGUIMovement() )
 		{
 			if ( GenericGUI.selectedSlot < 0 )
 			{
@@ -2411,7 +2411,7 @@ void itemContextMenu()
 	const int slot_width = 100;
 	const int slot_height = 20;
 
-	if ( game_controller->handleItemContextMenu(*current_item) )
+	if ( game_controllers[0].handleItemContextMenu(*current_item) )
 	{
 		SDL_WarpMouseInWindow(screen, itemMenuX + (slot_width / 2), itemMenuY + (itemMenuSelected * slot_height) + (slot_height / 2));
 	}

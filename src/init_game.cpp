@@ -1035,10 +1035,10 @@ void deinitGame()
 		SDL_GameControllerClose(game_controller);
 		game_controller = nullptr;
 	}*/
-	if (game_controller)
+	/*if (game_controller)
 	{
 		delete game_controller;
-	}
+	}*/
 
 	if ( shoparea )
 	{
