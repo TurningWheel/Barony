@@ -8,6 +8,10 @@
 
 class Frame;
 
+static inline bool rectContainsPoint(SDL_Rect& r, int x, int y) {
+	return x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
+}
+
 //! A Button lives in a Frame and can have scripted actions or a native callback.
 class Button : public Widget {
 public:

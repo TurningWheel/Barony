@@ -1,7 +1,10 @@
 // Slider.cpp
 
-#include "Slider.hpp"
+#include "../main.hpp"
 #include "../draw.hpp"
+#include "Slider.hpp"
+#include "Frame.hpp"
+#include "Button.hpp"
 
 Slider::Slider(Frame& _parent) {
 	parent = &_parent;
@@ -9,30 +12,25 @@ Slider::Slider(Frame& _parent) {
 }
 
 void Slider::draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize) {
-	Rect<int> _handleSize, _railSize;
+	SDL_Rect _handleSize, _railSize;
 
 	handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
 	handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
 
 	// draw rail
-	_railSize.x = _size.x + max(0, railSize.x - _actualSize.x);
-	_railSize.y = _size.y + max(0, railSize.y - _actualSize.y);
-	_railSize.w = min(railSize.w, _size.w - railSize.x + _actualSize.x) + min(0, railSize.x - _actualSize.x);
-	_railSize.h = min(railSize.h, _size.h - railSize.y + _actualSize.y) + min(0, railSize.y - _actualSize.y);
+	_railSize.x = _size.x + std::max(0, railSize.x - _actualSize.x);
+	_railSize.y = _size.y + std::max(0, railSize.y - _actualSize.y);
+	_railSize.w = std::min(railSize.w, _size.w - railSize.x + _actualSize.x) + std::min(0, railSize.x - _actualSize.x);
+	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 	if (_railSize.w > 0 && _railSize.h > 0) {
-		glm::vec4 _color = color * .5f;
-		if (border) {
-			renderer.drawLowFrame(_railSize, border, _color);
-		} else {
-			renderer.drawFrame(_railSize, border, _color);
-		}
+		drawDepressed(_railSize.x, _railSize.y, _railSize.x + _railSize.w, _railSize.y + _railSize.h);
 	}
 	
 	// draw handle
-	_handleSize.x = _size.x + max(0, handleSize.x - _actualSize.x);
-	_handleSize.y = _size.y + max(0, handleSize.y - _actualSize.y);
-	_handleSize.w = min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + min(0, handleSize.x - _actualSize.x);
-	_handleSize.h = min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + min(0, handleSize.y - _actualSize.y);
+	_handleSize.x = _size.x + std::max(0, handleSize.x - _actualSize.x);
+	_handleSize.y = _size.y + std::max(0, handleSize.y - _actualSize.y);
+	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
+	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
 	if (_handleSize.w > 0 && _handleSize.h > 0) {
 		bool h = highlighted | selected;
 		glm::vec4 _color = disabled ? color * .5f : (h ? color * 1.5f : color);
@@ -48,7 +46,7 @@ void Slider::draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize) {
 	}
 }
 
-Slider::result_t Slider::process(Rect<int> _size, Rect<int> _actualSize, const bool usable) {
+Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
 	result_t result;
 	result.tooltip = nullptr;
 	result.highlightTime = SDL_GetTicks();
@@ -67,25 +65,25 @@ Slider::result_t Slider::process(Rect<int> _size, Rect<int> _actualSize, const b
 		return result;
 	}
 
-	Rect<int> _handleSize, _railSize;
+	SDL_Rect _handleSize, _railSize;
 
 	handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
 	handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
 
-	_railSize.x = _size.x + max(0, railSize.x - _actualSize.x);
-	_railSize.y = _size.y + max(0, railSize.y - _actualSize.y);
-	_railSize.w = min(railSize.w, _size.w - railSize.x + _actualSize.x) + min(0, railSize.x - _actualSize.x);
-	_railSize.h = min(railSize.h, _size.h - railSize.y + _actualSize.y) + min(0, railSize.y - _actualSize.y);
+	_railSize.x = _size.x + std::max(0, railSize.x - _actualSize.x);
+	_railSize.y = _size.y + std::max(0, railSize.y - _actualSize.y);
+	_railSize.w = std::min(railSize.w, _size.w - railSize.x + _actualSize.x) + std::min(0, railSize.x - _actualSize.x);
+	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 
-	_handleSize.x = _size.x + max(0, handleSize.x - _actualSize.x);
-	_handleSize.y = _size.y + max(0, handleSize.y - _actualSize.y);
-	_handleSize.w = min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + min(0, handleSize.x - _actualSize.x);
-	_handleSize.h = min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + min(0, handleSize.y - _actualSize.y);
+	_handleSize.x = _size.x + std::max(0, handleSize.x - _actualSize.x);
+	_handleSize.y = _size.y + std::max(0, handleSize.y - _actualSize.y);
+	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
+	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
 
 	int offX = _size.x + railSize.x - _actualSize.x;
-	_size.x = max(_size.x, _railSize.x - _handleSize.w / 2);
-	_size.y = max(_size.y, _railSize.y + _railSize.h / 2 - _handleSize.h / 2);
-	_size.w = min(_size.w, _railSize.w + _handleSize.w);
+	_size.x = std::max(_size.x, _railSize.x - _handleSize.w / 2);
+	_size.y = std::max(_size.y, _railSize.y + _railSize.h / 2 - _handleSize.h / 2);
+	_size.w = std::min(_size.w, _railSize.w + _handleSize.w);
 	_size.h = _handleSize.h;
 
 	if (_size.w <= 0 || _size.h <= 0) {
@@ -93,12 +91,12 @@ Slider::result_t Slider::process(Rect<int> _size, Rect<int> _actualSize, const b
 		return result;
 	}
 
-	Sint32 mousex = (mainEngine->getMouseX() / (float)mainEngine->getXres()) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (mainEngine->getMouseY() / (float)mainEngine->getYres()) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (mainEngine->getOldMouseX() / (float)mainEngine->getXres()) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (mainEngine->getOldMouseY() / (float)mainEngine->getYres()) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
 
-	if (_size.containsPoint(omousex, omousey)) {
+	if (rectContainsPoint(_size, omousex, omousey)) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
 		result.tooltip = tooltip.get();
@@ -115,7 +113,7 @@ Slider::result_t Slider::process(Rect<int> _size, Rect<int> _actualSize, const b
 			pressed = true;
 			float oldValue = value;
 			value = ((float)(mousex - offX) / railSize.w) * (float)(maxValue - minValue) + minValue;
-			value = min(max(minValue, value), maxValue);
+			value = std::min(std::max(minValue, value), maxValue);
 			if (oldValue != value) {
 				result.clicked = true;
 			}
@@ -190,7 +188,7 @@ void Slider::control() {
 					value += inc;
 				}
 			}
-			value = std::min(std::max(minValue, value), maxValue);
+			value = std::std::min(std::std::max(minValue, value), maxValue);
 			if (value != ovalue) {
 				lastMoveTime = ticks;
 				fireCallback();

@@ -1,25 +1,21 @@
 // Frame.cpp
 
-#include "Main.hpp"
-#include "LinkedList.hpp"
+#include "../main.hpp"
+#include "../draw.hpp"
+#include "../player.hpp"
 #include "Button.hpp"
 #include "Frame.hpp"
-#include "Renderer.hpp"
-#include "Engine.hpp"
-#include "ShaderProgram.hpp"
-#include "Script.hpp"
 #include "Image.hpp"
 #include "Field.hpp"
 #include "Slider.hpp"
-#include "Player.hpp"
 
 const Sint32 Frame::sliderSize = 15;
 
-static Cvar cvar_tooltipFont("tooltip.font", "font to use for tooltips", Font::defaultFont);
-static Cvar cvar_tooltipColorBackground("tooltip.color.background", "color to use for tooltip background", "0.0 0.0 0.0 0.9");
-static Cvar cvar_tooltipColorBorder("tooltip.color.border", "color to use for tooltip border", "1.0 0.5 0.0 1.0");
-static Cvar cvar_tooltipColorText("tooltip.color.text", "color to use for tooltip text", "1.0 1.0 1.0 1.0");
-static Cvar cvar_tooltipBorderWidth("tooltip.border.width", "width of tooltip border", "3");
+static const Uint32 tooltip_background = 0x000000EE;
+static const Uint32 tooltip_border_color = 0xFF8800FF;
+static const int tooltip_border_width = 3;
+static const Uint32 tooltip_text_color = 0xFFFFFFFF;
+static const char* tooltip_text_font = Font::defaultFont;
 
 void Frame::listener_t::onDeleted() {
 	if (!entry) {
@@ -35,11 +31,11 @@ void Frame::listener_t::onChangeColor(bool selected, bool highlighted) {
 	}
 	Frame::entry_t* entryCast = (Frame::entry_t *)entry;
 	if (selected) {
-		entryCast->color = WideVector(1.f, 0.f, 0.f, 1.f);
+		entryCast->color = SDL_MapRGBA(mainsurface->format, 255, 0, 0, 255);
 	} else if (highlighted) {
-		entryCast->color = WideVector(1.f, 1.f, 0.f, 1.f);
+		entryCast->color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
 	} else {
-		entryCast->color = WideVector(1.f);
+		entryCast->color = 0xffffffff;
 	}
 }
 
@@ -130,17 +126,17 @@ void Frame::draw(Renderer& renderer, Rect<int> _size, Rect<int> _actualSize) {
 	if (disabled)
 		return;
 
-	_size.x += max(0, size.x - _actualSize.x);
-	_size.y += max(0, size.y - _actualSize.y);
+	_size.x += std::max(0, size.x - _actualSize.x);
+	_size.y += std::max(0, size.y - _actualSize.y);
 	if (size.h < actualSize.h) {
-		_size.w = min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + min(0, size.x - _actualSize.x);
+		_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	} else {
-		_size.w = min(size.w, _size.w - size.x + _actualSize.x) + min(0, size.x - _actualSize.x);
+		_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	}
 	if (size.w < actualSize.w) {
-		_size.h = min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + min(0, size.y - _actualSize.y);
+		_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 	} else {
-		_size.h = min(size.h, _size.h - size.y + _actualSize.y) + min(0, size.y - _actualSize.y);
+		_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 	}
 	if (_size.w <= 0 || _size.h <= 0)
 		return;
@@ -150,10 +146,10 @@ void Frame::draw(Renderer& renderer, Rect<int> _size, Rect<int> _actualSize) {
 		renderer.drawRect(&_size, color);
 	}
 
-	Sint32 mousex = (mainEngine->getMouseX() / (float)mainEngine->getXres()) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (mainEngine->getMouseY() / (float)mainEngine->getYres()) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (mainEngine->getOldMouseX() / (float)mainEngine->getXres()) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (mainEngine->getOldMouseY() / (float)mainEngine->getYres()) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	// horizontal slider
 	if (actualSize.w > size.w) {
@@ -172,7 +168,7 @@ void Frame::draw(Renderer& renderer, Rect<int> _size, Rect<int> _actualSize) {
 
 		// handle
 		float winFactor = ((float)_size.w / (float)actualSize.w);
-		int handleSize = max((int)(size.w * winFactor), sliderSize);
+		int handleSize = std::max((int)(size.w * winFactor), sliderSize);
 		int sliderPos = winFactor * actualSize.x;
 
 		Rect<int> handleRect;
@@ -210,7 +206,7 @@ void Frame::draw(Renderer& renderer, Rect<int> _size, Rect<int> _actualSize) {
 
 		// handle
 		float winFactor = ((float)_size.h / (float)actualSize.h);
-		int handleSize = max((int)(size.h * winFactor), sliderSize);
+		int handleSize = std::max((int)(size.h * winFactor), sliderSize);
 		int sliderPos = winFactor * actualSize.y;
 
 		Rect<int> handleRect;
@@ -280,22 +276,22 @@ void Frame::draw(Renderer& renderer, Rect<int> _size, Rect<int> _actualSize) {
 		pos.h = image.pos.h > 0 ? image.pos.h : actualImage->getHeight();
 
 		Rect<int> dest;
-		dest.x = max(_size.x, pos.x);
-		dest.y = max(_size.y, pos.y);
-		dest.w = pos.w - (dest.x - pos.x) - max(0, (pos.x + pos.w) - (_size.x + _size.w));
-		dest.h = pos.h - (dest.y - pos.y) - max(0, (pos.y + pos.h) - (_size.y + _size.h));
+		dest.x = std::max(_size.x, pos.x);
+		dest.y = std::max(_size.y, pos.y);
+		dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+		dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
 		Rect<int> src;
-		src.x = max(0, _size.x - pos.x);
-		src.y = max(0, _size.y - pos.y);
-		src.w = pos.w - (dest.x - pos.x) - max(0, (pos.x + pos.w) - (_size.x + _size.w));
-		src.h = pos.h - (dest.y - pos.y) - max(0, (pos.y + pos.h) - (_size.y + _size.h));
+		src.x = std::max(0, _size.x - pos.x);
+		src.y = std::max(0, _size.y - pos.y);
+		src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+		src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
 		actualImage->drawColor(&src, dest, image.color);
 	}
 
 	// render list entries
-	int listStart = std::min(std::max(0, scroll.y / entrySize), (int)list.getSize() - 1);
+	int listStart = std::std::min(std::std::max(0, scroll.y / entrySize), (int)list.getSize() - 1);
 	int i = listStart;
 	Node<entry_t*>* node = list.nodeForIndex(listStart);
 	for (; node != nullptr; node = node->getNext(), ++i) {
@@ -321,16 +317,16 @@ void Frame::draw(Renderer& renderer, Rect<int> _size, Rect<int> _actualSize) {
 		pos.h = textSizeH;
 
 		Rect<int> dest;
-		dest.x = max(_size.x, pos.x);
-		dest.y = max(_size.y, pos.y);
-		dest.w = pos.w - (dest.x - pos.x) - max(0, (pos.x + pos.w) - (_size.x + _size.w));
-		dest.h = pos.h - (dest.y - pos.y) - max(0, (pos.y + pos.h) - (_size.y + _size.h));
+		dest.x = std::max(_size.x, pos.x);
+		dest.y = std::max(_size.y, pos.y);
+		dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+		dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
 		Rect<int> src;
-		src.x = max(0, _size.x - pos.x);
-		src.y = max(0, _size.y - pos.y);
-		src.w = pos.w - (dest.x - pos.x) - max(0, (pos.x + pos.w) - (_size.x + _size.w));
-		src.h = pos.h - (dest.y - pos.y) - max(0, (pos.y + pos.h) - (_size.y + _size.h));
+		src.x = std::max(0, _size.x - pos.x);
+		src.y = std::max(0, _size.y - pos.y);
+		src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+		src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
 		if (src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0)
 			break;
@@ -379,7 +375,7 @@ void Frame::draw(Renderer& renderer, Rect<int> _size, Rect<int> _actualSize) {
 			if (font) {
 				Text* text = Text::get(tooltip, font->getName());
 				Rect<int> src;
-				src.x = mousex + 20 * ((float)Frame::virtualScreenX / mainEngine->getXres());
+				src.x = mousex + 20 * ((float)Frame::virtualScreenX / xres);
 				src.y = mousey;
 				src.w = text->getWidth() + 2;
 				src.h = text->getHeight() + 2;
@@ -446,17 +442,17 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 		return result;
 	}
 
-	_size.x += max(0, size.x - _actualSize.x);
-	_size.y += max(0, size.y - _actualSize.y);
+	_size.x += std::max(0, size.x - _actualSize.x);
+	_size.y += std::max(0, size.y - _actualSize.y);
 	if (size.h < actualSize.h) {
-		_size.w = min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + min(0, size.x - _actualSize.x);
+		_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	} else {
-		_size.w = min(size.w, _size.w - size.x + _actualSize.x) + min(0, size.x - _actualSize.x);
+		_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	}
 	if (size.w < actualSize.w) {
-		_size.h = min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + min(0, size.y - _actualSize.y);
+		_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 	} else {
-		_size.h = min(size.h, _size.h - size.y + _actualSize.y) + min(0, size.y - _actualSize.y);
+		_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 	}
 	if (_size.w <= 0 || _size.h <= 0)
 		return result;
@@ -465,10 +461,10 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
-	Sint32 mousex = (mainEngine->getMouseX() / (float)mainEngine->getXres()) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (mainEngine->getMouseY() / (float)mainEngine->getYres()) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (mainEngine->getOldMouseX() / (float)mainEngine->getXres()) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (mainEngine->getOldMouseY() / (float)mainEngine->getYres()) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	if (selected) {
 		Input& input = mainEngine->getInput(owner);
@@ -535,18 +531,18 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 		// x scroll with mouse wheel
 		if (actualSize.w > size.w) {
 			if (mainEngine->getMouseWheelX() < 0) {
-				actualSize.x += min(entrySize * 4, size.w);
+				actualSize.x += std::min(entrySize * 4, size.w);
 				usable = result.usable = false;
 			} else if (mainEngine->getMouseWheelX() > 0) {
-				actualSize.x -= min(entrySize * 4, size.w);
+				actualSize.x -= std::min(entrySize * 4, size.w);
 				usable = result.usable = false;
 			}
 			if (actualSize.h <= size.h) {
 				if (mainEngine->getMouseWheelY() < 0) {
-					actualSize.x += min(entrySize * 4, size.w);
+					actualSize.x += std::min(entrySize * 4, size.w);
 					usable = result.usable = false;
 				} else if (mainEngine->getMouseWheelY() > 0) {
-					actualSize.x -= min(entrySize * 4, size.w);
+					actualSize.x -= std::min(entrySize * 4, size.w);
 					usable = result.usable = false;
 				}
 			}
@@ -555,17 +551,17 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 		// y scroll with mouse wheel
 		if (actualSize.h > size.h) {
 			if (mainEngine->getMouseWheelY() < 0) {
-				actualSize.y += min(entrySize * 4, size.h);
+				actualSize.y += std::min(entrySize * 4, size.h);
 				usable = result.usable = false;
 			} else if (mainEngine->getMouseWheelY() > 0) {
-				actualSize.y -= min(entrySize * 4, size.h);
+				actualSize.y -= std::min(entrySize * 4, size.h);
 				usable = result.usable = false;
 			}
 		}
 
 		// bound
-		actualSize.x = min(max(0, actualSize.x), max(0, actualSize.w - size.w));
-		actualSize.y = min(max(0, actualSize.y), max(0, actualSize.h - size.h));
+		actualSize.x = std::min(std::max(0, actualSize.x), std::max(0, actualSize.w - size.w));
+		actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 	}
 
 	// widget to move to after processing inputs
@@ -614,7 +610,7 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 
 			// handle
 			float winFactor = ((float)_size.w / (float)actualSize.w);
-			int handleSize = max((int)(size.w * winFactor), sliderSize);
+			int handleSize = std::max((int)(size.w * winFactor), sliderSize);
 			int sliderPos = winFactor * actualSize.x;
 			Rect<int> handleRect;
 			handleRect.x = _size.x + sliderPos;
@@ -629,7 +625,7 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 				} else {
 					float winFactor = ((float)_size.w / (float)actualSize.w);
 					actualSize.x = (mousex - omousex) / winFactor + oldSliderX;
-					actualSize.x = min(max(0, actualSize.x), max(0, actualSize.w - size.w));
+					actualSize.x = std::min(std::max(0, actualSize.x), std::max(0, actualSize.w - size.w));
 				}
 				usable = result.usable = false;
 				ticks = -1; // hack to fix sliders in drop downs
@@ -643,8 +639,8 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if (sliderRect.containsPoint(omousex, omousey)) {
 					if (mainEngine->getMouseStatus(SDL_BUTTON_LEFT)) {
-						actualSize.x += omousex < handleRect.x ? -min(entrySize * 4, size.w) : min(entrySize * 4, size.w);
-						actualSize.x = min(max(0, actualSize.x), max(0, actualSize.w - size.w));
+						actualSize.x += omousex < handleRect.x ? -std::min(entrySize * 4, size.w) : std::min(entrySize * 4, size.w);
+						actualSize.x = std::min(std::max(0, actualSize.x), std::max(0, actualSize.w - size.w));
 						mainEngine->pressMouse(SDL_BUTTON_LEFT);
 					}
 					usable = result.usable = false;
@@ -664,7 +660,7 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 
 			// handle
 			float winFactor = ((float)_size.h / (float)actualSize.h);
-			int handleSize = max((int)(size.h * winFactor), sliderSize);
+			int handleSize = std::max((int)(size.h * winFactor), sliderSize);
 			int sliderPos = winFactor * actualSize.y;
 			Rect<int> handleRect;
 			handleRect.x = _size.x + _size.w;
@@ -679,7 +675,7 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 				} else {
 					float winFactor = ((float)_size.h / (float)actualSize.h);
 					actualSize.y = (mousey - omousey) / winFactor + oldSliderY;
-					actualSize.y = min(max(0, actualSize.y), max(0, actualSize.h - size.h));
+					actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 				}
 				usable = result.usable = false;
 				ticks = -1; // hack to fix sliders in drop downs
@@ -693,8 +689,8 @@ Frame::result_t Frame::process(Rect<int> _size, Rect<int> _actualSize, bool usab
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if (sliderRect.containsPoint(omousex, omousey)) {
 					if (mainEngine->getMouseStatus(SDL_BUTTON_LEFT)) {
-						actualSize.y += omousey < handleRect.y ? -min(entrySize * 4, size.h) : min(entrySize * 4, size.h);
-						actualSize.y = min(max(0, actualSize.y), max(0, actualSize.h - size.h));
+						actualSize.y += omousey < handleRect.y ? -std::min(entrySize * 4, size.h) : std::min(entrySize * 4, size.h);
+						actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 						mainEngine->pressMouse(SDL_BUTTON_LEFT);
 					}
 					usable = result.usable = false;
@@ -1123,12 +1119,12 @@ Slider* Frame::findSlider(const char* name) {
 void Frame::resizeForEntries() {
 	actualSize.w = size.w;
 	actualSize.h = (Uint32)list.getSize() * entrySize;
-	actualSize.y = min(max(0, actualSize.y), max(0, actualSize.h - size.h));
+	actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 }
 
 bool Frame::capturesMouse(Rect<int>* curSize, Rect<int>* curActualSize) {
-	int xres = mainEngine->getXres();
-	int yres = mainEngine->getYres();
+	int xres = xres;
+	int yres = yres;
 	Rect<int> newSize = Rect<int>(0, 0, xres, yres);
 	Rect<int> newActualSize = Rect<int>(0, 0, xres, yres);
 	Rect<int>& _size = curSize ? *curSize : newSize;
@@ -1137,23 +1133,23 @@ bool Frame::capturesMouse(Rect<int>* curSize, Rect<int>* curActualSize) {
 	if (parent) {
 		auto pframe = static_cast<Frame*>(parent);
 		if (pframe->capturesMouse(&_size, &_actualSize)) {
-			_size.x += max(0, size.x - _actualSize.x);
-			_size.y += max(0, size.y - _actualSize.y);
+			_size.x += std::max(0, size.x - _actualSize.x);
+			_size.y += std::max(0, size.y - _actualSize.y);
 			if (size.h < actualSize.h) {
-				_size.w = min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + min(0, size.x - _actualSize.x);
+				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 			} else {
-				_size.w = min(size.w, _size.w - size.x + _actualSize.x) + min(0, size.x - _actualSize.x);
+				_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 			}
 			if (size.w < actualSize.w) {
-				_size.h = min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + min(0, size.y - _actualSize.y);
+				_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 			} else {
-				_size.h = min(size.h, _size.h - size.y + _actualSize.y) + min(0, size.y - _actualSize.y);
+				_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 			}
 			if (_size.w <= 0 || _size.h <= 0) {
 				return false;
 			} else {
-				Sint32 omousex = (mainEngine->getOldMouseX() / (float)mainEngine->getXres()) * (float)Frame::virtualScreenX;
-				Sint32 omousey = (mainEngine->getOldMouseY() / (float)mainEngine->getYres()) * (float)Frame::virtualScreenY;
+				Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
+				Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
 				if (_size.containsPoint(omousex, omousey)) {
 					return true;
 				} else {

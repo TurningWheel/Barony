@@ -1,12 +1,11 @@
 // Font.cpp
 
-#include "Main.hpp"
-#include "Engine.hpp"
+#include "../main.hpp"
 #include "Font.hpp"
 
 const char* Font::defaultFont = "fonts/mono.ttf#16";
 
-Font::Font(const char* _name) : Asset(_name) {
+Font::Font(const char* _name) {
 	Uint32 index = name.find('#');
 	if (index != String::npos) {
 		path = mainEngine->buildPath(name.substr(0, index).get());
