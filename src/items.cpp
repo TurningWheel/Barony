@@ -4874,7 +4874,7 @@ void playerTryEquipItemAndUpdateServer(Item* const item)
 		EquipItemResult equipResult = EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 		if ( cat == SPELLBOOK )
 		{
-			if ( !cast_animation.active_spellbook )
+			if ( !cast_animation[clientnum].active_spellbook )
 			{
 				equipResult = equipItem(item, &stats[clientnum]->shield, clientnum);
 			}
@@ -4887,7 +4887,7 @@ void playerTryEquipItemAndUpdateServer(Item* const item)
 		{
 			if ( cat == SPELLBOOK )
 			{
-				if ( !cast_animation.active_spellbook )
+				if ( !cast_animation[clientnum].active_spellbook )
 				{
 					clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, equipResult, clientnum, 
 						type, status, beatitude, count, appearance, identified);
@@ -4906,7 +4906,7 @@ void playerTryEquipItemAndUpdateServer(Item* const item)
 		EquipItemResult equipResult = EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 		if ( itemCategory(item) == SPELLBOOK )
 		{
-			if ( !cast_animation.active_spellbook )
+			if ( !cast_animation[clientnum].active_spellbook )
 			{
 				equipResult = equipItem(item, &stats[clientnum]->shield, clientnum);
 			}

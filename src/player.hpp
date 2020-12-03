@@ -220,6 +220,7 @@ extern std::array<GameController, MAX_GAME_CONTROLLERS> game_controllers;
 class Inputs
 {
 	int playerControllerIds[MAXPLAYERS];
+	int playerUsingKeyboardControl = 0;
 public:
 	Inputs() 
 	{
@@ -229,6 +230,14 @@ public:
 		}
 	};
 	~Inputs() {};
+	const void setPlayerIDAllowedKeyboard(int player)
+	{
+		playerUsingKeyboardControl = player;
+	}
+	const bool bPlayerUsingKeyboardControl(int player) const
+	{
+		return player == playerUsingKeyboardControl;
+	}
 	const bool bControllerInputPressed(int player, const unsigned controllerImpulse) const;
 	void controllerClearInput(int player, const unsigned controllerImpulse);
 	const void removeControllerWithDeviceID(int id)
@@ -299,9 +308,9 @@ class Player
 
 	int playernum;
 
+
 public:
 	Entity* entity;
-
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 };

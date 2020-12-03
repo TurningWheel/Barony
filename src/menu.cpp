@@ -9553,10 +9553,13 @@ void handleMainMenu(bool mode)
 				}
 
 				// hack to fix these things from breaking everything...
-				hudarm = NULL;
-				hudweapon = NULL;
-				magicLeftHand = NULL;
-				magicRightHand = NULL;
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					hudarm[i] = nullptr;
+					hudweapon[i] = nullptr;
+					magicLeftHand[i] = nullptr;
+					magicRightHand[i] = nullptr;
+				}
 
 				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
@@ -9780,10 +9783,13 @@ void handleMainMenu(bool mode)
 			else
 			{
 				// hack to fix these things from breaking everything...
-				hudarm = NULL;
-				hudweapon = NULL;
-				magicLeftHand = NULL;
-				magicRightHand = NULL;
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					hudarm[i] = nullptr;
+					hudweapon[i] = nullptr;
+					magicLeftHand[i] = nullptr;
+					magicRightHand[i] = nullptr;
+				}
 
 				client_disconnected[0] = false;
 
@@ -10352,7 +10358,10 @@ void handleMainMenu(bool mode)
 			selected_spell = NULL; //So you don't start off with a spell when the game restarts.
 			selected_spell_last_appearance = -1;
 			client_classes[0] = 0;
-			spellcastingAnimationManager_deactivate(&cast_animation);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				spellcastingAnimationManager_deactivate(&cast_animation[c]);
+			}
 			SDL_StopTextInput();
 
 			// delete game data clutter
@@ -10400,10 +10409,13 @@ void handleMainMenu(bool mode)
 			}
 
 			// hack to fix these things from breaking everything...
-			hudarm = NULL;
-			hudweapon = NULL;
-			magicLeftHand = NULL;
-			magicRightHand = NULL;
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				hudarm[i] = nullptr;
+				hudweapon[i] = nullptr;
+				magicLeftHand[i] = nullptr;
+				magicRightHand[i] = nullptr;
+			}
 
 			// load menu level
 			int menuMapType = 0;

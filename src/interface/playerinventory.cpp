@@ -2124,7 +2124,7 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 		if (!is_potion_bad && !learnedSpell)
 		{
 			//Option 0 = use.
-			if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
+			if ( !(isItemEquippableInShieldSlot(item) && cast_animation[clientnum].active_spellbook) )
 			{
 				if ( !disableItemUsage )
 				{
@@ -2292,7 +2292,7 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 			else
 			{
 				//Option 1 = drink/use/whatever.
-				if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
+				if ( !(isItemEquippableInShieldSlot(item) && cast_animation[clientnum].active_spellbook) )
 				{
 					useItem(item, clientnum);
 				}

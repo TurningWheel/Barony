@@ -1048,7 +1048,7 @@ void drawStatus()
 
 							if ( !badpotion && !learnedSpell )
 							{
-								if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
+								if ( !(isItemEquippableInShieldSlot(item) && cast_animation[clientnum].active_spellbook) )
 								{
 									if ( !disableItemUsage )
 									{
@@ -1869,7 +1869,7 @@ void drawStatus()
 			{
 				if ( !badpotion && !learnedSpell )
 				{
-					if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
+					if ( !(isItemEquippableInShieldSlot(item) && cast_animation[clientnum].active_spellbook) )
 					{
 						if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON
 							&& (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )

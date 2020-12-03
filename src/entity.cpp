@@ -7233,7 +7233,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				if ( behavior == &actPlayer )
 				{
-					if ( skill[2] != clientnum )
+					if ( skill[2] != clientnum && (!splitscreen) )
 					{
 						if ( achievementRangedMode[skill[2]] && !playerFailedRangedOnlyConduct[skill[2]] )
 						{
@@ -7250,7 +7250,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							serverUpdatePlayerConduct(skill[2], CONDUCT_RANGED_ONLY, 0);
 						}
 					}
-					else if ( skill[2] == clientnum )
+					else
 					{
 						if ( achievementRangedMode[skill[2]] && conductGameChallenges[CONDUCT_RANGED_ONLY] )
 						{

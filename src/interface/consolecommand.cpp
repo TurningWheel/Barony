@@ -2849,6 +2849,46 @@ void consoleCommand(char const * const command_str)
 		{
 			sfxEnvironmentVolume = atoi(&command_str[22]);
 		}
+		else if ( !strncmp(command_str, "/cyclekeyboard", 14) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					if ( i + 1 >= MAXPLAYERS )
+					{
+						inputs.setPlayerIDAllowedKeyboard(0);
+						messagePlayer(clientnum, "Keyboard controlled by player %d", 0);
+					}
+					else
+					{
+						inputs.setPlayerIDAllowedKeyboard(i + 1);
+						messagePlayer(clientnum, "Keyboard controlled by player %d", i + 1);
+					}
+					break;
+				}
+			}
+		}
+		else if ( !strncmp(command_str, "/cyclegamepad", 13) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					int id = inputs.getControllerID(i);
+					inputs.removeControllerWithDeviceID(id);
+					if ( i + 1 >= MAXPLAYERS )
+					{
+						inputs.setControllerID(0, id);
+					}
+					else
+					{
+						inputs.setControllerID(i + 1, id);
+					}
+					break;
+				}
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

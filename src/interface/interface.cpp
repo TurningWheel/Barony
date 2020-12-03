@@ -1523,6 +1523,38 @@ Sint8* inputPressed(Uint32 scancode)
 	}
 }
 
+Sint8* inputPressedForPlayer(int player, Uint32 scancode)
+{
+	if ( splitscreen )
+	{
+		// WIP SPLITSCREEN - keyboard only send for local player
+		if ( !inputs.bPlayerUsingKeyboardControl(player) )
+		{
+			dummy_value = 0;
+			return &dummy_value;
+		}
+	}
+
+	if ( scancode >= 0 && scancode < 283 )
+	{
+		// usual (keyboard) scancode range
+		return &keystatus[scancode];
+	}
+	else if ( scancode < 299 )
+	{
+		// mouse scancodes
+		return &mousestatus[scancode - 282];
+	}
+	else
+	{
+		// bad scancode
+		//return nullptr; //This crashes.
+		dummy_value = 0;
+		return &dummy_value;
+		//Not an ideal solution, but...
+	}
+}
+
 void selectHotbarSlot(int slot)
 {
 	if (slot < 0)

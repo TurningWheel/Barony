@@ -15,6 +15,7 @@
 #include "hash.hpp"
 #include "entity.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 #ifndef NINTENDO
 #include "editor.hpp"
 #endif
@@ -1389,6 +1390,41 @@ void drawEntities3D(view_t* camera, int mode)
 				{
 					continue;
 				}
+		}
+		if ( entity->flags[OVERDRAW] && splitscreen )
+		{
+			// need to skip some HUD models in splitscreen.
+			int currentPlayerViewport = -1;
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( &cameras[c] == camera )
+				{
+					currentPlayerViewport = c;
+					break;
+				}
+			}
+			if ( currentPlayerViewport >= 0 )
+			{
+				if ( entity->behavior == &actHudWeapon || entity->behavior == &actHudArm || entity->behavior == &actGib )
+				{
+					// the gibs are from casting magic in the HUD
+					if ( entity->skill[11] != currentPlayerViewport )
+					{
+						continue;
+					}
+				}
+				else if ( entity->behavior == &actHudAdditional
+					|| entity->behavior == &actHudArrowModel
+					|| entity->behavior == &actHudShield
+					|| entity->behavior == &actLeftHandMagic
+					|| entity->behavior == &actRightHandMagic )
+				{
+					if ( entity->skill[2] != currentPlayerViewport )
+					{
+						continue;
+					}
+				}
+			}
 		}
 		x = entity->x / 16;
 		y = entity->y / 16;

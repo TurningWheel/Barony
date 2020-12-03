@@ -1036,10 +1036,13 @@ void gameLogic(void)
 					}
 
 					// hack to fix these things from breaking everything...
-					hudarm = nullptr;
-					hudweapon = nullptr;
-					magicLeftHand = nullptr;
-					magicRightHand = nullptr;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						hudarm[i] = nullptr;
+						hudweapon[i] = nullptr;
+						magicLeftHand[i] = nullptr;
+						magicRightHand[i] = nullptr;
+					}
 
 					// stop all sounds
 #ifdef USE_FMOD
@@ -3687,10 +3690,13 @@ int main(int argc, char** argv)
 				if ( introstage == -1 )
 				{
 					// hack to fix these things from breaking everything...
-					hudarm = NULL;
-					hudweapon = NULL;
-					magicLeftHand = NULL;
-					magicRightHand = NULL;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						hudarm[i] = nullptr;
+						hudweapon[i] = nullptr;
+						magicLeftHand[i] = nullptr;
+						magicRightHand[i] = nullptr;
+					}
 
 					// team splash
 					drawRect(NULL, 0, 255);
@@ -3761,10 +3767,13 @@ int main(int argc, char** argv)
 				else if ( introstage == 0 )
 				{
 					// hack to fix these things from breaking everything...
-					hudarm = NULL;
-					hudweapon = NULL;
-					magicLeftHand = NULL;
-					magicRightHand = NULL;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						hudarm[i] = nullptr;
+						hudweapon[i] = nullptr;
+						magicLeftHand[i] = nullptr;
+						magicRightHand[i] = nullptr;
+					}
 
 					drawRect(NULL, 0, 255);
 					char* banner_text1 = language[738];
@@ -3856,10 +3865,13 @@ int main(int argc, char** argv)
 						loading = true;
 
 						// hack to fix these things from breaking everything...
-						hudarm = NULL;
-						hudweapon = NULL;
-						magicLeftHand = NULL;
-						magicRightHand = NULL;
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							hudarm[i] = nullptr;
+							hudweapon[i] = nullptr;
+							magicLeftHand[i] = nullptr;
+							magicRightHand[i] = nullptr;
+						}
 
 						// reset class loadout
 						stats[0]->sex = static_cast<sex_t>(rand() % 2);

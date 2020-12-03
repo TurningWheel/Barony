@@ -32,6 +32,7 @@
 #define GIB_VELZ my->vel_z
 #define GIB_GRAVITY my->fskill[3]
 #define GIB_LIFESPAN my->skill[4]
+#define GIB_PLAYER my->skill[11]
 
 void actGib(Entity* my)
 {

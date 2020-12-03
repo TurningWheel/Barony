@@ -54,7 +54,8 @@ extern list_t safePacketsSent;
 extern std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 extern bool receivedclientnum;
 
-extern Entity* hudweapon, *hudarm;
+extern Entity* hudweapon[MAXPLAYERS];
+extern Entity* hudarm[MAXPLAYERS];
 
 extern Uint32 clientplayer;
 extern Sint32 numplayers;
@@ -227,6 +228,7 @@ void actTorch(Entity* my);
 void actCrystalShard(Entity* my);
 void actDoor(Entity* my);
 void actHudWeapon(Entity* my);
+void actHudArm(Entity* my);
 void actHudShield(Entity* my);
 void actHudAdditional(Entity* my);
 void actHudArrowModel(Entity* my);

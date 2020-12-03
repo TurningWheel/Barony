@@ -2380,7 +2380,7 @@ void TextSourceScript::playerClearInventory(bool clearStats)
 	}
 	selected_spell = NULL; //So you don't start off with a spell when the game restarts.
 	selected_spell_last_appearance = -1;
-	spellcastingAnimationManager_deactivate(&cast_animation);
+	spellcastingAnimationManager_deactivate(&cast_animation[clientnum]);
 	stats[clientnum]->freePlayerEquipment();
 	list_FreeAll(&stats[clientnum]->inventory);
 	shootmode = true;

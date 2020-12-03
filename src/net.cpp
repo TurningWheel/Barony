@@ -3466,10 +3466,13 @@ void clientHandlePacket()
 		}
 
 		// hack to fix these things from breaking everything...
-		hudarm = nullptr;
-		hudweapon = nullptr;
-		magicLeftHand = nullptr;
-		magicRightHand = nullptr;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			hudarm[i] = nullptr;
+			hudweapon[i] = nullptr;
+			magicLeftHand[i] = nullptr;
+			magicRightHand[i] = nullptr;
+		}
 
 		// stop all sounds
 #ifdef USE_FMOD

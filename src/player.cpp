@@ -125,16 +125,16 @@ void GameController::initBindings()
 		this->buttons[i].type = Binding_t::Bindtype_t::CONTROLLER_BUTTON;
 		this->buttons[i].padButton = static_cast<SDL_GameControllerButton>(i);
 		this->buttons[i].analog = 0.f;
-		this->buttons[i].binary = 0.f;
-		this->buttons[i].consumed = 0.f;
+		this->buttons[i].binary = false;
+		this->buttons[i].consumed = false;
 	}
 	for ( int i = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX; i < SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX; ++i )
 	{
 		this->axis[i].type = Binding_t::Bindtype_t::CONTROLLER_AXIS;
 		this->axis[i].padAxis = static_cast<SDL_GameControllerAxis>(i);
 		this->axis[i].analog = 0.f;
-		this->axis[i].binary = 0.f;
-		this->axis[i].consumed = 0.f;
+		this->axis[i].binary = false;
+		this->axis[i].consumed = false;
 	}
 }
 
@@ -201,35 +201,35 @@ void GameController::handleAnalog()
 		}
 	}
 
-	if (getLeftTrigger())
-	{
-		if ( !oldLeftTrigger )
-		{
-			oldLeftTrigger = 1;
-			//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT].binary = 1;
-			lastkeypressed = 299;
-		}
-	}
-	else
-	{
-		oldLeftTrigger = 0;
-		//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT].binary = 0;
-	}
+	//if (getLeftTrigger())
+	//{
+	//	if ( !oldLeftTrigger )
+	//	{
+	//		oldLeftTrigger = 1;
+	//		//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT].binary = 1;
+	//		lastkeypressed = 299;
+	//	}
+	//}
+	//else
+	//{
+	//	oldLeftTrigger = 0;
+	//	//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT].binary = 0;
+	//}
 
-	if (getRightTrigger())
-	{
-		if ( !oldRightTrigger )
-		{
-			oldRightTrigger = 1;
-			//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT].binary = 1;
-			lastkeypressed = 300;
-		}
-	}
-	else
-	{
-		oldRightTrigger = 0;
-		//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT].binary = 0;
-	}
+	//if (getRightTrigger())
+	//{
+	//	if ( !oldRightTrigger )
+	//	{
+	//		oldRightTrigger = 1;
+	//		//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT].binary = 1;
+	//		lastkeypressed = 300;
+	//	}
+	//}
+	//else
+	//{
+	//	oldRightTrigger = 0;
+	//	//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT].binary = 0;
+	//}
 }
 
 int GameController::getLeftXMove()
@@ -870,6 +870,7 @@ void initGameControllers()
 		}
 	}
 
+	inputs.setPlayerIDAllowedKeyboard(0);
 
 	auto controller_itr = game_controllers.begin();
 	for ( c = 0; c < SDL_NumJoysticks(); ++c )
