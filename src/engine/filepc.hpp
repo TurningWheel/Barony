@@ -38,7 +38,7 @@ public:
 		return fread(buffer, size, count, fp);
 	}
 
-	size_t size()
+	size_t size() override
 	{
 		size_t offset = ftell(fp);
 		(void)fseek(fp, 0, SEEK_END);
@@ -47,7 +47,7 @@ public:
 		return input_file_size;
 	}
 
-	bool eof()
+	bool eof() override
 	{
 		return feof(fp) != 0;
 	}
@@ -62,7 +62,7 @@ public:
 		return fgets(buf, size, fp);
 	}
 
-	int seek(ptrdiff_t offset, SeekMode mode)
+	int seek(ptrdiff_t offset, SeekMode mode) override
 	{
 		switch (mode)
 		{
@@ -74,7 +74,7 @@ public:
 		return -1; //Idk, it says "return non-zero on error"
 	}
 
-	long int tell()
+	long int tell() override
 	{
 		return (long int)ftell(fp);
 	}
@@ -90,7 +90,7 @@ private:
 	{
 	}
 
-	void close()
+	void close() override
 	{
 		fclose(fp);
 	}
