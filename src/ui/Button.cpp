@@ -46,7 +46,7 @@ void Button::activate() {
 	}
 }
 
-void Button::draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize) {
+void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	_size.x += std::max(0, size.x - _actualSize.x);
 	_size.y += std::max(0, size.y - _actualSize.y);
 	_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
@@ -75,7 +75,7 @@ void Button::draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize) {
 		}
 	} else if (icon.c_str()) {
 		// we check a second time, just incase the cache was dumped and the original pointer invalidated.
-		Image* iconImg = nullptr; //mainEngine->getImageResource().dataForString(icon.c_str());
+		Image* iconImg = Image::get(icon.c_str());
 		if (iconImg) {
 			if (style != STYLE_CHECKBOX || pressed == true) {
 				SDL_Rect pos;
@@ -101,7 +101,7 @@ void Button::draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize) {
 
 	// drop down buttons have an image on the right side (presumably a down arrow)
 	if (style == STYLE_DROPDOWN) {
-		Image* iconImg = nullptr; //mainEngine->getImageResource().dataForString(icon.c_str());
+		Image* iconImg = Image::get(icon.c_str());
 		if (iconImg) {
 			SDL_Rect pos;
 			pos.y = _size.y + border; pos.h = _size.h - border * 2;

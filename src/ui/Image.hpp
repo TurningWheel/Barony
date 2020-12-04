@@ -6,7 +6,7 @@
 
 //! An Image is a type of asset that contains all the raw data for a unique 2D image
 class Image {
-public:
+private:
 	Image() = default;
 	Image(const char* _name);
 	Image(const Image&) = delete;
@@ -19,6 +19,7 @@ public:
 	//! finish loading on main thread
 	bool finalize();
 
+public:
 	//! draws the image
 	//! @param src the section of the image to be used for drawing, or nullptr for the whole image
 	//! @param dest the location and size by which the image should be drawn
@@ -30,11 +31,13 @@ public:
 	//! @param color a 32-bit color to mix with the image
 	void drawColor(const SDL_Rect* src, const SDL_Rect& dest, const Uint32& color) const;
 
-	//! create static geometry data for rendering images
-	static void createStaticData();
+	//! get an Image object from the engine
+	//! @param name The Image name
+	//! @return the Image or nullptr if it could not be retrieved
+	static Image* get(const char* name);
 
-	//! delete static geometry data for rendering images
-	static void deleteStaticData();
+	//! dump engine's image cache
+	static void dumpCache();
 
 	const char*				getName() const { return name.c_str(); }
 	virtual const bool		isStreamable() const { return true; }

@@ -11,7 +11,7 @@ Slider::Slider(Frame& _parent) {
 	_parent.adoptWidget(*this);
 }
 
-void Slider::draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize) {
+void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	SDL_Rect _handleSize, _railSize;
 
 	handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
@@ -33,16 +33,7 @@ void Slider::draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize) {
 	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
 	if (_handleSize.w > 0 && _handleSize.h > 0) {
 		bool h = highlighted | selected;
-		glm::vec4 _color = disabled ? color * .5f : (h ? color * 1.5f : color);
-		if (activated) {
-			_color *= 1.5f;
-		}
-		if (border) {
-			renderer.drawHighFrame(_handleSize, border, _color);
-		} else {
-			renderer.drawFrame(_handleSize, border, color);
-			renderer.drawFrame(_handleSize, 1, _color, true);
-		}
+		drawWindow(_handleSize.x, _handleSize.y, _handleSize.x + _handleSize.w, _handleSize.y + _handleSize.h);
 	}
 }
 
@@ -99,7 +90,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	if (rectContainsPoint(_size, omousex, omousey)) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
-		result.tooltip = tooltip.get();
+		result.tooltip = tooltip.c_str();
 	} else {
 		result.highlighted = highlighted = false;
 		result.highlightTime = highlightTime = SDL_GetTicks();
@@ -108,7 +99,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 
 	result.clicked = false;
 	if (highlighted) {
-		if (mainEngine->getMouseStatus(SDL_BUTTON_LEFT)) {
+		if (mousestatus[SDL_BUTTON_LEFT]) {
 			select();
 			pressed = true;
 			float oldValue = value;
@@ -132,37 +123,30 @@ void Slider::activate() {
 }
 
 void Slider::fireCallback() {
-	Script::Args args;
+	Widget::Args args;
 	args.addFloat(value);
 	if (callback) {
 		(*callback)(args);
-	} else if (parent) {
-		Frame* fparent = static_cast<Frame*>(parent);
-		Script* script = fparent->getScript();
-		if (script) {
-			script->dispatch(name.get(), &args);
-		}
 	}
 }
 
 void Slider::control() {
-	Uint32 ticks = mainEngine->getTicks();
 	if (!activated) {
 		moveStartTime = ticks;
 		return;
 	}
-	Input& input = mainEngine->getInput(owner);
-	if (input.binaryToggle("MenuCancel") ||
-		input.binaryToggle("MenuConfirm")) {
-		input.consumeBinaryToggle("MenuCancel");
-		input.consumeBinaryToggle("MenuConfirm");
+	if (keystatus[SDL_SCANCODE_RETURN]) {
+		keystatus[SDL_SCANCODE_RETURN] = 0;
+		activated = false;
+	} else if (keystatus[SDL_SCANCODE_ESCAPE]) {
+		keystatus[SDL_SCANCODE_ESCAPE] = 0;
 		activated = false;
 	} else {
-		if (input.binary("MenuRight") || input.binary("MenuLeft")) {
+		if (keystatus[SDL_SCANCODE_RIGHT] || keystatus[SDL_SCANCODE_LEFT]) {
 			Uint32 timeMoved = ticks - moveStartTime;
 			Uint32 lastMove = ticks - lastMoveTime;
-			Uint32 sec = mainEngine->getTicksPerSecond();
-			float inc = input.binary("MenuRight") ? 1.f : -1.f;
+			Uint32 sec = TICKS_PER_SECOND;
+			float inc = keystatus[SDL_SCANCODE_RIGHT] ? 1.f : -1.f;
 			float ovalue = value;
 			if (timeMoved < sec) {
 				if (lastMove > sec / 5) {
@@ -188,7 +172,7 @@ void Slider::control() {
 					value += inc;
 				}
 			}
-			value = std::std::min(std::std::max(minValue, value), maxValue);
+			value = std::min(std::max(minValue, value), maxValue);
 			if (value != ovalue) {
 				lastMoveTime = ticks;
 				fireCallback();

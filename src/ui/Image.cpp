@@ -40,6 +40,8 @@ Image::Image(const char* _name) {
 	SDL_BlitSurface(surf, nullptr, newSurf, nullptr); // blit onto a purely RGBA Surface
 	SDL_FreeSurface(surf);
 	surf = newSurf;
+
+	(void)finalize();
 }
 
 bool Image::finalize() {
@@ -47,8 +49,7 @@ bool Image::finalize() {
 		SDL_LockSurface(surf);
 		glGenTextures(1, &texid);
 		glBindTexture(GL_TEXTURE_2D, texid);
-		glTexStorage2D(GL_TEXTURE_2D, 4, GL_RGBA8, surf->w, surf->h);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 		if (clamp) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -62,12 +63,6 @@ bool Image::finalize() {
 		} else {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-#ifdef PLATFORM_WINDOWS
-			if (cvar_anisotropy.toFloat() > 0.0) {
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, cvar_anisotropy.toFloat());
-			}
-#endif
-			glGenerateMipmap(GL_TEXTURE_2D);
 		}
 		SDL_UnlockSurface(surf);
 
@@ -85,51 +80,6 @@ Image::~Image() {
 	if (texid) {
 		glDeleteTextures(1, &texid);
 		texid = 0;
-	}
-}
-
-void Image::createStaticData() {
-	// initialize buffer names
-	for (int i = 0; i < BUFFER_TYPE_LENGTH; ++i) {
-		vbo[static_cast<buffer_t>(i)] = 0;
-	}
-
-	// create vertex array
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	// upload vertex data
-	glGenBuffers(1, &vbo[VERTEX_BUFFER]);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[VERTEX_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(GLfloat), positions, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(0);
-
-	// upload texcoord data
-	glGenBuffers(1, &vbo[TEXCOORD_BUFFER]);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[TEXCOORD_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(GLfloat), texcoords, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(1);
-
-	// upload index data
-	glGenBuffers(1, &vbo[INDEX_BUFFER]);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[INDEX_BUFFER]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * 3 * sizeof(GLuint), indices, GL_STATIC_DRAW);
-
-	// unbind vertex array
-	glBindVertexArray(0);
-}
-
-void Image::deleteStaticData() {
-	for (int i = 0; i < BUFFER_TYPE_LENGTH; ++i) {
-		buffer_t buffer = static_cast<buffer_t>(i);
-		if (vbo[buffer]) {
-			glDeleteBuffers(1, &vbo[buffer]);
-		}
-	}
-	if (vao) {
-		glDeleteVertexArrays(1, &vao);
 	}
 }
 
@@ -157,7 +107,6 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect& dest, const Uint32& c
 	}
 
 	// bind texture
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texid);
 
 	// consume color
@@ -181,4 +130,33 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect& dest, const Uint32& c
 
 	// unbind texture
 	glBindTexture(GL_TEXTURE_2D, 0);
+	glColor4f(1.f, 1.f, 1.f, 1.f);
+}
+
+static std::unordered_map<std::string, Image*> hashed_images;
+static const int IMAGE_BUDGET = 1000;
+
+Image* Image::get(const char* name) {
+	if (!name) {
+		return nullptr;
+	}
+	Image* image = nullptr;
+	auto search = hashed_images.find(name);
+	if (search == hashed_images.end()) {
+		if (hashed_images.size() > IMAGE_BUDGET) {
+			dumpCache();
+		}
+		image = new Image(name);
+		hashed_images.insert(std::make_pair(name, image));
+	} else {
+		image = search->second;
+	}
+	return image;
+}
+
+void Image::dumpCache() {
+	for (auto image : hashed_images) {
+		delete image.second;
+	}
+	hashed_images.clear();
 }

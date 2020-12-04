@@ -50,3 +50,31 @@ int Font::height() const {
 		return 0;
 	}
 }
+
+static std::unordered_map<std::string, Font*> hashed_fonts;
+static const int FONT_BUDGET = 100;
+
+Font* Font::get(const char* name) {
+	if (!name) {
+		return nullptr;
+	}
+	Font* font = nullptr;
+	auto search = hashed_fonts.find(name);
+	if (search == hashed_fonts.end()) {
+		if (hashed_fonts.size() > FONT_BUDGET) {
+			dumpCache();
+		}
+		font = new Font(name);
+		hashed_fonts.insert(std::make_pair(name, font));
+	} else {
+		font = search->second;
+	}
+	return font;
+}
+
+void Font::dumpCache() {
+	for (auto font : hashed_fonts) {
+		delete font.second;
+	}
+	hashed_fonts.clear();
+}

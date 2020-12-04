@@ -10,7 +10,6 @@ class Field;
 class Button;
 class Field;
 class Slider;
-class Renderer;
 
 //! A container for a gui (ie, a window)
 //! When a frame's size is smaller than its actual size, sliders will automatically be placed in the frame.
@@ -111,14 +110,12 @@ public:
 	static const int entrySize = 20;
 
 	//! draws the frame and all of its subelements
-	//! @param renderer the renderer object used to draw the frame
-	void draw(Renderer& renderer);
+	void draw();
 
 	//! draws the frame and all of its subelements
-	//! @param renderer the renderer object used to draw the frame
 	//! @param _size real position of the frame onscreen
 	//! @param _actualSize offset into the frame space (scroll)
-	void draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize);
+	void draw(SDL_Rect _size, SDL_Rect _actualSize);
 
 	//! handle clicks and other events
 	//! @return compiled results of frame processing
@@ -157,7 +154,7 @@ public:
 	//! @param image the image to draw
 	//! @param name the name of the image (unique id)
 	//! @return the newly created image object
-	image_t* addImage(const SDL_Rect& pos, const Uint32& color, std::string image, const char* name = "");
+	image_t* addImage(const SDL_Rect& pos, const Uint32& color, const char* image, const char* name = "");
 
 	//! adds a new entry to the frame's list
 	//! @param name internal name of the new entry
@@ -287,7 +284,7 @@ private:
 	int oldSliderY = 0;									//!< when you start dragging a slider, this is set
 	bool dropDown = false;								//!< if true, the frame is destroyed when specific inputs register
 	Uint32 dropDownClicked = 0;							//!< key states stored for removing drop downs
-	entry_t* selection = nullptr;						//!< entry selection
+	std::list<entry_t*>::iterator selection;			//!< entry selection
 
 	std::list<Frame*> frames;
 	std::list<Button*> buttons;

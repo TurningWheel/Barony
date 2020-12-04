@@ -1,16 +1,11 @@
 // Text.cpp
 
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/mat4x4.hpp>
+#include <assert.h>
 
-#include "Main.hpp"
-#include "Engine.hpp"
-#include "Renderer.hpp"
-#include "Client.hpp"
+#include "../main.hpp"
+#include "../draw.hpp"
 #include "Text.hpp"
+#include "Font.hpp"
 
 GLuint Text::vao = 0;
 GLuint Text::vbo[BUFFER_TYPE_LENGTH] = { 0 };
@@ -34,8 +29,8 @@ const GLuint Text::indices[6]{
 	0, 2, 3
 };
 
-Text::Text(const char* _name) : Asset(_name) {
-	loaded = true;
+Text::Text(const char* _name) {
+	name = _name;
 }
 
 Text::~Text() {
@@ -50,35 +45,23 @@ Text::~Text() {
 }
 
 void Text::render() {
-	Client* client = mainEngine->getLocalClient();
-	if (!client) {
-		return;
-	}
-	Renderer* renderer = client->getRenderer();
-	if (!renderer) {
-		return;
-	} else if (!renderer->isInitialized()) {
-		return;
-	}
-
 	// load font
-	String strToRender;
-	StringBuf<64> fontName;
+	std::string strToRender;
+	std::string fontName;
 	Uint32 fontIndex = 0u;
-	if ((fontIndex = name.find(fontBreak)) != String::npos) {
-		fontName = name.substr(fontIndex + 1, UINT32_MAX).get();
-		strToRender = name.substr(0, fontIndex).get();
+	if ((fontIndex = name.find(fontBreak)) != std::string::npos) {
+		fontName = name.substr(fontIndex + 1, UINT32_MAX);
+		strToRender = name.substr(0, fontIndex).c_str();
 	} else {
 		fontName = Font::defaultFont;
-		strToRender = name.get();
+		strToRender = name.c_str();
 	}
-	Font* font = mainEngine->getFontResource().dataForString(fontName.get());
+	Font* font = Font::get(fontName.c_str());
 	if (!font) {
 		return;
 	}
 	TTF_Font* ttf = font->getTTF();
 
-	const Sint32 xres = renderer->getXres();
 	SDL_Color colorBlack = { 0, 0, 0, 255 };
 	SDL_Color colorWhite = { 255, 255, 255, 255 };
 
@@ -89,16 +72,16 @@ void Text::render() {
 
 	if (outlineSize > 0) {
 		TTF_SetFontOutline(ttf, outlineSize);
-		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.get(), colorBlack, xres);
+		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorBlack, xres);
 		TTF_SetFontOutline(ttf, 0);
-		SDL_Surface* text = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.get(), colorWhite, xres);
+		SDL_Surface* text = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
 		SDL_Rect rect;
 		rect.x = 1; rect.y = 1;
 		SDL_BlitSurface(text, NULL, surf, &rect);
 		SDL_FreeSurface(text);
 	} else {
 		TTF_SetFontOutline(ttf, 0);
-		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.get(), colorWhite, xres);
+		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
 	}
 	assert(surf);
 	if (texid == 0) {
@@ -111,8 +94,8 @@ void Text::render() {
 	for (int y = 0; y < surf->h; ++y) {
 		for (int x = 0; x < surf->w; ++x) {
 			if (((Uint32 *)surf->pixels)[x + y * scan] != 0) {
-				width = max(width, x);
-				height = max(height, y);
+				width = std::max(width, x);
+				height = std::max(height, y);
 			}
 		}
 	}
@@ -140,68 +123,17 @@ void Text::render() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, surf->w, surf->h);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 	SDL_UnlockSurface(surf);
 
 	rendered = true;
 }
 
-void Text::createStaticData() {
-	// initialize buffer names
-	for (int i = 0; i < BUFFER_TYPE_LENGTH; ++i) {
-		vbo[static_cast<buffer_t>(i)] = 0;
-	}
-
-	// create vertex array
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	// upload vertex data
-	glGenBuffers(1, &vbo[VERTEX_BUFFER]);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[VERTEX_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(GLfloat), positions, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(0);
-
-	// upload texcoord data
-	glGenBuffers(1, &vbo[TEXCOORD_BUFFER]);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[TEXCOORD_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(GLfloat), texcoords, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(1);
-
-	// upload index data
-	glGenBuffers(1, &vbo[INDEX_BUFFER]);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[INDEX_BUFFER]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * 3 * sizeof(GLuint), indices, GL_STATIC_DRAW);
-
-	// unbind vertex array
-	glBindVertexArray(0);
+void Text::draw(SDL_Rect src, SDL_Rect dest) {
+	drawColor(src, dest, 0xffffffff);
 }
 
-void Text::deleteStaticData() {
-	for (int i = 0; i < BUFFER_TYPE_LENGTH; ++i) {
-		buffer_t buffer = static_cast<buffer_t>(i);
-		if (vbo[buffer]) {
-			glDeleteBuffers(1, &vbo[buffer]);
-		}
-	}
-	if (vao) {
-		glDeleteVertexArrays(1, &vao);
-	}
-}
-
-void Text::draw(Rect<int> src, Rect<int> dest) {
-	drawColor(src, dest, glm::vec4(1.f));
-}
-
-void Text::drawColor(Rect<int> src, Rect<int> dest, const glm::vec4& color) {
-	Client* client = mainEngine->getLocalClient(); assert(client);
-	Renderer* renderer = client->getRenderer(); assert(renderer);
-	int xres = renderer->getXres();
-	int yres = renderer->getYres();
-
+void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 	if (!rendered) {
 		render();
 	}
@@ -209,62 +141,48 @@ void Text::drawColor(Rect<int> src, Rect<int> dest, const glm::vec4& color) {
 		return;
 	}
 
-	// load shader
-	Material* mat = mainEngine->getMaterialResource().dataForString("shaders/basic/2D.json");
-	if (!mat) {
-		return;
-	}
-	ShaderProgram& shader = mat->getShader().mount();
-
-	glViewport(0, 0, xres, yres);
 	glDisable(GL_DEPTH_TEST);
-	//glDisable(GL_LIGHTING);
-	glEnable(GL_BLEND);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(0, 0, xres, yres);
+	glLoadIdentity();
+	glOrtho(0, xres, 0, yres, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
 
 	src.w = src.w <= 0 ? surf->w : src.w;
 	src.h = src.h <= 0 ? surf->h : src.h;
 	dest.w = dest.w <= 0 ? surf->w : dest.w;
 	dest.h = dest.h <= 0 ? surf->h : dest.h;
 
-	// create view matrix
-	glm::mat4 viewMatrix = glm::ortho(0.f, (float)xres, 0.f, (float)yres, 1.f, -1.f);
-
 	// bind texture
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texid);
 
-	// upload uniform variables
-	glUniformMatrix4fv(shader.getUniformLocation("gView"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
-	glUniform4fv(shader.getUniformLocation("gColor"), 1, glm::value_ptr(color));
-	glUniform1i(shader.getUniformLocation("gTexture"), 0);
+	// consume color
+	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
+	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
+	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
+	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
+	glColor4f(r, g, b, a);
 
-	// bind vertex array
-	glBindVertexArray(vao);
+	// draw quad
+	glBegin(GL_QUADS);
+	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * ((real_t)src.y / surf->h));
+	glVertex2f(dest.x, yres - dest.y);
+	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
+	glVertex2f(dest.x, yres - dest.y - src.h);
+	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
+	glVertex2f(dest.x + src.w, yres - dest.y - src.h);
+	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * ((real_t)src.y / surf->h));
+	glVertex2f(dest.x + src.w, yres - dest.y);
+	glEnd();
 
-	// upload positions
-	GLfloat positions[8] = {
-		(GLfloat)dest.x, (GLfloat)(yres - dest.y),
-		(GLfloat)dest.x, (GLfloat)(yres - dest.y - dest.h),
-		(GLfloat)(dest.x + dest.w), (GLfloat)(yres - dest.y - dest.h),
-		(GLfloat)(dest.x + dest.w), (GLfloat)(yres - dest.y)
-	};
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[VERTEX_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(GLfloat), positions, GL_DYNAMIC_DRAW);
-
-	// upload texcoords
-	GLfloat texcoords[8] = {
-		(float)src.x / (float)surf->w, (float)src.y / (float)surf->h,
-		(float)src.x / (float)surf->w, (float)(src.y + src.h) / (float)surf->h,
-		(float)(src.x + src.w) / (float)surf->w, (float)(src.y + src.h) / (float)surf->h,
-		(float)(src.x + src.w) / (float)surf->w, (float)src.y / (float)surf->h
-	};
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[TEXCOORD_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(GLfloat), texcoords, GL_DYNAMIC_DRAW);
-
-	// draw
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-	glBindVertexArray(0);
+	// unbind texture
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glColor4f(1.f, 1.f, 1.f, 1.f);
 }
+
+static std::unordered_map<std::string, Text*> hashed_text;
+static const int TEXT_BUDGET = 1000;
 
 Text* Text::get(const char* str, const char* font) {
 	if (!str) {
@@ -275,12 +193,32 @@ Text* Text::get(const char* str, const char* font) {
 	}
 	size_t len0 = strlen(str);
 	size_t len1 = strlen(font);
-	String textAndFont;
-	textAndFont.alloc((Uint32)(len0 + len1 + 2));
-	textAndFont.format("%s%c%s", str, Text::fontBreak, font);
-	Text* text = mainEngine->getTextResource().dataForString(textAndFont.get());
+	std::string textAndFont;
+	size_t totalLen = len0 + len1 + 2;
+	textAndFont.reserve(totalLen);
+	snprintf(const_cast<char*>(textAndFont.c_str()), totalLen, "%s%c%s", str, Text::fontBreak, font);
+
+	Text* text = nullptr;
+	auto search = hashed_text.find(textAndFont);
+	if (search == hashed_text.end()) {
+		if (hashed_text.size() > TEXT_BUDGET) {
+			dumpCache();
+		}
+		text = new Text(textAndFont.c_str());
+		hashed_text.insert(std::make_pair(textAndFont, text));
+	} else {
+		text = search->second;
+	}
+
 	if (text && !text->rendered) {
 		text->render();
 	}
 	return text;
+}
+
+void Text::dumpCache() {
+	for (auto text : hashed_text) {
+		delete text.second;
+	}
+	hashed_text.clear();
 }

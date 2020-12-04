@@ -6,7 +6,6 @@
 #include "Widget.hpp"
 
 class Frame;
-class Renderer;
 
 //! a Slider lives in a frame and allows a user to select a range of values
 class Slider : public Widget {
@@ -29,10 +28,9 @@ public:
     };
 
     //! draws the slider
-    //! @param renderer the renderer object used to draw the slider
     //! @param _size size and position of slider's parent frame
     //! @param _actualSize offset into the parent frame space (scroll)
-    void draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize);
+    void draw(SDL_Rect _size, SDL_Rect _actualSize);
 
     //! handles slider clicks, etc.
     //! @param _size size and position of slider's parent frame

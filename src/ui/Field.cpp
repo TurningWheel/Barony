@@ -61,7 +61,7 @@ void Field::deselect() {
 	}
 }
 
-void Field::draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize) {
+void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	SDL_Rect rect;
 	rect.x = _size.x + std::max(0, size.x - _actualSize.x);
 	rect.y = _size.y + std::max(0, size.y - _actualSize.y);
@@ -98,7 +98,7 @@ void Field::draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize) {
 	} else {
 		return;
 	}
-	Font* actualFont = nullptr; //mainEngine->getFontResource().dataForString(font.c_str());
+	Font* actualFont = Font::get(font.c_str());
 	if (!actualFont) {
 		return;
 	}

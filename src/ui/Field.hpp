@@ -5,7 +5,6 @@
 #include "../Main.hpp"
 #include "Font.hpp"
 
-class Renderer;
 class Frame;
 
 //! A Field is a text field that lives in a Frame. It can be edited, or locked for editing to just have some static text in a window.
@@ -47,10 +46,9 @@ public:
 	virtual void deselect() override;
 
 	//! draws the field
-	//! @param renderer the renderer object used to draw the field
 	//! @param _size size and position of field's parent frame
 	//! @param _actualSize offset into the parent frame space (scroll)
-	void draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize);
+	void draw(SDL_Rect _size, SDL_Rect _actualSize);
 
 	//! handles clicks, etc.
 	//! @param _size size and position of field's parent frame

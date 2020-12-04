@@ -5,7 +5,7 @@
 #include "../main.hpp"
 
 class Font {
-public:
+private:
 	Font() = default;
 	Font(const char* _name);
 	Font(const Font&) = delete;
@@ -15,12 +15,12 @@ public:
 	Font& operator=(const Font&) = delete;
 	Font& operator=(Font&&) = delete;
 
+public:
 	//! built-in font
 	static const char* defaultFont;
 
-	//! get ttf font
-	const char* getName() const { return name.c_str(); }
-	TTF_Font* getTTF() { return font; }
+	const char*		getName() const { return name.c_str(); }
+	TTF_Font*		getTTF() { return font; }
 
 	//! get the size of the given text string in pixels
 	//! @param str the utf-8 string to get the size of
@@ -32,6 +32,14 @@ public:
 	//! get the height of the font
 	//! @return the font height in pixels
 	int height() const;
+
+	//! get a Font object from the engine
+	//! @param name The Font name
+	//! @return the Font or nullptr if it could not be retrieved
+	static Font* get(const char* name);
+
+	//! dump engine's font cache
+	static void dumpCache();
 
 private:
 	std::string name;

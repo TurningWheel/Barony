@@ -46,7 +46,7 @@ public:
 	//! @param renderer the renderer object used to draw the button
 	//! @param _size size and position of button's parent frame
 	//! @param _actualSize offset into the parent frame space (scroll)
-	virtual void draw(Renderer& renderer, SDL_Rect _size, SDL_Rect _actualSize);
+	virtual void draw(SDL_Rect _size, SDL_Rect _actualSize);
 
 	//! handles button clicks, etc.
 	//! @param _size size and position of button's parent frame
