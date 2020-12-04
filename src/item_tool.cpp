@@ -778,16 +778,16 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		{
 			if ( entity.skill[3] == 1 || entity.skill[3] == 0 ) // ring or a slime
 			{
-				if ( player > 0 )
+				if ( player > 0 && !splitscreen )
 				{
 					client_selected[player] = &entity;
 					entity.skill[8] = 1; // disables polymorph being washed away.
 					actSink(&entity);
 					entity.skill[8] = 0;
 				}
-				else if ( player == 0 )
+				else if ( player == 0 || (player > 0 && splitscreen) )
 				{
-					selectedEntity = &entity;
+					selectedEntity[player] = &entity;
 					entity.skill[8] = 1; // disables polymorph being washed away.
 					actSink(&entity);
 					entity.skill[8] = 0;
@@ -846,14 +846,14 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		}
 		else if ( skillLVL < 2 || (skillLVL >= 2 && rand() % (skillLVL) == 0 ) )
 		{
-			if ( player > 0 )
+			if ( player > 0 && !splitscreen )
 			{
 				client_selected[player] = &entity;
 				actFountain(&entity);
 			}
-			else if ( player == 0 )
+			else if ( player == 0 || (player > 0 && splitscreen) )
 			{
-				selectedEntity = &entity;
+				selectedEntity[player] = &entity;
 				actFountain(&entity);
 			}
 		}

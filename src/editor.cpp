@@ -29,8 +29,8 @@
 
 //#include "player.hpp"
 
-Entity* selectedEntity = nullptr;
-Entity* lastSelectedEntity = nullptr;
+Entity* selectedEntity[MAXPLAYERS] = { nullptr };
+Entity* lastSelectedEntity[MAXPLAYERS] = { nullptr };
 Sint32 mousex = 0, mousey = 0;
 Sint32 omousex = 0, omousey = 0;
 Sint32 mousexrel = 0, mouseyrel = 0;
@@ -64,6 +64,15 @@ void initMenuOptions() {} // dummy
 int textInsertCaratPosition = -1;
 GenericGUIMenu GenericGUI;
 Item* selectedItem = nullptr; //Because it won't compile without this.
+
+void actGib(Entity* my) {} // dummy for draw.cpp
+void actHudArm(Entity* my) {} // dummy for draw.cpp
+void actHudWeapon(Entity* my) {} // dummy for draw.cpp
+void actHudShield(Entity* my) {} // dummy for draw.cpp
+void actHudAdditional(Entity* my) {} // dummy for draw.cpp
+void actHudArrowModel(Entity* my) {} // dummy for draw.cpp
+void actLeftHandMagic(Entity* my) {} // dummy for draw.cpp
+void actRightHandMagic(Entity* my) {} // dummy for draw.cpp
 
 map_t copymap;
 
@@ -1065,7 +1074,7 @@ void undo()
 	{
 		return;
 	}
-	selectedEntity = NULL;
+	selectedEntity[0] = NULL;
 	if ( undospot == undolist.last )
 	{
 		node_t* tempnode = undospot;
@@ -1104,7 +1113,7 @@ void redo()
 	{
 		return;
 	}
-	selectedEntity = NULL;
+	selectedEntity[0] = NULL;
 	free(map.tiles);
 	map_t* undomap = (map_t*)redospot->element;
 	map.width = undomap->width;
@@ -2078,21 +2087,21 @@ int main(int argc, char** argv)
 					{
 						nextnode = node->next;
 						entity = (Entity*)node->element;
-						if ( entity == selectedEntity )
+						if ( entity == selectedEntity[0] )
 						{
 							if ( mousestatus[SDL_BUTTON_LEFT] )
 							{
 								if ( newwindow == 0 )
 								{
 									// if the entity moved from where it was picked up, or if the sprite was right click duplicated, store an undo.
-									if ( selectedEntity->x / 16 != prev_x || selectedEntity->y / 16 != prev_y || duplicatedSprite )
+									if ( selectedEntity[0]->x / 16 != prev_x || selectedEntity[0]->y / 16 != prev_y || duplicatedSprite )
 									{
 										duplicatedSprite = false;
 										makeUndo();
 									}
 								}
 								mousestatus[SDL_BUTTON_LEFT] = 0;
-								selectedEntity = NULL;
+								selectedEntity[0] = NULL;
 								break;
 							}
 							else if ( mousestatus[SDL_BUTTON_RIGHT] )
@@ -2106,11 +2115,11 @@ int main(int argc, char** argv)
 									}
 									duplicatedSprite = true;
 								}
-								selectedEntity = newEntity(entity->sprite, 0, map.entities, nullptr);
+								selectedEntity[0] = newEntity(entity->sprite, 0, map.entities, nullptr);
 								
-								setSpriteAttributes(selectedEntity, entity, lastSelectedEntity);
+								setSpriteAttributes(selectedEntity[0], entity, lastSelectedEntity[0]);
 
-								lastSelectedEntity = selectedEntity;
+								lastSelectedEntity[0] = selectedEntity[0];
 
 								mousestatus[SDL_BUTTON_RIGHT] = 0;
 								break;
@@ -2125,8 +2134,8 @@ int main(int argc, char** argv)
 								if ( mousestatus[SDL_BUTTON_LEFT] && selectedTool == 1 )
 								{
 									// select sprite
-									selectedEntity = entity;
-									lastSelectedEntity = selectedEntity;
+									selectedEntity[0] = entity;
+									lastSelectedEntity[0] = selectedEntity[0];
 									prev_x = entity->x / 16;
 									prev_y = entity->y / 16;
 									mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -2143,10 +2152,10 @@ int main(int argc, char** argv)
 									{
 										makeUndo();
 									}
-									selectedEntity = newEntity(entity->sprite, 0, map.entities, nullptr);
-									lastSelectedEntity = selectedEntity;
+									selectedEntity[0] = newEntity(entity->sprite, 0, map.entities, nullptr);
+									lastSelectedEntity[0] = selectedEntity[0];
 
-									setSpriteAttributes(selectedEntity, entity, entity);
+									setSpriteAttributes(selectedEntity[0], entity, entity);
 
 									mousestatus[SDL_BUTTON_RIGHT] = 0;
 								}
@@ -3400,7 +3409,7 @@ int main(int argc, char** argv)
 				{
 					if ( selectedEntity != NULL ) 
 					{
-						spriteStats = selectedEntity->getStats();
+						spriteStats = selectedEntity[0]->getStats();
 						if ( spriteStats != nullptr )
 						{
 							int numProperties = sizeof(monsterPropertyNames) / sizeof(monsterPropertyNames[0]); //find number of entries in property list
@@ -8385,9 +8394,9 @@ int main(int argc, char** argv)
 				if (palette[mousey + mousex * yres] >= 0)
 				{
 					entity = newEntity(palette[mousey + mousex * yres], 0, map.entities, nullptr);
-					selectedEntity = entity;
-					lastSelectedEntity = selectedEntity;
-					setSpriteAttributes(selectedEntity, nullptr, nullptr);
+					selectedEntity[0] = entity;
+					lastSelectedEntity[0] = selectedEntity[0];
+					setSpriteAttributes(selectedEntity[0], nullptr, nullptr);
 				}
 
 				mclick = 0;

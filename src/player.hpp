@@ -17,8 +17,8 @@
 extern int current_player; //This may not be necessary. Consider this: Each Player instance keeps track of whether it is a network player or a localhost player.
 
 //TODO: Move these into each and every individual player.
-extern Entity* selectedEntity;
-extern Entity* lastSelectedEntity;
+extern Entity* selectedEntity[MAXPLAYERS];
+extern Entity* lastSelectedEntity[MAXPLAYERS];
 extern Sint32 mousex, mousey;
 extern Sint32 omousex, omousey;
 extern Sint32 mousexrel, mouseyrel;
@@ -131,7 +131,7 @@ public:
 	 * Moves the player's head around.
 	 * Handles the triggers.
 	 */
-	void handleAnalog();
+	void handleAnalog(int player);
 
 	//Left analog stick movement along the x axis.
 	int getLeftXMove();
@@ -221,6 +221,29 @@ class Inputs
 {
 	int playerControllerIds[MAXPLAYERS];
 	int playerUsingKeyboardControl = 0;
+
+	class VirtualMouse
+	{
+	public:
+		int xrel = 0; //mousexrel
+		int yrel = 0; //mouseyrel
+		int ox = 0; //omousex
+		int oy = 0; //omousey
+		int x = 0; //mousex
+		int y = 0; //mousey
+		bool draw_cursor = true;
+		bool moved = false;
+		VirtualMouse() {};
+		~VirtualMouse() {};
+
+		void warpMouseInCamera(const view_t& camera, const Sint32 newx, const Sint32 newy)
+		{
+			x = std::max(camera.winx, std::min(camera.winx + camera.winw, x + newx));
+			y = std::max(camera.winy, std::min(camera.winy + camera.winh, y + newy));
+			moved = true;
+		}
+	};
+	VirtualMouse vmouse[MAXPLAYERS];
 public:
 	Inputs() 
 	{
@@ -238,9 +261,10 @@ public:
 	{
 		return player == playerUsingKeyboardControl;
 	}
+	void controllerHandleMouse(int player);
 	const bool bControllerInputPressed(int player, const unsigned controllerImpulse) const;
 	void controllerClearInput(int player, const unsigned controllerImpulse);
-	const void removeControllerWithDeviceID(int id)
+	void removeControllerWithDeviceID(int id)
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -251,7 +275,15 @@ public:
 			}
 		}
 	}
-
+	VirtualMouse* getMouse(int player)
+	{
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			printlog("[INPUTS]: Warning: player index %d out of range.", player);
+			return nullptr;
+		}
+		return &vmouse[player];
+	}
 	const int getControllerID(int player) const
 	{
 		if ( player < 0 || player >= MAXPLAYERS )
@@ -293,6 +325,35 @@ public:
 		}
 	}
 	const bool bPlayerIsControllable(int player) const;
+	void updateAllMouse()
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			controllerHandleMouse(i);
+		}
+	}
+	void updateAllOMouse()
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			vmouse[i].ox = vmouse[i].x;
+			vmouse[i].oy = vmouse[i].y;
+			vmouse[i].moved = false;
+		}
+		/*messagePlayer(0, "x: %d | y: %d / x: %d | y: %d / x: %d | y: %d / x: %d | y: %d ", 
+			vmouse[0].ox, vmouse[0].oy,
+			vmouse[1].ox, vmouse[1].oy,
+			vmouse[2].ox, vmouse[2].oy,
+			vmouse[3].ox, vmouse[3].oy);*/
+	}
+	void updateAllRelMouse()
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			vmouse[i].xrel = 0;
+			vmouse[i].yrel = 0;
+		}
+	}
 };
 extern Inputs inputs;
 void initGameControllers();

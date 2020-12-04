@@ -2665,10 +2665,7 @@ void handleEvents(void)
 	}
 	fps = (d / AVERAGEFRAMES) * 1000;
 
-	if ( game_controllers[0].isActive())
-	{
-		game_controllers[0].handleAnalog();
-	}
+	inputs.updateAllMouse();
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events
 	{
@@ -2965,6 +2962,7 @@ void handleEvents(void)
 					gameLogic();
 					mousexrel = 0;
 					mouseyrel = 0;
+					inputs.updateAllRelMouse();
 				}
 				else
 				{
@@ -3128,6 +3126,7 @@ void handleEvents(void)
 		omousey = mousey;
 	}
 
+	inputs.updateAllOMouse();
 	for ( auto& controller : game_controllers )
 	{
 		controller.updateButtons();
@@ -4063,6 +4062,10 @@ int main(int argc, char** argv)
 					camera.ang += cvars.shakex2;
 					camera.vang += cvars.shakey2 / 200.0;
 				}
+
+				bool localClientnumsInUse[MAXPLAYERS] = { false };
+				bool localClientnumsAlive[MAXPLAYERS] = { false };
+
 				if ( true )
 				{
 					// drunkenness spinning
@@ -4090,6 +4093,11 @@ int main(int argc, char** argv)
 							if ( !splitscreen && c != clientnum )
 							{
 								continue;
+							}
+							localClientnumsInUse[c] = true;
+							if ( players[c] && players[c]->entity )
+							{
+								localClientnumsAlive[c] = true;
 							}
 							auto& camera = cameras[c];
 							if ( !splitscreen )
@@ -4282,142 +4290,159 @@ int main(int argc, char** argv)
 
 				if ( !gamePaused )
 				{
-					// interface
-					if ( !command && (*inputPressed(impulses[IN_STATUS]) || *inputPressed(joyimpulses[INJOY_STATUS])) )
+					for ( int player = 0; player < MAXPLAYERS; ++player )
 					{
-						*inputPressed(impulses[IN_STATUS]) = 0;
-						*inputPressed(joyimpulses[INJOY_STATUS]) = 0;
+						// inventory interface
+						// player not needed to be alive
+						if ( localClientnumsInUse[player] && !command
+							&& (*inputPressedForPlayer(player, impulses[IN_STATUS]) || inputs.bControllerInputPressed(player, INJOY_STATUS)) )
+						{
+							*inputPressedForPlayer(player, impulses[IN_STATUS]) = 0;
+							inputs.controllerClearInput(player, INJOY_STATUS);
 
-						if ( shootmode )
-						{
-							openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
-						}
-						else
-						{
-							closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-						}
-					}
-					if (!command && (*inputPressed(impulses[IN_SPELL_LIST]) || *inputPressed(joyimpulses[INJOY_SPELL_LIST])))   //TODO: Move to function in interface or something?
-					{
-						*inputPressed(impulses[IN_SPELL_LIST]) = 0;
-						*inputPressed(joyimpulses[INJOY_SPELL_LIST]) = 0;
-						gui_mode = GUI_MODE_INVENTORY;
-						selectedItem = NULL;
-						inventory_mode = INVENTORY_MODE_SPELL;
-
-						if (shootmode)
-						{
-							shootmode = false;
-							attributespage = 0;
-							//proficienciesPage = 0;
-						}
-					}
-					bool hasSpellbook = false;
-					if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
-					{
-						hasSpellbook = true;
-					}
-					if (!command && 
-						(*inputPressed(impulses[IN_CAST_SPELL]) 
-							|| (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))
-							|| (hasSpellbook && *inputPressed(impulses[IN_DEFEND])) 
-							|| (hasSpellbook && shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
-						)
-					{
-						bool allowCasting = true;
-						if ( *inputPressed(impulses[IN_CAST_SPELL]) || *inputPressed(impulses[IN_DEFEND]) )
-						{
-							if (((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE || impulses[IN_DEFEND] == RIGHT_CLICK_IMPULSE)
-								&& gui_mode >= GUI_MODE_INVENTORY
-								&& (mouseInsidePlayerInventory() || mouseInsidePlayerHotbar()) 
-								))
+							if ( shootmode )
 							{
-								allowCasting = false;
-							}
-						}
-
-						if ( (*inputPressed(impulses[IN_DEFEND]) || (*inputPressed(joyimpulses[INJOY_GAME_DEFEND]))) && hasSpellbook
-							&& players[clientnum] && players[clientnum]->entity )
-						{
-							if ( players[clientnum]->entity->effectShapeshift != NOTHING )
-							{
-								if ( players[clientnum]->entity->effectShapeshift == CREATURE_IMP )
-								{
-									// imp allowed to cast via spellbook.
-								}
-								else
-								{
-									allowCasting = false;
-								}
-							}
-
-							if ( *inputPressed(impulses[IN_DEFEND]) && impulses[IN_DEFEND] == 285 && itemMenuOpen ) // bound to right click, has context menu open.
-							{
-								allowCasting = false;
+								openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 							}
 							else
 							{
-								if ( allowCasting && stats[clientnum]->EFFECTS[EFF_BLIND] )
-								{
-									messagePlayer(clientnum, language[3863]); // prevent casting of spell.
-									allowCasting = false;
-									*inputPressed(impulses[IN_DEFEND]) = 0;
-									*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
-								}
+								closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 							}
 						}
 
-						if ( allowCasting )
+						// spell list
+						// player not needed to be alive
+						if ( localClientnumsInUse[player] && !command 
+							&& (*inputPressedForPlayer(player, impulses[IN_SPELL_LIST]) || inputs.bControllerInputPressed(player, INJOY_SPELL_LIST)) )   //TODO: Move to function in interface or something?
 						{
-							*inputPressed(impulses[IN_CAST_SPELL]) = 0;
+							*inputPressedForPlayer(player, impulses[IN_SPELL_LIST]) = 0;
+							inputs.controllerClearInput(player, INJOY_SPELL_LIST);
+							gui_mode = GUI_MODE_INVENTORY;
+							selectedItem = NULL;
+							inventory_mode = INVENTORY_MODE_SPELL;
+
 							if ( shootmode )
 							{
-								*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
+								shootmode = false;
+								attributespage = 0;
+								//proficienciesPage = 0;
 							}
-							if (players[clientnum] && players[clientnum]->entity)
+						}
+
+						// spellcasting
+						// player needs to be alive
+						if ( localClientnumsAlive[clientnum] )
+						{
+							bool hasSpellbook = false;
+							if ( stats[player]->shield && itemCategory(stats[player]->shield) == SPELLBOOK )
 							{
-								if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
+								hasSpellbook = true;
+							}
+							if ( !command &&
+								(*inputPressedForPlayer(player, impulses[IN_CAST_SPELL])
+									|| (shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL))
+									|| (hasSpellbook && *inputPressedForPlayer(player, impulses[IN_DEFEND]))
+									|| (hasSpellbook && shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)))
+								)
+							{
+								bool allowCasting = true;
+								if ( *inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) || *inputPressedForPlayer(player, impulses[IN_DEFEND]) )
 								{
-									if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
+									if ( ((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE || impulses[IN_DEFEND] == RIGHT_CLICK_IMPULSE)
+										&& gui_mode >= GUI_MODE_INVENTORY
+										&& (mouseInsidePlayerInventory() || mouseInsidePlayerHotbar())
+										) )
 									{
-										messagePlayer(clientnum, language[2999]); // prevent casting of spell.
+										allowCasting = false;
 									}
-									else
+								}
+
+								if ( (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || (inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND))) && hasSpellbook
+									&& players[player] && players[player]->entity )
+								{
+									if ( players[player]->entity->effectShapeshift != NOTHING )
 									{
-										if ( achievementBrawlerMode && selected_spell != nullptr )
+										if ( players[player]->entity->effectShapeshift == CREATURE_IMP )
 										{
-											messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still cast.
-										}
-										if ( hasSpellbook && (*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
-										{
-											castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
+											// imp allowed to cast via spellbook.
 										}
 										else
 										{
-											castSpellInit(players[clientnum]->entity->getUID(), selected_spell, false);
-										}
-										if ( selected_spell != nullptr )
-										{
-											conductGameChallenges[CONDUCT_BRAWLER] = 0;
+											allowCasting = false;
 										}
 									}
-								}
-								else
-								{
-									if ( hasSpellbook && (*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
+
+									if ( *inputPressedForPlayer(player, impulses[IN_DEFEND]) && impulses[IN_DEFEND] == 285 && itemMenuOpen ) // bound to right click, has context menu open.
 									{
-										castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
+										allowCasting = false;
 									}
 									else
 									{
-										castSpellInit(players[clientnum]->entity->getUID(), selected_spell, false);
+										if ( allowCasting && stats[player]->EFFECTS[EFF_BLIND] )
+										{
+											messagePlayer(player, language[3863]); // prevent casting of spell.
+											allowCasting = false;
+											*inputPressedForPlayer(player, impulses[IN_DEFEND]) = 0;
+											inputs.controllerClearInput(player, INJOY_GAME_DEFEND);
+										}
 									}
 								}
+
+								if ( allowCasting )
+								{
+									*inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) = 0;
+									if ( shootmode )
+									{
+										inputs.controllerClearInput(player, INJOY_GAME_CAST_SPELL);
+									}
+									if ( players[player] && players[player]->entity )
+									{
+										if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
+										{
+											if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
+											{
+												messagePlayer(player, language[2999]); // prevent casting of spell.
+											}
+											else
+											{
+												if ( achievementBrawlerMode && selected_spell != nullptr )
+												{
+													messagePlayer(player, language[2998]); // notify no longer eligible for achievement but still cast.
+												}
+												if ( hasSpellbook 
+													&& (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
+												{
+													castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
+												}
+												else
+												{
+													castSpellInit(players[player]->entity->getUID(), selected_spell, false);
+												}
+												if ( selected_spell != nullptr )
+												{
+													conductGameChallenges[CONDUCT_BRAWLER] = 0;
+												}
+											}
+										}
+										else
+										{
+											if ( hasSpellbook && (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
+											{
+												castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
+											}
+											else
+											{
+												castSpellInit(players[player]->entity->getUID(), selected_spell, false);
+											}
+										}
+									}
+									*inputPressedForPlayer(player, impulses[IN_DEFEND]) = 0;
+									inputs.controllerClearInput(player, INJOY_GAME_DEFEND);
+								}
 							}
-							*inputPressed(impulses[IN_DEFEND]) = 0;
-							*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
 						}
 					}
+
 					if ( !command && *inputPressed(impulses[IN_TOGGLECHATLOG]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG])) )
 					{
 						hide_statusbar = !hide_statusbar;
@@ -4438,7 +4463,7 @@ int main(int argc, char** argv)
 						*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE]) = 0;
 					}
 
-					// commands
+					// commands - uses local clientnum only
 					if ( ( *inputPressed(impulses[IN_CHAT]) || *inputPressed(impulses[IN_COMMAND]) ) && !command )
 					{
 						*inputPressed(impulses[IN_CHAT]) = 0;
@@ -4714,169 +4739,191 @@ int main(int argc, char** argv)
 					// pointer in inventory screen
 					if (shootmode == false)
 					{
-						if (selectedItem)
+						for ( int player = 0; player < MAXPLAYERS; ++player )
 						{
-							pos.x = mousex - 15;
-							pos.y = mousey - 15;
-							pos.w = 32 * uiscale_inventory;
-							pos.h = 32 * uiscale_inventory;
-							drawImageScaled(itemSprite(selectedItem), NULL, &pos);
-							if ( selectedItem->count > 1 )
+							// dragging items, player not needed to be alive
+							// to port to splitscreen, player == clientnum to be replaced
+							if ( selectedItem && player == clientnum )
 							{
-								ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
-							}
-							if ( itemCategory(selectedItem) != SPELL_CAT )
-							{
-								if ( itemIsEquipped(selectedItem, clientnum) )
+								pos.x = mousex - 15;
+								pos.y = mousey - 15;
+								pos.w = 32 * uiscale_inventory;
+								pos.h = 32 * uiscale_inventory;
+								drawImageScaled(itemSprite(selectedItem), NULL, &pos);
+								if ( selectedItem->count > 1 )
 								{
-									pos.y += 16;
-									drawImage(equipped_bmp, NULL, &pos);
+									ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
 								}
-								else if ( selectedItem->status == BROKEN )
+								if ( itemCategory(selectedItem) != SPELL_CAT )
 								{
-									pos.y += 16;
-									drawImage(itembroken_bmp, NULL, &pos);
-								}
-							}
-							else
-							{
-								spell_t* spell = getSpellFromItem(selectedItem);
-								if ( selected_spell == spell && 
-									(selected_spell_last_appearance == selectedItem->appearance || selected_spell_last_appearance == -1) )
-								{
-									pos.y += 16;
-									drawImage(equipped_bmp, NULL, &pos);
-								}
-							}
-						}
-						else if ( FollowerMenu.selectMoveTo &&
-							(FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
-						{
-							pos.x = mousex - cursor_bmp->w / 2;
-							pos.y = mousey - cursor_bmp->h / 2;
-							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-							if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
-							{
-								if ( FollowerMenu.followerToCommand
-									&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
-										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
-									)
-								{
-									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
+									if ( itemIsEquipped(selectedItem, player) )
+									{
+										pos.y += 16;
+										drawImage(equipped_bmp, NULL, &pos);
+									}
+									else if ( selectedItem->status == BROKEN )
+									{
+										pos.y += 16;
+										drawImage(itembroken_bmp, NULL, &pos);
+									}
 								}
 								else
 								{
-									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
+									spell_t* spell = getSpellFromItem(selectedItem);
+									if ( selected_spell == spell &&
+										(selected_spell_last_appearance == selectedItem->appearance || selected_spell_last_appearance == -1) )
+									{
+										pos.y += 16;
+										drawImage(equipped_bmp, NULL, &pos);
+									}
 								}
 							}
-							else
+							else if ( player == clientnum && FollowerMenu.selectMoveTo &&
+								(FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+									|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 							{
-								if ( !strcmp(FollowerMenu.interactText, "") )
+								pos.x = mousex - cursor_bmp->w / 2;
+								pos.y = mousey - cursor_bmp->h / 2;
+								drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+								if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 								{
-									if ( FollowerMenu.followerToCommand )
-									{
-										int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
-										if ( FollowerMenu.allowedInteractItems(type)
-											|| FollowerMenu.allowedInteractFood(type)
-											|| FollowerMenu.allowedInteractWorld(type)
+									if ( FollowerMenu.followerToCommand
+										&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+											|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
 										)
+									{
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
+									}
+									else
+									{
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
+									}
+								}
+								else
+								{
+									if ( !strcmp(FollowerMenu.interactText, "") )
+									{
+										if ( FollowerMenu.followerToCommand )
 										{
-											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+											int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
+											if ( FollowerMenu.allowedInteractItems(type)
+												|| FollowerMenu.allowedInteractFood(type)
+												|| FollowerMenu.allowedInteractWorld(type)
+												)
+											{
+												ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+											}
+											else
+											{
+												ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+											}
 										}
 										else
 										{
-											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
 										}
 									}
 									else
 									{
-										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
 									}
 								}
-								else
+							}
+							else if ( draw_cursor && player == clientnum )
+							{
+								if ( player == clientnum )
 								{
-									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
+									pos.x = mousex - cursor_bmp->w / 2;
+									pos.y = mousey - cursor_bmp->h / 2;
+									pos.w = 0;
+									pos.h = 0;
+									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 								}
 							}
-						}
-						else if (draw_cursor)
-						{
-							pos.x = mousex - cursor_bmp->w / 2;
-							pos.y = mousey - cursor_bmp->h / 2;
-							pos.w = 0;
-							pos.h = 0;
-							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+							else if ( localClientnumsInUse[player] && inputs.getMouse(player) && inputs.getMouse(player)->draw_cursor )
+							{
+								pos.x = inputs.getMouse(player)->x - cursor_bmp->w / 2;
+								pos.y = inputs.getMouse(player)->y - cursor_bmp->h / 2;
+								pos.w = 0;
+								pos.h = 0;
+								drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+							}
 						}
 					}
 					else if ( !nohud )
 					{
-						pos.x = xres / 2 - cross_bmp->w / 2;
-						pos.y = yres / 2 - cross_bmp->h / 2;
-						pos.w = 0;
-						pos.h = 0;
-						if ( FollowerMenu.selectMoveTo && (FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+						for ( int player = 0; player < MAXPLAYERS; ++player )
 						{
-							pos.x = xres / 2 - cursor_bmp->w / 2;
-							pos.y = yres / 2 - cursor_bmp->h / 2;
-							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-							if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+							if ( player == clientnum || localClientnumsInUse[player] )
 							{
-								if ( FollowerMenu.followerToCommand
-									&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
-										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
-									)
+								pos.x = cameras[player].winx + (cameras[player].winw / 2) - cross_bmp->w / 2;
+								pos.y = cameras[player].winy + (cameras[player].winh / 2) - cross_bmp->h / 2;
+								pos.w = 0;
+								pos.h = 0;
+								if ( FollowerMenu.selectMoveTo && (FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+									|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 								{
-									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
-								}
-								else
-								{
-									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
-								}
-							}
-							else
-							{
-								if ( !strcmp(FollowerMenu.interactText, "") )
-								{
-									if ( FollowerMenu.followerToCommand )
+									pos.x = xres / 2 - cursor_bmp->w / 2;
+									pos.y = yres / 2 - cursor_bmp->h / 2;
+									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+									if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 									{
-										int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
-										if ( FollowerMenu.allowedInteractItems(type)
-											|| FollowerMenu.allowedInteractFood(type)
-											|| FollowerMenu.allowedInteractWorld(type)
+										if ( FollowerMenu.followerToCommand
+											&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+												|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
 											)
 										{
-											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
 										}
 										else
 										{
-											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
 										}
 									}
 									else
 									{
-										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+										if ( !strcmp(FollowerMenu.interactText, "") )
+										{
+											if ( FollowerMenu.followerToCommand )
+											{
+												int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
+												if ( FollowerMenu.allowedInteractItems(type)
+													|| FollowerMenu.allowedInteractFood(type)
+													|| FollowerMenu.allowedInteractWorld(type)
+													)
+												{
+													ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+												}
+												else
+												{
+													ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+												}
+											}
+											else
+											{
+												ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+											}
+										}
+										else
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
+										}
 									}
 								}
 								else
 								{
-									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
+									if ( players[player] && players[player]->entity && stats[player]
+										&& stats[player]->defending )
+									{
+										bool foundTinkeringKit = false;
+										if ( stats[player]->shield && stats[player]->shield->type == TOOL_TINKERING_KIT )
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
+										}
+									}
+									drawImageAlpha(cross_bmp, NULL, &pos, 128);
 								}
 							}
-						}
-						else
-						{
-							if ( players[clientnum] && players[clientnum]->entity && stats[clientnum]
-								&& stats[clientnum]->defending )
-							{
-								bool foundTinkeringKit = false;
-								if ( stats[clientnum]->shield && stats[clientnum]->shield->type == TOOL_TINKERING_KIT )
-								{
-									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
-								}
-							}
-							drawImageAlpha(cross_bmp, NULL, &pos, 128);
 						}
 					}
 				}
@@ -5013,23 +5060,26 @@ int main(int argc, char** argv)
 				}
 			}
 
-			// selectedEntityGimpTimer will only allow the game to process a right click entity click 1-2 times
-			// otherwise if we interacted with a menu the gimp timer does not increment. (it would have auto reset the status of IN_USE)
-			if ( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				selectedEntityGimpTimer = 0;
-			}
-			else
-			{
-				if ( selectedEntityGimpTimer >= 2 )
+				// selectedEntityGimpTimer will only allow the game to process a right click entity click 1-2 times
+				// otherwise if we interacted with a menu the gimp timer does not increment. (it would have auto reset the status of IN_USE)
+				if ( !(*inputPressedForPlayer(i, impulses[IN_USE])) && !(inputs.bControllerInputPressed(i, INJOY_GAME_USE)) )
 				{
-					if ( *inputPressed(impulses[IN_USE]) )
+					selectedEntityGimpTimer[i] = 0;
+				}
+				else
+				{
+					if ( selectedEntityGimpTimer[i] >= 2 )
 					{
-						*inputPressed(impulses[IN_USE]) = 0;
-					}
-					if ( *inputPressed(joyimpulses[INJOY_GAME_USE]) )
-					{
-						*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+						if ( *inputPressedForPlayer(i, impulses[IN_USE]) )
+						{
+							*inputPressedForPlayer(i, impulses[IN_USE]) = 0;
+						}
+						if ( inputs.bControllerInputPressed(i, INJOY_GAME_USE) )
+						{
+							inputs.controllerClearInput(i, INJOY_GAME_USE);
+						}
 					}
 				}
 			}

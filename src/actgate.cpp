@@ -110,7 +110,7 @@ void Entity::actGate()
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity == this) || (client_selected[i] == this) )
+			if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
 			{
 				if (inrange[i])
 				{

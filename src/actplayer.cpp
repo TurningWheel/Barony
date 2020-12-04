@@ -35,7 +35,7 @@ bool disablemouserotationlimit = false;
 bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
 int monsterEmoteGimpTimer = 0;
-int selectedEntityGimpTimer = 0;
+int selectedEntityGimpTimer[MAXPLAYERS] = { 0 };
 bool insectoidLevitating[MAXPLAYERS] = { false, false, false, false };
 bool partymode = false;
 
@@ -76,6 +76,11 @@ void actDeathCam(Entity* my)
 		mousexrel = 0;
 		mouseyrel = 0;
 	}
+	if ( inputs.hasController(DEATHCAM_PLAYERNUM) )
+	{
+		mousexrel += inputs.getMouse(DEATHCAM_PLAYERNUM)->xrel;
+		mouseyrel += inputs.getMouse(DEATHCAM_PLAYERNUM)->yrel;
+	}
 
 	if ( DEATHCAM_TIME == 1 )
 	{
@@ -83,13 +88,27 @@ void actDeathCam(Entity* my)
 	}
 	else if ( DEATHCAM_TIME == deathcamGameoverPromptTicks )
 	{
-		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+		bool playerAlive = false;
+		if ( splitscreen )
 		{
-			gameModeManager.Tutorial.openGameoverWindow();
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( players[c] && players[c]->entity )
+				{
+					playerAlive = true;
+				}
+			}
 		}
-		else
+		if ( !playerAlive )
 		{
-			openGameoverWindow();
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				gameModeManager.Tutorial.openGameoverWindow();
+			}
+			else
+			{
+				openGameoverWindow();
+			}
 		}
 	}
 	if ( shootmode && !gamePaused )
@@ -269,6 +288,11 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 	{
 		mousexrel = 0;
 		mouseyrel = 0;
+	}
+	if ( inputs.hasController(PLAYER_NUM) )
+	{
+		mousexrel += inputs.getMouse(PLAYER_NUM)->xrel;
+		mouseyrel += inputs.getMouse(PLAYER_NUM)->yrel;
 	}
 
 	double refreshRateDelta = 1.0;
@@ -3227,6 +3251,15 @@ void actPlayer(Entity* my)
 			handlePlayerCameraBobbing(my, PLAYER_NUM, false);
 		}
 
+		int mouseX = omousex;
+		int mouseY = omousey;
+		if ( splitscreen && inputs.hasController(PLAYER_NUM) && !inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
+		{
+			const auto& mouse = inputs.getMouse(PLAYER_NUM);
+			mouseX = mouse->ox;
+			mouseY = mouse->oy;
+		}
+
 		// object interaction
 		if ( intro == false )
 		{
@@ -3239,7 +3272,7 @@ void actPlayer(Entity* my)
 				{
 					if ( !shootmode )
 					{
-						Uint32 uidnum = GO_GetPixelU32(omousex, yres - omousey, cameras[PLAYER_NUM]);
+						Uint32 uidnum = GO_GetPixelU32(mouseX, yres - mouseY, cameras[PLAYER_NUM]);
 						if ( uidnum > 0 )
 						{
 							underMouse = uidToEntity(uidnum);
@@ -3247,7 +3280,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						Uint32 uidnum = GO_GetPixelU32(xres / 2, yres / 2, cameras[PLAYER_NUM]);
+						Uint32 uidnum = GO_GetPixelU32(cameras[PLAYER_NUM].winw / 2, yres - cameras[PLAYER_NUM].winh / 2, cameras[PLAYER_NUM]);
 						if ( uidnum > 0 )
 						{
 							underMouse = uidToEntity(uidnum);
@@ -3277,16 +3310,16 @@ void actPlayer(Entity* my)
 			if ( FollowerMenu.followerToCommand == nullptr && FollowerMenu.selectMoveTo == false )
 			{
 				bool clickedOnGUI = false;
-				selectedEntity = entityClicked(&clickedOnGUI, false, PLAYER_NUM); // using objects
-				if ( !selectedEntity && !clickedOnGUI )
+				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM); // using objects
+				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
 				{
 					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
-					++selectedEntityGimpTimer; 
+					++selectedEntityGimpTimer[PLAYER_NUM]; 
 				}
 			}
 			else
 			{
-				selectedEntity = NULL;
+				selectedEntity[PLAYER_NUM] = NULL;
 
 				if ( !command && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
 				{
@@ -3313,7 +3346,7 @@ void actPlayer(Entity* my)
 							}
 							if ( !shootmode && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 							{
-								MinimapPing newPing(ticks, -1, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
+								MinimapPing newPing(ticks, -1, (mouseX - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (mouseY - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
 								minimapPingAdd(newPing);
 								createParticleFollowerCommand(newPing.x, newPing.y, 0, 174);
 								FollowerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
@@ -3423,7 +3456,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						selectedEntity = FollowerMenu.recentEntity;
+						selectedEntity[PLAYER_NUM] = FollowerMenu.recentEntity;
 						FollowerMenu.holdWheel = true;
 					}
 				}
@@ -3447,11 +3480,11 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
-			if ( selectedEntity != NULL )
+			if ( selectedEntity[PLAYER_NUM] != NULL )
 			{
 				FollowerMenu.followerToCommand = nullptr;
-				Entity* parent = uidToEntity(selectedEntity->skill[2]);
-				if ( selectedEntity->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+				Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->skill[2]);
+				if ( selectedEntity[PLAYER_NUM]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 				{
 					// see if we selected a follower to process right click menu.
 					if ( parent && parent->monsterAllyIndex == PLAYER_NUM )
@@ -3459,9 +3492,9 @@ void actPlayer(Entity* my)
 						FollowerMenu.followerToCommand = parent;
 						//messagePlayer(0, "limb");
 					}
-					else if ( selectedEntity->monsterAllyIndex == PLAYER_NUM )
+					else if ( selectedEntity[PLAYER_NUM]->monsterAllyIndex == PLAYER_NUM )
 					{
-						FollowerMenu.followerToCommand = selectedEntity;
+						FollowerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
 						//messagePlayer(0, "head");
 					}
 
@@ -3479,30 +3512,30 @@ void actPlayer(Entity* my)
 							FollowerMenu.recentEntity = FollowerMenu.followerToCommand;
 							FollowerMenu.initFollowerMenuGUICursor(true);
 							FollowerMenu.updateScrollPartySheet();
-							selectedEntity = NULL;
+							selectedEntity[PLAYER_NUM] = NULL;
 						}
 					}
 				}
-				if ( selectedEntity )
+				if ( selectedEntity[PLAYER_NUM] )
 				{
 					*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) = 0;
 					inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_USE);
 					bool foundTinkeringKit = false;
-					if ( entityDist(my, selectedEntity) <= TOUCHRANGE )
+					if ( entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
 					{
 						inrange[PLAYER_NUM] = true;
 
-						if ( (selectedEntity->behavior == &actItem 
-							|| selectedEntity->behavior == &actTorch
-							|| selectedEntity->behavior == &actCrystalShard)
-							&& stats[clientnum] && stats[clientnum]->shield && stats[clientnum]->defending
-							&& stats[clientnum]->shield->type == TOOL_TINKERING_KIT )
+						if ( (selectedEntity[PLAYER_NUM]->behavior == &actItem
+							|| selectedEntity[PLAYER_NUM]->behavior == &actTorch
+							|| selectedEntity[PLAYER_NUM]->behavior == &actCrystalShard)
+							&& stats[PLAYER_NUM] && stats[PLAYER_NUM]->shield && stats[PLAYER_NUM]->defending
+							&& stats[PLAYER_NUM]->shield->type == TOOL_TINKERING_KIT )
 						{
 							foundTinkeringKit = true;
 						}
 						if ( foundTinkeringKit && (clientnum == 0 || (splitscreen && PLAYER_NUM > 0)) )
 						{
-							selectedEntity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[PLAYER_NUM]->entity->getUID());
+							selectedEntity[PLAYER_NUM]->itemAutoSalvageByPlayer = static_cast<Sint32>(players[PLAYER_NUM]->entity->getUID());
 						}
 					}
 					else
@@ -3521,8 +3554,8 @@ void actPlayer(Entity* my)
 							{
 								strcpy((char*)net_packet->data, "CKIR");
 								if ( stats[PLAYER_NUM]->type == RAT
-									&& selectedEntity->behavior == &actItem
-									&& selectedEntity->itemShowOnMap == 1 )
+									&& selectedEntity[PLAYER_NUM]->behavior == &actItem
+									&& selectedEntity[PLAYER_NUM]->itemShowOnMap == 1 )
 								{
 									strcpy((char*)net_packet->data, "RATF");
 								}
@@ -3533,13 +3566,13 @@ void actPlayer(Entity* my)
 							strcpy((char*)net_packet->data, "CKOR");
 						}
 						net_packet->data[4] = PLAYER_NUM;
-						if (selectedEntity->behavior == &actPlayerLimb)
+						if ( selectedEntity[PLAYER_NUM]->behavior == &actPlayerLimb)
 						{
-							SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->getUID(), &net_packet->data[5]);
+							SDLNet_Write32((Uint32)players[selectedEntity[PLAYER_NUM]->skill[2]]->entity->getUID(), &net_packet->data[5]);
 						}
 						else
 						{
-							Entity* tempEntity = uidToEntity(selectedEntity->skill[2]);
+							Entity* tempEntity = uidToEntity(selectedEntity[PLAYER_NUM]->skill[2]);
 							if (tempEntity)
 							{
 								if (tempEntity->behavior == &actMonster)
@@ -3548,12 +3581,12 @@ void actPlayer(Entity* my)
 								}
 								else
 								{
-									SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
+									SDLNet_Write32((Uint32)selectedEntity[PLAYER_NUM]->getUID(), &net_packet->data[5]);
 								}
 							}
 							else
 							{
-								SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
+								SDLNet_Write32((Uint32)selectedEntity[PLAYER_NUM]->getUID(), &net_packet->data[5]);
 							}
 						}
 						net_packet->address.host = net_server.host;
@@ -3570,14 +3603,15 @@ void actPlayer(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my) || i == PLAYER_CLICKED - 1)
+			if ((i == 0 && selectedEntity[0] == my) || (client_selected[i] == my)
+				|| i == PLAYER_CLICKED - 1 || (i > 0 && splitscreen && selectedEntity[i] == my) )
 			{
 				PLAYER_CLICKED = 0;
 				if (inrange[i] && i != PLAYER_NUM)
 				{
 					messagePlayer(i, language[575], stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->HP, stats[PLAYER_NUM]->MAXHP, stats[PLAYER_NUM]->MP, stats[PLAYER_NUM]->MAXMP);
 					messagePlayer(PLAYER_NUM, language[576], stats[i]->name);
-					if (PLAYER_NUM == clientnum && players[i] && players[i]->entity)
+					if ((PLAYER_NUM == clientnum || (PLAYER_NUM != clientnum && splitscreen) ) && players[i] && players[i]->entity)
 					{
 						double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
 						PLAYER_VELX += cos(tangent);
@@ -4090,7 +4124,7 @@ void actPlayer(Entity* my)
 										entity->skill[15] = item->identified;
 									}
 								}
-								if ( multiplayer != SINGLE )
+								if ( multiplayer != SINGLE || splitscreen )
 								{
 									for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
 									{
@@ -4102,16 +4136,16 @@ void actPlayer(Entity* my)
 										}
 										list_RemoveNode(node);
 									}
-									stats[0]->helmet = NULL;
-									stats[0]->breastplate = NULL;
-									stats[0]->gloves = NULL;
-									stats[0]->shoes = NULL;
-									stats[0]->shield = NULL;
-									stats[0]->weapon = NULL;
-									stats[0]->cloak = NULL;
-									stats[0]->amulet = NULL;
-									stats[0]->ring = NULL;
-									stats[0]->mask = NULL;
+									stats[PLAYER_NUM]->helmet = NULL;
+									stats[PLAYER_NUM]->breastplate = NULL;
+									stats[PLAYER_NUM]->gloves = NULL;
+									stats[PLAYER_NUM]->shoes = NULL;
+									stats[PLAYER_NUM]->shield = NULL;
+									stats[PLAYER_NUM]->weapon = NULL;
+									stats[PLAYER_NUM]->cloak = NULL;
+									stats[PLAYER_NUM]->amulet = NULL;
+									stats[PLAYER_NUM]->ring = NULL;
+									stats[PLAYER_NUM]->mask = NULL;
 								}
 							}
 							else
@@ -6034,11 +6068,15 @@ void actPlayerLimb(Entity* my)
 		{
 			if ( inrange[i] )
 			{
-				if ( i == 0 && selectedEntity == my )
+				if ( i == 0 && selectedEntity[0] == my )
 				{
 					parent->skill[14] = i + 1;
 				}
 				else if ( client_selected[i] == my )
+				{
+					parent->skill[14] = i + 1;
+				}
+				else if ( i > 0 && splitscreen && selectedEntity[i] == my )
 				{
 					parent->skill[14] = i + 1;
 				}

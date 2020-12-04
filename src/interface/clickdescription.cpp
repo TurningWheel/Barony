@@ -35,12 +35,23 @@ void clickDescription(int player, Entity* entity)
 
 	if ( entity == NULL )
 	{
-		if ( !(*inputPressed(impulses[IN_ATTACK]) || *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) || shootmode )
+		if ( !(*inputPressedForPlayer(player, impulses[IN_ATTACK]) || inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)) || shootmode )
 		{
 			return;
 		}
+
+		int mx = omousex;
+		int my = omousey;
+		if ( splitscreen && inputs.hasController(player) && !inputs.bPlayerUsingKeyboardControl(player) )
+		{
+			const auto& mouse = inputs.getMouse(player);
+			mx = mouse->ox;
+			my = mouse->oy;
+		}
+		auto& camera = cameras[player];
+
 		//One of either IN_ATTACK or INJOY_MENU_LEFT_CLICK is true, && shootmode == false;
-		if ( omousex < 0 || omousex >= 0 + xres || omousey < 0 || omousey >= 0 + yres )
+		if ( mx < camera.winx || mx >= camera.winx + camera.winw || my < camera.winy || my >= camera.winy + camera.winh )
 		{
 			return;
 		}
@@ -48,13 +59,13 @@ void clickDescription(int player, Entity* entity)
 		{
 			return;
 		}
-		if (openedChest[clientnum])
-			if (omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
+		if (openedChest[player])
+			if ( mx > CHEST_INVENTORY_X && mx < CHEST_INVENTORY_X + inventoryChest_bmp->w && my > CHEST_INVENTORY_Y && my < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
 			{
 				return;    //Click falls inside the chest inventory GUI.
 			}
 		if (identifygui_active)
-			if (omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h)
+			if ( mx > IDENTIFY_GUI_X && mx < IDENTIFY_GUI_X + identifyGUI_img->w && my > IDENTIFY_GUI_Y && my < IDENTIFY_GUI_Y + identifyGUI_img->h)
 			{
 				return;    //Click falls inside the identify item gui.
 			}
@@ -156,16 +167,16 @@ void clickDescription(int player, Entity* entity)
 			return;
 		}
 
-		*inputPressed(impulses[IN_ATTACK]) = 0;
-		*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
+		*inputPressedForPlayer(player, impulses[IN_ATTACK]) = 0;
+		inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 
 		if ( softwaremode )
 		{
-			entity = clickmap[omousey + omousex * yres];
+			entity = clickmap[my + mx * (camera.winy + camera.winh)];
 		}
 		else
 		{
-			uidnum = GO_GetPixelU32(omousex, yres - omousey, cameras[player]);
+			uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
 			entity = uidToEntity(uidnum);
 		}
 	}

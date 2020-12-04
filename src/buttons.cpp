@@ -1014,11 +1014,11 @@ void buttonDelete(button_t* my)
 	makeUndo();
 
 	// delete the selected entity, if there is one
-	if (selectedEntity != NULL)
+	if ( selectedEntity[0] != NULL)
 	{
-		list_RemoveNode(selectedEntity->mynode);
-		selectedEntity = NULL;
-		lastSelectedEntity = NULL;
+		list_RemoveNode(selectedEntity[0]->mynode);
+		selectedEntity[0] = NULL;
+		lastSelectedEntity[0] = NULL;
 	}
 	if (selectedarea)
 	{
@@ -1056,13 +1056,13 @@ void buttonCycleSprites(button_t* my)
 
 	if ( lastEntity != nullptr )
 	{
-		if ( selectedEntity )
+		if ( selectedEntity[0] )
 		{
 			entityWasSelected = true;
 		}
 
-		selectedEntity = nullptr;
-		lastSelectedEntity = nullptr;
+		selectedEntity[0] = nullptr;
+		lastSelectedEntity[0] = nullptr;
 
 		// create new entity on the list, copying and removing the previous last one.
 		entity = newEntity(lastEntity->sprite, 0, map.entities, nullptr);
@@ -1071,8 +1071,8 @@ void buttonCycleSprites(button_t* my)
 
 		if ( entityWasSelected )
 		{
-			selectedEntity = entity;
-			lastSelectedEntity = selectedEntity;
+			selectedEntity[0] = entity;
+			lastSelectedEntity[0] = selectedEntity[0];
 		}
 	}
 }
@@ -1724,7 +1724,7 @@ void buttonCloseSubwindow(button_t* my)
 	int c;
 
 	// close window
-	selectedEntity = NULL;
+	selectedEntity[0] = NULL;
 	subwindow = 0;
 	newwindow = 0;
 	openwindow = 0;
@@ -1746,11 +1746,11 @@ void buttonSpriteProperties(button_t* my)
 	char tmpStr[32] = "";
 	int itemIndex = 0;
 
-	if ( selectedEntity == NULL && lastSelectedEntity != NULL )
+	if ( selectedEntity[0] == NULL && lastSelectedEntity[0] != NULL )
 	{
-		if ( checkSpriteType(lastSelectedEntity->sprite) != 0 )
+		if ( checkSpriteType(lastSelectedEntity[0]->sprite) != 0 )
 		{
-			selectedEntity = lastSelectedEntity;
+			selectedEntity[0] = lastSelectedEntity[0];
 		}
 		else
 		{
@@ -1759,7 +1759,7 @@ void buttonSpriteProperties(button_t* my)
 		}
 	}
 
-	if ( selectedEntity != NULL )
+	if ( selectedEntity[0] != NULL )
 	{
 		editproperty = 0;
 		for ( int i = 0; i < (sizeof(spriteProperties) / sizeof(spriteProperties[0])); i++ )
@@ -1767,11 +1767,11 @@ void buttonSpriteProperties(button_t* my)
 			strcpy(spriteProperties[i], "");
 		}
 
-		spriteType = checkSpriteType(selectedEntity->sprite);
+		spriteType = checkSpriteType(selectedEntity[0]->sprite);
 		switch ( spriteType )
 		{
 			case 1: //monsters
-				tmpSpriteStats = selectedEntity->getStats();
+				tmpSpriteStats = selectedEntity[0]->getStats();
 				if ( tmpSpriteStats != nullptr )
 				{
 					if ( exitFromItemWindow == true )
@@ -1794,9 +1794,9 @@ void buttonSpriteProperties(button_t* my)
 				tmpSpriteStats = NULL;
 				break;
 			case 2: //chests
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->yaw));
-				snprintf(spriteProperties[1], 4, "%d", selectedEntity->skill[9]);
-				snprintf(spriteProperties[2], 4, "%d", selectedEntity->chestLocked);
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->yaw));
+				snprintf(spriteProperties[1], 4, "%d", selectedEntity[0]->skill[9]);
+				snprintf(spriteProperties[2], 4, "%d", selectedEntity[0]->chestLocked);
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1810,19 +1810,19 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			case 3: //items
 				itemSelect = 1;
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->skill[10])); //ID
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->skill[11])); //status
-				if ( (int)selectedEntity->skill[12] == 10 )
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->skill[10])); //ID
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->skill[11])); //status
+				if ( (int)selectedEntity[0]->skill[12] == 10 )
 				{
 					strcpy(spriteProperties[2], "00"); //bless random
 				}
 				else
 				{
-					snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->skill[12])); //bless
+					snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity[0]->skill[12])); //bless
 				}
-				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->skill[13])); //count
-				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->skill[15])); //identified
-				snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity->skill[16])); //category if random
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->skill[13])); //count
+				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity[0]->skill[15])); //identified
+				snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity[0]->skill[16])); //category if random
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1836,12 +1836,12 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Item Properties:");
 				break;
 			case 4:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->skill[0])); //Monster to Spawn
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->skill[1])); //Qty
-				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->skill[2])); //Time Between Spawns
-				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->skill[3])); //Amount of Spawns 
-				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->skill[4])); //Requires Power
-				snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity->skill[5])); //Chance to Stop Working
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->skill[0])); //Monster to Spawn
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->skill[1])); //Qty
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity[0]->skill[2])); //Time Between Spawns
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->skill[3])); //Amount of Spawns 
+				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity[0]->skill[4])); //Requires Power
+				snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity[0]->skill[5])); //Chance to Stop Working
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1854,10 +1854,10 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Summoning Trap Properties:");
 				break;
 			case 5:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->yaw)); //Orientation
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->crystalNumElectricityNodes)); //Powered Distance
-				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->crystalTurnReverse)); //Rotation direction
-				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->crystalSpellToActivate)); //Spell to activate
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->yaw)); //Orientation
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->crystalNumElectricityNodes)); //Powered Distance
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity[0]->crystalTurnReverse)); //Rotation direction
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->crystalSpellToActivate)); //Spell to activate
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1870,7 +1870,7 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Power Crystal Properties:");
 				break;
 			case 6:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->leverTimerTicks));
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->leverTimerTicks));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1883,9 +1883,9 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Lever Timer Properties:");
 				break;
 			case 7:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireAmount));
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireDelay));
-				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->boulderTrapPreDelay));
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->boulderTrapRefireAmount));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->boulderTrapRefireDelay));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity[0]->boulderTrapPreDelay));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1898,11 +1898,11 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Boulder Trap Properties:");
 				break;
 			case 8:
-				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->pedestalOrbType));
-				snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity->pedestalHasOrb));
-				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->pedestalInvertedPower));
-				snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->pedestalInGround));
-				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->pedestalLockOrb));
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->pedestalOrbType));
+				snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity[0]->pedestalHasOrb));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity[0]->pedestalInvertedPower));
+				snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity[0]->pedestalInGround));
+				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity[0]->pedestalLockOrb));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1915,9 +1915,9 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Pedestal Properties:");
 				break;
 			case 9:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->teleporterX));
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->teleporterY));
-				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->teleporterType));
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->teleporterX));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->teleporterY));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity[0]->teleporterType));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1930,7 +1930,7 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Teleporter Properties:");
 				break;
 			case 10:
-				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity->ceilingTileModel));
+				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity[0]->ceilingTileModel));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1943,11 +1943,11 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Ceiling Tile Properties:");
 				break;
 			case 11:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->spellTrapType));
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefire));
-				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->spellTrapLatchPower));
-				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->spellTrapFloorTile));
-				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefireRate));
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->spellTrapType));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->spellTrapRefire));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity[0]->spellTrapLatchPower));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->spellTrapFloorTile));
+				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity[0]->spellTrapRefireRate));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1960,7 +1960,7 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Spell Trap Properties:");
 				break;
 			case 12:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->furnitureDir));
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->furnitureDir));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1974,27 +1974,27 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			case 13:
 			{
-				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity->floorDecorationModel));
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->floorDecorationRotation));
-				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->floorDecorationHeightOffset));
-				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->floorDecorationXOffset));
-				snprintf(spriteProperties[4], 5, "%d", static_cast<int>(selectedEntity->floorDecorationYOffset));
+				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationModel));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->floorDecorationRotation));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationHeightOffset));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationXOffset));
+				snprintf(spriteProperties[4], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationYOffset));
 				char buf[256] = "";
 				int totalChars = 0;
 				for ( int i = 8; i < 60; ++i )
 				{
-					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+					if ( selectedEntity[0]->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
 					{
 						for ( int c = 0; c < 4; ++c )
 						{
-							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
-								&& i != 59 && selectedEntity->skill[i + 1] != 0 )
+							if ( static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 59 && selectedEntity[0]->skill[i + 1] != 0 )
 							{
 								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
 							}
 							else
 							{
-								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								buf[totalChars] = static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF);
 								++totalChars;
 							}
 						}
@@ -2021,11 +2021,11 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			}
 			case 14:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->soundSourceToPlay));
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->soundSourceVolume));
-				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->soundSourceLatchOn));
-				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->soundSourceDelay));
-				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->soundSourceOrigin));
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->soundSourceToPlay));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->soundSourceVolume));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity[0]->soundSourceLatchOn));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->soundSourceDelay));
+				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity[0]->soundSourceOrigin));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2038,13 +2038,13 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Sound Source Properties:");
 				break;
 			case 15:
-				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->lightSourceAlwaysOn));
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->lightSourceBrightness));
-				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->lightSourceInvertPower));
-				snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->lightSourceLatchOn));
-				snprintf(spriteProperties[4], 3, "%d", static_cast<int>(selectedEntity->lightSourceRadius));
-				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity->lightSourceFlicker));
-				snprintf(spriteProperties[6], 5, "%d", static_cast<int>(selectedEntity->lightSourceDelay));
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->lightSourceAlwaysOn));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->lightSourceBrightness));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity[0]->lightSourceInvertPower));
+				snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity[0]->lightSourceLatchOn));
+				snprintf(spriteProperties[4], 3, "%d", static_cast<int>(selectedEntity[0]->lightSourceRadius));
+				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity[0]->lightSourceFlicker));
+				snprintf(spriteProperties[6], 5, "%d", static_cast<int>(selectedEntity[0]->lightSourceDelay));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2058,9 +2058,9 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			case 16:
 			{
-				Uint32 r = (Uint32)(selectedEntity->textSourceColorRGB >> 16) & 0xFF;
-				Uint32 g = (Uint32)(selectedEntity->textSourceColorRGB >> 8) & 0xFF;
-				Uint32 b = (Uint32)(selectedEntity->textSourceColorRGB >> 0) & 0xFF;
+				Uint32 r = (Uint32)(selectedEntity[0]->textSourceColorRGB >> 16) & 0xFF;
+				Uint32 g = (Uint32)(selectedEntity[0]->textSourceColorRGB >> 8) & 0xFF;
+				Uint32 b = (Uint32)(selectedEntity[0]->textSourceColorRGB >> 0) & 0xFF;
 				snprintf(spriteProperties[0], 4, "%d", r);
 				snprintf(spriteProperties[1], 4, "%d", g);
 				snprintf(spriteProperties[2], 4, "%d", b);
@@ -2068,18 +2068,18 @@ void buttonSpriteProperties(button_t* my)
 				int totalChars = 0;
 				for ( int i = 4; i < 60; ++i )
 				{
-					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+					if ( selectedEntity[0]->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
 					{
 						for ( int c = 0; c < 4; ++c )
 						{
-							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
-								&& i != 59 && selectedEntity->skill[i + 1] != 0 )
+							if ( static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 59 && selectedEntity[0]->skill[i + 1] != 0 )
 							{
 								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
 							}
 							else
 							{
-								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								buf[totalChars] = static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF);
 								++totalChars;
 							}
 						}
@@ -2094,8 +2094,8 @@ void buttonSpriteProperties(button_t* my)
 				strncpy(spriteProperties[5], buf + 96, 48);
 				strncpy(spriteProperties[6], buf + 144, 48);
 				strncpy(spriteProperties[7], buf + 192, 48);
-				snprintf(spriteProperties[8], 5, "%d", static_cast<int>(selectedEntity->textSourceDelay));
-				snprintf(spriteProperties[9], 2, "%d", static_cast<int>((selectedEntity->textSourceVariables4W >> 8) & 0xFF));
+				snprintf(spriteProperties[8], 5, "%d", static_cast<int>(selectedEntity[0]->textSourceDelay));
+				snprintf(spriteProperties[9], 2, "%d", static_cast<int>((selectedEntity[0]->textSourceVariables4W >> 8) & 0xFF));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2109,11 +2109,11 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			}
 			case 17:
-				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->signalInputDirection));
-				snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity->signalActivateDelay));
-				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->signalTimerInterval));
-				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->signalTimerRepeatCount));
-				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->signalTimerLatchInput));
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->signalInputDirection));
+				snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity[0]->signalActivateDelay));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->signalTimerInterval));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->signalTimerRepeatCount));
+				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity[0]->signalTimerLatchInput));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2127,29 +2127,29 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			case 18: // custom portal
 			{
-				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity->portalCustomSprite));
-				snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity->portalCustomSpriteAnimationFrames));
-				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->portalCustomZOffset));
-				snprintf(spriteProperties[3], 3, "%d", static_cast<int>(selectedEntity->portalCustomLevelsToJump));
-				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity->portalCustomRequiresPower));
-				snprintf(spriteProperties[6], 2, "%d", static_cast<int>((selectedEntity->portalNotSecret ? 0 : 1)));
+				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity[0]->portalCustomSprite));
+				snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity[0]->portalCustomSpriteAnimationFrames));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->portalCustomZOffset));
+				snprintf(spriteProperties[3], 3, "%d", static_cast<int>(selectedEntity[0]->portalCustomLevelsToJump));
+				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity[0]->portalCustomRequiresPower));
+				snprintf(spriteProperties[6], 2, "%d", static_cast<int>((selectedEntity[0]->portalNotSecret ? 0 : 1)));
 
 				char buf[64] = "";
 				int totalChars = 0;
 				for ( int i = 11; i <= 18; ++i )
 				{
-					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+					if ( selectedEntity[0]->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
 					{
 						for ( int c = 0; c < 4; ++c )
 						{
-							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
-								&& i != 18 && selectedEntity->skill[i + 1] != 0 )
+							if ( static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 18 && selectedEntity[0]->skill[i + 1] != 0 )
 							{
 								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
 							}
 							else
 							{
-								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								buf[totalChars] = static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF);
 								++totalChars;
 							}
 						}
@@ -2174,9 +2174,9 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			}
 			case 19: // tables
-				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity->furnitureDir));
-				snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity->furnitureTableSpawnChairs));
-				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->furnitureTableRandomItemChance));
+				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity[0]->furnitureDir));
+				snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity[0]->furnitureTableSpawnChairs));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity[0]->furnitureTableRandomItemChance));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2190,32 +2190,32 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			case 20: // readablebook
 			{
-				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity->skill[11])); // status
-				if ( (int)selectedEntity->skill[12] == 10 )
+				snprintf(spriteProperties[0], 3, "%d", static_cast<int>(selectedEntity[0]->skill[11])); // status
+				if ( (int)selectedEntity[0]->skill[12] == 10 )
 				{
 					strcpy(spriteProperties[1], "00"); //bless random
 				}
 				else
 				{
-					snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity->skill[12])); //bless
+					snprintf(spriteProperties[1], 3, "%d", static_cast<int>(selectedEntity[0]->skill[12])); //bless
 				}
-				snprintf(spriteProperties[2], 3, "%d", static_cast<int>(selectedEntity->skill[15])); // identified
+				snprintf(spriteProperties[2], 3, "%d", static_cast<int>(selectedEntity[0]->skill[15])); // identified
 				char buf[64] = "";
 				int totalChars = 0;
 				for ( int i = 40; i <= 52; ++i )
 				{
-					if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+					if ( selectedEntity[0]->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
 					{
 						for ( int c = 0; c < 4; ++c )
 						{
-							if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
-								&& i != 52 && selectedEntity->skill[i + 1] != 0 )
+							if ( static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF) == '\0'
+								&& i != 52 && selectedEntity[0]->skill[i + 1] != 0 )
 							{
 								// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
 							}
 							else
 							{
-								buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+								buf[totalChars] = static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF);
 								++totalChars;
 							}
 						}
@@ -2240,9 +2240,9 @@ void buttonSpriteProperties(button_t* my)
 			}
 				break;
 			case 21:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->doorForceLockedUnlocked));
-				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->doorDisableLockpicks));
-				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->doorDisableOpening));
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->doorForceLockedUnlocked));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->doorDisableLockpicks));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity[0]->doorDisableOpening));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2255,7 +2255,7 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Door Properties:");
 				break;
 			case 22:
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->gateDisableOpening));
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->gateDisableOpening));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2268,7 +2268,7 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Gate Properties:");
 				break;
 			case 23: // player spawn
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->playerStartDir));
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->playerStartDir));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2290,7 +2290,7 @@ void buttonSpriteProperties(button_t* my)
 		switch ( spriteType )
 		{
 			case 1: //monsters
-				tmpSpriteStats = selectedEntity->getStats();
+				tmpSpriteStats = selectedEntity[0]->getStats();
 				if ( tmpSpriteStats != nullptr )
 				{
 
@@ -2341,7 +2341,7 @@ void buttonSpriteProperties(button_t* my)
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterHelm = newButton();
 						strcpy(butMonsterHelm->label, tmpStr);
@@ -2368,7 +2368,7 @@ void buttonSpriteProperties(button_t* my)
 					{
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterAmulet = newButton();
 						strcpy(butMonsterAmulet->label, tmpStr);
@@ -2395,7 +2395,7 @@ void buttonSpriteProperties(button_t* my)
 					{
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterArmor = newButton();
 						strcpy(butMonsterArmor->label, tmpStr);
@@ -2422,7 +2422,7 @@ void buttonSpriteProperties(button_t* my)
 					{
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterBoots = newButton();
 						strcpy(butMonsterBoots->label, tmpStr);
@@ -2452,7 +2452,7 @@ void buttonSpriteProperties(button_t* my)
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterCloak = newButton();
 						strcpy(butMonsterCloak->label, tmpStr);
@@ -2481,7 +2481,7 @@ void buttonSpriteProperties(button_t* my)
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterMask = newButton();
 						strcpy(butMonsterMask->label, tmpStr);
@@ -2508,7 +2508,7 @@ void buttonSpriteProperties(button_t* my)
 					{
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterShield = newButton();
 						strcpy(butMonsterShield->label, tmpStr);
@@ -2535,7 +2535,7 @@ void buttonSpriteProperties(button_t* my)
 					{
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterWeapon = newButton();
 						strcpy(butMonsterWeapon->label, tmpStr);
@@ -2563,7 +2563,7 @@ void buttonSpriteProperties(button_t* my)
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterRing = newButton();
 						strcpy(butMonsterRing->label, tmpStr);
@@ -2589,7 +2589,7 @@ void buttonSpriteProperties(button_t* my)
 					{
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
-					if ( canWearEquip(selectedEntity, itemIndex) )
+					if ( canWearEquip(selectedEntity[0], itemIndex) )
 					{
 						butMonsterGloves = newButton();
 						strcpy(butMonsterGloves->label, tmpStr);
@@ -2817,13 +2817,13 @@ void buttonSpritePropertiesConfirm(button_t* my)
 {
 	Stat* tmpSpriteStats = NULL;
 	button_t* button = NULL;
-	if ( selectedEntity != NULL )
+	if ( selectedEntity[0] != NULL )
 	{
-		int spriteType = checkSpriteType(selectedEntity->sprite);
+		int spriteType = checkSpriteType(selectedEntity[0]->sprite);
 		switch ( spriteType )
 		{
 			case 1: //monsters
-				tmpSpriteStats = selectedEntity->getStats();
+				tmpSpriteStats = selectedEntity[0]->getStats();
 				if ( tmpSpriteStats != nullptr )
 				{
 					if ( my == butMonsterItemOK )
@@ -2836,7 +2836,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 1] = (Sint32)atoi(spriteProperties[1]);
 						if ( strcmp(spriteProperties[2], "00") == 0 )
 						{
-							selectedEntity->skill[12] = 10; //bless random
+							selectedEntity[0]->skill[12] = 10; //bless random
 						}
 						else
 						{
@@ -3001,150 +3001,150 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				}
 				break;
 			case 2: //chest
-				selectedEntity->yaw = (real_t)atoi(spriteProperties[0]);
-				selectedEntity->skill[9] = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->chestLocked = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->yaw = (real_t)atoi(spriteProperties[0]);
+				selectedEntity[0]->skill[9] = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->chestLocked = (Sint32)atoi(spriteProperties[2]);
 				break;
 			case 3: //items
 				if ( strcmp(spriteProperties[0], "0") == 0 )
 				{
 					strcpy(spriteProperties[0], "1");
 				}
-				selectedEntity->skill[10] = (Sint32)atoi(spriteProperties[0]); //id
-				selectedEntity->skill[11] = (Sint32)atoi(spriteProperties[1]); //status
+				selectedEntity[0]->skill[10] = (Sint32)atoi(spriteProperties[0]); //id
+				selectedEntity[0]->skill[11] = (Sint32)atoi(spriteProperties[1]); //status
 				if ( strcmp(spriteProperties[2], "00") == 0 )
 				{
-					selectedEntity->skill[12] = 10; //bless random
+					selectedEntity[0]->skill[12] = 10; //bless random
 				}
 				else
 				{
-					selectedEntity->skill[12] = (Sint32)atoi(spriteProperties[2]); //bless
+					selectedEntity[0]->skill[12] = (Sint32)atoi(spriteProperties[2]); //bless
 				}
 				if ( strcmp(spriteProperties[3], "0") == 0 )
 				{
-					selectedEntity->skill[13] = 1; //reset quantity to 1
+					selectedEntity[0]->skill[13] = 1; //reset quantity to 1
 				}
 				else
 				{
-					selectedEntity->skill[13] = (Sint32)atoi(spriteProperties[3]); //quantity
+					selectedEntity[0]->skill[13] = (Sint32)atoi(spriteProperties[3]); //quantity
 				}
-				selectedEntity->skill[15] = (Sint32)atoi(spriteProperties[4]); //identified
-				selectedEntity->skill[16] = (Sint32)atoi(spriteProperties[5]); //cateogry if random
+				selectedEntity[0]->skill[15] = (Sint32)atoi(spriteProperties[4]); //identified
+				selectedEntity[0]->skill[16] = (Sint32)atoi(spriteProperties[5]); //cateogry if random
 				break;
 			case 4: //summoning traps
 				if ( (Sint32)atoi(spriteProperties[0]) < -1 || (Sint32)atoi(spriteProperties[0]) == 6
 					|| (Sint32)atoi(spriteProperties[0]) == 12 || (Sint32)atoi(spriteProperties[0]) == 16 )
 				{
-					selectedEntity->skill[0] = 0;
+					selectedEntity[0]->skill[0] = 0;
 				}
 				else
 				{
-					selectedEntity->skill[0] = (Sint32)atoi(spriteProperties[0]); //Monster to Spawn
+					selectedEntity[0]->skill[0] = (Sint32)atoi(spriteProperties[0]); //Monster to Spawn
 				}
 
 				if ( (Sint32)atoi(spriteProperties[1]) == 0 )
 				{
-					selectedEntity->skill[1] = 1;
+					selectedEntity[0]->skill[1] = 1;
 				}
 				else
 				{
-					selectedEntity->skill[1] = (Sint32)atoi(spriteProperties[1]); //Qty
+					selectedEntity[0]->skill[1] = (Sint32)atoi(spriteProperties[1]); //Qty
 				}
 
 				if ( (Sint32)atoi(spriteProperties[2]) == 0 )
 				{
-					selectedEntity->skill[2] = 1;
+					selectedEntity[0]->skill[2] = 1;
 				}
 				else
 				{
-					selectedEntity->skill[2] = (Sint32)atoi(spriteProperties[2]); //Time Between Spawns
+					selectedEntity[0]->skill[2] = (Sint32)atoi(spriteProperties[2]); //Time Between Spawns
 				}
 
 				if ( (Sint32)atoi(spriteProperties[3]) == 0 )
 				{
-					selectedEntity->skill[3] = 1;
+					selectedEntity[0]->skill[3] = 1;
 				}
 				else
 				{
-					selectedEntity->skill[3] = (Sint32)atoi(spriteProperties[3]); //Amount of Spawns 
+					selectedEntity[0]->skill[3] = (Sint32)atoi(spriteProperties[3]); //Amount of Spawns 
 				}
-				selectedEntity->skill[4] = (Sint32)atoi(spriteProperties[4]); //Requires Power
-				selectedEntity->skill[5] = (Sint32)atoi(spriteProperties[5]); //Chance to Stop Working
+				selectedEntity[0]->skill[4] = (Sint32)atoi(spriteProperties[4]); //Requires Power
+				selectedEntity[0]->skill[5] = (Sint32)atoi(spriteProperties[5]); //Chance to Stop Working
 				break;
 			case 5: //power crystal
-				selectedEntity->yaw = (real_t)atoi(spriteProperties[0]);
-				selectedEntity->crystalNumElectricityNodes = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->crystalTurnReverse = (Sint32)atoi(spriteProperties[2]);
-				selectedEntity->crystalSpellToActivate = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->yaw = (real_t)atoi(spriteProperties[0]);
+				selectedEntity[0]->crystalNumElectricityNodes = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->crystalTurnReverse = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->crystalSpellToActivate = (Sint32)atoi(spriteProperties[3]);
 				break;
 			case 6: //lever timer
 				if ( (Sint32)atoi(spriteProperties[0]) == 0 )
 				{
-					selectedEntity->leverTimerTicks = 1;
+					selectedEntity[0]->leverTimerTicks = 1;
 				}
 				else
 				{
-					selectedEntity->leverTimerTicks = (Sint32)atoi(spriteProperties[0]);
+					selectedEntity[0]->leverTimerTicks = (Sint32)atoi(spriteProperties[0]);
 				}
 				break;
 			case 7: //boulder trap
-				selectedEntity->boulderTrapRefireAmount = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->boulderTrapRefireAmount = (Sint32)atoi(spriteProperties[0]);
 				if ( (Sint32)atoi(spriteProperties[1]) < 2 )
 				{
-					selectedEntity->boulderTrapRefireDelay = 2;
+					selectedEntity[0]->boulderTrapRefireDelay = 2;
 				}
 				else
 				{
-					selectedEntity->boulderTrapRefireDelay = (Sint32)atoi(spriteProperties[1]);
+					selectedEntity[0]->boulderTrapRefireDelay = (Sint32)atoi(spriteProperties[1]);
 				}
 				if ( (Sint32)atoi(spriteProperties[2]) < 0 )
 				{
-					selectedEntity->boulderTrapPreDelay = 0;
+					selectedEntity[0]->boulderTrapPreDelay = 0;
 				}
 				else
 				{
-					selectedEntity->boulderTrapPreDelay = (Sint32)atoi(spriteProperties[2]);
+					selectedEntity[0]->boulderTrapPreDelay = (Sint32)atoi(spriteProperties[2]);
 				}
 				break;
 			case 8: //pedestal
-				selectedEntity->pedestalOrbType = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->pedestalHasOrb = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->pedestalInvertedPower = (Sint32)atoi(spriteProperties[2]);
-				selectedEntity->pedestalInGround = (Sint32)atoi(spriteProperties[3]);
-				selectedEntity->pedestalLockOrb = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->pedestalOrbType = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->pedestalHasOrb = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->pedestalInvertedPower = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->pedestalInGround = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->pedestalLockOrb = (Sint32)atoi(spriteProperties[4]);
 				break;
 			case 9: //teleporter
-				selectedEntity->teleporterX = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->teleporterY = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->teleporterType = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->teleporterX = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->teleporterY = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->teleporterType = (Sint32)atoi(spriteProperties[2]);
 				break;
 			case 10: //ceiling tile model
-				selectedEntity->ceilingTileModel = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->ceilingTileModel = (Sint32)atoi(spriteProperties[0]);
 				break;
 			case 11: //spell trap ceiling
-				selectedEntity->spellTrapType = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->spellTrapRefire = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->spellTrapLatchPower = (Sint32)atoi(spriteProperties[2]);
-				selectedEntity->spellTrapFloorTile = (Sint32)atoi(spriteProperties[3]);
-				selectedEntity->spellTrapRefireRate = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->spellTrapType = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->spellTrapRefire = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->spellTrapLatchPower = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->spellTrapFloorTile = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->spellTrapRefireRate = (Sint32)atoi(spriteProperties[4]);
 				break;
 			case 12: //furniture
-				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->furnitureDir = (Sint32)atoi(spriteProperties[0]);
 				break;
 			case 13: //floor decoration
 			{
-				selectedEntity->floorDecorationModel = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->floorDecorationRotation = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->floorDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
-				selectedEntity->floorDecorationXOffset = (Sint32)atoi(spriteProperties[3]);
-				selectedEntity->floorDecorationYOffset = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->floorDecorationModel = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->floorDecorationRotation = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->floorDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->floorDecorationXOffset = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->floorDecorationYOffset = (Sint32)atoi(spriteProperties[4]);
 
 				int totalChars = 0;
 				char checkChr = 'a';
 				const int kMaxCharacters = 192; // 4x48 char fields.
 				for ( int i = 8; i < 60 && totalChars < kMaxCharacters; ++i )
 				{
-					selectedEntity->skill[i] = 0;
+					selectedEntity[0]->skill[i] = 0;
 				}
 				for ( int i = 8; i < 60 && totalChars < kMaxCharacters; ++i )
 				{
@@ -3156,22 +3156,22 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					{
 						if ( totalChars >= 144 )
 						{
-							selectedEntity->skill[i] |= (spriteProperties[8][totalChars - 144]) << (c * 8);
+							selectedEntity[0]->skill[i] |= (spriteProperties[8][totalChars - 144]) << (c * 8);
 							checkChr = spriteProperties[8][totalChars - 144];
 						}
 						else if ( totalChars >= 96 )
 						{
-							selectedEntity->skill[i] |= (spriteProperties[7][totalChars - 96]) << (c * 8);
+							selectedEntity[0]->skill[i] |= (spriteProperties[7][totalChars - 96]) << (c * 8);
 							checkChr = spriteProperties[7][totalChars - 96];
 						}
 						else if ( totalChars >= 48 )
 						{
-							selectedEntity->skill[i] |= (spriteProperties[6][totalChars - 48]) << (c * 8);
+							selectedEntity[0]->skill[i] |= (spriteProperties[6][totalChars - 48]) << (c * 8);
 							checkChr = spriteProperties[6][totalChars - 48];
 						}
 						else
 						{
-							selectedEntity->skill[i] |= (spriteProperties[5][totalChars]) << (c * 8);
+							selectedEntity[0]->skill[i] |= (spriteProperties[5][totalChars]) << (c * 8);
 							checkChr = spriteProperties[5][totalChars];
 						}
 						if ( checkChr == '\0' )
@@ -3187,39 +3187,39 @@ void buttonSpritePropertiesConfirm(button_t* my)
 			}
 				break;
 			case 14: //sound source
-				selectedEntity->soundSourceToPlay = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->soundSourceVolume = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->soundSourceLatchOn = (Sint32)atoi(spriteProperties[2]);
-				selectedEntity->soundSourceDelay = (Sint32)atoi(spriteProperties[3]);
-				selectedEntity->soundSourceOrigin = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->soundSourceToPlay = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->soundSourceVolume = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->soundSourceLatchOn = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->soundSourceDelay = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->soundSourceOrigin = (Sint32)atoi(spriteProperties[4]);
 				break;
 			case 15: //light source
-				selectedEntity->lightSourceAlwaysOn = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->lightSourceBrightness = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->lightSourceInvertPower = (Sint32)atoi(spriteProperties[2]);
-				selectedEntity->lightSourceLatchOn = (Sint32)atoi(spriteProperties[3]);
-				selectedEntity->lightSourceRadius = (Sint32)atoi(spriteProperties[4]);
-				selectedEntity->lightSourceFlicker = (Sint32)atoi(spriteProperties[5]);
-				selectedEntity->lightSourceDelay = (Sint32)atoi(spriteProperties[6]);
+				selectedEntity[0]->lightSourceAlwaysOn = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->lightSourceBrightness = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->lightSourceInvertPower = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->lightSourceLatchOn = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->lightSourceRadius = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->lightSourceFlicker = (Sint32)atoi(spriteProperties[5]);
+				selectedEntity[0]->lightSourceDelay = (Sint32)atoi(spriteProperties[6]);
 				break;
 			case 16: // text source
 			{
 				Uint32 r = (Uint32)atoi(spriteProperties[0]);
 				Uint32 g = (Uint32)atoi(spriteProperties[1]);
 				Uint32 b = (Uint32)atoi(spriteProperties[2]);
-				selectedEntity->textSourceColorRGB = 0;
-				selectedEntity->textSourceColorRGB |= (r << 16);
-				selectedEntity->textSourceColorRGB |= (g << 8);
-				selectedEntity->textSourceColorRGB |= (b << 0);
-				selectedEntity->textSourceDelay = (Sint32)atoi(spriteProperties[8]);
-				selectedEntity->textSourceVariables4W = 0;
-				selectedEntity->textSourceVariables4W |= ((Sint32)atoi(spriteProperties[9]) & 0xFF) << 8;
+				selectedEntity[0]->textSourceColorRGB = 0;
+				selectedEntity[0]->textSourceColorRGB |= (r << 16);
+				selectedEntity[0]->textSourceColorRGB |= (g << 8);
+				selectedEntity[0]->textSourceColorRGB |= (b << 0);
+				selectedEntity[0]->textSourceDelay = (Sint32)atoi(spriteProperties[8]);
+				selectedEntity[0]->textSourceVariables4W = 0;
+				selectedEntity[0]->textSourceVariables4W |= ((Sint32)atoi(spriteProperties[9]) & 0xFF) << 8;
 				int totalChars = 0;
 				char checkChr = 'a';
 				const int kMaxCharacters = 220; //55 skills, starting at 4 ending at 59, skipping 28. storing 4 chars each.
 				for ( int i = 4; i < 60 && totalChars < kMaxCharacters; ++i )
 				{
-					selectedEntity->skill[i] = 0;
+					selectedEntity[0]->skill[i] = 0;
 				}
 				for ( int i = 4; i < 60 && totalChars < kMaxCharacters; ++i )
 				{
@@ -3231,27 +3231,27 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					{
 						if ( totalChars >= 192 )
 						{
-							selectedEntity->skill[i] |= (spriteProperties[7][totalChars - 192]) << (c * 8);
+							selectedEntity[0]->skill[i] |= (spriteProperties[7][totalChars - 192]) << (c * 8);
 							checkChr = spriteProperties[7][totalChars - 192];
 						}
 						else if ( totalChars >= 144 )
 						{
-							selectedEntity->skill[i] |= (spriteProperties[6][totalChars - 144]) << (c * 8);
+							selectedEntity[0]->skill[i] |= (spriteProperties[6][totalChars - 144]) << (c * 8);
 							checkChr = spriteProperties[6][totalChars - 144];
 						}
 						else if ( totalChars >= 96 )
 						{
-							selectedEntity->skill[i] |= (spriteProperties[5][totalChars - 96]) << (c * 8);
+							selectedEntity[0]->skill[i] |= (spriteProperties[5][totalChars - 96]) << (c * 8);
 							checkChr = spriteProperties[5][totalChars - 96];
 						}
 						else if ( totalChars >= 48 )
 						{
-							selectedEntity->skill[i] |= (spriteProperties[4][totalChars - 48]) << (c * 8);
+							selectedEntity[0]->skill[i] |= (spriteProperties[4][totalChars - 48]) << (c * 8);
 							checkChr = spriteProperties[4][totalChars - 48];
 						}
 						else
 						{
-							selectedEntity->skill[i] |= (spriteProperties[3][totalChars]) << (c * 8);
+							selectedEntity[0]->skill[i] |= (spriteProperties[3][totalChars]) << (c * 8);
 							checkChr = spriteProperties[3][totalChars];
 						}
 						if ( checkChr == '\0' )
@@ -3267,28 +3267,28 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				break;
 			}
 			case 17:
-				selectedEntity->signalInputDirection = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->signalActivateDelay = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->signalTimerInterval = (Sint32)atoi(spriteProperties[2]);
-				selectedEntity->signalTimerRepeatCount = (Sint32)atoi(spriteProperties[3]);
-				selectedEntity->signalTimerLatchInput = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->signalInputDirection = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->signalActivateDelay = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->signalTimerInterval = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->signalTimerRepeatCount = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->signalTimerLatchInput = (Sint32)atoi(spriteProperties[4]);
 				break;
 			case 18: // custom portal
 			{
-				selectedEntity->portalCustomSprite = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->portalCustomSpriteAnimationFrames = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->portalCustomZOffset = (Sint32)atoi(spriteProperties[2]);
-				selectedEntity->portalCustomLevelsToJump = (Sint32)atoi(spriteProperties[3]);
-				selectedEntity->portalCustomRequiresPower = (Sint32)atoi(spriteProperties[5]);
+				selectedEntity[0]->portalCustomSprite = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->portalCustomSpriteAnimationFrames = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->portalCustomZOffset = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->portalCustomLevelsToJump = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->portalCustomRequiresPower = (Sint32)atoi(spriteProperties[5]);
 				int isSecret = (Sint32)atoi(spriteProperties[6]);
-				selectedEntity->portalNotSecret = isSecret ? 0 : 1;
+				selectedEntity[0]->portalNotSecret = isSecret ? 0 : 1;
 
 				int totalChars = 0;
 				char checkChr = 'a';
 				const int kMaxCharacters = 32;
 				for ( int i = 11; i <= 18 && totalChars < kMaxCharacters; ++i )
 				{
-					selectedEntity->skill[i] = 0;
+					selectedEntity[0]->skill[i] = 0;
 				}
 				for ( int i = 11; i <= 18 && totalChars < kMaxCharacters; ++i )
 				{
@@ -3298,7 +3298,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					}
 					for ( int c = 0; c < 4; ++c )
 					{
-						selectedEntity->skill[i] |= (spriteProperties[4][totalChars]) << (c * 8);
+						selectedEntity[0]->skill[i] |= (spriteProperties[4][totalChars]) << (c * 8);
 						checkChr = spriteProperties[4][totalChars];
 						++totalChars;
 					}
@@ -3306,28 +3306,28 @@ void buttonSpritePropertiesConfirm(button_t* my)
 			}
 				break;
 			case 19: // tables
-				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->furnitureTableSpawnChairs = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->furnitureTableRandomItemChance = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->furnitureDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->furnitureTableSpawnChairs = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->furnitureTableRandomItemChance = (Sint32)atoi(spriteProperties[2]);
 				break;
 			case 20: // readablebook
 			{
-				selectedEntity->skill[11] = (Sint32)atoi(spriteProperties[0]); // status
+				selectedEntity[0]->skill[11] = (Sint32)atoi(spriteProperties[0]); // status
 				if ( strcmp(spriteProperties[1], "00") == 0 )
 				{
-					selectedEntity->skill[12] = 10; //bless random
+					selectedEntity[0]->skill[12] = 10; //bless random
 				}
 				else
 				{
-					selectedEntity->skill[12] = (Sint32)atoi(spriteProperties[1]); //bless
+					selectedEntity[0]->skill[12] = (Sint32)atoi(spriteProperties[1]); //bless
 				}
-				selectedEntity->skill[15] = (Sint32)atoi(spriteProperties[2]); // identified
+				selectedEntity[0]->skill[15] = (Sint32)atoi(spriteProperties[2]); // identified
 				int totalChars = 0;
 				char checkChr = 'a';
 				const int kMaxCharacters = 48;
 				for ( int i = 40; i <= 52 && totalChars < kMaxCharacters; ++i )
 				{
-					selectedEntity->skill[i] = 0;
+					selectedEntity[0]->skill[i] = 0;
 				}
 				for ( int i = 40; i <= 52 && totalChars < kMaxCharacters; ++i )
 				{
@@ -3337,7 +3337,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					}
 					for ( int c = 0; c < 4; ++c )
 					{
-						selectedEntity->skill[i] |= (spriteProperties[3][totalChars]) << (c * 8);
+						selectedEntity[0]->skill[i] |= (spriteProperties[3][totalChars]) << (c * 8);
 						checkChr = spriteProperties[3][totalChars];
 						++totalChars;
 					}
@@ -3345,15 +3345,15 @@ void buttonSpritePropertiesConfirm(button_t* my)
 			}
 				break;
 			case 21: // doors
-				selectedEntity->doorForceLockedUnlocked = (Sint32)atoi(spriteProperties[0]);
-				selectedEntity->doorDisableLockpicks = (Sint32)atoi(spriteProperties[1]);
-				selectedEntity->doorDisableOpening = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->doorForceLockedUnlocked = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->doorDisableLockpicks = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->doorDisableOpening = (Sint32)atoi(spriteProperties[2]);
 				break;
 			case 22: // gates
-				selectedEntity->gateDisableOpening = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->gateDisableOpening = (Sint32)atoi(spriteProperties[0]);
 				break;
 			case 23: // player spawn
-				selectedEntity->playerStartDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->playerStartDir = (Sint32)atoi(spriteProperties[0]);
 				break;
 			default:
 				break;
@@ -3389,9 +3389,9 @@ void buttonCloseSpriteSubwindow(button_t* my)
 	// close window
 	if ( my == butMonsterItemCancel || my == butMonsterItemX )
 	{
-		if ( selectedEntity != NULL )
+		if ( selectedEntity[0] != NULL )
 		{
-			tmpSpriteStats = selectedEntity->getStats();
+			tmpSpriteStats = selectedEntity[0]->getStats();
 		}
 		if ( tmpSpriteStats != NULL )
 		{
@@ -3417,7 +3417,7 @@ void buttonCloseSpriteSubwindow(button_t* my)
 		}
 	}
 	else {
-		selectedEntity = NULL;
+		selectedEntity[0] = NULL;
 		newwindow = 0;
 		subwindow = 0;
 		editproperty = 0;
@@ -3447,7 +3447,7 @@ void buttonMonsterItems(button_t* my)
 	suby2 = yres / 2 + 158;
 	strcpy(subtext, "Monster Item Properties:");
 
-	Stat* tmpSpriteStats = selectedEntity->getStats();
+	Stat* tmpSpriteStats = selectedEntity[0]->getStats();
 
 	// stores any modified monster stats, to be restored when window is closed.
 
@@ -3660,7 +3660,7 @@ void initMonsterPropertiesWindow() {
 	suby1 = yres / 2 - 190;
 	suby2 = yres / 2 + 190;
 	strcpy(subtext, "Sprite properties: ");
-	strcat(subtext, spriteEditorNameStrings[selectedEntity->sprite]);
+	strcat(subtext, spriteEditorNameStrings[selectedEntity[0]->sprite]);
 }
 
 void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats)

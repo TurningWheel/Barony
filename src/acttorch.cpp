@@ -97,7 +97,7 @@ void actTorch(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if (inrange[i])
 				{
@@ -160,15 +160,15 @@ void actTorch(Entity* my)
 		if ( my->isInteractWithMonster() )
 		{
 			list_RemoveNode(my->light->node);
-			list_RemoveNode(my->mynode);
 			Entity* monster = uidToEntity(my->interactedByMonster);
+			my->clearMonsterInteract();
 			if ( monster )
 			{
 				Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, true, NULL);
 				dropItemMonster(item, monster, monster->getStats());
 				//monster->addItemToMonsterInventory(item);
 			}
-			my->clearMonsterInteract();
+			list_RemoveNode(my->mynode);
 		}
 	}
 }
@@ -241,7 +241,7 @@ void actCrystalShard(Entity* my)
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
-			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if ( inrange[i] )
 				{

@@ -22,7 +22,7 @@
 
 Player** players = nullptr;
 
-Entity* selectedEntity = nullptr;
+Entity* selectedEntity[MAXPLAYERS] = { nullptr };
 int current_player = 0;
 Sint32 mousex = 0, mousey = 0;
 Sint32 omousex = 0, omousey = 0;
@@ -143,7 +143,7 @@ const bool GameController::isActive()
 	return (sdl_device != nullptr);
 }
 
-void GameController::handleAnalog()
+void GameController::handleAnalog(int player)
 {
 	if (!isActive())
 	{
@@ -156,8 +156,6 @@ void GameController::handleAnalog()
 	{
 		int rightx = getRawRightXMove() / gamepad_menux_sensitivity;
 		int righty = getRawRightYMove() / gamepad_menuy_sensitivity;
-
-
 
 		//The right stick's inversion and the menu's inversion should be independent of eachother. This just undoes any inversion.
 		if (gamepad_rightx_invert)
@@ -180,7 +178,14 @@ void GameController::handleAnalog()
 
 		if (rightx || righty)
 		{
-			SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
+			if ( inputs.bPlayerUsingKeyboardControl(player) )
+			{
+				SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
+			}
+			else if(const auto& mouse = inputs.getMouse(player))
+			{
+				mouse->warpMouseInCamera(cameras[player], rightx, righty);
+			}
 		}
 	}
 	else
@@ -190,46 +195,30 @@ void GameController::handleAnalog()
 
 		if (rightx || righty)
 		{
-			SDL_Event e;
-
-			e.type = SDL_MOUSEMOTION;
-			e.motion.x = mousex + rightx;
-			e.motion.y = mousey + righty;
-			e.motion.xrel = rightx;
-			e.motion.yrel = righty;
-			SDL_PushEvent(&e);
+			if ( inputs.bPlayerUsingKeyboardControl(player) )
+			{
+				SDL_Event e;
+				e.type = SDL_MOUSEMOTION;
+				e.motion.x = mousex + rightx;
+				e.motion.y = mousey + righty;
+				e.motion.xrel = rightx;
+				e.motion.yrel = righty;
+				SDL_PushEvent(&e);
+			}
+			else if ( const auto& mouse = inputs.getMouse(player) )
+			{
+				mouse->x += rightx;
+				mouse->y += righty;
+				mouse->xrel += rightx;
+				mouse->yrel += righty;
+				if ( !mouse->draw_cursor )
+				{
+					mouse->draw_cursor = true;
+				}
+				mouse->moved = true;
+			}
 		}
 	}
-
-	//if (getLeftTrigger())
-	//{
-	//	if ( !oldLeftTrigger )
-	//	{
-	//		oldLeftTrigger = 1;
-	//		//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT].binary = 1;
-	//		lastkeypressed = 299;
-	//	}
-	//}
-	//else
-	//{
-	//	oldLeftTrigger = 0;
-	//	//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT].binary = 0;
-	//}
-
-	//if (getRightTrigger())
-	//{
-	//	if ( !oldRightTrigger )
-	//	{
-	//		oldRightTrigger = 1;
-	//		//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT].binary = 1;
-	//		lastkeypressed = 300;
-	//	}
-	//}
-	//else
-	//{
-	//	oldRightTrigger = 0;
-	//	//axis[SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT].binary = 0;
-	//}
 }
 
 int GameController::getLeftXMove()
@@ -1049,6 +1038,21 @@ const bool Inputs::bPlayerIsControllable(int player) const
 	return false;
 }
 
+void Inputs::controllerHandleMouse(int player)
+{
+	if ( !bPlayerIsControllable(player) )
+	{
+		return;
+	}
+	GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return;
+	}
+
+	controller->handleAnalog(player);
+}
+
 void initIdentifyGUIControllerCode()
 {
 	if ( identify_items[0] )
@@ -1163,7 +1167,7 @@ void GameController::updateAxis()
 		axis[i].binary = binaryOf(axis[i]);
 		if ( oldBinary != axis[i].binary ) {
 			// unconsume the input whenever it's released or pressed again.
-			messagePlayer(0, "%d: %d", i, axis[i].binary ? 1 : 0);
+			//messagePlayer(0, "%d: %d", i, axis[i].binary ? 1 : 0);
 			axis[i].consumed = false;
 		}
 	}
