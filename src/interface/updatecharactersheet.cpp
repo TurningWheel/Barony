@@ -33,7 +33,7 @@ void statsHoverText(Stat* tmpStat);
 
 -------------------------------------------------------------------------------*/
 
-void updateCharacterSheet()
+void updateCharacterSheet(const int player)
 {
 	int i = 0;
 	int x = 0;
@@ -44,29 +44,36 @@ void updateCharacterSheet()
 	Item* item = NULL;
 	int c;
 
+	int xres = players[player]->camera_width();
+	int yres = players[player]->camera_height();
+	int x1 = players[player]->camera_x1();
+	int x2 = players[player]->camera_x2();
+	int y1 = players[player]->camera_y1();
+	int y2 = players[player]->camera_y2();
+
 	// draw window
-	pos.x = 8;
-	pos.y = 8;
+	pos.x = x1 + 8;
+	pos.y = y1 + 8;
 	pos.w = 208;
 	pos.h = 180;
 	//drawImage(character_bmp, NULL, &pos);
 	//pos.x=0; pos.y=196;
 	//pos.w=222; pos.h=392-196;
 	//drawTooltip(&pos);
-	int statWindowY = 196;
-	int statWindowY2 = 404;
+	int statWindowY = y1 + 196;
+	int statWindowY2 = y1 + 404;
 	if ( uiscale_charactersheet )
 	{
 		pos.h = 236;
 		pos.w = 276;
-		statWindowY = pos.h + 16;
-		statWindowY2 = 554;
+		statWindowY = y1 + pos.h + 16;
+		statWindowY2 = y1 + 554;
 	}
 
 
-	drawWindowFancy(0, 0, pos.w + 16, pos.h + 16);
+	drawWindowFancy(x1, y1, x1 + pos.w + 16, y1 + pos.h + 16);
 	drawRect(&pos, 0, 255);
-	drawWindowFancy(0, pos.h + 16, pos.w + 16, statWindowY2);
+	drawWindowFancy(x1, y1 + pos.h + 16, x1 + pos.w + 16, statWindowY2);
 
 	interfaceCharacterSheet.x = pos.x - 8;
 	interfaceCharacterSheet.y = pos.y - 8;
@@ -76,36 +83,36 @@ void updateCharacterSheet()
 	// character sheet
 	double ofov = fov;
 	fov = 50;
-	if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+	if (players[player] != nullptr && players[player]->entity != nullptr)
 	{
 		if (!softwaremode)
 		{
 			glClear(GL_DEPTH_BUFFER_BIT);
 		}
 		//TODO: These two NOT PLAYERSWAP
-		//camera.x=players[clientnum]->x/16.0+.5*cos(players[clientnum]->yaw)-.4*sin(players[clientnum]->yaw);
-		//camera.y=players[clientnum]->y/16.0+.5*sin(players[clientnum]->yaw)+.4*cos(players[clientnum]->yaw);
-		camera_charsheet.x = players[clientnum]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
-		camera_charsheet.y = players[clientnum]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
-		camera_charsheet.z = players[clientnum]->entity->z * 2;
-		//camera.ang=atan2(players[clientnum]->y/16.0-camera.y,players[clientnum]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
+		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
+		//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
+		camera_charsheet.x = players[player]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
+		camera_charsheet.y = players[player]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
+		camera_charsheet.z = players[player]->entity->z * 2;
+		//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
 		camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
 		camera_charsheet.vang = PI / 20;
-		camera_charsheet.winx = 8;
-		camera_charsheet.winy = 8;
+		camera_charsheet.winx = x1 + 8;
+		camera_charsheet.winy = y1 + 8;
 		camera_charsheet.winw = pos.w;
 		camera_charsheet.winh = pos.h;
-		b = players[clientnum]->entity->flags[BRIGHT];
-		players[clientnum]->entity->flags[BRIGHT] = true;
-		if ( !players[clientnum]->entity->flags[INVISIBLE] )
+		b = players[player]->entity->flags[BRIGHT];
+		players[player]->entity->flags[BRIGHT] = true;
+		if ( !players[player]->entity->flags[INVISIBLE] )
 		{
-			glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
+			glDrawVoxel(&camera_charsheet, players[player]->entity, REALCOLORS);
 		}
-		players[clientnum]->entity->flags[BRIGHT] = b;
+		players[player]->entity->flags[BRIGHT] = b;
 		c = 0;
 		if (multiplayer != CLIENT)
 		{
-			for (node = players[clientnum]->entity->children.first; node != nullptr; node = node->next)
+			for (node = players[player]->entity->children.first; node != nullptr; node = node->next)
 			{
 				if (c == 0)
 				{
@@ -136,7 +143,7 @@ void updateCharacterSheet()
 			for ( node = map.entities->first; node != NULL; node = node->next )
 			{
 				entity = (Entity*) node->element;
-				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
+				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
 				{
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
@@ -193,6 +200,7 @@ void updateCharacterSheet()
 	fov = ofov;
 
 	TTF_Font* fontStat = ttf12;
+	int text_x = x1 + 8;
 	int text_y = 0;
 	int pad_y = 12;
 	int fontWidth = TTF12_WIDTH;
@@ -203,18 +211,18 @@ void updateCharacterSheet()
 		fontWidth = TTF16_WIDTH;
 	}
 	text_y = statWindowY + 6;
-	ttfPrintTextFormatted(fontStat, 8, text_y, "%s", stats[clientnum]->name);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, "%s", stats[player]->name);
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum], clientnum));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[359], stats[player]->LVL, playerClassLangEntry(client_classes[player], player));
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[360], stats[clientnum]->EXP);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[360], stats[player]->EXP);
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[361], currentlevel);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[361], currentlevel);
 
 	Entity* playerEntity = nullptr;
-	if ( players[clientnum] )
+	if ( players[player] )
 	{
-		playerEntity = players[clientnum]->entity;
+		playerEntity = players[player]->entity;
 	}
 
 	// attributes
@@ -222,47 +230,47 @@ void updateCharacterSheet()
 	char statText[64] = "";
 	//Uint32 statColor = uint32ColorWhite(*mainsurface);
 	text_y += pad_y * 2;
-	snprintf(statText, 64, language[1200], stats[clientnum]->STR);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->STR, statGetSTR(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1200], stats[player]->STR);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->STR, statGetSTR(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1201], stats[clientnum]->DEX);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->DEX, statGetDEX(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1201], stats[player]->DEX);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->DEX, statGetDEX(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1202], stats[clientnum]->CON);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->CON, statGetCON(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1202], stats[player]->CON);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->CON, statGetCON(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1203], stats[clientnum]->INT);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->INT, statGetINT(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1203], stats[player]->INT);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->INT, statGetINT(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1204], stats[clientnum]->PER);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->PER, statGetPER(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1204], stats[player]->PER);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->PER, statGetPER(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1205], stats[clientnum]->CHR);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->CHR, statGetCHR(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1205], stats[player]->CHR);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->CHR, statGetCHR(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	// armor, gold, and weight
 	int attackInfo[6] = { 0 };
 	text_y += pad_y * 2;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[2542], displayAttackPower(attackInfo));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[2542], displayAttackPower(attackInfo));
 
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[371], AC(stats[clientnum]));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[371], AC(stats[player]));
 
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[370], stats[clientnum]->GOLD);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[370], stats[player]->GOLD);
 	Uint32 weight = 0;
-	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		item = (Item*)node->element;
 		int itemWeight = items[item->type].weight * item->count;
@@ -272,11 +280,11 @@ void updateCharacterSheet()
 		}
 		weight += itemWeight;
 	}
-	weight += stats[clientnum]->GOLD / 100;
+	weight += stats[player]->GOLD / 100;
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[372], weight);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[372], weight);
 
-	statsHoverText(stats[clientnum]);
+	statsHoverText(stats[player]);
 	attackHoverText(attackInfo);
 
 	// gold hover text.
@@ -302,11 +310,18 @@ void updateCharacterSheet()
 	}
 }
 
-void drawSkillsSheet()
+void drawSkillsSheet(const int player)
 {
+	int xres = players[player]->camera_width();
+	int yres = players[player]->camera_height();
+	int x1 = players[player]->camera_x1();
+	int x2 = players[player]->camera_x2();
+	int y1 = players[player]->camera_y1();
+	int y2 = players[player]->camera_y2();
+
 	SDL_Rect pos;
 	pos.w = 208;
-	pos.y = 32;
+	pos.y = y1 + 32;
 
 	TTF_Font* fontSkill = ttf12;
 	int fontHeight = TTF12_HEIGHT;
@@ -318,7 +333,7 @@ void drawSkillsSheet()
 		fontWidth = TTF16_WIDTH;
 		pos.w = 276;
 	}
-	pos.x = xres - pos.w;
+	pos.x = x1 + xres - pos.w;
 
 
 	pos.h = (NUMPROFICIENCIES * fontHeight) + (fontHeight * 3);
@@ -419,7 +434,7 @@ void drawSkillsSheet()
 	Uint32 color;
 	for ( int i = 0; i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
 	{
-		if ( skillCapstoneUnlocked(clientnum, i) )
+		if ( skillCapstoneUnlocked(player, i) )
 		{
 			color = uint32ColorGreen(*mainsurface);
 		}
@@ -431,33 +446,33 @@ void drawSkillsSheet()
 
 		if ( show_skill_values )
 		{
-			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, "%15d / 100", stats[clientnum]->PROFICIENCIES[i]);
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, "%15d / 100", stats[player]->PROFICIENCIES[i]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] == 0 )
+		else if ( stats[player]->PROFICIENCIES[i] == 0 )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[363]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
+		else if ( stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[364]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_BASIC && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_SKILLED )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_BASIC && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_SKILLED )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[365]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_SKILLED && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_EXPERT )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_SKILLED && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_EXPERT )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[366]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_MASTER )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_MASTER )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[367]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_MASTER && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_LEGENDARY )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_MASTER && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_LEGENDARY )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[368]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_LEGENDARY )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_LEGENDARY )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[369]);
 		}
@@ -467,7 +482,7 @@ void drawSkillsSheet()
 	std::string skillTooltip;
 	for ( int i = 0; !shootmode && i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
 	{
-		if ( mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + fontHeight) && stats[clientnum] )
+		if ( mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + fontHeight) && stats[player] )
 		{
 			skillTooltipRect.w = (longestline(language[3255 + i]) * fontWidth) + 8;
 			skillTooltip = language[3255 + i];
@@ -478,7 +493,7 @@ void drawSkillsSheet()
 			skillTooltipRect.y = mousey + 16;
 
 			Uint32 capstoneTextColor = uint32ColorGray(*mainsurface);
-			if ( skillCapstoneUnlocked(clientnum, i) )
+			if ( skillCapstoneUnlocked(player, i) )
 			{
 				capstoneTextColor = uint32ColorGreen(*mainsurface);
 			}
@@ -587,7 +602,7 @@ void drawSkillsSheet()
 			}
 
 			Uint32 headerColor = uint32ColorBaronyBlue(*mainsurface);
-			if ( skillCapstoneUnlocked(clientnum, i) )
+			if ( skillCapstoneUnlocked(player, i) )
 			{
 				headerColor = uint32ColorGreen(*mainsurface);
 			}
@@ -595,7 +610,7 @@ void drawSkillsSheet()
 			if ( i != PRO_MAGIC && i != PRO_ALCHEMY )
 			{
 				ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8, 
-					headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+					headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 			}
 
 			real_t skillDetails[6] = { 0.f };
@@ -605,46 +620,46 @@ void drawSkillsSheet()
 				case PRO_LOCKPICKING:
 				{
 					Sint32 PER = 0;
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						PER = statGetPER(stats[clientnum], players[clientnum]->entity);
+						PER = statGetPER(stats[player], players[player]->entity);
 					}
-					skillDetails[0] = stats[clientnum]->PROFICIENCIES[i] / 2.f; // lockpick chests/doors
-					if ( stats[clientnum]->PROFICIENCIES[i] == SKILL_LEVEL_LEGENDARY )
+					skillDetails[0] = stats[player]->PROFICIENCIES[i] / 2.f; // lockpick chests/doors
+					if ( stats[player]->PROFICIENCIES[i] == SKILL_LEVEL_LEGENDARY )
 					{
 						skillDetails[0] = 100.f;
 					}
-					skillDetails[1] = std::min(100.f, stats[clientnum]->PROFICIENCIES[i] + 50.f);
-					if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT )
+					skillDetails[1] = std::min(100.f, stats[player]->PROFICIENCIES[i] + 50.f);
+					if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT )
 					{
 						skillDetails[2] = 100.f; // lockpick automatons
 					}
 					else
 					{
-						skillDetails[2] = (100 - 100 / (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
+						skillDetails[2] = (100 - 100 / (static_cast<int>(stats[player]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
 					}
-					skillDetails[3] = (100 - 100 / (std::max(1, static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10)))); // disarm arrow traps
-					if ( stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
+					skillDetails[3] = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->PROFICIENCIES[i] / 10)))); // disarm arrow traps
+					if ( stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
 					{
 						skillDetails[3] = 0.f;
 					}
 					std::string canRepairItems = "  no";
-					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + (stats[clientnum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
+					if ( (stats[player]->PROFICIENCIES[i] + PER + (stats[player]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
 					{
 						canRepairItems = "all";
 					}
-					else if ( (stats[clientnum]->PROFICIENCIES[i] + PER + (stats[clientnum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
+					else if ( (stats[player]->PROFICIENCIES[i] + PER + (stats[player]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
 					{
 						canRepairItems = "2/0";
 					}
-					else if ( (stats[clientnum]->PROFICIENCIES[i] + PER + (stats[clientnum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
+					else if ( (stats[player]->PROFICIENCIES[i] + PER + (stats[player]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
 					{
 						canRepairItems = "1/0";
 					}
-					skillDetails[4] = maximumTinkeringBotsCanBeDeployed(stats[clientnum]);
+					skillDetails[4] = maximumTinkeringBotsCanBeDeployed(stats[player]);
 
 					// bonus scrapping chances.
-					switch ( std::min(5, static_cast<int>((stats[clientnum]->PROFICIENCIES[i] + PER) / 20)) )
+					switch ( std::min(5, static_cast<int>((stats[player]->PROFICIENCIES[i] + PER) / 20)) )
 					{
 						case 5:
 							skillDetails[5] = 150.f;
@@ -671,14 +686,14 @@ void drawSkillsSheet()
 					break;
 				}
 				case PRO_STEALTH:
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[0] = players[clientnum]->entity->entityLightAfterReductions(*stats[clientnum], nullptr); 
+						skillDetails[0] = players[player]->entity->entityLightAfterReductions(*stats[player], nullptr); 
 						skillDetails[0] = std::max(1, (static_cast<int>(skillDetails[0] / 32))); // general visibility
-						skillDetails[1] = stats[clientnum]->PROFICIENCIES[i] * 2 * 100 / 512.f; // % visibility reduction of above
-						skillDetails[2] = (2 + (stats[clientnum]->PROFICIENCIES[PRO_STEALTH] / 40)); // night vision when sneaking
-						skillDetails[3] = (stats[clientnum]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * 2; // backstab dmg
-						if ( skillCapstoneUnlocked(clientnum, i) )
+						skillDetails[1] = stats[player]->PROFICIENCIES[i] * 2 * 100 / 512.f; // % visibility reduction of above
+						skillDetails[2] = (2 + (stats[player]->PROFICIENCIES[PRO_STEALTH] / 40)); // night vision when sneaking
+						skillDetails[3] = (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * 2; // backstab dmg
+						if ( skillCapstoneUnlocked(player, i) )
 						{
 							skillDetails[3] *= 2;
 						}
@@ -689,22 +704,22 @@ void drawSkillsSheet()
 					
 					break;
 				case PRO_TRADING:
-					skillDetails[0] = 1 / ((50 + stats[clientnum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
-					skillDetails[1] = (50 + stats[clientnum]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
+					skillDetails[0] = 1 / ((50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
+					skillDetails[1] = (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
 						skillDetails[0], skillDetails[1]);
 					break;
 				case PRO_APPRAISAL:
-					skillDetails[0] = (60.f / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
-					if ( players[clientnum] && players[clientnum]->entity )
+					skillDetails[0] = (60.f / (stats[player]->PROFICIENCIES[PRO_APPRAISAL] + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[1] = 10 * (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + players[clientnum]->entity->getPER() * 5); // max gold value can appraise
+						skillDetails[1] = 10 * (stats[player]->PROFICIENCIES[PRO_APPRAISAL] + players[player]->entity->getPER() * 5); // max gold value can appraise
 						if ( skillDetails[1] < 0.1 )
 						{
 							skillDetails[1] = 9;
 						}
-						if ( (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + players[clientnum]->entity->getPER() * 5) >= 100 )
+						if ( (stats[player]->PROFICIENCIES[PRO_APPRAISAL] + players[player]->entity->getPER() * 5) >= 100 )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 								uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -725,27 +740,27 @@ void drawSkillsSheet()
 					}
 					break;
 				case PRO_SWIMMING:
-					skillDetails[0] = (((stats[clientnum]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50); // water movement speed
+					skillDetails[0] = (((stats[player]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50); // water movement speed
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
 						skillDetails[0]);
 					break;
 				case PRO_LEADERSHIP:
-					skillDetails[0] = std::min(8, std::max(4, 2 * (stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] / 20))); // max followers
-					if ( players[clientnum] && players[clientnum]->entity )
+					skillDetails[0] = std::min(8, std::max(4, 2 * (stats[player]->PROFICIENCIES[PRO_LEADERSHIP] / 20))); // max followers
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[1] = 1 + (stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] / 20);
-						skillDetails[2] = 80 + ((players[clientnum]->entity->getCHR() + stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+						skillDetails[1] = 1 + (stats[player]->PROFICIENCIES[PRO_LEADERSHIP] / 20);
+						skillDetails[2] = 80 + ((players[player]->entity->getCHR() + stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
 					}
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
 						getInputName(impulses[IN_USE]),skillDetails[0], skillDetails[1], skillDetails[2], getInputName(impulses[IN_FOLLOWERMENU]));
 					break;
 				case PRO_SPELLCASTING:
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[0] = players[clientnum]->entity->getManaRegenInterval(*(stats[clientnum])) / (TICKS_PER_SECOND * 1.f);
-						if ( players[clientnum]->entity->isSpellcasterBeginner() )
+						skillDetails[0] = players[player]->entity->getManaRegenInterval(*(stats[player])) / (TICKS_PER_SECOND * 1.f);
+						if ( players[player]->entity->isSpellcasterBeginner() )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 								uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -770,10 +785,10 @@ void drawSkillsSheet()
 					int skillLVL = 0;
 					std::string magics = "";
 					int lines = 0;
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + players[clientnum]->entity->getINT());
-						if ( stats[clientnum]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+						skillLVL = (stats[player]->PROFICIENCIES[PRO_MAGIC] + players[player]->entity->getINT());
+						if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
 						{
 							skillLVL = 100;
 						}
@@ -828,7 +843,7 @@ void drawSkillsSheet()
 						capstoneTextColor, language[3277]);
 
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
-						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -840,23 +855,23 @@ void drawSkillsSheet()
 				}
 				case PRO_RANGED:
 				{
-					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[PRO_RANGED]) / 2.f; // lowest damage roll
-					skillDetails[1] = 50 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
-					if ( stats[clientnum]->type == GOBLIN )
+					skillDetails[0] = 100 - (100 - stats[player]->PROFICIENCIES[PRO_RANGED]) / 2.f; // lowest damage roll
+					skillDetails[1] = 50 + static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 10;
+					if ( stats[player]->type == GOBLIN )
 					{
 						skillDetails[1] += 20;
-						if ( stats[clientnum]->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_LEGENDARY )
+						if ( stats[player]->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_LEGENDARY )
 						{
 							skillDetails[1] = std::min(skillDetails[1], 90.0);
 						}
 					}
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[2] = std::min(std::max(players[clientnum]->entity->getPER() / 2, 0), 50);
+						skillDetails[2] = std::min(std::max(players[player]->entity->getPER() / 2, 0), 50);
 					}
-					int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 20; // thrown dmg bonus
+					int skillLVL = stats[player]->PROFICIENCIES[PRO_RANGED] / 20; // thrown dmg bonus
 					skillDetails[3] = 100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
-					if ( skillCapstoneUnlocked(clientnum, i) )
+					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -876,13 +891,13 @@ void drawSkillsSheet()
 				case PRO_POLEARM:
 					if ( i == PRO_POLEARM )
 					{
-						skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 3.f; // lowest damage roll
+						skillDetails[0] = 100 - (100 - stats[player]->PROFICIENCIES[i]) / 3.f; // lowest damage roll
 					}
 					else
 					{
-						skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
+						skillDetails[0] = 100 - (100 - stats[player]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
 					}
-					if ( skillCapstoneUnlocked(clientnum, i) )
+					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -890,10 +905,10 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 50 + (stats[clientnum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
-						skillDetails[2] = 4 + (stats[clientnum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
-						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
-						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
+						skillDetails[1] = 50 + (stats[player]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+						skillDetails[2] = 4 + (stats[player]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[player]->PROFICIENCIES[i] / 20)) * 10;
+						skillDetails[2] += static_cast<int>(stats[player]->PROFICIENCIES[i] / 20);
 						if ( svFlags & SV_FLAG_HARDCORE )
 						{
 							skillDetails[1] *= 2;
@@ -905,10 +920,10 @@ void drawSkillsSheet()
 					}
 					break;
 				case PRO_UNARMED:
-					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
-					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
-					skillDetails[4] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 20;
-					if ( skillCapstoneUnlocked(clientnum, i) )
+					skillDetails[0] = 100 - (100 - stats[player]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
+					skillDetails[3] = static_cast<int>(stats[player]->PROFICIENCIES[i] / 20);
+					skillDetails[4] = static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 20;
+					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -916,10 +931,10 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 100 + (stats[clientnum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
-						skillDetails[2] = 8 + (stats[clientnum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
-						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
-						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
+						skillDetails[1] = 100 + (stats[player]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+						skillDetails[2] = 8 + (stats[player]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[player]->PROFICIENCIES[i] / 20)) * 10;
+						skillDetails[2] += static_cast<int>(stats[player]->PROFICIENCIES[i] / 20);
 						if ( svFlags & SV_FLAG_HARDCORE )
 						{
 							skillDetails[1] *= 2;
@@ -931,8 +946,8 @@ void drawSkillsSheet()
 					}
 					break;
 				case PRO_SHIELD:
-					skillDetails[0] = 5 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 5);
-					if ( skillCapstoneUnlocked(clientnum, i) )
+					skillDetails[0] = 5 + static_cast<int>(stats[player]->PROFICIENCIES[i] / 5);
+					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -940,13 +955,13 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 25 + (stats[clientnum]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
-						skillDetails[2] = 10 + (stats[clientnum]->type == GOBLIN ? 10 : 0); // degrade on 0 dmg
-						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
-						skillDetails[2] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
+						skillDetails[1] = 25 + (stats[player]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
+						skillDetails[2] = 10 + (stats[player]->type == GOBLIN ? 10 : 0); // degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[player]->PROFICIENCIES[i] / 10));
+						skillDetails[2] += (static_cast<int>(stats[player]->PROFICIENCIES[i] / 10));
 						if ( svFlags & SV_FLAG_HARDCORE )
 						{
-							skillDetails[2] = 40 + (stats[clientnum]->type == GOBLIN ? 10 : 0);
+							skillDetails[2] = 40 + (stats[player]->type == GOBLIN ? 10 : 0);
 						}
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -982,12 +997,12 @@ void drawSkillsSheet()
 						}
 					}
 					lines = std::max(lines, lines2);
-					int skillLVL = stats[clientnum]->PROFICIENCIES[i] / 20;
+					int skillLVL = stats[player]->PROFICIENCIES[i] / 20;
 					skillDetails[0] = 100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
 					skillDetails[1] = skillDetails[0];
-					skillDetails[2] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
-					skillDetails[3] = std::min(80, (60 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10));
-					skillDetails[4] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
+					skillDetails[2] = 50.f + static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 10;
+					skillDetails[3] = std::min(80, (60 + static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 10));
+					skillDetails[4] = 50.f + static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 5;
 
 					skillTooltipRect.h = fontHeight * (5 + 2) + 8;
 					skillTooltipRect.h += 4 + (6 + lines) * (fontHeight + lines / 6);
@@ -997,7 +1012,7 @@ void drawSkillsSheet()
 						capstoneTextColor, language[3347]);
 					// header text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
-						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 					// effect text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3348], 
@@ -1019,8 +1034,15 @@ void drawSkillsSheet()
 	}
 }
 
-void drawPartySheet()
+void drawPartySheet(const int player)
 {
+	int xres = players[player]->camera_width();
+	int yres = players[player]->camera_height();
+	int x1 = players[player]->camera_x1();
+	int x2 = players[player]->camera_x2();
+	int y1 = players[player]->camera_y1();
+	int y2 = players[player]->camera_y2();
+
 	SDL_Rect pos;
 	pos.w = 208;
 
@@ -1042,8 +1064,8 @@ void drawPartySheet()
 			break;
 		}
 	}
-	pos.x = xres - pos.w;
-	pos.y = 32;
+	pos.x = x1 + xres - pos.w;
+	pos.y = y1 + 32;
 	pos.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
 
 	int numFollowers = 0;
@@ -1076,14 +1098,14 @@ void drawPartySheet()
 	ttfPrintTextFormatted(fontPlayer, pos.x + 4, pos.y + 8, "Party Stats");
 
 	SDL_Rect button;
-	button.x = xres - attributesright_bmp->w - 8;
+	button.x = x1 + xres - attributesright_bmp->w - 8;
 	button.w = attributesright_bmp->w;
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
 	if ( uiscale_skillspage )
 	{
 		button.w = attributesright_bmp->w * 1.3;
-		button.x = xres - button.w - 8;
+		button.x = x1 + xres - button.w - 8;
 		button.y = pos.y;
 		button.h = attributesright_bmp->h * 1.3;
 	}
@@ -1410,7 +1432,7 @@ void drawPartySheet()
 				}
 			}
 		}
-		slider.x = xres - 16;
+		slider.x = x1 + xres - 16;
 		slider.w = 16;
 		slider.h = (fontHeight * 2 + 12) * (std::min(monstersToDisplay + 1, numFollowers));
 		interfacePartySheet.h += slider.h + 6;

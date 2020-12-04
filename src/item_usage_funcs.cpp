@@ -4918,7 +4918,7 @@ void item_Spellbook(Item*& item, int player)
 			{
 				ItemType originalSpellbook = item->type;
 				item->type = SPELLBOOK_REVERT_FORM;
-				if ( !playerLearnedSpellbook(item) ) // have we learnt "revert form"?
+				if ( !playerLearnedSpellbook(player, item) ) // have we learnt "revert form"?
 				{
 					addSpell(SPELL_REVERT_FORM, player, true); // add it.
 				}

@@ -277,7 +277,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				spellBookBonusPercent += abs(stat->shield->beatitude) * 25;
 			}
-			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(stat->shield) )
+			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(player, stat->shield) )
 			{
 				// bypass newbie penalty since we're good enough to cast the spell.
 				newbie = false; 

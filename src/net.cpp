@@ -2867,12 +2867,15 @@ void clientHandlePacket()
 			if ( pickedUp && pickedUp->type == BOOMERANG && !stats[clientnum]->weapon && item->ownerUid == players[clientnum]->entity->getUID() )
 			{
 				useItem(pickedUp, clientnum);
-				if ( magicBoomerangHotbarSlot >= 0 )
+
+				auto& hotbar_t = players[clientnum]->hotbar;
+				auto& hotbar = hotbar_t->slots();
+				if ( hotbar_t->magicBoomerangHotbarSlot >= 0 )
 				{
-					hotbar[magicBoomerangHotbarSlot].item = pickedUp->uid;
+					hotbar[hotbar_t->magicBoomerangHotbarSlot].item = pickedUp->uid;
 					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 					{
-						if ( i != magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+						if ( i != hotbar_t->magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
 						{
 							hotbar[i].item = 0;
 						}

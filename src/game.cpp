@@ -1005,7 +1005,7 @@ void gameLogic(void)
 								messagePlayerColor(parent->skill[2], color, language[3746], items[item->type].name_unidentified);
 								if ( pickedUp )
 								{
-									if ( parent->skill[2] == 0 )
+									if ( parent->skill[2] == 0 || (parent->skill[2] > 0 && splitscreen) )
 									{
 										// pickedUp is the new inventory stack for server, free the original items
 										free(item);
@@ -1014,12 +1014,16 @@ void gameLogic(void)
 										{
 											useItem(pickedUp, parent->skill[2]);
 										}
-										if ( magicBoomerangHotbarSlot >= 0 )
+
+										auto& hotbar_t = players[parent->skill[2]]->hotbar;
+										auto& hotbar = hotbar_t->slots();
+
+										if ( hotbar_t->magicBoomerangHotbarSlot >= 0 )
 										{
-											hotbar[magicBoomerangHotbarSlot].item = pickedUp->uid;
+											hotbar[hotbar_t->magicBoomerangHotbarSlot].item = pickedUp->uid;
 											for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 											{
-												if ( i != magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+												if ( i != hotbar_t->magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
 												{
 													hotbar[i].item = 0;
 												}
@@ -4666,7 +4670,13 @@ int main(int argc, char** argv)
 						/*auto tEndMinimapDraw = std::chrono::high_resolution_clock::now();
 						double timeTaken = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(tEndMinimapDraw - tStartMinimapDraw).count();
 						printlog("Minimap draw time: %.5f", timeTaken);*/
-						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
+						for ( int player = 0; player < MAXPLAYERS; ++player )
+						{
+							if ( localClientnumsInUse[player] )
+							{
+								drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
+							}
+						}
 					}
 
 					DebugStats.t8Status = std::chrono::high_resolution_clock::now();
@@ -4679,8 +4689,14 @@ int main(int argc, char** argv)
 					{
 						if (gui_mode == GUI_MODE_INVENTORY)
 						{
-							updateCharacterSheet();
-							updatePlayerInventory();
+							for ( int player = 0; player < MAXPLAYERS; ++player )
+							{
+								if ( localClientnumsInUse[player] )
+								{
+									updateCharacterSheet(player);
+									updatePlayerInventory(player);
+								}
+							}
 							updateChestInventory();
 							updateIdentifyGUI();
 							updateRemoveCurseGUI();
@@ -4691,36 +4707,60 @@ int main(int argc, char** argv)
 						}
 						else if (gui_mode == GUI_MODE_MAGIC)
 						{
-							updateCharacterSheet();
+							for ( int player = 0; player < MAXPLAYERS; ++player )
+							{
+								if ( localClientnumsInUse[player] )
+								{
+									updateCharacterSheet(player);
+								}
+							}
 							updateMagicGUI();
 						}
 						else if (gui_mode == GUI_MODE_SHOP)
 						{
-							updateCharacterSheet();
-							updatePlayerInventory();
+							for ( int player = 0; player < MAXPLAYERS; ++player )
+							{
+								if ( localClientnumsInUse[player] )
+								{
+									updateCharacterSheet(player);
+									updatePlayerInventory(player);
+								}
+							}
 							updateShopWindow();
 						}
 
-						if ( proficienciesPage == 1 )
+						for ( int player = 0; player < MAXPLAYERS; ++player )
 						{
-							drawPartySheet();
-						}
-						else
-						{
-							drawSkillsSheet();
+							if ( localClientnumsInUse[player] )
+							{
+								if ( proficienciesPage == 1 )
+								{
+									drawPartySheet(player);
+								}
+								else
+								{
+									drawSkillsSheet(player);
+								}
+							}
 						}
 					}
 					else
 					{
 						if ( lock_right_sidebar )
 						{
-							if ( proficienciesPage == 1 )
+							for ( int player = 0; player < MAXPLAYERS; ++player )
 							{
-								drawPartySheet();
-							}
-							else
-							{
-								drawSkillsSheet();
+								if ( localClientnumsInUse[player] )
+								{
+									if ( proficienciesPage == 1 )
+									{
+										drawPartySheet(player);
+									}
+									else
+									{
+										drawSkillsSheet(player);
+									}
+								}
 							}
 						}
 					}

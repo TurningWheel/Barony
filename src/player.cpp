@@ -499,7 +499,7 @@ int GameController::maxRightTrigger()
 	return 32767 - gamepad_deadzone;
 }
 
-bool GameController::handleInventoryMovement()
+bool GameController::handleInventoryMovement(const int player)
 {
 	bool dpad_moved = false;
 
@@ -508,23 +508,25 @@ bool GameController::handleInventoryMovement()
 		return false;
 	}
 
-	if ( hotbarHasFocus && !hotbarGamepadControlEnabled() )
+	auto& hotbar_t = players[player]->hotbar;
+
+	if ( hotbar_t->hotbarHasFocus && !hotbarGamepadControlEnabled() )
 	{
-		hotbarHasFocus = false;
+		hotbar_t->hotbarHasFocus = false;
 	}
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]))
 	{
-		if ( hotbarHasFocus && hotbarGamepadControlEnabled() )
+		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled() )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			selectHotbarSlot(current_hotbar - 1);
+			hotbar_t->selectHotbarSlot(hotbar_t->current_hotbar - 1);
 			warpMouseToSelectedHotbarSlot();
 		}
 		else
 		{
 			//Navigate inventory.
-			select_inventory_slot(selected_inventory_slot_x - 1, selected_inventory_slot_y);
+			select_inventory_slot(player, selected_inventory_slot_x - 1, selected_inventory_slot_y);
 		}
 		*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
 
@@ -533,16 +535,16 @@ bool GameController::handleInventoryMovement()
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]))
 	{
-		if ( hotbarHasFocus && hotbarGamepadControlEnabled() )
+		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled() )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			selectHotbarSlot(current_hotbar + 1);
+			hotbar_t->selectHotbarSlot(hotbar_t->current_hotbar + 1);
 			warpMouseToSelectedHotbarSlot();
 		}
 		else
 		{
 			//Navigate inventory.
-			select_inventory_slot(selected_inventory_slot_x + 1, selected_inventory_slot_y);
+			select_inventory_slot(player, selected_inventory_slot_x + 1, selected_inventory_slot_y);
 		}
 		*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
 
@@ -551,16 +553,16 @@ bool GameController::handleInventoryMovement()
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
 	{
-		if ( hotbarHasFocus && hotbarGamepadControlEnabled() )
+		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled() )
 		{
 			//Warp back to top of inventory.
-			hotbarHasFocus = false;
-			float percentage = static_cast<float>(current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot((percentage) * INVENTORY_SIZEX - 1, INVENTORY_SIZEY - 1);
+			hotbar_t->hotbarHasFocus = false;
+			float percentage = static_cast<float>(hotbar_t->current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+			select_inventory_slot(player, (percentage) * INVENTORY_SIZEX - 1, INVENTORY_SIZEY - 1);
 		}
 		else
 		{
-			select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y - 1); //Will handle warping to hotbar.
+			select_inventory_slot(player, selected_inventory_slot_x, selected_inventory_slot_y - 1); //Will handle warping to hotbar.
 		}
 		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 
@@ -569,16 +571,16 @@ bool GameController::handleInventoryMovement()
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
 	{
-		if ( hotbarHasFocus && hotbarGamepadControlEnabled() )
+		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled() )
 		{
 			//Warp back to bottom of inventory.
-			hotbarHasFocus = false;
-			float percentage = static_cast<float>(current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot((percentage) * INVENTORY_SIZEX - 1, 0);
+			hotbar_t->hotbarHasFocus = false;
+			float percentage = static_cast<float>(hotbar_t->current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+			select_inventory_slot(player, (percentage) * INVENTORY_SIZEX - 1, 0);
 		}
 		else
 		{
-			select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y + 1);
+			select_inventory_slot(player, selected_inventory_slot_x, selected_inventory_slot_y + 1);
 		}
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 
@@ -596,7 +598,7 @@ bool GameController::handleInventoryMovement()
 	return false;
 }
 
-bool GameController::handleChestMovement()
+bool GameController::handleChestMovement(const int player)
 {
 	bool dpad_moved = false;
 
@@ -632,7 +634,7 @@ bool GameController::handleChestMovement()
 	return false;
 }
 
-bool GameController::handleShopMovement()
+bool GameController::handleShopMovement(const int player)
 {
 	bool dpad_moved = false;
 
@@ -686,7 +688,7 @@ bool GameController::handleShopMovement()
 	return false;
 }
 
-bool GameController::handleIdentifyMovement()
+bool GameController::handleIdentifyMovement(const int player)
 {
 	bool dpad_moved = false;
 
@@ -722,7 +724,7 @@ bool GameController::handleIdentifyMovement()
 	return false;
 }
 
-bool GameController::handleRemoveCurseMovement()
+bool GameController::handleRemoveCurseMovement(const int player)
 {
 	bool dpad_moved = false;
 
@@ -758,7 +760,7 @@ bool GameController::handleRemoveCurseMovement()
 	return false;
 }
 
-bool GameController::handleRepairGUIMovement()
+bool GameController::handleRepairGUIMovement(const int player)
 {
 	bool dpad_moved = false;
 
@@ -794,7 +796,7 @@ bool GameController::handleRepairGUIMovement()
 	return false;
 }
 
-bool GameController::handleItemContextMenu(const Item& item)
+bool GameController::handleItemContextMenu(const int player, const Item& item)
 {
 	bool dpad_moved = false;
 
@@ -922,9 +924,11 @@ SDL_GameControllerAxis GameController::getSDLTriggerFromImpulse(const unsigned c
 Player::Player(int in_playernum, bool in_local_host)
 {
 	screen = nullptr;
-	local_host = in_local_host;
+	local_host = false;
 	playernum = in_playernum;
 	entity = nullptr;
+	cam = &cameras[playernum];
+	hotbar = new Hotbar_t();
 }
 
 Player::~Player()
@@ -937,6 +941,10 @@ Player::~Player()
 	if (entity)
 	{
 		delete entity;
+	}
+	if ( hotbar )
+	{
+		delete hotbar;
 	}
 }
 

@@ -27,7 +27,7 @@
 #endif
 
 //Prototype helper functions for player inventory helper functions.
-void itemContextMenu();
+void itemContextMenu(const int player);
 
 
 SDL_Surface* inventory_mode_item_img = NULL;
@@ -52,11 +52,11 @@ void warpMouseToSelectedInventorySlot()
 
 -------------------------------------------------------------------------------*/
 
-char* itemUseString(const Item* item)
+char* itemUseString(int player, const Item* item)
 {
 	if ( itemCategory(item) == WEAPON )
 	{
-		if ( itemIsEquipped(item, clientnum) )
+		if ( itemIsEquipped(item, player) )
 		{
 			return language[323];
 		}
@@ -76,7 +76,7 @@ char* itemUseString(const Item* item)
 			case STEEL_SHIELD_RESISTANCE:
 			case CRYSTAL_SHIELD:
 			case MIRROR_SHIELD:
-				if ( itemIsEquipped(item, clientnum) )
+				if ( itemIsEquipped(item, player) )
 				{
 					return language[325];
 				}
@@ -87,7 +87,7 @@ char* itemUseString(const Item* item)
 			default:
 				break;
 		}
-		if ( itemIsEquipped(item, clientnum) )
+		if ( itemIsEquipped(item, player) )
 		{
 			return language[327];
 		}
@@ -98,7 +98,7 @@ char* itemUseString(const Item* item)
 	}
 	else if ( itemCategory(item) == AMULET )
 	{
-		if ( itemIsEquipped(item, clientnum) )
+		if ( itemIsEquipped(item, player) )
 		{
 			return language[327];
 		}
@@ -117,7 +117,7 @@ char* itemUseString(const Item* item)
 	}
 	else if ( itemCategory(item) == MAGICSTAFF )
 	{
-		if ( itemIsEquipped(item, clientnum) )
+		if ( itemIsEquipped(item, player) )
 		{
 			return language[323];
 		}
@@ -128,7 +128,7 @@ char* itemUseString(const Item* item)
 	}
 	else if ( itemCategory(item) == RING )
 	{
-		if ( itemIsEquipped(item, clientnum) )
+		if ( itemIsEquipped(item, player) )
 		{
 			return language[327];
 		}
@@ -143,7 +143,7 @@ char* itemUseString(const Item* item)
 	}
 	else if ( itemCategory(item) == GEM )
 	{
-		if ( itemIsEquipped(item, clientnum) )
+		if ( itemIsEquipped(item, player) )
 		{
 			return language[323];
 		}
@@ -154,7 +154,7 @@ char* itemUseString(const Item* item)
 	}
 	else if ( itemCategory(item) == THROWN )
 	{
-		if ( itemIsEquipped(item, clientnum) )
+		if ( itemIsEquipped(item, player) )
 		{
 			return language[323];
 		}
@@ -168,7 +168,7 @@ char* itemUseString(const Item* item)
 		switch ( item->type )
 		{
 			case TOOL_PICKAXE:
-				if ( itemIsEquipped(item, clientnum) )
+				if ( itemIsEquipped(item, player) )
 				{
 					return language[323];
 				}
@@ -182,7 +182,7 @@ char* itemUseString(const Item* item)
 				return language[332];
 			case TOOL_LOCKPICK:
 			case TOOL_SKELETONKEY:
-				if ( itemIsEquipped(item, clientnum) )
+				if ( itemIsEquipped(item, player) )
 				{
 					return language[333];
 				}
@@ -193,7 +193,7 @@ char* itemUseString(const Item* item)
 			case TOOL_TORCH:
 			case TOOL_LANTERN:
 			case TOOL_CRYSTALSHARD:
-				if ( itemIsEquipped(item, clientnum) )
+				if ( itemIsEquipped(item, player) )
 				{
 					return language[335];
 				}
@@ -202,7 +202,7 @@ char* itemUseString(const Item* item)
 					return language[336];
 				}
 			case TOOL_BLINDFOLD:
-				if ( itemIsEquipped(item, clientnum) )
+				if ( itemIsEquipped(item, player) )
 				{
 					return language[327];
 				}
@@ -213,7 +213,7 @@ char* itemUseString(const Item* item)
 			case TOOL_TOWEL:
 				return language[332];
 			case TOOL_GLASSES:
-				if ( itemIsEquipped(item, clientnum) )
+				if ( itemIsEquipped(item, player) )
 				{
 					return language[327];
 				}
@@ -306,7 +306,7 @@ void updateAppraisalItemBox()
 	}
 }
 
-void select_inventory_slot(int x, int y)
+void select_inventory_slot(const int player, int x, int y)
 {
 	if ( x < 0 )   //Wrap around left boundary.
 	{
@@ -318,21 +318,22 @@ void select_inventory_slot(int x, int y)
 	}
 
 	bool warpInv = true;
+	auto& hotbar_t = players[player]->hotbar;
 
 	if ( y < 0 )   //Wrap around top to bottom.
 	{
 		y = INVENTORY_SIZEY - 1;
 		if ( hotbarGamepadControlEnabled() )
 		{
-			hotbarHasFocus = true; //Warp to hotbar.
+			hotbar_t->hotbarHasFocus = true; //Warp to hotbar.
 			float percentage = static_cast<float>(x + 1) / static_cast<float>(INVENTORY_SIZEX);
-			selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
+			hotbar_t->selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
 			warpMouseToSelectedHotbarSlot();
 		}
 	}
 	if ( y >= INVENTORY_SIZEY )   //Hit bottom. Wrap around or go to shop/chest?
 	{
-		if ( openedChest[clientnum] )
+		if ( openedChest[player] )
 		{
 			//Do not want to wrap around if opened chest or shop.
 			warpInv = false;
@@ -402,9 +403,9 @@ void select_inventory_slot(int x, int y)
 
 			if ( hotbarGamepadControlEnabled() )
 			{
-				hotbarHasFocus = true;
+				hotbar_t->hotbarHasFocus = true;
 				float percentage = static_cast<float>(x + 1) / static_cast<float>(INVENTORY_SIZEX);
-				selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
+				hotbar_t->selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
 				warpMouseToSelectedHotbarSlot();
 			}
 		}
@@ -465,7 +466,7 @@ Uint32 itemMenuItem = 0;
 	}
 }*/
 
-void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict with inventory context menu?
+void releaseItem(const int player, int x, int y) //TODO: This function uses toggleclick. Conflict with inventory context menu?
 {
 	if ( !selectedItem )
 	{
@@ -474,6 +475,8 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
+
+	auto& hotbar = players[player]->hotbar->slots();
 
 	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]))
 	{
@@ -508,7 +511,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || (mousestatus[SDL_BUTTON_LEFT] && toggleclick) || ( (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && toggleclick) )
 	{
 		*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
-		if (openedChest[clientnum] && itemCategory(selectedItem) != SPELL_CAT)
+		if (openedChest[player] && itemCategory(selectedItem) != SPELL_CAT)
 		{
 			if (mousex >= CHEST_INVENTORY_X && mousey >= CHEST_INVENTORY_Y
 			        && mousex < CHEST_INVENTORY_X + inventoryChest_bmp->w
@@ -516,14 +519,14 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 			{
 				if (selectedItem->count > 1)
 				{
-					openedChest[clientnum]->addItemToChestFromInventory(
-					    clientnum, selectedItem, false);
+					openedChest[player]->addItemToChestFromInventory(
+						player, selectedItem, false);
 					toggleclick = true;
 				}
 				else
 				{
-					openedChest[clientnum]->addItemToChestFromInventory(
-					    clientnum, selectedItem, false);
+					openedChest[player]->addItemToChestFromInventory(
+						player, selectedItem, false);
 					selectedItem = NULL;
 					toggleclick = false;
 				}
@@ -541,7 +544,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 				int oldy = selectedItem->y;
 				selectedItem->x = (mousex - x) / INVENTORY_SLOTSIZE;
 				selectedItem->y = (mousey - y) / INVENTORY_SLOTSIZE;
-				for (node = stats[clientnum]->inventory.first; node != NULL;
+				for (node = stats[player]->inventory.first; node != NULL;
 				        node = nextnode)
 				{
 					nextnode = node->next;
@@ -586,7 +589,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 			else if (itemCategory(selectedItem) == SPELL_CAT)
 			{
 				//Outside inventory. Spells can't be dropped.
-				hotbar_slot_t* slot = getHotbar(mousex, mousey);
+				hotbar_slot_t* slot = getHotbar(player, mousex, mousey);
 				if (slot)
 				{
 					//Add spell to hotbar.
@@ -613,7 +616,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 			else
 			{
 				// outside inventory
-				hotbar_slot_t* slot = getHotbar(mousex, mousey);
+				hotbar_slot_t* slot = getHotbar(player, mousex, mousey);
 				if (slot)
 				{
 					//Add item to hotbar.
@@ -636,7 +639,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 				{
 					if (selectedItem->count > 1)
 					{
-						if ( dropItem(selectedItem, clientnum) )
+						if ( dropItem(selectedItem, player) )
 						{
 							selectedItem = NULL;
 						}
@@ -644,7 +647,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 					}
 					else
 					{
-						dropItem(selectedItem, clientnum);
+						dropItem(selectedItem, player);
 						selectedItem = NULL;
 						toggleclick = false;
 					}
@@ -703,15 +706,25 @@ void drawBlueInventoryBorder(const Item& item, int x, int y)
 	drawBox(&pos, color, 127);
 }
 
-void updatePlayerInventory()
+void updatePlayerInventory(const int player)
 {
 	bool disableMouseDisablingHotbarFocus = false;
 	SDL_Rect pos, mode_pos;
 	node_t* node, *nextnode;
 	int x, y;
 
-	x = INVENTORY_STARTX;
-	y = INVENTORY_STARTY;
+	auto& hotbar_t = players[player]->hotbar;
+	auto& hotbar = hotbar_t->slots();
+
+	int xres = players[player]->camera_width();
+	int yres = players[player]->camera_height();
+	int x1 = players[player]->camera_x1();
+	int x2 = players[player]->camera_x2();
+	int y1 = players[player]->camera_y1();
+	int y2 = players[player]->camera_y2();
+
+	x = x1 + INVENTORY_STARTX;
+	y = y1 + INVENTORY_STARTY;
 
 	// draw translucent box
 	pos.x = x;
@@ -738,14 +751,14 @@ void updatePlayerInventory()
 
 		if ( selectedChestSlot < 0 && selectedShopSlot < 0 
 			&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 
-			&& !itemMenuOpen && game_controllers[0].handleInventoryMovement()
+			&& !itemMenuOpen && game_controllers[0].handleInventoryMovement(player)
 			&& GenericGUI.selectedSlot < 0 )
 		{
 			if ( selectedChestSlot < 0 && selectedShopSlot < 0 
 				&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
 				&& GenericGUI.selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
-				if ( !hotbarHasFocus )
+				if ( !hotbar_t->hotbarHasFocus )
 				{
 					warpMouseToSelectedInventorySlot();
 				}
@@ -755,7 +768,7 @@ void updatePlayerInventory()
 				}
 			}
 		}
-		else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controllers[0].handleChestMovement() )
+		else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controllers[0].handleChestMovement(player) )
 		{
 			if ( selectedChestSlot < 0 )
 			{
@@ -763,28 +776,28 @@ void updatePlayerInventory()
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( selectedShopSlot >= 0 && !itemMenuOpen && game_controllers[0].handleShopMovement() )
+		else if ( selectedShopSlot >= 0 && !itemMenuOpen && game_controllers[0].handleShopMovement(player) )
 		{
 			if ( selectedShopSlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && game_controllers[0].handleIdentifyMovement() )
+		else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && game_controllers[0].handleIdentifyMovement(player) )
 		{
 			if ( selectedIdentifySlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( selectedRemoveCurseSlot >= 0 && !itemMenuOpen && game_controllers[0].handleRemoveCurseMovement() )
+		else if ( selectedRemoveCurseSlot >= 0 && !itemMenuOpen && game_controllers[0].handleRemoveCurseMovement(player) )
 		{
 			if ( selectedRemoveCurseSlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( GenericGUI.selectedSlot >= 0 && !itemMenuOpen && game_controllers[0].handleRepairGUIMovement() )
+		else if ( GenericGUI.selectedSlot >= 0 && !itemMenuOpen && game_controllers[0].handleRepairGUIMovement(player) )
 		{
 			if ( GenericGUI.selectedSlot < 0 )
 			{
@@ -810,11 +823,11 @@ void updatePlayerInventory()
 		}
 	}
 
-	if ( !command && *inputPressed(impulses[IN_AUTOSORT]) )
+	if ( !command && *inputPressedForPlayer(player, impulses[IN_AUTOSORT]) )
 	{
-		autosortInventory();
+		autosortInventory(player);
 		//quickStackItems();
-		*inputPressed(impulses[IN_AUTOSORT]) = 0;
+		*inputPressedForPlayer(player, impulses[IN_AUTOSORT]) = 0;
 		playSound(139, 64);
 	}
 
@@ -855,13 +868,13 @@ void updatePlayerInventory()
 				{
 					selected_inventory_slot_x = x;
 					selected_inventory_slot_y = y;
-					if ( hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+					if ( hotbar_t->hotbarHasFocus && !disableMouseDisablingHotbarFocus )
 					{
-						hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+						hotbar_t->hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
 					}
 				}
 
-				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y && !hotbarHasFocus )
+				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y && !hotbar_t->hotbarHasFocus )
 				{
 					Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
 					drawBox(&pos, color, 127);
@@ -872,9 +885,9 @@ void updatePlayerInventory()
 
 
 	// draw contents of each slot
-	x = INVENTORY_STARTX;
-	y = INVENTORY_STARTY;
-	for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
+	x = x1 + INVENTORY_STARTX;
+	y = y1 + INVENTORY_STARTY;
+	for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 	{
 		nextnode = node->next;
 		Item* item = (Item*)node->element;
@@ -941,10 +954,10 @@ void updatePlayerInventory()
 		}
 
 		bool greyedOut = false;
-		if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+		if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
 		{
 			// shape shifted, disable some items
-			if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+			if ( !item->usableWhileShapeshifted(stats[player]) )
 			{
 				SDL_Rect greyBox;
 				greyBox.x = x + item->x * (INVENTORY_SLOTSIZE)+2;
@@ -955,8 +968,8 @@ void updatePlayerInventory()
 				greyedOut = true;
 			}
 		}
-		if ( !greyedOut && client_classes[clientnum] == CLASS_SHAMAN 
-			&& item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+		if ( !greyedOut && client_classes[player] == CLASS_SHAMAN
+			&& item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
 		{
 			SDL_Rect greyBox;
 			greyBox.x = x + item->x * (INVENTORY_SLOTSIZE)+2;
@@ -983,7 +996,7 @@ void updatePlayerInventory()
 		// item equipped
 		if ( itemCategory(item) != SPELL_CAT )
 		{
-			if ( itemIsEquipped(item, clientnum) )
+			if ( itemIsEquipped(item, player) )
 			{
 				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
 				pos.y = y + item->y * INVENTORY_SLOTSIZE + INVENTORY_SLOTSIZE - 18;
@@ -1047,7 +1060,7 @@ void updatePlayerInventory()
 		if ( mousestatus[SDL_BUTTON_LEFT] )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
-			autosortInventory();
+			autosortInventory(player);
 			playSound(139, 64);
 		}
 	}
@@ -1116,7 +1129,7 @@ void updatePlayerInventory()
 	// mouse interactions
 	if ( !selectedItem )
 	{
-		for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
+		for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 		{
 			nextnode = node->next;
 			Item* item = (Item*)node->element;  //I don't like that there's not a check that either are null.
@@ -1155,11 +1168,11 @@ void updatePlayerInventory()
 								bool learnedSpellbook = false;
 								if ( itemCategory(item) == SPELLBOOK )
 								{
-									learnedSpellbook = playerLearnedSpellbook(item);
-									if ( !learnedSpellbook && stats[clientnum] && players[clientnum] && players[clientnum]->entity )
+									learnedSpellbook = playerLearnedSpellbook(player, item);
+									if ( !learnedSpellbook && stats[player] && players[player] && players[player]->entity )
 									{
 										// spellbook tooltip shows if you have the magic requirement as well (for goblins)
-										int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity);
+										int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
 										spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 										if ( spell && skillLVL >= spell->difficulty )
 										{
@@ -1290,7 +1303,7 @@ void updatePlayerInventory()
 								itemWeight = std::max(1, itemWeight / 5);
 							}
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
-							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
+							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(player));
 							if ( strcmp(spellEffectText, "") )
 							{
 								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, SDL_MapRGB(mainsurface->format, 0, 255, 255), spellEffectText);
@@ -1301,17 +1314,17 @@ void updatePlayerInventory()
 								if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN 
 									|| itemTypeIsQuiver(item->type) )
 								{
-									Monster tmpRace = stats[clientnum]->type;
-									if ( stats[clientnum]->type == TROLL
-										|| stats[clientnum]->type == RAT
-										|| stats[clientnum]->type == SPIDER
-										|| stats[clientnum]->type == CREATURE_IMP )
+									Monster tmpRace = stats[player]->type;
+									if ( stats[player]->type == TROLL
+										|| stats[player]->type == RAT
+										|| stats[player]->type == SPIDER
+										|| stats[player]->type == CREATURE_IMP )
 									{
 										// these monsters have 0 bonus from weapons, but want the tooltip to say the normal amount.
-										stats[clientnum]->type = HUMAN;
+										stats[player]->type = HUMAN;
 									}
 
-									if ( item->weaponGetAttack(stats[clientnum]) >= 0 )
+									if ( item->weaponGetAttack(stats[player]) >= 0 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 									}
@@ -1319,27 +1332,27 @@ void updatePlayerInventory()
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
-									if ( stats[clientnum]->type != tmpRace )
+									if ( stats[player]->type != tmpRace )
 									{
 										color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
 									}
 
-									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[clientnum]));
-									stats[clientnum]->type = tmpRace;
+									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[player]));
+									stats[player]->type = tmpRace;
 								}
 								else if ( itemCategory(item) == ARMOR )
 								{
-									Monster tmpRace = stats[clientnum]->type;
-									if ( stats[clientnum]->type == TROLL
-										|| stats[clientnum]->type == RAT
-										|| stats[clientnum]->type == SPIDER
-										|| stats[clientnum]->type == CREATURE_IMP )
+									Monster tmpRace = stats[player]->type;
+									if ( stats[player]->type == TROLL
+										|| stats[player]->type == RAT
+										|| stats[player]->type == SPIDER
+										|| stats[player]->type == CREATURE_IMP )
 									{
 										// these monsters have 0 bonus from weapons, but want the tooltip to say the normal amount.
-										stats[clientnum]->type = HUMAN;
+										stats[player]->type = HUMAN;
 									}
 
-									if ( item->armorGetAC(stats[clientnum]) >= 0 )
+									if ( item->armorGetAC(stats[player]) >= 0 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 									}
@@ -1347,13 +1360,13 @@ void updatePlayerInventory()
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
-									if ( stats[clientnum]->type != tmpRace )
+									if ( stats[player]->type != tmpRace )
 									{
 										color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
 									}
 
-									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[clientnum]));
-									stats[clientnum]->type = tmpRace;
+									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[player]));
+									stats[player]->type = tmpRace;
 								}
 								else if ( itemCategory(item) == SCROLL )
 								{
@@ -1364,7 +1377,7 @@ void updatePlayerInventory()
 						}
 					}
 
-					if ( stats[clientnum]->HP <= 0 )
+					if ( stats[player]->HP <= 0 )
 					{
 						break;
 					}
@@ -1375,7 +1388,7 @@ void updatePlayerInventory()
 						&& GenericGUI.selectedSlot < 0 )
 					{
 						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
-						if ( dropItem(item, clientnum) )
+						if ( dropItem(item, player) )
 						{
 							item = nullptr;
 						}
@@ -1384,17 +1397,17 @@ void updatePlayerInventory()
 					bool disableItemUsage = false;
 					if ( item )
 					{
-						if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+						if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
 						{
 							// shape shifted, disable some items
-							if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+							if ( !item->usableWhileShapeshifted(stats[player]) )
 							{
 								disableItemUsage = true;
 							}
 						}
-						if ( client_classes[clientnum] == CLASS_SHAMAN )
+						if ( client_classes[player] == CLASS_SHAMAN )
 						{
-							if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+							if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
 							{
 								disableItemUsage = true;
 							}
@@ -1411,7 +1424,7 @@ void updatePlayerInventory()
 					{
 						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 						{
-							if ( dropItem(item, clientnum) ) // Quick item drop
+							if ( dropItem(item, player) ) // Quick item drop
 							{
 								item = nullptr;
 							}
@@ -1481,7 +1494,7 @@ void updatePlayerInventory()
 
 					bool numkey_quick_add = hotbar_numkey_quick_add;
 					if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 &&
-						players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift )
+						players[player] && players[player]->entity && players[player]->entity->effectShapeshift )
 					{
 						if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 )
 						{
@@ -1547,18 +1560,18 @@ void updatePlayerInventory()
 			}
 		}
 	}
-	else if ( stats[clientnum]->HP > 0 )
+	else if ( stats[player]->HP > 0 )
 	{
 		// releasing items
-		releaseItem(x, y);
+		releaseItem(player, x, y);
 	}
 
-	itemContextMenu();
+	itemContextMenu(player);
 }
 
-inline bool itemMenuSkipRow1ForShopsAndChests(const Item& item)
+inline bool itemMenuSkipRow1ForShopsAndChests(const int player, const Item& item)
 {
-	if ( (openedChest[clientnum] || gui_mode == GUI_MODE_SHOP) 
+	if ( (openedChest[player] || gui_mode == GUI_MODE_SHOP)
 		&& (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC || item.type == TOOL_TINKERING_KIT || itemCategory(&item) == SPELLBOOK) )
 	{
 		return true;
@@ -1584,7 +1597,7 @@ inline void drawItemMenuSlot(int x, int y, int width, int height, bool selected 
 /*
  * Helper function to itemContextMenu(). Draws the context menu slots.
  */
-inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
+inline void drawItemMenuSlots(const int player, const Item& item, int slot_width, int slot_height)
 {
 	//Draw the action select boxes. "Appraise", "Use, "Equip", etc.
 	int current_x = itemMenuX;
@@ -1592,7 +1605,7 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 	drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 0); //Option 0 => Store in chest, sell, use.
 	if (itemCategory(&item) != SPELL_CAT)
 	{
-		if ( itemMenuSkipRow1ForShopsAndChests(item) )
+		if ( itemMenuSkipRow1ForShopsAndChests(player, item) )
 		{
 			current_y += slot_height;
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 1 => appraise
@@ -1608,7 +1621,7 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 		current_y += slot_height;
 		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 2 => appraise, drop
 
-		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) 
+		if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(item)
 			&& itemCategory(&item) != FOOD )
 		{
 			current_y += slot_height;
@@ -1649,10 +1662,10 @@ inline void drawOptionSell(int x, int y)
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[345]);
 }
 
-inline void drawOptionUse(const Item& item, int x, int y)
+inline void drawOptionUse(const int player, const Item& item, int x, int y)
 {
 	int width = 0;
-	ttfPrintTextFormatted(ttf12, x + 50 - strlen(itemUseString(&item)) * TTF12_WIDTH / 2, y + 4, "%s", itemUseString(&item));
+	ttfPrintTextFormatted(ttf12, x + 50 - strlen(itemUseString(player, &item)) * TTF12_WIDTH / 2, y + 4, "%s", itemUseString(player, &item));
 }
 
 inline void drawOptionUnwield(int x, int y)
@@ -1686,7 +1699,7 @@ inline void drawOptionDrop(int x, int y)
 /*
  * Helper function to itemContextMenu(). Draws a spell's options.
  */
-inline void drawItemMenuOptionSpell(const Item& item, int x, int y)
+inline void drawItemMenuOptionSpell(const int player, const Item& item, int x, int y)
 {
 	if (itemCategory(&item) != SPELL_CAT)
 	{
@@ -1696,13 +1709,13 @@ inline void drawItemMenuOptionSpell(const Item& item, int x, int y)
 	int width = 0;
 
 	//Option 0.
-	drawOptionUse(item, x, y);
+	drawOptionUse(player, item, x, y);
 }
 
 /*
  * Helper function to itemContextMenu(). Draws a potion's options.
  */
-inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height, bool is_potion_bad = false)
+inline void drawItemMenuOptionPotion(const int player, const Item& item, int x, int y, int height, bool is_potion_bad = false)
 {
 	if (itemCategory(&item) != POTION && item.type != TOOL_ALEMBIC && item.type != TOOL_TINKERING_KIT )
 	{
@@ -1712,7 +1725,7 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	int width = 0;
 
 	//Option 0.
-	if (openedChest[clientnum])
+	if (openedChest[player])
 	{
 		drawOptionStoreInChest(x, y);
 	}
@@ -1724,7 +1737,7 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	{
 		if ( item.type == TOOL_TINKERING_KIT )
 		{
-			if ( itemIsEquipped(&item, clientnum) )
+			if ( itemIsEquipped(&item, player) )
 			{
 				drawOptionUnwield(x, y);
 			}
@@ -1735,11 +1748,11 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 		}
 		else if (!is_potion_bad)
 		{
-			drawOptionUse(item, x, y);
+			drawOptionUse(player, item, x, y);
 		}
 		else
 		{
-			if (itemIsEquipped(&item, clientnum))
+			if (itemIsEquipped(&item, player))
 			{
 				drawOptionUnwield(x, y);
 			}
@@ -1752,7 +1765,7 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	y += height;
 
 	//Option 1.
-	if ( itemMenuSkipRow1ForShopsAndChests(item) )
+	if ( itemMenuSkipRow1ForShopsAndChests(player, item) )
 	{
 		// skip this row.
 	}
@@ -1770,7 +1783,7 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 				getSizeOfText(ttf12, language[3670], &width, nullptr);
 				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3670]);
 			}
-			else if (itemIsEquipped(&item, clientnum))
+			else if (itemIsEquipped(&item, player))
 			{
 				drawOptionUnwield(x, y);
 			}
@@ -1781,7 +1794,7 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 		}
 		else
 		{
-			drawOptionUse(item, x, y);
+			drawOptionUse(player, item, x, y);
 		}
 		y += height;
 	}
@@ -1794,12 +1807,12 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	drawOptionDrop(x, y);
 }
 
-inline void drawItemMenuOptionAutomaton(const Item& item, int x, int y, int height, bool is_potion_bad)
+inline void drawItemMenuOptionAutomaton(const int player, const Item& item, int x, int y, int height, bool is_potion_bad)
 {
 	int width = 0;
 
 	//Option 0.
-	if ( openedChest[clientnum] )
+	if ( openedChest[player] )
 	{
 		drawOptionStoreInChest(x, y);
 	}
@@ -1813,7 +1826,7 @@ inline void drawItemMenuOptionAutomaton(const Item& item, int x, int y, int heig
 		{
 			if ( !itemIsConsumableByAutomaton(item) || (itemCategory(&item) != FOOD && item.type != TOOL_METAL_SCRAP && item.type != TOOL_MAGIC_SCRAP) )
 			{
-				drawOptionUse(item, x, y);
+				drawOptionUse(player, item, x, y);
 			}
 			else
 			{
@@ -1823,7 +1836,7 @@ inline void drawItemMenuOptionAutomaton(const Item& item, int x, int y, int heig
 		}
 		else
 		{
-			if ( itemIsEquipped(&item, clientnum) )
+			if ( itemIsEquipped(&item, player) )
 			{
 				drawOptionUnwield(x, y);
 			}
@@ -1860,7 +1873,7 @@ inline void drawItemMenuOptionAutomaton(const Item& item, int x, int y, int heig
 /*
  * Helper function to itemContextMenu(). Draws all other items's options.
  */
-inline void drawItemMenuOptionGeneric(const Item& item, int x, int y, int height)
+inline void drawItemMenuOptionGeneric(const int player, const Item& item, int x, int y, int height)
 {
 	if (itemCategory(&item) == SPELL_CAT || itemCategory(&item) == POTION)
 	{
@@ -1870,7 +1883,7 @@ inline void drawItemMenuOptionGeneric(const Item& item, int x, int y, int height
 	int width = 0;
 
 	//Option 0.
-	if (openedChest[clientnum])
+	if (openedChest[player])
 	{
 		drawOptionStoreInChest(x, y);
 	}
@@ -1880,7 +1893,7 @@ inline void drawItemMenuOptionGeneric(const Item& item, int x, int y, int height
 	}
 	else
 	{
-		drawOptionUse(item, x, y);
+		drawOptionUse(player, item, x, y);
 	}
 	y += height;
 
@@ -1892,12 +1905,12 @@ inline void drawItemMenuOptionGeneric(const Item& item, int x, int y, int height
 	drawOptionDrop(x, y);
 }
 
-inline void drawItemMenuOptionSpellbook(const Item& item, int x, int y, int height, bool learnedSpell)
+inline void drawItemMenuOptionSpellbook(const int player, const Item& item, int x, int y, int height, bool learnedSpell)
 {
 	int width = 0;
 
 	//Option 0.
-	if ( openedChest[clientnum] )
+	if ( openedChest[player] )
 	{
 		drawOptionStoreInChest(x, y);
 	}
@@ -1909,7 +1922,7 @@ inline void drawItemMenuOptionSpellbook(const Item& item, int x, int y, int heig
 	{
 		if ( learnedSpell )
 		{
-			if ( itemIsEquipped(&item, clientnum) )
+			if ( itemIsEquipped(&item, player) )
 			{
 				drawOptionUnwield(x, y);
 			}
@@ -1920,13 +1933,13 @@ inline void drawItemMenuOptionSpellbook(const Item& item, int x, int y, int heig
 		}
 		else
 		{
-			drawOptionUse(item, x, y);
+			drawOptionUse(player, item, x, y);
 		}
 	}
 	y += height;
 
 	//Option 1
-	if ( itemMenuSkipRow1ForShopsAndChests(item) )
+	if ( itemMenuSkipRow1ForShopsAndChests(player, item) )
 	{
 		// skip this row.
 	}
@@ -1934,11 +1947,11 @@ inline void drawItemMenuOptionSpellbook(const Item& item, int x, int y, int heig
 	{
 		if ( learnedSpell )
 		{
-			drawOptionUse(item, x, y);
+			drawOptionUse(player, item, x, y);
 		}
 		else
 		{
-			if ( itemIsEquipped(&item, clientnum) )
+			if ( itemIsEquipped(&item, player) )
 			{
 				drawOptionUnwield(x, y);
 			}
@@ -1958,12 +1971,12 @@ inline void drawItemMenuOptionSpellbook(const Item& item, int x, int y, int heig
 	drawOptionDrop(x, y);
 }
 
-inline void drawItemMenuOptionUsableAndWieldable(const Item& item, int x, int y, int height)
+inline void drawItemMenuOptionUsableAndWieldable(const int player, const Item& item, int x, int y, int height)
 {
 	int width = 0;
 
 	//Option 0.
-	if ( openedChest[clientnum] )
+	if ( openedChest[player] )
 	{
 		drawOptionStoreInChest(x, y);
 	}
@@ -1973,12 +1986,12 @@ inline void drawItemMenuOptionUsableAndWieldable(const Item& item, int x, int y,
 	}
 	else
 	{
-		drawOptionUse(item, x, y);
+		drawOptionUse(player, item, x, y);
 	}
 	y += height;
 
 	//Option 1
-	if ( itemIsEquipped(&item, clientnum) )
+	if ( itemIsEquipped(&item, player) )
 	{
 		drawOptionUnwield(x, y);
 	}
@@ -1999,7 +2012,7 @@ inline void drawItemMenuOptionUsableAndWieldable(const Item& item, int x, int y,
 /*
  * Helper function to itemContextMenu(). Changes the currently selected slot based on the mouse cursor's position.
  */
-inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, int slot_height)
+inline void selectItemMenuSlot(const int player, const Item& item, int x, int y, int slot_width, int slot_height)
 {
 	int current_x = itemMenuX;
 	int current_y = itemMenuY;
@@ -2014,7 +2027,7 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 	}
 	if (itemCategory(&item) != SPELL_CAT)
 	{
-		if ( itemMenuSkipRow1ForShopsAndChests(item) )
+		if ( itemMenuSkipRow1ForShopsAndChests(player, item) )
 		{
 			current_y += slot_height;
 			if ( mousey >= current_y && mousey < current_y + slot_height )
@@ -2041,7 +2054,7 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 			}
 			current_y += slot_height;
 			if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK || item.type == FOOD_CREAMPIE
-				|| (stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) 
+				|| (stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(item)
 					&& itemCategory(&item) != FOOD) )
 			{
 				if (mousey >= current_y && mousey < current_y + slot_height)
@@ -2071,7 +2084,7 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 /*
  * execteItemMenuOptionX() -  Helper function to itemContextMenu(). Executes the specified menu option for the item.
  */
-inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedSpell)
+inline void executeItemMenuOption0(const int player, Item* item, bool is_potion_bad, bool learnedSpell)
 {
 	if (!item)
 	{
@@ -2079,12 +2092,12 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 	}
 
 	bool disableItemUsage = false;
-	if ( players[clientnum] && players[clientnum]->entity )
+	if ( players[player] && players[player]->entity )
 	{
-		if ( players[clientnum]->entity->effectShapeshift != NOTHING )
+		if ( players[player]->entity->effectShapeshift != NOTHING )
 		{
 			// shape shifted, disable some items
-			if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+			if ( !item->usableWhileShapeshifted(stats[player]) )
 			{
 				disableItemUsage = true;
 			}
@@ -2101,18 +2114,18 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 		}
 	}
 
-	if ( client_classes[clientnum] == CLASS_SHAMAN )
+	if ( client_classes[player] == CLASS_SHAMAN )
 	{
-		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
 		{
 			disableItemUsage = true;
 		}
 	}
 
-	if (openedChest[clientnum] && itemCategory(item) != SPELL_CAT)
+	if (openedChest[player] && itemCategory(item) != SPELL_CAT)
 	{
 		//Option 0 = store in chest.
-		openedChest[clientnum]->addItemToChestFromInventory(clientnum, item, false);
+		openedChest[player]->addItemToChestFromInventory(player, item, false);
 	}
 	else if (gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT)
 	{
@@ -2124,11 +2137,11 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 		if (!is_potion_bad && !learnedSpell)
 		{
 			//Option 0 = use.
-			if ( !(isItemEquippableInShieldSlot(item) && cast_animation[clientnum].active_spellbook) )
+			if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
 			{
 				if ( !disableItemUsage )
 				{
-					if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON 
+					if ( stats[player] && stats[player]->type == AUTOMATON
 						&& (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
 					{
 						// consume item
@@ -2141,28 +2154,28 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 							SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
 							SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 							net_packet->data[24] = item->identified;
-							net_packet->data[25] = clientnum;
+							net_packet->data[25] = player;
 							net_packet->address.host = net_server.host;
 							net_packet->address.port = net_server.port;
 							net_packet->len = 26;
 							sendPacketSafe(net_sock, -1, net_packet, 0);
 						}
-						item_FoodAutomaton(item, clientnum);
+						item_FoodAutomaton(item, player);
 					}
 					else
 					{
-						useItem(item, clientnum);
+						useItem(item, player);
 					}
 				}
 				else
 				{
-					if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+					if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 					{
-						messagePlayer(clientnum, language[3488]); // unable to use with current level.
+						messagePlayer(player, language[3488]); // unable to use with current level.
 					}
 					else
 					{
-						messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+						messagePlayer(player, language[3432]); // unable to use in current form message.
 					}
 				}
 			}
@@ -2176,20 +2189,20 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 			}
 			else
 			{
-				if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(clientnum, language[3488]); // unable to use with current level.
+					messagePlayer(player, language[3488]); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+					messagePlayer(player, language[3432]); // unable to use in current form message.
 				}
 			}
 		}
 	}
 }
 
-inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedSpell)
+inline void executeItemMenuOption1(const int player, Item* item, bool is_potion_bad, bool learnedSpell)
 {
 	if (!item || itemCategory(item) == SPELL_CAT)
 	{
@@ -2197,10 +2210,10 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 	}
 
 	bool disableItemUsage = false;
-	if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+	if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
 	{
 		// shape shifted, disable some items
-		if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+		if ( !item->usableWhileShapeshifted(stats[player]) )
 		{
 			disableItemUsage = true;
 		}
@@ -2210,20 +2223,20 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 		}
 	}
 
-	if ( client_classes[clientnum] == CLASS_SHAMAN )
+	if ( client_classes[player] == CLASS_SHAMAN )
 	{
-		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
 		{
 			disableItemUsage = true;
 		}
 	}
 
-	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) 
+	if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item)
 		&& itemCategory(item) != FOOD )
 	{
 		if ( item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP )
 		{
-			useItem(item, clientnum);
+			useItem(item, player);
 		}
 		else
 		{
@@ -2237,13 +2250,13 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 				SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
 				SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 				net_packet->data[24] = item->identified;
-				net_packet->data[25] = clientnum;
+				net_packet->data[25] = player;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				net_packet->len = 26;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-			item_FoodAutomaton(item, clientnum);
+			item_FoodAutomaton(item, player);
 		}
 	}
 	else if ( item->type == TOOL_ALEMBIC )
@@ -2255,7 +2268,7 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 		}
 		else
 		{
-			messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+			messagePlayer(player, language[3432]); // unable to use in current form message.
 		}
 	}
 	else if ( item->type == TOOL_TINKERING_KIT )
@@ -2266,7 +2279,7 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 		}
 		else
 		{
-			messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+			messagePlayer(player, language[3432]); // unable to use in current form message.
 		}
 	}
 	else if (itemCategory(item) != POTION && itemCategory(item) != SPELLBOOK && item->type != FOOD_CREAMPIE)
@@ -2292,34 +2305,34 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 			else
 			{
 				//Option 1 = drink/use/whatever.
-				if ( !(isItemEquippableInShieldSlot(item) && cast_animation[clientnum].active_spellbook) )
+				if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
 				{
-					useItem(item, clientnum);
+					useItem(item, player);
 				}
 			}
 		}
 		else
 		{
-			if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 			{
-				messagePlayer(clientnum, language[3488]); // unable to use with current level.
+				messagePlayer(player, language[3488]); // unable to use with current level.
 			}
 			else
 			{
-				messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+				messagePlayer(player, language[3432]); // unable to use in current form message.
 			}
 		}
 	}
 }
 
-inline void executeItemMenuOption2(Item* item)
+inline void executeItemMenuOption2(const int player, Item* item)
 {
 	if (!item || itemCategory(item) == SPELL_CAT)
 	{
 		return;
 	}
 
-	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
+	if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
 	{
 		//Option 2 = appraise.
 		identifygui_active = false;
@@ -2335,7 +2348,7 @@ inline void executeItemMenuOption2(Item* item)
 		&& item->type != FOOD_CREAMPIE )
 	{
 		//Option 2 = drop.
-		dropItem(item, clientnum);
+		dropItem(item, player);
 	}
 	else
 	{
@@ -2350,16 +2363,16 @@ inline void executeItemMenuOption2(Item* item)
 	}
 }
 
-inline void executeItemMenuOption3(Item* item)
+inline void executeItemMenuOption3(const int player, Item* item)
 {
 	if ( !item )
 	{
 		return;
 	}
-	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
+	if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
 	{
 		//Option 3 = drop (automaton has 4 options on consumable items).
-		dropItem(item, clientnum);
+		dropItem(item, player);
 		return;
 	}
 	if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC 
@@ -2370,10 +2383,10 @@ inline void executeItemMenuOption3(Item* item)
 	}
 
 	//Option 3 = drop (only spellbooks/potions have option 3).
-	dropItem(item, clientnum);
+	dropItem(item, player);
 }
 
-void itemContextMenu()
+void itemContextMenu(const int player)
 {
 	if (!itemMenuOpen)
 	{
@@ -2411,65 +2424,65 @@ void itemContextMenu()
 	const int slot_width = 100;
 	const int slot_height = 20;
 
-	if ( game_controllers[0].handleItemContextMenu(*current_item) )
+	if ( game_controllers[0].handleItemContextMenu(player, *current_item) )
 	{
 		SDL_WarpMouseInWindow(screen, itemMenuX + (slot_width / 2), itemMenuY + (itemMenuSelected * slot_height) + (slot_height / 2));
 	}
 
-	drawItemMenuSlots(*current_item, slot_width, slot_height);
+	drawItemMenuSlots(player, *current_item, slot_width, slot_height);
 	bool learnedSpell = false;
 
 	if (itemCategory(current_item) == SPELL_CAT)
 	{
-		drawItemMenuOptionSpell(*current_item, itemMenuX, itemMenuY);
+		drawItemMenuOptionSpell(player, *current_item, itemMenuX, itemMenuY);
 	}
 	else
 	{
-		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*current_item)
+		if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*current_item)
 			&& current_item->type != FOOD_CREAMPIE )
 		{
-			drawItemMenuOptionAutomaton(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
+			drawItemMenuOptionAutomaton(player, *current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
 		}
 		else if ( current_item->type == TOOL_ALEMBIC || current_item->type == TOOL_TINKERING_KIT )
 		{
-			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, false);
+			drawItemMenuOptionPotion(player, *current_item, itemMenuX, itemMenuY, slot_height, false);
 		}
 		else if (itemCategory(current_item) == POTION || current_item->type == TOOL_ALEMBIC)
 		{
-			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
+			drawItemMenuOptionPotion(player, *current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
 		}
 		else if ( itemCategory(current_item) == SPELLBOOK )
 		{
-			learnedSpell = playerLearnedSpellbook(current_item);
-			if ( itemIsEquipped(current_item, clientnum) )
+			learnedSpell = playerLearnedSpellbook(player, current_item);
+			if ( itemIsEquipped(current_item, player) )
 			{
 				learnedSpell = true; // equipped spellbook will unequip on use.
 			}
-			else if ( players[clientnum] && players[clientnum]->entity )
+			else if ( players[player] && players[player]->entity )
 			{
-				if ( players[clientnum]->entity->effectShapeshift == CREATURE_IMP )
+				if ( players[player]->entity->effectShapeshift == CREATURE_IMP )
 				{
 					learnedSpell = true; // imps can't learn spells but always equip books.
 				}
-				else if ( stats[clientnum] && stats[clientnum]->type == GOBLIN )
+				else if ( stats[player] && stats[player]->type == GOBLIN )
 				{
 					learnedSpell = true; // goblinos can't learn spells but always equip books.
 				}
 			}
 
-			drawItemMenuOptionSpellbook(*current_item, itemMenuX, itemMenuY, slot_height, learnedSpell);
+			drawItemMenuOptionSpellbook(player, *current_item, itemMenuX, itemMenuY, slot_height, learnedSpell);
 		}
 		else if ( current_item->type == FOOD_CREAMPIE )
 		{
-			drawItemMenuOptionUsableAndWieldable(*current_item, itemMenuX, itemMenuY, slot_height);
+			drawItemMenuOptionUsableAndWieldable(player, *current_item, itemMenuX, itemMenuY, slot_height);
 		}
 		else
 		{
-			drawItemMenuOptionGeneric(*current_item, itemMenuX, itemMenuY, slot_height); //Every other item besides potions and spells.
+			drawItemMenuOptionGeneric(player, *current_item, itemMenuX, itemMenuY, slot_height); //Every other item besides potions and spells.
 		}
 	}
 
-	selectItemMenuSlot(*current_item, itemMenuX, itemMenuY, slot_width, slot_height);
+	selectItemMenuSlot(player, *current_item, itemMenuX, itemMenuY, slot_width, slot_height);
 
 	bool activateSelection = false;
 	if (!mousestatus[SDL_BUTTON_RIGHT] && !toggleclick)
@@ -2489,16 +2502,16 @@ void itemContextMenu()
 		switch (itemMenuSelected)
 		{
 			case 0:
-				executeItemMenuOption0(current_item, is_potion_bad, learnedSpell);
+				executeItemMenuOption0(player, current_item, is_potion_bad, learnedSpell);
 				break;
 			case 1:
-				executeItemMenuOption1(current_item, is_potion_bad, learnedSpell);
+				executeItemMenuOption1(player, current_item, is_potion_bad, learnedSpell);
 				break;
 			case 2:
-				executeItemMenuOption2(current_item);
+				executeItemMenuOption2(player, current_item);
 				break;
 			case 3:
-				executeItemMenuOption3(current_item);
+				executeItemMenuOption3(player, current_item);
 				break;
 			default:
 				break;
@@ -2640,24 +2653,24 @@ bool autoAddHotbarFilter(const Item& item)
 	return false;
 }
 
-void quickStackItems()
+void quickStackItems(int player)
 {
-	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* itemToStack = (Item*)node->element;
-		if ( itemToStack && itemToStack->shouldItemStack(clientnum) )
+		if ( itemToStack && itemToStack->shouldItemStack(player) )
 		{
-			for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+			for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 			{
 				Item* item2 = (Item*)node->element;
 				// if items are the same, check to see if they should stack
 				if ( item2 && item2 != itemToStack && !itemCompare(itemToStack, item2, false) )
 				{
 					itemToStack->count += item2->count;
-					if ( multiplayer == CLIENT && itemIsEquipped(itemToStack, clientnum) )
+					if ( multiplayer == CLIENT && itemIsEquipped(itemToStack, player) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
+						clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
 							itemToStack->type, itemToStack->status,	itemToStack->beatitude, itemToStack->count, itemToStack->appearance, itemToStack->identified);
 					}
 					if ( item2->node )
@@ -2675,7 +2688,7 @@ void quickStackItems()
 	}
 }
 
-void autosortInventory()
+void autosortInventory(int player)
 {
 	std::vector<std::pair<int, int>> autosortPairs;
 	for ( int i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
@@ -2683,10 +2696,10 @@ void autosortInventory()
 		autosortPairs.push_back(std::make_pair(autosort_inventory_categories[i], i));
 	}
 
-	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
-		if ( item && (!itemIsEquipped(item, clientnum) || autosort_inventory_categories[11] != 0) && itemCategory(item) != SPELL_CAT )
+		if ( item && (!itemIsEquipped(item, player) || autosort_inventory_categories[11] != 0) && itemCategory(item) != SPELL_CAT )
 		{
 			item->x = -1;
 			item->y = 0;
@@ -2707,42 +2720,42 @@ void autosortInventory()
 			switch ( tmpPair.second )
 			{
 				case 0: // weapons
-					sortInventoryItemsOfType(WEAPON, invertSortDirection);
+					sortInventoryItemsOfType(player, WEAPON, invertSortDirection);
 					break;
 				case 1: // armor
-					sortInventoryItemsOfType(ARMOR, invertSortDirection);
+					sortInventoryItemsOfType(player, ARMOR, invertSortDirection);
 					break;
 				case 2: // jewelry
-					sortInventoryItemsOfType(RING, invertSortDirection);
-					sortInventoryItemsOfType(AMULET, invertSortDirection);
+					sortInventoryItemsOfType(player, RING, invertSortDirection);
+					sortInventoryItemsOfType(player, AMULET, invertSortDirection);
 					break;
 				case 3: // books/spellbooks
-					sortInventoryItemsOfType(SPELLBOOK, invertSortDirection);
-					sortInventoryItemsOfType(BOOK, invertSortDirection);
+					sortInventoryItemsOfType(player, SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(player, BOOK, invertSortDirection);
 					break;
 				case 4: // tools
-					sortInventoryItemsOfType(TOOL, invertSortDirection);
+					sortInventoryItemsOfType(player, TOOL, invertSortDirection);
 					break;
 				case 5: // thrown
-					sortInventoryItemsOfType(THROWN, invertSortDirection);
+					sortInventoryItemsOfType(player, THROWN, invertSortDirection);
 					break;
 				case 6: // gems
-					sortInventoryItemsOfType(GEM, invertSortDirection);
+					sortInventoryItemsOfType(player, GEM, invertSortDirection);
 					break;
 				case 7: // potions
-					sortInventoryItemsOfType(POTION, invertSortDirection);
+					sortInventoryItemsOfType(player, POTION, invertSortDirection);
 					break;
 				case 8: // scrolls
-					sortInventoryItemsOfType(SCROLL, invertSortDirection);
+					sortInventoryItemsOfType(player, SCROLL, invertSortDirection);
 					break;
 				case 9: // magicstaves
-					sortInventoryItemsOfType(MAGICSTAFF, invertSortDirection);
+					sortInventoryItemsOfType(player, MAGICSTAFF, invertSortDirection);
 					break;
 				case 10: // food
-					sortInventoryItemsOfType(FOOD, invertSortDirection);
+					sortInventoryItemsOfType(player, FOOD, invertSortDirection);
 					break;
 				case 11: // equipped items
-					sortInventoryItemsOfType(-2, invertSortDirection);
+					sortInventoryItemsOfType(player, -2, invertSortDirection);
 					break;
 				default:
 					break;
@@ -2761,42 +2774,42 @@ void autosortInventory()
 			switch ( tmpPair.second )
 			{
 				case 0: // weapons
-					sortInventoryItemsOfType(WEAPON, invertSortDirection);
+					sortInventoryItemsOfType(player, WEAPON, invertSortDirection);
 					break;
 				case 1: // armor
-					sortInventoryItemsOfType(ARMOR, invertSortDirection);
+					sortInventoryItemsOfType(player, ARMOR, invertSortDirection);
 					break;
 				case 2: // jewelry
-					sortInventoryItemsOfType(RING, invertSortDirection);
-					sortInventoryItemsOfType(AMULET, invertSortDirection);
+					sortInventoryItemsOfType(player, RING, invertSortDirection);
+					sortInventoryItemsOfType(player, AMULET, invertSortDirection);
 					break;
 				case 3: // books/spellbooks
-					sortInventoryItemsOfType(SPELLBOOK, invertSortDirection);
-					sortInventoryItemsOfType(BOOK, invertSortDirection);
+					sortInventoryItemsOfType(player, SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(player, BOOK, invertSortDirection);
 					break;
 				case 4: // tools
-					sortInventoryItemsOfType(TOOL, invertSortDirection);
+					sortInventoryItemsOfType(player, TOOL, invertSortDirection);
 					break;
 				case 5: // thrown
-					sortInventoryItemsOfType(THROWN, invertSortDirection);
+					sortInventoryItemsOfType(player, THROWN, invertSortDirection);
 					break;
 				case 6: // gems
-					sortInventoryItemsOfType(GEM, invertSortDirection);
+					sortInventoryItemsOfType(player, GEM, invertSortDirection);
 					break;
 				case 7: // potions
-					sortInventoryItemsOfType(POTION, invertSortDirection);
+					sortInventoryItemsOfType(player, POTION, invertSortDirection);
 					break;
 				case 8: // scrolls
-					sortInventoryItemsOfType(SCROLL, invertSortDirection);
+					sortInventoryItemsOfType(player, SCROLL, invertSortDirection);
 					break;
 				case 9: // magicstaves
-					sortInventoryItemsOfType(MAGICSTAFF, invertSortDirection);
+					sortInventoryItemsOfType(player, MAGICSTAFF, invertSortDirection);
 					break;
 				case 10: // food
-					sortInventoryItemsOfType(FOOD, invertSortDirection);
+					sortInventoryItemsOfType(player, FOOD, invertSortDirection);
 					break;
 				case 11: // equipped items
-					sortInventoryItemsOfType(-2, invertSortDirection);
+					sortInventoryItemsOfType(player, -2, invertSortDirection);
 					break;
 				default:
 					break;
@@ -2805,16 +2818,16 @@ void autosortInventory()
 	}
 
 
-	sortInventoryItemsOfType(-1, true); // clean up the rest of the items.
+	sortInventoryItemsOfType(player, -1, true); // clean up the rest of the items.
 }
 
-void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
+void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 {
 	node_t* node = nullptr;
 	Item* itemBeingSorted = nullptr;
 	Category cat = static_cast<Category>(categoryInt);
 
-	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		itemBeingSorted = (Item*)node->element;
 		if ( itemBeingSorted && itemBeingSorted->x == -1 )
@@ -2835,11 +2848,11 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 					continue;
 				}
 			}
-			if ( categoryInt == -2 && !itemIsEquipped(itemBeingSorted, clientnum) )
+			if ( categoryInt == -2 && !itemIsEquipped(itemBeingSorted, player) )
 			{
 				continue;
 			}
-			if ( categoryInt != -2 && itemIsEquipped(itemBeingSorted, clientnum) )
+			if ( categoryInt != -2 && itemIsEquipped(itemBeingSorted, player) )
 			{
 				continue;
 			}
@@ -2869,7 +2882,7 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 				for ( y = 0; y < inventory_y; y++ )
 				{
 					node_t* node2 = nullptr;
-					for ( node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
+					for ( node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
 					{
 						Item* tempItem = (Item*)node2->element;
 						if ( tempItem == itemBeingSorted )
@@ -2933,7 +2946,7 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 					for ( y = 3; y < INVENTORY_SIZEY; y++ )
 					{
 						node_t* node2 = nullptr;
-						for ( node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
+						for ( node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
 						{
 							Item* tempItem = (Item*)node2->element;
 							if ( tempItem == itemBeingSorted )
@@ -3003,7 +3016,7 @@ bool mouseInsidePlayerHotbar()
 	return mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h);
 }
 
-bool playerLearnedSpellbook(Item* current_item)
+bool playerLearnedSpellbook(int player, Item* current_item)
 {
 	if ( !current_item )
 	{
@@ -3013,7 +3026,7 @@ bool playerLearnedSpellbook(Item* current_item)
 	{
 		return false;
 	}
-	for ( node_t* node = stats[clientnum]->inventory.first; node && current_item->identified; node = node->next )
+	for ( node_t* node = stats[player]->inventory.first; node && current_item->identified; node = node->next )
 	{
 		Item* item = static_cast<Item*>(node->element);
 		if ( !item )

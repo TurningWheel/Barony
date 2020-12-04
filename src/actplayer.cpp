@@ -1147,20 +1147,20 @@ void actPlayer(Entity* my)
 	{
 		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
 		{
-			if ( swapHotbarOnShapeshift == 0 )
+			if ( players[PLAYER_NUM]->hotbar->swapHotbarOnShapeshift == 0 )
 			{
-				initShapeshiftHotbar();
+				initShapeshiftHotbar(PLAYER_NUM);
 			}
-			else if ( swapHotbarOnShapeshift != stats[PLAYER_NUM]->type )
+			else if ( players[PLAYER_NUM]->hotbar->swapHotbarOnShapeshift != stats[PLAYER_NUM]->type )
 			{
 				// we likely transformed while still shapeshifted, fully init the hotbar code again.
-				deinitShapeshiftHotbar();
-				initShapeshiftHotbar();
+				deinitShapeshiftHotbar(PLAYER_NUM);
+				initShapeshiftHotbar(PLAYER_NUM);
 			}
 		}
-		else if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] && swapHotbarOnShapeshift > 0 )
+		else if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] && players[PLAYER_NUM]->hotbar->swapHotbarOnShapeshift > 0 )
 		{
-			deinitShapeshiftHotbar();
+			deinitShapeshiftHotbar(PLAYER_NUM);
 		}
 	}
 

@@ -298,8 +298,8 @@ extern Uint32 serverSchedulePlayerHealthUpdate;
 
 // function prototypes for charclass.c:
 void initClass(int player);
-void initShapeshiftHotbar();
-void deinitShapeshiftHotbar();
+void initShapeshiftHotbar(int player);
+void deinitShapeshiftHotbar(int player);
 bool playerUnlockedShamanSpell(int player, Item* item);
 
 extern char last_ip[64];

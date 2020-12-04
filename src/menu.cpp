@@ -9383,11 +9383,15 @@ void handleMainMenu(bool mode)
 			entity_uids = 1;
 			loading = true;
 			darkmap = false;
-			deinitShapeshiftHotbar();
-			for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				selected_spell_alternate[c] = NULL;
-				hotbarShapeshiftInit[c] = false;
+				deinitShapeshiftHotbar(i);
+				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+				{
+					selected_spell_alternate[c] = NULL;
+					players[i]->hotbar->hotbarShapeshiftInit[c] = false;
+				}
 			}
 			selected_spell = NULL;
 			selected_spell_last_appearance = -1;
@@ -10348,11 +10352,15 @@ void handleMainMenu(bool mode)
 			clientnum = 0;
 			introstage = 1;
 			intro = true;
-			deinitShapeshiftHotbar();
-			for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				selected_spell_alternate[c] = NULL;
-				hotbarShapeshiftInit[c] = false;
+				deinitShapeshiftHotbar(i);
+				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+				{
+					selected_spell_alternate[c] = NULL;
+					players[i]->hotbar->hotbarShapeshiftInit[c] = false;
+				}
 			}
 			gameModeManager.currentSession.restoreSavedServerFlags();
 			selected_spell = NULL; //So you don't start off with a spell when the game restarts.

@@ -231,9 +231,9 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		{
 			if ( stats[clientnum] && inventory == &stats[clientnum]->inventory )
 			{
-				for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+				for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
 				{
-					if ( !uidToItem(hotbar[c].item) )
+					if ( !uidToItem(hotbarSlot.item) )
 					{
 						if ( autoAddHotbarFilter(*item) )
 						{
@@ -241,12 +241,12 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 							{
 								if ( item->usableWhileShapeshifted(stats[clientnum]) )
 								{
-									hotbar[c].item = item->uid;
+									hotbarSlot.item = item->uid;
 								}
 							}
 							else
 							{
-								hotbar[c].item = item->uid;
+								hotbarSlot.item = item->uid;
 							}
 							break;
 						}
@@ -329,15 +329,19 @@ void addItemToMonsterInventory(Item &item, list_t& inventory)
 	// add the item to the hotbar automatically
 	if ( !intro && auto_hotbar_new_items )
 	{
-		if ( &inventory == &stats[clientnum]->inventory )
+		for ( int c = 0; c < MAXPLAYERS; ++c )
 		{
-			for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+			if ( &inventory == &stats[c]->inventory )
 			{
-				if ( !uidToItem(hotbar[c].item) )
+				for ( auto& hotbarSlot : players[c]->hotbar->slots() )
 				{
-					hotbar[c].item = item.uid;
-					break;
+					if ( !uidToItem(hotbarSlot.item) )
+					{
+						hotbarSlot.item = item.uid;
+						break;
+					}
 				}
+				break;
 			}
 		}
 	}

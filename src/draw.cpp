@@ -1405,7 +1405,10 @@ void drawEntities3D(view_t* camera, int mode)
 			}
 			if ( currentPlayerViewport >= 0 )
 			{
-				if ( entity->behavior == &actHudWeapon || entity->behavior == &actHudArm || entity->behavior == &actGib )
+				if ( entity->behavior == &actHudWeapon 
+					|| entity->behavior == &actHudArm 
+					|| entity->behavior == &actGib
+					|| entity->behavior == &actFlame )
 				{
 					// the gibs are from casting magic in the HUD
 					if ( entity->skill[11] != currentPlayerViewport )

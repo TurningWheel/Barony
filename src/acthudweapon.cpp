@@ -3693,6 +3693,7 @@ void actHudShield(Entity* my)
 				entity->flags[OVERDRAW] = true;
 				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
 				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+				entity->skill[11] = HUDSHIELD_PLAYERNUM;
 				my->flags[BRIGHT] = true;
 			}
 			if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
@@ -3701,12 +3702,14 @@ void actHudShield(Entity* my)
 				entity->flags[OVERDRAW] = true;
 				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
 				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+				entity->skill[11] = HUDSHIELD_PLAYERNUM;
 				my->flags[BRIGHT] = true;
 			}
 			else if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_LANTERN)
 			{
 				Entity* entity = spawnFlame(my, SPRITE_FLAME);
 				entity->flags[OVERDRAW] = true;
+				entity->skill[11] = HUDSHIELD_PLAYERNUM;
 				entity->z += 1;
 				my->flags[BRIGHT] = true;
 			}

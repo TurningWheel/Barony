@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "interface/interface.hpp"
 
 #pragma once
 
@@ -176,43 +177,43 @@ public:
 	 * Uses dpad to move the cursor around the inventory and select items.
 	 * Returns true if moved.
 	 */
-	bool handleInventoryMovement();
+	bool handleInventoryMovement(const int player);
 
 	/*
 	 * Uses dpad to move the cursor around a chest's inventory and select items.
 	 * Returns true if moved.
 	 */
-	bool handleChestMovement();
+	bool handleChestMovement(const int player);
 
 	/*
 	 * Uses dpad to move the cursor around a shop's inventory and select items.
 	 * Returns true if moved.
 	 */
-	bool handleShopMovement();
+	bool handleShopMovement(const int player);
 
 	/*
 	 * Uses dpad to move the cursor around Identify GUI's inventory and select items.
 	 * Returns true if moved.
 	 */
-	bool handleIdentifyMovement();
+	bool handleIdentifyMovement(const int player);
 
 	/*
 	 * Uses dpad to move the cursor around Remove Curse GUI's inventory and select items.
 	 * Returns true if moved.
 	 */
-	bool handleRemoveCurseMovement();
+	bool handleRemoveCurseMovement(const int player);
 
 	/*
 	 * Uses dpad to move the cursor through the item context menu and select entries.
 	 * Returns true if moved.
 	 */
-	bool handleItemContextMenu(const Item& item);
+	bool handleItemContextMenu(const int player, const Item& item);
 
 	/*
 	* Uses dpad to move the cursor through the item context menu and select entries.
 	* Returns true if moved.
 	*/
-	bool handleRepairGUIMovement();
+	bool handleRepairGUIMovement(const int player);
 };
 const int MAX_GAME_CONTROLLERS = 16;
 extern std::array<GameController, MAX_GAME_CONTROLLERS> game_controllers;
@@ -358,6 +359,9 @@ public:
 extern Inputs inputs;
 void initGameControllers();
 
+static const unsigned NUM_HOTBAR_SLOTS = 10; //NOTE: If you change this, you must dive into drawstatus.c and update the hotbar code. It expects 10.
+static const unsigned NUM_HOTBAR_ALTERNATES = 5;
+
 class Player
 {
 	//Splitscreen support. Every player gets their own screen.
@@ -366,14 +370,87 @@ class Player
 
 	//Is this a hotseat player? If so, draw splitscreen and stuff. (Host player is automatically a hotseat player). If not, then this is a dummy container for the multiplayer client.
 	bool local_host;
+	view_t* cam;
 
 	int playernum;
 
-
 public:
 	Entity* entity;
+	bool bSplitscreen = false;
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
+
+	class Hotbar_t;
+	Hotbar_t* hotbar;
+	view_t& camera() const { return *cam; }
+	int camera_x1() const { return cam->winx; }
+	int camera_x2() const { return cam->winx + cam->winw; }
+	int camera_y1() const { return cam->winy; }
+	int camera_y2() const { return cam->winy + cam->winh; }
+	int camera_width() const { return cam->winw; }
+	int camera_height() const { return cam->winh; }
+};
+
+class Player::Hotbar_t {
+	std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS> hotbar;
+	std::array<std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS>, NUM_HOTBAR_ALTERNATES> hotbar_alternate;
+public:
+	int current_hotbar = 0;
+	bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
+	int swapHotbarOnShapeshift = 0;
+	bool hotbarHasFocus = false;
+	int magicBoomerangHotbarSlot = -1;
+	Uint32 hotbarTooltipLastGameTick = 0;
+
+	Player::Hotbar_t()
+	{
+		clear();
+	}
+
+	enum HotbarLoadouts : int
+	{
+		HOTBAR_DEFAULT,
+		HOTBAR_RAT,
+		HOTBAR_SPIDER,
+		HOTBAR_TROLL,
+		HOTBAR_IMP
+	};
+
+	void clear()
+	{
+		swapHotbarOnShapeshift = 0;
+		current_hotbar = 0;
+		hotbarHasFocus = false;
+		for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+		{
+			hotbarShapeshiftInit[j] = false;
+		}
+		for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+		{
+			hotbar[i].item = 0;
+			for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+			{
+				hotbar_alternate[j][i].item = 0;
+			}
+		}
+	}
+
+	auto& slots() { return hotbar; };
+	auto& slotsAlternate(int alternate) { return hotbar_alternate[alternate]; };
+	auto& slotsAlternate() { return hotbar_alternate;  }
+	void selectHotbarSlot(int slot)
+	{
+		if ( slot < 0 )
+		{
+			slot = NUM_HOTBAR_SLOTS - 1;
+		}
+		if ( slot >= NUM_HOTBAR_SLOTS )
+		{
+			slot = 0;
+		}
+		current_hotbar = slot;
+		hotbarHasFocus = true;
+	}
 };
 
 void initIdentifyGUIControllerCode();

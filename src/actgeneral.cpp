@@ -2372,11 +2372,11 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 
 void TextSourceScript::playerClearInventory(bool clearStats)
 {
-	deinitShapeshiftHotbar();
+	deinitShapeshiftHotbar(clientnum);
 	for ( int c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 	{
 		selected_spell_alternate[c] = NULL;
-		hotbarShapeshiftInit[c] = false;
+		players[clientnum]->hotbar->hotbarShapeshiftInit[c] = false;
 	}
 	selected_spell = NULL; //So you don't start off with a spell when the game restarts.
 	selected_spell_last_appearance = -1;
