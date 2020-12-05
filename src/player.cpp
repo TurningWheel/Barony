@@ -948,6 +948,15 @@ Player::~Player()
 	}
 }
 
+const bool Player::isLocalPlayer() const
+{
+	return ((splitscreen && bSplitscreen) || playernum == clientnum);
+}
+const bool Player::isLocalPlayerAlive() const
+{
+	return (isLocalPlayer() && entity && !client_disconnected[playernum]);
+}
+
 GameController* Inputs::getController(int player) const
 {
 	if ( player < 0 || player >= MAXPLAYERS )
@@ -1042,7 +1051,7 @@ const bool Inputs::bPlayerIsControllable(int player) const
 		}
 	}
 
-	printlog("[INPUTS]: Warning: player index %d invalid.", player);
+	//printlog("[INPUTS]: Warning: player index %d invalid.", player);
 	return false;
 }
 

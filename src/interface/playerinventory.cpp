@@ -478,7 +478,7 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 
 	auto& hotbar = players[player]->hotbar->slots();
 
-	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]))
+	if ( inputs.bControllerInputPressed(player, INJOY_MENU_CANCEL) )
 	{
 		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS)
 		{
@@ -493,7 +493,7 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 		}
 
 		selectedItem = nullptr;
-		*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
+		inputs.controllerClearInput(player, INJOY_MENU_CANCEL);
 		return;
 	}
 
@@ -508,9 +508,11 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 	}
 
 	// releasing items
-	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || (mousestatus[SDL_BUTTON_LEFT] && toggleclick) || ( (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && toggleclick) )
+	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) 
+		|| (mousestatus[SDL_BUTTON_LEFT] && toggleclick) 
+		|| ( (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)) && toggleclick) )
 	{
-		*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
+		inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 		if (openedChest[player] && itemCategory(selectedItem) != SPELL_CAT)
 		{
 			if (mousex >= CHEST_INVENTORY_X && mousey >= CHEST_INVENTORY_Y
@@ -733,25 +735,25 @@ void updatePlayerInventory(const int player)
 	pos.h = INVENTORY_SIZEY * INVENTORY_SLOTSIZE;
 	drawRect(&pos, 0, 224);
 
-	if ( game_controllers[0].isActive() )
+	if ( inputs.hasController(player) )
 	{
 		if ( gui_mode == GUI_MODE_SHOP )
 		{
-			if ( *inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT]) )
+			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_LEFT) )
 			{
-				*inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT]) = 0;
+				inputs.controllerClearInput(player, INJOY_MENU_CYCLE_SHOP_LEFT);
 				cycleShopCategories(-1);
 			}
-			if ( *inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_RIGHT]) )
+			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_RIGHT) )
 			{
-				*inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_RIGHT]) = 0;
+				inputs.controllerClearInput(player, INJOY_MENU_CYCLE_SHOP_RIGHT);
 				cycleShopCategories(1);
 			}
 		}
 
 		if ( selectedChestSlot < 0 && selectedShopSlot < 0 
 			&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 
-			&& !itemMenuOpen && game_controllers[0].handleInventoryMovement(player)
+			&& !itemMenuOpen && inputs.getController(player)->handleInventoryMovement(player)
 			&& GenericGUI.selectedSlot < 0 )
 		{
 			if ( selectedChestSlot < 0 && selectedShopSlot < 0 
@@ -768,7 +770,7 @@ void updatePlayerInventory(const int player)
 				}
 			}
 		}
-		else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controllers[0].handleChestMovement(player) )
+		else if ( selectedChestSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleChestMovement(player) )
 		{
 			if ( selectedChestSlot < 0 )
 			{
@@ -776,28 +778,28 @@ void updatePlayerInventory(const int player)
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( selectedShopSlot >= 0 && !itemMenuOpen && game_controllers[0].handleShopMovement(player) )
+		else if ( selectedShopSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleShopMovement(player) )
 		{
 			if ( selectedShopSlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && game_controllers[0].handleIdentifyMovement(player) )
+		else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleIdentifyMovement(player) )
 		{
 			if ( selectedIdentifySlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( selectedRemoveCurseSlot >= 0 && !itemMenuOpen && game_controllers[0].handleRemoveCurseMovement(player) )
+		else if ( selectedRemoveCurseSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRemoveCurseMovement(player) )
 		{
 			if ( selectedRemoveCurseSlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
-		else if ( GenericGUI.selectedSlot >= 0 && !itemMenuOpen && game_controllers[0].handleRepairGUIMovement(player) )
+		else if ( GenericGUI.selectedSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRepairGUIMovement(player) )
 		{
 			if ( GenericGUI.selectedSlot < 0 )
 			{
@@ -805,9 +807,9 @@ void updatePlayerInventory(const int player)
 			}
 		}
 
-		if ( *inputPressed(joyimpulses[INJOY_MENU_INVENTORY_TAB]) )
+		if ( inputs.bControllerInputPressed(player, INJOY_MENU_INVENTORY_TAB) )
 		{
-			*inputPressed(joyimpulses[INJOY_MENU_INVENTORY_TAB]) = 0;
+			inputs.controllerClearInput(player, INJOY_MENU_INVENTORY_TAB);
 			cycleInventoryTab();
 		}
 
@@ -816,9 +818,9 @@ void updatePlayerInventory(const int player)
 			lastkeypressed = 0;
 		}
 
-		if ( *inputPressed(joyimpulses[INJOY_MENU_MAGIC_TAB]) )
+		if ( inputs.bControllerInputPressed(player, INJOY_MENU_MAGIC_TAB) )
 		{
-			*inputPressed(joyimpulses[INJOY_MENU_MAGIC_TAB]) = 0;
+			inputs.controllerClearInput(player, INJOY_MENU_MAGIC_TAB);
 			cycleInventoryTab();
 		}
 	}
@@ -1382,12 +1384,12 @@ void updatePlayerInventory(const int player)
 						break;
 					}
 
-					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) 
+					if ( inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
 						&& !itemMenuOpen && !selectedItem && selectedChestSlot < 0 
 						&& selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
 						&& GenericGUI.selectedSlot < 0 )
 					{
-						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
+						inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
 						if ( dropItem(item, player) )
 						{
 							item = nullptr;
@@ -1416,13 +1418,13 @@ void updatePlayerInventory(const int player)
 
 					// handle clicking
 					if ( (mousestatus[SDL_BUTTON_LEFT] 
-						|| (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) 
+						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
 							&& selectedChestSlot < 0 && selectedShopSlot < 0 
 							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
 							&& GenericGUI.selectedSlot < 0)) 
 						&& !selectedItem && !itemMenuOpen )
 					{
-						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+						if ( !(inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 						{
 							if ( dropItem(item, player) ) // Quick item drop
 							{
@@ -1437,9 +1439,9 @@ void updatePlayerInventory(const int player)
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 
-							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) )
+							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) )
 							{
-								*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
+								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
 								mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -1448,13 +1450,13 @@ void updatePlayerInventory(const int player)
 						}
 					}
 					else if ( (mousestatus[SDL_BUTTON_RIGHT] 
-						|| (*inputPressed(joyimpulses[INJOY_MENU_USE]) 
+						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
 							&& selectedChestSlot < 0 && selectedShopSlot < 0 
 							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
 							&& GenericGUI.selectedSlot < 0)) 
 						&& !itemMenuOpen && !selectedItem )
 					{
-						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
+						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(inputs.bControllerInputPressed(player, INJOY_MENU_USE) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
 						{
 							// auto-appraise the item
 							identifygui_active = false;
@@ -1467,7 +1469,7 @@ void updatePlayerInventory(const int player)
 						}
 						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
-							&& !(*inputPressed(joyimpulses[INJOY_MENU_USE])) )
+							&& !(inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
 						{
 							mousestatus[SDL_BUTTON_RIGHT] = 0;
 							// force equip potion/spellbook
@@ -1484,9 +1486,9 @@ void updatePlayerInventory(const int player)
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 
-							if ( *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+							if ( inputs.bControllerInputPressed(player, INJOY_MENU_USE) )
 							{
-								*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+								inputs.controllerClearInput(player, INJOY_MENU_USE);
 								toggleclick = true;
 							}
 						}
@@ -2393,9 +2395,9 @@ void itemContextMenu(const int player)
 		return;
 	}
 
-	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) )
+	if ( inputs.bControllerInputPressed(player, INJOY_MENU_CANCEL) )
 	{
-		*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
+		inputs.controllerClearInput(player, INJOY_MENU_CANCEL);
 		itemMenuOpen = false;
 		//Warp cursor back into inventory, for gamepad convenience.
 		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (uidToItem(itemMenuItem)->x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), INVENTORY_STARTY + (uidToItem(itemMenuItem)->y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));
@@ -2489,9 +2491,9 @@ void itemContextMenu(const int player)
 	{
 		activateSelection = true;
 	}
-	else if ( *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+	else if ( inputs.bControllerInputPressed(player, INJOY_MENU_USE) )
 	{
-		*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+		inputs.controllerClearInput(player, INJOY_MENU_USE);
 		activateSelection = true;
 		//Warp cursor back into inventory, for gamepad convenience.
 		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), INVENTORY_STARTY + (selected_inventory_slot_y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));

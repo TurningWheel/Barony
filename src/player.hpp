@@ -260,6 +260,10 @@ public:
 	}
 	const bool bPlayerUsingKeyboardControl(int player) const
 	{
+		if ( !splitscreen )
+		{
+			return player == clientnum;
+		}
 		return player == playerUsingKeyboardControl;
 	}
 	void controllerHandleMouse(int player);
@@ -383,12 +387,14 @@ public:
 	class Hotbar_t;
 	Hotbar_t* hotbar;
 	view_t& camera() const { return *cam; }
-	int camera_x1() const { return cam->winx; }
-	int camera_x2() const { return cam->winx + cam->winw; }
-	int camera_y1() const { return cam->winy; }
-	int camera_y2() const { return cam->winy + cam->winh; }
-	int camera_width() const { return cam->winw; }
-	int camera_height() const { return cam->winh; }
+	const int camera_x1() const { return cam->winx; }
+	const int camera_x2() const { return cam->winx + cam->winw; }
+	const int camera_y1() const { return cam->winy; }
+	const int camera_y2() const { return cam->winy + cam->winh; }
+	const int camera_width() const { return cam->winw; }
+	const int camera_height() const { return cam->winh; }
+	const bool isLocalPlayer() const;
+	const bool isLocalPlayerAlive() const;
 };
 
 class Player::Hotbar_t {

@@ -4067,9 +4067,6 @@ int main(int argc, char** argv)
 					camera.vang += cvars.shakey2 / 200.0;
 				}
 
-				bool localClientnumsInUse[MAXPLAYERS] = { false };
-				bool localClientnumsAlive[MAXPLAYERS] = { false };
-
 				if ( true )
 				{
 					// drunkenness spinning
@@ -4097,11 +4094,6 @@ int main(int argc, char** argv)
 							if ( !splitscreen && c != clientnum )
 							{
 								continue;
-							}
-							localClientnumsInUse[c] = true;
-							if ( players[c] && players[c]->entity )
-							{
-								localClientnumsAlive[c] = true;
 							}
 							auto& camera = cameras[c];
 							if ( !splitscreen )
@@ -4298,7 +4290,7 @@ int main(int argc, char** argv)
 					{
 						// inventory interface
 						// player not needed to be alive
-						if ( localClientnumsInUse[player] && !command
+						if ( players[player]->isLocalPlayer() && !command
 							&& (*inputPressedForPlayer(player, impulses[IN_STATUS]) || inputs.bControllerInputPressed(player, INJOY_STATUS)) )
 						{
 							*inputPressedForPlayer(player, impulses[IN_STATUS]) = 0;
@@ -4316,7 +4308,7 @@ int main(int argc, char** argv)
 
 						// spell list
 						// player not needed to be alive
-						if ( localClientnumsInUse[player] && !command 
+						if ( players[player]->isLocalPlayer() && !command
 							&& (*inputPressedForPlayer(player, impulses[IN_SPELL_LIST]) || inputs.bControllerInputPressed(player, INJOY_SPELL_LIST)) )   //TODO: Move to function in interface or something?
 						{
 							*inputPressedForPlayer(player, impulses[IN_SPELL_LIST]) = 0;
@@ -4335,7 +4327,7 @@ int main(int argc, char** argv)
 
 						// spellcasting
 						// player needs to be alive
-						if ( localClientnumsAlive[clientnum] )
+						if ( players[player]->isLocalPlayerAlive() )
 						{
 							bool hasSpellbook = false;
 							if ( stats[player]->shield && itemCategory(stats[player]->shield) == SPELLBOOK )
@@ -4670,12 +4662,9 @@ int main(int argc, char** argv)
 						/*auto tEndMinimapDraw = std::chrono::high_resolution_clock::now();
 						double timeTaken = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(tEndMinimapDraw - tStartMinimapDraw).count();
 						printlog("Minimap draw time: %.5f", timeTaken);*/
-						for ( int player = 0; player < MAXPLAYERS; ++player )
+						for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
 						{
-							if ( localClientnumsInUse[player] )
-							{
-								drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
-							}
+							drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 						}
 					}
 
@@ -4689,13 +4678,10 @@ int main(int argc, char** argv)
 					{
 						if (gui_mode == GUI_MODE_INVENTORY)
 						{
-							for ( int player = 0; player < MAXPLAYERS; ++player )
+							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
 							{
-								if ( localClientnumsInUse[player] )
-								{
-									updateCharacterSheet(player);
-									updatePlayerInventory(player);
-								}
+								updateCharacterSheet(player);
+								updatePlayerInventory(player);
 							}
 							updateChestInventory();
 							updateIdentifyGUI();
@@ -4707,31 +4693,25 @@ int main(int argc, char** argv)
 						}
 						else if (gui_mode == GUI_MODE_MAGIC)
 						{
-							for ( int player = 0; player < MAXPLAYERS; ++player )
+							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
 							{
-								if ( localClientnumsInUse[player] )
-								{
-									updateCharacterSheet(player);
-								}
+								updateCharacterSheet(player);
 							}
 							updateMagicGUI();
 						}
 						else if (gui_mode == GUI_MODE_SHOP)
 						{
-							for ( int player = 0; player < MAXPLAYERS; ++player )
+							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
 							{
-								if ( localClientnumsInUse[player] )
-								{
-									updateCharacterSheet(player);
-									updatePlayerInventory(player);
-								}
+								updateCharacterSheet(player);
+								updatePlayerInventory(player);
 							}
 							updateShopWindow();
 						}
 
 						for ( int player = 0; player < MAXPLAYERS; ++player )
 						{
-							if ( localClientnumsInUse[player] )
+							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
 							{
 								if ( proficienciesPage == 1 )
 								{
@@ -4748,18 +4728,15 @@ int main(int argc, char** argv)
 					{
 						if ( lock_right_sidebar )
 						{
-							for ( int player = 0; player < MAXPLAYERS; ++player )
+							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
 							{
-								if ( localClientnumsInUse[player] )
+								if ( proficienciesPage == 1 )
 								{
-									if ( proficienciesPage == 1 )
-									{
-										drawPartySheet(player);
-									}
-									else
-									{
-										drawSkillsSheet(player);
-									}
+									drawPartySheet(player);
+								}
+								else
+								{
+									drawSkillsSheet(player);
 								}
 							}
 						}
@@ -4880,7 +4857,7 @@ int main(int argc, char** argv)
 									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 								}
 							}
-							else if ( localClientnumsInUse[player] && inputs.getMouse(player) && inputs.getMouse(player)->draw_cursor )
+							else if ( players[player]->isLocalPlayer() && inputs.getMouse(player) && inputs.getMouse(player)->draw_cursor )
 							{
 								pos.x = inputs.getMouse(player)->x - cursor_bmp->w / 2;
 								pos.y = inputs.getMouse(player)->y - cursor_bmp->h / 2;
@@ -4894,7 +4871,7 @@ int main(int argc, char** argv)
 					{
 						for ( int player = 0; player < MAXPLAYERS; ++player )
 						{
-							if ( player == clientnum || localClientnumsInUse[player] )
+							if ( players[player]->isLocalPlayer() )
 							{
 								pos.x = cameras[player].winx + (cameras[player].winw / 2) - cross_bmp->w / 2;
 								pos.y = cameras[player].winy + (cameras[player].winh / 2) - cross_bmp->h / 2;

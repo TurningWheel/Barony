@@ -949,7 +949,7 @@ void drawStatus(int player)
 				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 				{
 					if ( (mousestatus[SDL_BUTTON_LEFT] 
-						|| (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) 
+						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
 							&& !identifygui_active
@@ -972,9 +972,9 @@ void drawStatus(int player)
 							}
 							hotbar[num].item = 0;
 
-							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active )
+							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active )
 							{
-								*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
+								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
 								selectedItemFromHotbar = num;
@@ -983,7 +983,7 @@ void drawStatus(int player)
 						}
 					}
 					if ( mousestatus[SDL_BUTTON_RIGHT] 
-						|| (*inputPressed(joyimpulses[INJOY_MENU_USE]) 
+						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
 							&& !identifygui_active 
@@ -992,7 +992,7 @@ void drawStatus(int player)
 					{
 						//Use the item if right clicked.
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
-						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+						inputs.controllerClearInput(player, INJOY_MENU_USE);
 						bool badpotion = false;
 						bool learnedSpell = false;
 
@@ -1562,10 +1562,10 @@ void drawStatus(int player)
 		}
 		if ( !FollowerMenu.selectMoveTo && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 		{
-			if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE])) )
+			if ( mousestatus[SDL_BUTTON_RIGHT] || (inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
 			{
 				mousestatus[SDL_BUTTON_RIGHT] = 0;
-				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				inputs.controllerClearInput(player, INJOY_MENU_USE);
 				if ( minimapPingGimpTimer == -1 )
 				{
 					MinimapPing newPing(ticks, player, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
@@ -1675,24 +1675,22 @@ void drawStatus(int player)
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
 
-		if ( inputs.bControllerInputPressed(0, INJOY_GAME_HOTBAR_NEXT)
-			|| *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
-		//if ( (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT])) )
+		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_NEXT)
+			|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 		{
 			if ( shootmode && !itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
 				&& !identifygui_active && !removecursegui_active
 				&& !GenericGUI.isGUIOpen() )
 			{
-				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 				{
-					*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
 					hotbar_t->hotbarTooltipLastGameTick = ticks;
 				}
 				else
 				{
-					//*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
-					inputs.controllerClearInput(0, INJOY_GAME_HOTBAR_NEXT);
+					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_NEXT);
 					bumper_moved = true;
 				}
 				players[player]->hotbar->selectHotbarSlot(players[player]->hotbar->current_hotbar + 1);
@@ -1702,28 +1700,28 @@ void drawStatus(int player)
 				hotbar_t->hotbarTooltipLastGameTick = 0;
 				/*if ( intro || shootmode )
 				{
-					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+					if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 					{
-						*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+						*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
 					}
 				}*/
 			}
 		}
-		if ( inputs.bControllerInputPressed(0, INJOY_GAME_HOTBAR_PREV) || *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_PREV) || *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 		{
 			if ( shootmode && !itemMenuOpen && !openedChest[player] 
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
 				&& !identifygui_active && !removecursegui_active
 				&& !GenericGUI.isGUIOpen() )
 			{
-				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 				{
-					*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
 					hotbar_t->hotbarTooltipLastGameTick = ticks;
 				}
 				else
 				{
-					inputs.controllerClearInput(0, INJOY_GAME_HOTBAR_PREV);
+					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_PREV);
 					bumper_moved = true;
 				}
 				hotbar_t->selectHotbarSlot(hotbar_t->current_hotbar - 1);
@@ -1733,9 +1731,9 @@ void drawStatus(int player)
 				hotbar_t->hotbarTooltipLastGameTick = 0;
 				/*if ( intro || shootmode )
 				{
-					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+					if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 					{
-						*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+						*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
 					}
 				}*/
 			}
@@ -1751,38 +1749,39 @@ void drawStatus(int player)
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]))
+			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
+				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !book_open && !identifygui_active 
 				&& !removecursegui_active && !GenericGUI.isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
-				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]) )
+				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) )
 				{
 					hotbar_t->hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t->hotbarTooltipLastGameTick);
-					*inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
+					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
 				}
 				else
 				{
-					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
+					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
 				}
 				item = uidToItem(hotbar[hotbar_t->current_hotbar].item);
 			}
 
-			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) && !book_open ) //TODO: Don't activate if any of the previous if statement's conditions are true?
+			if ( !shootmode && inputs.bControllerInputPressed(player, INJOY_MENU_HOTBAR_CLEAR) && !book_open ) //TODO: Don't activate if any of the previous if statement's conditions are true?
 			{
 				//Clear a hotbar slot if in-inventory.
-				*inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) = 0;
+				inputs.controllerClearInput(player, INJOY_MENU_HOTBAR_CLEAR);
 
 				hotbar[hotbar_t->current_hotbar].item = 0;
 			}	
 
 			pos.x = initial_position.x + (hotbar_t->current_hotbar * hotbar_img->w * uiscale_hotbar);
 			pos.y = initial_position.y - hotbar_img->h * uiscale_hotbar;
-			if ( !shootmode && !book_open && !openedChest[player] && *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+			if ( !shootmode && !book_open && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM) && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 			{
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
+				inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
 				Item* itemToDrop = uidToItem(hotbar[hotbar_t->current_hotbar].item);
 				if ( itemToDrop )
 				{
