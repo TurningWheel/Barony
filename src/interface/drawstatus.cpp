@@ -320,18 +320,34 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 
 -------------------------------------------------------------------------------*/
 
-bool mouseInBoundsRealtimeCoords(int, int, int, int); //Defined in playerinventory.cpp. Dirty hack, you should be ashamed of yourself.
+bool mouseInBoundsRealtimeCoords(int, int, int, int, int); //Defined in playerinventory.cpp. Dirty hack, you should be ashamed of yourself.
 
-void warpMouseToSelectedHotbarSlot()
+void warpMouseToSelectedHotbarSlot(const int player)
 {
-	if (shootmode == true)
+	if ( players[player]->shootmode == true)
 	{
 		return;
 	}
 	SDL_Rect pos;
+
+	int xres = players[player]->camera_width();
+	int yres = players[player]->camera_height();
+
 	pos.x = ((xres / 2) - 5 * hotbar_img->w * uiscale_hotbar) + (players[clientnum]->hotbar->current_hotbar * hotbar_img->w * uiscale_hotbar) + (hotbar_img->w * uiscale_hotbar / 2);
 	pos.y = STATUS_Y - (hotbar_img->h * uiscale_hotbar / 2);
-	SDL_WarpMouseInWindow(screen, pos.x, pos.y);
+
+	//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
+	//inputs.warpMouse(playernum, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2), flags);
+	if ( inputs.bPlayerUsingKeyboardControl(player) )
+	{
+		SDL_WarpMouseInWindow(screen, pos.x, pos.y);
+	}
+	else if ( inputs.hasController(player) )
+	{
+		const auto& mouse = inputs.getVirtualMouse(player);
+		mouse->x = pos.x;
+		mouse->y = pos.y;
+	}
 }
 
 void drawStatus(int player)
@@ -348,9 +364,17 @@ void drawStatus(int player)
 	int y1 = players[player]->camera_y1();
 	int y2 = players[player]->camera_y2();
 
+	Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+
 	pos.x = STATUS_X;
 	auto& hotbar_t = players[player]->hotbar;
 	auto& hotbar = hotbar_t->slots();
+
+	bool gui_mode = players[player]->gui_mode;
+	bool shootmode = players[player]->shootmode;
 
 	if ( !hide_statusbar )
 	{
@@ -455,7 +479,7 @@ void drawStatus(int player)
 				ttfPrintTextColor(ttf12, x, y, color, false, string->data);
 			}
 		}
-		if ( mousestatus[SDL_BUTTON_LEFT] )
+		if ( inputs.bMouseLeft(player) )
 		{
 			if ( omousey >= yres - status_bmp->h * uiscale_chatlog + 7 && omousey < yres - status_bmp->h * uiscale_chatlog + (7 + 27) * uiscale_chatlog )
 			{
@@ -464,7 +488,7 @@ void drawStatus(int player)
 					// text scroll up
 					buttonclick = 3;
 					textscroll++;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 			}
 			else if ( omousey >= yres - status_bmp->h * uiscale_chatlog + 34 && omousey < yres - status_bmp->h * uiscale_chatlog + (34 + 28) * uiscale_chatlog )
@@ -478,7 +502,7 @@ void drawStatus(int player)
 					{
 						textscroll = 0;
 					}
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 			}
 			else if ( omousey >= yres - status_bmp->h * uiscale_chatlog + 62 && omousey < yres - status_bmp->h * uiscale_chatlog + (62 + 31) * uiscale_chatlog )
@@ -488,7 +512,7 @@ void drawStatus(int player)
 					// text scroll down all the way
 					buttonclick = 4;
 					textscroll = 0;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 			}
 			/*else if( omousey>=yres-status_bmp->h+8 && omousey<yres-status_bmp->h+8+30 ) {
@@ -946,9 +970,11 @@ void drawStatus(int player)
 
 			if ( stats[player] && stats[player]->HP > 0 )
 			{
+				Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+
 				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 				{
-					if ( (mousestatus[SDL_BUTTON_LEFT] 
+					if ( (inputs.bMouseLeft(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
@@ -957,7 +983,7 @@ void drawStatus(int player)
 							&& !GenericGUI.isGUIOpen())) 
 						&& !selectedItem )
 					{
-						toggleclick = false;
+						inputs.getUIInteraction(player)->toggleclick = false;
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 						{
 							hotbar[num].item = 0;
@@ -976,13 +1002,13 @@ void drawStatus(int player)
 							{
 								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
-								toggleclick = true;
-								selectedItemFromHotbar = num;
+								inputs.getUIInteraction(player)->toggleclick = true;
+								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
 								//TODO: Change the mouse cursor to THE HAND.
 							}
 						}
 					}
-					if ( mousestatus[SDL_BUTTON_RIGHT] 
+					if ( inputs.bMouseRight(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
@@ -991,7 +1017,7 @@ void drawStatus(int player)
 							&& !GenericGUI.isGUIOpen()) )
 					{
 						//Use the item if right clicked.
-						mousestatus[SDL_BUTTON_RIGHT] = 0;
+						inputs.mouseClearRight(player);
 						inputs.controllerClearInput(player, INJOY_MENU_USE);
 						bool badpotion = false;
 						bool learnedSpell = false;
@@ -1103,7 +1129,7 @@ void drawStatus(int player)
 							{
 								if ( !disableItemUsage )
 								{
-									playerTryEquipItemAndUpdateServer(item);
+									playerTryEquipItemAndUpdateServer(player, item);
 								}
 								else
 								{
@@ -1562,9 +1588,9 @@ void drawStatus(int player)
 		}
 		if ( !FollowerMenu.selectMoveTo && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 		{
-			if ( mousestatus[SDL_BUTTON_RIGHT] || (inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
+			if ( inputs.bMouseRight(player) || (inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
 			{
-				mousestatus[SDL_BUTTON_RIGHT] = 0;
+				inputs.mouseClearRight(player);
 				inputs.controllerClearInput(player, INJOY_MENU_USE);
 				if ( minimapPingGimpTimer == -1 )
 				{
@@ -1665,7 +1691,7 @@ void drawStatus(int player)
 			pos.y = initial_position.y - hotbar_img->h * uiscale_hotbar;
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w * uiscale_hotbar )
 			{
-				if ( mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+				if ( mouseInBoundsRealtimeCoords(player, pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 				{
 					players[player]->hotbar->selectHotbarSlot(c);
 				}
@@ -1673,12 +1699,12 @@ void drawStatus(int player)
 		}
 
 		bool bumper_moved = false;
-		//Gamepad change hotbar selection.
 
+		//Gamepad change hotbar selection.
 		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_NEXT)
 			|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 		{
-			if ( shootmode && !itemMenuOpen && !openedChest[player]
+			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
 				&& !identifygui_active && !removecursegui_active
 				&& !GenericGUI.isGUIOpen() )
@@ -1709,7 +1735,7 @@ void drawStatus(int player)
 		}
 		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_PREV) || *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 		{
-			if ( shootmode && !itemMenuOpen && !openedChest[player] 
+			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
 				&& !identifygui_active && !removecursegui_active
 				&& !GenericGUI.isGUIOpen() )
@@ -1739,15 +1765,15 @@ void drawStatus(int player)
 			}
 		}
 
-		if ( bumper_moved && !itemMenuOpen 
+		if ( bumper_moved && !inputs.getUIInteraction(player)->itemMenuOpen
 			&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) 
 			&& !book_open && !identifygui_active 
 			&& !removecursegui_active && !GenericGUI.isGUIOpen() )
 		{
-			warpMouseToSelectedHotbarSlot();
+			warpMouseToSelectedHotbarSlot(player);
 		}
 
-		if ( !itemMenuOpen && !selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
+		if ( !inputs.getUIInteraction(player)->itemMenuOpen && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
 			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
 				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
@@ -1907,7 +1933,7 @@ void drawStatus(int player)
 				}
 				else
 				{
-					playerTryEquipItemAndUpdateServer(item);
+					playerTryEquipItemAndUpdateServer(player, item);
 				}
 			}
 			else

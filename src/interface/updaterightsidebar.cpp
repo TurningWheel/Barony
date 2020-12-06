@@ -64,12 +64,12 @@ void updateRightSidebar()
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			identifygui_active = true;
 			identifygui_appraising = true;
-			openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+			players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 			if ( removecursegui_active )
 			{
 				closeRemoveCurseGUI();
 			}
-			GenericGUI.closeGUI();
+			GenericGUI.closeGUI(clientnum);
 			if ( openedChest[clientnum] )
 			{
 				openedChest[clientnum]->closeChest();
@@ -102,10 +102,10 @@ void updateRightSidebar()
 		if (mousestatus[SDL_BUTTON_LEFT])
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
-			gui_mode = GUI_MODE_MAGIC;
-			if (shootmode)
+			players[clientnum]->gui_mode = GUI_MODE_MAGIC;
+			if (players[clientnum]->shootmode)
 			{
-				shootmode = false;
+				players[clientnum]->shootmode = false;
 				attributespage = 0;
 				proficienciesPage = 0;
 			}

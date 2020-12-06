@@ -1702,160 +1702,177 @@ void gameLogic(void)
 				client_selected[j] = NULL;
 			}
 
-			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
-			int backpack_sizey = 3;
-			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
-				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
-			{
-				backpack_sizey = 4;
-			}
+			int backpack_sizey[MAXPLAYERS];
 
-			if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
+			for ( int player = 0; player < MAXPLAYERS; ++player )
 			{
-				INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
-			}
-			else if ( backpack_sizey == 4 )
-			{
-				INVENTORY_SIZEY = 4;
-			}
-			else
-			{
-				if ( INVENTORY_SIZEY > 3 && !tooManySpells )
+				if ( !players[player]->isLocalPlayer() )
 				{
-					// we should rearrange our spells.
-					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+					continue;
+				}
+				backpack_sizey[player] = 3;
+				bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
+				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK
+					&& (shouldInvertEquipmentBeatitude(stats[player]) ? abs(stats[player]->cloak->beatitude) >= 0 : stats[player]->cloak->beatitude >= 0) )
+				{
+					backpack_sizey[player] = 4;
+				}
+
+				if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+				{
+					INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+				}
+				else if ( backpack_sizey[player] == 4 )
+				{
+					INVENTORY_SIZEY = 4;
+				}
+				else
+				{
+					if ( INVENTORY_SIZEY > 3 && !tooManySpells )
 					{
-						int scanx = 0;
-						int scany = 0;
-						bool notfree = false;
-						bool foundaspot = false;
-						Item* item = (Item*)node->element;
-						if ( itemCategory(item) != SPELL_CAT )
+						// we should rearrange our spells.
+						for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 						{
-							continue;
-						}
-						if ( item->appearance >= 1000 )
-						{
-							continue; // shaman spells.
-						}
-						while ( 1 )
-						{
-							for ( scany = 0; scany < 3; scany++ )
+							int scanx = 0;
+							int scany = 0;
+							bool notfree = false;
+							bool foundaspot = false;
+							Item* item = (Item*)node->element;
+							if ( itemCategory(item) != SPELL_CAT )
 							{
-								node_t* node2;
-								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
+								continue;
+							}
+							if ( item->appearance >= 1000 )
+							{
+								continue; // shaman spells.
+							}
+							while ( 1 )
+							{
+								for ( scany = 0; scany < 3; scany++ )
 								{
-									Item* tempItem = (Item*)node2->element;
-									if ( tempItem == item )
+									node_t* node2;
+									for ( node2 = stats[player]->inventory.first; node2 != NULL; node2 = node2->next )
 									{
-										continue;
-									}
-									if ( tempItem )
-									{
-										if ( tempItem->x == scanx && tempItem->y == scany )
+										Item* tempItem = (Item*)node2->element;
+										if ( tempItem == item )
 										{
-											if ( itemCategory(tempItem) == SPELL_CAT )
+											continue;
+										}
+										if ( tempItem )
+										{
+											if ( tempItem->x == scanx && tempItem->y == scany )
 											{
-												notfree = true;  //Both spells. Can't fit in the same slot.
+												if ( itemCategory(tempItem) == SPELL_CAT )
+												{
+													notfree = true;  //Both spells. Can't fit in the same slot.
+												}
 											}
 										}
 									}
+									if ( notfree )
+									{
+										notfree = false;
+										continue;
+									}
+									item->x = scanx;
+									item->y = scany;
+									foundaspot = true;
+									break;
 								}
-								if ( notfree )
+								if ( foundaspot )
 								{
-									notfree = false;
-									continue;
+									break;
 								}
-								item->x = scanx;
-								item->y = scany;
-								foundaspot = true;
-								break;
+								scanx++;
 							}
-							if ( foundaspot )
-							{
-								break;
-							}
-							scanx++;
 						}
 					}
+					INVENTORY_SIZEY = 3;
 				}
-				INVENTORY_SIZEY = 3;
 			}
 
 			DebugStats.eventsT5 = std::chrono::high_resolution_clock::now();
 
-			int bloodCount = 0;
-			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
+			for ( int player = 0; player < MAXPLAYERS; ++player )
 			{
-				nextnode = node->next;
-				Item* item = (Item*)node->element;
-				if ( !item )
+				if ( !players[player]->isLocalPlayer() )
 				{
 					continue;
 				}
-				// unlock achievements for special collected items
-				switch ( item->type )
-				{
-					case ARTIFACT_SWORD:
-						steamAchievement("BARONY_ACH_KING_ARTHURS_BLADE");
-						break;
-					case ARTIFACT_MACE:
-						steamAchievement("BARONY_ACH_SPUD_LORD");
-						break;
-					case ARTIFACT_AXE:
-						steamAchievement("BARONY_ACH_THANKS_MR_SKELTAL");
-						break;
-					case ARTIFACT_SPEAR:
-						steamAchievement("BARONY_ACH_SPEAR_OF_DESTINY");
-						break;
-					default:
-						break;
-				}
 
-				if ( item->type == FOOD_BLOOD )
+				int bloodCount = 0;
+				for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 				{
-					bloodCount += item->count;
-					if ( bloodCount >= 20 )
+					nextnode = node->next;
+					Item* item = (Item*)node->element;
+					if ( !item )
 					{
-						steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+						continue;
 					}
-				}
-
-				if ( itemCategory(item) == WEAPON )
-				{
-					if ( item->beatitude >= 10 )
+					// unlock achievements for special collected items
+					switch ( item->type )
 					{
-						steamAchievement("BARONY_ACH_BLESSED");
+						case ARTIFACT_SWORD:
+							steamAchievement("BARONY_ACH_KING_ARTHURS_BLADE");
+							break;
+						case ARTIFACT_MACE:
+							steamAchievement("BARONY_ACH_SPUD_LORD");
+							break;
+						case ARTIFACT_AXE:
+							steamAchievement("BARONY_ACH_THANKS_MR_SKELTAL");
+							break;
+						case ARTIFACT_SPEAR:
+							steamAchievement("BARONY_ACH_SPEAR_OF_DESTINY");
+							break;
+						default:
+							break;
 					}
-				}
 
-				// drop any inventory items you don't have room for
-				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= backpack_sizey) )
-				{
-					messagePlayer(clientnum, language[727], item->getName());
-					bool droppedAll = false;
-					while ( item && item->count > 1 )
+					if ( item->type == FOOD_BLOOD )
 					{
-						droppedAll = dropItem(item, clientnum);
-						if ( droppedAll )
+						bloodCount += item->count;
+						if ( bloodCount >= 20 )
 						{
-							item = nullptr;
+							steamAchievement("BARONY_ACH_BLOOD_VESSELS");
 						}
 					}
-					if ( !droppedAll )
+
+					if ( itemCategory(item) == WEAPON )
 					{
-						dropItem(item, clientnum);
-					}
-				}
-				else
-				{
-					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
-					{
-						int appraisal_time = getAppraisalTime(item);
-						if (appraisal_time < auto_appraise_lowest_time)
+						if ( item->beatitude >= 10 )
 						{
-							auto_appraise_target = item;
-							auto_appraise_lowest_time = appraisal_time;
+							steamAchievement("BARONY_ACH_BLESSED");
+						}
+					}
+
+					// drop any inventory items you don't have room for
+					if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= backpack_sizey[player]) )
+					{
+						messagePlayer(player, language[727], item->getName());
+						bool droppedAll = false;
+						while ( item && item->count > 1 )
+						{
+							droppedAll = dropItem(item, player);
+							if ( droppedAll )
+							{
+								item = nullptr;
+							}
+						}
+						if ( !droppedAll )
+						{
+							dropItem(item, player);
+						}
+					}
+					else
+					{
+						if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
+						{
+							int appraisal_time = getAppraisalTime(item);
+							if ( appraisal_time < auto_appraise_lowest_time )
+							{
+								auto_appraise_target = item;
+								auto_appraise_lowest_time = appraisal_time;
+							}
 						}
 					}
 				}
@@ -2286,7 +2303,7 @@ void gameLogic(void)
 				backpack_sizey = 4;
 			}
 
-			if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
+			if ( tooManySpells && players[clientnum]->gui_mode == GUI_MODE_INVENTORY && players[clientnum]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
 				INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
 			}
@@ -2855,23 +2872,36 @@ void handleEvents(void)
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 
-				if ( !draw_cursor )
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					draw_cursor = true;
+					if ( inputs.bPlayerUsingKeyboardControl(i) )
+					{
+						if ( !inputs.getVirtualMouse(i)->draw_cursor )
+						{
+							inputs.getVirtualMouse(i)->draw_cursor = true;
+						}
+						if ( event.user.code == 0 ) 
+						{
+							// we use SDL_pushEvent() to push a event.user.code == 1 on a gamepad manipulating a mouse event
+							// default 0 for normal mouse events
+							inputs.getVirtualMouse(i)->lastMovementFromController = false;
+						}
+						break;
+					}
 				}
 				break;
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 				//joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
-				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ((!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
+				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ((!players[clientnum]->shootmode && players[clientnum]->gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
 				{
 					//Generate a mouse click.
-					SDL_Event e;
-
-					e.type = SDL_MOUSEBUTTONDOWN;
-					e.button.button = SDL_BUTTON_LEFT;
-					e.button.clicks = 1; //Single click.
-					SDL_PushEvent(&e);
+					//SDL_Event e;
+					//
+					//e.type = SDL_MOUSEBUTTONDOWN;
+					//e.button.button = SDL_BUTTON_LEFT;
+					//e.button.clicks = 1; //Single click.
+					//SDL_PushEvent(&e);
 				}
 				break;
 			case SDL_CONTROLLERBUTTONUP: // if joystick button is released
@@ -2879,11 +2909,11 @@ void handleEvents(void)
 				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] )
 				{
 					//Generate a mouse lift.
-					SDL_Event e;
-
-					e.type = SDL_MOUSEBUTTONUP;
-					e.button.button = SDL_BUTTON_LEFT;
-					SDL_PushEvent(&e);
+					//SDL_Event e;
+					//
+					//e.type = SDL_MOUSEBUTTONUP;
+					//e.button.button = SDL_BUTTON_LEFT;
+					//SDL_PushEvent(&e);
 				}
 				break;
 			case SDL_CONTROLLERDEVICEADDED:
@@ -3689,7 +3719,10 @@ int main(int argc, char** argv)
 			if ( intro )
 			{
 				globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
-				shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					players[i]->shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
+				}
 				if ( introstage == -1 )
 				{
 					// hack to fix these things from breaking everything...
@@ -3894,7 +3927,10 @@ int main(int argc, char** argv)
 
 						//TODO: Replace all of this with centralized startGameRoutine().
 						// setup game
-						shootmode = true;
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							players[i]->shootmode = true;
+						}
 						// make some messages
 						startMessages();
 
@@ -3989,13 +4025,19 @@ int main(int argc, char** argv)
 						UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
 
 						// draw mouse
-						if (!movie && draw_cursor)
+						if ( !movie )
 						{
-							pos.x = mousex - cursor_bmp->w / 2;
-							pos.y = mousey - cursor_bmp->h / 2;
-							pos.w = 0;
-							pos.h = 0;
-							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+							for ( int i = 0; i < MAXPLAYERS; ++i )
+							{
+								if ( inputs.getVirtualMouse(i)->draw_cursor )
+								{
+									pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
+									pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
+									pos.w = 0;
+									pos.h = 0;
+									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+								}
+							}
 						}
 					}
 				}
@@ -4040,21 +4082,52 @@ int main(int argc, char** argv)
 #endif
 
 				// toggling the game menu
-				if ( (keystatus[SDL_SCANCODE_ESCAPE] || (*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) && rebindaction == -1)) && !command )
+				bool doPause = false;
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					keystatus[SDL_SCANCODE_ESCAPE] = 0;
-					*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
-					if ( !shootmode )
+					if ( !players[i]->isLocalPlayer() )
 					{
-						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-						gui_mode = GUI_MODE_INVENTORY;
-						attributespage = 0;
-						//proficienciesPage = 0;
+						continue;
 					}
-					else
+					if ( inputs.bPlayerUsingKeyboardControl(i) )
 					{
-						pauseGame(0, MAXPLAYERS);
+						if ( (keystatus[SDL_SCANCODE_ESCAPE] && rebindaction == -1) && !command )
+						{
+							keystatus[SDL_SCANCODE_ESCAPE] = 0;
+							if ( !players[i]->shootmode )
+							{
+								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+								players[i]->gui_mode = GUI_MODE_INVENTORY;
+								attributespage = 0;
+								//proficienciesPage = 0;
+							}
+							else
+							{
+								doPause = true;
+							}
+							break;
+						}
 					}
+					if ( (inputs.bControllerInputPressed(i, INJOY_PAUSE_MENU) && rebindaction == -1) && !command )
+					{
+						inputs.controllerClearInput(i, INJOY_PAUSE_MENU);
+						if ( !players[i]->shootmode )
+						{
+							players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+							players[i]->gui_mode = GUI_MODE_INVENTORY;
+							attributespage = 0;
+							//proficienciesPage = 0;
+						}
+						else
+						{
+							doPause = true;
+						}
+						break;
+					}
+				}
+				if ( doPause )
+				{
+					pauseGame(0, MAXPLAYERS);
 				}
 
 				// main drawing
@@ -4296,13 +4369,13 @@ int main(int argc, char** argv)
 							*inputPressedForPlayer(player, impulses[IN_STATUS]) = 0;
 							inputs.controllerClearInput(player, INJOY_STATUS);
 
-							if ( shootmode )
+							if ( players[player]->shootmode )
 							{
-								openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+								players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 							}
 							else
 							{
-								closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+								players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 							}
 						}
 
@@ -4313,13 +4386,13 @@ int main(int argc, char** argv)
 						{
 							*inputPressedForPlayer(player, impulses[IN_SPELL_LIST]) = 0;
 							inputs.controllerClearInput(player, INJOY_SPELL_LIST);
-							gui_mode = GUI_MODE_INVENTORY;
-							selectedItem = NULL;
-							inventory_mode = INVENTORY_MODE_SPELL;
+							players[player]->gui_mode = GUI_MODE_INVENTORY;
+							inputs.getUIInteraction(player)->selectedItem = nullptr;
+							players[player]->inventory_mode = INVENTORY_MODE_SPELL;
 
-							if ( shootmode )
+							if ( players[player]->shootmode )
 							{
-								shootmode = false;
+								players[player]->shootmode = false;
 								attributespage = 0;
 								//proficienciesPage = 0;
 							}
@@ -4336,16 +4409,16 @@ int main(int argc, char** argv)
 							}
 							if ( !command &&
 								(*inputPressedForPlayer(player, impulses[IN_CAST_SPELL])
-									|| (shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL))
+									|| (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL))
 									|| (hasSpellbook && *inputPressedForPlayer(player, impulses[IN_DEFEND]))
-									|| (hasSpellbook && shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)))
+									|| (hasSpellbook && players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)))
 								)
 							{
 								bool allowCasting = true;
 								if ( *inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) || *inputPressedForPlayer(player, impulses[IN_DEFEND]) )
 								{
 									if ( ((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE || impulses[IN_DEFEND] == RIGHT_CLICK_IMPULSE)
-										&& gui_mode >= GUI_MODE_INVENTORY
+										&& players[player]->gui_mode >= GUI_MODE_INVENTORY
 										&& (mouseInsidePlayerInventory() || mouseInsidePlayerHotbar())
 										) )
 									{
@@ -4368,7 +4441,9 @@ int main(int argc, char** argv)
 										}
 									}
 
-									if ( *inputPressedForPlayer(player, impulses[IN_DEFEND]) && impulses[IN_DEFEND] == 285 && itemMenuOpen ) // bound to right click, has context menu open.
+									if ( *inputPressedForPlayer(player, impulses[IN_DEFEND]) 
+										&& impulses[IN_DEFEND] == 285 
+										&& inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
 									{
 										allowCasting = false;
 									}
@@ -4387,7 +4462,7 @@ int main(int argc, char** argv)
 								if ( allowCasting )
 								{
 									*inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) = 0;
-									if ( shootmode )
+									if ( players[player]->shootmode )
 									{
 										inputs.controllerClearInput(player, INJOY_GAME_CAST_SPELL);
 									}
@@ -4437,27 +4512,30 @@ int main(int argc, char** argv)
 								}
 							}
 						}
-					}
 
-					if ( !command && *inputPressed(impulses[IN_TOGGLECHATLOG]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG])) )
-					{
-						hide_statusbar = !hide_statusbar;
-						*inputPressed(impulses[IN_TOGGLECHATLOG]) = 0;
-						*inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG]) = 0;
-						playSound(139, 64);
-					}
-
-					if ( !command && (*inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE])) )
-					{
-						FollowerMenu.selectNextFollower();
-						proficienciesPage = 1;
-						if ( shootmode && !lock_right_sidebar )
+						if ( !command && *inputPressedForPlayer(player, impulses[IN_TOGGLECHATLOG]) 
+							|| (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_TOGGLECHATLOG)) )
 						{
-							openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+							hide_statusbar = !hide_statusbar;
+							*inputPressedForPlayer(player, impulses[IN_TOGGLECHATLOG]) = 0;
+							inputs.controllerClearInput(player, INJOY_GAME_TOGGLECHATLOG);
+							playSound(139, 64);
 						}
-						*inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) = 0;
-						*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE]) = 0;
+
+						if ( !command && (*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT]) 
+							|| inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE)) )
+						{
+							FollowerMenu.selectNextFollower();
+							proficienciesPage = 1;
+							if ( players[player]->shootmode && !lock_right_sidebar )
+							{
+								players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+							}
+							*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT]) = 0;
+							inputs.controllerClearInput(player, INJOY_GAME_FOLLOWERMENU_CYCLE);
+						}
 					}
+
 
 					// commands - uses local clientnum only
 					if ( ( *inputPressed(impulses[IN_CHAT]) || *inputPressed(impulses[IN_COMMAND]) ) && !command )
@@ -4613,43 +4691,57 @@ int main(int argc, char** argv)
 					}
 
 					// other status
-					if ( shootmode == false )
+					for ( int player = 0; player < MAXPLAYERS; ++player )
 					{
-						SDL_SetRelativeMouseMode(SDL_FALSE);
-					}
-					else
-					{
-						//Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
-						//2-3 years later...yes, it is run every frame.
-						if (identifygui_appraising)
+						if ( !players[player]->isLocalPlayer() )
 						{
-							//Close the identify GUI if appraising.
-							identifygui_active = false;
-							identifygui_appraising = false;
-
-							//Cleanup identify GUI gamecontroller code here.
-							selectedIdentifySlot = -1;
+							continue;
 						}
-
-						if ( removecursegui_active )
+						if ( players[player]->shootmode == false )
 						{
-							closeRemoveCurseGUI();
+							if ( inputs.bPlayerUsingKeyboardControl(player) )
+							{
+								SDL_SetRelativeMouseMode(SDL_FALSE);
+							}
 						}
-
-						GenericGUI.closeGUI();
-
-						if ( book_open )
+						else
 						{
-							closeBookGUI();
+							if ( player != clientnum )
+							{
+								continue;
+							}
+							//Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
+							//2-3 years later...yes, it is run every frame.
+							if ( identifygui_appraising )
+							{
+								//Close the identify GUI if appraising.
+								identifygui_active = false;
+								identifygui_appraising = false;
+
+								//Cleanup identify GUI gamecontroller code here.
+								selectedIdentifySlot = -1;
+							}
+
+							if ( removecursegui_active )
+							{
+								closeRemoveCurseGUI();
+							}
+
+							GenericGUI.closeGUI(player);
+
+							if ( book_open )
+							{
+								closeBookGUI();
+							}
+
+							gui_clickdrag = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
+
+							if ( capture_mouse )
+							{
+								SDL_SetRelativeMouseMode(SDL_TRUE);
+							}
+
 						}
-
-						gui_clickdrag = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
-
-						if (capture_mouse)
-						{
-							SDL_SetRelativeMouseMode(SDL_TRUE);
-						}
-
 					}
 
 					DebugStats.t7Inputs = std::chrono::high_resolution_clock::now();
@@ -4662,56 +4754,71 @@ int main(int argc, char** argv)
 						/*auto tEndMinimapDraw = std::chrono::high_resolution_clock::now();
 						double timeTaken = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(tEndMinimapDraw - tStartMinimapDraw).count();
 						printlog("Minimap draw time: %.5f", timeTaken);*/
-						for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
+						for ( int player = 0; player < MAXPLAYERS; ++player )
 						{
+							if ( !players[player]->isLocalPlayer() )
+							{
+								continue;
+							}
 							drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 						}
 					}
 
 					DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
-					drawSustainedSpells();
-					updateAppraisalItemBox();
-
-					// inventory and stats
-					if ( shootmode == false )
+					for ( int player = 0; player < MAXPLAYERS; ++player )
 					{
-						if (gui_mode == GUI_MODE_INVENTORY)
+						if ( !players[player]->isLocalPlayer() )
 						{
-							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
+							continue;
+						}
+
+						drawSustainedSpells(player);
+						if ( player == clientnum )
+						{
+							//updateAppraisalItemBox(player);
+
+						}
+						
+						// inventory and stats
+						if ( players[player]->shootmode == false )
+						{
+							if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 							{
 								updateCharacterSheet(player);
 								updatePlayerInventory(player);
-							}
-							updateChestInventory();
-							updateIdentifyGUI();
-							updateRemoveCurseGUI();
-							GenericGUI.updateGUI();
-							updateBookGUI();
-							//updateRightSidebar();
+								updateChestInventory(player);
+								updateIdentifyGUI();
+								updateRemoveCurseGUI();
+								GenericGUI.updateGUI(player);
+								updateBookGUI();
+								//updateRightSidebar(); -- 06/12/20 we don't use this but it still somehow displays stuff :D
 
-						}
-						else if (gui_mode == GUI_MODE_MAGIC)
-						{
-							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
+							}
+							else if ( players[player]->gui_mode == GUI_MODE_MAGIC )
 							{
 								updateCharacterSheet(player);
+								updateMagicGUI();
 							}
-							updateMagicGUI();
-						}
-						else if (gui_mode == GUI_MODE_SHOP)
-						{
-							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
+							else if ( players[player]->gui_mode == GUI_MODE_SHOP )
 							{
 								updateCharacterSheet(player);
 								updatePlayerInventory(player);
+								updateShopWindow();
 							}
-							updateShopWindow();
-						}
 
-						for ( int player = 0; player < MAXPLAYERS; ++player )
+							if ( proficienciesPage == 1 )
+							{
+								drawPartySheet(player);
+							}
+							else
+							{
+								drawSkillsSheet(player);
+							}
+						}
+						else
 						{
-							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
+							if ( lock_right_sidebar )
 							{
 								if ( proficienciesPage == 1 )
 								{
@@ -4723,25 +4830,22 @@ int main(int argc, char** argv)
 								}
 							}
 						}
-					}
-					else
-					{
-						if ( lock_right_sidebar )
+
+						bool debugMouse = true;
+						if ( debugMouse )
 						{
-							for ( int player = 0; player < MAXPLAYERS && players[player]->isLocalPlayer(); ++player )
-							{
-								if ( proficienciesPage == 1 )
-								{
-									drawPartySheet(player);
-								}
-								else
-								{
-									drawSkillsSheet(player);
-								}
-							}
+							int x = players[player]->camera_x1() + 12;
+							int y = players[player]->camera_y1() + 12;
+							printTextFormatted(font8x8_bmp, x, y, "mx:  %4d | my:  %4d", mousex, mousey);
+							printTextFormatted(font8x8_bmp, x, y + 12, "mox: %4d | moy: %4d", omousex, omousey);
+							printTextFormatted(font8x8_bmp, x, y + 28, "vx:  %4d |  vy: %4d",
+								inputs.getVirtualMouse(player)->x, inputs.getVirtualMouse(player)->y);
+							printTextFormatted(font8x8_bmp, x, y + 40, "vox: %4d | voy: %4d",
+								inputs.getVirtualMouse(player)->ox, inputs.getVirtualMouse(player)->oy);
 						}
 					}
-					if ( (shootmode == false && gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
+
+					if ( (players[clientnum]->shootmode == false && players[clientnum]->gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
 					{
 						Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
 						Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
@@ -4754,14 +4858,19 @@ int main(int argc, char** argv)
 					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
 
 					// pointer in inventory screen
-					if (shootmode == false)
+					for ( int player = 0; player < MAXPLAYERS; ++player )
 					{
-						for ( int player = 0; player < MAXPLAYERS; ++player )
+						if ( !players[player]->isLocalPlayer() )
+						{
+							continue;
+						}
+						if ( players[player]->shootmode == false )
 						{
 							// dragging items, player not needed to be alive
 							// to port to splitscreen, player == clientnum to be replaced
-							if ( selectedItem && player == clientnum )
+							if ( inputs.getUIInteraction(player)->selectedItem )
 							{
+								Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 								pos.x = mousex - 15;
 								pos.y = mousey - 15;
 								pos.w = 32 * uiscale_inventory;
@@ -4846,100 +4955,83 @@ int main(int argc, char** argv)
 									}
 								}
 							}
-							else if ( draw_cursor && player == clientnum )
+							else if ( inputs.getVirtualMouse(player)->draw_cursor )
 							{
-								if ( player == clientnum )
-								{
-									pos.x = mousex - cursor_bmp->w / 2;
-									pos.y = mousey - cursor_bmp->h / 2;
-									pos.w = 0;
-									pos.h = 0;
-									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-								}
-							}
-							else if ( players[player]->isLocalPlayer() && inputs.getMouse(player) && inputs.getMouse(player)->draw_cursor )
-							{
-								pos.x = inputs.getMouse(player)->x - cursor_bmp->w / 2;
-								pos.y = inputs.getMouse(player)->y - cursor_bmp->h / 2;
+								pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
+								pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
 								pos.w = 0;
 								pos.h = 0;
 								drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 							}
 						}
-					}
-					else if ( !nohud )
-					{
-						for ( int player = 0; player < MAXPLAYERS; ++player )
+						else if ( !nohud )
 						{
-							if ( players[player]->isLocalPlayer() )
+							pos.x = cameras[player].winx + (cameras[player].winw / 2) - cross_bmp->w / 2;
+							pos.y = cameras[player].winy + (cameras[player].winh / 2) - cross_bmp->h / 2;
+							pos.w = 0;
+							pos.h = 0;
+							if ( FollowerMenu.selectMoveTo && (FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+								|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 							{
-								pos.x = cameras[player].winx + (cameras[player].winw / 2) - cross_bmp->w / 2;
-								pos.y = cameras[player].winy + (cameras[player].winh / 2) - cross_bmp->h / 2;
-								pos.w = 0;
-								pos.h = 0;
-								if ( FollowerMenu.selectMoveTo && (FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-									|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+								pos.x = xres / 2 - cursor_bmp->w / 2;
+								pos.y = yres / 2 - cursor_bmp->h / 2;
+								drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+								if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 								{
-									pos.x = xres / 2 - cursor_bmp->w / 2;
-									pos.y = yres / 2 - cursor_bmp->h / 2;
-									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-									if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+									if ( FollowerMenu.followerToCommand
+										&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+											|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
+										)
 									{
-										if ( FollowerMenu.followerToCommand
-											&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
-												|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
-											)
-										{
-											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
-										}
-										else
-										{
-											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
-										}
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
 									}
 									else
 									{
-										if ( !strcmp(FollowerMenu.interactText, "") )
-										{
-											if ( FollowerMenu.followerToCommand )
-											{
-												int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
-												if ( FollowerMenu.allowedInteractItems(type)
-													|| FollowerMenu.allowedInteractFood(type)
-													|| FollowerMenu.allowedInteractWorld(type)
-													)
-												{
-													ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
-												}
-												else
-												{
-													ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
-												}
-											}
-											else
-											{
-												ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
-											}
-										}
-										else
-										{
-											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
-										}
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
 									}
 								}
 								else
 								{
-									if ( players[player] && players[player]->entity && stats[player]
-										&& stats[player]->defending )
+									if ( !strcmp(FollowerMenu.interactText, "") )
 									{
-										bool foundTinkeringKit = false;
-										if ( stats[player]->shield && stats[player]->shield->type == TOOL_TINKERING_KIT )
+										if ( FollowerMenu.followerToCommand )
 										{
-											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
+											int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
+											if ( FollowerMenu.allowedInteractItems(type)
+												|| FollowerMenu.allowedInteractFood(type)
+												|| FollowerMenu.allowedInteractWorld(type)
+												)
+											{
+												ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+											}
+											else
+											{
+												ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+											}
+										}
+										else
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
 										}
 									}
-									drawImageAlpha(cross_bmp, NULL, &pos, 128);
+									else
+									{
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
+									}
 								}
+							}
+							else
+							{
+								if ( players[player] && players[player]->entity && stats[player]
+									&& stats[player]->defending )
+								{
+									bool foundTinkeringKit = false;
+									if ( stats[player]->shield && stats[player]->shield->type == TOOL_TINKERING_KIT )
+									{
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
+									}
+								}
+								drawImageAlpha(cross_bmp, NULL, &pos, 128);
 							}
 						}
 					}
@@ -4990,26 +5082,37 @@ int main(int argc, char** argv)
 					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
 				}
 
-				if (((subwindow && !shootmode) || gamePaused) && draw_cursor)
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					pos.x = mousex - cursor_bmp->w / 2;
-					pos.y = mousey - cursor_bmp->h / 2;
-					pos.w = 0;
-					pos.h = 0;
-					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+					if ( !players[i]->isLocalPlayer() )
+					{
+						continue;
+					}
+					if (((subwindow && !players[i]->shootmode) || gamePaused))
+					{
+						if ( inputs.getVirtualMouse(i)->draw_cursor )
+						{
+							pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
+							pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
+							pos.w = 0;
+							pos.h = 0;
+							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+						}
+					}
+
+					if ( !players[i]->shootmode )
+					{
+						if ( *inputPressedForPlayer(i, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+						{
+							*inputPressedForPlayer(i, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+						}
+						if ( *inputPressedForPlayer(i, impulses[IN_HOTBAR_SCROLL_LEFT]) )
+						{
+							*inputPressedForPlayer(i, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+						}
+					}
 				}
 
-				if ( !shootmode )
-				{
-					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
-					{
-						*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-					}
-					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
-					{
-						*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-					}
-				}
 			}
 
 			// fade in/out effect

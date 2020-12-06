@@ -35,6 +35,7 @@ void statsHoverText(Stat* tmpStat);
 
 void updateCharacterSheet(const int player)
 {
+	return;
 	int i = 0;
 	int x = 0;
 	SDL_Rect pos;
@@ -166,7 +167,7 @@ void updateCharacterSheet(const int player)
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+		if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
 		{
 			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
@@ -183,7 +184,7 @@ void updateCharacterSheet(const int player)
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+		if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
 		{
 			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
@@ -312,6 +313,7 @@ void updateCharacterSheet(const int player)
 
 void drawSkillsSheet(const int player)
 {
+	return;
 	int xres = players[player]->camera_width();
 	int yres = players[player]->camera_height();
 	int x1 = players[player]->camera_x1();
@@ -359,7 +361,7 @@ void drawSkillsSheet(const int player)
 		button.h = attributesright_bmp->h * 1.3;
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+	if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
 	{
 		if ( omousex >= button.x && omousex <= button.x + button.w
 			&& omousey >= button.y && omousey <= button.y + button.h )
@@ -409,7 +411,7 @@ void drawSkillsSheet(const int player)
 		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+	if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
 	{
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
@@ -480,7 +482,7 @@ void drawSkillsSheet(const int player)
 	pos = initialSkillPos;
 	SDL_Rect skillTooltipRect;
 	std::string skillTooltip;
-	for ( int i = 0; !shootmode && i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
+	for ( int i = 0; !players[player]->shootmode && i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
 	{
 		if ( mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + fontHeight) && stats[player] )
 		{
@@ -1036,6 +1038,7 @@ void drawSkillsSheet(const int player)
 
 void drawPartySheet(const int player)
 {
+	return;
 	int xres = players[player]->camera_width();
 	int yres = players[player]->camera_height();
 	int x1 = players[player]->camera_x1();
@@ -1078,7 +1081,7 @@ void drawPartySheet(const int player)
 	{
 		if ( numFollowers == 0 )
 		{
-			if ( shootmode )
+			if ( players[player]->shootmode )
 			{
 				return; // don't show menu if not in inventory, no point reminding the player they have no friends!
 			}
@@ -1111,7 +1114,7 @@ void drawPartySheet(const int player)
 	}
 
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+	if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
 	{
 		if ( omousex >= button.x && omousex <= button.x + button.w
 			&& omousey >= button.y && omousey <= button.y + button.h )
@@ -1161,7 +1164,7 @@ void drawPartySheet(const int player)
 		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+	if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
 	{
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
@@ -1320,7 +1323,7 @@ void drawPartySheet(const int player)
 							// ttfPrintText(ttf16, xres - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
 						}
 
-						if ( stats[clientnum] && stats[clientnum]->HP > 0 && !shootmode 
+						if ( stats[clientnum] && stats[clientnum]->HP > 0 && !players[player]->shootmode
 							&& (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE]))) )
 						{
 							bool inBounds = mouseInBounds(monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,

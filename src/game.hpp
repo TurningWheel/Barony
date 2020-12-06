@@ -96,7 +96,6 @@ extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
 extern real_t fps;
-extern bool shootmode;
 static const int NUMCLASSES = 21;
 #define NUMRACES 13
 #define NUMPLAYABLERACES 9

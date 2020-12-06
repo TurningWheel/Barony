@@ -2383,7 +2383,7 @@ void TextSourceScript::playerClearInventory(bool clearStats)
 	spellcastingAnimationManager_deactivate(&cast_animation[clientnum]);
 	stats[clientnum]->freePlayerEquipment();
 	list_FreeAll(&stats[clientnum]->inventory);
-	shootmode = true;
+	players[clientnum]->shootmode = true;
 	appraisal_timer = 0;
 	appraisal_item = 0;
 

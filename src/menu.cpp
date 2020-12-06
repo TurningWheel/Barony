@@ -461,7 +461,7 @@ void navigateMainMenuItems(bool mode)
 			{
 				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 			}
-			draw_cursor = false;
+			inputs.hideMouseCursors();
 			menuselect = menuOptions.at(0).second;
 			//Warp cursor to menu item, for gamepad convenience.
 			warpx = 50 + 18;
@@ -475,7 +475,7 @@ void navigateMainMenuItems(bool mode)
 			{
 				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 			}
-			draw_cursor = false;
+			inputs.hideMouseCursors();
 			menuselect = menuOptions.at(0).second;
 			warpx = 50 + 18;
 			warpy = (yres / 4) + 80 + (18 / 2);
@@ -491,7 +491,7 @@ void navigateMainMenuItems(bool mode)
 			{
 				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 			}
-			draw_cursor = false;
+			inputs.hideMouseCursors();
 			if ( mode )
 			{
 				getPrevMenuOption(menuselect);
@@ -516,7 +516,7 @@ void navigateMainMenuItems(bool mode)
 			{
 				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 			}
-			draw_cursor = false;
+			inputs.hideMouseCursors();
 			if ( mode )
 			{
 				getNextMenuOption(menuselect);
@@ -3087,7 +3087,7 @@ void handleMainMenu(bool mode)
 				{
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 				}
-				draw_cursor = false;
+				inputs.hideMouseCursors();
 				if ( raceSelect == 1 )
 				{
 					PlayerRaces lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
@@ -3211,7 +3211,7 @@ void handleMainMenu(bool mode)
 				{
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 				}
-				draw_cursor = false;
+				inputs.hideMouseCursors();
 				if ( raceSelect == 1 )
 				{
 					PlayerRaces lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
@@ -3350,7 +3350,7 @@ void handleMainMenu(bool mode)
 				{
 					*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
 				}
-				draw_cursor = false;
+				inputs.hideMouseCursors();
 				++raceSelect;
 				if ( stats[0]->playerRace == RACE_HUMAN )
 				{
@@ -3371,7 +3371,7 @@ void handleMainMenu(bool mode)
 				{
 					*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
 				}
-				draw_cursor = false;
+				inputs.hideMouseCursors();
 				--raceSelect;
 				if ( stats[0]->playerRace == RACE_HUMAN )
 				{
@@ -3512,7 +3512,7 @@ void handleMainMenu(bool mode)
 					{
 						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					}
-					draw_cursor = false;
+					inputs.hideMouseCursors();
 
 					int previousClassPicked = client_classes[0];
 					if ( client_classes[0] == 0 )
@@ -3546,7 +3546,7 @@ void handleMainMenu(bool mode)
 					{
 						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					}
-					draw_cursor = false;
+					inputs.hideMouseCursors();
 
 					auto it = availableClasses.find(client_classes[0]);
 					int previousClassPicked = client_classes[0];
@@ -3620,7 +3620,7 @@ void handleMainMenu(bool mode)
 					{
 						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					}
-					draw_cursor = false;
+					inputs.hideMouseCursors();
 					stats[0]->appearance--;
 					if (stats[0]->appearance >= NUMAPPEARANCES)
 					{
@@ -3634,7 +3634,7 @@ void handleMainMenu(bool mode)
 					{
 						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					}
-					draw_cursor = false;
+					inputs.hideMouseCursors();
 					stats[0]->appearance++;
 					if (stats[0]->appearance >= NUMAPPEARANCES)
 					{
@@ -3791,7 +3791,7 @@ void handleMainMenu(bool mode)
 				{
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 				}
-				draw_cursor = false;
+				inputs.hideMouseCursors();
 
 				Uint32 vIndex = 0;
 				for ( auto& option : displayedOptionToGamemode )
@@ -3818,7 +3818,7 @@ void handleMainMenu(bool mode)
 				{
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 				}
-				draw_cursor = false;
+				inputs.hideMouseCursors();
 
 				Uint32 vIndex = 0;
 				for ( auto& option : displayedOptionToGamemode )
@@ -9392,10 +9392,10 @@ void handleMainMenu(bool mode)
 					selected_spell_alternate[c] = NULL;
 					players[i]->hotbar->hotbarShapeshiftInit[c] = false;
 				}
+				players[i]->shootmode = true;
 			}
 			selected_spell = NULL;
 			selected_spell_last_appearance = -1;
-			shootmode = true;
 			currentlevel = startfloor;
 			secretlevel = false;
 			victory = 0;
@@ -10346,7 +10346,6 @@ void handleMainMenu(bool mode)
 			appraisal_timer = 0;
 			appraisal_item = 0;
 			multiplayer = 0;
-			shootmode = true;
 			currentlevel = 0;
 			secretlevel = false;
 			clientnum = 0;
@@ -10361,6 +10360,7 @@ void handleMainMenu(bool mode)
 					selected_spell_alternate[c] = NULL;
 					players[i]->hotbar->hotbarShapeshiftInit[c] = false;
 				}
+				players[i]->shootmode = true;
 			}
 			gameModeManager.currentSession.restoreSavedServerFlags();
 			selected_spell = NULL; //So you don't start off with a spell when the game restarts.
@@ -11914,7 +11914,11 @@ void openGameoverWindow()
 
 	scoreDeconstructor((void*)score);
 
-	shootmode = false;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->shootmode = false;
+	}
+
 	if ( multiplayer == SINGLE )
 	{
 		strcpy(subtext, language[1133]);
@@ -11934,10 +11938,17 @@ void openGameoverWindow()
 		}
 
 		// identify all inventory items
-		for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			Item* item = (Item*)node->element;
-			item->identified = true;
+			if ( !players[i]->isLocalPlayer() )
+			{
+				continue;
+			}
+			for ( node = stats[i]->inventory.first; node != NULL; node = node->next )
+			{
+				Item* item = (Item*)node->element;
+				item->identified = true;
+			}
 		}
 
 		// Restart

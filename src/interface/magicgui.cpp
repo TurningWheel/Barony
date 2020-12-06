@@ -197,7 +197,7 @@ void updateMagicGUI()
 	}
 }
 
-void drawSustainedSpells()
+void drawSustainedSpells(const int player)
 {
 	SDL_Surface** sprite;
 	SDL_Rect pos;
@@ -222,7 +222,7 @@ void drawSustainedSpells()
 			iconHeightOffset = std::max(iconHeightOffset, interfacePartySheet.y + interfacePartySheet.h);
 		}
 
-		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (iconHeightOffset) : 0);
+		pos.y = 32 + ( (!players[player]->shootmode || lock_right_sidebar) ? (iconHeightOffset) : 0);
 	}
 
 	bool isChanneled = false;
@@ -238,7 +238,7 @@ void drawSustainedSpells()
 		fontWidth = TTF16_WIDTH;
 	}
 
-	for ( int i = 0; showStatusEffectIcons && i <= NUMEFFECTS && stats[clientnum]; ++i )
+	for ( int i = 0; showStatusEffectIcons && i <= NUMEFFECTS && stats[player]; ++i )
 	{
 		node_t* effectImageNode = nullptr;
 		sprite = nullptr;
@@ -246,13 +246,13 @@ void drawSustainedSpells()
 
 		if ( i == NUMEFFECTS )
 		{
-			if ( players[clientnum] && players[clientnum]->entity )
+			if ( players[player] && players[player]->entity )
 			{
-				if ( players[clientnum]->entity->creatureShadowTaggedThisUid != 0
-					&& uidToEntity(players[clientnum]->entity->creatureShadowTaggedThisUid) )
+				if ( players[player]->entity->creatureShadowTaggedThisUid != 0
+					&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SHADOW_TAG);
-					Entity* tagged = uidToEntity(players[clientnum]->entity->creatureShadowTaggedThisUid);
+					Entity* tagged = uidToEntity(players[player]->entity->creatureShadowTaggedThisUid);
 					if ( tagged->behavior == &actMonster )
 					{
 						int type = tagged->getMonsterTypeFromSprite();
@@ -280,7 +280,7 @@ void drawSustainedSpells()
 				}
 			}
 		}
-		else if ( stats[clientnum]->EFFECTS[i] )
+		else if ( stats[player]->EFFECTS[i] )
 		{
 			switch ( i )
 			{
@@ -315,7 +315,7 @@ void drawSustainedSpells()
 				case EFF_MAGICAMPLIFY:
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_AMPLIFY_MAGIC);
-					node_t* node = channeledSpells[clientnum].first;
+					node_t* node = channeledSpells[player].first;
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
@@ -341,9 +341,9 @@ void drawSustainedSpells()
 					tooltipText = language[3493];
 					break;
 				case EFF_SHAPESHIFT:
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						switch ( players[clientnum]->entity->effectShapeshift )
+						switch ( players[player]->entity->effectShapeshift )
 						{
 							case RAT:
 								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_RAT_FORM);
@@ -370,7 +370,7 @@ void drawSustainedSpells()
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
 					tooltipText = language[3389];
-					node_t* node = channeledSpells[clientnum].first;
+					node_t* node = channeledSpells[player].first;
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
@@ -414,7 +414,7 @@ void drawSustainedSpells()
 				case EFF_LEVITATING:
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LEVITATION);
-					node_t* node = channeledSpells[clientnum].first;
+					node_t* node = channeledSpells[player].first;
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
@@ -430,7 +430,7 @@ void drawSustainedSpells()
 				case EFF_INVISIBLE:
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_INVISIBILITY);
-					node_t* node = channeledSpells[clientnum].first;
+					node_t* node = channeledSpells[player].first;
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
@@ -450,7 +450,7 @@ void drawSustainedSpells()
 			}
 		}
 
-		if ( tooltipText && !shootmode && mouseInBounds(pos.x, pos.x + 32,
+		if ( tooltipText && !players[player]->shootmode && mouseInBounds(pos.x, pos.x + 32,
 			pos.y, pos.y + 32) )
 		{
 			// draw tooltip.
@@ -465,8 +465,8 @@ void drawSustainedSpells()
 			}
 
 			bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-			bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[i] > 0 && 
-				(stats[clientnum]->EFFECTS_TIMERS[i] < TICKS_PER_SECOND * 5);
+			bool lowDuration = stats[player]->EFFECTS_TIMERS[i] > 0 &&
+				(stats[player]->EFFECTS_TIMERS[i] < TICKS_PER_SECOND * 5);
 			if ( i == EFF_VAMPIRICAURA )
 			{
 				lowDuration = false;
@@ -498,7 +498,7 @@ void drawSustainedSpells()
 		}
 	}
 
-	if ( !channeledSpells[clientnum].first )
+	if ( !channeledSpells[player].first )
 	{
 		if ( currentTooltip )
 		{
@@ -537,7 +537,7 @@ void drawSustainedSpells()
 
 
 	int count = 0; //This is just for debugging purposes.
-	node_t* node = channeledSpells[clientnum].first;
+	node_t* node = channeledSpells[player].first;
 	for (; node; node = node->next, count++)
 	{
 		tooltipText = nullptr;
@@ -578,7 +578,7 @@ void drawSustainedSpells()
 
 		drawImage(*sprite, NULL, &pos);
 
-		if ( !shootmode && mouseInBounds(pos.x, pos.x + 32, pos.y, pos.y + 32) && tooltipText )
+		if ( !players[player]->shootmode && mouseInBounds(pos.x, pos.x + 32, pos.y, pos.y + 32) && tooltipText )
 		{
 			// draw tooltip.
 			currentTooltip = tooltipText;

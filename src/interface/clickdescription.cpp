@@ -35,19 +35,14 @@ void clickDescription(int player, Entity* entity)
 
 	if ( entity == NULL )
 	{
-		if ( !(*inputPressedForPlayer(player, impulses[IN_ATTACK]) || inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)) || shootmode )
+		if ( !(*inputPressedForPlayer(player, impulses[IN_ATTACK]) || inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)) 
+			|| players[player]->shootmode )
 		{
 			return;
 		}
 
-		int mx = omousex;
-		int my = omousey;
-		if ( splitscreen && inputs.hasController(player) && !inputs.bPlayerUsingKeyboardControl(player) )
-		{
-			const auto& mouse = inputs.getMouse(player);
-			mx = mouse->ox;
-			my = mouse->oy;
-		}
+		Sint32 mx = inputs.getMouse(player, Inputs::OX);
+		Sint32 my = inputs.getMouse(player, Inputs::OY);
 		auto& camera = cameras[player];
 
 		//One of either IN_ATTACK or INJOY_MENU_LEFT_CLICK is true, && shootmode == false;
@@ -74,9 +69,9 @@ void clickDescription(int player, Entity* entity)
 			{
 				return;    //Click falls inside the book GUI.
 			}
-		if (gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP)
+		if ( players[player]->gui_mode == GUI_MODE_INVENTORY || players[player]->gui_mode == GUI_MODE_SHOP)
 		{
-			if ( gui_mode == GUI_MODE_INVENTORY )
+			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 				if (mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height))
 				{
 					return;    //Click falls inside the right sidebar.
@@ -89,7 +84,7 @@ void clickDescription(int player, Entity* entity)
 				// clicked in inventory
 				return;
 			}
-			if ( gui_mode == GUI_MODE_SHOP )
+			if ( players[player]->gui_mode == GUI_MODE_SHOP )
 			{
 				int x1 = xres / 2 - SHOPWINDOW_SIZEX / 2, x2 = xres / 2 + SHOPWINDOW_SIZEX / 2;
 				int y1 = yres / 2 - SHOPWINDOW_SIZEY / 2, y2 = yres / 2 + SHOPWINDOW_SIZEY / 2;
@@ -99,7 +94,7 @@ void clickDescription(int player, Entity* entity)
 				}
 			}
 		}
-		else if (gui_mode == GUI_MODE_MAGIC)
+		else if ( players[player]->gui_mode == GUI_MODE_MAGIC)
 		{
 			if (magic_GUI_state == 0)
 			{
@@ -138,7 +133,7 @@ void clickDescription(int player, Entity* entity)
 			return;
 		}
 
-		if ( selectedItem || itemMenuOpen )
+		if ( inputs.getUIInteraction(player)->selectedItem || inputs.getUIInteraction(player)->itemMenuOpen )
 		{
 			//Will bugger up GUI item interaction if this function continues to run.
 			return;

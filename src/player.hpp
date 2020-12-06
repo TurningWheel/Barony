@@ -10,9 +10,9 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#pragma once
 #include "interface/interface.hpp"
 
-#pragma once
 
 //Splitscreen support stuff.
 extern int current_player; //This may not be necessary. Consider this: Each Player instance keeps track of whether it is a network player or a localhost player.
@@ -226,14 +226,15 @@ class Inputs
 	class VirtualMouse
 	{
 	public:
-		int xrel = 0; //mousexrel
-		int yrel = 0; //mouseyrel
-		int ox = 0; //omousex
-		int oy = 0; //omousey
-		int x = 0; //mousex
-		int y = 0; //mousey
-		bool draw_cursor = true;
+		Sint32 xrel = 0; //mousexrel
+		Sint32 yrel = 0; //mouseyrel
+		Sint32 ox = 0; //omousex
+		Sint32 oy = 0; //omousey
+		Sint32 x = 0; //mousex
+		Sint32 y = 0; //mousey
+		bool draw_cursor = true; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
 		bool moved = false;
+		bool lastMovementFromController = false;
 		VirtualMouse() {};
 		~VirtualMouse() {};
 
@@ -241,10 +242,43 @@ class Inputs
 		{
 			x = std::max(camera.winx, std::min(camera.winx + camera.winw, x + newx));
 			y = std::max(camera.winy, std::min(camera.winy + camera.winh, y + newy));
+			xrel += newx;
+			yrel += newy;
+			moved = true;
+		}
+		void warpMouseInScreen(SDL_Window*& window, const Sint32 newx, const Sint32 newy)
+		{
+			int w, h;
+			SDL_GetWindowSize(window, &w, &h);
+			x = std::max(0, std::min(w, x + newx));
+			y = std::max(0, std::min(h, y + newy));
+			xrel += newx;
+			yrel += newy;
 			moved = true;
 		}
 	};
 	VirtualMouse vmouse[MAXPLAYERS];
+
+	class UIStatus
+	{
+	public:
+		/*
+		* So that the cursor jumps back to the hotbar instead of the inventory if a picked up hotbar item is canceled.
+		* Its value indicates which hotbar slot it's from.
+		* -1 means it's not from the hotbar.
+		*/
+		int selectedItemFromHotbar = -1;
+
+		Item* selectedItem = nullptr;
+		bool toggleclick = false;
+		bool itemMenuOpen = false;
+		int itemMenuX = 0;
+		int itemMenuY = 0;
+		int itemMenuSelected = 0;
+		Uint32 itemMenuItem = 0;
+	};
+	UIStatus uiStatus[MAXPLAYERS];
+
 public:
 	Inputs() 
 	{
@@ -254,11 +288,11 @@ public:
 		}
 	};
 	~Inputs() {};
-	const void setPlayerIDAllowedKeyboard(int player)
+	const void setPlayerIDAllowedKeyboard(const int player)
 	{
 		playerUsingKeyboardControl = player;
 	}
-	const bool bPlayerUsingKeyboardControl(int player) const
+	const bool bPlayerUsingKeyboardControl(const int player) const
 	{
 		if ( !splitscreen )
 		{
@@ -266,10 +300,14 @@ public:
 		}
 		return player == playerUsingKeyboardControl;
 	}
-	void controllerHandleMouse(int player);
-	const bool bControllerInputPressed(int player, const unsigned controllerImpulse) const;
-	void controllerClearInput(int player, const unsigned controllerImpulse);
-	void removeControllerWithDeviceID(int id)
+	void controllerHandleMouse(const int player);
+	const bool bControllerInputPressed(const int player, const unsigned controllerImpulse) const;
+	void controllerClearInput(const int player, const unsigned controllerImpulse);
+	const bool bMouseLeft (const int player) const;
+	const bool bMouseRight(const int player) const;
+	const void mouseClearLeft(int player);
+	const void mouseClearRight(int player);
+	void removeControllerWithDeviceID(const int id)
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -280,7 +318,7 @@ public:
 			}
 		}
 	}
-	VirtualMouse* getMouse(int player)
+	VirtualMouse* getVirtualMouse(int player)
 	{
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
@@ -289,6 +327,40 @@ public:
 		}
 		return &vmouse[player];
 	}
+	UIStatus* getUIInteraction(int player)
+	{
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			printlog("[INPUTS]: Warning: player index %d out of range.", player);
+			return nullptr;
+		}
+		return &uiStatus[player];
+	}
+	enum MouseInputs
+	{
+		OX,
+		OY,
+		X,
+		Y,
+		XREL,
+		YREL
+	};
+	const Sint32 getMouse(const int player, MouseInputs input);
+	void hideMouseCursors()
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			getVirtualMouse(i)->draw_cursor = false;
+		}
+	};
+	enum MouseWarpFlags : Uint32
+	{
+		UNSET_RELATIVE_MOUSE = 1,
+		SET_RELATIVE_MOUSE = 2,
+		SET_MOUSE = 4,
+		SET_CONTROLLER = 8
+	};
+	void warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 flags);
 	const int getControllerID(int player) const
 	{
 		if ( player < 0 || player >= MAXPLAYERS )
@@ -341,9 +413,12 @@ public:
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			vmouse[i].ox = vmouse[i].x;
-			vmouse[i].oy = vmouse[i].y;
-			vmouse[i].moved = false;
+			if ( !bMouseLeft(i) )
+			{
+				vmouse[i].ox = vmouse[i].x;
+				vmouse[i].oy = vmouse[i].y;
+				vmouse[i].moved = false;
+			}
 		}
 		/*messagePlayer(0, "x: %d | y: %d / x: %d | y: %d / x: %d | y: %d / x: %d | y: %d ", 
 			vmouse[0].ox, vmouse[0].oy,
@@ -370,8 +445,8 @@ class Player
 {
 	//Splitscreen support. Every player gets their own screen.
 	//Except in multiplayer. In that case, this is just a big old dummy class.
-	SDL_Surface* screen;
-
+	//SDL_Surface* screen;
+	
 	//Is this a hotseat player? If so, draw splitscreen and stuff. (Host player is automatically a hotseat player). If not, then this is a dummy container for the multiplayer client.
 	bool local_host;
 	view_t* cam;
@@ -395,6 +470,13 @@ public:
 	const int camera_height() const { return cam->winh; }
 	const bool isLocalPlayer() const;
 	const bool isLocalPlayerAlive() const;
+
+	//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
+	void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
+	void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose);
+	bool shootmode = false;
+	int inventory_mode = INVENTORY_MODE_ITEM;
+	int gui_mode = GUI_MODE_NONE;
 };
 
 class Player::Hotbar_t {
@@ -462,7 +544,7 @@ public:
 void initIdentifyGUIControllerCode();
 void initRemoveCurseGUIControllerCode();
 
-extern Player** players;
+extern Player* players[MAXPLAYERS];
 //In the process of switching from the old entity player array, all of the old uses of player need to be hunted down and then corrected to account for the new array.
 //So, search for the comment:
 //TODO: PLAYERSWAP

@@ -13,6 +13,7 @@ See LICENSE for details.
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "draw.hpp"
+#include "player.hpp"
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -108,7 +109,7 @@ void GameModeManager_t::Tutorial_t::openGameoverWindow()
 	suby2 = yres / 2 + 160;
 	button_t* button;
 
-	shootmode = false;
+	players[clientnum]->shootmode = false;
 	strcpy(subtext, language[1133]);
 	strcat(subtext, language[1134]);
 	strcat(subtext, language[1137]);

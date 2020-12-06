@@ -60,19 +60,14 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 		return NULL;
 	}
 
-	int mx = omousex;
-	int my = omousey;
-	if ( splitscreen && inputs.hasController(player) && !inputs.bPlayerUsingKeyboardControl(player) )
-	{
-		const auto& mouse = inputs.getMouse(player);
-		mx = mouse->ox;
-		my = mouse->oy;
-	}
+	Sint32 mx = inputs.getMouse(player, Inputs::OX);
+	Sint32 my = inputs.getMouse(player, Inputs::OY);
+
 	auto& camera = cameras[player];
 
-	if ( !shootmode )
+	if ( !players[player]->shootmode )
 	{
-		if ( itemMenuOpen )
+		if ( inputs.getUIInteraction(player)->itemMenuOpen )
 		{
 			if ( clickedOnGUI )
 			{
@@ -115,9 +110,9 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				}
 				return NULL;    //Click falls inside the book GUI.
 			}
-		if (gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP)
+		if ( players[player]->gui_mode == GUI_MODE_INVENTORY || players[player]->gui_mode == GUI_MODE_SHOP)
 		{
-			if ( gui_mode == GUI_MODE_INVENTORY )
+			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 				if (mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height))
 				{
 					if ( clickedOnGUI )
@@ -138,7 +133,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				}
 				return NULL;
 			}
-			if ( gui_mode == GUI_MODE_SHOP )
+			if ( players[player]->gui_mode == GUI_MODE_SHOP )
 			{
 				int x1 = xres / 2 - SHOPWINDOW_SIZEX / 2, x2 = xres / 2 + SHOPWINDOW_SIZEX / 2;
 				int y1 = yres / 2 - SHOPWINDOW_SIZEY / 2, y2 = yres / 2 + SHOPWINDOW_SIZEY / 2;
@@ -152,7 +147,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				}
 			}
 		}
-		else if (gui_mode == GUI_MODE_MAGIC)
+		else if ( players[player]->gui_mode == GUI_MODE_MAGIC)
 		{
 			if (magic_GUI_state == 0)
 			{

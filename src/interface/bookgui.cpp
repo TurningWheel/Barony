@@ -206,8 +206,8 @@ void openBook(book_t* book, Item* item)
 		return;
 	}
 
-	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-	shootmode = false;
+	players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	players[clientnum]->shootmode = false;
 	book_page = book->pages.first;
 	book_open = true;
 	open_book = book;

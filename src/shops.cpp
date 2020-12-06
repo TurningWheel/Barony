@@ -69,10 +69,10 @@ void startTradingServer(Entity* entity, int player)
 		return;
 	}
 
-	if ( player == 0 )
+	if ( players[player]->isLocalPlayer() )
 	{
-		closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
-		openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
+		players[player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		players[player]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
 		shopInv = &stats->inventory;
 		shopkeeper = entity->getUID();
 		shoptimer = ticks - 1;

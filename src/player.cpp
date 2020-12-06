@@ -15,12 +15,13 @@
 #include "interface/interface.hpp"
 #include "items.hpp"
 #include "shops.hpp"
+#include "menu.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
 #endif
 
-Player** players = nullptr;
+Player* players[MAXPLAYERS] = { nullptr };
 
 Entity* selectedEntity[MAXPLAYERS] = { nullptr };
 int current_player = 0;
@@ -152,7 +153,7 @@ void GameController::handleAnalog(int player)
 
 	//Right analog stick = look.
 
-	if (!shootmode || gamePaused)
+	if (!players[player]->shootmode || gamePaused)
 	{
 		int rightx = getRawRightXMove() / gamepad_menux_sensitivity;
 		int righty = getRawRightYMove() / gamepad_menuy_sensitivity;
@@ -178,13 +179,32 @@ void GameController::handleAnalog(int player)
 
 		if (rightx || righty)
 		{
+			const auto& mouse = inputs.getVirtualMouse(player);
+			mouse->lastMovementFromController = true;
 			if ( inputs.bPlayerUsingKeyboardControl(player) )
 			{
-				SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
+				//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
+				//mouse->warpMouseInScreen(screen, rightx, righty);
+				// smoother to use virtual mouse than push mouse events
+				if ( gamePaused )
+				{
+					mouse->warpMouseInScreen(screen, rightx, righty);
+				}
+				else
+				{
+					mouse->warpMouseInCamera(cameras[player], rightx, righty);
+				}
 			}
-			else if(const auto& mouse = inputs.getMouse(player))
+			else
 			{
-				mouse->warpMouseInCamera(cameras[player], rightx, righty);
+				if ( gamePaused )
+				{
+					mouse->warpMouseInScreen(screen, rightx, righty);
+				}
+				else
+				{
+					mouse->warpMouseInCamera(cameras[player], rightx, righty);
+				}
 			}
 		}
 	}
@@ -195,6 +215,8 @@ void GameController::handleAnalog(int player)
 
 		if (rightx || righty)
 		{
+			const auto& mouse = inputs.getVirtualMouse(player);
+			mouse->lastMovementFromController = true;
 			if ( inputs.bPlayerUsingKeyboardControl(player) )
 			{
 				SDL_Event e;
@@ -203,9 +225,10 @@ void GameController::handleAnalog(int player)
 				e.motion.y = mousey + righty;
 				e.motion.xrel = rightx;
 				e.motion.yrel = righty;
+				e.user.code = 1;
 				SDL_PushEvent(&e);
 			}
-			else if ( const auto& mouse = inputs.getMouse(player) )
+			else
 			{
 				mouse->x += rightx;
 				mouse->y += righty;
@@ -499,61 +522,70 @@ int GameController::maxRightTrigger()
 	return 32767 - gamepad_deadzone;
 }
 
+const bool hotbarGamepadControlEnabled(const int player)
+{
+	return (!openedChest[player]
+		&& players[player]->gui_mode != GUI_MODE_SHOP
+		&& !identifygui_active
+		&& !removecursegui_active
+		&& !GenericGUI.isGUIOpen());
+}
+
 bool GameController::handleInventoryMovement(const int player)
 {
 	bool dpad_moved = false;
 
-	if (itemMenuOpen)
+	if ( inputs.getUIInteraction(player)->itemMenuOpen )
 	{
 		return false;
 	}
 
 	auto& hotbar_t = players[player]->hotbar;
 
-	if ( hotbar_t->hotbarHasFocus && !hotbarGamepadControlEnabled() )
+	if ( hotbar_t->hotbarHasFocus && !hotbarGamepadControlEnabled(player) )
 	{
 		hotbar_t->hotbarHasFocus = false;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_LEFT) )
 	{
-		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled() )
+		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
 			hotbar_t->selectHotbarSlot(hotbar_t->current_hotbar - 1);
-			warpMouseToSelectedHotbarSlot();
+			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
 		{
 			//Navigate inventory.
 			select_inventory_slot(player, selected_inventory_slot_x - 1, selected_inventory_slot_y);
 		}
-		*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_LEFT);
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_RIGHT) )
 	{
-		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled() )
+		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
 			hotbar_t->selectHotbarSlot(hotbar_t->current_hotbar + 1);
-			warpMouseToSelectedHotbarSlot();
+			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
 		{
 			//Navigate inventory.
 			select_inventory_slot(player, selected_inventory_slot_x + 1, selected_inventory_slot_y);
 		}
-		*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_RIGHT);
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
-		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled() )
+		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//Warp back to top of inventory.
 			hotbar_t->hotbarHasFocus = false;
@@ -564,14 +596,14 @@ bool GameController::handleInventoryMovement(const int player)
 		{
 			select_inventory_slot(player, selected_inventory_slot_x, selected_inventory_slot_y - 1); //Will handle warping to hotbar.
 		}
-		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
-		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled() )
+		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//Warp back to bottom of inventory.
 			hotbar_t->hotbarHasFocus = false;
@@ -582,7 +614,7 @@ bool GameController::handleInventoryMovement(const int player)
 		{
 			select_inventory_slot(player, selected_inventory_slot_x, selected_inventory_slot_y + 1);
 		}
-		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
 	}
@@ -590,7 +622,7 @@ bool GameController::handleInventoryMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		draw_cursor = false;
+		inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -602,23 +634,23 @@ bool GameController::handleChestMovement(const int player)
 {
 	bool dpad_moved = false;
 
-	if ( itemMenuOpen )
+	if ( inputs.getUIInteraction(player)->itemMenuOpen )
 	{
 		return false;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
-		selectChestSlot(selectedChestSlot - 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+		selectChestSlot(player, selectedChestSlot - 1);
+		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
-		selectChestSlot(selectedChestSlot + 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+		selectChestSlot(player, selectedChestSlot + 1);
+		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
 	}
@@ -626,7 +658,7 @@ bool GameController::handleChestMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		draw_cursor = false;
+		inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -638,41 +670,41 @@ bool GameController::handleShopMovement(const int player)
 {
 	bool dpad_moved = false;
 
-	if ( itemMenuOpen )
+	if ( inputs.getUIInteraction(player)->itemMenuOpen )
 	{
 		return false;
 	}
 
 	/*
 	//I would love to just do these, but it just wouldn't work with the way the code is set up.
-	if (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_LEFT) )
 	{
 		cycleShopCategories(-1);
-		*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_LEFT);
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_RIGHT) )
 	{
 		cycleShopCategories(1);
-		*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_RIGHT);
 
 		dpad_moved = true;
 	}*/
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
 		selectShopSlot(selectedShopSlot - 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
 		selectShopSlot(selectedShopSlot + 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
 	}
@@ -680,7 +712,7 @@ bool GameController::handleShopMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		draw_cursor = false;
+		inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -692,23 +724,23 @@ bool GameController::handleIdentifyMovement(const int player)
 {
 	bool dpad_moved = false;
 
-	if ( itemMenuOpen )
+	if ( inputs.getUIInteraction(player)->itemMenuOpen )
 	{
 		return false;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
 		selectIdentifySlot(selectedIdentifySlot - 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
 		selectIdentifySlot(selectedIdentifySlot + 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
 	}
@@ -716,7 +748,7 @@ bool GameController::handleIdentifyMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		draw_cursor = false;
+		inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -728,23 +760,23 @@ bool GameController::handleRemoveCurseMovement(const int player)
 {
 	bool dpad_moved = false;
 
-	if ( itemMenuOpen )
+	if ( inputs.getUIInteraction(player)->itemMenuOpen )
 	{
 		return false;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
 		selectRemoveCurseSlot(selectedRemoveCurseSlot - 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
 		selectRemoveCurseSlot(selectedRemoveCurseSlot + 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
 	}
@@ -752,7 +784,7 @@ bool GameController::handleRemoveCurseMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		draw_cursor = false;
+		inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -764,23 +796,23 @@ bool GameController::handleRepairGUIMovement(const int player)
 {
 	bool dpad_moved = false;
 
-	if ( itemMenuOpen )
+	if ( inputs.getUIInteraction(player)->itemMenuOpen )
 	{
 		return false;
 	}
 
-	if ( *inputPressed(joyimpulses[INJOY_DPAD_UP]) )
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
 		GenericGUI.selectSlot(GenericGUI.selectedSlot - 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
 	}
 
-	if ( *inputPressed(joyimpulses[INJOY_DPAD_DOWN]) )
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
 		GenericGUI.selectSlot(GenericGUI.selectedSlot + 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
 	}
@@ -788,7 +820,7 @@ bool GameController::handleRepairGUIMovement(const int player)
 	if ( dpad_moved )
 	{
 		dpad_moved = false;
-		draw_cursor = false;
+		inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -800,23 +832,23 @@ bool GameController::handleItemContextMenu(const int player, const Item& item)
 {
 	bool dpad_moved = false;
 
-	if (!itemMenuOpen)
+	if (!inputs.getUIInteraction(player)->itemMenuOpen)
 	{
 		return false;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
-		selectItemMenuSlot(item, itemMenuSelected - 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+		selectItemMenuSlot(player, item, inputs.getUIInteraction(player)->itemMenuSelected - 1);
+		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
-		selectItemMenuSlot(item, itemMenuSelected + 1);
-		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+		selectItemMenuSlot(player, item, inputs.getUIInteraction(player)->itemMenuSelected + 1);
+		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
 	}
@@ -824,7 +856,7 @@ bool GameController::handleItemContextMenu(const int player, const Item& item)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		draw_cursor = false;
+		inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -923,7 +955,6 @@ SDL_GameControllerAxis GameController::getSDLTriggerFromImpulse(const unsigned c
 
 Player::Player(int in_playernum, bool in_local_host)
 {
-	screen = nullptr;
 	local_host = false;
 	playernum = in_playernum;
 	entity = nullptr;
@@ -933,11 +964,6 @@ Player::Player(int in_playernum, bool in_local_host)
 
 Player::~Player()
 {
-	if (screen)
-	{
-		SDL_FreeSurface(screen);
-	}
-
 	if (entity)
 	{
 		delete entity;
@@ -955,6 +981,87 @@ const bool Player::isLocalPlayer() const
 const bool Player::isLocalPlayerAlive() const
 {
 	return (isLocalPlayer() && entity && !client_disconnected[playernum]);
+}
+
+const Sint32 Inputs::getMouse(const int player, MouseInputs input)
+{
+	if ( bPlayerUsingKeyboardControl(player) && (!getVirtualMouse(player)->lastMovementFromController || players[player]->shootmode) )
+	{
+		// add controller virtual mouse if applicable, only in shootmode
+		// shootmode has no limits on rotation, but !shootmode is inventory
+		switch ( input )
+		{
+			case OX:
+				return omousex + ((players[player]->shootmode && hasController(player)) ? getVirtualMouse(player)->ox : 0);
+				//return omousex;
+			case OY:
+				return omousey + ((players[player]->shootmode && hasController(player)) ? getVirtualMouse(player)->oy : 0);
+				//return omousey;
+			case X:
+				return mousex + ((players[player]->shootmode && hasController(player)) ? getVirtualMouse(player)->x : 0);
+				//return mousex;
+			case Y:
+				return mousey + ((players[player]->shootmode && hasController(player)) ? getVirtualMouse(player)->y : 0);
+				//return mousey;
+			case XREL:
+				return mousexrel + ((players[player]->shootmode && hasController(player)) ? getVirtualMouse(player)->xrel : 0);
+				//return mousexrel;
+			case YREL:
+				return mouseyrel + ((players[player]->shootmode && hasController(player)) ? getVirtualMouse(player)->yrel : 0);
+				//return mouseyrel;
+			default:
+				return 0;
+		}
+	}
+	else if ( hasController(player) )
+	{
+		switch ( input )
+		{
+			case OX:
+				return getVirtualMouse(player)->ox;
+			case OY:
+				return getVirtualMouse(player)->oy;
+			case X:
+				return getVirtualMouse(player)->x;
+			case Y:
+				return getVirtualMouse(player)->y;
+			case XREL:
+				return getVirtualMouse(player)->xrel;
+			case YREL:
+				return getVirtualMouse(player)->yrel;
+			default:
+				return 0;
+		}
+	}
+	return 0;
+}
+
+void Inputs::warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 flags)
+{
+	if ( inputs.bPlayerUsingKeyboardControl(player) && (flags & SET_MOUSE) )
+	{
+		if ( flags & UNSET_RELATIVE_MOUSE )
+		{
+			SDL_SetRelativeMouseMode(SDL_FALSE);
+		}
+		else if ( flags & SET_RELATIVE_MOUSE )
+		{
+			SDL_SetRelativeMouseMode(SDL_TRUE);
+		}
+		SDL_WarpMouseInWindow(screen, x, y);
+		mousex = x;
+		mousey = y;
+		omousex = x;
+		omousey = y;
+	}
+	if ( inputs.hasController(player) && (flags & SET_CONTROLLER) )
+	{
+		const auto& mouse = inputs.getVirtualMouse(player);
+		mouse->x = x;
+		mouse->y = y;
+		mouse->ox = x;
+		mouse->oy = y;
+	}
 }
 
 GameController* Inputs::getController(int player) const
@@ -995,13 +1102,78 @@ const bool Inputs::bControllerInputPressed(int player, const unsigned controller
 		return false;
 	}
 
-	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 )
+	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 ) // triggers
 	{
 		return controller->binaryToggle(GameController::getSDLTriggerFromImpulse(controllerImpulse));
 	}
 	else
 	{
 		return controller->binaryToggle(GameController::getSDLButtonFromImpulse(controllerImpulse));
+	}
+}
+
+const bool Inputs::bMouseLeft(int player) const
+{
+	if ( !bPlayerIsControllable(player) )
+	{
+		return false;
+	}
+	if ( bPlayerUsingKeyboardControl(player) )
+	{
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			return true;
+		}
+	}
+
+	bool hackFromPreviousCode = bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK);
+	if ( hackFromPreviousCode && ((!players[player]->shootmode && players[player]->gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
+	{
+		return true;
+	}
+	return false;
+}
+
+const bool Inputs::bMouseRight(int player) const
+{
+	if ( !bPlayerIsControllable(player) )
+	{
+		return false;
+	}
+	if ( bPlayerUsingKeyboardControl(player) && mousestatus[SDL_BUTTON_RIGHT] )
+	{
+		return true;
+	}
+	return false;
+}
+
+const void Inputs::mouseClearLeft(int player)
+{
+	if ( !bPlayerIsControllable(player) )
+	{
+		return;
+	}
+	if ( bPlayerUsingKeyboardControl(player) )
+	{
+		mousestatus[SDL_BUTTON_LEFT] = 0;
+	}
+
+	controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
+	//bool hackFromPreviousCode = bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK);
+	//if ( hackFromPreviousCode )
+	//{
+	//}
+}
+
+const void Inputs::mouseClearRight(int player)
+{
+	if ( !bPlayerIsControllable(player) )
+	{
+		return;
+	}
+	if ( bPlayerUsingKeyboardControl(player) )
+	{
+		mousestatus[SDL_BUTTON_RIGHT] = 0;
 	}
 }
 
@@ -1021,7 +1193,7 @@ void Inputs::controllerClearInput(int player, const unsigned controllerImpulse)
 		return;
 	}
 
-	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 )
+	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 ) // triggers
 	{
 		controller->consumeBinaryToggle(GameController::getSDLTriggerFromImpulse(controllerImpulse));
 	}

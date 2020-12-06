@@ -706,9 +706,9 @@ void Entity::actChest()
 				messagePlayer(chestclicked, language[459]);
 				openedChest[chestclicked] = this;
 				chestOpener = chestclicked;
-				if ( chestclicked == clientnum ) // i.e host opened the chest, close GUIs
+				if ( chestclicked == clientnum || players[chestclicked]->isLocalPlayer() ) // i.e host opened the chest, close GUIs
 				{
-					closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CHEST);
+					players[chestclicked]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CHEST);
 				}
 				if (chestclicked != 0 && multiplayer == SERVER)
 				{
@@ -737,8 +737,8 @@ void Entity::actChest()
 				}
 				else
 				{
-					openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-					if ( numItemsInChest() > 0 )   //Warp mouse to first item in chest only if there are any items!
+					players[chestclicked]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+					if ( numItemsInChest(chestclicked) > 0 )   //Warp mouse to first item in chest only if there are any items!
 					{
 						selectedChestSlot = 0;
 						warpMouseToSelectedChestSlot();
@@ -1056,51 +1056,51 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 		// tell the server to unequip.
 		if ( slot != nullptr )
 		{
-			if ( slot == &stats[clientnum]->weapon )
+			if ( slot == &stats[player]->weapon )
 			{
-				playerTryEquipItemAndUpdateServer(item);
+				playerTryEquipItemAndUpdateServer(player, item);
 			}
-			else if ( slot == &stats[clientnum]->shield && itemCategory(newitem) == SPELLBOOK )
+			else if ( slot == &stats[player]->shield && itemCategory(newitem) == SPELLBOOK )
 			{
-				playerTryEquipItemAndUpdateServer(item);
+				playerTryEquipItemAndUpdateServer(player, item);
 			}
 			else
 			{
-				if ( slot == &stats[clientnum]->helmet )
+				if ( slot == &stats[player]->helmet )
 				{
-					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_HELM, item);
+					clientUnequipSlotAndUpdateServer(player, EQUIP_ITEM_SLOT_HELM, item);
 				}
-				else if ( slot == &stats[clientnum]->breastplate )
+				else if ( slot == &stats[player]->breastplate )
 				{
-					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_BREASTPLATE, item);
+					clientUnequipSlotAndUpdateServer(player, EQUIP_ITEM_SLOT_BREASTPLATE, item);
 				}
-				else if ( slot == &stats[clientnum]->gloves )
+				else if ( slot == &stats[player]->gloves )
 				{
-					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_GLOVES, item);
+					clientUnequipSlotAndUpdateServer(player, EQUIP_ITEM_SLOT_GLOVES, item);
 				}
-				else if ( slot == &stats[clientnum]->shoes )
+				else if ( slot == &stats[player]->shoes )
 				{
-					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_BOOTS, item);
+					clientUnequipSlotAndUpdateServer(player, EQUIP_ITEM_SLOT_BOOTS, item);
 				}
-				else if ( slot == &stats[clientnum]->shield )
+				else if ( slot == &stats[player]->shield )
 				{
-					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_SHIELD, item);
+					clientUnequipSlotAndUpdateServer(player, EQUIP_ITEM_SLOT_SHIELD, item);
 				}
-				else if ( slot == &stats[clientnum]->cloak )
+				else if ( slot == &stats[player]->cloak )
 				{
-					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_CLOAK, item);
+					clientUnequipSlotAndUpdateServer(player, EQUIP_ITEM_SLOT_CLOAK, item);
 				}
-				else if ( slot == &stats[clientnum]->amulet )
+				else if ( slot == &stats[player]->amulet )
 				{
-					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_AMULET, item);
+					clientUnequipSlotAndUpdateServer(player, EQUIP_ITEM_SLOT_AMULET, item);
 				}
-				else if ( slot == &stats[clientnum]->ring )
+				else if ( slot == &stats[player]->ring )
 				{
-					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_RING, item);
+					clientUnequipSlotAndUpdateServer(player, EQUIP_ITEM_SLOT_RING, item);
 				}
-				else if ( slot == &stats[clientnum]->mask )
+				else if ( slot == &stats[player]->mask )
 				{
-					clientUnequipSlotAndUpdateServer(EQUIP_ITEM_SLOT_MASK, item);
+					clientUnequipSlotAndUpdateServer(player, EQUIP_ITEM_SLOT_MASK, item);
 				}
 			}
 		}

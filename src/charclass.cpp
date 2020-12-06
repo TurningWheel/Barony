@@ -2634,7 +2634,7 @@ void initShapeshiftHotbar(int player)
 						bool foundaspot = false;
 						const bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
 						int numRows = INVENTORY_SIZEY;
-						if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
+						if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 						{
 							numRows = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
 						}

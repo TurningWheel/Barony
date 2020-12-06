@@ -476,8 +476,6 @@ extern int INVENTORY_SIZEY;
 #define INVENTORY_STARTX ((xres)/2-(INVENTORY_SIZEX)*(INVENTORY_SLOTSIZE)/2-inventory_mode_item_img->w/2)
 static const int INVENTORY_STARTY = 10;
 
-extern Item* selectedItem;
-
 // item generic
 class ItemGeneric
 {
@@ -578,10 +576,10 @@ enum EquipItemSendToServerSlot : int
 	EQUIP_ITEM_SLOT_AMULET,
 	EQUIP_ITEM_SLOT_RING
 };
-void playerTryEquipItemAndUpdateServer(Item* item);
+void playerTryEquipItemAndUpdateServer(const int player, Item* item);
 void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
 	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
-void clientUnequipSlotAndUpdateServer(EquipItemSendToServerSlot slot, Item* item);
+void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
 EquipItemResult equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);

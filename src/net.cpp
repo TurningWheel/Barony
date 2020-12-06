@@ -2932,9 +2932,9 @@ void clientHandlePacket()
 			return;
 		}
 
-		if ( *armor == selectedItem )
+		if ( *armor == inputs.getUIInteraction(clientnum)->selectedItem )
 		{
-			selectedItem = nullptr;
+			inputs.getUIInteraction(clientnum)->selectedItem = nullptr;
 		}
 
 		if ( (*armor)->count > 1 )
@@ -2966,8 +2966,8 @@ void clientHandlePacket()
 	// open shop
 	else if (!strncmp((char*)net_packet->data, "SHOP", 4))
 	{
-		closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
-		openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
+		players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
 		shopkeeper = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		shopkeepertype = net_packet->data[8];
 		strcpy( shopkeepername_client, (char*)(&net_packet->data[9]) );
@@ -3004,7 +3004,7 @@ void clientHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "SHPC", 4))
 	{
 		shopkeeper = 0;
-		closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+		players[clientnum]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 		list_FreeAll(shopInv);
 		//Clean up shop gamepad code here.
 		selectedShopSlot = -1;
@@ -3956,12 +3956,12 @@ void clientHandlePacket()
 			{
 				closeRemoveCurseGUI();
 			}
-			GenericGUI.closeGUI();
+			GenericGUI.closeGUI(clientnum);
 			identifygui_active = false;
 			list_FreeAll(&chestInv);
 			chestInv.first = nullptr;
 			chestInv.last = nullptr;
-			openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+			players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 		}
 		return;
 	}
@@ -4007,13 +4007,13 @@ void clientHandlePacket()
 		//identifygui_mode = true;
 		identifygui_active = true;
 		identifygui_appraising = false;
-		shootmode = false;
-		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+		players[clientnum]->shootmode = false;
+		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 		if ( removecursegui_active )
 		{
 			closeRemoveCurseGUI();
 		}
-		GenericGUI.closeGUI();
+		GenericGUI.closeGUI(clientnum);
 		if ( openedChest[clientnum] )
 		{
 			openedChest[clientnum]->closeChest();
@@ -4029,14 +4029,14 @@ void clientHandlePacket()
 	else if ( !strncmp((char*)net_packet->data, "CRCU", 4) )
 	{
 		removecursegui_active = true;
-		shootmode = false;
-		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+		players[clientnum]->shootmode = false;
+		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
 		if ( identifygui_active )
 		{
 			CloseIdentifyGUI();
 		}
-		GenericGUI.closeGUI();
+		GenericGUI.closeGUI(clientnum);
 
 		if ( openedChest[clientnum] )
 		{

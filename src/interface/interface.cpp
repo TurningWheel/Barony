@@ -98,8 +98,6 @@ Item* open_book_item = NULL;
 SDL_Surface* book_highlighted_left_img = NULL;
 SDL_Surface* book_highlighted_right_img = NULL;
 
-int gui_mode = GUI_MODE_NONE;
-
 SDL_Surface* magicspellList_bmp = NULL;
 SDL_Surface* spell_list_titlebar_bmp = NULL;
 SDL_Surface* spell_list_gui_slot_bmp = NULL;
@@ -142,8 +140,6 @@ SDL_Rect magic_gui_pos;
 SDL_Surface* sustained_spell_generic_icon = NULL;
 
 int buttonclick = 0;
-
-bool draw_cursor = true;
 
 SDL_Surface* hotbar_img = NULL;
 SDL_Surface* hotbar_spell_img = NULL;
@@ -1539,27 +1535,57 @@ Sint8* inputPressedForPlayer(int player, Uint32 scancode)
 	}
 }
 
-void openStatusScreen(int whichGUIMode, int whichInventoryMode)
+void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMode)
 {
+	if ( !inputs.bPlayerIsControllable(playernum) )
+	{
+		return;
+	}
+
 	shootmode = false;
 	gui_mode = whichGUIMode;
-	selectedItem = nullptr;
+	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 	inventory_mode = whichInventoryMode;
-	SDL_SetRelativeMouseMode(SDL_FALSE);
-	SDL_WarpMouseInWindow(screen, xres / 2, yres / 2);
-	mousex = xres / 2;
-	mousey = yres / 2;
-	omousex = mousex;
-	omousey = mousey;
+
+	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
+	inputs.warpMouse(playernum, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2), flags);
+
+	//if ( inputs.bPlayerUsingKeyboardControl(playernum) )
+	//{
+	//	SDL_SetRelativeMouseMode(SDL_FALSE);
+	//	//SDL_WarpMouseInWindow(screen, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2));
+	//	mousex = camera_x1() + (camera_width() / 2);
+	//	mousey = camera_y1() + (camera_height() / 2);
+	//	omousex = mousex;
+	//	omousey = mousey;
+
+	//	if ( inputs.hasController(playernum) )
+	//	{
+	//		const auto& mouse = inputs.getVirtualMouse(playernum);
+	//		mouse->x = mousex;
+	//		mouse->y = mousey;
+	//		mouse->ox = omousex;
+	//		mouse->oy = omousey;
+	//	}
+	//}
+	//else if ( inputs.hasController(playernum) )
+	//{
+	//	const auto& mouse = inputs.getVirtualMouse(playernum);
+	//	mouse->x = camera_x1() + (camera_width() / 2);
+	//	mouse->y = camera_y1() + (camera_height() / 2);
+	//	mouse->ox = mouse->x;
+	//	mouse->oy = mouse->y;
+	//}
+	
 	attributespage = 0;
 	//proficienciesPage = 0;
 }
 
-void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
+void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
 {
 	CloseIdentifyGUI();
 	closeRemoveCurseGUI();
-	GenericGUI.closeGUI();
+	GenericGUI.closeGUI(playernum);
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
 	{
 		FollowerMenu.closeFollowerMenuGUI();
@@ -1615,7 +1641,7 @@ void FollowerRadialMenu::initFollowerMenuGUICursor(bool openInventory)
 {
 	if ( openInventory )
 	{
-		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 	}
 	omousex = mousex;
 	omousey = mousey;
@@ -1688,7 +1714,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		if ( players[clientnum] && players[clientnum]->entity
 			&& followerToCommand->monsterTarget == players[clientnum]->entity->getUID() )
 		{
-			closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
+			players[clientnum]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 			return;
 		}
 
@@ -1832,7 +1858,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						|| optionSelected == ALLY_CMD_ATTACK_SELECT
 						|| optionSelected == ALLY_CMD_CANCEL )
 					{
-						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
+						players[clientnum]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 					}
 				}
 
@@ -3376,7 +3402,7 @@ void GenericGUIMenu::rebuildGUIInventory()
 			{
 				messagePlayer(clientnum, language[3343]);
 			}
-			closeGUI();
+			closeGUI(clientnum);
 			return;
 		}
 		scroll = std::max(0, std::min(scroll, c - kNumShownItems));
@@ -3411,7 +3437,7 @@ void GenericGUIMenu::rebuildGUIInventory()
 }
 
 
-void GenericGUIMenu::updateGUI()
+void GenericGUIMenu::updateGUI(const int player)
 {
 	SDL_Rect pos;
 	node_t* node;
@@ -3424,18 +3450,18 @@ void GenericGUIMenu::updateGUI()
 		{
 			if ( !alembicItem )
 			{
-				closeGUI();
+				closeGUI(player);
 				return;
 			}
 			if ( !alembicItem->node )
 			{
-				closeGUI();
+				closeGUI(player);
 				return;
 			}
 			if ( alembicItem->node->list != &stats[clientnum]->inventory )
 			{
 				// dropped out of inventory or something.
-				closeGUI();
+				closeGUI(player);
 				return;
 			}
 		}
@@ -3443,18 +3469,18 @@ void GenericGUIMenu::updateGUI()
 		{
 			if ( !tinkeringKitItem )
 			{
-				closeGUI();
+				closeGUI(player);
 				return;
 			}
 			if ( !tinkeringKitItem->node )
 			{
-				closeGUI();
+				closeGUI(player);
 				return;
 			}
 			if ( tinkeringKitItem->node->list != &stats[clientnum]->inventory )
 			{
 				// dropped out of inventory or something.
-				closeGUI();
+				closeGUI(player);
 				return;
 			}
 		}
@@ -3462,18 +3488,18 @@ void GenericGUIMenu::updateGUI()
 		{
 			if ( !scribingToolItem )
 			{
-				closeGUI();
+				closeGUI(player);
 				return;
 			}
 			if ( !scribingToolItem->node )
 			{
-				closeGUI();
+				closeGUI(player);
 				return;
 			}
 			if ( scribingToolItem->node->list != &stats[clientnum]->inventory )
 			{
 				// dropped out of inventory or something.
-				closeGUI();
+				closeGUI(player);
 				return;
 			}
 			if ( scribingBlankScrollTarget && scribingFilter != SCRIBING_FILTER_CRAFTABLE )
@@ -3953,7 +3979,7 @@ void GenericGUIMenu::updateGUI()
 				pos.w = 0;
 				pos.h = 0;
 				drawImage(invclose_bmp, NULL, &pos);
-				closeGUI();
+				closeGUI(clientnum);
 			}
 
 			Item *item = nullptr;
@@ -4347,7 +4373,7 @@ void GenericGUIMenu::repairItem(Item* item)
 		}
 		messagePlayer(clientnum, language[872], item->getName());
 	}
-	closeGUI();
+	closeGUI(clientnum);
 	if ( multiplayer == CLIENT && isEquipped )
 	{
 		// the client needs to inform the server that their equipment was repaired.
@@ -4395,7 +4421,7 @@ void GenericGUIMenu::repairItem(Item* item)
 	}
 }
 
-void GenericGUIMenu::closeGUI()
+void GenericGUIMenu::closeGUI(const int player)
 {
 	tinkeringFreeLists();
 	scribingFreeLists();
@@ -4528,11 +4554,13 @@ void GenericGUIMenu::initGUIControllerCode()
 	}
 }
 
-void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
+void GenericGUIMenu::openGUI(int player, int type, int scrollBeatitude, int scrollType)
 {
-	this->closeGUI();
-	shootmode = false;
-	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	this->closeGUI(player);
+
+	players[player]->shootmode = false;
+	players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+
 	guiActive = true;
 	usingScrollBeatitude = scrollBeatitude;
 	repairItemType = scrollType;
@@ -4558,11 +4586,11 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 	this->initGUIControllerCode();
 }
 
-void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
+void GenericGUIMenu::openGUI(const int player, int type, bool experimenting, Item* itemOpenedWith)
 {
-	this->closeGUI();
-	shootmode = false;
-	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	this->closeGUI(player);
+	players[player]->shootmode = false;
+	players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	alembicItem = itemOpenedWith;
 	experimentingAlchemy = experimenting;
@@ -4589,11 +4617,11 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	this->initGUIControllerCode();
 }
 
-void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
+void GenericGUIMenu::openGUI(const int player, int type, Item* itemOpenedWith)
 {
-	this->closeGUI();
-	shootmode = false;
-	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	this->closeGUI(player);
+	players[player]->shootmode = false;
+	players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	guiType = static_cast<GUICurrentType>(type);
 
@@ -4622,9 +4650,9 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	}
 	FollowerMenu.closeFollowerMenuGUI();
 
-	if ( openedChest[clientnum] )
+	if ( openedChest[player] )
 	{
-		openedChest[clientnum]->closeChest();
+		openedChest[player]->closeChest();
 	}
 	rebuildGUIInventory();
 	this->initGUIControllerCode();
@@ -4671,7 +4699,7 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 				{
 					messagePlayer(clientnum, language[3342]);
 				}
-				closeGUI();
+				closeGUI(clientnum);
 				return false;
 			}
 		}
@@ -4753,7 +4781,7 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		if ( players[clientnum]->entity->isBlind() )
 		{
 			messagePlayer(clientnum, language[892]);
-			closeGUI();
+			closeGUI(clientnum);
 			return false; // I can't see!
 		}
 	}
@@ -5367,7 +5395,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			spawnMagicTower(nullptr, players[clientnum]->entity->x, players[clientnum]->entity->y, SPELL_FIREBALL, nullptr);
 			players[clientnum]->entity->setObituary(language[3350]);
 		}
-		closeGUI();
+		closeGUI(clientnum);
 		return;
 	}
 
@@ -5455,7 +5483,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			break;
 		}
 	}
-	closeGUI();
+	closeGUI(clientnum);
 }
 
 bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notify)
