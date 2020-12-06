@@ -1360,10 +1360,10 @@ int saveGame(int saveIndex)
 	fp->write(&svFlags, sizeof(Uint32), 1);
 
 	// write hotbar items
-	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+	for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
 	{
 		int index = list_Size(&stats[clientnum]->inventory);
-		Item* item = uidToItem(hotbar[c].item);
+		Item* item = uidToItem(hotbarSlot.item);
 		if ( item )
 		{
 			index = list_Index(item->node);
@@ -2486,6 +2486,8 @@ int loadGame(int player, int saveIndex)
 	}
 
 	// assign hotbar items
+	auto& hotbar = players[player]->hotbar->slots();
+	auto& hotbar_alternate = players[player]->hotbar->slotsAlternate();
 	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 	{
 		node = list_Node(&stats[player]->inventory, temp_hotbar[c]);

@@ -38,8 +38,6 @@ Sint8 keystatus[512];
 char* inputstr = nullptr;
 int inputlen = 0;
 Sint8 mousestatus[6];
-Sint8 joystatus[NUM_JOY_STATUS];
-Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS];
 Entity** clickmap = nullptr;
 bool capture_mouse = true;
 string lastname;

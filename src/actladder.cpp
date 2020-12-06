@@ -54,7 +54,7 @@ void actLadder(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my))
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if (inrange[i])
 				{
@@ -125,7 +125,7 @@ void actLadderUp(Entity* my)
 	{
 		for (int i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if (inrange[i])
 				{
@@ -245,7 +245,7 @@ void actPortal(Entity* my)
 	// step through portal
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if ((i == 0 && selectedEntity == my) || (client_selected[i] == my))
+		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 		{
 			if (inrange[i])
 			{
@@ -441,7 +441,7 @@ void actWinningPortal(Entity* my)
 	// step through portal
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if ((i == 0 && selectedEntity == my) || (client_selected[i] == my))
+		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 		{
 			if (inrange[i])
 			{
@@ -581,7 +581,7 @@ void Entity::actExpansionEndGamePortal()
 	// step through portal
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity == this) || (client_selected[i] == this) )
+		if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
 		{
 			if ( inrange[i] )
 			{
@@ -740,7 +740,7 @@ void Entity::actMidGamePortal()
 	// step through portal
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity == this) || (client_selected[i] == this) )
+		if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
 		{
 			if ( inrange[i] )
 			{
@@ -1074,7 +1074,7 @@ void actCustomPortal(Entity* my)
 	// step through portal
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 		{
 			if ( inrange[i] )
 			{

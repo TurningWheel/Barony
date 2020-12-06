@@ -684,7 +684,7 @@ void Entity::actChest()
 	int chestclicked = -1;
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
-		if ( (i == 0 && selectedEntity == this) || (client_selected[i] == this) )
+		if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
 		{
 			if (inrange[i])
 			{
@@ -806,7 +806,7 @@ void actChestLid(Entity* my)
 
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if (inrange[i])
 				{

@@ -35,7 +35,7 @@ bool disablemouserotationlimit = false;
 bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
 int monsterEmoteGimpTimer = 0;
-int selectedEntityGimpTimer = 0;
+int selectedEntityGimpTimer[MAXPLAYERS] = { 0 };
 bool insectoidLevitating[MAXPLAYERS] = { false, false, false, false };
 bool partymode = false;
 
@@ -69,19 +69,46 @@ void actDeathCam(Entity* my)
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
 	}
 
+	Sint32 mousexrel_old = mousexrel;
+	Sint32 mouseyrel_old = mouseyrel;
+	if ( !inputs.bPlayerUsingKeyboardControl(DEATHCAM_PLAYERNUM) )
+	{
+		mousexrel = 0;
+		mouseyrel = 0;
+	}
+	if ( inputs.hasController(DEATHCAM_PLAYERNUM) )
+	{
+		mousexrel += inputs.getMouse(DEATHCAM_PLAYERNUM)->xrel;
+		mouseyrel += inputs.getMouse(DEATHCAM_PLAYERNUM)->yrel;
+	}
+
 	if ( DEATHCAM_TIME == 1 )
 	{
 		DEATHCAM_PLAYERTARGET = -1;
 	}
 	else if ( DEATHCAM_TIME == deathcamGameoverPromptTicks )
 	{
-		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+		bool playerAlive = false;
+		if ( splitscreen )
 		{
-			gameModeManager.Tutorial.openGameoverWindow();
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( players[c] && players[c]->entity )
+				{
+					playerAlive = true;
+				}
+			}
 		}
-		else
+		if ( !playerAlive )
 		{
-			openGameoverWindow();
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				gameModeManager.Tutorial.openGameoverWindow();
+			}
+			else
+			{
+				openGameoverWindow();
+			}
 		}
 	}
 	if ( shootmode && !gamePaused )
@@ -139,12 +166,12 @@ void actDeathCam(Entity* my)
 	{
 		// do nothing if still alive
 	}
-	else if ((*inputPressed(impulses[IN_ATTACK]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_ATTACK]))) && shootmode)
+	else if ((*inputPressedForPlayer(DEATHCAM_PLAYERNUM, impulses[IN_ATTACK]) || (shootmode && inputs.bControllerInputPressed(DEATHCAM_PLAYERNUM, INJOY_GAME_ATTACK))) && shootmode)
 	{
-		*inputPressed(impulses[IN_ATTACK]) = 0;
+		*inputPressedForPlayer(DEATHCAM_PLAYERNUM, impulses[IN_ATTACK]) = 0;
 		if ( shootmode )
 		{
-			*inputPressed(joyimpulses[INJOY_GAME_ATTACK]) = 0;
+			inputs.controllerClearInput(DEATHCAM_PLAYERNUM, INJOY_GAME_ATTACK);
 		}
 		DEATHCAM_PLAYERTARGET++;
 		if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)
@@ -188,6 +215,9 @@ void actDeathCam(Entity* my)
 	cameras[DEATHCAM_PLAYERNUM].x -= cos(my->yaw) * cos(my->pitch) * 1.5;
 	cameras[DEATHCAM_PLAYERNUM].y -= sin(my->yaw) * cos(my->pitch) * 1.5;
 	cameras[DEATHCAM_PLAYERNUM].z -= sin(my->pitch) * 16;
+
+	mousexrel = mousexrel_old;
+	mouseyrel = mouseyrel_old;
 }
 
 #define PLAYER_INIT my->skill[0]
@@ -252,6 +282,19 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 		return;
 	}
 
+	Sint32 mousexrel_old = mousexrel;
+	Sint32 mouseyrel_old = mouseyrel;
+	if ( !inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
+	{
+		mousexrel = 0;
+		mouseyrel = 0;
+	}
+	if ( inputs.hasController(PLAYER_NUM) )
+	{
+		mousexrel += inputs.getMouse(PLAYER_NUM)->xrel;
+		mouseyrel += inputs.getMouse(PLAYER_NUM)->yrel;
+	}
+
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
@@ -265,16 +308,16 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 		{
 			if ( noclip )
 			{
-				my->z -= (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .25 * refreshRateDelta;
+				my->z -= (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNR]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNL])) * .25 * refreshRateDelta;
 			}
 			else
 			{
-				my->yaw += (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .05 * refreshRateDelta;
+				my->yaw += (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNR]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNL])) * .05 * refreshRateDelta;
 			}
 		}
 		else
 		{
-			my->yaw += (*inputPressed(impulses[IN_TURNL]) - *inputPressed(impulses[IN_TURNR])) * .05 * refreshRateDelta;
+			my->yaw += (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNL]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNR])) * .05 * refreshRateDelta;
 		}
 	}
 	if ( shootmode && !gamePaused )
@@ -369,11 +412,11 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 		{
-			my->pitch += (*inputPressed(impulses[IN_DOWN]) - *inputPressed(impulses[IN_UP])) * .05 * refreshRateDelta;
+			my->pitch += (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_DOWN]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_UP])) * .05 * refreshRateDelta;
 		}
 		else
 		{
-			my->pitch += (*inputPressed(impulses[IN_UP]) - *inputPressed(impulses[IN_DOWN])) * .05 * refreshRateDelta;
+			my->pitch += (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_UP]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_DOWN])) * .05 * refreshRateDelta;
 		}
 	}
 	if ( shootmode && !gamePaused )
@@ -459,6 +502,9 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 	{
 		PLAYER_ROTY *= .5;
 	}
+
+	mousexrel = mousexrel_old;
+	mouseyrel = mouseyrel_old;
 }
 
 void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDelta)
@@ -489,10 +535,10 @@ void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDel
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ( ((*inputPressed(impulses[IN_FORWARD]) 
-				|| *inputPressed(impulses[IN_BACK])) 
-				|| (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) 
-				|| (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) 
+		else if ( ((*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD])
+				|| *inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]))
+				|| (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]))
+				|| (inputs.hasController(PLAYER_NUM) && (inputs.getController(PLAYER_NUM)->getLeftXPercent() || inputs.getController(PLAYER_NUM)->getLeftYPercent())))
 			&& !command && !swimming )
 		{
 			if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
@@ -525,14 +571,14 @@ void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDel
 			PLAYER_BOBMODE = 0;
 		}
 
-		if ( !command && !swimming && (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) )
+		if ( !command && !swimming && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT])) )
 		{
-			if ( (*inputPressed(impulses[IN_RIGHT]) && !(*inputPressed(impulses[IN_BACK])))
-				|| (*inputPressed(impulses[IN_LEFT]) && (*inputPressed(impulses[IN_BACK]))) )
+			if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) && !(*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK])))
+				|| (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]))) )
 			{
 				PLAYER_SIDEBOB += 0.01 * refreshRateDelta;
 				real_t angle = PI / 32;
-				if ( *inputPressed(impulses[IN_BACK]) )
+				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) )
 				{
 					angle = PI / 64;
 				}
@@ -541,12 +587,12 @@ void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDel
 					PLAYER_SIDEBOB = angle;
 				}
 			}
-			else if ( (*inputPressed(impulses[IN_LEFT]) && !(*inputPressed(impulses[IN_BACK])))
-				|| (*inputPressed(impulses[IN_RIGHT]) && (*inputPressed(impulses[IN_BACK]))) )
+			else if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) && !(*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK])))
+				|| (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]))) )
 			{
 				PLAYER_SIDEBOB -= 0.01 * refreshRateDelta;
 				real_t angle = -PI / 32;
-				if ( *inputPressed(impulses[IN_BACK]) )
+				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) )
 				{
 					angle = -PI / 64;
 				}
@@ -714,8 +760,8 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 			{
 				//Normal controls.
-				x_force = (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT]));
-				y_force = (*inputPressed(impulses[IN_FORWARD]) - (double)* inputPressed(impulses[IN_BACK]) * backpedalMultiplier);
+				x_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]));
+				y_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) - (double)* inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) * backpedalMultiplier);
 				if ( noclip )
 				{
 					if ( keystatus[SDL_SCANCODE_LSHIFT] )
@@ -728,22 +774,22 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			else
 			{
 				//Confused controls.
-				x_force = (*inputPressed(impulses[IN_LEFT]) - *inputPressed(impulses[IN_RIGHT]));
-				y_force = (*inputPressed(impulses[IN_BACK]) - (double)* inputPressed(impulses[IN_FORWARD]) * backpedalMultiplier);
+				x_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]));
+				y_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) - (double)* inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) * backpedalMultiplier);
 			}
 
-			if ( game_controller && !*inputPressed(impulses[IN_LEFT]) && !*inputPressed(impulses[IN_RIGHT]) )
+			if ( inputs.hasController(PLAYER_NUM) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) )
 			{
-				x_force = game_controller->getLeftXPercent();
+				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercent();
 
 				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				{
 					x_force *= -1;
 				}
 			}
-			if ( game_controller && !*inputPressed(impulses[IN_FORWARD]) && !*inputPressed(impulses[IN_BACK]) )
+			if ( inputs.hasController(PLAYER_NUM) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) )
 			{
-				y_force = game_controller->getLeftYPercent();
+				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercent();
 
 				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				{
@@ -1101,20 +1147,20 @@ void actPlayer(Entity* my)
 	{
 		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
 		{
-			if ( swapHotbarOnShapeshift == 0 )
+			if ( players[PLAYER_NUM]->hotbar->swapHotbarOnShapeshift == 0 )
 			{
-				initShapeshiftHotbar();
+				initShapeshiftHotbar(PLAYER_NUM);
 			}
-			else if ( swapHotbarOnShapeshift != stats[PLAYER_NUM]->type )
+			else if ( players[PLAYER_NUM]->hotbar->swapHotbarOnShapeshift != stats[PLAYER_NUM]->type )
 			{
 				// we likely transformed while still shapeshifted, fully init the hotbar code again.
-				deinitShapeshiftHotbar();
-				initShapeshiftHotbar();
+				deinitShapeshiftHotbar(PLAYER_NUM);
+				initShapeshiftHotbar(PLAYER_NUM);
 			}
 		}
-		else if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] && swapHotbarOnShapeshift > 0 )
+		else if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] && players[PLAYER_NUM]->hotbar->swapHotbarOnShapeshift > 0 )
 		{
-			deinitShapeshiftHotbar();
+			deinitShapeshiftHotbar(PLAYER_NUM);
 		}
 	}
 
@@ -1223,7 +1269,7 @@ void actPlayer(Entity* my)
 			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actLeftHandMagic;
 			entity->focalz = -4;
-			magicLeftHand = entity;
+			magicLeftHand[PLAYER_NUM] = entity;
 			//Right hand.
 			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
 			entity->flags[PASSABLE] = true;
@@ -1233,7 +1279,7 @@ void actPlayer(Entity* my)
 			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actRightHandMagic;
 			entity->focalz = -4;
-			magicRightHand = entity;
+			magicRightHand[PLAYER_NUM] = entity;
 			my->bodyparts.push_back(entity);
 
 			// hud shield
@@ -1578,7 +1624,7 @@ void actPlayer(Entity* my)
 	if ( !intro )
 	{
 		PLAYER_ALIVETIME++;
-		if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
+		if ( PLAYER_NUM == clientnum )
 		{
 			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
@@ -2825,7 +2871,7 @@ void actPlayer(Entity* my)
 	bool oldInsectoidLevitate = insectoidLevitating[PLAYER_NUM];
 	insectoidLevitating[PLAYER_NUM] = false;
 
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || splitscreen )
+	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || (splitscreen && PLAYER_NUM > 0) )
 	{
 		switch ( stats[PLAYER_NUM]->type )
 		{
@@ -3205,6 +3251,15 @@ void actPlayer(Entity* my)
 			handlePlayerCameraBobbing(my, PLAYER_NUM, false);
 		}
 
+		int mouseX = omousex;
+		int mouseY = omousey;
+		if ( splitscreen && inputs.hasController(PLAYER_NUM) && !inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
+		{
+			const auto& mouse = inputs.getMouse(PLAYER_NUM);
+			mouseX = mouse->ox;
+			mouseY = mouse->oy;
+		}
+
 		// object interaction
 		if ( intro == false )
 		{
@@ -3217,7 +3272,7 @@ void actPlayer(Entity* my)
 				{
 					if ( !shootmode )
 					{
-						Uint32 uidnum = GO_GetPixelU32(omousex, yres - omousey, cameras[PLAYER_NUM]);
+						Uint32 uidnum = GO_GetPixelU32(mouseX, yres - mouseY, cameras[PLAYER_NUM]);
 						if ( uidnum > 0 )
 						{
 							underMouse = uidToEntity(uidnum);
@@ -3225,7 +3280,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						Uint32 uidnum = GO_GetPixelU32(xres / 2, yres / 2, cameras[PLAYER_NUM]);
+						Uint32 uidnum = GO_GetPixelU32(cameras[PLAYER_NUM].winw / 2, yres - cameras[PLAYER_NUM].winh / 2, cameras[PLAYER_NUM]);
 						if ( uidnum > 0 )
 						{
 							underMouse = uidToEntity(uidnum);
@@ -3255,26 +3310,26 @@ void actPlayer(Entity* my)
 			if ( FollowerMenu.followerToCommand == nullptr && FollowerMenu.selectMoveTo == false )
 			{
 				bool clickedOnGUI = false;
-				selectedEntity = entityClicked(&clickedOnGUI, false, PLAYER_NUM); // using objects
-				if ( !selectedEntity && !clickedOnGUI )
+				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM); // using objects
+				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
 				{
 					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
-					++selectedEntityGimpTimer; 
+					++selectedEntityGimpTimer[PLAYER_NUM]; 
 				}
 			}
 			else
 			{
-				selectedEntity = NULL;
+				selectedEntity[PLAYER_NUM] = NULL;
 
-				if ( !command && (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
+				if ( !command && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
 				{
 					if ( !FollowerMenu.menuToggleClick && FollowerMenu.selectMoveTo )
 					{
 						if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 						{
 							// we're selecting a point for the ally to move to.
-							*inputPressed(impulses[IN_USE]) = 0;
-							*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+							*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) = 0;
+							inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_USE);
 
 							int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
 							if ( map.height > 64 || map.width > 64 )
@@ -3291,7 +3346,7 @@ void actPlayer(Entity* my)
 							}
 							if ( !shootmode && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 							{
-								MinimapPing newPing(ticks, -1, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
+								MinimapPing newPing(ticks, -1, (mouseX - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (mouseY - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
 								minimapPingAdd(newPing);
 								createParticleFollowerCommand(newPing.x, newPing.y, 0, 174);
 								FollowerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
@@ -3342,8 +3397,8 @@ void actPlayer(Entity* my)
 						{
 							// we're selecting a target for the ally.
 							Entity* target = entityClicked(nullptr, false, PLAYER_NUM);
-							*inputPressed(impulses[IN_USE]) = 0;
-							*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+							*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) = 0;
+							inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_USE);
 							if ( target )
 							{
 								Entity* parent = uidToEntity(target->skill[2]);
@@ -3392,7 +3447,7 @@ void actPlayer(Entity* my)
 
 			if ( !command && !FollowerMenu.followerToCommand && FollowerMenu.recentEntity )
 			{
-				if ( *inputPressed(impulses[IN_FOLLOWERMENU]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU]) )
+				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& FollowerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
@@ -3401,18 +3456,18 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						selectedEntity = FollowerMenu.recentEntity;
+						selectedEntity[PLAYER_NUM] = FollowerMenu.recentEntity;
 						FollowerMenu.holdWheel = true;
 					}
 				}
-				else if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) )
+				else if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& FollowerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 					{
 						// your ally is angry at you!
-						*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
-						*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) = 0;
+						*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+						inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD);
 					}
 					else if ( FollowerMenu.optionPrevious != -1 )
 					{
@@ -3420,16 +3475,16 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
-						*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) = 0;
+						*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+						inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD);
 					}
 				}
 			}
-			if ( selectedEntity != NULL )
+			if ( selectedEntity[PLAYER_NUM] != NULL )
 			{
 				FollowerMenu.followerToCommand = nullptr;
-				Entity* parent = uidToEntity(selectedEntity->skill[2]);
-				if ( selectedEntity->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+				Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->skill[2]);
+				if ( selectedEntity[PLAYER_NUM]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 				{
 					// see if we selected a follower to process right click menu.
 					if ( parent && parent->monsterAllyIndex == PLAYER_NUM )
@@ -3437,9 +3492,9 @@ void actPlayer(Entity* my)
 						FollowerMenu.followerToCommand = parent;
 						//messagePlayer(0, "limb");
 					}
-					else if ( selectedEntity->monsterAllyIndex == PLAYER_NUM )
+					else if ( selectedEntity[PLAYER_NUM]->monsterAllyIndex == PLAYER_NUM )
 					{
-						FollowerMenu.followerToCommand = selectedEntity;
+						FollowerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
 						//messagePlayer(0, "head");
 					}
 
@@ -3457,30 +3512,30 @@ void actPlayer(Entity* my)
 							FollowerMenu.recentEntity = FollowerMenu.followerToCommand;
 							FollowerMenu.initFollowerMenuGUICursor(true);
 							FollowerMenu.updateScrollPartySheet();
-							selectedEntity = NULL;
+							selectedEntity[PLAYER_NUM] = NULL;
 						}
 					}
 				}
-				if ( selectedEntity )
+				if ( selectedEntity[PLAYER_NUM] )
 				{
-					*inputPressed(impulses[IN_USE]) = 0;
-					*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+					*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) = 0;
+					inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_USE);
 					bool foundTinkeringKit = false;
-					if ( entityDist(my, selectedEntity) <= TOUCHRANGE )
+					if ( entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
 					{
 						inrange[PLAYER_NUM] = true;
 
-						if ( (selectedEntity->behavior == &actItem 
-							|| selectedEntity->behavior == &actTorch
-							|| selectedEntity->behavior == &actCrystalShard)
-							&& stats[clientnum] && stats[clientnum]->shield && stats[clientnum]->defending
-							&& stats[clientnum]->shield->type == TOOL_TINKERING_KIT )
+						if ( (selectedEntity[PLAYER_NUM]->behavior == &actItem
+							|| selectedEntity[PLAYER_NUM]->behavior == &actTorch
+							|| selectedEntity[PLAYER_NUM]->behavior == &actCrystalShard)
+							&& stats[PLAYER_NUM] && stats[PLAYER_NUM]->shield && stats[PLAYER_NUM]->defending
+							&& stats[PLAYER_NUM]->shield->type == TOOL_TINKERING_KIT )
 						{
 							foundTinkeringKit = true;
 						}
-						if ( foundTinkeringKit && (clientnum == 0 || (splitscreen && clientnum > 0)) )
+						if ( foundTinkeringKit && (clientnum == 0 || (splitscreen && PLAYER_NUM > 0)) )
 						{
-							selectedEntity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[PLAYER_NUM]->entity->getUID());
+							selectedEntity[PLAYER_NUM]->itemAutoSalvageByPlayer = static_cast<Sint32>(players[PLAYER_NUM]->entity->getUID());
 						}
 					}
 					else
@@ -3499,8 +3554,8 @@ void actPlayer(Entity* my)
 							{
 								strcpy((char*)net_packet->data, "CKIR");
 								if ( stats[PLAYER_NUM]->type == RAT
-									&& selectedEntity->behavior == &actItem
-									&& selectedEntity->itemShowOnMap == 1 )
+									&& selectedEntity[PLAYER_NUM]->behavior == &actItem
+									&& selectedEntity[PLAYER_NUM]->itemShowOnMap == 1 )
 								{
 									strcpy((char*)net_packet->data, "RATF");
 								}
@@ -3511,13 +3566,13 @@ void actPlayer(Entity* my)
 							strcpy((char*)net_packet->data, "CKOR");
 						}
 						net_packet->data[4] = PLAYER_NUM;
-						if (selectedEntity->behavior == &actPlayerLimb)
+						if ( selectedEntity[PLAYER_NUM]->behavior == &actPlayerLimb)
 						{
-							SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->getUID(), &net_packet->data[5]);
+							SDLNet_Write32((Uint32)players[selectedEntity[PLAYER_NUM]->skill[2]]->entity->getUID(), &net_packet->data[5]);
 						}
 						else
 						{
-							Entity* tempEntity = uidToEntity(selectedEntity->skill[2]);
+							Entity* tempEntity = uidToEntity(selectedEntity[PLAYER_NUM]->skill[2]);
 							if (tempEntity)
 							{
 								if (tempEntity->behavior == &actMonster)
@@ -3526,12 +3581,12 @@ void actPlayer(Entity* my)
 								}
 								else
 								{
-									SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
+									SDLNet_Write32((Uint32)selectedEntity[PLAYER_NUM]->getUID(), &net_packet->data[5]);
 								}
 							}
 							else
 							{
-								SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
+								SDLNet_Write32((Uint32)selectedEntity[PLAYER_NUM]->getUID(), &net_packet->data[5]);
 							}
 						}
 						net_packet->address.host = net_server.host;
@@ -3548,14 +3603,15 @@ void actPlayer(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my) || i == PLAYER_CLICKED - 1)
+			if ((i == 0 && selectedEntity[0] == my) || (client_selected[i] == my)
+				|| i == PLAYER_CLICKED - 1 || (i > 0 && splitscreen && selectedEntity[i] == my) )
 			{
 				PLAYER_CLICKED = 0;
 				if (inrange[i] && i != PLAYER_NUM)
 				{
 					messagePlayer(i, language[575], stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->HP, stats[PLAYER_NUM]->MAXHP, stats[PLAYER_NUM]->MP, stats[PLAYER_NUM]->MAXMP);
 					messagePlayer(PLAYER_NUM, language[576], stats[i]->name);
-					if (PLAYER_NUM == clientnum && players[i] && players[i]->entity)
+					if ((PLAYER_NUM == clientnum || (PLAYER_NUM != clientnum && splitscreen) ) && players[i] && players[i]->entity)
 					{
 						double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
 						PLAYER_VELX += cos(tangent);
@@ -4068,7 +4124,7 @@ void actPlayer(Entity* my)
 										entity->skill[15] = item->identified;
 									}
 								}
-								if ( multiplayer != SINGLE )
+								if ( multiplayer != SINGLE || splitscreen )
 								{
 									for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
 									{
@@ -4080,16 +4136,16 @@ void actPlayer(Entity* my)
 										}
 										list_RemoveNode(node);
 									}
-									stats[0]->helmet = NULL;
-									stats[0]->breastplate = NULL;
-									stats[0]->gloves = NULL;
-									stats[0]->shoes = NULL;
-									stats[0]->shield = NULL;
-									stats[0]->weapon = NULL;
-									stats[0]->cloak = NULL;
-									stats[0]->amulet = NULL;
-									stats[0]->ring = NULL;
-									stats[0]->mask = NULL;
+									stats[PLAYER_NUM]->helmet = NULL;
+									stats[PLAYER_NUM]->breastplate = NULL;
+									stats[PLAYER_NUM]->gloves = NULL;
+									stats[PLAYER_NUM]->shoes = NULL;
+									stats[PLAYER_NUM]->shield = NULL;
+									stats[PLAYER_NUM]->weapon = NULL;
+									stats[PLAYER_NUM]->cloak = NULL;
+									stats[PLAYER_NUM]->amulet = NULL;
+									stats[PLAYER_NUM]->ring = NULL;
+									stats[PLAYER_NUM]->mask = NULL;
 								}
 							}
 							else
@@ -6012,11 +6068,15 @@ void actPlayerLimb(Entity* my)
 		{
 			if ( inrange[i] )
 			{
-				if ( i == 0 && selectedEntity == my )
+				if ( i == 0 && selectedEntity[0] == my )
 				{
 					parent->skill[14] = i + 1;
 				}
 				else if ( client_selected[i] == my )
+				{
+					parent->skill[14] = i + 1;
+				}
+				else if ( i > 0 && splitscreen && selectedEntity[i] == my )
 				{
 					parent->skill[14] = i + 1;
 				}

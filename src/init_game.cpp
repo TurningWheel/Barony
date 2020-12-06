@@ -433,7 +433,7 @@ int initGame()
 	// default player stats
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
-		players[c] = new Player();
+		players[c] = new Player(c, true);
 		// Stat set to 0 as monster type not needed, values will be filled with default, then overwritten by savegame or the charclass.cpp file
 		stats[c] = new Stat(0);
 		if (c > 0)
@@ -1035,10 +1035,10 @@ void deinitGame()
 		SDL_GameControllerClose(game_controller);
 		game_controller = nullptr;
 	}*/
-	if (game_controller)
+	/*if (game_controller)
 	{
 		delete game_controller;
-	}
+	}*/
 
 	if ( shoparea )
 	{

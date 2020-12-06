@@ -55,10 +55,21 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 	Uint32 uidnum;
 	GLubyte pixel[4];
 
-	if ( !clickCheckOverride && !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
+	if ( !clickCheckOverride && !(*inputPressedForPlayer(player, impulses[IN_USE])) && !(inputs.bControllerInputPressed(player, INJOY_GAME_USE)) )
 	{
 		return NULL;
 	}
+
+	int mx = omousex;
+	int my = omousey;
+	if ( splitscreen && inputs.hasController(player) && !inputs.bPlayerUsingKeyboardControl(player) )
+	{
+		const auto& mouse = inputs.getMouse(player);
+		mx = mouse->ox;
+		my = mouse->oy;
+	}
+	auto& camera = cameras[player];
+
 	if ( !shootmode )
 	{
 		if ( itemMenuOpen )
@@ -69,7 +80,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 			}
 			return NULL;
 		}
-		if ( omousex < 0 || omousex >= 0 + xres || omousey < 0 || omousey >= 0 + yres )
+		if ( mx < camera.winx || mx >= camera.winx + camera.winw || my < camera.winy || my >= camera.winy + camera.winh )
 		{
 			if ( clickedOnGUI )
 			{
@@ -77,8 +88,8 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 			}
 			return NULL;
 		}
-		if (openedChest[clientnum])
-			if (omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
+		if (openedChest[player])
+			if ( mx > CHEST_INVENTORY_X && mx < CHEST_INVENTORY_X + inventoryChest_bmp->w && my > CHEST_INVENTORY_Y && my < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
 			{
 				if ( clickedOnGUI )
 				{
@@ -87,7 +98,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				return NULL;    //Click falls inside the chest inventory GUI.
 			}
 		if (identifygui_active)
-			if (omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h)
+			if ( mx > IDENTIFY_GUI_X && mx < IDENTIFY_GUI_X + identifyGUI_img->w && my > IDENTIFY_GUI_Y && my < IDENTIFY_GUI_Y + identifyGUI_img->h)
 			{
 				if ( clickedOnGUI )
 				{
@@ -226,22 +237,27 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 
 		if ( softwaremode )
 		{
-			return clickmap[omousey + omousex * yres];
+			return clickmap[my + mx * (camera.winy + camera.winh)];
 		}
 		else
 		{
-			uidnum = GO_GetPixelU32(omousex, yres - omousey, cameras[player]);
+			uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
 		}
 	}
 	else
 	{
 		if ( softwaremode )
 		{
-			return clickmap[(yres / 2) + (xres / 2) * yres];
+			return clickmap[
+				(cameras[player].winy + cameras[player].winh / 2) 
+				+ (cameras[player].winx + (cameras[player].winw / 2) * (cameras[player].winy + (cameras[player].winh / 2) * 2))];
 		}
 		else
 		{
-			uidnum = GO_GetPixelU32(xres / 2, yres / 2, cameras[player]);
+			uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), yres - (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
+			messagePlayer(0, "first: %d", uidnum);
+			//uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
+			//messagePlayer(0, "sec: %d", uidnum);
 		}
 	}
 
@@ -249,12 +265,12 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 
 	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride )
 	{
-		if ( players[clientnum] && players[clientnum]->entity && monsterEmoteGimpTimer == 0 )
+		if ( players[player] && players[player]->entity && monsterEmoteGimpTimer == 0 )
 		{
 			monsterEmoteGimpTimer = TICKS_PER_SECOND * 5;
 			int sfx = 0;
 			int line = 0;
-			switch ( stats[clientnum]->type )
+			switch ( stats[player]->type )
 			{
 				case SKELETON:
 					sfx = 95;
@@ -322,7 +338,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				{
 					playSound(sfx, 92);
 					strcpy((char*)net_packet->data, "EMOT");
-					net_packet->data[4] = clientnum;
+					net_packet->data[4] = player;
 					SDLNet_Write16(sfx, &net_packet->data[5]);
 					net_packet->address.host = net_server.host;
 					net_packet->address.port = net_server.port;
@@ -338,7 +354,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 						{
 							strcpy((char*)net_packet->data, "SNEL");
 							SDLNet_Write16(sfx, &net_packet->data[4]);
-							SDLNet_Write32((Uint32)players[clientnum]->entity->getUID(), &net_packet->data[6]);
+							SDLNet_Write32((Uint32)players[player]->entity->getUID(), &net_packet->data[6]);
 							SDLNet_Write16(92, &net_packet->data[10]);
 							net_packet->address.host = net_clients[c - 1].host;
 							net_packet->address.port = net_clients[c - 1].port;

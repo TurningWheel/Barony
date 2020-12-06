@@ -575,6 +575,7 @@ typedef struct spellcastingAnimationManager
 	//The data to pass on to the castSpell function.
 	spell_t* spell;
 	Uint32 caster;
+	int player;
 
 	bool active;
 	bool active_spellbook;
@@ -592,11 +593,11 @@ typedef struct spellcastingAnimationManager
 	float lefthand_movey;
 	float lefthand_angle;
 } spellcasting_animation_manager_t;
-extern spellcasting_animation_manager_t cast_animation;
+extern spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 
 void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook);
-extern Entity* magicLeftHand;
-extern Entity* magicRightHand;
+extern Entity* magicLeftHand[MAXPLAYERS];
+extern Entity* magicRightHand[MAXPLAYERS];
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager);
 void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager);
 

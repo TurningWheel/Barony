@@ -188,7 +188,7 @@ void Entity::actPowerCrystal()
 
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( ((i == 0 && selectedEntity == this) || (client_selected[i] == this)) && crystalTurning == 0 )
+		if ( ((i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this)) && crystalTurning == 0 )
 		{
 			if ( inrange[i] )
 			{

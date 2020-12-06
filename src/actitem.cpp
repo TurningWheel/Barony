@@ -240,7 +240,7 @@ void actItem(Entity* my)
 		}
 		for ( i = 0; i < MAXPLAYERS; i++)
 		{
-			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my))
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if ( inrange[i] && players[i] && players[i]->entity )
 				{
@@ -295,7 +295,7 @@ void actItem(Entity* my)
 							item = itemPickup(i, item2);
 							if (item)
 							{
-								if (i == 0)
+								if (i == 0 || (splitscreen && i > 0) )
 								{
 									// item is the new inventory stack for server, free the picked up items
 									free(item2); 
@@ -330,7 +330,7 @@ void actItem(Entity* my)
 										}
 									}
 								}
-								if (i != 0)
+								if ( i != 0 && !splitscreen )
 								{
 									free(item); // item is the picked up items (item == item2)
 								}

@@ -74,8 +74,6 @@ public:
 };
 extern EnemyHPDamageBarHandler enemyHPDamageBarHandler;
 
-extern int magicBoomerangHotbarSlot;
-
 #ifndef SHOPWINDOW_SIZE
 #define SHOPWINDOW_SIZE
 #define SHOPWINDOW_SIZEX 576
@@ -129,7 +127,7 @@ extern real_t camera_charsheet_offsetyaw;
 extern int selected_inventory_slot_x;
 extern int selected_inventory_slot_y;
 
-void select_inventory_slot(int x, int y);
+void select_inventory_slot(int player, int x, int y);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -151,31 +149,31 @@ extern bool draw_cursor; //True if the gamepad's d-pad has been used to navigate
 void takeScreenshot();
 bool loadInterfaceResources();
 void freeInterfaceResources();
-void clickDescription(int player, Entity* entity);
+void clickDescription(const int player, Entity* entity);
 void consoleCommand(char const * const command);
 void drawMinimap();
-void handleDamageIndicators(int player);
+void handleDamageIndicators(const int player);
 void handleDamageIndicatorTicks();
-void drawStatus();
+void drawStatus(const int player);
 void saveCommand(char* content);
 int loadConfig(char* filename);
 int saveConfig(char const * const filename);
 void defaultConfig();
 void updateChestInventory();
 void updateAppraisalItemBox();
-void updatePlayerInventory();
+void updatePlayerInventory(const int player);
 void updateShopWindow();
 void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
 damageIndicator_t* newDamageIndicator(double x, double y);
 
 void selectItemMenuSlot(const Item& item, int entry);
 bool autoAddHotbarFilter(const Item& item);
-void quickStackItems();
-void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft); // sort inventory items matching category. -1 is everything, -2 is only equipped items.
-void autosortInventory();
+void quickStackItems(const int player);
+void sortInventoryItemsOfType(const int player, int categoryInt, bool sortRightToLeft); // sort inventory items matching category. -1 is everything, -2 is only equipped items.
+void autosortInventory(const int player);
 bool mouseInsidePlayerInventory();
 bool mouseInsidePlayerHotbar();
-bool playerLearnedSpellbook(Item* current_item);
+bool playerLearnedSpellbook(const int player, Item* current_item);
 extern Uint32 itemMenuItem;
 extern bool itemMenuOpen;
 extern int itemMenuSelected;
@@ -514,9 +512,9 @@ extern GenericGUIMenu GenericGUI;
  */
 bool mouseInBounds(int x1, int x2, int y1, int y2);
 
-void updateCharacterSheet();
-void drawPartySheet();
-void drawSkillsSheet();
+void updateCharacterSheet(const int player);
+void drawPartySheet(const int player);
+void drawSkillsSheet(const int player);
 
 //Right sidebar defines.
 #define RIGHTSIDEBAR_X (xres - rightsidebar_titlebar_img->w)
@@ -573,8 +571,6 @@ void updateBookGUI();
 void closeBookGUI();
 void openBook(struct book_t* book, Item* item);
 
-extern Entity* hudweapon; //A pointer to the hudweapon entity.
-
 
 //------Hotbar Defines-----
 /*
@@ -582,43 +578,26 @@ extern Entity* hudweapon; //A pointer to the hudweapon entity.
  * NOTE: If the status bar width is changed, you need to change the slot image too. Make sure the status bar width stays divisible by 10.
  */
 
-//NOTE: Each hotbar slot is "constructed" in loadInterfaceResources() in interface.c. If you add anything, make sure to initialize it there.
-typedef struct hotbar_slot_t
-{
-	/*
-	 * This is an item's ID. It just resolves to NULL if an item is no longer valid.
-	 */
-	Uint32 item;
-} hotbar_slot_t;
-
 #define HOTBAR_EMPTY 0
 #define HOTBAR_ITEM 1
 #define HOTBAR_SPELL 2
 
-static const unsigned NUM_HOTBAR_SLOTS = 10; //NOTE: If you change this, you must dive into drawstatus.c and update the hotbar code. It expects 10.
-static const unsigned NUM_HOTBAR_ALTERNATES = 5;
-extern hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
-extern hotbar_slot_t hotbar_alternate[NUM_HOTBAR_ALTERNATES][NUM_HOTBAR_SLOTS];
-extern int swapHotbarOnShapeshift;
-extern bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES];
-extern int current_hotbar; //For use with gamepads and stuff because no hotkeys like a keyboard.
-enum HotbarLoadouts : int
-{
-	HOTBAR_DEFAULT,
-	HOTBAR_RAT,
-	HOTBAR_SPIDER,
-	HOTBAR_TROLL,
-	HOTBAR_IMP
-};
-
 extern SDL_Surface* hotbar_img; //A 64x64 slot.
 extern SDL_Surface* hotbar_spell_img; //Drawn when a spell is in the hotbar. TODO: Replace with unique images for every spell. (Or draw this by default if none found?)
 
-//Returns a pointer to a hotbar slot if the specified coordinates are in the area of the hotbar. Used for such things as dragging and dropping items.
-hotbar_slot_t* getHotbar(int x, int y);
+//NOTE: Each hotbar slot is "constructed" in loadInterfaceResources() in interface.c. If you add anything, make sure to initialize it there.
+typedef struct hotbar_slot_t
+{
+	/*
+	* This is an item's ID. It just resolves to NULL if an item is no longer valid.
+	*/
+	Uint32 item;
+} hotbar_slot_t;
 
-void selectHotbarSlot(int slot);
-extern bool hotbarHasFocus;
+
+//Returns a pointer to a hotbar slot if the specified coordinates are in the area of the hotbar. Used for such things as dragging and dropping items.
+hotbar_slot_t* getHotbar(int player, int x, int y);
+
 void warpMouseToSelectedHotbarSlot();
 
 /*
@@ -649,6 +628,7 @@ extern bool show_skill_values;
 
 const char* getInputName(Uint32 scancode);
 Sint8* inputPressed(Uint32 scancode);
+Sint8* inputPressedForPlayer(int player, Uint32 scancode);
 
 //All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
 void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.

@@ -254,7 +254,7 @@ void Entity::actPedestalBase()
 	// handle player interaction
 	for ( int i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( ((i == 0 && selectedEntity == this) || (client_selected[i] == this)))
+		if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
 		{
 			if ( inrange[i] )
 			{
@@ -354,7 +354,7 @@ void Entity::actPedestalOrb()
 		{
 			for ( int i = 0; i < MAXPLAYERS; i++ )
 			{
-				if ( ((i == 0 && selectedEntity == this) || (client_selected[i] == this)) )
+				if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
 				{
 					if ( inrange[i] )
 					{

@@ -238,7 +238,7 @@ void Entity::actFurniture()
 			int i;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity == this) || (client_selected[i] == this) )
+				if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
 				{
 					if (inrange[i])
 					{
@@ -295,7 +295,7 @@ void actMCaxe(Entity* my)
 			int i;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+				if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 				{
 					if (inrange[i])
 					{
@@ -513,7 +513,7 @@ void actFloorDecoration(Entity* my)
 	int i;
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 		{
 			if ( inrange[i] )
 			{
@@ -2372,15 +2372,15 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 
 void TextSourceScript::playerClearInventory(bool clearStats)
 {
-	deinitShapeshiftHotbar();
+	deinitShapeshiftHotbar(clientnum);
 	for ( int c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 	{
 		selected_spell_alternate[c] = NULL;
-		hotbarShapeshiftInit[c] = false;
+		players[clientnum]->hotbar->hotbarShapeshiftInit[c] = false;
 	}
 	selected_spell = NULL; //So you don't start off with a spell when the game restarts.
 	selected_spell_last_appearance = -1;
-	spellcastingAnimationManager_deactivate(&cast_animation);
+	spellcastingAnimationManager_deactivate(&cast_animation[clientnum]);
 	stats[clientnum]->freePlayerEquipment();
 	list_FreeAll(&stats[clientnum]->inventory);
 	shootmode = true;

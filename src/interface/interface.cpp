@@ -145,14 +145,8 @@ int buttonclick = 0;
 
 bool draw_cursor = true;
 
-hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
-hotbar_slot_t hotbar_alternate[NUM_HOTBAR_ALTERNATES][NUM_HOTBAR_SLOTS];
-int swapHotbarOnShapeshift = 0;
-bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
-int current_hotbar = 0;
 SDL_Surface* hotbar_img = NULL;
 SDL_Surface* hotbar_spell_img = NULL;
-bool hotbarHasFocus = false;
 
 list_t damageIndicators;
 
@@ -396,16 +390,6 @@ bool loadInterfaceResources()
 	effect_drunk_bmp = loadImage("images/system/drunk.png");
 	effect_polymorph_bmp = loadImage("images/system/polymorph.png");
 	effect_hungover_bmp = loadImage("images/system/hungover.png");
-
-	int i = 0;
-	for (i = 0; i < NUM_HOTBAR_SLOTS; ++i)
-	{
-		hotbar[i].item = 0;
-		for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
-		{
-			hotbar_alternate[j][i].item = 0;
-		}
-	}
 
 	damageIndicators.first = nullptr;
 	damageIndicators.last = nullptr;
@@ -1384,12 +1368,12 @@ bool mouseInBounds(int x1, int x2, int y1, int y2)
 	return false;
 }
 
-hotbar_slot_t* getHotbar(int x, int y)
+hotbar_slot_t* getHotbar(int player, int x, int y)
 {
 	if (x >= HOTBAR_START_X && x < HOTBAR_START_X + (10 * hotbar_img->w * uiscale_hotbar) && y >= STATUS_Y - hotbar_img->h * uiscale_hotbar && y < STATUS_Y)
 	{
 		int relx = x - HOTBAR_START_X; //X relative to the start of the hotbar.
-		return &hotbar[static_cast<int>(relx / (hotbar_img->w * uiscale_hotbar))]; //The slot will clearly be the x divided by the width of a slot
+		return &players[player]->hotbar->slots()[static_cast<int>(relx / (hotbar_img->w * uiscale_hotbar))]; //The slot will clearly be the x divided by the width of a slot
 	}
 
 	return NULL;
@@ -1501,11 +1485,17 @@ Sint8* inputPressed(Uint32 scancode)
 	else if (scancode < 301)
 	{
 		//Analog joystick triggers are mapped to digital status (0 = not pressed, 1 = pressed).
-		return &joy_trigger_status[scancode - 299];
+		//return &joy_trigger_status[scancode - 299];
+		// WIP SPLITSCREEN - DEPRECATE THIS
+		dummy_value = 0;
+		return &dummy_value;
 	}
 	else if (scancode < 318)
 	{
-		return &joystatus[scancode - 301];
+		//return &joystatus[scancode - 301];
+		// WIP SPLITSCREEN - DEPRECATE THIS
+		dummy_value = 0;
+		return &dummy_value;
 	}
 	else
 	{
@@ -1517,20 +1507,36 @@ Sint8* inputPressed(Uint32 scancode)
 	}
 }
 
-void selectHotbarSlot(int slot)
+Sint8* inputPressedForPlayer(int player, Uint32 scancode)
 {
-	if (slot < 0)
+	if ( splitscreen )
 	{
-		slot = NUM_HOTBAR_SLOTS - 1;
-	}
-	if (slot >= NUM_HOTBAR_SLOTS)
-	{
-		slot = 0;
+		// WIP SPLITSCREEN - keyboard only send for local player
+		if ( !inputs.bPlayerUsingKeyboardControl(player) )
+		{
+			dummy_value = 0;
+			return &dummy_value;
+		}
 	}
 
-	current_hotbar = slot;
-
-	hotbarHasFocus = true;
+	if ( scancode >= 0 && scancode < 283 )
+	{
+		// usual (keyboard) scancode range
+		return &keystatus[scancode];
+	}
+	else if ( scancode < 299 )
+	{
+		// mouse scancodes
+		return &mousestatus[scancode - 282];
+	}
+	else
+	{
+		// bad scancode
+		//return nullptr; //This crashes.
+		dummy_value = 0;
+		return &dummy_value;
+		//Not an ideal solution, but...
+	}
 }
 
 void openStatusScreen(int whichGUIMode, int whichInventoryMode)
@@ -7109,16 +7115,16 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+							for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
 							{
-								if ( hotbar[c].item == item->uid )
+								if ( hotbarSlot.item == item->uid )
 								{
-									hotbar[c].item = pickedUp->uid;
+									hotbarSlot.item = pickedUp->uid;
 								}
-								else if ( hotbar[c].item == pickedUp->uid )
+								else if ( hotbarSlot.item == pickedUp->uid )
 								{
 									// this was auto placed by itemPickup just above, undo it.
-									hotbar[c].item = 0;
+									hotbarSlot.item = 0;
 								}
 							}
 						}
@@ -7162,16 +7168,16 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+							for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
 							{
-								if ( hotbar[c].item == item->uid )
+								if ( hotbarSlot.item == item->uid )
 								{
-									hotbar[c].item = pickedUp->uid;
+									hotbarSlot.item = pickedUp->uid;
 								}
-								else if ( hotbar[c].item == pickedUp->uid )
+								else if ( hotbarSlot.item == pickedUp->uid )
 								{
 									// this was auto placed by itemPickup just above, undo it.
-									hotbar[c].item = 0;
+									hotbarSlot.item = 0;
 								}
 							}
 						}
@@ -7222,16 +7228,16 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+							for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
 							{
-								if ( hotbar[c].item == item->uid )
+								if ( hotbarSlot.item == item->uid )
 								{
-									hotbar[c].item = pickedUp->uid;
+									hotbarSlot.item = pickedUp->uid;
 								}
-								else if ( hotbar[c].item == pickedUp->uid )
+								else if ( hotbarSlot.item == pickedUp->uid )
 								{
 									// this was auto placed by itemPickup just above, undo it.
-									hotbar[c].item = 0;
+									hotbarSlot.item = 0;
 								}
 							}
 							if ( replaceTinkeringKit )

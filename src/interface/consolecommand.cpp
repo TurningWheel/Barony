@@ -996,6 +996,7 @@ void consoleCommand(char const * const command_str)
 			}
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
+				auto& hotbar = players[clientnum]->hotbar->slots();
 				hotbar[c].item = 0;
 			}
 			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
@@ -1050,6 +1051,7 @@ void consoleCommand(char const * const command_str)
 			}
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
+				auto& hotbar = players[clientnum]->hotbar->slots();
 				hotbar[c].item = 0;
 			}
 			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
@@ -1091,6 +1093,7 @@ void consoleCommand(char const * const command_str)
 			}
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
+				auto& hotbar = players[clientnum]->hotbar->slots();
 				hotbar[c].item = 0;
 			}
 			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
@@ -1746,6 +1749,19 @@ void consoleCommand(char const * const command_str)
 		client_disconnected[1] = false;
 		client_disconnected[2] = false;
 		client_disconnected[3] = false;
+		// reset class loadout
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			players[i]->bSplitscreen = true;
+			if ( i > 0 )
+			{
+				stats[i]->sex = static_cast<sex_t>(rand() % 2);
+				stats[i]->appearance = rand() % 18;
+				stats[i]->clearStats();
+				client_classes[i] = rand() % (CLASS_HUNTER + 1);
+				initClass(i);
+			}
+		}
 	}
 	else if (!strncmp(command_str, "/gamepad_deadzone ", 18))
 	{
@@ -2848,6 +2864,46 @@ void consoleCommand(char const * const command_str)
 		else if ( !strncmp(command_str, "/sfxenvironmentvolume", 21) )
 		{
 			sfxEnvironmentVolume = atoi(&command_str[22]);
+		}
+		else if ( !strncmp(command_str, "/cyclekeyboard", 14) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					if ( i + 1 >= MAXPLAYERS )
+					{
+						inputs.setPlayerIDAllowedKeyboard(0);
+						messagePlayer(clientnum, "Keyboard controlled by player %d", 0);
+					}
+					else
+					{
+						inputs.setPlayerIDAllowedKeyboard(i + 1);
+						messagePlayer(clientnum, "Keyboard controlled by player %d", i + 1);
+					}
+					break;
+				}
+			}
+		}
+		else if ( !strncmp(command_str, "/cyclegamepad", 13) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					int id = inputs.getControllerID(i);
+					inputs.removeControllerWithDeviceID(id);
+					if ( i + 1 >= MAXPLAYERS )
+					{
+						inputs.setControllerID(0, id);
+					}
+					else
+					{
+						inputs.setControllerID(i + 1, id);
+					}
+					break;
+				}
+			}
 		}
 		else
 		{

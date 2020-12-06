@@ -54,7 +54,8 @@ extern list_t safePacketsSent;
 extern std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 extern bool receivedclientnum;
 
-extern Entity* hudweapon, *hudarm;
+extern Entity* hudweapon[MAXPLAYERS];
+extern Entity* hudarm[MAXPLAYERS];
 
 extern Uint32 clientplayer;
 extern Sint32 numplayers;
@@ -227,6 +228,7 @@ void actTorch(Entity* my);
 void actCrystalShard(Entity* my);
 void actDoor(Entity* my);
 void actHudWeapon(Entity* my);
+void actHudArm(Entity* my);
 void actHudShield(Entity* my);
 void actHudAdditional(Entity* my);
 void actHudArrowModel(Entity* my);
@@ -296,8 +298,8 @@ extern Uint32 serverSchedulePlayerHealthUpdate;
 
 // function prototypes for charclass.c:
 void initClass(int player);
-void initShapeshiftHotbar();
-void deinitShapeshiftHotbar();
+void initShapeshiftHotbar(int player);
+void deinitShapeshiftHotbar(int player);
 bool playerUnlockedShamanSpell(int player, Item* item);
 
 extern char last_ip[64];
@@ -343,7 +345,7 @@ extern bool enabledDLCPack2;
 extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
 extern int monsterEmoteGimpTimer;
-extern int selectedEntityGimpTimer;
+extern int selectedEntityGimpTimer[MAXPLAYERS];
 void mapLevel(int player);
 void mapFoodOnLevel(int player);
 

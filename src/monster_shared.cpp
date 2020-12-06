@@ -338,7 +338,11 @@ void Entity::actMonsterLimb(bool processLight)
 		{
 			if ( inrange[i] )
 			{
-				if ( i == 0 && selectedEntity == this )
+				if ( i == 0 && selectedEntity[0] == this )
+				{
+					parentEnt->skill[13] = i + 1;
+				}
+				else if ( i > 0 && splitscreen && selectedEntity[i] == this )
 				{
 					parentEnt->skill[13] = i + 1;
 				}

@@ -152,7 +152,7 @@ void actFountain(Entity* my)
 	int i;
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
-		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 		{
 			if (inrange[i])   //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
 			{
