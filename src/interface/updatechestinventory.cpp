@@ -59,21 +59,18 @@ void repopulateInvItems(list_t* chestInventory)
 	}
 }
 
-int numItemsInChest()
+int numItemsInChest(const int player)
 {
 	node_t* node = nullptr;
 
 	list_t* chestInventory = nullptr;
-	if ( clientnum != 0 )
+	if ( multiplayer == CLIENT )
 	{
-		if ( multiplayer != SERVER )
-		{
-			chestInventory = &chestInv;
-		}
+		chestInventory = &chestInv;
 	}
-	else if (openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element)
+	else if (openedChest[player]->children.first && openedChest[player]->children.first->element)
 	{
-		chestInventory = (list_t*)openedChest[clientnum]->children.first->element;
+		chestInventory = (list_t*)openedChest[player]->children.first->element;
 	}
 
 	int i = 0;
@@ -104,15 +101,20 @@ void warpMouseToSelectedChestSlot()
 
 -------------------------------------------------------------------------------*/
 
-inline void drawChestSlots()
+inline void drawChestSlots(const int player)
 {
-	if ( !openedChest[clientnum] )
+	if ( !openedChest[player] )
 	{
 		return;
 	}
 
 	SDL_Rect pos;
 	Item* item = nullptr;
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
 	int highlightingSlot = -1;
 
@@ -128,7 +130,7 @@ inline void drawChestSlots()
 			if ( omousey >= currentY && omousey < currentY + inventoryoptionChest_bmp->h )
 			{
 				pos.y = currentY;
-				item = openedChest[clientnum]->getItemFromChest(invitemschest[i], false, true);
+				item = openedChest[player]->getItemFromChest(invitemschest[i], false, true);
 				if ( item != nullptr )
 				{
 					free(item); //Only YOU can prevent memleaks!
@@ -141,18 +143,18 @@ inline void drawChestSlots()
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
-						item = openedChest[clientnum]->getItemFromChest(invitemschest[i], false);
-						messagePlayer(clientnum, language[374], item->description());
-						itemPickup(clientnum, item);
+						item = openedChest[player]->getItemFromChest(invitemschest[i], false);
+						messagePlayer(player, language[374], item->description());
+						itemPickup(player, item);
 						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
 					}
 					else if ( mousestatus[SDL_BUTTON_RIGHT] )
 					{
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
-						item = openedChest[clientnum]->getItemFromChest(invitemschest[i], true);
-						messagePlayer(clientnum, language[374], item->description());
-						itemPickup(clientnum, item); //Grab all of that item from the chest.
+						item = openedChest[player]->getItemFromChest(invitemschest[i], true);
+						messagePlayer(player, language[374], item->description());
+						itemPickup(player, item); //Grab all of that item from the chest.
 						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
 					}
@@ -160,20 +162,17 @@ inline void drawChestSlots()
 					if ( grabbedItem )
 					{
 						list_t* chestInventory = nullptr;
-						if ( clientnum != 0 )
+						if ( multiplayer == CLIENT )
 						{
-							if ( multiplayer != SERVER )
-							{
-								chestInventory = &chestInv;
-							}
+							chestInventory = &chestInv;
 						}
-						else if ( openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element )
+						else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
 						{
-							chestInventory = (list_t*)openedChest[clientnum]->children.first->element;
+							chestInventory = (list_t*)openedChest[player]->children.first->element;
 						}
 						repopulateInvItems(chestInventory); //Have to regenerate, otherwise the following if check will often end up evaluating to false. //Doesn't work. #blamedennis
 
-						item = openedChest[clientnum]->getItemFromChest(invitemschest[i], false, true);
+						item = openedChest[player]->getItemFromChest(invitemschest[i], false, true);
 						if ( item )
 						{
 							free(item);
@@ -189,7 +188,7 @@ inline void drawChestSlots()
 							}
 							else
 							{
-								warpMouseToSelectedInventorySlot();
+								warpMouseToSelectedInventorySlot(clientnum);
 							}
 						}
 					}
@@ -208,9 +207,9 @@ inline void drawChestSlots()
 	}
 }
 
-void updateChestInventory()
+void updateChestInventory(const int player)
 {
-	if ( !openedChest[clientnum] )
+	if ( !openedChest[player] )
 	{
 		for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
 		{
@@ -236,9 +235,9 @@ void updateChestInventory()
 	drawImage(inventoryChest_bmp, NULL, &pos);
 
 	// buttons
-	if ( mousestatus[SDL_BUTTON_LEFT] && !selectedItem )
+	if ( inputs.bMouseLeft(player) && !inputs.getUIInteraction(player)->selectedItem )
 	{
-		if (openedChest[clientnum])
+		if (openedChest[player])
 		{
 			//Chest inventory scroll up button.
 			if (omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + 52)
@@ -247,7 +246,7 @@ void updateChestInventory()
 				{
 					chest_buttonclick = 7;
 					chestitemscroll--;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 			}
 			//Chest inventory scroll down button.
@@ -257,7 +256,7 @@ void updateChestInventory()
 				{
 					chest_buttonclick = 8;
 					chestitemscroll++;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 			}
 			else if (omousey >= CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + 15)
@@ -266,13 +265,13 @@ void updateChestInventory()
 				if (omousex >= CHEST_INVENTORY_X + 393 && omousex < CHEST_INVENTORY_X + 407)
 				{
 					chest_buttonclick = 9;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 				//Chest inventory grab all button.
 				if (omousex >= CHEST_INVENTORY_X + 376 && omousex < CHEST_INVENTORY_X + 391)
 				{
 					chest_buttonclick = 10;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 				if (omousex >= CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + 377 && omousey >= CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + 15)
 				{
@@ -280,7 +279,7 @@ void updateChestInventory()
 					dragging_chestGUI = true;
 					dragoffset_x = omousex - CHEST_INVENTORY_X;
 					dragoffset_y = omousey - CHEST_INVENTORY_Y;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 			}
 		}
@@ -340,21 +339,18 @@ void updateChestInventory()
 	}
 
 	list_t* chest_inventory = NULL;
-	if (clientnum != 0)
+	if ( multiplayer == CLIENT )
 	{
-		if (multiplayer != SERVER)
-		{
-			chest_inventory = &chestInv;
-		}
+		chest_inventory = &chestInv;
 	}
-	else if (openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element)
+	else if (openedChest[player]->children.first && openedChest[player]->children.first->element)
 	{
-		chest_inventory = (list_t*)openedChest[clientnum]->children.first->element;
+		chest_inventory = (list_t*)openedChest[player]->children.first->element;
 	}
 
 	if (!chest_inventory)
 	{
-		messagePlayer(0, "Warning: openedChest[%d] has no inventory. This should not happen.", clientnum);
+		messagePlayer(0, "Warning: openedChest[%d] has no inventory. This should not happen.", player);
 	}
 	else
 	{
@@ -387,9 +383,9 @@ void updateChestInventory()
 			pos.w = 0;
 			pos.h = 0;
 			drawImage(invclose_bmp, NULL, &pos);
-			if (openedChest[clientnum])
+			if (openedChest[player])
 			{
-				openedChest[clientnum]->closeChest();
+				openedChest[player]->closeChest();
 				return; //Crashes otherwise, because the rest of this function runs without a chest...
 			}
 		}
@@ -404,27 +400,27 @@ void updateChestInventory()
 			for (node = chest_inventory->first; node != NULL; node = nextnode)
 			{
 				nextnode = node->next;
-				if (node->element && openedChest[clientnum])
+				if (node->element && openedChest[player])
 				{
-					item = openedChest[clientnum]->getItemFromChest(static_cast<Item* >(node->element), true);
+					item = openedChest[player]->getItemFromChest(static_cast<Item* >(node->element), true);
 					if ( item != NULL )
 					{
-						messagePlayer(clientnum, language[374], item->description());
-						itemPickup(clientnum, item);
+						messagePlayer(player, language[374], item->description());
+						itemPickup(player, item);
 						playSound(35 + rand() % 3, 64);
 					}
 				}
 			}
 		}
 
-		drawChestSlots();
+		drawChestSlots(player);
 
 		//Okay, now prepare to render all the items.
 		y = CHEST_INVENTORY_Y + 22;
 		c = 0;
 		if (chest_inventory)
 		{
-			c = numItemsInChest();
+			c = numItemsInChest(player);
 			chestitemscroll = std::max(0, std::min(chestitemscroll, c - 4));
 
 			repopulateInvItems(chest_inventory);
@@ -468,7 +464,7 @@ void updateChestInventory()
 	}
 }
 
-void selectChestSlot(int slot)
+void selectChestSlot(const int player, const int slot)
 {
 	//TODO?: Grab amount (difference between slot and selectedChestSlot)?
 
@@ -550,7 +546,7 @@ void selectChestSlot(int slot)
 			 * * B) On last item already. Do nothing (revoke movement).
 			 */
 
-			item = openedChest[clientnum]->getItemFromChest(invitemschest[selectedChestSlot + 1], false, true);
+			item = openedChest[player]->getItemFromChest(invitemschest[selectedChestSlot + 1], false, true);
 
 
 			if ( item )

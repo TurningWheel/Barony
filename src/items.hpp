@@ -470,13 +470,10 @@ public:
 };
 extern Uint32 itemuids;
 
-static const int INVENTORY_SIZEX = 12;
-extern int INVENTORY_SIZEY;
-#define INVENTORY_SIZE ((INVENTORY_SIZEX)*(INVENTORY_SIZEY))
-#define INVENTORY_STARTX ((xres)/2-(INVENTORY_SIZEX)*(INVENTORY_SLOTSIZE)/2-inventory_mode_item_img->w/2)
-static const int INVENTORY_STARTY = 10;
-
-extern Item* selectedItem;
+//static const int INVENTORY_SIZEX = 12;
+//#define INVENTORY_SIZE ((INVENTORY_SIZEX)*(INVENTORY_SIZEY))
+//#define INVENTORY_STARTX ((xres)/2-(INVENTORY_SIZEX)*(INVENTORY_SLOTSIZE)/2-inventory_mode_item_img->w/2)
+//static const int INVENTORY_STARTY = 10;
 
 // item generic
 class ItemGeneric
@@ -543,7 +540,6 @@ void item_Spellbook(Item*& item, int player);
 
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
-void addItemToMonsterInventory(Item &item, list_t& inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel);
@@ -578,10 +574,10 @@ enum EquipItemSendToServerSlot : int
 	EQUIP_ITEM_SLOT_AMULET,
 	EQUIP_ITEM_SLOT_RING
 };
-void playerTryEquipItemAndUpdateServer(Item* item);
+void playerTryEquipItemAndUpdateServer(const int player, Item* item);
 void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
 	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
-void clientUnequipSlotAndUpdateServer(EquipItemSendToServerSlot slot, Item* item);
+void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
 EquipItemResult equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);

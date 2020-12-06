@@ -25,11 +25,6 @@ typedef struct damageIndicator_t
 } damageIndicator_t;
 extern list_t damageIndicators;
 
-#define STATUS_BAR_Y_OFFSET (status_bmp->h * uiscale_chatlog * !hide_statusbar)
-#define INVENTORY_SLOTSIZE (40 * uiscale_inventory)
-#define STATUS_X (xres / 2 - status_bmp->w * uiscale_chatlog / 2)
-#define STATUS_Y (yres - STATUS_BAR_Y_OFFSET)
-#define HOTBAR_START_X ((xres / 2) - (5 * hotbar_img->w * uiscale_hotbar))
 extern bool hide_statusbar;
 extern real_t uiscale_chatlog;
 extern real_t uiscale_playerbars;
@@ -84,14 +79,6 @@ static const int GUI_MODE_NONE = -1; //GUI closed, ingame & playing.
 static const int GUI_MODE_INVENTORY = 0;
 static const int GUI_MODE_MAGIC = 1;
 static const int GUI_MODE_SHOP = 2;
-extern int gui_mode;
-
-/*
- * So that the cursor jumps back to the hotbar instead of the inventory if a picked up hotbar item is canceled.
- * Its value indicates which hotbar slot it's from.
- * -1 means it's not from the hotbar.
- */
-extern int selectedItemFromHotbar;
 
 extern SDL_Surface* font12x12_small_bmp;
 extern SDL_Surface* backdrop_minotaur_bmp;
@@ -124,9 +111,6 @@ extern int itemscroll;
 extern view_t camera_charsheet;
 extern real_t camera_charsheet_offsetyaw;
 
-extern int selected_inventory_slot_x;
-extern int selected_inventory_slot_y;
-
 void select_inventory_slot(int player, int x, int y);
 
 extern SDL_Surface* inventoryChest_bmp;
@@ -143,8 +127,6 @@ extern int dragoffset_x;
 extern int dragoffset_y;
 extern int buttonclick;
 
-extern bool draw_cursor; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
-
 // function prototypes
 void takeScreenshot();
 bool loadInterfaceResources();
@@ -159,24 +141,21 @@ void saveCommand(char* content);
 int loadConfig(char* filename);
 int saveConfig(char const * const filename);
 void defaultConfig();
-void updateChestInventory();
-void updateAppraisalItemBox();
+void updateChestInventory(const int player);
+void updateAppraisalItemBox(const int player);
 void updatePlayerInventory(const int player);
 void updateShopWindow();
 void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
 damageIndicator_t* newDamageIndicator(double x, double y);
 
-void selectItemMenuSlot(const Item& item, int entry);
+void selectItemMenuSlot(const int player, const Item& item, int entry);
 bool autoAddHotbarFilter(const Item& item);
 void quickStackItems(const int player);
 void sortInventoryItemsOfType(const int player, int categoryInt, bool sortRightToLeft); // sort inventory items matching category. -1 is everything, -2 is only equipped items.
 void autosortInventory(const int player);
-bool mouseInsidePlayerInventory();
-bool mouseInsidePlayerHotbar();
+bool mouseInsidePlayerInventory(const int player);
+bool mouseInsidePlayerHotbar(const int player);
 bool playerLearnedSpellbook(const int player, Item* current_item);
-extern Uint32 itemMenuItem;
-extern bool itemMenuOpen;
-extern int itemMenuSelected;
 
 /*
  * Used for two purposes:
@@ -184,7 +163,6 @@ extern int itemMenuSelected;
  * * In the item context menu, toggles if it should pop open or not.
  * This makes this variable super useful for gamepad support.
  */
-extern bool toggleclick;
 
 //Inventory GUI definitions.
 static const int INVENTORY_MODE_ITEM = 0;
@@ -193,7 +171,6 @@ extern SDL_Surface* inventory_mode_item_img;
 extern SDL_Surface* inventory_mode_item_highlighted_img;
 extern SDL_Surface* inventory_mode_spell_img;
 extern SDL_Surface* inventory_mode_spell_highlighted_img;
-extern int inventory_mode;
 
 /*
  * Determines how item select (pick up, release) mechanic works.
@@ -219,11 +196,11 @@ extern bool dragging_chestGUI; //The chest GUI is being dragged.
  * -1 = no selection (e.g. mouse out or no items in the first place).
  */
 extern int selectedChestSlot;
-void selectChestSlot(int slot);
-int numItemsInChest();
+void selectChestSlot(const int player, const int slot);
+int numItemsInChest(const int player);
 void warpMouseToSelectedChestSlot();
 
-void warpMouseToSelectedInventorySlot();
+void warpMouseToSelectedInventorySlot(const int player);
 
 //Magic GUI definitions.
 extern SDL_Surface* magicspellList_bmp;
@@ -254,7 +231,6 @@ void updateMagicGUI();
 #define SUST_SPELLS_X 32
 #define SUST_SPELLS_Y 32
 #define SUST_SPELLS_RIGHT_ALIGN true //If true, overrides settings and makes the sustained spells draw alongside the right edge of the screen, vertically.
-void drawSustainedSpells(); //Draws an icon for every sustained spell.
 
 //Identify GUI definitions.
 //NOTE: Make sure to always reset identifygui_appraising back to false.
@@ -279,7 +255,7 @@ void CloseIdentifyGUI();
 void updateIdentifyGUI(); //Updates the identify item GUI.
 void identifyGUIIdentify(Item* item); //Identify the given item.
 int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
-void drawSustainedSpells(); //Draws an icon for every sustained spell.
+void drawSustainedSpells(const int player); //Draws an icon for every sustained spell.
 
 //Remove curse GUI definitions.
 #define REMOVECURSE_GUI_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + removecursegui_offset_x)
@@ -403,12 +379,12 @@ public:
 
 	void warpMouseToSelectedSlot();
 	void selectSlot(int slot);
-	void closeGUI();
-	void openGUI(int type, int scrollBeatitude, int scrollType);
-	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
-	void openGUI(int type, Item* itemOpenedWith);
+	void closeGUI(const int player);
+	void openGUI(const int player, int type, int scrollBeatitude, int scrollType);
+	void openGUI(const int player, int type, bool experimenting, Item* itemOpenedWith);
+	void openGUI(const int player, int type, Item* itemOpenedWith);
 	inline Item* getItemInfo(int slot);
-	void updateGUI();
+	void updateGUI(const int player);
 	void rebuildGUIInventory();
 	void initGUIControllerCode();
 	bool shouldDisplayItemInGUI(Item* item);
@@ -510,7 +486,7 @@ extern GenericGUIMenu GenericGUI;
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.
  */
-bool mouseInBounds(int x1, int x2, int y1, int y2);
+bool mouseInBounds(const int player, int x1, int x2, int y1, int y2);
 
 void updateCharacterSheet(const int player);
 void drawPartySheet(const int player);
@@ -598,7 +574,7 @@ typedef struct hotbar_slot_t
 //Returns a pointer to a hotbar slot if the specified coordinates are in the area of the hotbar. Used for such things as dragging and dropping items.
 hotbar_slot_t* getHotbar(int player, int x, int y);
 
-void warpMouseToSelectedHotbarSlot();
+void warpMouseToSelectedHotbarSlot(const int player);
 
 /*
  * True = automatically place items you pick up in your hotbar.
@@ -630,8 +606,6 @@ const char* getInputName(Uint32 scancode);
 Sint8* inputPressed(Uint32 scancode);
 Sint8* inputPressedForPlayer(int player, Uint32 scancode);
 
-//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
-void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
 enum CloseGUIShootmode : int
 {
 	DONT_CHANGE_SHOOTMODE,
@@ -645,18 +619,9 @@ enum CloseGUIIgnore : int
 	CLOSEGUI_DONT_CLOSE_SHOP
 };
 
-void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose);
-
 static const int SCANCODE_UNASSIGNED_BINDING = 399;
 
-inline bool hotbarGamepadControlEnabled()
-{
-	return ( !openedChest[clientnum] 
-		&& gui_mode != GUI_MODE_SHOP 
-		&& !identifygui_active 
-		&& !removecursegui_active
-		&& !GenericGUI.isGUIOpen() );
-}
+const bool hotbarGamepadControlEnabled(const int player);
 
 extern SDL_Surface *str_bmp64u;
 extern SDL_Surface *dex_bmp64u;

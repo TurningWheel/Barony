@@ -27,7 +27,6 @@
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
-int INVENTORY_SIZEY = 3;
 const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f };
 const real_t thrownDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f };
 std::mt19937 enchantedFeatherScrollSeed(0);
@@ -90,17 +89,40 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 			is_spell = true;
 		}
 
+		int inventory_sizex = Player::Inventory_t::DEFAULT_INVENTORY_SIZEX;
+		int inventory_sizey = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY;
+		Player::Inventory_t* playerInventoryUI = nullptr;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( stats[i] && inventory == &stats[i]->inventory )
+			{
+				inventory_sizex = players[i]->inventoryUI.getSizeX();
+				inventory_sizey = players[i]->inventoryUI.getSizeY();
+				playerInventoryUI = &players[i]->inventoryUI;
+				break;
+			}
+		}
+
+		if ( !playerInventoryUI )
+		{
+			printlog("warning: newItem inventory was not a local player?");
+			return item;
+		}
+
 		int x = 0;
-		int inventory_y = INVENTORY_SIZEY;
 		if ( is_spell )
 		{
-			if ( list_Size(&spellList) >= INVENTORY_SIZEX * 3 )
+			if ( list_Size(&spellList) >= inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY )
 			{
-				inventory_y = INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+				// original commented out code to investigate -- why a double = sign?
+				//inventory_y = INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex);
+
+				playerInventoryUI->setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1)
+					+ ((list_Size(&spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex));
 			}
 			else
 			{
-				inventory_y = 3;
+				playerInventoryUI->setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
 			}
 		}
 		else if ( multiplayer != CLIENT )
@@ -112,7 +134,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
 						&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
 					{
-						inventory_y = 4;
+						playerInventoryUI->setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1);
 						break;
 					}
 					break;
@@ -121,16 +143,25 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		}
 		else if ( multiplayer == CLIENT )
 		{
-			if ( stats[clientnum] && &stats[clientnum]->inventory == inventory )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
-					&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
+				if ( !players[i]->isLocalPlayer() )
 				{
-					inventory_y = 4;
+					continue;
+				}
+				if ( stats[i] && &stats[i]->inventory == inventory )
+				{
+					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
+						&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
+					{
+						players[i]->inventoryUI.setSizeY(4);
+						break;
+					}
+					break;
 				}
 			}
 		}
-		const int sort_y = std::min(std::max(inventory_y, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
+		const int sort_y = std::min(std::max(playerInventoryUI->getSizeY(), 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
 
 		while ( true )
 		{
@@ -177,14 +208,14 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 
 
 		// backpack sorting, sort into here as last priority.
-		if ( x > INVENTORY_SIZEX - 1 && inventory_y > 3 )
+		if ( x > playerInventoryUI->getSizeX() - 1 && playerInventoryUI->getSizeY() > Player::Inventory_t::DEFAULT_INVENTORY_SIZEY )
 		{
 			x = 0;
 			foundaspot = false;
 			notfree = false;
 			while ( true )
 			{
-				for ( y = 3; y < inventory_y; y++ )
+				for ( y = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY; y < playerInventoryUI->getSizeY(); y++ )
 				{
 					for ( node_t* node = inventory->first; node != nullptr; node = node->next )
 					{
@@ -229,28 +260,36 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		// add the item to the hotbar automatically
 		if ( !intro && auto_hotbar_new_items )
 		{
-			if ( stats[clientnum] && inventory == &stats[clientnum]->inventory )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
+				if ( !players[i]->isLocalPlayer() )
 				{
-					if ( !uidToItem(hotbarSlot.item) )
+					continue;
+				}
+				if ( stats[i] && inventory == &stats[i]->inventory )
+				{
+					for ( auto& hotbarSlot : players[i]->hotbar->slots() )
 					{
-						if ( autoAddHotbarFilter(*item) )
+						if ( !uidToItem(hotbarSlot.item) )
 						{
-							if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+							if ( autoAddHotbarFilter(*item) )
 							{
-								if ( item->usableWhileShapeshifted(stats[clientnum]) )
+								if ( players[i] && players[i]->entity && players[i]->entity->effectShapeshift != NOTHING )
+								{
+									if ( item->usableWhileShapeshifted(stats[i]) )
+									{
+										hotbarSlot.item = item->uid;
+									}
+								}
+								else
 								{
 									hotbarSlot.item = item->uid;
 								}
+								break;
 							}
-							else
-							{
-								hotbarSlot.item = item->uid;
-							}
-							break;
 						}
 					}
+					break;
 				}
 			}
 		}
@@ -263,88 +302,6 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 
 	itemuids++;
 	return item;
-}
-
-void addItemToMonsterInventory(Item &item, list_t& inventory)
-{
-	// add the item to the inventory
-
-	item.node = list_AddNodeLast(&inventory);
-	item.node->element = &item;
-	item.node->deconstructor = &defaultDeconstructor;
-	item.node->size = sizeof(Item);
-
-	bool notfree = false, foundaspot = false;
-
-	bool is_spell = false;
-	if (itemCategory(&item) == SPELL_CAT)
-	{
-		is_spell = true;
-	}
-
-	int x = 0;
-	while ( true )
-	{
-		for ( int y = 0; y < INVENTORY_SIZEY; ++y )
-		{
-			for ( node_t* node = inventory.first; node != nullptr; node = node->next )
-			{
-				Item* tempItem = static_cast<Item*>(node->element);
-				if ( tempItem == &item )
-				{
-					continue;
-				}
-				if ( tempItem )
-				{
-					if ( tempItem->x == x && tempItem->y == y )
-					{
-						if (is_spell && itemCategory(tempItem) == SPELL_CAT)
-						{
-							notfree = true;  //Both spells. Can't fit in the same slot.
-						}
-						else if (!is_spell && itemCategory(tempItem) != SPELL_CAT)
-						{
-							notfree = true;  //Both not spells. Can't fit in the same slot.
-						}
-					}
-				}
-			}
-			if ( notfree )
-			{
-				notfree = false;
-				continue;
-			}
-			item.x = x;
-			item.y = y;
-			foundaspot = true;
-			break;
-		}
-		if ( foundaspot )
-		{
-			break;
-		}
-		++x;
-	}
-
-	// add the item to the hotbar automatically
-	if ( !intro && auto_hotbar_new_items )
-	{
-		for ( int c = 0; c < MAXPLAYERS; ++c )
-		{
-			if ( &inventory == &stats[c]->inventory )
-			{
-				for ( auto& hotbarSlot : players[c]->hotbar->slots() )
-				{
-					if ( !uidToItem(hotbarSlot.item) )
-					{
-						hotbarSlot.item = item.uid;
-						break;
-					}
-				}
-				break;
-			}
-		}
-	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -361,12 +318,15 @@ Item* uidToItem(const Uint32 uid)
 	{
 		return nullptr;
 	}
-	for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
+	for ( int i = 0; i < MAXPLAYERS && players[i]->isLocalPlayer(); ++i )
 	{
-		Item* item = static_cast<Item*>(node->element);
-		if ( item->uid == uid )
+		for ( node_t* node = stats[i]->inventory.first; node != nullptr; node = node->next )
 		{
-			return item;
+			Item* item = static_cast<Item*>(node->element);
+			if ( item->uid == uid )
+			{
+				return item;
+			}
 		}
 	}
 	return nullptr;
@@ -1329,19 +1289,23 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 
 		if ( item->node != nullptr )
 		{
-			if ( item->node->list == &stats[0]->inventory )
+			for ( int i = 0; i < MAXPLAYERS && players[i]->isLocalPlayer(); ++i )
 			{
-				oldcount = item->count;
-				item->count = qtyToDrop;
-				if ( notifyMessage )
+				if ( item->node->list == &stats[i]->inventory )
 				{
-					messagePlayer(player, language[1088], item->description());
-				}
-				item->count = oldcount - qtyToDrop;
-				if ( item->count <= 0 )
-				{
-					list_RemoveNode(item->node);
-					return true;
+					oldcount = item->count;
+					item->count = qtyToDrop;
+					if ( notifyMessage )
+					{
+						messagePlayer(player, language[1088], item->description());
+					}
+					item->count = oldcount - qtyToDrop;
+					if ( item->count <= 0 )
+					{
+						list_RemoveNode(item->node);
+						return true;
+					}
+					break;
 				}
 			}
 		}
@@ -1370,11 +1334,11 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 		return nullptr;
 	}
 
-	if ( monster->behavior == &actPlayer && monster->skill[2] == clientnum )
+	if ( monster->behavior == &actPlayer && players[monster->skill[2]]->isLocalPlayer() )
 	{
-		if ( item == selectedItem )
+		if ( item == inputs.getUIInteraction(monster->skill[2])->selectedItem )
 		{
-			selectedItem = nullptr;
+			inputs.getUIInteraction(monster->skill[2])->selectedItem = nullptr;
 		}
 	}
 
@@ -1639,7 +1603,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 {
 	int oldcount;
 
-	if ( player == clientnum && pickaxeGimpTimer > 0 && !intro )
+	if ( players[player]->isLocalPlayer() && pickaxeGimpTimer > 0 && !intro )
 	{
 		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}
@@ -1649,7 +1613,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}
 
-	if ( player == clientnum && multiplayer != SINGLE 
+	if ( players[player]->isLocalPlayer() && multiplayer != SINGLE
 		&& item->unableToEquipDueToSwapWeaponTimer() )
 	{
 		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
@@ -1668,7 +1632,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 				}
 				else
 				{
-					if ( player == clientnum )
+					if ( players[player]->isLocalPlayer() )
 					{
 						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
 						{
@@ -1739,7 +1703,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 			item->count = oldcount;
 		}
 		*slot = item;
-		if ( player == clientnum )
+		if ( players[player]->isLocalPlayer() )
 		{
 			if ( slot == &stats[player]->weapon )
 			{
@@ -1761,7 +1725,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 			{
 				if (!(*slot)->canUnequip(stats[player]))
 				{
-					if ( player == clientnum )
+					if ( players[player]->isLocalPlayer() )
 					{
 						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
 						{
@@ -1863,7 +1827,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		openedChest[player]->addItemToChestFromInventory(player, item, false);
 		return;
 	}
-	else if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
+	else if ( players[player]->isLocalPlayer() && players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
 	{
 		bool deal = true;
 		switch ( shopkeepertype )
@@ -1934,24 +1898,24 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		return;
 	}
 
-	if ( item->status == BROKEN && player == clientnum )
+	if ( item->status == BROKEN && players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, language[1092], item->getName());
 		return;
 	}
-	if ( item->type == FOOD_CREAMPIE && player == clientnum && itemIsEquipped(item, player) )
+	if ( item->type == FOOD_CREAMPIE && players[player]->isLocalPlayer() && itemIsEquipped(item, player) )
 	{
 		messagePlayer(player, language[3874]); // can't eat while equipped.
 		return;
 	}
 
 	// tins need a tin opener to open...
-	if ( player == clientnum && !(stats[player]->type == GOATMAN || stats[player]->type == AUTOMATON) )
+	if ( players[player]->isLocalPlayer() && !(stats[player]->type == GOATMAN || stats[player]->type == AUTOMATON) )
 	{
 		if ( item->type == FOOD_TIN )
 		{
 			bool havetinopener = false;
-			for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
+			for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 			{
 				Item* tempitem = static_cast<Item*>(node->element);
 				if ( tempitem->type == TOOL_TINOPENER )
@@ -1965,7 +1929,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			if ( !havetinopener )
 			{
-				messagePlayer(clientnum, language[1093]);
+				messagePlayer(player, language[1093]);
 				return;
 			}
 		}
@@ -2000,11 +1964,11 @@ void useItem(Item* item, const int player, Entity* usedBy)
 	bool tryLearnPotionRecipe = false;
 	const bool tryEmptyBottle = (item->status >= SERVICABLE);
 	const ItemType potionType = item->type;
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		if ( itemCategory(item) == POTION && item->type != POTION_EMPTY && usedBy
-			&& (players[clientnum] && players[clientnum]->entity)
-			&& players[clientnum]->entity == usedBy )
+			&& (players[player] && players[player]->entity)
+			&& players[player]->entity == usedBy )
 		{
 			if ( item->identified )
 			{
@@ -2493,7 +2457,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			item_ToolBeartrap(item, player);
 			break;
 		case TOOL_ALEMBIC:
-			if ( player != clientnum )
+			if ( !players[player]->isLocalPlayer() )
 			{
 				consumeItem(item, player);
 			}
@@ -2503,13 +2467,13 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			break;
 		case ENCHANTED_FEATHER:
-			if ( player != clientnum )
+			if ( !players[player]->isLocalPlayer() )
 			{
 				consumeItem(item, player);
 			}
 			else
 			{
-				GenericGUI.openGUI(GUI_TYPE_SCRIBING, item);
+				GenericGUI.openGUI(player, GUI_TYPE_SCRIBING, item);
 			}
 			break;
 		case FOOD_BREAD:
@@ -2527,7 +2491,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		case TOOL_MAGIC_SCRAP:
 		case TOOL_METAL_SCRAP:
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				if ( item->type == TOOL_METAL_SCRAP )
 				{
@@ -2540,7 +2504,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			break;
 		case READABLE_BOOK:
-			if (numbooks && player == clientnum)
+			if (numbooks && players[player]->isLocalPlayer() )
 			{
 				if (players[player] && players[player]->entity)
 				{
@@ -2569,9 +2533,9 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case ARTIFACT_MACE:
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
-				messagePlayer(clientnum, language[1096]);
+				messagePlayer(player, language[1096]);
 			}
 			equipItem(item, &stats[player]->weapon, player);
 			break;
@@ -2591,22 +2555,22 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		if ( drankPotion && usedBy
-			&& (players[clientnum] && players[clientnum]->entity)
-			&& players[clientnum]->entity == usedBy )
+			&& (players[player] && players[player]->entity)
+			&& players[player]->entity == usedBy )
 		{
 			if ( tryLearnPotionRecipe )
 			{
 				GenericGUI.alchemyLearnRecipe(potionType, true);
 			}
-			const int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			const int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
 			if ( tryEmptyBottle && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-				itemPickup(clientnum, emptyBottle);
-				messagePlayer(clientnum, language[3351], items[POTION_EMPTY].name_identified);
+				itemPickup(player, emptyBottle);
+				messagePlayer(player, language[3351], items[POTION_EMPTY].name_identified);
 				free(emptyBottle);
 			}
 		}
@@ -2856,7 +2820,7 @@ Item* itemPickup(const int player, Item* const item)
 					item2->count = maxStack - 1;
 					item->count = total - item2->count;
 
-					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
+					if ( multiplayer == CLIENT && players[player]->isLocalPlayer() && itemIsEquipped(item2, player) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
 						strcpy((char*)net_packet->data, "EQUS");
@@ -2866,7 +2830,7 @@ Item* itemPickup(const int player, Item* const item)
 						SDLNet_Write32(static_cast<Uint32>(item2->count), &net_packet->data[16]);
 						SDLNet_Write32(static_cast<Uint32>(item2->appearance), &net_packet->data[20]);
 						net_packet->data[24] = item2->identified;
-						net_packet->data[25] = clientnum;
+						net_packet->data[25] = player;
 						net_packet->address.host = net_server.host;
 						net_packet->address.port = net_server.port;
 						net_packet->len = 27;
@@ -2893,20 +2857,20 @@ Item* itemPickup(const int player, Item* const item)
 				else if ( item2->shouldItemStack(player) )
 				{
 					item2->count += item->count;
-					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
+					if ( multiplayer == CLIENT && players[player]->isLocalPlayer() && itemIsEquipped(item2, player) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						Item** slot = itemSlot(stats[clientnum], item2);
+						Item** slot = itemSlot(stats[player], item2);
 						if ( slot )
 						{
-							if ( slot == &stats[clientnum]->weapon )
+							if ( slot == &stats[player]->weapon )
 							{
-								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
+								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
 									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
 							}
-							else if ( slot == &stats[clientnum]->shield )
+							else if ( slot == &stats[player]->shield )
 							{
-								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, clientnum,
+								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
 									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
 							}
 						}
@@ -3780,7 +3744,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					// degrade lockpick.
 					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (rand() % 10 == 0 || (failed && rand() % 4 == 0)) )
 					{
-						if ( player == clientnum )
+						if ( players[player]->isLocalPlayer() )
 						{
 							if ( count > 1 )
 							{
@@ -4857,7 +4821,7 @@ bool playerCanSpawnMoreTinkeringBots(const Stat* const myStats)
 	return false;
 }
 
-void playerTryEquipItemAndUpdateServer(Item* const item)
+void playerTryEquipItemAndUpdateServer(const int player, Item* const item)
 {
 	if ( !item )
 	{
@@ -4878,28 +4842,28 @@ void playerTryEquipItemAndUpdateServer(Item* const item)
 		EquipItemResult equipResult = EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 		if ( cat == SPELLBOOK )
 		{
-			if ( !cast_animation[clientnum].active_spellbook )
+			if ( !cast_animation[player].active_spellbook )
 			{
-				equipResult = equipItem(item, &stats[clientnum]->shield, clientnum);
+				equipResult = equipItem(item, &stats[player]->shield, player);
 			}
 		}
 		else
 		{
-			equipResult = equipItem(item, &stats[clientnum]->weapon, clientnum);
+			equipResult = equipItem(item, &stats[player]->weapon, player);
 		}
 		if ( equipResult != EQUIP_ITEM_FAIL_CANT_UNEQUIP )
 		{
 			if ( cat == SPELLBOOK )
 			{
-				if ( !cast_animation[clientnum].active_spellbook )
+				if ( !cast_animation[player].active_spellbook )
 				{
-					clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, equipResult, clientnum, 
+					clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, equipResult, player,
 						type, status, beatitude, count, appearance, identified);
 				}
 			}
 			else
 			{
-				clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, equipResult, clientnum,
+				clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, equipResult, player,
 					type, status, beatitude, count, appearance, identified);
 			}
 		}
@@ -4910,14 +4874,14 @@ void playerTryEquipItemAndUpdateServer(Item* const item)
 		EquipItemResult equipResult = EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 		if ( itemCategory(item) == SPELLBOOK )
 		{
-			if ( !cast_animation[clientnum].active_spellbook )
+			if ( !cast_animation[player].active_spellbook )
 			{
-				equipResult = equipItem(item, &stats[clientnum]->shield, clientnum);
+				equipResult = equipItem(item, &stats[player]->shield, player);
 			}
 		}
 		else
 		{
-			equipResult = equipItem(item, &stats[clientnum]->weapon, clientnum);
+			equipResult = equipItem(item, &stats[player]->weapon, player);
 		}
 	}
 }
@@ -4952,7 +4916,7 @@ void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const E
 	sendPacketSafe(net_sock, -1, net_packet, 0);
 }
 
-void clientUnequipSlotAndUpdateServer(const EquipItemSendToServerSlot slot, Item* const item)
+void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToServerSlot slot, Item* const item)
 {
 	if ( !item )
 	{
@@ -4962,41 +4926,41 @@ void clientUnequipSlotAndUpdateServer(const EquipItemSendToServerSlot slot, Item
 
 	if ( slot == EQUIP_ITEM_SLOT_HELM )
 	{
-		equipType = equipItem(item, &stats[clientnum]->helmet, clientnum);
+		equipType = equipItem(item, &stats[player]->helmet, player);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_BREASTPLATE )
 	{
-		equipType = equipItem(item, &stats[clientnum]->breastplate, clientnum);
+		equipType = equipItem(item, &stats[player]->breastplate, player);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_GLOVES )
 	{
-		equipType = equipItem(item, &stats[clientnum]->gloves, clientnum);
+		equipType = equipItem(item, &stats[player]->gloves, player);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_BOOTS )
 	{
-		equipType = equipItem(item, &stats[clientnum]->shoes, clientnum);
+		equipType = equipItem(item, &stats[player]->shoes, player);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_SHIELD )
 	{
-		equipType = equipItem(item, &stats[clientnum]->shield, clientnum);
+		equipType = equipItem(item, &stats[player]->shield, player);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_CLOAK )
 	{
-		equipType = equipItem(item, &stats[clientnum]->cloak, clientnum);
+		equipType = equipItem(item, &stats[player]->cloak, player);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_AMULET )
 	{
-		equipType = equipItem(item, &stats[clientnum]->amulet, clientnum);
+		equipType = equipItem(item, &stats[player]->amulet, player);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_RING )
 	{
-		equipType = equipItem(item, &stats[clientnum]->ring, clientnum);
+		equipType = equipItem(item, &stats[player]->ring, player);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_MASK )
 	{
-		equipType = equipItem(item, &stats[clientnum]->mask, clientnum);
+		equipType = equipItem(item, &stats[player]->mask, player);
 	}
 
-	clientSendEquipUpdateToServer(slot, equipType, clientnum,
+	clientSendEquipUpdateToServer(slot, equipType, player,
 		item->type, item->status, item->beatitude, item->count, item->appearance, item->identified);
 }

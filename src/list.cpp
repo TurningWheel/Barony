@@ -13,6 +13,7 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "interface/interface.hpp"
+#include "player.hpp"
 /*-------------------------------------------------------------------------------
 
 	list_FreeAll
@@ -53,19 +54,28 @@ void list_RemoveNode(node_t* node)
 	{
 		map.entities_map.erase(((Entity*)node->element)->getUID());
 	}
-	if ( stats[clientnum] && node->list && node->list == &stats[clientnum]->inventory )
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		Item* tmp = ((Item*)node->element);
-		if ( tmp )
+		if ( !players[i] || !players[i]->isLocalPlayer() )
 		{
-			if ( tmp == selectedItem )
+			continue;
+		}
+		if ( stats[i] && node->list && node->list == &stats[i]->inventory )
+		{
+			Item* tmp = ((Item*)node->element);
+			if ( tmp )
 			{
-				selectedItem = nullptr; // important! crashes occur when deleting items you've selected...
-				// printlog("Reset selectedItem");
-			}
-			if ( GenericGUI.isItemUsedForCurrentGUI(*tmp) )
-			{
-				GenericGUI.clearCurrentGUIFromItem(*tmp);
+				if ( tmp == inputs.getUIInteraction(i)->selectedItem )
+				{
+					// important! crashes occur when deleting items you've selected...
+					inputs.getUIInteraction(i)->selectedItem = nullptr; 
+					// printlog("Reset selectedItem");
+				}
+				if ( GenericGUI.isItemUsedForCurrentGUI(*tmp) )
+				{
+					GenericGUI.clearCurrentGUIFromItem(*tmp);
+				}
 			}
 		}
 	}

@@ -259,7 +259,7 @@ public:
 		r.y = yres - r.h - posy;
 		drawWindowFancy(r.x, r.y - 8, xres + 16 + docked_animx, r.y + 24);
 
-		if ( !temporaryCardHide && mouseInBounds(r.x, xres + docked_animx, r.y - 8, r.y + 24) )
+		if ( !temporaryCardHide && mouseInBounds(clientnum, r.x, xres + docked_animx, r.y - 8, r.y + 24) )
 		{
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -493,7 +493,7 @@ public:
 		closeBtn.y = src->y - 8 + 4;
 		closeBtn.w = 16;
 		closeBtn.h = 16;
-		if ( !temporaryCardHide && mouseInBounds(closeBtn.x, closeBtn.x + closeBtn.w, closeBtn.y, closeBtn.y + closeBtn.h) )
+		if ( !temporaryCardHide && mouseInBounds(clientnum, closeBtn.x, closeBtn.x + closeBtn.w, closeBtn.y, closeBtn.y + closeBtn.h) )
 		{
 			drawDepressed(closeBtn.x, closeBtn.y, closeBtn.x + closeBtn.w, closeBtn.y + closeBtn.h);
 			if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -531,7 +531,7 @@ public:
 		{
 			textx += 1;
 		}
-		if ( !temporaryCardHide && mouseInBounds(actionBtn.x, actionBtn.x + actionBtn.w, actionBtn.y, actionBtn.y + actionBtn.h) )
+		if ( !temporaryCardHide && mouseInBounds(clientnum, actionBtn.x, actionBtn.x + actionBtn.w, actionBtn.y, actionBtn.y + actionBtn.h) )
 		{
 			//drawDepressed(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
 			drawWindowFancy(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);

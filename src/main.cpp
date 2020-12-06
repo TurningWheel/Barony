@@ -248,7 +248,6 @@ int globalLightSmoothingRate = 1;
 int globalLightModifierActive = 0;
 
 // game variables
-bool shootmode = false;
 Sint8 minimap[MINIMAP_MAX_DIMENSION][MINIMAP_MAX_DIMENSION];
 bool loadnextlevel = false;
 int skipLevelsOnLoad = 0;

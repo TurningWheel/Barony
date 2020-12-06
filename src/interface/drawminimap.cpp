@@ -58,7 +58,7 @@ void drawMinimap()
 	int x, y, i;
 	int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
 	// handle toggling scale hotkey.
-	if ( !command && *inputPressed(impulses[IN_MINIMAPSCALE]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_MINIMAPSCALE])) )
+	if ( !command && *inputPressed(impulses[IN_MINIMAPSCALE]) || (players[clientnum]->shootmode && *inputPressed(joyimpulses[INJOY_GAME_MINIMAPSCALE])) )
 	{
 		if ( minimapScaleQuickToggle == 3 )
 		{

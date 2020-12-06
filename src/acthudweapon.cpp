@@ -681,6 +681,8 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
+	bool shootmode = players[HUDWEAPON_PLAYERNUM]->shootmode;
+
 	bool swingweapon = false;
 	if ( players[HUDWEAPON_PLAYERNUM]->entity
 		&& (*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) || (shootmode && inputs.bControllerInputPressed(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK)))
@@ -701,7 +703,7 @@ void actHudWeapon(Entity* my)
 			{
 				*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) = 0;
 				inputs.controllerClearInput(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK);
-				GenericGUI.openGUI(GUI_TYPE_TINKERING, stats[HUDWEAPON_PLAYERNUM]->shield);
+				GenericGUI.openGUI(HUDWEAPON_PLAYERNUM, GUI_TYPE_TINKERING, stats[HUDWEAPON_PLAYERNUM]->shield);
 				swapWeaponGimpTimer = 20;
 				return;
 			}
@@ -1350,13 +1352,18 @@ void actHudWeapon(Entity* my)
 							if ( stats[HUDWEAPON_PLAYERNUM]->weapon )
 							{
 								bool clickedOnGUI = false;
-								int tmpmousex = omousex;
-								int tmpmousey = omousey;
-								omousex = xres / 2; // pretend move the mouse to the centre of screen.
-								omousey = yres / 2;
+
+								int tmpmousex = inputs.getMouse(HUDWEAPON_PLAYERNUM, Inputs::OX);
+								int tmpmousey = inputs.getMouse(HUDWEAPON_PLAYERNUM, Inputs::OY);
+								// to verify splitscreen
+								// pretend move the mouse to the centre of screen.
+								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, players[HUDWEAPON_PLAYERNUM]->camera_midx()); 
+								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OY, players[HUDWEAPON_PLAYERNUM]->camera_midy());
+
 								Entity* clickedOn = entityClicked(&clickedOnGUI, true, HUDWEAPON_PLAYERNUM); // using objects
-								omousex = tmpmousex;
-								omousey = tmpmousey;
+
+								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousex);
+								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousey);
 								if ( clickedOn && clickedOn->behavior == &actBomb && entityDist(clickedOn, players[HUDWEAPON_PLAYERNUM]->entity) < STRIKERANGE )
 								{
 									// found something
@@ -3191,7 +3198,8 @@ void actHudShield(Entity* my)
 	if (!command && !swimming)
 	{
 		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity 
-			&& (*inputPressedForPlayer(HUDSHIELD_PLAYERNUM, impulses[IN_DEFEND]) || (shootmode && inputs.bControllerInputPressed(HUDSHIELD_PLAYERNUM, INJOY_GAME_DEFEND)))
+			&& (*inputPressedForPlayer(HUDSHIELD_PLAYERNUM, impulses[IN_DEFEND]) 
+				|| (players[HUDSHIELD_PLAYERNUM]->shootmode && inputs.bControllerInputPressed(HUDSHIELD_PLAYERNUM, INJOY_GAME_DEFEND)))
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
 			&& !gamePaused 
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active

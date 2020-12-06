@@ -429,11 +429,11 @@ int initGame()
 	mousex = xres / 2;
 	mousey = yres / 2;
 
-	players = new Player*[MAXPLAYERS];
 	// default player stats
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
 		players[c] = new Player(c, true);
+		players[c]->init();
 		// Stat set to 0 as monster type not needed, values will be filled with default, then overwritten by savegame or the charclass.cpp file
 		stats[c] = new Stat(0);
 		if (c > 0)
@@ -1048,6 +1048,6 @@ void deinitGame()
 	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
 		delete players[i];
+		players[i] = nullptr;
 	}
-	delete[] players;
 }

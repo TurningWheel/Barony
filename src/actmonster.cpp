@@ -5851,9 +5851,9 @@ timeToGoAgain:
 					{
 						player = target->skill[2];
 					}
-					if ( player == 0 )
+					if ( player >= 0 && players[player]->isLocalPlayer() )
 					{
-						closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+						players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 					}
 					else if ( player > 0 )
 					{

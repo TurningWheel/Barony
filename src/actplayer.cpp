@@ -71,16 +71,8 @@ void actDeathCam(Entity* my)
 
 	Sint32 mousexrel_old = mousexrel;
 	Sint32 mouseyrel_old = mouseyrel;
-	if ( !inputs.bPlayerUsingKeyboardControl(DEATHCAM_PLAYERNUM) )
-	{
-		mousexrel = 0;
-		mouseyrel = 0;
-	}
-	if ( inputs.hasController(DEATHCAM_PLAYERNUM) )
-	{
-		mousexrel += inputs.getMouse(DEATHCAM_PLAYERNUM)->xrel;
-		mouseyrel += inputs.getMouse(DEATHCAM_PLAYERNUM)->yrel;
-	}
+	mousexrel = inputs.getMouse(DEATHCAM_PLAYERNUM, Inputs::XREL);
+	mouseyrel = inputs.getMouse(DEATHCAM_PLAYERNUM, Inputs::YREL);
 
 	if ( DEATHCAM_TIME == 1 )
 	{
@@ -111,6 +103,7 @@ void actDeathCam(Entity* my)
 			}
 		}
 	}
+	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
 	if ( shootmode && !gamePaused )
 	{
 		if ( smoothmouse )
@@ -284,16 +277,8 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 
 	Sint32 mousexrel_old = mousexrel;
 	Sint32 mouseyrel_old = mouseyrel;
-	if ( !inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
-	{
-		mousexrel = 0;
-		mouseyrel = 0;
-	}
-	if ( inputs.hasController(PLAYER_NUM) )
-	{
-		mousexrel += inputs.getMouse(PLAYER_NUM)->xrel;
-		mouseyrel += inputs.getMouse(PLAYER_NUM)->yrel;
-	}
+	mousexrel = inputs.getMouse(playernum, Inputs::XREL);
+	mouseyrel = inputs.getMouse(playernum, Inputs::YREL);
 
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
@@ -320,6 +305,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 			my->yaw += (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNL]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNR])) * .05 * refreshRateDelta;
 		}
 	}
+	bool shootmode = players[PLAYER_NUM]->shootmode;
 	if ( shootmode && !gamePaused )
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
@@ -3251,14 +3237,10 @@ void actPlayer(Entity* my)
 			handlePlayerCameraBobbing(my, PLAYER_NUM, false);
 		}
 
-		int mouseX = omousex;
-		int mouseY = omousey;
-		if ( splitscreen && inputs.hasController(PLAYER_NUM) && !inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
-		{
-			const auto& mouse = inputs.getMouse(PLAYER_NUM);
-			mouseX = mouse->ox;
-			mouseY = mouse->oy;
-		}
+		Sint32 mouseX = inputs.getMouse(PLAYER_NUM, Inputs::OX);
+		Sint32 mouseY = inputs.getMouse(PLAYER_NUM, Inputs::OY);
+
+		bool shootmode = players[PLAYER_NUM]->shootmode;
 
 		// object interaction
 		if ( intro == false )
@@ -3344,7 +3326,7 @@ void actPlayer(Entity* my)
 								}
 								minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
 							}
-							if ( !shootmode && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+							if ( !shootmode && mouseInBounds(PLAYER_NUM, xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 							{
 								MinimapPing newPing(ticks, -1, (mouseX - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (mouseY - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
 								minimapPingAdd(newPing);

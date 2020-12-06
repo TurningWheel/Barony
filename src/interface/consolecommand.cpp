@@ -1746,20 +1746,79 @@ void consoleCommand(char const * const command_str)
 	else if (!strncmp(command_str, "/splitscreen", 12))
 	{
 		splitscreen = !splitscreen;
-		client_disconnected[1] = false;
-		client_disconnected[2] = false;
-		client_disconnected[3] = false;
-		// reset class loadout
-		for ( int i = 0; i < MAXPLAYERS; ++i )
+		if ( splitscreen )
+		{
+			client_disconnected[1] = false;
+			client_disconnected[2] = false;
+			client_disconnected[3] = false;
+		}
+		else
+		{
+			client_disconnected[1] = true;
+			client_disconnected[2] = true;
+			client_disconnected[3] = true;
+		}
+
+		int playercount = 1;
+		for ( int i = 1; i < MAXPLAYERS; ++i )
 		{
 			players[i]->bSplitscreen = true;
+			if ( players[i]->isLocalPlayer() )
+			{
+				++playercount;
+			}
+		}
+
+
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !splitscreen )
+			{
+				players[i]->camera().winx = 0;
+				players[i]->camera().winy = 0;
+				players[i]->camera().winw = xres;
+				players[i]->camera().winh = yres;
+			}
+			else
+			{
+				if ( playercount == 1 )
+				{
+					players[i]->camera().winx = 0;
+					players[i]->camera().winy = 0;
+					players[i]->camera().winw = xres;
+					players[i]->camera().winh = yres;
+				}
+				else if ( playercount == 2 )
+				{
+					// divide screen horizontally
+					players[i]->camera().winx = 0;
+					players[i]->camera().winy = c * yres / 2;
+					players[i]->camera().winw = xres;
+					players[i]->camera().winh = yres / 2;
+				}
+				else if ( playercount >= 3 )
+				{
+					// divide screen into quadrants
+					players[i]->camera().winx = (c % 2) * xres / 2;
+					players[i]->camera().winy = (c / 2) * yres / 2;
+					players[i]->camera().winw = xres / 2;
+					players[i]->camera().winh = yres / 2;
+				}
+			}
+
+			inputs.getVirtualMouse(i)->x = players[i]->camera_x1() + players[i]->camera_width() / 2;
+			inputs.getVirtualMouse(i)->y = players[i]->camera_y1() + players[i]->camera_height() / 2;
+
 			if ( i > 0 )
 			{
 				stats[i]->sex = static_cast<sex_t>(rand() % 2);
 				stats[i]->appearance = rand() % 18;
 				stats[i]->clearStats();
 				client_classes[i] = rand() % (CLASS_HUNTER + 1);
+				bool oldIntro = intro;
+				intro = true; // so initClass doesn't add items to hotbar.
 				initClass(i);
+				intro = oldIntro;
 			}
 		}
 	}
