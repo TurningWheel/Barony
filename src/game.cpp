@@ -1710,25 +1710,28 @@ void gameLogic(void)
 				{
 					continue;
 				}
-				backpack_sizey[player] = 3;
-				bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
+				backpack_sizey[player] = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY;
+				const int inventorySizeX = players[player]->inventoryUI.getSizeX();
+
+				bool tooManySpells = (list_Size(&spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
 				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK
 					&& (shouldInvertEquipmentBeatitude(stats[player]) ? abs(stats[player]->cloak->beatitude) >= 0 : stats[player]->cloak->beatitude >= 0) )
 				{
-					backpack_sizey[player] = 4;
+					backpack_sizey[player] = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1;
 				}
 
 				if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 				{
-					INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+					players[player]->inventoryUI.setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1) 
+						+ ((list_Size(&spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
 				}
-				else if ( backpack_sizey[player] == 4 )
+				else if ( backpack_sizey[player] == Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1 )
 				{
-					INVENTORY_SIZEY = 4;
+					players[player]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1);
 				}
 				else
 				{
-					if ( INVENTORY_SIZEY > 3 && !tooManySpells )
+					if ( players[player]->inventoryUI.getSizeY() > Player::Inventory_t::DEFAULT_INVENTORY_SIZEY && !tooManySpells )
 					{
 						// we should rearrange our spells.
 						for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
@@ -1748,7 +1751,7 @@ void gameLogic(void)
 							}
 							while ( 1 )
 							{
-								for ( scany = 0; scany < 3; scany++ )
+								for ( scany = 0; scany < Player::Inventory_t::DEFAULT_INVENTORY_SIZEY; scany++ )
 								{
 									node_t* node2;
 									for ( node2 = stats[player]->inventory.first; node2 != NULL; node2 = node2->next )
@@ -1787,7 +1790,7 @@ void gameLogic(void)
 							}
 						}
 					}
-					INVENTORY_SIZEY = 3;
+					players[player]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
 				}
 			}
 
@@ -1846,7 +1849,7 @@ void gameLogic(void)
 					}
 
 					// drop any inventory items you don't have room for
-					if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= backpack_sizey[player]) )
+					if ( itemCategory(item) != SPELL_CAT && (item->x >= players[player]->inventoryUI.getSizeX() || item->y >= backpack_sizey[player]) )
 					{
 						messagePlayer(player, language[727], item->getName());
 						bool droppedAll = false;
@@ -2295,7 +2298,11 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
 			}
-			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
+
+			const int inventorySizeX = players[clientnum]->inventoryUI.getSizeX();
+
+
+			bool tooManySpells = (list_Size(&spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
 			int backpack_sizey = 3;
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
 				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
@@ -2305,15 +2312,16 @@ void gameLogic(void)
 
 			if ( tooManySpells && players[clientnum]->gui_mode == GUI_MODE_INVENTORY && players[clientnum]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
-				INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+				players[clientnum]->inventoryUI.setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1) 
+					+ ((list_Size(&spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
 			}
 			else if ( backpack_sizey == 4 )
 			{
-				INVENTORY_SIZEY = 4;
+				players[clientnum]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1);
 			}
 			else
 			{
-				if ( INVENTORY_SIZEY > 3 && !tooManySpells )
+				if ( players[clientnum]->inventoryUI.getSizeY() > Player::Inventory_t::DEFAULT_INVENTORY_SIZEY && !tooManySpells )
 				{
 					// we should rearrange our spells.
 					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
@@ -2372,7 +2380,7 @@ void gameLogic(void)
 						}
 					}
 				}
-				INVENTORY_SIZEY = 3;
+				players[clientnum]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
 			}
 
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
@@ -2416,7 +2424,7 @@ void gameLogic(void)
 				}
 
 				// drop any inventory items you don't have room for
-				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= backpack_sizey) )
+				if ( itemCategory(item) != SPELL_CAT && (item->x >= players[clientnum]->inventoryUI.getSizeX() || item->y >= backpack_sizey) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
 					bool droppedAll = false;
@@ -4419,7 +4427,7 @@ int main(int argc, char** argv)
 								{
 									if ( ((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE || impulses[IN_DEFEND] == RIGHT_CLICK_IMPULSE)
 										&& players[player]->gui_mode >= GUI_MODE_INVENTORY
-										&& (mouseInsidePlayerInventory() || mouseInsidePlayerHotbar())
+										&& (mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player))
 										) )
 									{
 										allowCasting = false;
@@ -4871,8 +4879,8 @@ int main(int argc, char** argv)
 							if ( inputs.getUIInteraction(player)->selectedItem )
 							{
 								Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
-								pos.x = mousex - 15;
-								pos.y = mousey - 15;
+								pos.x = inputs.getMouse(player, Inputs::X) - 15;
+								pos.y = inputs.getMouse(player, Inputs::Y) - 15;
 								pos.w = 32 * uiscale_inventory;
 								pos.h = 32 * uiscale_inventory;
 								drawImageScaled(itemSprite(selectedItem), NULL, &pos);
@@ -4908,8 +4916,8 @@ int main(int argc, char** argv)
 								(FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 									|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 							{
-								pos.x = mousex - cursor_bmp->w / 2;
-								pos.y = mousey - cursor_bmp->h / 2;
+								pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
+								pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
 								drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 								if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 								{

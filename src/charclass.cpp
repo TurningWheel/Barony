@@ -35,21 +35,14 @@ void initClass(const int player)
 	auto& hotbar_t = players[player]->hotbar;
 	auto& hotbar = hotbar_t->slots();
 
-	bool isLocalPlayer = (player == clientnum) || (player != clientnum && splitscreen);
+	bool isLocalPlayer = players[player]->isLocalPlayer();
 
 	if ( isLocalPlayer )
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
 		//(same for deathStuff() and/or gameEndStuff().
-		selected_inventory_slot_x = 0;
-		selected_inventory_slot_y = 0;
-		hotbar_t->current_hotbar = 0;
-
-		for ( Uint32 i = 0; i < NUM_HOTBAR_SLOTS; ++i )
-		{
-			hotbar[i].item = 0;
-		}
-		hotbar_t->magicBoomerangHotbarSlot = -1;
+		players[player]->inventoryUI.selectSlot(0, 0);
+		hotbar_t->clear();
 	}
 
 	bool curseItems = false;
@@ -2487,7 +2480,7 @@ void initClass(const int player)
 			Item* item = static_cast<Item*>(node->element);
 			if ( item )
 			{
-				item->x = INVENTORY_SIZEX - item->x - 1;
+				item->x = players[player]->inventoryUI.getSizeX() - item->x - 1;
 				if ( item->type == SPELL_ITEM )
 				{
 					bool skipSpellRearrange = false;
@@ -2632,11 +2625,11 @@ void initShapeshiftHotbar(int player)
 						int x = 0;
 						bool notfree = false;
 						bool foundaspot = false;
-						const bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
-						int numRows = INVENTORY_SIZEY;
+						const bool tooManySpells = (list_Size(&spellList) >= players[player]->inventoryUI.getSizeX() * 3);
+						int numRows = players[player]->inventoryUI.getSizeY();
 						if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 						{
-							numRows = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+							numRows = 4 + ((list_Size(&spellList) - (players[player]->inventoryUI.getSizeX() * 3)) / players[player]->inventoryUI.getSizeX());
 						}
 						while ( true )
 						{

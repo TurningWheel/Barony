@@ -558,7 +558,9 @@ bool GameController::handleInventoryMovement(const int player)
 		else
 		{
 			//Navigate inventory.
-			select_inventory_slot(player, selected_inventory_slot_x - 1, selected_inventory_slot_y);
+			select_inventory_slot(player, 
+				players[player]->inventoryUI.getSelectedSlotX() - 1, 
+				players[player]->inventoryUI.getSelectedSlotY());
 		}
 		inputs.controllerClearInput(player, INJOY_DPAD_LEFT);
 
@@ -576,7 +578,9 @@ bool GameController::handleInventoryMovement(const int player)
 		else
 		{
 			//Navigate inventory.
-			select_inventory_slot(player, selected_inventory_slot_x + 1, selected_inventory_slot_y);
+			select_inventory_slot(player, 
+				players[player]->inventoryUI.getSelectedSlotX() + 1, 
+				players[player]->inventoryUI.getSelectedSlotY());
 		}
 		inputs.controllerClearInput(player, INJOY_DPAD_RIGHT);
 
@@ -590,11 +594,13 @@ bool GameController::handleInventoryMovement(const int player)
 			//Warp back to top of inventory.
 			hotbar_t->hotbarHasFocus = false;
 			float percentage = static_cast<float>(hotbar_t->current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * INVENTORY_SIZEX - 1, INVENTORY_SIZEY - 1);
+			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1);
 		}
 		else
 		{
-			select_inventory_slot(player, selected_inventory_slot_x, selected_inventory_slot_y - 1); //Will handle warping to hotbar.
+			select_inventory_slot(player, 
+				players[player]->inventoryUI.getSelectedSlotX(),
+				players[player]->inventoryUI.getSelectedSlotY() - 1); //Will handle warping to hotbar.
 		}
 		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
@@ -608,11 +614,13 @@ bool GameController::handleInventoryMovement(const int player)
 			//Warp back to bottom of inventory.
 			hotbar_t->hotbarHasFocus = false;
 			float percentage = static_cast<float>(hotbar_t->current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * INVENTORY_SIZEX - 1, 0);
+			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0);
 		}
 		else
 		{
-			select_inventory_slot(player, selected_inventory_slot_x, selected_inventory_slot_y + 1);
+			select_inventory_slot(player, 
+				players[player]->inventoryUI.getSelectedSlotX(),
+				players[player]->inventoryUI.getSelectedSlotY() + 1);
 		}
 		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
@@ -622,7 +630,7 @@ bool GameController::handleInventoryMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		inputs.getVirtualMouse(player)->draw_cursor = false;
+		//inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -658,7 +666,7 @@ bool GameController::handleChestMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		inputs.getVirtualMouse(player)->draw_cursor = false;
+		//inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -712,7 +720,7 @@ bool GameController::handleShopMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		inputs.getVirtualMouse(player)->draw_cursor = false;
+		//inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -748,7 +756,7 @@ bool GameController::handleIdentifyMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		inputs.getVirtualMouse(player)->draw_cursor = false;
+		//inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -784,7 +792,7 @@ bool GameController::handleRemoveCurseMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		inputs.getVirtualMouse(player)->draw_cursor = false;
+		//inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -820,7 +828,7 @@ bool GameController::handleRepairGUIMovement(const int player)
 	if ( dpad_moved )
 	{
 		dpad_moved = false;
-		inputs.getVirtualMouse(player)->draw_cursor = false;
+		//inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -856,7 +864,7 @@ bool GameController::handleItemContextMenu(const int player, const Item& item)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		inputs.getVirtualMouse(player)->draw_cursor = false;
+		//inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -953,13 +961,15 @@ SDL_GameControllerAxis GameController::getSDLTriggerFromImpulse(const unsigned c
 	return SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID;
 }
 
-Player::Player(int in_playernum, bool in_local_host)
+Player::Player(int in_playernum, bool in_local_host) : 
+	inventoryUI(*this),
+	statusBarUI(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
 	entity = nullptr;
 	cam = &cameras[playernum];
-	hotbar = new Hotbar_t();
+	hotbar = new Hotbar_t(*this);
 }
 
 Player::~Player()
@@ -981,6 +991,62 @@ const bool Player::isLocalPlayer() const
 const bool Player::isLocalPlayerAlive() const
 {
 	return (isLocalPlayer() && entity && !client_disconnected[playernum]);
+}
+
+void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
+{
+	if ( bPlayerUsingKeyboardControl(player) )
+	{
+		switch ( input )
+		{
+			case OX:
+				omousex = value;
+				return;
+			case OY:
+				omousey = value;
+				return;
+			case X:
+				mousex = value;
+				return;
+			case Y:
+				mousey = value;
+				return;
+			case XREL:
+				mousexrel = value;
+				return;
+			case YREL:
+				mouseyrel = value;
+				return;
+			default:
+				return;
+		}
+	}
+	else if ( hasController(player) )
+	{
+		switch ( input )
+		{
+			case OX:
+				getVirtualMouse(player)->ox = value;
+				return;
+			case OY:
+				getVirtualMouse(player)->oy = value;
+				return;
+			case X:
+				getVirtualMouse(player)->x = value;
+				return;
+			case Y:
+				getVirtualMouse(player)->y = value;
+				return;
+			case XREL:
+				getVirtualMouse(player)->xrel = value;
+				return;
+			case YREL:
+				getVirtualMouse(player)->yrel = value;
+				return;
+			default:
+				return;
+		}
+	}
 }
 
 const Sint32 Inputs::getMouse(const int player, MouseInputs input)
@@ -1048,9 +1114,13 @@ void Inputs::warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 
 		{
 			SDL_SetRelativeMouseMode(SDL_TRUE);
 		}
-		SDL_WarpMouseInWindow(screen, x, y);
+		SDL_WarpMouseInWindow(screen, x, y); // this pushes to the SDL event queue
+		
+		// if we don't set mousex/y here, the mouse will flicker until the event is popped
 		mousex = x;
 		mousey = y;
+		
+		//// not sure about omousex/y here...
 		omousex = x;
 		omousey = y;
 	}
@@ -1059,6 +1129,8 @@ void Inputs::warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 
 		const auto& mouse = inputs.getVirtualMouse(player);
 		mouse->x = x;
 		mouse->y = y;
+
+		// not sure about omousex/y here...
 		mouse->ox = x;
 		mouse->oy = y;
 	}

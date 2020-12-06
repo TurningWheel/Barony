@@ -111,6 +111,11 @@ inline void drawChestSlots(const int player)
 	SDL_Rect pos;
 	Item* item = nullptr;
 
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+
 	int highlightingSlot = -1;
 
 	if (omousex >= CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28))
@@ -183,7 +188,7 @@ inline void drawChestSlots(const int player)
 							}
 							else
 							{
-								warpMouseToSelectedInventorySlot();
+								warpMouseToSelectedInventorySlot(clientnum);
 							}
 						}
 					}

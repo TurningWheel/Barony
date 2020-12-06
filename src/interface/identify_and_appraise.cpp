@@ -91,6 +91,9 @@ void updateIdentifyGUI()
 	//if (openedChest[clientnum])
 	//	return; //Cannot have the identify and chest GUIs open at the same time.
 
+	const Sint32 omousex = inputs.getMouse(clientnum, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(clientnum, Inputs::OY);
+
 	SDL_Rect pos;
 	node_t* node;
 	int y, c;
@@ -279,7 +282,7 @@ void updateIdentifyGUI()
 							{
 								//Go back to inventory.
 								selectedIdentifySlot = -1;
-								warpMouseToSelectedInventorySlot();
+								warpMouseToSelectedInventorySlot(clientnum);
 							}
 							else
 							{

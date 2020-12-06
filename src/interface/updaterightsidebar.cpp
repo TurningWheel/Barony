@@ -56,7 +56,7 @@ void updateRightSidebar()
 	{
 		drawImage(rightsidebar_slot_grayedout_img, NULL, &pos); //The appraisal skill is grayed out while it's timing down. //TODO: Maybe a countdown timer or progress bar?
 	}
-	else if (mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h))
+	else if (mouseInBounds(clientnum, pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h))
 	{
 		drawImage(rightsidebar_slot_highlighted_img, NULL, &pos);
 		if (mousestatus[SDL_BUTTON_LEFT])
@@ -96,7 +96,7 @@ void updateRightSidebar()
 		//Grayed out. No spells.
 		drawImage(rightsidebar_slot_grayedout_img, NULL, &pos);
 	}
-	else if (mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h))
+	else if (mouseInBounds(clientnum, pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h))
 	{
 		drawImage(rightsidebar_slot_highlighted_img, NULL, &pos);
 		if (mousestatus[SDL_BUTTON_LEFT])

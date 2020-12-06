@@ -44,11 +44,11 @@ void updateBookGUI()
 	//Center the book GUI.
 	pos.x = BOOK_GUI_X;
 	pos.y = BOOK_GUI_Y;
-	if (mouseInBounds(BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+	if (mouseInBounds(clientnum, BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
 	{
 		drawImage(book_highlighted_right_img, NULL, &pos);
 	}
-	else if (mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+	else if (mouseInBounds(clientnum, BOOK_GUI_X, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
 	{
 		drawImage(book_highlighted_left_img, NULL, &pos);
 	}
@@ -93,7 +93,7 @@ void updateBookGUI()
 	if ( mousestatus[SDL_BUTTON_LEFT] )
 	{
 		//book_t GUI next page button.
-		if ( mouseInBounds(BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+		if ( mouseInBounds(clientnum, BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			if (book_page->next)
@@ -105,7 +105,7 @@ void updateBookGUI()
 				}
 			}
 		}
-		else if ( mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+		else if ( mouseInBounds(clientnum, BOOK_GUI_X, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			if (book_page->prev)
@@ -117,12 +117,13 @@ void updateBookGUI()
 				}
 			}
 		}
-		if ( !mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) )
+		if ( !mouseInBounds(clientnum, BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) )
 		{
 			// closing book
 			closeBookGUI();
 		}
-		if ( mouseInBounds(BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) || mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + DRAGHEIGHT_BOOK) )
+		if ( mouseInBounds(clientnum, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) 
+			|| mouseInBounds(clientnum, BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + DRAGHEIGHT_BOOK) )
 		{
 			// moving book
 			gui_clickdrag = true;

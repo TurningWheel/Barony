@@ -69,9 +69,6 @@ int chestgui_offset_y = 0;
 bool dragging_chestGUI = false;
 int selectedChestSlot = -1;
 
-int selected_inventory_slot_x = 0;
-int selected_inventory_slot_y = 0;
-
 SDL_Surface* rightsidebar_titlebar_img = NULL;
 SDL_Surface* rightsidebar_slot_img = NULL;
 SDL_Surface* rightsidebar_slot_highlighted_img = NULL;
@@ -1353,23 +1350,30 @@ int saveConfig(char const * const _filename)
 
 -------------------------------------------------------------------------------*/
 
-bool mouseInBounds(int x1, int x2, int y1, int y2)
+bool mouseInBounds(const int player, int x1, int x2, int y1, int y2)
 {
-	if (omousey >= y1 && omousey < y2)
-		if (omousex >= x1 && omousex < x2)
+	if ( inputs.getMouse(player, Inputs::OY) >= y1 && inputs.getMouse(player, Inputs::OY) < y2 )
+	{
+		if ( inputs.getMouse(player, Inputs::OX) >= x1 && inputs.getMouse(player, Inputs::OX) < x2)
 		{
 			return true;
 		}
+	}
 
 	return false;
 }
 
 hotbar_slot_t* getHotbar(int player, int x, int y)
 {
-	if (x >= HOTBAR_START_X && x < HOTBAR_START_X + (10 * hotbar_img->w * uiscale_hotbar) && y >= STATUS_Y - hotbar_img->h * uiscale_hotbar && y < STATUS_Y)
+	if ( x >= players[player]->hotbar->getStartX() 
+		&& x < players[player]->hotbar->getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar->getSlotSize())
+		&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar->getSlotSize()
+		&& y < players[player]->statusBarUI.getStartY() )
 	{
-		int relx = x - HOTBAR_START_X; //X relative to the start of the hotbar.
-		return &players[player]->hotbar->slots()[static_cast<int>(relx / (hotbar_img->w * uiscale_hotbar))]; //The slot will clearly be the x divided by the width of a slot
+		int relx = x - players[player]->hotbar->getStartX(); //X relative to the start of the hotbar.
+		int slot = std::max(0, std::min(relx / (players[player]->hotbar->getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
+
+		return &players[player]->hotbar->slots()[slot]; //The slot will clearly be the x divided by the width of a slot
 	}
 
 	return NULL;
@@ -1643,6 +1647,12 @@ void FollowerRadialMenu::initFollowerMenuGUICursor(bool openInventory)
 	{
 		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 	}
+
+	//const Sint32 mousex = inputs.getMouse(clientnum, Inputs::X);
+	//const Sint32 mousey = inputs.getMouse(clientnum, Inputs::Y);
+	//const Sint32 omousex = inputs.getMouse(clientnum, Inputs::OX);
+	//const Sint32 omousey = inputs.getMouse(clientnum, Inputs::OY);
+
 	omousex = mousex;
 	omousey = mousey;
 	if ( menuX == -1 )
@@ -1681,6 +1691,11 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 			mousey = partySheetMouseY;
 			SDL_SetRelativeMouseMode(SDL_FALSE);
 			SDL_WarpMouseInWindow(screen, mousex, mousey);
+
+			// to verify for splitscreen
+			//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
+			//inputs.warpMouse(clientnum, mousex, mousey, flags);
+
 		}
 	}
 	optionSelected = -1;
@@ -1708,6 +1723,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 	int disableOption = 0;
 	bool keepWheelOpen = false;
+
+	//const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	//const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	//const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	//const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+	//const Sint32 mousexrel = inputs.getMouse(player, Inputs::XREL);
+	//const Sint32 mouseyrel = inputs.getMouse(player, Inputs::YREL);
 
 	if ( followerToCommand )
 	{
@@ -3443,6 +3465,11 @@ void GenericGUIMenu::updateGUI(const int player)
 	node_t* node;
 	int y, c;
 
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+
 	//Generic GUI.
 	if ( guiActive )
 	{
@@ -3602,7 +3629,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_CRAFTABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3621,7 +3648,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_SALVAGEABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3640,7 +3667,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_REPAIRABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3659,7 +3686,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_ALL;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3712,7 +3739,7 @@ void GenericGUIMenu::updateGUI(const int player)
 					smallIcon.w = longestline(language[3723]) * TTF12_WIDTH + 8;
 					smallIcon.y -= 2;
 					smallIcon.h += 2;
-					if ( mouseInBounds(smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
+					if ( mouseInBounds(clientnum, smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
 					{
 						drawDepressed(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
 						if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
@@ -3756,7 +3783,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				scribingFilter = SCRIBING_FILTER_CRAFTABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3775,7 +3802,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				scribingFilter = SCRIBING_FILTER_REPAIRABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -4024,7 +4051,7 @@ void GenericGUIMenu::updateGUI(const int player)
 							{
 								//Go back to inventory.
 								selectedSlot = -1;
-								warpMouseToSelectedInventorySlot();
+								warpMouseToSelectedInventorySlot(clientnum);
 							}
 							else
 							{
@@ -4538,6 +4565,7 @@ void GenericGUIMenu::warpMouseToSelectedSlot()
 	slotPos.h = inventoryoptionChest_bmp->h;
 	slotPos.y = gui_startx + 16 + (slotPos.h * selectedSlot);
 
+	// to verify for splitscreen
 	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
 }
 

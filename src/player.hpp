@@ -346,6 +346,7 @@ public:
 		YREL
 	};
 	const Sint32 getMouse(const int player, MouseInputs input);
+	void setMouse(const int player, MouseInputs input, Sint32 value);
 	void hideMouseCursors()
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -459,8 +460,14 @@ public:
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 
+	void init()
+	{
+		inventoryUI.resetInventory();
+	};
+
 	class Hotbar_t;
 	Hotbar_t* hotbar;
+
 	view_t& camera() const { return *cam; }
 	const int camera_x1() const { return cam->winx; }
 	const int camera_x2() const { return cam->winx + cam->winw; }
@@ -468,6 +475,8 @@ public:
 	const int camera_y2() const { return cam->winy + cam->winh; }
 	const int camera_width() const { return cam->winw; }
 	const int camera_height() const { return cam->winh; }
+	const int camera_midx() const { return camera_x1() + camera_width() / 2; }
+	const int camera_midy() const { return camera_y1() + camera_height() / 2; }
 	const bool isLocalPlayer() const;
 	const bool isLocalPlayerAlive() const;
 
@@ -477,11 +486,63 @@ public:
 	bool shootmode = false;
 	int inventory_mode = INVENTORY_MODE_ITEM;
 	int gui_mode = GUI_MODE_NONE;
+
+	class Inventory_t
+	{
+		const int sizex = DEFAULT_INVENTORY_SIZEX;
+		int sizey = DEFAULT_INVENTORY_SIZEY;
+		const int starty = 10;
+		Player& player;
+
+		int selectedSlotX = 0;
+		int selectedSlotY = 0;
+	public:
+		static const int DEFAULT_INVENTORY_SIZEX = 12;
+		static const int DEFAULT_INVENTORY_SIZEY = 3;
+		Inventory_t(Player& p) : player(p) {};
+		~Inventory_t() {};
+		const int getTotalSize() const { return sizex * sizey; }
+		const int getSizeX() const { return sizex; }
+		const int getSizeY() const { return sizey; }
+		const int getStartX() const {
+			return (player.camera_midx() - (sizex) * (getSlotSize()) / 2 - inventory_mode_item_img->w / 2);
+		}
+		const int getStartY() const { return player.camera_y1() + starty; }
+		const int getSlotSize() const { return static_cast<int>(40 * uiscale_inventory); }
+		void setSizeY(int size) { sizey = size; }
+		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
+		const int getSelectedSlotX() const { return selectedSlotX; }
+		const int getSelectedSlotY() const { return selectedSlotY; }
+		void resetInventory()
+		{
+			sizey = DEFAULT_INVENTORY_SIZEY;
+		}
+	} inventoryUI;
+
+	class StatusBar_t
+	{
+		Player& player;
+	public:
+		StatusBar_t(Player& p) : player(p)
+		{};
+		~StatusBar_t() {};
+
+		const int getStartX() const 
+		{ 
+			return (player.camera_midx() - status_bmp->w * uiscale_chatlog / 2);
+		}
+		const int getStartY() const
+		{
+			return (player.camera_y2() - getOffsetY());
+		}
+		const int getOffsetY() const { return (status_bmp->h * uiscale_chatlog * (hide_statusbar ? 0 : 1)); }
+	} statusBarUI;
 };
 
 class Player::Hotbar_t {
 	std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS> hotbar;
 	std::array<std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS>, NUM_HOTBAR_ALTERNATES> hotbar_alternate;
+	Player& player;
 public:
 	int current_hotbar = 0;
 	bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
@@ -490,7 +551,13 @@ public:
 	int magicBoomerangHotbarSlot = -1;
 	Uint32 hotbarTooltipLastGameTick = 0;
 
-	Player::Hotbar_t()
+	const int getStartX() const
+	{
+		return (player.camera_midx() - ((NUM_HOTBAR_SLOTS / 2) * getSlotSize()));
+	}
+	const int getSlotSize() const { return hotbar_img->w * uiscale_hotbar; }
+
+	Player::Hotbar_t(Player& p) : player(p)
 	{
 		clear();
 	}
@@ -509,6 +576,8 @@ public:
 		swapHotbarOnShapeshift = 0;
 		current_hotbar = 0;
 		hotbarHasFocus = false;
+		magicBoomerangHotbarSlot = -1;
+		hotbarTooltipLastGameTick = 0;
 		for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
 		{
 			hotbarShapeshiftInit[j] = false;

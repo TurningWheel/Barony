@@ -25,11 +25,6 @@ typedef struct damageIndicator_t
 } damageIndicator_t;
 extern list_t damageIndicators;
 
-#define STATUS_BAR_Y_OFFSET (status_bmp->h * uiscale_chatlog * !hide_statusbar)
-#define INVENTORY_SLOTSIZE (40 * uiscale_inventory)
-#define STATUS_X (xres / 2 - status_bmp->w * uiscale_chatlog / 2)
-#define STATUS_Y (yres - STATUS_BAR_Y_OFFSET)
-#define HOTBAR_START_X ((xres / 2) - (5 * hotbar_img->w * uiscale_hotbar))
 extern bool hide_statusbar;
 extern real_t uiscale_chatlog;
 extern real_t uiscale_playerbars;
@@ -116,9 +111,6 @@ extern int itemscroll;
 extern view_t camera_charsheet;
 extern real_t camera_charsheet_offsetyaw;
 
-extern int selected_inventory_slot_x;
-extern int selected_inventory_slot_y;
-
 void select_inventory_slot(int player, int x, int y);
 
 extern SDL_Surface* inventoryChest_bmp;
@@ -161,8 +153,8 @@ bool autoAddHotbarFilter(const Item& item);
 void quickStackItems(const int player);
 void sortInventoryItemsOfType(const int player, int categoryInt, bool sortRightToLeft); // sort inventory items matching category. -1 is everything, -2 is only equipped items.
 void autosortInventory(const int player);
-bool mouseInsidePlayerInventory();
-bool mouseInsidePlayerHotbar();
+bool mouseInsidePlayerInventory(const int player);
+bool mouseInsidePlayerHotbar(const int player);
 bool playerLearnedSpellbook(const int player, Item* current_item);
 
 /*
@@ -208,7 +200,7 @@ void selectChestSlot(const int player, const int slot);
 int numItemsInChest(const int player);
 void warpMouseToSelectedChestSlot();
 
-void warpMouseToSelectedInventorySlot();
+void warpMouseToSelectedInventorySlot(const int player);
 
 //Magic GUI definitions.
 extern SDL_Surface* magicspellList_bmp;
@@ -494,7 +486,7 @@ extern GenericGUIMenu GenericGUI;
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.
  */
-bool mouseInBounds(int x1, int x2, int y1, int y2);
+bool mouseInBounds(const int player, int x1, int x2, int y1, int y2);
 
 void updateCharacterSheet(const int player);
 void drawPartySheet(const int player);

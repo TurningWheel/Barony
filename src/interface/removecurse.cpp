@@ -87,6 +87,13 @@ void updateRemoveCurseGUI()
 	node_t* node;
 	int y, c;
 
+	//const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	//const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	//const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	//const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+	//const Sint32 mousexrel = inputs.getMouse(player, Inputs::XREL);
+	//const Sint32 mouseyrel = inputs.getMouse(player, Inputs::YREL);
+
 	//Remove Curse GUI.
 	if (removecursegui_active)
 	{
@@ -260,7 +267,7 @@ void updateRemoveCurseGUI()
 							{
 								//Go back to inventory.
 								selectedRemoveCurseSlot = -1;
-								warpMouseToSelectedInventorySlot();
+								warpMouseToSelectedInventorySlot(clientnum);
 							}
 							else
 							{

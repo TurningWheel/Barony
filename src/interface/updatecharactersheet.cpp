@@ -45,12 +45,15 @@ void updateCharacterSheet(const int player)
 	Item* item = NULL;
 	int c;
 
-	int xres = players[player]->camera_width();
-	int yres = players[player]->camera_height();
-	int x1 = players[player]->camera_x1();
-	int x2 = players[player]->camera_x2();
-	int y1 = players[player]->camera_y1();
-	int y2 = players[player]->camera_y2();
+	const int x1 = players[player]->camera_x1();
+	const int x2 = players[player]->camera_x2();
+	const int y1 = players[player]->camera_y1();
+	const int y2 = players[player]->camera_y2();
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
 	// draw window
 	pos.x = x1 + 8;
@@ -169,7 +172,7 @@ void updateCharacterSheet(const int player)
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 		if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
 		{
-			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+			if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
 				camera_charsheet_offsetyaw += 0.05;
 				if ( camera_charsheet_offsetyaw > 2 * PI )
@@ -186,7 +189,7 @@ void updateCharacterSheet(const int player)
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 		if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
 		{
-			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+			if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
 				camera_charsheet_offsetyaw -= 0.05;
 				if ( camera_charsheet_offsetyaw < 0.f )
@@ -294,7 +297,7 @@ void updateCharacterSheet(const int player)
 	src.y = mousey + 16;
 	src.h = TTF12_HEIGHT + 8;
 	src.w = ( longestline(language[2968]) + strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
-	if ( mouseInBounds(pos.x + 4, pos.x + pos.w, text_y - pad_y, text_y) )
+	if ( mouseInBounds(player, pos.x + 4, pos.x + pos.w, text_y - pad_y, text_y) )
 	{
 		drawTooltip(&src);
 		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 6, language[2968], getInputName(impulses[IN_USE]));
@@ -314,8 +317,6 @@ void updateCharacterSheet(const int player)
 void drawSkillsSheet(const int player)
 {
 	return;
-	int xres = players[player]->camera_width();
-	int yres = players[player]->camera_height();
 	int x1 = players[player]->camera_x1();
 	int x2 = players[player]->camera_x2();
 	int y1 = players[player]->camera_y1();
@@ -335,7 +336,7 @@ void drawSkillsSheet(const int player)
 		fontWidth = TTF16_WIDTH;
 		pos.w = 276;
 	}
-	pos.x = x1 + xres - pos.w;
+	pos.x = x2 - pos.w;
 
 
 	pos.h = (NUMPROFICIENCIES * fontHeight) + (fontHeight * 3);
@@ -349,14 +350,14 @@ void drawSkillsSheet(const int player)
 	ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y + 8, language[1883]);
 
 	SDL_Rect button;
-	button.x = xres - attributesright_bmp->w - 8;
+	button.x = x2 - attributesright_bmp->w - 8;
 	button.w = attributesright_bmp->w;
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
 	if ( uiscale_skillspage )
 	{
 		button.w = attributesright_bmp->w * 1.3;
-		button.x = xres - button.w - 8;
+		button.x = x2 - button.w - 8;
 		button.y = pos.y;
 		button.h = attributesright_bmp->h * 1.3;
 	}
@@ -484,7 +485,7 @@ void drawSkillsSheet(const int player)
 	std::string skillTooltip;
 	for ( int i = 0; !players[player]->shootmode && i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
 	{
-		if ( mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + fontHeight) && stats[player] )
+		if ( mouseInBounds(player, pos.x, pos.x + pos.w, pos.y, pos.y + fontHeight) && stats[player] )
 		{
 			skillTooltipRect.w = (longestline(language[3255 + i]) * fontWidth) + 8;
 			skillTooltip = language[3255 + i];
@@ -1039,12 +1040,15 @@ void drawSkillsSheet(const int player)
 void drawPartySheet(const int player)
 {
 	return;
-	int xres = players[player]->camera_width();
-	int yres = players[player]->camera_height();
-	int x1 = players[player]->camera_x1();
-	int x2 = players[player]->camera_x2();
-	int y1 = players[player]->camera_y1();
-	int y2 = players[player]->camera_y2();
+	const int x1 = players[player]->camera_x1();
+	const int x2 = players[player]->camera_x2();
+	const int y1 = players[player]->camera_y1();
+	const int y2 = players[player]->camera_y2();
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
 	SDL_Rect pos;
 	pos.w = 208;
@@ -1067,7 +1071,7 @@ void drawPartySheet(const int player)
 			break;
 		}
 	}
-	pos.x = x1 + xres - pos.w;
+	pos.x = x2 - pos.w;
 	pos.y = y1 + 32;
 	pos.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
 
@@ -1101,14 +1105,14 @@ void drawPartySheet(const int player)
 	ttfPrintTextFormatted(fontPlayer, pos.x + 4, pos.y + 8, "Party Stats");
 
 	SDL_Rect button;
-	button.x = x1 + xres - attributesright_bmp->w - 8;
+	button.x = x2 - attributesright_bmp->w - 8;
 	button.w = attributesright_bmp->w;
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
 	if ( uiscale_skillspage )
 	{
 		button.w = attributesright_bmp->w * 1.3;
-		button.x = x1 + xres - button.w - 8;
+		button.x = x2 - button.w - 8;
 		button.y = pos.y;
 		button.h = attributesright_bmp->h * 1.3;
 	}
@@ -1208,7 +1212,7 @@ void drawPartySheet(const int player)
 				}
 
 				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i], i));
-				ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
+				ttfPrintTextFormattedColor(fontPlayer, x2 - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
 
 				playerBar.x = pos.x + 64;
 				playerBar.w = 10 * 11;
@@ -1320,13 +1324,13 @@ void drawPartySheet(const int player)
 						{
 							// draw highlight on current selected monster.
 							drawRect(&monsterEntryWindow, uint32ColorBaronyBlue(*mainsurface), 32);
-							// ttfPrintText(ttf16, xres - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
+							// ttfPrintText(ttf16, x2 - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
 						}
 
 						if ( stats[clientnum] && stats[clientnum]->HP > 0 && !players[player]->shootmode
 							&& (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE]))) )
 						{
-							bool inBounds = mouseInBounds(monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
+							bool inBounds = mouseInBounds(player, monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
 								monsterEntryWindow.y, monsterEntryWindow.y + monsterEntryWindow.h);
 							if ( inBounds )
 							{
@@ -1407,7 +1411,7 @@ void drawPartySheet(const int player)
 								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
 							}
 						}
-						ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 11, pos.y, color, "LVL %2d", followerStats->LVL);
+						ttfPrintTextFormattedColor(fontPlayer, x2 - 8 * 11, pos.y, color, "LVL %2d", followerStats->LVL);
 
 						playerBar.x = pos.x + 64;
 						playerBar.w = 10 * 11;
@@ -1435,7 +1439,7 @@ void drawPartySheet(const int player)
 				}
 			}
 		}
-		slider.x = x1 + xres - 16;
+		slider.x = x1 + x2 - 16;
 		slider.w = 16;
 		slider.h = (fontHeight * 2 + 12) * (std::min(monstersToDisplay + 1, numFollowers));
 		interfacePartySheet.h += slider.h + 6;
@@ -1445,7 +1449,7 @@ void drawPartySheet(const int player)
 			drawDepressed(slider.x, slider.y, slider.x + slider.w,
 				slider.y + slider.h);
 
-			bool mouseInScrollbarTotalHeight = mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
+			bool mouseInScrollbarTotalHeight = mouseInBounds(player, x2 - monsterEntryWindow.w, x2, slider.y,
 				slider.y + slider.h);
 
 			if ( mousestatus[SDL_BUTTON_WHEELDOWN] && mouseInScrollbarTotalHeight )
@@ -1464,7 +1468,7 @@ void drawPartySheet(const int player)
 			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
 			if ( mouseInScrollbarTotalHeight && mousestatus[SDL_BUTTON_LEFT] )
 			{
-				if ( !mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
+				if ( !mouseInBounds(player, x2 - monsterEntryWindow.w, x2, slider.y,
 					slider.y + slider.h) )
 				{
 					if ( omousey < slider.y )
@@ -1620,7 +1624,7 @@ void statsHoverText(Stat* tmpStat)
 					break;
 			}
 
-			if ( mouseInBounds(pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
+			if ( mouseInBounds(clientnum, pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
 			{
 				src.x = mousex + tooltip_offset_x;
 				src.y = mousey + tooltip_offset_y;
@@ -2008,7 +2012,7 @@ void attackHoverText(Sint32 input[6])
 
 	if ( attributespage == 0 )
 	{
-		if ( mouseInBounds(pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
+		if ( mouseInBounds(clientnum, pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
 		{
 			char tooltipHeader[32] = "";
 			switch ( input[0] )

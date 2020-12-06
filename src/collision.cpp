@@ -62,6 +62,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 
 	Sint32 mx = inputs.getMouse(player, Inputs::OX);
 	Sint32 my = inputs.getMouse(player, Inputs::OY);
+	auto& inventoryUI = players[player]->inventoryUI;
 
 	auto& camera = cameras[player];
 
@@ -102,7 +103,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				return NULL;    //Click falls inside the identify item gui.
 			}
 		if (book_open)
-			if (mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h))
+			if (mouseInBounds(player, BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h))
 			{
 				if ( clickedOnGUI )
 				{
@@ -113,7 +114,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 		if ( players[player]->gui_mode == GUI_MODE_INVENTORY || players[player]->gui_mode == GUI_MODE_SHOP)
 		{
 			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
-				if (mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height))
+				if (mouseInBounds(player, RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height))
 				{
 					if ( clickedOnGUI )
 					{
@@ -124,7 +125,11 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
 			//return NULL;
-			if ( mouseInBounds(INVENTORY_STARTX, INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE, INVENTORY_STARTY, INVENTORY_STARTY + INVENTORY_SIZEY * INVENTORY_SLOTSIZE) )
+			if ( mouseInBounds(player, 
+				inventoryUI.getStartX(),
+				inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize(),
+				inventoryUI.getStartY(),
+				inventoryUI.getStartY() + inventoryUI.getSizeY() * inventoryUI.getSlotSize()) )
 			{
 				// clicked in inventory
 				if ( clickedOnGUI )
@@ -137,7 +142,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 			{
 				int x1 = xres / 2 - SHOPWINDOW_SIZEX / 2, x2 = xres / 2 + SHOPWINDOW_SIZEX / 2;
 				int y1 = yres / 2 - SHOPWINDOW_SIZEY / 2, y2 = yres / 2 + SHOPWINDOW_SIZEY / 2;
-				if (mouseInBounds(x1, x2, y1, y2))
+				if (mouseInBounds(player, x1, x2, y1, y2))
 				{
 					if ( clickedOnGUI )
 					{
@@ -164,7 +169,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				height += numspells * spell_list_gui_slot_bmp->h;
 				int spelllist_y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
 
-				if (mouseInBounds(MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
+				if (mouseInBounds(player, MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
 				{
 					if ( clickedOnGUI )
 					{
@@ -174,7 +179,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				}
 			}
 		}
-		if ( mouseInBounds(interfaceCharacterSheet.x, interfaceCharacterSheet.x + interfaceCharacterSheet.w,
+		if ( mouseInBounds(player, interfaceCharacterSheet.x, interfaceCharacterSheet.x + interfaceCharacterSheet.w,
 			interfaceCharacterSheet.y, interfaceCharacterSheet.y + interfaceCharacterSheet.h) )   // character sheet
 		{
 			if ( clickedOnGUI )
@@ -185,7 +190,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 		}
 
 		if ( !hide_statusbar &&
-			mouseInBounds(interfaceMessageStatusBar.x, interfaceMessageStatusBar.x + interfaceMessageStatusBar.w,
+			mouseInBounds(player, interfaceMessageStatusBar.x, interfaceMessageStatusBar.x + interfaceMessageStatusBar.w,
 				interfaceMessageStatusBar.y, interfaceMessageStatusBar.y + interfaceMessageStatusBar.h) ) // bottom message log
 		{
 			if ( clickedOnGUI )
@@ -198,7 +203,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 		// ui code taken from drawSkillsSheet() and drawPartySheet().
 		if ( proficienciesPage == 0 )
 		{
-			if ( mouseInBounds(interfaceSkillsSheet.x, interfaceSkillsSheet.x + interfaceSkillsSheet.w,
+			if ( mouseInBounds(player, interfaceSkillsSheet.x, interfaceSkillsSheet.x + interfaceSkillsSheet.w,
 				interfaceSkillsSheet.y, interfaceSkillsSheet.y + interfaceSkillsSheet.h) )
 			{
 				if ( clickedOnGUI )
@@ -210,7 +215,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 		}
 		else
 		{
-			if ( mouseInBounds(interfacePartySheet.x, interfacePartySheet.x + interfacePartySheet.w,
+			if ( mouseInBounds(player, interfacePartySheet.x, interfacePartySheet.x + interfacePartySheet.w,
 				interfacePartySheet.y, interfacePartySheet.y + interfacePartySheet.h) )
 			{
 				if ( clickedOnGUI )
@@ -221,7 +226,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 			}
 		}
 
-		if ( mouseInsidePlayerInventory() || mouseInsidePlayerHotbar() )
+		if ( mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player) )
 		{
 			if ( clickedOnGUI )
 			{

@@ -822,7 +822,7 @@ void LobbyHandler_t::drawLobbyFilters()
 	ttfPrintTextFormatted(ttf12, text.x, text.y, language[3955], filterShowInProgressLobbies ? 'x' : ' ');
 	if ( mousestatus[SDL_BUTTON_LEFT] )
 	{
-		if ( mouseInBounds(text.x + strlen("crossplay lobbies: ") * TTF12_WIDTH, text.x + strlen("crossplay lobbies: [x]") * TTF12_WIDTH,
+		if ( mouseInBounds(clientnum, text.x + strlen("crossplay lobbies: ") * TTF12_WIDTH, text.x + strlen("crossplay lobbies: [x]") * TTF12_WIDTH,
 			text.y + TTF12_HEIGHT, text.y + TTF12_HEIGHT * 2) )
 		{
 			filterShowInProgressLobbies = !filterShowInProgressLobbies;

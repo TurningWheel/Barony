@@ -219,6 +219,13 @@ inline void checkBuyItem()
 		return;
 	}
 
+	//const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	//const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	//const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	//const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+	//const Sint32 mousexrel = inputs.getMouse(player, Inputs::XREL);
+	//const Sint32 mouseyrel = inputs.getMouse(player, Inputs::YREL);
+
 	//Window bounds.
 	Area shopWindow(xres / 2 - SHOPWINDOW_SIZEX / 2, xres / 2 + SHOPWINDOW_SIZEX / 2, yres / 2 - SHOPWINDOW_SIZEY / 2, yres / 2 + SHOPWINDOW_SIZEY / 2);
 
@@ -264,7 +271,7 @@ inline void checkBuyItem()
 					{
 						//Go back to inventory.
 						selectedShopSlot = -1;
-						warpMouseToSelectedInventorySlot();
+						warpMouseToSelectedInventorySlot(clientnum);
 					}
 					else
 					{

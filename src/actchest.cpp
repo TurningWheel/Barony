@@ -746,7 +746,7 @@ void Entity::actChest()
 					else
 					{
 						selectedChestSlot = -1;
-						warpMouseToSelectedInventorySlot(); //Because setting shootmode to false tends to start the mouse in the middle of the screen. Which is not nice.
+						warpMouseToSelectedInventorySlot(chestclicked); //Because setting shootmode to false tends to start the mouse in the middle of the screen. Which is not nice.
 					}
 				}
 				chestStatus = 1; //Toggle chest open/closed.

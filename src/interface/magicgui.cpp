@@ -93,7 +93,7 @@ void renderMagicGUI(int winx, int winy, int winw, int winh)
 				if (spell)
 				{
 					//If the mouse is over the slot, then draw the highlighted version.
-					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
+					if (mouseInBounds(clientnum, pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
 					{
 						drawImage(spell_list_gui_slot_highlighted_bmp, NULL, &pos);
 					}
@@ -175,7 +175,7 @@ void updateMagicGUI()
 			{
 				if (node)   //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
 				{
-					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
+					if (mouseInBounds(clientnum, pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						spell_t* spell = (spell_t*)node->element;
@@ -203,6 +203,10 @@ void drawSustainedSpells(const int player)
 	SDL_Rect pos;
 	pos.x = SUST_SPELLS_X;
 	pos.y = SUST_SPELLS_Y;
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+
 	if (SUST_SPELLS_RIGHT_ALIGN)
 	{
 		//Alright, so, the list should be right-aligned.
@@ -450,8 +454,8 @@ void drawSustainedSpells(const int player)
 			}
 		}
 
-		if ( tooltipText && !players[player]->shootmode && mouseInBounds(pos.x, pos.x + 32,
-			pos.y, pos.y + 32) )
+		if ( tooltipText && !players[player]->shootmode 
+			&& mouseInBounds(player, pos.x, pos.x + 32, pos.y, pos.y + 32) )
 		{
 			// draw tooltip.
 			currentTooltip = tooltipText;
@@ -578,7 +582,7 @@ void drawSustainedSpells(const int player)
 
 		drawImage(*sprite, NULL, &pos);
 
-		if ( !players[player]->shootmode && mouseInBounds(pos.x, pos.x + 32, pos.y, pos.y + 32) && tooltipText )
+		if ( !players[player]->shootmode && mouseInBounds(player, pos.x, pos.x + 32, pos.y, pos.y + 32) && tooltipText )
 		{
 			// draw tooltip.
 			currentTooltip = tooltipText;

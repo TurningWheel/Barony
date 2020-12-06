@@ -1352,13 +1352,18 @@ void actHudWeapon(Entity* my)
 							if ( stats[HUDWEAPON_PLAYERNUM]->weapon )
 							{
 								bool clickedOnGUI = false;
-								int tmpmousex = omousex;
-								int tmpmousey = omousey;
-								omousex = xres / 2; // pretend move the mouse to the centre of screen.
-								omousey = yres / 2;
+
+								int tmpmousex = inputs.getMouse(HUDWEAPON_PLAYERNUM, Inputs::OX);
+								int tmpmousey = inputs.getMouse(HUDWEAPON_PLAYERNUM, Inputs::OY);
+								// to verify splitscreen
+								// pretend move the mouse to the centre of screen.
+								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, players[HUDWEAPON_PLAYERNUM]->camera_midx()); 
+								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OY, players[HUDWEAPON_PLAYERNUM]->camera_midy());
+
 								Entity* clickedOn = entityClicked(&clickedOnGUI, true, HUDWEAPON_PLAYERNUM); // using objects
-								omousex = tmpmousex;
-								omousey = tmpmousey;
+
+								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousex);
+								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousey);
 								if ( clickedOn && clickedOn->behavior == &actBomb && entityDist(clickedOn, players[HUDWEAPON_PLAYERNUM]->entity) < STRIKERANGE )
 								{
 									// found something

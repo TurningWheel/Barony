@@ -3326,7 +3326,7 @@ void actPlayer(Entity* my)
 								}
 								minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
 							}
-							if ( !shootmode && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+							if ( !shootmode && mouseInBounds(PLAYER_NUM, xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 							{
 								MinimapPing newPing(ticks, -1, (mouseX - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (mouseY - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
 								minimapPingAdd(newPing);

@@ -27,7 +27,6 @@
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
-int INVENTORY_SIZEY = 3;
 const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f };
 const real_t thrownDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f };
 std::mt19937 enchantedFeatherScrollSeed(0);
@@ -90,17 +89,40 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 			is_spell = true;
 		}
 
+		int inventory_sizex = Player::Inventory_t::DEFAULT_INVENTORY_SIZEX;
+		int inventory_sizey = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY;
+		Player::Inventory_t* playerInventoryUI = nullptr;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( stats[i] && inventory == &stats[i]->inventory )
+			{
+				inventory_sizex = players[i]->inventoryUI.getSizeX();
+				inventory_sizey = players[i]->inventoryUI.getSizeY();
+				playerInventoryUI = &players[i]->inventoryUI;
+				break;
+			}
+		}
+
+		if ( !playerInventoryUI )
+		{
+			printlog("warning: newItem inventory was not a local player?");
+			return item;
+		}
+
 		int x = 0;
-		int inventory_y = INVENTORY_SIZEY;
 		if ( is_spell )
 		{
-			if ( list_Size(&spellList) >= INVENTORY_SIZEX * 3 )
+			if ( list_Size(&spellList) >= inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY )
 			{
-				inventory_y = INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+				// original commented out code to investigate -- why a double = sign?
+				//inventory_y = INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex);
+
+				playerInventoryUI->setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1)
+					+ ((list_Size(&spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex));
 			}
 			else
 			{
-				inventory_y = 3;
+				playerInventoryUI->setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
 			}
 		}
 		else if ( multiplayer != CLIENT )
@@ -112,7 +134,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
 						&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
 					{
-						inventory_y = 4;
+						playerInventoryUI->setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1);
 						break;
 					}
 					break;
@@ -121,21 +143,25 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		}
 		else if ( multiplayer == CLIENT )
 		{
-			for ( int i = 0; i < MAXPLAYERS && players[i]->isLocalPlayer(); ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+				if ( !players[i]->isLocalPlayer() )
+				{
+					continue;
+				}
 				if ( stats[i] && &stats[i]->inventory == inventory )
 				{
 					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
 						&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
 					{
-						inventory_y = 4;
+						players[i]->inventoryUI.setSizeY(4);
 						break;
 					}
 					break;
 				}
 			}
 		}
-		const int sort_y = std::min(std::max(inventory_y, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
+		const int sort_y = std::min(std::max(playerInventoryUI->getSizeY(), 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
 
 		while ( true )
 		{
@@ -182,14 +208,14 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 
 
 		// backpack sorting, sort into here as last priority.
-		if ( x > INVENTORY_SIZEX - 1 && inventory_y > 3 )
+		if ( x > playerInventoryUI->getSizeX() - 1 && playerInventoryUI->getSizeY() > Player::Inventory_t::DEFAULT_INVENTORY_SIZEY )
 		{
 			x = 0;
 			foundaspot = false;
 			notfree = false;
 			while ( true )
 			{
-				for ( y = 3; y < inventory_y; y++ )
+				for ( y = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY; y < playerInventoryUI->getSizeY(); y++ )
 				{
 					for ( node_t* node = inventory->first; node != nullptr; node = node->next )
 					{
@@ -234,8 +260,12 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		// add the item to the hotbar automatically
 		if ( !intro && auto_hotbar_new_items )
 		{
-			for ( int i = 0; i < MAXPLAYERS && players[i]->isLocalPlayer(); ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+				if ( !players[i]->isLocalPlayer() )
+				{
+					continue;
+				}
 				if ( stats[i] && inventory == &stats[i]->inventory )
 				{
 					for ( auto& hotbarSlot : players[i]->hotbar->slots() )
@@ -259,6 +289,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 							}
 						}
 					}
+					break;
 				}
 			}
 		}
@@ -271,88 +302,6 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 
 	itemuids++;
 	return item;
-}
-
-void addItemToMonsterInventory(Item &item, list_t& inventory)
-{
-	// add the item to the inventory
-
-	item.node = list_AddNodeLast(&inventory);
-	item.node->element = &item;
-	item.node->deconstructor = &defaultDeconstructor;
-	item.node->size = sizeof(Item);
-
-	bool notfree = false, foundaspot = false;
-
-	bool is_spell = false;
-	if (itemCategory(&item) == SPELL_CAT)
-	{
-		is_spell = true;
-	}
-
-	int x = 0;
-	while ( true )
-	{
-		for ( int y = 0; y < INVENTORY_SIZEY; ++y )
-		{
-			for ( node_t* node = inventory.first; node != nullptr; node = node->next )
-			{
-				Item* tempItem = static_cast<Item*>(node->element);
-				if ( tempItem == &item )
-				{
-					continue;
-				}
-				if ( tempItem )
-				{
-					if ( tempItem->x == x && tempItem->y == y )
-					{
-						if (is_spell && itemCategory(tempItem) == SPELL_CAT)
-						{
-							notfree = true;  //Both spells. Can't fit in the same slot.
-						}
-						else if (!is_spell && itemCategory(tempItem) != SPELL_CAT)
-						{
-							notfree = true;  //Both not spells. Can't fit in the same slot.
-						}
-					}
-				}
-			}
-			if ( notfree )
-			{
-				notfree = false;
-				continue;
-			}
-			item.x = x;
-			item.y = y;
-			foundaspot = true;
-			break;
-		}
-		if ( foundaspot )
-		{
-			break;
-		}
-		++x;
-	}
-
-	// add the item to the hotbar automatically
-	if ( !intro && auto_hotbar_new_items )
-	{
-		for ( int c = 0; c < MAXPLAYERS && players[c]->isLocalPlayer(); ++c )
-		{
-			if ( &inventory == &stats[c]->inventory )
-			{
-				for ( auto& hotbarSlot : players[c]->hotbar->slots() )
-				{
-					if ( !uidToItem(hotbarSlot.item) )
-					{
-						hotbarSlot.item = item.uid;
-						break;
-					}
-				}
-				break;
-			}
-		}
-	}
 }
 
 /*-------------------------------------------------------------------------------

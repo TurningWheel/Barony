@@ -1815,7 +1815,10 @@ void consoleCommand(char const * const command_str)
 				stats[i]->appearance = rand() % 18;
 				stats[i]->clearStats();
 				client_classes[i] = rand() % (CLASS_HUNTER + 1);
+				bool oldIntro = intro;
+				intro = true; // so initClass doesn't add items to hotbar.
 				initClass(i);
+				intro = oldIntro;
 			}
 		}
 	}
