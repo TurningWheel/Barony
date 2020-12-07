@@ -57,7 +57,10 @@ void clickDescription(int player, Entity* entity)
 			return;
 		}
 		if (openedChest[player])
-			if ( mx > CHEST_INVENTORY_X && mx < CHEST_INVENTORY_X + inventoryChest_bmp->w && my > CHEST_INVENTORY_Y && my < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
+			if ( mx > getChestGUIStartX(player) 
+				&& mx < getChestGUIStartX(player) + inventoryChest_bmp->w 
+				&& my > getChestGUIStartY(player) 
+				&& my < getChestGUIStartY(player) + inventoryChest_bmp->h)
 			{
 				return;    //Click falls inside the chest inventory GUI.
 			}

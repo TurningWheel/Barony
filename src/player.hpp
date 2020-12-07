@@ -62,7 +62,6 @@ class GameController
 
 	int oldLeftTrigger;
 	int oldRightTrigger;
-
 	std::string name;
 public:
 	GameController();
@@ -173,6 +172,10 @@ public:
 
 	int maxLeftTrigger();
 	int maxRightTrigger();
+	int oldRightX;
+	int oldRightY;
+	int oldAxisRightX;
+	int oldAxisRightY;
 
 	/*
 	 * Uses dpad to move the cursor around the inventory and select items.

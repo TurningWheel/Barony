@@ -414,14 +414,17 @@ int initGame()
 	topscoresMultiplayer.last = NULL;
 	messages.first = NULL;
 	messages.last = NULL;
-	chestInv.first = NULL;
-	chestInv.last = NULL;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		chestInv[i].first = NULL;
+		chestInv[i].last = NULL;
+		for ( c = 0; c < kNumChestItemsToDisplay; c++ )
+		{
+			invitemschest[i][c] = NULL;
+		}
+	}
 	command_history.first = NULL;
 	command_history.last = NULL;
-	for ( c = 0; c < kNumChestItemsToDisplay; c++ )
-	{
-		invitemschest[c] = NULL;
-	}
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		openedChest[c] = NULL;
@@ -748,7 +751,10 @@ void deinitGame()
 	}
 	//if(sky_bmp!=NULL)
 	//	SDL_FreeSurface(sky_bmp);
-	list_FreeAll(&chestInv);
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		list_FreeAll(&chestInv[i]);
+	}
 	freeInterfaceResources();
 	if ( books )
 	{

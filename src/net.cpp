@@ -3958,9 +3958,9 @@ void clientHandlePacket()
 			}
 			GenericGUI[clientnum].closeGUI();
 			identifygui_active = false;
-			list_FreeAll(&chestInv);
-			chestInv.first = nullptr;
-			chestInv.last = nullptr;
+			list_FreeAll(&chestInv[clientnum]);
+			chestInv[clientnum].first = nullptr;
+			chestInv[clientnum].last = nullptr;
 			players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 		}
 		return;

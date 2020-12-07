@@ -355,9 +355,9 @@ void select_inventory_slot(const int player, int x, int y)
 			if ( numItemsInChest(player) > 0 )   //If chest even has an item...
 			{
 				//Then warp cursor to chest.
-				selectedChestSlot = 0; //Warp to first chest slot.
-				int warpX = CHEST_INVENTORY_X + (inventoryoptionChest_bmp->w / 2);
-				int warpY = CHEST_INVENTORY_Y + (inventoryoptionChest_bmp->h / 2)  + 16;
+				selectedChestSlot[player] = 0; //Warp to first chest slot.
+				int warpX = getChestGUIStartX(player) + (inventoryoptionChest_bmp->w / 2);
+				int warpY = getChestGUIStartY(player) + (inventoryoptionChest_bmp->h / 2)  + 16;
 				//SDL_WarpMouseInWindow(screen, warpX, warpY);
 				Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 				inputs.warpMouse(player, warpX, warpY, flags);
@@ -519,9 +519,9 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 		inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 		if (openedChest[player] && itemCategory(selectedItem) != SPELL_CAT)
 		{
-			if (mousex >= CHEST_INVENTORY_X && mousey >= CHEST_INVENTORY_Y
-			        && mousex < CHEST_INVENTORY_X + inventoryChest_bmp->w
-			        && mousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
+			if (mousex >= getChestGUIStartX(player) && mousey >= getChestGUIStartY(player)
+			        && mousex < getChestGUIStartX(player) + inventoryChest_bmp->w
+			        && mousey < getChestGUIStartY(player) + inventoryChest_bmp->h)
 			{
 				if (selectedItem->count > 1)
 				{
@@ -767,12 +767,12 @@ void updatePlayerInventory(const int player)
 			}
 		}
 
-		if ( selectedChestSlot < 0 && selectedShopSlot < 0 
+		if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0 
 			&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 
 			&& !itemMenuOpen && inputs.getController(player)->handleInventoryMovement(player)
 			&& GenericGUI[player].selectedSlot < 0 )
 		{
-			if ( selectedChestSlot < 0 && selectedShopSlot < 0 
+			if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0
 				&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
 				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
@@ -786,9 +786,9 @@ void updatePlayerInventory(const int player)
 				}
 			}
 		}
-		else if ( selectedChestSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleChestMovement(player) )
+		else if ( selectedChestSlot[player] >= 0 && !itemMenuOpen && inputs.getController(player)->handleChestMovement(player) )
 		{
-			if ( selectedChestSlot < 0 )
+			if ( selectedChestSlot[player] < 0 )
 			{
 				//Move out of chest. Warp cursor back to selected inventory slot.
 				warpMouseToSelectedInventorySlot(player);
@@ -866,7 +866,7 @@ void updatePlayerInventory(const int player)
 	}
 
 	if ( !itemMenuOpen 
-		&& selectedChestSlot < 0 && selectedShopSlot < 0 
+		&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
 		&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
 		&& GenericGUI[player].selectedSlot < 0 )
 	{
@@ -1406,7 +1406,7 @@ void updatePlayerInventory(const int player)
 					}
 
 					if ( inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
-						&& !itemMenuOpen && !selectedItem && selectedChestSlot < 0 
+						&& !itemMenuOpen && !selectedItem && selectedChestSlot[player] < 0
 						&& selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
@@ -1440,7 +1440,7 @@ void updatePlayerInventory(const int player)
 					// handle clicking
 					if ( (inputs.bMouseLeft(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
-							&& selectedChestSlot < 0 && selectedShopSlot < 0 
+							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
 							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !selectedItem && !itemMenuOpen )
@@ -1472,7 +1472,7 @@ void updatePlayerInventory(const int player)
 					}
 					else if ( (inputs.bMouseRight(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
-							&& selectedChestSlot < 0 && selectedShopSlot < 0 
+							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
 							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !itemMenuOpen && !selectedItem )

@@ -9968,7 +9968,11 @@ void handleMainMenu(bool mode)
 			}
 
 			list_FreeAll(&removedEntities);
-			list_FreeAll(&chestInv);
+
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				list_FreeAll(&chestInv[c]);
+			}
 
 			// make some messages
 			startMessages();
@@ -10394,7 +10398,10 @@ void handleMainMenu(bool mode)
 				list_FreeAll(&stats[c]->FOLLOWERS);
 			}
 			list_FreeAll(&removedEntities);
-			list_FreeAll(&chestInv);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				list_FreeAll(&chestInv[c]);
+			}
 
 			// default player stats
 			for ( c = 0; c < MAXPLAYERS; c++ )

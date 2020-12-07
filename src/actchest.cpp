@@ -710,7 +710,7 @@ void Entity::actChest()
 				{
 					players[chestclicked]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CHEST);
 				}
-				if (chestclicked != 0 && multiplayer == SERVER)
+				if ( !players[chestclicked]->isLocalPlayer() && multiplayer == SERVER)
 				{
 					//Send all of the items to the client.
 					strcpy((char*)net_packet->data, "CHST");  //Chest.
@@ -740,12 +740,12 @@ void Entity::actChest()
 					players[chestclicked]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 					if ( numItemsInChest(chestclicked) > 0 )   //Warp mouse to first item in chest only if there are any items!
 					{
-						selectedChestSlot = 0;
-						warpMouseToSelectedChestSlot();
+						selectedChestSlot[chestclicked] = 0;
+						warpMouseToSelectedChestSlot(chestclicked);
 					}
 					else
 					{
-						selectedChestSlot = -1;
+						selectedChestSlot[chestclicked] = -1;
 						warpMouseToSelectedInventorySlot(chestclicked); //Because setting shootmode to false tends to start the mouse in the middle of the screen. Which is not nice.
 					}
 				}
@@ -754,7 +754,7 @@ void Entity::actChest()
 			else
 			{
 				messagePlayer(chestclicked, language[460]);
-				if (chestOpener != 0)
+				if ( !players[chestclicked]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "CCLS");  //Chest close.
 					net_packet->address.host = net_clients[chestOpener - 1].host;
@@ -764,11 +764,11 @@ void Entity::actChest()
 				}
 				else
 				{
-					chestitemscroll = 0;
+					chestitemscroll[chestclicked] = 0;
 				}
 				if (chestOpener != chestclicked)
 				{
-					messagePlayer(chestOpener, language[461]);
+					messagePlayer(chestclicked, language[461]);
 				}
 				closeChestServer();
 			}
@@ -914,12 +914,12 @@ void Entity::closeChest()
 			{
 				for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
 				{
-					invitemschest[c] = nullptr;
+					invitemschest[chestOpener][c] = nullptr;
 				}
 			}
-			chestitemscroll = 0;
+			chestitemscroll[chestOpener] = 0;
 			//Reset chest-gamepad related stuff here.
-			selectedChestSlot = -1;
+			selectedChestSlot[chestOpener] = -1;
 		}
 	}
 }
@@ -934,7 +934,7 @@ void Entity::closeChestServer()
 		{
 			for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
 			{
-				invitemschest[c] = nullptr;
+				invitemschest[chestOpener][c] = nullptr;
 			}
 		}
 	}
@@ -1270,19 +1270,19 @@ void closeChestClientside()
 		return;    //Only called for the client.
 	}
 
-	list_FreeAll(&chestInv);
+	list_FreeAll(&chestInv[clientnum]);
 
 	openedChest[clientnum] = NULL;
 
-	chestitemscroll = 0;
+	chestitemscroll[clientnum] = 0;
 
 	for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
 	{
-		invitemschest[c] = nullptr;
+		invitemschest[clientnum][c] = nullptr;
 	}
 
 	//Reset chest-gamepad related stuff here.
-	selectedChestSlot = -1;
+	selectedChestSlot[clientnum] = -1;
 }
 
 void addItemToChestClientside(Item* item)
@@ -1297,7 +1297,7 @@ void addItemToChestClientside(Item* item)
 		Item* item2 = NULL;
 		node_t* node = NULL;
 
-		for (node = chestInv.first; node != NULL; node = node->next)
+		for (node = chestInv[clientnum].first; node != NULL; node = node->next)
 		{
 			item2 = (Item*) node->element;
 			if (!itemCompare(item, item2, false))
@@ -1307,7 +1307,7 @@ void addItemToChestClientside(Item* item)
 			}
 		}
 
-		item->node = list_AddNodeFirst(&chestInv);
+		item->node = list_AddNodeFirst(&chestInv[clientnum]);
 		item->node->element = item;
 		item->node->deconstructor = &defaultDeconstructor;
 	}

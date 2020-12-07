@@ -116,11 +116,11 @@ void select_inventory_slot(int player, int x, int y);
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
 extern SDL_Surface* invgraball_bmp;
-extern int chestitemscroll; //Same as itemscroll, but for the chest inventory GUI.
+extern int chestitemscroll[MAXPLAYERS]; //Same as itemscroll, but for the chest inventory GUI.
 extern Entity* openedChest[MAXPLAYERS]; //One for each client. //TODO: Clientside, [0] will always point to something other than NULL when a chest is open and it will be NULL when a chest is closed.
-extern list_t chestInv; //This is just for the client, so that it can populate the chest inventory on its end.
+extern list_t chestInv[MAXPLAYERS]; //This is just for the client, so that it can populate the chest inventory on its end.
 static const int kNumChestItemsToDisplay = 4;
-extern Item* invitemschest[kNumChestItemsToDisplay];
+extern Item* invitemschest[MAXPLAYERS][kNumChestItemsToDisplay];
 
 extern bool gui_clickdrag; //True as long as an interface element is being dragged.
 extern int dragoffset_x;
@@ -185,20 +185,22 @@ enum selectBehavior_t
 } extern itemSelectBehavior;
 
 //Chest GUI definitions.
-#define CHEST_INVENTORY_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + chestgui_offset_x)
-#define CHEST_INVENTORY_Y (((yres / 2) - (inventoryChest_bmp->h / 2)) + chestgui_offset_y)
-extern int chestgui_offset_x;
-extern int chestgui_offset_y;
-extern bool dragging_chestGUI; //The chest GUI is being dragged.
+//#define CHEST_INVENTORY_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + chestgui_offset_x)
+//#define CHEST_INVENTORY_Y (((yres / 2) - (inventoryChest_bmp->h / 2)) + chestgui_offset_y)
+const int getChestGUIStartX(const int player);
+const int getChestGUIStartY(const int player);
+extern int chestgui_offset_x[MAXPLAYERS];
+extern int chestgui_offset_y[MAXPLAYERS];
+extern bool dragging_chestGUI[MAXPLAYERS]; //The chest GUI is being dragged.
 /*
  * Currently selected chest inventory slot.
  * Same deal as with hotbar & inventory selection (exists for gamepad support).
  * -1 = no selection (e.g. mouse out or no items in the first place).
  */
-extern int selectedChestSlot;
+extern int selectedChestSlot[MAXPLAYERS];
 void selectChestSlot(const int player, const int slot);
 int numItemsInChest(const int player);
-void warpMouseToSelectedChestSlot();
+void warpMouseToSelectedChestSlot(const int player);
 
 void warpMouseToSelectedInventorySlot(const int player);
 

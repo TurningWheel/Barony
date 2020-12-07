@@ -177,6 +177,30 @@ void GameController::handleAnalog(int player)
 			righty = -righty;
 		}
 
+		/*int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
+		int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
+
+		real_t magnitude = sqrt(pow(x, 2) + pow(y, 2));
+		real_t normalised = magnitude / (sqrt(2) * 32767);
+		real_t deadzone = 0.15;
+		if ( normalised < deadzone )
+		{
+			rightx = 0;
+			righty = 0;
+		}
+		else
+		{
+			real_t newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone);
+			real_t angle = atan2(y, static_cast<real_t>(x));
+			rightx = newMagnitude * cos(angle) / gamepad_menux_sensitivity;
+			righty = newMagnitude * sin(angle) / gamepad_menuy_sensitivity;
+		}
+
+		oldAxisRightX = x;
+		oldAxisRightY = y;*/
+		oldRightX = rightx;
+		oldRightY = righty;
+
 		if (rightx || righty)
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
@@ -212,6 +236,31 @@ void GameController::handleAnalog(int player)
 	{
 		int rightx = getRightXMove();
 		int righty = getRightYMove();
+
+		//int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
+		//int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
+
+		//real_t magnitude = sqrt(pow(x, 2) + pow(y, 2));
+		//real_t normalised = magnitude / (sqrt(2) * 32767);
+		//real_t deadzone = 0.25;
+		//if ( normalised < deadzone )
+		//{
+		//	rightx = 0;
+		//	righty = 0;
+		//}
+		//else
+		//{
+		//	//real_t newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone); // linear gradient
+		//	real_t newMagnitude = magnitude * pow((normalised - deadzone), 2); // half pipe gradient
+		//	real_t angle = atan2(y, static_cast<real_t>(x));
+		//	rightx = newMagnitude * cos(angle) / gamepad_rightx_sensitivity;
+		//	righty = newMagnitude * sin(angle) / gamepad_righty_sensitivity;
+		//}
+		//oldAxisRightX = x;
+		//oldAxisRightY = y;
+		
+		oldRightX = rightx;
+		oldRightY = righty;
 
 		if (rightx || righty)
 		{
@@ -649,7 +698,7 @@ bool GameController::handleChestMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
-		selectChestSlot(player, selectedChestSlot - 1);
+		selectChestSlot(player, selectedChestSlot[player] - 1);
 		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
@@ -657,7 +706,7 @@ bool GameController::handleChestMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
-		selectChestSlot(player, selectedChestSlot + 1);
+		selectChestSlot(player, selectedChestSlot[player] + 1);
 		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;

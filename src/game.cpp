@@ -4855,6 +4855,14 @@ int main(int argc, char** argv)
 								inputs.getVirtualMouse(player)->x, inputs.getVirtualMouse(player)->y);
 							printTextFormatted(font8x8_bmp, x, y + 40, "vox: %4d | voy: %4d",
 								inputs.getVirtualMouse(player)->ox, inputs.getVirtualMouse(player)->oy);
+
+							if ( inputs.hasController(player) )
+							{
+								printTextFormatted(font8x8_bmp, x + 12, y + 60, "rawx: %4d | rawy: %4d",
+									inputs.getController(player)->oldAxisRightX, inputs.getController(player)->oldAxisRightY);
+								printTextFormatted(font8x8_bmp, x + 12, y + 12 + 72, "newx: %4d | newy: %4d",
+									inputs.getController(player)->oldRightX, inputs.getController(player)->oldRightY);
+							}
 						}
 					}
 

@@ -47,7 +47,7 @@ SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
 int proficienciesPage = 0;
-Item* invitemschest[kNumChestItemsToDisplay];
+Item* invitemschest[MAXPLAYERS][kNumChestItemsToDisplay];
 int inventorycategory = 7; // inventory window defaults to wildcard
 int itemscroll = 0;
 view_t camera_charsheet;
@@ -62,12 +62,12 @@ bool gui_clickdrag = false;
 int dragoffset_x = 0;
 int dragoffset_y = 0;
 
-int chestitemscroll = 0;
-list_t chestInv;
-int chestgui_offset_x = 0;
-int chestgui_offset_y = 0;
-bool dragging_chestGUI = false;
-int selectedChestSlot = -1;
+list_t chestInv[MAXPLAYERS];
+int chestitemscroll[MAXPLAYERS] = { 0 };
+int chestgui_offset_x[MAXPLAYERS] = { 0 };
+int chestgui_offset_y[MAXPLAYERS] = { 0 };
+bool dragging_chestGUI[MAXPLAYERS] = { 0 };
+int selectedChestSlot[MAXPLAYERS] = { -1 };
 
 SDL_Surface* rightsidebar_titlebar_img = NULL;
 SDL_Surface* rightsidebar_slot_img = NULL;
