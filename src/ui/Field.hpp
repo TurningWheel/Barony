@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "../Main.hpp"
+#include "../main.hpp"
 #include "Font.hpp"
 
 class Frame;

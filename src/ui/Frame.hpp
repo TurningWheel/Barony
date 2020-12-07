@@ -6,6 +6,8 @@
 #include "Font.hpp"
 #include "Widget.hpp"
 
+#include <memory>
+
 class Field;
 class Button;
 class Field;
