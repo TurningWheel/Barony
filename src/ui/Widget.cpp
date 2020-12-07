@@ -84,7 +84,7 @@ Widget* Widget::handleInput() {
 		};
 		for (int c = 0; c < sizeof(moves) / sizeof(moves[0]); ++c) {
 			if (keystatus[moves[c].scancode]) {
-				if (moves[c].widget && moves[c].widget != '\0') {
+				if (moves[c].widget && moves[c].widget[0] != '\0') {
 					root = root ? root : findSearchRoot();
 					result = root->findWidget(moves[c].widget, true);
 					if (result) {
