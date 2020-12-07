@@ -316,11 +316,6 @@ public:
     //! @return the widget found, or nullptr if it was not found
     Widget* findWidget(const char* name, bool recursive);
 
-	//! create a frame to act as the root GUI object for all guis
-	static Frame* createGUI();
-
-	static Frame* deleteGUI();
-
 protected:
     Widget* parent = nullptr;                       //!< parent widget
     std::list<Widget*> widgets;                     //!< widget children
