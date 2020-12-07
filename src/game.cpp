@@ -4714,10 +4714,6 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							if ( player != clientnum )
-							{
-								continue;
-							}
 							//Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
 							//2-3 years later...yes, it is run every frame.
 							if ( identifygui_appraising )
@@ -4746,7 +4742,10 @@ int main(int argc, char** argv)
 
 							if ( capture_mouse )
 							{
-								SDL_SetRelativeMouseMode(SDL_TRUE);
+								if ( inputs.bPlayerUsingKeyboardControl(player) )
+								{
+									SDL_SetRelativeMouseMode(SDL_TRUE);
+								}
 							}
 
 						}

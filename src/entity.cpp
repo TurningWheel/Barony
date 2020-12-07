@@ -18464,7 +18464,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 
 	if ( flameEntity && player >= 0 )
 	{
-		if ( player == clientnum )
+		if ( players[player]->isLocalPlayer() )
 		{
 			flameEntity->flags[GENIUS] = true;
 			flameEntity->setUID(-4);
