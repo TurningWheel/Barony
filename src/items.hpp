@@ -464,11 +464,6 @@ public:
 };
 extern Uint32 itemuids;
 
-//static const int INVENTORY_SIZEX = 12;
-//#define INVENTORY_SIZE ((INVENTORY_SIZEX)*(INVENTORY_SIZEY))
-//#define INVENTORY_STARTX ((xres)/2-(INVENTORY_SIZEX)*(INVENTORY_SLOTSIZE)/2-inventory_mode_item_img->w/2)
-//static const int INVENTORY_STARTY = 10;
-
 // item generic
 class ItemGeneric
 {

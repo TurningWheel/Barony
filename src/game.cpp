@@ -4883,7 +4883,6 @@ int main(int argc, char** argv)
 						if ( players[player]->shootmode == false )
 						{
 							// dragging items, player not needed to be alive
-							// to port to splitscreen, player == clientnum to be replaced
 							if ( inputs.getUIInteraction(player)->selectedItem )
 							{
 								Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
@@ -4990,8 +4989,8 @@ int main(int argc, char** argv)
 							if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 								|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 							{
-								pos.x = xres / 2 - cursor_bmp->w / 2;
-								pos.y = yres / 2 - cursor_bmp->h / 2;
+								pos.x = players[player]->camera_midx() - cursor_bmp->w / 2;
+								pos.y = players[player]->camera_midy() - cursor_bmp->h / 2;
 								drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 								if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 								{
