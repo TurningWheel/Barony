@@ -2309,7 +2309,7 @@ inline void executeItemMenuOption1(const int player, Item* item, bool is_potion_
 	{
 		if ( !disableItemUsage )
 		{
-			GenericGUI[player].openGUI(player, GUI_TYPE_TINKERING, item);
+			GenericGUI[player].openGUI(GUI_TYPE_TINKERING, item);
 		}
 		else
 		{

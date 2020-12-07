@@ -598,7 +598,10 @@ public:
 		list_t spellList; //All of the player's spells are stored here.
 
 		Magic_t(Player& p) : player(p)
-		{};
+		{
+			spellList.first = nullptr;
+			spellList.last = nullptr;
+		};
 		~Magic_t() {};
 		void clearSelectedSpells()
 		{

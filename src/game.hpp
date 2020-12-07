@@ -340,7 +340,7 @@ extern bool enabledDLCPack1;
 extern bool enabledDLCPack2;
 extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
-extern int monsterEmoteGimpTimer;
+extern int monsterEmoteGimpTimer[MAXPLAYERS];
 extern int selectedEntityGimpTimer[MAXPLAYERS];
 void mapLevel(int player);
 void mapFoodOnLevel(int player);

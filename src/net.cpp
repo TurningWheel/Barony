@@ -342,7 +342,7 @@ void sendEntityTCP(Entity* entity, int c)
 	{
 		return;
 	}
-	if ( client_disconnected[c] == true )
+	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -407,7 +407,7 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 	{
 		return;
 	}
-	if ( client_disconnected[c] == true )
+	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -477,7 +477,7 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 
 void sendMapSeedTCP(int c)
 {
-	if ( client_disconnected[c] == true )
+	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -511,7 +511,7 @@ void sendMapTCP(int c)
 {
 	Uint32 x, y, z;
 
-	if ( client_disconnected[c] == true )
+	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -560,7 +560,7 @@ void serverUpdateBodypartIDs(Entity* entity)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -612,7 +612,7 @@ void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -670,7 +670,7 @@ void serverUpdateEntitySprite(Entity* entity)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -737,7 +737,7 @@ void serverUpdateEntityStatFlag(Entity* entity, int flag)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -769,7 +769,7 @@ void serverUpdateEntityFSkill(Entity* entity, int fskill)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -801,7 +801,7 @@ void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSpri
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -834,7 +834,7 @@ void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int partic
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -868,7 +868,7 @@ void serverUpdateEntityFlag(Entity* entity, int flag)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -956,7 +956,7 @@ void serverUpdateHunger(int player)
 	{
 		return;
 	}
-	if ( client_disconnected[player] == true )
+	if ( client_disconnected[player] == true || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -986,7 +986,7 @@ void serverUpdatePlayerStats()
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -1095,7 +1095,7 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 			gameStatistics[gameplayStat] += changeval;
 		}
 	}
-	else
+	else if ( !players[player]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "GPST");
 		SDLNet_Write32(gameplayStat, &net_packet->data[4]);
@@ -1114,7 +1114,7 @@ void serverUpdatePlayerConduct(int player, int conduct, int value)
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1144,7 +1144,7 @@ void serverUpdatePlayerLVL()
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -1171,7 +1171,7 @@ void serverRemoveClientFollower(int player, Uint32 uidToRemove)
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1190,7 +1190,7 @@ void serverSendItemToPickupAndEquip(int player, Item* item)
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1216,7 +1216,7 @@ void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int M
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1243,7 +1243,7 @@ void serverUpdatePlayerSummonStrength(int player)
 	{
 		return;
 	}
-	if ( client_disconnected[player] || !stats[player] )
+	if ( client_disconnected[player] || !stats[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1271,7 +1271,7 @@ void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool 
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1317,7 +1317,7 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 	{
 		for ( int c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[player]->isLocalPlayer() )
 			{
 				continue;
 			}

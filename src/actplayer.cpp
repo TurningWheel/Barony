@@ -34,7 +34,7 @@ bool usecamerasmoothing = false;
 bool disablemouserotationlimit = false;
 bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
-int monsterEmoteGimpTimer = 0;
+int monsterEmoteGimpTimer[MAXPLAYERS] = 0;
 int selectedEntityGimpTimer[MAXPLAYERS] = { 0 };
 bool insectoidLevitating[MAXPLAYERS] = { false, false, false, false };
 bool partymode = false;
@@ -1839,6 +1839,10 @@ void actPlayer(Entity* my)
 				}
 			}
 
+		}
+
+		if ( players[PLAYER_NUM]->isLocalPlayer() )
+		{
 			// shurar the talking mace
 			if ( stats[PLAYER_NUM]->weapon )
 			{
@@ -1851,9 +1855,9 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			if ( monsterEmoteGimpTimer > 0 )
+			if ( monsterEmoteGimpTimer[PLAYER_NUM] > 0 )
 			{
-				--monsterEmoteGimpTimer;
+				--monsterEmoteGimpTimer[PLAYER_NUM];
 			}
 		}
 		if ( multiplayer == SERVER )
@@ -1945,7 +1949,7 @@ void actPlayer(Entity* my)
 		}
 		if ( multiplayer == CLIENT && client_classes[PLAYER_NUM] == CLASS_ACCURSED )
 		{
-			if ( PLAYER_NUM == clientnum && my->playerVampireCurse == 1 )
+			if ( players[PLAYER_NUM]->isLocalPlayer() && my->playerVampireCurse == 1 )
 			{
 				stats[PLAYER_NUM]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -2;
 			}
@@ -2370,7 +2374,7 @@ void actPlayer(Entity* my)
 	}*/
 
 	// SPLITSCREEN TODO
-	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
+	if ( players[PLAYER_NUM]->isLocalPlayer() && appraisal_timer > 0)
 	{
 		Item* tempItem = uidToItem(appraisal_item);
 		if ( tempItem )
@@ -2757,7 +2761,7 @@ void actPlayer(Entity* my)
 	// invisibility
 	if ( !intro )
 	{
-		if ( PLAYER_NUM == clientnum || multiplayer == SERVER || (splitscreen && PLAYER_NUM > 0) )
+		if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 		{
 			if ( stats[PLAYER_NUM]->ring != NULL )
 				if ( stats[PLAYER_NUM]->ring->type == RING_INVISIBILITY )
@@ -2857,7 +2861,7 @@ void actPlayer(Entity* my)
 	bool oldInsectoidLevitate = insectoidLevitating[PLAYER_NUM];
 	insectoidLevitating[PLAYER_NUM] = false;
 
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || (splitscreen && PLAYER_NUM > 0) )
+	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
 		switch ( stats[PLAYER_NUM]->type )
 		{
@@ -3020,7 +3024,7 @@ void actPlayer(Entity* my)
 						}
 						clipMove(&my->x, &my->y, velx, vely, my);
 						messagePlayer(PLAYER_NUM, language[3869]);
-						if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
+						if ( players[PLAYER_NUM]->isLocalPlayer() )
 						{
 							cameravars[PLAYER_NUM].shakex += .1;
 							cameravars[PLAYER_NUM].shakey += 10;
@@ -3078,7 +3082,7 @@ void actPlayer(Entity* my)
 			waterwalkingboots = true;
 		}
 	bool swimming = isPlayerSwimming(my);
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || (splitscreen && PLAYER_NUM > 0) )
+	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
 		if ( swimming )
 		{
@@ -3093,7 +3097,7 @@ void actPlayer(Entity* my)
 			{
 				my->z += 1;
 			}
-			if ( !PLAYER_INWATER && (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) )
+			if ( !PLAYER_INWATER && (players[PLAYER_NUM]->isLocalPlayer()) )
 			{
 				PLAYER_INWATER = 1;
 				if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
@@ -3228,7 +3232,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
+	if ( players[PLAYER_NUM]->isLocalPlayer() )
 	{
 		players[PLAYER_NUM]->entity = my;
 
@@ -3594,7 +3598,7 @@ void actPlayer(Entity* my)
 				{
 					messagePlayer(i, language[575], stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->HP, stats[PLAYER_NUM]->MAXHP, stats[PLAYER_NUM]->MP, stats[PLAYER_NUM]->MAXMP);
 					messagePlayer(PLAYER_NUM, language[576], stats[i]->name);
-					if ((PLAYER_NUM == clientnum || (PLAYER_NUM != clientnum && splitscreen) ) && players[i] && players[i]->entity)
+					if ( players[PLAYER_NUM]->isLocalPlayer() && players[i] && players[i]->entity)
 					{
 						double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
 						PLAYER_VELX += cos(tangent);
@@ -3608,11 +3612,11 @@ void actPlayer(Entity* my)
 	// torch light
 	if ( !intro )
 	{
-		if ( multiplayer == SERVER || PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
+		if ( multiplayer == SERVER || players[PLAYER_NUM]->isLocalPlayer() )
 		{
 			if ( stats[PLAYER_NUM]->shield != NULL && (showEquipment && isHumanoid) && !itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
 			{
-				if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
+				if ( players[PLAYER_NUM]->isLocalPlayer() )
 				{
 					if ( stats[PLAYER_NUM]->shield->type == TOOL_TORCH )
 					{
@@ -3691,7 +3695,7 @@ void actPlayer(Entity* my)
 	}
 
 	// server controls players primarily
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER || (splitscreen && PLAYER_NUM > 0) )
+	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
 		// set head model
 		if ( playerRace != HUMAN )
@@ -3977,7 +3981,7 @@ void actPlayer(Entity* my)
 										followerStats->leader_uid = 0;
 									}
 									list_RemoveNode(node);
-									if ( PLAYER_NUM != clientnum && !splitscreen )
+									if ( !players[PLAYER_NUM]->isLocalPlayer() )
 									{
 										serverRemoveClientFollower(PLAYER_NUM, myFollower->getUID());
 									}
@@ -4041,7 +4045,7 @@ void actPlayer(Entity* my)
 #endif
 							combat = false;
 
-							if ( PLAYER_NUM == clientnum 
+							if ( players[PLAYER_NUM]->isLocalPlayer()
 								&& gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 							{
 								if ( !strncmp(map.name, "Tutorial Hub", 12) )
@@ -4066,7 +4070,7 @@ void actPlayer(Entity* my)
 									}
 									if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES )
 									{
-										if ( itemIsEquipped(item, clientnum) )
+										if ( itemIsEquipped(item, PLAYER_NUM) )
 										{
 											steamAchievement("BARONY_ACH_CHOSEN_ONE");
 										}
@@ -4307,7 +4311,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) && intro == false )
+	if ( (players[PLAYER_NUM]->isLocalPlayer()) && intro == false )
 	{
 		// effects of drunkenness
 		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN))
@@ -4362,7 +4366,7 @@ void actPlayer(Entity* my)
 		if ( multiplayer == CLIENT )
 		{
 			strcpy((char*)net_packet->data, "PMOV");
-			net_packet->data[4] = clientnum;
+			net_packet->data[4] = PLAYER_NUM;
 			net_packet->data[5] = currentlevel;
 			SDLNet_Write16((Sint16)(my->x * 32), &net_packet->data[6]);
 			SDLNet_Write16((Sint16)(my->y * 32), &net_packet->data[8]);
@@ -4470,7 +4474,7 @@ void actPlayer(Entity* my)
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 	}
 
-	if ( (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) && ticks % 65 == 0 )
+	if ( (players[PLAYER_NUM]->isLocalPlayer()) && ticks % 65 == 0 )
 	{
 		for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 		{
@@ -4741,7 +4745,7 @@ void actPlayer(Entity* my)
 							}
 						}
 
-						if ( PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH && (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) )
+						if ( PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH && (players[PLAYER_NUM]->isLocalPlayer()) )
 						{
 							if ( my->pitch < PI / 32 )
 							{
@@ -4852,7 +4856,7 @@ void actPlayer(Entity* my)
 						{
 							// move the head.
 							//limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.1);
-							if ( (PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0)) && PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
+							if ( (players[PLAYER_NUM]->isLocalPlayer()) && PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
 							{
 								if ( my->pitch > -PI / 12 )
 								{

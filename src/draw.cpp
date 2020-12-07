@@ -672,9 +672,9 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 			real_t arcx2 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
 			real_t arcy2 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
 			//glTexCoord2f(1.f, 0.f);
-			glVertex2f(xres / 2 + arcx1, yres / 2 + arcy1);
+			glVertex2f(src->x + arcx1, yres - src->y + arcy1);
 			//glTexCoord2f(0.f, 1.f);
-			glVertex2f(xres / 2 + arcx2, yres / 2 + arcy2);
+			glVertex2f(src->x + arcx2, yres - src->y + arcy2);
 			//s = i % first + 0.01;
 			//arcAngle = (((j + 1) % segments) * 2 * PI / segments) + angStart; // angle of the line.
 			//real_t arcx3 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);

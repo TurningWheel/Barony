@@ -7944,7 +7944,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 					steamAchievementClient(leader.skill[2], "BARONY_ACH_CONFESSOR");
 				}
 				list_RemoveNodeWithElement<Uint32>(oldLeaderStats->FOLLOWERS, *myuid);
-				if ( oldLeader->behavior == &actPlayer )
+				if ( oldLeader->behavior == &actPlayer && !players[oldLeader->skill[2]]->isLocalPlayer() )
 				{
 					serverRemoveClientFollower(oldLeader->skill[2], *myuid);
 				}

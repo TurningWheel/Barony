@@ -698,7 +698,7 @@ void actHudWeapon(Entity* my)
 			{
 				*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) = 0;
 				inputs.controllerClearInput(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK);
-				GenericGUI[HUDWEAPON_PLAYERNUM].openGUI(HUDWEAPON_PLAYERNUM, GUI_TYPE_TINKERING, stats[HUDWEAPON_PLAYERNUM]->shield);
+				GenericGUI[HUDWEAPON_PLAYERNUM].openGUI(GUI_TYPE_TINKERING, stats[HUDWEAPON_PLAYERNUM]->shield);
 				swapWeaponGimpTimer = 20;
 				return;
 			}

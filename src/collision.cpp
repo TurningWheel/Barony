@@ -265,16 +265,16 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 
 	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride )
 	{
-		if ( players[player] && players[player]->entity && monsterEmoteGimpTimer == 0 )
+		if ( players[player] && players[player]->entity && monsterEmoteGimpTimer[player] == 0 )
 		{
-			monsterEmoteGimpTimer = TICKS_PER_SECOND * 5;
+			monsterEmoteGimpTimer[player] = TICKS_PER_SECOND * 5;
 			int sfx = 0;
 			int line = 0;
 			switch ( stats[player]->type )
 			{
 				case SKELETON:
 					sfx = 95;
-					monsterEmoteGimpTimer = TICKS_PER_SECOND;
+					monsterEmoteGimpTimer[player] = TICKS_PER_SECOND;
 					break;
 				case SUCCUBUS:
 					sfx = 70;

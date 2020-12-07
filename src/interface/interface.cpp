@@ -1735,12 +1735,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 	int disableOption = 0;
 	bool keepWheelOpen = false;
 
-	//const Sint32 mousex = inputs.getMouse(player, Inputs::X);
-	//const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
-	//const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
-	//const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
-	//const Sint32 mousexrel = inputs.getMouse(player, Inputs::XREL);
-	//const Sint32 mouseyrel = inputs.getMouse(player, Inputs::YREL);
+	const Sint32 mousex = inputs.getMouse(gui_player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(gui_player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(gui_player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(gui_player, Inputs::OY);
 
 	if ( followerToCommand )
 	{
@@ -1760,7 +1758,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		int skillLVL = 0;
 		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity )
 		{
-			if ( (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD])) && optionPrevious != -1 )
+			if ( (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD)) && optionPrevious != -1 )
 			{
 				if ( optionPrevious == ALLY_CMD_ATTACK_CONFIRM )
 				{
@@ -1813,16 +1811,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 		}
 		// process commands if option selected on the wheel.
-		if ( (!(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) && !menuToggleClick && !holdWheel)
-			|| ((*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) && menuToggleClick)
-			|| (!(*inputPressed(impulses[IN_FOLLOWERMENU] || !(*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU])) )) && holdWheel && !menuToggleClick)
-			|| (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD] || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD])) && optionPrevious != -1)
+		if ( (!(*inputPressedForPlayer(gui_player, impulses[IN_USE])) && !(inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE)) && !menuToggleClick && !holdWheel)
+			|| ((*inputPressedForPlayer(gui_player, impulses[IN_USE]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE)) && menuToggleClick)
+			|| (!(*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU] || !(inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU)) )) && holdWheel && !menuToggleClick)
+			|| (*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD] || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD)) && optionPrevious != -1)
 			)
 		{
 			if ( menuToggleClick )
 			{
-				*inputPressed(impulses[IN_USE]) = 0;
-				*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+				*inputPressedForPlayer(gui_player, impulses[IN_USE]) = 0;
+				inputs.controllerClearInput(gui_player, INJOY_GAME_USE);
 				menuToggleClick = false;
 				if ( optionSelected == -1 )
 				{
@@ -1831,7 +1829,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 
 			bool usingLastCmd = false;
-			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) )
+			if ( *inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD) )
 			{
 				usingLastCmd = true;
 			}
@@ -1861,15 +1859,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 				keepWheelOpen = true;
 			}
 
-			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) )
+			if ( *inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD) )
 			{
 				if ( keepWheelOpen )
 				{
 					// need to reset the coordinates of the mouse.
 					initfollowerMenuGUICursor(false);
 				}
-				*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
-				*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) = 0;
+				*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+				inputs.controllerClearInput(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD);
 			}
 
 			if ( optionSelected != -1 )
@@ -2007,9 +2005,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 		}
 
+		const int centerx = players[gui_player]->camera_midx();
+		const int centery = players[gui_player]->camera_midy();
+
 		SDL_Rect src;
-		src.x = xres / 2;
-		src.y = yres / 2;
+		src.x = centerx;
+		src.y = centery;
 
 		int numoptions = 8;
 		real_t angleStart = PI / 2 - (PI / numoptions);
@@ -2019,7 +2020,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		int thickness = 70;
 		src.h = radius;
 		src.w = radius;
-		if ( yres <= 768 )
+		if ( players[gui_player]->camera_height() <= 768 )
 		{
 			radius = 110;
 			thickness = 70;
@@ -2031,7 +2032,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 		int width = 0;
 		getSizeOfText(ttf12, language[3036], &width, nullptr);
-		if ( yres < 768 )
+		if ( players[gui_player]->camera_height() < 768 )
 		{
 			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 14, language[3036]);
 		}
@@ -2040,18 +2041,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 24, language[3036]);
 		}
 
-		drawImageRing(fancyWindow_bmp, nullptr, radius, thickness, 40, 0, PI * 2, 156);
+
+		drawImageRing(fancyWindow_bmp, &src, radius, thickness, 40, 0, PI * 2, 156);
 
 		for ( i = 0; i < numoptions; ++i )
 		{
 			// draw borders around ring.
-			drawLine(xres / 2 + (radius - thickness) * cos(angleStart), yres / 2 - (radius - thickness) * sin(angleStart),
-				xres / 2 + (radius + thickness) * cos(angleStart), yres / 2 - (radius + thickness) * sin(angleStart), uint32ColorGray(*mainsurface), 192);
-			drawLine(xres / 2 + (radius - thickness) * cos(angleEnd), yres / 2 - (radius - thickness) * sin(angleEnd),
-				xres / 2 + (radius + thickness - 1) * cos(angleEnd), yres / 2 - (radius + thickness - 1) * sin(angleEnd), uint32ColorGray(*mainsurface), 192);
+			drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
+				centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), uint32ColorGray(*mainsurface), 192);
+			drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
+				centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), uint32ColorGray(*mainsurface), 192);
 
-			drawArcInvertedY(xres / 2, yres / 2, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray(*mainsurface), 192);
-			drawArcInvertedY(xres / 2, yres / 2, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray(*mainsurface), 192);
+			drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray(*mainsurface), 192);
+			drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray(*mainsurface), 192);
 
 			angleStart += 2 * PI / numoptions;
 			angleMiddle = angleStart + PI / numoptions;
@@ -2092,13 +2094,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							borderColor = uint32ColorOrange(*mainsurface);
 						}
-						drawLine(xres / 2 + (radius - thickness) * cos(angleStart), yres / 2 - (radius - thickness) * sin(angleStart),
-							xres / 2 + (radius + thickness) * cos(angleStart), yres / 2 - (radius + thickness) * sin(angleStart), borderColor, 192);
-						drawLine(xres / 2 + (radius - thickness) * cos(angleEnd), yres / 2 - (radius - thickness) * sin(angleEnd),
-							xres / 2 + (radius + thickness - 1) * cos(angleEnd), yres / 2 - (radius + thickness - 1) * sin(angleEnd), borderColor, 192);
+						drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
+							centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), borderColor, 192);
+						drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
+							centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), borderColor, 192);
 
-						drawArcInvertedY(xres / 2, yres / 2, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), borderColor, 192);
-						drawArcInvertedY(xres / 2, yres / 2, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, borderColor, 192);
+						drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), borderColor, 192);
+						drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, borderColor, 192);
 					}
 				}
 			}
@@ -2301,9 +2303,9 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			highlight = -1;
 			//drawImageRing(fancyWindow_bmp, nullptr, 35, 35, 40, 0, 2 * PI, 192);
-			drawCircle(xres / 2, yres / 2, radius - thickness, uint32ColorBaronyBlue(*mainsurface), 192);
+			drawCircle(centerx, centery, radius - thickness, uint32ColorBaronyBlue(*mainsurface), 192);
 			//getSizeOfText(ttf12, language[3063], &width, nullptr);
-			//ttfPrintText(ttf12, xres / 2 - width / 2, yres / 2 - 8, language[3063]);
+			//ttfPrintText(ttf12, centerx - width / 2, centery - 8, language[3063]);
 		}
 
 		if ( optionSelected == -1 && disableOption == 0 && highlight != -1 )
@@ -3558,8 +3560,8 @@ void GenericGUIMenu::updateGUI()
 			}
 		}
 
-		gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
-		gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+		gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
+		gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
 		//Center the GUI.
 		pos.x = gui_starty;
@@ -3639,12 +3641,12 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
 				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_CRAFTABLE;
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+				inputs.mouseClearLeft(gui_player);
 			}
 			if ( tinkeringFilter == TINKER_FILTER_CRAFTABLE )
 			{
@@ -3658,12 +3660,12 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
 				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_SALVAGEABLE;
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+				inputs.mouseClearLeft(gui_player);
 			}
 			if ( tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
 			{
@@ -3677,12 +3679,12 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
 				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_REPAIRABLE;
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+				inputs.mouseClearLeft(gui_player);
 			}
 			if ( tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 			{
@@ -3696,12 +3698,12 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
 				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_ALL;
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+				inputs.mouseClearLeft(gui_player);
 			}
 			if ( tinkeringFilter == TINKER_FILTER_ALL )
 			{
@@ -3753,10 +3755,10 @@ void GenericGUIMenu::updateGUI()
 					if ( mouseInBounds(gui_player, smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
 					{
 						drawDepressed(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
-						if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+						if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
 						{
-							*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+							inputs.mouseClearLeft(gui_player);
 							scribingBlankScrollTarget = nullptr;
 						}
 					}
@@ -3793,12 +3795,12 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
 				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				scribingFilter = SCRIBING_FILTER_CRAFTABLE;
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+				inputs.mouseClearLeft(gui_player);
 			}
 			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
 			{
@@ -3812,12 +3814,12 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
 				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				scribingFilter = SCRIBING_FILTER_REPAIRABLE;
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+				inputs.mouseClearLeft(gui_player);
 			}
 			if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
 			{
@@ -3828,7 +3830,7 @@ void GenericGUIMenu::updateGUI()
 		drawImage(identifyGUI_img, NULL, &pos);
 
 		//Buttons
-		if ( mousestatus[SDL_BUTTON_LEFT] )
+		if ( inputs.bMouseLeft(gui_player) )
 		{
 			//GUI scroll up button.
 			if ( omousey >= gui_startx + 16 && omousey < gui_startx + 52 )
@@ -3837,7 +3839,7 @@ void GenericGUIMenu::updateGUI()
 				{
 					buttonclick = 7;
 					scroll--;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(gui_player);
 				}
 			}
 			//GUI scroll down button.
@@ -3847,7 +3849,7 @@ void GenericGUIMenu::updateGUI()
 				{
 					buttonclick = 8;
 					scroll++;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(gui_player);
 				}
 			}
 			else if ( omousey >= gui_startx && omousey < gui_startx + 15 )
@@ -3856,7 +3858,7 @@ void GenericGUIMenu::updateGUI()
 				if ( omousex >= gui_starty + 393 && omousex < gui_starty + 407 )
 				{
 					buttonclick = 9;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(gui_player);
 				}
 				if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
 				{
@@ -3864,7 +3866,7 @@ void GenericGUIMenu::updateGUI()
 					draggingGUI = true;
 					dragoffset_x = omousex - gui_starty;
 					dragoffset_y = omousey - gui_startx;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(gui_player);
 				}
 			}
 		}
@@ -3905,9 +3907,9 @@ void GenericGUIMenu::updateGUI()
 				{
 					offsety = 0 - (gui_startx - offsety);
 				}
-				if ( gui_startx > 0 + yres - identifyGUI_img->h )
+				if ( gui_startx > 0 + players[gui_player]->camera_y2() - identifyGUI_img->h )
 				{
-					offsety = (0 + yres - identifyGUI_img->h) - (gui_startx - offsety);
+					offsety = (0 + players[gui_player]->camera_y2() - identifyGUI_img->h) - (gui_startx - offsety);
 				}
 			}
 			else
@@ -4043,10 +4045,10 @@ void GenericGUIMenu::updateGUI()
 					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
 					selectedSlot = i;
 					selectingSlot = true;
-					if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+					if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
 					{
-						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+						inputs.mouseClearLeft(gui_player);
 
 						bool result = executeOnItemClick(itemsDisplayed[i]);
 						GUICurrentType oldType = guiType;
@@ -4604,8 +4606,8 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 	usingScrollBeatitude = scrollBeatitude;
 	repairItemType = scrollType;
 	guiType = static_cast<GUICurrentType>(type);
-	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
-	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
+	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
 	if ( removecursegui_active )
 	{
@@ -4635,8 +4637,8 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	experimentingAlchemy = experimenting;
 	guiType = static_cast<GUICurrentType>(type);
 
-	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
-	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
+	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
 	if ( removecursegui_active )
 	{
@@ -4664,8 +4666,8 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	guiActive = true;
 	guiType = static_cast<GUICurrentType>(type);
 
-	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
-	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
+	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
 	// build the craftables list.
 	if ( guiType == GUI_TYPE_TINKERING )
