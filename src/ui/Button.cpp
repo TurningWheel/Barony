@@ -42,7 +42,7 @@ void Button::activate() {
 	if (callback) {
 		(*callback)(args);
 	} else {
-		printlog("button clicked with no callback (script or otherwise)");
+		printlog("button clicked with no callback");
 	}
 }
 
@@ -64,7 +64,9 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		Text* _text = Text::get(text.c_str(), font.c_str());
 		if (_text) {
 			SDL_Rect pos;
-			int textX = style == STYLE_DROPDOWN ? 5 + border : _size.w / 2 - _text->getWidth() / 2;
+			int textX = (style != STYLE_DROPDOWN) ?
+				_size.w / 2 - _text->getWidth() / 2 :
+				5 + border;
 			int textY = _size.h / 2 - _text->getHeight() / 2;
 			pos.x = _size.x + textX; pos.w = std::min((int)_text->getWidth(), _size.w);
 			pos.y = _size.y + textY; pos.h = std::min((int)_text->getHeight(), _size.h);

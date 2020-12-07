@@ -16,7 +16,7 @@ public:
     Widget& operator=(const Widget&) = delete;
     Widget& operator=(Widget&&) = delete;
 
-	//! script variable types
+	//! variable types
 	enum var_t {
 		TYPE_BOOLEAN,
 		TYPE_INTEGER,
@@ -27,7 +27,7 @@ public:
 		TYPE_MAX
 	};
 
-	//! script function parameter
+	//! function parameter
 	struct param_t {
 		param_t() = default;
 		param_t(const param_t&) = delete;
@@ -163,7 +163,7 @@ public:
 		}
 	};
 
-	//! script function arguments
+	//! function arguments
 	class Args {
 	public:
 		Args() = default;
@@ -235,12 +235,12 @@ public:
 		std::vector<param_t*> list;
 	};
 
-    //! native callback function for processing script args
+    //! native callback function for processing args
     class Callback {
     public:
         virtual ~Callback() {}
 
-        //! handle the script args
+        //! handle the args
         //! @param args the args to consume
         //! @return error code
         virtual int operator()(Args& args) const = 0;
@@ -316,6 +316,11 @@ public:
     //! @return the widget found, or nullptr if it was not found
     Widget* findWidget(const char* name, bool recursive);
 
+	//! create a frame to act as the root GUI object for all guis
+	static Frame* createGUI();
+
+	static Frame* deleteGUI();
+
 protected:
     Widget* parent = nullptr;                       //!< parent widget
     std::list<Widget*> widgets;                     //!< widget children
@@ -326,6 +331,7 @@ protected:
     bool selected = false;							//!< if true, this widget has focus
     bool disabled = false;							//!< if true, the widget is unusable and grayed out
     bool invisible = false;                         //!< if true, widget is both unusable and invisible
+	bool toBeDeleted = false;						//!< if true, the widget will be removed at the end of its process
     Uint32 highlightTime = 0u;						//!< records the time since the widget was highlighted
     Sint32 owner = 0;                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
 

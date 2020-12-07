@@ -17,8 +17,8 @@ class Slider;
 class Frame : public Widget {
 public:
 	Frame() = delete;
-	Frame(const char* _name = "", const char* _script = "");
-	Frame(Frame& parent, const char* _name = "", const char* _script = "");
+	Frame(const char* _name = "");
+	Frame(Frame& parent, const char* _name = "");
 	Frame(const Frame&) = delete;
 	Frame(Frame&&) = delete;
 	virtual ~Frame();
@@ -133,9 +133,8 @@ public:
 
 	//! adds a new frame to the current frame
 	//! @param name internal name of the new frame
-	//! @param script script name of the new frame (sans extension + path)
 	//! @return the newly created frame
-	Frame* addFrame(const char* name = "", const char* script = "");
+	Frame* addFrame(const char* name = "");
 
 	//! adds a new button to the current frame
 	//! @param name internal name of the new button
@@ -266,7 +265,6 @@ public:
 	void	setDropDown(const bool _dropDown) { dropDown = _dropDown; }
 
 private:
-	Widget* script = nullptr;							//!< script engine
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
 	std::string font = Font::defaultFont;				//!< name of the font to use for frame entries
 	int border = 3;										//!< size of the frame's border
@@ -277,7 +275,6 @@ private:
 	Uint32 borderColor;									//!< the frame's border color (only used for flat border)
 	const char* tooltip = nullptr;						//!< points to the tooltip that should be displayed by the (master) frame, or nullptr if none should be displayed
 	bool hollow = false;								//!< if true, the frame is hollow; otherwise it is not
-	bool toBeDeleted = false;							//!< if true, the frame will be removed at the end of its process
 	bool draggingHSlider = false;						//!< if true, we are dragging the horizontal slider
 	bool draggingVSlider = false;						//!< if true, we are dragging the vertical slider
 	int oldSliderX = 0;									//!< when you start dragging a slider, this is set

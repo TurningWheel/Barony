@@ -141,6 +141,7 @@ list(APPEND EDITOR_SOURCES
 
 add_subdirectory(magic)
 add_subdirectory(interface)
+add_subdirectory(ui)
 
 set(GAME_SOURCES ${GAME_SOURCES} PARENT_SCOPE)
 set(EDITOR_SOURCES ${EDITOR_SOURCES} PARENT_SCOPE)

@@ -72,7 +72,7 @@ Frame::entry_t::~entry_t() {
 	}
 }
 
-Frame::Frame(const char* _name, const char* _script) {
+Frame::Frame(const char* _name) {
 	size.x = 0;
 	size.y = 0;
 	size.w = 0;
@@ -88,7 +88,7 @@ Frame::Frame(const char* _name, const char* _script) {
 	name = _name;
 }
 
-Frame::Frame(Frame& _parent, const char* _name, const char* _script) : Frame(_name, _script) {
+Frame::Frame(Frame& _parent, const char* _name) : Frame(_name) {
 	parent = &_parent;
 	_parent.getFrames().push_back(this);
 	_parent.adoptWidget(*this);
@@ -96,10 +96,6 @@ Frame::Frame(Frame& _parent, const char* _name, const char* _script) : Frame(_na
 
 Frame::~Frame() {
 	clear();
-	if (script) {
-		delete script;
-		script = nullptr;
-	}
 }
 
 void Frame::draw() {
@@ -769,7 +765,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 				if (field->getCallback()) {
 					(*field->getCallback())(args);
 				} else {
-					printlog("modified field with no callback (script or otherwise)");
+					printlog("modified field with no callback");
 				}
 			}
 
@@ -820,8 +816,8 @@ void Frame::postprocess() {
 	}
 }
 
-Frame* Frame::addFrame(const char* name, const char* script) {
-	return new Frame(*this, name, script);
+Frame* Frame::addFrame(const char* name) {
+	return new Frame(*this, name);
 }
 
 Button* Frame::addButton(const char* name) {
@@ -969,7 +965,6 @@ bool Frame::remove(const char* name) {
 }
 
 bool Frame::removeEntry(const char* name, bool resizeFrame) {
-	entry_t* prevEntry = nullptr;
 	for (auto it = list.begin(); it != list.end(); ++it) {
 		entry_t* entry = *it;
 		if (entry->name == name) {
@@ -983,7 +978,6 @@ bool Frame::removeEntry(const char* name, bool resizeFrame) {
 			}
 			return true;
 		}
-		prevEntry = entry;
 	}
 	return false;
 }
