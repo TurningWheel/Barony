@@ -1081,10 +1081,7 @@ public:
 		rapidjson::StringStream os(buf);
 		rapidjson::PrettyWriter<rapidjson::StringStream> writer(os);
 		d.Accept(writer);
-		for (int c = 0;;++c) {
-			if (buf[c] == '\0') {
-				break;
-			}
+		for (int c = 0; buf[c] != '\0'; ++c) {
 			fp->write(&(buf[c]), sizeof(char), 1);
 		}
 
