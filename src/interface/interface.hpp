@@ -290,6 +290,7 @@ enum GUICurrentType
 // Generic GUI Stuff (repair/alchemy)
 class GenericGUIMenu
 {
+	int gui_player = 0;
 	int gui_starty = ((xres / 2) - (420 / 2)) + offsetx;
 	int gui_startx = ((yres / 2) - (96 / 2)) + offsety;
 	int usingScrollBeatitude = 0;
@@ -377,14 +378,16 @@ public:
 		scribingTotalItems.last = nullptr;
 	};
 
+	void setPlayer(const int p) { gui_player = p; }
+	const int getPlayer() { return gui_player;  }
 	void warpMouseToSelectedSlot();
 	void selectSlot(int slot);
-	void closeGUI(const int player);
-	void openGUI(const int player, int type, int scrollBeatitude, int scrollType);
-	void openGUI(const int player, int type, bool experimenting, Item* itemOpenedWith);
-	void openGUI(const int player, int type, Item* itemOpenedWith);
+	void closeGUI();
+	void openGUI(int type, int scrollBeatitude, int scrollType);
+	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
+	void openGUI(int type, Item* itemOpenedWith);
 	inline Item* getItemInfo(int slot);
-	void updateGUI(const int player);
+	void updateGUI();
 	void rebuildGUIInventory();
 	void initGUIControllerCode();
 	bool shouldDisplayItemInGUI(Item* item);
@@ -408,8 +411,8 @@ public:
 	void tinkeringCreateCraftableItemList();
 	void tinkeringFreeLists();
 	bool isItemSalvageable(const Item* item, int player);
-	bool tinkeringGetItemValue(const Item* item, int* metal, int* magic);
-	bool tinkeringGetCraftingCost(const Item* item, int* metal, int* magic);
+	static bool tinkeringGetItemValue(const Item* item, int* metal, int* magic);
+	static bool tinkeringGetCraftingCost(const Item* item, int* metal, int* magic);
 	bool tinkeringPlayerCanAffordCraft(const Item* item);
 	Item* tinkeringCraftItemAndConsumeMaterials(const Item* item);
 	int tinkeringPlayerHasSkillLVLToCraft(const Item* item);
@@ -481,7 +484,7 @@ public:
 	}
 	bool isNodeFromPlayerInventory(node_t* node);
 };
-extern GenericGUIMenu GenericGUI;
+extern GenericGUIMenu GenericGUI[MAXPLAYERS];
 
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.
@@ -697,6 +700,7 @@ public:
 	int partySheetMouseY; // store mouse y cooord for accessedMenuFromPartySheet warp.
 	int sidebarScrollIndex; // entries scrolled in the sidebar list if overflowed with followers.
 	int maxMonstersToDraw;
+	int gui_player = 0;
 
 	FollowerRadialMenu() :
 		followerToCommand(nullptr),
@@ -722,7 +726,7 @@ public:
 
 	bool followerMenuIsOpen();
 	void drawFollowerMenu();
-	void initFollowerMenuGUICursor(bool openInventory = true);
+	void initfollowerMenuGUICursor(bool openInventory);
 	void closeFollowerMenuGUI(bool clearRecentEntity = false);
 	void selectNextFollower();
 	int numMonstersToDrawInParty();
@@ -731,16 +735,18 @@ public:
 	int optionDisabledForCreature(int playerSkillLVL, int monsterType, int option);
 	bool allowedClassToggle(int monsterType);
 	bool allowedItemPickupToggle(int monsterType);
-	bool allowedInteractFood(int monsterType);
-	bool allowedInteractWorld(int monsterType);
+	static bool allowedInteractFood(int monsterType);
+	static bool allowedInteractWorld(int monsterType);
 	bool allowedInteractItems(int monsterType);
 	bool attackCommandOnly(int monsterType);
 	void monsterGyroBotConvertCommand(int* option);
 	bool monsterGyroBotOnlyCommand(int option);
 	bool monsterGyroBotDisallowedCommands(int option);
 	bool isTinkeringFollower(int type);
+	void setPlayer(const int p) { gui_player = p; }
+	const int getPlayer() const { return gui_player; }
 };
-extern FollowerRadialMenu FollowerMenu;
+extern FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 extern SDL_Rect interfaceSkillsSheet;
 extern SDL_Rect interfacePartySheet;
 extern SDL_Rect interfaceCharacterSheet;

@@ -9447,10 +9447,10 @@ void handleMainMenu(bool mode)
 				}
 			}
 
-			// clear follower menu entities.
-			FollowerMenu.closeFollowerMenuGUI(true);
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+				// clear follower menu entities.
+				FollowerMenu[i].closeFollowerMenuGUI(true);
 				list_FreeAll(&damageIndicators[i]);
 			}
 			for ( c = 0; c < NUMMONSTERS; c++ )
@@ -9461,18 +9461,18 @@ void handleMainMenu(bool mode)
 			// close chests
 			for ( c = 0; c < MAXPLAYERS; ++c )
 			{
-				if ( c > 0 && !client_disconnected[c] )
-				{
-					if ( openedChest[c] )
-					{
-						openedChest[c]->closeChestServer();
-					}
-				}
-				else if ( c == 0 )
+				if ( players[c]->isLocalPlayer() )
 				{
 					if ( openedChest[c] )
 					{
 						openedChest[c]->closeChest();
+					}
+				}
+				else if ( c > 0 && !client_disconnected[c] )
+				{
+					if ( openedChest[c] )
+					{
+						openedChest[c]->closeChestServer();
 					}
 				}
 			}
@@ -9738,9 +9738,9 @@ void handleMainMenu(bool mode)
 												serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 											}
 
-											if ( !FollowerMenu.recentEntity && c == clientnum )
+											if ( !FollowerMenu[c].recentEntity && players[c]->isLocalPlayer() )
 											{
-												FollowerMenu.recentEntity = monster;
+												FollowerMenu[c].recentEntity = monster;
 											}
 										}
 									}

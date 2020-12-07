@@ -1098,9 +1098,9 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 		}
 	}
 
-	if ( !FollowerMenu.recentEntity && monsterclicked == clientnum )
+	if ( !FollowerMenu[monsterclicked].recentEntity && players[monsterclicked]->isLocalPlayer() )
 	{
-		FollowerMenu.recentEntity = my;
+		FollowerMenu[monsterclicked].recentEntity = my;
 	}
 
 	if ( (stats[monsterclicked]->type != HUMAN && stats[monsterclicked]->type != AUTOMATON) && myStats->type == HUMAN )
@@ -2466,20 +2466,20 @@ void actMonster(Entity* my)
 								{
 									steamStatisticUpdateClient(c, STEAM_STAT_SURROGATES, STEAM_STAT_INT, 1);
 								}
-								if ( c != clientnum )
+								if ( !players[c]->isLocalPlayer() )
 								{
 									serverRemoveClientFollower(c, my->getUID());
 								}
 								else
 								{
-									if ( FollowerMenu.recentEntity && (FollowerMenu.recentEntity->getUID() == 0
-										|| FollowerMenu.recentEntity->getUID() == my->getUID()) )
+									if ( FollowerMenu[c].recentEntity && (FollowerMenu[c].recentEntity->getUID() == 0
+										|| FollowerMenu[c].recentEntity->getUID() == my->getUID()) )
 									{
-										FollowerMenu.recentEntity = nullptr;
+										FollowerMenu[c].recentEntity = nullptr;
 									}
-									if ( FollowerMenu.followerToCommand == my )
+									if ( FollowerMenu[c].followerToCommand == my )
 									{
-										FollowerMenu.closeFollowerMenuGUI();
+										FollowerMenu[c].closeFollowerMenuGUI();
 									}
 								}
 								break;
@@ -5625,7 +5625,9 @@ timeToGoAgain:
 									}
 									else
 									{
-										if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+
+										if ( my->monsterAllyIndex >= 0 && FollowerMenu[my->monsterAllyIndex].entityToInteractWith
+											&& FollowerMenu[my->monsterAllyIndex].entityToInteractWith->behavior == &actItem )
 										{
 											//my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
 										}
@@ -5735,7 +5737,8 @@ timeToGoAgain:
 								{
 									// we found our interactable within distance.
 									//messagePlayer(0, "Found my interactable.");
-									if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+									if ( my->monsterAllyIndex >= 0 && FollowerMenu[my->monsterAllyIndex].entityToInteractWith
+										&& FollowerMenu[my->monsterAllyIndex].entityToInteractWith->behavior == &actItem )
 									{
 										//my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
 									}
@@ -7972,7 +7975,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 	}
 
 	int player = leader.isEntityPlayer();
-	if ( player > 0 && multiplayer == SERVER )
+	if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		//Tell the client he suckered somebody into his cult.
 		strcpy((char*) (net_packet->data), "LEAD");
@@ -7987,9 +7990,12 @@ bool forceFollower(Entity& leader, Entity& follower)
 		serverUpdateAllyStat(player, follower.getUID(), followerStats->LVL, followerStats->HP, followerStats->MAXHP, followerStats->type);
 	}
 
-	if ( !FollowerMenu.recentEntity && player == clientnum )
+	if ( player >= 0 )
 	{
-		FollowerMenu.recentEntity = &follower;
+		if ( !FollowerMenu[player].recentEntity && players[player]->isLocalPlayer() )
+		{
+			FollowerMenu[player].recentEntity = &follower;
+		}
 	}
 
 	if ( player >= 0 )
@@ -8862,7 +8868,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		return;
 	}
 
-	bool isTinkeringFollower = FollowerMenu.isTinkeringFollower(myStats->type);
+	bool isTinkeringFollower = FollowerMenu[monsterAllyIndex].isTinkeringFollower(myStats->type);
 	int tinkeringLVL = 0;
 	int skillLVL = 0;
 	if ( stats[monsterAllyIndex] )
@@ -8877,14 +8883,14 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 
 	if ( myStats->type != GYROBOT )
 	{
-		if ( FollowerMenu.monsterGyroBotOnlyCommand(command) )
+		if ( FollowerMenu[monsterAllyIndex].monsterGyroBotOnlyCommand(command) )
 		{
 			return;
 		}
 	}
 	else if ( myStats->type == GYROBOT )
 	{
-		if ( FollowerMenu.monsterGyroBotDisallowedCommands(command) )
+		if ( FollowerMenu[monsterAllyIndex].monsterGyroBotDisallowedCommands(command) )
 		{
 			return;
 		}
@@ -9449,8 +9455,11 @@ bool Entity::monsterAllySetInteract()
 		}
 		else
 		{
-			FollowerMenu.entityToInteractWith = target; // set followerInteractedEntity to the mechanism/item/gold etc.
-			FollowerMenu.entityToInteractWith->interactedByMonster = getUID(); // set the remote entity to this monster's uid to lookup later.
+			if ( monsterAllyIndex >= 0 )
+			{
+				FollowerMenu[monsterAllyIndex].entityToInteractWith = target; // set followerInteractedEntity to the mechanism/item/gold etc.
+				FollowerMenu[monsterAllyIndex].entityToInteractWith->interactedByMonster = getUID(); // set the remote entity to this monster's uid to lookup later.
+			}
 		}
 	}
 	else
@@ -9463,24 +9472,40 @@ bool Entity::monsterAllySetInteract()
 
 bool Entity::isInteractWithMonster()
 {
-	if ( FollowerMenu.entityToInteractWith == nullptr )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		return false; // entity is not set to interact with any monster.
-	}
-	if ( FollowerMenu.entityToInteractWith->interactedByMonster == 0 )
-	{
-		return false; // recent monster is not set to interact.
-	}
-	if ( FollowerMenu.entityToInteractWith == this )
-	{
-		return true; // a monster is set to interact with myself.
+		if ( !players[i]->isLocalPlayer() )
+		{
+			continue;
+		}
+		if ( FollowerMenu[i].entityToInteractWith == nullptr )
+		{
+			// entity is not set to interact with any monster.
+		}
+		else
+		{
+			if ( FollowerMenu[i].entityToInteractWith->interactedByMonster == 0 )
+			{
+				// recent monster is not set to interact.
+			}
+			else if ( FollowerMenu[i].entityToInteractWith == this )
+			{
+				return true; // a monster is set to interact with myself.
+			}
+		}
 	}
 	return false;
 }
 
 void Entity::clearMonsterInteract()
 {
-	FollowerMenu.entityToInteractWith = nullptr;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		FollowerMenu[i].entityToInteractWith = nullptr; // does this need to be unique?? is it safe to close everyones entity for splitscreen??
+		//if ( FollowerMenu[i].entityToInteractWith == this )
+		//{
+		//}
+	}
 	interactedByMonster = 0;
 }
 
@@ -9604,9 +9629,9 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				message = language[3077 + rand() % 2];
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_CURSED:
-				if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+				if ( FollowerMenu[monsterAllyIndex].entityToInteractWith && FollowerMenu[monsterAllyIndex].entityToInteractWith->behavior == &actItem )
 				{
-					Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+					Item* item = newItemFromEntity(FollowerMenu[monsterAllyIndex].entityToInteractWith);
 					if ( item )
 					{
 						char fullmsg[256] = "";
@@ -9757,9 +9782,9 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				}
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_CURSED:
-				if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+				if ( FollowerMenu[monsterAllyIndex].entityToInteractWith && FollowerMenu[monsterAllyIndex].entityToInteractWith->behavior == &actItem )
 				{
-					Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+					Item* item = newItemFromEntity(FollowerMenu[monsterAllyIndex].entityToInteractWith);
 					if ( item )
 					{
 						char fullmsg[256] = "";
@@ -9820,7 +9845,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_INTERACT_ITEM_NOUSE:
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_FULL:
 			{
-				Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+				Item* item = newItemFromEntity(FollowerMenu[monsterAllyIndex].entityToInteractWith);
 				if ( item )
 				{
 					char itemString[64] = "";
@@ -9839,7 +9864,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_GOOD:
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN:
 			{
-				Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+				Item* item = newItemFromEntity(FollowerMenu[monsterAllyIndex].entityToInteractWith);
 				if ( item )
 				{
 					char itemString[64] = "";
@@ -10060,7 +10085,7 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		return false;
 	}
 
-	if ( !FollowerMenu.allowedInteractFood(myStats->type) )
+	if ( !FollowerRadialMenu::allowedInteractFood(myStats->type) )
 	{
 		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_NOUSE);
 		return false;

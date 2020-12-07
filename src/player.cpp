@@ -528,7 +528,7 @@ const bool hotbarGamepadControlEnabled(const int player)
 		&& players[player]->gui_mode != GUI_MODE_SHOP
 		&& !identifygui_active
 		&& !removecursegui_active
-		&& !GenericGUI.isGUIOpen());
+		&& !GenericGUI[player].isGUIOpen());
 }
 
 bool GameController::handleInventoryMovement(const int player)
@@ -811,7 +811,7 @@ bool GameController::handleRepairGUIMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
-		GenericGUI.selectSlot(GenericGUI.selectedSlot - 1);
+		GenericGUI[player].selectSlot(GenericGUI[player].selectedSlot - 1);
 		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
@@ -819,7 +819,7 @@ bool GameController::handleRepairGUIMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
-		GenericGUI.selectSlot(GenericGUI.selectedSlot + 1);
+		GenericGUI[player].selectSlot(GenericGUI[player].selectedSlot + 1);
 		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;

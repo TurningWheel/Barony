@@ -694,11 +694,11 @@ void actHudWeapon(Entity* my)
 	{
 		if ( stats[HUDWEAPON_PLAYERNUM]->shield && stats[HUDWEAPON_PLAYERNUM]->shield->type == TOOL_TINKERING_KIT )
 		{
-			if ( !GenericGUI.isGUIOpen() )
+			if ( !GenericGUI[HUDWEAPON_PLAYERNUM].isGUIOpen() )
 			{
 				*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) = 0;
 				inputs.controllerClearInput(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK);
-				GenericGUI.openGUI(HUDWEAPON_PLAYERNUM, GUI_TYPE_TINKERING, stats[HUDWEAPON_PLAYERNUM]->shield);
+				GenericGUI[HUDWEAPON_PLAYERNUM].openGUI(HUDWEAPON_PLAYERNUM, GUI_TYPE_TINKERING, stats[HUDWEAPON_PLAYERNUM]->shield);
 				swapWeaponGimpTimer = 20;
 				return;
 			}

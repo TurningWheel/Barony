@@ -167,8 +167,8 @@ bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
 EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
-FollowerRadialMenu FollowerMenu;
-GenericGUIMenu GenericGUI;
+FollowerRadialMenu FollowerMenu[MAXPLAYERS];
+GenericGUIMenu GenericGUI[MAXPLAYERS];
 SDL_Rect interfaceSkillsSheet;
 SDL_Rect interfacePartySheet;
 SDL_Rect interfaceCharacterSheet;
@@ -1595,16 +1595,16 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 {
 	CloseIdentifyGUI();
 	closeRemoveCurseGUI();
-	GenericGUI.closeGUI(playernum);
+	GenericGUI[playernum].closeGUI();
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
 	{
-		FollowerMenu.closeFollowerMenuGUI();
+		FollowerMenu[playernum].closeFollowerMenuGUI();
 	}
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_CHEST )
 	{
-		if ( openedChest[clientnum] )
+		if ( openedChest[playernum] )
 		{
-			openedChest[clientnum]->closeChest();
+			openedChest[playernum]->closeChest();
 		}
 	}
 
@@ -1647,27 +1647,30 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	}
 }
 
-void FollowerRadialMenu::initFollowerMenuGUICursor(bool openInventory)
+void FollowerRadialMenu::initfollowerMenuGUICursor(bool openInventory)
 {
 	if ( openInventory )
 	{
-		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+		players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 	}
 
-	//const Sint32 mousex = inputs.getMouse(clientnum, Inputs::X);
-	//const Sint32 mousey = inputs.getMouse(clientnum, Inputs::Y);
-	//const Sint32 omousex = inputs.getMouse(clientnum, Inputs::OX);
-	//const Sint32 omousey = inputs.getMouse(clientnum, Inputs::OY);
+	//const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	//const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	//const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	//const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
-	omousex = mousex;
-	omousey = mousey;
+	inputs.setMouse(gui_player, Inputs::OX, inputs.getMouse(gui_player, Inputs::X));
+	inputs.setMouse(gui_player, Inputs::OY, inputs.getMouse(gui_player, Inputs::Y));
+
+	//omousex = mousex;
+	//omousey = mousey;
 	if ( menuX == -1 )
 	{
-		menuX = mousex;
+		menuX = inputs.getMouse(gui_player, Inputs::X);
 	}
 	if ( menuY == -1 )
 	{
-		menuY = mousey;
+		menuY = inputs.getMouse(gui_player, Inputs::Y);
 	}
 }
 
@@ -1688,19 +1691,21 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 	{
 		if ( optionSelected == ALLY_CMD_MOVETO_CONFIRM || optionSelected == ALLY_CMD_ATTACK_CONFIRM )
 		{
-			initFollowerMenuGUICursor(true);
+			initfollowerMenuGUICursor(true);
 		}
 		accessedMenuFromPartySheet = false;
 		if ( optionSelected != ALLY_CMD_CANCEL && optionSelected != -1 )
 		{
-			mousex = partySheetMouseX;
-			mousey = partySheetMouseY;
-			SDL_SetRelativeMouseMode(SDL_FALSE);
-			SDL_WarpMouseInWindow(screen, mousex, mousey);
+			//inputs.setMouse(player, Inputs::X, partySheetMouseX);
+			//inputs.setMouse(player, Inputs::Y, partySheetMouseY);
+			//mousex = partySheetMouseX;
+			//mousey = partySheetMouseY;
+			//SDL_SetRelativeMouseMode(SDL_FALSE);
+			//SDL_WarpMouseInWindow(screen, mousex, mousey);
 
 			// to verify for splitscreen
-			//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
-			//inputs.warpMouse(clientnum, mousex, mousey, flags);
+			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
+			inputs.warpMouse(gui_player, partySheetMouseX, partySheetMouseY, flags);
 
 		}
 	}
@@ -1739,10 +1744,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 	if ( followerToCommand )
 	{
-		if ( players[clientnum] && players[clientnum]->entity
-			&& followerToCommand->monsterTarget == players[clientnum]->entity->getUID() )
+		if ( players[gui_player] && players[gui_player]->entity
+			&& followerToCommand->monsterTarget == players[gui_player]->entity->getUID() )
 		{
-			players[clientnum]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
+			players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 			return;
 		}
 
@@ -1753,7 +1758,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		}
 		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
 		int skillLVL = 0;
-		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
+		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity )
 		{
 			if ( (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD])) && optionPrevious != -1 )
 			{
@@ -1780,10 +1785,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_END && optionSelected != ALLY_CMD_ATTACK_CONFIRM )
 			{
-				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+				skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[gui_player], players[gui_player]->entity);
 				if ( tinkeringFollower )
 				{
-					skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
+					skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity);
 				}
 				if ( followerToCommand->monsterAllySummonRank != 0 )
 				{
@@ -1794,16 +1799,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( attackCommandOnly(followerStats->type) )
 					{
 						// attack only.
-						disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
+						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
 					}
 					else
 					{
-						disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
+						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
 					}
 				}
 				else
 				{
-					disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
+					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
 				}
 			}
 		}
@@ -1861,7 +1866,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( keepWheelOpen )
 				{
 					// need to reset the coordinates of the mouse.
-					initFollowerMenuGUICursor();
+					initfollowerMenuGUICursor(false);
 				}
 				*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
 				*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) = 0;
@@ -1886,7 +1891,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						|| optionSelected == ALLY_CMD_ATTACK_SELECT
 						|| optionSelected == ALLY_CMD_CANCEL )
 					{
-						players[clientnum]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
+						players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 					}
 				}
 
@@ -1910,15 +1915,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							if ( optionSelected == ALLY_CMD_ATTACK_CONFIRM )
 							{
-								sendAllyCommandClient(clientnum, followerToCommand->getUID(), optionSelected, 0, 0, followerToCommand->monsterAllyInteractTarget);
+								sendAllyCommandClient(gui_player, followerToCommand->getUID(), optionSelected, 0, 0, followerToCommand->monsterAllyInteractTarget);
 							}
 							else if ( optionSelected == ALLY_CMD_MOVETO_CONFIRM )
 							{
-								sendAllyCommandClient(clientnum, followerToCommand->getUID(), optionSelected, moveToX, moveToY);
+								sendAllyCommandClient(gui_player, followerToCommand->getUID(), optionSelected, moveToX, moveToY);
 							}
 							else
 							{
-								sendAllyCommandClient(clientnum, followerToCommand->getUID(), optionSelected, 0, 0);
+								sendAllyCommandClient(gui_player, followerToCommand->getUID(), optionSelected, 0, 0);
 							}
 						}
 						else
@@ -1933,30 +1938,30 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							if ( disableOption < 0 )
 							{
-								messagePlayer(clientnum, language[3640], language[90 + followerStats->type]);
+								messagePlayer(gui_player, language[3640], language[90 + followerStats->type]);
 							}
 							else if ( tinkeringFollower )
 							{
-								messagePlayer(clientnum, language[3639], language[90 + followerStats->type]);
+								messagePlayer(gui_player, language[3639], language[90 + followerStats->type]);
 							}
 							else
 							{
-								messagePlayer(clientnum, language[3638], language[90 + followerStats->type]);
+								messagePlayer(gui_player, language[3638], language[90 + followerStats->type]);
 							}
 						}
 						else if ( followerStats->type >= KOBOLD ) //New monsters
 						{
 							if ( disableOption < 0 )
 							{
-								messagePlayer(clientnum, language[3640], language[2000 + (followerStats->type - KOBOLD)]);
+								messagePlayer(gui_player, language[3640], language[2000 + (followerStats->type - KOBOLD)]);
 							}
 							else if ( tinkeringFollower )
 							{
-								messagePlayer(clientnum, language[3639], language[2000 + (followerStats->type - KOBOLD)]);
+								messagePlayer(gui_player, language[3639], language[2000 + (followerStats->type - KOBOLD)]);
 							}
 							else
 							{
-								messagePlayer(clientnum, language[3638], language[2000 + (followerStats->type - KOBOLD)]);
+								messagePlayer(gui_player, language[3638], language[2000 + (followerStats->type - KOBOLD)]);
 							}
 						}
 					}
@@ -1989,12 +1994,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			return;
 		}
 		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
-		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
+		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity )
 		{
-			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+			skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[gui_player], players[gui_player]->entity);
 			if ( tinkeringFollower )
 			{
-				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
+				skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity);
 			}
 			else if ( followerToCommand->monsterAllySummonRank != 0 )
 			{
@@ -2309,16 +2314,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( attackCommandOnly(followerStats->type) )
 				{
 					// attack only.
-					disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
+					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
 				}
 				else
 				{
-					disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, highlight);
+					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight);
 				}
 			}
 			else
 			{
-				disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, highlight);
+				disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight);
 			}
 		}
 
@@ -2466,12 +2471,12 @@ int FollowerRadialMenu::numMonstersToDrawInParty()
 
 void FollowerRadialMenu::selectNextFollower()
 {
-	if ( !stats[clientnum] )
+	if ( !stats[gui_player] )
 	{
 		return;
 	}
 
-	int numFollowers = list_Size(&stats[clientnum]->FOLLOWERS);
+	int numFollowers = list_Size(&stats[gui_player]->FOLLOWERS);
 
 	if ( numFollowers <= 0 )
 	{
@@ -2480,14 +2485,14 @@ void FollowerRadialMenu::selectNextFollower()
 
 	if ( !recentEntity ) // set first follower to be the selected one.
 	{
-		node_t* node = stats[clientnum]->FOLLOWERS.first;
+		node_t* node = stats[gui_player]->FOLLOWERS.first;
 		if ( node )
 		{
 			Entity* follower = uidToEntity(*((Uint32*)node->element));
 			if ( follower )
 			{
 				recentEntity = follower;
-				FollowerMenu.sidebarScrollIndex = 0;
+				sidebarScrollIndex = 0;
 				return;
 			}
 		}
@@ -2495,7 +2500,7 @@ void FollowerRadialMenu::selectNextFollower()
 	else if ( numFollowers == 1 )
 	{
 		// only 1 follower, no work to do.
-		FollowerMenu.sidebarScrollIndex = 0;
+		sidebarScrollIndex = 0;
 		return;
 	}
 
@@ -2503,7 +2508,7 @@ void FollowerRadialMenu::selectNextFollower()
 
 	node_t* node2 = nullptr;
 	int i = 0;
-	for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i)
+	for ( node_t* node = stats[gui_player]->FOLLOWERS.first; node != nullptr; node = node->next, ++i)
 	{
 		Entity* follower = nullptr;
 		if ( (Uint32*)node->element )
@@ -2540,7 +2545,7 @@ void FollowerRadialMenu::selectNextFollower()
 			}
 			else
 			{
-				node2 = stats[clientnum]->FOLLOWERS.first; // loop around to first index.
+				node2 = stats[gui_player]->FOLLOWERS.first; // loop around to first index.
 				follower = nullptr;
 				if ( (Uint32*)node2->element )
 				{
@@ -2568,12 +2573,12 @@ void FollowerRadialMenu::selectNextFollower()
 
 void FollowerRadialMenu::updateScrollPartySheet()
 {
-	if ( !stats[clientnum] )
+	if ( !stats[gui_player] )
 	{
 		return;
 	}
 
-	int numFollowers = list_Size(&stats[clientnum]->FOLLOWERS);
+	int numFollowers = list_Size(&stats[gui_player]->FOLLOWERS);
 
 	if ( numFollowers <= 0 )
 	{
@@ -2589,13 +2594,13 @@ void FollowerRadialMenu::updateScrollPartySheet()
 	else if ( numFollowers == 1 || numFollowers <= monstersToDraw )
 	{
 		// only 1 follower or limit not reached, no work to do.
-		FollowerMenu.sidebarScrollIndex = 0;
+		sidebarScrollIndex = 0;
 		return;
 	}
 
 	int i = 0;
 
-	for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
+	for ( node_t* node = stats[gui_player]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
 	{
 		Entity* follower = nullptr;
 		if ( (Uint32*)node->element )
@@ -2648,7 +2653,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	{
 		return false;
 	}
-	if ( !players[clientnum] || !players[clientnum]->entity )
+	if ( !players[gui_player] || !players[gui_player]->entity )
 	{
 		return false;
 	}
@@ -2656,10 +2661,10 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	bool interactItems = allowedInteractItems(followerStats->type) || allowedInteractFood(followerStats->type);
 	bool interactWorld = allowedInteractWorld(followerStats->type);
 	bool tinkeringFollower = isTinkeringFollower(followerStats->type);
-	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+	int skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[gui_player], players[gui_player]->entity);
 	if ( tinkeringFollower )
 	{
-		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
+		skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity);
 	}
 	if ( followerToCommand->monsterAllySummonRank != 0 )
 	{
@@ -2670,24 +2675,24 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	
 	if ( !interactItems && !interactWorld && enableAttack )
 	{
-		strcpy(FollowerMenu.interactText, "Attack ");
+		strcpy(interactText, "Attack ");
 	}
 	else
 	{
-		strcpy(FollowerMenu.interactText, "Interact with ");
+		strcpy(interactText, "Interact with ");
 	}
 	if ( selectedEntity.behavior == &actTorch && interactWorld )
 	{
-		strcat(FollowerMenu.interactText, items[TOOL_TORCH].name_identified);
+		strcat(interactText, items[TOOL_TORCH].name_identified);
 	}
 	else if ( (selectedEntity.behavior == &actSwitch || selectedEntity.sprite == 184) && interactWorld )
 	{
-		strcat(FollowerMenu.interactText, "switch");
+		strcat(interactText, "switch");
 	}
 	else if ( selectedEntity.behavior == &actBomb && interactWorld && followerStats->type == GYROBOT )
 	{
-		strcpy(FollowerMenu.interactText, language[3093]);
-		strcat(FollowerMenu.interactText, "trap");
+		strcpy(interactText, language[3093]);
+		strcat(interactText, "trap");
 	}
 	else if ( selectedEntity.behavior == &actItem && interactItems )
 	{
@@ -2695,34 +2700,34 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 		{
 			if ( selectedEntity.skill[15] == 0 )
 			{
-				strcat(FollowerMenu.interactText, items[selectedEntity.skill[10]].name_unidentified);
+				strcat(interactText, items[selectedEntity.skill[10]].name_unidentified);
 			}
 			else
 			{
-				strcat(FollowerMenu.interactText, items[selectedEntity.skill[10]].name_identified);
+				strcat(interactText, items[selectedEntity.skill[10]].name_identified);
 			}
 		}
 		else
 		{
-			strcat(FollowerMenu.interactText, "item");
+			strcat(interactText, "item");
 		}
 	}
 	else if ( selectedEntity.behavior == &actMonster && enableAttack )
 	{
-		strcpy(FollowerMenu.interactText, "Attack ");
+		strcpy(interactText, "Attack ");
 		int monsterType = selectedEntity.getMonsterTypeFromSprite();
 		if ( monsterType < KOBOLD ) //Original monster count
 		{
-			strcat(FollowerMenu.interactText, language[90 + monsterType]);
+			strcat(interactText, language[90 + monsterType]);
 		}
 		else if ( monsterType >= KOBOLD ) //New monsters
 		{
-			strcat(FollowerMenu.interactText, language[2000 + monsterType - KOBOLD]);
+			strcat(interactText, language[2000 + monsterType - KOBOLD]);
 		}
 	}
 	else
 	{
-		strcpy(FollowerMenu.interactText, "No interactions available");
+		strcpy(interactText, "No interactions available");
 		return false;
 	}
 	return true;
@@ -3367,7 +3372,7 @@ bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 // Generic GUI Code
 void GenericGUIMenu::rebuildGUIInventory()
 {
-	list_t* player_inventory = &stats[clientnum]->inventory;
+	list_t* player_inventory = &stats[gui_player]->inventory;
 	node_t* node = nullptr;
 	Item* item = nullptr;
 	int c = 0;
@@ -3378,7 +3383,7 @@ void GenericGUIMenu::rebuildGUIInventory()
 		tinkeringTotalLastCraftableNode = tinkeringTotalItems.last;
 		if ( tinkeringTotalLastCraftableNode )
 		{
-			tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+			tinkeringTotalLastCraftableNode->next = stats[gui_player]->inventory.first;
 		}
 	}
 	else if ( guiType == GUI_TYPE_SCRIBING )
@@ -3387,7 +3392,7 @@ void GenericGUIMenu::rebuildGUIInventory()
 		scribingTotalLastCraftableNode = scribingTotalItems.last;
 		if ( scribingTotalLastCraftableNode )
 		{
-			scribingTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+			scribingTotalLastCraftableNode->next = stats[gui_player]->inventory.first;
 		}
 	}
 
@@ -3405,7 +3410,7 @@ void GenericGUIMenu::rebuildGUIInventory()
 				}
 				if ( guiType == GUI_TYPE_TINKERING )
 				{
-					if ( item->node && item->node->list == &stats[clientnum]->inventory )
+					if ( item->node && item->node->list == &stats[gui_player]->inventory )
 					{
 						if ( item->type == TOOL_METAL_SCRAP )
 						{
@@ -3424,13 +3429,13 @@ void GenericGUIMenu::rebuildGUIInventory()
 			// did not find mixable item... close GUI
 			if ( !experimentingAlchemy )
 			{
-				messagePlayer(clientnum, language[3338]);
+				messagePlayer(gui_player, language[3338]);
 			}
 			else
 			{
-				messagePlayer(clientnum, language[3343]);
+				messagePlayer(gui_player, language[3343]);
 			}
-			closeGUI(clientnum);
+			closeGUI();
 			return;
 		}
 		scroll = std::max(0, std::min(scroll, c - kNumShownItems));
@@ -3465,16 +3470,16 @@ void GenericGUIMenu::rebuildGUIInventory()
 }
 
 
-void GenericGUIMenu::updateGUI(const int player)
+void GenericGUIMenu::updateGUI()
 {
 	SDL_Rect pos;
 	node_t* node;
 	int y, c;
 
-	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
-	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
-	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
-	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+	const Sint32 mousex = inputs.getMouse(gui_player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(gui_player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(gui_player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(gui_player, Inputs::OY);
 
 	//Generic GUI.
 	if ( guiActive )
@@ -3483,18 +3488,18 @@ void GenericGUIMenu::updateGUI(const int player)
 		{
 			if ( !alembicItem )
 			{
-				closeGUI(player);
+				closeGUI();
 				return;
 			}
 			if ( !alembicItem->node )
 			{
-				closeGUI(player);
+				closeGUI();
 				return;
 			}
-			if ( alembicItem->node->list != &stats[clientnum]->inventory )
+			if ( alembicItem->node->list != &stats[gui_player]->inventory )
 			{
 				// dropped out of inventory or something.
-				closeGUI(player);
+				closeGUI();
 				return;
 			}
 		}
@@ -3502,18 +3507,18 @@ void GenericGUIMenu::updateGUI(const int player)
 		{
 			if ( !tinkeringKitItem )
 			{
-				closeGUI(player);
+				closeGUI();
 				return;
 			}
 			if ( !tinkeringKitItem->node )
 			{
-				closeGUI(player);
+				closeGUI();
 				return;
 			}
-			if ( tinkeringKitItem->node->list != &stats[clientnum]->inventory )
+			if ( tinkeringKitItem->node->list != &stats[gui_player]->inventory )
 			{
 				// dropped out of inventory or something.
-				closeGUI(player);
+				closeGUI();
 				return;
 			}
 		}
@@ -3521,18 +3526,18 @@ void GenericGUIMenu::updateGUI(const int player)
 		{
 			if ( !scribingToolItem )
 			{
-				closeGUI(player);
+				closeGUI();
 				return;
 			}
 			if ( !scribingToolItem->node )
 			{
-				closeGUI(player);
+				closeGUI();
 				return;
 			}
-			if ( scribingToolItem->node->list != &stats[clientnum]->inventory )
+			if ( scribingToolItem->node->list != &stats[gui_player]->inventory )
 			{
 				// dropped out of inventory or something.
-				closeGUI(player);
+				closeGUI();
 				return;
 			}
 			if ( scribingBlankScrollTarget && scribingFilter != SCRIBING_FILTER_CRAFTABLE )
@@ -3635,7 +3640,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_CRAFTABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3654,7 +3659,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_SALVAGEABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3673,7 +3678,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_REPAIRABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3692,7 +3697,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_ALL;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3745,7 +3750,7 @@ void GenericGUIMenu::updateGUI(const int player)
 					smallIcon.w = longestline(language[3723]) * TTF12_WIDTH + 8;
 					smallIcon.y -= 2;
 					smallIcon.h += 2;
-					if ( mouseInBounds(clientnum, smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
+					if ( mouseInBounds(gui_player, smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
 					{
 						drawDepressed(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
 						if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
@@ -3789,7 +3794,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				scribingFilter = SCRIBING_FILTER_CRAFTABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3808,7 +3813,7 @@ void GenericGUIMenu::updateGUI(const int player)
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
 			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
-				&& mouseInBounds(clientnum, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				scribingFilter = SCRIBING_FILTER_REPAIRABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -3911,14 +3916,14 @@ void GenericGUIMenu::updateGUI(const int player)
 			}
 		}
 
-		list_t* player_inventory = &stats[clientnum]->inventory;
+		list_t* player_inventory = &stats[gui_player]->inventory;
 		if ( guiType == GUI_TYPE_TINKERING )
 		{
 			player_inventory = &tinkeringTotalItems;
 			tinkeringTotalLastCraftableNode = tinkeringTotalItems.last;
 			if ( tinkeringTotalLastCraftableNode )
 			{
-				tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+				tinkeringTotalLastCraftableNode->next = stats[gui_player]->inventory.first;
 			}
 		}
 		else if ( guiType == GUI_TYPE_SCRIBING )
@@ -3927,13 +3932,13 @@ void GenericGUIMenu::updateGUI(const int player)
 			scribingTotalLastCraftableNode = scribingTotalItems.last;
 			if ( scribingTotalLastCraftableNode )
 			{
-				scribingTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+				scribingTotalLastCraftableNode->next = stats[gui_player]->inventory.first;
 			}
 		}
 
 		if ( !player_inventory )
 		{
-			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
+			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", gui_player);
 		}
 		else
 		{
@@ -4012,7 +4017,7 @@ void GenericGUIMenu::updateGUI(const int player)
 				pos.w = 0;
 				pos.h = 0;
 				drawImage(invclose_bmp, NULL, &pos);
-				closeGUI(clientnum);
+				closeGUI();
 			}
 
 			Item *item = nullptr;
@@ -4057,7 +4062,7 @@ void GenericGUIMenu::updateGUI(const int player)
 							{
 								//Go back to inventory.
 								selectedSlot = -1;
-								warpMouseToSelectedInventorySlot(clientnum);
+								warpMouseToSelectedInventorySlot(gui_player);
 							}
 							else
 							{
@@ -4116,12 +4121,12 @@ void GenericGUIMenu::updateGUI(const int player)
 										color = uint32ColorGray(*mainsurface);
 									}
 								}
-								else if ( isItemSalvageable(item, clientnum) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
+								else if ( isItemSalvageable(item, gui_player) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
 								{
 									strcpy(tempstr, language[3645]); // salvage
 									strncat(tempstr, item->description(), 46 - strlen(language[3645]));
 								}
-								else if ( tinkeringIsItemRepairable(item, clientnum) )
+								else if ( tinkeringIsItemRepairable(item, gui_player) )
 								{
 									if ( tinkeringIsItemUpgradeable(item) )
 									{
@@ -4229,11 +4234,11 @@ void GenericGUIMenu::updateGUI(const int player)
 								{
 									tinkeringGetCraftingCost(item, &metal, &magic);
 								}
-								else if ( isItemSalvageable(item, clientnum) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
+								else if ( isItemSalvageable(item, gui_player) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
 								{
 									tinkeringGetItemValue(item, &metal, &magic);
 								}
-								else if ( tinkeringIsItemRepairable(item, clientnum) )
+								else if ( tinkeringIsItemRepairable(item, gui_player) )
 								{
 									tinkeringGetRepairCost(item, &metal, &magic);
 								}
@@ -4294,11 +4299,11 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 				return true;
 			}
 		}
-		else if ( tinkeringIsItemRepairable(item, clientnum) && tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+		else if ( tinkeringIsItemRepairable(item, gui_player) && tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 		{
 			return true;
 		}
-		else if ( isItemSalvageable(item, clientnum) )
+		else if ( isItemSalvageable(item, gui_player) )
 		{
 			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
 			{
@@ -4345,11 +4350,11 @@ void GenericGUIMenu::repairItem(Item* item)
 	}
 	if ( !shouldDisplayItemInGUI(item) )
 	{
-		messagePlayer(clientnum, language[3287], item->getName());
+		messagePlayer(gui_player, language[3287], item->getName());
 		return;
 	}
 
-	bool isEquipped = itemIsEquipped(item, clientnum);
+	bool isEquipped = itemIsEquipped(item, gui_player);
 
 	if ( repairItemType == SCROLL_CHARGING )
 	{
@@ -4385,7 +4390,7 @@ void GenericGUIMenu::repairItem(Item* item)
 			item->appearance += repairAmount;
 			item->status = EXCELLENT;
 		}
-		messagePlayer(clientnum, language[3730], item->getName());
+		messagePlayer(gui_player, language[3730], item->getName());
 	}
 	else
 	{
@@ -4404,47 +4409,47 @@ void GenericGUIMenu::repairItem(Item* item)
 				item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
 			}
 		}
-		messagePlayer(clientnum, language[872], item->getName());
+		messagePlayer(gui_player, language[872], item->getName());
 	}
-	closeGUI(clientnum);
+	closeGUI();
 	if ( multiplayer == CLIENT && isEquipped )
 	{
 		// the client needs to inform the server that their equipment was repaired.
 		int armornum = 0;
-		if ( item == stats[clientnum]->weapon )
+		if ( item == stats[gui_player]->weapon )
 		{
 			armornum = 0;
 		}
-		else if ( item == stats[clientnum]->helmet )
+		else if ( item == stats[gui_player]->helmet )
 		{
 			armornum = 1;
 		}
-		else if ( item == stats[clientnum]->breastplate )
+		else if ( item == stats[gui_player]->breastplate )
 		{
 			armornum = 2;
 		}
-		else if ( item == stats[clientnum]->gloves )
+		else if ( item == stats[gui_player]->gloves )
 		{
 			armornum = 3;
 		}
-		else if ( item == stats[clientnum]->shoes )
+		else if ( item == stats[gui_player]->shoes )
 		{
 			armornum = 4;
 		}
-		else if ( item == stats[clientnum]->shield )
+		else if ( item == stats[gui_player]->shield )
 		{
 			armornum = 5;
 		}
-		else if ( item == stats[clientnum]->cloak )
+		else if ( item == stats[gui_player]->cloak )
 		{
 			armornum = 6;
 		}
-		else if ( item == stats[clientnum]->mask )
+		else if ( item == stats[gui_player]->mask )
 		{
 			armornum = 7;
 		}
 		strcpy((char*)net_packet->data, "REPA");
-		net_packet->data[4] = clientnum;
+		net_packet->data[4] = gui_player;
 		net_packet->data[5] = armornum;
 		net_packet->data[6] = item->status;
 		net_packet->address.host = net_server.host;
@@ -4454,7 +4459,7 @@ void GenericGUIMenu::repairItem(Item* item)
 	}
 }
 
-void GenericGUIMenu::closeGUI(const int player)
+void GenericGUIMenu::closeGUI()
 {
 	tinkeringFreeLists();
 	scribingFreeLists();
@@ -4588,12 +4593,12 @@ void GenericGUIMenu::initGUIControllerCode()
 	}
 }
 
-void GenericGUIMenu::openGUI(int player, int type, int scrollBeatitude, int scrollType)
+void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 {
-	this->closeGUI(player);
+	this->closeGUI();
 
-	players[player]->shootmode = false;
-	players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	players[gui_player]->shootmode = false;
+	players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
 	guiActive = true;
 	usingScrollBeatitude = scrollBeatitude;
@@ -4610,21 +4615,21 @@ void GenericGUIMenu::openGUI(int player, int type, int scrollBeatitude, int scro
 	{
 		CloseIdentifyGUI();
 	}
-	FollowerMenu.closeFollowerMenuGUI();
+	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
-	if ( openedChest[clientnum] )
+	if ( openedChest[gui_player] )
 	{
-		openedChest[clientnum]->closeChest();
+		openedChest[gui_player]->closeChest();
 	}
 	rebuildGUIInventory();
 	this->initGUIControllerCode();
 }
 
-void GenericGUIMenu::openGUI(const int player, int type, bool experimenting, Item* itemOpenedWith)
+void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 {
-	this->closeGUI(player);
-	players[player]->shootmode = false;
-	players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	this->closeGUI();
+	players[gui_player]->shootmode = false;
+	players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	alembicItem = itemOpenedWith;
 	experimentingAlchemy = experimenting;
@@ -4641,21 +4646,21 @@ void GenericGUIMenu::openGUI(const int player, int type, bool experimenting, Ite
 	{
 		CloseIdentifyGUI();
 	}
-	FollowerMenu.closeFollowerMenuGUI();
+	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
-	if ( openedChest[clientnum] )
+	if ( openedChest[gui_player] )
 	{
-		openedChest[clientnum]->closeChest();
+		openedChest[gui_player]->closeChest();
 	}
 	rebuildGUIInventory();
 	this->initGUIControllerCode();
 }
 
-void GenericGUIMenu::openGUI(const int player, int type, Item* itemOpenedWith)
+void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 {
-	this->closeGUI(player);
-	players[player]->shootmode = false;
-	players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	this->closeGUI();
+	players[gui_player]->shootmode = false;
+	players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	guiType = static_cast<GUICurrentType>(type);
 
@@ -4682,11 +4687,11 @@ void GenericGUIMenu::openGUI(const int player, int type, Item* itemOpenedWith)
 	{
 		CloseIdentifyGUI();
 	}
-	FollowerMenu.closeFollowerMenuGUI();
+	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
-	if ( openedChest[player] )
+	if ( openedChest[gui_player] )
 	{
-		openedChest[player]->closeChest();
+		openedChest[gui_player]->closeChest();
 	}
 	rebuildGUIInventory();
 	this->initGUIControllerCode();
@@ -4712,7 +4717,7 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			{
 				basePotion = item;
 				// check if secondary potion available.
-				list_t* player_inventory = &stats[clientnum]->inventory;
+				list_t* player_inventory = &stats[gui_player]->inventory;
 				for ( node_t* node = player_inventory->first; node != nullptr; node = node->next )
 				{
 					if ( node->element )
@@ -4727,13 +4732,13 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 				// did not find mixable item... close GUI
 				if ( !experimentingAlchemy )
 				{
-					messagePlayer(clientnum, language[3337]);
+					messagePlayer(gui_player, language[3337]);
 				}
 				else
 				{
-					messagePlayer(clientnum, language[3342]);
+					messagePlayer(gui_player, language[3342]);
 				}
-				closeGUI(clientnum);
+				closeGUI();
 				return false;
 			}
 		}
@@ -4760,13 +4765,13 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 		}
 		else if ( isNodeFromPlayerInventory(item->node) )
 		{
-			if ( tinkeringIsItemRepairable(item, clientnum) && tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+			if ( tinkeringIsItemRepairable(item, gui_player) && tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 			{
 				tinkeringRepairItem(item);
 			}
 			else
 			{
-				tinkeringSalvageItem(item, false, clientnum);
+				tinkeringSalvageItem(item, false, gui_player);
 			}
 		}
 		return true;
@@ -4810,12 +4815,12 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		return false;
 	}
 
-	if ( players[clientnum] && players[clientnum]->entity )
+	if ( players[gui_player] && players[gui_player]->entity )
 	{
-		if ( players[clientnum]->entity->isBlind() )
+		if ( players[gui_player]->entity->isBlind() )
 		{
-			messagePlayer(clientnum, language[892]);
-			closeGUI(clientnum);
+			messagePlayer(gui_player, language[892]);
+			closeGUI();
 			return false; // I can't see!
 		}
 	}
@@ -4834,15 +4839,15 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		return false;
 	}
 
-	if ( itemIsEquipped(item, clientnum) )
+	if ( itemIsEquipped(item, gui_player) )
 	{
 		return false; // don't want to deal with client/server desync problems here.
 	}
 
 	//int skillLVL = 0;
-	//if ( stats[clientnum] )
+	//if ( stats[gui_player] )
 	//{
-	//	skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
+	//	skillLVL = stats[gui_player]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
 	//}
 
 	if ( experimentingAlchemy )
@@ -5207,9 +5212,9 @@ void GenericGUIMenu::alchemyCombinePotions()
 	}
 
 	int skillLVL = 0;
-	if ( stats[clientnum] )
+	if ( stats[gui_player] )
 	{
-		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
+		skillLVL = stats[gui_player]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
 	}
 
 	Status status = SERVICABLE;
@@ -5272,22 +5277,22 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	if ( basePotion->identified && secondaryPotion->identified )
 	{
-		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3332],
+		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3332],
 			items[basePotion->type].name_identified, items[secondaryPotion->type].name_identified);
 	}
 	else if ( basePotion->identified )
 	{
-		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3334],
+		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3334],
 			items[basePotion->type].name_identified);
 	}
 	else if ( secondaryPotion->identified )
 	{
-		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3333],
+		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3333],
 			items[secondaryPotion->type].name_identified);
 	}
 	else
 	{
-		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3335]);
+		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3335]);
 	}
 
 	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion )
@@ -5356,24 +5361,24 @@ void GenericGUIMenu::alchemyCombinePotions()
 	{
 		if ( basePotion->type == POTION_WATER )
 		{
-			consumeItem(basePotion, clientnum);
+			consumeItem(basePotion, gui_player);
 			duplicatedPotion = secondaryPotion;
 		}
 		else if ( secondaryPotion->type == POTION_WATER )
 		{
-			consumeItem(secondaryPotion, clientnum);
+			consumeItem(secondaryPotion, gui_player);
 			duplicatedPotion = basePotion;
 		}
 	}
 	else
 	{
-		consumeItem(basePotion, clientnum);
-		consumeItem(secondaryPotion, clientnum);
+		consumeItem(basePotion, gui_player);
+		consumeItem(secondaryPotion, gui_player);
 		if ( rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
 		{
 			Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-			itemPickup(clientnum, emptyBottle);
-			messagePlayer(clientnum, language[3351], items[POTION_EMPTY].name_identified);
+			itemPickup(gui_player, emptyBottle);
+			messagePlayer(gui_player, language[3351], items[POTION_EMPTY].name_identified);
 			free(emptyBottle);
 		}
 	}
@@ -5390,7 +5395,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 		}
 	}
 
-	if ( skillCapstoneUnlocked(clientnum, PRO_ALCHEMY) )
+	if ( skillCapstoneUnlocked(gui_player, PRO_ALCHEMY) )
 	{
 		blessing = 2;
 		degradeAlembic = false;
@@ -5401,24 +5406,24 @@ void GenericGUIMenu::alchemyCombinePotions()
 		alembicItem->status = static_cast<Status>(alembicItem->status - 1);
 		if ( alembicItem->status > BROKEN )
 		{
-			messagePlayer(clientnum, language[681], alembicItem->getName());
+			messagePlayer(gui_player, language[681], alembicItem->getName());
 		}
 		else
 		{
-			messagePlayer(clientnum, language[2351], alembicItem->getName());
-			playSoundPlayer(clientnum, 162, 64);
-			consumeItem(alembicItem, clientnum);
+			messagePlayer(gui_player, language[2351], alembicItem->getName());
+			playSoundPlayer(gui_player, 162, 64);
+			consumeItem(alembicItem, gui_player);
 			alembicItem = nullptr;
 		}
 	}
 
-	if ( explodeSelf && players[clientnum] && players[clientnum]->entity )
+	if ( explodeSelf && players[gui_player] && players[gui_player]->entity )
 	{
 		// hurt.
 		if ( multiplayer == CLIENT )
 		{
 			strcpy((char*)net_packet->data, "BOOM");
-			net_packet->data[4] = clientnum;
+			net_packet->data[4] = gui_player;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 5;
@@ -5426,10 +5431,10 @@ void GenericGUIMenu::alchemyCombinePotions()
 		}
 		else
 		{
-			spawnMagicTower(nullptr, players[clientnum]->entity->x, players[clientnum]->entity->y, SPELL_FIREBALL, nullptr);
-			players[clientnum]->entity->setObituary(language[3350]);
+			spawnMagicTower(nullptr, players[gui_player]->entity->x, players[gui_player]->entity->y, SPELL_FIREBALL, nullptr);
+			players[gui_player]->entity->setObituary(language[3350]);
 		}
-		closeGUI(clientnum);
+		closeGUI();
 		return;
 	}
 
@@ -5467,7 +5472,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			{
 				if ( result == POTION_WATER && !duplicateSucceed )
 				{
-					messagePlayer(clientnum, language[3356]);
+					messagePlayer(gui_player, language[3356]);
 					newPotion->identified = true;
 				}
 				else
@@ -5479,19 +5484,19 @@ void GenericGUIMenu::alchemyCombinePotions()
 						newPotion->identified = duplicatedPotion->identified;
 						newPotion->status = duplicatedPotion->status;
 					}
-					messagePlayer(clientnum, language[3352], newPotion->description());
+					messagePlayer(gui_player, language[3352], newPotion->description());
 				}
 			}
 			else
 			{
-				messagePlayer(clientnum, language[3352], newPotion->description());
+				messagePlayer(gui_player, language[3352], newPotion->description());
 				steamStatisticUpdate(STEAM_STAT_IN_THE_MIX, STEAM_STAT_INT, 1);
 			}
-			itemPickup(clientnum, newPotion);
+			itemPickup(gui_player, newPotion);
 			free(newPotion);
-			if ( players[clientnum] && players[clientnum]->entity )
+			if ( players[gui_player] && players[gui_player]->entity )
 			{
-				playSoundEntityLocal(players[clientnum]->entity, 401, 64);
+				playSoundEntityLocal(players[gui_player]->entity, 401, 64);
 			}
 			if ( raiseSkill && rand() % 2 == 0 )
 			{
@@ -5499,7 +5504,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 				{
 					// request level up
 					strcpy((char*)net_packet->data, "CSKL");
-					net_packet->data[4] = clientnum;
+					net_packet->data[4] = gui_player;
 					net_packet->data[5] = PRO_ALCHEMY;
 					net_packet->address.host = net_server.host;
 					net_packet->address.port = net_server.port;
@@ -5508,16 +5513,16 @@ void GenericGUIMenu::alchemyCombinePotions()
 				}
 				else
 				{
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[gui_player] && players[gui_player]->entity )
 					{
-						players[clientnum]->entity->increaseSkill(PRO_ALCHEMY);
+						players[gui_player]->entity->increaseSkill(PRO_ALCHEMY);
 					}
 				}
 			}
 			break;
 		}
 	}
-	closeGUI(clientnum);
+	closeGUI();
 }
 
 bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notify)
@@ -5537,11 +5542,11 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 				{
 					if ( isItemBaseIngredient(type) )
 					{
-						messagePlayerColor(clientnum, color, language[3346], items[type].name_identified);
+						messagePlayerColor(gui_player, color, language[3346], items[type].name_identified);
 					}
 					else if ( isItemSecondaryIngredient(type) )
 					{
-						messagePlayerColor(clientnum, color, language[3349], items[type].name_identified);
+						messagePlayerColor(gui_player, color, language[3349], items[type].name_identified);
 					}
 				}
 				if ( increaseskill )
@@ -5550,7 +5555,7 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 					{
 						// request level up
 						strcpy((char*)net_packet->data, "CSKL");
-						net_packet->data[4] = clientnum;
+						net_packet->data[4] = gui_player;
 						net_packet->data[5] = PRO_ALCHEMY;
 						net_packet->address.host = net_server.host;
 						net_packet->address.port = net_server.port;
@@ -5559,9 +5564,9 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 					}
 					else
 					{
-						if ( players[clientnum] && players[clientnum]->entity )
+						if ( players[gui_player] && players[gui_player]->entity )
 						{
-							players[clientnum]->entity->increaseSkill(PRO_ALCHEMY);
+							players[gui_player]->entity->increaseSkill(PRO_ALCHEMY);
 						}
 					}
 				}
@@ -5578,7 +5583,7 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 					{
 						// request level up
 						strcpy((char*)net_packet->data, "CSKL");
-						net_packet->data[4] = clientnum;
+						net_packet->data[4] = gui_player;
 						net_packet->data[5] = PRO_ALCHEMY;
 						net_packet->address.host = net_server.host;
 						net_packet->address.port = net_server.port;
@@ -5587,9 +5592,9 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 					}
 					else
 					{
-						if ( players[clientnum] && players[clientnum]->entity )
+						if ( players[gui_player] && players[gui_player]->entity )
 						{
-							players[clientnum]->entity->increaseSkill(PRO_ALCHEMY);
+							players[gui_player]->entity->increaseSkill(PRO_ALCHEMY);
 						}
 					}
 				}
@@ -5645,33 +5650,33 @@ void GenericGUIMenu::alchemyLearnRecipeOnLevelUp(int skill)
 	if ( skill > 0 )
 	{
 		ItemType potion = POTION_WATER;
-		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		learned = alchemyLearnRecipe(potion, false);
 	}
 	
 	if ( skill == 20 )
 	{
 		ItemType potion = POTION_JUICE;
-		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		learned = alchemyLearnRecipe(potion, false);
 		potion = POTION_BOOZE;
-		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		learned = alchemyLearnRecipe(potion, false);
 	}
 	else if ( skill == 40 )
 	{
 		ItemType potion = POTION_ACID;
-		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		learned = alchemyLearnRecipe(potion, false);
 	}
 	else if ( skill == 60 )
 	{
 		ItemType potion = POTION_INVISIBILITY;
-		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		learned = alchemyLearnRecipe(potion, false);
 		potion = POTION_POLYMORPH;
-		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		learned = alchemyLearnRecipe(potion, false);
 	}
 
 	if ( !learned && skill % 5 == 0 )
 	{
 		ItemType potion = itemLevelCurve(POTION, 0, currentlevel);
-		GenericGUI.alchemyLearnRecipe(potion, false);
+		alchemyLearnRecipe(potion, false);
 	}
 }
 
@@ -5706,9 +5711,9 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 		{
 			int skillLVL = 0;
 			int requiredSkill = tinkeringPlayerHasSkillLVLToCraft(item);
-			if ( stats[clientnum] && players[clientnum] )
+			if ( stats[gui_player] && players[gui_player] )
 			{
-				skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+				skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
 				skillLVL = std::min(skillLVL, 5);
 			}
 			if ( item->type == TOOL_DUMMYBOT || item->type == TOOL_SENTRYBOT
@@ -5743,17 +5748,17 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 	//newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
 	//newItem(TOOL_DETONATOR_CHARGE, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
 
-	//messagePlayer(clientnum, "asserting craftable num items: %d", list_Size(&tinkeringTotalItems));
-	if ( stats[clientnum] )
+	//messagePlayer(gui_player, "asserting craftable num items: %d", list_Size(&tinkeringTotalItems));
+	if ( stats[gui_player] )
 	{
 		// make the last node jump to the player's actual items, 
 		// so consuming the items in this list will actually update the player's inventory.
 		node_t* tinkeringTotalLastCraftableNode = tinkeringTotalItems.last;
 		if ( tinkeringTotalLastCraftableNode )
 		{
-			tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+			tinkeringTotalLastCraftableNode->next = stats[gui_player]->inventory.first;
 		}
-		//messagePlayer(clientnum, "asserting total list size: %d", list_Size(&tinkeringTotalItems));
+		//messagePlayer(gui_player, "asserting total list size: %d", list_Size(&tinkeringTotalItems));
 	}
 }
 
@@ -5772,9 +5777,9 @@ void GenericGUIMenu::tinkeringFreeLists()
 			list_RemoveNode(node);
 			++itemcnt;
 		}
-		else if ( node->list == &stats[clientnum]->inventory )
+		else if ( node->list == &stats[gui_player]->inventory )
 		{
-			//messagePlayer(clientnum, "reached inventory after clearing %d items", itemcnt);
+			//messagePlayer(gui_player, "reached inventory after clearing %d items", itemcnt);
 			break;
 		}
 	}
@@ -5796,21 +5801,21 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 )
 	{
 		playSound(90, 64);
-		messagePlayer(clientnum, language[3652], items[item->type].name_identified);
+		messagePlayer(gui_player, language[3652], items[item->type].name_identified);
 		return false;
 	}
 	if ( !tinkeringPlayerCanAffordCraft(item) )
 	{
 		playSound(90, 64);
-		messagePlayer(clientnum, language[3648], items[item->type].name_identified);
+		messagePlayer(gui_player, language[3648], items[item->type].name_identified);
 		return false;
 	}
 
 	Item* crafted = tinkeringCraftItemAndConsumeMaterials(item);
 	if ( crafted )
 	{
-		Item* pickedUp = itemPickup(clientnum, crafted);
-		messagePlayer(clientnum, language[3668], crafted->description());
+		Item* pickedUp = itemPickup(gui_player, crafted);
+		messagePlayer(gui_player, language[3668], crafted->description());
 		free(crafted);
 		return true;
 	}
@@ -5986,20 +5991,20 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 
 	if ( increaseSkill )
 	{
-		if ( player != clientnum ) // server initiated craft for client.
+		if ( player != gui_player ) // server initiated craft for client.
 		{
 			if ( players[player] && players[player]->entity )
 			{
 				players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 			}
 		}
-		else if ( player == clientnum ) // client/server initiated craft for self.
+		else if ( players[player]->isLocalPlayer() ) // client/server initiated craft for self.
 		{
 			if ( multiplayer == CLIENT )
 			{
 				// request level up
 				strcpy((char*)net_packet->data, "CSKL");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = player;
 				net_packet->data[5] = PRO_LOCKPICKING;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -6008,9 +6013,9 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			}
 			else
 			{
-				if ( players[clientnum] && players[clientnum]->entity )
+				if ( players[player] && players[player]->entity )
 				{
-					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+					players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 				}
 			}
 		}
@@ -6025,9 +6030,9 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 
 bool GenericGUIMenu::isNodeFromPlayerInventory(node_t* node)
 {
-	if ( stats[clientnum] && node )
+	if ( stats[gui_player] && node )
 	{
-		return (node->list == &stats[clientnum]->inventory);
+		return (node->list == &stats[gui_player]->inventory);
 	}
 	return false;
 }
@@ -6042,7 +6047,7 @@ bool GenericGUIMenu::isItemSalvageable(const Item* item, int player)
 	{
 		return false;
 	}*/
-	if ( player == clientnum && isNodeFromPlayerInventory(item->node) && itemIsEquipped(item, clientnum) )
+	if ( player == gui_player && isNodeFromPlayerInventory(item->node) && itemIsEquipped(item, gui_player) )
 	{
 		return false;
 	}
@@ -6070,7 +6075,7 @@ bool GenericGUIMenu::tinkeringIsItemRepairable(Item* item, int player)
 	{
 		return false;
 	}
-	/*if ( player == clientnum && itemIsEquipped(item, clientnum) )
+	/*if ( player == gui_player && itemIsEquipped(item, gui_player) )
 	{
 		return false;
 	}*/
@@ -6148,7 +6153,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
 	{
 		bool increaseSkill = false;
-		if ( stats[clientnum] )
+		if ( stats[gui_player] )
 		{
 			if ( metal > 4 || magic > 4 )
 			{
@@ -6168,7 +6173,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 				}
 				else
 				{
-					if ( stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+					if ( stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
 					{
 						if ( rand() % 10 == 0 )
 						{
@@ -6177,7 +6182,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 					}
 					else if ( rand() % 20 == 0 )
 					{
-						messagePlayer(clientnum, language[3667], items[item->type].name_identified);
+						messagePlayer(gui_player, language[3667], items[item->type].name_identified);
 					}
 				}
 			}
@@ -6189,7 +6194,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			{
 				// request level up
 				strcpy((char*)net_packet->data, "CSKL");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = gui_player;
 				net_packet->data[5] = PRO_LOCKPICKING;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -6198,9 +6203,9 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			}
 			else
 			{
-				if ( players[clientnum] && players[clientnum]->entity )
+				if ( players[gui_player] && players[gui_player]->entity )
 				{
-					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+					players[gui_player]->entity->increaseSkill(PRO_LOCKPICKING);
 				}
 			}
 		}
@@ -6210,23 +6215,23 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			tinkeringSfxLastTicks = ticks;
 			if ( itemIsThrowableTinkerTool(item) )
 			{
-				playSoundEntity(players[clientnum]->entity, 459 + (rand() % 3), 92);
+				playSoundEntity(players[gui_player]->entity, 459 + (rand() % 3), 92);
 			}
 			else
 			{
 				if ( rand() % 3 == 0 )
 				{
-					playSoundEntity(players[clientnum]->entity, 422 + (rand() % 2), 92);
+					playSoundEntity(players[gui_player]->entity, 422 + (rand() % 2), 92);
 				}
 				else
 				{
-					playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+					playSoundEntity(players[gui_player]->entity, 35 + rand() % 3, 64);
 				}
 			}
 		}
 		else
 		{
-			playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+			playSoundEntity(players[gui_player]->entity, 35 + rand() % 3, 64);
 		}
 
 		for ( int c = 0; c < metal; ++c )
@@ -6234,7 +6239,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_METAL_SCRAP));
 			if ( item )
 			{
-				consumeItem(item, clientnum);
+				consumeItem(item, gui_player);
 			}
 		}
 		for ( int c = 0; c < magic; ++c )
@@ -6242,12 +6247,12 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_MAGIC_SCRAP));
 			if ( item )
 			{
-				consumeItem(item, clientnum);
+				consumeItem(item, gui_player);
 			}
 		}
 		if ( tinkeringKitRollIfShouldBreak() )
 		{
-			tinkeringKitDegradeOnUse(clientnum);
+			tinkeringKitDegradeOnUse(gui_player);
 		}
 		return newItem(item->type, item->status, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
 	}
@@ -6876,8 +6881,8 @@ bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 			if ( item->status < EXCELLENT )
 			{
 				int requirement = tinkeringRepairGeneralItemSkillRequirement(item);
-				if ( requirement >= 0 && stats[clientnum] 
-					&& ((stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) >= requirement) )
+				if ( requirement >= 0 && stats[gui_player]
+					&& ((stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity)) >= requirement) )
 				{
 					int metalSalvage = 0;
 					int magicSalvage = 0;
@@ -6946,7 +6951,7 @@ int GenericGUIMenu::tinkeringRepairGeneralItemSkillRequirement(Item* item)
 
 	if ( requirement > 0 )
 	{
-		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON )
+		if ( stats[gui_player] && stats[gui_player]->type == AUTOMATON )
 		{
 			requirement -= 20;
 		}
@@ -6981,14 +6986,14 @@ bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
 
 int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 {
-	if ( !item || !stats[clientnum] )
+	if ( !item || !stats[gui_player] )
 	{
 		return -1;
 	}
 	int skillLVL = 0;
-	if ( stats[clientnum] && players[clientnum] )
+	if ( stats[gui_player] && players[gui_player] )
 	{
-		skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+		skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
 	}
 
 	switch ( item->type )
@@ -6997,7 +7002,7 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 		case TOOL_GLASSES:
 		case POTION_EMPTY:
 		case TOOL_DECOY:
-			if ( stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity) >= 10 ) // 10 requirement
+			if ( stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity) >= 10 ) // 10 requirement
 			{
 				return 0;
 			}
@@ -7045,10 +7050,10 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 
 bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
 {
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		Item* toDegrade = tinkeringKitItem;
-		if ( !toDegrade && player == clientnum )
+		if ( !toDegrade && players[player]->isLocalPlayer() )
 		{
 			// look for tinkeringKit in inventory.
 			toDegrade = tinkeringKitFindInInventory();
@@ -7058,19 +7063,19 @@ bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
 			}
 		}
 
-		bool isEquipped = itemIsEquipped(toDegrade, clientnum);
+		bool isEquipped = itemIsEquipped(toDegrade, gui_player);
 
 		toDegrade->status = std::max(BROKEN, static_cast<Status>(toDegrade->status - 1));
 		if ( toDegrade->status > BROKEN )
 		{
-			messagePlayer(clientnum, language[681], toDegrade->getName());
+			messagePlayer(gui_player, language[681], toDegrade->getName());
 		}
 		else
 		{
-			messagePlayer(clientnum, language[662], toDegrade->getName());
-			if ( players[clientnum] && players[clientnum]->entity )
+			messagePlayer(gui_player, language[662], toDegrade->getName());
+			if ( players[gui_player] && players[gui_player]->entity )
 			{
-				playSoundEntityLocal(players[clientnum]->entity, 76, 64);
+				playSoundEntityLocal(players[gui_player]->entity, 76, 64);
 			}
 			tinkeringKitItem = nullptr;
 		}
@@ -7079,7 +7084,7 @@ bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
 			// the client needs to inform the server that their equipment was damaged.
 			int armornum = 5;
 			strcpy((char*)net_packet->data, "REPA");
-			net_packet->data[4] = clientnum;
+			net_packet->data[4] = gui_player;
 			net_packet->data[5] = armornum;
 			net_packet->data[6] = toDegrade->status;
 			net_packet->address.host = net_server.host;
@@ -7100,7 +7105,7 @@ Item* GenericGUIMenu::tinkeringKitFindInInventory()
 	}
 	else
 	{
-		for ( node_t* invnode = stats[clientnum]->inventory.first; invnode != NULL; invnode = invnode->next )
+		for ( node_t* invnode = stats[gui_player]->inventory.first; invnode != NULL; invnode = invnode->next )
 		{
 			Item* tinkerItem = (Item*)invnode->element;
 			if ( tinkerItem && tinkerItem->type == TOOL_TINKERING_KIT && tinkerItem->status > BROKEN )
@@ -7127,13 +7132,13 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 	{
 		return false;
 	}
-	//if ( itemIsEquipped(item, clientnum) && item->type != TOOL_TINKERING_KIT )
+	//if ( itemIsEquipped(item, gui_player) && item->type != TOOL_TINKERING_KIT )
 	//{
-	//	messagePlayer(clientnum, language[3681]);
+	//	messagePlayer(gui_player, language[3681]);
 	//	return false; // don't want to deal with client/server desync problems here.
 	//}
 
-	if ( stats[clientnum] && players[clientnum] )
+	if ( stats[gui_player] && players[gui_player] )
 	{
 		if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_GYROBOT )
 		{
@@ -7144,13 +7149,13 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				if ( craftRequirement == -1 ) // can't craft, can't upgrade!
 				{
 					playSound(90, 64);
-					messagePlayer(clientnum, language[3685], items[item->type].name_identified);
+					messagePlayer(gui_player, language[3685], items[item->type].name_identified);
 					return false;
 				}
 				else if ( !tinkeringPlayerCanAffordRepair(item) )
 				{
 					playSound(90, 64);
-					messagePlayer(clientnum, language[3687], items[item->type].name_identified);
+					messagePlayer(gui_player, language[3687], items[item->type].name_identified);
 					return false;
 				}
 				
@@ -7160,7 +7165,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				if ( maxStatus <= item->status )
 				{
 					playSound(90, 64);
-					messagePlayer(clientnum, language[3685], items[item->type].name_identified);
+					messagePlayer(gui_player, language[3685], items[item->type].name_identified);
 					return false;
 				}
 
@@ -7170,14 +7175,14 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					Item* upgradedItem = newItem(item->type, newStatus, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
 					if ( upgradedItem )
 					{
-						achievementObserver.playerAchievements[clientnum].fixerUpper += 1;
-						Item* pickedUp = itemPickup(clientnum, upgradedItem);
+						achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
+						Item* pickedUp = itemPickup(gui_player, upgradedItem);
 						if ( pickedUp && item->count == 1 )
 						{
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
+							for ( auto& hotbarSlot : players[gui_player]->hotbar->slots() )
 							{
 								if ( hotbarSlot.item == item->uid )
 								{
@@ -7192,8 +7197,8 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 						}
 						free(upgradedItem);
 					}
-					messagePlayer(clientnum, language[3683], items[item->type].name_identified);
-					consumeItem(item, clientnum);
+					messagePlayer(gui_player, language[3683], items[item->type].name_identified);
+					consumeItem(item, gui_player);
 					return true;
 				}
 			}
@@ -7203,13 +7208,13 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				if ( craftRequirement == -1 ) // can't craft, can't repair!
 				{
 					playSound(90, 64);
-					messagePlayer(clientnum, language[3688], items[item->type].name_identified);
+					messagePlayer(gui_player, language[3688], items[item->type].name_identified);
 					return false;
 				}
 				else if ( !tinkeringPlayerCanAffordRepair(item) )
 				{
 					playSound(90, 64);
-					messagePlayer(clientnum, language[3686], items[item->type].name_identified);
+					messagePlayer(gui_player, language[3686], items[item->type].name_identified);
 					return false;
 				}
 
@@ -7223,14 +7228,14 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, repairedAppearance, true, nullptr);
 					if ( repairedItem )
 					{
-						achievementObserver.playerAchievements[clientnum].fixerUpper += 1;
-						Item* pickedUp = itemPickup(clientnum, repairedItem);
+						achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
+						Item* pickedUp = itemPickup(gui_player, repairedItem);
 						if ( pickedUp && item->count == 1 )
 						{
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
+							for ( auto& hotbarSlot : players[gui_player]->hotbar->slots() )
 							{
 								if ( hotbarSlot.item == item->uid )
 								{
@@ -7245,8 +7250,8 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 						}
 						free(repairedItem);
 					}
-					messagePlayer(clientnum, language[3682], items[item->type].name_identified);
-					consumeItem(item, clientnum);
+					messagePlayer(gui_player, language[3682], items[item->type].name_identified);
+					consumeItem(item, gui_player);
 					return true;
 				}
 			}
@@ -7258,22 +7263,22 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 			if ( craftRequirement == -1 && itemCategory(item) == TOOL ) // can't craft, can't repair!
 			{
 				playSound(90, 64);
-				messagePlayer(clientnum, language[3688], items[item->type].name_identified);
+				messagePlayer(gui_player, language[3688], items[item->type].name_identified);
 				return false;
 			}
 			if ( !tinkeringPlayerCanAffordRepair(item) )
 			{
 				playSound(90, 64);
-				messagePlayer(clientnum, language[3686], items[item->type].name_identified);
+				messagePlayer(gui_player, language[3686], items[item->type].name_identified);
 				return false;
 			}
 
 			if ( tinkeringConsumeMaterialsForRepair(item, false) )
 			{
 				int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
-				bool isEquipped = itemIsEquipped(item, clientnum);
+				bool isEquipped = itemIsEquipped(item, gui_player);
 				item->status = static_cast<Status>(repairedStatus);
-				messagePlayer(clientnum, language[872], item->getName());
+				messagePlayer(gui_player, language[872], item->getName());
 				bool replaceTinkeringKit = false;
 				if ( item == tinkeringKitItem )
 				{
@@ -7284,13 +7289,13 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
 					if ( repairedItem )
 					{
-						Item* pickedUp = itemPickup(clientnum, repairedItem);
+						Item* pickedUp = itemPickup(gui_player, repairedItem);
 						if ( pickedUp && item->count == 1 )
 						{
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
+							for ( auto& hotbarSlot : players[gui_player]->hotbar->slots() )
 							{
 								if ( hotbarSlot.item == item->uid )
 								{
@@ -7309,47 +7314,47 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 						}
 						free(repairedItem);
 					}
-					consumeItem(item, clientnum);
+					consumeItem(item, gui_player);
 				}
 				else if ( multiplayer == CLIENT && isEquipped )
 				{
 					// the client needs to inform the server that their equipment was repaired.
 					int armornum = 0;
-					if ( item == stats[clientnum]->weapon )
+					if ( item == stats[gui_player]->weapon )
 					{
 						armornum = 0;
 					}
-					else if ( item == stats[clientnum]->helmet )
+					else if ( item == stats[gui_player]->helmet )
 					{
 						armornum = 1;
 					}
-					else if ( item == stats[clientnum]->breastplate )
+					else if ( item == stats[gui_player]->breastplate )
 					{
 						armornum = 2;
 					}
-					else if ( item == stats[clientnum]->gloves )
+					else if ( item == stats[gui_player]->gloves )
 					{
 						armornum = 3;
 					}
-					else if ( item == stats[clientnum]->shoes )
+					else if ( item == stats[gui_player]->shoes )
 					{
 						armornum = 4;
 					}
-					else if ( item == stats[clientnum]->shield )
+					else if ( item == stats[gui_player]->shield )
 					{
 						armornum = 5;
 					}
-					else if ( item == stats[clientnum]->cloak )
+					else if ( item == stats[gui_player]->cloak )
 					{
 						armornum = 6;
 					}
-					else if ( item == stats[clientnum]->mask )
+					else if ( item == stats[gui_player]->mask )
 					{
 						armornum = 7;
 					}
 
 					strcpy((char*)net_packet->data, "REPA");
-					net_packet->data[4] = clientnum;
+					net_packet->data[4] = gui_player;
 					net_packet->data[5] = armornum;
 					net_packet->data[6] = item->status;
 					net_packet->address.host = net_server.host;
@@ -7371,9 +7376,9 @@ int GenericGUIMenu::tinkeringUpgradeMaxStatus(Item* item)
 		return BROKEN;
 	}
 	int skillLVL = 0;
-	if ( stats[clientnum] && players[clientnum] )
+	if ( stats[gui_player] && players[gui_player] )
 	{
-		skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+		skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
 		int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
 		if ( skillLVL >= 5 )
 		{
@@ -7414,7 +7419,7 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
 	{
 		bool increaseSkill = false;
-		if ( stats[clientnum] )
+		if ( stats[gui_player] )
 		{
 			if ( !upgradingItem )
 			{
@@ -7438,7 +7443,7 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 			{
 				// request level up
 				strcpy((char*)net_packet->data, "CSKL");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = gui_player;
 				net_packet->data[5] = PRO_LOCKPICKING;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -7447,9 +7452,9 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 			}
 			else
 			{
-				if ( players[clientnum] && players[clientnum]->entity )
+				if ( players[gui_player] && players[gui_player]->entity )
 				{
-					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+					players[gui_player]->entity->increaseSkill(PRO_LOCKPICKING);
 				}
 			}
 		}
@@ -7459,7 +7464,7 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_METAL_SCRAP));
 			if ( item )
 			{
-				consumeItem(item, clientnum);
+				consumeItem(item, gui_player);
 			}
 		}
 		for ( int c = 0; c < magic; ++c )
@@ -7467,12 +7472,12 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_MAGIC_SCRAP));
 			if ( item )
 			{
-				consumeItem(item, clientnum);
+				consumeItem(item, gui_player);
 			}
 		}
 		if ( tinkeringKitRollIfShouldBreak() && item != tinkeringKitItem )
 		{
-			tinkeringKitDegradeOnUse(clientnum);
+			tinkeringKitDegradeOnUse(gui_player);
 		}
 		return true;
 	}
@@ -7505,14 +7510,14 @@ void GenericGUIMenu::scribingCreateCraftableItemList()
 		}
 	}
 
-	if ( stats[clientnum] )
+	if ( stats[gui_player] )
 	{
 		// make the last node jump to the player's actual items, 
 		// so consuming the items in this list will actually update the player's inventory.
 		node_t* scribingTotalLastCraftableNode = scribingTotalItems.last;
 		if ( scribingTotalLastCraftableNode )
 		{
-			scribingTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+			scribingTotalLastCraftableNode->next = stats[gui_player]->inventory.first;
 		}
 	}
 }
@@ -7532,9 +7537,9 @@ void GenericGUIMenu::scribingFreeLists()
 			list_RemoveNode(node);
 			++itemcnt;
 		}
-		else if ( node->list == &stats[clientnum]->inventory )
+		else if ( node->list == &stats[gui_player]->inventory )
 		{
-			//messagePlayer(clientnum, "reached inventory after clearing %d items", itemcnt);
+			//messagePlayer(gui_player, "reached inventory after clearing %d items", itemcnt);
 			break;
 		}
 	}
@@ -7605,12 +7610,12 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 		usageCost = 16;
 	}
 	int randomValue = 0;
-	if ( stats[clientnum] )
+	if ( stats[gui_player] )
 	{
 		int skillLVL = 0;
-		if ( stats[clientnum] && players[clientnum] )
+		if ( stats[gui_player] && players[gui_player] )
 		{
-			skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+			skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
 		}
 		if ( toDegrade->beatitude > 0 )
 		{
@@ -7656,7 +7661,7 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 		if ( toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY == 0 )
 		{
 			toDegrade->status = BROKEN;
-			messagePlayer(clientnum, language[3727], toDegrade->getName());
+			messagePlayer(gui_player, language[3727], toDegrade->getName());
 			scribingToolItem = nullptr;
 			return usageCost;
 		}
@@ -7665,13 +7670,13 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 			if ( durability > 25 && (toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY) <= 25 )
 			{
 				// notify we're at less than 25%.
-				messagePlayer(clientnum, language[3729], toDegrade->getName());
+				messagePlayer(gui_player, language[3729], toDegrade->getName());
 			}
 		}
 	}
 	if ( toDegrade->status > BROKEN )
 	{
-		//messagePlayer(clientnum, language[681], toDegrade->getName());
+		//messagePlayer(gui_player, language[681], toDegrade->getName());
 		return usageCost;
 	}
 	else
@@ -7679,13 +7684,13 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 		if ( (usageCost / 2) < durability && itemCategory(itemUsedWith) == SCROLL )
 		{
 			// if scroll cost is a little more than the durability, then let it succeed.
-			messagePlayer(clientnum, language[3727], toDegrade->getName());
+			messagePlayer(gui_player, language[3727], toDegrade->getName());
 			scribingToolItem = nullptr;
 			return usageCost;
 		}
 		else
 		{
-			messagePlayer(clientnum, language[3728], toDegrade->getName());
+			messagePlayer(gui_player, language[3728], toDegrade->getName());
 			scribingToolItem = nullptr;
 			return 0;
 		}
@@ -7701,7 +7706,7 @@ Item* GenericGUIMenu::scribingToolFindInInventory()
 	}
 	else
 	{
-		for ( node_t* invnode = stats[clientnum]->inventory.first; invnode != NULL; invnode = invnode->next )
+		for ( node_t* invnode = stats[gui_player]->inventory.first; invnode != NULL; invnode = invnode->next )
 		{
 			Item* scribeItem = (Item*)invnode->element;
 			if ( scribeItem && scribeItem->type == ENCHANTED_FEATHER && scribeItem->status > BROKEN )
@@ -7740,7 +7745,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		}
 
 		bool increaseSkill = false;
-		if ( stats[clientnum] )
+		if ( stats[gui_player] )
 		{
 			if ( rand() % 5 == 0 )
 			{
@@ -7754,7 +7759,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			{
 				// request level up
 				strcpy((char*)net_packet->data, "CSKL");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = gui_player;
 				net_packet->data[5] = PRO_MAGIC;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -7763,9 +7768,9 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			}
 			else
 			{
-				if ( players[clientnum] && players[clientnum]->entity )
+				if ( players[gui_player] && players[gui_player]->entity )
 				{
-					players[clientnum]->entity->increaseSkill(PRO_MAGIC);
+					players[gui_player]->entity->increaseSkill(PRO_MAGIC);
 				}
 			}
 		}
@@ -7779,15 +7784,15 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				// mail uses the appearance to generate the text, so randomise it here.
 				crafted->appearance = rand(); 
 			}
-			Item* pickedUp = itemPickup(clientnum, crafted);
-			//messagePlayerColor(clientnum, uint32ColorGreen(*mainsurface), language[3724]);
+			Item* pickedUp = itemPickup(gui_player, crafted);
+			//messagePlayerColor(gui_player, uint32ColorGreen(*mainsurface), language[3724]);
 			int oldcount = pickedUp->count;
 			pickedUp->count = 1;
-			messagePlayerColor(clientnum, uint32ColorGreen(*mainsurface), language[3724], pickedUp->description());
+			messagePlayerColor(gui_player, uint32ColorGreen(*mainsurface), language[3724], pickedUp->description());
 			pickedUp->count = oldcount;
-			consumeItem(scribingBlankScrollTarget, clientnum);
+			consumeItem(scribingBlankScrollTarget, gui_player);
 			//scribingBlankScrollTarget = nullptr;
-			if ( client_classes[clientnum] == CLASS_SHAMAN )
+			if ( client_classes[gui_player] == CLASS_SHAMAN )
 			{
 				steamStatisticUpdate(STEAM_STAT_ROLL_THE_BONES, STEAM_STAT_INT, 1);
 			}
@@ -7814,7 +7819,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		}
 
 		bool increaseSkill = false;
-		if ( stats[clientnum] )
+		if ( stats[gui_player] )
 		{
 			if ( rand() % 10 == 0 )
 			{
@@ -7828,7 +7833,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			{
 				// request level up
 				strcpy((char*)net_packet->data, "CSKL");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = gui_player;
 				net_packet->data[5] = PRO_MAGIC;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -7837,38 +7842,38 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			}
 			else
 			{
-				if ( players[clientnum] && players[clientnum]->entity )
+				if ( players[gui_player] && players[gui_player]->entity )
 				{
-					players[clientnum]->entity->increaseSkill(PRO_MAGIC);
+					players[gui_player]->entity->increaseSkill(PRO_MAGIC);
 				}
 			}
 		}
 		int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
-		bool isEquipped = itemIsEquipped(item, clientnum);
+		bool isEquipped = itemIsEquipped(item, gui_player);
 		item->status = static_cast<Status>(repairedStatus);
-		messagePlayer(clientnum, language[3725]);
-		messagePlayer(clientnum, language[872], item->getName());
+		messagePlayer(gui_player, language[3725]);
+		messagePlayer(gui_player, language[872], item->getName());
 		if ( !isEquipped )
 		{
 			Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
 			if ( repairedItem )
 			{
-				itemPickup(clientnum, repairedItem);
+				itemPickup(gui_player, repairedItem);
 				free(repairedItem);
 			}
-			consumeItem(item, clientnum);
+			consumeItem(item, gui_player);
 		}
 		else if ( multiplayer == CLIENT && isEquipped )
 		{
 			// the client needs to inform the server that their equipment was repaired.
 			int armornum = 0;
-			if ( stats[clientnum] && item == stats[clientnum]->shield )
+			if ( stats[gui_player] && item == stats[gui_player]->shield )
 			{
 				armornum = 5;
 			}
 
 			strcpy((char*)net_packet->data, "REPA");
-			net_packet->data[4] = clientnum;
+			net_packet->data[4] = gui_player;
 			net_packet->data[5] = armornum;
 			net_packet->data[6] = item->status;
 			net_packet->address.host = net_server.host;

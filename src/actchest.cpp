@@ -706,7 +706,7 @@ void Entity::actChest()
 				messagePlayer(chestclicked, language[459]);
 				openedChest[chestclicked] = this;
 				chestOpener = chestclicked;
-				if ( chestclicked == clientnum || players[chestclicked]->isLocalPlayer() ) // i.e host opened the chest, close GUIs
+				if ( players[chestclicked]->isLocalPlayer() ) // i.e host opened the chest, close GUIs
 				{
 					players[chestclicked]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CHEST);
 				}
@@ -910,7 +910,7 @@ void Entity::closeChest()
 		}
 		else
 		{
-			if ( chestOpener == clientnum )
+			if ( players[chestOpener]->isLocalPlayer() )
 			{
 				for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
 				{
@@ -930,7 +930,7 @@ void Entity::closeChestServer()
 	{
 		chestStatus = 0;
 		openedChest[chestOpener] = NULL;
-		if ( chestOpener == clientnum )
+		if ( players[chestOpener]->isLocalPlayer() )
 		{
 			for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
 			{

@@ -1127,7 +1127,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 							int magic = 0;
 							if ( itemOnGround )
 							{
-								GenericGUI.tinkeringGetItemValue(itemOnGround, &metal, &magic);
+								GenericGUIMenu::tinkeringGetItemValue(itemOnGround, &metal, &magic);
 								if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_METAL
 									&& metal > 0 )
 								{

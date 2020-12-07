@@ -979,11 +979,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							if ( itemEntity && itemEntity->behavior == &actItem && entityDist(itemEntity, caster) < TOUCHRANGE )
 							{
 								Item* toSalvage = newItemFromEntity(itemEntity);
-								if ( toSalvage && GenericGUI.isItemSalvageable(toSalvage, i) )
+								if ( toSalvage && GenericGUI[i].isItemSalvageable(toSalvage, i) )
 								{
 									int metal = 0;
 									int magic = 0;
-									GenericGUI.tinkeringGetItemValue(toSalvage, &metal, &magic);
+									GenericGUIMenu::tinkeringGetItemValue(toSalvage, &metal, &magic);
 									totalMetal += metal;
 									totalMagic += magic;
 									++numItems;

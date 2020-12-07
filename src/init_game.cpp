@@ -457,6 +457,8 @@ int initGame()
 		{
 			initClass(c);
 		}
+		GenericGUI[c].setPlayer(c);
+		FollowerMenu[c].setPlayer(c);
 	}
 
 	// load music

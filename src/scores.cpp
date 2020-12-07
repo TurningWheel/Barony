@@ -3588,7 +3588,7 @@ void updateGameplayStatisticsInMainLoop()
 			bool learned = gameStatistics[STATISTICS_ALCHEMY_RECIPES] & (1 << i);
 			auto typeAppearance = potionStandardAppearanceMap.at(i);
 			int type = typeAppearance.first;
-			if ( !learned && (GenericGUI.isItemBaseIngredient(type) || GenericGUI.isItemSecondaryIngredient(type)) )
+			if ( !learned && (GenericGUI[clientnum].isItemBaseIngredient(type) || GenericGUI[clientnum].isItemSecondaryIngredient(type)) )
 			{
 				failAchievement = true;
 				break;
@@ -3719,7 +3719,7 @@ void updateGameplayStatisticsInMainLoop()
 						bowList.insert(SHORTBOW);
 					}
 				}
-				if ( GenericGUI.tinkeringGetCraftingCost(item, &dummy1, &dummy2) )
+				if ( GenericGUI[clientnum].tinkeringGetCraftingCost(item, &dummy1, &dummy2) )
 				{
 					utilityBeltList.insert(item->type);
 				}

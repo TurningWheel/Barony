@@ -52,7 +52,7 @@ void clickDescription(int player, Entity* entity)
 		{
 			return;
 		}
-		if ( FollowerMenu.followerMenuIsOpen() )
+		if ( FollowerMenu[player].followerMenuIsOpen() )
 		{
 			return;
 		}

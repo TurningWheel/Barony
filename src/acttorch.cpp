@@ -115,9 +115,9 @@ void actTorch(Entity* my)
 						// auto salvage this item, don't pick it up.
 						messagePlayer(i, language[589]);
 						bool salvaged = false;
-						if ( GenericGUI.isItemSalvageable(item, i) )
+						if ( GenericGUI[i].isItemSalvageable(item, i) )
 						{
-							if ( GenericGUI.tinkeringSalvageItem(item, true, i) )
+							if ( GenericGUI[i].tinkeringSalvageItem(item, true, i) )
 							{
 								salvaged = true;
 							}
@@ -259,9 +259,9 @@ void actCrystalShard(Entity* my)
 						// auto salvage this item, don't pick it up.
 						messagePlayer(i, language[589]);
 						bool salvaged = false;
-						if ( GenericGUI.isItemSalvageable(item, i) )
+						if ( GenericGUI[i].isItemSalvageable(item, i) )
 						{
-							if ( GenericGUI.tinkeringSalvageItem(item, true, i) )
+							if ( GenericGUI[i].tinkeringSalvageItem(item, true, i) )
 							{
 								salvaged = true;
 							}

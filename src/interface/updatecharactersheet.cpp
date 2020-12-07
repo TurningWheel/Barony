@@ -980,7 +980,7 @@ void drawSkillsSheet(const int player)
 					for ( auto it = clientLearnedAlchemyIngredients.begin(); it != clientLearnedAlchemyIngredients.end(); ++it )
 					{
 						auto alchemyEntry = *it;
-						if ( GenericGUI.isItemBaseIngredient(alchemyEntry) )
+						if ( GenericGUI[player].isItemBaseIngredient(alchemyEntry) )
 						{
 							baseIngredients += " -[";
 							std::string itemName = items[alchemyEntry].name_identified;
@@ -989,7 +989,7 @@ void drawSkillsSheet(const int player)
 							baseIngredients += "]\n";
 							++lines;
 						}
-						if ( GenericGUI.isItemSecondaryIngredient(alchemyEntry) )
+						if ( GenericGUI[player].isItemSecondaryIngredient(alchemyEntry) )
 						{
 							secondaryIngredients += " -[";
 							std::string itemName = items[alchemyEntry].name_identified;
@@ -1265,12 +1265,13 @@ void drawPartySheet(const int player)
 	// draw follower stats
 	if ( numFollowers > 0 )
 	{
-		int monstersToDisplay = FollowerMenu.maxMonstersToDraw;
+		FollowerRadialMenu& followerMenu = FollowerMenu[player];
+		int monstersToDisplay = followerMenu.maxMonstersToDraw;
 		if ( playerCnt != 0 )
 		{
 			pos.y -= (fontHeight * 4) * 2;
 			pos.y += std::max(playerCnt - 1, 0) * (fontHeight * 4 + 8);
-			monstersToDisplay = FollowerMenu.numMonstersToDrawInParty();
+			monstersToDisplay = followerMenu.numMonstersToDrawInParty();
 		}
 		int i = 0;
 		SDL_Rect monsterEntryWindow;
@@ -1301,11 +1302,11 @@ void drawPartySheet(const int player)
 					bool hideDetail = false;
 					if ( numFollowers > monstersToDisplay )
 					{
-						if ( i < FollowerMenu.sidebarScrollIndex )
+						if ( i < followerMenu.sidebarScrollIndex )
 						{
 							hideDetail = true;
 						}
-						else if ( i > FollowerMenu.sidebarScrollIndex + monstersToDisplay )
+						else if ( i > followerMenu.sidebarScrollIndex + monstersToDisplay )
 						{
 							hideDetail = true;
 						}
@@ -1316,11 +1317,11 @@ void drawPartySheet(const int player)
 						drawWindowFancy(monsterEntryWindow.x, monsterEntryWindow.y, 
 							monsterEntryWindow.x + monsterEntryWindow.w, monsterEntryWindow.y + monsterEntryWindow.h);
 
-						if ( !FollowerMenu.recentEntity )
+						if ( !followerMenu.recentEntity )
 						{
-							FollowerMenu.recentEntity = follower;
+							followerMenu.recentEntity = follower;
 						}
-						if ( FollowerMenu.recentEntity == follower )
+						if ( followerMenu.recentEntity == follower )
 						{
 							// draw highlight on current selected monster.
 							drawRect(&monsterEntryWindow, uint32ColorBaronyBlue(*mainsurface), 32);
@@ -1336,29 +1337,29 @@ void drawPartySheet(const int player)
 							{
 								if ( mousestatus[SDL_BUTTON_LEFT] )
 								{
-									FollowerMenu.recentEntity = follower;
+									followerMenu.recentEntity = follower;
 									playSound(139, 64);
-									FollowerMenu.accessedMenuFromPartySheet = true;
-									FollowerMenu.partySheetMouseX = omousex;
-									FollowerMenu.partySheetMouseY = omousey;
+									followerMenu.accessedMenuFromPartySheet = true;
+									followerMenu.partySheetMouseX = omousex;
+									followerMenu.partySheetMouseY = omousey;
 									mousestatus[SDL_BUTTON_LEFT] = 0;
-									if ( FollowerMenu.recentEntity )
+									if ( followerMenu.recentEntity )
 									{
-										createParticleFollowerCommand(FollowerMenu.recentEntity->x, FollowerMenu.recentEntity->y, 0, 174);
+										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, 174);
 									}
 								}
 								else if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
 								{
-									FollowerMenu.followerToCommand = follower;
-									FollowerMenu.recentEntity = follower;
-									FollowerMenu.accessedMenuFromPartySheet = true;
-									FollowerMenu.partySheetMouseX = omousex;
-									FollowerMenu.partySheetMouseY = omousey;
-									FollowerMenu.initFollowerMenuGUICursor();
-									FollowerMenu.updateScrollPartySheet();
-									if ( FollowerMenu.recentEntity )
+									followerMenu.followerToCommand = follower;
+									followerMenu.recentEntity = follower;
+									followerMenu.accessedMenuFromPartySheet = true;
+									followerMenu.partySheetMouseX = omousex;
+									followerMenu.partySheetMouseY = omousey;
+									followerMenu.initfollowerMenuGUICursor(false);
+									followerMenu.updateScrollPartySheet();
+									if ( followerMenu.recentEntity )
 									{
-										createParticleFollowerCommand(FollowerMenu.recentEntity->x, FollowerMenu.recentEntity->y, 0, 174);
+										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, 174);
 									}
 								}
 							}
@@ -1455,16 +1456,16 @@ void drawPartySheet(const int player)
 			if ( mousestatus[SDL_BUTTON_WHEELDOWN] && mouseInScrollbarTotalHeight )
 			{
 				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-				FollowerMenu.sidebarScrollIndex = std::min(FollowerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
+				followerMenu.sidebarScrollIndex = std::min(followerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
 			}
 			else if ( mousestatus[SDL_BUTTON_WHEELUP] && mouseInScrollbarTotalHeight )
 			{
 				mousestatus[SDL_BUTTON_WHEELUP] = 0;
-				FollowerMenu.sidebarScrollIndex = std::max(FollowerMenu.sidebarScrollIndex - 1, 0);
+				followerMenu.sidebarScrollIndex = std::max(followerMenu.sidebarScrollIndex - 1, 0);
 			}
 
 			slider.h *= (1 / static_cast<real_t>(std::max(1, numFollowers - monstersToDisplay)));
-			slider.y += slider.h * FollowerMenu.sidebarScrollIndex;
+			slider.y += slider.h * followerMenu.sidebarScrollIndex;
 			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
 			if ( mouseInScrollbarTotalHeight && mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -1473,12 +1474,12 @@ void drawPartySheet(const int player)
 				{
 					if ( omousey < slider.y )
 					{
-						FollowerMenu.sidebarScrollIndex = std::max(FollowerMenu.sidebarScrollIndex - 1, 0);
+						followerMenu.sidebarScrollIndex = std::max(followerMenu.sidebarScrollIndex - 1, 0);
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
 					else if ( omousey > slider.y + slider.h )
 					{
-						FollowerMenu.sidebarScrollIndex = std::min(FollowerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
+						followerMenu.sidebarScrollIndex = std::min(followerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
 				}

@@ -974,7 +974,7 @@ void drawStatus(int player)
 							&& gui_mode != (GUI_MODE_SHOP) 
 							&& !identifygui_active
 							&& !removecursegui_active
-							&& !GenericGUI.isGUIOpen())) 
+							&& !GenericGUI[player].isGUIOpen())) 
 						&& !selectedItem )
 					{
 						inputs.getUIInteraction(player)->toggleclick = false;
@@ -1008,7 +1008,7 @@ void drawStatus(int player)
 							&& gui_mode != (GUI_MODE_SHOP) 
 							&& !identifygui_active 
 							&& !removecursegui_active
-							&& !GenericGUI.isGUIOpen()) )
+							&& !GenericGUI[player].isGUIOpen()) )
 					{
 						//Use the item if right clicked.
 						inputs.mouseClearRight(player);
@@ -1488,7 +1488,7 @@ void drawStatus(int player)
 							}
 						}
 					}
-					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add )
+					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						Uint32 swapItem = 0;
 						if ( keystatus[SDL_SCANCODE_1] )
@@ -1580,7 +1580,7 @@ void drawStatus(int player)
 			}
 			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
 		}
-		if ( !FollowerMenu.selectMoveTo && mouseInBounds(player, xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+		if ( !FollowerMenu[player].selectMoveTo && mouseInBounds(player, xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 		{
 			if ( inputs.bMouseRight(player) || (inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
 			{
@@ -1627,55 +1627,58 @@ void drawStatus(int player)
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
-			if ( keystatus[SDL_SCANCODE_1] )
+			if ( inputs.bPlayerUsingKeyboardControl(player) )
 			{
-				keystatus[SDL_SCANCODE_1] = 0;
-				item = uidToItem(hotbar[0].item);
-			}
-			if ( keystatus[SDL_SCANCODE_2] )
-			{
-				keystatus[SDL_SCANCODE_2] = 0;
-				item = uidToItem(hotbar[1].item);
-			}
-			if ( keystatus[SDL_SCANCODE_3] )
-			{
-				keystatus[SDL_SCANCODE_3] = 0;
-				item = uidToItem(hotbar[2].item);
-			}
-			if ( keystatus[SDL_SCANCODE_4] )
-			{
-				keystatus[SDL_SCANCODE_4] = 0;
-				item = uidToItem(hotbar[3].item);
-			}
-			if ( keystatus[SDL_SCANCODE_5] )
-			{
-				keystatus[SDL_SCANCODE_5] = 0;
-				item = uidToItem(hotbar[4].item);
-			}
-			if ( keystatus[SDL_SCANCODE_6] )
-			{
-				keystatus[SDL_SCANCODE_6] = 0;
-				item = uidToItem(hotbar[5].item);
-			}
-			if ( keystatus[SDL_SCANCODE_7] )
-			{
-				keystatus[SDL_SCANCODE_7] = 0;
-				item = uidToItem(hotbar[6].item);
-			}
-			if ( keystatus[SDL_SCANCODE_8] )
-			{
-				keystatus[SDL_SCANCODE_8] = 0;
-				item = uidToItem(hotbar[7].item);
-			}
-			if ( keystatus[SDL_SCANCODE_9] )
-			{
-				keystatus[SDL_SCANCODE_9] = 0;
-				item = uidToItem(hotbar[8].item);
-			}
-			if ( keystatus[SDL_SCANCODE_0] )
-			{
-				keystatus[SDL_SCANCODE_0] = 0;
-				item = uidToItem(hotbar[9].item);
+				if ( keystatus[SDL_SCANCODE_1] )
+				{
+					keystatus[SDL_SCANCODE_1] = 0;
+					item = uidToItem(hotbar[0].item);
+				}
+				if ( keystatus[SDL_SCANCODE_2] )
+				{
+					keystatus[SDL_SCANCODE_2] = 0;
+					item = uidToItem(hotbar[1].item);
+				}
+				if ( keystatus[SDL_SCANCODE_3] )
+				{
+					keystatus[SDL_SCANCODE_3] = 0;
+					item = uidToItem(hotbar[2].item);
+				}
+				if ( keystatus[SDL_SCANCODE_4] )
+				{
+					keystatus[SDL_SCANCODE_4] = 0;
+					item = uidToItem(hotbar[3].item);
+				}
+				if ( keystatus[SDL_SCANCODE_5] )
+				{
+					keystatus[SDL_SCANCODE_5] = 0;
+					item = uidToItem(hotbar[4].item);
+				}
+				if ( keystatus[SDL_SCANCODE_6] )
+				{
+					keystatus[SDL_SCANCODE_6] = 0;
+					item = uidToItem(hotbar[5].item);
+				}
+				if ( keystatus[SDL_SCANCODE_7] )
+				{
+					keystatus[SDL_SCANCODE_7] = 0;
+					item = uidToItem(hotbar[6].item);
+				}
+				if ( keystatus[SDL_SCANCODE_8] )
+				{
+					keystatus[SDL_SCANCODE_8] = 0;
+					item = uidToItem(hotbar[7].item);
+				}
+				if ( keystatus[SDL_SCANCODE_9] )
+				{
+					keystatus[SDL_SCANCODE_9] = 0;
+					item = uidToItem(hotbar[8].item);
+				}
+				if ( keystatus[SDL_SCANCODE_0] )
+				{
+					keystatus[SDL_SCANCODE_0] = 0;
+					item = uidToItem(hotbar[9].item);
+				}
 			}
 		}
 
@@ -1702,7 +1705,7 @@ void drawStatus(int player)
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
 				&& !identifygui_active && !removecursegui_active
-				&& !GenericGUI.isGUIOpen() )
+				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 				{
@@ -1733,7 +1736,7 @@ void drawStatus(int player)
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
 				&& !identifygui_active && !removecursegui_active
-				&& !GenericGUI.isGUIOpen() )
+				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 				{
@@ -1763,7 +1766,7 @@ void drawStatus(int player)
 		if ( bumper_moved && !inputs.getUIInteraction(player)->itemMenuOpen
 			&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) 
 			&& !book_open && !identifygui_active 
-			&& !removecursegui_active && !GenericGUI.isGUIOpen() )
+			&& !removecursegui_active && !GenericGUI[player].isGUIOpen() )
 		{
 			warpMouseToSelectedHotbarSlot(player);
 		}
@@ -1774,7 +1777,7 @@ void drawStatus(int player)
 				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !book_open && !identifygui_active 
-				&& !removecursegui_active && !GenericGUI.isGUIOpen() )
+				&& !removecursegui_active && !GenericGUI[player].isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) )
@@ -1946,7 +1949,7 @@ void drawStatus(int player)
 		}
 	}
 
-	FollowerMenu.drawFollowerMenu();
+	FollowerMenu[player].drawFollowerMenu();
 
 	// stat increase icons
 	pos.w = 64;

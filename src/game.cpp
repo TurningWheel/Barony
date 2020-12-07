@@ -1081,18 +1081,18 @@ void gameLogic(void)
 					for ( c = 0; c < MAXPLAYERS; ++c )
 					{
 						assailantTimer[c] = 0;
-						if ( c > 0 && !client_disconnected[c] )
-						{
-							if ( openedChest[c] )
-							{
-								openedChest[c]->closeChestServer();
-							}
-						}
-						else if ( c == 0 )
+						if ( players[c]->isLocalPlayer() )
 						{
 							if ( openedChest[c] )
 							{
 								openedChest[c]->closeChest();
+							}
+						}
+						else if ( c > 0 && !client_disconnected[c] )
+						{
+							if ( openedChest[c] )
+							{
+								openedChest[c]->closeChestServer();
 							}
 						}
 					}
@@ -1271,7 +1271,13 @@ void gameLogic(void)
 					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 					// clear follower menu entities.
-					FollowerMenu.closeFollowerMenuGUI(true);
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( players[i]->isLocalPlayer() )
+						{
+							FollowerMenu[i].closeFollowerMenuGUI(true);
+						}
+					}
 
 					assignActions(&map);
 					generatePathMaps();
@@ -1491,9 +1497,9 @@ void gameLogic(void)
 										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 									}
 
-									if ( !FollowerMenu.recentEntity && c == clientnum )
+									if ( !FollowerMenu[c].recentEntity && players[c]->isLocalPlayer() )
 									{
-										FollowerMenu.recentEntity = monster;
+										FollowerMenu[c].recentEntity = monster;
 									}
 								}
 								else
@@ -4526,7 +4532,7 @@ int main(int argc, char** argv)
 						if ( !command && (*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT]) 
 							|| inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE)) )
 						{
-							FollowerMenu.selectNextFollower();
+							FollowerMenu[player].selectNextFollower();
 							proficienciesPage = 1;
 							if ( players[player]->shootmode && !lock_right_sidebar )
 							{
@@ -4556,7 +4562,14 @@ int main(int argc, char** argv)
 						*inputPressed(impulses[IN_COMMAND]) = 0;
 						SDL_StartTextInput();
 
-						FollowerMenu.closeFollowerMenuGUI();
+						// clear follower menu entities.
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) )
+							{
+								FollowerMenu[i].closeFollowerMenuGUI(true);
+							}
+						}
 					}
 					if ( command )
 					{
@@ -4724,7 +4737,7 @@ int main(int argc, char** argv)
 								closeRemoveCurseGUI();
 							}
 
-							GenericGUI.closeGUI(player);
+							GenericGUI[player].closeGUI();
 
 							if ( book_open )
 							{
@@ -4790,7 +4803,7 @@ int main(int argc, char** argv)
 								updateChestInventory(player);
 								updateIdentifyGUI();
 								updateRemoveCurseGUI();
-								GenericGUI.updateGUI(player);
+								GenericGUI[player].updateGUI();
 								updateBookGUI();
 								//updateRightSidebar(); -- 06/12/20 we don't use this but it still somehow displays stuff :D
 
@@ -4864,6 +4877,9 @@ int main(int argc, char** argv)
 						{
 							continue;
 						}
+
+						FollowerRadialMenu& followerMenu = FollowerMenu[player];
+
 						if ( players[player]->shootmode == false )
 						{
 							// dragging items, player not needed to be alive
@@ -4905,18 +4921,18 @@ int main(int argc, char** argv)
 									}
 								}
 							}
-							else if ( players[player]->isLocalPlayer() && FollowerMenu.selectMoveTo &&
-								(FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-									|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+							else if ( players[player]->isLocalPlayer() && followerMenu.selectMoveTo &&
+								(followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+									|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 							{
 								pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
 								pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
 								drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-								if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+								if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 								{
-									if ( FollowerMenu.followerToCommand
-										&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
-											|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
+									if ( followerMenu.followerToCommand
+										&& (followerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+											|| followerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
 										)
 									{
 										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
@@ -4928,14 +4944,14 @@ int main(int argc, char** argv)
 								}
 								else
 								{
-									if ( !strcmp(FollowerMenu.interactText, "") )
+									if ( !strcmp(followerMenu.interactText, "") )
 									{
-										if ( FollowerMenu.followerToCommand )
+										if ( followerMenu.followerToCommand )
 										{
-											int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
-											if ( FollowerMenu.allowedInteractItems(type)
-												|| FollowerMenu.allowedInteractFood(type)
-												|| FollowerMenu.allowedInteractWorld(type)
+											int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
+											if ( followerMenu.allowedInteractItems(type)
+												|| followerMenu.allowedInteractFood(type)
+												|| followerMenu.allowedInteractWorld(type)
 												)
 											{
 												ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
@@ -4952,7 +4968,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", followerMenu.interactText);
 									}
 								}
 							}
@@ -4971,17 +4987,17 @@ int main(int argc, char** argv)
 							pos.y = cameras[player].winy + (cameras[player].winh / 2) - cross_bmp->h / 2;
 							pos.w = 0;
 							pos.h = 0;
-							if ( FollowerMenu.selectMoveTo && (FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-								|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+							if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+								|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 							{
 								pos.x = xres / 2 - cursor_bmp->w / 2;
 								pos.y = yres / 2 - cursor_bmp->h / 2;
 								drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-								if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+								if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 								{
-									if ( FollowerMenu.followerToCommand
-										&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
-											|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
+									if ( followerMenu.followerToCommand
+										&& (followerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+											|| followerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
 										)
 									{
 										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
@@ -4993,14 +5009,14 @@ int main(int argc, char** argv)
 								}
 								else
 								{
-									if ( !strcmp(FollowerMenu.interactText, "") )
+									if ( !strcmp(followerMenu.interactText, "") )
 									{
-										if ( FollowerMenu.followerToCommand )
+										if ( followerMenu.followerToCommand )
 										{
-											int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
-											if ( FollowerMenu.allowedInteractItems(type)
-												|| FollowerMenu.allowedInteractFood(type)
-												|| FollowerMenu.allowedInteractWorld(type)
+											int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
+											if ( followerMenu.allowedInteractItems(type)
+												|| followerMenu.allowedInteractFood(type)
+												|| followerMenu.allowedInteractWorld(type)
 												)
 											{
 												ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
@@ -5017,7 +5033,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", followerMenu.interactText);
 									}
 								}
 							}

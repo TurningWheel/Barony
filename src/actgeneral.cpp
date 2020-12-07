@@ -966,7 +966,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				{
 					Stat* stats = entity->getStats();
 					int player = entity->skill[2];
-					if ( player == 0 )
+					if ( player >= 0 && players[player]->isLocalPlayer() )
 					{
 						playerClearInventory(true);
 					}
@@ -1030,7 +1030,10 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				{
 					for ( int c = 1; c < MAXPLAYERS; ++c )
 					{
-						updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_CLASS);
+						if ( !players[c]->isLocalPlayer() )
+						{
+							updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_CLASS);
+						}
 					}
 				}
 			}
@@ -1133,7 +1136,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 					if ( stats[player] && !client_disconnected[player] )
 					{
 						stats[player]->HUNGER = std::min(result, 2000);
-						if ( player != clientnum )
+						if ( !players[player]->isLocalPlayer() )
 						{
 							updateClientInformation(player, false, false, TextSourceScript::CLIENT_UPDATE_HUNGER);
 						}
@@ -2073,7 +2076,10 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 	{
 		for ( int c = 1; c < MAXPLAYERS; ++c )
 		{
-			updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_ALL);
+			if ( !players[c]->isLocalPlayer() )
+			{
+				updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_ALL);
+			}
 		}
 	}
 	printlog("[SCRIPT]: Finished running.");

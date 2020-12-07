@@ -209,26 +209,26 @@ void actItem(Entity* my)
 							}
 							list_RemoveNode(copyOfItem->mynode);
 							copyOfItem = nullptr;
-							if ( pickedUpItem )
+							if ( pickedUpItem && monsterInteracting->monsterAllyIndex >= 0 )
 							{
-								FollowerMenu.entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
+								FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 								return;
 							}
 						}
 					}
 					else if ( items[my->skill[10]].category == Category::FOOD && monsterInteracting->getMonsterTypeFromSprite() != SLIME )
 					{
-						if ( monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats()) )
+						if ( monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats()) && monsterInteracting->monsterAllyIndex >= 0 )
 						{
-							FollowerMenu.entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
+							FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 							return;
 						}
 					}
 					else
 					{
-						if ( monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my) )
+						if ( monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my) && monsterInteracting->monsterAllyIndex >= 0 )
 						{
-							FollowerMenu.entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
+							FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 							return;
 						}
 					}
@@ -266,9 +266,9 @@ void actItem(Entity* my)
 						{
 							// auto salvage this item, don't pick it up.
 							bool salvaged = false;
-							if ( GenericGUI.isItemSalvageable(item2, i) )
+							if ( GenericGUI[i].isItemSalvageable(item2, i) )
 							{
-								if ( GenericGUI.tinkeringSalvageItem(item2, true, i) )
+								if ( GenericGUI[i].tinkeringSalvageItem(item2, true, i) )
 								{
 									salvaged = true;
 								}

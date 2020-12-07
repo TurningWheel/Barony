@@ -2421,26 +2421,26 @@ void initClass(const int player)
 			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 0 )
 			{
 				ItemType potion = POTION_WATER;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
 			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 20 )
 			{
 				ItemType potion = POTION_JUICE;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 				potion = POTION_BOOZE;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
 			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 40 )
 			{
 				ItemType potion = POTION_ACID;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
 			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 60 )
 			{
 				ItemType potion = POTION_INVISIBILITY;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 				potion = POTION_POLYMORPH;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
 		}
 

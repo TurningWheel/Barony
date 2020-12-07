@@ -1641,9 +1641,9 @@ void Entity::increaseSkill(int skill, bool notify)
 
 		if ( skill == PRO_ALCHEMY )
 		{
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
-				GenericGUI.alchemyLearnRecipeOnLevelUp(myStats->PROFICIENCIES[skill]);
+				GenericGUI[player].alchemyLearnRecipeOnLevelUp(myStats->PROFICIENCIES[skill]);
 			}
 		}
 
@@ -14536,9 +14536,16 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 	//X and Y in terms of tiles.
 	if ( forcePickupItem != nullptr && forcePickupItem->behavior == &actItem )
 	{
-		if ( !FollowerMenu.allowedInteractItems(myStats->type) )
+		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			return false;
+			if ( FollowerMenu[i].followerToCommand == this )
+			{
+				if ( !FollowerMenu[i].allowedInteractItems(myStats->type) )
+				{
+					return false;
+				}
+				break;
+			}
 		}
 		
 		//If this is the first item found, the list needs to be created.

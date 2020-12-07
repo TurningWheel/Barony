@@ -701,7 +701,7 @@ void serverUpdateEntitySkill(Entity* entity, int skill)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -904,7 +904,7 @@ void serverUpdateEffects(int player)
 	{
 		return;
 	}
-	if ( client_disconnected[player] == true )
+	if ( client_disconnected[player] == true || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -3300,7 +3300,7 @@ void clientHandlePacket()
 
 		if ( net_packet->data[5] == PRO_ALCHEMY )
 		{
-			GenericGUI.alchemyLearnRecipeOnLevelUp(stats[clientnum]->PROFICIENCIES[net_packet->data[5]]);
+			GenericGUI[clientnum].alchemyLearnRecipeOnLevelUp(stats[clientnum]->PROFICIENCIES[net_packet->data[5]]);
 		}
 		return;
 	}
@@ -3602,7 +3602,7 @@ void clientHandlePacket()
 		globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 		// clear follower menu entities.
-		FollowerMenu.closeFollowerMenuGUI(true);
+		FollowerMenu[clientnum].closeFollowerMenuGUI(true);
 
 		numplayers = 0;
 		assignActions(&map);
@@ -3710,9 +3710,9 @@ void clientHandlePacket()
 			{
 				strcpy(monster->clientStats->name, (char*)&net_packet->data[8]);
 			}
-			if ( !FollowerMenu.recentEntity )
+			if ( !FollowerMenu[clientnum].recentEntity )
 			{
-				FollowerMenu.recentEntity = monster;
+				FollowerMenu[clientnum].recentEntity = monster;
 			}
 		}
 		return;
@@ -3728,14 +3728,14 @@ void clientHandlePacket()
 			{
 				if ( (Uint32*)allyNode->element && *((Uint32*)allyNode->element) == uidnum )
 				{
-					if ( FollowerMenu.recentEntity && (FollowerMenu.recentEntity->getUID() == 0
-						|| FollowerMenu.recentEntity->getUID() == uidnum) )
+					if ( FollowerMenu[clientnum].recentEntity && (FollowerMenu[clientnum].recentEntity->getUID() == 0
+						|| FollowerMenu[clientnum].recentEntity->getUID() == uidnum) )
 					{
-						FollowerMenu.recentEntity = nullptr;
+						FollowerMenu[clientnum].recentEntity = nullptr;
 					}
-					if ( FollowerMenu.followerToCommand == uidToEntity(uidnum) )
+					if ( FollowerMenu[clientnum].followerToCommand == uidToEntity(uidnum) )
 					{
-						FollowerMenu.closeFollowerMenuGUI();
+						FollowerMenu[clientnum].closeFollowerMenuGUI();
 					}
 					list_RemoveNode(allyNode);
 					break;
@@ -3956,7 +3956,7 @@ void clientHandlePacket()
 			{
 				closeRemoveCurseGUI();
 			}
-			GenericGUI.closeGUI(clientnum);
+			GenericGUI[clientnum].closeGUI();
 			identifygui_active = false;
 			list_FreeAll(&chestInv);
 			chestInv.first = nullptr;
@@ -4013,7 +4013,7 @@ void clientHandlePacket()
 		{
 			closeRemoveCurseGUI();
 		}
-		GenericGUI.closeGUI(clientnum);
+		GenericGUI[clientnum].closeGUI();
 		if ( openedChest[clientnum] )
 		{
 			openedChest[clientnum]->closeChest();
@@ -4036,7 +4036,7 @@ void clientHandlePacket()
 		{
 			CloseIdentifyGUI();
 		}
-		GenericGUI.closeGUI(clientnum);
+		GenericGUI[clientnum].closeGUI();
 
 		if ( openedChest[clientnum] )
 		{
@@ -4097,7 +4097,7 @@ void clientHandlePacket()
 
 	else if ( !strncmp((char*)net_packet->data, "TKIT", 4) )
 	{
-		GenericGUI.tinkeringKitDegradeOnUse(clientnum);
+		GenericGUI[clientnum].tinkeringKitDegradeOnUse(clientnum);
 		return;
 	}
 
@@ -5434,7 +5434,7 @@ void serverHandlePacket()
 			for ( int c = 1; c < MAXPLAYERS; ++c )
 			{
 				// send to all other players
-				if ( c != player && !client_disconnected[c] )
+				if ( c != player && !client_disconnected[c] && !players[c]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "SNEL");
 					SDLNet_Write16(sfx, &net_packet->data[4]);

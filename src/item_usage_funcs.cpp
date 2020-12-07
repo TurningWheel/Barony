@@ -2351,7 +2351,7 @@ void item_ScrollIdentify(Item* item, int player)
 		closeRemoveCurseGUI();
 	}
 
-	GenericGUI.closeGUI(player);
+	GenericGUI[player].closeGUI();
 
 	if ( openedChest[player] )
 	{
@@ -2756,7 +2756,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		{
 			CloseIdentifyGUI();
 		}
-		GenericGUI.closeGUI(player);
+		GenericGUI[player].closeGUI();
 
 		if ( openedChest[player] )
 		{
@@ -3134,7 +3134,7 @@ void item_ScrollRepair(Item* item, int player)
 		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
 			Item* inventoryItem = (Item*)node->element;
-			if ( GenericGUI.isItemRepairable(inventoryItem, item->type) )
+			if ( GenericGUI[player].isItemRepairable(inventoryItem, item->type) )
 			{
 				foundRepairableItem = true;
 				break;
@@ -3291,7 +3291,7 @@ void item_ScrollRepair(Item* item, int player)
 	else
 	{
 		// Repair an item
-		GenericGUI.openGUI(player, GUI_TYPE_REPAIR, item->beatitude, item->type);
+		GenericGUI[player].openGUI(GUI_TYPE_REPAIR, item->beatitude, item->type);
 	}
 	consumeItem(item, player);
 }
@@ -3657,9 +3657,9 @@ void item_ScrollSummon(Item* item, int player)
 					serverUpdateAllyStat(player, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 				}
 
-				if ( !FollowerMenu.recentEntity && players[player]->isLocalPlayer() )
+				if ( !FollowerMenu[player].recentEntity && players[player]->isLocalPlayer() )
 				{
-					FollowerMenu.recentEntity = monster;
+					FollowerMenu[player].recentEntity = monster;
 				}
 			}
 		}

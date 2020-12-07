@@ -2481,7 +2481,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			else
 			{
-				GenericGUI.openGUI(GUI_TYPE_ALCHEMY, false, item);
+				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, false, item);
 			}
 			break;
 		case ENCHANTED_FEATHER:
@@ -2491,7 +2491,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			else
 			{
-				GenericGUI.openGUI(player, GUI_TYPE_SCRIBING, item);
+				GenericGUI[player].openGUI(GUI_TYPE_SCRIBING, item);
 			}
 			break;
 		case FOOD_BREAD:
@@ -2581,7 +2581,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		{
 			if ( tryLearnPotionRecipe )
 			{
-				GenericGUI.alchemyLearnRecipe(potionType, true);
+				GenericGUI[player].alchemyLearnRecipe(potionType, true);
 			}
 			const int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
 			if ( tryEmptyBottle && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
@@ -4338,7 +4338,7 @@ bool Item::isThisABetterWeapon(const Item& newWeapon, const Item* const weaponAl
 	return false;
 }
 
-bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlreadyHave)
+bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlreadyHave )
 {
 	if ( !armorAlreadyHave )
 	{
@@ -4346,11 +4346,14 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlrea
 		return true;
 	}
 
-	if ( FollowerMenu.entityToInteractWith )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( newArmor.interactNPCUid == FollowerMenu.entityToInteractWith->interactedByMonster )
+		if ( FollowerMenu[i].entityToInteractWith )
 		{
-			return true;
+			if ( newArmor.interactNPCUid == FollowerMenu[i].entityToInteractWith->interactedByMonster )
+			{
+				return true;
+			}
 		}
 	}
 

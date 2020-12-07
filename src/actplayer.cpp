@@ -3241,16 +3241,17 @@ void actPlayer(Entity* my)
 		Sint32 mouseY = inputs.getMouse(PLAYER_NUM, Inputs::OY);
 
 		bool shootmode = players[PLAYER_NUM]->shootmode;
+		FollowerRadialMenu& followerMenu = FollowerMenu[PLAYER_NUM];
 
 		// object interaction
 		if ( intro == false )
 		{
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
 
-			if ( FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
+			if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 			{
 				Entity* underMouse = nullptr;
-				if ( FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT && ticks % 10 == 0 )
+				if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT && ticks % 10 == 0 )
 				{
 					if ( !shootmode )
 					{
@@ -3269,7 +3270,7 @@ void actPlayer(Entity* my)
 						}
 					}
 
-					if ( underMouse && FollowerMenu.followerToCommand )
+					if ( underMouse && followerMenu.followerToCommand )
 					{
 						Entity* parent = uidToEntity(underMouse->skill[2]);
 						if ( underMouse->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
@@ -3280,16 +3281,16 @@ void actPlayer(Entity* my)
 								underMouse = parent;
 							}
 						}
-						FollowerMenu.allowedInteractEntity(*underMouse);
+						followerMenu.allowedInteractEntity(*underMouse);
 					}
 					else
 					{
-						strcpy(FollowerMenu.interactText, "");
+						strcpy(followerMenu.interactText, "");
 					}
 				}
 			}
 
-			if ( FollowerMenu.followerToCommand == nullptr && FollowerMenu.selectMoveTo == false )
+			if ( followerMenu.followerToCommand == nullptr && followerMenu.selectMoveTo == false )
 			{
 				bool clickedOnGUI = false;
 				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM); // using objects
@@ -3305,9 +3306,9 @@ void actPlayer(Entity* my)
 
 				if ( !command && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
 				{
-					if ( !FollowerMenu.menuToggleClick && FollowerMenu.selectMoveTo )
+					if ( !followerMenu.menuToggleClick && followerMenu.selectMoveTo )
 					{
-						if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+						if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 						{
 							// we're selecting a point for the ally to move to.
 							*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) = 0;
@@ -3331,10 +3332,10 @@ void actPlayer(Entity* my)
 								MinimapPing newPing(ticks, -1, (mouseX - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (mouseY - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
 								minimapPingAdd(newPing);
 								createParticleFollowerCommand(newPing.x, newPing.y, 0, 174);
-								FollowerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
-								FollowerMenu.selectMoveTo = false;
-								FollowerMenu.moveToX = static_cast<int>(newPing.x);
-								FollowerMenu.moveToY = static_cast<int>(newPing.y);
+								followerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
+								followerMenu.selectMoveTo = false;
+								followerMenu.moveToX = static_cast<int>(newPing.x);
+								followerMenu.moveToY = static_cast<int>(newPing.y);
 							}
 							else if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
 							{
@@ -3368,14 +3369,14 @@ void actPlayer(Entity* my)
 								}
 
 								createParticleFollowerCommand(previousx, previousy, 0, 174);
-								FollowerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
-								FollowerMenu.selectMoveTo = false;
-								FollowerMenu.moveToX = static_cast<int>(previousx) / 16;
-								FollowerMenu.moveToY = static_cast<int>(previousy) / 16;
+								followerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
+								followerMenu.selectMoveTo = false;
+								followerMenu.moveToX = static_cast<int>(previousx) / 16;
+								followerMenu.moveToY = static_cast<int>(previousy) / 16;
 								//messagePlayer(PLAYER_NUM, "%d, %d, pitch: %f", followerMoveToX, followerMoveToY, players[PLAYER_NUM]->entity->pitch);
 							}
 						}
-						else if ( FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
+						else if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 						{
 							// we're selecting a target for the ally.
 							Entity* target = entityClicked(nullptr, false, PLAYER_NUM);
@@ -3400,60 +3401,60 @@ void actPlayer(Entity* my)
 										target = parent;
 									}
 								}
-								if ( FollowerMenu.allowedInteractEntity(*target) )
+								if ( followerMenu.allowedInteractEntity(*target) )
 								{
 									createParticleFollowerCommand(target->x, target->y, 0, 174);
-									FollowerMenu.optionSelected = ALLY_CMD_ATTACK_CONFIRM;
-									FollowerMenu.followerToCommand->monsterAllyInteractTarget = target->getUID();
+									followerMenu.optionSelected = ALLY_CMD_ATTACK_CONFIRM;
+									followerMenu.followerToCommand->monsterAllyInteractTarget = target->getUID();
 								}
 								else
 								{
 									messagePlayer(clientnum, language[3094]);
-									FollowerMenu.optionSelected = ALLY_CMD_CANCEL;
-									FollowerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
-									FollowerMenu.followerToCommand->monsterAllyInteractTarget = 0;
+									followerMenu.optionSelected = ALLY_CMD_CANCEL;
+									followerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
+									followerMenu.followerToCommand->monsterAllyInteractTarget = 0;
 								}
 							}
 							else
 							{
-								FollowerMenu.optionSelected = ALLY_CMD_CANCEL;
-								FollowerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
-								FollowerMenu.followerToCommand->monsterAllyInteractTarget = 0;
+								followerMenu.optionSelected = ALLY_CMD_CANCEL;
+								followerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
+								followerMenu.followerToCommand->monsterAllyInteractTarget = 0;
 							}
-							FollowerMenu.selectMoveTo = false;
-							strcpy(FollowerMenu.interactText, "");
+							followerMenu.selectMoveTo = false;
+							strcpy(followerMenu.interactText, "");
 						}
 					}
 				}
 			}
 
-			if ( !command && !FollowerMenu.followerToCommand && FollowerMenu.recentEntity )
+			if ( !command && !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
 				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
-						&& FollowerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 					{
 						// your ally is angry at you!
 					}
 					else
 					{
-						selectedEntity[PLAYER_NUM] = FollowerMenu.recentEntity;
-						FollowerMenu.holdWheel = true;
+						selectedEntity[PLAYER_NUM] = followerMenu.recentEntity;
+						followerMenu.holdWheel = true;
 					}
 				}
 				else if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
-						&& FollowerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 					{
 						// your ally is angry at you!
 						*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
 						inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD);
 					}
-					else if ( FollowerMenu.optionPrevious != -1 )
+					else if ( followerMenu.optionPrevious != -1 )
 					{
-						FollowerMenu.followerToCommand = FollowerMenu.recentEntity;
+						followerMenu.followerToCommand = followerMenu.recentEntity;
 					}
 					else
 					{
@@ -3464,36 +3465,36 @@ void actPlayer(Entity* my)
 			}
 			if ( selectedEntity[PLAYER_NUM] != NULL )
 			{
-				FollowerMenu.followerToCommand = nullptr;
+				followerMenu.followerToCommand = nullptr;
 				Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->skill[2]);
 				if ( selectedEntity[PLAYER_NUM]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 				{
 					// see if we selected a follower to process right click menu.
 					if ( parent && parent->monsterAllyIndex == PLAYER_NUM )
 					{
-						FollowerMenu.followerToCommand = parent;
+						followerMenu.followerToCommand = parent;
 						//messagePlayer(0, "limb");
 					}
 					else if ( selectedEntity[PLAYER_NUM]->monsterAllyIndex == PLAYER_NUM )
 					{
-						FollowerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
+						followerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
 						//messagePlayer(0, "head");
 					}
 
-					if ( FollowerMenu.followerToCommand )
+					if ( followerMenu.followerToCommand )
 					{
 						if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
-							&& FollowerMenu.followerToCommand->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+							&& followerMenu.followerToCommand->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 						{
 							// your ally is angry at you!
-							FollowerMenu.followerToCommand = nullptr;
-							FollowerMenu.optionPrevious = -1;
+							followerMenu.followerToCommand = nullptr;
+							followerMenu.optionPrevious = -1;
 						}
 						else
 						{
-							FollowerMenu.recentEntity = FollowerMenu.followerToCommand;
-							FollowerMenu.initFollowerMenuGUICursor(true);
-							FollowerMenu.updateScrollPartySheet();
+							followerMenu.recentEntity = followerMenu.followerToCommand;
+							followerMenu.initfollowerMenuGUICursor(true);
+							followerMenu.updateScrollPartySheet();
 							selectedEntity[PLAYER_NUM] = NULL;
 						}
 					}

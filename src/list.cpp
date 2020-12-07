@@ -72,9 +72,9 @@ void list_RemoveNode(node_t* node)
 					inputs.getUIInteraction(i)->selectedItem = nullptr; 
 					// printlog("Reset selectedItem");
 				}
-				if ( GenericGUI.isItemUsedForCurrentGUI(*tmp) )
+				if ( GenericGUI[i].isItemUsedForCurrentGUI(*tmp) )
 				{
-					GenericGUI.clearCurrentGUIFromItem(*tmp);
+					GenericGUI[i].clearCurrentGUIFromItem(*tmp);
 				}
 			}
 		}

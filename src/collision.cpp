@@ -350,7 +350,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 					playSound(sfx, 92);
 					for ( int c = 1; c < MAXPLAYERS; ++c )
 					{
-						if ( !client_disconnected[c] )
+						if ( !client_disconnected[c] && !players[c]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "SNEL");
 							SDLNet_Write16(sfx, &net_packet->data[4]);

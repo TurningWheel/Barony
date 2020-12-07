@@ -399,16 +399,16 @@ void select_inventory_slot(const int player, int x, int y)
 				warpMouseToSelectedRemoveCurseSlot();
 			}
 		}
-		else if ( GenericGUI.isGUIOpen() )
+		else if ( GenericGUI[player].isGUIOpen() )
 		{
 			warpInv = false;
 			y = players[player]->inventoryUI.getSizeY() - 1;
 
 			//Warp into GUI "inventory"...if there is anything there.
-			if ( GenericGUI.itemsDisplayed[0] )
+			if ( GenericGUI[player].itemsDisplayed[0] )
 			{
-				GenericGUI.selectedSlot = 0;
-				GenericGUI.warpMouseToSelectedSlot();
+				GenericGUI[player].selectedSlot = 0;
+				GenericGUI[player].warpMouseToSelectedSlot();
 			}
 		}
 
@@ -770,11 +770,11 @@ void updatePlayerInventory(const int player)
 		if ( selectedChestSlot < 0 && selectedShopSlot < 0 
 			&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 
 			&& !itemMenuOpen && inputs.getController(player)->handleInventoryMovement(player)
-			&& GenericGUI.selectedSlot < 0 )
+			&& GenericGUI[player].selectedSlot < 0 )
 		{
 			if ( selectedChestSlot < 0 && selectedShopSlot < 0 
 				&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
-				&& GenericGUI.selectedSlot < 0 ) //This second check prevents the extra mouse warp.
+				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
 				if ( !hotbar_t->hotbarHasFocus )
 				{
@@ -815,11 +815,11 @@ void updatePlayerInventory(const int player)
 				warpMouseToSelectedInventorySlot(player);
 			}
 		}
-		else if ( GenericGUI.selectedSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRepairGUIMovement(player) )
+		else if ( GenericGUI[player].selectedSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRepairGUIMovement(player) )
 		{
-			if ( GenericGUI.selectedSlot < 0 )
+			if ( GenericGUI[player].selectedSlot < 0 )
 			{
-				GenericGUI.warpMouseToSelectedSlot();
+				GenericGUI[player].warpMouseToSelectedSlot();
 			}
 		}
 
@@ -868,7 +868,7 @@ void updatePlayerInventory(const int player)
 	if ( !itemMenuOpen 
 		&& selectedChestSlot < 0 && selectedShopSlot < 0 
 		&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
-		&& GenericGUI.selectedSlot < 0 )
+		&& GenericGUI[player].selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
 		//Only if item menu is not open, no chest slot is selected, no shop slot is selected, no Identify GUI slot is selected, and no Remove Curse GUI slot is selected.
@@ -1408,7 +1408,7 @@ void updatePlayerInventory(const int player)
 					if ( inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
 						&& !itemMenuOpen && !selectedItem && selectedChestSlot < 0 
 						&& selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
-						&& GenericGUI.selectedSlot < 0 )
+						&& GenericGUI[player].selectedSlot < 0 )
 					{
 						inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
 						if ( dropItem(item, player) )
@@ -1442,7 +1442,7 @@ void updatePlayerInventory(const int player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
 							&& selectedChestSlot < 0 && selectedShopSlot < 0 
 							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
-							&& GenericGUI.selectedSlot < 0)) 
+							&& GenericGUI[player].selectedSlot < 0))
 						&& !selectedItem && !itemMenuOpen )
 					{
 						if ( !(inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
@@ -1474,7 +1474,7 @@ void updatePlayerInventory(const int player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
 							&& selectedChestSlot < 0 && selectedShopSlot < 0 
 							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
-							&& GenericGUI.selectedSlot < 0)) 
+							&& GenericGUI[player].selectedSlot < 0))
 						&& !itemMenuOpen && !selectedItem )
 					{
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(inputs.bControllerInputPressed(player, INJOY_MENU_USE) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
@@ -1525,7 +1525,7 @@ void updatePlayerInventory(const int player)
 						}
 					}
 
-					if ( numkey_quick_add && !command )
+					if ( numkey_quick_add && !command && inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						if ( keystatus[SDL_SCANCODE_1] )
 						{
@@ -2298,7 +2298,7 @@ inline void executeItemMenuOption1(const int player, Item* item, bool is_potion_
 		// experimenting!
 		if ( !disableItemUsage )
 		{
-			GenericGUI.openGUI(GUI_TYPE_ALCHEMY, true, item);
+			GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
 		}
 		else
 		{
@@ -2309,7 +2309,7 @@ inline void executeItemMenuOption1(const int player, Item* item, bool is_potion_
 	{
 		if ( !disableItemUsage )
 		{
-			GenericGUI.openGUI(player, GUI_TYPE_TINKERING, item);
+			GenericGUI[player].openGUI(player, GUI_TYPE_TINKERING, item);
 		}
 		else
 		{
