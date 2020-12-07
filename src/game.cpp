@@ -1042,10 +1042,10 @@ void gameLogic(void)
 					// hack to fix these things from breaking everything...
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						hudarm[i] = nullptr;
-						hudweapon[i] = nullptr;
-						magicLeftHand[i] = nullptr;
-						magicRightHand[i] = nullptr;
+						players[i]->hud.arm = nullptr;
+						players[i]->hud.weapon = nullptr;
+						players[i]->hud.magicLeftHand = nullptr;
+						players[i]->hud.magicRightHand = nullptr;
 					}
 
 					// stop all sounds
@@ -1713,7 +1713,7 @@ void gameLogic(void)
 				backpack_sizey[player] = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY;
 				const int inventorySizeX = players[player]->inventoryUI.getSizeX();
 
-				bool tooManySpells = (list_Size(&spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
+				bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
 				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK
 					&& (shouldInvertEquipmentBeatitude(stats[player]) ? abs(stats[player]->cloak->beatitude) >= 0 : stats[player]->cloak->beatitude >= 0) )
 				{
@@ -1723,7 +1723,7 @@ void gameLogic(void)
 				if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 				{
 					players[player]->inventoryUI.setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1) 
-						+ ((list_Size(&spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
+						+ ((list_Size(&players[player]->magic.spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
 				}
 				else if ( backpack_sizey[player] == Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1 )
 				{
@@ -2302,7 +2302,7 @@ void gameLogic(void)
 			const int inventorySizeX = players[clientnum]->inventoryUI.getSizeX();
 
 
-			bool tooManySpells = (list_Size(&spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
+			bool tooManySpells = (list_Size(&players[clientnum]->magic.spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
 			int backpack_sizey = 3;
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
 				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
@@ -2313,7 +2313,7 @@ void gameLogic(void)
 			if ( tooManySpells && players[clientnum]->gui_mode == GUI_MODE_INVENTORY && players[clientnum]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
 				players[clientnum]->inventoryUI.setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1) 
-					+ ((list_Size(&spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
+					+ ((list_Size(&players[clientnum]->magic.spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
 			}
 			else if ( backpack_sizey == 4 )
 			{
@@ -3736,10 +3736,10 @@ int main(int argc, char** argv)
 					// hack to fix these things from breaking everything...
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						hudarm[i] = nullptr;
-						hudweapon[i] = nullptr;
-						magicLeftHand[i] = nullptr;
-						magicRightHand[i] = nullptr;
+						players[i]->hud.arm = nullptr;
+						players[i]->hud.weapon = nullptr;
+						players[i]->hud.magicLeftHand = nullptr;
+						players[i]->hud.magicRightHand = nullptr;
 					}
 
 					// team splash
@@ -3813,10 +3813,10 @@ int main(int argc, char** argv)
 					// hack to fix these things from breaking everything...
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						hudarm[i] = nullptr;
-						hudweapon[i] = nullptr;
-						magicLeftHand[i] = nullptr;
-						magicRightHand[i] = nullptr;
+						players[i]->hud.arm = nullptr;
+						players[i]->hud.weapon = nullptr;
+						players[i]->hud.magicLeftHand = nullptr;
+						players[i]->hud.magicRightHand = nullptr;
 					}
 
 					drawRect(NULL, 0, 255);
@@ -3911,10 +3911,10 @@ int main(int argc, char** argv)
 						// hack to fix these things from breaking everything...
 						for ( int i = 0; i < MAXPLAYERS; ++i )
 						{
-							hudarm[i] = nullptr;
-							hudweapon[i] = nullptr;
-							magicLeftHand[i] = nullptr;
-							magicRightHand[i] = nullptr;
+							players[i]->hud.arm = nullptr;
+							players[i]->hud.weapon = nullptr;
+							players[i]->hud.magicLeftHand = nullptr;
+							players[i]->hud.magicRightHand = nullptr;
 						}
 
 						// reset class loadout
@@ -4346,19 +4346,12 @@ int main(int argc, char** argv)
 				updateMessages();
 				if ( !nohud )
 				{
-					if (splitscreen) 
+					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
-						for (int c = 0; c < MAXPLAYERS; ++c)
+						if ( players[c]->isLocalPlayer() )
 						{
-							if (!client_disconnected[c]) 
-							{
-								handleDamageIndicators(c);
-							}
+							handleDamageIndicators(c);
 						}
-					} 
-					else 
-					{
-						handleDamageIndicators(0);
 					}
 					drawMessages();
 				}
@@ -4484,7 +4477,7 @@ int main(int argc, char** argv)
 											}
 											else
 											{
-												if ( achievementBrawlerMode && selected_spell != nullptr )
+												if ( achievementBrawlerMode && players[player]->magic.selectedSpell() )
 												{
 													messagePlayer(player, language[2998]); // notify no longer eligible for achievement but still cast.
 												}
@@ -4495,9 +4488,9 @@ int main(int argc, char** argv)
 												}
 												else
 												{
-													castSpellInit(players[player]->entity->getUID(), selected_spell, false);
+													castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
 												}
-												if ( selected_spell != nullptr )
+												if ( players[player]->magic.selectedSpell() )
 												{
 													conductGameChallenges[CONDUCT_BRAWLER] = 0;
 												}
@@ -4511,7 +4504,7 @@ int main(int argc, char** argv)
 											}
 											else
 											{
-												castSpellInit(players[player]->entity->getUID(), selected_spell, false);
+												castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
 											}
 										}
 									}
@@ -4902,16 +4895,17 @@ int main(int argc, char** argv)
 								}
 								else
 								{
-									spell_t* spell = getSpellFromItem(selectedItem);
-									if ( selected_spell == spell &&
-										(selected_spell_last_appearance == selectedItem->appearance || selected_spell_last_appearance == -1) )
+									spell_t* spell = getSpellFromItem(player, selectedItem);
+									if ( players[player]->magic.selectedSpell() == spell &&
+										(players[player]->magic.selected_spell_last_appearance == selectedItem->appearance
+											|| players[player]->magic.selected_spell_last_appearance == -1) )
 									{
 										pos.y += 16;
 										drawImage(equipped_bmp, NULL, &pos);
 									}
 								}
 							}
-							else if ( player == clientnum && FollowerMenu.selectMoveTo &&
+							else if ( players[player]->isLocalPlayer() && FollowerMenu.selectMoveTo &&
 								(FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 									|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 							{

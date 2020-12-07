@@ -963,7 +963,9 @@ SDL_GameControllerAxis GameController::getSDLTriggerFromImpulse(const unsigned c
 
 Player::Player(int in_playernum, bool in_local_host) : 
 	inventoryUI(*this),
-	statusBarUI(*this)
+	statusBarUI(*this),
+	hud(*this),
+	magic(*this)
 {
 	local_host = false;
 	playernum = in_playernum;

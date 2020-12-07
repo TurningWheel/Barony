@@ -56,7 +56,7 @@ void renderMagicGUI(int winx, int winy, int winw, int winh)
 		int height = spell_list_titlebar_bmp->h;
 		int numspells = 0;
 		node_t* node;
-		for (node = spellList.first; node != NULL; node = node->next)   //TODO: Create spellList. -- Done?
+		for (node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next)   //TODO: Create spellList. -- Done?
 		{
 			numspells++;
 		}
@@ -77,7 +77,7 @@ void renderMagicGUI(int winx, int winy, int winw, int winh)
 		pos.y += spell_list_titlebar_bmp->h;
 		int i = 0;
 		//Draw all the spell GUI slots.
-		node = spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
+		node = players[clientnum]->magic.spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
 		for (i = 0; i < spellscroll; ++i)
 		{
 			if (node)
@@ -147,7 +147,7 @@ void updateMagicGUI()
 			int height = spell_list_titlebar_bmp->h;
 			int numspells = 0;
 			node_t* node;
-			for (node = spellList.first; node != NULL; node = node->next)
+			for (node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next)
 			{
 				numspells++;
 			}
@@ -162,7 +162,7 @@ void updateMagicGUI()
 
 			pos.y += spell_list_titlebar_bmp->h;
 			int i = 0;
-			node = spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
+			node = players[clientnum]->magic.spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
 			for (i = 0; i < spellscroll; ++i)
 			{
 				if (node)

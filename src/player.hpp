@@ -12,6 +12,7 @@
 #include "main.hpp"
 #pragma once
 #include "interface/interface.hpp"
+#include "magic/magic.hpp"
 
 
 //Splitscreen support stuff.
@@ -537,6 +538,81 @@ public:
 		}
 		const int getOffsetY() const { return (status_bmp->h * uiscale_chatlog * (hide_statusbar ? 0 : 1)); }
 	} statusBarUI;
+
+	class HUD_t
+	{
+		Player& player;
+	public:
+		Entity* weapon = nullptr;
+		Entity* arm = nullptr;
+		Entity* magicLeftHand = nullptr;
+		Entity* magicRightHand = nullptr;
+
+		bool weaponSwitch = false;
+		bool shieldSwitch = false;
+
+		Sint32 throwGimpTimer = 0; // player cannot throw objects unless zero
+		Sint32 pickaxeGimpTimer = 0; // player cannot swap weapons immediately after using pickaxe 
+									 // due to multiplayer weapon degrade lag... equipping new weapon before degrade
+									 // message hits can degrade the wrong weapon.
+		Sint32 swapWeaponGimpTimer = 0; // player cannot swap weapons unless zero
+		Sint32 bowGimpTimer = 0; // can't draw bow unless zero.
+
+		bool bowFire = false;
+		bool bowIsBeingDrawn = false;
+		Uint32 bowStartDrawingTick = 0;
+		Uint32 bowDrawBaseTicks = 50;
+#ifdef USE_FMOD
+		FMOD_CHANNEL* bowDrawingSoundChannel = NULL;
+		FMOD_BOOL bowDrawingSoundPlaying = 0;
+#elif defined USE_OPENAL
+		OPENAL_SOUND* bowDrawingSoundChannel = NULL;
+		ALboolean bowDrawingSoundPlaying = 0;
+#endif
+		HUD_t(Player& p) : player(p)
+		{};
+		~HUD_t() {};
+
+		void reset()
+		{
+			swapWeaponGimpTimer = 0;
+			bowGimpTimer = 0;
+			throwGimpTimer = 0;
+			pickaxeGimpTimer = 0;
+			bowFire = false;
+			bowIsBeingDrawn = false;
+			bowStartDrawingTick = 0;
+			bowDrawBaseTicks = 50;
+			weaponSwitch = false;
+			shieldSwitch = false;
+		}
+	} hud;
+
+	class Magic_t
+	{
+		Player& player;
+		spell_t* selected_spell = nullptr; //The spell the player has currently selected.
+	public:
+		spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { nullptr, nullptr, nullptr, nullptr, nullptr };
+		int selected_spell_last_appearance = -1;
+		list_t spellList; //All of the player's spells are stored here.
+
+		Magic_t(Player& p) : player(p)
+		{};
+		~Magic_t() {};
+		void clearSelectedSpells()
+		{
+			selected_spell = nullptr;
+			for ( int c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+			{
+				selected_spell_alternate[c] = nullptr;
+			}
+			selected_spell_last_appearance = -1;
+		}
+		void equipSpell(spell_t* spell) { selected_spell = spell; }
+		spell_t* selectedSpell() const { return selected_spell; }
+
+	} magic;
 };
 
 class Player::Hotbar_t {

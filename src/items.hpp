@@ -14,12 +14,6 @@
 #include "main.hpp"
 #include "entity.hpp"
 
-// variables
-extern bool weaponSwitch;
-extern bool shieldSwitch;
-extern Sint32 pickaxeGimpTimer;
-extern Sint32 swapWeaponGimpTimer;
-
 // items
 typedef enum ItemType
 {
@@ -464,7 +458,7 @@ public:
 	};
 	void applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity);
 	void applyTinkeringCreation(Entity* parent, Entity* thrown);
-	bool unableToEquipDueToSwapWeaponTimer() const;
+	bool unableToEquipDueToSwapWeaponTimer(const int player) const;
 	bool tinkeringBotIsMaxHealth() const;
 	bool isTinkeringItemWithThrownLimit() const;
 };

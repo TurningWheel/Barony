@@ -141,7 +141,7 @@ int buttonclick = 0;
 SDL_Surface* hotbar_img = NULL;
 SDL_Surface* hotbar_spell_img = NULL;
 
-list_t damageIndicators;
+list_t damageIndicators[MAXPLAYERS];
 
 bool auto_hotbar_new_items = true;
 bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true, 
@@ -166,7 +166,7 @@ real_t uiscale_inventory = 1.f;
 bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
-EnemyHPDamageBarHandler enemyHPDamageBarHandler;
+EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 FollowerRadialMenu FollowerMenu;
 GenericGUIMenu GenericGUI;
 SDL_Rect interfaceSkillsSheet;
@@ -384,8 +384,11 @@ bool loadInterfaceResources()
 	effect_polymorph_bmp = loadImage("images/system/polymorph.png");
 	effect_hungover_bmp = loadImage("images/system/hungover.png");
 
-	damageIndicators.first = nullptr;
-	damageIndicators.last = nullptr;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		damageIndicators[i].first = nullptr;
+		damageIndicators[i].last = nullptr;
+	}
 
 	return true;
 }
@@ -669,7 +672,10 @@ void freeInterfaceResources()
 	{
 		SDL_FreeSurface(effect_hungover_bmp);
 	}
-	list_FreeAll(&damageIndicators);
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		list_FreeAll(&damageIndicators[i]);
+	}
 }
 
 void defaultImpulses()
@@ -7875,7 +7881,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 	return false;
 }
 
-void EnemyHPDamageBarHandler::displayCurrentHPBar()
+void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 {
 	if ( HPBars.empty() )
 	{
@@ -7936,13 +7942,13 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar()
 
 		// bar
 		SDL_Rect pos;
-		pos.x = xres / 2 - 256;
-		pos.y = yres - 224;
+		pos.x = players[player]->camera_midx() - 256;
+		pos.y = players[player]->camera_y2() - 224;
 		pos.w = 512;
 		pos.h = 38;
 		drawTooltip(&pos);
-		pos.x = xres / 2 - 253;
-		pos.y = yres - 221;
+		pos.x = players[player]->camera_midx() - 253;
+		pos.y = players[player]->camera_y2() - 221;
 		pos.w = 506;
 		pos.h = 32;
 		drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
@@ -7981,8 +7987,8 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar()
 		}
 
 		// name
-		int x = xres / 2 - longestline((*mostRecentEntry).second.enemy_name) * TTF12_WIDTH / 2 + 2;
-		int y = yres - 221 + 16 - TTF12_HEIGHT / 2 + 2;
+		int x = players[player]->camera_midx() - longestline((*mostRecentEntry).second.enemy_name) * TTF12_WIDTH / 2 + 2;
+		int y = players[player]->camera_y2() - 221 + 16 - TTF12_HEIGHT / 2 + 2;
 		ttfPrintText(ttf12, x, y, (*mostRecentEntry).second.enemy_name);
 	}
 }

@@ -9366,8 +9366,6 @@ void handleMainMenu(bool mode)
 			gamePaused = false;
 			multiplayerselect = SINGLE;
 			intro = true; //Fix items auto-adding to the hotbar on game restart.
-			swapWeaponGimpTimer = 0;
-			pickaxeGimpTimer = 0;
 
 			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
 			{
@@ -9394,16 +9392,16 @@ void handleMainMenu(bool mode)
 
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+				players[i]->hud.reset();
 				deinitShapeshiftHotbar(i);
 				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 				{
-					selected_spell_alternate[c] = NULL;
 					players[i]->hotbar->hotbarShapeshiftInit[c] = false;
 				}
 				players[i]->shootmode = true;
+				players[i]->magic.clearSelectedSpells();
+				enemyHPDamageBarHandler[i].HPBars.clear();
 			}
-			selected_spell = NULL;
-			selected_spell_last_appearance = -1;
 			currentlevel = startfloor;
 			secretlevel = false;
 			victory = 0;
@@ -9414,7 +9412,6 @@ void handleMainMenu(bool mode)
 			{
 				conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 			}
-			enemyHPDamageBarHandler.HPBars.clear();
 
 			minimapPings.clear(); // clear minimap pings
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
@@ -9452,8 +9449,10 @@ void handleMainMenu(bool mode)
 
 			// clear follower menu entities.
 			FollowerMenu.closeFollowerMenuGUI(true);
-
-			list_FreeAll(&damageIndicators);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				list_FreeAll(&damageIndicators[i]);
+			}
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
 				kills[c] = 0;
@@ -9567,10 +9566,10 @@ void handleMainMenu(bool mode)
 				// hack to fix these things from breaking everything...
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					hudarm[i] = nullptr;
-					hudweapon[i] = nullptr;
-					magicLeftHand[i] = nullptr;
-					magicRightHand[i] = nullptr;
+					players[i]->hud.arm = nullptr;
+					players[i]->hud.weapon = nullptr;
+					players[i]->hud.magicLeftHand = nullptr;
+					players[i]->hud.magicRightHand = nullptr;
 				}
 
 				for ( node = map.entities->first; node != nullptr; node = node->next )
@@ -9797,10 +9796,10 @@ void handleMainMenu(bool mode)
 				// hack to fix these things from breaking everything...
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					hudarm[i] = nullptr;
-					hudweapon[i] = nullptr;
-					magicLeftHand[i] = nullptr;
-					magicRightHand[i] = nullptr;
+					players[i]->hud.arm = nullptr;
+					players[i]->hud.weapon = nullptr;
+					players[i]->hud.magicLeftHand = nullptr;
+					players[i]->hud.magicRightHand = nullptr;
 				}
 
 				client_disconnected[0] = false;
@@ -10362,17 +10361,16 @@ void handleMainMenu(bool mode)
 
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+				players[i]->hud.reset();
 				deinitShapeshiftHotbar(i);
 				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 				{
-					selected_spell_alternate[c] = NULL;
 					players[i]->hotbar->hotbarShapeshiftInit[c] = false;
 				}
 				players[i]->shootmode = true;
+				players[i]->magic.clearSelectedSpells();
 			}
 			gameModeManager.currentSession.restoreSavedServerFlags();
-			selected_spell = NULL; //So you don't start off with a spell when the game restarts.
-			selected_spell_last_appearance = -1;
 			client_classes[0] = 0;
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
@@ -10427,10 +10425,10 @@ void handleMainMenu(bool mode)
 			// hack to fix these things from breaking everything...
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				hudarm[i] = nullptr;
-				hudweapon[i] = nullptr;
-				magicLeftHand[i] = nullptr;
-				magicRightHand[i] = nullptr;
+				players[i]->hud.arm = nullptr;
+				players[i]->hud.weapon = nullptr;
+				players[i]->hud.magicLeftHand = nullptr;
+				players[i]->hud.magicRightHand = nullptr;
 			}
 
 			// load menu level

@@ -27,8 +27,6 @@
 
 spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 bool overDrawDamageNotify = false;
-Entity* magicLeftHand[MAXPLAYERS] = { nullptr };
-Entity* magicRightHand[MAXPLAYERS] = { nullptr };
 
 #define HANDMAGIC_INIT my->skill[0]
 #define HANDMAGIC_TESTVAR my->skill[1]
@@ -58,11 +56,11 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	{
 		return;
 	}
-	if ( !magicLeftHand[player] )
+	if ( !players[player]->hud.magicLeftHand )
 	{
 		return;
 	}
-	if ( !magicRightHand[player] )
+	if ( !players[player]->hud.magicRightHand )
 	{
 		return;
 	}
@@ -90,9 +88,9 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	{
 		if ( !usingSpellbook )
 		{
-			magicLeftHand[player]->flags[INVISIBLE] = false;
+			players[player]->hud.magicLeftHand->flags[INVISIBLE] = false;
 		}
-		magicRightHand[player]->flags[INVISIBLE] = false;
+		players[player]->hud.magicRightHand->flags[INVISIBLE] = false;
 	}
 
 	animation_manager->lefthand_angle = 0;
@@ -157,13 +155,13 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 		return;
 	}
 	//Make the hands invisible (should probably fall away or something, but whatever. That's another project for another day)
-	if ( magicLeftHand[animation_manager->player] )
+	if ( players[animation_manager->player]->hud.magicLeftHand )
 	{
-		magicLeftHand[animation_manager->player]->flags[INVISIBLE] = true;
+		players[animation_manager->player]->hud.magicLeftHand->flags[INVISIBLE] = true;
 	}
-	if ( magicRightHand[animation_manager->player] )
+	if ( players[animation_manager->player]->hud.magicRightHand )
 	{
-		magicRightHand[animation_manager->player]->flags[INVISIBLE] = true;
+		players[animation_manager->player]->hud.magicRightHand->flags[INVISIBLE] = true;
 	}
 	animation_manager->player = -1;
 }
@@ -202,7 +200,7 @@ void actLeftHandMagic(Entity* my)
 	if (players[HANDMAGIC_PLAYERNUM] == nullptr || players[HANDMAGIC_PLAYERNUM]->entity == nullptr
 		|| (players[HANDMAGIC_PLAYERNUM]->entity && players[HANDMAGIC_PLAYERNUM]->entity->playerCreatedDeathCam != 0) )
 	{
-		magicLeftHand[HANDMAGIC_PLAYERNUM] = nullptr;
+		players[HANDMAGIC_PLAYERNUM]->hud.magicLeftHand = nullptr;
 		spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
 		list_RemoveNode(my->mynode);
 		return;
@@ -376,18 +374,21 @@ void actLeftHandMagic(Entity* my)
 		my->y = 0;
 		my->z += 1;
 	}
+
+
+	Entity*& hudarm = players[HANDMAGIC_PLAYERNUM]->hud.arm;
 	if ( playerRace == SPIDER && hudarm && players[HANDMAGIC_PLAYERNUM]->entity->bodyparts.at(0) )
 	{
-		my->x = hudarm[HANDMAGIC_PLAYERNUM]->x;
-		my->y = -hudarm[HANDMAGIC_PLAYERNUM]->y;
+		my->x = hudarm->x;
+		my->y = -hudarm->y;
 		//my->z = hudArm->z;
-		my->pitch = hudarm[HANDMAGIC_PLAYERNUM]->pitch;
-		my->roll = -hudarm[HANDMAGIC_PLAYERNUM]->roll;
+		my->pitch = hudarm->pitch;
+		my->roll = -hudarm->roll;
 		my->yaw = -players[HANDMAGIC_PLAYERNUM]->entity->bodyparts.at(0)->yaw;
-		my->scalex = hudarm[HANDMAGIC_PLAYERNUM]->scalex;
-		my->scaley = hudarm[HANDMAGIC_PLAYERNUM]->scaley;
-		my->scalez = hudarm[HANDMAGIC_PLAYERNUM]->scalez;
-		my->focalz = hudarm[HANDMAGIC_PLAYERNUM]->focalz;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 	else
 	{
@@ -513,16 +514,16 @@ void actLeftHandMagic(Entity* my)
 
 	if ( playerRace == SPIDER && hudarm && players[HANDMAGIC_PLAYERNUM]->entity->bodyparts.at(0) )
 	{
-		my->x = hudarm[HANDMAGIC_PLAYERNUM]->x;
-		my->y = -hudarm[HANDMAGIC_PLAYERNUM]->y;
-		my->z = hudarm[HANDMAGIC_PLAYERNUM]->z;
-		my->pitch = hudarm[HANDMAGIC_PLAYERNUM]->pitch;
-		my->roll = -hudarm[HANDMAGIC_PLAYERNUM]->roll;
+		my->x = hudarm->x;
+		my->y = -hudarm->y;
+		my->z = hudarm->z;
+		my->pitch = hudarm->pitch;
+		my->roll = -hudarm->roll;
 		my->yaw = -players[HANDMAGIC_PLAYERNUM]->entity->bodyparts.at(0)->yaw;
-		my->scalex = hudarm[HANDMAGIC_PLAYERNUM]->scalex;
-		my->scaley = hudarm[HANDMAGIC_PLAYERNUM]->scaley;
-		my->scalez = hudarm[HANDMAGIC_PLAYERNUM]->scalez;
-		my->focalz = hudarm[HANDMAGIC_PLAYERNUM]->focalz;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 	else
 	{
@@ -559,7 +560,7 @@ void actRightHandMagic(Entity* my)
 	if (players[HANDMAGIC_PLAYERNUM] == nullptr || players[HANDMAGIC_PLAYERNUM]->entity == nullptr
 		|| (players[HANDMAGIC_PLAYERNUM]->entity && players[HANDMAGIC_PLAYERNUM]->entity->playerCreatedDeathCam != 0) )
 	{
-		magicRightHand[HANDMAGIC_PLAYERNUM] = nullptr;
+		players[HANDMAGIC_PLAYERNUM]->hud.magicRightHand = nullptr;
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -728,18 +729,21 @@ void actRightHandMagic(Entity* my)
 		my->y = 0;
 		my->z += 1;
 	}
+
+	Entity*& hudarm = players[HANDMAGIC_PLAYERNUM]->hud.arm;
+
 	if ( playerRace == SPIDER && hudarm && players[HANDMAGIC_PLAYERNUM]->entity->bodyparts.at(0) )
 	{
-		my->x = hudarm[HANDMAGIC_PLAYERNUM]->x;
-		my->y = hudarm[HANDMAGIC_PLAYERNUM]->y;
+		my->x = hudarm->x;
+		my->y = hudarm->y;
 		//my->z = hudArm->z;
-		my->pitch = hudarm[HANDMAGIC_PLAYERNUM]->pitch;
-		my->roll = hudarm[HANDMAGIC_PLAYERNUM]->roll;
+		my->pitch = hudarm->pitch;
+		my->roll = hudarm->roll;
 		my->yaw = players[HANDMAGIC_PLAYERNUM]->entity->bodyparts.at(0)->yaw;
-		my->scalex = hudarm[HANDMAGIC_PLAYERNUM]->scalex;
-		my->scaley = hudarm[HANDMAGIC_PLAYERNUM]->scaley;
-		my->scalez = hudarm[HANDMAGIC_PLAYERNUM]->scalez;
-		my->focalz = hudarm[HANDMAGIC_PLAYERNUM]->focalz;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 	else
 	{
@@ -814,16 +818,16 @@ void actRightHandMagic(Entity* my)
 
 	if ( playerRace == SPIDER && hudarm && players[HANDMAGIC_PLAYERNUM]->entity->bodyparts.at(0) )
 	{
-		my->x = hudarm[HANDMAGIC_PLAYERNUM]->x;
-		my->y = hudarm[HANDMAGIC_PLAYERNUM]->y;
-		my->z = hudarm[HANDMAGIC_PLAYERNUM]->z;
-		my->pitch = hudarm[HANDMAGIC_PLAYERNUM]->pitch;
-		my->roll = hudarm[HANDMAGIC_PLAYERNUM]->roll;
+		my->x = hudarm->x;
+		my->y = hudarm->y;
+		my->z = hudarm->z;
+		my->pitch = hudarm->pitch;
+		my->roll = hudarm->roll;
 		my->yaw = players[HANDMAGIC_PLAYERNUM]->entity->bodyparts.at(0)->yaw;
-		my->scalex = hudarm[HANDMAGIC_PLAYERNUM]->scalex;
-		my->scaley = hudarm[HANDMAGIC_PLAYERNUM]->scaley;
-		my->scalez = hudarm[HANDMAGIC_PLAYERNUM]->scalez;
-		my->focalz = hudarm[HANDMAGIC_PLAYERNUM]->focalz;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 	else
 	{

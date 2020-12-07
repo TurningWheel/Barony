@@ -1372,9 +1372,9 @@ int saveGame(int saveIndex)
 	}
 
 	// write spells
-	Uint32 numspells = list_Size(&spellList);
+	Uint32 numspells = list_Size(&players[clientnum]->magic.spellList);
 	fp->write(&numspells, sizeof(Uint32), 1);
-	for ( node = spellList.first; node != NULL; node = node->next )
+	for ( node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next )
 	{
 		spell_t* spell = (spell_t*)node->element;
 		fp->write(&spell->ID, sizeof(Uint32), 1);
@@ -2090,7 +2090,7 @@ int loadGame(int player, int saveIndex)
 	}
 
 	// read spells
-	list_FreeAll(&spellList);
+	list_FreeAll(&players[player]->magic.spellList);
 	Uint32 numspells = 0;
 	fp->read(&numspells, sizeof(Uint32), 1);
 	for ( c = 0; c < numspells; c++ )
@@ -2099,7 +2099,7 @@ int loadGame(int player, int saveIndex)
 		fp->read(&spellnum, sizeof(Uint32), 1);
 		spell_t* spell = copySpell(getSpellFromID(spellnum));
 
-		node = list_AddNodeLast(&spellList);
+		node = list_AddNodeLast(&players[player]->magic.spellList);
 		node->element = spell;
 		node->deconstructor = &spellDeconstructor;
 		node->size = sizeof(spell);

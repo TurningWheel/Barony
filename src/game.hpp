@@ -54,9 +54,6 @@ extern list_t safePacketsSent;
 extern std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 extern bool receivedclientnum;
 
-extern Entity* hudweapon[MAXPLAYERS];
-extern Entity* hudarm[MAXPLAYERS];
-
 extern Uint32 clientplayer;
 extern Sint32 numplayers;
 extern Sint32 clientnum;

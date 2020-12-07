@@ -419,12 +419,8 @@ typedef struct spell_t
 	//TODO: Some way to make spells work with "need to cast more to get better at casting the spell." A sort of spell learning curve. The first time you cast it, prone to failure. Less the more you cast it.
 } spell_t;
 
-extern list_t spellList; //All of the player's spells are stored here.
-extern spell_t* selected_spell; //The spell the player's currently selected.
-extern spell_t* selected_spell_alternate[5];
 extern list_t channeledSpells[MAXPLAYERS]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
 extern std::vector<spell_t*> allGameSpells; // to iterate over for quickly finding attributes of all spells.
-extern int selected_spell_last_appearance;
 
 //TODO: Add stock spells.
 
@@ -596,16 +592,14 @@ typedef struct spellcastingAnimationManager
 extern spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 
 void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook);
-extern Entity* magicLeftHand[MAXPLAYERS];
-extern Entity* magicRightHand[MAXPLAYERS];
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager);
 void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager);
 
 class Item;
 
-spell_t* getSpellFromItem(Item* item);
+spell_t* getSpellFromItem(const int player, Item* item);
 int getSpellIDFromSpellbook(int spellbookType);
-int canUseShapeshiftSpellInCurrentForm(Item& item);
+int canUseShapeshiftSpellInCurrentForm(const int player, Item& item);
 
 //Spell implementation stuff.
 bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);

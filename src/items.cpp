@@ -92,6 +92,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		int inventory_sizex = Player::Inventory_t::DEFAULT_INVENTORY_SIZEX;
 		int inventory_sizey = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY;
 		Player::Inventory_t* playerInventoryUI = nullptr;
+		Player::Magic_t* playerMagic = nullptr;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( stats[i] && inventory == &stats[i]->inventory )
@@ -99,6 +100,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 				inventory_sizex = players[i]->inventoryUI.getSizeX();
 				inventory_sizey = players[i]->inventoryUI.getSizeY();
 				playerInventoryUI = &players[i]->inventoryUI;
+				playerMagic = &players[i]->magic;
 				break;
 			}
 		}
@@ -112,13 +114,13 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		int x = 0;
 		if ( is_spell )
 		{
-			if ( list_Size(&spellList) >= inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY )
+			if ( playerMagic && list_Size(&playerMagic->spellList) >= inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY )
 			{
 				// original commented out code to investigate -- why a double = sign?
 				//inventory_y = INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex);
 
 				playerInventoryUI->setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1)
-					+ ((list_Size(&spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex));
+					+ ((list_Size(&playerMagic->spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex));
 			}
 			else
 			{
@@ -318,8 +320,12 @@ Item* uidToItem(const Uint32 uid)
 	{
 		return nullptr;
 	}
-	for ( int i = 0; i < MAXPLAYERS && players[i]->isLocalPlayer(); ++i )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
+		if ( !players[i]->isLocalPlayer() )
+		{
+			continue;
+		}
 		for ( node_t* node = stats[i]->inventory.first; node != nullptr; node = node->next )
 		{
 			Item* item = static_cast<Item*>(node->element);
@@ -1009,7 +1015,15 @@ SDL_Surface* itemSprite(Item* const item)
 	}
 	if (itemCategory(item) == SPELL_CAT)
 	{
-		spell_t* spell = getSpellFromItem(item);
+		spell_t* spell = nullptr;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			spell = getSpellFromItem(i, item);
+			if ( spell )
+			{
+				break;
+			}
+		}
 		if (spell)
 		{
 			node_t* node = list_Node(&items[item->type].surfaces, spell->ID);
@@ -1289,8 +1303,12 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 
 		if ( item->node != nullptr )
 		{
-			for ( int i = 0; i < MAXPLAYERS && players[i]->isLocalPlayer(); ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+				if ( !players[i]->isLocalPlayer() )
+				{
+					continue;
+				}
 				if ( item->node->list == &stats[i]->inventory )
 				{
 					oldcount = item->count;
@@ -1603,7 +1621,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 {
 	int oldcount;
 
-	if ( players[player]->isLocalPlayer() && pickaxeGimpTimer > 0 && !intro )
+	if ( players[player]->isLocalPlayer() && players[player]->hud.pickaxeGimpTimer > 0 && !intro )
 	{
 		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}
@@ -1614,7 +1632,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 	}
 
 	if ( players[player]->isLocalPlayer() && multiplayer != SINGLE
-		&& item->unableToEquipDueToSwapWeaponTimer() )
+		&& item->unableToEquipDueToSwapWeaponTimer(player) )
 	{
 		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}
@@ -1707,11 +1725,11 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 		{
 			if ( slot == &stats[player]->weapon )
 			{
-				weaponSwitch = true;
+				players[player]->hud.weaponSwitch = true;
 			}
 			else if ( slot == &stats[player]->shield )
 			{
-				shieldSwitch = true;
+				players[player]->hud.shieldSwitch = true;
 			}
 		}
 		return EQUIP_ITEM_SUCCESS_NEWITEM;
@@ -1937,7 +1955,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 
 	if ( multiplayer == CLIENT && !intro )
 	{
-		if ( item->unableToEquipDueToSwapWeaponTimer() && itemCategory(item) != POTION )
+		if ( item->unableToEquipDueToSwapWeaponTimer(player) && itemCategory(item) != POTION )
 		{
 			// don't send to host as we're not allowed to "use" or equip these items. 
 			// will return false in equipItem.
@@ -2522,7 +2540,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		case SPELL_ITEM:
 		{
-			spell_t* spell = getSpellFromItem(item);
+			spell_t* spell = getSpellFromItem(player, item);
 			if (spell)
 			{
 				equipSpell(spell, player, item);
@@ -4709,13 +4727,13 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 	return 0.0;
 }
 
-bool Item::unableToEquipDueToSwapWeaponTimer() const
+bool Item::unableToEquipDueToSwapWeaponTimer(const int player) const
 {
-	if ( pickaxeGimpTimer > 0 && !intro )
+	if ( players[player]->hud.pickaxeGimpTimer > 0 && !intro )
 	{
 		return true;
 	}
-	if ( swapWeaponGimpTimer > 0 && !intro )
+	if ( players[player]->hud.swapWeaponGimpTimer > 0 && !intro )
 	{
 		return true;
 	}

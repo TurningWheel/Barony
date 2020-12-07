@@ -160,7 +160,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 				int height = spell_list_titlebar_bmp->h;
 				int numspells = 0;
 				node_t* node;
-				for (node = spellList.first; node != NULL; node = node->next)
+				for (node = players[player]->magic.spellList.first; node != NULL; node = node->next)
 				{
 					numspells++;
 				}

@@ -2388,7 +2388,7 @@ void clientHandlePacket()
 		}
 		char enemy_name[128] = "";
 		strcpy(enemy_name, (char*)(&net_packet->data[25]));
-		enemyHPDamageBarHandler.addEnemyToList(enemy_hp, enemy_maxhp, oldhp, enemy_bar_color, uid, enemy_name, lowPriorityTick);
+		enemyHPDamageBarHandler[clientnum].addEnemyToList(enemy_hp, enemy_maxhp, oldhp, enemy_bar_color, uid, enemy_name, lowPriorityTick);
 		return;
 	}
 
@@ -2653,7 +2653,7 @@ void clientHandlePacket()
 								Item* item = (Item*)spellnode->element;
 								if ( item && itemCategory(item) == SPELL_CAT )
 								{
-									spell_t* spell = getSpellFromItem(item);
+									spell_t* spell = getSpellFromItem(clientnum, item);
 									if ( spell && spell->ID == SPELL_CHARM_MONSTER )
 									{
 										foundCharmSpell = true;
@@ -2737,7 +2737,7 @@ void clientHandlePacket()
 	// damage indicator
 	else if (!strncmp((char*)net_packet->data, "DAMI", 4))
 	{
-		newDamageIndicator(SDLNet_Read32(&net_packet->data[4]), SDLNet_Read32(&net_packet->data[8]));
+		newDamageIndicator(clientnum, SDLNet_Read32(&net_packet->data[4]), SDLNet_Read32(&net_packet->data[8]));
 		return;
 	}
 
@@ -3471,10 +3471,10 @@ void clientHandlePacket()
 		// hack to fix these things from breaking everything...
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			hudarm[i] = nullptr;
-			hudweapon[i] = nullptr;
-			magicLeftHand[i] = nullptr;
-			magicRightHand[i] = nullptr;
+			players[i]->hud.arm = nullptr;
+			players[i]->hud.weapon = nullptr;
+			players[i]->hud.magicLeftHand = nullptr;
+			players[i]->hud.magicRightHand = nullptr;
 		}
 
 		// stop all sounds

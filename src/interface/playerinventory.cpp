@@ -499,7 +499,7 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 	//TODO: Do proper refactoring.
 	if ( selectedItem && itemCategory(selectedItem) == SPELL_CAT && selectedItem->appearance >= 1000 )
 	{
-		if ( canUseShapeshiftSpellInCurrentForm(*selectedItem) == 0 )
+		if ( canUseShapeshiftSpellInCurrentForm(player, *selectedItem) == 0 )
 		{
 			selectedItem = nullptr;
 			return;
@@ -1037,9 +1037,9 @@ void updatePlayerInventory(const int player)
 		}
 		else
 		{
-			spell_t* spell = getSpellFromItem(item);
-			if ( selected_spell == spell 
-				&& (selected_spell_last_appearance == item->appearance || selected_spell_last_appearance == -1) )
+			spell_t* spell = getSpellFromItem(player, item);
+			if ( players[player]->magic.selectedSpell() == spell 
+				&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1) )
 			{
 				pos.x = x + item->x * inventorySlotSize + 2;
 				pos.y = y + item->y * inventorySlotSize + inventorySlotSize - 18;
@@ -1178,7 +1178,7 @@ void updatePlayerInventory(const int player)
 						src.y = mousey + 8;
 						if (itemCategory(item) == SPELL_CAT)
 						{
-							spell_t* spell = getSpellFromItem(item);
+							spell_t* spell = getSpellFromItem(player, item);
 							drawSpellTooltip(player, spell, item, nullptr);
 						}
 						else
@@ -1519,7 +1519,7 @@ void updatePlayerInventory(const int player)
 					if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 &&
 						players[player] && players[player]->entity && players[player]->entity->effectShapeshift )
 					{
-						if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 )
+						if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 )
 						{
 							numkey_quick_add = false;
 						}
@@ -2140,7 +2140,7 @@ inline void executeItemMenuOption0(const int player, Item* item, bool is_potion_
 		{
 			if ( itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
 			{
-				if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 )
+				if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 )
 				{
 					disableItemUsage = true;
 				}
@@ -3097,7 +3097,7 @@ bool playerLearnedSpellbook(int player, Item* current_item)
 			// special shaman racial spells, don't count this as being learnt
 			continue;
 		}
-		spell_t *spell = getSpellFromItem(item); //Do not free or delete this.
+		spell_t *spell = getSpellFromItem(player, item); //Do not free or delete this.
 		if ( !spell )
 		{
 			continue;

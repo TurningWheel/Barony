@@ -21,18 +21,6 @@
 #include "player.hpp"
 #include "scores.hpp"
 
-Entity* hudweapon[MAXPLAYERS] = { nullptr };
-Entity* hudarm[MAXPLAYERS] = { nullptr };
-bool weaponSwitch = false;
-bool shieldSwitch = false;
-
-Sint32 throwGimpTimer = 0; // player cannot throw objects unless zero
-Sint32 pickaxeGimpTimer = 0; // player cannot swap weapons immediately after using pickaxe 
-							 // due to multiplayer weapon degrade lag... equipping new weapon before degrade
-							// message hits can degrade the wrong weapon.
-Sint32 swapWeaponGimpTimer = 0; // player cannot swap weapons unless zero
-Sint32 bowGimpTimer = 0; // can't draw bow unless zero.
-
 /*-------------------------------------------------------------------------------
 
 	act*
@@ -48,26 +36,26 @@ Sint32 bowGimpTimer = 0; // can't draw bow unless zero.
 
 void actHudArm(Entity* my)
 {
-	hudarm[HUDARM_PLAYERNUM] = my;
-	Entity* parent = hudweapon[HUDARM_PLAYERNUM];
+	players[HUDARM_PLAYERNUM]->hud.arm = my;
+	Entity* parent = players[HUDARM_PLAYERNUM]->hud.weapon;
 
 	if (players[HUDARM_PLAYERNUM] == nullptr || players[HUDARM_PLAYERNUM]->entity == nullptr)
 	{
-		hudarm[HUDARM_PLAYERNUM] = nullptr;
+		players[HUDARM_PLAYERNUM]->hud.arm = nullptr;
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
 	if (stats[HUDARM_PLAYERNUM]->HP <= 0)
 	{
-		hudarm[HUDARM_PLAYERNUM] = nullptr;
+		players[HUDARM_PLAYERNUM]->hud.arm = nullptr;
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
 	if (parent == nullptr)
 	{
-		hudarm[HUDARM_PLAYERNUM] = nullptr;
+		players[HUDARM_PLAYERNUM]->hud.arm = nullptr;
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -291,18 +279,6 @@ void actHudArm(Entity* my)
 	}
 }
 
-bool bowFire = false;
-bool bowIsBeingDrawn = false;
-Uint32 bowStartDrawingTick = 0;
-Uint32 bowDrawBaseTicks = 50;
-#ifdef USE_FMOD
-	FMOD_CHANNEL* bowDrawingSoundChannel = NULL;
-	FMOD_BOOL bowDrawingSoundPlaying = 0;
-#elif defined USE_OPENAL
-	OPENAL_SOUND* bowDrawingSoundChannel = NULL;
-	ALboolean bowDrawingSoundPlaying = 0;
-#endif
-
 #define HUDWEAPON_CHOP my->skill[0]
 #define HUDWEAPON_INIT my->skill[1]
 #define HUDWEAPON_CHARGE my->skill[3]
@@ -352,13 +328,32 @@ void actHudWeapon(Entity* my)
 	double result = 0;
 	ItemType type;
 	bool wearingring = false;
+
+	Player::HUD_t& playerHud = players[HUDWEAPON_PLAYERNUM]->hud;
+
 	Entity* entity;
-	Entity* parent = hudarm[HUDWEAPON_PLAYERNUM];
+	Entity* parent = playerHud.arm;
 
 	auto& camera_shakex = cameravars[HUDWEAPON_PLAYERNUM].shakex;
 	auto& camera_shakey = cameravars[HUDWEAPON_PLAYERNUM].shakey;
 	auto& camera_shakex2 = cameravars[HUDWEAPON_PLAYERNUM].shakex2;
 	auto& camera_shakey2 = cameravars[HUDWEAPON_PLAYERNUM].shakey2;
+
+	Sint32& throwGimpTimer = playerHud.throwGimpTimer; // player cannot throw objects unless zero
+	Sint32& pickaxeGimpTimer = playerHud.pickaxeGimpTimer;
+	Sint32& swapWeaponGimpTimer = playerHud.swapWeaponGimpTimer; // player cannot swap weapons unless zero
+	Sint32& bowGimpTimer = playerHud.bowGimpTimer;
+	bool& bowFire = playerHud.bowFire;
+	bool& bowIsBeingDrawn = playerHud.bowIsBeingDrawn;
+	Uint32& bowStartDrawingTick = playerHud.bowStartDrawingTick;
+	const Uint32& bowDrawBaseTicks = playerHud.bowDrawBaseTicks;
+#ifdef USE_FMOD
+	FMOD_CHANNEL*& bowDrawingSoundChannel = playerHud.bowDrawingSoundChannel;
+	FMOD_BOOL& bowDrawingSoundPlaying = playerHud.bowDrawingSoundPlaying;
+#elif defined USE_OPENAL
+	OPENAL_SOUND*& bowDrawingSoundChannel = playerHud.bowDrawingSoundChannel;
+	ALboolean& bowDrawingSoundPlaying = playerHud.bowDrawingSoundPlaying;
+#endif
 
 	// isn't active during intro/menu sequence
 	if ( intro == true )
@@ -380,13 +375,13 @@ void actHudWeapon(Entity* my)
 	if ( !HUDWEAPON_INIT )
 	{
 		HUDWEAPON_INIT = 1;
-		hudweapon[HUDWEAPON_PLAYERNUM] = my;
+		playerHud.weapon = my;
 		entity = newEntity(109, 1, map.entities, nullptr); // malearmright.vox
 		entity->focalz = -1.5;
 		entity->parent = my->getUID();
 		my->parent = entity->getUID(); // just an easy way to refer to eachother, doesn't mean much
-		hudarm[HUDWEAPON_PLAYERNUM] = entity;
-		parent = hudarm[HUDWEAPON_PLAYERNUM];
+		playerHud.arm = entity;
+		parent = playerHud.arm;
 		entity->behavior = &actHudArm;
 		entity->skill[11] = HUDWEAPON_PLAYERNUM;
 		entity->flags[OVERDRAW] = true;
@@ -397,7 +392,7 @@ void actHudWeapon(Entity* my)
 	if ( players[HUDWEAPON_PLAYERNUM] == nullptr || players[HUDWEAPON_PLAYERNUM]->entity == nullptr
 		|| (players[HUDWEAPON_PLAYERNUM]->entity && players[HUDWEAPON_PLAYERNUM]->entity->playerCreatedDeathCam != 0) )
 	{
-		hudweapon[HUDWEAPON_PLAYERNUM] = nullptr; //PLAYER DED. NULLIFY THIS.
+		playerHud.weapon = nullptr; //PLAYER DED. NULLIFY THIS.
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -716,9 +711,9 @@ void actHudWeapon(Entity* my)
 	bool castStrikeAnimation = (players[HUDWEAPON_PLAYERNUM]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1);
 
 	// weapon switch animation
-	if ( weaponSwitch )
+	if ( players[HUDWEAPON_PLAYERNUM]->hud.weaponSwitch )
 	{
-		weaponSwitch = false;
+		players[HUDWEAPON_PLAYERNUM]->hud.weaponSwitch = false;
 		if ( !hideWeapon )
 		{
 			if ( stats[HUDWEAPON_PLAYERNUM]->weapon && (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
@@ -3036,7 +3031,7 @@ void actHudShield(Entity* my)
 	}
 
 	// this entity only exists so long as the player exists
-	if (players[HUDSHIELD_PLAYERNUM] == nullptr || players[HUDSHIELD_PLAYERNUM]->entity == nullptr || !hudweapon)
+	if (players[HUDSHIELD_PLAYERNUM] == nullptr || players[HUDSHIELD_PLAYERNUM]->entity == nullptr || !players[HUDSHIELD_PLAYERNUM]->hud.weapon)
 	{
 		list_RemoveNode(my->mynode);
 		return;
@@ -3206,7 +3201,7 @@ void actHudShield(Entity* my)
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 			&& (!spellbook || (spellbook && hideShield)) )
 		{
-			if ( stats[HUDSHIELD_PLAYERNUM]->shield && (hudweapon[HUDSHIELD_PLAYERNUM]->skill[0] % 3 == 0) )
+			if ( stats[HUDSHIELD_PLAYERNUM]->shield && (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
 			{
 				defending = true;
 			}
@@ -3274,8 +3269,10 @@ void actHudShield(Entity* my)
 	bool doCrossbowReloadAnimation = false;
 	bool doBowReload = false;
 
+	Entity*& hudweapon = players[HUDSHIELD_PLAYERNUM]->hud.weapon;
+
 	// shield switching animation
-	if ( shieldSwitch )
+	if ( players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch )
 	{
 		if ( hudweapon )
 		{
@@ -3294,8 +3291,8 @@ void actHudShield(Entity* my)
 			{
 				if ( rangedWeaponUseQuiverOnAttack(stats[HUDSHIELD_PLAYERNUM]) )
 				{
-					hudweapon[HUDSHIELD_PLAYERNUM]->skill[10] = 1; // HUDWEAPON_BOW_FORCE_RELOAD
-					hudweapon[HUDSHIELD_PLAYERNUM]->skill[7] = RANGED_ANIM_IDLE;
+					hudweapon->skill[10] = 1; // HUDWEAPON_BOW_FORCE_RELOAD
+					hudweapon->skill[7] = RANGED_ANIM_IDLE;
 					doBowReload = true;
 				}
 			}
@@ -3303,7 +3300,7 @@ void actHudShield(Entity* my)
 
 		if ( !spellbook )
 		{
-			shieldSwitch = false;
+			players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch = false;
 		}
 		if ( !(defending || (spellbook && cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook) || doBowReload) )
 		{
@@ -3315,10 +3312,10 @@ void actHudShield(Entity* my)
 
 	bool crossbowReloadAnimation = true;
 	if ( hudweapon && crossbow 
-		&& hudweapon[HUDSHIELD_PLAYERNUM]->skill[8] == CROSSBOW_ANIM_SWAPPED_WEAPON && rangedWeaponUseQuiverOnAttack(stats[HUDSHIELD_PLAYERNUM]) )
+		&& hudweapon->skill[8] == CROSSBOW_ANIM_SWAPPED_WEAPON && rangedWeaponUseQuiverOnAttack(stats[HUDSHIELD_PLAYERNUM]) )
 	{
 		// CROSSBOW_ANIM_SWAPPED_WEAPON requires the weapon to not be in the swapping animation to finish.
-		if ( fabs(hudweapon[HUDSHIELD_PLAYERNUM]->fskill[5]) < (3 * PI / 8) )
+		if ( fabs(hudweapon->fskill[5]) < (3 * PI / 8) )
 		{
 			doCrossbowReloadAnimation = true;
 		}
@@ -3397,11 +3394,11 @@ void actHudShield(Entity* my)
 		}
 	}
 	else if ( !hideShield && quiver && hudweapon && rangedWeaponUseQuiverOnAttack(stats[HUDSHIELD_PLAYERNUM])
-		&& hudweapon[HUDSHIELD_PLAYERNUM]->skill[7] != RANGED_ANIM_IDLE
-		&& (!crossbow || (crossbow && crossbowReloadAnimation && hudweapon[HUDSHIELD_PLAYERNUM]->skill[8] != CROSSBOW_ANIM_RELOAD_START)) )
+		&& hudweapon->skill[7] != RANGED_ANIM_IDLE
+		&& (!crossbow || (crossbow && crossbowReloadAnimation && hudweapon->skill[8] != CROSSBOW_ANIM_RELOAD_START)) )
 	{
 		// skill[7] == 1 is hudweapon bow drawing, skill[8] is the crossbow reload animation state.
-		if ( hudweapon[HUDSHIELD_PLAYERNUM]->skill[7] == RANGED_ANIM_FIRED && (!crossbow || (crossbow && hudweapon[HUDSHIELD_PLAYERNUM]->skill[8] == CROSSBOW_ANIM_SHOOT)) )
+		if ( hudweapon->skill[7] == RANGED_ANIM_FIRED && (!crossbow || (crossbow && hudweapon->skill[8] == CROSSBOW_ANIM_SHOOT)) )
 		{
 			my->flags[INVISIBLE] = true;
 			HUDSHIELD_MOVEY = 0;
@@ -3410,7 +3407,7 @@ void actHudShield(Entity* my)
 			HUDSHIELD_MOVEZ = 0;
 			HUDSHIELD_MOVEX = 0;
 
-			if ( crossbow && hudweapon[HUDSHIELD_PLAYERNUM]->skill[8] == CROSSBOW_ANIM_SHOOT )
+			if ( crossbow && hudweapon->skill[8] == CROSSBOW_ANIM_SHOOT )
 			{
 				// after shooting, lower the Z to create illusion of drawing the next arrow out of your hud.
 				HUDSHIELD_MOVEZ = 2;
@@ -3437,11 +3434,11 @@ void actHudShield(Entity* my)
 
 			if ( hudweapon && stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW )
 			{
-				if ( hudweapon[HUDSHIELD_PLAYERNUM]->sprite == items[HEAVY_CROSSBOW].fpindex - 1 )
+				if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex - 1 )
 				{
 					targetX += 1;
 				}
-				else if ( hudweapon[HUDSHIELD_PLAYERNUM]->sprite == items[HEAVY_CROSSBOW].fpindex )
+				else if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex )
 				{
 					targetX += -1.5;
 					if ( HUDSHIELD_MOVEX < targetX )
@@ -3470,14 +3467,14 @@ void actHudShield(Entity* my)
 
 			if ( doCrossbowReloadAnimation )
 			{
-				hudweapon[HUDSHIELD_PLAYERNUM]->skill[8] = CROSSBOW_ANIM_RELOAD_START;
-				hudweapon[HUDSHIELD_PLAYERNUM]->skill[0] = CROSSBOW_CHOP_RELOAD_START;
-				hudweapon[HUDSHIELD_PLAYERNUM]->fskill[0] = -1;
-				throwGimpTimer = std::max(throwGimpTimer, 20);
+				hudweapon->skill[8] = CROSSBOW_ANIM_RELOAD_START;
+				hudweapon->skill[0] = CROSSBOW_CHOP_RELOAD_START;
+				hudweapon->fskill[0] = -1;
+				players[HUDSHIELD_PLAYERNUM]->hud.throwGimpTimer = std::max(players[HUDSHIELD_PLAYERNUM]->hud.throwGimpTimer, 20);
 
-				if ( fabs(hudweapon[HUDSHIELD_PLAYERNUM]->fskill[5]) < 0.01 )
+				if ( fabs(hudweapon->fskill[5]) < 0.01 )
 				{
-					throwGimpTimer = std::max(throwGimpTimer, 20);
+					players[HUDSHIELD_PLAYERNUM]->hud.throwGimpTimer = std::max(players[HUDSHIELD_PLAYERNUM]->hud.throwGimpTimer, 20);
 					my->flags[INVISIBLE] = true;
 					HUDSHIELD_MOVEY = 0;
 					HUDSHIELD_PITCH = 0;
@@ -3633,14 +3630,14 @@ void actHudShield(Entity* my)
 	}
 	else if ( quiver && hudweapon && crossbow )
 	{
-		if ( hudweapon[HUDSHIELD_PLAYERNUM]->skill[8] != CROSSBOW_ANIM_SHOOT
-			&& hudweapon[HUDSHIELD_PLAYERNUM]->skill[8] != CROSSBOW_ANIM_RELOAD_START
-			&& hudweapon[HUDSHIELD_PLAYERNUM]->skill[8] != CROSSBOW_ANIM_SWAPPED_WEAPON )
+		if ( hudweapon->skill[8] != CROSSBOW_ANIM_SHOOT
+			&& hudweapon->skill[8] != CROSSBOW_ANIM_RELOAD_START
+			&& hudweapon->skill[8] != CROSSBOW_ANIM_SWAPPED_WEAPON )
 		{
 			// only bob the arrow if idle animation or DRAW_END animation
-			my->x += hudweapon[HUDSHIELD_PLAYERNUM]->fskill[0]; // HUDWEAPON_MOVEX
-			my->y += hudweapon[HUDSHIELD_PLAYERNUM]->fskill[1]; // HUDWEAPON_MOVEY
-			my->z += hudweapon[HUDSHIELD_PLAYERNUM]->fskill[2]; // HUDWEAPON_MOVEZ
+			my->x += hudweapon->fskill[0]; // HUDWEAPON_MOVEX
+			my->y += hudweapon->fskill[1]; // HUDWEAPON_MOVEY
+			my->z += hudweapon->fskill[2]; // HUDWEAPON_MOVEZ
 		}
 		my->focalx = 0;
 		my->focaly = 0;
@@ -3659,19 +3656,20 @@ void actHudShield(Entity* my)
 		my->focalz -= 0.5;
 	}
 
-	if ( playerRace == SPIDER && hudarm[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(0) )
+	Entity*& hudarm = players[HUDSHIELD_PLAYERNUM]->hud.arm;
+	if ( playerRace == SPIDER && hudarm && players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(0) )
 	{
 		my->sprite = 854;
-		my->x = hudarm[HUDSHIELD_PLAYERNUM]->x;
-		my->y = -hudarm[HUDSHIELD_PLAYERNUM]->y;
-		my->z = hudarm[HUDSHIELD_PLAYERNUM]->z;
-		my->pitch = hudarm[HUDSHIELD_PLAYERNUM]->pitch - camera_shakey2 / 200.f;
-		my->roll = -hudarm[HUDSHIELD_PLAYERNUM]->roll;
+		my->x = hudarm->x;
+		my->y = -hudarm->y;
+		my->z = hudarm->z;
+		my->pitch = hudarm->pitch - camera_shakey2 / 200.f;
+		my->roll = -hudarm->roll;
 		my->yaw = -players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(0)->yaw + players[HUDSHIELD_PLAYERNUM]->entity->fskill[10] - camera_shakex2;
-		my->scalex = hudarm[HUDSHIELD_PLAYERNUM]->scalex;
-		my->scaley = hudarm[HUDSHIELD_PLAYERNUM]->scaley;
-		my->scalez = hudarm[HUDSHIELD_PLAYERNUM]->scalez;
-		my->focalz = hudarm[HUDSHIELD_PLAYERNUM]->focalz;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 
 	// dirty hack because we altered the camera height in actPlayer(). adjusts HUD to match new height.
@@ -3691,7 +3689,12 @@ void actHudShield(Entity* my)
 		// don't process flames as these don't hold torches.
 		return;
 	}
-	if (stats[HUDSHIELD_PLAYERNUM]->shield && !swimming && players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 0 && !cast_animation[HUDSHIELD_PLAYERNUM].active && !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook && !shieldSwitch)
+	if (stats[HUDSHIELD_PLAYERNUM]->shield 
+		&& !swimming 
+		&& players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 0 
+		&& !cast_animation[HUDSHIELD_PLAYERNUM].active 
+		&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
+		&& !players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch)
 	{
 		if (itemCategory(stats[HUDSHIELD_PLAYERNUM]->shield) == TOOL)
 		{
@@ -3757,7 +3760,7 @@ void actHudAdditional(Entity* my)
 	}
 
 	// this entity only exists so long as the player exists
-	if ( players[HUDSHIELD_PLAYERNUM] == nullptr || players[HUDSHIELD_PLAYERNUM]->entity == nullptr || !hudweapon )
+	if ( players[HUDSHIELD_PLAYERNUM] == nullptr || players[HUDSHIELD_PLAYERNUM]->entity == nullptr || !players[HUDSHIELD_PLAYERNUM]->hud.weapon )
 	{
 		list_RemoveNode(my->mynode);
 		return;
@@ -3837,11 +3840,11 @@ void actHudAdditional(Entity* my)
 	}*/
 
 	// shield switching animation
-	if ( shieldSwitch )
+	if ( players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch )
 	{
 		if ( spellbook )
 		{
-			shieldSwitch = false;
+			players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch = false;
 		}
 		if ( !(defending || (spellbook && cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook)) )
 		{
@@ -4000,6 +4003,8 @@ void actHudArrowModel(Entity* my)
 		}
 	}
 
+	Entity*& hudweapon = players[HUDSHIELD_PLAYERNUM]->hud.weapon;
+
 	// this entity only exists so long as the player exists
 	if ( players[HUDSHIELD_PLAYERNUM] == nullptr || players[HUDSHIELD_PLAYERNUM]->entity == nullptr || !hudweapon )
 	{
@@ -4015,7 +4020,7 @@ void actHudArrowModel(Entity* my)
 
 	if ( crossbow )
 	{
-		if ( hudweapon[HUDSHIELD_PLAYERNUM]->flags[INVISIBLE] || hudweapon[HUDSHIELD_PLAYERNUM]->skill[6] != 0 ) // skill[6] is hideWeapon
+		if ( hudweapon->flags[INVISIBLE] || hudweapon->skill[6] != 0 ) // skill[6] is hideWeapon
 		{
 			my->flags[INVISIBLE] = true;
 			return;
@@ -4027,7 +4032,7 @@ void actHudArrowModel(Entity* my)
 		}
 		if ( stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW )
 		{
-			if ( hudweapon[HUDSHIELD_PLAYERNUM]->sprite != items[CROSSBOW].fpindex )
+			if ( hudweapon->sprite != items[CROSSBOW].fpindex )
 			{
 				my->flags[INVISIBLE] = true;
 				return;
@@ -4035,16 +4040,16 @@ void actHudArrowModel(Entity* my)
 		}
 		if ( stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW )
 		{
-			if ( hudweapon[HUDSHIELD_PLAYERNUM]->sprite == items[HEAVY_CROSSBOW].fpindex + 1 )
+			if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex + 1 )
 			{
 				my->flags[INVISIBLE] = true;
 				return;
 			}
 		}
 	}
-	else if ( hudweapon[HUDSHIELD_PLAYERNUM]->flags[INVISIBLE]
-		|| hudweapon[HUDSHIELD_PLAYERNUM]->skill[6] != 0
-		|| hudweapon[HUDSHIELD_PLAYERNUM]->skill[7] != RANGED_ANIM_FIRED ) // skill[6] is hiding weapon, skill[7] is shooting something
+	else if ( hudweapon->flags[INVISIBLE]
+		|| hudweapon->skill[6] != 0
+		|| hudweapon->skill[7] != RANGED_ANIM_FIRED ) // skill[6] is hiding weapon, skill[7] is shooting something
 	{
 		my->flags[INVISIBLE] = true;
 		return;
@@ -4092,44 +4097,44 @@ void actHudArrowModel(Entity* my)
 	}
 
 	// set entity position
-	my->x = hudweapon[HUDSHIELD_PLAYERNUM]->x;
-	my->y = hudweapon[HUDSHIELD_PLAYERNUM]->y;
-	my->z = hudweapon[HUDSHIELD_PLAYERNUM]->z;
+	my->x = hudweapon->x;
+	my->y = hudweapon->y;
+	my->z = hudweapon->z;
 
-	my->yaw = hudweapon[HUDSHIELD_PLAYERNUM]->yaw;
-	my->pitch = hudweapon[HUDSHIELD_PLAYERNUM]->pitch;
-	my->roll = hudweapon[HUDSHIELD_PLAYERNUM]->roll;
+	my->yaw = hudweapon->yaw;
+	my->pitch = hudweapon->pitch;
+	my->roll = hudweapon->roll;
 
-	my->focalx = hudweapon[HUDSHIELD_PLAYERNUM]->focalx - 0.125;
-	if ( hudweapon[HUDSHIELD_PLAYERNUM]->sprite == items[COMPOUND_BOW].fpindex + 1 )
+	my->focalx = hudweapon->focalx - 0.125;
+	if ( hudweapon->sprite == items[COMPOUND_BOW].fpindex + 1 )
 	{
 		my->focalx += 0.125; // shorter bowstring on compound bow, push arrow forward.
 	}
-	my->focaly = hudweapon[HUDSHIELD_PLAYERNUM]->focaly - 0.25;
-	my->focalz = hudweapon[HUDSHIELD_PLAYERNUM]->focalz - 0.25;
+	my->focaly = hudweapon->focaly - 0.25;
+	my->focalz = hudweapon->focalz - 0.25;
 
 	if ( crossbow )
 	{
-		if ( hudweapon[HUDSHIELD_PLAYERNUM]->sprite == items[CROSSBOW].fpindex )
+		if ( hudweapon->sprite == items[CROSSBOW].fpindex )
 		{
 			my->focalx += 3.5;
 			my->focaly += 0.25;
 			my->focalz += -0.25;
 		}
-		else if ( hudweapon[HUDSHIELD_PLAYERNUM]->sprite == items[HEAVY_CROSSBOW].fpindex || hudweapon[HUDSHIELD_PLAYERNUM]->sprite == items[HEAVY_CROSSBOW].fpindex - 1 )
+		else if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex || hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex - 1 )
 		{
 			my->focalx += 4.5;
 			my->focaly += 0.25;
 			my->focalz += -0.25;
 
-			if ( hudweapon[HUDSHIELD_PLAYERNUM]->sprite == items[HEAVY_CROSSBOW].fpindex )
+			if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex )
 			{
 				my->focalx -= 2;
 			}
 		}
 	}
 
-	my->scalex = hudweapon[HUDSHIELD_PLAYERNUM]->scalex;
-	my->scaley = hudweapon[HUDSHIELD_PLAYERNUM]->scaley;
-	my->scalez = hudweapon[HUDSHIELD_PLAYERNUM]->scalez;
+	my->scalex = hudweapon->scalex;
+	my->scaley = hudweapon->scaley;
+	my->scalez = hudweapon->scalez;
 }

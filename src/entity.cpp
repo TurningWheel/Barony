@@ -6132,7 +6132,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( (rand() % 3 == 0 && degradeWeapon && !(svFlags & SV_FLAG_HARDCORE)) || forceDegrade
 						|| ((svFlags & SV_FLAG_HARDCORE) && rand() % 6 == 0 && degradeWeapon) )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( myStats->weapon->count > 1 )
 							{
@@ -6152,17 +6152,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 								steamAchievementClient(player, "BARONY_ACH_ONE_MANS_TRASH");
 							}
 							messagePlayer(player, language[660]);
-							if ( player == clientnum && client_classes[player] == CLASS_MESMER )
+							if ( player >= 0 && players[player]->isLocalPlayer() && client_classes[player] == CLASS_MESMER )
 							{
 								if ( myStats->weapon->type == MAGICSTAFF_CHARM )
 								{
 									bool foundCharmSpell = false;
-									for ( node_t* spellnode = stats[clientnum]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
+									for ( node_t* spellnode = stats[player]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
 									{
 										Item* item = (Item*)spellnode->element;
 										if ( item && itemCategory(item) == SPELL_CAT )
 										{
-											spell_t* spell = getSpellFromItem(item);
+											spell_t* spell = getSpellFromItem(player, item);
 											if ( spell && spell->ID == SPELL_CHARM_MONSTER )
 											{
 												foundCharmSpell = true;

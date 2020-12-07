@@ -47,9 +47,9 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 		}
 	}
 
-	if ( player >= 0 && hudweapon[player] )
+	if ( player >= 0 && players[player]->hud.weapon )
 	{
-		if ( hudweapon[player]->skill[0] != 0 )   //HUDWEAPON_CHOP.
+		if ( players[player]->hud.weapon->skill[0] != 0 )   //HUDWEAPON_CHOP.
 		{
 			return; //Can't cast spells while attacking.
 		}

@@ -4624,11 +4624,11 @@ void item_Spellbook(Item*& item, int player)
 	if ( item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]) )
 	{
 		messagePlayer(player, language[971]);
-		if ( list_Size(&spellList) > 0 && stats[player]->type != AUTOMATON )
+		if ( list_Size(&players[player]->magic.spellList) > 0 && stats[player]->type != AUTOMATON )
 		{
 			// randomly delete a spell
-			int spellToDelete = rand() % list_Size(&spellList);
-			node = list_Node(&spellList, spellToDelete);
+			int spellToDelete = rand() % list_Size(&players[player]->magic.spellList);
+			node = list_Node(&players[player]->magic.spellList, spellToDelete);
 			spell_t* spell = (spell_t*)node->element;
 			int spellID = spell->ID;
 			bool deleted = false;
@@ -4640,16 +4640,16 @@ void item_Spellbook(Item*& item, int player)
 			{
 				// don't forget your racial spells otherwise borked.
 				// special roll checking.
-				if ( list_Size(&spellList) <= CLASS_SHAMAN_NUM_STARTING_SPELLS )
+				if ( list_Size(&players[player]->magic.spellList) <= CLASS_SHAMAN_NUM_STARTING_SPELLS )
 				{
 					// no spells to delete. return early.
 					messagePlayer(player, language[973]);
 					consumeItem(item, player);
 					return;
 				}
-				spellToDelete = rand() % (list_Size(&spellList) - CLASS_SHAMAN_NUM_STARTING_SPELLS);
+				spellToDelete = rand() % (list_Size(&players[player]->magic.spellList) - CLASS_SHAMAN_NUM_STARTING_SPELLS);
 				spellToDelete += CLASS_SHAMAN_NUM_STARTING_SPELLS; // e.g 16 spells is 0 + 15, 15th index.
-				node = list_Node(&spellList, spellToDelete);
+				node = list_Node(&players[player]->magic.spellList, spellToDelete);
 				spell = (spell_t*)node->element;
 				spellID = spell->ID;
 			}
@@ -4722,15 +4722,15 @@ void item_Spellbook(Item*& item, int player)
 			else if ( deleted )
 			{
 				messagePlayer(player, language[972]);
-				if ( spell == selected_spell )
+				if ( spell == players[player]->magic.selectedSpell() )
 				{
-					selected_spell = nullptr;
+					players[player]->magic.equipSpell(nullptr);
 				}
 				for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
 				{
-					if ( selected_spell_alternate[i] == spell )
+					if ( players[player]->magic.selected_spell_alternate[i] == spell )
 					{
-						selected_spell_alternate[i] = nullptr;
+						players[player]->magic.selected_spell_alternate[i] = nullptr;
 					}
 				}
 				list_RemoveNode(node);
@@ -4939,7 +4939,7 @@ void item_Spellbook(Item*& item, int player)
 			{
 				steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
 			}
-			if ( list_Size(&spellList) >= 20 )
+			if ( list_Size(&players[player]->magic.spellList) >= 20 )
 			{
 				steamAchievement("BARONY_ACH_MAGIC_MASTERY");
 			}

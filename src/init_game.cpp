@@ -808,7 +808,11 @@ void deinitGame()
 			list_FreeAll(&channeledSpells[c]);
 		}
 	}
-	list_FreeAll(&spellList);
+
+	for ( c = 0; c < MAXPLAYERS; c++ )
+	{
+		list_FreeAll(&players[c]->magic.spellList);
+	}
 	list_FreeAll(&command_history);
 
 	list_FreeAll(&safePacketsSent);

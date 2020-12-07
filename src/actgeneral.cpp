@@ -2372,14 +2372,13 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 
 void TextSourceScript::playerClearInventory(bool clearStats)
 {
+	players[clientnum]->hud.reset();
 	deinitShapeshiftHotbar(clientnum);
 	for ( int c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 	{
-		selected_spell_alternate[c] = NULL;
 		players[clientnum]->hotbar->hotbarShapeshiftInit[c] = false;
 	}
-	selected_spell = NULL; //So you don't start off with a spell when the game restarts.
-	selected_spell_last_appearance = -1;
+	players[clientnum]->magic.clearSelectedSpells(); //So you don't start off with a spell when the game restarts.
 	spellcastingAnimationManager_deactivate(&cast_animation[clientnum]);
 	stats[clientnum]->freePlayerEquipment();
 	list_FreeAll(&stats[clientnum]->inventory);

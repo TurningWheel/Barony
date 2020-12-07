@@ -1129,7 +1129,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) ) // TODO: hotbar code splitscreen
+	if ( players[PLAYER_NUM]->isLocalPlayer() ) // TODO: hotbar code splitscreen
 	{
 		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
 		{
@@ -1255,7 +1255,7 @@ void actPlayer(Entity* my)
 			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actLeftHandMagic;
 			entity->focalz = -4;
-			magicLeftHand[PLAYER_NUM] = entity;
+			players[PLAYER_NUM]->hud.magicLeftHand = entity;
 			//Right hand.
 			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
 			entity->flags[PASSABLE] = true;
@@ -1265,7 +1265,7 @@ void actPlayer(Entity* my)
 			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actRightHandMagic;
 			entity->focalz = -4;
-			magicRightHand[PLAYER_NUM] = entity;
+			players[PLAYER_NUM]->hud.magicRightHand = entity;
 			my->bodyparts.push_back(entity);
 
 			// hud shield

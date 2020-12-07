@@ -23,7 +23,7 @@ typedef struct damageIndicator_t
 	node_t* node; // node in the damageIndicator list
 	Sint32 ticks; // birthtime of the damage indicator
 } damageIndicator_t;
-extern list_t damageIndicators;
+extern list_t damageIndicators[MAXPLAYERS];
 
 extern bool hide_statusbar;
 extern real_t uiscale_chatlog;
@@ -62,12 +62,12 @@ public:
 		}
 	};
 
-	Uint32 enemy_bar_client_colors[MAXPLAYERS];
+	Uint32 enemy_bar_client_color = 0;
 	std::unordered_map<Uint32, EnemyHPDetails> HPBars;
 	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority);
-	void displayCurrentHPBar();
+	void displayCurrentHPBar(const int player);
 };
-extern EnemyHPDamageBarHandler enemyHPDamageBarHandler;
+extern EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 
 #ifndef SHOPWINDOW_SIZE
 #define SHOPWINDOW_SIZE
@@ -146,7 +146,7 @@ void updateAppraisalItemBox(const int player);
 void updatePlayerInventory(const int player);
 void updateShopWindow();
 void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
-damageIndicator_t* newDamageIndicator(double x, double y);
+damageIndicator_t* newDamageIndicator(const int player, double x, double y);
 
 void selectItemMenuSlot(const int player, const Item& item, int entry);
 bool autoAddHotbarFilter(const Item& item);

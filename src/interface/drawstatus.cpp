@@ -38,7 +38,7 @@
 void handleDamageIndicators(int player)
 {
 	node_t* node, *nextnode;
-	for ( node = damageIndicators.first; node != NULL; node = nextnode )
+	for ( node = damageIndicators[player].first; node != NULL; node = nextnode )
 	{
 		nextnode = node->next;
 		damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
@@ -55,8 +55,8 @@ void handleDamageIndicators(int player)
 			angle += PI * 2;
 		}
 		SDL_Rect pos;
-		pos.x = xres / 2;
-		pos.y = yres / 2;
+		pos.x = players[player]->camera_midx();
+		pos.y = players[player]->camera_midy();
 		pos.x += 200 * cos(angle);
 		pos.y += 200 * sin(angle);
 		pos.w = damage_bmp->w;
@@ -77,10 +77,13 @@ void handleDamageIndicators(int player)
 void handleDamageIndicatorTicks()
 {
 	node_t* node;
-	for ( node = damageIndicators.first; node != NULL; node = node->next )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
-		damageIndicator->ticks--;
+		for ( node = damageIndicators[i].first; node != NULL; node = node->next )
+		{
+			damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
+			damageIndicator->ticks--;
+		}
 	}
 }
 
@@ -92,7 +95,7 @@ void handleDamageIndicatorTicks()
 
 -------------------------------------------------------------------------------*/
 
-damageIndicator_t* newDamageIndicator(double x, double y)
+damageIndicator_t* newDamageIndicator(const int player, double x, double y)
 {
 	damageIndicator_t* damageIndicator;
 
@@ -104,7 +107,7 @@ damageIndicator_t* newDamageIndicator(double x, double y)
 	}
 
 	// add the indicator to the list of indicators
-	damageIndicator->node = list_AddNodeLast(&damageIndicators);
+	damageIndicator->node = list_AddNodeLast(&damageIndicators[player]);
 	damageIndicator->node->element = damageIndicator;
 	damageIndicator->node->deconstructor = &defaultDeconstructor;
 	damageIndicator->node->size = sizeof(damageIndicator_t);
@@ -131,32 +134,32 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 	{
 		if ( colorblind )
 		{
-			enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 0, 0, 64); // Display blue
+			enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 0, 0, 64); // Display blue
 		}
 		else
 		{
-			enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 0, 64, 0); // Display green
+			enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 0, 64, 0); // Display green
 		}
 	}
 	else if ( targetStats.EFFECTS[EFF_PARALYZED] )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 112, 112, 0);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 112, 112, 0);
 	}
 	else if ( targetStats.EFFECTS[EFF_CONFUSED] || targetStats.EFFECTS[EFF_DISORIENTED] )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 92, 0, 92);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 92, 0, 92);
 	}
 	else if ( targetStats.EFFECTS[EFF_PACIFY] )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 128, 32, 80);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 128, 32, 80);
 	}
 	else if ( targetStats.EFFECTS[EFF_BLIND] )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 64, 64, 64);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 64, 64, 64);
 	}
 	else
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = 0;
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = 0;
 	}
 }
 
@@ -231,9 +234,9 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 	{
 		if ( stats->HP != stats->OLDHP )
 		{
-			if ( playertarget == clientnum )
+			if ( playertarget >= 0 && players[playertarget]->isLocalPlayer() )
 			{
-				newDamageIndicator(source->x, source->y);
+				newDamageIndicator(playertarget, source->x, source->y);
 			}
 			else if ( playertarget > 0 && multiplayer == SERVER )
 			{
@@ -252,9 +255,9 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 			updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
 		}
 	}
-	else if ( player >= 0 )
+	else if ( player >= 0 && players[player]->isLocalPlayer() )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = 0;
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = 0;
 	}
 
 	//if ( player >= 0 )
@@ -273,17 +276,17 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 	//	}
 	//	enemy_lastuid = target->getUID();
 	//}
-	if ( player == clientnum )
+	if ( player >= 0 && players[player]->isLocalPlayer() )
 	{
 		if ( stats )
 		{
-			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, stats->OLDHP, 
-				enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name, lowPriorityTick);
+			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, stats->OLDHP, 
+				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
 		}
 		else
 		{
-			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, hp, 
-				enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name, lowPriorityTick);
+			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, hp,
+				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
 		}
 	}
 	else if ( player > 0 && multiplayer == SERVER )
@@ -291,7 +294,7 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		strcpy((char*)net_packet->data, "ENHP");
 		SDLNet_Write32(hp, &net_packet->data[4]);
 		SDLNet_Write32(maxhp, &net_packet->data[8]);
-		SDLNet_Write32(enemyHPDamageBarHandler.enemy_bar_client_colors[player], &net_packet->data[12]);
+		SDLNet_Write32(enemyHPDamageBarHandler[player].enemy_bar_client_color, &net_packet->data[12]);
 		if ( stats )
 		{
 			SDLNet_Write32(stats->OLDHP, &net_packet->data[16]);
@@ -390,7 +393,7 @@ void drawStatus(int player)
 	interfaceMessageStatusBar.h = pos.h;
 
 	// enemy health
-	enemyHPDamageBarHandler.displayCurrentHPBar();
+	enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
 
 	// messages
 	if ( !hide_statusbar )
@@ -1182,9 +1185,9 @@ void drawStatus(int player)
 				}
 				else
 				{
-					spell_t* spell = getSpellFromItem(item);
-					if ( selected_spell == spell 
-						&& (selected_spell_last_appearance == item->appearance || selected_spell_last_appearance == -1 ) )
+					spell_t* spell = getSpellFromItem(player, item);
+					if ( players[player]->magic.selectedSpell() == spell
+						&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1 ) )
 					{
 						drawImageScaled(equipped_bmp, NULL, &src);
 					}
@@ -1257,7 +1260,7 @@ void drawStatus(int player)
 
 					if ( itemCategory(item) == SPELL_CAT )
 					{
-						spell_t* spell = getSpellFromItem(item);
+						spell_t* spell = getSpellFromItem(player, item);
 						if ( drawHotBarTooltipOnCycle )
 						{
 							drawSpellTooltip(player, spell, item, &src);
@@ -1876,7 +1879,7 @@ void drawStatus(int player)
 				{
 					if ( itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
 					{
-						if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 )
+						if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 )
 						{
 							disableItemUsage = true;
 						}

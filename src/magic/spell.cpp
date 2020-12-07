@@ -20,11 +20,7 @@
 #include "../player.hpp"
 #include "magic.hpp"
 
-list_t spellList;
 list_t channeledSpells[MAXPLAYERS];
-spell_t* selected_spell = NULL;
-spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { NULL, NULL, NULL, NULL, NULL };
-int selected_spell_last_appearance = -1;
 
 spellElement_t spellElement_unintelligible;
 spellElement_t spellElement_missile;
@@ -136,7 +132,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	node_t* node = nullptr;
 
 	// this is a local function
-	if ( player != clientnum )
+	if ( !players[player]->isLocalPlayer() )
 	{
 		return false;
 	}
@@ -308,7 +304,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		default:
 			return false;
 	}
-	if ( spellInList(&spellList, new_spell) )
+	if ( spellInList(&players[player]->magic.spellList, new_spell) )
 	{
 		// check inventory for shapeshift spells
 		bool foundShapeshiftSpell = false;
@@ -376,7 +372,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	{
 		messagePlayer(player, language[441], new_spell->name);
 	}
-	node = list_AddNodeLast(&spellList);
+	node = list_AddNodeLast(&players[player]->magic.spellList);
 	node->element = new_spell;
 	node->size = sizeof(spell_t);
 	node->deconstructor = &spellDeconstructor;
@@ -628,11 +624,11 @@ bool spellElement_isChanneled(spellElement_t* spellElement)
 
 void equipSpell(spell_t* spell, int playernum, Item* spellItem)
 {
-	if ( playernum == clientnum )
+	if ( players[playernum]->isLocalPlayer() )
 	{
-		selected_spell = spell;
+		players[playernum]->magic.equipSpell(spell);
 		messagePlayer(playernum, language[442], spell->name);
-		selected_spell_last_appearance = spellItem->appearance; // to keep track of shapeshift/normal spells.
+		players[playernum]->magic.selected_spell_last_appearance = spellItem->appearance; // to keep track of shapeshift/normal spells.
 	}
 }
 
@@ -1183,7 +1179,7 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 	}
 }
 
-spell_t* getSpellFromItem(Item* item)
+spell_t* getSpellFromItem(const int player, Item* item)
 {
 	spell_t* spell = nullptr;
 	node_t* node = nullptr;
@@ -1191,7 +1187,7 @@ spell_t* getSpellFromItem(Item* item)
 	{
 		return nullptr;
 	}
-	for ( node = spellList.first; node; node = node->next )
+	for ( node = players[player]->magic.spellList.first; node; node = node->next )
 	{
 		if ( node->element )
 		{
@@ -1211,7 +1207,7 @@ spell_t* getSpellFromItem(Item* item)
 	return nullptr;
 }
 
-int canUseShapeshiftSpellInCurrentForm(Item& item)
+int canUseShapeshiftSpellInCurrentForm(const int player, Item& item)
 {
 	if ( itemCategory(&item) != SPELL_CAT )
 	{
@@ -1221,16 +1217,16 @@ int canUseShapeshiftSpellInCurrentForm(Item& item)
 	{
 		return -1;
 	}
-	if ( !stats[clientnum] )
+	if ( !stats[player] )
 	{
 		return -1;
 	}
-	spell_t* spell = getSpellFromItem(&item);
+	spell_t* spell = getSpellFromItem(player, &item);
 	if ( !spell )
 	{
 		return -1;
 	}
-	if ( !stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] )
+	if ( !stats[player]->EFFECTS[EFF_SHAPESHIFT] )
 	{
 		return 0;
 	}
@@ -1238,14 +1234,14 @@ int canUseShapeshiftSpellInCurrentForm(Item& item)
 	{
 		case SPELL_SPEED:
 		case SPELL_DETECT_FOOD:
-			if ( stats[clientnum]->type == RAT )
+			if ( stats[player]->type == RAT )
 			{
 				return 1;
 			}
 			break;
 		case SPELL_POISON:
 		case SPELL_SPRAY_WEB:
-			if ( stats[clientnum]->type == SPIDER )
+			if ( stats[player]->type == SPIDER )
 			{
 				return 1;
 			}
@@ -1253,7 +1249,7 @@ int canUseShapeshiftSpellInCurrentForm(Item& item)
 		case SPELL_STRIKE:
 		case SPELL_FEAR:
 		case SPELL_TROLLS_BLOOD:
-			if ( stats[clientnum]->type == TROLL )
+			if ( stats[player]->type == TROLL )
 			{
 				return 1;
 			}
@@ -1261,7 +1257,7 @@ int canUseShapeshiftSpellInCurrentForm(Item& item)
 		case SPELL_LIGHTNING:
 		case SPELL_CONFUSE:
 		case SPELL_AMPLIFY_MAGIC:
-			if ( stats[clientnum]->type == CREATURE_IMP )
+			if ( stats[player]->type == CREATURE_IMP )
 			{
 				return 1;
 			}

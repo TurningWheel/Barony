@@ -91,7 +91,7 @@ void updateRightSidebar()
 	//Advance the position.
 	pos.y += rightsidebar_slot_img->h;
 
-	if (!spellList.first)
+	if (!players[clientnum]->magic.spellList.first)
 	{
 		//Grayed out. No spells.
 		drawImage(rightsidebar_slot_grayedout_img, NULL, &pos);
