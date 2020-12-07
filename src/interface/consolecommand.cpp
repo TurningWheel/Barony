@@ -2817,6 +2817,7 @@ void consoleCommand(char const * const command_str)
 			EOS.CrossplayAccountManager.autologin = true;
 #endif // USE_EOS
 		}
+#if (defined SOUND)
 		else if ( !strncmp(command_str, "/sfxambientvolume", 17) )
 		{
 			sfxAmbientVolume = atoi(&command_str[18]);
@@ -2849,6 +2850,7 @@ void consoleCommand(char const * const command_str)
 		{
 			sfxEnvironmentVolume = atoi(&command_str[22]);
 		}
+#endif // (defined SOUND)
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

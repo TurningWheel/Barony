@@ -26,21 +26,21 @@ if (NOT EOS_INCLUDE_DIR OR NOT EOS_LIBRARIES)
 		DOC "Include path for EOS"
 	)
 
-	if (Windows) # TODO: Fix this part. Not using CMake on Windows right now, so...
+	if (Windows)
 		if (BIT_32) #Need a better way of determining bits needed. Maybe have (LIBRARIES_32_BIT and LIBRARIES_64_BIT)?
-			FIND_LIBRARY(STEAMWORKS_LIBRARY NAMES steam_api
+			FIND_LIBRARY(EOS_LIBRARY NAMES EOSSDK-Win32-Shipping.lib
 				PATHS
-				$ENV{STEAMWORKS_ROOT}/sdk/redistributable_bin
+				$ENV{EOS_ROOT}/SDK/Lib
 				DOC "EOS library name"
 			)
-			MESSAGE("32 bit steam")
+			MESSAGE("32 bit EOS")
 		else ()
-			FIND_LIBRARY(STEAMWORKS_LIBRARY NAMES steam_api64
+			FIND_LIBRARY(EOS_LIBRARY NAMES EOSSDK-Win64-Shipping.lib
 				PATHS
-				$ENV{STEAMWORKS_ROOT}/sdk/redistributable_bin/win64
+				$ENV{EOS_ROOT}/SDK/Lib
 				DOC "EOS library name"
 			)
-			MESSAGE("64 bit steam")
+			MESSAGE("64 bit EOS")
 		endif()
 	elseif (APPLE)
 		FIND_LIBRARY(EOS_LIBRARY NAMES libEOSSDK-Mac-Shipping.dylib
