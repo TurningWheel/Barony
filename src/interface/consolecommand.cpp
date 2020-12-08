@@ -1698,10 +1698,13 @@ void consoleCommand(char const * const command_str)
 	}
 	else if ( !strncmp(command_str, "/locksidebar", 12) )
 	{
-		lock_right_sidebar = (lock_right_sidebar == false);
-		if ( lock_right_sidebar )
+		if ( players[clientnum] )
 		{
-			proficienciesPage = 1;
+			players[clientnum]->characterSheet.lock_right_sidebar = (players[clientnum]->characterSheet.lock_right_sidebar == false);
+			if ( players[clientnum]->characterSheet.lock_right_sidebar )
+			{
+				players[clientnum]->characterSheet.proficienciesPage = 1;
+			}
 		}
 	}
 	else if ( !strncmp(command_str, "/showgametimer", 14) )
@@ -1814,7 +1817,73 @@ void consoleCommand(char const * const command_str)
 				stats[i]->sex = static_cast<sex_t>(rand() % 2);
 				stats[i]->appearance = rand() % 18;
 				stats[i]->clearStats();
-				client_classes[i] = CLASS_MACHINIST; rand() % (CLASS_HUNTER + 1);
+				client_classes[i] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
+				stats[i]->playerRace = RACE_HUMAN;
+				if ( enabledDLCPack1 || enabledDLCPack2 )
+				{
+					stats[i]->playerRace = rand() % NUMPLAYABLERACES;
+					if ( !enabledDLCPack1 )
+					{
+						while ( stats[i]->playerRace == RACE_SKELETON || stats[i]->playerRace == RACE_VAMPIRE
+							|| stats[i]->playerRace == RACE_SUCCUBUS || stats[i]->playerRace == RACE_GOATMAN )
+						{
+							stats[i]->playerRace = rand() % NUMPLAYABLERACES;
+						}
+					}
+					else if ( !enabledDLCPack2 )
+					{
+						while ( stats[i]->playerRace == RACE_AUTOMATON || stats[i]->playerRace == RACE_GOBLIN
+							|| stats[i]->playerRace == RACE_INCUBUS || stats[i]->playerRace == RACE_INSECTOID )
+						{
+							stats[i]->playerRace = rand() % NUMPLAYABLERACES;
+						}
+					}
+					if ( stats[i]->playerRace == RACE_INCUBUS )
+					{
+						stats[i]->sex = MALE;
+					}
+					else if ( stats[i]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[i]->sex = FEMALE;
+					}
+
+					if ( stats[i]->playerRace == RACE_HUMAN )
+					{
+						client_classes[i] = rand() % (NUMCLASSES);
+						if ( !enabledDLCPack1 )
+						{
+							while ( client_classes[i] == CLASS_CONJURER || client_classes[i] == CLASS_ACCURSED
+								|| client_classes[i] == CLASS_MESMER || client_classes[i] == CLASS_BREWER )
+							{
+								client_classes[i] = rand() % (NUMCLASSES);
+							}
+						}
+						else if ( !enabledDLCPack2 )
+						{
+							while ( client_classes[i] == CLASS_HUNTER || client_classes[i] == CLASS_SHAMAN
+								|| client_classes[i] == CLASS_PUNISHER || client_classes[i] == CLASS_MACHINIST )
+							{
+								client_classes[i] = rand() % (NUMCLASSES);
+							}
+						}
+						stats[i]->appearance = rand() % 18;
+					}
+					else
+					{
+						client_classes[i] = rand() % (CLASS_MONK + 2);
+						if ( client_classes[i] > CLASS_MONK )
+						{
+							client_classes[i] = CLASS_MONK + stats[i]->playerRace; // monster specific classes.
+						}
+						stats[i]->appearance = 0;
+					}
+				}
+				else
+				{
+					stats[i]->playerRace = RACE_HUMAN;
+					stats[i]->appearance = rand() % 18;
+				}
+				strcpy(stats[i]->name, randomPlayerNamesFemale[rand() % randomPlayerNamesFemale.size()].c_str());
 				bool oldIntro = intro;
 				intro = true; // so initClass doesn't add items to hotbar.
 				initClass(i);

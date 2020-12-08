@@ -495,6 +495,8 @@ public:
 	void init()
 	{
 		inventoryUI.resetInventory();
+		selectedIdentifySlot[playernum] = -1;
+		selectedChestSlot[playernum] = -1;
 	};
 
 	class Hotbar_t;
@@ -556,7 +558,7 @@ public:
 		public:
 			Appraisal_t(Player& p) : player(p) {};
 			~Appraisal_t() {};
-			int timer; //There is a delay after the appraisal skill is activated before the item is identified.
+			int timer = 0; //There is a delay after the appraisal skill is activated before the item is identified.
 			int timermax = 0;
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
@@ -570,7 +572,7 @@ public:
 		StatusBar_t(Player& p) : player(p)
 		{};
 		~StatusBar_t() {};
-
+		SDL_Rect messageStatusBarBox;
 		const int getStartX() const 
 		{ 
 			return (player.camera_midx() - status_bmp->w * uiscale_chatlog / 2);
@@ -581,6 +583,22 @@ public:
 		}
 		const int getOffsetY() const { return (status_bmp->h * uiscale_chatlog * (hide_statusbar ? 0 : 1)); }
 	} statusBarUI;
+
+	class CharacterSheet_t
+	{
+		Player& player;
+	public:
+		CharacterSheet_t(Player& p) : player(p)
+		{};
+		~CharacterSheet_t() {};
+		SDL_Rect skillsSheetBox;
+		SDL_Rect partySheetBox;
+		SDL_Rect characterSheetBox;
+
+		bool lock_right_sidebar = false;
+		int proficienciesPage = 0;
+		int attributespage = 0;
+	} characterSheet;
 
 	class HUD_t
 	{

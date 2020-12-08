@@ -169,27 +169,37 @@ void GameController::handleAnalog(int player)
 			righty = -righty;
 		}
 
-		/*int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
-		int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
-
-		real_t magnitude = sqrt(pow(x, 2) + pow(y, 2));
-		real_t normalised = magnitude / (sqrt(2) * 32767);
-		real_t deadzone = 0.15;
-		if ( normalised < deadzone )
+		if ( rightStickDeadzoneType != DEADZONE_PER_AXIS )
 		{
-			rightx = 0;
-			righty = 0;
-		}
-		else
-		{
-			real_t newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone);
-			real_t angle = atan2(y, static_cast<real_t>(x));
-			rightx = newMagnitude * cos(angle) / gamepad_menux_sensitivity;
-			righty = newMagnitude * sin(angle) / gamepad_menuy_sensitivity;
+			rightx = getRawRightXMove();
+			righty = getRawRightYMove();
+
+			const real_t maxInputVector = 32767 * sqrt(2);
+			const real_t magnitude = sqrt(pow(rightx, 2) + pow(righty, 2));
+			const real_t normalised = magnitude / (maxInputVector);
+			real_t deadzone = rightStickDeadzone / maxInputVector;
+
+			if ( normalised < deadzone )
+			{
+				rightx = 0;
+				righty = 0;
+			}
+			else
+			{
+				const real_t angle = atan2(righty, rightx);
+				real_t newMagnitude = 0.0;
+				newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone); // linear gradient
+				rightx = newMagnitude * cos(angle) / gamepad_menux_sensitivity;
+				righty = newMagnitude * sin(angle) / gamepad_menuy_sensitivity;
+
+				//rightx = oldFloatRightX;
+				//righty = oldFloatRightY;
+			}
+
+			oldAxisRightX = rightx;
+			oldAxisRightY = righty;
 		}
 
-		oldAxisRightX = x;
-		oldAxisRightY = y;*/
 		oldFloatRightX += rightx;
 		oldFloatRightY += righty;
 
@@ -321,10 +331,10 @@ void GameController::handleAnalog(int player)
 			}
 			else
 			{
-				mouse->x += rightx;
-				mouse->y += righty;
-				mouse->xrel += rightx;
-				mouse->yrel += righty;
+				mouse->floatx += rightx;
+				mouse->floaty += righty;
+				mouse->floatxrel += rightx;
+				mouse->floatyrel += righty;
 
 				if ( !mouse->draw_cursor )
 				{
@@ -988,7 +998,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	inventoryUI(*this),
 	statusBarUI(*this),
 	hud(*this),
-	magic(*this)
+	magic(*this),
+	characterSheet(*this)
 {
 	local_host = false;
 	playernum = in_playernum;

@@ -760,9 +760,20 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 				y_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) - (double)* inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) * backpedalMultiplier);
 			}
 
+			const float x_forceMaxForwardThreshold = 0.7;
+			const float x_forceMaxBackwardThreshold = 0.5;
+			const float y_forceMaxStrafeThreshold = 0.7;
 			if ( inputs.hasController(PLAYER_NUM) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) )
 			{
 				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercent();
+				if ( x_force > 0 )
+				{
+					x_force = std::min(x_force / x_forceMaxForwardThreshold, 1.f);
+				}
+				else if ( x_force < 0 )
+				{
+					x_force = std::max(x_force / x_forceMaxBackwardThreshold, -1.f);
+				}
 
 				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				{
@@ -772,6 +783,14 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			if ( inputs.hasController(PLAYER_NUM) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) )
 			{
 				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercent();
+				if ( y_force > 0 )
+				{
+					y_force = std::min(y_force / y_forceMaxStrafeThreshold, 1.f);
+				}
+				else if ( y_force < 0 )
+				{
+					y_force = std::max(y_force / y_forceMaxStrafeThreshold, -1.f);
+				}
 
 				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				{

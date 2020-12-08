@@ -9401,6 +9401,8 @@ void handleMainMenu(bool mode)
 				players[i]->shootmode = true;
 				players[i]->magic.clearSelectedSpells();
 				enemyHPDamageBarHandler[i].HPBars.clear();
+				selectedIdentifySlot[i] = -1;
+				selectedChestSlot[i] = -1;
 			}
 			currentlevel = startfloor;
 			secretlevel = false;
@@ -12260,7 +12262,7 @@ void openSettingsWindow()
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
-	settings_lock_right_sidebar = lock_right_sidebar;
+	settings_lock_right_sidebar = players[clientnum]->characterSheet.lock_right_sidebar;
 	settings_show_game_timer_always = show_game_timer_always;
 
 	settings_gamepad_leftx_invert = gamepad_leftx_invert;
@@ -14197,7 +14199,7 @@ void applySettings()
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;
-	lock_right_sidebar = settings_lock_right_sidebar;
+	players[clientnum]->characterSheet.lock_right_sidebar = settings_lock_right_sidebar;
 	show_game_timer_always = settings_show_game_timer_always;
 
 	gamepad_leftx_invert = settings_gamepad_leftx_invert;

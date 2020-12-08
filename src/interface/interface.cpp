@@ -45,8 +45,6 @@ SDL_Surface* hunger_boiler_hotflame_bmp = nullptr;
 SDL_Surface* hunger_boiler_flame_bmp = nullptr;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
-int attributespage = 0;
-int proficienciesPage = 0;
 Item* invitemschest[MAXPLAYERS][kNumChestItemsToDisplay];
 int inventorycategory = 7; // inventory window defaults to wildcard
 int itemscroll = 0;
@@ -67,7 +65,7 @@ int chestitemscroll[MAXPLAYERS] = { 0 };
 int chestgui_offset_x[MAXPLAYERS] = { 0 };
 int chestgui_offset_y[MAXPLAYERS] = { 0 };
 bool dragging_chestGUI[MAXPLAYERS] = { 0 };
-int selectedChestSlot[MAXPLAYERS] = { -1 };
+int selectedChestSlot[MAXPLAYERS];
 
 SDL_Surface* rightsidebar_titlebar_img = NULL;
 SDL_Surface* rightsidebar_slot_img = NULL;
@@ -151,7 +149,6 @@ bool hotbar_numkey_quick_add = false;
 bool disable_messages = false;
 bool right_click_protect = false;
 bool auto_appraise_new_items = false;
-bool lock_right_sidebar = false;
 bool show_game_timer_always = false;
 bool hide_statusbar = false;
 bool hide_playertags = false;
@@ -166,10 +163,6 @@ bool uiscale_skillspage = false;
 EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 GenericGUIMenu GenericGUI[MAXPLAYERS];
-SDL_Rect interfaceSkillsSheet;
-SDL_Rect interfacePartySheet;
-SDL_Rect interfaceCharacterSheet;
-SDL_Rect interfaceMessageStatusBar;
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
@@ -1210,7 +1203,7 @@ int saveConfig(char const * const _filename)
 	{
 		fp->printf("/quickaddtohotbar\n");
 	}
-	if ( lock_right_sidebar )
+	if ( players[clientnum]->characterSheet.lock_right_sidebar )
 	{
 		fp->printf("/locksidebar\n");
 	}
@@ -1584,7 +1577,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	//	mouse->oy = mouse->y;
 	//}
 	
-	attributespage = 0;
+	players[playernum]->characterSheet.attributespage = 0;
 	//proficienciesPage = 0;
 }
 

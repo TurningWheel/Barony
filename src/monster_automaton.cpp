@@ -1413,7 +1413,11 @@ void Entity::automatonRecycleItem()
 
 	int i = 0;
 	int itemIndex = 0;
-	int chances[10] = { -1 }; // max 10 items
+	int chances[10]; // max 10 items
+	for ( int i = 0; i < 10; ++i )
+	{
+		chances[i] = -1;
+	}
 	int matches = 0;
 
 	// search for valid recyclable items, set chance for valid index.

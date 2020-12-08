@@ -104,8 +104,6 @@ extern SDL_Surface* shopkeeper_bmp;
 extern SDL_Surface* shopkeeper2_bmp;
 extern SDL_Surface* damage_bmp;
 extern int textscroll;
-extern int attributespage;
-extern int proficienciesPage;
 extern int inventorycategory;
 extern int itemscroll;
 extern view_t camera_charsheet;
@@ -594,8 +592,6 @@ extern bool right_click_protect;
 
 extern bool auto_appraise_new_items;
 
-extern bool lock_right_sidebar;
-
 extern bool show_game_timer_always;
 
 extern bool hide_playertags;
@@ -644,8 +640,8 @@ extern SDL_Surface *effect_polymorph_bmp;
 extern SDL_Surface *effect_hungover_bmp;
 
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
-void attackHoverText(Sint32 input[6]);
-Sint32 displayAttackPower(Sint32 output[6]);
+void attackHoverText(const int player, Sint32 input[6]);
+Sint32 displayAttackPower(const int player, Sint32 output[6]);
 
 class MinimapPing
 {
@@ -744,7 +740,3 @@ public:
 	const int getPlayer() const { return gui_player; }
 };
 extern FollowerRadialMenu FollowerMenu[MAXPLAYERS];
-extern SDL_Rect interfaceSkillsSheet;
-extern SDL_Rect interfacePartySheet;
-extern SDL_Rect interfaceCharacterSheet;
-extern SDL_Rect interfaceMessageStatusBar;

@@ -23,7 +23,7 @@
 #include "../net.hpp"
 #include "../scores.hpp"
 
-void statsHoverText(Stat* tmpStat);
+void statsHoverText(const int player, Stat* tmpStat);
 
 /*-------------------------------------------------------------------------------
 
@@ -35,7 +35,6 @@ void statsHoverText(Stat* tmpStat);
 
 void updateCharacterSheet(const int player)
 {
-	return;
 	int i = 0;
 	int x = 0;
 	SDL_Rect pos;
@@ -79,10 +78,10 @@ void updateCharacterSheet(const int player)
 	drawRect(&pos, 0, 255);
 	drawWindowFancy(x1, y1 + pos.h + 16, x1 + pos.w + 16, statWindowY2);
 
-	interfaceCharacterSheet.x = pos.x - 8;
-	interfaceCharacterSheet.y = pos.y - 8;
-	interfaceCharacterSheet.w = pos.w + 16;
-	interfaceCharacterSheet.h = statWindowY2;
+	players[player]->characterSheet.characterSheetBox.x = pos.x - 8;
+	players[player]->characterSheet.characterSheetBox.y = pos.y - 8;
+	players[player]->characterSheet.characterSheetBox.w = pos.w + 16;
+	players[player]->characterSheet.characterSheetBox.h = statWindowY2;
 
 	// character sheet
 	double ofov = fov;
@@ -170,7 +169,7 @@ void updateCharacterSheet(const int player)
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
+		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 		{
 			if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
@@ -187,7 +186,7 @@ void updateCharacterSheet(const int player)
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
+		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 		{
 			if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
@@ -266,7 +265,7 @@ void updateCharacterSheet(const int player)
 	// armor, gold, and weight
 	int attackInfo[6] = { 0 };
 	text_y += pad_y * 2;
-	ttfPrintTextFormatted(fontStat, text_x, text_y, language[2542], displayAttackPower(attackInfo));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[2542], displayAttackPower(player, attackInfo));
 
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, text_x, text_y, language[371], AC(stats[player]));
@@ -288,8 +287,8 @@ void updateCharacterSheet(const int player)
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, text_x, text_y, language[372], weight);
 
-	statsHoverText(stats[player]);
-	attackHoverText(attackInfo);
+	statsHoverText(player, stats[player]);
+	attackHoverText(player, attackInfo);
 
 	// gold hover text.
 	SDL_Rect src;
@@ -297,30 +296,85 @@ void updateCharacterSheet(const int player)
 	src.y = mousey + 16;
 	src.h = TTF12_HEIGHT + 8;
 	src.w = ( longestline(language[2968]) + strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
+	bool dropGold = false;
 	if ( mouseInBounds(player, pos.x + 4, pos.x + pos.w, text_y - pad_y, text_y) )
 	{
 		drawTooltip(&src);
 		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 6, language[2968], getInputName(impulses[IN_USE]));
-		if ( *inputPressed(impulses[IN_USE]) )
+		if ( *inputPressedForPlayer(player, impulses[IN_USE]) )
 		{
-			consoleCommand("/dropgold");
-			*inputPressed(impulses[IN_USE]) = 0;
+			dropGold = true;
+			*inputPressedForPlayer(player, impulses[IN_USE]) = 0;
 		}
-		else if ( *inputPressed(joyimpulses[INJOY_GAME_USE]) )
+		else if ( inputs.bControllerInputPressed(player, INJOY_GAME_USE) )
 		{
-			consoleCommand("/dropgold");
-			*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+			dropGold = true;
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
+	}
+
+	if ( dropGold && stats[player] && stats[player]->HP > 0 && players[player]->entity )
+	{
+		int amount = 100;
+		if ( stats[player]->GOLD - amount < 0 )
+		{
+			amount = stats[player]->GOLD;
+		}
+		if ( amount == 0 )
+		{
+			messagePlayer(player, language[2593]);
+			return;
+		}
+		stats[player]->GOLD -= amount;
+		stats[player]->GOLD = std::max(stats[player]->GOLD, 0);
+
+		if ( multiplayer == CLIENT )
+		{
+			//Tell the server we dropped some gold.
+			strcpy((char*)net_packet->data, "DGLD");
+			net_packet->data[4] = player;
+			SDLNet_Write32(amount, &net_packet->data[5]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else
+		{
+			//Drop gold.
+			int x = std::min<int>(std::max(0, (int)(players[player]->entity->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max(0, (int)(players[player]->entity->y / 16)), map.height - 1);
+			if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x = players[player]->entity->x;
+				entity->y = players[player]->entity->y;
+				entity->z = 6;
+				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->behavior = &actGoldBag;
+				entity->goldAmount = amount; // amount
+			}
+			playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
+		}
+		messagePlayer(player, language[2594], amount);
 	}
 }
 
 void drawSkillsSheet(const int player)
 {
-	return;
 	int x1 = players[player]->camera_x1();
 	int x2 = players[player]->camera_x2();
 	int y1 = players[player]->camera_y1();
 	int y2 = players[player]->camera_y2();
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
 	SDL_Rect pos;
 	pos.w = 208;
@@ -342,10 +396,10 @@ void drawSkillsSheet(const int player)
 	pos.h = (NUMPROFICIENCIES * fontHeight) + (fontHeight * 3);
 
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
-	interfaceSkillsSheet.x = pos.x;
-	interfaceSkillsSheet.y = pos.y;
-	interfaceSkillsSheet.w = pos.w;
-	interfaceSkillsSheet.h = pos.h;
+	players[player]->characterSheet.skillsSheetBox.x = pos.x;
+	players[player]->characterSheet.skillsSheetBox.y = pos.y;
+	players[player]->characterSheet.skillsSheetBox.w = pos.w;
+	players[player]->characterSheet.skillsSheetBox.h = pos.h;
 
 	ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y + 8, language[1883]);
 
@@ -362,22 +416,23 @@ void drawSkillsSheet(const int player)
 		button.h = attributesright_bmp->h * 1.3;
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
+	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 	{
 		if ( omousex >= button.x && omousex <= button.x + button.w
 			&& omousey >= button.y && omousey <= button.y + button.h )
 		{
 			buttonclick = 14;
 			playSound(139, 64);
-			if ( proficienciesPage == 0 )
+			if ( players[player]->characterSheet.proficienciesPage == 0 )
 			{
-				proficienciesPage = 1;
+				players[player]->characterSheet.proficienciesPage = 1;
 			}
 			else
 			{
-				proficienciesPage = 0;
+				players[player]->characterSheet.proficienciesPage = 0;
 			}
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(player);
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
 	}
 	if ( buttonclick == 14 )
@@ -403,7 +458,7 @@ void drawSkillsSheet(const int player)
 	{
 		lockbtn.x -= 32;
 	}
-	if ( lock_right_sidebar )
+	if ( players[player]->characterSheet.lock_right_sidebar )
 	{
 		drawImageScaled(sidebar_lock_bmp, nullptr, &lockbtn);
 	}
@@ -412,14 +467,15 @@ void drawSkillsSheet(const int player)
 		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
+	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 	{
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
 		{
 			playSound(139, 64);
-			lock_right_sidebar = !lock_right_sidebar;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			players[player]->characterSheet.lock_right_sidebar = !players[player]->characterSheet.lock_right_sidebar;
+			inputs.mouseClearLeft(player);
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
 	}
 
@@ -1039,7 +1095,6 @@ void drawSkillsSheet(const int player)
 
 void drawPartySheet(const int player)
 {
-	return;
 	const int x1 = players[player]->camera_x1();
 	const int x2 = players[player]->camera_x2();
 	const int y1 = players[player]->camera_y1();
@@ -1076,9 +1131,9 @@ void drawPartySheet(const int player)
 	pos.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
 
 	int numFollowers = 0;
-	if ( stats[clientnum] )
+	if ( stats[player] )
 	{
-		numFollowers = list_Size(&stats[clientnum]->FOLLOWERS);
+		numFollowers = list_Size(&stats[player]->FOLLOWERS);
 	}
 
 	if ( playerCnt == 0 ) // 1 player.
@@ -1097,10 +1152,10 @@ void drawPartySheet(const int player)
 		}
 	}
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
-	interfacePartySheet.x = pos.x;
-	interfacePartySheet.y = pos.y;
-	interfacePartySheet.w = pos.w;
-	interfacePartySheet.h = pos.h;
+	players[player]->characterSheet.partySheetBox.x = pos.x;
+	players[player]->characterSheet.partySheetBox.y = pos.y;
+	players[player]->characterSheet.partySheetBox.w = pos.w;
+	players[player]->characterSheet.partySheetBox.h = pos.h;
 
 	ttfPrintTextFormatted(fontPlayer, pos.x + 4, pos.y + 8, "Party Stats");
 
@@ -1118,22 +1173,23 @@ void drawPartySheet(const int player)
 	}
 
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
+	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 	{
 		if ( omousex >= button.x && omousex <= button.x + button.w
 			&& omousey >= button.y && omousey <= button.y + button.h )
 		{
 			buttonclick = 14;
 			playSound(139, 64);
-			if ( proficienciesPage == 0 )
+			if ( players[player]->characterSheet.proficienciesPage == 0 )
 			{
-				proficienciesPage = 1;
+				players[player]->characterSheet.proficienciesPage = 1;
 			}
 			else
 			{
-				proficienciesPage = 0;
+				players[player]->characterSheet.proficienciesPage = 0;
 			}
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(player);
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
 	}
 	if ( buttonclick == 14 )
@@ -1159,7 +1215,7 @@ void drawPartySheet(const int player)
 	{
 		lockbtn.x -= 32;
 	}
-	if ( lock_right_sidebar )
+	if ( players[player]->characterSheet.lock_right_sidebar )
 	{
 		drawImageScaled(sidebar_lock_bmp, nullptr, &lockbtn);
 	}
@@ -1168,14 +1224,15 @@ void drawPartySheet(const int player)
 		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !players[player]->shootmode )
+	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 	{
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
 		{
 			playSound(139, 64);
-			lock_right_sidebar = !lock_right_sidebar;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			players[player]->characterSheet.lock_right_sidebar = !players[player]->characterSheet.lock_right_sidebar;
+			inputs.mouseClearLeft(player);
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
 	}
 
@@ -1284,7 +1341,7 @@ void drawPartySheet(const int player)
 		SDL_Rect slider = monsterEntryWindow;
 		slider.y = pos.y;
 
-		for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
+		for ( node_t* node = stats[player]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
 		{
 			Entity* follower = nullptr;
 			if ( (Uint32*)node->element )
@@ -1328,34 +1385,34 @@ void drawPartySheet(const int player)
 							// ttfPrintText(ttf16, x2 - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
 						}
 
-						if ( stats[clientnum] && stats[clientnum]->HP > 0 && !players[player]->shootmode
-							&& (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE]))) )
+						if ( stats[player] && stats[player]->HP > 0 && !players[player]->shootmode
+							&& (inputs.bMouseLeft(player) || (*inputPressedForPlayer(player, impulses[IN_USE]) || inputs.bControllerInputPressed(player, INJOY_GAME_USE))) )
 						{
 							bool inBounds = mouseInBounds(player, monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
 								monsterEntryWindow.y, monsterEntryWindow.y + monsterEntryWindow.h);
 							if ( inBounds )
 							{
-								if ( mousestatus[SDL_BUTTON_LEFT] )
+								if ( inputs.bMouseLeft(player) )
 								{
 									followerMenu.recentEntity = follower;
 									playSound(139, 64);
 									followerMenu.accessedMenuFromPartySheet = true;
 									followerMenu.partySheetMouseX = omousex;
 									followerMenu.partySheetMouseY = omousey;
-									mousestatus[SDL_BUTTON_LEFT] = 0;
+									inputs.mouseClearLeft(player);
 									if ( followerMenu.recentEntity )
 									{
 										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, 174);
 									}
 								}
-								else if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
+								else if ( (*inputPressedForPlayer(player, impulses[IN_USE]) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) )
 								{
 									followerMenu.followerToCommand = follower;
 									followerMenu.recentEntity = follower;
 									followerMenu.accessedMenuFromPartySheet = true;
 									followerMenu.partySheetMouseX = omousex;
 									followerMenu.partySheetMouseY = omousey;
-									followerMenu.initfollowerMenuGUICursor(false);
+									followerMenu.initfollowerMenuGUICursor(true);
 									followerMenu.updateScrollPartySheet();
 									if ( followerMenu.recentEntity )
 									{
@@ -1443,7 +1500,7 @@ void drawPartySheet(const int player)
 		slider.x = x1 + x2 - 16;
 		slider.w = 16;
 		slider.h = (fontHeight * 2 + 12) * (std::min(monstersToDisplay + 1, numFollowers));
-		interfacePartySheet.h += slider.h + 6;
+		players[player]->characterSheet.partySheetBox.h += slider.h + 6;
 
 		if ( numFollowers > (monstersToDisplay + 1) )
 		{
@@ -1467,7 +1524,7 @@ void drawPartySheet(const int player)
 			slider.h *= (1 / static_cast<real_t>(std::max(1, numFollowers - monstersToDisplay)));
 			slider.y += slider.h * followerMenu.sidebarScrollIndex;
 			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
-			if ( mouseInScrollbarTotalHeight && mousestatus[SDL_BUTTON_LEFT] )
+			if ( mouseInScrollbarTotalHeight && (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) )
 			{
 				if ( !mouseInBounds(player, x2 - monsterEntryWindow.w, x2, slider.y,
 					slider.y + slider.h) )
@@ -1475,12 +1532,14 @@ void drawPartySheet(const int player)
 					if ( omousey < slider.y )
 					{
 						followerMenu.sidebarScrollIndex = std::max(followerMenu.sidebarScrollIndex - 1, 0);
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(player);
+						inputs.controllerClearInput(player, INJOY_GAME_USE);
 					}
 					else if ( omousey > slider.y + slider.h )
 					{
 						followerMenu.sidebarScrollIndex = std::min(followerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(player);
+						inputs.controllerClearInput(player, INJOY_GAME_USE);
 					}
 				}
 			}
@@ -1488,15 +1547,20 @@ void drawPartySheet(const int player)
 	}
 }
 
-void statsHoverText(Stat* tmpStat)
+void statsHoverText(const int player, Stat* tmpStat)
 {
 	if ( tmpStat == nullptr )
 	{
 		return;
 	}
 
-	int pad_y = 262; // 262 px.
-	int pad_x = 8; // 8 px.
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+
+	int pad_y = players[player]->camera_y1() + 262; // 262 px.
+	int pad_x = players[player]->camera_x1() + 8; // 8 px.
 	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
 	int off_w = 216; // 216px. width of stat line.
 	int i = 0;
@@ -1572,12 +1636,12 @@ void statsHoverText(Stat* tmpStat)
 	SDL_Surface *tmp_bmp = NULL;
 
 	Entity* playerEntity = nullptr;
-	if ( players[clientnum] )
+	if ( players[player] )
 	{
-		playerEntity = players[clientnum]->entity;
+		playerEntity = players[player]->entity;
 	}
 
-	if ( attributespage == 0 )
+	if ( players[player]->characterSheet.attributespage == 0 )
 	{
 		for ( i = 0; i < 6; i++ ) // cycle through 6 stats.
 		{
@@ -1625,7 +1689,7 @@ void statsHoverText(Stat* tmpStat)
 					break;
 			}
 
-			if ( mouseInBounds(clientnum, pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
+			if ( mouseInBounds(player, pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
 			{
 				src.x = mousex + tooltip_offset_x;
 				src.y = mousey + tooltip_offset_y;
@@ -1676,19 +1740,19 @@ void statsHoverText(Stat* tmpStat)
 						if ( i == 3 )
 						{
 							Entity* tmp = nullptr;
-							if ( players[clientnum] && players[clientnum]->entity )
+							if ( players[player] && players[player]->entity )
 							{
-								tmp = players[clientnum]->entity;
+								tmp = players[player]->entity;
 								real_t regen = (static_cast<real_t>(tmp->getManaRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
-								if ( stats[clientnum]->type == AUTOMATON )
+								if ( stats[player]->type == AUTOMATON )
 								{
-									if ( stats[clientnum]->HUNGER <= 300 )
+									if ( stats[player]->HUNGER <= 300 )
 									{
 										regen /= 6; // degrade faster
 									}
-									else if ( stats[clientnum]->HUNGER > 1200 )
+									else if ( stats[player]->HUNGER > 1200 )
 									{
-										if ( stats[clientnum]->MP / static_cast<real_t>(std::max(1, stats[clientnum]->MAXMP)) <= 0.5 )
+										if ( stats[player]->MP / static_cast<real_t>(std::max(1, stats[player]->MAXMP)) <= 0.5 )
 										{
 											regen /= 4; // increase faster at < 50% mana
 										}
@@ -1697,13 +1761,13 @@ void statsHoverText(Stat* tmpStat)
 											regen /= 2; // increase less faster at > 50% mana
 										}
 									}
-									else if ( stats[clientnum]->HUNGER > 300 )
+									else if ( stats[player]->HUNGER > 300 )
 									{
 										// normal manaRegenInterval 300-1200 hunger.
 									}
 								}
 
-								if ( regen < 0.f /*stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0*/ )
+								if ( regen < 0.f /*stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0*/ )
 								{
 									regen = 0.f;
 									snprintf(buf, longestline("MP regen rate: 0 / %2.1fs"), "MP regen rate: 0 / %2.1fs", (static_cast<real_t>(MAGIC_REGEN_TIME) / TICKS_PER_SECOND));
@@ -1713,9 +1777,9 @@ void statsHoverText(Stat* tmpStat)
 									snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
 								}
 
-								if ( stats[clientnum]->type == AUTOMATON )
+								if ( stats[player]->type == AUTOMATON )
 								{
-									if ( stats[clientnum]->HUNGER <= 300 )
+									if ( stats[player]->HUNGER <= 300 )
 									{
 										color = uint32ColorRed(*mainsurface);
 									}
@@ -1724,7 +1788,7 @@ void statsHoverText(Stat* tmpStat)
 										color = uint32ColorGreen(*mainsurface);
 									}
 								}
-								else if ( stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0 )
+								else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 								{
 									if ( !(svFlags & SV_FLAG_HUNGER) )
 									{
@@ -1749,9 +1813,9 @@ void statsHoverText(Stat* tmpStat)
 						else if ( i == 2 )
 						{
 							Entity* tmp = nullptr;
-							if ( players[clientnum] && players[clientnum]->entity )
+							if ( players[player] && players[player]->entity )
 							{
-								tmp = players[clientnum]->entity;
+								tmp = players[player]->entity;
 								real_t regen = (static_cast<real_t>(tmp->getHealthRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
 								if ( tmpStat->type == SKELETON )
 								{
@@ -1793,9 +1857,9 @@ void statsHoverText(Stat* tmpStat)
 						if ( i == 3 )
 						{
 							int bonusDamage = 100;
-							if ( players[clientnum] && players[clientnum]->entity )
+							if ( players[player] && players[player]->entity )
 							{
-								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[clientnum]->entity, nullptr));
+								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[player]->entity, nullptr));
 							}
 							snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], bonusDamage);
 						}
@@ -1806,9 +1870,9 @@ void statsHoverText(Stat* tmpStat)
 						{
 							Entity* tmp = nullptr;
 							real_t resistance = 0.f;
-							if ( players[clientnum] && players[clientnum]->entity )
+							if ( players[player] && players[player]->entity )
 							{
-								tmp = players[clientnum]->entity;
+								tmp = players[player]->entity;
 								real_t resistance = 100 - 100 / (tmp->getMagicResistance() + 1);
 								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], resistance);
 								if ( resistance > 0.f )
@@ -1831,93 +1895,93 @@ void statsHoverText(Stat* tmpStat)
 	}
 }
 
-Sint32 displayAttackPower(Sint32 output[6])
+Sint32 displayAttackPower(const int player, Sint32 output[6])
 {
 	Sint32 attack = 0;
 	Entity* entity = nullptr;
-	if ( players[clientnum] && (entity = players[clientnum]->entity) )
+	if ( players[player] && (entity = players[player]->entity) )
 	{
-		if ( stats[clientnum] )
+		if ( stats[player] )
 		{
 			bool shapeshiftUseMeleeAttack = false;
 			if ( entity->effectShapeshift != NOTHING )
 			{
 				shapeshiftUseMeleeAttack = true;
 				if ( entity->effectShapeshift == CREATURE_IMP
-					&& stats[clientnum]->weapon && itemCategory(stats[clientnum]->weapon) == MAGICSTAFF )
+					&& stats[player]->weapon && itemCategory(stats[player]->weapon) == MAGICSTAFF )
 				{
 					shapeshiftUseMeleeAttack = false;
 				}
 			}
 
-			if ( !stats[clientnum]->weapon || shapeshiftUseMeleeAttack )
+			if ( !stats[player]->weapon || shapeshiftUseMeleeAttack )
 			{
 				// fists
 				attack += entity->getAttack();
 				output[0] = 0; // melee
 				output[1] = attack;
-				output[2] = (stats[clientnum]->PROFICIENCIES[PRO_UNARMED] / 20); // bonus from proficiency
+				output[2] = (stats[player]->PROFICIENCIES[PRO_UNARMED] / 20); // bonus from proficiency
 				output[3] = entity->getSTR(); // bonus from main attribute
 				output[5] = attack - entity->getSTR() - BASE_PLAYER_UNARMED_DAMAGE - output[2]; // bonus from equipment
 				// get damage variances.
-				output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[PRO_UNARMED]) / 100.f;
+				output[4] = (attack / 2) * (100 - stats[player]->PROFICIENCIES[PRO_UNARMED]) / 100.f;
 				attack -= (output[4] / 2); // attack is the midpoint between max and min damage.
 				output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
 				output[1] = attack;
 			}
 			else
 			{
-				int weaponskill = getWeaponSkill(stats[clientnum]->weapon);
+				int weaponskill = getWeaponSkill(stats[player]->weapon);
 				real_t variance = 0;
 				if ( weaponskill == PRO_RANGED )
 				{
-					if ( isRangedWeapon(*stats[clientnum]->weapon) )
+					if ( isRangedWeapon(*stats[player]->weapon) )
 					{
 						attack += entity->getRangedAttack();
 						output[0] = 1; // ranged
 						output[1] = attack;
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+						output[2] = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
 						output[5] = 0;
-						if ( stats[clientnum]->shield && rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+						if ( stats[player]->shield && rangedWeaponUseQuiverOnAttack(stats[player]) )
 						{
-							int quiverATK = stats[clientnum]->shield->weaponGetAttack(stats[clientnum]);
+							int quiverATK = stats[player]->shield->weaponGetAttack(stats[player]);
 							output[5] += quiverATK;
 							attack += quiverATK;
 						}
 						output[3] = entity->getDEX(); // bonus from main attribute
 						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
 
-						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						output[4] = (attack / 2) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
 						attack -= (output[4] / 2);
 						output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
 						output[1] = attack;
 					}
-					else if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP )
+					else if ( stats[player]->weapon && stats[player]->weapon->type == TOOL_WHIP )
 					{
 						attack += entity->getAttack();
 						output[0] = 6; // ranged
 						output[1] = attack;
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+						output[2] = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
 						int atk = entity->getSTR() + entity->getDEX();
 						atk = std::min(atk / 2, atk);
 						output[3] = atk; // bonus from main attribute
 						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
 
-						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						output[4] = (attack / 2) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
 						attack -= (output[4] / 2);
 						output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
 						output[1] = attack;
 					}
 					else
 					{
-						int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 20;
+						int skillLVL = stats[player]->PROFICIENCIES[PRO_RANGED] / 20;
 						attack += entity->getThrownAttack();
 						output[0] = 2; // thrown
 						output[1] = attack;
 						// bonus from weapon
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]);
+						output[2] = stats[player]->weapon->weaponGetAttack(stats[player]);
 						// bonus from dex
-						if ( itemCategory(stats[clientnum]->weapon) != POTION )
+						if ( itemCategory(stats[player]->weapon) != POTION )
 						{
 							output[3] = entity->getDEX() / 4;
 						}
@@ -1936,7 +2000,7 @@ Sint32 displayAttackPower(Sint32 output[6])
 					attack += entity->getAttack();
 					output[0] = 3; // melee
 					output[1] = attack;
-					output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+					output[2] = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
 					output[3] = entity->getSTR(); // bonus from main attribute
 					if ( weaponskill == PRO_AXE )
 					{
@@ -1946,17 +2010,17 @@ Sint32 displayAttackPower(Sint32 output[6])
 					// get damage variances.
 					if ( weaponskill == PRO_POLEARM )
 					{
-						output[4] = (attack / 3) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						output[4] = (attack / 3) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
 					}
 					else
 					{
-						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						output[4] = (attack / 2) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
 					}
 					attack -= (output[4] / 2); // attack is the midpoint between max and min damage.
 					output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
 					output[1] = attack;
 				}
-				else if ( itemCategory(stats[clientnum]->weapon) == MAGICSTAFF ) // staffs.
+				else if ( itemCategory(stats[player]->weapon) == MAGICSTAFF ) // staffs.
 				{
 					attack = 0;
 					output[0] = 5; // staffs
@@ -1986,10 +2050,15 @@ Sint32 displayAttackPower(Sint32 output[6])
 	return attack;
 }
 
-void attackHoverText(Sint32 input[6])
+void attackHoverText(const int player, Sint32 input[6])
 {
-	int pad_y = 346; // 262 px.
-	int pad_x = 8; // 8 px.
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+
+	int pad_y = players[player]->camera_y1() + 346; // 262 px.
+	int pad_x = players[player]->camera_x1() + 8; // 8 px.
 	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
 	int off_w = 216; // 216px. width of stat line.
 	int i = 0;
@@ -2011,9 +2080,9 @@ void attackHoverText(Sint32 input[6])
 		off_w = 280;
 	}
 
-	if ( attributespage == 0 )
+	if ( players[player]->characterSheet.attributespage == 0 )
 	{
-		if ( mouseInBounds(clientnum, pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
+		if ( mouseInBounds(player, pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
 		{
 			char tooltipHeader[32] = "";
 			switch ( input[0] )

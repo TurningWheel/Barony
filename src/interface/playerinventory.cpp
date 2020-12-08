@@ -289,8 +289,8 @@ void updateAppraisalItemBox(const int player)
 		}
 		else
 		{
-			pos.x = 16;
-			pos.y = 16;
+			pos.x = players[player]->camera_x1() + 16;
+			pos.y = players[player]->camera_y1() + 16;
 		}
 		int w1, w2;
 		getSizeOfText(ttf12, language[340], &w1, NULL);
@@ -311,8 +311,8 @@ void updateAppraisalItemBox(const int player)
 		}
 		else
 		{
-			pos.x = 24;
-			pos.y = 16 + 24;
+			pos.x = players[player]->camera_x1() + 24;
+			pos.y = players[player]->camera_y1() + 16 + 24;
 		}
 		ttfPrintText( ttf12, pos.x + 40, pos.y + 8, item->getName() );
 		pos.w = 32;
@@ -377,7 +377,7 @@ void select_inventory_slot(const int player, int x, int y)
 				warpMouseToSelectedShopSlot();
 			}
 		}
-		else if ( identifygui_active )
+		else if ( identifygui_active[player] )
 		{
 			warpInv = false;
 			y = players[player]->inventoryUI.getSizeY() - 1;
@@ -770,12 +770,12 @@ void updatePlayerInventory(const int player)
 		}
 
 		if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0 
-			&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 
+			&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0 
 			&& !itemMenuOpen && inputs.getController(player)->handleInventoryMovement(player)
 			&& GenericGUI[player].selectedSlot < 0 )
 		{
 			if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0
-				&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+				&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
 				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
 				if ( !hotbar_t->hotbarHasFocus )
@@ -803,9 +803,9 @@ void updatePlayerInventory(const int player)
 				warpMouseToSelectedInventorySlot(player);
 			}
 		}
-		else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleIdentifyMovement(player) )
+		else if ( selectedIdentifySlot[player] >= 0 && !itemMenuOpen && inputs.getController(player)->handleIdentifyMovement(player) )
 		{
-			if ( selectedIdentifySlot < 0 )
+			if ( selectedIdentifySlot[player] < 0 )
 			{
 				warpMouseToSelectedInventorySlot(player);
 			}
@@ -869,7 +869,7 @@ void updatePlayerInventory(const int player)
 
 	if ( !itemMenuOpen 
 		&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
-		&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+		&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
 		&& GenericGUI[player].selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
@@ -1239,18 +1239,18 @@ void updatePlayerInventory(const int player)
 								}
 							}
 							int furthestX = players[player]->camera_x2();
-							if ( proficienciesPage == 0 )
+							if ( players[player]->characterSheet.proficienciesPage == 0 )
 							{
-								if ( src.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+								if ( src.y < players[player]->characterSheet.skillsSheetBox.y + players[player]->characterSheet.skillsSheetBox.h )
 								{
-									furthestX = players[player]->camera_x2() - interfaceSkillsSheet.w;
+									furthestX = players[player]->camera_x2() - players[player]->characterSheet.skillsSheetBox.w;
 								}
 							}
 							else
 							{
-								if ( src.y < interfacePartySheet.y + interfacePartySheet.h )
+								if ( src.y < players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h )
 								{
-									furthestX = players[player]->camera_x2() - interfacePartySheet.w;
+									furthestX = players[player]->camera_x2() - players[player]->characterSheet.partySheetBox.w;
 								}
 							}
 							if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
@@ -1409,7 +1409,7 @@ void updatePlayerInventory(const int player)
 
 					if ( inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
 						&& !itemMenuOpen && !selectedItem && selectedChestSlot[player] < 0
-						&& selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+						&& selectedShopSlot < 0 && selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
 						inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
@@ -1443,7 +1443,7 @@ void updatePlayerInventory(const int player)
 					if ( (inputs.bMouseLeft(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
 							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
-							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+							&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !selectedItem && !itemMenuOpen )
 					{
@@ -1475,7 +1475,7 @@ void updatePlayerInventory(const int player)
 					else if ( (inputs.bMouseRight(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
 							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
-							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+							&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !itemMenuOpen && !selectedItem )
 					{
@@ -2607,13 +2607,13 @@ int numItemMenuSlots(const Item& item)
 void selectItemMenuSlot(const int player, const Item& item, int entry)
 {
 	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
-	if (entry > numItemMenuSlots(item))
+	if (entry >= numItemMenuSlots(item))
 	{
 		entry = 0;
 	}
 	if (entry < 0)
 	{
-		entry = numItemMenuSlots(item);
+		entry = numItemMenuSlots(item) - 1;
 	}
 
 	itemMenuSelected = entry;

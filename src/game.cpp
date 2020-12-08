@@ -2488,7 +2488,7 @@ void gameLogic(void)
 					//Cleanup identify GUI gamecontroller code here.
 					selectedIdentifySlot[i] = -1;
 
-					//identifygui_active = false;
+					//identifygui_active[i] = false;
 					identifygui_appraising[i] = true;
 					identifyGUIIdentify(i, auto_appraise_target[i]);
 				}
@@ -4125,7 +4125,7 @@ int main(int argc, char** argv)
 							{
 								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 								players[i]->gui_mode = GUI_MODE_INVENTORY;
-								attributespage = 0;
+								players[i]->characterSheet.attributespage = 0;
 								//proficienciesPage = 0;
 							}
 							else
@@ -4142,7 +4142,7 @@ int main(int argc, char** argv)
 						{
 							players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 							players[i]->gui_mode = GUI_MODE_INVENTORY;
-							attributespage = 0;
+							players[i]->characterSheet.attributespage = 0;
 							//proficienciesPage = 0;
 						}
 						else
@@ -4413,7 +4413,7 @@ int main(int argc, char** argv)
 							if ( players[player]->shootmode )
 							{
 								players[player]->shootmode = false;
-								attributespage = 0;
+								players[player]->characterSheet.attributespage = 0;
 								//proficienciesPage = 0;
 							}
 						}
@@ -4546,8 +4546,8 @@ int main(int argc, char** argv)
 							|| inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE)) )
 						{
 							FollowerMenu[player].selectNextFollower();
-							proficienciesPage = 1;
-							if ( players[player]->shootmode && !lock_right_sidebar )
+							players[player]->characterSheet.proficienciesPage = 1;
+							if ( players[player]->shootmode && !players[player]->characterSheet.lock_right_sidebar )
 							{
 								players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 							}
@@ -4829,7 +4829,7 @@ int main(int argc, char** argv)
 								updateShopWindow();
 							}
 
-							if ( proficienciesPage == 1 )
+							if ( players[player]->characterSheet.proficienciesPage == 1 )
 							{
 								drawPartySheet(player);
 							}
@@ -4840,9 +4840,9 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							if ( lock_right_sidebar )
+							if ( players[player]->characterSheet.lock_right_sidebar )
 							{
-								if ( proficienciesPage == 1 )
+								if ( players[player]->characterSheet.proficienciesPage == 1 )
 								{
 									drawPartySheet(player);
 								}

@@ -220,13 +220,13 @@ void drawSustainedSpells(const int player)
 		pos.x = xres - (*surface)->w - SUST_SPELLS_X;
 
 		//Draw under the skills sheet if inventory open or the sidebar lock has been enabled.
-		int iconHeightOffset = interfaceSkillsSheet.y + interfaceSkillsSheet.h;
-		if ( proficienciesPage == 1 )
+		int iconHeightOffset = players[player]->characterSheet.skillsSheetBox.y + players[player]->characterSheet.skillsSheetBox.h;
+		if ( players[player]->characterSheet.proficienciesPage == 1 )
 		{
-			iconHeightOffset = std::max(iconHeightOffset, interfacePartySheet.y + interfacePartySheet.h);
+			iconHeightOffset = std::max(iconHeightOffset, players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h);
 		}
 
-		pos.y = 32 + ( (!players[player]->shootmode || lock_right_sidebar) ? (iconHeightOffset) : 0);
+		pos.y = 32 + ( (!players[player]->shootmode || players[player]->characterSheet.lock_right_sidebar) ? (iconHeightOffset) : 0);
 	}
 
 	bool isChanneled = false;

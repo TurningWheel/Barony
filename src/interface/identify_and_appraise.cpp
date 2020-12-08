@@ -29,7 +29,7 @@ int identifyscroll[MAXPLAYERS] = { 0 };
 Item* identify_items[MAXPLAYERS][NUM_IDENTIFY_GUI_ITEMS] = { nullptr };
 SDL_Surface* identifyGUI_img;
 
-int selectedIdentifySlot[MAXPLAYERS] = { -1 };
+int selectedIdentifySlot[MAXPLAYERS];
 
 void rebuildIdentifyGUIInventory(const int player)
 {

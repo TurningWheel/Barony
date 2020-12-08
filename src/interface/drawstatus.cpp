@@ -387,10 +387,10 @@ void drawStatus(int player)
 		drawImageScaled(status_bmp, NULL, &pos);
 	}
 
-	interfaceMessageStatusBar.x = pos.x;
-	interfaceMessageStatusBar.y = pos.y;
-	interfaceMessageStatusBar.w = pos.w;
-	interfaceMessageStatusBar.h = pos.h;
+	players[player]->statusBarUI.messageStatusBarBox.x = pos.x;
+	players[player]->statusBarUI.messageStatusBarBox.y = pos.y;
+	players[player]->statusBarUI.messageStatusBarBox.w = pos.w;
+	players[player]->statusBarUI.messageStatusBarBox.h = pos.h;
 
 	// enemy health
 	enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
@@ -1327,18 +1327,18 @@ void drawStatus(int player)
 						}
 
 						int furthestX = players[player]->camera_x2();
-						if ( proficienciesPage == 0 )
+						if ( players[player]->characterSheet.proficienciesPage == 0 )
 						{
-							if ( src.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+							if ( src.y < players[player]->characterSheet.skillsSheetBox.y + players[player]->characterSheet.skillsSheetBox.h )
 							{
-								furthestX = players[player]->camera_x2() - interfaceSkillsSheet.w;
+								furthestX = players[player]->camera_x2() - players[player]->characterSheet.skillsSheetBox.w;
 							}
 						}
 						else
 						{
-							if ( src.y < interfacePartySheet.y + interfacePartySheet.h )
+							if ( src.y < players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h )
 							{
-								furthestX = players[player]->camera_x2() - interfacePartySheet.w;
+								furthestX = players[player]->camera_x2() - players[player]->characterSheet.partySheetBox.w;
 							}
 						}
 						if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
@@ -1957,10 +1957,10 @@ void drawStatus(int player)
 	pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
 	pos.y = (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) + (32 + 64 + 64 + 3); // 131px from end of prof window.
 
-	if ( (!shootmode || lock_right_sidebar) && proficienciesPage == 1 
-		&& pos.y < (interfacePartySheet.y + interfacePartySheet.h + 16) )
+	if ( (!shootmode || players[player]->characterSheet.lock_right_sidebar) && players[player]->characterSheet.proficienciesPage == 1
+		&& pos.y < (players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16) )
 	{
-		pos.y = interfacePartySheet.y + interfacePartySheet.h + 16;
+		pos.y = players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16;
 	}
 
 	if ( pos.y + pos.h > (yres - map.height * 4) ) // check if overlapping minimap
@@ -2176,18 +2176,18 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 		}
 
 		int furthestX = players[player]->camera_x2();
-		if ( proficienciesPage == 0 )
+		if ( players[player]->characterSheet.proficienciesPage == 0 )
 		{
-			if ( pos.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+			if ( pos.y < players[player]->characterSheet.skillsSheetBox.y + players[player]->characterSheet.skillsSheetBox.h )
 			{
-				furthestX = players[player]->camera_x2() - interfaceSkillsSheet.w;
+				furthestX = players[player]->camera_x2() - players[player]->characterSheet.skillsSheetBox.w;
 			}
 		}
 		else
 		{
-			if ( pos.y < interfacePartySheet.y + interfacePartySheet.h )
+			if ( pos.y < players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h )
 			{
-				furthestX = players[player]->camera_x2() - interfacePartySheet.w;
+				furthestX = players[player]->camera_x2() - players[player]->characterSheet.partySheetBox.w;
 			}
 		}
 

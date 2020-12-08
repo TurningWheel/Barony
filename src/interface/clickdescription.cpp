@@ -131,6 +131,10 @@ void clickDescription(int player, Entity* entity)
 			}
 		}
 
+		SDL_Rect& interfaceCharacterSheet = players[player]->characterSheet.characterSheetBox;
+		SDL_Rect& interfaceMessageStatusBar = players[player]->statusBarUI.messageStatusBarBox;
+		SDL_Rect& interfaceSkillsSheet = players[player]->characterSheet.skillsSheetBox;
+		SDL_Rect& interfacePartySheet = players[player]->characterSheet.partySheetBox;
 		if ( mouseInBounds(player, interfaceCharacterSheet.x, interfaceCharacterSheet.x + interfaceCharacterSheet.w,
 			interfaceCharacterSheet.y, interfaceCharacterSheet.y + interfaceCharacterSheet.h) )
 		{
@@ -153,7 +157,7 @@ void clickDescription(int player, Entity* entity)
 		}
 
 		// ui code taken from drawSkillsSheet() and drawPartySheet().
-		if ( proficienciesPage == 0 )
+		if ( players[player]->characterSheet.proficienciesPage == 0 )
 		{
 			if ( mouseInBounds(player, interfaceSkillsSheet.x, interfaceSkillsSheet.x + interfaceSkillsSheet.w,
 				interfaceSkillsSheet.y, interfaceSkillsSheet.y + interfaceSkillsSheet.h) )
