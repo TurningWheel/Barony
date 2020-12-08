@@ -2341,8 +2341,8 @@ void item_ScrollIdentify(Item* item, int player)
 	}
 
 	//identifygui_mode = true;
-	identifygui_active = true;
-	identifygui_appraising = false;
+	identifygui_active[player] = true;
+	identifygui_appraising[player] = false;
 	players[player]->shootmode = false;
 	players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
@@ -2359,7 +2359,7 @@ void item_ScrollIdentify(Item* item, int player)
 	}
 
 	//Initialize Identify GUI game controller code here.
-	initIdentifyGUIControllerCode();
+	initIdentifyGUIControllerCode(player);
 }
 
 void item_ScrollLight(Item* item, int player)
@@ -2752,9 +2752,9 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		players[player]->shootmode = false;
 		players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 		removecursegui_active = true;
-		if ( identifygui_active )
+		if ( identifygui_active[player] )
 		{
-			CloseIdentifyGUI();
+			CloseIdentifyGUI(player);
 		}
 		GenericGUI[player].closeGUI();
 

@@ -74,9 +74,6 @@ SDL_Surface* rightsidebar_slot_img = NULL;
 SDL_Surface* rightsidebar_slot_highlighted_img = NULL;
 SDL_Surface* rightsidebar_slot_grayedout_img = NULL;
 int rightsidebar_height = 0;
-int appraisal_timer = 0;
-int appraisal_timermax = 0;
-Uint32 appraisal_item = 0;
 
 SDL_Surface* bookgui_img = NULL;
 //SDL_Surface *nextpage_img = NULL;
@@ -1593,7 +1590,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 
 void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
 {
-	CloseIdentifyGUI();
+	CloseIdentifyGUI(playernum);
 	closeRemoveCurseGUI();
 	GenericGUI[playernum].closeGUI();
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
@@ -4613,9 +4610,9 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 	{
 		closeRemoveCurseGUI();
 	}
-	if ( identifygui_active )
+	if ( identifygui_active[gui_player] )
 	{
-		CloseIdentifyGUI();
+		CloseIdentifyGUI(gui_player);
 	}
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
@@ -4644,9 +4641,9 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	{
 		closeRemoveCurseGUI();
 	}
-	if ( identifygui_active )
+	if ( identifygui_active[gui_player] )
 	{
-		CloseIdentifyGUI();
+		CloseIdentifyGUI(gui_player);
 	}
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
@@ -4685,9 +4682,9 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	{
 		closeRemoveCurseGUI();
 	}
-	if ( identifygui_active )
+	if ( identifygui_active[gui_player] )
 	{
-		CloseIdentifyGUI();
+		CloseIdentifyGUI(gui_player);
 	}
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
 

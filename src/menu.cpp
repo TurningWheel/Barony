@@ -10354,8 +10354,6 @@ void handleMainMenu(bool mode)
 
 			// reset game
 			darkmap = false;
-			appraisal_timer = 0;
-			appraisal_item = 0;
 			multiplayer = 0;
 			currentlevel = 0;
 			secretlevel = false;
@@ -10365,6 +10363,8 @@ void handleMainMenu(bool mode)
 
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+				players[i]->inventoryUI.appraisal.timer = 0;
+				players[i]->inventoryUI.appraisal.current_item = 0;
 				players[i]->hud.reset();
 				deinitShapeshiftHotbar(i);
 				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )

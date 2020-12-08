@@ -1568,10 +1568,10 @@ void consumeItem(Item*& item, const int player)
 	{
 		return;
 	}
-	if ( appraisal_item == item->uid && item->count == 1 )
+	if ( players[player]->inventoryUI.appraisal.current_item == item->uid && item->count == 1 )
 	{
-		appraisal_item = 0;
-		appraisal_timer = 0;
+		players[player]->inventoryUI.appraisal.current_item = 0;
+		players[player]->inventoryUI.appraisal.timer = 0;
 	}
 
 	if ( player > 0 && multiplayer == SERVER )

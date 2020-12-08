@@ -279,7 +279,8 @@ void updateAppraisalItemBox(const int player)
 	int y = players[player]->inventoryUI.getStartY();
 
 	// appraisal item box
-	if ( (item = uidToItem(appraisal_item)) != NULL && appraisal_timer > 0 )
+	if ( (item = uidToItem(players[player]->inventoryUI.appraisal.current_item)) != NULL 
+		&& players[player]->inventoryUI.appraisal.timer > 0 )
 	{
 		if ( !players[player]->shootmode )
 		{
@@ -300,7 +301,8 @@ void updateAppraisalItemBox(const int player)
 		drawTooltip(&pos);
 
 		char tempstr[64] = { 0 };
-		snprintf(tempstr, 63, language[341], (((double)(appraisal_timermax - appraisal_timer)) / ((double)appraisal_timermax)) * 100);
+		snprintf(tempstr, 63, language[341], 
+			(((double)(players[player]->inventoryUI.appraisal.timermax - players[player]->inventoryUI.appraisal.timer)) / ((double)players[player]->inventoryUI.appraisal.timermax)) * 100);
 		ttfPrintText( ttf12, pos.x + 8, pos.y + 8, tempstr );
 		if ( !players[player]->shootmode )
 		{
@@ -381,10 +383,10 @@ void select_inventory_slot(const int player, int x, int y)
 			y = players[player]->inventoryUI.getSizeY() - 1;
 
 			//Warp into identify GUI "inventory"...if there is anything there.
-			if ( identify_items[0] )
+			if ( identify_items[player][0] )
 			{
-				selectedIdentifySlot = 0;
-				warpMouseToSelectedIdentifySlot();
+				selectedIdentifySlot[player] = 0;
+				warpMouseToSelectedIdentifySlot(player);
 			}
 		}
 		else if ( removecursegui_active )
@@ -1480,13 +1482,13 @@ void updatePlayerInventory(const int player)
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(inputs.bControllerInputPressed(player, INJOY_MENU_USE) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
 						{
 							// auto-appraise the item
-							identifygui_active = false;
-							identifygui_appraising = true;
-							identifyGUIIdentify(item);
+							identifygui_active[player] = false;
+							identifygui_appraising[player] = true;
+							identifyGUIIdentify(player, item);
 							inputs.mouseClearRight(player);
 
 							//Cleanup identify GUI gamecontroller code here.
-							selectedIdentifySlot = -1;
+							selectedIdentifySlot[player] = -1;
 						}
 						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
@@ -2319,13 +2321,13 @@ inline void executeItemMenuOption1(const int player, Item* item, bool is_potion_
 	else if (itemCategory(item) != POTION && itemCategory(item) != SPELLBOOK && item->type != FOOD_CREAMPIE)
 	{
 		//Option 1 = appraise.
-		identifygui_active = false;
-		identifygui_appraising = true;
+		identifygui_active[player] = false;
+		identifygui_appraising[player] = true;
 
 		//Cleanup identify GUI gamecontroller code here.
-		selectedIdentifySlot = -1;
+		selectedIdentifySlot[player] = -1;
 
-		identifyGUIIdentify(item);
+		identifyGUIIdentify(player, item);
 	}
 	else
 	{
@@ -2369,13 +2371,13 @@ inline void executeItemMenuOption2(const int player, Item* item)
 	if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
 	{
 		//Option 2 = appraise.
-		identifygui_active = false;
-		identifygui_appraising = true;
+		identifygui_active[player] = false;
+		identifygui_appraising[player] = true;
 
 		//Cleanup identify GUI gamecontroller code here.
-		selectedIdentifySlot = -1;
+		selectedIdentifySlot[player] = -1;
 
-		identifyGUIIdentify(item);
+		identifyGUIIdentify(player, item);
 	}
 	else if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC 
 		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT
@@ -2387,13 +2389,13 @@ inline void executeItemMenuOption2(const int player, Item* item)
 	else
 	{
 		//Option 2 = appraise.
-		identifygui_active = false;
-		identifygui_appraising = true;
+		identifygui_active[player] = false;
+		identifygui_appraising[player] = true;
 
 		//Cleanup identify GUI gamecontroller code here.
-		selectedIdentifySlot = -1;
+		selectedIdentifySlot[player] = -1;
 
-		identifyGUIIdentify(item);
+		identifyGUIIdentify(player, item);
 	}
 }
 

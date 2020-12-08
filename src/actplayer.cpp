@@ -69,10 +69,11 @@ void actDeathCam(Entity* my)
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
 	}
 
-	Sint32 mousexrel_old = mousexrel;
-	Sint32 mouseyrel_old = mouseyrel;
-	mousexrel = inputs.getMouse(DEATHCAM_PLAYERNUM, Inputs::XREL);
-	mouseyrel = inputs.getMouse(DEATHCAM_PLAYERNUM, Inputs::YREL);
+	real_t mousex_relative = mousexrel;
+	real_t mousey_relative = mouseyrel;
+
+	mousex_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_XREL);
+	mousey_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_YREL);
 
 	if ( DEATHCAM_TIME == 1 )
 	{
@@ -108,12 +109,12 @@ void actDeathCam(Entity* my)
 	{
 		if ( smoothmouse )
 		{
-			DEATHCAM_ROTX += mousexrel * .006 * (mousespeed / 128.f);
+			DEATHCAM_ROTX += mousex_relative * .006 * (mousespeed / 128.f);
 			DEATHCAM_ROTX = fmin(fmax(-0.35, DEATHCAM_ROTX), 0.35);
 		}
 		else
 		{
-			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mousespeed / 128.f)), 0.35f);
 		}
 		my->yaw += DEATHCAM_ROTX;
 		if ( my->yaw >= PI * 2 )
@@ -127,12 +128,12 @@ void actDeathCam(Entity* my)
 
 		if ( smoothmouse )
 		{
-			DEATHCAM_ROTY += mouseyrel * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+			DEATHCAM_ROTY += mousey_relative * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 			DEATHCAM_ROTY = fmin(fmax(-0.35, DEATHCAM_ROTY), 0.35);
 		}
 		else
 		{
-			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 		}
 		my->pitch -= DEATHCAM_ROTY;
 		if ( my->pitch > PI / 2 )
@@ -208,9 +209,6 @@ void actDeathCam(Entity* my)
 	cameras[DEATHCAM_PLAYERNUM].x -= cos(my->yaw) * cos(my->pitch) * 1.5;
 	cameras[DEATHCAM_PLAYERNUM].y -= sin(my->yaw) * cos(my->pitch) * 1.5;
 	cameras[DEATHCAM_PLAYERNUM].z -= sin(my->pitch) * 16;
-
-	mousexrel = mousexrel_old;
-	mouseyrel = mouseyrel_old;
 }
 
 #define PLAYER_INIT my->skill[0]
@@ -275,10 +273,11 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 		return;
 	}
 
-	Sint32 mousexrel_old = mousexrel;
-	Sint32 mouseyrel_old = mouseyrel;
-	mousexrel = inputs.getMouse(playernum, Inputs::XREL);
-	mouseyrel = inputs.getMouse(playernum, Inputs::YREL);
+	real_t mousex_relative = mousexrel;
+	real_t mousey_relative = mouseyrel;
+
+	mousex_relative = inputs.getMouseFloat(playernum, Inputs::ANALOGUE_XREL);
+	mousey_relative = inputs.getMouseFloat(playernum, Inputs::ANALOGUE_YREL);
 
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
@@ -314,7 +313,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTX += mousexrel * .006 * (mousespeed / 128.f);
+					PLAYER_ROTX += mousex_relative * .006 * (mousespeed / 128.f);
 				}
 				if ( !disablemouserotationlimit )
 				{
@@ -328,11 +327,11 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 				{
 					if ( disablemouserotationlimit )
 					{
-						PLAYER_ROTX = mousexrel * .01f * (mousespeed / 128.f);
+						PLAYER_ROTX = mousex_relative * .01f * (mousespeed / 128.f);
 					}
 					else
 					{
-						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 				}
 				else
@@ -347,7 +346,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTX -= mousexrel * .006f * (mousespeed / 128.f);
+					PLAYER_ROTX -= mousex_relative * .006f * (mousespeed / 128.f);
 				}
 				if ( !disablemouserotationlimit )
 				{
@@ -361,11 +360,11 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 				{
 					if ( disablemouserotationlimit )
 					{
-						PLAYER_ROTX = -mousexrel * .01f * (mousespeed / 128.f);
+						PLAYER_ROTX = -mousex_relative * .01f * (mousespeed / 128.f);
 					}
 					else
 					{
-						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
+						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 				}
 				else
@@ -413,7 +412,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTY += mouseyrel * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+					PLAYER_ROTY += mousey_relative * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 				}
 				PLAYER_ROTY = fmin(fmax(-0.35, PLAYER_ROTY), 0.35);
 				PLAYER_ROTY *= pow(0.5, refreshRateDelta);
@@ -423,7 +422,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 				if ( my->isMobile() )
 				{
 					PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, 
-						mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+						mousey_relative * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 				}
 				else
 				{
@@ -437,7 +436,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTY -= mouseyrel * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+					PLAYER_ROTY -= mousey_relative * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 				}
 				PLAYER_ROTY = fmin(fmax(-0.35f, PLAYER_ROTY), 0.35f);
 				PLAYER_ROTY *= pow(0.5, refreshRateDelta);
@@ -447,7 +446,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 				if ( my->isMobile() )
 				{
 					PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, 
-						mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+						mousey_relative * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 				}
 				else
 				{
@@ -488,9 +487,6 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 	{
 		PLAYER_ROTY *= .5;
 	}
-
-	mousexrel = mousexrel_old;
-	mouseyrel = mouseyrel_old;
 }
 
 void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDelta)
@@ -2372,24 +2368,24 @@ void actPlayer(Entity* my)
 		SteamUserStats()->StoreStats();
 	}*/
 
-	// SPLITSCREEN TODO
-	if ( players[PLAYER_NUM]->isLocalPlayer() && appraisal_timer > 0 && PLAYER_NUM == clientnum )
+	if ( players[PLAYER_NUM]->isLocalPlayer() 
+		&& players[PLAYER_NUM]->inventoryUI.appraisal.timer > 0 )
 	{
-		Item* tempItem = uidToItem(appraisal_item);
+		Item* tempItem = uidToItem(players[PLAYER_NUM]->inventoryUI.appraisal.current_item);
 		if ( tempItem )
 		{
 			if ( tempItem->identified )
 			{
-				appraisal_timer = 0;
-				appraisal_item = 0;
+				players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
+				players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 			}
 			else if ( tempItem->type == GEM_ROCK )
 			{
 				//Auto-succeed on rocks.
 				tempItem->identified = true;
 				messagePlayer(PLAYER_NUM, language[570], tempItem->description());
-				appraisal_item = 0;
-				appraisal_timer = 0;
+				players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
+				players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
 
 				// update inventory by trying to stack the newly identified item.
 				std::unordered_set<Uint32> appearancesOfSimilarItems;
@@ -2452,10 +2448,10 @@ void actPlayer(Entity* my)
 			}
 			else
 			{
-				appraisal_timer -= 1; //De-increment appraisal timer.
-				if (appraisal_timer <= 0)
+				players[PLAYER_NUM]->inventoryUI.appraisal.timer -= 1; //De-increment appraisal timer.
+				if ( players[PLAYER_NUM]->inventoryUI.appraisal.timer <= 0)
 				{
-					appraisal_timer = 0;
+					players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
 
 					//Cool. Time to identify the item.
 					bool success = false;
@@ -2689,14 +2685,14 @@ void actPlayer(Entity* my)
 						}
 					}
 
-					appraisal_item = 0;
+					players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 				}
 			}
 		}
 		else
 		{
-			appraisal_timer = 0;
-			appraisal_item = 0;
+			players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
+			players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 		}
 	}
 

@@ -64,8 +64,11 @@ void clickDescription(int player, Entity* entity)
 			{
 				return;    //Click falls inside the chest inventory GUI.
 			}
-		if (identifygui_active)
-			if ( mx > IDENTIFY_GUI_X && mx < IDENTIFY_GUI_X + identifyGUI_img->w && my > IDENTIFY_GUI_Y && my < IDENTIFY_GUI_Y + identifyGUI_img->h)
+		if ( identifygui_active[player] )
+			if ( mx > getIdentifyGUIStartX(player) 
+				&& mx < getIdentifyGUIStartX(player) + identifyGUI_img->w
+				&& my > getIdentifyGUIStartY(player)
+				&& my < getIdentifyGUIStartY(player) + identifyGUI_img->h)
 			{
 				return;    //Click falls inside the identify item gui.
 			}

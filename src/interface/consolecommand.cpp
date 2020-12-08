@@ -2964,6 +2964,54 @@ void consoleCommand(char const * const command_str)
 				}
 			}
 		}
+		else if ( !strncmp(command_str, "/cycledeadzoneleft", 18) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					switch ( inputs.getController(i)->leftStickDeadzoneType )
+					{
+						case GameController::DEADZONE_PER_AXIS:
+							inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_LINEAR;
+							messagePlayer(i, "Using radial deadzone on left stick.");
+							break;
+						case GameController::DEADZONE_MAGNITUDE_LINEAR:
+							inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_HALFPIPE;
+							messagePlayer(i, "Using curved radial deadzone on left stick.");
+							break;
+						case GameController::DEADZONE_MAGNITUDE_HALFPIPE:
+							inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_PER_AXIS;
+							messagePlayer(i, "Using per-axis deadzone on left stick.");
+							break;
+					}
+				}
+			}
+		}
+		else if ( !strncmp(command_str, "/cycledeadzoneright", 19) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					switch ( inputs.getController(i)->rightStickDeadzoneType )
+					{
+						case GameController::DEADZONE_PER_AXIS:
+							inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_LINEAR;
+							messagePlayer(i, "Using radial deadzone on right stick.");
+							break;
+						case GameController::DEADZONE_MAGNITUDE_LINEAR:
+							inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_HALFPIPE;
+							messagePlayer(i, "Using curved radial deadzone on right stick.");
+							break;
+						case GameController::DEADZONE_MAGNITUDE_HALFPIPE:
+							inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_PER_AXIS;
+							messagePlayer(i, "Using per-axis deadzone on right stick.");
+							break;
+					}
+				}
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

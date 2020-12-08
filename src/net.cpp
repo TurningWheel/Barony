@@ -3957,7 +3957,7 @@ void clientHandlePacket()
 				closeRemoveCurseGUI();
 			}
 			GenericGUI[clientnum].closeGUI();
-			identifygui_active = false;
+			identifygui_active[clientnum] = false;
 			list_FreeAll(&chestInv[clientnum]);
 			chestInv[clientnum].first = nullptr;
 			chestInv[clientnum].last = nullptr;
@@ -4005,8 +4005,8 @@ void clientHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "IDEN", 4))
 	{
 		//identifygui_mode = true;
-		identifygui_active = true;
-		identifygui_appraising = false;
+		identifygui_active[clientnum] = true;
+		identifygui_appraising[clientnum] = false;
 		players[clientnum]->shootmode = false;
 		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 		if ( removecursegui_active )
@@ -4020,7 +4020,7 @@ void clientHandlePacket()
 		}
 
 		//Initialize Identify GUI game controller code here.
-		initIdentifyGUIControllerCode();
+		initIdentifyGUIControllerCode(clientnum);
 
 		return;
 	}
@@ -4032,9 +4032,9 @@ void clientHandlePacket()
 		players[clientnum]->shootmode = false;
 		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
-		if ( identifygui_active )
+		if ( identifygui_active[clientnum] )
 		{
-			CloseIdentifyGUI();
+			CloseIdentifyGUI(clientnum);
 		}
 		GenericGUI[clientnum].closeGUI();
 

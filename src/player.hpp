@@ -16,7 +16,6 @@
 
 
 //Splitscreen support stuff.
-extern int current_player; //This may not be necessary. Consider this: Each Player instance keeps track of whether it is a network player or a localhost player.
 
 //TODO: Move these into each and every individual player.
 extern Entity* selectedEntity[MAXPLAYERS];
@@ -59,9 +58,6 @@ class GameController
 {
 	SDL_GameController* sdl_device;
 	int id;
-
-	int oldLeftTrigger;
-	int oldRightTrigger;
 	std::string name;
 public:
 	GameController();
@@ -172,10 +168,23 @@ public:
 
 	int maxLeftTrigger();
 	int maxRightTrigger();
-	int oldRightX;
-	int oldRightY;
-	int oldAxisRightX;
-	int oldAxisRightY;
+
+	enum DeadZoneType
+	{
+		DEADZONE_PER_AXIS,
+		DEADZONE_MAGNITUDE_LINEAR,
+		DEADZONE_MAGNITUDE_HALFPIPE
+	};
+	DeadZoneType leftStickDeadzoneType = DEADZONE_PER_AXIS;
+	DeadZoneType rightStickDeadzoneType = DEADZONE_MAGNITUDE_HALFPIPE;
+
+	Sint32 leftStickDeadzone = 8000;
+	Sint32 rightStickDeadzone = 8000;
+
+	real_t oldFloatRightX = 0.0; // current delta per frame right-stick analogue value
+	real_t oldFloatRightY = 0.0; // current delta per frame right-stick analogue value
+	int oldAxisRightX = 0;  // current raw right-stick analogue value (0-32768)
+	int oldAxisRightY = 0; // current raw right-stick analogue value (0-32768)
 
 	/*
 	 * Uses dpad to move the cursor around the inventory and select items.
@@ -236,6 +245,14 @@ class Inputs
 		Sint32 oy = 0; //omousey
 		Sint32 x = 0; //mousex
 		Sint32 y = 0; //mousey
+
+		real_t floatxrel = 0.0;
+		real_t floatyrel = 0.0;
+		real_t floatx = 0.0;
+		real_t floaty = 0.0;
+		real_t floatox = 0.0;
+		real_t floatoy = 0.0;
+
 		bool draw_cursor = true; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
 		bool moved = false;
 		bool lastMovementFromController = false;
@@ -347,9 +364,16 @@ public:
 		X,
 		Y,
 		XREL,
-		YREL
+		YREL,
+		ANALOGUE_OX,
+		ANALOGUE_OY,
+		ANALOGUE_X,
+		ANALOGUE_Y,
+		ANALOGUE_XREL,
+		ANALOGUE_YREL,
 	};
 	const Sint32 getMouse(const int player, MouseInputs input);
+	const real_t getMouseFloat(const int player, MouseInputs input);
 	void setMouse(const int player, MouseInputs input, Sint32 value);
 	void hideMouseCursors()
 	{
@@ -422,6 +446,8 @@ public:
 			{
 				vmouse[i].ox = vmouse[i].x;
 				vmouse[i].oy = vmouse[i].y;
+				vmouse[i].floatox = vmouse[i].floatx;
+				vmouse[i].floatoy = vmouse[i].floaty;
 				vmouse[i].moved = false;
 			}
 		}
@@ -437,6 +463,8 @@ public:
 		{
 			vmouse[i].xrel = 0;
 			vmouse[i].yrel = 0;
+			vmouse[i].floatxrel = 0.0;
+			vmouse[i].floatyrel = 0.0;
 		}
 	}
 };
@@ -503,7 +531,7 @@ public:
 	public:
 		static const int DEFAULT_INVENTORY_SIZEX = 12;
 		static const int DEFAULT_INVENTORY_SIZEY = 3;
-		Inventory_t(Player& p) : player(p) {};
+		Inventory_t(Player& p) : player(p), appraisal(p) {};
 		~Inventory_t() {};
 		const int getTotalSize() const { return sizex * sizey; }
 		const int getSizeX() const { return sizex; }
@@ -521,6 +549,18 @@ public:
 		{
 			sizey = DEFAULT_INVENTORY_SIZEY;
 		}
+
+		class Appraisal_t
+		{
+			Player& player;
+		public:
+			Appraisal_t(Player& p) : player(p) {};
+			~Appraisal_t() {};
+			int timer; //There is a delay after the appraisal skill is activated before the item is identified.
+			int timermax = 0;
+			Uint32 current_item = 0; //The item being appraised (or rather its uid)
+			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
+		} appraisal;
 	} inventoryUI;
 
 	class StatusBar_t
@@ -692,7 +732,7 @@ public:
 	}
 };
 
-void initIdentifyGUIControllerCode();
+void initIdentifyGUIControllerCode(const int player);
 void initRemoveCurseGUIControllerCode();
 
 extern Player* players[MAXPLAYERS];

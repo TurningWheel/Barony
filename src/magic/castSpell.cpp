@@ -889,10 +889,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						players[i]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 						players[i]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
-						identifygui_active = true;
-						identifygui_appraising = false;
+						identifygui_active[i] = true;
+						identifygui_appraising[i] = false;
 						//Initialize Identify GUI game controller code here.
-						initIdentifyGUIControllerCode();
+						initIdentifyGUIControllerCode(i);
 					}
 				}
 			}
@@ -922,7 +922,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						players[i]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
 						removecursegui_active = true;
-						identifygui_active = false;
+						identifygui_active[i] = false;
 						initRemoveCurseGUIControllerCode();
 					}
 				}

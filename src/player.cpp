@@ -22,9 +22,7 @@
 #endif
 
 Player* players[MAXPLAYERS] = { nullptr };
-
 Entity* selectedEntity[MAXPLAYERS] = { nullptr };
-int current_player = 0;
 Sint32 mousex = 0, mousey = 0;
 Sint32 omousex = 0, omousey = 0;
 Sint32 mousexrel = 0, mouseyrel = 0;
@@ -56,9 +54,6 @@ GameController::GameController()
 	sdl_device = nullptr;
 	id = -1;
 	name = "";
-
-	oldLeftTrigger = 0;
-	oldRightTrigger = 0;
 }
 
 GameController::~GameController()
@@ -79,9 +74,6 @@ void GameController::close()
 	id = -1;
 
 	initBindings(); // clear status of all values
-
-	oldLeftTrigger = 0;
-	oldRightTrigger = 0;
 }
 
 bool GameController::open(int c)
@@ -198,8 +190,8 @@ void GameController::handleAnalog(int player)
 
 		oldAxisRightX = x;
 		oldAxisRightY = y;*/
-		oldRightX = rightx;
-		oldRightY = righty;
+		oldFloatRightX += rightx;
+		oldFloatRightY += righty;
 
 		if (rightx || righty)
 		{
@@ -234,35 +226,85 @@ void GameController::handleAnalog(int player)
 	}
 	else
 	{
-		int rightx = getRightXMove();
-		int righty = getRightYMove();
+		bool debugMouse = true;
+		if ( debugMouse )
+		{
+			if ( keystatus[SDL_SCANCODE_F1] && keystatus[SDL_SCANCODE_EQUALS] )
+			{
+				leftStickDeadzone = std::min(leftStickDeadzone + 100, 32767);
+			}
+			else if ( keystatus[SDL_SCANCODE_F1] && keystatus[SDL_SCANCODE_MINUS] )
+			{
+				leftStickDeadzone = std::max(leftStickDeadzone - 100, 0);
+			}
+			if ( keystatus[SDL_SCANCODE_F2] && keystatus[SDL_SCANCODE_EQUALS] )
+			{
+				rightStickDeadzone = std::min(rightStickDeadzone + 100, 32767);
+			}
+			else if ( keystatus[SDL_SCANCODE_F2] && keystatus[SDL_SCANCODE_MINUS] )
+			{
+				rightStickDeadzone = std::max(rightStickDeadzone - 100, 0);
+			}
+		}
 
-		//int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
-		//int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
+		int rightx = 0;
+		int righty = 0;
+		real_t floatx = 0;
+		real_t floaty = 0;
 
-		//real_t magnitude = sqrt(pow(x, 2) + pow(y, 2));
-		//real_t normalised = magnitude / (sqrt(2) * 32767);
-		//real_t deadzone = 0.25;
-		//if ( normalised < deadzone )
-		//{
-		//	rightx = 0;
-		//	righty = 0;
-		//}
-		//else
-		//{
-		//	//real_t newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone); // linear gradient
-		//	real_t newMagnitude = magnitude * pow((normalised - deadzone), 2); // half pipe gradient
-		//	real_t angle = atan2(y, static_cast<real_t>(x));
-		//	rightx = newMagnitude * cos(angle) / gamepad_rightx_sensitivity;
-		//	righty = newMagnitude * sin(angle) / gamepad_righty_sensitivity;
-		//}
-		//oldAxisRightX = x;
-		//oldAxisRightY = y;
-		
-		oldRightX = rightx;
-		oldRightY = righty;
+		if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
+		{
+			rightx = getRightXMove();
+			righty = getRightYMove();
+		}
+		else if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_LINEAR || rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
+		{
+			floatx = getRawRightXMove();
+			floaty = getRawRightYMove();
 
-		if (rightx || righty)
+			const real_t maxInputVector = 32767 * sqrt(2);
+			const real_t magnitude = sqrt(pow(floatx, 2) + pow(floaty, 2));
+			const real_t normalised = magnitude / (maxInputVector);
+			real_t deadzone = rightStickDeadzone / maxInputVector;
+			if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
+			{
+				deadzone = rightStickDeadzone / maxInputVector;
+			}
+
+			if ( normalised < deadzone )
+			{
+				floatx = 0.0;
+				floaty = 0.0;
+			}
+			else
+			{
+				const real_t angle = atan2(floaty, floatx);
+				real_t newMagnitude = 0.0;
+				if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
+				{
+					newMagnitude = magnitude * pow((normalised - deadzone), 2); // half pipe gradient
+				}
+				else if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_LINEAR )
+				{
+					newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone); // linear gradient
+				}
+				floatx = newMagnitude * cos(angle) / gamepad_rightx_sensitivity;
+				floaty = newMagnitude * sin(angle) / gamepad_righty_sensitivity;
+
+				//rightx = oldFloatRightX;
+				//righty = oldFloatRightY;
+			}
+
+			oldFloatRightX = floatx;
+			oldFloatRightY = floaty;
+			oldAxisRightX = getRawRightXMove();
+			oldAxisRightY = getRawRightYMove();
+		}
+
+		//real_t x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
+		//real_t y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
+	
+		if ( rightx || righty )
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
@@ -283,6 +325,7 @@ void GameController::handleAnalog(int player)
 				mouse->y += righty;
 				mouse->xrel += rightx;
 				mouse->yrel += righty;
+
 				if ( !mouse->draw_cursor )
 				{
 					mouse->draw_cursor = true;
@@ -290,183 +333,171 @@ void GameController::handleAnalog(int player)
 				mouse->moved = true;
 			}
 		}
+		if ( abs(floatx) > 0.0001 || abs(floaty) > 0.0001 )
+		{
+			const auto& mouse = inputs.getVirtualMouse(player);
+			mouse->lastMovementFromController = true;
+
+			mouse->floatx += floatx;
+			mouse->floaty += floaty;
+			mouse->floatxrel += floatx;
+			mouse->floatyrel += floaty;
+
+			if ( !mouse->draw_cursor )
+			{
+				mouse->draw_cursor = true;
+			}
+			mouse->moved = true;
+		}
 	}
 }
 
-int GameController::getLeftXMove()
+int GameController::getLeftXMove() // with sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
-
 	int x = getRawLeftXMove();
-
 	x /= gamepad_leftx_sensitivity;
-
 	return x;
 }
 
-int GameController::getLeftYMove()
+int GameController::getLeftYMove() // with sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
-
 	int y = -getRawLeftYMove();
-
 	y /= gamepad_lefty_sensitivity;
-
 	return y;
 }
 
-int GameController::getRightXMove()
+int GameController::getRightXMove() // with sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
-
 	int x = getRawRightXMove();
-
 	x /= gamepad_rightx_sensitivity;
-
 	return x;
 }
 
-int GameController::getRightYMove()
+int GameController::getRightYMove() // with sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
-
 	int y = getRawRightYMove();
-
 	y /= gamepad_righty_sensitivity;
-
 	return y;
 }
 
+int GameController::getLeftTrigger() { return getRawLeftTrigger(); } //No sensitivity taken into account (yet)
+int GameController::getRightTrigger() { return getRawRightTrigger(); } //No sensitivity taken into account (yet)
 
-
-int GameController::getLeftTrigger()
-{
-	return getRawLeftTrigger(); //No sensitivity taken into account (yet)
-}
-
-int GameController::getRightTrigger()
-{
-	return getRawRightTrigger(); //No sensitivity taken into account (yet)
-}
-
-
-int GameController::getRawLeftXMove()
+int GameController::getRawLeftXMove() // no sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
-
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTX);
-
-	if (x < gamepad_deadzone && x > -gamepad_deadzone)
+	if ( leftStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
-		return 0;
+		if (x < leftStickDeadzone && x > -leftStickDeadzone )
+		{
+			return 0;
+		}
+		if (x < -leftStickDeadzone )
+		{
+			x += leftStickDeadzone;
+		}
+		else
+		{
+			x -= leftStickDeadzone;
+		}
 	}
-
-	if (x < -gamepad_deadzone)   //TODO: Give each controller a deadzone setting? Or maybe on a player by player basis? And/or each analog stick its own deadzone setting?
-	{
-		x += gamepad_deadzone;
-	}
-	else
-	{
-		x -= gamepad_deadzone;
-	}
-
 	return (!gamepad_leftx_invert) ? x : -x;
 }
 
-int GameController::getRawLeftYMove()
+int GameController::getRawLeftYMove() // no sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
-
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTY);
-
-	if (y < gamepad_deadzone && y > -gamepad_deadzone)
+	if ( leftStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
-		return 0;
+		if (y < leftStickDeadzone && y > -leftStickDeadzone )
+		{
+			return 0;
+		}
+		if (y < -leftStickDeadzone )
+		{
+			y += leftStickDeadzone;
+		}
+		else
+		{
+			y -= leftStickDeadzone;
+		}
 	}
-
-	if (y < -gamepad_deadzone)
-	{
-		y += gamepad_deadzone;
-	}
-	else
-	{
-		y -= gamepad_deadzone;
-	}
-
 	return (!gamepad_lefty_invert) ? -y : y;
 }
 
-int GameController::getRawRightXMove()
+int GameController::getRawRightXMove() // no sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
-
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
-
-	if (x < gamepad_deadzone && x > -gamepad_deadzone)
+	if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
-		return 0;
+		if (x < rightStickDeadzone && x > -rightStickDeadzone )
+		{
+			return 0;
+		}
+		if (x < -rightStickDeadzone )
+		{
+			x += rightStickDeadzone;
+		}
+		else
+		{
+			x -= rightStickDeadzone;
+		}
 	}
-
-	if (x < -gamepad_deadzone)
-	{
-		x += gamepad_deadzone;
-	}
-	else
-	{
-		x -= gamepad_deadzone;
-	}
-
 	return (!gamepad_rightx_invert) ? x : -x;
 }
 
-int GameController::getRawRightYMove()
+int GameController::getRawRightYMove() // no sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
-
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
-
-	if (y < gamepad_deadzone && y > -gamepad_deadzone)
+	if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
-		return 0;
+		if (y < rightStickDeadzone && y > -rightStickDeadzone )
+		{
+			return 0;
+		}
+		if (y < -rightStickDeadzone )
+		{
+			y += rightStickDeadzone;
+		}
+		else
+		{
+			y -= rightStickDeadzone;
+		}
 	}
-
-	if (y < -gamepad_deadzone)
-	{
-		y += gamepad_deadzone;
-	}
-	else
-	{
-		y -= gamepad_deadzone;
-	}
-
 	return (!gamepad_righty_invert) ? y : -y;
 }
-
-
 
 int GameController::getRawLeftTrigger()
 {
@@ -474,16 +505,12 @@ int GameController::getRawLeftTrigger()
 	{
 		return 0;
 	}
-
 	int n = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-
 	if (n < gamepad_trigger_deadzone)
 	{
 		return 0;
 	}
-
 	n -= gamepad_trigger_deadzone;
-
 	return n;
 }
 
@@ -493,89 +520,36 @@ int GameController::getRawRightTrigger()
 	{
 		return 0;
 	}
-
 	int n = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
-
 	if (n < gamepad_trigger_deadzone)
 	{
 		return 0;
 	}
-
 	n -= gamepad_trigger_deadzone;
-
 	return n;
 }
 
+float GameController::getLeftXPercent() { return (float)getRawLeftXMove() / (float)maxLeftXMove(); }
+float GameController::getLeftYPercent() { return (float)getRawLeftYMove() / (float)maxLeftYMove(); }
+float GameController::getRightXPercent() { return (float)getRawRightXMove() / (float)maxRightXMove(); }
+float GameController::getRightYPercent() { return (float)getRawRightYMove() / (float)maxRightYMove(); }
 
+float GameController::getLeftTriggerPercent() { return (float)getRawLeftTrigger() / (float)maxLeftTrigger(); }
+float GameController::getRightTriggerPercent() { return (float)getRawRightTrigger() / (float)maxRightTrigger(); }
 
-float GameController::getLeftXPercent()
-{
-	return (float)getRawLeftXMove() / (float)maxLeftXMove();
-}
-
-float GameController::getLeftYPercent()
-{
-	return (float)getRawLeftYMove() / (float)maxLeftYMove();
-}
-
-float GameController::getRightXPercent()
-{
-	return (float)getRawRightXMove() / (float)maxRightXMove();
-}
-
-float GameController::getRightYPercent()
-{
-	return (float)getRawRightYMove() / (float)maxRightYMove();
-}
-
-
-float GameController::getLeftTriggerPercent()
-{
-	return (float)getRawLeftTrigger() / (float)maxLeftTrigger();
-}
-
-float GameController::getRightTriggerPercent()
-{
-	return (float)getRawRightTrigger() / (float)maxRightTrigger();
-}
-
-
-int GameController::maxLeftXMove()
-{
-	return 32767 - gamepad_deadzone;
-}
-
-int GameController::maxLeftYMove()
-{
-	return 32767 - gamepad_deadzone;
-}
-
-int GameController::maxRightXMove()
-{
-	return 32767 - gamepad_deadzone;
-}
-
-int GameController::maxRightYMove()
-{
-	return 32767 - gamepad_deadzone; //Ya, it's pretty constant in SDL2.
-}
-
-
-int GameController::maxLeftTrigger()
-{
-	return 32767 - gamepad_deadzone;
-}
-
-int GameController::maxRightTrigger()
-{
-	return 32767 - gamepad_deadzone;
-}
+//Ya, it's pretty constant in SDL2.
+int GameController::maxLeftXMove() { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? leftStickDeadzone : 0); }
+int GameController::maxLeftYMove() { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? leftStickDeadzone : 0); }
+int GameController::maxRightXMove() { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? rightStickDeadzone : 0); }
+int GameController::maxRightYMove() { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? rightStickDeadzone : 0); }
+int GameController::maxLeftTrigger() { return 32767 - gamepad_deadzone; }
+int GameController::maxRightTrigger() {	return 32767 - gamepad_deadzone; }
 
 const bool hotbarGamepadControlEnabled(const int player)
 {
 	return (!openedChest[player]
 		&& players[player]->gui_mode != GUI_MODE_SHOP
-		&& !identifygui_active
+		&& !identifygui_active[player]
 		&& !removecursegui_active
 		&& !GenericGUI[player].isGUIOpen());
 }
@@ -788,7 +762,7 @@ bool GameController::handleIdentifyMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
-		selectIdentifySlot(selectedIdentifySlot - 1);
+		selectIdentifySlot(player, selectedIdentifySlot[player] - 1);
 		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
@@ -796,7 +770,7 @@ bool GameController::handleIdentifyMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
-		selectIdentifySlot(selectedIdentifySlot + 1);
+		selectIdentifySlot(player, selectedIdentifySlot[player] + 1);
 		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
@@ -1157,6 +1131,93 @@ const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 	return 0;
 }
 
+const real_t Inputs::getMouseFloat(const int player, MouseInputs input)
+{
+	if ( bPlayerUsingKeyboardControl(player) && (!getVirtualMouse(player)->lastMovementFromController
+		|| (players[player]->shootmode && !gamePaused && !intro)) )
+	{
+		// add controller virtual mouse if applicable, only in shootmode
+		// shootmode has no limits on rotation, but !shootmode is inventory
+
+		bool combineMouseInputs = (players[player]->shootmode && hasController(player)) && !gamePaused && !intro;
+
+		switch ( input )
+		{
+			case OX:
+				return omousex + ((combineMouseInputs) ? getVirtualMouse(player)->ox : 0);
+				//return omousex;
+			case OY:
+				return omousey + ((combineMouseInputs) ? getVirtualMouse(player)->oy : 0);
+				//return omousey;
+			case X:
+				return mousex + ((combineMouseInputs) ? getVirtualMouse(player)->x : 0);
+				//return mousex;
+			case Y:
+				return mousey + ((combineMouseInputs) ? getVirtualMouse(player)->y : 0);
+				//return mousey;
+			case XREL:
+				return mousexrel + ((combineMouseInputs) ? getVirtualMouse(player)->xrel : 0);
+				//return mousexrel;
+			case YREL:
+				return mouseyrel + ((combineMouseInputs) ? getVirtualMouse(player)->yrel : 0);
+				//return mouseyrel;
+			case ANALOGUE_OX:
+				return omousex + ((combineMouseInputs) ? getVirtualMouse(player)->floatox : 0);
+				//return omousex;
+			case ANALOGUE_OY:
+				return omousey + ((combineMouseInputs) ? getVirtualMouse(player)->floatoy : 0);
+				//return omousey;
+			case ANALOGUE_X:
+				return mousex + ((combineMouseInputs) ? getVirtualMouse(player)->floatx : 0);
+				//return mousex;
+			case ANALOGUE_Y:
+				return mousey + ((combineMouseInputs) ? getVirtualMouse(player)->floaty : 0);
+				//return mousey;
+			case ANALOGUE_XREL:
+				return mousexrel + ((combineMouseInputs) ? getVirtualMouse(player)->floatxrel : 0);
+				//return mousexrel;
+			case ANALOGUE_YREL:
+				return mouseyrel + ((combineMouseInputs) ? getVirtualMouse(player)->floatyrel : 0);
+				//return mouseyrel;
+			default:
+				return 0;
+		}
+	}
+	else if ( hasController(player) )
+	{
+		switch ( input )
+		{
+			case OX:
+				return getVirtualMouse(player)->ox;
+			case OY:
+				return getVirtualMouse(player)->oy;
+			case X:
+				return getVirtualMouse(player)->x;
+			case Y:
+				return getVirtualMouse(player)->y;
+			case XREL:
+				return getVirtualMouse(player)->xrel;
+			case YREL:
+				return getVirtualMouse(player)->yrel;
+			case ANALOGUE_OX:
+				return getVirtualMouse(player)->floatox;
+			case ANALOGUE_OY:
+				return getVirtualMouse(player)->floatoy;
+			case ANALOGUE_X:
+				return getVirtualMouse(player)->floatx;
+			case ANALOGUE_Y:
+				return getVirtualMouse(player)->floaty;
+			case ANALOGUE_XREL:
+				return getVirtualMouse(player)->floatxrel;
+			case ANALOGUE_YREL:
+				return getVirtualMouse(player)->floatyrel;
+			default:
+				return 0;
+		}
+	}
+	return 0;
+}
+
 void Inputs::warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 flags)
 {
 	if ( inputs.bPlayerUsingKeyboardControl(player) && (flags & SET_MOUSE) )
@@ -1369,16 +1430,16 @@ void Inputs::controllerHandleMouse(int player)
 	controller->handleAnalog(player);
 }
 
-void initIdentifyGUIControllerCode()
+void initIdentifyGUIControllerCode(const int player)
 {
-	if ( identify_items[0] )
+	if ( identify_items[player][0] )
 	{
-		selectedIdentifySlot = 0;
-		warpMouseToSelectedIdentifySlot();
+		selectedIdentifySlot[player] = 0;
+		warpMouseToSelectedIdentifySlot(player);
 	}
 	else
 	{
-		selectedIdentifySlot = -1;
+		selectedIdentifySlot[player] = -1;
 	}
 }
 

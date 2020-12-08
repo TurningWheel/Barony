@@ -236,27 +236,25 @@ void updateMagicGUI();
 
 //Identify GUI definitions.
 //NOTE: Make sure to always reset identifygui_appraising back to false.
-#define IDENTIFY_GUI_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + identifygui_offset_x)
-#define IDENTIFY_GUI_Y (((yres / 2) - (inventoryChest_bmp->h / 2)) + identifygui_offset_y)
-extern bool identifygui_active;
-extern bool identifygui_appraising; //If this is true, the appraisal skill is controlling the identify GUI. If this is false, it originated from an identify spell.
-extern int identifygui_offset_x;
-extern int identifygui_offset_y;
-extern bool dragging_identifyGUI; //The identify GUI is being dragged.
-extern int identifyscroll;
+extern bool identifygui_active[MAXPLAYERS];
+extern bool identifygui_appraising[MAXPLAYERS]; //If this is true, the appraisal skill is controlling the identify GUI. If this is false, it originated from an identify spell.
+extern int identifygui_offset_x[MAXPLAYERS];
+extern int identifygui_offset_y[MAXPLAYERS];
+extern bool dragging_identifyGUI[MAXPLAYERS]; //The identify GUI is being dragged.
+extern int identifyscroll[MAXPLAYERS];
 static const int NUM_IDENTIFY_GUI_ITEMS = 4;
-extern Item* identify_items[NUM_IDENTIFY_GUI_ITEMS];
+extern Item* identify_items[MAXPLAYERS][NUM_IDENTIFY_GUI_ITEMS];
 extern SDL_Surface* identifyGUI_img;
 
-extern int selectedIdentifySlot;
+extern int selectedIdentifySlot[MAXPLAYERS];
 
-void selectIdentifySlot(int slot);
-void warpMouseToSelectedIdentifySlot();
-
-void CloseIdentifyGUI();
-void updateIdentifyGUI(); //Updates the identify item GUI.
-void identifyGUIIdentify(Item* item); //Identify the given item.
-int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
+void selectIdentifySlot(const int player, int slot);
+void warpMouseToSelectedIdentifySlot(const int player);
+const int getIdentifyGUIStartX(const int player);
+const int getIdentifyGUIStartY(const int player);
+void CloseIdentifyGUI(const int player);
+void updateIdentifyGUI(const int player); //Updates the identify item GUI.
+void identifyGUIIdentify(const int player, Item* item); //Identify the given item.
 void drawSustainedSpells(const int player); //Draws an icon for every sustained spell.
 
 //Remove curse GUI definitions.
@@ -506,9 +504,6 @@ extern SDL_Surface* rightsidebar_slot_img;
 extern SDL_Surface* rightsidebar_slot_highlighted_img;
 extern SDL_Surface* rightsidebar_slot_grayedout_img;
 extern int rightsidebar_height;
-extern int appraisal_timer; //There is a delay after the appraisal skill is activated before the item is identified.
-extern int appraisal_timermax;
-extern Uint32 appraisal_item; //The item being appraised (or rather its uid)
 
 void updateRightSidebar(); //Updates the sidebar on the right side of the screen, the one containing spells, skills, etc.
 

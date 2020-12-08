@@ -972,7 +972,7 @@ void drawStatus(int player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
-							&& !identifygui_active
+							&& !identifygui_active[player]
 							&& !removecursegui_active
 							&& !GenericGUI[player].isGUIOpen())) 
 						&& !selectedItem )
@@ -992,7 +992,7 @@ void drawStatus(int player)
 							}
 							hotbar[num].item = 0;
 
-							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active )
+							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active[player] )
 							{
 								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
@@ -1006,7 +1006,7 @@ void drawStatus(int player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
-							&& !identifygui_active 
+							&& !identifygui_active[player]
 							&& !removecursegui_active
 							&& !GenericGUI[player].isGUIOpen()) )
 					{
@@ -1032,13 +1032,13 @@ void drawStatus(int player)
 
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 						{
-							identifygui_active = false;
-							identifygui_appraising = true;
+							identifygui_active[player] = false;
+							identifygui_appraising[player] = true;
 
 							//Cleanup identify GUI gamecontroller code here.
-							selectedIdentifySlot = -1;
+							selectedIdentifySlot[player] = -1;
 
-							identifyGUIIdentify(item);
+							identifyGUIIdentify(player,item);
 						}
 						else
 						{
@@ -1704,7 +1704,7 @@ void drawStatus(int player)
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-				&& !identifygui_active && !removecursegui_active
+				&& !identifygui_active[player] && !removecursegui_active
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
@@ -1735,7 +1735,7 @@ void drawStatus(int player)
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-				&& !identifygui_active && !removecursegui_active
+				&& !identifygui_active[player] && !removecursegui_active
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
@@ -1765,7 +1765,7 @@ void drawStatus(int player)
 
 		if ( bumper_moved && !inputs.getUIInteraction(player)->itemMenuOpen
 			&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) 
-			&& !book_open && !identifygui_active 
+			&& !book_open && !identifygui_active[player]
 			&& !removecursegui_active && !GenericGUI[player].isGUIOpen() )
 		{
 			warpMouseToSelectedHotbarSlot(player);
@@ -1776,7 +1776,7 @@ void drawStatus(int player)
 			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
 				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
-				&& !book_open && !identifygui_active 
+				&& !book_open && !identifygui_active[player]
 				&& !removecursegui_active && !GenericGUI[player].isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.

@@ -2389,8 +2389,8 @@ void TextSourceScript::playerClearInventory(bool clearStats)
 	stats[clientnum]->freePlayerEquipment();
 	list_FreeAll(&stats[clientnum]->inventory);
 	players[clientnum]->shootmode = true;
-	appraisal_timer = 0;
-	appraisal_item = 0;
+	players[clientnum]->inventoryUI.appraisal.timer = 0;
+	players[clientnum]->inventoryUI.appraisal.current_item = 0;
 
 	if ( clearStats )
 	{

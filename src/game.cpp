@@ -228,8 +228,14 @@ void gameLogic(void)
 	Uint32 i = 0, j;
 	deleteent_t* deleteent;
 	bool entitydeletedself;
-	int auto_appraise_lowest_time = std::numeric_limits<int>::max();
-	Item* auto_appraise_target = NULL;
+
+	int auto_appraise_lowest_time[MAXPLAYERS];
+	Item* auto_appraise_target[MAXPLAYERS];
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		auto_appraise_target[i] = nullptr;
+		auto_appraise_lowest_time[i] = std::numeric_limits<int>::max();
+	}
 
 	if ( creditstage > 0 )
 	{
@@ -1874,13 +1880,14 @@ void gameLogic(void)
 					}
 					else
 					{
-						if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
+						if ( auto_appraise_new_items && players[player]->inventoryUI.appraisal.timer == 0 
+							&& !(item->identified) )
 						{
-							int appraisal_time = getAppraisalTime(item);
-							if ( appraisal_time < auto_appraise_lowest_time )
+							int appraisal_time = players[player]->inventoryUI.appraisal.getAppraisalTime(item);
+							if ( appraisal_time < auto_appraise_lowest_time[player] )
 							{
-								auto_appraise_target = item;
-								auto_appraise_lowest_time = appraisal_time;
+								auto_appraise_target[player] = item;
+								auto_appraise_lowest_time[player] = appraisal_time;
 							}
 						}
 					}
@@ -2449,13 +2456,13 @@ void gameLogic(void)
 				}
 				else
 				{
-					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
+					if ( auto_appraise_new_items && players[clientnum]->inventoryUI.appraisal.timer == 0 && !(item->identified) )
 					{
-						int appraisal_time = getAppraisalTime(item);
-						if (appraisal_time < auto_appraise_lowest_time)
+						int appraisal_time = players[clientnum]->inventoryUI.appraisal.getAppraisalTime(item);
+						if (appraisal_time < auto_appraise_lowest_time[clientnum])
 						{
-							auto_appraise_target = item;
-							auto_appraise_lowest_time = appraisal_time;
+							auto_appraise_target[clientnum] = item;
+							auto_appraise_lowest_time[clientnum] = appraisal_time;
 						}
 					}
 				}
@@ -2472,14 +2479,20 @@ void gameLogic(void)
 		}
 
 		// Automatically identify items, shortest time required first
-		if ( auto_appraise_target != NULL )
+		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			//Cleanup identify GUI gamecontroller code here.
-			selectedIdentifySlot = -1;
+			if ( players[i]->isLocalPlayer() )
+			{
+				if ( auto_appraise_target[i] != NULL )
+				{
+					//Cleanup identify GUI gamecontroller code here.
+					selectedIdentifySlot[i] = -1;
 
-			//identifygui_active = false;
-			identifygui_appraising = true;
-			identifyGUIIdentify(auto_appraise_target);
+					//identifygui_active = false;
+					identifygui_appraising[i] = true;
+					identifyGUIIdentify(i, auto_appraise_target[i]);
+				}
+			}
 		}
 	}
 }
@@ -4722,14 +4735,14 @@ int main(int argc, char** argv)
 						{
 							//Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
 							//2-3 years later...yes, it is run every frame.
-							if ( identifygui_appraising )
+							if ( identifygui_appraising[player] )
 							{
 								//Close the identify GUI if appraising.
-								identifygui_active = false;
-								identifygui_appraising = false;
+								identifygui_active[player] = false;
+								identifygui_appraising[player] = false;
 
 								//Cleanup identify GUI gamecontroller code here.
-								selectedIdentifySlot = -1;
+								selectedIdentifySlot[player] = -1;
 							}
 
 							if ( removecursegui_active )
@@ -4787,11 +4800,7 @@ int main(int argc, char** argv)
 						}
 
 						drawSustainedSpells(player);
-						if ( player == clientnum )
-						{
-							//updateAppraisalItemBox(player);
-
-						}
+						updateAppraisalItemBox(player);
 						
 						// inventory and stats
 						if ( players[player]->shootmode == false )
@@ -4801,7 +4810,7 @@ int main(int argc, char** argv)
 								updateCharacterSheet(player);
 								updatePlayerInventory(player);
 								updateChestInventory(player);
-								updateIdentifyGUI();
+								updateIdentifyGUI(player);
 								updateRemoveCurseGUI();
 								GenericGUI[player].updateGUI();
 								updateBookGUI();
@@ -4858,10 +4867,24 @@ int main(int argc, char** argv)
 
 							if ( inputs.hasController(player) )
 							{
-								printTextFormatted(font8x8_bmp, x + 12, y + 60, "rawx: %4d | rawy: %4d",
+								printTextFormatted(font8x8_bmp, x, y + 60, "rawx: %4d | rawy: %4d",
 									inputs.getController(player)->oldAxisRightX, inputs.getController(player)->oldAxisRightY);
-								printTextFormatted(font8x8_bmp, x + 12, y + 12 + 72, "newx: %4d | newy: %4d",
-									inputs.getController(player)->oldRightX, inputs.getController(player)->oldRightY);
+								printTextFormatted(font8x8_bmp, x, y + 72, "flx: %4f | fly: %4f",
+									inputs.getController(player)->oldFloatRightX, inputs.getController(player)->oldFloatRightY);
+								printTextFormatted(font8x8_bmp, x, y + 84, "deadzonex: %3.1f%% | deadzoney: %3.1f%%",
+									inputs.getController(player)->leftStickDeadzone * 100 / 32767.0,
+									inputs.getController(player)->rightStickDeadzone * 100 / 32767.0);
+							}
+							if ( players[player]->entity )
+							{
+								printTextFormatted(font8x8_bmp, x, y + 100, "velx:  %4f | vely:  %4f",
+									players[player]->entity->vel_x, players[player]->entity->vel_y);
+							}
+							if ( inputs.hasController(player) )
+							{
+								printTextFormatted(font8x8_bmp, x, y + 112, "leftx: %4f | lefty: %4f",
+									inputs.getController(player)->getLeftXPercent(),
+									inputs.getController(player)->getLeftYPercent());
 							}
 						}
 					}

@@ -20,20 +20,20 @@
 #include "../scores.hpp"
 
 //Identify GUI definitions.
-bool identifygui_active = false;
-bool identifygui_appraising = false;
-int identifygui_offset_x = 0;
-int identifygui_offset_y = 0;
-bool dragging_identifyGUI = false;
-int identifyscroll = 0;
-Item* identify_items[NUM_IDENTIFY_GUI_ITEMS];
+bool identifygui_active[MAXPLAYERS] = { false };
+bool identifygui_appraising[MAXPLAYERS] = { false };
+int identifygui_offset_x[MAXPLAYERS] = { 0 };
+int identifygui_offset_y[MAXPLAYERS] = { 0 };
+bool dragging_identifyGUI[MAXPLAYERS] = { false };
+int identifyscroll[MAXPLAYERS] = { 0 };
+Item* identify_items[MAXPLAYERS][NUM_IDENTIFY_GUI_ITEMS] = { nullptr };
 SDL_Surface* identifyGUI_img;
 
-int selectedIdentifySlot = -1;
+int selectedIdentifySlot[MAXPLAYERS] = { -1 };
 
-void rebuildIdentifyGUIInventory()
+void rebuildIdentifyGUIInventory(const int player)
 {
-	list_t* identify_inventory = &stats[clientnum]->inventory;
+	list_t* identify_inventory = &stats[player]->inventory;
 	node_t* node = nullptr;
 	Item* item = nullptr;
 	int c = 0;
@@ -49,10 +49,10 @@ void rebuildIdentifyGUIInventory()
 				c++;
 			}
 		}
-		identifyscroll = std::max(0, std::min(identifyscroll, c - 4));
+		identifyscroll[player] = std::max(0, std::min(identifyscroll[player], c - 4));
 		for (c = 0; c < 4; ++c)
 		{
-			identify_items[c] = NULL;
+			identify_items[player][c] = NULL;
 		}
 		c = 0;
 
@@ -65,12 +65,12 @@ void rebuildIdentifyGUIInventory()
 				if (item && !item->identified)   //Skip over all identified items.
 				{
 					c++;
-					if (c <= identifyscroll)
+					if (c <= identifyscroll[player] )
 					{
 						continue;
 					}
-					identify_items[c - identifyscroll - 1] = item;
-					if (c > 3 + identifyscroll)
+					identify_items[player][c - identifyscroll[player] - 1] = item;
+					if (c > 3 + identifyscroll[player] )
 					{
 						break;
 					}
@@ -80,13 +80,23 @@ void rebuildIdentifyGUIInventory()
 	}
 }
 
-void CloseIdentifyGUI()
+void CloseIdentifyGUI(const int player)
 {
-	identifygui_active = false;
-	selectedIdentifySlot = -1;
+	identifygui_active[player] = false;
+	selectedIdentifySlot[player] = -1;
 }
 
-void updateIdentifyGUI()
+const int getIdentifyGUIStartX(const int player)
+{
+	return ((players[player]->camera_midx() - (inventoryChest_bmp->w / 2)) + identifygui_offset_x[player]);
+}
+
+const int getIdentifyGUIStartY(const int player)
+{
+	return ((players[player]->camera_midy() - (inventoryChest_bmp->h / 2)) + identifygui_offset_y[player]);
+}
+
+void updateIdentifyGUI(const int player)
 {
 	//if (openedChest[clientnum])
 	//	return; //Cannot have the identify and chest GUIs open at the same time.
@@ -99,69 +109,78 @@ void updateIdentifyGUI()
 	int y, c;
 
 	//Identify GUI.
-	if (identifygui_active)
+	if ( identifygui_active[player] )
 	{
 		//Center the identify GUI.
-		pos.x = IDENTIFY_GUI_X;
-		pos.y = IDENTIFY_GUI_Y;
+		pos.x = getIdentifyGUIStartX(player);
+		pos.y = getIdentifyGUIStartY(player);
 		drawImage(identifyGUI_img, NULL, &pos);
 
 		//Buttons
 		if ( mousestatus[SDL_BUTTON_LEFT] )
 		{
 			//Identify GUI scroll up button.
-			if (omousey >= IDENTIFY_GUI_Y + 16 && omousey < IDENTIFY_GUI_Y + 52)
+			if (omousey >= getIdentifyGUIStartY(player) + 16
+				&& omousey < getIdentifyGUIStartY(player) + 52)
 			{
-				if (omousex >= IDENTIFY_GUI_X + (identifyGUI_img->w - 28) && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 12))
+				if (omousex >= getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28) 
+					&& omousex < getIdentifyGUIStartX(player) + (identifyGUI_img->w - 12))
 				{
 					buttonclick = 7;
-					identifyscroll--;
+					identifyscroll[player]--;
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
 			//Identify GUI scroll down button.
-			else if (omousey >= IDENTIFY_GUI_Y + 52 && omousey < IDENTIFY_GUI_Y + 88)
+			else if (omousey >= getIdentifyGUIStartY(player) + 52
+				&& omousey < getIdentifyGUIStartY(player) + 88)
 			{
-				if (omousex >= IDENTIFY_GUI_X + (identifyGUI_img->w - 28) && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 12))
+				if (omousex >= getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28)
+					&& omousex < getIdentifyGUIStartX(player) + (identifyGUI_img->w - 12))
 				{
 					buttonclick = 8;
-					identifyscroll++;
+					identifyscroll[player]++;
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
-			else if (omousey >= IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + 15)
+			else if (omousey >= getIdentifyGUIStartY(player)
+				&& omousey < getIdentifyGUIStartY(player) + 15)
 			{
 				//Identify GUI close button.
-				if (omousex >= IDENTIFY_GUI_X + 393 && omousex < IDENTIFY_GUI_X + 407)
+				if (omousex >= getIdentifyGUIStartX(player) + 393 
+					&& omousex < getIdentifyGUIStartX(player) + 407)
 				{
 					buttonclick = 9;
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
-				if (omousex >= IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + 377 && omousey >= IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + 15)
+				if (omousex >= getIdentifyGUIStartX(player) 
+					&& omousex < getIdentifyGUIStartX(player) + 377 
+					&& omousey >= getIdentifyGUIStartY(player)
+					&& omousey < getIdentifyGUIStartY(player) + 15)
 				{
 					gui_clickdrag = true;
-					dragging_identifyGUI = true;
-					dragoffset_x = omousex - IDENTIFY_GUI_X;
-					dragoffset_y = omousey - IDENTIFY_GUI_Y;
+					dragging_identifyGUI[player] = true;
+					dragoffset_x = omousex - getIdentifyGUIStartX(player);
+					dragoffset_y = omousey - getIdentifyGUIStartY(player);
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
 		}
 
 		// mousewheel
-		if ( omousex >= IDENTIFY_GUI_X + 12 && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 28) )
+		if ( omousex >= getIdentifyGUIStartX(player) + 12 && omousex < getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28) )
 		{
-			if ( omousey >= IDENTIFY_GUI_Y + 16 && omousey < IDENTIFY_GUI_Y + (identifyGUI_img->h - 8) )
+			if ( omousey >= getIdentifyGUIStartY(player) + 16 && omousey < getIdentifyGUIStartY(player) + (identifyGUI_img->h - 8) )
 			{
 				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
 				{
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					identifyscroll++;
+					identifyscroll[player]++;
 				}
 				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 0;
-					identifyscroll--;
+					identifyscroll[player]--;
 				}
 			}
 		}
@@ -170,28 +189,28 @@ void updateIdentifyGUI()
 		{
 			if (gui_clickdrag)
 			{
-				identifygui_offset_x = (omousex - dragoffset_x) - (IDENTIFY_GUI_X - identifygui_offset_x);
-				identifygui_offset_y = (omousey - dragoffset_y) - (IDENTIFY_GUI_Y - identifygui_offset_y);
-				if (IDENTIFY_GUI_X <= 0)
+				identifygui_offset_x[player] = (omousex - dragoffset_x) - (getIdentifyGUIStartX(player) - identifygui_offset_x[player]);
+				identifygui_offset_y[player] = (omousey - dragoffset_y) - (getIdentifyGUIStartY(player) - identifygui_offset_y[player]);
+				if ( getIdentifyGUIStartX(player) <= 0)
 				{
-					identifygui_offset_x = 0 - (IDENTIFY_GUI_X - identifygui_offset_x);
+					identifygui_offset_x[player] = 0 - (getIdentifyGUIStartX(player) - identifygui_offset_x[player]);
 				}
-				if (IDENTIFY_GUI_X > 0 + xres - identifyGUI_img->w)
+				if ( getIdentifyGUIStartX(player) > 0 + xres - identifyGUI_img->w)
 				{
-					identifygui_offset_x = (0 + xres - identifyGUI_img->w) - (IDENTIFY_GUI_X - identifygui_offset_x);
+					identifygui_offset_x[player] = (0 + xres - identifyGUI_img->w) - (getIdentifyGUIStartX(player) - identifygui_offset_x[player]);
 				}
-				if (IDENTIFY_GUI_Y <= 0)
+				if (getIdentifyGUIStartY(player) <= 0)
 				{
-					identifygui_offset_y = 0 - (IDENTIFY_GUI_Y - identifygui_offset_y);
+					identifygui_offset_y[player] = 0 - (getIdentifyGUIStartY(player) - identifygui_offset_y[player]);
 				}
-				if (IDENTIFY_GUI_Y > 0 + yres - identifyGUI_img->h)
+				if ( getIdentifyGUIStartY(player) > 0 + yres - identifyGUI_img->h)
 				{
-					identifygui_offset_y = (0 + yres - identifyGUI_img->h) - (IDENTIFY_GUI_Y - identifygui_offset_y);
+					identifygui_offset_y[player] = (0 + yres - identifyGUI_img->h) - (getIdentifyGUIStartY(player) - identifygui_offset_y[player]);
 				}
 			}
 			else
 			{
-				dragging_identifyGUI = false;
+				dragging_identifyGUI[player] = false;
 			}
 		}
 
@@ -213,13 +232,14 @@ void updateIdentifyGUI()
 			{
 				window_name = language[318];
 			}
-			ttfPrintText(ttf8, (IDENTIFY_GUI_X + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), IDENTIFY_GUI_Y + 4, window_name);
+			ttfPrintText(ttf8, (getIdentifyGUIStartX(player) + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), 
+				getIdentifyGUIStartY(player) + 4, window_name);
 
 			//Identify GUI up button.
 			if (buttonclick == 7)
 			{
-				pos.x = IDENTIFY_GUI_X + (identifyGUI_img->w - 28);
-				pos.y = IDENTIFY_GUI_Y + 16;
+				pos.x = getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28);
+				pos.y = getIdentifyGUIStartY(player) + 16;
 				pos.w = 0;
 				pos.h = 0;
 				drawImage(invup_bmp, NULL, &pos);
@@ -227,8 +247,8 @@ void updateIdentifyGUI()
 			//Identify GUI down button.
 			if (buttonclick == 8)
 			{
-				pos.x = IDENTIFY_GUI_X + (identifyGUI_img->w - 28);
-				pos.y = IDENTIFY_GUI_Y + 52;
+				pos.x = getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28);
+				pos.y = getIdentifyGUIStartY(player) + 52;
 				pos.w = 0;
 				pos.h = 0;
 				drawImage(invdown_bmp, NULL, &pos);
@@ -236,16 +256,16 @@ void updateIdentifyGUI()
 			//Identify GUI close button.
 			if (buttonclick == 9)
 			{
-				pos.x = IDENTIFY_GUI_X + 393;
-				pos.y = IDENTIFY_GUI_Y;
+				pos.x = getIdentifyGUIStartX(player) + 393;
+				pos.y = getIdentifyGUIStartY(player);
 				pos.w = 0;
 				pos.h = 0;
 				drawImage(invclose_bmp, NULL, &pos);
-				identifygui_active = false;
-				identifygui_appraising = false;
+				identifygui_active[player] = false;
+				identifygui_appraising[player] = false;
 
 				//Cleanup identify GUI gamecontroller code here.
-				selectedIdentifySlot = -1;
+				selectedIdentifySlot[player] = -1;
 				//TODO: closeIdentifyGUI() instead.
 			}
 
@@ -253,9 +273,9 @@ void updateIdentifyGUI()
 
 			bool selectingSlot = false;
 			SDL_Rect slotPos;
-			slotPos.x = IDENTIFY_GUI_X;
+			slotPos.x = getIdentifyGUIStartX(player);
 			slotPos.w = inventoryoptionChest_bmp->w;
-			slotPos.y = IDENTIFY_GUI_Y + 16;
+			slotPos.y = getIdentifyGUIStartY(player) + 16;
 			slotPos.h = inventoryoptionChest_bmp->h;
 			for ( int i = 0; i < NUM_IDENTIFY_GUI_ITEMS; ++i, slotPos.y += slotPos.h )
 			{
@@ -267,28 +287,28 @@ void updateIdentifyGUI()
 				{
 					pos.y = slotPos.y;
 					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
-					selectedIdentifySlot = i;
+					selectedIdentifySlot[player] = i;
 					selectingSlot = true;
 					if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
 					{
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						identifyGUIIdentify(identify_items[i]);
+						identifyGUIIdentify(player, identify_items[player][i]);
 
-						rebuildIdentifyGUIInventory();
-						if ( identify_items[i] == nullptr )
+						rebuildIdentifyGUIInventory(player);
+						if ( identify_items[player][i] == nullptr )
 						{
-							if ( identify_items[0] == nullptr )
+							if ( identify_items[player][0] == nullptr )
 							{
 								//Go back to inventory.
-								selectedIdentifySlot = -1;
+								selectedIdentifySlot[player] = -1;
 								warpMouseToSelectedInventorySlot(clientnum);
 							}
 							else
 							{
 								//Move up one slot.
-								--selectedIdentifySlot;
-								warpMouseToSelectedIdentifySlot();
+								--selectedIdentifySlot[player];
+								warpMouseToSelectedIdentifySlot(player);
 							}
 						}
 					}
@@ -297,15 +317,15 @@ void updateIdentifyGUI()
 
 			if ( !selectingSlot )
 			{
-				selectedIdentifySlot = -1;
+				selectedIdentifySlot[player] = -1;
 			}
 
 			//Okay, now prepare to render all the items.
-			y = IDENTIFY_GUI_Y + 22;
+			y = getIdentifyGUIStartY(player) + 22;
 			c = 0;
 			if (identify_inventory)
 			{
-				rebuildIdentifyGUIInventory();
+				rebuildIdentifyGUIInventory(player);
 
 				//Actually render the items.
 				c = 0;
@@ -317,7 +337,7 @@ void updateIdentifyGUI()
 						if (item && !item->identified)   //Skip over all identified items.
 						{
 							c++;
-							if (c <= identifyscroll)
+							if (c <= identifyscroll[player] )
 							{
 								continue;
 							}
@@ -327,14 +347,14 @@ void updateIdentifyGUI()
 							{
 								strcat(tempstr, " ...");
 							}
-							ttfPrintText(ttf8, IDENTIFY_GUI_X + 36, y, tempstr);
-							pos.x = IDENTIFY_GUI_X + 16;
-							pos.y = IDENTIFY_GUI_Y + 17 + 18 * (c - identifyscroll - 1);
+							ttfPrintText(ttf8, getIdentifyGUIStartX(player) + 36, y, tempstr);
+							pos.x = getIdentifyGUIStartX(player) + 16;
+							pos.y = getIdentifyGUIStartY(player) + 17 + 18 * (c - identifyscroll[player] - 1);
 							pos.w = 16;
 							pos.h = 16;
 							drawImageScaled(itemSprite(item), NULL, &pos);
 							y += 18;
-							if (c > 3 + identifyscroll)
+							if (c > 3 + identifyscroll[player])
 							{
 								break;
 							}
@@ -346,7 +366,7 @@ void updateIdentifyGUI()
 	}
 } //updateIdentifyGUI()
 
-void identifyGUIIdentify(Item* item)
+void identifyGUIIdentify(const int player, Item* item)
 {
 	if (!item)
 	{
@@ -362,12 +382,14 @@ void identifyGUIIdentify(Item* item)
 	{
 		item->identified = true;
 		messagePlayer(clientnum, language[320], item->description());
-		if (appraisal_timer > 0 && appraisal_item && appraisal_item == item->uid)
+		if ( players[player]->inventoryUI.appraisal.timer > 0 
+			&& players[player]->inventoryUI.appraisal.current_item
+			&& players[player]->inventoryUI.appraisal.current_item == item->uid)
 		{
-			appraisal_timer = 0;
-			appraisal_item = 0;
+			players[player]->inventoryUI.appraisal.timer = 0;
+			players[player]->inventoryUI.appraisal.current_item = 0;
 		}
-		identifygui_active = false;
+		identifygui_active[player] = false;
 	}
 	else
 	{
@@ -378,10 +400,12 @@ void identifyGUIIdentify(Item* item)
 		{
 			item->identified = true;
 			messagePlayer(clientnum, language[320], item->description());
-			if (appraisal_timer > 0 && appraisal_item && appraisal_item == item->uid)
+			if ( players[player]->inventoryUI.appraisal.timer > 0 
+				&& players[player]->inventoryUI.appraisal.current_item
+				&& players[player]->inventoryUI.appraisal.current_item == item->uid)
 			{
-				appraisal_timer = 0;
-				appraisal_item = 0;
+				players[player]->inventoryUI.appraisal.timer = 0;
+				players[player]->inventoryUI.appraisal.current_item = 0;
 			}
 			if ( item->type == GEM_GLASS )
 			{
@@ -396,23 +420,24 @@ void identifyGUIIdentify(Item* item)
 			//Once the timer hits zero, roll to see if the item is identified.
 			//If it is identified, identify it and print out a message for the player.
 
-			identifygui_appraising = false;
-			appraisal_timer = getAppraisalTime(item);
-			appraisal_timermax = appraisal_timer;
-			appraisal_item = item->uid;
+			identifygui_appraising[player] = false;
+			players[player]->inventoryUI.appraisal.timer = players[player]->inventoryUI.appraisal.getAppraisalTime(item);
+			players[player]->inventoryUI.appraisal.timermax = players[player]->inventoryUI.appraisal.timer;
+			players[player]->inventoryUI.appraisal.current_item = item->uid;
 		}
 	}
 
 	//Cleanup identify GUI gamecontroller code here.
-	selectedIdentifySlot = -1;
+	selectedIdentifySlot[player] = -1;
 }
 
-int getAppraisalTime(Item* item)
+int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 {
 	int appraisal_time;
+
 	if ( item->type != GEM_GLASS )
 	{
-		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
+		appraisal_time = (items[item->type].value * 60) / (stats[this->player.playernum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
 		int playerCount = 0;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -433,7 +458,7 @@ int getAppraisalTime(Item* item)
 	}
 	else
 	{
-		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-
+		appraisal_time = (1000 * 60) / (stats[this->player.playernum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-
 		int playerCount = 0;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -455,19 +480,19 @@ int getAppraisalTime(Item* item)
 	return appraisal_time;
 }
 
-inline Item* getItemInfoFromIdentifyGUI(int slot)
+inline Item* getItemInfoFromIdentifyGUI(const int player, int slot)
 {
 	if ( slot >= 4 )
 	{
 		return nullptr; //Out of bounds,
 	}
 
-	return identify_items[slot];
+	return identify_items[player][slot];
 }
 
-void selectIdentifySlot(int slot)
+void selectIdentifySlot(const int player, int slot)
 {
-	if ( slot < selectedIdentifySlot )
+	if ( slot < selectedIdentifySlot[player] )
 	{
 		//Moving up.
 
@@ -478,7 +503,7 @@ void selectIdentifySlot(int slot)
 		 * * 3) Scrolling up past top of Identify GUI, no identifyscroll (move back to inventory)
 		 */
 
-		if ( selectedIdentifySlot <= 0 )
+		if ( selectedIdentifySlot[player] <= 0 )
 		{
 			//Covers cases 2 & 3.
 
@@ -491,12 +516,12 @@ void selectIdentifySlot(int slot)
 			if ( identifyscroll <= 0 )
 			{
 				//Case 3/A: Return to inventory.
-				selectedIdentifySlot = -1;
+				selectedIdentifySlot[player] = -1;
 			}
 			else
 			{
 				//Case 2/B: Page up through Identify "inventory".
-				--identifyscroll;
+				--identifyscroll[player];
 			}
 		}
 		else
@@ -504,11 +529,11 @@ void selectIdentifySlot(int slot)
 			//Covers case 1.
 
 			//Move cursor up the GUI through different selectedIdentifySlot (--selectedIdentifySlot).
-			--selectedIdentifySlot;
-			warpMouseToSelectedIdentifySlot();
+			--selectedIdentifySlot[player];
+			warpMouseToSelectedIdentifySlot(player);
 		}
 	}
-	else if ( slot > selectedIdentifySlot )
+	else if ( slot > selectedIdentifySlot[player] )
 	{
 		//Moving down.
 
@@ -519,10 +544,10 @@ void selectIdentifySlot(int slot)
 		 * * 3) Scrolling down past bottom of Identify GUI, max Identify scroll (revoke move -- can't go beyond limit of Identify GUI).
 		 */
 
-		if ( selectedIdentifySlot >= NUM_IDENTIFY_GUI_ITEMS - 1 )
+		if ( selectedIdentifySlot[player] >= NUM_IDENTIFY_GUI_ITEMS - 1 )
 		{
 			//Covers cases 2 & 3.
-			++identifyscroll; //identifyscroll is automatically sanitized in updateIdentifyGUI().
+			++identifyscroll[player]; //identifyscroll is automatically sanitized in updateIdentifyGUI().
 		}
 		else
 		{
@@ -536,12 +561,12 @@ void selectIdentifySlot(int slot)
 			 * * B) On last item already. Do nothing (revoke movement).
 			 */
 
-			Item* item = getItemInfoFromIdentifyGUI(selectedIdentifySlot + 1);
+			Item* item = getItemInfoFromIdentifyGUI(player, selectedIdentifySlot[player] + 1);
 
 			if ( item )
 			{
-				++selectedIdentifySlot;
-				warpMouseToSelectedIdentifySlot();
+				++selectedIdentifySlot[player];
+				warpMouseToSelectedIdentifySlot(player);
 			}
 			else
 			{
@@ -551,13 +576,17 @@ void selectIdentifySlot(int slot)
 	}
 }
 
-void warpMouseToSelectedIdentifySlot()
+void warpMouseToSelectedIdentifySlot(const int player)
 {
 	SDL_Rect slotPos;
-	slotPos.x = IDENTIFY_GUI_X;
+	slotPos.x = getIdentifyGUIStartX(player);
 	slotPos.w = inventoryoptionChest_bmp->w;
 	slotPos.h = inventoryoptionChest_bmp->h;
-	slotPos.y = IDENTIFY_GUI_Y + 16 + (slotPos.h * selectedIdentifySlot);
+	slotPos.y = getIdentifyGUIStartY(player) + 16 + (slotPos.h * selectedIdentifySlot[player]);
 
-	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
+	int newx = slotPos.x + (slotPos.w / 2);
+	int newy = slotPos.y + (slotPos.h / 2);
+	//SDL_WarpMouseInWindow(screen, newx, newy);
+	Uint32 flags = (Inputs::SET_CONTROLLER | Inputs::SET_MOUSE);
+	inputs.warpMouse(player, newx, newy, flags);
 }
