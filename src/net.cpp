@@ -3507,7 +3507,7 @@ void clientHandlePacket()
 #endif
 		if ( openedChest[clientnum] )
 		{
-			closeChestClientside();
+			closeChestClientside(clientnum);
 		}
 
 		// show loading message
@@ -3945,7 +3945,7 @@ void clientHandlePacket()
 		if ( openedChest[clientnum] )
 		{
 			//Close the chest.
-			closeChestClientside();
+			closeChestClientside(clientnum);
 		}
 
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
@@ -3953,7 +3953,6 @@ void clientHandlePacket()
 		{
 			openedChest[clientnum] = entity; //Set the opened chest to this.
 			GenericGUI[clientnum].closeGUI();
-			identifygui_active[clientnum] = false;
 			list_FreeAll(&chestInv[clientnum]);
 			chestInv[clientnum].first = nullptr;
 			chestInv[clientnum].last = nullptr;
@@ -3986,34 +3985,21 @@ void clientHandlePacket()
 			newitem->identified = false;
 		}
 
-		addItemToChestClientside(newitem);
+		addItemToChestClientside(clientnum, newitem);
 		return;
 	}
 
 	//Close the chest.
 	else if (!strncmp((char*)net_packet->data, "CCLS", 4))
 	{
-		closeChestClientside();
+		closeChestClientside(clientnum);
 		return;
 	}
 
 	//Open up the GUI to identify an item.
 	else if (!strncmp((char*)net_packet->data, "IDEN", 4))
 	{
-		//identifygui_mode = true;
-		identifygui_active[clientnum] = true;
-		identifygui_appraising[clientnum] = false;
-		players[clientnum]->shootmode = false;
-		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-		GenericGUI[clientnum].closeGUI();
-		if ( openedChest[clientnum] )
-		{
-			openedChest[clientnum]->closeChest();
-		}
-
-		//Initialize Identify GUI game controller code here.
-		initIdentifyGUIControllerCode(clientnum);
-
+		GenericGUI[clientnum].openGUI(GUI_TYPE_IDENTIFY, nullptr);
 		return;
 	}
 

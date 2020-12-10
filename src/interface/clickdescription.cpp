@@ -64,19 +64,25 @@ void clickDescription(int player, Entity* entity)
 			{
 				return;    //Click falls inside the chest inventory GUI.
 			}
-		if ( identifygui_active[player] )
-			if ( mx > getIdentifyGUIStartX(player) 
-				&& mx < getIdentifyGUIStartX(player) + identifyGUI_img->w
-				&& my > getIdentifyGUIStartY(player)
-				&& my < getIdentifyGUIStartY(player) + identifyGUI_img->h)
+		SDL_Rect guiBox;
+		GenericGUI[player].getDimensions(guiBox);
+		if ( GenericGUI[player].isGUIOpen() )
+		{
+			if ( mx > guiBox.x
+				&& mx < guiBox.x + guiBox.w
+				&& my > guiBox.y
+				&& my < guiBox.y + guiBox.h )
 			{
-				return;    //Click falls inside the identify item gui.
+				return;    //Click falls inside the generic gui.
 			}
-		if (book_open)
-			if (mouseInBounds(player, BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h))
+		}
+		if ( book_open )
+		{
+			if ( mouseInBounds(player, BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) )
 			{
 				return;    //Click falls inside the book GUI.
 			}
+		}
 		if ( players[player]->gui_mode == GUI_MODE_INVENTORY || players[player]->gui_mode == GUI_MODE_SHOP)
 		{
 			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )

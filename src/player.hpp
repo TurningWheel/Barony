@@ -205,12 +205,6 @@ public:
 	bool handleShopMovement(const int player);
 
 	/*
-	 * Uses dpad to move the cursor around Identify GUI's inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleIdentifyMovement(const int player);
-
-	/*
 	 * Uses dpad to move the cursor through the item context menu and select entries.
 	 * Returns true if moved.
 	 */
@@ -489,7 +483,6 @@ public:
 	void init()
 	{
 		inventoryUI.resetInventory();
-		selectedIdentifySlot[playernum] = -1;
 		selectedChestSlot[playernum] = -1;
 	};
 
@@ -556,6 +549,7 @@ public:
 			int timermax = 0;
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
+			void appraiseItem(Item* item); // start appraise process
 		} appraisal;
 	} inventoryUI;
 
@@ -743,9 +737,6 @@ public:
 		hotbarHasFocus = true;
 	}
 };
-
-void initIdentifyGUIControllerCode(const int player);
-void initRemoveCurseGUIControllerCode();
 
 extern Player* players[MAXPLAYERS];
 //In the process of switching from the old entity player array, all of the old uses of player need to be hunted down and then corrected to account for the new array.

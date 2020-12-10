@@ -2485,12 +2485,7 @@ void gameLogic(void)
 			{
 				if ( auto_appraise_target[i] != NULL )
 				{
-					//Cleanup identify GUI gamecontroller code here.
-					selectedIdentifySlot[i] = -1;
-
-					//identifygui_active[i] = false;
-					identifygui_appraising[i] = true;
-					identifyGUIIdentify(i, auto_appraise_target[i]);
+					players[i]->inventoryUI.appraisal.appraiseItem(auto_appraise_target[i]);
 				}
 			}
 		}
@@ -4735,16 +4730,6 @@ int main(int argc, char** argv)
 						{
 							//Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
 							//2-3 years later...yes, it is run every frame.
-							if ( identifygui_appraising[player] )
-							{
-								//Close the identify GUI if appraising.
-								identifygui_active[player] = false;
-								identifygui_appraising[player] = false;
-
-								//Cleanup identify GUI gamecontroller code here.
-								selectedIdentifySlot[player] = -1;
-							}
-
 							GenericGUI[player].closeGUI();
 
 							if ( book_open )
@@ -4805,7 +4790,6 @@ int main(int argc, char** argv)
 								updateCharacterSheet(player);
 								updatePlayerInventory(player);
 								updateChestInventory(player);
-								updateIdentifyGUI(player);
 								GenericGUI[player].updateGUI();
 								updateBookGUI();
 								//updateRightSidebar(); -- 06/12/20 we don't use this but it still somehow displays stuff :D

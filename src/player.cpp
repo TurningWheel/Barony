@@ -559,7 +559,6 @@ const bool hotbarGamepadControlEnabled(const int player)
 {
 	return (!openedChest[player]
 		&& players[player]->gui_mode != GUI_MODE_SHOP
-		&& !identifygui_active[player]
 		&& !GenericGUI[player].isGUIOpen());
 }
 
@@ -744,42 +743,6 @@ bool GameController::handleShopMovement(const int player)
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
 		selectShopSlot(selectedShopSlot + 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
-
-		dpad_moved = true;
-	}
-
-	if (dpad_moved)
-	{
-		dpad_moved = false;
-		//inputs.getVirtualMouse(player)->draw_cursor = false;
-
-		return true;
-	}
-
-	return false;
-}
-
-bool GameController::handleIdentifyMovement(const int player)
-{
-	bool dpad_moved = false;
-
-	if ( inputs.getUIInteraction(player)->itemMenuOpen )
-	{
-		return false;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
-	{
-		selectIdentifySlot(player, selectedIdentifySlot[player] - 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_UP);
-
-		dpad_moved = true;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
-	{
-		selectIdentifySlot(player, selectedIdentifySlot[player] + 1);
 		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
@@ -1402,19 +1365,6 @@ void Inputs::controllerHandleMouse(int player)
 	}
 
 	controller->handleAnalog(player);
-}
-
-void initIdentifyGUIControllerCode(const int player)
-{
-	if ( identify_items[player][0] )
-	{
-		selectedIdentifySlot[player] = 0;
-		warpMouseToSelectedIdentifySlot(player);
-	}
-	else
-	{
-		selectedIdentifySlot[player] = -1;
-	}
 }
 
 bool GameController::binaryOf(Binding_t& binding) 

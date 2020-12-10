@@ -1583,7 +1583,6 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 
 void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
 {
-	CloseIdentifyGUI(playernum);
 	GenericGUI[playernum].closeGUI();
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
 	{
@@ -3287,6 +3286,19 @@ bool GenericGUIMenu::isItemRemoveCursable(const Item* item)
 	return false;
 }
 
+bool GenericGUIMenu::isItemIdentifiable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( item->identified )
+	{
+		return false;
+	}
+	return true;
+}
+
 bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 {
 	if ( !item )
@@ -3572,12 +3584,17 @@ void GenericGUIMenu::updateGUI()
 		//Center the GUI.
 		pos.x = gui_starty;
 		pos.y = gui_startx;
-		int windowX1 = pos.x - 20;
-		int windowX2 = pos.x + identifyGUI_img->w + 20;
-		int windowY1 = pos.y - 40;
-		int windowY2 = pos.y + identifyGUI_img->h + 40;
+
+		windowX1 = gui_starty;
+		windowX2 = gui_starty + identifyGUI_img->w;
+		windowY1 = gui_startx;
+		windowY2 = gui_startx + identifyGUI_img->h;
 		if ( guiType == GUI_TYPE_TINKERING )
 		{
+			windowX1 -= 20;
+			windowX2 += 20;
+			windowY1 -= 40;
+			windowY2 += 40;
 			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
 			int numMetalScrap = 0;
 			int numMagicScrap = 0;
@@ -3719,6 +3736,10 @@ void GenericGUIMenu::updateGUI()
 		}
 		else if ( guiType == GUI_TYPE_SCRIBING )
 		{
+			windowX1 -= 20;
+			windowX2 += 20;
+			windowY1 -= 40;
+			windowY2 += 40;
 			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
 
 			// title
@@ -4361,6 +4382,10 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 	{
 		return isItemRemoveCursable(item);
 	}
+	else if ( guiType == GUI_TYPE_IDENTIFY )
+	{
+		return isItemIdentifiable(item);
+	}
 	return false;
 }
 
@@ -4425,13 +4450,30 @@ void GenericGUIMenu::uncurseItem(Item* item)
 			armornum = 9;
 		}
 		strcpy((char*)net_packet->data, "RCUR");
-		net_packet->data[4] = clientnum;
+		net_packet->data[4] = gui_player;
 		net_packet->data[5] = armornum;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		net_packet->len = 6;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
+}
+
+void GenericGUIMenu::identifyItem(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, language[319], item->getName());
+		return;
+	}
+
+	item->identified = true;
+	messagePlayer(gui_player, language[320], item->description());
+	closeGUI();
 }
 
 void GenericGUIMenu::repairItem(Item* item)
@@ -4701,10 +4743,6 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
-	if ( identifygui_active[gui_player] )
-	{
-		CloseIdentifyGUI(gui_player);
-	}
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
 	if ( openedChest[gui_player] )
@@ -4728,10 +4766,6 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
-	if ( identifygui_active[gui_player] )
-	{
-		CloseIdentifyGUI(gui_player);
-	}
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
 	if ( openedChest[gui_player] )
@@ -4779,10 +4813,6 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 		}
 	}
 
-	if ( identifygui_active[gui_player] )
-	{
-		CloseIdentifyGUI(gui_player);
-	}
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
 	if ( openedChest[gui_player] )
@@ -4812,7 +4842,7 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 	}
 	else if ( guiType == GUI_TYPE_IDENTIFY )
 	{
-		repairItem(item);
+		identifyItem(item);
 		return true;
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )

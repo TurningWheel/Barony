@@ -201,7 +201,7 @@ inline void drawChestSlots(const int player)
 							}
 							else
 							{
-								warpMouseToSelectedInventorySlot(clientnum);
+								warpMouseToSelectedInventorySlot(player);
 							}
 						}
 					}

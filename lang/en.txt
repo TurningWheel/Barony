@@ -5937,4 +5937,5 @@ Changing this gameflag is disabled in current game mode.#
 3993 https://store.steampowered.com/app/1010821/Barony_Legends__Pariahs/#
 3994 Crossplay search not enabled#
 3995 You have no items able to be uncursed!#
+3996 You have no items able to be identified!#
 3999 end#

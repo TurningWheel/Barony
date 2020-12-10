@@ -61,7 +61,7 @@ void handleDamageIndicators(int player)
 		pos.y += 200 * sin(angle);
 		pos.w = damage_bmp->w;
 		pos.h = damage_bmp->h;
-		if ( stats[clientnum]->HP > 0 )
+		if ( stats[player]->HP > 0 )
 		{
 			drawImageRotatedAlpha( damage_bmp, NULL, &pos, angle, (Uint8)(damageIndicator->alpha * 255) );
 		}
@@ -972,7 +972,6 @@ void drawStatus(int player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
-							&& !identifygui_active[player]
 							&& !GenericGUI[player].isGUIOpen())) 
 						&& !selectedItem )
 					{
@@ -991,7 +990,7 @@ void drawStatus(int player)
 							}
 							hotbar[num].item = 0;
 
-							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active[player] )
+							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
 								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
@@ -1005,7 +1004,6 @@ void drawStatus(int player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
-							&& !identifygui_active[player]
 							&& !GenericGUI[player].isGUIOpen()) )
 					{
 						//Use the item if right clicked.
@@ -1030,13 +1028,7 @@ void drawStatus(int player)
 
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 						{
-							identifygui_active[player] = false;
-							identifygui_appraising[player] = true;
-
-							//Cleanup identify GUI gamecontroller code here.
-							selectedIdentifySlot[player] = -1;
-
-							identifyGUIIdentify(player,item);
+							players[player]->inventoryUI.appraisal.appraiseItem(item);
 						}
 						else
 						{
@@ -1702,7 +1694,6 @@ void drawStatus(int player)
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-				&& !identifygui_active[player]
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
@@ -1733,7 +1724,6 @@ void drawStatus(int player)
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-				&& !identifygui_active[player]
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
@@ -1763,7 +1753,7 @@ void drawStatus(int player)
 
 		if ( bumper_moved && !inputs.getUIInteraction(player)->itemMenuOpen
 			&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) 
-			&& !book_open && !identifygui_active[player]
+			&& !book_open
 			&& !GenericGUI[player].isGUIOpen() )
 		{
 			warpMouseToSelectedHotbarSlot(player);
@@ -1774,7 +1764,7 @@ void drawStatus(int player)
 			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
 				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
-				&& !book_open && !identifygui_active[player]
+				&& !book_open
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
@@ -2059,21 +2049,21 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 					damage = primaryElement->damage;
 				}
 			}
-			if ( players[clientnum] )
+			if ( players[player] )
 			{
 				int bonus = 0;
 				if ( spellbook )
 				{
-					bonus = 25 * ((shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(item->beatitude) : item->beatitude));
-					if ( stats[clientnum] )
+					bonus = 25 * ((shouldInvertEquipmentBeatitude(stats[player]) ? abs(item->beatitude) : item->beatitude));
+					if ( stats[player] )
 					{
-						if ( players[clientnum] && players[clientnum]->entity )
+						if ( players[player] && players[player]->entity )
 						{
-							bonus += players[clientnum]->entity->getINT() * 0.5;
+							bonus += players[player]->entity->getINT() * 0.5;
 						}
 						else
 						{
-							bonus += statGetINT(stats[clientnum], nullptr) * 0.5;
+							bonus += statGetINT(stats[player], nullptr) * 0.5;
 						}
 					}
 					if ( bonus < 0 )
@@ -2081,8 +2071,8 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 						bonus = 0;
 					}
 				}
-				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
-				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, primaryElement)));
+				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, primaryElement)));
 			}
 			if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
 			{
@@ -2139,16 +2129,16 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 		}
 		else
 		{
-			if ( players[clientnum] && players[clientnum]->entity )
+			if ( players[player] && players[player]->entity )
 			{
 				if ( sustainCostPerSecond > 0.01 )
 				{
 					snprintf(tempstr, 31, language[3325],
-						getCostOfSpell(spell, players[clientnum]->entity), sustainCostPerSecond);
+						getCostOfSpell(spell, players[player]->entity), sustainCostPerSecond);
 				}
 				else
 				{
-					snprintf(tempstr, 31, language[308], getCostOfSpell(spell, players[clientnum]->entity));
+					snprintf(tempstr, 31, language[308], getCostOfSpell(spell, players[player]->entity));
 				}
 			}
 			else

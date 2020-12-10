@@ -278,9 +278,11 @@ void updateAppraisalItemBox(const int player)
 	int x = players[player]->inventoryUI.getStartX();
 	int y = players[player]->inventoryUI.getStartY();
 
+	Player::Inventory_t::Appraisal_t& appraisal_t = players[player]->inventoryUI.appraisal;
+
 	// appraisal item box
-	if ( (item = uidToItem(players[player]->inventoryUI.appraisal.current_item)) != NULL 
-		&& players[player]->inventoryUI.appraisal.timer > 0 )
+	if ( (item = uidToItem(appraisal_t.current_item)) != NULL
+		&& appraisal_t.timer > 0 )
 	{
 		if ( !players[player]->shootmode )
 		{
@@ -302,7 +304,7 @@ void updateAppraisalItemBox(const int player)
 
 		char tempstr[64] = { 0 };
 		snprintf(tempstr, 63, language[341], 
-			(((double)(players[player]->inventoryUI.appraisal.timermax - players[player]->inventoryUI.appraisal.timer)) / ((double)players[player]->inventoryUI.appraisal.timermax)) * 100);
+			(((double)(appraisal_t.timermax - appraisal_t.timer)) / ((double)appraisal_t.timermax)) * 100);
 		ttfPrintText( ttf12, pos.x + 8, pos.y + 8, tempstr );
 		if ( !players[player]->shootmode )
 		{
@@ -375,18 +377,6 @@ void select_inventory_slot(const int player, int x, int y)
 			{
 				selectedShopSlot = 0;
 				warpMouseToSelectedShopSlot();
-			}
-		}
-		else if ( identifygui_active[player] )
-		{
-			warpInv = false;
-			y = players[player]->inventoryUI.getSizeY() - 1;
-
-			//Warp into identify GUI "inventory"...if there is anything there.
-			if ( identify_items[player][0] )
-			{
-				selectedIdentifySlot[player] = 0;
-				warpMouseToSelectedIdentifySlot(player);
 			}
 		}
 		else if ( GenericGUI[player].isGUIOpen() )
@@ -758,12 +748,10 @@ void updatePlayerInventory(const int player)
 		}
 
 		if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0 
-			&& selectedIdentifySlot[player] < 0 
 			&& !itemMenuOpen && GenericGUI[player].selectedSlot < 0
 			&& inputs.getController(player)->handleInventoryMovement(player) ) // handleInventoryMovement should be at the end of this check
 		{
 			if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0
-				&& selectedIdentifySlot[player] < 0
 				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
 				if ( !hotbar_t->hotbarHasFocus )
@@ -787,13 +775,6 @@ void updatePlayerInventory(const int player)
 		else if ( selectedShopSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleShopMovement(player) )
 		{
 			if ( selectedShopSlot < 0 )
-			{
-				warpMouseToSelectedInventorySlot(player);
-			}
-		}
-		else if ( selectedIdentifySlot[player] >= 0 && !itemMenuOpen && inputs.getController(player)->handleIdentifyMovement(player) )
-		{
-			if ( selectedIdentifySlot[player] < 0 )
 			{
 				warpMouseToSelectedInventorySlot(player);
 			}
@@ -850,11 +831,10 @@ void updatePlayerInventory(const int player)
 
 	if ( !itemMenuOpen 
 		&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
-		&& selectedIdentifySlot[player] < 0
 		&& GenericGUI[player].selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
-		//Only if item menu is not open, no chest slot is selected, no shop slot is selected, no Identify GUI slot is selected, and no Remove Curse GUI slot is selected.
+		//Only if item menu is not open, no chest slot is selected, no shop slot is selected.
 		pos.w = inventorySlotSize;
 		pos.h = inventorySlotSize;
 		for (x = 0; x < players[player]->inventoryUI.getSizeX(); ++x)
@@ -1390,7 +1370,7 @@ void updatePlayerInventory(const int player)
 
 					if ( inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
 						&& !itemMenuOpen && !selectedItem && selectedChestSlot[player] < 0
-						&& selectedShopSlot < 0 && selectedIdentifySlot[player] < 0
+						&& selectedShopSlot < 0
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
 						inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
@@ -1424,7 +1404,6 @@ void updatePlayerInventory(const int player)
 					if ( (inputs.bMouseLeft(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
 							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
-							&& selectedIdentifySlot[player] < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !selectedItem && !itemMenuOpen )
 					{
@@ -1456,20 +1435,14 @@ void updatePlayerInventory(const int player)
 					else if ( (inputs.bMouseRight(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
 							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
-							&& selectedIdentifySlot[player] < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !itemMenuOpen && !selectedItem )
 					{
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(inputs.bControllerInputPressed(player, INJOY_MENU_USE) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
 						{
 							// auto-appraise the item
-							identifygui_active[player] = false;
-							identifygui_appraising[player] = true;
-							identifyGUIIdentify(player, item);
+							players[player]->inventoryUI.appraisal.appraiseItem(item);
 							inputs.mouseClearRight(player);
-
-							//Cleanup identify GUI gamecontroller code here.
-							selectedIdentifySlot[player] = -1;
 						}
 						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
@@ -2302,13 +2275,7 @@ inline void executeItemMenuOption1(const int player, Item* item, bool is_potion_
 	else if (itemCategory(item) != POTION && itemCategory(item) != SPELLBOOK && item->type != FOOD_CREAMPIE)
 	{
 		//Option 1 = appraise.
-		identifygui_active[player] = false;
-		identifygui_appraising[player] = true;
-
-		//Cleanup identify GUI gamecontroller code here.
-		selectedIdentifySlot[player] = -1;
-
-		identifyGUIIdentify(player, item);
+		players[player]->inventoryUI.appraisal.appraiseItem(item);
 	}
 	else
 	{
@@ -2352,13 +2319,7 @@ inline void executeItemMenuOption2(const int player, Item* item)
 	if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
 	{
 		//Option 2 = appraise.
-		identifygui_active[player] = false;
-		identifygui_appraising[player] = true;
-
-		//Cleanup identify GUI gamecontroller code here.
-		selectedIdentifySlot[player] = -1;
-
-		identifyGUIIdentify(player, item);
+		players[player]->inventoryUI.appraisal.appraiseItem(item);
 	}
 	else if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC 
 		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT
@@ -2370,13 +2331,7 @@ inline void executeItemMenuOption2(const int player, Item* item)
 	else
 	{
 		//Option 2 = appraise.
-		identifygui_active[player] = false;
-		identifygui_appraising[player] = true;
-
-		//Cleanup identify GUI gamecontroller code here.
-		selectedIdentifySlot[player] = -1;
-
-		identifyGUIIdentify(player, item);
+		players[player]->inventoryUI.appraisal.appraiseItem(item);
 	}
 }
 

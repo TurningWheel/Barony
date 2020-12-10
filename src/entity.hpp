@@ -987,8 +987,8 @@ void actSwitchWithTimer(Entity* my);
 //---Chest/container functions---
 void actChest(Entity* my);
 void actChestLid(Entity* my);
-void closeChestClientside(); //Called by the client to manage all clientside stuff relating to closing a chest.
-void addItemToChestClientside(Item* item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
+void closeChestClientside(const int player); //Called by the client to manage all clientside stuff relating to closing a chest.
+void addItemToChestClientside(const int player, Item* item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
 
 //---Stalag functions---
 void actStalagFloor(Entity* my);

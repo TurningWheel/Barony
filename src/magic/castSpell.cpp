@@ -886,8 +886,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						//Identify an item.
-						identifygui_active[i] = true;
-						identifygui_appraising[i] = false;
 						GenericGUI[i].openGUI(GUI_TYPE_IDENTIFY, nullptr);
 					}
 				}

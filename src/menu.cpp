@@ -9401,7 +9401,6 @@ void handleMainMenu(bool mode)
 				players[i]->shootmode = true;
 				players[i]->magic.clearSelectedSpells();
 				enemyHPDamageBarHandler[i].HPBars.clear();
-				selectedIdentifySlot[i] = -1;
 				selectedChestSlot[i] = -1;
 			}
 			currentlevel = startfloor;

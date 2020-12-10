@@ -705,6 +705,7 @@ void Entity::actChest()
 			{
 				messagePlayer(chestclicked, language[459]);
 				openedChest[chestclicked] = this;
+
 				chestOpener = chestclicked;
 				if ( players[chestclicked]->isLocalPlayer() ) // i.e host opened the chest, close GUIs
 				{
@@ -754,7 +755,7 @@ void Entity::actChest()
 			else
 			{
 				messagePlayer(chestclicked, language[460]);
-				if ( !players[chestclicked]->isLocalPlayer() )
+				if ( !players[chestOpener]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "CCLS");  //Chest close.
 					net_packet->address.host = net_clients[chestOpener - 1].host;
@@ -768,7 +769,7 @@ void Entity::actChest()
 				}
 				if (chestOpener != chestclicked)
 				{
-					messagePlayer(chestclicked, language[461]);
+					messagePlayer(chestOpener, language[461]);
 				}
 				closeChestServer();
 			}
@@ -864,27 +865,41 @@ void actChestLid(Entity* my)
 	}
 }
 
+int getChestOpenerFromEntity(const Entity& const chest)
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( openedChest[i] == &chest )
+		{
+			return i;
+		}
+	}
+	return clientnum;
+}
+
 void Entity::closeChest()
 {
-	if (clientnum != 0 && multiplayer == CLIENT)
+	int player = getChestOpenerFromEntity(*this);
+
+	if ( players[player]->isLocalPlayer() && multiplayer == CLIENT)
 	{
 		//If client, tell server the chest got closed.
-		if (openedChest[clientnum] != NULL)
+		if (openedChest[player] != NULL)
 		{
 			//Message server.
 			if ( chestHealth > 0 )
 			{
-				messagePlayer(clientnum, language[460]);
+				messagePlayer(player, language[460]);
 			}
 			
 			strcpy( (char*)net_packet->data, "CCLS" );
-			net_packet->data[4] = clientnum;
+			net_packet->data[4] = player;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 5;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 
-			closeChestClientside();
+			closeChestClientside(player);
 			return;
 		}
 	}
@@ -895,11 +910,11 @@ void Entity::closeChest()
 
 		if ( chestHealth > 0 )
 		{
-			messagePlayer(clientnum, language[460]);
+			messagePlayer(player, language[460]);
 		}
 
 		openedChest[chestOpener] = nullptr;
-		if (chestOpener != 0 && multiplayer == SERVER)
+		if ( !players[chestOpener]->isLocalPlayer() && multiplayer == SERVER)
 		{
 			//Tell the client that the chest got closed.
 			strcpy((char*)net_packet->data, "CCLS");  //Chest close.
@@ -946,12 +961,12 @@ void Entity::addItemToChest(Item* item)
 	{
 		return;
 	}
-
-	if (clientnum != 0 && multiplayer == CLIENT)
+	int player = getChestOpenerFromEntity(*this);
+	if ( players[player]->isLocalPlayer() && multiplayer == CLIENT )
 	{
 		//Tell the server.
 		strcpy( (char*)net_packet->data, "CITM" );
-		net_packet->data[4] = clientnum;
+		net_packet->data[4] = player;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[5]);
@@ -963,7 +978,7 @@ void Entity::addItemToChest(Item* item)
 		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 
-		addItemToChestClientside(item);
+		addItemToChestClientside(player, item);
 		return;
 	}
 
@@ -988,7 +1003,7 @@ void Entity::addItemToChest(Item* item)
 	item->node->element = item;
 	item->node->deconstructor = &defaultDeconstructor;
 
-	if (chestOpener != 0 && multiplayer == SERVER)
+	if ( !players[chestOpener]->isLocalPlayer() && multiplayer == SERVER )
 	{
 		strcpy((char*)net_packet->data, "CITM");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
@@ -1154,6 +1169,7 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 	 * getInfoOnly just returns a copy of the item at the slot, it does not actually grab the item.
 	 * Note that the returned memory will need to be freed.
 	 */
+	
 	Item* newitem = NULL;
 
 	if ( item == NULL )
@@ -1161,7 +1177,9 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 		return NULL;
 	}
 
-	if ( clientnum != 0 && multiplayer == CLIENT)
+	int player = getChestOpenerFromEntity(*this);
+
+	if ( players[player]->isLocalPlayer() && multiplayer == CLIENT )
 	{
 		if (!item || !item->node)
 		{
@@ -1185,7 +1203,7 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 		if ( !getInfoOnly )
 		{
 			strcpy( (char*)net_packet->data, "RCIT" );  //Have the server remove the item from the chest).
-			net_packet->data[4] = clientnum;
+			net_packet->data[4] = player;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			SDLNet_Write32((Uint32)item->type, &net_packet->data[5]);
@@ -1258,38 +1276,38 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 	return newitem;
 }
 
-void closeChestClientside()
+void closeChestClientside(const int player)
 {
-	if (!openedChest[clientnum])
+	if (!openedChest[player])
 	{
 		return;
 	}
 
-	if (multiplayer != CLIENT || clientnum == 0)
+	if ( multiplayer == CLIENT && players[player]->isLocalPlayer() )
 	{
-		return;    //Only called for the client.
+		//Only called for the client.
+
+		list_FreeAll(&chestInv[player]);
+
+		openedChest[player] = NULL;
+
+		chestitemscroll[player] = 0;
+
+		for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
+		{
+			invitemschest[player][c] = nullptr;
+		}
+
+		//Reset chest-gamepad related stuff here.
+		selectedChestSlot[player] = -1;
 	}
-
-	list_FreeAll(&chestInv[clientnum]);
-
-	openedChest[clientnum] = NULL;
-
-	chestitemscroll[clientnum] = 0;
-
-	for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
-	{
-		invitemschest[clientnum][c] = nullptr;
-	}
-
-	//Reset chest-gamepad related stuff here.
-	selectedChestSlot[clientnum] = -1;
 }
 
-void addItemToChestClientside(Item* item)
+void addItemToChestClientside(const int player, Item* item)
 {
-	if (openedChest[clientnum])
+	if (openedChest[player])
 	{
-		//messagePlayer(clientnum, "Recieved item.");
+		//messagePlayer(player, "Recieved item.");
 
 		//If there's an open chests, add an item to it.
 		//TODO: Add item to the chest.
@@ -1297,7 +1315,7 @@ void addItemToChestClientside(Item* item)
 		Item* item2 = NULL;
 		node_t* node = NULL;
 
-		for (node = chestInv[clientnum].first; node != NULL; node = node->next)
+		for (node = chestInv[player].first; node != NULL; node = node->next)
 		{
 			item2 = (Item*) node->element;
 			if (!itemCompare(item, item2, false))
@@ -1307,7 +1325,7 @@ void addItemToChestClientside(Item* item)
 			}
 		}
 
-		item->node = list_AddNodeFirst(&chestInv[clientnum]);
+		item->node = list_AddNodeFirst(&chestInv[player]);
 		item->node->element = item;
 		item->node->deconstructor = &defaultDeconstructor;
 	}

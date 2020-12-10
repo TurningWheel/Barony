@@ -2208,7 +2208,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			item_ScrollIdentify(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item, player);
+				//consumeItem(item, player);
 			}
 			break;
 		case SCROLL_LIGHT:

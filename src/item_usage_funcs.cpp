@@ -2331,6 +2331,7 @@ void item_ScrollIdentify(Item* item, int player)
 
 	if (!players[player]->isLocalPlayer())
 	{
+		consumeItem(item, player);
 		return;
 	}
 
@@ -2340,21 +2341,33 @@ void item_ScrollIdentify(Item* item, int player)
 		return;
 	}
 
-	//identifygui_mode = true;
-	identifygui_active[player] = true;
-	identifygui_appraising[player] = false;
-	players[player]->shootmode = false;
-	players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	conductIlliterate = false;
 
-	GenericGUI[player].closeGUI();
-
-	if ( openedChest[player] )
+	if ( item->identified )
 	{
-		openedChest[player]->closeChest();
+		// Uncurse an item
+		// quickly check if we have any items available so we don't waste our scroll
+		bool foundIdentifiable = false;
+		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+		{
+			Item* inventoryItem = (Item*)node->element;
+			if ( GenericGUI[player].isItemIdentifiable(inventoryItem) )
+			{
+				foundIdentifiable = true;
+				break;
+			}
+		}
+		if ( !foundIdentifiable )
+		{
+			messagePlayer(player, language[3996]);
+			return;
+		}
 	}
 
-	//Initialize Identify GUI game controller code here.
-	initIdentifyGUIControllerCode(player);
+	item->identified = true;
+	messagePlayer(player, language[848]);
+	GenericGUI[player].openGUI(GUI_TYPE_IDENTIFY, item->beatitude, item->type);
+	consumeItem(item, player);
 }
 
 void item_ScrollLight(Item* item, int player)

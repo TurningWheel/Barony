@@ -180,7 +180,8 @@ enum selectBehavior_t
 	BEHAVIOR_MOUSE = 0,
 	BEHAVIOR_GAMEPAD = 1,
 	ENUM_LEN = 2
-} extern itemSelectBehavior;
+};
+extern selectBehavior_t itemSelectBehavior;
 
 //Chest GUI definitions.
 //#define CHEST_INVENTORY_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + chestgui_offset_x)
@@ -233,26 +234,8 @@ void updateMagicGUI();
 #define SUST_SPELLS_RIGHT_ALIGN true //If true, overrides settings and makes the sustained spells draw alongside the right edge of the screen, vertically.
 
 //Identify GUI definitions.
-//NOTE: Make sure to always reset identifygui_appraising back to false.
-extern bool identifygui_active[MAXPLAYERS];
-extern bool identifygui_appraising[MAXPLAYERS]; //If this is true, the appraisal skill is controlling the identify GUI. If this is false, it originated from an identify spell.
-extern int identifygui_offset_x[MAXPLAYERS];
-extern int identifygui_offset_y[MAXPLAYERS];
-extern bool dragging_identifyGUI[MAXPLAYERS]; //The identify GUI is being dragged.
-extern int identifyscroll[MAXPLAYERS];
-static const int NUM_IDENTIFY_GUI_ITEMS = 4;
-extern Item* identify_items[MAXPLAYERS][NUM_IDENTIFY_GUI_ITEMS];
 extern SDL_Surface* identifyGUI_img;
 
-extern int selectedIdentifySlot[MAXPLAYERS];
-
-void selectIdentifySlot(const int player, int slot);
-void warpMouseToSelectedIdentifySlot(const int player);
-const int getIdentifyGUIStartX(const int player);
-const int getIdentifyGUIStartY(const int player);
-void CloseIdentifyGUI(const int player);
-void updateIdentifyGUI(const int player); //Updates the identify item GUI.
-void identifyGUIIdentify(const int player, Item* item); //Identify the given item.
 void drawSustainedSpells(const int player); //Draws an icon for every sustained spell.
 
 enum GUICurrentType
@@ -272,6 +255,10 @@ class GenericGUIMenu
 	int gui_player = 0;
 	int gui_starty = ((xres / 2) - (420 / 2)) + offsetx;
 	int gui_startx = ((yres / 2) - (96 / 2)) + offsety;
+	int windowX1 = 0;
+	int windowX2 = 0;
+	int windowY1 = 0;
+	int windowY2 = 0;
 	int usingScrollBeatitude = 0;
 	int offsetx;
 	int offsety;
@@ -376,6 +363,10 @@ public:
 	void initGUIControllerCode();
 	bool shouldDisplayItemInGUI(Item* item);
 	bool executeOnItemClick(Item* item);
+	void getDimensions(SDL_Rect& r) const 
+	{
+		r.x = windowX1; r.w = windowX2 - windowX1; r.y = windowY1; r.h = windowY2 - windowY1;
+	}
 
 	// repair menu funcs
 	void repairItem(Item* item);
@@ -384,6 +375,10 @@ public:
 	//remove curse
 	bool isItemRemoveCursable(const Item* item);
 	void uncurseItem(Item* item);
+
+	//identify
+	bool isItemIdentifiable(const Item* item);
+	void identifyItem(Item* item);
 
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
