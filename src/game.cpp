@@ -1273,12 +1273,12 @@ void gameLogic(void)
 						conductGameChallenges[CONDUCT_MODDED] = 1;
 					}
 
-					minimapPings.clear(); // clear minimap pings
 					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 					// clear follower menu entities.
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
+						minimapPings[i].clear(); // clear minimap pings
 						if ( players[i]->isLocalPlayer() )
 						{
 							FollowerMenu[i].closeFollowerMenuGUI(true);
@@ -4759,7 +4759,6 @@ int main(int argc, char** argv)
 					if ( !nohud )
 					{
 						//auto tStartMinimapDraw = std::chrono::high_resolution_clock::now();
-						drawMinimap(); // Draw the Minimap
 						/*auto tEndMinimapDraw = std::chrono::high_resolution_clock::now();
 						double timeTaken = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(tEndMinimapDraw - tStartMinimapDraw).count();
 						printlog("Minimap draw time: %.5f", timeTaken);*/
@@ -4769,6 +4768,7 @@ int main(int argc, char** argv)
 							{
 								continue;
 							}
+							drawMinimap(player); // Draw the Minimap
 							drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 						}
 					}

@@ -9414,7 +9414,10 @@ void handleMainMenu(bool mode)
 				conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 			}
 
-			minimapPings.clear(); // clear minimap pings
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				minimapPings[i].clear(); // clear minimap pings
+			}
 			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 			gameplayCustomManager.readFromFile();
 			textSourceScript.scriptVariables.clear();

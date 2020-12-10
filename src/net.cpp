@@ -1295,11 +1295,6 @@ void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool 
 
 void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 {
-	if ( multiplayer == SINGLE )
-	{
-		return;
-	}
-
 	if ( multiplayer == CLIENT )
 	{
 		// send to host to relay info.
@@ -1315,22 +1310,31 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 	}
 	else
 	{
-		for ( int c = 1; c < MAXPLAYERS; c++ )
+		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] || players[player]->isLocalPlayer() )
+			if ( client_disconnected[c] )
 			{
 				continue;
 			}
-			// send to all clients.
-			strcpy((char*)net_packet->data, "PMAP");
-			net_packet->data[4] = player;
-			net_packet->data[5] = x;
-			net_packet->data[6] = y;
+			if ( players[c]->isLocalPlayer() )
+			{
+				minimapPingAdd(player, c, MinimapPing(ticks, player, x, y));
+				continue;
+			}
 
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 7;
-			sendPacket(net_sock, -1, net_packet, c - 1);
+			if ( multiplayer == SERVER )
+			{
+				// send to all clients.
+				strcpy((char*)net_packet->data, "PMAP");
+				net_packet->data[4] = player;
+				net_packet->data[5] = x;
+				net_packet->data[6] = y;
+
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 7;
+				sendPacket(net_sock, -1, net_packet, c - 1);
+			}
 		}
 	}
 }
@@ -3599,7 +3603,10 @@ void clientHandlePacket()
 			conductGameChallenges[CONDUCT_MODDED] = 1;
 		}
 
-		minimapPings.clear(); // clear minimap pings
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			minimapPings[i].clear(); // clear minimap pings
+		}
 		globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 		// clear follower menu entities.
@@ -4195,7 +4202,13 @@ void clientHandlePacket()
 	else if ( !strncmp((char*)net_packet->data, "PMAP", 4) )
 	{
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
-		minimapPingAdd(newPing);
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			if ( players[c]->isLocalPlayer() )
+			{
+				minimapPingAdd(newPing.player, c, newPing);
+			}
+		}
 	}
 	else if ( !strncmp((char*)net_packet->data, "DASH", 4) )
 	{
@@ -5444,8 +5457,7 @@ void serverHandlePacket()
 	else if ( !strncmp((char*)net_packet->data, "PMAP", 4) )
 	{
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
-		minimapPingAdd(newPing);
-		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay to other clients.
+		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay self and to other clients.
 		return;
 	}
 

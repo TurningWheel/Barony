@@ -298,9 +298,9 @@ void updateChestInventory(const int player)
 		}
 	}
 
-	if ( *inputPressed(joyimpulses[INJOY_MENU_CHEST_GRAB_ALL]) )   //Gamepad "Y" button grabs all items in chest.
+	if ( inputs.bControllerInputPressed(player, INJOY_MENU_CHEST_GRAB_ALL) )   //Gamepad "Y" button grabs all items in chest.
 	{
-		*inputPressed(joyimpulses[INJOY_MENU_CHEST_GRAB_ALL]) = 0;
+		inputs.controllerClearInput(player, INJOY_MENU_CHEST_GRAB_ALL);
 		chest_buttonclick = 10;
 	}
 

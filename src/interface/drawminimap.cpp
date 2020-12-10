@@ -30,9 +30,10 @@
 -------------------------------------------------------------------------------*/
 
 Uint32 minotaur_timer = 0;
-std::vector<MinimapPing> minimapPings;
-int minimapPingGimpTimer = -1;
+std::vector<MinimapPing> minimapPings[MAXPLAYERS];
+int minimapPingGimpTimer[MAXPLAYERS] = { 0 };
 Uint32 lastMapTick = 0;
+SDL_Rect minimaps[MAXPLAYERS];
 
 Uint32 minimapColorFunc(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 	Uint32 result = 0u;
@@ -43,7 +44,7 @@ Uint32 minimapColorFunc(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 	return result;
 }
 
-void drawMinimap()
+void drawMinimap(const int player)
 {
 	if ( gameplayCustomManager.inUse() )
 	{
@@ -53,12 +54,21 @@ void drawMinimap()
 		}
 	}
 
+	int numplayers = 0;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i]->isLocalPlayer() )
+		{
+			++numplayers;
+		}
+	}
+
 	node_t* node;
 	Uint32 color;
 	int x, y, i;
 	int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
 	// handle toggling scale hotkey.
-	if ( !command && *inputPressed(impulses[IN_MINIMAPSCALE]) || (players[clientnum]->shootmode && *inputPressed(joyimpulses[INJOY_GAME_MINIMAPSCALE])) )
+	if ( !command && *inputPressedForPlayer(player, impulses[IN_MINIMAPSCALE]) || (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_MINIMAPSCALE)) )
 	{
 		if ( minimapScaleQuickToggle == 3 )
 		{
@@ -69,7 +79,7 @@ void drawMinimap()
 			++minimapScaleQuickToggle;
 		}
 		*inputPressed(impulses[IN_MINIMAPSCALE]) = 0;
-		*inputPressed(joyimpulses[INJOY_GAME_MINIMAPSCALE]) = 0;
+		inputs.controllerClearInput(player, INJOY_GAME_MINIMAPSCALE);
 		playSound(139, 32);
 	}
 
@@ -85,6 +95,11 @@ void drawMinimap()
 		}
 		minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
 	}
+
+	minimaps[player].x = players[player]->camera_x2() - map.width * minimapTotalScale;
+	minimaps[player].y = yres - players[player]->camera_height() - players[player]->camera_y1();
+	minimaps[player].w = map.width * minimapTotalScale;
+	minimaps[player].h = map.height * minimapTotalScale;
 
 	// create a new minimap texture
 	SDL_Surface* minimapSurface = SDL_CreateRGBSurface(0, map.width, map.height, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
@@ -133,13 +148,13 @@ void drawMinimap()
 	glColor4f(1, 1, 1, 1);
 	glBegin(GL_QUADS);
 	glTexCoord2f(0, 0);
-	glVertex2f(xres - map.width * minimapTotalScale, map.height * minimapTotalScale);
+	glVertex2f(minimaps[player].x, minimaps[player].y + minimaps[player].h);
 	glTexCoord2f(0, 1);
-	glVertex2f(xres - map.width * minimapTotalScale, 0);
+	glVertex2f(minimaps[player].x, minimaps[player].y);
 	glTexCoord2f(1, 1);
-	glVertex2f(xres, 0);
+	glVertex2f(minimaps[player].x + minimaps[player].w, minimaps[player].y);
 	glTexCoord2f(1, 0);
-	glVertex2f(xres, map.height * minimapTotalScale);
+	glVertex2f(minimaps[player].x + minimaps[player].w, minimaps[player].y + minimaps[player].h);
 	glEnd();
 	glBindTexture(GL_TEXTURE_2D, 0);
 	if (minimapTexture) {
@@ -177,10 +192,10 @@ void drawMinimap()
 					{
 						glColor4f( 0, 1, 1, 1 );
 						//glBegin(GL_QUADS);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+						glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+						glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+						glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
+						glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
 						//glEnd();
 					}
 				}
@@ -200,8 +215,8 @@ void drawMinimap()
 			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
 			{
 				bool warningEffect = false;
-				if ( (players[clientnum] && players[clientnum]->entity
-					&& players[clientnum]->entity->creatureShadowTaggedThisUid == entity->getUID())
+				if ( (players[player] && players[player]->entity
+					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID())
 					|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
 				{
 					warningEffect = true;
@@ -209,24 +224,24 @@ void drawMinimap()
 					y = floor(entity->y / 16);
 					glColor4f(.75, .75, .75, 1);
 					//glBegin(GL_QUADS);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
 					//glEnd();
 				}
 				if ( !warningEffect 
-					&& ((stats[clientnum]->ring && stats[clientnum]->ring->type == RING_WARNING) 
+					&& ((stats[player]->ring && stats[player]->ring->type == RING_WARNING)
 						|| (entity->entityShowOnMap > 0)) )
 				{
 					int beatitude = 0;
-					if ( stats[clientnum]->ring && stats[clientnum]->ring->type == RING_WARNING )
+					if ( stats[player]->ring && stats[player]->ring->type == RING_WARNING )
 					{
-						beatitude = stats[clientnum]->ring->beatitude;
+						beatitude = stats[player]->ring->beatitude;
 						// invert for succ/incubus
-						if ( beatitude < 0 && shouldInvertEquipmentBeatitude(stats[clientnum]) )
+						if ( beatitude < 0 && shouldInvertEquipmentBeatitude(stats[player]) )
 						{
-							beatitude = abs(stats[clientnum]->ring->beatitude);
+							beatitude = abs(stats[player]->ring->beatitude);
 						}
 					}
 
@@ -235,8 +250,8 @@ void drawMinimap()
 					{
 						doEffect = true;
 					}
-					else if ( stats[clientnum]->ring && players[clientnum] && players[clientnum]->entity 
-						&& entityDist(players[clientnum]->entity, entity) < 16.0 * std::max(3, (11 + 5 * beatitude)) )
+					else if ( stats[player]->ring && players[player] && players[player]->entity
+						&& entityDist(players[player]->entity, entity) < 16.0 * std::max(3, (11 + 5 * beatitude)) )
 					{
 						doEffect = true;
 					}
@@ -246,31 +261,31 @@ void drawMinimap()
 						y = floor(entity->y / 16);
 						glColor4f(0.75, 0.5, 0.75, 1);
 						//glBegin(GL_QUADS);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+						glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+						glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+						glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
+						glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
 						//glEnd();
 						warningEffect = true;
 					}
 				}
-				if ( !warningEffect && stats[clientnum]->shoes != NULL )
+				if ( !warningEffect && stats[player]->shoes != NULL )
 				{
-					if ( stats[clientnum]->shoes->type == ARTIFACT_BOOTS )
+					if ( stats[player]->shoes->type == ARTIFACT_BOOTS )
 					{
 						if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
-							&& players[clientnum] && players[clientnum]->entity
-							&& entityDist(players[clientnum]->entity, entity) < 16.0 * 20 )
+							&& players[player] && players[player]->entity
+							&& entityDist(players[player]->entity, entity) < 16.0 * 20 )
 						{
 							entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
 							x = floor(entity->x / 16);
 							y = floor(entity->y / 16);
 							glColor4f(0.75, 0.5, 0.75, 1);
 							//glBegin(GL_QUADS);
-							glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-							glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-							glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-							glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+							glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+							glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+							glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
+							glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
 							//glEnd();
 						}
 					}
@@ -284,10 +299,10 @@ void drawMinimap()
 				{
 					glColor4f( 192 / 255.f, 64 / 255.f, 0 / 255.f, 1 );
 					//glBegin(GL_QUADS);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
 					//glEnd();
 				}
 			}
@@ -299,10 +314,10 @@ void drawMinimap()
 				{
 					glColor4f(240 / 255.f, 228 / 255.f, 66 / 255.f, 1); // yellow
 					//glBegin(GL_QUADS);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
 				}
 			}
 			else if ( entity->entityShowOnMap > 0 )
@@ -312,10 +327,10 @@ void drawMinimap()
 				if ( ticks % 40 - ticks % 20 )
 				{
 					glColor4f(255 / 255.f, 168 / 255.f, 200 / 255.f, 1); // pink
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x + minimapTotalScale, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + minimaps[player].x, minimaps[player].y + minimaps[player].h - y * minimapTotalScale);
 				}
 			}
 		}
@@ -330,9 +345,9 @@ void drawMinimap()
 	glEnd();
 
 	// draw player pings
-	if ( !minimapPings.empty() )
+	if ( !minimapPings[player].empty() )
 	{
-		for ( std::vector<MinimapPing>::iterator it = minimapPings.begin(); it != minimapPings.end();)
+		for ( std::vector<MinimapPing>::iterator it = minimapPings[player].begin(); it != minimapPings[player].end();)
 		{
 			MinimapPing ping = *it;
 			switch ( ping.player )
@@ -360,8 +375,8 @@ void drawMinimap()
 				if ( (aliveTime < TICKS_PER_SECOND && (aliveTime % 10 < 5)) || aliveTime >= TICKS_PER_SECOND || ping.radiusPing )
 				{
 					// draw the ping blinking every 5 ticks if less than 1 second lifetime, otherwise constantly draw.
-					x = xres - map.width * minimapTotalScale + ping.x * minimapTotalScale;
-					y = yres - map.height * minimapTotalScale + ping.y * minimapTotalScale;
+					x = minimaps[player].x + ping.x * minimapTotalScale + minimapTotalScale / 2;
+					y = yres - (minimaps[player].y + minimaps[player].h) + ping.y * minimapTotalScale + minimapTotalScale / 2;
 					int alpha = 255;
 					if ( ping.radiusPing )
 					{
@@ -391,14 +406,14 @@ void drawMinimap()
 			// prune old pings > 2.5 seconds
 			if ( aliveTime > TICKS_PER_SECOND * 2.5 )
 			{
-				if ( ping.player == clientnum )
+				if ( ping.player == player )
 				{
-					if ( minimapPingGimpTimer > TICKS_PER_SECOND / 4 )
+					if ( minimapPingGimpTimer[player] > TICKS_PER_SECOND / 4 )
 					{
-						minimapPingGimpTimer = TICKS_PER_SECOND / 4; // reduce the gimp timer when one of the player's own pings fades.
+						minimapPingGimpTimer[player] = TICKS_PER_SECOND / 4; // reduce the gimp timer when one of the player's own pings fades.
 					}
 				}
-				it = minimapPings.erase(it);
+				it = minimapPings[player].erase(it);
 			}
 			else
 			{
@@ -448,8 +463,8 @@ void drawMinimap()
 						color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
 						break;
 				}
-				if ( players[clientnum] && players[clientnum]->entity
-					&& players[clientnum]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+				if ( players[player] && players[player]->entity
+					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() )
 				{
 					color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
 				}
@@ -475,16 +490,18 @@ void drawMinimap()
 						color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
 						break;
 				}
-				if ( players[clientnum] && players[clientnum]->entity
-					&& players[clientnum]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+				if ( players[player] && players[player]->entity
+					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() )
 				{
 					color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
 				}
 			}
 
 			// draw the first pixel
-			x = xres - map.width * minimapTotalScale + (int)(entity->x / (16.f / minimapTotalScale));
-			y = map.height * minimapTotalScale - (int)(entity->y / (16.f / minimapTotalScale));
+			int oldx = minimaps[player].x + (int)(entity->x / (16.f / minimapTotalScale));
+			int oldy = minimaps[player].y + minimaps[player].h - (int)(entity->y / (16.f / minimapTotalScale));
+			x = oldx;
+			y = oldy;
 			if ( foundplayer >= 0 )
 			{
 				if ( softwaremode )
@@ -553,7 +570,7 @@ void drawMinimap()
 					{
 						glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, 1);
 						glBegin(GL_POINTS);
-						glVertex2f( xres - map.width * minimapTotalScale + (int)(entity->x / (16.f / minimapTotalScale)) + x, map.height * minimapTotalScale - (int)(entity->y / (16.f / minimapTotalScale)) - y );
+						glVertex2f(oldx + x, oldy - y );
 						glEnd();
 					}
 				}
@@ -562,7 +579,7 @@ void drawMinimap()
 	}
 
 	// draw minotaur
-	if (players[clientnum] == nullptr)
+	if (players[player] == nullptr)
 	{
 		return;
 	}
@@ -588,8 +605,10 @@ void drawMinimap()
 				}
 
 				// draw the first pixel
-				x = xres - map.width * minimapTotalScale + (int)(entity->x / (16.f / minimapTotalScale));
-				y = map.height * minimapTotalScale - (int)(entity->y / (16.f / minimapTotalScale));
+				int oldx = minimaps[player].x + (int)(entity->x / (16.f / minimapTotalScale));
+				int oldy = minimaps[player].y + minimaps[player].h - (int)(entity->y / (16.f / minimapTotalScale));
+				x = oldx;
+				y = oldy;
 				if ( softwaremode )
 				{
 					//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color); //TODO: NOT a PLAYERSWAP
@@ -646,7 +665,7 @@ void drawMinimap()
 					{
 						glColor4f(((Uint8)(color >> 16)) / 255.f, ((Uint8)(color >> 8)) / 255.f, ((Uint8)(color)) / 255.f, 1);
 						glBegin(GL_POINTS);
-						glVertex2f( xres - map.width * minimapTotalScale + (int)(entity->x / (16.f / minimapTotalScale)) + x, map.height * minimapTotalScale - (int)(entity->y / (16.f / minimapTotalScale)) - y );
+						glVertex2f( oldx + x, oldy - y );
 						glEnd();
 					}
 				}
@@ -659,12 +678,17 @@ void drawMinimap()
 	}
 }
 
-void minimapPingAdd(MinimapPing newPing)
+void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPing)
 {
 	int numPlayerPings = 0;
-	if ( !minimapPings.empty() )
+
+	if ( !players[destPlayer]->isLocalPlayer() )
 	{
-		for ( std::vector<MinimapPing>::iterator it = minimapPings.begin(); it != minimapPings.end();)
+		return;
+	}
+	if ( !minimapPings[destPlayer].empty() )
+	{
+		for ( std::vector<MinimapPing>::iterator it = minimapPings[destPlayer].begin(); it != minimapPings[destPlayer].end();)
 		{
 			MinimapPing ping = *it;
 			if ( ping.player == newPing.player && !newPing.radiusPing )
@@ -673,12 +697,12 @@ void minimapPingAdd(MinimapPing newPing)
 				// prune pings if too many by same player.
 				if ( numPlayerPings > 3 )
 				{
-					if ( ping.player == clientnum )
+					if ( ping.player == srcPlayer )
 					{
 						// this is the player creating the sound source.
-						minimapPingGimpTimer = TICKS_PER_SECOND * 3; // 3 second penalty for spam.
+						minimapPingGimpTimer[srcPlayer] = TICKS_PER_SECOND * 3; // 3 second penalty for spam.
 					}
-					it = minimapPings.erase(it);
+					it = minimapPings[destPlayer].erase(it);
 					continue;
 				}
 			}
@@ -687,7 +711,12 @@ void minimapPingAdd(MinimapPing newPing)
 	}
 	if ( !minimapPingMute && !newPing.radiusPing )
 	{
-		playSound(399, 64);
+		if ( newPing.player == destPlayer || !players[newPing.player]->isLocalPlayer() )
+		{
+			// play once? splitscreen host will satisfy newPing.player == destPlayer
+			// remote client sending a ping will satisfy !players[newPing.player]->isLocalPlayer()
+			playSound(399, 64); 
+		}
 	}
-	minimapPings.insert(minimapPings.begin(), newPing);
+	minimapPings[destPlayer].insert(minimapPings[destPlayer].begin(), newPing);
 }

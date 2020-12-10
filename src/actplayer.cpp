@@ -3348,10 +3348,11 @@ void actPlayer(Entity* my)
 								}
 								minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
 							}
-							if ( !shootmode && mouseInBounds(PLAYER_NUM, xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+							if ( !shootmode && mouseInBounds(PLAYER_NUM, minimaps[PLAYER_NUM].x, minimaps[PLAYER_NUM].x + minimaps[PLAYER_NUM].w,
+								yres - minimaps[PLAYER_NUM].y - minimaps[PLAYER_NUM].h, yres - minimaps[PLAYER_NUM].y) ) // mouse within minimap pixels (each map tile is 4 pixels)
 							{
-								MinimapPing newPing(ticks, -1, (mouseX - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (mouseY - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
-								minimapPingAdd(newPing);
+								MinimapPing newPing(ticks, -1, (mouseX - (minimaps[PLAYER_NUM].x)) / minimapTotalScale, (mouseY - (yres - minimaps[PLAYER_NUM].y - minimaps[PLAYER_NUM].h)) / minimapTotalScale);
+								minimapPingAdd(PLAYER_NUM, PLAYER_NUM, newPing);
 								createParticleFollowerCommand(newPing.x, newPing.y, 0, 174);
 								followerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
 								followerMenu.selectMoveTo = false;

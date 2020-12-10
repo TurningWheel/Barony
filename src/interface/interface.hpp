@@ -131,7 +131,7 @@ bool loadInterfaceResources();
 void freeInterfaceResources();
 void clickDescription(const int player, Entity* entity);
 void consoleCommand(char const * const command);
-void drawMinimap();
+void drawMinimap(const int player);
 void handleDamageIndicators(const int player);
 void handleDamageIndicatorTicks();
 void drawStatus(const int player);
@@ -651,9 +651,10 @@ public:
 		radiusPing(radiusPing) {}
 };
 
-extern std::vector<MinimapPing> minimapPings;
-void minimapPingAdd(MinimapPing newPing);
-extern int minimapPingGimpTimer;
+extern std::vector<MinimapPing> minimapPings[MAXPLAYERS];
+void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPing);
+extern int minimapPingGimpTimer[MAXPLAYERS];
+extern SDL_Rect minimaps[MAXPLAYERS];
 
 extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages;
 

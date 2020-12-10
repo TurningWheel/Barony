@@ -258,10 +258,10 @@ inline void checkBuyItem(const int player)
 			selectedShopSlot[player] = i;
 			selectingSlot = true;
 			drawImage(inventoryoption_bmp, nullptr, &slotPos);
-			if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+			if ( inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_MENU_USE) )
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				inputs.mouseClearLeft(player);
+				inputs.controllerClearInput(player, INJOY_MENU_USE);
 				buyItemFromShop(player, shopinvitems[player][i]);
 				//Check if no more items after this slot & deal accordingly.
 				rebuildShopInventory(player);
