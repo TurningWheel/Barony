@@ -2346,11 +2346,6 @@ void item_ScrollIdentify(Item* item, int player)
 	players[player]->shootmode = false;
 	players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
-	if ( removecursegui_active )
-	{
-		closeRemoveCurseGUI();
-	}
-
 	GenericGUI[player].closeGUI();
 
 	if ( openedChest[player] )
@@ -2746,28 +2741,31 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		return;
 	}
 
-	if (item->beatitude >= 0)
+	conductIlliterate = false;
+	if ( item->identified && item->beatitude >= 0 )
 	{
 		// Uncurse an item
-		players[player]->shootmode = false;
-		players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-		removecursegui_active = true;
-		if ( identifygui_active[player] )
+		// quickly check if we have any items available so we don't waste our scroll
+		bool foundUncurseable = false;
+		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
-			CloseIdentifyGUI(player);
+			Item* inventoryItem = (Item*)node->element;
+			if ( GenericGUI[player].isItemRemoveCursable(inventoryItem) )
+			{
+				foundUncurseable = true;
+				break;
+			}
 		}
-		GenericGUI[player].closeGUI();
-
-		if ( openedChest[player] )
+		if ( !foundUncurseable )
 		{
-			openedChest[player]->closeChest();
+			messagePlayer(player, language[3995]);
+			return;
 		}
-
-		initRemoveCurseGUIControllerCode();
-		consumeItem(item, player);
-		return;
 	}
-	else
+
+	item->identified = true;
+	messagePlayer(player, language[848]);
+	if ( item->beatitude < 0 )
 	{
 		// choose a random piece of worn equipment to curse!
 		int tryIndex = rand() % 8;
@@ -2886,6 +2884,10 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		{
 			messagePlayer(player, language[862]);
 		}
+	}
+	else
+	{
+		GenericGUI[player].openGUI(GUI_TYPE_REMOVECURSE, item->beatitude, item->type);
 	}
 	consumeItem(item, player);
 }

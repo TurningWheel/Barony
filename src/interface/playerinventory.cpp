@@ -389,18 +389,6 @@ void select_inventory_slot(const int player, int x, int y)
 				warpMouseToSelectedIdentifySlot(player);
 			}
 		}
-		else if ( removecursegui_active )
-		{
-			warpInv = false;
-			y = players[player]->inventoryUI.getSizeY() - 1;
-
-			//Warp into Remove Curse GUI "inventory"...if there is anything there.
-			if ( removecurse_items[0] )
-			{
-				selectedRemoveCurseSlot = 0;
-				warpMouseToSelectedRemoveCurseSlot();
-			}
-		}
 		else if ( GenericGUI[player].isGUIOpen() )
 		{
 			warpInv = false;
@@ -770,12 +758,12 @@ void updatePlayerInventory(const int player)
 		}
 
 		if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0 
-			&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0 
-			&& !itemMenuOpen && inputs.getController(player)->handleInventoryMovement(player)
-			&& GenericGUI[player].selectedSlot < 0 )
+			&& selectedIdentifySlot[player] < 0 
+			&& !itemMenuOpen && GenericGUI[player].selectedSlot < 0
+			&& inputs.getController(player)->handleInventoryMovement(player) ) // handleInventoryMovement should be at the end of this check
 		{
 			if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0
-				&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
+				&& selectedIdentifySlot[player] < 0
 				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
 				if ( !hotbar_t->hotbarHasFocus )
@@ -810,18 +798,11 @@ void updatePlayerInventory(const int player)
 				warpMouseToSelectedInventorySlot(player);
 			}
 		}
-		else if ( selectedRemoveCurseSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRemoveCurseMovement(player) )
-		{
-			if ( selectedRemoveCurseSlot < 0 )
-			{
-				warpMouseToSelectedInventorySlot(player);
-			}
-		}
 		else if ( GenericGUI[player].selectedSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRepairGUIMovement(player) )
 		{
 			if ( GenericGUI[player].selectedSlot < 0 )
 			{
-				GenericGUI[player].warpMouseToSelectedSlot();
+				warpMouseToSelectedInventorySlot(player);
 			}
 		}
 
@@ -869,7 +850,7 @@ void updatePlayerInventory(const int player)
 
 	if ( !itemMenuOpen 
 		&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
-		&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
+		&& selectedIdentifySlot[player] < 0
 		&& GenericGUI[player].selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
@@ -1409,7 +1390,7 @@ void updatePlayerInventory(const int player)
 
 					if ( inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
 						&& !itemMenuOpen && !selectedItem && selectedChestSlot[player] < 0
-						&& selectedShopSlot < 0 && selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
+						&& selectedShopSlot < 0 && selectedIdentifySlot[player] < 0
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
 						inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
@@ -1443,7 +1424,7 @@ void updatePlayerInventory(const int player)
 					if ( (inputs.bMouseLeft(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
 							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
-							&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
+							&& selectedIdentifySlot[player] < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !selectedItem && !itemMenuOpen )
 					{
@@ -1475,7 +1456,7 @@ void updatePlayerInventory(const int player)
 					else if ( (inputs.bMouseRight(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
 							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
-							&& selectedIdentifySlot[player] < 0 && selectedRemoveCurseSlot < 0
+							&& selectedIdentifySlot[player] < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !itemMenuOpen && !selectedItem )
 					{

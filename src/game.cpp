@@ -4745,11 +4745,6 @@ int main(int argc, char** argv)
 								selectedIdentifySlot[player] = -1;
 							}
 
-							if ( removecursegui_active )
-							{
-								closeRemoveCurseGUI();
-							}
-
 							GenericGUI[player].closeGUI();
 
 							if ( book_open )
@@ -4811,7 +4806,6 @@ int main(int argc, char** argv)
 								updatePlayerInventory(player);
 								updateChestInventory(player);
 								updateIdentifyGUI(player);
-								updateRemoveCurseGUI();
 								GenericGUI[player].updateGUI();
 								updateBookGUI();
 								//updateRightSidebar(); -- 06/12/20 we don't use this but it still somehow displays stuff :D

@@ -502,7 +502,7 @@ void selectChestSlot(const int player, const int slot)
 			 * * B) Page up, scrolling through chestitemscroll.
 			 */
 
-			if ( chestitemscroll <= 0 )
+			if ( chestitemscroll[player] <= 0 )
 			{
 				//Case 3/A: Return to inventory.
 				selectedChestSlot[player] = -1;

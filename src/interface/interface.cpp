@@ -1584,7 +1584,6 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
 {
 	CloseIdentifyGUI(playernum);
-	closeRemoveCurseGUI();
 	GenericGUI[playernum].closeGUI();
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
 	{
@@ -3271,6 +3270,23 @@ bool FollowerRadialMenu::monsterGyroBotDisallowedCommands(int option)
 	return false;
 }
 
+bool GenericGUIMenu::isItemRemoveCursable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+	if ( item->identified && item->beatitude < 0 )
+	{
+		return true;
+	}
+	return false;
+}
+
 bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 {
 	if ( !item )
@@ -3982,6 +3998,16 @@ void GenericGUIMenu::updateGUI()
 						gui_startx + 4, description);
 				}
 			}
+			else if ( guiType == GUI_TYPE_REMOVECURSE )
+			{
+				window_name = language[346];
+				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+			}
+			else if ( guiType == GUI_TYPE_IDENTIFY )
+			{
+				window_name = language[318];
+				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+			}
 
 			//GUI up button.
 			if ( buttonclick == 7 )
@@ -4331,7 +4357,81 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 			}
 		}
 	}
+	else if ( guiType == GUI_TYPE_REMOVECURSE )
+	{
+		return isItemRemoveCursable(item);
+	}
 	return false;
+}
+
+void GenericGUIMenu::uncurseItem(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, language[347], item->getName());
+		return;
+	}
+
+	item->beatitude = 0; //0 = uncursed. > 0 = blessed.
+	messagePlayer(gui_player, language[348], item->description());
+
+	closeGUI();
+	if ( multiplayer == CLIENT && itemIsEquipped(item, gui_player) )
+	{
+		// the client needs to inform the server that their equipment was uncursed.
+		int armornum = 0;
+		if ( item == stats[gui_player]->helmet )
+		{
+			armornum = 0;
+		}
+		else if ( item == stats[gui_player]->breastplate )
+		{
+			armornum = 1;
+		}
+		else if ( item == stats[gui_player]->gloves )
+		{
+			armornum = 2;
+		}
+		else if ( item == stats[gui_player]->shoes )
+		{
+			armornum = 3;
+		}
+		else if ( item == stats[gui_player]->shield )
+		{
+			armornum = 4;
+		}
+		else if ( item == stats[gui_player]->weapon )
+		{
+			armornum = 5;
+		}
+		else if ( item == stats[gui_player]->cloak )
+		{
+			armornum = 6;
+		}
+		else if ( item == stats[gui_player]->amulet )
+		{
+			armornum = 7;
+		}
+		else if ( item == stats[gui_player]->ring )
+		{
+			armornum = 8;
+		}
+		else if ( item == stats[gui_player]->mask )
+		{
+			armornum = 9;
+		}
+		strcpy((char*)net_packet->data, "RCUR");
+		net_packet->data[4] = clientnum;
+		net_packet->data[5] = armornum;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 6;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
 }
 
 void GenericGUIMenu::repairItem(Item* item)
@@ -4462,6 +4562,8 @@ void GenericGUIMenu::closeGUI()
 	secondaryPotion = nullptr;
 	alembicItem = nullptr;
 	repairItemType = 0;
+	removeCurseUsingSpell = false;
+	identifyUsingSpell = false;
 }
 
 inline Item* GenericGUIMenu::getItemInfo(int slot)
@@ -4599,10 +4701,6 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
-	if ( removecursegui_active )
-	{
-		closeRemoveCurseGUI();
-	}
 	if ( identifygui_active[gui_player] )
 	{
 		CloseIdentifyGUI(gui_player);
@@ -4630,10 +4728,6 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
-	if ( removecursegui_active )
-	{
-		closeRemoveCurseGUI();
-	}
 	if ( identifygui_active[gui_player] )
 	{
 		CloseIdentifyGUI(gui_player);
@@ -4670,11 +4764,21 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 		scribingToolItem = itemOpenedWith;
 		scribingCreateCraftableItemList();
 	}
-
-	if ( removecursegui_active )
+	else if ( guiType == GUI_TYPE_REMOVECURSE )
 	{
-		closeRemoveCurseGUI();
+		if ( !itemOpenedWith )
+		{
+			removeCurseUsingSpell = true;
+		}
 	}
+	else if ( guiType == GUI_TYPE_IDENTIFY )
+	{
+		if ( !itemOpenedWith )
+		{
+			identifyUsingSpell = true;
+		}
+	}
+
 	if ( identifygui_active[gui_player] )
 	{
 		CloseIdentifyGUI(gui_player);
@@ -4697,6 +4801,16 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 	}
 
 	if ( guiType == GUI_TYPE_REPAIR )
+	{
+		repairItem(item);
+		return true;
+	}
+	else if ( guiType == GUI_TYPE_REMOVECURSE )
+	{
+		uncurseItem(item);
+		return true;
+	}
+	else if ( guiType == GUI_TYPE_IDENTIFY )
 	{
 		repairItem(item);
 		return true;

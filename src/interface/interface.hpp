@@ -255,34 +255,15 @@ void updateIdentifyGUI(const int player); //Updates the identify item GUI.
 void identifyGUIIdentify(const int player, Item* item); //Identify the given item.
 void drawSustainedSpells(const int player); //Draws an icon for every sustained spell.
 
-//Remove curse GUI definitions.
-#define REMOVECURSE_GUI_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + removecursegui_offset_x)
-#define REMOVECURSE_GUI_Y (((yres / 2) - (inventoryChest_bmp->h / 2)) + removecursegui_offset_y)
-extern bool removecursegui_active;
-extern int removecursegui_offset_x;
-extern int removecursegui_offset_y;
-extern bool dragging_removecurseGUI; //The remove curse GUI is being dragged.
-extern int removecursescroll;
-static const int NUM_REMOVE_CURSE_GUI_ITEMS = 4;
-extern Item* removecurse_items[NUM_REMOVE_CURSE_GUI_ITEMS];
-//extern SDL_Surface *removecurseGUI_img; //Nah, just use the identify GUI's image. It works well enough. No need to double the resources.
-
-void closeRemoveCurseGUI();
-void updateRemoveCurseGUI(); //Updates the remove curse GUI.
-void removecurseGUIRemoveCurse(Item* item); //Uncurse the given item.
-
-//Gamepad-support related stuff.
-extern int selectedRemoveCurseSlot;
-void selectRemoveCurseSlot(int slot);
-void warpMouseToSelectedRemoveCurseSlot();
-
 enum GUICurrentType
 {
 	GUI_TYPE_NONE,
 	GUI_TYPE_REPAIR,
 	GUI_TYPE_ALCHEMY,
 	GUI_TYPE_TINKERING,
-	GUI_TYPE_SCRIBING
+	GUI_TYPE_SCRIBING,
+	GUI_TYPE_REMOVECURSE,
+	GUI_TYPE_IDENTIFY
 };
 
 // Generic GUI Stuff (repair/alchemy)
@@ -311,6 +292,11 @@ public:
 	Item* secondaryPotion;
 	Item* alembicItem;
 	bool experimentingAlchemy;
+	
+	// Remove Curse
+	bool removeCurseUsingSpell = false;
+	// Identify
+	bool identifyUsingSpell = false;
 
 	// Tinkering
 	enum TinkeringFilter
@@ -394,6 +380,10 @@ public:
 	// repair menu funcs
 	void repairItem(Item* item);
 	bool isItemRepairable(const Item* item, int repairScroll);
+
+	//remove curse
+	bool isItemRemoveCursable(const Item* item);
+	void uncurseItem(Item* item);
 
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);

@@ -3952,10 +3952,6 @@ void clientHandlePacket()
 		if ( entity )
 		{
 			openedChest[clientnum] = entity; //Set the opened chest to this.
-			if ( removecursegui_active )
-			{
-				closeRemoveCurseGUI();
-			}
 			GenericGUI[clientnum].closeGUI();
 			identifygui_active[clientnum] = false;
 			list_FreeAll(&chestInv[clientnum]);
@@ -4009,10 +4005,6 @@ void clientHandlePacket()
 		identifygui_appraising[clientnum] = false;
 		players[clientnum]->shootmode = false;
 		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-		if ( removecursegui_active )
-		{
-			closeRemoveCurseGUI();
-		}
 		GenericGUI[clientnum].closeGUI();
 		if ( openedChest[clientnum] )
 		{
@@ -4028,23 +4020,8 @@ void clientHandlePacket()
 	// Open up the Remove Curse GUI
 	else if ( !strncmp((char*)net_packet->data, "CRCU", 4) )
 	{
-		removecursegui_active = true;
-		players[clientnum]->shootmode = false;
-		players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-
-		if ( identifygui_active[clientnum] )
-		{
-			CloseIdentifyGUI(clientnum);
-		}
-		GenericGUI[clientnum].closeGUI();
-
-		if ( openedChest[clientnum] )
-		{
-			openedChest[clientnum]->closeChest();
-		}
-
-		initRemoveCurseGUIControllerCode();
-
+		//Uncurse an item
+		GenericGUI[clientnum].openGUI(GUI_TYPE_REMOVECURSE, nullptr);
 		return;
 	}
 

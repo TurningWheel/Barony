@@ -211,12 +211,6 @@ public:
 	bool handleIdentifyMovement(const int player);
 
 	/*
-	 * Uses dpad to move the cursor around Remove Curse GUI's inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleRemoveCurseMovement(const int player);
-
-	/*
 	 * Uses dpad to move the cursor through the item context menu and select entries.
 	 * Returns true if moved.
 	 */

@@ -973,7 +973,6 @@ void drawStatus(int player)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
 							&& !identifygui_active[player]
-							&& !removecursegui_active
 							&& !GenericGUI[player].isGUIOpen())) 
 						&& !selectedItem )
 					{
@@ -1007,7 +1006,6 @@ void drawStatus(int player)
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
 							&& !identifygui_active[player]
-							&& !removecursegui_active
 							&& !GenericGUI[player].isGUIOpen()) )
 					{
 						//Use the item if right clicked.
@@ -1704,7 +1702,7 @@ void drawStatus(int player)
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-				&& !identifygui_active[player] && !removecursegui_active
+				&& !identifygui_active[player]
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
@@ -1735,7 +1733,7 @@ void drawStatus(int player)
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-				&& !identifygui_active[player] && !removecursegui_active
+				&& !identifygui_active[player]
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
@@ -1766,7 +1764,7 @@ void drawStatus(int player)
 		if ( bumper_moved && !inputs.getUIInteraction(player)->itemMenuOpen
 			&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) 
 			&& !book_open && !identifygui_active[player]
-			&& !removecursegui_active && !GenericGUI[player].isGUIOpen() )
+			&& !GenericGUI[player].isGUIOpen() )
 		{
 			warpMouseToSelectedHotbarSlot(player);
 		}
@@ -1777,7 +1775,7 @@ void drawStatus(int player)
 				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !book_open && !identifygui_active[player]
-				&& !removecursegui_active && !GenericGUI[player].isGUIOpen() )
+				&& !GenericGUI[player].isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) )
