@@ -1596,11 +1596,11 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		}
 	}
 
-	if ( whatToClose != CLOSEGUI_DONT_CLOSE_SHOP && shopkeeper != 0 )
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_SHOP && shopkeeper[playernum] != 0 )
 	{
 		if ( multiplayer != CLIENT )
 		{
-			Entity* entity = uidToEntity(shopkeeper);
+			Entity* entity = uidToEntity(shopkeeper[playernum]);
 			if ( entity )
 			{
 				entity->skill[0] = 0;
@@ -1615,18 +1615,13 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		{
 			// inform server that we're done talking to shopkeeper
 			strcpy((char*)net_packet->data, "SHPC");
-			SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
+			SDLNet_Write32((Uint32)shopkeeper[playernum], &net_packet->data[4]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 8;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
-			list_FreeAll(shopInv);
 		}
-
-		shopkeeper = 0;
-
-		//Clean up shopkeeper gamepad code here.
-		selectedShopSlot = -1;
+		closeShop(playernum);
 	}
 	gui_mode = GUI_MODE_NONE;
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )

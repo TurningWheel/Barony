@@ -373,10 +373,10 @@ void select_inventory_slot(const int player, int x, int y)
 			y = players[player]->inventoryUI.getSizeY() - 1; //Keeps the selected slot within the inventory, to warp back to later.
 
 			//Warp into shop inventory if shopkeep has any items.
-			if ( shopinvitems[0] )
+			if ( shopinvitems[player][0] )
 			{
-				selectedShopSlot = 0;
-				warpMouseToSelectedShopSlot();
+				selectedShopSlot[player] = 0;
+				warpMouseToSelectedShopSlot(player);
 			}
 		}
 		else if ( GenericGUI[player].isGUIOpen() )
@@ -738,12 +738,12 @@ void updatePlayerInventory(const int player)
 			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_LEFT) )
 			{
 				inputs.controllerClearInput(player, INJOY_MENU_CYCLE_SHOP_LEFT);
-				cycleShopCategories(-1);
+				cycleShopCategories(player, -1);
 			}
 			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_RIGHT) )
 			{
 				inputs.controllerClearInput(player, INJOY_MENU_CYCLE_SHOP_RIGHT);
-				cycleShopCategories(1);
+				cycleShopCategories(player, 1);
 			}
 		}
 
@@ -2120,7 +2120,7 @@ inline void executeItemMenuOption0(const int player, Item* item, bool is_potion_
 	else if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT)
 	{
 		//Option 0 = sell.
-		sellItemToShop(item);
+		sellItemToShop(player, item);
 	}
 	else
 	{

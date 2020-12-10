@@ -480,11 +480,7 @@ public:
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 
-	void init()
-	{
-		inventoryUI.resetInventory();
-		selectedChestSlot[playernum] = -1;
-	};
+	void init();
 
 	class Hotbar_t;
 	Hotbar_t* hotbar;

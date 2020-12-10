@@ -10188,11 +10188,14 @@ void handleMainMenu(bool mode)
 			// clean up shopInv
 			if ( multiplayer == CLIENT )
 			{
-				if ( shopInv )
+				for ( x = 0; x < MAXPLAYERS; x++ )
 				{
-					list_FreeAll(shopInv);
-					free(shopInv);
-					shopInv = NULL;
+					if ( shopInv[x] )
+					{
+						list_FreeAll(shopInv[x]);
+						free(shopInv[x]);
+						shopInv[x] = nullptr;
+					}
 				}
 			}
 

@@ -3093,7 +3093,41 @@ void actMonster(Entity* my)
 				}
 				else
 				{
-					if ( myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 ) // mysterious merchant
+					bool canTrade = true;
+
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( players[i] && players[i]->entity ) // check hostiles
+						{
+							if ( uidToEntity(my->monsterTarget) == players[i]->entity )
+							{
+								canTrade = false;
+							}
+						}
+					}
+					if ( my->monsterState != MONSTER_STATE_WAIT )
+					{
+						canTrade = false;
+					}
+
+
+					if ( !canTrade )
+					{
+						if ( !my->checkEnemy(players[monsterclicked]->entity) )
+						{
+							switch ( myStats->type )
+							{
+								case SHOPKEEPER:
+								case HUMAN:
+									messagePlayer(monsterclicked, language[520 + rand() % 4], namesays);
+									break;
+								default:
+									messagePlayer(monsterclicked, language[524], namesays);
+									break;
+							}
+						}
+					}
+					else if ( myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 ) // mysterious merchant
 					{
 						bool hasOrb = false;
 						for ( node_t* node = myStats->inventory.first; node; node = node->next )
@@ -5862,9 +5896,10 @@ timeToGoAgain:
 					{
 						// inform client of abandonment
 						strcpy((char*)net_packet->data, "SHPC");
+						SDLNet_Write32(my->getUID(), &net_packet->data[4]);
 						net_packet->address.host = net_clients[player - 1].host;
 						net_packet->address.port = net_clients[player - 1].port;
-						net_packet->len = 4;
+						net_packet->len = 8;
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 					monsterMoveAside(my, target);
@@ -7119,6 +7154,27 @@ timeToGoAgain:
 		if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
 		{
 			serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+		}
+
+		if ( myStats->type == SHOPKEEPER && previousMonsterState == MONSTER_STATE_TALK )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( players[i]->isLocalPlayer() && shopkeeper[i] == my->getUID() )
+				{
+					players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+				}
+				else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER )
+				{
+					// inform client of abandonment
+					strcpy((char*)net_packet->data, "SHPC");
+					SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+					net_packet->address.host = net_clients[i - 1].host;
+					net_packet->address.port = net_clients[i - 1].port;
+					net_packet->len = 8;
+					sendPacketSafe(net_sock, -1, net_packet, i - 1);
+				}
+			}
 		}
 	}
 

@@ -4069,11 +4069,14 @@ int main(int argc, char** argv)
 				if ( multiplayer == CLIENT )
 				{
 					// make sure shop inventory is alloc'd
-					if ( !shopInv )
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						shopInv = (list_t*) malloc(sizeof(list_t));
-						shopInv->first = NULL;
-						shopInv->last = NULL;
+						if ( !shopInv[i] )
+						{
+							shopInv[i] = (list_t*) malloc(sizeof(list_t));
+							shopInv[i]->first = NULL;
+							shopInv[i]->last = NULL;
+						}
 					}
 				}
 #ifdef MUSIC
@@ -4804,7 +4807,7 @@ int main(int argc, char** argv)
 							{
 								updateCharacterSheet(player);
 								updatePlayerInventory(player);
-								updateShopWindow();
+								updateShopWindow(player);
 							}
 
 							if ( players[player]->characterSheet.proficienciesPage == 1 )

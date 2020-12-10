@@ -785,14 +785,14 @@ void deinitGame()
 		players[c]->inventoryUI.appraisal.timer = 0;
 		players[c]->inventoryUI.appraisal.current_item = 0;
 		list_FreeAll(&stats[c]->inventory);
-	}
-	if ( multiplayer == CLIENT )
-	{
-		if ( shopInv )
+		if ( multiplayer == CLIENT )
 		{
-			list_FreeAll(shopInv);
-			free(shopInv);
-			shopInv = NULL;
+			if ( shopInv[c] )
+			{
+				list_FreeAll(shopInv[c]);
+				free(shopInv[c]);
+				shopInv[c] = NULL;
+			}
 		}
 	}
 	list_FreeAll(map.entities);

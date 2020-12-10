@@ -2968,24 +2968,24 @@ void clientHandlePacket()
 	{
 		players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
 		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
-		shopkeeper = (Uint32)SDLNet_Read32(&net_packet->data[4]);
-		shopkeepertype = net_packet->data[8];
-		strcpy( shopkeepername_client, (char*)(&net_packet->data[9]) );
-		shopkeepername = shopkeepername_client;
-		shoptimer = ticks - 1;
-		shopspeech = language[194 + rand() % 3];
-		shopinventorycategory = 7;
-		sellitem = NULL;
-		shopitemscroll = 0;
+		shopkeeper[clientnum] = (Uint32)SDLNet_Read32(&net_packet->data[4]);
+		shopkeepertype[clientnum] = net_packet->data[8];
+		strcpy( shopkeepername_client[clientnum], (char*)(&net_packet->data[9]) );
+		shopkeepername[clientnum] = shopkeepername_client[clientnum];
+		shoptimer[clientnum] = ticks - 1;
+		shopspeech[clientnum] = language[194 + rand() % 3];
+		shopinventorycategory[clientnum] = 7;
+		sellitem[clientnum] = NULL;
+		shopitemscroll[clientnum] = 0;
 		//Initialize shop gamepad code here.
-		if ( shopinvitems[0] != nullptr )
+		if ( shopinvitems[clientnum][0] != nullptr )
 		{
-			selectedShopSlot = 0;
-			warpMouseToSelectedShopSlot();
+			selectedShopSlot[clientnum] = 0;
+			warpMouseToSelectedShopSlot(clientnum);
 		}
 		else
 		{
-			selectedShopSlot = -1;
+			selectedShopSlot[clientnum] = -1;
 		}
 		return;
 	}
@@ -2993,21 +2993,22 @@ void clientHandlePacket()
 	// shop item
 	else if (!strncmp((char*)net_packet->data, "SHPI", 4))
 	{
-		if ( !shopInv )
+		if ( !shopInv[clientnum] )
 		{
 			return;
 		}
-		newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>((char)net_packet->data[8]), (char)net_packet->data[9], (unsigned char)net_packet->data[10], SDLNet_Read32(&net_packet->data[11]), (bool)net_packet->data[15], shopInv);
+		newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>((char)net_packet->data[8]), (char)net_packet->data[9], (unsigned char)net_packet->data[10], SDLNet_Read32(&net_packet->data[11]), (bool)net_packet->data[15], shopInv[clientnum]);
 	}
 
 	// close shop
 	else if (!strncmp((char*)net_packet->data, "SHPC", 4))
 	{
-		shopkeeper = 0;
-		players[clientnum]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-		list_FreeAll(shopInv);
-		//Clean up shop gamepad code here.
-		selectedShopSlot = -1;
+		Uint32 id = SDLNet_Read32(&net_packet->data[4]);
+		if ( id == shopkeeper[clientnum] )
+		{
+			closeShop(clientnum);
+			players[clientnum]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+		}
 		return;
 	}
 
@@ -4893,7 +4894,7 @@ void serverHandlePacket()
 				printlog("client %d bought item from shop (uid=%d)\n", client, uidnum);
 				if ( shopIsMysteriousShopkeeper(entity) )
 				{
-					buyItemFromMysteriousShopkeepConsumeOrb(*entity, *item2);
+					buyItemFromMysteriousShopkeepConsumeOrb(client, *entity, *item2);
 				}
 				consumeItem(item2, client);
 				break;

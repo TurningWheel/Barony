@@ -734,7 +734,7 @@ bool GameController::handleShopMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
-		selectShopSlot(selectedShopSlot - 1);
+		selectShopSlot(player, selectedShopSlot[player] - 1);
 		inputs.controllerClearInput(player, INJOY_DPAD_UP);
 
 		dpad_moved = true;
@@ -742,7 +742,7 @@ bool GameController::handleShopMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
-		selectShopSlot(selectedShopSlot + 1);
+		selectShopSlot(player, selectedShopSlot[player] + 1);
 		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
 
 		dpad_moved = true;
@@ -944,6 +944,14 @@ Player::~Player()
 	{
 		delete hotbar;
 	}
+}
+
+void Player::init()
+{
+	inventoryUI.resetInventory();
+	selectedChestSlot[playernum] = -1;
+	selectedShopSlot[playernum] = -1;
+	shopinventorycategory[playernum] = -1;
 }
 
 const bool Player::isLocalPlayer() const

@@ -22,6 +22,7 @@ See LICENSE for details.
 #include "collision.hpp"
 #include "paths.hpp"
 #include "book.hpp"
+#include "shops.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #endif
@@ -14199,6 +14200,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	}
 
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
+	Sint32 oldMonsterState = monsterState;
 
 	if ( target.getRace() == GYROBOT )
 	{
@@ -14375,6 +14377,27 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			else
 			{
 				messagePlayer(target.skill[2], language[516 + rand() % 4], namesays);
+			}
+
+			if ( oldMonsterState == MONSTER_STATE_TALK && monsterState != MONSTER_STATE_TALK )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( players[i]->isLocalPlayer() && shopkeeper[i] == getUID() )
+					{
+						players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+					}
+					else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER )
+					{
+						// inform client of abandonment
+						strcpy((char*)net_packet->data, "SHPC");
+						SDLNet_Write32(getUID(), &net_packet->data[4]);
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
 			}
 		}
 	}

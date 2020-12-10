@@ -1848,7 +1848,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 	else if ( players[player]->isLocalPlayer() && players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
 	{
 		bool deal = true;
-		switch ( shopkeepertype )
+		switch ( shopkeepertype[player] )
 		{
 			case 0: // arms & armor
 				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && itemCategory(item) != THROWN )
@@ -1904,14 +1904,14 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		}
 		if ( deal )
 		{
-			sellitem = item;
-			shopspeech = language[215];
-			shoptimer = ticks - 1;
+			sellitem[player] = item;
+			shopspeech[player] = language[215];
+			shoptimer[player] = ticks - 1;
 		}
 		else
 		{
-			shopspeech = language[212 + rand() % 3];
-			shoptimer = ticks - 1;
+			shopspeech[player] = language[212 + rand() % 3];
+			shoptimer[player] = ticks - 1;
 		}
 		return;
 	}
@@ -3569,7 +3569,7 @@ int Item::buyValue(const int player) const
 	// result
 	value = std::max(1, value);
 
-	if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper)) )
+	if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper[player])) )
 	{
 		value *= 2;
 	}
