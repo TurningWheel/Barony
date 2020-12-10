@@ -252,6 +252,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 		else
 		{
 			uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
+			//messagePlayer(0, "first: %d %d", uidnum, selectedEntityGimpTimer[player]);
 		}
 	}
 	else
@@ -265,7 +266,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 		else
 		{
 			uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), yres - (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
-			messagePlayer(0, "first: %d", uidnum);
+			//messagePlayer(0, "first: %d", uidnum);
 			//uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
 			//messagePlayer(0, "sec: %d", uidnum);
 		}

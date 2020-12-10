@@ -3315,7 +3315,10 @@ void actPlayer(Entity* my)
 				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
 				{
 					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
-					++selectedEntityGimpTimer[PLAYER_NUM]; 
+					if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE])) || (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
+					{
+						++selectedEntityGimpTimer[PLAYER_NUM]; 
+					}
 				}
 			}
 			else
