@@ -161,6 +161,7 @@ public:
 	Sint32& chestPreventLockpickCapstoneExploit;
 	Sint32& chestHasVampireBook; // skill[11]
 	Sint32& chestLockpickHealth; // skill[12]
+	Sint32& chestOldHealth; //skill[15]
 
 	//--PUBLIC MONSTER SKILLS--
 	Sint32& monsterState; //skill[0]
@@ -307,6 +308,7 @@ public:
 	Sint32& doorDisableLockpicks; //skill[12]
 	Sint32& doorDisableOpening; //skill[13]
 	Sint32& doorLockpickHealth; //skill[14]
+	Sint32& doorOldHealth; //skill[15]
 
 	//--PUBLIC PEDESTAL SKILLS--
 	Sint32& pedestalHasOrb; //skill[0]
@@ -385,6 +387,7 @@ public:
 	Sint32& furnitureMaxHealth; //skill[9]
 	Sint32& furnitureTableRandomItemChance; //skill[10]
 	Sint32& furnitureTableSpawnChairs; //skill[11]
+	Sint32& furnitureOldHealth; //skill[15]
 
 	//--PUBLIC PISTON SKILLS--
 	Sint32& pistonCamDir; //skill[0]

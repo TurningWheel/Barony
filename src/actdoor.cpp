@@ -45,6 +45,7 @@ void actDoor(Entity* my)
 		my->doorStartAng = my->yaw;
 		my->doorHealth = 15 + rand() % 5;
 		my->doorMaxHealth = my->doorHealth;
+		my->doorOldHealth = my->doorHealth;
 		my->doorPreventLockpickExploit = 1;
 		my->doorLockpickHealth = 20;
 		if ( my->doorForceLockedUnlocked == 2 )
@@ -74,6 +75,8 @@ void actDoor(Entity* my)
 					my->doorHealth--;
 				}
 			}
+
+			my->doorOldHealth = my->doorHealth;
 
 			// door mortality :p
 			if ( my->doorHealth <= 0 )

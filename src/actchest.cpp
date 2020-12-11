@@ -65,6 +65,7 @@ void Entity::actChest()
 		chestInit = 1;
 		chestHealth = 90 + rand() % 20;
 		chestMaxHealth = chestHealth;
+		chestOldHealth = chestHealth;
 		chestPreventLockpickCapstoneExploit = 1;
 		chestLockpickHealth = 40;
 		int roll = 0;
@@ -584,6 +585,8 @@ void Entity::actChest()
 	list_t* inventory = static_cast<list_t* >(children.first->element);
 	node_t* node = NULL;
 	Item* item = NULL;
+
+	chestOldHealth = chestHealth;
 
 	if ( chestHealth <= 0 )
 	{

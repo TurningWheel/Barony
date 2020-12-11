@@ -276,16 +276,42 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 	//	}
 	//	enemy_lastuid = target->getUID();
 	//}
+
+	int oldhp = 0;
+	if ( stats )
+	{
+		oldhp = stats->OLDHP;
+	}
+	else
+	{
+		if ( target->behavior == &actDoor )
+		{
+			oldhp = target->doorOldHealth;
+		}
+		else if ( target->behavior == &actFurniture )
+		{
+			oldhp = target->furnitureOldHealth;
+		}
+		else if ( target->behavior == &actChest )
+		{
+			oldhp = target->chestOldHealth;
+		}
+		else
+		{
+			oldhp = hp;
+		}
+	}
+
 	if ( player >= 0 && players[player]->isLocalPlayer() )
 	{
 		if ( stats )
 		{
-			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, stats->OLDHP, 
+			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, oldhp,
 				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
 		}
 		else
 		{
-			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, hp,
+			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, oldhp,
 				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
 		}
 	}
@@ -297,11 +323,11 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		SDLNet_Write32(enemyHPDamageBarHandler[player].enemy_bar_client_color, &net_packet->data[12]);
 		if ( stats )
 		{
-			SDLNet_Write32(stats->OLDHP, &net_packet->data[16]);
+			SDLNet_Write32(oldhp, &net_packet->data[16]);
 		}
 		else
 		{
-			SDLNet_Write32(hp, &net_packet->data[16]);
+			SDLNet_Write32(oldhp, &net_packet->data[16]);
 		}
 		SDLNet_Write32(target->getUID(), &net_packet->data[20]);
 		net_packet->data[24] = lowPriorityTick ? 1 : 0; // 1 == true

@@ -183,6 +183,7 @@ void Entity::actFurniture()
 			furnitureHealth = 4 + rand() % 4;
 		}
 		furnitureMaxHealth = furnitureHealth;
+		furnitureOldHealth = furnitureHealth;
 		flags[BURNABLE] = true;
 	}
 	else
@@ -197,6 +198,8 @@ void Entity::actFurniture()
 					furnitureHealth--;
 				}
 			}
+
+			furnitureOldHealth = furnitureHealth;
 
 			// furniture mortality :p
 			if ( furnitureHealth <= 0 )
