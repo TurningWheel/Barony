@@ -227,6 +227,32 @@ int power(int a, int b)
 
 /*-------------------------------------------------------------------------------
 
+messageLocalPlayers
+
+Support function, messages all local players with the message "message"
+
+-------------------------------------------------------------------------------*/
+
+void messageLocalPlayers(char const * const message, ...)
+{
+	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
+
+	va_list argptr;
+	va_start(argptr, message);
+	vsnprintf(str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr);
+	va_end(argptr);
+
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, str);
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 	messagePlayer
 
 	Support function, messages the player number given by "player" with the
@@ -240,14 +266,41 @@ void messagePlayer(int player, char const * const message, ...)
 	{
 		return;
 	}
-	char str[256] = { 0 };
+	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
 	va_list argptr;
 	va_start( argptr, message );
-	vsnprintf( str, 255, message, argptr );
+	vsnprintf( str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr );
 	va_end( argptr );
 
 	messagePlayerColor(player, 0xFFFFFFFF, str);
+}
+
+/*-------------------------------------------------------------------------------
+
+messageLocalPlayersColor
+
+Messages all local players with the message "message"
+and color "color"
+
+-------------------------------------------------------------------------------*/
+
+void messageLocalPlayersColor(Uint32 color, char const * const message, ...)
+{
+	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
+
+	va_list argptr;
+	va_start(argptr, message);
+	vsnprintf(str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr);
+	va_end(argptr);
+
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayerColor(player, color, str);
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -275,7 +328,7 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 
 	// format the content
 	va_start( argptr, message );
-	vsnprintf( str, 255, message, argptr );
+	vsnprintf( str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr );
 	va_end( argptr );
 
 	// fixes crash when reading config at start of game

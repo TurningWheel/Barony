@@ -1305,7 +1305,7 @@ void gameLogic(void)
 								}
 							}
 						}
-						messagePlayer(clientnum, language[2599]);
+						messageLocalPlayers(language[2599]);
 
 						// undo shopkeeper grudge
 						swornenemies[SHOPKEEPER][HUMAN] = false;
@@ -1330,39 +1330,39 @@ void gameLogic(void)
 
 					if ( !secretlevel )
 					{
-						messagePlayer(clientnum, language[710], currentlevel);
+						messageLocalPlayers(language[710], currentlevel);
 					}
 					else
 					{
-						messagePlayer(clientnum, language[711], map.name);
+						messageLocalPlayers(language[711], map.name);
 					}
 					if ( !secretlevel && result )
 					{
 						switch ( currentlevel )
 						{
 							case 2:
-								messagePlayer(clientnum, language[712]);
+								messageLocalPlayers(language[712]);
 								break;
 							case 3:
-								messagePlayer(clientnum, language[713]);
+								messageLocalPlayers(language[713]);
 								break;
 							case 7:
-								messagePlayer(clientnum, language[714]);
+								messageLocalPlayers(language[714]);
 								break;
 							case 8:
-								messagePlayer(clientnum, language[715]);
+								messageLocalPlayers(language[715]);
 								break;
 							case 11:
-								messagePlayer(clientnum, language[716]);
+								messageLocalPlayers(language[716]);
 								break;
 							case 13:
-								messagePlayer(clientnum, language[717]);
+								messageLocalPlayers(language[717]);
 								break;
 							case 16:
-								messagePlayer(clientnum, language[718]);
+								messageLocalPlayers(language[718]);
 								break;
 							case 18:
-								messagePlayer(clientnum, language[719]);
+								messageLocalPlayers(language[719]);
 								break;
 							default:
 								break;
@@ -1370,15 +1370,15 @@ void gameLogic(void)
 					}
 					if ( MFLAG_DISABLETELEPORT || MFLAG_DISABLEOPENING )
 					{
-						messagePlayer(clientnum, language[2382]);
+						messageLocalPlayers(language[2382]);
 					}
 					if ( MFLAG_DISABLELEVITATION )
 					{
-						messagePlayer(clientnum, language[2383]);
+						messageLocalPlayers(language[2383]);
 					}
 					if ( MFLAG_DISABLEDIGGING )
 					{
-						messagePlayer(clientnum, language[2450]);
+						messageLocalPlayers(language[2450]);
 					}
 					loadnextlevel = false;
 					loading = false;
@@ -1655,30 +1655,18 @@ void gameLogic(void)
 					{
 						// regained connection
 						losingConnection[c] = false;
-						int i;
-						for ( i = 0; i < MAXPLAYERS; i++ )
-						{
-							messagePlayer(i, language[724], c, stats[c]->name);
-						}
+						messageLocalPlayers(language[724], c, stats[c]->name);
 					}
 					else if ( !losingConnection[c] && ticks - client_keepalive[c] == TICKS_PER_SECOND * 30 - 1 )
 					{
 						// 30 second timer
 						losingConnection[c] = true;
-						int i;
-						for ( i = 0; i < MAXPLAYERS; i++ )
-						{
-							messagePlayer(clientnum, language[725], c, stats[c]->name);
-						}
+						messageLocalPlayers(language[725], c, stats[c]->name);
 					}
 					else if ( !client_disconnected[c] && ticks - client_keepalive[c] >= TICKS_PER_SECOND * 45 - 1 )
 					{
 						// additional 15 seconds (kick time)
-						int i;
-						for ( i = 0; i < MAXPLAYERS; i++ )
-						{
-							messagePlayer(clientnum, language[726], c, stats[c]->name);
-						}
+						messageLocalPlayers(language[726], c, stats[c]->name);
 						strcpy((char*)net_packet->data, "KICK");
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
@@ -1930,12 +1918,12 @@ void gameLogic(void)
 				{
 					// 30 second timer
 					losingConnection[0] = true;
-					messagePlayer(clientnum, language[729]);
+					messageLocalPlayers(language[729]);
 				}
 				else if ( !client_disconnected[c] && ticks - client_keepalive[0] >= TICKS_PER_SECOND * 45 - 1 )
 				{
 					// additional 15 seconds (disconnect time)
-					messagePlayer(clientnum, language[730]);
+					messageLocalPlayers(language[730]);
 
 					button_t* button;
 					pauseGame(2, 0);

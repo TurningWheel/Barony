@@ -1158,7 +1158,7 @@ void actPlayer(Entity* my)
 			//messagePlayer(0, "Lorem ipsum dolor sit amet, dico accusam reprehendunt ne mea, ea est illum tincidunt voluptatibus. Ne labore voluptua eos, nostro fierent mnesarchum an mei, cu mea dolor verear epicuri. Est id iriure principes, unum cotidieque qui te. An sit tractatos complectitur.");
 		}
 	}
-	if ( autoLimbReload && ticks % 20 == 0 && (PLAYER_NUM == clientnum || splitscreen) )
+	if ( autoLimbReload && ticks % 20 == 0 && (PLAYER_NUM == clientnum) )
 	{
 		consoleCommand("/reloadlimbs");
 	}
@@ -1309,7 +1309,7 @@ void actPlayer(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		if ( PLAYER_NUM != clientnum )
+		if ( !players[PLAYER_NUM]->isLocalPlayer() )
 		{
 			my->flags[UPDATENEEDED] = true;
 		}
@@ -1357,7 +1357,7 @@ void actPlayer(Entity* my)
 		nametag->setUID(-3);
 
 		// hud weapon
-		if ( PLAYER_NUM == clientnum || (splitscreen && PLAYER_NUM > 0) )
+		if ( players[PLAYER_NUM]->isLocalPlayer() )
 		{
 			if ( multiplayer == CLIENT )
 			{
@@ -1744,7 +1744,7 @@ void actPlayer(Entity* my)
 	if ( !intro )
 	{
 		PLAYER_ALIVETIME++;
-		if ( PLAYER_NUM == clientnum )
+		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
 		{
 			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
@@ -1769,8 +1769,8 @@ void actPlayer(Entity* my)
 					if ( PLAYER_ALIVETIME == 300 )
 					{
 						playSound(185, 128);
-						messagePlayerColor(PLAYER_NUM, color, language[537]);
-						messagePlayerColor(PLAYER_NUM, color, language[89]);
+						messageLocalPlayersColor(color, language[537]);
+						messageLocalPlayersColor(color, language[89]);
 					}
 				}
 			}
@@ -1779,41 +1779,42 @@ void actPlayer(Entity* my)
 				if ( PLAYER_ALIVETIME == 300 && !MFLAG_DISABLEMESSAGES )
 				{
 					// five seconds in, herx chimes in (maybe)
+					// replicate the messagePlayer to all splitscreen clients so it's not randomly different between screens
 					my->playerLevelEntrySpeech = 0;
 					if ( currentlevel == 0 && !secretlevel )
 					{
 						int speech = rand() % 3;
 						playSound(126 + speech, 128);
-						messagePlayerColor(PLAYER_NUM, color, language[537]);
-						messagePlayerColor(PLAYER_NUM, color, language[77 + speech]);
+						messageLocalPlayersColor(color, language[537]);
+						messageLocalPlayersColor(color, language[77 + speech]);
 					}
 					else if ( currentlevel == 1 && !secretlevel )
 					{
 						int speech = rand() % 3;
 						playSound(117 + speech, 128);
-						messagePlayerColor(PLAYER_NUM, color, language[537]);
-						messagePlayerColor(PLAYER_NUM, color, language[70 + speech]);
+						messageLocalPlayersColor(color, language[537]);
+						messageLocalPlayersColor(color, language[70 + speech]);
 					}
 					else if ( currentlevel == 5 && !secretlevel )
 					{
 						int speech = rand() % 2;
 						playSound(156 + speech, 128);
-						messagePlayerColor(PLAYER_NUM, color, language[537]);
-						messagePlayerColor(PLAYER_NUM, color, language[83 + speech]);
+						messageLocalPlayersColor(color, language[537]);
+						messageLocalPlayersColor(color, language[83 + speech]);
 					}
 					else if ( currentlevel == 10 && !secretlevel )
 					{
 						int speech = rand() % 2;
 						playSound(158 + speech, 128);
-						messagePlayerColor(PLAYER_NUM, color, language[537]);
-						messagePlayerColor(PLAYER_NUM, color, language[85 + speech]);
+						messageLocalPlayersColor(color, language[537]);
+						messageLocalPlayersColor(color, language[85 + speech]);
 					}
 					else if ( currentlevel == 15 && !secretlevel )
 					{
 						int speech = rand() % 2;
 						playSound(160 + speech, 128);
-						messagePlayerColor(PLAYER_NUM, color, language[537]);
-						messagePlayerColor(PLAYER_NUM, color, language[87 + speech]);
+						messageLocalPlayersColor(color, language[537]);
+						messageLocalPlayersColor(color, language[87 + speech]);
 					}
 					else if ( currentlevel == 26 && !secretlevel )
 					{
@@ -1822,18 +1823,18 @@ void actPlayer(Entity* my)
 						{
 							case 1:
 								playSound(341, blueSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[2615]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2615]);
 								break;
 							case 2:
 								playSound(343, orangeSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[2617]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2617]);
 								break;
 							case 3:
 								playSound(346, orangeSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[2620]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2620]);
 								break;
 						}
 						my->playerLevelEntrySpeech = speech;
@@ -1845,18 +1846,18 @@ void actPlayer(Entity* my)
 						{
 							case 1:
 								playSound(349, blueSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[2629]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2629]);
 								break;
 							case 2:
 								playSound(352, orangeSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[2632]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2632]);
 								break;
 							case 3:
 								playSound(354, blueSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[2634]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2634]);
 								break;
 						}
 						my->playerLevelEntrySpeech = speech;
@@ -1868,8 +1869,8 @@ void actPlayer(Entity* my)
 						{
 							case 1:
 								playSound(356, blueSpeechVolume - 16);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[2636]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2636]);
 								break;
 						}
 						my->playerLevelEntrySpeech = speech;
@@ -1881,8 +1882,8 @@ void actPlayer(Entity* my)
 						{
 							case 1:
 								playSound(358, blueSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[2638]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2638]);
 								break;
 						}
 						my->playerLevelEntrySpeech = speech;
@@ -1894,13 +1895,13 @@ void actPlayer(Entity* my)
 						{
 							case 1:
 								playSound(360, orangeSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[2640]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2640]);
 								break;
 							case 2:
 								playSound(362, blueSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[2642]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2642]);
 								break;
 						}
 						my->playerLevelEntrySpeech = speech;
@@ -1912,8 +1913,8 @@ void actPlayer(Entity* my)
 						{
 							case 1:
 								playSound(364, orangeSpeechVolume);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[537]);
-								messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[2644]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[537]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2644]);
 								break;
 						}
 						my->playerLevelEntrySpeech = speech;
@@ -1924,8 +1925,8 @@ void actPlayer(Entity* my)
 						{
 							int speech = rand() % 3;
 							playSound(123 + speech, 128);
-							messagePlayerColor(PLAYER_NUM, color, language[537]);
-							messagePlayerColor(PLAYER_NUM, color, language[74 + speech]);
+							messageLocalPlayersColor(color, language[537]);
+							messageLocalPlayersColor(color, language[74 + speech]);
 						}
 						else
 						{
@@ -1934,18 +1935,18 @@ void actPlayer(Entity* my)
 							{
 								case 1:
 									playSound(366, blueSpeechVolume);
-									messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[537]);
-									messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[2623]);
+									messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[537]);
+									messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2623]);
 									break;
 								case 2:
 									playSound(368, orangeSpeechVolume);
-									messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[537]);
-									messagePlayerColor(PLAYER_NUM, uint32ColorOrange(*mainsurface), language[2625]);
+									messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[537]);
+									messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2625]);
 									break;
 								case 3:
 									playSound(370, blueSpeechVolume);
-									messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[537]);
-									messagePlayerColor(PLAYER_NUM, uint32ColorBaronyBlue(*mainsurface), language[2627]);
+									messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[537]);
+									messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2627]);
 									break;
 							}
 							my->playerLevelEntrySpeech = speech;
@@ -1958,13 +1959,13 @@ void actPlayer(Entity* my)
 					if ( currentlevel == 1 && !secretlevel )
 					{
 						playSound(120 + rand() % 3, 128);
-						messagePlayerColor(PLAYER_NUM, color, language[73]);
+						messageLocalPlayersColor(color, language[73]);
 					}
 					else if ( minotaurlevel && currentlevel < 25 )
 					{
 						int speech = rand() % 3;
 						playSound(129 + speech, 128);
-						messagePlayerColor(PLAYER_NUM, color, language[80 + speech]);
+						messageLocalPlayersColor(color, language[80 + speech]);
 					}
 				}
 				else if ( my->playerLevelEntrySpeech > 0 )
@@ -3163,7 +3164,7 @@ void actPlayer(Entity* my)
 							cameravars[PLAYER_NUM].shakex += .1;
 							cameravars[PLAYER_NUM].shakey += 10;
 						}
-						else if ( PLAYER_NUM != clientnum && multiplayer == SERVER )
+						else if ( !players[PLAYER_NUM]->isLocalPlayer() && multiplayer == SERVER )
 						{
 							if ( PLAYER_NUM > 0 )
 							{
@@ -4559,7 +4560,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM != clientnum && multiplayer == SERVER )
+	if ( !players[PLAYER_NUM]->isLocalPlayer() && multiplayer == SERVER )
 	{
 		// PLAYER_VEL* skills updated by messages sent to server from client
 
@@ -4609,7 +4610,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM != clientnum && multiplayer == CLIENT )
+	if ( !players[PLAYER_NUM]->isLocalPlayer() && multiplayer == CLIENT )
 	{
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 	}
@@ -6294,7 +6295,7 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 200 )
 						{
 							playSound(342, orangeSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2616]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2616]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6302,12 +6303,12 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 200 )
 						{
 							playSound(344, blueSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorBaronyBlue(*mainsurface), language[2618]);
+							messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2618]);
 						}
 						else if ( timeDiff == 350 )
 						{
 							playSound(345, orangeSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2619]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2619]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6315,12 +6316,12 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 200 )
 						{
 							playSound(347, blueSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorBaronyBlue(*mainsurface), language[2621]);
+							messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2621]);
 						}
 						else if ( timeDiff == 350 )
 						{
 							playSound(348, orangeSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2622]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2622]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6335,12 +6336,12 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 200 )
 						{
 							playSound(350, orangeSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2630]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2630]);
 						}
 						else if ( timeDiff == 350 )
 						{
 							playSound(351, blueSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorBaronyBlue(*mainsurface), language[2631]);
+							messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2631]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6348,7 +6349,7 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 350 )
 						{
 							playSound(353, blueSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorBaronyBlue(*mainsurface), language[2633]);
+							messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2633]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6356,7 +6357,7 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 200 )
 						{
 							playSound(355, orangeSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2635]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2635]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6371,11 +6372,11 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 350 )
 						{
 							playSound(357, orangeSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2637]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2637]);
 						}
 						else if ( timeDiff == 500 )
 						{
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2652]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2652]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6390,11 +6391,11 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 350 )
 						{
 							playSound(359, orangeSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2639]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2639]);
 						}
 						else if ( timeDiff == 510 )
 						{
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2653]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2653]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6409,7 +6410,7 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 200 )
 						{
 							playSound(361, blueSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorBaronyBlue(*mainsurface), language[2641]);
+							messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2641]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6417,7 +6418,7 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 350 )
 						{
 							playSound(363, orangeSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2643]);
+							messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2643]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6432,7 +6433,7 @@ void Entity::playerLevelEntrySpeechSecond()
 						if ( timeDiff == 310 )
 						{
 							playSound(365, blueSpeechVolume);
-							messagePlayerColor(clientnum, uint32ColorBaronyBlue(*mainsurface), language[2645]);
+							messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2645]);
 							playerLevelEntrySpeech = 0;
 						}
 						break;
@@ -6452,7 +6453,7 @@ void Entity::playerLevelEntrySpeechSecond()
 							if ( timeDiff == 200 )
 							{
 								playSound(367, orangeSpeechVolume);
-								messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2624]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2624]);
 								playerLevelEntrySpeech = 0;
 							}
 							break;
@@ -6460,7 +6461,7 @@ void Entity::playerLevelEntrySpeechSecond()
 							if ( timeDiff == 200 )
 							{
 								playSound(369, blueSpeechVolume);
-								messagePlayerColor(clientnum, uint32ColorBaronyBlue(*mainsurface), language[2626]);
+								messageLocalPlayersColor(uint32ColorBaronyBlue(*mainsurface), language[2626]);
 								playerLevelEntrySpeech = 0;
 							}
 							break;
@@ -6468,7 +6469,7 @@ void Entity::playerLevelEntrySpeechSecond()
 							if ( timeDiff == 200 )
 							{
 								playSound(371, orangeSpeechVolume);
-								messagePlayerColor(clientnum, uint32ColorOrange(*mainsurface), language[2628]);
+								messageLocalPlayersColor(uint32ColorOrange(*mainsurface), language[2628]);
 								playerLevelEntrySpeech = 0;
 							}
 							break;
