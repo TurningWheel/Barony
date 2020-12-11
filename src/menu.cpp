@@ -9947,8 +9947,8 @@ void handleMainMenu(bool mode)
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				safePacketsReceivedMap[c].clear();
+				players[c]->messageZone.deleteAllNotificationMessages();
 			}
-			deleteAllNotificationMessages();
 			if ( !loadingsavegame ) // don't delete the followers we just created!
 			{
 				for (c = 0; c < MAXPLAYERS; c++)
@@ -10396,8 +10396,8 @@ void handleMainMenu(bool mode)
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				safePacketsReceivedMap[c].clear();
+				players[c]->messageZone.deleteAllNotificationMessages();
 			}
-			deleteAllNotificationMessages();
 			for (c = 0; c < MAXPLAYERS; c++)
 			{
 				stats[c]->freePlayerEquipment();
@@ -10422,6 +10422,7 @@ void handleMainMenu(bool mode)
 					client_disconnected[c] = false;
 				}
 				players[c]->entity = nullptr; //TODO: PLAYERSWAP VERIFY. Need to do anything else?
+				players[c]->cleanUpOnEntityRemoval();
 				stats[c]->sex = static_cast<sex_t>(0);
 				stats[c]->appearance = 0;
 				strcpy(stats[c]->name, "");

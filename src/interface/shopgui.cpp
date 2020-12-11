@@ -662,7 +662,7 @@ void updateShopWindow(const int player)
 
 	//Calculate x that will be halfway in slot.
 	int x = x1 + (x2 - x1)/2 - inventory_bmp->w/2;
-	int y = y1 + 16 + 160 + (inventoryoption_bmp->h * selectedShopSlot) + (inventoryoption_bmp->h / 2);
+	int y = y1 + 16 + 160 + (inventoryoption_bmp->h * selectedShopSlot[player]) + (inventoryoption_bmp->h / 2);
 	SDL_WarpMouseInWindow(screen, x, y);
 }*/
 

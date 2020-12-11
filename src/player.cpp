@@ -539,6 +539,33 @@ int GameController::getRawRightTrigger()
 	return n;
 }
 
+float GameController::getLeftXPercentForPlayerMovement()
+{
+	float x_force = getLeftXPercent();
+	if ( x_force > 0 )
+	{
+		x_force = std::min(x_force / x_forceMaxForwardThreshold, 1.f);
+	}
+	else if ( x_force < 0 )
+	{
+		x_force = std::max(x_force / x_forceMaxBackwardThreshold, -1.f);
+	}
+	return x_force;
+}
+float GameController::getLeftYPercentForPlayerMovement()
+{
+	float y_force = getLeftYPercent();
+	if ( y_force > 0 )
+	{
+		y_force = std::min(y_force / y_forceMaxStrafeThreshold, 1.f);
+	}
+	else if ( y_force < 0 )
+	{
+		y_force = std::max(y_force / y_forceMaxStrafeThreshold, -1.f);
+	}
+	return y_force;
+}
+
 float GameController::getLeftXPercent() { return (float)getRawLeftXMove() / (float)maxLeftXMove(); }
 float GameController::getLeftYPercent() { return (float)getRawLeftYMove() / (float)maxLeftYMove(); }
 float GameController::getRightXPercent() { return (float)getRawRightXMove() / (float)maxRightXMove(); }
@@ -925,7 +952,9 @@ Player::Player(int in_playernum, bool in_local_host) :
 	statusBarUI(*this),
 	hud(*this),
 	magic(*this),
-	characterSheet(*this)
+	characterSheet(*this),
+	movement(*this),
+	messageZone(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
@@ -954,6 +983,18 @@ void Player::init()
 	shopinventorycategory[playernum] = -1;
 }
 
+void Player::cleanUpOnEntityRemoval()
+{
+	if ( isLocalPlayer() )
+	{
+		//selectedChestSlot[playernum] = -1;
+		//selectedShopSlot[playernum] = -1;
+		//shopinventorycategory[playernum] = -1;
+		hud.reset();
+		movement.reset();
+	}
+}
+
 const bool Player::isLocalPlayer() const
 {
 	return ((splitscreen && bSplitscreen) || playernum == clientnum);
@@ -961,6 +1002,16 @@ const bool Player::isLocalPlayer() const
 const bool Player::isLocalPlayerAlive() const
 {
 	return (isLocalPlayer() && entity && !client_disconnected[playernum]);
+}
+
+void Player::PlayerMovement_t::reset()
+{
+	quickTurnRotation = 0.0;
+	quickTurnStartTicks = 0;
+	bDoingQuickTurn = false;
+	monsterEmoteGimpTimer = 0;
+	selectedEntityGimpTimer = 0;
+	insectoidLevitating = false;
 }
 
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)

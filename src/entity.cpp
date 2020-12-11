@@ -520,6 +520,7 @@ Entity::~Entity()
 		if ( this == players[i]->entity )
 		{
 			players[i]->entity = nullptr;    //TODO: PLAYERSWAP VERIFY. Should this do anything to the player itself?
+			players[i]->cleanUpOnEntityRemoval();
 		}
 	}
 	// destroy my children

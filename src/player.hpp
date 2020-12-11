@@ -13,6 +13,7 @@
 #pragma once
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
+#include "messages.hpp"
 
 
 //Splitscreen support stuff.
@@ -157,6 +158,11 @@ public:
 	float getRightXPercent();
 	float getRightYPercent();
 
+	//Gets the percentage of the left stick for player movement, 100% input is multiplied by :
+	// x_forceMaxForwardThreshold, x_forceMaxBackwardThreshold, y_forceMaxStrafeThreshold
+	float getLeftXPercentForPlayerMovement();
+	float getLeftYPercentForPlayerMovement();
+
 	float getLeftTriggerPercent();
 	float getRightTriggerPercent();
 
@@ -185,6 +191,10 @@ public:
 	real_t oldFloatRightY = 0.0; // current delta per frame right-stick analogue value
 	int oldAxisRightX = 0;  // current raw right-stick analogue value (0-32768)
 	int oldAxisRightY = 0; // current raw right-stick analogue value (0-32768)
+
+	float x_forceMaxForwardThreshold = 0.7;
+	float x_forceMaxBackwardThreshold = 0.5;
+	float y_forceMaxStrafeThreshold = 0.7;
 
 	/*
 	 * Uses dpad to move the cursor around the inventory and select items.
@@ -481,6 +491,7 @@ public:
 	~Player();
 
 	void init();
+	void cleanUpOnEntityRemoval();
 
 	class Hotbar_t;
 	Hotbar_t* hotbar;
@@ -661,6 +672,70 @@ public:
 		spell_t* selectedSpell() const { return selected_spell; }
 
 	} magic;
+	class PlayerSettings_t
+	{
+	public:
+		int quickTurnDirection = 1; // 1 == right, -1 == left
+		real_t quickTurnSpeed = PI / 15;
+	} settings;
+	
+	class PlayerMovement_t
+	{
+		real_t quickTurnRotation = 0.0;
+		Uint32 quickTurnStartTicks = 0;
+		bool bDoingQuickTurn = false;
+		Player& player;
+	public:
+		int monsterEmoteGimpTimer = 0;
+		int selectedEntityGimpTimer = 0;
+		bool insectoidLevitating = false;
+
+		PlayerMovement_t(Player& p) : player(p)
+		{};
+		~PlayerMovement_t() {};
+		bool handleQuickTurn(bool useRefreshRateDelta);
+		void startQuickTurn();
+		bool isPlayerSwimming();
+		void handlePlayerCameraUpdate(bool useRefreshRateDelta);
+		void handlePlayerCameraBobbing(bool useRefreshRateDelta);
+		void handlePlayerMovement(bool useRefreshRateDelta);
+		void handlePlayerCameraPosition(bool useRefreshRateDelta);
+		void reset();
+	} movement;
+
+	class MessageZone_t
+	{
+		static const int MESSAGE_X_OFFSET = 5;
+		//Time in seconds before the message starts fading.
+		static const int MESSAGE_PREFADE_TIME = 3600;
+		//How fast the alpha value de-increments
+		static const int MESSAGE_FADE_RATE = 10;
+		TTF_Font* font = ttf16;
+		Uint32 old_sdl_ticks;
+		Player& player;
+	public:
+		static const int ADD_MESSAGE_BUFFER_LENGTH = 256;
+		MessageZone_t(Player& p) : player(p)
+		{};
+		std::list<Message*> notification_messages;
+		//Adds a message to the list of messages.
+		void addMessage(Uint32 color, char* content, ...);
+		//Updates all the messages; fades them & removes them.
+		void updateMessages();
+		//Draw all the messages.
+		void drawMessages();
+		//Used on program deinitialization.
+		void deleteAllNotificationMessages();
+
+		// leftmost x-anchored location
+		int getMessageZoneStartX();
+		// bottommost y-anchored location
+		int getMessageZoneStartY();
+		//Maximum number of messages displayed on screen at once before the oldest message is automatically deleted.
+		int getMaxTotalLines();
+
+		int fontSize() { return getHeightOfFont(font); }
+	} messageZone;
 };
 
 class Player::Hotbar_t {

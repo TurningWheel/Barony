@@ -422,7 +422,7 @@ void actHudWeapon(Entity* my)
 	// swimming
 	if (players[HUDWEAPON_PLAYERNUM] && players[HUDWEAPON_PLAYERNUM]->entity)
 	{
-		if ( isPlayerSwimming(players[HUDWEAPON_PLAYERNUM]->entity) || players[HUDWEAPON_PLAYERNUM]->entity->skill[13] != 0 )  //skill[13] PLAYER_INWATER
+		if ( players[HUDWEAPON_PLAYERNUM]->movement.isPlayerSwimming() || players[HUDWEAPON_PLAYERNUM]->entity->skill[13] != 0 )  //skill[13] PLAYER_INWATER
 		{
 			my->flags[INVISIBLE] = true;
 			if (parent)
@@ -3163,7 +3163,7 @@ void actHudShield(Entity* my)
 	bool swimming = false;
 	if (players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity)
 	{
-		if ( isPlayerSwimming(players[HUDSHIELD_PLAYERNUM]->entity) || players[HUDSHIELD_PLAYERNUM]->entity->skill[13] != 0 ) //skill[13] PLAYER_INWATER
+		if ( players[HUDWEAPON_PLAYERNUM]->movement.isPlayerSwimming() || players[HUDSHIELD_PLAYERNUM]->entity->skill[13] != 0 ) //skill[13] PLAYER_INWATER
 		{
 			my->flags[INVISIBLE] = true;
 			Entity* parent = uidToEntity(my->parent);

@@ -731,7 +731,10 @@ void deinitGame()
 	saveAllScores(SCORESFILE_MULTIPLAYER);
 	list_FreeAll(&topscores);
 	list_FreeAll(&topscoresMultiplayer);
-	deleteAllNotificationMessages();
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->messageZone.deleteAllNotificationMessages();
+	}
 	list_FreeAll(&removedEntities);
 	if ( title_bmp != nullptr )
 	{

@@ -34,9 +34,6 @@ bool usecamerasmoothing = false;
 bool disablemouserotationlimit = false;
 bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
-int monsterEmoteGimpTimer[MAXPLAYERS] = { 0 };
-int selectedEntityGimpTimer[MAXPLAYERS] = { 0 };
-bool insectoidLevitating[MAXPLAYERS] = { false, false, false, false };
 bool partymode = false;
 
 /*-------------------------------------------------------------------------------
@@ -239,8 +236,15 @@ void actDeathCam(Entity* my)
 #define PLAYER_CAMERAZ_ACCEL my->fskill[14]
 #define PLAYERWALKSPEED .12
 
-bool isPlayerSwimming(Entity* my)
+bool Player::PlayerMovement_t::isPlayerSwimming()
 {
+	if ( !players[player.playernum]->entity  || !stats[player.playernum])
+	{
+		return false;
+	}
+
+	Entity* my = players[player.playernum]->entity;
+
 	// swimming
 	bool waterwalkingboots = false;
 	if ( stats[PLAYER_NUM]->shoes != NULL )
@@ -266,12 +270,119 @@ bool isPlayerSwimming(Entity* my)
 	return swimming;
 }
 
-void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelta)
+bool Player::PlayerMovement_t::handleQuickTurn(bool useRefreshRateDelta)
 {
-	if ( !my )
+	if ( !players[player.playernum]->entity || !bDoingQuickTurn )
+	{
+		quickTurnRotation = 0.0;
+		bDoingQuickTurn = false;
+		quickTurnStartTicks = 0;
+		return false;
+	}
+
+	Entity* my = players[player.playernum]->entity;
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / fps;
+	}
+
+	if ( abs(quickTurnRotation) > 0.001 )
+	{
+		int dir = ((quickTurnRotation > 0) ? 1 : -1);
+		if ( my->ticks - quickTurnStartTicks < 15 )
+		{
+			PLAYER_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed;
+		}
+		else
+		{
+			PLAYER_ROTX = std::max(0.01, (dir * PI / 15) * pow(0.99, my->ticks - quickTurnStartTicks));
+		}
+
+		if ( dir == 1 )
+		{
+			quickTurnRotation = std::max(0.0, quickTurnRotation - PLAYER_ROTX * refreshRateDelta);
+		}
+		else
+		{
+			quickTurnRotation = std::min(0.0, quickTurnRotation - PLAYER_ROTX * refreshRateDelta);
+		}
+		return true;
+	}
+	else
+	{
+		bDoingQuickTurn = false;
+		return false;
+	}
+}
+
+void Player::PlayerMovement_t::startQuickTurn()
+{
+	if ( !players[player.playernum]->entity || bDoingQuickTurn )
 	{
 		return;
 	}
+
+	Entity* my = players[player.playernum]->entity;
+
+	if ( gamePaused || !stats[PLAYER_NUM] || !my->isMobile() )
+	{
+		return;
+	}
+
+	quickTurnRotation = PI * players[PLAYER_NUM]->settings.quickTurnDirection;
+	if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+	{
+		quickTurnRotation = -quickTurnRotation;
+	}
+
+	quickTurnStartTicks = players[PLAYER_NUM]->entity->ticks;
+	bDoingQuickTurn = true;
+	// code for moving left -> turn left, moving right -> turn right
+	// maybe better for 1 direction only.
+	/*if ( abs(PLAYER_VELY) > 0.001 || abs(PLAYER_VELX) > 0.001 )
+	{
+	real_t tangent = atan2(PLAYER_VELY, PLAYER_VELX);
+	real_t playerFacingDir = my->yaw;
+	while ( playerFacingDir >= 2 * PI )
+	{
+	playerFacingDir -= PI * 2;
+	}
+	while ( tangent < -PI )
+	{
+	playerFacingDir += PI * 2;
+	}
+	real_t difference = tangent - playerFacingDir;
+	if ( difference < -PI )
+	{
+	difference += 2 * PI;
+	}
+	if ( difference > PI )
+	{
+	difference -= 2 * PI;
+	}
+
+	if ( difference >= 0.0f )
+	{
+	quickTurnRotation[playernum] = PI;
+	}
+	if ( difference < 0.0f )
+	{
+	quickTurnRotation[playernum] = -PI;
+	}
+	//messagePlayer(0, "%.2f, %.2f, %.2f", tangent, playerFacingDir, (PI - abs(abs(playerFacingDir - tangent) - PI)) * 2);
+	}*/
+}
+
+void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta)
+{
+	if ( !players[player.playernum]->entity )
+	{
+		return;
+	}
+
+	Entity* my = players[player.playernum]->entity;
+	int playernum = player.playernum;
 
 	real_t mousex_relative = mousexrel;
 	real_t mousey_relative = mouseyrel;
@@ -284,11 +395,20 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 	{
 		refreshRateDelta *= TICKS_PER_SECOND / fps;
 	}
+	if ( players[playernum]->shootmode && !command )
+	{
+		if ( keystatus[SDL_SCANCODE_H] || inputs.bControllerInputPressed(playernum, INJOY_MENU_CHEST_GRAB_ALL) )
+		{
+			inputs.controllerClearInput(playernum, INJOY_MENU_CHEST_GRAB_ALL);
+			keystatus[SDL_SCANCODE_H] = 0;
+			startQuickTurn();
+		}
+	}
 
 	// rotate
 	if ( !command && my->isMobile() )
 	{
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
 		{
 			if ( noclip )
 			{
@@ -305,7 +425,12 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 		}
 	}
 	bool shootmode = players[PLAYER_NUM]->shootmode;
-	if ( shootmode && !gamePaused )
+
+	if ( handleQuickTurn(useRefreshRateDelta) )
+	{
+		// do nothing, override rotations.
+	}
+	else if ( shootmode && !gamePaused )
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -374,6 +499,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 			}
 		}
 	}
+
 	my->yaw += PLAYER_ROTX * refreshRateDelta;
 	while ( my->yaw >= PI * 2 )
 	{
@@ -383,6 +509,7 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 	{
 		my->yaw += PI * 2;
 	}
+
 	if ( smoothmouse )
 	{
 		PLAYER_ROTX *= pow(0.5, refreshRateDelta);
@@ -489,13 +616,17 @@ void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelt
 	}
 }
 
-void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDelta)
+void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelta)
 {
-	if ( !my )
+	if ( !players[player.playernum]->entity )
 	{
 		return;
 	}
-	bool swimming = isPlayerSwimming(my);
+
+	Entity* my = players[player.playernum]->entity;
+	int playernum = player.playernum;
+
+	bool swimming = isPlayerSwimming();
 
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
@@ -520,7 +651,9 @@ void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDel
 		else if ( ((*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD])
 				|| *inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]))
 				|| (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]))
-				|| (inputs.hasController(PLAYER_NUM) && (inputs.getController(PLAYER_NUM)->getLeftXPercent() || inputs.getController(PLAYER_NUM)->getLeftYPercent())))
+				|| (inputs.hasController(PLAYER_NUM) 
+					&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
+						|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement())))
 			&& !command && !swimming )
 		{
 			if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
@@ -657,12 +790,14 @@ void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDel
 	}
 }
 
-void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
+void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 {
-	if ( !my )
+	if ( !players[player.playernum]->entity )
 	{
 		return;
 	}
+
+	Entity* my = players[player.playernum]->entity;
 
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
@@ -760,20 +895,9 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 				y_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) - (double)* inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) * backpedalMultiplier);
 			}
 
-			const float x_forceMaxForwardThreshold = 0.7;
-			const float x_forceMaxBackwardThreshold = 0.5;
-			const float y_forceMaxStrafeThreshold = 0.7;
 			if ( inputs.hasController(PLAYER_NUM) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) )
 			{
-				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercent();
-				if ( x_force > 0 )
-				{
-					x_force = std::min(x_force / x_forceMaxForwardThreshold, 1.f);
-				}
-				else if ( x_force < 0 )
-				{
-					x_force = std::max(x_force / x_forceMaxBackwardThreshold, -1.f);
-				}
+				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement();
 
 				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				{
@@ -782,15 +906,7 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			}
 			if ( inputs.hasController(PLAYER_NUM) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) )
 			{
-				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercent();
-				if ( y_force > 0 )
-				{
-					y_force = std::min(y_force / y_forceMaxStrafeThreshold, 1.f);
-				}
-				else if ( y_force < 0 )
-				{
-					y_force = std::max(y_force / y_forceMaxStrafeThreshold, -1.f);
-				}
+				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement();
 
 				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				{
@@ -905,7 +1021,7 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 			amuletwaterbreathing = true;
 		}
 	}
-	bool swimming = isPlayerSwimming(my);
+	bool swimming = isPlayerSwimming();
 	if ( swimming && !amuletwaterbreathing )
 	{
 		PLAYER_VELX *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
@@ -925,14 +1041,17 @@ void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta)
 	}
 }
 
-void handlePlayerCameraPosition(Entity* my, int playernum, bool useRefreshRateDelta)
+void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDelta)
 {
-	if ( !my )
+	if ( !players[player.playernum]->entity )
 	{
 		return;
 	}
+
+	Entity* my = players[player.playernum]->entity;
+
 	int playerRace = my->getMonsterTypeFromSprite();
-	bool swimming = isPlayerSwimming(my);
+	bool swimming = isPlayerSwimming();
 
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
@@ -1869,9 +1988,9 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			if ( monsterEmoteGimpTimer[PLAYER_NUM] > 0 )
+			if ( players[PLAYER_NUM]->movement.monsterEmoteGimpTimer > 0 )
 			{
-				--monsterEmoteGimpTimer[PLAYER_NUM];
+				--players[PLAYER_NUM]->movement.monsterEmoteGimpTimer;
 			}
 		}
 		if ( multiplayer == SERVER )
@@ -2872,8 +2991,9 @@ void actPlayer(Entity* my)
 	}
 
 	real_t zOffset = 0;
-	bool oldInsectoidLevitate = insectoidLevitating[PLAYER_NUM];
-	insectoidLevitating[PLAYER_NUM] = false;
+	bool oldInsectoidLevitate = players[PLAYER_NUM]->movement.insectoidLevitating;
+	bool& insectoidLevitating = players[PLAYER_NUM]->movement.insectoidLevitating;
+	insectoidLevitating = false;
 
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
@@ -2960,7 +3080,7 @@ void actPlayer(Entity* my)
 		if ( levitating )
 		{
 			my->z -= 1; // floating
-			insectoidLevitating[PLAYER_NUM] = (playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER]);
+			insectoidLevitating = (playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER]);
 		}
 
 		if ( !levitating && prevlevitating )
@@ -3084,18 +3204,20 @@ void actPlayer(Entity* my)
 	{
 		if ( playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER] && (my->z >= -2.05 && my->z <= -1.95) )
 		{
-			insectoidLevitating[PLAYER_NUM] = true;
+			insectoidLevitating = true;
 		}
 	}
 
 	// swimming
 	bool waterwalkingboots = false;
 	if ( stats[PLAYER_NUM]->shoes != NULL )
+	{
 		if ( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
 		{
 			waterwalkingboots = true;
 		}
-	bool swimming = isPlayerSwimming(my);
+	}
+	bool swimming = players[PLAYER_NUM]->movement.isPlayerSwimming();
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
 		if ( swimming )
@@ -3252,7 +3374,7 @@ void actPlayer(Entity* my)
 
 		if ( !usecamerasmoothing )
 		{
-			handlePlayerCameraBobbing(my, PLAYER_NUM, false);
+			players[PLAYER_NUM]->movement.handlePlayerCameraBobbing(false);
 		}
 
 		Sint32 mouseX = inputs.getMouse(PLAYER_NUM, Inputs::OX);
@@ -3317,7 +3439,7 @@ void actPlayer(Entity* my)
 					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
 					if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE])) || (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
 					{
-						++selectedEntityGimpTimer[PLAYER_NUM]; 
+						++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
 					}
 				}
 			}
@@ -4376,8 +4498,8 @@ void actPlayer(Entity* my)
 
 		if ( !usecamerasmoothing )
 		{
-			handlePlayerMovement(my, PLAYER_NUM, false);
-			handlePlayerCameraUpdate(my, PLAYER_NUM, false);
+			players[PLAYER_NUM]->movement.handlePlayerMovement(false);
+			players[PLAYER_NUM]->movement.handlePlayerCameraUpdate(false);
 		}
 
 		// send movement updates to server
@@ -4585,7 +4707,7 @@ void actPlayer(Entity* my)
 						bendArm = false;
 					}
 
-					if ( insectoidLevitating[PLAYER_NUM] )
+					if ( insectoidLevitating )
 					{
 						// hands stationary, legs pitched back and little swing.
 						limbSpeed = 0.03;
@@ -5014,7 +5136,7 @@ void actPlayer(Entity* my)
 					entity->pitch = entity->fskill[0];
 				}
 
-				if ( insectoidLevitating[PLAYER_NUM] )
+				if ( insectoidLevitating )
 				{
 					// hands stationary, legs pitched back and little swing.
 					double limbSpeed = 0.03;
@@ -5247,12 +5369,12 @@ void actPlayer(Entity* my)
 								// successfully set sprite for the human model
 							}
 						}
-						if ( (!PLAYER_ARMBENDED && showEquipment) || (insectoidLevitating[PLAYER_NUM] && PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
+						if ( (!PLAYER_ARMBENDED && showEquipment) || (insectoidLevitating && PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
 						{
 							entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
 
 							if ( stats[PLAYER_NUM]->weapon == nullptr
-								&& insectoidLevitating[PLAYER_NUM] )
+								&& insectoidLevitating )
 							{
 								entity->sprite += 2;
 							}
@@ -5335,7 +5457,7 @@ void actPlayer(Entity* my)
 						if ( showEquipment )
 						{
 							bool bendArm = false;
-							if ( insectoidLevitating[PLAYER_NUM] )
+							if ( insectoidLevitating )
 							{
 								bendArm = true;
 							}
@@ -5390,7 +5512,7 @@ void actPlayer(Entity* my)
 						if ( shield->flags[INVISIBLE] )
 						{
 							bendArm = false;
-							if ( insectoidLevitating[PLAYER_NUM] )
+							if ( insectoidLevitating )
 							{
 								bendArm = true;
 							}
@@ -5865,7 +5987,7 @@ void actPlayer(Entity* my)
 						{
 							if ( moving )
 							{
-								if ( insectoidLevitating[PLAYER_NUM] )
+								if ( insectoidLevitating )
 								{
 									entity->fskill[0] += std::min(std::max(0.2, dist * PLAYERWALKSPEED), 2.f * PLAYERWALKSPEED); // move proportional to move speed
 								}
@@ -5895,7 +6017,7 @@ void actPlayer(Entity* my)
 						{
 							if ( moving )
 							{
-								if ( insectoidLevitating[PLAYER_NUM] )
+								if ( insectoidLevitating )
 								{
 									entity->fskill[0] -= std::min(std::max(0.15, dist * PLAYERWALKSPEED), 2.f * PLAYERWALKSPEED);
 								}
@@ -6034,7 +6156,7 @@ void actPlayer(Entity* my)
 		PLAYER_ATTACKTIME = 0;
 	}
 
-	handlePlayerCameraPosition(my, PLAYER_NUM, false);
+	players[PLAYER_NUM]->movement.handlePlayerCameraPosition(false);
 }
 
 // client function

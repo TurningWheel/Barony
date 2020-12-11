@@ -261,7 +261,7 @@ void messagePlayer(int player, char const * const message, ...)
 
 void messagePlayerColor(int player, Uint32 color, char const * const message, ...)
 {
-	char str[ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
+	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 	va_list argptr;
 
 	if ( message == NULL )
@@ -285,10 +285,10 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		printlog("%s\n", str);
-		strncpy(str, messageSanitizePercentSign(str, nullptr).c_str(), ADD_MESSAGE_BUFFER_LENGTH - 1);
+		strncpy(str, messageSanitizePercentSign(str, nullptr).c_str(), Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1);
 		newString(&messages, color, str);
 		while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
 		{
@@ -296,10 +296,10 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 		}
 		if ( !disable_messages )
 		{
-			addMessage(color, str);
+			players[player]->messageZone.addMessage(color, str);
 		}
 	}
-	else if ( multiplayer == SERVER && player > 0 )
+	else if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "MSGS");
 		SDLNet_Write32(color, &net_packet->data[4]);
@@ -2562,6 +2562,7 @@ void clientHandlePacket()
 							}
 						}
 						players[j]->entity = nullptr;
+						players[j]->cleanUpOnEntityRemoval();
 					}
 				}
 				if ( entity->light )

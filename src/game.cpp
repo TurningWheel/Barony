@@ -4239,10 +4239,10 @@ int main(int argc, char** argv)
 								{
 									real_t oldYaw = players[c]->entity->yaw;
 									//printText(font8x8_bmp, 20, 20, "using smooth camera");
-									handlePlayerCameraBobbing(players[c]->entity, c, true);
-									handlePlayerMovement(players[c]->entity, c, true);
-									handlePlayerCameraUpdate(players[c]->entity, c, true);
-									handlePlayerCameraPosition(players[c]->entity, c, true);
+									players[c]->movement.handlePlayerCameraBobbing(true);
+									players[c]->movement.handlePlayerMovement(true);
+									players[c]->movement.handlePlayerCameraUpdate(true);
+									players[c]->movement.handlePlayerCameraPosition(true);
 									//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
 								}
 							}
@@ -4360,17 +4360,23 @@ int main(int argc, char** argv)
 
 				DebugStats.t5MainDraw = std::chrono::high_resolution_clock::now();
 
-				updateMessages();
+				for ( int player = 0; player < MAXPLAYERS; ++player )
+				{
+					if ( players[player]->isLocalPlayer() )
+					{
+						players[player]->messageZone.updateMessages();
+					}
+				}
 				if ( !nohud )
 				{
-					for ( int c = 0; c < MAXPLAYERS; ++c )
+					for ( int player = 0; player < MAXPLAYERS; ++player )
 					{
-						if ( players[c]->isLocalPlayer() )
+						if ( players[player]->isLocalPlayer() )
 						{
-							handleDamageIndicators(c);
+							handleDamageIndicators(player);
+							players[player]->messageZone.drawMessages();
 						}
 					}
-					drawMessages();
 				}
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
@@ -4584,6 +4590,16 @@ int main(int argc, char** argv)
 					}
 					if ( command )
 					{
+						int commandPlayer = clientnum;
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( inputs.bPlayerUsingKeyboardControl(i) )
+							{
+								commandPlayer = i;
+								break;
+							}
+						}
+
 						if ( !SDL_IsTextInputActive() )
 						{
 							SDL_StartTextInput();
@@ -4609,7 +4625,7 @@ int main(int argc, char** argv)
 								if ( command_str[0] == '/' )
 								{
 									// backslash invokes command procedure
-									messagePlayer(clientnum, command_str);
+									messagePlayer(commandPlayer, command_str);
 									consoleCommand(command_str);
 								}
 								else
@@ -4620,7 +4636,7 @@ int main(int argc, char** argv)
 										strcpy(chatstring, language[739]);
 										strcat(chatstring, command_str);
 										Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
-										messagePlayerColor(clientnum, color, chatstring);
+										messagePlayerColor(commandPlayer, color, chatstring);
 										playSound(238, 64);
 										if ( multiplayer == SERVER )
 										{
@@ -4662,7 +4678,7 @@ int main(int argc, char** argv)
 								if ( command_str[0] == '/' )
 								{
 									// backslash invokes command procedure
-									messagePlayer(clientnum, command_str);
+									messagePlayer(commandPlayer, command_str);
 									consoleCommand(command_str);
 								}
 								else
@@ -4673,12 +4689,12 @@ int main(int argc, char** argv)
 										strcpy(chatstring, language[739]);
 										strcat(chatstring, command_str);
 										Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
-										messagePlayerColor(clientnum, color, chatstring);
+										messagePlayerColor(commandPlayer, color, chatstring);
 										playSound(238, 64);
 
 										// send message to server
 										strcpy((char*)net_packet->data, "MSGS");
-										net_packet->data[4] = clientnum;
+										net_packet->data[4] = commandPlayer;
 										SDLNet_Write32(color, &net_packet->data[5]);
 										strcpy((char*)(&net_packet->data[9]), command_str);
 										net_packet->address.host = net_server.host;
@@ -4699,12 +4715,14 @@ int main(int argc, char** argv)
 							}
 							chosen_command = NULL;
 						}
-						ttfPrintTextFormatted(ttf16, MESSAGE_X_OFFSET, MESSAGE_Y_OFFSET, ">%s", command_str);
+						ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX(), 
+							players[commandPlayer]->messageZone.getMessageZoneStartY(), ">%s", command_str);
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
 							int x;
 							getSizeOfText(ttf16, command_str, &x, NULL);
-							ttfPrintTextFormatted(ttf16, MESSAGE_X_OFFSET + x + TTF16_WIDTH, MESSAGE_Y_OFFSET, "_");
+							ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX() + x + TTF16_WIDTH, 
+								players[commandPlayer]->messageZone.getMessageZoneStartY(), "_");
 						}
 					}
 					else
@@ -5214,11 +5232,11 @@ int main(int argc, char** argv)
 				// otherwise if we interacted with a menu the gimp timer does not increment. (it would have auto reset the status of IN_USE)
 				if ( !(*inputPressedForPlayer(i, impulses[IN_USE])) && !(inputs.bControllerInputPressed(i, INJOY_GAME_USE)) )
 				{
-					selectedEntityGimpTimer[i] = 0;
+					players[i]->movement.selectedEntityGimpTimer = 0;
 				}
 				else
 				{
-					if ( selectedEntityGimpTimer[i] >= 2 )
+					if ( players[i]->movement.selectedEntityGimpTimer >= 2 )
 					{
 						if ( *inputPressedForPlayer(i, impulses[IN_USE]) )
 						{

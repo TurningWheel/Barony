@@ -747,11 +747,11 @@ void updatePlayerInventory(const int player)
 			}
 		}
 
-		if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0 
+		if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0 
 			&& !itemMenuOpen && GenericGUI[player].selectedSlot < 0
 			&& inputs.getController(player)->handleInventoryMovement(player) ) // handleInventoryMovement should be at the end of this check
 		{
-			if ( selectedChestSlot[player] < 0 && selectedShopSlot < 0
+			if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
 				if ( !hotbar_t->hotbarHasFocus )
@@ -772,9 +772,9 @@ void updatePlayerInventory(const int player)
 				warpMouseToSelectedInventorySlot(player);
 			}
 		}
-		else if ( selectedShopSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleShopMovement(player) )
+		else if ( selectedShopSlot[player] >= 0 && !itemMenuOpen && inputs.getController(player)->handleShopMovement(player) )
 		{
-			if ( selectedShopSlot < 0 )
+			if ( selectedShopSlot[player] < 0 )
 			{
 				warpMouseToSelectedInventorySlot(player);
 			}
@@ -830,7 +830,7 @@ void updatePlayerInventory(const int player)
 	}
 
 	if ( !itemMenuOpen 
-		&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
+		&& selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 		&& GenericGUI[player].selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
@@ -1370,7 +1370,7 @@ void updatePlayerInventory(const int player)
 
 					if ( inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
 						&& !itemMenuOpen && !selectedItem && selectedChestSlot[player] < 0
-						&& selectedShopSlot < 0
+						&& selectedShopSlot[player] < 0
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
 						inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
@@ -1403,7 +1403,7 @@ void updatePlayerInventory(const int player)
 					// handle clicking
 					if ( (inputs.bMouseLeft(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
-							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
+							&& selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !selectedItem && !itemMenuOpen )
 					{
@@ -1434,7 +1434,7 @@ void updatePlayerInventory(const int player)
 					}
 					else if ( (inputs.bMouseRight(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
-							&& selectedChestSlot[player] < 0 && selectedShopSlot < 0
+							&& selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !itemMenuOpen && !selectedItem )
 					{
