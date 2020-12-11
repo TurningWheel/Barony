@@ -54,7 +54,9 @@ void updateCharacterSheet(const int player)
 	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
 	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
-	players[player]->characterSheet.setDefaultCharacterSheetBox();
+	// mostly a copy of the code below.
+	// sets values into players[player]->characterSheet.partySheetBox for elsewhere
+	players[player]->characterSheet.setDefaultCharacterSheetBox(); 
 
 	// draw window
 	pos.x = x1 + 8;
