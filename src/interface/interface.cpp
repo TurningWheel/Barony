@@ -8081,22 +8081,21 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 		const int barWidth = 512;
 		SDL_Rect pos;
 		pos.w = barWidth;
-		pos.x = players[player]->camera_midx() - (pos.w / 2);
 		pos.h = 38;
 		pos.y = players[player]->camera_y2() - 224;
 		if ( splitscreen && players[player]->isLocalPlayer() && players[player]->camera_width() < yres )
 		{
 			if ( yres < 900 )
 			{
-				pos.w *= 0.6;
+				pos.w *= 0.5;
 			}
 			else if ( yres < 1080 )
 			{
 				pos.w *= 0.8;
 			}
-			pos.x = players[player]->camera_midx() - (pos.w / 2);
 			pos.y = players[player]->hotbar->hotbarBox.y - pos.h - 8;
 		}
+		pos.x = players[player]->camera_midx() - (pos.w / 2);
 
 		// bar
 		drawTooltip(&pos);
