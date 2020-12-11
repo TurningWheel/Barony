@@ -424,6 +424,7 @@ void updateChestInventory(const int player)
 					}
 				}
 			}
+			repopulateInvItems(player, chest_inventory); // otherwise drawChestSlots will try draw corrupted data
 		}
 
 		drawChestSlots(player);
