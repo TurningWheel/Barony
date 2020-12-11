@@ -160,11 +160,11 @@ void actBeartrap(Entity* my)
 						int player = entity->skill[2];
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerColor(player, color, language[454]);
-						if ( player > 0 )
+						if ( !players[player]->isLocalPlayer() )
 						{
 							serverUpdateEffects(player);
 						}
-						if ( player == clientnum || (splitscreen && player > 0) )
+						if ( players[player]->isLocalPlayer() )
 						{
 							cameravars[entity->skill[2]].shakex += .1;
 							cameravars[entity->skill[2]].shakey += 10;
@@ -541,7 +541,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	{
 		int player = triggered->skill[2];
 		
-		if ( player == clientnum || (splitscreen && player > 0) )
+		if ( players[player]->isLocalPlayer() )
 		{
 			cameravars[triggered->skill[2]].shakex += .1;
 			cameravars[triggered->skill[2]].shakey += 10;

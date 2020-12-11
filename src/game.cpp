@@ -4235,9 +4235,9 @@ int main(int argc, char** argv)
 								}
 							}
 
-							if ( players[clientnum] && players[clientnum]->entity )
+							if ( players[c] && players[c]->entity )
 							{
-								if ( players[clientnum]->entity->isBlind() )
+								if ( players[c]->entity->isBlind() )
 								{
 									if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_STOPPED 
 										|| (globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_DISSIPATING && globalLightModifier < 1.f) )
@@ -4245,7 +4245,7 @@ int main(int argc, char** argv)
 										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
 										globalLightModifier = 0.f;
 										globalLightTelepathyModifier = 0.f;
-										if ( stats[clientnum]->mask && stats[clientnum]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+										if ( stats[c]->mask && stats[c]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
 										{
 											for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 											{
@@ -4259,11 +4259,11 @@ int main(int argc, char** argv)
 									}
 
 									int PERModifier = 0;
-									if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_BLIND]
-										&& !stats[clientnum]->EFFECTS[EFF_ASLEEP] && !stats[clientnum]->EFFECTS[EFF_MESSY] )
+									if ( stats[c] && stats[c]->EFFECTS[EFF_BLIND]
+										&& !stats[c]->EFFECTS[EFF_ASLEEP] && !stats[c]->EFFECTS[EFF_MESSY] )
 									{
 										// blind but not messy or asleep = allow PER to let you see the world a little.
-										PERModifier = players[clientnum]->entity->getPER() / 5;
+										PERModifier = players[c]->entity->getPER() / 5;
 										if ( PERModifier < 0 )
 										{
 											PERModifier = 0;
@@ -4273,7 +4273,7 @@ int main(int argc, char** argv)
 									real_t limit = PERModifier * 0.01;
 									globalLightModifier = std::min(limit, globalLightModifier + 0.0005);
 
-									int telepathyLimit = std::min(64, 48 + players[clientnum]->entity->getPER());
+									int telepathyLimit = std::min(64, 48 + players[c]->entity->getPER());
 									globalLightTelepathyModifier = std::min(telepathyLimit / 255.0, globalLightTelepathyModifier + (0.2 / 255.0));
 								}
 								else
@@ -4333,7 +4333,7 @@ int main(int argc, char** argv)
 
 							//drawFloors(&camera);
 							drawEntities3D(&camera, REALCOLORS);
-							if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
+							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{
 								camera.ang -= cosspin * drunkextend;
 								camera.vang -= sinspin * drunkextend;
@@ -4874,14 +4874,14 @@ int main(int argc, char** argv)
 									inputs.getController(player)->getLeftYPercent());
 							}
 						}
-					}
 
-					if ( (players[clientnum]->shootmode == false && players[clientnum]->gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
-					{
-						Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
-						Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
-						Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
-						printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
+						if ( (players[player]->shootmode == false && players[player]->gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
+						{
+							Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
+							Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
+							Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
+							printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
+						}
 					}
 
 					DebugStats.t9GUI = std::chrono::high_resolution_clock::now();

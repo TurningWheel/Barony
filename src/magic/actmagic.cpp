@@ -458,7 +458,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 	{
 		my->removeLightField();
 
-		if (clientnum == 0 || multiplayer == SERVER)
+		if ( multiplayer != CLIENT )
 		{
 			//Handle the missile's life.
 			MAGIC_LIFE++;
@@ -833,7 +833,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							// set armornum to the relevant equipment slot to send to clients
 							int armornum = 5 + reflection;
-							if ( player == clientnum || player < 0 )
+							if ( (player >= 0 && players[player]->isLocalPlayer()) || player < 0 )
 							{
 								if ( reflection == 1 )
 								{

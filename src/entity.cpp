@@ -1250,7 +1250,7 @@ void Entity::effectTimes()
 						{
 							setEffect(EFF_TELEPATH, false, 0, true);
 							messagePlayer(player, language[608]);
-							if ( player == clientnum )
+							if ( player >= 0 && players[player]->isLocalPlayer() )
 							{
 								for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 								{
@@ -1621,7 +1621,7 @@ void Entity::increaseSkill(int skill, bool notify)
 
 		if ( skill == PRO_STEALTH && myStats->PROFICIENCIES[skill] == 100 )
 		{
-			if ( client_classes[player] == CLASS_ACCURSED )
+			if ( player >= 0 && client_classes[player] == CLASS_ACCURSED )
 			{
 				steamAchievementClient(player, "BARONY_ACH_BLOOD_RUNS_CLEAR");
 			}
@@ -1646,7 +1646,7 @@ void Entity::increaseSkill(int skill, bool notify)
 
 		if ( skill == PRO_ALCHEMY )
 		{
-			if ( players[player]->isLocalPlayer() )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				GenericGUI[player].alchemyLearnRecipeOnLevelUp(myStats->PROFICIENCIES[skill]);
 			}
@@ -3117,7 +3117,7 @@ void Entity::handleEffects(Stat* myStats)
 					// Shake the Host's screen
 					if ( myStats->HP <= 10 )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							camera_shakex += .1;
 							camera_shakey += 10;
@@ -3274,7 +3274,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 
 					// Shake the Host's screen
-					if ( player == clientnum )
+					if ( player >= 0 && players[player]->isLocalPlayer() )
 					{
 						camera_shakex += .1;
 						camera_shakey += 10;
@@ -3328,7 +3328,7 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->EFFECTS[EFF_VOMITING] = true;
 			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + rand() % 20;
 			serverUpdateEffects(player);
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				camera_shakey += 9;
 			}
@@ -3632,7 +3632,7 @@ void Entity::handleEffects(Stat* myStats)
 			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10260) )
 			{
 				this->char_torchtime = 0;
-				if ( player == clientnum )
+				if ( player >= 0 && players[player]->isLocalPlayer() )
 				{
 					if ( myStats->shield->count > 1 )
 					{
@@ -3743,7 +3743,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			this->setObituary(language[1531]);
 			playSoundEntity(this, 28, 64);
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				camera_shakex += .1;
 				camera_shakey += 10;
@@ -3813,7 +3813,7 @@ void Entity::handleEffects(Stat* myStats)
 				this->setObituary(language[1532]);
 				Entity* gib = spawnGib(this);
 				serverSpawnGibForClient(gib);
-				if ( player == clientnum )
+				if ( player >= 0 && players[player]->isLocalPlayer() )
 				{
 					camera_shakex -= .03;
 					camera_shakey += 3;
@@ -4073,7 +4073,7 @@ void Entity::handleEffects(Stat* myStats)
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
 				// Shake the Camera
-				if ( player == clientnum )
+				if ( player >= 0 && players[player]->isLocalPlayer() )
 				{
 					camera_shakey += 5;
 				}
@@ -4094,7 +4094,7 @@ void Entity::handleEffects(Stat* myStats)
 					// 1 in 10 chance of dealing damage to Entity's cloak
 					if ( rand() % 10 == 0 && myStats->cloak->type != ARTIFACT_CLOAK && myStats->cloak->type != CLOAK_BACKPACK )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( myStats->cloak->count > 1 )
 							{
@@ -4287,7 +4287,7 @@ void Entity::handleEffects(Stat* myStats)
 								int amount = 2 + rand() % 2;
 								int oldMP = myStats->MP;
 								this->modMP(amount);
-								if ( stats[player]->appearance == 0 )
+								if ( player >= 0 && stats[player]->appearance == 0 )
 								{
 									if ( stats[player]->playerRace == RACE_INCUBUS || stats[player]->playerRace == RACE_SUCCUBUS )
 									{
@@ -4325,7 +4325,7 @@ void Entity::handleEffects(Stat* myStats)
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
-					if ( player == clientnum )
+					if ( player >= 0 && players[player]->isLocalPlayer() )
 					{
 						camera_shakey += 8;
 					}
@@ -6352,7 +6352,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( myStats->weapon != NULL )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( myStats->weapon->count > 1 )
 							{
@@ -7238,7 +7238,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				if ( behavior == &actPlayer )
 				{
-					if ( skill[2] != clientnum && (!splitscreen) )
+					if ( !players[skill[2]]->isLocalPlayer() )
 					{
 						if ( achievementRangedMode[skill[2]] && !playerFailedRangedOnlyConduct[skill[2]] )
 						{
@@ -7735,7 +7735,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( degradeWeapon )
 							{
-								if ( player == clientnum || player < 0 )
+								if ( (player >= 0 && players[player]->isLocalPlayer()) || player < 0 )
 								{
 									if ( (*weaponToBreak)->count > 1 )
 									{
@@ -8076,7 +8076,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								tangent -= 2 * PI;
 							}
-							if ( hit.entity->skill[2] != clientnum )
+							if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
 							{
 								hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
 								hit.entity->monsterKnockbackTangentDir = tangent;
@@ -8188,7 +8188,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									tangent -= 2 * PI;
 								}
-								if ( hit.entity->skill[2] != clientnum )
+								if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
 								{
 									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
 									hit.entity->monsterKnockbackTangentDir = tangent;
@@ -8438,7 +8438,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								if ( armor != nullptr )
 								{
-									if ( playerhit == clientnum || playerhit < 0 )
+									if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )
 									{
 										if ( armor->count > 1 )
 										{
@@ -9103,7 +9103,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								updateAchievementRhythmOfTheKnight(playerhit, this, true);
 								updateAchievementThankTheTank(playerhit, this, false);
 							}
-							else if ( !achievementStatusRhythmOfTheKnight[player] )
+							else if ( !achievementStatusRhythmOfTheKnight[playerhit] )
 							{
 								achievementRhythmOfTheKnightVec[playerhit].clear();
 								//messagePlayer(0, "used AC!");
@@ -15459,7 +15459,7 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		playerhit = this->skill[2];
 	}
 
-	if ( playerhit == clientnum || playerhit < 0 )
+	if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )
 	{
 		if ( armor.count > 1 )
 		{

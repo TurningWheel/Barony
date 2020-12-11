@@ -233,7 +233,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				{
 					if ( rand() % 5 == 0 )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( count > 1 )
 							{
@@ -342,7 +342,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				{
 					if ( rand() % 5 == 0 )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( count > 1 )
 							{
@@ -453,7 +453,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 					if ( rand() % 2 == 0 )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( count > 1 )
 							{
@@ -607,7 +607,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		if ( entity.skill[0] <= 0 )
 		{
 			// fountain is dry, no bueno.
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				if ( entity.behavior == &actFountain )
 				{

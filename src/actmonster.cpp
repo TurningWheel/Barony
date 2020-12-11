@@ -8930,7 +8930,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	if ( stats[monsterAllyIndex] )
 	{
 		tinkeringLVL = stats[monsterAllyIndex]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
-		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[monsterAllyIndex]->entity);
+		skillLVL = stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
 		if ( isTinkeringFollower )
 		{
 			skillLVL = tinkeringLVL;

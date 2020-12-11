@@ -116,8 +116,10 @@ void Entity::actPedestalBase()
 			orbEntity->vel_z = vel_z;
 			orbEntity->z += orbEntity->vel_z;
 			// shake camera if in range.
-			for (int c = 0; c < MAXPLAYERS; ++c) {
-				if (client_disconnected[c] || !players[c]) {
+			for (int c = 0; c < MAXPLAYERS; ++c) 
+			{
+				if ( !players[c]->isLocalPlayer || !players[c]->isLocalPlayerAlive() ) 
+				{
 					continue;
 				}
 				auto& player = players[c];
