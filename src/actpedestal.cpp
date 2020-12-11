@@ -118,7 +118,7 @@ void Entity::actPedestalBase()
 			// shake camera if in range.
 			for (int c = 0; c < MAXPLAYERS; ++c) 
 			{
-				if ( !players[c]->isLocalPlayer || !players[c]->isLocalPlayerAlive() ) 
+				if ( !players[c]->isLocalPlayer() || !players[c]->isLocalPlayerAlive() ) 
 				{
 					continue;
 				}

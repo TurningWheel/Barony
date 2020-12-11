@@ -397,10 +397,9 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	if ( players[playernum]->shootmode && !command )
 	{
-		if ( keystatus[SDL_SCANCODE_H] || inputs.bControllerInputPressed(playernum, INJOY_MENU_CHEST_GRAB_ALL) )
+		if ( inputs.bControllerInputPressed(playernum, INJOY_MENU_CHEST_GRAB_ALL) )
 		{
 			inputs.controllerClearInput(playernum, INJOY_MENU_CHEST_GRAB_ALL);
-			keystatus[SDL_SCANCODE_H] = 0;
 			startQuickTurn();
 		}
 	}
