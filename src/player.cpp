@@ -975,12 +975,15 @@ Player::~Player()
 	}
 }
 
-void Player::init()
+void Player::init() // for use on new/restart game, UI related
 {
 	inventoryUI.resetInventory();
 	selectedChestSlot[playernum] = -1;
 	selectedShopSlot[playernum] = -1;
 	shopinventorycategory[playernum] = -1;
+	characterSheet.setDefaultSkillsSheetBox();
+	characterSheet.setDefaultPartySheetBox();
+	characterSheet.setDefaultCharacterSheetBox();
 }
 
 void Player::cleanUpOnEntityRemoval()

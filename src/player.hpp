@@ -590,6 +590,10 @@ public:
 		SDL_Rect partySheetBox;
 		SDL_Rect characterSheetBox;
 
+		void setDefaultSkillsSheetBox();
+		void setDefaultPartySheetBox();
+		void setDefaultCharacterSheetBox();
+
 		bool lock_right_sidebar = false;
 		int proficienciesPage = 0;
 		int attributespage = 0;

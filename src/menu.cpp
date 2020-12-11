@@ -9392,6 +9392,7 @@ void handleMainMenu(bool mode)
 
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+				players[i]->init();
 				players[i]->hud.reset();
 				deinitShapeshiftHotbar(i);
 				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
@@ -9401,7 +9402,6 @@ void handleMainMenu(bool mode)
 				players[i]->shootmode = true;
 				players[i]->magic.clearSelectedSpells();
 				enemyHPDamageBarHandler[i].HPBars.clear();
-				selectedChestSlot[i] = -1;
 			}
 			currentlevel = startfloor;
 			secretlevel = false;

@@ -1976,7 +1976,7 @@ void drawStatus(int player)
 	pos.w = 64;
 	pos.h = 64;
 	pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
-	pos.y = (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) + (32 + 64 + 64 + 3); // 131px from end of prof window.
+	pos.y = players[player]->characterSheet.skillsSheetBox.h + (32 + pos.h * 2 + 3); // 131px from end of prof window.
 
 	if ( (!shootmode || players[player]->characterSheet.lock_right_sidebar) && players[player]->characterSheet.proficienciesPage == 1
 		&& pos.y < (players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16) )
@@ -1984,9 +1984,20 @@ void drawStatus(int player)
 		pos.y = players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16;
 	}
 
-	if ( pos.y + pos.h > (yres - map.height * 4) ) // check if overlapping minimap
+	if ( splitscreen )
 	{
-		pos.y = (yres - map.height * 4) - (64 + 3); // align above minimap
+		// todo - adjust position.
+		pos.w = 48;
+		pos.h = 48;
+		pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
+		pos.y = players[player]->characterSheet.skillsSheetBox.h + (16 + pos.h * 2 + 3);
+	}
+	else
+	{
+		if ( pos.y + pos.h > (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) ) // check if overlapping minimap
+		{
+			pos.y = (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) - (64 + 3); // align above minimap
+		}
 	}
 	
 	SDL_Surface *tmp_bmp = NULL;

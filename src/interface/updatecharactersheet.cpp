@@ -54,6 +54,8 @@ void updateCharacterSheet(const int player)
 	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
 	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
+	players[player]->characterSheet.setDefaultCharacterSheetBox();
+
 	// draw window
 	pos.x = x1 + 8;
 	pos.y = y1 + 8;
@@ -73,15 +75,9 @@ void updateCharacterSheet(const int player)
 		statWindowY2 = y1 + 554;
 	}
 
-
 	drawWindowFancy(x1, y1, x1 + pos.w + 16, y1 + pos.h + 16);
 	drawRect(&pos, 0, 255);
 	drawWindowFancy(x1, y1 + pos.h + 16, x1 + pos.w + 16, statWindowY2);
-
-	players[player]->characterSheet.characterSheetBox.x = pos.x - 8;
-	players[player]->characterSheet.characterSheetBox.y = pos.y - 8;
-	players[player]->characterSheet.characterSheetBox.w = pos.w + 16;
-	players[player]->characterSheet.characterSheetBox.h = statWindowY2;
 
 	// character sheet
 	double ofov = fov;
@@ -364,6 +360,107 @@ void updateCharacterSheet(const int player)
 	}
 }
 
+void Player::CharacterSheet_t::setDefaultCharacterSheetBox()
+{
+	const int x1 = players[player.playernum]->camera_x1();
+	const int y1 = players[player.playernum]->camera_y1();
+
+	// draw window
+	SDL_Rect pos;
+	pos.x = x1 + 8;
+	pos.y = y1 + 8;
+	pos.w = 208;
+	pos.h = 180;
+
+	int statWindowY = y1 + 196;
+	int statWindowY2 = y1 + 404;
+	if ( uiscale_charactersheet )
+	{
+		pos.h = 236;
+		pos.w = 276;
+		statWindowY = y1 + pos.h + 16;
+		statWindowY2 = y1 + 554;
+	}
+
+	characterSheetBox.x = pos.x - 8;
+	characterSheetBox.y = pos.y - 8;
+	characterSheetBox.w = pos.w + 16;
+	characterSheetBox.h = statWindowY2;
+}
+
+void Player::CharacterSheet_t::setDefaultPartySheetBox()
+{
+	const int x2 = players[player.playernum]->camera_x2();
+	const int y1 = players[player.playernum]->camera_y1();
+
+	partySheetBox.w = 208;
+
+	TTF_Font* fontPlayer = ttf12;
+	int fontHeight = TTF12_HEIGHT;
+	int fontWidth = TTF12_WIDTH;
+	if ( uiscale_skillspage )
+	{
+		fontPlayer = ttf16;
+		fontHeight = TTF16_HEIGHT;
+		fontWidth = TTF16_WIDTH;
+		partySheetBox.w = 276;
+	}
+	int playerCnt = 0;
+	for ( playerCnt = MAXPLAYERS - 1; playerCnt > 0; --playerCnt )
+	{
+		if ( !client_disconnected[playerCnt] )
+		{
+			break;
+		}
+	}
+	partySheetBox.x = x2 - partySheetBox.w;
+	partySheetBox.y = y1 + 32;
+	partySheetBox.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
+
+	int numFollowers = 0;
+	if ( stats[player.playernum] )
+	{
+		numFollowers = list_Size(&stats[player.playernum]->FOLLOWERS);
+	}
+
+	if ( playerCnt == 0 ) // 1 player.
+	{
+		if ( numFollowers == 0 )
+		{
+			if ( players[player.playernum]->shootmode )
+			{
+				// don't show menu if not in inventory, no point reminding the player they have no friends!
+			}
+			else
+			{
+				partySheetBox.h = (fontHeight * 4 + 12);
+			}
+		}
+		else
+		{
+			partySheetBox.h = (fontHeight + 12);
+		}
+	}
+}
+
+void Player::CharacterSheet_t::setDefaultSkillsSheetBox()
+{
+	int y1 = players[player.playernum]->camera_y1();
+	int x2 = players[player.playernum]->camera_x2();
+
+	skillsSheetBox.w = 208;
+	skillsSheetBox.y = y1 + 32;
+
+	int fontHeight = TTF12_HEIGHT;
+	if ( uiscale_skillspage )
+	{
+		fontHeight = TTF16_HEIGHT;
+		skillsSheetBox.w = 276;
+	}
+	skillsSheetBox.x = x2 - skillsSheetBox.w;
+	skillsSheetBox.h = (NUMPROFICIENCIES * fontHeight) + (fontHeight * 3);
+}
+
 void drawSkillsSheet(const int player)
 {
 	int x1 = players[player]->camera_x1();
@@ -377,9 +474,6 @@ void drawSkillsSheet(const int player)
 	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
 	SDL_Rect pos;
-	pos.w = 208;
-	pos.y = y1 + 32;
-
 	TTF_Font* fontSkill = ttf12;
 	int fontHeight = TTF12_HEIGHT;
 	int fontWidth = TTF12_WIDTH;
@@ -388,18 +482,15 @@ void drawSkillsSheet(const int player)
 		fontSkill = ttf16;
 		fontHeight = TTF16_HEIGHT;
 		fontWidth = TTF16_WIDTH;
-		pos.w = 276;
 	}
-	pos.x = x2 - pos.w;
+	players[player]->characterSheet.setDefaultSkillsSheetBox();
 
-
-	pos.h = (NUMPROFICIENCIES * fontHeight) + (fontHeight * 3);
+	pos.x = players[player]->characterSheet.skillsSheetBox.x;
+	pos.y = players[player]->characterSheet.skillsSheetBox.y;
+	pos.w = players[player]->characterSheet.skillsSheetBox.w;
+	pos.h = players[player]->characterSheet.skillsSheetBox.h;
 
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
-	players[player]->characterSheet.skillsSheetBox.x = pos.x;
-	players[player]->characterSheet.skillsSheetBox.y = pos.y;
-	players[player]->characterSheet.skillsSheetBox.w = pos.w;
-	players[player]->characterSheet.skillsSheetBox.h = pos.h;
 
 	ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y + 8, language[1883]);
 
@@ -1105,9 +1196,6 @@ void drawPartySheet(const int player)
 	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
 	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
-	SDL_Rect pos;
-	pos.w = 208;
-
 	TTF_Font* fontPlayer = ttf12;
 	int fontHeight = TTF12_HEIGHT;
 	int fontWidth = TTF12_WIDTH;
@@ -1116,8 +1204,9 @@ void drawPartySheet(const int player)
 		fontPlayer = ttf16;
 		fontHeight = TTF16_HEIGHT;
 		fontWidth = TTF16_WIDTH;
-		pos.w = 276;
 	}
+	players[player]->characterSheet.setDefaultPartySheetBox();
+
 	int playerCnt = 0;
 	for ( playerCnt = MAXPLAYERS - 1; playerCnt > 0; --playerCnt )
 	{
@@ -1126,9 +1215,6 @@ void drawPartySheet(const int player)
 			break;
 		}
 	}
-	pos.x = x2 - pos.w;
-	pos.y = y1 + 32;
-	pos.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
 
 	int numFollowers = 0;
 	if ( stats[player] )
@@ -1144,18 +1230,15 @@ void drawPartySheet(const int player)
 			{
 				return; // don't show menu if not in inventory, no point reminding the player they have no friends!
 			}
-			pos.h = (fontHeight * 4 + 12);
-		}
-		else
-		{
-			pos.h = (fontHeight + 12);
 		}
 	}
+
+	SDL_Rect pos;
+	pos.x = players[player]->characterSheet.partySheetBox.x;
+	pos.y = players[player]->characterSheet.partySheetBox.y;
+	pos.w = players[player]->characterSheet.partySheetBox.w;
+	pos.h = players[player]->characterSheet.partySheetBox.h;
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
-	players[player]->characterSheet.partySheetBox.x = pos.x;
-	players[player]->characterSheet.partySheetBox.y = pos.y;
-	players[player]->characterSheet.partySheetBox.w = pos.w;
-	players[player]->characterSheet.partySheetBox.h = pos.h;
 
 	ttfPrintTextFormatted(fontPlayer, pos.x + 4, pos.y + 8, "Party Stats");
 
