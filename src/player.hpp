@@ -321,7 +321,9 @@ public:
 	}
 	void controllerHandleMouse(const int player);
 	const bool bControllerInputPressed(const int player, const unsigned controllerImpulse) const;
+	const bool bControllerRawInputPressed(const int player, const unsigned button) const;
 	void controllerClearInput(const int player, const unsigned controllerImpulse);
+	void controllerClearRawInput(const int player, const unsigned button);
 	const bool bMouseLeft (const int player) const;
 	const bool bMouseRight(const int player) const;
 	const void mouseClearLeft(int player);

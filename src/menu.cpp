@@ -454,12 +454,12 @@ void navigateMainMenuItems(bool mode)
 	if (menuselect == 0)
 	{
 		//No menu item selected.
-		if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
+		if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 		{
 			keystatus[SDL_SCANCODE_UP] = 0;
 			if ( rebindaction == -1 )
 			{
-				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+				inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
 			}
 			inputs.hideMouseCursors();
 			menuselect = menuOptions.at(0).second;
@@ -470,12 +470,12 @@ void navigateMainMenuItems(bool mode)
 			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 			inputs.warpMouse(clientnum, warpx, warpy, flags);
 		}
-		else if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
+		else if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 		{
 			keystatus[SDL_SCANCODE_DOWN] = 0;
 			if ( rebindaction == -1 )
 			{
-				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+				inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
 			}
 			inputs.hideMouseCursors();
 			menuselect = menuOptions.at(0).second;
@@ -488,12 +488,12 @@ void navigateMainMenuItems(bool mode)
 	}
 	else
 	{
-		if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
+		if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 		{
 			keystatus[SDL_SCANCODE_UP] = 0;
 			if ( rebindaction == -1 )
 			{
-				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+				inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
 			}
 			inputs.hideMouseCursors();
 			if ( mode )
@@ -515,12 +515,12 @@ void navigateMainMenuItems(bool mode)
 			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 			inputs.warpMouse(clientnum, warpx, warpy, flags);
 		}
-		else if (keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
+		else if (keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 		{
 			keystatus[SDL_SCANCODE_DOWN] = 0;
 			if ( rebindaction == -1 )
 			{
-				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+				inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
 			}
 			inputs.hideMouseCursors();
 			if ( mode )
@@ -808,14 +808,14 @@ void inline pauseMenuOnInputPressed()
 	playSound(139, 64);
 	if ( rebindaction == -1 )
 	{
-		*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+		inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 	}
 }
 
 void handleInGamePauseMenu()
 {
 	Uint32 colorGray = uint32ColorGray(*mainsurface);
-	const bool inputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1));
+	const bool inputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 	SDL_Rect text;
 	text.x = 50;
 	text.h = 18;
@@ -1250,7 +1250,7 @@ void handleInGamePauseMenu()
 void handleTutorialPauseMenu()
 {
 	const Uint32 colorGray = uint32ColorGray(*mainsurface);
-	const bool inputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1));
+	const bool inputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 	SDL_Rect text;
 	text.x = 50;
 	text.h = 18;
@@ -1873,7 +1873,7 @@ void handleMainMenu(bool mode)
 				buttonJoinLobby(nullptr);
 			}
 
-			bool mainMenuSelectInputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1));
+			bool mainMenuSelectInputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 
 			//"Start Game" button.
 			SDL_Rect text;
@@ -2536,11 +2536,11 @@ void handleMainMenu(bool mode)
 			drawWindow(raceInfoBtn.x, raceInfoBtn.y, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y + raceInfoBtn.h);
 			if ( mouseInBounds(clientnum, raceInfoBtn.x, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y, raceInfoBtn.y + raceInfoBtn.h) )
 			{
-				if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) || mousestatus[SDL_BUTTON_LEFT] )
+				if ( inputs.bControllerInputPressed(clientnum, INJOY_MENU_LEFT_CLICK) || mousestatus[SDL_BUTTON_LEFT] )
 				{
 					//drawDepressed(raceInfoBtn.x, raceInfoBtn.y, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y + raceInfoBtn.h);
 					mousestatus[SDL_BUTTON_LEFT] = 0;
-					*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
+					inputs.controllerClearInput(clientnum, INJOY_MENU_LEFT_CLICK);
 					showRaceInfo = !showRaceInfo;
 					playSound(139, 64);
 				}
@@ -3088,12 +3088,12 @@ void handleMainMenu(bool mode)
 					}
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
+			if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 			{
 				keystatus[SDL_SCANCODE_UP] = 0;
 				if ( rebindaction == -1 )
 				{
-					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
 				}
 				inputs.hideMouseCursors();
 				if ( raceSelect == 1 )
@@ -3212,12 +3212,12 @@ void handleMainMenu(bool mode)
 					initClass(0);
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
+			if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 			{
 				keystatus[SDL_SCANCODE_DOWN] = 0;
 				if ( rebindaction == -1 )
 				{
-					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
 				}
 				inputs.hideMouseCursors();
 				if ( raceSelect == 1 )
@@ -3351,12 +3351,12 @@ void handleMainMenu(bool mode)
 					initClass(0);
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_RIGHT] || (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) && rebindaction == -1) )
+			if ( keystatus[SDL_SCANCODE_RIGHT] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_RIGHT) && rebindaction == -1) )
 			{
 				keystatus[SDL_SCANCODE_RIGHT] = 0;
 				if ( rebindaction == -1 )
 				{
-					*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
+					inputs.controllerClearInput(clientnum, INJOY_DPAD_RIGHT);
 				}
 				inputs.hideMouseCursors();
 				++raceSelect;
@@ -3372,12 +3372,12 @@ void handleMainMenu(bool mode)
 					raceSelect = 0;
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_LEFT] || (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) && rebindaction == -1) )
+			if ( keystatus[SDL_SCANCODE_LEFT] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_LEFT) && rebindaction == -1) )
 			{
 				keystatus[SDL_SCANCODE_LEFT] = 0;
 				if ( rebindaction == -1 )
 				{
-					*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
+					inputs.controllerClearInput(clientnum, INJOY_DPAD_LEFT);
 				}
 				inputs.hideMouseCursors();
 				--raceSelect;
@@ -3513,12 +3513,12 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
+				if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
 					if ( rebindaction == -1 )
 					{
-						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+						inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
 					}
 					inputs.hideMouseCursors();
 
@@ -3547,12 +3547,12 @@ void handleMainMenu(bool mode)
 						initClass(0);
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
+				if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					if ( rebindaction == -1 )
 					{
-						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+						inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
 					}
 					inputs.hideMouseCursors();
 
@@ -3621,12 +3621,12 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
+				if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
 					if ( rebindaction == -1 )
 					{
-						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+						inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
 					}
 					inputs.hideMouseCursors();
 					stats[0]->appearance--;
@@ -3635,12 +3635,12 @@ void handleMainMenu(bool mode)
 						stats[0]->appearance = NUMAPPEARANCES - 1;
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
+				if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					if ( rebindaction == -1 )
 					{
-						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+						inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
 					}
 					inputs.hideMouseCursors();
 					stats[0]->appearance++;
@@ -3792,12 +3792,12 @@ void handleMainMenu(bool mode)
 					}
 				}
 			}
-			if (keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
+			if (keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 			{
 				keystatus[SDL_SCANCODE_UP] = 0;
 				if ( rebindaction == -1 )
 				{
-					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
 				}
 				inputs.hideMouseCursors();
 
@@ -3819,12 +3819,12 @@ void handleMainMenu(bool mode)
 					multiplayerselect = displayedOptionToGamemode.at(nummodes - 1);
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
+			if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 			{
 				keystatus[SDL_SCANCODE_DOWN] = 0;
 				if ( rebindaction == -1 )
 				{
-					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
 				}
 				inputs.hideMouseCursors();
 
@@ -3947,14 +3947,14 @@ void handleMainMenu(bool mode)
 		int hovering_selection = -1; //0 to NUM_SERVER_FLAGS used for the game flags settings, e.g. are traps enabled, are cheats enabled, is minotaur enabled, etc.
 		SDL_Rect tooltip_box;
 
-		if ( *inputPressed(joyimpulses[INJOY_MENU_SETTINGS_NEXT]) && rebindaction == -1 )
+		if ( inputs.bControllerInputPressed(clientnum, INJOY_MENU_SETTINGS_NEXT) && rebindaction == -1 )
 		{
-			*inputPressed(joyimpulses[INJOY_MENU_SETTINGS_NEXT]) = 0;;
+			inputs.controllerClearInput(clientnum, INJOY_MENU_SETTINGS_NEXT);
 			changeSettingsTab(settings_tab + 1);
 		}
-		if ( *inputPressed(joyimpulses[INJOY_MENU_SETTINGS_PREV]) && rebindaction == -1 )
+		if ( inputs.bControllerInputPressed(clientnum, INJOY_MENU_SETTINGS_PREV) && rebindaction == -1 )
 		{
-			*inputPressed(joyimpulses[INJOY_MENU_SETTINGS_PREV]) = 0;
+			inputs.controllerClearInput(clientnum, INJOY_MENU_SETTINGS_PREV);
 			changeSettingsTab(settings_tab - 1);
 		}
 
@@ -10802,12 +10802,12 @@ void handleMainMenu(bool mode)
 	if ( creditstage > 0 )
 	{
 		if ( (credittime >= 300 && (creditstage <= 11 || creditstage > 13)) || (credittime >= 180 && creditstage == 12) ||
-		        (credittime >= 480 && creditstage == 13) || mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		        (credittime >= 480 && creditstage == 13) || mousestatus[SDL_BUTTON_LEFT] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1) )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			if ( rebindaction == -1 )
 			{
-				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+				inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 			}
 			introstage = 4;
 			fadeout = true;
@@ -10933,13 +10933,13 @@ void handleMainMenu(bool mode)
 		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( intromovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
-		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1) )
 		{
 			intromovietime = 0;
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			if ( rebindaction == -1 )
 			{
-				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+				inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 			}
 			if ( intromoviestage != 9 )
 			{
@@ -14262,7 +14262,7 @@ void openConfirmResolutionWindow()
 {
 	mousestatus[SDL_BUTTON_LEFT] = 0;
 	keystatus[SDL_SCANCODE_RETURN] = 0;
-	*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+	inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 	playSound(139, 64);
 
 	//Create confirmation window

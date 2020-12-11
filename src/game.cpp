@@ -2558,7 +2558,7 @@ void handleButtons(void)
 				button->pressed = true;
 				button->needclick = false;
 			}
-			if (button->joykey != -1 && *inputPressed(button->joykey) && rebindaction == -1 )
+			if (button->joykey != -1 && inputs.bControllerRawInputPressed(clientnum, button->joykey) && rebindaction == -1 )
 			{
 				button->pressed = true;
 				button->needclick = false;
@@ -2603,7 +2603,7 @@ void handleButtons(void)
 						if ( ( omousey >= button->y && omousey < button->y + button->sizey ) || !button->needclick )
 						{
 							keystatus[button->key] = false;
-							*inputPressed(button->joykey) = 0;
+							inputs.controllerClearRawInput(clientnum, button->joykey);
 							playSound(139, 64);
 							if ( button->action != NULL )
 							{
@@ -3749,15 +3749,20 @@ int main(int argc, char** argv)
 					drawGear(xres / 2, yres / 2, gearsize, gearrot);
 					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, SDL_MapRGB(mainsurface->format, 127, 0, 0), std::min<Uint16>(logoalpha, 255));
 					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
-					if ( (logoalpha >= 255 || keystatus[SDL_SCANCODE_ESCAPE] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL])) && !fadeout )
+					if ( (logoalpha >= 255 
+						|| keystatus[SDL_SCANCODE_ESCAPE] 
+						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) 
+						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL)) && !fadeout )
 					{
 						fadeout = true;
 					}
-					if ( fadefinished || keystatus[SDL_SCANCODE_ESCAPE] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]))
+					if ( fadefinished || keystatus[SDL_SCANCODE_ESCAPE] 
+						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT)
+						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL))
 					{
 						keystatus[SDL_SCANCODE_ESCAPE] = 0;
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
-						*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
+						inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
+						inputs.controllerClearInput(clientnum, INJOY_MENU_CANCEL);
 						fadealpha = 255;
 #if (!defined STEAMWORKS && !defined USE_EOS)
 						introstage = 0;
@@ -3839,7 +3844,11 @@ int main(int argc, char** argv)
 
 					int menuMapType = 0;
 					//if( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || *inputPressed(joyimpulses[INJOY_BACK]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
-					if ( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout)
+					if ( (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) 
+						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL)
+						|| keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE]
+						|| keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] 
+						|| indev_timer >= indev_displaytime) && !fadeout)
 					{
 						switch ( rand() % 4 ) // DRM FREE VERSION INTRO
 						{
@@ -4074,13 +4083,13 @@ int main(int argc, char** argv)
 
 #ifdef NINTENDO
 				// activate console
-				if ((*inputPressed(joyimpulses[INJOY_PAUSE_MENU])) &&
-					(*inputPressed(joyimpulses[INJOY_GAME_DEFEND])) &&
-					(*inputPressed(joyimpulses[INJOY_GAME_ATTACK])))
+				if ((inputs.bControllerInputPressed(clientnum, INJOY_PAUSE_MENU)) &&
+					(inputs.bControllerInputPressed(clientnum, INJOY_GAME_DEFEND)) &&
+					(inputs.bControllerInputPressed(clientnum, INJOY_GAME_ATTACK)))
 				{
-					*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
-					*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
-					*inputPressed(joyimpulses[INJOY_GAME_ATTACK]) = 0;
+					inputs.bControllerInputPressed(clientnum, INJOY_PAUSE_MENU);
+					inputs.bControllerInputPressed(clientnum, INJOY_GAME_DEFEND);
+					inputs.bControllerInputPressed(clientnum, INJOY_GAME_ATTACK);
 
 					auto result = nxKeyboard("Enter console command");
 					if (result.success)
@@ -4807,7 +4816,7 @@ int main(int argc, char** argv)
 							else if ( players[player]->gui_mode == GUI_MODE_MAGIC )
 							{
 								updateCharacterSheet(player);
-								updateMagicGUI();
+								//updateMagicGUI();
 							}
 							else if ( players[player]->gui_mode == GUI_MODE_SHOP )
 							{

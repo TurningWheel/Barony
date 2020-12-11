@@ -1273,6 +1273,24 @@ GameController* Inputs::getController(int player) const
 	return nullptr;
 }
 
+const bool Inputs::bControllerRawInputPressed(int player, const unsigned button) const
+{
+	const GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return false;
+	}
+
+	if ( button == 299 || button == 300 ) // triggers
+	{
+		return controller->binaryToggle(static_cast<SDL_GameControllerAxis>(button - 299 + SDL_CONTROLLER_AXIS_TRIGGERLEFT));
+	}
+	else
+	{
+		return controller->binaryToggle(static_cast<SDL_GameControllerButton>(button - 301));
+	}
+}
+
 const bool Inputs::bControllerInputPressed(int player, const unsigned controllerImpulse) const
 {
 	if ( controllerImpulse >= NUM_JOY_IMPULSES )
@@ -1361,6 +1379,28 @@ const void Inputs::mouseClearRight(int player)
 	if ( bPlayerUsingKeyboardControl(player) )
 	{
 		mousestatus[SDL_BUTTON_RIGHT] = 0;
+	}
+}
+
+void Inputs::controllerClearRawInput(int player, const unsigned button)
+{
+	if ( !bPlayerIsControllable(player) )
+	{
+		return;
+	}
+	GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return;
+	}
+
+	if ( button == 299 || button == 300 ) // triggers
+	{
+		controller->consumeBinaryToggle(static_cast<SDL_GameControllerAxis>(button - 299 + SDL_CONTROLLER_AXIS_TRIGGERLEFT));
+	}
+	else
+	{
+		controller->consumeBinaryToggle(static_cast<SDL_GameControllerButton>(button - 301));
 	}
 }
 
