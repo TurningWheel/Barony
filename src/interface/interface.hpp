@@ -48,12 +48,15 @@ public:
 		Uint32 enemy_bar_color = 0;
 		bool lowPriorityTick = false;
 		bool shouldDisplay = true;
+		real_t depletionAnimationPercent = 100.0;
 		EnemyHPDetails(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name, bool isLowPriority)
 		{
 			memset(enemy_name, 0, 128);
 			enemy_hp = HP;
 			enemy_maxhp = maxHP;
 			enemy_oldhp = oldHP;
+			depletionAnimationPercent =
+				enemy_oldhp / static_cast<real_t>(enemy_maxhp);
 			enemy_timer = ticks;
 			enemy_bar_color = color;
 			lowPriorityTick = isLowPriority;

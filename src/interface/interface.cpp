@@ -8074,58 +8074,87 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 				mostRecentEntry = highPriorityMostRecentEntry;
 			}
 		}
-		(*mostRecentEntry).second.enemy_hp = std::max(0, (*mostRecentEntry).second.enemy_hp);
+
+		auto& HPDetails = (*mostRecentEntry).second;
+		HPDetails.enemy_hp = std::max(0, HPDetails.enemy_hp);
+
+		const int barWidth = 512;
+		SDL_Rect pos;
+		pos.w = barWidth;
+		pos.x = players[player]->camera_midx() - (pos.w / 2);
+		pos.h = 38;
+		pos.y = players[player]->camera_y2() - 224;
+		if ( splitscreen && players[player]->isLocalPlayer() && players[player]->camera_width() < yres )
+		{
+			if ( yres < 900 )
+			{
+				pos.w *= 0.6;
+			}
+			else if ( yres < 1080 )
+			{
+				pos.w *= 0.8;
+			}
+			pos.x = players[player]->camera_midx() - (pos.w / 2);
+			pos.y = players[player]->hotbar->hotbarBox.y - pos.h - 8;
+		}
 
 		// bar
-		SDL_Rect pos;
-		pos.x = players[player]->camera_midx() - 256;
-		pos.y = players[player]->camera_y2() - 224;
-		pos.w = 512;
-		pos.h = 38;
 		drawTooltip(&pos);
-		pos.x = players[player]->camera_midx() - 253;
-		pos.y = players[player]->camera_y2() - 221;
-		pos.w = 506;
-		pos.h = 32;
+
+		pos.w = pos.w - 6;
+		pos.x = pos.x + 3;
+		pos.y = pos.y + 3;
+		pos.h = pos.h - 6;
 		drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
-		if ( (*mostRecentEntry).second.enemy_oldhp > (*mostRecentEntry).second.enemy_hp )
+
+		if ( HPDetails.enemy_oldhp > HPDetails.enemy_hp )
 		{
-			int timeDiff = ticks - (*mostRecentEntry).second.enemy_timer;
-			if ( timeDiff > 30 || (*mostRecentEntry).second.enemy_hp == 0 )
+			int timeDiff = ticks - HPDetails.enemy_timer;
+			if ( timeDiff > 30 || HPDetails.enemy_hp == 0 )
 			{
 				// delay 30 ticks before background hp drop animation, or if health 0 start immediately.
 				// we want to complete animation with x ticks to go
-				int depletionTicks = (80 - timeDiff) / 2;
-				int healthDiff = (*mostRecentEntry).second.enemy_oldhp - (*mostRecentEntry).second.enemy_hp;
-				if ( ticks % 2 == 0 )
-				{
-					(*mostRecentEntry).second.enemy_oldhp -= std::max((healthDiff) / std::max(depletionTicks, 1), 1);
-				}
+				int depletionTicks = (80 - timeDiff);
+				int healthDiff = HPDetails.enemy_oldhp - HPDetails.enemy_hp;
+
+				// scale duration to FPS - tested @ 144hz
+				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+				HPDetails.depletionAnimationPercent -= fpsScale * (std::max((healthDiff) / std::max(depletionTicks, 1), 1) / 100.0);
+				HPDetails.enemy_oldhp = HPDetails.depletionAnimationPercent * HPDetails.enemy_maxhp; // this follows the animation
 			}
-			pos.w = 506 * ((double)(*mostRecentEntry).second.enemy_oldhp / (*mostRecentEntry).second.enemy_maxhp);
-			if ( (*mostRecentEntry).second.enemy_bar_color > 0 )
+			else
 			{
-				drawRect(&pos, (*mostRecentEntry).second.enemy_bar_color, 128);
+				HPDetails.depletionAnimationPercent =
+					HPDetails.enemy_oldhp / static_cast<real_t>(HPDetails.enemy_maxhp);
+			}
+			int tmpw = pos.w;
+			pos.w = pos.w * HPDetails.depletionAnimationPercent;
+			if ( HPDetails.enemy_bar_color > 0 )
+			{
+				drawRect(&pos, HPDetails.enemy_bar_color, 128);
 			}
 			else
 			{
 				drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 128);
 			}
+			pos.w = tmpw;
 		}
-		if ( (*mostRecentEntry).second.enemy_hp > 0 )
+		if ( HPDetails.enemy_hp > 0 )
 		{
-			pos.w = 506 * ((double)(*mostRecentEntry).second.enemy_hp / (*mostRecentEntry).second.enemy_maxhp);
+			int tmpw = pos.w;
+			pos.w = pos.w * ((double)HPDetails.enemy_hp / HPDetails.enemy_maxhp);
 			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
-			if ( (*mostRecentEntry).second.enemy_bar_color > 0 )
+			if ( HPDetails.enemy_bar_color > 0 )
 			{
-				drawRect(&pos, (*mostRecentEntry).second.enemy_bar_color, 224);
+				drawRect(&pos, HPDetails.enemy_bar_color, 224);
 			}
+			pos.w = tmpw;
 		}
 
 		// name
-		int x = players[player]->camera_midx() - longestline((*mostRecentEntry).second.enemy_name) * TTF12_WIDTH / 2 + 2;
-		int y = players[player]->camera_y2() - 221 + 16 - TTF12_HEIGHT / 2 + 2;
-		ttfPrintText(ttf12, x, y, (*mostRecentEntry).second.enemy_name);
+		int x = players[player]->camera_midx() - longestline(HPDetails.enemy_name) * TTF12_WIDTH / 2 + 2;
+		int y = pos.y + 16 - TTF12_HEIGHT / 2 + 2;
+		ttfPrintText(ttf12, x, y, HPDetails.enemy_name);
 	}
 }
 

@@ -749,6 +749,7 @@ public:
 	bool hotbarHasFocus = false;
 	int magicBoomerangHotbarSlot = -1;
 	Uint32 hotbarTooltipLastGameTick = 0;
+	SDL_Rect hotbarBox;
 
 	const int getStartX() const
 	{

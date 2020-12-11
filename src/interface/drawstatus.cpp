@@ -908,6 +908,12 @@ void drawStatus(int player)
 	//pos.x = initial_position.x;
 	pos.x = hotbar_t->getStartX();
 	pos.y = initial_position.y - hotbar_t->getSlotSize();
+
+	hotbar_t->hotbarBox.x = pos.x;
+	hotbar_t->hotbarBox.y = pos.y;
+	hotbar_t->hotbarBox.w = NUM_HOTBAR_SLOTS * hotbar_t->getSlotSize();
+	hotbar_t->hotbarBox.h = hotbar_t->getSlotSize();
+
 	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_t->getSlotSize() )
 	{
 		Uint32 color;
