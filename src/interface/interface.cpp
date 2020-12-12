@@ -1718,10 +1718,8 @@ void FollowerRadialMenu::drawFollowerMenu()
 	int disableOption = 0;
 	bool keepWheelOpen = false;
 
-	const Sint32 mousex = inputs.getMouse(gui_player, Inputs::X);
-	const Sint32 mousey = inputs.getMouse(gui_player, Inputs::Y);
-	const Sint32 omousex = inputs.getMouse(gui_player, Inputs::OX);
-	const Sint32 omousey = inputs.getMouse(gui_player, Inputs::OY);
+	Sint32 omousex = inputs.getMouse(gui_player, Inputs::OX);
+	Sint32 omousey = inputs.getMouse(gui_player, Inputs::OY);
 
 	if ( followerToCommand )
 	{
@@ -2024,6 +2022,132 @@ void FollowerRadialMenu::drawFollowerMenu()
 			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 24, language[3036]);
 		}
 
+		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
+
+		if ( inputs.hasController(gui_player) )
+		{
+			auto controller = inputs.getController(gui_player);
+			if ( controller )
+			{
+				GameController::DpadDirection dir = controller->dpadDirToggle();
+				if ( dir != GameController::DpadDirection::INVALID )
+				{
+					controller->consumeDpadDirToggle();
+					highlight = dir;
+					real_t angleMiddleForOption = PI / 2 + dir * (2 * PI / numoptions);
+					omousex = centerx + (radius + thickness) / 2 * cos(angleMiddleForOption);
+					omousey = centery + (radius + thickness) / 2 * sin(angleMiddleForOption);
+					inputs.setMouse(gui_player, Inputs::OX, omousex);
+					inputs.setMouse(gui_player, Inputs::OY, omousey);
+					inputs.setMouse(gui_player, Inputs::X, omousex);
+					inputs.setMouse(gui_player, Inputs::Y, omousey);
+				}
+				/*
+				real_t magnitude = sqrt(pow(controller->getRightYPercent(), 2) + pow(controller->getRightXPercent(), 2));
+				if ( magnitude > 1 )
+				{
+					real_t stickAngle = atan2(controller->getRightYPercent(), controller->getRightXPercent());
+					while ( stickAngle >= (2 * PI + (PI / 2 - (PI / numoptions))) )
+					{
+						stickAngle -= PI * 2;
+					}
+					while ( stickAngle < (PI / 2 - (PI / numoptions)))
+					{
+						stickAngle += PI * 2;
+					}
+					real_t currentCursorAngle = atan2(omousey - menuY, omousex - menuX);
+					while ( currentCursorAngle >= (2 * PI + (PI / 2 - (PI / numoptions))) )
+					{
+						currentCursorAngle -= PI * 2;
+					}
+					while ( currentCursorAngle < (PI / 2 - (PI / numoptions)) )
+					{
+						currentCursorAngle += PI * 2;
+					}
+
+					angleStart = PI / 2 - (PI / numoptions);
+					angleMiddle = angleStart + PI / numoptions;
+					angleEnd = angleMiddle + PI / numoptions;
+
+					int newOption = -1;
+					int currentOption = -1;
+					for ( i = 0; i < numoptions; ++i )
+					{
+						if ( (stickAngle >= angleStart && stickAngle < angleEnd) )
+						{
+							newOption = i;
+						}
+						if ( (currentCursorAngle >= angleStart && stickAngle < angleEnd) )
+						{
+							currentOption = (mouseInCenterButton ? -1 : i); // disregard if mouse in center
+						}
+						angleStart += 2 * PI / numoptions;
+						angleMiddle = angleStart + PI / numoptions;
+						angleEnd = angleMiddle + PI / numoptions;
+					}
+
+					real_t angleMiddleForOption = PI / 2 + newOption * (2 * PI / numoptions);
+					if ( mouseInCenterButton && newOption >= 0 )
+					{
+						omousex = centerx + (radius + thickness) / 2 * cos(angleMiddleForOption);
+						omousey = centery + (radius + thickness) / 2 * sin(angleMiddleForOption);
+					}
+					else
+					{
+						switch ( newOption )
+						{
+							case UP: // up
+							case UPLEFT:
+							case UPRIGHT:
+								if ( currentOption == DOWN || currentOption == DOWNLEFT || currentOption == DOWNRIGHT )
+								{
+									newOption = -1;
+								}
+								break;
+							case LEFT:
+								break;
+							case DOWNLEFT:
+							case DOWN:
+							case DOWNRIGHT:
+								if ( currentOption == UP || currentOption == UPLEFT || currentOption == UPRIGHT )
+								{
+									newOption = -1;
+								}
+								break;
+							case RIGHT:
+								break;
+							default:
+								break;
+						}
+						if ( newOption != -1 )
+						{
+							angleMiddleForOption = PI / 2 + newOption * (2 * PI / numoptions);
+							omousex = centerx + (radius + thickness) / 2 * cos(angleMiddleForOption);
+							omousey = centery + (radius + thickness) / 2 * sin(angleMiddleForOption);
+						}
+						else
+						{
+							omousex = centerx;
+							omousey = centery;
+						}
+					}
+				}
+				else
+				{
+					//omousex = centerx;
+					//omousey = centery;
+				}
+				inputs.setMouse(gui_player, Inputs::OX, omousex);
+				inputs.setMouse(gui_player, Inputs::OY, omousey);
+				inputs.setMouse(gui_player, Inputs::X, omousex);
+				inputs.setMouse(gui_player, Inputs::Y, omousey);
+				*/
+			}
+		}
+
+		angleStart = PI / 2 - (PI / numoptions);
+		angleMiddle = angleStart + PI / numoptions;
+		angleEnd = angleMiddle + PI / numoptions;
 
 		drawImageRing(fancyWindow_bmp, &src, radius, thickness, 40, 0, PI * 2, 156);
 
@@ -2046,8 +2170,6 @@ void FollowerRadialMenu::drawFollowerMenu()
 		angleStart = PI / 2 - (PI / numoptions);
 		angleMiddle = angleStart + PI / numoptions;
 		angleEnd = angleMiddle + PI / numoptions;
-
-		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
 
 		for ( i = 0; i < numoptions; ++i )
 		{

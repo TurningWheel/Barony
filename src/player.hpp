@@ -64,6 +64,20 @@ public:
 	GameController();
 	~GameController();
 
+	enum DpadDirection : int
+	{
+		INVALID = -2,
+		CENTERED = -1,
+		UP,
+		UPLEFT,
+		LEFT,
+		DOWNLEFT,
+		DOWN,
+		DOWNRIGHT,
+		RIGHT,
+		UPRIGHT
+	};
+
 	struct Binding_t {
 		float analog = 0.f;
 		float deadzone = 0.f;
@@ -80,6 +94,7 @@ public:
 			JOYSTICK_AXIS,
 			JOYSTICK_BUTTON,
 			JOYSTICK_HAT,
+			VIRTUAL_DPAD,
 			//JOYSTICK_BALL,
 			NUM
 		};
@@ -87,6 +102,7 @@ public:
 
 		SDL_GameControllerAxis padAxis = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID;
 		SDL_GameControllerButton padButton = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID;
+		DpadDirection padVirtualDpad = DpadDirection::CENTERED;
 		bool padAxisNegative = false;
 	};
 
@@ -97,6 +113,7 @@ public:
 
 	Binding_t buttons[NUM_JOY_STATUS];
 	Binding_t axis[NUM_JOY_AXIS_STATUS];
+	Binding_t virtualDpad;
 
 	bool binary(SDL_GameControllerButton binding) const;
 	bool binaryToggle(SDL_GameControllerButton binding) const;
@@ -106,6 +123,9 @@ public:
 	bool binaryToggle(SDL_GameControllerAxis binding) const;
 	void consumeBinaryToggle(SDL_GameControllerAxis binding);
 	float analog(SDL_GameControllerAxis binding) const;
+	DpadDirection dpadDir() const;
+	DpadDirection dpadDirToggle() const;
+	void consumeDpadDirToggle();
 
 
 	//! converts the given input to a boolean/analog value

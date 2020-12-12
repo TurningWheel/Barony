@@ -129,6 +129,11 @@ void GameController::initBindings()
 		this->axis[i].binary = false;
 		this->axis[i].consumed = false;
 	}
+	this->virtualDpad.padVirtualDpad = DpadDirection::CENTERED;
+	this->virtualDpad.type = Binding_t::Bindtype_t::VIRTUAL_DPAD;
+	this->virtualDpad.analog = 0.f;
+	this->virtualDpad.binary = false;
+	this->virtualDpad.consumed = false;
 }
 
 const bool GameController::isActive()
@@ -144,6 +149,13 @@ void GameController::handleAnalog(int player)
 	}
 
 	//Right analog stick = look.
+
+	bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
+	if ( !radialMenuOpen )
+	{
+		consumeDpadDirToggle();
+		virtualDpad.padVirtualDpad = DpadDirection::CENTERED;
+	}
 
 	if (!players[player]->shootmode || gamePaused)
 	{
@@ -169,7 +181,51 @@ void GameController::handleAnalog(int player)
 			righty = -righty;
 		}
 
-		if ( rightStickDeadzoneType != DEADZONE_PER_AXIS )
+		if ( radialMenuOpen )
+		{
+			real_t floatx = getRightXPercent();
+			real_t floaty = getRightYPercent();
+			const int numoptions = 8;
+			real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
+			DpadDirection dir = DpadDirection::CENTERED;
+			if ( magnitude > 1 )
+			{
+				real_t stickAngle = atan2(floaty, floatx);
+				while ( stickAngle >= (2 * PI + (PI / 2 - (PI / numoptions))) )
+				{
+					stickAngle -= PI * 2;
+				}
+				while ( stickAngle < (PI / 2 - (PI / numoptions)) )
+				{
+					stickAngle += PI * 2;
+				}
+
+				real_t angleStart = PI / 2 - (PI / numoptions);
+				real_t angleMiddle = angleStart + PI / numoptions;
+				real_t angleEnd = angleMiddle + PI / numoptions;
+				for ( int i = 0; i < numoptions; ++i )
+				{
+					if ( (stickAngle >= angleStart && stickAngle < angleEnd) )
+					{
+						dir = static_cast<DpadDirection>(i);
+					}
+					angleStart += 2 * PI / numoptions;
+					angleMiddle = angleStart + PI / numoptions;
+					angleEnd = angleMiddle + PI / numoptions;
+				}
+				DpadDirection oldDpad = virtualDpad.padVirtualDpad;
+				virtualDpad.padVirtualDpad = dir;
+				if ( oldDpad != virtualDpad.padVirtualDpad ) 
+				{
+					// unconsume the input whenever it's released or pressed again.
+					virtualDpad.consumed = false;
+					messagePlayer(0, "%d", virtualDpad.padVirtualDpad);
+				}
+			}
+			rightx = 0;
+			righty = 0;
+		}
+		else if ( rightStickDeadzoneType != DEADZONE_PER_AXIS )
 		{
 			rightx = getRawRightXMove();
 			righty = getRawRightYMove();
@@ -207,6 +263,7 @@ void GameController::handleAnalog(int player)
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
+
 			if ( inputs.bPlayerUsingKeyboardControl(player) )
 			{
 				//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
@@ -1019,7 +1076,10 @@ void Player::PlayerMovement_t::reset()
 
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 {
-	if ( bPlayerUsingKeyboardControl(player) )
+	// todo: add condition like getMouse()? && (!getVirtualMouse(player)->lastMovementFromController 
+	// || (players[player]->shootmode && !gamePaused && !intro))
+	if ( bPlayerUsingKeyboardControl(player) && (!getVirtualMouse(player)->lastMovementFromController
+		|| (players[player]->shootmode && !gamePaused && !intro)) )
 	{
 		switch ( input )
 		{
@@ -1471,12 +1531,16 @@ void Inputs::controllerHandleMouse(int player)
 
 bool GameController::binaryOf(Binding_t& binding) 
 {
-	if ( binding.type == Binding_t::CONTROLLER_AXIS || binding.type == Binding_t::CONTROLLER_BUTTON ) 
+	if ( binding.type == Binding_t::CONTROLLER_AXIS || binding.type == Binding_t::CONTROLLER_BUTTON || binding.type == Binding_t::VIRTUAL_DPAD )
 	{
 		SDL_GameController* pad = sdl_device;
 		if ( binding.type == Binding_t::CONTROLLER_BUTTON ) 
 		{
 			return SDL_GameControllerGetButton(pad, binding.padButton) == 1;
+		}
+		else if ( binding.type == Binding_t::VIRTUAL_DPAD )
+		{
+			return binding.padVirtualDpad;
 		}
 		else 
 		{
@@ -1639,4 +1703,23 @@ void GameController::consumeBinaryToggle(SDL_GameControllerAxis binding)
 	{
 		axis[binding].consumed = true;
 	}
+}
+
+GameController::DpadDirection GameController::dpadDirToggle() const
+{
+	if ( !virtualDpad.consumed )
+	{
+		return virtualDpad.padVirtualDpad;
+	}
+	return DpadDirection::INVALID;
+}
+
+GameController::DpadDirection GameController::dpadDir() const
+{
+	return virtualDpad.padVirtualDpad;
+}
+
+void GameController::consumeDpadDirToggle()
+{
+	virtualDpad.consumed = true;
 }
