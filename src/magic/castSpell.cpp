@@ -112,7 +112,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 			{
 				return;
 			}
-			if ( spell->ID == SPELL_VAMPIRIC_AURA && client_classes[player] == CLASS_ACCURSED && 
+			if ( spell->ID == SPELL_VAMPIRIC_AURA && player >= 0 && client_classes[player] == CLASS_ACCURSED &&
 				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
 			{
 				if ( multiplayer == CLIENT )
@@ -479,7 +479,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	if (!waterwalkingboots && !levitating && !trap && player >= 0)
 	{
 		bool swimming = false;
-		if (players[player] && players[player]->entity)
+		if ( player >= 0 && players[player] && players[player]->entity)
 		{
 			int x = std::min<int>(std::max<int>(0, floor(caster->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(caster->y / 16)), map.height - 1);

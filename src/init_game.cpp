@@ -462,6 +462,10 @@ int initGame()
 		}
 		GenericGUI[c].setPlayer(c);
 		FollowerMenu[c].setPlayer(c);
+		cameras[c].winx = 0;
+		cameras[c].winy = 0;
+		cameras[c].winw = xres;
+		cameras[c].winh = yres;
 	}
 
 	// load music

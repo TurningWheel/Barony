@@ -1281,6 +1281,10 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 
 void closeChestClientside(const int player)
 {
+	if ( player < 0 )
+	{
+		return;
+	}
 	if (!openedChest[player])
 	{
 		return;

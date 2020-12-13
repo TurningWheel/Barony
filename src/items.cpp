@@ -1568,7 +1568,8 @@ void consumeItem(Item*& item, const int player)
 	{
 		return;
 	}
-	if ( players[player]->inventoryUI.appraisal.current_item == item->uid && item->count == 1 )
+
+	if ( player >= 0 && players[player]->inventoryUI.appraisal.current_item == item->uid && item->count == 1 )
 	{
 		players[player]->inventoryUI.appraisal.current_item = 0;
 		players[player]->inventoryUI.appraisal.timer = 0;
@@ -1845,7 +1846,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		openedChest[player]->addItemToChestFromInventory(player, item, false);
 		return;
 	}
-	else if ( players[player]->isLocalPlayer() && players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
+	else if ( player >= 0 && players[player]->isLocalPlayer() && players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
 	{
 		bool deal = true;
 		switch ( shopkeepertype[player] )
@@ -1916,19 +1917,19 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		return;
 	}
 
-	if ( item->status == BROKEN && players[player]->isLocalPlayer() )
+	if ( item->status == BROKEN && player >= 0 && players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, language[1092], item->getName());
 		return;
 	}
-	if ( item->type == FOOD_CREAMPIE && players[player]->isLocalPlayer() && itemIsEquipped(item, player) )
+	if ( item->type == FOOD_CREAMPIE && player >= 0 && players[player]->isLocalPlayer() && itemIsEquipped(item, player) )
 	{
 		messagePlayer(player, language[3874]); // can't eat while equipped.
 		return;
 	}
 
 	// tins need a tin opener to open...
-	if ( players[player]->isLocalPlayer() && !(stats[player]->type == GOATMAN || stats[player]->type == AUTOMATON) )
+	if ( player >= 0 && players[player]->isLocalPlayer() && !(stats[player]->type == GOATMAN || stats[player]->type == AUTOMATON) )
 	{
 		if ( item->type == FOOD_TIN )
 		{
@@ -1982,7 +1983,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 	bool tryLearnPotionRecipe = false;
 	const bool tryEmptyBottle = (item->status >= SERVICABLE);
 	const ItemType potionType = item->type;
-	if ( players[player]->isLocalPlayer() )
+	if ( player >= 0 && players[player]->isLocalPlayer() )
 	{
 		if ( itemCategory(item) == POTION && item->type != POTION_EMPTY && usedBy
 			&& (players[player] && players[player]->entity)
@@ -2766,7 +2767,7 @@ Item* itemPickup(const int player, Item* const item)
 		}
 	}
 
-	if ( multiplayer != CLIENT && players[player] && players[player]->entity )
+	if ( multiplayer != CLIENT && player >= 0 && players[player] && players[player]->entity )
 	{
 		bool assignNewOwner = true;
 		if ( item->ownerUid != 0 && !achievementObserver.playerAchievements[player].ironicPunishmentTargets.empty() )
@@ -2838,7 +2839,7 @@ Item* itemPickup(const int player, Item* const item)
 					item2->count = maxStack - 1;
 					item->count = total - item2->count;
 
-					if ( multiplayer == CLIENT && players[player]->isLocalPlayer() && itemIsEquipped(item2, player) )
+					if ( multiplayer == CLIENT && player >= 0 && players[player]->isLocalPlayer() && itemIsEquipped(item2, player) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
 						strcpy((char*)net_packet->data, "EQUS");
@@ -2875,7 +2876,7 @@ Item* itemPickup(const int player, Item* const item)
 				else if ( item2->shouldItemStack(player) )
 				{
 					item2->count += item->count;
-					if ( multiplayer == CLIENT && players[player]->isLocalPlayer() && itemIsEquipped(item2, player) )
+					if ( multiplayer == CLIENT && player >= 0 && players[player]->isLocalPlayer() && itemIsEquipped(item2, player) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
 						Item** slot = itemSlot(stats[player], item2);
@@ -3727,7 +3728,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 			// found a trap.
 			if ( entity->skill[4] == 0 )
 			{
-				if ( players[player] && players[player]->entity
+				if ( player >= 0 && players[player] && players[player]->entity
 					&& stats[player] && stats[player]->weapon
 					&& (stats[player]->weapon->type == TOOL_LOCKPICK || stats[player]->weapon->type == TOOL_SKELETONKEY) )
 				{
@@ -4732,11 +4733,11 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 
 bool Item::unableToEquipDueToSwapWeaponTimer(const int player) const
 {
-	if ( players[player]->hud.pickaxeGimpTimer > 0 && !intro )
+	if ( player >= 0 && players[player]->hud.pickaxeGimpTimer > 0 && !intro )
 	{
 		return true;
 	}
-	if ( players[player]->hud.swapWeaponGimpTimer > 0 && !intro )
+	if ( player >= 0 && players[player]->hud.swapWeaponGimpTimer > 0 && !intro )
 	{
 		return true;
 	}

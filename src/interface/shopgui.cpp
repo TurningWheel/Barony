@@ -214,7 +214,7 @@ public:
 
 inline void checkBuyItem(const int player)
 {
-	if ( (stats[player]->HP <= 0) || (players[player] == nullptr) || (players[player]->entity == nullptr) )
+	if ( player < 0 || (stats[player]->HP <= 0) || (players[player] == nullptr) || (players[player]->entity == nullptr) )
 	{
 		return;
 	}
@@ -323,6 +323,10 @@ void updateShopWindow(const int player)
 	node_t* node;
 	int c;
 
+	if ( player < 0 )
+	{
+		return;
+	}
 	if ( !uidToEntity(shopkeeper[player]) )
 	{
 		if ( shopkeeper[player] != 0 )

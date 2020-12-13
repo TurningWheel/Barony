@@ -125,7 +125,7 @@ void spell_detectFoodEffectOnMap(int player)
 void spell_summonFamiliar(int player)
 {
 	// server only function
-	if ( players[player] == nullptr || players[player]->entity == nullptr )
+	if ( player < 0 || players[player] == nullptr || players[player]->entity == nullptr )
 	{
 		return;
 	}
