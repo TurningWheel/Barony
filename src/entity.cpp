@@ -299,6 +299,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
 	interactedByMonster(skill[47]),
+	highlightForUI(skill[56]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
@@ -329,7 +330,13 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	entityShowOnMap(skill[59]),
 	thrownProjectilePower(skill[19]),
 	thrownProjectileCharge(skill[20]),
-	playerStartDir(skill[1])
+	playerStartDir(skill[1]),
+	worldTooltipAlpha(fskill[0]),
+	worldTooltipZ(fskill[1]),
+	worldTooltipActive(skill[0]),
+	worldTooltipPlayer(skill[1]),
+	worldTooltipInit(skill[3]),
+	worldTooltipFadeDelay(skill[4])
 {
 	int c;
 	// add the entity to the entity list
@@ -350,6 +357,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	{
 		addToCreatureList(creaturelist);
 	}
+	myWorldUIListNode = nullptr;
 	myTileListNode = nullptr;
 
 	// now reset all of my data elements
@@ -472,6 +480,11 @@ Entity::~Entity()
 	{
 		list_RemoveNode(myCreatureListNode);
 		myCreatureListNode = nullptr;
+	}
+	if ( myWorldUIListNode )
+	{
+		list_RemoveNode(myWorldUIListNode);
+		myWorldUIListNode = nullptr;
 	}
 	if ( myTileListNode )
 	{
@@ -17425,6 +17438,24 @@ void Entity::addToCreatureList(list_t *list)
 		myCreatureListNode->element = this;
 		myCreatureListNode->deconstructor = &emptyDeconstructor;
 		myCreatureListNode->size = sizeof(Entity);
+		//printlog("Added dennis to creature list.");
+	}
+}
+
+void Entity::addToWorldUIList(list_t *list)
+{
+	//printlog("*ATTEMPTING* to add Dennis to creature list.");
+	if ( list )
+	{
+		if ( myWorldUIListNode )
+		{
+			list_RemoveNode(myWorldUIListNode);
+			myWorldUIListNode = nullptr;
+		}
+		myWorldUIListNode = list_AddNodeLast(list);
+		myWorldUIListNode->element = this;
+		myWorldUIListNode->deconstructor = &emptyDeconstructor;
+		myWorldUIListNode->size = sizeof(Entity);
 		//printlog("Added dennis to creature list.");
 	}
 }

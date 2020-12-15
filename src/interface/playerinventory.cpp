@@ -805,11 +805,16 @@ void updatePlayerInventory(const int player)
 		}
 	}
 
-	if ( !command && *inputPressedForPlayer(player, impulses[IN_AUTOSORT]) )
+	if ( !command 
+		&& (*inputPressedForPlayer(player, impulses[IN_AUTOSORT]) 
+			|| (inputs.bControllerInputPressed(player, INJOY_MENU_CHEST_GRAB_ALL) && !openedChest[player])
+			)
+		)
 	{
 		autosortInventory(player);
 		//quickStackItems();
 		*inputPressedForPlayer(player, impulses[IN_AUTOSORT]) = 0;
+		inputs.controllerClearInput(player, INJOY_MENU_CHEST_GRAB_ALL);
 		playSound(139, 64);
 	}
 

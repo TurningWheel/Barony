@@ -3433,7 +3433,7 @@ void actPlayer(Entity* my)
 			if ( followerMenu.followerToCommand == nullptr && followerMenu.selectMoveTo == false )
 			{
 				bool clickedOnGUI = false;
-				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM); // using objects
+				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_USE); // using objects
 				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
 				{
 					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
@@ -3523,7 +3523,7 @@ void actPlayer(Entity* my)
 						else if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 						{
 							// we're selecting a target for the ally.
-							Entity* target = entityClicked(nullptr, false, PLAYER_NUM);
+							Entity* target = entityClicked(nullptr, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_FOLLOWER_INTERACT);
 							*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) = 0;
 							inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_USE);
 							if ( target )

@@ -273,6 +273,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
 	interactedByMonster(skill[47]),
+	highlightForUI(skill[56]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
@@ -300,7 +301,13 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	signalInputDirection(skill[5]),
 	thrownProjectilePower(skill[19]),
 	thrownProjectileCharge(skill[20]),
-	playerStartDir(skill[1])
+	playerStartDir(skill[1]),
+	worldTooltipAlpha(fskill[0]),
+	worldTooltipZ(fskill[1]),
+	worldTooltipActive(skill[0]),
+	worldTooltipPlayer(skill[1]),
+	worldTooltipInit(skill[3]),
+	worldTooltipFadeDelay(skill[4])
 {
 	int c;
 	// add the entity to the entity list

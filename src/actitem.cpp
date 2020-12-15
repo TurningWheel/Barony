@@ -145,6 +145,46 @@ void actItem(Entity* my)
 		free(item);
 	}
 
+	if ( ITEM_LIFE == 0 && !hide_playertags )
+	{
+		for ( int i = 0; i < MAXPLAYERS && i < 4; ++i )
+		{
+			if ( !players[i]->isLocalPlayerAlive() )
+			{
+				continue;
+			}
+			Entity* worldTooltip = newEntity(-1, 1, map.entities, nullptr);
+			worldTooltip->x = my->x;
+			worldTooltip->y = my->y;
+			worldTooltip->z = my->z;
+			worldTooltip->sizex = 1;
+			worldTooltip->sizey = 1;
+			worldTooltip->flags[NOUPDATE] = true;
+			worldTooltip->flags[PASSABLE] = true;
+			worldTooltip->flags[SPRITE] = true;
+			worldTooltip->flags[BRIGHT] = true;
+			worldTooltip->flags[UNCLICKABLE] = true;
+			worldTooltip->behavior = &actSpriteWorldTooltip;
+			worldTooltip->parent = my->getUID();
+			worldTooltip->scalex = 0.05;
+			worldTooltip->scaley = 0.05;
+			worldTooltip->scalez = 0.05;
+			worldTooltip->worldTooltipPlayer = i;
+			worldTooltip->worldTooltipZ = 1.5;
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			players[i]->worldUI.setTooltipDisabled(*worldTooltip);
+			worldTooltip->addToWorldUIList(map.worldUI);
+		}
+
+		//node_t* node = list_AddNodeLast(&my->children);
+		//node->element = worldTooltip; // add the node to the children list.
+		//node->deconstructor = &entityDeconstructor;
+		//node->size = sizeof(Entity*);
+	}
+
 	ITEM_LIFE++;
 
 	// pick up item

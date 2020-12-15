@@ -16,6 +16,7 @@
 #include "items.hpp"
 #include "shops.hpp"
 #include "menu.hpp"
+#include "collision.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -1011,7 +1012,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	magic(*this),
 	characterSheet(*this),
 	movement(*this),
-	messageZone(*this)
+	messageZone(*this),
+	worldUI(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
@@ -1052,6 +1054,7 @@ void Player::cleanUpOnEntityRemoval()
 		//shopinventorycategory[playernum] = -1;
 		hud.reset();
 		movement.reset();
+		worldUI.reset();
 	}
 }
 
@@ -1072,6 +1075,322 @@ void Player::PlayerMovement_t::reset()
 	monsterEmoteGimpTimer = 0;
 	selectedEntityGimpTimer = 0;
 	insectoidLevitating = false;
+}
+
+void Player::WorldUI_t::reset()
+{
+	for ( auto& tooltip : tooltipsInRange )
+	{
+		if ( bTooltipActiveForPlayer(*tooltip.first) )
+		{
+			setTooltipDisabled(*tooltip.first);
+		}
+	}
+	tooltipsInRange.clear();
+}
+
+real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
+{
+	if ( !players[player.playernum]->isLocalPlayerAlive() )
+	{
+		return 0.0;
+	}
+
+	real_t dist = entityDist(&tooltip, players[player.playernum]->entity);
+	if ( dist < 24 && dist > 4 )
+	{
+		real_t tangent = atan2(tooltip.y - players[player.playernum]->entity->y, tooltip.x - players[player.playernum]->entity->x);
+		while ( tangent >= 2 * PI )
+		{
+			tangent -= 2 * PI;
+		}
+		while ( tangent < 0 )
+		{
+			tangent += 2 * PI;
+		}
+		real_t playerYaw = players[player.playernum]->entity->yaw;
+		while ( playerYaw >= 2 * PI )
+		{
+			playerYaw -= 2 * PI;
+		}
+		while ( playerYaw < 0 )
+		{
+			playerYaw += 2 * PI;
+		}
+		if ( abs(tangent - playerYaw) < (PI / 8) || abs(tangent - playerYaw) > (2 * PI - PI / 8) )
+		{
+			//messagePlayer(0, "%.2f", tangent - playerYaw);
+			return dist;
+		}
+	}
+	return 0.0;
+}
+
+void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
+{
+	tooltip.setUID(UID_TOOLTIP_ACTIVE);
+	tooltip.worldTooltipActive = 1;
+	if ( uidToEntity(tooltip.parent) )
+	{
+		uidToEntity(tooltip.parent)->highlightForUI = 1;
+	}
+}
+void Player::WorldUI_t::setTooltipDisabled(Entity& tooltip)
+{
+	tooltip.setUID(UID_TOOLTIP_DISABLED);
+	tooltip.worldTooltipActive = 0;
+	if ( uidToEntity(tooltip.parent) )
+	{
+		uidToEntity(tooltip.parent)->highlightForUI = 0;
+	}
+}
+bool Player::WorldUI_t::bTooltipActiveForPlayer(Entity& tooltip)
+{
+	return (tooltip.worldTooltipActive == 1 && tooltip.worldTooltipPlayer == player.playernum);
+}
+
+void Player::WorldUI_t::cycleToNextTooltip()
+{
+	if ( tooltipsInRange.empty() )
+	{
+		return;
+	}
+	int index = 0;
+	int newIndex = 0;
+	bool bFound = false;
+	for ( auto& pair : tooltipsInRange )
+	{
+		if ( pair.first->getUID() == UID_TOOLTIP_ACTIVE )
+		{
+			if ( !bFound )
+			{
+				newIndex = index;
+			}
+			bFound = true;
+		}
+		setTooltipDisabled(*pair.first);
+		++index;
+	}
+
+	if ( !bFound )
+	{
+		setTooltipActive(*tooltipsInRange.front().first);
+	}
+	else if ( newIndex >= tooltipsInRange.size() - 1 )
+	{
+		setTooltipActive(*tooltipsInRange.front().first);
+	}
+	else
+	{
+		setTooltipActive(*tooltipsInRange.at(newIndex + 1).first);
+	}
+}
+
+void Player::WorldUI_t::cycleToPreviousTooltip()
+{
+	if ( tooltipsInRange.empty() )
+	{
+		return;
+	}
+	int index = 0;
+	int newIndex = 0;
+	bool bFound = false;
+	for ( auto& pair : tooltipsInRange )
+	{
+		if ( pair.first->getUID() == UID_TOOLTIP_ACTIVE )
+		{
+			if ( !bFound )
+			{
+				newIndex = index;
+			}
+			bFound = true;
+		}
+		setTooltipDisabled(*pair.first);
+		++index;
+	}
+
+	if ( !bFound )
+	{
+		setTooltipActive(*tooltipsInRange.front().first);
+	}
+	else if ( newIndex == 0 )
+	{
+		setTooltipActive(*tooltipsInRange.at(tooltipsInRange.size() - 1).first); // set as last
+	}
+	else
+	{
+		setTooltipActive(*tooltipsInRange.at(newIndex - 1).first);
+	}
+}
+
+void Player::WorldUI_t::handleTooltips()
+{
+	for ( int player = 0; player < MAXPLAYERS && !gamePaused && !hide_playertags; ++player )
+	{
+		if ( !players[player]->isLocalPlayerAlive() )
+		{
+			players[player]->worldUI.reset();
+			continue;
+		}
+
+		bool bDoingActionHideTooltips = false;
+		if ( players[player]->hud.arm && players[player]->hud.weapon->skill[0] != 0 )
+		{
+			// hudweapon chop
+			bDoingActionHideTooltips = true;
+		}
+		else if ( cast_animation[player].active )
+		{
+			// spells
+			bDoingActionHideTooltips = true;
+		}
+		else if ( stats[player] && stats[player]->defending )
+		{
+			bDoingActionHideTooltips = true;
+		}
+		
+		if ( !bDoingActionHideTooltips )
+		{
+			Entity* ohitentity = hit.entity;
+			lineTrace(players[player]->entity, players[player]->entity->x, players[player]->entity->y,
+				players[player]->entity->yaw, STRIKERANGE, 0, true);
+			if ( hit.entity )
+			{
+				bDoingActionHideTooltips = true;
+			}
+			hit.entity = ohitentity;
+		}
+
+		if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT) )
+		{
+			players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
+			inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT);
+			players[player]->worldUI.cycleToPreviousTooltip();
+		}
+		if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT) )
+		{
+			players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
+			inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
+			players[player]->worldUI.cycleToNextTooltip();
+		}
+
+		if ( players[player]->worldUI.tooltipView == TOOLTIP_VIEW_FREE
+			|| players[player]->worldUI.tooltipView == TOOLTIP_VIEW_RESCAN)
+		{
+			players[player]->worldUI.reset();
+			for ( node_t* node = map.worldUI->first; node; node = node->next )
+			{
+				Entity* tooltip = (Entity*)node->element;
+				if ( !tooltip || tooltip->behavior != &actSpriteWorldTooltip )
+				{
+					continue;
+				}
+				if ( tooltip->worldTooltipPlayer != player )
+				{
+					continue;
+				}
+				players[player]->worldUI.setTooltipDisabled(*tooltip);
+			}
+
+			if ( bDoingActionHideTooltips )
+			{
+				players[player]->worldUI.gimpDisplayTimer = 10;
+				continue;
+			}
+
+			players[player]->worldUI.gimpDisplayTimer = std::max(0, players[player]->worldUI.gimpDisplayTimer - 1);
+
+			Entity* closestTooltip = nullptr;
+			real_t dist = 10000.0;
+			for ( node_t* node = map.worldUI->first; node; node = node->next )
+			{
+				Entity* tooltip = (Entity*)node->element;
+				if ( !tooltip || tooltip->behavior != &actSpriteWorldTooltip )
+				{
+					continue;
+				}
+				if ( tooltip->worldTooltipPlayer != player )
+				{
+					continue;
+				}
+				real_t newDist = players[player]->worldUI.tooltipInRange(*tooltip);
+				if ( newDist > 0.01 )
+				{
+					players[player]->worldUI.tooltipsInRange.push_back(std::make_pair(tooltip, newDist));
+					if ( newDist < dist )
+					{
+						dist = newDist;
+						closestTooltip = tooltip;
+					}
+				}
+			}
+			if ( closestTooltip )
+			{
+				players[player]->worldUI.playerLastYaw = players[player]->entity->yaw;
+				while ( players[player]->worldUI.playerLastYaw >= 4 * PI )
+				{
+					players[player]->worldUI.playerLastYaw -= 2 * PI;
+				}
+				while ( players[player]->worldUI.playerLastYaw < 2 * PI )
+				{
+					players[player]->worldUI.playerLastYaw += 2 * PI;
+				}
+				players[player]->worldUI.setTooltipActive(*closestTooltip);
+			}
+			std::sort(players[player]->worldUI.tooltipsInRange.begin(), players[player]->worldUI.tooltipsInRange.end(),
+				[](const std::pair<Entity*, real_t>& lhs, const std::pair<Entity*, real_t>& rhs)
+			{
+				return lhs.second < rhs.second;
+			}
+			);
+			if ( players[player]->worldUI.tooltipView == TOOLTIP_VIEW_RESCAN )
+			{
+				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
+			}
+		}
+		else if ( players[player]->worldUI.tooltipView == TOOLTIP_VIEW_LOCKED )
+		{
+			if ( players[player]->worldUI.tooltipsInRange.empty() )
+			{
+				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+				return;
+			}
+			real_t currentYaw = players[player]->entity->yaw;
+			while ( currentYaw >= 4 * PI )
+			{
+				currentYaw -= 2 * PI;
+			}
+			while ( currentYaw < 2 * PI )
+			{
+				currentYaw += 2 * PI;
+			}
+			real_t yawDiff = players[player]->worldUI.playerLastYaw - currentYaw;
+			if ( inputs.hasController(player) )
+			{
+				real_t floatx = inputs.getController(player)->getLeftXPercent();
+				real_t floaty = inputs.getController(player)->getLeftYPercent();
+				real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
+				if ( magnitude > 0.0 )
+				{
+					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_FREE;
+					return;
+				}
+			}
+			if ( abs(yawDiff) > PI / 16 )
+			{
+				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+				return;
+			}
+			for ( auto& tooltip : players[player]->worldUI.tooltipsInRange )
+			{
+				if ( players[player]->worldUI.tooltipInRange(*tooltip.first) < 0.01 )
+				{
+					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+					return;
+				}
+			}
+		}
+	}
 }
 
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
@@ -1540,7 +1859,7 @@ bool GameController::binaryOf(Binding_t& binding)
 		}
 		else if ( binding.type == Binding_t::VIRTUAL_DPAD )
 		{
-			return binding.padVirtualDpad;
+			return binding.padVirtualDpad != DpadDirection::CENTERED;
 		}
 		else 
 		{

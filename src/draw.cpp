@@ -1449,6 +1449,10 @@ void drawEntities3D(view_t* camera, int mode)
 							glDrawSpriteFromImage(camera, entity, stats[playersTag]->name, mode);
 						}
 					}
+					else if ( entity->behavior == &actSpriteWorldTooltip )
+					{
+						glDrawWorldUISprite(camera, entity, mode);
+					}
 					else
 					{
 						glDrawSprite(camera, entity, mode);
@@ -1462,7 +1466,11 @@ void drawEntities3D(view_t* camera, int mode)
 			{
 				glDrawVoxel(camera, entity, mode);
 			}
-			else
+			else if ( entity->behavior == &actSpriteWorldTooltip )
+			{
+				glDrawWorldUISprite(camera, entity, mode);
+			}
+			else 
 			{
 				glDrawSprite(camera, entity, mode);
 			}

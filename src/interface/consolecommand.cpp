@@ -2932,7 +2932,7 @@ void consoleCommand(char const * const command_str)
 		}
 		else if ( !strncmp(command_str, "/jsonexportfromcursor", 21) )
 		{
-			Entity* target = entityClicked(nullptr, true, clientnum);
+			Entity* target = entityClicked(nullptr, true, clientnum, EntityClickType::ENTITY_CLICK_USE);
 			if ( target )
 			{
 				Entity* parent = uidToEntity(target->skill[2]);

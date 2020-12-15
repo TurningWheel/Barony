@@ -762,6 +762,35 @@ public:
 
 		int fontSize() { return getHeightOfFont(font); }
 	} messageZone;
+
+	class WorldUI_t
+	{
+		Player& player;
+		static const int UID_TOOLTIP_ACTIVE = -21;
+		static const int UID_TOOLTIP_DISABLED = -20;
+		enum TooltipView
+		{
+			TOOLTIP_VIEW_FREE,
+			TOOLTIP_VIEW_LOCKED,
+			TOOLTIP_VIEW_RESCAN
+		};
+	public:
+		WorldUI_t(Player& p) : player(p)
+		{};
+		~WorldUI_t() {};
+		TooltipView tooltipView = TOOLTIP_VIEW_FREE;
+		std::vector<std::pair<Entity*, real_t>> tooltipsInRange;
+		real_t playerLastYaw = 0.0;
+		int gimpDisplayTimer = 0;
+		void reset();
+		void setTooltipActive(Entity& tooltip);
+		void setTooltipDisabled(Entity& tooltip);
+		bool bTooltipActiveForPlayer(Entity& tooltip);
+		static void handleTooltips();
+		real_t tooltipInRange(Entity& tooltip); // returns distance of added tooltip, otherwise 0.
+		void cycleToNextTooltip();
+		void cycleToPreviousTooltip();
+	} worldUI;
 };
 
 class Player::Hotbar_t {

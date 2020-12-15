@@ -50,7 +50,7 @@ real_t entityDist(Entity* my, Entity* your)
 
 -------------------------------------------------------------------------------*/
 
-Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
+Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, EntityClickType clicktype)
 {
 	Uint32 uidnum;
 	GLubyte pixel[4];
@@ -281,6 +281,37 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player)
 	}
 
 	Entity* entity = uidToEntity(uidnum);
+	if ( clicktype == ENTITY_CLICK_USE && 
+		(!entity 
+			|| (entity && entity->behavior == &actSpriteWorldTooltip)
+			|| (entity && entity->behavior == &actDoorFrame) // door frames eat up clicks
+			|| (players[player]->entity && (entityDist(entity, players[player]->entity) > TOUCHRANGE) ))
+		)
+	{
+		if ( entity && entity->behavior == &actSpriteWorldTooltip )
+		{
+			if ( players[player]->worldUI.bTooltipActiveForPlayer(*entity) )
+			{
+				entity = uidToEntity(entity->parent);
+			}
+		}
+		else
+		{
+			for ( node_t* node = map.worldUI->first; node; node = node->next )
+			{
+				Entity* tooltip = (Entity*)node->element;
+				if ( !tooltip || tooltip->behavior != &actSpriteWorldTooltip )
+				{
+					continue;
+				}
+				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
+				{
+					entity = uidToEntity(tooltip->parent);
+					break;
+				}
+			}
+		}
+	}
 
 	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride )
 	{

@@ -366,6 +366,7 @@ typedef struct map_t
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 	list_t* creatures; //A list of Entity* pointers.
+	list_t* worldUI; //A list of Entity* pointers.
 } map_t;
 
 #define MAPLAYERS 3 // number of layers contained in a single map
@@ -755,6 +756,7 @@ pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Si
 real_t getLightForEntity(real_t x, real_t y);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
+void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
 real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);

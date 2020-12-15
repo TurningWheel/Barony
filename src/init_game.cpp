@@ -807,6 +807,10 @@ void deinitGame()
 	{
 		list_FreeAll(map.creatures); //TODO: Need to do this?
 	}
+	if ( map.worldUI )
+	{
+		list_FreeAll(map.worldUI); //TODO: Need to do this?
+	}
 	list_FreeAll(&messages);
 	if ( multiplayer == SINGLE )
 	{

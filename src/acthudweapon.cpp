@@ -1355,7 +1355,7 @@ void actHudWeapon(Entity* my)
 								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, players[HUDWEAPON_PLAYERNUM]->camera_midx()); 
 								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OY, players[HUDWEAPON_PLAYERNUM]->camera_midy());
 
-								Entity* clickedOn = entityClicked(&clickedOnGUI, true, HUDWEAPON_PLAYERNUM); // using objects
+								Entity* clickedOn = entityClicked(&clickedOnGUI, true, HUDWEAPON_PLAYERNUM, EntityClickType::ENTITY_CLICK_USE); // using objects
 
 								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousex);
 								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousey);

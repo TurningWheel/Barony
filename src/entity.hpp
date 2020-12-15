@@ -217,6 +217,7 @@ public:
 
 	//--PUBLIC GENERAL ENTITY STUFF--
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
+	Sint32& highlightForUI; //skill[56] for highlighting interactibles
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
@@ -492,12 +493,21 @@ public:
 	//--PLAYER SPAWN POINT--
 	Sint32& playerStartDir; //skill[1]
 
+	//--WORLDTOOLTIP--
+	real_t& worldTooltipAlpha; //fskill[0]
+	real_t& worldTooltipZ; //fskill[1]
+	Sint32& worldTooltipActive; //skill[0]
+	Sint32& worldTooltipPlayer;  //skill[1]
+	Sint32& worldTooltipInit; //skill[3]
+	Sint32& worldTooltipFadeDelay; //skill[4]
+
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
 	node_t* myCreatureListNode;
 	node_t* myTileListNode;
+	node_t* myWorldUIListNode;
 
 	list_t* path; // pathfinding stuff. Most of the code currently stuffs that into children, but the magic code makes use of this variable instead.
 
@@ -866,6 +876,7 @@ public:
 	void SetEntityOnFire(Entity* sourceOfFire = nullptr);
 
 	void addToCreatureList(list_t* list);
+	void addToWorldUIList(list_t *list);
 	std::vector<Entity*> bodyparts;
 
 	// special magic functions/trickery

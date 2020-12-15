@@ -16,6 +16,9 @@
 #include "collision.hpp"
 #include "entity.hpp"
 #include "interface/interface.hpp"
+#include "draw.hpp"
+#include "items.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -81,6 +84,110 @@ void actSpriteNametag(Entity* my)
 	else
 	{
 		my->flags[INVISIBLE] = true;
+		list_RemoveNode(my->mynode);
+	}
+}
+
+void actSpriteWorldTooltip(Entity* my)
+{
+	Entity* parent = uidToEntity(my->parent);
+	if ( parent )
+	{
+		my->x = parent->x;
+		my->y = parent->y;
+		bool inrange = (my->worldTooltipActive == 1);
+		bool skipUpdating = true;
+		if ( players[my->worldTooltipPlayer]->worldUI.bTooltipActiveForPlayer(*my) )
+		{
+			if ( players[my->worldTooltipPlayer]->worldUI.gimpDisplayTimer == 0 )
+			{
+				skipUpdating = false;
+			}
+		}
+
+		if ( parent->flags[INVISIBLE] )
+		{
+			skipUpdating = true;
+		}
+
+		if ( inrange && !skipUpdating )
+		{
+			my->worldTooltipAlpha = std::min(1.0, my->worldTooltipAlpha + .15);
+			if ( my->worldTooltipInit == 0 )
+			{
+				my->worldTooltipInit = 1;
+				my->worldTooltipZ = 1.5;
+			}
+			else
+			{
+				my->worldTooltipZ -= my->worldTooltipZ * 0.25;
+				my->worldTooltipZ = std::max(0.1, my->worldTooltipZ);
+			}
+
+			if ( players[my->worldTooltipPlayer]->worldUI.bTooltipActiveForPlayer(*my) )
+			{
+				// in range of player
+				my->worldTooltipFadeDelay = 25; // tick draw time, so when inrange = false it'll still be drawn as it fades
+			}
+			//messagePlayer(0, "%.2f", my->worldTooltipZ);
+			if ( my->worldTooltipZ <= 0.15 ) // wait until animation before being able to be clicked on.
+			{
+				my->flags[UNCLICKABLE] = false;
+			}
+			my->flags[INVISIBLE] = false;
+		}
+		else
+		{
+			my->worldTooltipAlpha = std::max(0.0, my->worldTooltipAlpha - .12);
+			if ( my->worldTooltipInit == 1 )
+			{
+				my->worldTooltipInit = 0;
+				my->worldTooltipZ = 0.1;
+			}
+			else
+			{
+				my->worldTooltipZ -= 0.05;
+				my->worldTooltipZ = std::max(-1.0, my->worldTooltipZ);
+			}
+		
+			--my->worldTooltipFadeDelay; // decrement fade timer
+			my->worldTooltipFadeDelay = std::max(0, my->worldTooltipFadeDelay);
+
+			if ( my->worldTooltipAlpha <= 0.01 )
+			{
+				my->flags[INVISIBLE] = true;
+			}
+			my->flags[UNCLICKABLE] = true;
+		}
+		my->z = -1.25 + std::max(0.0, parent->z - 7.75) - my->worldTooltipZ;
+	}
+	else
+	{
+		my->flags[INVISIBLE] = true;
+		// delete this entity, remove from any lists
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			int index = 0;
+			bool bFound = false;
+			for ( auto& tooltip : players[i]->worldUI.tooltipsInRange )
+			{
+				if ( tooltip.first == my )
+				{
+					bFound = true;
+					break;
+				}
+				++index;
+			}
+			if ( bFound && index >= 0 && index < players[i]->worldUI.tooltipsInRange.size() )
+			{
+				players[i]->worldUI.tooltipsInRange.erase(players[i]->worldUI.tooltipsInRange.begin() + index);
+				if ( players[i]->worldUI.bTooltipActiveForPlayer(*my) )
+				{
+					players[i]->worldUI.cycleToNextTooltip();
+				}
+			}
+		}
+
 		list_RemoveNode(my->mynode);
 	}
 }

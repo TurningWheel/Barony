@@ -1702,6 +1702,9 @@ void gameLogic(void)
 				client_selected[j] = NULL;
 			}
 
+			// world UI
+			Player::WorldUI_t::handleTooltips();
+
 			int backpack_sizey[MAXPLAYERS];
 
 			for ( int player = 0; player < MAXPLAYERS; ++player )
@@ -3659,6 +3662,9 @@ int main(int argc, char** argv)
 		map.creatures = new list_t;
 		map.creatures->first = nullptr;
 		map.creatures->last = nullptr;
+		map.worldUI = new list_t;
+		map.worldUI->first = nullptr;
+		map.worldUI->last = nullptr;
 
 		// initialize player conducts
 		setDefaultPlayerConducts();
