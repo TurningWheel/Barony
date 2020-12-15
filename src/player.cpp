@@ -1233,6 +1233,24 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
+		if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK) )
+		{
+			if ( players[player]->worldUI.bEnabled )
+			{
+				players[player]->worldUI.disable();
+			}
+			else
+			{
+				players[player]->worldUI.enable();
+			}
+			inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK);
+		}
+
+		if ( !players[player]->worldUI.bEnabled )
+		{
+			continue;
+		}
+
 		bool bDoingActionHideTooltips = false;
 		if ( players[player]->hud.arm && players[player]->hud.weapon->skill[0] != 0 )
 		{

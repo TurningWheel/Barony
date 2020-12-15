@@ -678,7 +678,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
 				}
 			}
-			else if ( parent->behavior == &actGold )
+			else if ( parent->behavior == &actGoldBag )
 			{
 				SDL_Surface* textSurf = glTextSurface("Press use to pick up!", &tmpTextid);
 				if ( textSurf )

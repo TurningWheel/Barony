@@ -766,6 +766,7 @@ public:
 	class WorldUI_t
 	{
 		Player& player;
+		bool bEnabled = false;
 		static const int UID_TOOLTIP_ACTIVE = -21;
 		static const int UID_TOOLTIP_DISABLED = -20;
 		enum TooltipView
@@ -786,6 +787,11 @@ public:
 		void setTooltipActive(Entity& tooltip);
 		void setTooltipDisabled(Entity& tooltip);
 		bool bTooltipActiveForPlayer(Entity& tooltip);
+		void enable() { bEnabled = true; }
+		void disable() { 
+			bEnabled = false; 
+			reset();
+		}
 		static void handleTooltips();
 		real_t tooltipInRange(Entity& tooltip); // returns distance of added tooltip, otherwise 0.
 		void cycleToNextTooltip();
