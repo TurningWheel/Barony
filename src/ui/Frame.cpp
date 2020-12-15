@@ -159,9 +159,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		handleRect.h = sliderSize;
 
 		int x = (handleRect.x) * (float)xres / (float)Frame::virtualScreenX;
-		int y = (handleRect.x) * (float)yres / (float)Frame::virtualScreenY;
+		int y = (handleRect.y) * (float)yres / (float)Frame::virtualScreenY;
 		int w = (handleRect.x + handleRect.w) * (float)xres / (float)Frame::virtualScreenX;
-		int h = (handleRect.x + handleRect.h) * (float)yres / (float)Frame::virtualScreenY;
+		int h = (handleRect.y + handleRect.h) * (float)yres / (float)Frame::virtualScreenY;
 		if (rectContainsPoint(barRect, omousex, omousey)) {
 			// TODO highlight
 			drawWindow(x, y, w, h);
@@ -191,9 +191,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		handleRect.h = handleSize;
 
 		int x = (handleRect.x) * (float)xres / (float)Frame::virtualScreenX;
-		int y = (handleRect.x) * (float)yres / (float)Frame::virtualScreenY;
+		int y = (handleRect.y) * (float)yres / (float)Frame::virtualScreenY;
 		int w = (handleRect.x + handleRect.w) * (float)xres / (float)Frame::virtualScreenX;
-		int h = (handleRect.x + handleRect.h) * (float)yres / (float)Frame::virtualScreenY;
+		int h = (handleRect.y + handleRect.h) * (float)yres / (float)Frame::virtualScreenY;
 		if (rectContainsPoint(barRect, omousex, omousey)) {
 			// TODO highlight
 			drawWindow(x, y, w, h);

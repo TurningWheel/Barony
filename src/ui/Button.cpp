@@ -56,9 +56,9 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 	{
 		int x = (_size.x) * (float)xres / (float)Frame::virtualScreenX;
-		int y = (_size.x) * (float)yres / (float)Frame::virtualScreenY;
+		int y = (_size.y) * (float)yres / (float)Frame::virtualScreenY;
 		int w = (_size.x + _size.w) * (float)xres / (float)Frame::virtualScreenX;
-		int h = (_size.x + _size.h) * (float)yres / (float)Frame::virtualScreenY;
+		int h = (_size.y + _size.h) * (float)yres / (float)Frame::virtualScreenY;
 		if (pressed) {
 			drawDepressed(x, y, w, h);
 		} else {
