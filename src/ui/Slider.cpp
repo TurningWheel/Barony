@@ -23,7 +23,11 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	_railSize.w = std::min(railSize.w, _size.w - railSize.x + _actualSize.x) + std::min(0, railSize.x - _actualSize.x);
 	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 	if (_railSize.w > 0 && _railSize.h > 0) {
-		drawDepressed(_railSize.x, _railSize.y, _railSize.x + _railSize.w, _railSize.y + _railSize.h);
+		int x = (_railSize.x) * (float)xres / (float)Frame::virtualScreenX;
+		int y = (_railSize.x) * (float)yres / (float)Frame::virtualScreenY;
+		int w = (_railSize.x + _railSize.w) * (float)xres / (float)Frame::virtualScreenX;
+		int h = (_railSize.x + _railSize.h) * (float)yres / (float)Frame::virtualScreenY;
+		drawDepressed(x, y, w, h);
 	}
 	
 	// draw handle
@@ -33,7 +37,11 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
 	if (_handleSize.w > 0 && _handleSize.h > 0) {
 		bool h = highlighted | selected;
-		drawWindow(_handleSize.x, _handleSize.y, _handleSize.x + _handleSize.w, _handleSize.y + _handleSize.h);
+		int x = (_handleSize.x) * (float)xres / (float)Frame::virtualScreenX;
+		int y = (_handleSize.x) * (float)yres / (float)Frame::virtualScreenY;
+		int w = (_handleSize.x + _handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
+		int h = (_handleSize.x + _handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
+		drawWindow(x, y, w, h);
 	}
 }
 

@@ -123,7 +123,12 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 	// draw frame background
 	if (!hollow) {
-		drawRect(&_size, color, (Uint8)(color>>mainsurface->format->Ashift));
+		SDL_Rect scaledSize;
+		scaledSize.x = _size.x * (float)xres / (float)Frame::virtualScreenX;
+		scaledSize.y = _size.y * (float)yres / (float)Frame::virtualScreenY;
+		scaledSize.w = _size.w * (float)xres / (float)Frame::virtualScreenX;
+		scaledSize.h = _size.h * (float)yres / (float)Frame::virtualScreenY;
+		drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
 	}
 
 	Sint32 mousex = (mousex / (float)xres) * (float)Frame::virtualScreenX;
@@ -136,10 +141,10 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 		// slider rail
 		SDL_Rect barRect;
-		barRect.x = _size.x;
-		barRect.y = _size.y + _size.h;
-		barRect.w = _size.w;
-		barRect.h = sliderSize;
+		barRect.x = (_size.x) * (float)xres / (float)Frame::virtualScreenX;
+		barRect.y = (_size.y + _size.h) * (float)yres / (float)Frame::virtualScreenY;
+		barRect.w = (_size.w) * (float)xres / (float)Frame::virtualScreenX;
+		barRect.h = (sliderSize) * (float)yres / (float)Frame::virtualScreenY;
 		drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
 
 		// handle
@@ -152,21 +157,26 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		handleRect.y = _size.y + _size.h;
 		handleRect.w = handleSize;
 		handleRect.h = sliderSize;
+
+		int x = (handleRect.x) * (float)xres / (float)Frame::virtualScreenX;
+		int y = (handleRect.x) * (float)yres / (float)Frame::virtualScreenY;
+		int w = (handleRect.x + handleRect.w) * (float)xres / (float)Frame::virtualScreenX;
+		int h = (handleRect.x + handleRect.h) * (float)yres / (float)Frame::virtualScreenY;
 		if (rectContainsPoint(barRect, omousex, omousey)) {
 			// TODO highlight
-			drawWindow(handleRect.x, handleRect.y, handleRect.x + handleRect.w, handleRect.y + handleRect.h);
+			drawWindow(x, y, w, h);
 		} else {
-			drawWindow(handleRect.x, handleRect.y, handleRect.x + handleRect.w, handleRect.y + handleRect.h);
+			drawWindow(x, y, w, h);
 		}
 	}
 
 	// vertical slider
 	if (actualSize.h > size.h && _size.y) {
 		SDL_Rect barRect;
-		barRect.x = _size.x + _size.w;
-		barRect.y = _size.y;
-		barRect.w = sliderSize;
-		barRect.h = _size.h;
+		barRect.x = (_size.x + _size.w) * (float)xres / (float)Frame::virtualScreenX;
+		barRect.y = (_size.y) * (float)yres / (float)Frame::virtualScreenY;
+		barRect.w = (sliderSize) * (float)xres / (float)Frame::virtualScreenX;
+		barRect.h = (_size.h) * (float)yres / (float)Frame::virtualScreenY;
 		drawRect(&barRect, color, (Uint8)(color>>mainsurface->format->Ashift));
 
 		// handle
@@ -179,20 +189,26 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		handleRect.y = _size.y + sliderPos;
 		handleRect.w = sliderSize;
 		handleRect.h = handleSize;
+
+		int x = (handleRect.x) * (float)xres / (float)Frame::virtualScreenX;
+		int y = (handleRect.x) * (float)yres / (float)Frame::virtualScreenY;
+		int w = (handleRect.x + handleRect.w) * (float)xres / (float)Frame::virtualScreenX;
+		int h = (handleRect.x + handleRect.h) * (float)yres / (float)Frame::virtualScreenY;
 		if (rectContainsPoint(barRect, omousex, omousey)) {
-			drawWindow(handleRect.x, handleRect.y, handleRect.x + handleRect.w, handleRect.y + handleRect.h);
+			// TODO highlight
+			drawWindow(x, y, w, h);
 		} else {
-			drawWindow(handleRect.x, handleRect.y, handleRect.x + handleRect.w, handleRect.y + handleRect.h);
+			drawWindow(x, y, w, h);
 		}
 	}
 
 	// slider filler (at the corner between sliders)
 	if (actualSize.w > size.w && actualSize.h > size.h) {
 		SDL_Rect barRect;
-		barRect.x = _size.x + _size.w;
-		barRect.y = _size.y + _size.h;
-		barRect.w = sliderSize;
-		barRect.h = sliderSize;
+		barRect.x = (_size.x + _size.w) * (float)xres / (float)Frame::virtualScreenX;
+		barRect.y = (_size.y + _size.h) * (float)yres / (float)Frame::virtualScreenY;
+		barRect.w = (sliderSize) * (float)xres / (float)Frame::virtualScreenX;
+		barRect.h = (sliderSize) * (float)yres / (float)Frame::virtualScreenY;
 		// TODO different border styles
 		if (border > 0) {
 			switch (borderStyle) {
@@ -234,6 +250,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			dest.y = std::max(_size.y, pos.y);
 			dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
 			dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+			SDL_Rect scaledDest;
+			scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
+			scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
+			scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
+			scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
 
 			SDL_Rect src;
 			src.x = std::max(0, _size.x - pos.x);
@@ -241,7 +262,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
 			src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
-			actualImage->drawColor(&src, dest, image->color);
+			actualImage->drawColor(&src, scaledDest, image->color);
 		}
 	}
 
@@ -288,6 +309,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		// TODO entry highlighting
 		SDL_Rect entryback = dest;
 		entryback.w = _size.w - border * 2;
+		
+		entryback.x = entryback.x * (float)xres / (float)Frame::virtualScreenX;
+		entryback.y = entryback.y * (float)yres / (float)Frame::virtualScreenY;
+		entryback.w = entryback.w * (float)xres / (float)Frame::virtualScreenX;
+		entryback.h = entryback.h * (float)yres / (float)Frame::virtualScreenY;
 		if (entry.pressed) {
 			drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
 		} else if (entry.highlighted) {
@@ -296,7 +322,12 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
 		}
 
-		text->drawColor(src, dest, entry.color);
+		SDL_Rect scaledDest;
+		scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
+		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
+		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
+		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+		text->drawColor(src, scaledDest, entry.color);
 	}
 
 	// render fields
@@ -333,9 +364,17 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 				int border = tooltip_border_width;
 
+				src.x = src.x * (float)xres / (float)Frame::virtualScreenX;
+				src.y = src.y * (float)yres / (float)Frame::virtualScreenY;
+				src.w = src.w * (float)xres / (float)Frame::virtualScreenX;
+				src.h = src.h * (float)yres / (float)Frame::virtualScreenY;
 				drawRect(&src, tooltip_border_color, (Uint8)(tooltip_border_color>>mainsurface->format->Ashift));
 
 				SDL_Rect src2{src.x + border, src.y + border, src.w - border * 2, src.h - border * 2};
+				src2.x = src2.x * (float)xres / (float)Frame::virtualScreenX;
+				src2.y = src2.y * (float)yres / (float)Frame::virtualScreenY;
+				src2.w = src2.w * (float)xres / (float)Frame::virtualScreenX;
+				src2.h = src2.h * (float)yres / (float)Frame::virtualScreenY;
 				drawRect(&src2, tooltip_background, (Uint8)(tooltip_background>>mainsurface->format->Ashift));
 
 				text->drawColor(SDL_Rect{0,0,0,0}, SDL_Rect{src.x + 1, src.y + 1, 0, 0}, tooltip_text_color);
