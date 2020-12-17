@@ -447,6 +447,38 @@ void actSpriteNametag(Entity* my)
 	return;
 }
 
+void actFlame(Entity* my)
+{
+	// dummy function
+	return;
+}
+
+void actSpriteWorldTooltip(Entity* my)
+{
+	// dummy function
+	return;
+}
+
+void actSpriteWorldTooltip(Entity* my);
+
+void actGoldBag(Entity* my)
+{
+	// dummy function
+	return;
+}
+
+void actSwitch(Entity* my)
+{
+	// dummy function
+	return;
+}
+
+void actItem(Entity* my)
+{
+	// dummy function
+	return;
+}
+
 int playerEntityMatchesUid(Uint32 uid)
 {
 	return -1;
@@ -462,4 +494,9 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 {
 	// dummy function
 	return false;
+}
+
+Entity* uidToEntity(Sint32 uidnum)
+{
+	return nullptr;
 }

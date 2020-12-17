@@ -95,6 +95,12 @@ void GameModeManager_t::Tutorial_t::buttonRestartTrial(button_t* my)
 	buttonReturnToTutorialHub(nullptr);
 }
 
+#ifdef EDITOR
+void GameModeManager_t::Tutorial_t::openGameoverWindow()
+{
+	return;
+}
+#else
 void GameModeManager_t::Tutorial_t::openGameoverWindow()
 {
 	node_t* node;
@@ -165,6 +171,7 @@ void GameModeManager_t::Tutorial_t::openGameoverWindow()
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
+#endif
 
 //TODO: NX PORT: Update for the Switch?
 void GameModeManager_t::Tutorial_t::readFromFile()
