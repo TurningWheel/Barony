@@ -895,6 +895,12 @@ void gameLogic(void)
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
+			bool debugMonsterTimer = false && !gamePaused;
+			if ( debugMonsterTimer )
+			{
+				printlog("loop start");
+			}
+			real_t accum = 0.0;
 			DebugStats.eventsT3 = std::chrono::high_resolution_clock::now();
 			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
@@ -922,6 +928,8 @@ void gameLogic(void)
 						}
 						int ox = -1;
 						int oy = -1;
+						auto t = std::chrono::high_resolution_clock::now();
+
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
 							ox = static_cast<int>(entity->x) >> 4;
@@ -940,7 +948,6 @@ void gameLogic(void)
 								printlog("DEBUG: Starting Entity sprite: %d", entity->sprite);
 							}*/
 							(*entity->behavior)(entity);
-
 						}
 						if ( entitiesdeleted.first != nullptr )
 						{
@@ -983,6 +990,14 @@ void gameLogic(void)
 							}
 							entity->ranbehavior = true;
 							nextnode = node->next;
+							if ( debugMonsterTimer && entity->behavior == &actMonster )
+							{
+								auto t2 = std::chrono::high_resolution_clock::now();
+								printlog("%d: %d %f", entity->sprite, entity->monsterState,
+									1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count());
+								accum += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count();
+							}
+
 						}
 					}
 				}
@@ -1554,6 +1569,10 @@ void gameLogic(void)
 					saveGame();
 					break;
 				}
+			}
+			if ( debugMonsterTimer )
+			{
+				printlog("accum: %f", accum);
 			}
 			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
@@ -5195,8 +5214,8 @@ int main(int argc, char** argv)
 				}
 				if ( DebugStats.displayStats )
 				{
-					printTextFormatted(font8x8_bmp, 8, 20, DebugStats.debugOutput);
-					printTextFormatted(font8x8_bmp, 8, 100, DebugStats.debugEventOutput);
+					printTextFormatted(font8x8_bmp, 8, 200 + 20, DebugStats.debugOutput);
+					printTextFormatted(font8x8_bmp, 8, 200 + 100, DebugStats.debugEventOutput);
 				}
 			}
 
