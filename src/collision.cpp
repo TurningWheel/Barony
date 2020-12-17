@@ -1524,6 +1524,10 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 		}
 	}
 
+	//auto t = std::chrono::high_resolution_clock::now();
+	//auto t2 = std::chrono::high_resolution_clock::now();
+	//int entCheck = 0;
+	//
 	// collision detection
 	if ( x >= 0 && x < map.width << 4 )
 	{
@@ -1557,6 +1561,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 				for ( node = currentList->first; node != nullptr; node = node->next )
 				{
 					entity = (Entity*)node->element;
+					//++entCheck;
 					if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
 					{
 						continue;
@@ -1576,6 +1581,12 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 			}
 		}
 	}
+	//t2 = std::chrono::high_resolution_clock::now();
+	//real_t time = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count();
+	//if ( my )
+	//{
+	//	printlog("checkObstacle: %d: %d %f, entities: %d", my->sprite, my->monsterState, time, entCheck);
+	//}
 
 	if ( logCheckObstacle )
 	{

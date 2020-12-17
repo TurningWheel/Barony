@@ -58,11 +58,50 @@ extern bool gamepad_menuy_invert;
 class GameController
 {
 	SDL_GameController* sdl_device;
+	SDL_Haptic* sdl_haptic;
 	int id;
 	std::string name;
 public:
 	GameController();
 	~GameController();
+
+	class Haptic_t
+	{
+	public:
+		enum RumblePattern
+		{
+			RUMBLE_NORMAL,
+			RUMBLE_BOULDER,
+			RUMBLE_DEATH,
+			RUMBLE_TMP
+		};
+		int hapticEffectId = -1;
+		SDL_HapticEffect hapticEffect;
+		Uint32 hapticTick;
+		Haptic_t();
+		~Haptic_t() {};
+
+		struct Rumble
+		{
+			Uint32 startTick = 0;
+			Uint16 smallMagnitude = 0;
+			Uint16 largeMagnitude = 0;
+			Uint32 startTime = 0;
+			Uint32 length = 0;
+			real_t customEffect = 0.0;
+			RumblePattern pattern = RUMBLE_NORMAL;
+			bool isPlaying = false;
+			Rumble(int sm, int lg, int len, Uint32 tick) :
+				smallMagnitude(sm),
+				largeMagnitude(lg),
+				length(len)
+			{
+				startTick = tick;
+			};
+		};
+		std::vector<std::pair<Uint32, Rumble>> activeRumbles;
+		bool vibrationEnabled = true;
+	} haptics;
 
 	enum DpadDirection : int
 	{
@@ -143,7 +182,12 @@ public:
 	void initBindings();
 	const int getID() { return id; }
 	const SDL_GameController* getControllerDevice() { return sdl_device; }
+	SDL_Haptic* getHaptic() { return sdl_haptic; }
 	const bool isActive();
+	void addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length);
+	void doRumble(Haptic_t::Rumble* r);
+	void stopRumble();
+	void handleRumble();
 
 	/*
 	 * Moves the player's head around.
@@ -486,6 +530,22 @@ public:
 			vmouse[i].floatxrel = 0.0;
 			vmouse[i].floatyrel = 0.0;
 		}
+	}
+	void rumble(const int player, GameController::Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length)
+	{
+		if ( !hasController(player) )
+		{
+			return;
+		}
+		getController(player)->addRumble(pattern, smallMagnitude, largeMagnitude, length);
+	}
+	void rumbleStop(const int player)
+	{
+		if ( !hasController(player) )
+		{
+			return;
+		}
+		getController(player)->stopRumble();
 	}
 };
 extern Inputs inputs;

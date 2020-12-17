@@ -254,6 +254,30 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		{
 			updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
 		}
+		if ( playertarget >= 0 && players[playertarget]->isLocalPlayer() && stats->OLDHP >= stats->HP )
+		{
+			real_t percentHPLost = std::min(1.0, (stats->OLDHP - stats->HP) / static_cast<real_t>(std::max(1, stats->MAXHP)));
+			if ( stats->HP <= 0 )
+			{
+				inputs.rumble(playertarget, GameController::Haptic_t::RUMBLE_DEATH, 32000, 32000, 2 * TICKS_PER_SECOND);
+			}
+			else if ( stats->OLDHP == stats->HP )
+			{
+				inputs.rumble(playertarget, GameController::Haptic_t::RUMBLE_NORMAL, 8000, 8000, 6);
+			}
+			else if ( percentHPLost < .05 )
+			{
+				inputs.rumble(playertarget, GameController::Haptic_t::RUMBLE_NORMAL, 16000, 16000, 6);
+			}
+			else if ( percentHPLost < .25 )
+			{
+				inputs.rumble(playertarget, GameController::Haptic_t::RUMBLE_NORMAL, 24000, 24000, 11);
+			}
+			else
+			{
+				inputs.rumble(playertarget, GameController::Haptic_t::RUMBLE_NORMAL, 32000, 32000, 11);
+			}
+		}
 	}
 	else if ( player >= 0 && players[player]->isLocalPlayer() )
 	{

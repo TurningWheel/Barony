@@ -3081,6 +3081,24 @@ void consoleCommand(char const * const command_str)
 				}
 			}
 		}
+		else if ( !strncmp(command_str, "/vibration", 10) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					inputs.getController(i)->haptics.vibrationEnabled = !inputs.getController(i)->haptics.vibrationEnabled;
+					if ( inputs.getController(i)->haptics.vibrationEnabled )
+					{
+						messagePlayer(i, "Controller vibration is enabled.");
+					}
+					else
+					{
+						messagePlayer(i, "Controller vibration is disabled.");
+					}
+				}
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

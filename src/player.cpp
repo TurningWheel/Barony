@@ -53,13 +53,14 @@ Inputs inputs;
 GameController::GameController()
 {
 	sdl_device = nullptr;
+	sdl_haptic = nullptr;
 	id = -1;
 	name = "";
 }
 
 GameController::~GameController()
 {
-	if (sdl_device)
+	if ( sdl_device )
 	{
 		close();
 	}
@@ -67,6 +68,12 @@ GameController::~GameController()
 
 void GameController::close()
 {
+	if ( sdl_haptic )
+	{
+		SDL_HapticClose(sdl_haptic);
+		sdl_haptic = nullptr;
+	}
+
 	if (sdl_device)
 	{
 		SDL_GameControllerClose(sdl_device);
@@ -105,7 +112,29 @@ bool GameController::open(int c)
 		id = c;
 		printlog("Successfully initialized game controller!\n");
 		name = (SDL_GameControllerNameForIndex(c));
-		printlog("Controller name is \"%s\"", name.c_str());
+		sdl_haptic = SDL_HapticOpen(c);
+		if ( sdl_haptic == nullptr )
+		{
+			printf("Notice: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
+		}
+		else
+		{
+			//Get initialize rumble
+			/*if ( SDL_HapticRumbleInit(sdl_haptic) < 0 )
+			{
+				printf("Warning: Unable to initialize rumble! SDL Error: %s\n", SDL_GetError());
+				SDL_HapticClose(sdl_haptic);
+				sdl_haptic = nullptr;
+			}*/
+		}
+		if ( sdl_haptic )
+		{
+			printlog("Controller name is \"%s\", haptics available: %d", name.c_str(), SDL_HapticQuery(sdl_haptic));
+		}
+		else
+		{
+			printlog("Controller name is \"%s\", haptics disabled", name.c_str());
+		}
 	}
 
 
@@ -1003,6 +1032,202 @@ SDL_GameControllerAxis GameController::getSDLTriggerFromImpulse(const unsigned c
 	}
 
 	return SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID;
+}
+
+GameController::Haptic_t::Haptic_t()
+{
+	hapticTick = 0;
+	memset(&hapticEffect, 0, sizeof(SDL_HapticEffect));
+}
+
+void GameController::handleRumble()
+{
+	if ( haptics.hapticTick == std::numeric_limits<Uint32>::max() )
+	{
+		haptics.hapticTick = 0;
+	}
+	else
+	{
+		++haptics.hapticTick;
+	}
+	size_t size = haptics.activeRumbles.size();
+	if ( !sdl_haptic || size == 0 )
+	{
+		return;
+	}
+
+	Uint32 highestPriority = 0;
+	Uint32 earliestTick = std::numeric_limits<Uint32>::max();
+	for ( auto& it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); /*blank*/ )
+	{
+		Uint32 priority = it->first;
+		auto& rumble = it->second;
+		if ( haptics.hapticTick - rumble.startTick >= rumble.length ) // expired length
+		{
+			it = haptics.activeRumbles.erase(it);
+			continue;
+		}
+		++it;
+	}
+
+	std::vector<std::pair<Uint32, Haptic_t::Rumble>>::iterator rumbleToPlay = haptics.activeRumbles.end();
+	for ( auto& it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); ++it )
+	{
+		Uint32 priority = it->first;
+		auto& rumble = it->second;
+		if ( priority > highestPriority )
+		{
+			highestPriority = priority;
+			earliestTick = rumble.startTick;
+			rumbleToPlay = it;
+		}
+		else if ( highestPriority == priority )
+		{
+			if ( rumble.startTick < earliestTick )
+			{
+				earliestTick = rumble.startTick;
+				rumbleToPlay = it;
+			}
+		}
+	}
+
+	for ( auto& it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); ++it )
+	{
+		if ( it != rumbleToPlay )
+		{
+			it->second.isPlaying = false;
+		}
+	}
+
+	if ( rumbleToPlay != haptics.activeRumbles.end() 
+		&& (!rumbleToPlay->second.isPlaying || rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER || rumbleToPlay->second.pattern == Haptic_t::RUMBLE_TMP))
+	{
+		Uint32 newStartTime = (haptics.hapticTick - rumbleToPlay->second.startTick);
+		rumbleToPlay->second.startTime = newStartTime; // move the playhead forward.
+		rumbleToPlay->second.isPlaying = true;
+		doRumble(&rumbleToPlay->second);
+	}
+}
+
+void GameController::addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length)
+{
+	if ( !sdl_haptic )
+	{
+		return;
+	}
+	if ( !haptics.vibrationEnabled )
+	{
+		return;
+	}
+
+	if ( pattern == Haptic_t::RumblePattern::RUMBLE_NORMAL )
+	{
+		haptics.activeRumbles.push_back(std::make_pair(1, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick)));
+		haptics.activeRumbles.back().second.pattern = pattern;
+	}
+	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_DEATH )
+	{
+		haptics.activeRumbles.push_back(std::make_pair(10, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick))); // higher priority
+		haptics.activeRumbles.back().second.pattern = pattern;
+	}
+	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_BOULDER )
+	{
+		haptics.activeRumbles.push_back(std::make_pair(10, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick))); // higher priority
+		haptics.activeRumbles.back().second.pattern = pattern;
+	}
+	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_TMP )
+	{
+		haptics.activeRumbles.push_back(std::make_pair(5, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick))); // higher priority
+		haptics.activeRumbles.back().second.pattern = pattern;
+	}
+	else
+	{
+		haptics.activeRumbles.push_back(std::make_pair(1, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick)));
+		haptics.activeRumbles.back().second.pattern = pattern;
+	}
+}
+
+void GameController::doRumble(Haptic_t::Rumble* r)
+{
+	if ( !sdl_haptic || !r )
+	{
+		return;
+	}
+
+	// init an effect.
+	haptics.hapticEffect.type = SDL_HAPTIC_LEFTRIGHT;
+	haptics.hapticEffect.leftright.type = SDL_HAPTIC_LEFTRIGHT;
+
+	if ( r->pattern == Haptic_t::RUMBLE_BOULDER )
+	{
+		real_t currentPlayheadPercent = r->startTime / static_cast<real_t>(r->length);
+		if ( currentPlayheadPercent < .33 )
+		{
+			r->customEffect = (currentPlayheadPercent) / .33;
+		}
+		else if ( currentPlayheadPercent < .66 )
+		{
+			r->customEffect = std::max(0.1, 1 - ((currentPlayheadPercent - .33) / .33));
+		}
+		else
+		{
+			r->customEffect = std::max(0.1, (currentPlayheadPercent - .66) / .33);
+		}
+		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * r->customEffect;
+		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * r->customEffect;
+	}
+	else if ( r->pattern == Haptic_t::RUMBLE_TMP )
+	{
+		real_t currentPlayheadPercent = r->startTime / static_cast<real_t>(r->length);
+		if ( currentPlayheadPercent < .165 )
+		{
+			r->customEffect = (currentPlayheadPercent) / .165;
+		}
+		else if ( currentPlayheadPercent < .33 )
+		{
+			r->customEffect = std::max(0.1, 1 - ((currentPlayheadPercent - .165) / .165));
+		}
+		else if ( currentPlayheadPercent < .495 )
+		{
+			r->customEffect = std::max(0.1, (currentPlayheadPercent - .33) / .165);
+		}
+		else if ( currentPlayheadPercent < .66 )
+		{
+			r->customEffect = std::max(0.1, 1 - ((currentPlayheadPercent - .495) / .165));
+		}
+		else
+		{
+			r->customEffect = std::max(0.1, (currentPlayheadPercent - .66) / .165);
+		}
+		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * r->customEffect;
+		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * r->customEffect;
+	}
+	else
+	{
+		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude;
+		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude;
+	}
+	haptics.hapticEffect.leftright.length = ((r->length - r->startTime) * 1000 / TICKS_PER_SECOND); // convert to ms
+	if ( haptics.hapticEffectId == -1 )
+	{
+		haptics.hapticEffectId = SDL_HapticNewEffect(sdl_haptic, &haptics.hapticEffect);
+		if ( haptics.hapticEffectId == -1 )
+		{
+			printlog("SDL_HapticNewEffect error: %s", SDL_GetError());
+		}
+	}
+	if ( SDL_HapticUpdateEffect(sdl_haptic, haptics.hapticEffectId, &haptics.hapticEffect) < 0 )
+	{
+		printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
+	}
+	if ( SDL_HapticRunEffect(sdl_haptic, haptics.hapticEffectId, 1) < 0 )
+	{
+		printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
+	}
+}
+void GameController::stopRumble()
+{
+	SDL_HapticStopEffect(sdl_haptic, haptics.hapticEffectId);
 }
 
 Player::Player(int in_playernum, bool in_local_host) : 
