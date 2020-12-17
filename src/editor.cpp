@@ -2164,7 +2164,7 @@ int main(int argc, char** argv)
 				}
 
 				// Modify World
-				if ( mousestatus[SDL_BUTTON_LEFT] && selectedEntity == NULL )
+				if ( mousestatus[SDL_BUTTON_LEFT] && selectedEntity[0] == NULL )
 				{
 					if ( allowediting )
 					{
@@ -2285,7 +2285,7 @@ int main(int argc, char** argv)
 					selectingspace = false;
 					savedundo = false;
 				}
-				if ( mousestatus[SDL_BUTTON_RIGHT] && selectedEntity == NULL )
+				if ( mousestatus[SDL_BUTTON_RIGHT] && selectedEntity[0] == NULL )
 				{
 					if ( selectedTool != 3 )
 					{
@@ -3406,7 +3406,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 2 ) 
 				{
-					if ( selectedEntity != NULL ) 
+					if ( selectedEntity[0] != NULL )
 					{
 						spriteStats = selectedEntity[0]->getStats();
 						if ( spriteStats != nullptr )
@@ -3776,7 +3776,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 3 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties = sizeof(chestPropertyNames) / sizeof(chestPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(chestPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -3972,7 +3972,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 4 || newwindow == 5 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties;
 
@@ -4437,7 +4437,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 6 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties = sizeof(summonTrapPropertyNames) / sizeof(summonTrapPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(summonTrapPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -4646,7 +4646,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 7 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties = sizeof(powerCrystalPropertyNames) / sizeof(powerCrystalPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(powerCrystalPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -4839,7 +4839,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 8 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties = sizeof(leverTimerPropertyNames) / sizeof(leverTimerPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(leverTimerPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -4937,7 +4937,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 9 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties = sizeof(boulderTrapPropertyNames) / sizeof(boulderTrapPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(boulderTrapPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -5079,7 +5079,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 10 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties = sizeof(pedestalPropertyNames) / sizeof(pedestalPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(pedestalPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -5250,7 +5250,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 11 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties = sizeof(teleporterPropertyNames) / sizeof(teleporterPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(teleporterPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -5358,7 +5358,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 12 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(ceilingTilePropertyNames) / sizeof(ceilingTilePropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(ceilingTilePropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -5435,7 +5435,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 13 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(spellTrapPropertyNames) / sizeof(spellTrapPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(spellTrapPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -5570,7 +5570,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 14 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(furniturePropertyNames) / sizeof(furniturePropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(furniturePropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -5677,7 +5677,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 15 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(floorDecorationPropertyNames) / sizeof(floorDecorationPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(floorDecorationPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -5909,7 +5909,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 18 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(soundSourcePropertyNames) / sizeof(soundSourcePropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(soundSourcePropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -6026,7 +6026,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 19 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(lightSourcePropertyNames) / sizeof(lightSourcePropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(lightSourcePropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -6132,7 +6132,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 20 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(textSourcePropertyNames) / sizeof(textSourcePropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(textSourcePropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -6520,7 +6520,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 21 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(signalTimerPropertyNames) / sizeof(signalTimerPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(signalTimerPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -6665,7 +6665,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 22 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(customPortalPropertyNames) / sizeof(customPortalPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(customPortalPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -6862,7 +6862,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 23 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(tablePropertyNames) / sizeof(tablePropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(tablePropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -7012,7 +7012,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 24 )
 				{
-						if ( selectedEntity != nullptr )
+						if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(readableBookPropertyNames) / sizeof(readableBookPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(readableBookPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -7154,7 +7154,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 26 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties = sizeof(doorPropertyNames) / sizeof(doorPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(doorPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -7257,7 +7257,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 27 )
 				{
-					if ( selectedEntity != NULL )
+					if ( selectedEntity[0] != NULL )
 					{
 						int numProperties = sizeof(gatePropertyNames) / sizeof(gatePropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(gatePropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -7336,7 +7336,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 28 )
 				{
-					if ( selectedEntity != nullptr )
+					if ( selectedEntity[0] != nullptr )
 					{
 						int numProperties = sizeof(playerSpawnPropertyNames) / sizeof(playerSpawnPropertyNames[0]); //find number of entries in property list
 						const int lenProperties = sizeof(playerSpawnPropertyNames[0]) / sizeof(char); //find length of entry in property list
@@ -7443,7 +7443,7 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 25 )
 				{
-					//if ( selectedEntity != nullptr )
+					//if ( selectedEntity[0] != nullptr )
 					//{
 					//	int numProperties = sizeof(playerClassSetterPropertyNames) / sizeof(playerClassSetterPropertyNames[0]); //find number of entries in property list
 					//	const int lenProperties = sizeof(playerClassSetterPropertyNames[0]) / sizeof(char); //find length of entry in property list
