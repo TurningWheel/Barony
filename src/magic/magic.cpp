@@ -2449,7 +2449,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 				locationTimer->sizey = 4;
 				if ( !locationTimer->myTileListNode )
 				{
-					locationTimer->setUID(-2);
+					locationTimer->setUID(-2); // to avoid being excluded by TileEntityList
 					TileEntityList.addEntity(*locationTimer);
 					locationTimer->setUID(-3);
 				}

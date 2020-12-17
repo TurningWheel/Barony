@@ -17600,7 +17600,7 @@ node_t* TileEntityListHandler::addEntity(Entity& entity)
 		return nullptr;
 	}
 
-	if ( entity.getUID() == -3 )
+	if ( static_cast<Sint32>(entity.getUID()) <= -3 )
 	{
 		return nullptr;
 	}
