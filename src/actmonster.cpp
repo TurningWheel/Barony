@@ -204,6 +204,7 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 		node = list_AddNodeLast(&entity->children); //ASSUMING THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node->element = myStats;
 		node->size = sizeof(myStats);
+		node->deconstructor = &statDeconstructor;
 		//node->deconstructor = myStats->~Stat;
 		if ( entity->parent )
 		{

@@ -894,6 +894,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 							node2->element = myStats;
 							//					node2->deconstructor = &myStats->~Stat;
 							node2->size = sizeof(myStats);
+							node2->deconstructor = &statDeconstructor;
 
 							sex_t dummyVar = MALE; 
 							// we don't actually embed the sex from the editor
