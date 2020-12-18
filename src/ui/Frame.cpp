@@ -368,7 +368,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	if (disabled) {
 		return result;
 	}
-	if (shootmode) {
+	if (players[clientnum]->shootmode) {
 		return result;
 	}
 
