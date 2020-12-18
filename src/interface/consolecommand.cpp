@@ -726,30 +726,30 @@ void consoleCommand(char const * const command_str)
 			joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_ACTIVATE: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_MINIMAPSCALE") )
+		else if ( strstr(command_str, "INJOY_GAME_MINIMAPSCALE") )
 		{
 			joyimpulses[INJOY_GAME_MINIMAPSCALE] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_MINIMAPSCALE: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_MINIMAPSCALE: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_TOGGLECHATLOG") )
+		else if ( strstr(command_str, "INJOY_GAME_TOGGLECHATLOG") )
 		{
 			joyimpulses[INJOY_GAME_TOGGLECHATLOG] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_TOGGLECHATLOG: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_TOGGLECHATLOG: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_FOLLOWERMENU_OPEN") )
+		else if ( strstr(command_str, "INJOY_GAME_FOLLOWERMENU_OPEN") )
 		{
 			joyimpulses[INJOY_GAME_FOLLOWERMENU] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_FOLLOWERMENU_OPEN: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_FOLLOWERMENU_OPEN: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_FOLLOWERMENU_LASTCMD") )
+		else if ( strstr(command_str, "INJOY_GAME_FOLLOWERMENU_LASTCMD") )
 		{
 			joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_FOLLOWERMENU_LASTCMD: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_FOLLOWERMENU_LASTCMD: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_FOLLOWERMENU_CYCLENEXT") )
+		else if ( strstr(command_str, "INJOY_GAME_FOLLOWERMENU_CYCLENEXT") )
 		{
 			joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_FOLLOWERMENU_CYCLENEXT: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_FOLLOWERMENU_CYCLENEXT: %d\n", atoi(&command_str[9]));
 		}
 		else if ( strstr(command_str, "INJOY_MENU_CHEST_GRAB_ALL"))
 		{
