@@ -54,10 +54,16 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	if (_size.w <= 0 || _size.h <= 0)
 		return;
 
-	if (pressed) {
-		drawDepressed(_size.x, _size.y, _size.x + _size.w, _size.y + _size.h);
-	} else {
-		drawWindow(_size.x, _size.y, _size.x + _size.w, _size.y + _size.h);
+	{
+		int x = (_size.x) * (float)xres / (float)Frame::virtualScreenX;
+		int y = (_size.y) * (float)yres / (float)Frame::virtualScreenY;
+		int w = (_size.x + _size.w) * (float)xres / (float)Frame::virtualScreenX;
+		int h = (_size.y + _size.h) * (float)yres / (float)Frame::virtualScreenY;
+		if (pressed) {
+			drawDepressed(x, y, w, h);
+		} else {
+			drawWindow(x, y, w, h);
+		}
 	}
 
 	if (!text.empty() && style != STYLE_CHECKBOX) {
@@ -73,7 +79,13 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			if (pos.w <= 0 || pos.h <= 0) {
 				return;
 			}
-			_text->drawColor(SDL_Rect(), pos, textColor);
+
+			SDL_Rect scaledPos;
+			scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
+			scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
+			scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
+			scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
+			_text->drawColor(SDL_Rect(), scaledPos, textColor);
 		}
 	} else if (icon.c_str()) {
 		// we check a second time, just incase the cache was dumped and the original pointer invalidated.
@@ -96,7 +108,12 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				section.w = ((float)pos.w / (size.w - border * 2)) * w;
 				section.h = ((float)pos.h / (size.h - border * 2)) * h;
 
-				iconImg->draw(&section, pos);
+				SDL_Rect scaledPos;
+				scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
+				scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
+				scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
+				scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
+				iconImg->draw(&section, scaledPos);
 			}
 		}
 	}
@@ -122,7 +139,12 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			section.w = ((float)pos.w / (size.h - border * 2)) * w;
 			section.h = ((float)pos.h / (size.h - border * 2)) * h;
 
-			iconImg->draw(&section, pos);
+			SDL_Rect scaledPos;
+			scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
+			scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
+			scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
+			scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
+			iconImg->draw(&section, scaledPos);
 		}
 	}
 }

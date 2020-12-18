@@ -70,8 +70,14 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	if (rect.w <= 0 || rect.h <= 0)
 		return;
 
+	SDL_Rect scaledRect;
+	scaledRect.x = rect.x * (float)xres / (float)Frame::virtualScreenX;
+	scaledRect.y = rect.y * (float)yres / (float)Frame::virtualScreenY;
+	scaledRect.w = rect.w * (float)xres / (float)Frame::virtualScreenX;
+	scaledRect.h = rect.h * (float)yres / (float)Frame::virtualScreenY;
+
 	if (selected) {
-		drawRect(&rect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
+		drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
 	}
 
 	bool showCursor = (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
@@ -161,10 +167,15 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		return;
 
 	if (selectAll && selected) {
-		drawRect(&rect, SDL_MapRGB(mainsurface->format, 127, 127, 0), 255);
+		drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 127, 127, 0), 255);
 	}
 
-	text->drawColor(src, dest, color);
+	SDL_Rect scaledDest;
+	scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
+	scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
+	scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
+	scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+	text->drawColor(src, scaledDest, color);
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
