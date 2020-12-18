@@ -546,14 +546,16 @@ void navigateMainMenuItems(bool mode)
 
 void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebindingaction)
 {
+	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
+	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
 	ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1948 + c]);
-	if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingaction )
+	if ( inputs.bMouseLeft(clientnum) && !rebindingaction )
 	{
 		if ( omousex >= currentPos.x && omousex < subx2 - 24 )
 		{
 			if ( omousey >= currentPos.y && omousey < currentPos.y + 12 )
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 				if ( settings_joyimpulses[c] != UNBOUND_JOYBINDING )
 				{
 					settings_joyimpulses[c] = UNBOUND_JOYBINDING; //Unbind the joybinding if clicked on.
@@ -803,7 +805,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 
 void inline pauseMenuOnInputPressed()
 {
-	mousestatus[SDL_BUTTON_LEFT] = 0;
+	inputs.mouseClearLeft(clientnum);
 	keystatus[SDL_SCANCODE_RETURN] = 0;
 	playSound(139, 64);
 	if ( rebindaction == -1 )
@@ -815,7 +817,12 @@ void inline pauseMenuOnInputPressed()
 void handleInGamePauseMenu()
 {
 	Uint32 colorGray = uint32ColorGray(*mainsurface);
-	const bool inputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
+
+	Sint32 mousex = inputs.getMouse(clientnum, Inputs::MouseInputs::X);
+	Sint32 mousey = inputs.getMouse(clientnum, Inputs::MouseInputs::Y);
+	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
+	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
+	const bool inputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 	SDL_Rect text;
 	text.x = 50;
 	text.h = 18;
@@ -1249,8 +1256,13 @@ void handleInGamePauseMenu()
 
 void handleTutorialPauseMenu()
 {
+	Sint32 mousex = inputs.getMouse(clientnum, Inputs::MouseInputs::X);
+	Sint32 mousey = inputs.getMouse(clientnum, Inputs::MouseInputs::Y);
+	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
+	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
+
 	const Uint32 colorGray = uint32ColorGray(*mainsurface);
-	const bool inputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
+	const bool inputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 	SDL_Rect text;
 	text.x = 50;
 	text.h = 18;
@@ -1569,6 +1581,10 @@ void handleMainMenu(bool mode)
 	Entity* entity;
 	//SDL_Surface *sky_bmp;
 	button_t* button;
+	Sint32 mousex = inputs.getMouse(clientnum, Inputs::MouseInputs::X);
+	Sint32 mousey = inputs.getMouse(clientnum, Inputs::MouseInputs::Y);
+	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
+	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
 
 #ifdef STEAMWORKS
 	if ( SteamApps()->BIsDlcInstalled(1010820) )
@@ -1765,9 +1781,9 @@ void handleMainMenu(bool mode)
 				&& introstage == 1
 				&& SteamUser()->BLoggedOn() )
 			{
-				if ( mousestatus[SDL_BUTTON_LEFT] )
+				if ( inputs.bMouseLeft(clientnum) )
 				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(clientnum);
 					playSound(139, 64);
 					SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
 				}
@@ -1807,9 +1823,9 @@ void handleMainMenu(bool mode)
 				if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
 					&& subwindow == 0 )
 				{
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						playSound(139, 64);
 						windowEnterSerialPrompt();
 						
@@ -1873,7 +1889,7 @@ void handleMainMenu(bool mode)
 				buttonJoinLobby(nullptr);
 			}
 
-			bool mainMenuSelectInputIsPressed = (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
+			bool mainMenuSelectInputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 
 			//"Start Game" button.
 			SDL_Rect text;
@@ -2499,7 +2515,7 @@ void handleMainMenu(bool mode)
 			drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 			if ( mouseInBounds(clientnum, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
-				if ( mousestatus[SDL_BUTTON_LEFT] )
+				if ( inputs.bMouseLeft(clientnum) )
 				{
 					camera_charsheet_offsetyaw += 0.05;
 					if ( camera_charsheet_offsetyaw > 2 * PI )
@@ -2516,7 +2532,7 @@ void handleMainMenu(bool mode)
 			drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 			if ( mouseInBounds(clientnum, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
-				if ( mousestatus[SDL_BUTTON_LEFT] )
+				if ( inputs.bMouseLeft(clientnum) )
 				{
 					camera_charsheet_offsetyaw -= 0.05;
 					if ( camera_charsheet_offsetyaw < 0.f )
@@ -2536,10 +2552,10 @@ void handleMainMenu(bool mode)
 			drawWindow(raceInfoBtn.x, raceInfoBtn.y, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y + raceInfoBtn.h);
 			if ( mouseInBounds(clientnum, raceInfoBtn.x, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y, raceInfoBtn.y + raceInfoBtn.h) )
 			{
-				if ( inputs.bControllerInputPressed(clientnum, INJOY_MENU_LEFT_CLICK) || mousestatus[SDL_BUTTON_LEFT] )
+				if ( inputs.bControllerInputPressed(clientnum, INJOY_MENU_LEFT_CLICK) || inputs.bMouseLeft(clientnum) )
 				{
 					//drawDepressed(raceInfoBtn.x, raceInfoBtn.y, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y + raceInfoBtn.h);
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(clientnum);
 					inputs.controllerClearInput(clientnum, INJOY_MENU_LEFT_CLICK);
 					showRaceInfo = !showRaceInfo;
 					playSound(139, 64);
@@ -2790,10 +2806,10 @@ void handleMainMenu(bool mode)
 			{
 				if ( omousey >= suby1 + 56 && omousey < suby1 + 72 )
 				{
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
 						raceSelect = 0;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						stats[0]->sex = MALE;
 						lastSex = MALE;
 						if ( stats[0]->playerRace == RACE_SUCCUBUS )
@@ -2820,10 +2836,10 @@ void handleMainMenu(bool mode)
 				}
 				else if ( omousey >= suby1 + 72 && omousey < suby1 + 90 )
 				{
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
 						raceSelect = 0;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						stats[0]->sex = FEMALE;
 						lastSex = FEMALE;
 						if ( stats[0]->playerRace == RACE_INCUBUS )
@@ -2876,10 +2892,10 @@ void handleMainMenu(bool mode)
 									disableSelect = true;
 								}
 							}
-							if ( !disableSelect && mousestatus[SDL_BUTTON_LEFT] )
+							if ( !disableSelect && inputs.bMouseLeft(clientnum) )
 							{
 								raceSelect = 1;
-								mousestatus[SDL_BUTTON_LEFT] = 0;
+								inputs.mouseClearLeft(clientnum);
 								if ( !disableSelect )
 								{
 									PlayerRaces lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
@@ -2903,7 +2919,7 @@ void handleMainMenu(bool mode)
 									{
 										stats[0]->playerRace = c;
 									}
-									mousestatus[SDL_BUTTON_LEFT] = 0;
+									inputs.mouseClearLeft(clientnum);
 									if ( stats[0]->playerRace == RACE_INCUBUS )
 									{
 										stats[0]->sex = MALE;
@@ -2978,7 +2994,7 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 								if ( SteamUser()->BLoggedOn() )
 								{
-									if ( mousestatus[SDL_BUTTON_LEFT] )
+									if ( inputs.bMouseLeft(clientnum) )
 									{
 										if ( SteamUtils()->IsOverlayEnabled() )
 										{
@@ -2995,24 +3011,24 @@ void handleMainMenu(bool mode)
 												openURLTryWithOverlay(language[3992]);
 											}
 										}
-										mousestatus[SDL_BUTTON_LEFT] = 0;
+										inputs.mouseClearLeft(clientnum);
 									}
 								}
 #elif defined USE_EOS
 								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
 								{
-									if ( mousestatus[SDL_BUTTON_LEFT] )
+									if ( inputs.bMouseLeft(clientnum) )
 									{
 										openURLTryWithOverlay(language[3985]);
-										mousestatus[SDL_BUTTON_LEFT] = 0;
+										inputs.mouseClearLeft(clientnum);
 									}
 								}
 								else
 								{
-									if ( mousestatus[SDL_BUTTON_LEFT] )
+									if ( inputs.bMouseLeft(clientnum) )
 									{
 										openURLTryWithOverlay(language[3984]);
-										mousestatus[SDL_BUTTON_LEFT] = 0;
+										inputs.mouseClearLeft(clientnum);
 									}
 								}
 #endif
@@ -3055,9 +3071,9 @@ void handleMainMenu(bool mode)
 				}
 				else if ( omousey >= pady + (NUMPLAYABLERACES * 17) + 48 && omousey < pady + (NUMPLAYABLERACES * 17) + 82 )
 				{
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						if ( stats[0]->playerRace > 0 )
 						{
 							if ( omousey < pady + (NUMPLAYABLERACES * 17) + 64 ) // first option
@@ -3083,7 +3099,7 @@ void handleMainMenu(bool mode)
 							stats[0]->clearStats();
 							initClass(0);
 							raceSelect = 2;
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 						}
 					}
 				}
@@ -3451,13 +3467,13 @@ void handleMainMenu(bool mode)
 					pady += 8;
 				}
 
-				if ( mousestatus[SDL_BUTTON_LEFT] )
+				if ( inputs.bMouseLeft(clientnum) )
 				{
 					if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
 					{
 						if ( omousey >= pady && omousey < pady + 16 )
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 							if ( isCharacterValidFromDLC(*stats[0], classToPick) == VALID_OK_CHARACTER )
 							{
 								int previousClassPicked = client_classes[0];
@@ -3610,13 +3626,13 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + c * 16, "[ ] %s", language[20 + c]);
 				}
-				if ( mousestatus[SDL_BUTTON_LEFT] )
+				if ( inputs.bMouseLeft(clientnum) )
 				{
 					if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
 					{
 						if ( omousey >= suby1 + 56 + 16 * c && omousey < suby1 + 72 + 16 * c )
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 							stats[0]->appearance = c;
 						}
 					}
@@ -3780,13 +3796,13 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 + TTF12_HEIGHT, uint32ColorBaronyBlue(*mainsurface), true, language[2982]);
 				}
-				if ( mousestatus[SDL_BUTTON_LEFT] )
+				if ( inputs.bMouseLeft(clientnum) )
 				{
 					if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
 					{
 						if ( omousey >= optionY.at(mode) && omousey < (optionY.at(mode) + optionHeight) )
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 							multiplayerselect = displayedOptionToGamemode.at(mode);
 						}
 					}
@@ -3976,13 +3992,13 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[ ] %dx%d", width, height);
 				}
-				if ( mousestatus[SDL_BUTTON_LEFT] )
+				if ( inputs.bMouseLeft(clientnum) )
 				{
 					if ( omousex >= subx1 + 38 && omousex < subx1 + 62 )
 					{
 						if ( omousey >= suby1 + 84 + c * 16 && omousey < suby1 + 96 + c * 16 )
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 							settings_xres = width;
 							settings_yres = height;
 							resolutionChanged = true;
@@ -4075,58 +4091,58 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 300, "[ ] %s", language[3935]);
 			}
 
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( inputs.bMouseLeft(clientnum) )
 			{
 				if ( omousex >= subx1 + 242 && omousex < subx1 + 266 )
 				{
 					if ( omousey >= suby1 + 84 && omousey < suby1 + 84 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_smoothlighting = (settings_smoothlighting == 0);
 					}
 					else if ( omousey >= suby1 + 108 && omousey < suby1 + 108 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_fullscreen = (settings_fullscreen == 0);
 					}
 					else if ( omousey >= suby1 + 132 && omousey < suby1 + 132 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_shaking = (settings_shaking == 0);
 					}
 					else if ( omousey >= suby1 + 156 && omousey < suby1 + 156 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_bobbing = (settings_bobbing == 0);
 					}
 					else if ( omousey >= suby1 + 180 && omousey < suby1 + 180 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_spawn_blood = (settings_spawn_blood == 0);
 					}
 					else if ( omousey >= suby1 + 204 && omousey < suby1 + 204 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_colorblind = (settings_colorblind == false);
 					}
 					else if ( omousey >= suby1 + 228 && omousey < suby1 + 228 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_light_flicker = (settings_light_flicker == false);
 					}
 					else if ( omousey >= suby1 + 252 && omousey < suby1 + 252 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_vsync = (settings_vsync == false);
 					}
 					else if ( omousey >= suby1 + 276 && omousey < suby1 + 276 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_status_effect_icons = (settings_status_effect_icons == false);
 					}
 					else if ( omousey >= suby1 + 300 && omousey < suby1 + 300 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_borderless = (settings_borderless == false);
 					}
 				}
@@ -4195,33 +4211,33 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 396, "[ ] %s", language[3159]);
 			}
 
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( inputs.bMouseLeft(clientnum) )
 			{
 				if ( omousex >= subx1 + 498 && omousex < subx1 + 522 )
 				{
 					if ( omousey >= suby1 + 300 && omousey < suby1 + 300 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_uiscale_charactersheet = (settings_uiscale_charactersheet == 0);
 					}
 					else if ( omousey >= suby1 + 324 && omousey < suby1 + 324 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_uiscale_skillspage = (settings_uiscale_skillspage == 0);
 					}
 					else if ( omousey >= suby1 + 348 && omousey < suby1 + 348 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_hide_statusbar = (settings_hide_statusbar == 0);
 					}
 					else if ( omousey >= suby1 + 372 && omousey < suby1 + 372 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_hide_playertags = (settings_hide_playertags == 0);
 					}
 					else if ( omousey >= suby1 + 396 && omousey < suby1 + 396 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_show_skill_values = (settings_show_skill_values == 0);
 					}
 				}
@@ -4288,23 +4304,23 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 312, "[ ] %s", language[3371]);
 			}
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( inputs.bMouseLeft(clientnum) )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
 				{
 					if ( omousey >= suby1 + 168 && omousey < suby1 + 264 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_minimap_ping_mute = (settings_minimap_ping_mute == false);
 					}
 					else if ( omousey >= suby1 + 192 && omousey < suby1 + 288 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_mute_audio_on_focus_lost = (settings_mute_audio_on_focus_lost == false);
 					}
 					else if ( omousey >= suby1 + 216 && omousey < suby1 + 312 + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_mute_player_monster_sounds = (settings_mute_player_monster_sounds == false);
 					}
 				}
@@ -4340,13 +4356,13 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[3901 + (c - 22)]);
 				}
-				if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingkey )
+				if ( inputs.bMouseLeft(clientnum) && !rebindingkey )
 				{
 					if ( omousex >= subx1 + 24 && omousex < subx2 - 24 )
 					{
 						if ( omousey >= suby1 + 84 + c * 16 && omousey < suby1 + 96 + c * 16 )
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 							lastkeypressed = 0;
 							rebindingkey = true;
 							rebindkey = c;
@@ -4387,7 +4403,7 @@ void handleMainMenu(bool mode)
 					settings_impulses[rebindkey] = lastkeypressed;
 					if ( lastkeypressed == 283 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;  // fixes mouse-left not registering bug
+						inputs.mouseClearLeft(clientnum);  // fixes mouse-left not registering bug
 					}
 					rebindkey = -1;
 				}
@@ -4425,23 +4441,23 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 156, "[ ] %s", language[3918]);
 			}
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( inputs.bMouseLeft(clientnum) )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
 				{
 					if ( omousey >= suby1 + 108 && omousey < suby1 + 120 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_reversemouse = (settings_reversemouse == 0);
 					}
 					if ( omousey >= suby1 + 132 && omousey < suby1 + 144 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_smoothmouse = (settings_smoothmouse == 0);
 					}
 					if ( omousey >= suby1 + 156 && omousey < suby1 + 168 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_disablemouserotationlimit = (settings_disablemouserotationlimit == 0);
 					}
 				}
@@ -4527,9 +4543,9 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2401]);
 			}
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
+			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 				settings_gamepad_leftx_invert = !settings_gamepad_leftx_invert;
 			}
 
@@ -4544,9 +4560,9 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2402]);
 			}
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
+			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 				settings_gamepad_lefty_invert = !settings_gamepad_lefty_invert;
 			}
 
@@ -4561,9 +4577,9 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2403]);
 			}
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
+			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 				settings_gamepad_rightx_invert = !settings_gamepad_rightx_invert;
 			}
 
@@ -4578,9 +4594,9 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2404]);
 			}
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
+			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 				settings_gamepad_righty_invert = !settings_gamepad_righty_invert;
 			}
 
@@ -4595,9 +4611,9 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2405]);
 			}
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
+			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 				settings_gamepad_menux_invert = !settings_gamepad_menux_invert;
 			}
 
@@ -4612,9 +4628,9 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2406]);
 			}
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
+			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 				settings_gamepad_menuy_invert = !settings_gamepad_menuy_invert;
 			}
 
@@ -4946,53 +4962,53 @@ void handleMainMenu(bool mode)
 
 			current_y = options_start_y;
 
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( inputs.bMouseLeft(clientnum) )
 			{
 				if ( omousex >= subx1 + 42 && omousex < subx1 + 66 )
 				{
 					if ( omousey >= current_y && omousey < current_y + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_broadcast = (settings_broadcast == false);
 					}
 					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_nohud = (settings_nohud == false);
 					}
 					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_auto_hotbar_new_items = (settings_auto_hotbar_new_items == false);
 					}
 					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_auto_appraise_new_items = (settings_auto_appraise_new_items == false);
 					}
 					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_disable_messages = (settings_disable_messages == false);
 					}
 					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_right_click_protect = (settings_right_click_protect == false);
 					}
 					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_hotbar_numkey_quick_add = (settings_hotbar_numkey_quick_add == false);
 					}
 					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_lock_right_sidebar = (settings_lock_right_sidebar == false);
 					}
 					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_show_game_timer_always = (settings_show_game_timer_always == false);
 					}
 				}
@@ -5000,14 +5016,14 @@ void handleMainMenu(bool mode)
 				{
 					if ( settings_auto_hotbar_new_items )
 					{
-						if ( mousestatus[SDL_BUTTON_LEFT] )
+						if ( inputs.bMouseLeft(clientnum) )
 						{
 							for ( int i = 0; i < NUM_HOTBAR_CATEGORIES; ++i )
 							{
 								if ( mouseInBounds(clientnum, hotbar_options_x, hotbar_options_x + 24, hotbar_options_y, hotbar_options_y + 12) )
 								{
 									settings_auto_hotbar_categories[i] = !settings_auto_hotbar_categories[i];
-									mousestatus[SDL_BUTTON_LEFT] = 0;
+									inputs.mouseClearLeft(clientnum);
 								}
 								hotbar_options_x += 128;
 								if ( i == 3 || i == 7 )
@@ -5020,7 +5036,7 @@ void handleMainMenu(bool mode)
 					}
 
 					// autosort category toggles
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
 						for ( int i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
 						{
@@ -5031,7 +5047,7 @@ void handleMainMenu(bool mode)
 								{
 									settings_autosort_inventory_categories[i] = 9;
 								}
-								mousestatus[SDL_BUTTON_LEFT] = 0;
+								inputs.mouseClearLeft(clientnum);
 							}
 							else if ( mouseInBounds(clientnum, autosort_options_x + 36, autosort_options_x + 52, autosort_options_y, autosort_options_y + 12) )
 							{
@@ -5040,7 +5056,7 @@ void handleMainMenu(bool mode)
 								{
 									settings_autosort_inventory_categories[i] = -9;
 								}
-								mousestatus[SDL_BUTTON_LEFT] = 0;
+								inputs.mouseClearLeft(clientnum);
 							}
 							autosort_options_x += 128;
 							if ( i == 3 || i == 7 )
@@ -5060,7 +5076,7 @@ void handleMainMenu(bool mode)
 						if ( !gameModeManager.isServerflagDisabledForCurrentMode(i)
 							&& mouseInBounds(clientnum, subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12) )
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 
 							// toggle flag
 							settings_svFlags ^= power(2, i);
@@ -5084,9 +5100,9 @@ void handleMainMenu(bool mode)
 					//tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					//drawTooltip(&tooltip_box);
 					//ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_disableFPSLimitOnNetworkMessages = (settings_disableFPSLimitOnNetworkMessages == false);
 					}
 				}
@@ -5098,9 +5114,9 @@ void handleMainMenu(bool mode)
 					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					drawTooltip(&tooltip_box);
 					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						settings_disableMultithreadedSteamNetworking = true;// (settings_disableMultithreadedSteamNetworking == false);
 					}
 				}
@@ -5112,9 +5128,9 @@ void handleMainMenu(bool mode)
 					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					drawTooltip(&tooltip_box);
 					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);*/
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 						LobbyHandler.settings_crossplayEnabled = !LobbyHandler.settings_crossplayEnabled;
 					}
 				}
@@ -6532,11 +6548,11 @@ void handleMainMenu(bool mode)
 		}
 
 		// select gui element w/ mouse
-		if ( mousestatus[SDL_BUTTON_LEFT] )
+		if ( inputs.bMouseLeft(clientnum) )
 		{
 			if ( mouseInBounds(clientnum, subx1 + 16, subx2 - 16, suby2 - 48, suby2 - 32) )
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 
 				// chatbox
 				inputstr = lobbyChatbox;
@@ -6545,7 +6561,7 @@ void handleMainMenu(bool mode)
 			}
 			else if ( mouseInBounds(clientnum, xres / 2, subx2 - 32, suby1 + 56, suby1 + 68) && !directConnect )
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 
 				// lobby name
 				if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
@@ -6573,7 +6589,7 @@ void handleMainMenu(bool mode)
 				{
 					if ( mouseInBounds(clientnum, xres / 2 + 8 + 6, xres / 2 + 8 + 30, suby1 + 80 + i * 16, suby1 + 92 + i * 16) )
 					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						inputs.mouseClearLeft(clientnum);
 
 						// toggle flag
 						svFlags ^= power(2, i);
@@ -6618,7 +6634,7 @@ void handleMainMenu(bool mode)
 					{
 						if ( mouseInBounds(clientnum, xres / 2 + 8 + 6, xres / 2 + 8 + 30, suby1 + 256 + i * 16, suby1 + 268 + i * 16) )
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 							switch ( i )
 							{
 								default:
@@ -6644,7 +6660,7 @@ void handleMainMenu(bool mode)
 					{
 						if ( mouseInBounds(clientnum, xres / 2 + 8 + 6, xres / 2 + 8 + 30, suby1 + 256 + i * 16, suby1 + 268 + i * 16) )
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 							switch ( i )
 							{
 								default:
@@ -7711,7 +7727,7 @@ void handleMainMenu(bool mode)
 				drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 				if ( mouseInBounds(clientnum, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 				{
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
 						camera_charsheet_offsetyaw += 0.05;
 						if ( camera_charsheet_offsetyaw > 2 * PI )
@@ -7728,7 +7744,7 @@ void handleMainMenu(bool mode)
 				drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 				if ( mouseInBounds(clientnum, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 				{
-					if ( mousestatus[SDL_BUTTON_LEFT] )
+					if ( inputs.bMouseLeft(clientnum) )
 					{
 						camera_charsheet_offsetyaw -= 0.05;
 						if ( camera_charsheet_offsetyaw < 0.f )
@@ -8243,10 +8259,10 @@ void handleMainMenu(bool mode)
 					if ( mouseInBounds(clientnum, filename_padx - 4, filename_padx2,
 						filename_pady - 2, filename_pady - 2 + i * TTF12_HEIGHT) )
 					{
-						if ( mousestatus[SDL_BUTTON_LEFT] )
+						if ( inputs.bMouseLeft(clientnum) )
 						{
 							gamemods_window_fileSelect = i;
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(clientnum);
 						}
 					}
 				}
@@ -8391,7 +8407,7 @@ void handleMainMenu(bool mode)
 
 								if ( mouseInBounds(clientnum, status_padx, status_padx + 32 * TTF12_WIDTH, status_pady - 4, status_pady + TTF12_HEIGHT) )
 								{
-									if ( mousestatus[SDL_BUTTON_LEFT] )
+									if ( inputs.bMouseLeft(clientnum) )
 									{
 										switch ( fields )
 										{
@@ -8406,7 +8422,7 @@ void handleMainMenu(bool mode)
 											default:
 												break;
 										}
-										mousestatus[SDL_BUTTON_LEFT] = 0;
+										inputs.mouseClearLeft(clientnum);
 									}
 								}
 
@@ -10802,9 +10818,9 @@ void handleMainMenu(bool mode)
 	if ( creditstage > 0 )
 	{
 		if ( (credittime >= 300 && (creditstage <= 11 || creditstage > 13)) || (credittime >= 180 && creditstage == 12) ||
-		        (credittime >= 480 && creditstage == 13) || mousestatus[SDL_BUTTON_LEFT] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1) )
+		        (credittime >= 480 && creditstage == 13) || inputs.bMouseLeft(clientnum) || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1) )
 		{
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			if ( rebindaction == -1 )
 			{
 				inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
@@ -10932,11 +10948,11 @@ void handleMainMenu(bool mode)
 		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
 		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
-		if ( intromovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
+		if ( intromovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1) )
 		{
 			intromovietime = 0;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			if ( rebindaction == -1 )
 			{
 				inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
@@ -11027,11 +11043,11 @@ void handleMainMenu(bool mode)
 		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
 		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
-		if ( firstendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
+		if ( firstendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (firstendmovietime >= 120 && firstendmoviestage == 1) )
 		{
 			firstendmovietime = 0;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			if ( firstendmoviestage != 5 )
 			{
 				firstendmoviestage++;
@@ -11105,11 +11121,11 @@ void handleMainMenu(bool mode)
 		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
 		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
-		if ( secondendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
+		if ( secondendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (secondendmovietime >= 120 && secondendmoviestage == 1) )
 		{
 			secondendmovietime = 0;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			if ( secondendmoviestage != 7 )
 			{
 				secondendmoviestage++;
@@ -11198,11 +11214,11 @@ void handleMainMenu(bool mode)
 		drawRect(&pos, 0, 255);
 		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
-		if ( thirdendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
+		if ( thirdendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (thirdendmovietime >= 120 && thirdendmoviestage == 1) )
 		{
 			thirdendmovietime = 0;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			if ( thirdendmoviestage < thirdEndNumLines )
 			{
 				thirdendmoviestage++;
@@ -11309,7 +11325,7 @@ void handleMainMenu(bool mode)
 		drawImageScaled(backdrop_blessed_bmp, NULL, &pos);
 
 		if ( fourthendmovietime >= 600 
-			|| (mousestatus[SDL_BUTTON_LEFT] 
+			|| (inputs.bMouseLeft(clientnum) 
 				&& fourthendmoviestage < 10 
 				&& fourthendmoviestage != 10 
 				&& fourthendmoviestage != 5
@@ -11323,7 +11339,7 @@ void handleMainMenu(bool mode)
 			)
 		{
 			fourthendmovietime = 0;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			if ( fourthendmoviestage < fourthEndNumLines )
 			{
 				fourthendmoviestage++;
@@ -11496,11 +11512,11 @@ void handleMainMenu(bool mode)
 		drawRect(&pos, 0, 255);
 		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
-		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 120 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 1) )
 		{
 			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < DLCendmovieNumLines[movieType] )
 			{
 				DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
@@ -11682,7 +11698,7 @@ void handleMainMenu(bool mode)
 		drawImageScaled(backdrop_blessed_bmp, NULL, &pos);
 
 		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600
-			|| (mousestatus[SDL_BUTTON_LEFT]
+			|| (inputs.bMouseLeft(clientnum)
 				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10
 				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] != 10
 				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] != 5
@@ -11696,7 +11712,7 @@ void handleMainMenu(bool mode)
 			)
 		{
 			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < DLCendmovieNumLines[movieType] )
 			{
 				DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
@@ -14260,7 +14276,7 @@ void applySettings()
 
 void openConfirmResolutionWindow()
 {
-	mousestatus[SDL_BUTTON_LEFT] = 0;
+	inputs.mouseClearLeft(clientnum);
 	keystatus[SDL_SCANCODE_RETURN] = 0;
 	inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 	playSound(139, 64);
@@ -14668,6 +14684,10 @@ void buttonDeleteCurrentScore(button_t* my)
 void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int* var, SDL_Surface* slider_font, int slider_font_char_width)
 {
 	int c;
+	Sint32 mousex = inputs.getMouse(clientnum, Inputs::MouseInputs::X);
+	Sint32 mousey = inputs.getMouse(clientnum, Inputs::MouseInputs::Y);
+	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
+	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
 
 	// build bar
 	strcpy(tempstr, "| ");
@@ -14681,7 +14701,7 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 	// control
 	int range = maxvalue - minvalue;
 	int sliderLength = ((strlen(tempstr) - 4) * (slider_font->w / slider_font_char_width));
-	if ( mousestatus[SDL_BUTTON_LEFT] )
+	if ( inputs.bMouseLeft(clientnum) )
 	{
 		if ( omousex >= x && omousex < x + sliderLength + (slider_font->w / slider_font_char_width) )
 		{
@@ -14709,6 +14729,10 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 void doSliderF(int x, int y, int dots, real_t minvalue, real_t maxvalue, real_t increment, real_t* var)
 {
 	int c;
+	Sint32 mousex = inputs.getMouse(clientnum, Inputs::MouseInputs::X);
+	Sint32 mousey = inputs.getMouse(clientnum, Inputs::MouseInputs::Y);
+	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
+	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
 
 	// build bar
 	strcpy(tempstr, "| ");
@@ -14722,7 +14746,7 @@ void doSliderF(int x, int y, int dots, real_t minvalue, real_t maxvalue, real_t 
 	// control
 	real_t range = maxvalue - minvalue;
 	int sliderLength = ((strlen(tempstr) - 6) * (SLIDERFONT->w / 16));
-	if ( mousestatus[SDL_BUTTON_LEFT] )
+	if ( inputs.bMouseLeft(clientnum) )
 	{
 		if ( omousex >= x && omousex < x + sliderLength + (SLIDERFONT->w / 16) )
 		{
@@ -16589,7 +16613,7 @@ void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y)
 	if ( mouseInBounds(clientnum, x, x + printText.size() * TTF12_WIDTH, y, y + TTF12_HEIGHT) )
 	{
 		ttfPrintTextColor(ttf12, x, y, SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255), true, printText.c_str());
-		if ( mousestatus[SDL_BUTTON_LEFT] )
+		if ( inputs.bMouseLeft(clientnum) )
 		{
 			playSound(139, 64);
 			if ( foundTag )
@@ -16600,7 +16624,7 @@ void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y)
 			{
 				g_SteamWorkshop->workshopItemTags.push_back(tagname);
 			}
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 		}
 	}
 	else
@@ -16770,10 +16794,10 @@ bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 
 	if ( mouseInBounds(clientnum, padx, padx + padw, pady - 4, pady + padh) )
 	{
 		drawDepressed(padx, pady - 4, padx + padw, pady + padh);
-		if ( mousestatus[SDL_BUTTON_LEFT] )
+		if ( inputs.bMouseLeft(clientnum) )
 		{
 			playSound(139, 64);
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			clicked = true;
 		}
 	}
@@ -17223,10 +17247,10 @@ bool drawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor
 	if ( mouseInBounds(clientnum, padx, padx + padw, pady - 4, pady + padh) )
 	{
 		drawDepressed(padx, pady - 4, padx + padw, pady + padh);
-		if ( mousestatus[SDL_BUTTON_LEFT] )
+		if ( inputs.bMouseLeft(clientnum) )
 		{
 			playSound(139, 64);
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 			clicked = true;
 		}
 	}
