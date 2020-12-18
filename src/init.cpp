@@ -36,6 +36,9 @@
 #include "player.hpp"
 #include "items.hpp"
 #include "cppfuncs.hpp"
+#include "ui/Text.hpp"
+#include "ui/Font.hpp"
+#include "ui/Image.hpp"
 
 #ifdef USE_FMOD
  #include "fmod.h"
@@ -2129,6 +2132,11 @@ int deinitApp()
 	{
 		TTF_CloseFont(ttf16);
 	}
+
+	printlog("freeing ui resources...\n");
+	Text::dumpCache();
+	Image::dumpCache();
+	Font::dumpCache();
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )

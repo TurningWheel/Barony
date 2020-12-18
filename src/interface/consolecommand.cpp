@@ -2961,6 +2961,7 @@ void consoleCommand(char const * const command_str)
 			EOS.CrossplayAccountManager.autologin = true;
 #endif // USE_EOS
 		}
+#if (defined SOUND)
 		else if ( !strncmp(command_str, "/sfxambientvolume", 17) )
 		{
 			sfxAmbientVolume = atoi(&command_str[18]);
@@ -2993,6 +2994,7 @@ void consoleCommand(char const * const command_str)
 		{
 			sfxEnvironmentVolume = atoi(&command_str[22]);
 		}
+#endif
 		else if ( !strncmp(command_str, "/cyclekeyboard", 14) )
 		{
 			for ( int i = 0; i < MAXPLAYERS; ++i )
