@@ -11,7 +11,7 @@ private:
 	Image(const char* _name);
 	Image(const Image&) = delete;
 	Image(Image&&) = delete;
-	virtual ~Image();
+	~Image();
 
 	Image& operator=(const Image&) = delete;
 	Image& operator=(Image&&) = delete;

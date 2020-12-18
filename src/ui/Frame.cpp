@@ -259,12 +259,23 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
 			scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
 			scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+			if (scaledDest.w <= 0 || scaledDest.h <= 0) {
+				continue;
+			}
 
 			SDL_Rect src;
 			src.x = std::max(0, _size.x - pos.x);
 			src.y = std::max(0, _size.y - pos.y);
-			src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
-			src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+			if (image->tiled) {
+				src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+				src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+			} else {
+				src.w = ((float)dest.w / pos.w) * actualImage->getWidth();
+				src.h = ((float)dest.h / pos.h) * actualImage->getHeight();
+			}
+			if (src.w <= 0 || src.h <= 0) {
+				continue;
+			}
 
 			actualImage->drawColor(&src, scaledDest, image->color);
 		}
@@ -309,7 +320,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
 			if (src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0)
-				break;
+				continue;
 
 			// TODO entry highlighting
 			SDL_Rect entryback = dest;
@@ -332,6 +343,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
 			scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
 			scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+			if (scaledDest.h <= 0 || scaledDest.w <= 0) {
+				continue;
+			}
 			text->drawColor(src, scaledDest, entry.color);
 		}
 	}
@@ -1076,8 +1090,6 @@ void Frame::resizeForEntries() {
 }
 
 bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
-	int xres = xres;
-	int yres = yres;
 	SDL_Rect newSize = SDL_Rect{0, 0, xres, yres};
 	SDL_Rect newActualSize = SDL_Rect{0, 0, xres, yres};
 	SDL_Rect& _size = curSize ? *curSize : newSize;
@@ -1188,7 +1200,7 @@ void Frame::activateEntry(entry_t& entry) {
 void createTestUI() {
 	Frame* window = gui->addFrame("window");
 	window->setSize(SDL_Rect{(Frame::virtualScreenX - 500) / 2, (Frame::virtualScreenY - 400) / 2, 500, 400});
-	window->setActualSize(SDL_Rect{0, 0, 1500, 1200});
+	window->setActualSize(SDL_Rect{0, 0, 1500, 1500});
 	window->setColor(SDL_MapRGBA(mainsurface->format, 128, 128, 160, 255));
 
 	{
@@ -1258,7 +1270,7 @@ void createTestUI() {
 		field->setText("Editable text");
 		field->setEditable(true);
 
-		y += 50;
+		y += 60;
 	}
 
 	{
@@ -1288,6 +1300,15 @@ void createTestUI() {
 			entry->text = "Entry #2";
 			entry->tooltip = "Another entry in the frame";
 		}
+
+		y += 210;
+	}
+
+	{
+		Frame::image_t* image = window->addImage(
+			SDL_Rect{510, y, 200, 200}, 0xffffffff,
+			"images/system/shopkeeper.png", "shopkeeper"
+		);
 
 		y += 210;
 	}

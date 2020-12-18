@@ -11,7 +11,7 @@ private:
 	Text(const char* _name);
 	Text(const Text&) = delete;
 	Text(Text&&) = delete;
-	virtual ~Text();
+	~Text();
 
 	Text& operator=(const Text&) = delete;
 	Text& operator=(Text&&) = delete;

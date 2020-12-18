@@ -42,6 +42,7 @@ public:
 		std::string path;
 		Uint32 color;
 		SDL_Rect pos;
+		bool tiled = false;
 	};
 
 	struct entry_t;

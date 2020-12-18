@@ -10,15 +10,13 @@ class Frame;
 //! A Field is a text field that lives in a Frame. It can be edited, or locked for editing to just have some static text in a window.
 class Field : public Widget {
 public:
-	Field();
 	Field(const int _textLen);
 	Field(const char* _text);
-	Field(Frame& _parent);
 	Field(Frame& _parent, const int _textLen);
 	Field(Frame& _parent, const char* _text);
 	Field(const Field&) = delete;
 	Field(Field&&) = delete;
-	~Field();
+	virtual ~Field();
 
 	Field& operator=(const Field&) = delete;
 	Field& operator=(Field&&) = delete;
@@ -58,7 +56,7 @@ public:
 	result_t process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable);
 
 	virtual type_t              getType() const override { return WIDGET_FIELD; }
-	const char*					getText() const { return text.c_str(); }
+	const char*					getText() const { return text; }
 	const char*					getFont() const { return font.c_str(); }
 	const Uint32&				getColor() const { return color; }
 	const SDL_Rect				getSize() const { return size; }
@@ -69,7 +67,7 @@ public:
 	Widget::Args&				getParams() { return params; }
 	const Widget::Callback*		getCallback() const { return callback; }
 
-	void	setText(const char* _text) { text = _text; }
+	void	setText(const char* _text);
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
 	void	setSize(const SDL_Rect& _size) { size = _size; }
 	void	setColor(const Uint32& _color) { color = _color; }
@@ -85,7 +83,8 @@ public:
 private:
 	Widget::Args params;								//!< script arguments to use when calling script
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field
-	std::string text;									//!< internal text buffer
+	char* text = nullptr;								//!< internal text buffer
+	size_t textlen = 0;									//!< length of internal text buffer
 	Uint32 color = 0xFFFFFFFF;							//!< text color
 	SDL_Rect size;										//!< size of the field in pixels
 	justify_t hjustify = LEFT;							//!< horizontal text justification

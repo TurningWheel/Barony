@@ -10,7 +10,7 @@ private:
 	Font(const char* _name);
 	Font(const Font&) = delete;
 	Font(Font&&) = delete;
-	virtual ~Font();
+	~Font();
 
 	Font& operator=(const Font&) = delete;
 	Font& operator=(Font&&) = delete;
