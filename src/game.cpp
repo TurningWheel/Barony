@@ -2520,6 +2520,11 @@ void handleButtons(void)
 	button_t* button;
 	int w = 0, h = 0;
 
+	Sint32 mousex = inputs.getMouse(clientnum, Inputs::MouseInputs::X);
+	Sint32 mousey = inputs.getMouse(clientnum, Inputs::MouseInputs::Y);
+	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
+	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
+
 	// handle buttons
 	for ( node = button_l.first; node != NULL; node = nextnode )
 	{
@@ -2585,7 +2590,7 @@ void handleButtons(void)
 				button->pressed = true;
 				button->needclick = false;
 			}
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( inputs.bMouseLeft(clientnum) )
 			{
 				if ( mousex >= button->x && mousex < button->x + button->sizex && omousex >= button->x && omousex < button->x + button->sizex )
 				{
@@ -2618,7 +2623,7 @@ void handleButtons(void)
 			{
 				drawDepressed(button->x, button->y, button->x + button->sizex, button->y + button->sizey);
 				ttfPrintText(ttf12, button->x + (button->sizex - w) / 2 - 2, button->y + (button->sizey - h) / 2 + 3, button->label);
-				if ( !mousestatus[SDL_BUTTON_LEFT] && !keystatus[button->key] )
+				if ( !inputs.bMouseLeft(clientnum) && !keystatus[button->key] )
 				{
 					if ( ( omousex >= button->x && omousex < button->x + button->sizex ) || !button->needclick )
 					{
@@ -4576,8 +4581,10 @@ int main(int argc, char** argv)
 						}
 
 						if ( !command && (*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT]) 
-							|| inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE)) )
+							|| (inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE) 
+								&& (players[player]->shootmode || FollowerMenu[player].followerMenuIsOpen()) )) )
 						{
+							// can select next follower in inventory or shootmode
 							FollowerMenu[player].selectNextFollower();
 							players[player]->characterSheet.proficienciesPage = 1;
 							if ( players[player]->shootmode && !players[player]->characterSheet.lock_right_sidebar )
