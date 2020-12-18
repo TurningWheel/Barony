@@ -54,8 +54,6 @@ extern list_t safePacketsSent;
 extern std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 extern bool receivedclientnum;
 
-extern Entity* hudweapon, *hudarm;
-
 extern Uint32 clientplayer;
 extern Sint32 numplayers;
 extern Sint32 clientnum;
@@ -95,7 +93,6 @@ extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
 extern real_t fps;
-extern bool shootmode;
 static const int NUMCLASSES = 21;
 #define NUMRACES 13
 #define NUMPLAYABLERACES 9
@@ -227,6 +224,7 @@ void actTorch(Entity* my);
 void actCrystalShard(Entity* my);
 void actDoor(Entity* my);
 void actHudWeapon(Entity* my);
+void actHudArm(Entity* my);
 void actHudShield(Entity* my);
 void actHudAdditional(Entity* my);
 void actHudArrowModel(Entity* my);
@@ -247,6 +245,7 @@ void actMagic(Entity* my);
 Entity* castMagic(Entity* parentent);
 void actSprite(Entity* my);
 void actSpriteNametag(Entity* my);
+void actSpriteWorldTooltip(Entity* my);
 void actSleepZ(Entity* my);
 Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z);
@@ -296,8 +295,8 @@ extern Uint32 serverSchedulePlayerHealthUpdate;
 
 // function prototypes for charclass.c:
 void initClass(int player);
-void initShapeshiftHotbar();
-void deinitShapeshiftHotbar();
+void initShapeshiftHotbar(int player);
+void deinitShapeshiftHotbar(int player);
 bool playerUnlockedShamanSpell(int player, Item* item);
 
 extern char last_ip[64];
@@ -342,8 +341,6 @@ extern bool enabledDLCPack1;
 extern bool enabledDLCPack2;
 extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
-extern int monsterEmoteGimpTimer;
-extern int selectedEntityGimpTimer;
 void mapLevel(int player);
 void mapFoodOnLevel(int player);
 

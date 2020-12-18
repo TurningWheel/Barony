@@ -1037,7 +1037,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 	}
 
 	int detectDuration = 5 * TICKS_PER_SECOND;
-	if ( my->ticks % (detectDuration) == 0 && my->monsterAllyIndex == clientnum )
+	if ( my->ticks % (detectDuration) == 0 && my->monsterAllyIndex >= 0 && players[my->monsterAllyIndex]->isLocalPlayer() )
 	{
 		Entity* playerLeader = my->monsterAllyGetPlayerLeader();
 		bool doPing = false;
@@ -1127,7 +1127,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 							int magic = 0;
 							if ( itemOnGround )
 							{
-								GenericGUI.tinkeringGetItemValue(itemOnGround, &metal, &magic);
+								GenericGUIMenu::tinkeringGetItemValue(itemOnGround, &metal, &magic);
 								if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_METAL
 									&& metal > 0 )
 								{
@@ -1179,8 +1179,8 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			int pingx = my->x / 16;
 			int pingy = my->y / 16;
-			MinimapPing radiusPing(ticks, clientnum, pingx, pingy, true);
-			minimapPingAdd(radiusPing);
+			MinimapPing radiusPing(ticks, my->monsterAllyIndex, pingx, pingy, true);
+			minimapPingAdd(my->monsterAllyIndex, my->monsterAllyIndex, radiusPing);
 
 			if ( foundGoodSound >= 1 )
 			{

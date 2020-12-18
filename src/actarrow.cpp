@@ -558,7 +558,7 @@ void actArrow(Entity* my)
 						playSoundEntity(hit.entity, 28, 64);
 						if ( hit.entity->behavior == &actPlayer )
 						{
-							if ( hit.entity->skill[2] == clientnum || splitscreen )
+							if ( players[hit.entity->skill[2]]->isLocalPlayer() )
 							{
 								cameravars[hit.entity->skill[2]].shakex += .1;
 								cameravars[hit.entity->skill[2]].shakey += 10;
@@ -587,7 +587,7 @@ void actArrow(Entity* my)
 						// playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
 						{
-							if ( hit.entity->skill[2] == clientnum || splitscreen )
+							if ( players[hit.entity->skill[2]]->isLocalPlayer() )
 							{
 								cameravars[hit.entity->skill[2]].shakex += .05;
 								cameravars[hit.entity->skill[2]].shakey += 5;
@@ -825,7 +825,7 @@ void actArrow(Entity* my)
 										pushbackMultiplier += 0.5;
 									}
 								}
-								if ( hit.entity->skill[2] != clientnum )
+								if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
 								{
 									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
 									hit.entity->monsterKnockbackTangentDir = my->yaw;

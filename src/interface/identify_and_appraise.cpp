@@ -20,330 +20,344 @@
 #include "../scores.hpp"
 
 //Identify GUI definitions.
-bool identifygui_active = false;
-bool identifygui_appraising = false;
-int identifygui_offset_x = 0;
-int identifygui_offset_y = 0;
-bool dragging_identifyGUI = false;
-int identifyscroll = 0;
-Item* identify_items[NUM_IDENTIFY_GUI_ITEMS];
 SDL_Surface* identifyGUI_img;
 
-int selectedIdentifySlot = -1;
+//void rebuildIdentifyGUIInventory(const int player)
+//{
+//	list_t* identify_inventory = &stats[player]->inventory;
+//	node_t* node = nullptr;
+//	Item* item = nullptr;
+//	int c = 0;
+//
+//	if (identify_inventory)
+//	{
+//		//Count the number of items in the identify GUI "inventory".
+//		for (node = identify_inventory->first; node != NULL; node = node->next)
+//		{
+//			item = (Item*) node->element;
+//			if (item && !item->identified)
+//			{
+//				c++;
+//			}
+//		}
+//		identifyscroll[player] = std::max(0, std::min(identifyscroll[player], c - 4));
+//		for (c = 0; c < 4; ++c)
+//		{
+//			identify_items[player][c] = NULL;
+//		}
+//		c = 0;
+//
+//		//Assign the visible items to the GUI slots.
+//		for (node = identify_inventory->first; node != NULL; node = node->next)
+//		{
+//			if (node->element)
+//			{
+//				item = (Item*) node->element;
+//				if (item && !item->identified)   //Skip over all identified items.
+//				{
+//					c++;
+//					if (c <= identifyscroll[player] )
+//					{
+//						continue;
+//					}
+//					identify_items[player][c - identifyscroll[player] - 1] = item;
+//					if (c > 3 + identifyscroll[player] )
+//					{
+//						break;
+//					}
+//				}
+//			}
+//		}
+//	}
+//}
 
-void rebuildIdentifyGUIInventory()
-{
-	list_t* identify_inventory = &stats[clientnum]->inventory;
-	node_t* node = nullptr;
-	Item* item = nullptr;
-	int c = 0;
+//void CloseIdentifyGUI(const int player)
+//{
+//	identifygui_active[player] = false;
+//	selectedIdentifySlot[player] = -1;
+//}
 
-	if (identify_inventory)
-	{
-		//Count the number of items in the identify GUI "inventory".
-		for (node = identify_inventory->first; node != NULL; node = node->next)
-		{
-			item = (Item*) node->element;
-			if (item && !item->identified)
-			{
-				c++;
-			}
-		}
-		identifyscroll = std::max(0, std::min(identifyscroll, c - 4));
-		for (c = 0; c < 4; ++c)
-		{
-			identify_items[c] = NULL;
-		}
-		c = 0;
+//const int getIdentifyGUIStartX(const int player)
+//{
+//	return ((players[player]->camera_midx() - (inventoryChest_bmp->w / 2)) + identifygui_offset_x[player]);
+//}
+//
+//const int getIdentifyGUIStartY(const int player)
+//{
+//	return ((players[player]->camera_midy() - (inventoryChest_bmp->h / 2)) + identifygui_offset_y[player]);
+//}
 
-		//Assign the visible items to the GUI slots.
-		for (node = identify_inventory->first; node != NULL; node = node->next)
-		{
-			if (node->element)
-			{
-				item = (Item*) node->element;
-				if (item && !item->identified)   //Skip over all identified items.
-				{
-					c++;
-					if (c <= identifyscroll)
-					{
-						continue;
-					}
-					identify_items[c - identifyscroll - 1] = item;
-					if (c > 3 + identifyscroll)
-					{
-						break;
-					}
-				}
-			}
-		}
-	}
-}
+//void updateIdentifyGUI(const int player)
+//{
+//	//if (openedChest[clientnum])
+//	//	return; //Cannot have the identify and chest GUIs open at the same time.
+//
+//	const Sint32 omousex = inputs.getMouse(clientnum, Inputs::OX);
+//	const Sint32 omousey = inputs.getMouse(clientnum, Inputs::OY);
+//
+//	SDL_Rect pos;
+//	node_t* node;
+//	int y, c;
+//
+//	//Identify GUI.
+//	if ( identifygui_active[player] )
+//	{
+//		//Center the identify GUI.
+//		pos.x = getIdentifyGUIStartX(player);
+//		pos.y = getIdentifyGUIStartY(player);
+//		drawImage(identifyGUI_img, NULL, &pos);
+//
+//		//Buttons
+//		if ( mousestatus[SDL_BUTTON_LEFT] )
+//		{
+//			//Identify GUI scroll up button.
+//			if (omousey >= getIdentifyGUIStartY(player) + 16
+//				&& omousey < getIdentifyGUIStartY(player) + 52)
+//			{
+//				if (omousex >= getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28) 
+//					&& omousex < getIdentifyGUIStartX(player) + (identifyGUI_img->w - 12))
+//				{
+//					buttonclick = 7;
+//					identifyscroll[player]--;
+//					mousestatus[SDL_BUTTON_LEFT] = 0;
+//				}
+//			}
+//			//Identify GUI scroll down button.
+//			else if (omousey >= getIdentifyGUIStartY(player) + 52
+//				&& omousey < getIdentifyGUIStartY(player) + 88)
+//			{
+//				if (omousex >= getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28)
+//					&& omousex < getIdentifyGUIStartX(player) + (identifyGUI_img->w - 12))
+//				{
+//					buttonclick = 8;
+//					identifyscroll[player]++;
+//					mousestatus[SDL_BUTTON_LEFT] = 0;
+//				}
+//			}
+//			else if (omousey >= getIdentifyGUIStartY(player)
+//				&& omousey < getIdentifyGUIStartY(player) + 15)
+//			{
+//				//Identify GUI close button.
+//				if (omousex >= getIdentifyGUIStartX(player) + 393 
+//					&& omousex < getIdentifyGUIStartX(player) + 407)
+//				{
+//					buttonclick = 9;
+//					mousestatus[SDL_BUTTON_LEFT] = 0;
+//				}
+//				if (omousex >= getIdentifyGUIStartX(player) 
+//					&& omousex < getIdentifyGUIStartX(player) + 377 
+//					&& omousey >= getIdentifyGUIStartY(player)
+//					&& omousey < getIdentifyGUIStartY(player) + 15)
+//				{
+//					gui_clickdrag = true;
+//					dragging_identifyGUI[player] = true;
+//					dragoffset_x = omousex - getIdentifyGUIStartX(player);
+//					dragoffset_y = omousey - getIdentifyGUIStartY(player);
+//					mousestatus[SDL_BUTTON_LEFT] = 0;
+//				}
+//			}
+//		}
+//
+//		// mousewheel
+//		if ( omousex >= getIdentifyGUIStartX(player) + 12 && omousex < getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28) )
+//		{
+//			if ( omousey >= getIdentifyGUIStartY(player) + 16 && omousey < getIdentifyGUIStartY(player) + (identifyGUI_img->h - 8) )
+//			{
+//				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+//				{
+//					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+//					identifyscroll[player]++;
+//				}
+//				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+//				{
+//					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+//					identifyscroll[player]--;
+//				}
+//			}
+//		}
+//
+//		if (dragging_identifyGUI)
+//		{
+//			if (gui_clickdrag)
+//			{
+//				identifygui_offset_x[player] = (omousex - dragoffset_x) - (getIdentifyGUIStartX(player) - identifygui_offset_x[player]);
+//				identifygui_offset_y[player] = (omousey - dragoffset_y) - (getIdentifyGUIStartY(player) - identifygui_offset_y[player]);
+//				if ( getIdentifyGUIStartX(player) <= 0)
+//				{
+//					identifygui_offset_x[player] = 0 - (getIdentifyGUIStartX(player) - identifygui_offset_x[player]);
+//				}
+//				if ( getIdentifyGUIStartX(player) > 0 + xres - identifyGUI_img->w)
+//				{
+//					identifygui_offset_x[player] = (0 + xres - identifyGUI_img->w) - (getIdentifyGUIStartX(player) - identifygui_offset_x[player]);
+//				}
+//				if (getIdentifyGUIStartY(player) <= 0)
+//				{
+//					identifygui_offset_y[player] = 0 - (getIdentifyGUIStartY(player) - identifygui_offset_y[player]);
+//				}
+//				if ( getIdentifyGUIStartY(player) > 0 + yres - identifyGUI_img->h)
+//				{
+//					identifygui_offset_y[player] = (0 + yres - identifyGUI_img->h) - (getIdentifyGUIStartY(player) - identifygui_offset_y[player]);
+//				}
+//			}
+//			else
+//			{
+//				dragging_identifyGUI[player] = false;
+//			}
+//		}
+//
+//		list_t* identify_inventory = &stats[clientnum]->inventory;
+//
+//		if (!identify_inventory)
+//		{
+//			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
+//		}
+//		else
+//		{
+//			//Print the window label signifying this as the identify GUI.
+//			char* window_name;
+//			if (identifygui_appraising)
+//			{
+//				window_name = language[317];
+//			}
+//			else
+//			{
+//				window_name = language[318];
+//			}
+//			ttfPrintText(ttf8, (getIdentifyGUIStartX(player) + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), 
+//				getIdentifyGUIStartY(player) + 4, window_name);
+//
+//			//Identify GUI up button.
+//			if (buttonclick == 7)
+//			{
+//				pos.x = getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28);
+//				pos.y = getIdentifyGUIStartY(player) + 16;
+//				pos.w = 0;
+//				pos.h = 0;
+//				drawImage(invup_bmp, NULL, &pos);
+//			}
+//			//Identify GUI down button.
+//			if (buttonclick == 8)
+//			{
+//				pos.x = getIdentifyGUIStartX(player) + (identifyGUI_img->w - 28);
+//				pos.y = getIdentifyGUIStartY(player) + 52;
+//				pos.w = 0;
+//				pos.h = 0;
+//				drawImage(invdown_bmp, NULL, &pos);
+//			}
+//			//Identify GUI close button.
+//			if (buttonclick == 9)
+//			{
+//				pos.x = getIdentifyGUIStartX(player) + 393;
+//				pos.y = getIdentifyGUIStartY(player);
+//				pos.w = 0;
+//				pos.h = 0;
+//				drawImage(invclose_bmp, NULL, &pos);
+//				identifygui_active[player] = false;
+//				identifygui_appraising[player] = false;
+//
+//				//Cleanup identify GUI gamecontroller code here.
+//				selectedIdentifySlot[player] = -1;
+//				//TODO: closeIdentifyGUI() instead.
+//			}
+//
+//			Item* item = NULL;
+//
+//			bool selectingSlot = false;
+//			SDL_Rect slotPos;
+//			slotPos.x = getIdentifyGUIStartX(player);
+//			slotPos.w = inventoryoptionChest_bmp->w;
+//			slotPos.y = getIdentifyGUIStartY(player) + 16;
+//			slotPos.h = inventoryoptionChest_bmp->h;
+//			for ( int i = 0; i < NUM_IDENTIFY_GUI_ITEMS; ++i, slotPos.y += slotPos.h )
+//			{
+//				pos.x = slotPos.x + 12;
+//				pos.w = 0;
+//				pos.h = 0;
+//
+//				if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && identify_items[i] )
+//				{
+//					pos.y = slotPos.y;
+//					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
+//					selectedIdentifySlot[player] = i;
+//					selectingSlot = true;
+//					if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+//					{
+//						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+//						mousestatus[SDL_BUTTON_LEFT] = 0;
+//						identifyGUIIdentify(player, identify_items[player][i]);
+//
+//						rebuildIdentifyGUIInventory(player);
+//						if ( identify_items[player][i] == nullptr )
+//						{
+//							if ( identify_items[player][0] == nullptr )
+//							{
+//								//Go back to inventory.
+//								selectedIdentifySlot[player] = -1;
+//								warpMouseToSelectedInventorySlot(clientnum);
+//							}
+//							else
+//							{
+//								//Move up one slot.
+//								--selectedIdentifySlot[player];
+//								warpMouseToSelectedIdentifySlot(player);
+//							}
+//						}
+//					}
+//				}
+//			}
+//
+//			if ( !selectingSlot )
+//			{
+//				selectedIdentifySlot[player] = -1;
+//			}
+//
+//			//Okay, now prepare to render all the items.
+//			y = getIdentifyGUIStartY(player) + 22;
+//			c = 0;
+//			if (identify_inventory)
+//			{
+//				rebuildIdentifyGUIInventory(player);
+//
+//				//Actually render the items.
+//				c = 0;
+//				for (node = identify_inventory->first; node != NULL; node = node->next)
+//				{
+//					if (node->element)
+//					{
+//						item = (Item*) node->element;
+//						if (item && !item->identified)   //Skip over all identified items.
+//						{
+//							c++;
+//							if (c <= identifyscroll[player] )
+//							{
+//								continue;
+//							}
+//							char tempstr[64] = { 0 };
+//							strncpy(tempstr, item->description(), 46);
+//							if ( strlen(tempstr) == 46 )
+//							{
+//								strcat(tempstr, " ...");
+//							}
+//							ttfPrintText(ttf8, getIdentifyGUIStartX(player) + 36, y, tempstr);
+//							pos.x = getIdentifyGUIStartX(player) + 16;
+//							pos.y = getIdentifyGUIStartY(player) + 17 + 18 * (c - identifyscroll[player] - 1);
+//							pos.w = 16;
+//							pos.h = 16;
+//							drawImageScaled(itemSprite(item), NULL, &pos);
+//							y += 18;
+//							if (c > 3 + identifyscroll[player])
+//							{
+//								break;
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
+//} //updateIdentifyGUI()
 
-void CloseIdentifyGUI()
-{
-	identifygui_active = false;
-	selectedIdentifySlot = -1;
-}
-
-void updateIdentifyGUI()
-{
-	//if (openedChest[clientnum])
-	//	return; //Cannot have the identify and chest GUIs open at the same time.
-
-	SDL_Rect pos;
-	node_t* node;
-	int y, c;
-
-	//Identify GUI.
-	if (identifygui_active)
-	{
-		//Center the identify GUI.
-		pos.x = IDENTIFY_GUI_X;
-		pos.y = IDENTIFY_GUI_Y;
-		drawImage(identifyGUI_img, NULL, &pos);
-
-		//Buttons
-		if ( mousestatus[SDL_BUTTON_LEFT] )
-		{
-			//Identify GUI scroll up button.
-			if (omousey >= IDENTIFY_GUI_Y + 16 && omousey < IDENTIFY_GUI_Y + 52)
-			{
-				if (omousex >= IDENTIFY_GUI_X + (identifyGUI_img->w - 28) && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 12))
-				{
-					buttonclick = 7;
-					identifyscroll--;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-				}
-			}
-			//Identify GUI scroll down button.
-			else if (omousey >= IDENTIFY_GUI_Y + 52 && omousey < IDENTIFY_GUI_Y + 88)
-			{
-				if (omousex >= IDENTIFY_GUI_X + (identifyGUI_img->w - 28) && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 12))
-				{
-					buttonclick = 8;
-					identifyscroll++;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-				}
-			}
-			else if (omousey >= IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + 15)
-			{
-				//Identify GUI close button.
-				if (omousex >= IDENTIFY_GUI_X + 393 && omousex < IDENTIFY_GUI_X + 407)
-				{
-					buttonclick = 9;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-				}
-				if (omousex >= IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + 377 && omousey >= IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + 15)
-				{
-					gui_clickdrag = true;
-					dragging_identifyGUI = true;
-					dragoffset_x = omousex - IDENTIFY_GUI_X;
-					dragoffset_y = omousey - IDENTIFY_GUI_Y;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-				}
-			}
-		}
-
-		// mousewheel
-		if ( omousex >= IDENTIFY_GUI_X + 12 && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 28) )
-		{
-			if ( omousey >= IDENTIFY_GUI_Y + 16 && omousey < IDENTIFY_GUI_Y + (identifyGUI_img->h - 8) )
-			{
-				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
-				{
-					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					identifyscroll++;
-				}
-				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
-				{
-					mousestatus[SDL_BUTTON_WHEELUP] = 0;
-					identifyscroll--;
-				}
-			}
-		}
-
-		if (dragging_identifyGUI)
-		{
-			if (gui_clickdrag)
-			{
-				identifygui_offset_x = (omousex - dragoffset_x) - (IDENTIFY_GUI_X - identifygui_offset_x);
-				identifygui_offset_y = (omousey - dragoffset_y) - (IDENTIFY_GUI_Y - identifygui_offset_y);
-				if (IDENTIFY_GUI_X <= 0)
-				{
-					identifygui_offset_x = 0 - (IDENTIFY_GUI_X - identifygui_offset_x);
-				}
-				if (IDENTIFY_GUI_X > 0 + xres - identifyGUI_img->w)
-				{
-					identifygui_offset_x = (0 + xres - identifyGUI_img->w) - (IDENTIFY_GUI_X - identifygui_offset_x);
-				}
-				if (IDENTIFY_GUI_Y <= 0)
-				{
-					identifygui_offset_y = 0 - (IDENTIFY_GUI_Y - identifygui_offset_y);
-				}
-				if (IDENTIFY_GUI_Y > 0 + yres - identifyGUI_img->h)
-				{
-					identifygui_offset_y = (0 + yres - identifyGUI_img->h) - (IDENTIFY_GUI_Y - identifygui_offset_y);
-				}
-			}
-			else
-			{
-				dragging_identifyGUI = false;
-			}
-		}
-
-		list_t* identify_inventory = &stats[clientnum]->inventory;
-
-		if (!identify_inventory)
-		{
-			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
-		}
-		else
-		{
-			//Print the window label signifying this as the identify GUI.
-			char* window_name;
-			if (identifygui_appraising)
-			{
-				window_name = language[317];
-			}
-			else
-			{
-				window_name = language[318];
-			}
-			ttfPrintText(ttf8, (IDENTIFY_GUI_X + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), IDENTIFY_GUI_Y + 4, window_name);
-
-			//Identify GUI up button.
-			if (buttonclick == 7)
-			{
-				pos.x = IDENTIFY_GUI_X + (identifyGUI_img->w - 28);
-				pos.y = IDENTIFY_GUI_Y + 16;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invup_bmp, NULL, &pos);
-			}
-			//Identify GUI down button.
-			if (buttonclick == 8)
-			{
-				pos.x = IDENTIFY_GUI_X + (identifyGUI_img->w - 28);
-				pos.y = IDENTIFY_GUI_Y + 52;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invdown_bmp, NULL, &pos);
-			}
-			//Identify GUI close button.
-			if (buttonclick == 9)
-			{
-				pos.x = IDENTIFY_GUI_X + 393;
-				pos.y = IDENTIFY_GUI_Y;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invclose_bmp, NULL, &pos);
-				identifygui_active = false;
-				identifygui_appraising = false;
-
-				//Cleanup identify GUI gamecontroller code here.
-				selectedIdentifySlot = -1;
-				//TODO: closeIdentifyGUI() instead.
-			}
-
-			Item* item = NULL;
-
-			bool selectingSlot = false;
-			SDL_Rect slotPos;
-			slotPos.x = IDENTIFY_GUI_X;
-			slotPos.w = inventoryoptionChest_bmp->w;
-			slotPos.y = IDENTIFY_GUI_Y + 16;
-			slotPos.h = inventoryoptionChest_bmp->h;
-			for ( int i = 0; i < NUM_IDENTIFY_GUI_ITEMS; ++i, slotPos.y += slotPos.h )
-			{
-				pos.x = slotPos.x + 12;
-				pos.w = 0;
-				pos.h = 0;
-
-				if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && identify_items[i] )
-				{
-					pos.y = slotPos.y;
-					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
-					selectedIdentifySlot = i;
-					selectingSlot = true;
-					if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
-					{
-						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						identifyGUIIdentify(identify_items[i]);
-
-						rebuildIdentifyGUIInventory();
-						if ( identify_items[i] == nullptr )
-						{
-							if ( identify_items[0] == nullptr )
-							{
-								//Go back to inventory.
-								selectedIdentifySlot = -1;
-								warpMouseToSelectedInventorySlot();
-							}
-							else
-							{
-								//Move up one slot.
-								--selectedIdentifySlot;
-								warpMouseToSelectedIdentifySlot();
-							}
-						}
-					}
-				}
-			}
-
-			if ( !selectingSlot )
-			{
-				selectedIdentifySlot = -1;
-			}
-
-			//Okay, now prepare to render all the items.
-			y = IDENTIFY_GUI_Y + 22;
-			c = 0;
-			if (identify_inventory)
-			{
-				rebuildIdentifyGUIInventory();
-
-				//Actually render the items.
-				c = 0;
-				for (node = identify_inventory->first; node != NULL; node = node->next)
-				{
-					if (node->element)
-					{
-						item = (Item*) node->element;
-						if (item && !item->identified)   //Skip over all identified items.
-						{
-							c++;
-							if (c <= identifyscroll)
-							{
-								continue;
-							}
-							char tempstr[64] = { 0 };
-							strncpy(tempstr, item->description(), 46);
-							if ( strlen(tempstr) == 46 )
-							{
-								strcat(tempstr, " ...");
-							}
-							ttfPrintText(ttf8, IDENTIFY_GUI_X + 36, y, tempstr);
-							pos.x = IDENTIFY_GUI_X + 16;
-							pos.y = IDENTIFY_GUI_Y + 17 + 18 * (c - identifyscroll - 1);
-							pos.w = 16;
-							pos.h = 16;
-							drawImageScaled(itemSprite(item), NULL, &pos);
-							y += 18;
-							if (c > 3 + identifyscroll)
-							{
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-} //updateIdentifyGUI()
-
-void identifyGUIIdentify(Item* item)
+void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 {
 	if (!item)
 	{
@@ -351,65 +365,61 @@ void identifyGUIIdentify(Item* item)
 	}
 	if (item->identified)
 	{
-		messagePlayer(clientnum, language[319], item->getName());
+		messagePlayer(player.playernum, language[319], item->getName());
 		return;
 	}
 
-	if (!identifygui_appraising)
+	/*if (!identifygui_appraising)
 	{
 		item->identified = true;
 		messagePlayer(clientnum, language[320], item->description());
-		if (appraisal_timer > 0 && appraisal_item && appraisal_item == item->uid)
+		if ( players[player]->inventoryUI.appraisal.timer > 0 
+			&& players[player]->inventoryUI.appraisal.current_item
+			&& players[player]->inventoryUI.appraisal.current_item == item->uid)
 		{
-			appraisal_timer = 0;
-			appraisal_item = 0;
+			players[player]->inventoryUI.appraisal.timer = 0;
+			players[player]->inventoryUI.appraisal.current_item = 0;
 		}
-		identifygui_active = false;
+		identifygui_active[player] = false;
+	}
+	else*/
+	//Appraising.
+
+	//If appraisal skill >= LEGENDARY, then auto-complete appraisal. Else, do the normal routine.
+	if ( stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+	{
+		item->identified = true;
+		messagePlayer(player.playernum, language[320], item->description());
+		if ( timer > 0 && current_item != 0	&& current_item == item->uid)
+		{
+			timer = 0;
+			current_item = 0;
+		}
+		if ( item->type == GEM_GLASS )
+		{
+			steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
+		}
 	}
 	else
 	{
-		//Appraising.
+		messagePlayer(player.playernum, language[321], item->description());
 
-		//If appraisal skill >= LEGENDARY, then auto-complete appraisal. Else, do the normal routine.
-		if ( stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
-		{
-			item->identified = true;
-			messagePlayer(clientnum, language[320], item->description());
-			if (appraisal_timer > 0 && appraisal_item && appraisal_item == item->uid)
-			{
-				appraisal_timer = 0;
-				appraisal_item = 0;
-			}
-			if ( item->type == GEM_GLASS )
-			{
-				steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
-			}
-		}
-		else
-		{
-			messagePlayer(clientnum, language[321], item->description());
-
-			//Tick the timer in act player.
-			//Once the timer hits zero, roll to see if the item is identified.
-			//If it is identified, identify it and print out a message for the player.
-
-			identifygui_appraising = false;
-			appraisal_timer = getAppraisalTime(item);
-			appraisal_timermax = appraisal_timer;
-			appraisal_item = item->uid;
-		}
+		//Tick the timer in act player.
+		//Once the timer hits zero, roll to see if the item is identified.
+		//If it is identified, identify it and print out a message for the player.
+		timer = getAppraisalTime(item);
+		timermax = timer;
+		current_item = item->uid;
 	}
-
-	//Cleanup identify GUI gamecontroller code here.
-	selectedIdentifySlot = -1;
 }
 
-int getAppraisalTime(Item* item)
+int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 {
 	int appraisal_time;
+
 	if ( item->type != GEM_GLASS )
 	{
-		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
+		appraisal_time = (items[item->type].value * 60) / (stats[this->player.playernum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
 		int playerCount = 0;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -430,7 +440,7 @@ int getAppraisalTime(Item* item)
 	}
 	else
 	{
-		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-
+		appraisal_time = (1000 * 60) / (stats[this->player.playernum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-
 		int playerCount = 0;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -451,110 +461,114 @@ int getAppraisalTime(Item* item)
 	appraisal_time = std::min(std::max(1, appraisal_time), 36000);
 	return appraisal_time;
 }
+//
+//inline Item* getItemInfoFromIdentifyGUI(const int player, int slot)
+//{
+//	if ( slot >= 4 )
+//	{
+//		return nullptr; //Out of bounds,
+//	}
+//
+//	return identify_items[player][slot];
+//}
+//
+//void selectIdentifySlot(const int player, int slot)
+//{
+//	if ( slot < selectedIdentifySlot[player] )
+//	{
+//		//Moving up.
+//
+//		/*
+//		 * Possible cases:
+//		 * * 1) Move cursor up the GUI through different selectedIdentifySlot.
+//		 * * 2) Page up through identifyscroll--
+//		 * * 3) Scrolling up past top of Identify GUI, no identifyscroll (move back to inventory)
+//		 */
+//
+//		if ( selectedIdentifySlot[player] <= 0 )
+//		{
+//			//Covers cases 2 & 3.
+//
+//			/*
+//			 * Possible cases:
+//			 * * A) Hit very top of Identify "inventory", can't go any further. Return to inventory.
+//			 * * B) Page up, scrolling through identifyscroll.
+//			 */
+//
+//			if ( identifyscroll <= 0 )
+//			{
+//				//Case 3/A: Return to inventory.
+//				selectedIdentifySlot[player] = -1;
+//			}
+//			else
+//			{
+//				//Case 2/B: Page up through Identify "inventory".
+//				--identifyscroll[player];
+//			}
+//		}
+//		else
+//		{
+//			//Covers case 1.
+//
+//			//Move cursor up the GUI through different selectedIdentifySlot (--selectedIdentifySlot).
+//			--selectedIdentifySlot[player];
+//			warpMouseToSelectedIdentifySlot(player);
+//		}
+//	}
+//	else if ( slot > selectedIdentifySlot[player] )
+//	{
+//		//Moving down.
+//
+//		/*
+//		 * Possible cases:
+//		 * * 1) Moving cursor down through GUI through different selectedIdentifySlot.
+//		 * * 2) Scrolling down past bottom of Identify GUI through identifyscroll++
+//		 * * 3) Scrolling down past bottom of Identify GUI, max Identify scroll (revoke move -- can't go beyond limit of Identify GUI).
+//		 */
+//
+//		if ( selectedIdentifySlot[player] >= NUM_IDENTIFY_GUI_ITEMS - 1 )
+//		{
+//			//Covers cases 2 & 3.
+//			++identifyscroll[player]; //identifyscroll is automatically sanitized in updateIdentifyGUI().
+//		}
+//		else
+//		{
+//			//Covers case 1.
+//			//Move cursor down through the GUi through different selectedIdentifySlot (++selectedIdentifySlot).
+//			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
+//
+//			/*
+//			 * Two possible cases:
+//			 * * A) Items below this. Advance selectedIdentifySlot to them.
+//			 * * B) On last item already. Do nothing (revoke movement).
+//			 */
+//
+//			Item* item = getItemInfoFromIdentifyGUI(player, selectedIdentifySlot[player] + 1);
+//
+//			if ( item )
+//			{
+//				++selectedIdentifySlot[player];
+//				warpMouseToSelectedIdentifySlot(player);
+//			}
+//			else
+//			{
+//				//No more items. Stop.
+//			}
+//		}
+//	}
+//}
 
-inline Item* getItemInfoFromIdentifyGUI(int slot)
-{
-	if ( slot >= 4 )
-	{
-		return nullptr; //Out of bounds,
-	}
-
-	return identify_items[slot];
-}
-
-void selectIdentifySlot(int slot)
-{
-	if ( slot < selectedIdentifySlot )
-	{
-		//Moving up.
-
-		/*
-		 * Possible cases:
-		 * * 1) Move cursor up the GUI through different selectedIdentifySlot.
-		 * * 2) Page up through identifyscroll--
-		 * * 3) Scrolling up past top of Identify GUI, no identifyscroll (move back to inventory)
-		 */
-
-		if ( selectedIdentifySlot <= 0 )
-		{
-			//Covers cases 2 & 3.
-
-			/*
-			 * Possible cases:
-			 * * A) Hit very top of Identify "inventory", can't go any further. Return to inventory.
-			 * * B) Page up, scrolling through identifyscroll.
-			 */
-
-			if ( identifyscroll <= 0 )
-			{
-				//Case 3/A: Return to inventory.
-				selectedIdentifySlot = -1;
-			}
-			else
-			{
-				//Case 2/B: Page up through Identify "inventory".
-				--identifyscroll;
-			}
-		}
-		else
-		{
-			//Covers case 1.
-
-			//Move cursor up the GUI through different selectedIdentifySlot (--selectedIdentifySlot).
-			--selectedIdentifySlot;
-			warpMouseToSelectedIdentifySlot();
-		}
-	}
-	else if ( slot > selectedIdentifySlot )
-	{
-		//Moving down.
-
-		/*
-		 * Possible cases:
-		 * * 1) Moving cursor down through GUI through different selectedIdentifySlot.
-		 * * 2) Scrolling down past bottom of Identify GUI through identifyscroll++
-		 * * 3) Scrolling down past bottom of Identify GUI, max Identify scroll (revoke move -- can't go beyond limit of Identify GUI).
-		 */
-
-		if ( selectedIdentifySlot >= NUM_IDENTIFY_GUI_ITEMS - 1 )
-		{
-			//Covers cases 2 & 3.
-			++identifyscroll; //identifyscroll is automatically sanitized in updateIdentifyGUI().
-		}
-		else
-		{
-			//Covers case 1.
-			//Move cursor down through the GUi through different selectedIdentifySlot (++selectedIdentifySlot).
-			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
-
-			/*
-			 * Two possible cases:
-			 * * A) Items below this. Advance selectedIdentifySlot to them.
-			 * * B) On last item already. Do nothing (revoke movement).
-			 */
-
-			Item* item = getItemInfoFromIdentifyGUI(selectedIdentifySlot + 1);
-
-			if ( item )
-			{
-				++selectedIdentifySlot;
-				warpMouseToSelectedIdentifySlot();
-			}
-			else
-			{
-				//No more items. Stop.
-			}
-		}
-	}
-}
-
-void warpMouseToSelectedIdentifySlot()
-{
-	SDL_Rect slotPos;
-	slotPos.x = IDENTIFY_GUI_X;
-	slotPos.w = inventoryoptionChest_bmp->w;
-	slotPos.h = inventoryoptionChest_bmp->h;
-	slotPos.y = IDENTIFY_GUI_Y + 16 + (slotPos.h * selectedIdentifySlot);
-
-	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
-}
+//void warpMouseToSelectedIdentifySlot(const int player)
+//{
+//	SDL_Rect slotPos;
+//	slotPos.x = getIdentifyGUIStartX(player);
+//	slotPos.w = inventoryoptionChest_bmp->w;
+//	slotPos.h = inventoryoptionChest_bmp->h;
+//	slotPos.y = getIdentifyGUIStartY(player) + 16 + (slotPos.h * selectedIdentifySlot[player]);
+//
+//	int newx = slotPos.x + (slotPos.w / 2);
+//	int newy = slotPos.y + (slotPos.h / 2);
+//	//SDL_WarpMouseInWindow(screen, newx, newy);
+//	Uint32 flags = (Inputs::SET_CONTROLLER | Inputs::SET_MOUSE);
+//	inputs.warpMouse(player, newx, newy, flags);
+//}

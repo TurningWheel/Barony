@@ -18,6 +18,7 @@
 #include "book.hpp"
 #include "net.hpp"
 #include "charclass.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -31,19 +32,17 @@ void initClass(const int player)
 {
 	Item* item = nullptr;
 	Item* item2 = nullptr;
-	if ( player == clientnum)
+	auto& hotbar_t = players[player]->hotbar;
+	auto& hotbar = hotbar_t->slots();
+
+	bool isLocalPlayer = players[player]->isLocalPlayer();
+
+	if ( isLocalPlayer )
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
 		//(same for deathStuff() and/or gameEndStuff().
-		selected_inventory_slot_x = 0;
-		selected_inventory_slot_y = 0;
-		current_hotbar = 0;
-
-		for ( Uint32 i = 0; i < NUM_HOTBAR_SLOTS; ++i )
-		{
-			hotbar[i].item = 0;
-		}
-		magicBoomerangHotbarSlot = -1;
+		players[player]->inventoryUI.selectSlot(0, 0);
+		hotbar_t->clear();
 	}
 
 	bool curseItems = false;
@@ -67,8 +66,8 @@ void initClass(const int player)
 	stats[player]->type = HUMAN;
 
 	//spellList = malloc(sizeof(list_t));
-	spellList.first = nullptr;
-	spellList.last = nullptr;
+	players[player]->magic.spellList.first = nullptr;
+	players[player]->magic.spellList.last = nullptr;
 
 
 	// CLASS LOADOUTS
@@ -96,7 +95,7 @@ void initClass(const int player)
 
 		// iron axe
 		item = newItem(IRON_AXE, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -110,7 +109,7 @@ void initClass(const int player)
 
 		// wooden shield
 		item = newItem(WOODEN_SHIELD, SERVICABLE, 0, 1, 1, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -124,7 +123,7 @@ void initClass(const int player)
 
 		// leather helm
 		item = newItem(LEATHER_HELM, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -135,7 +134,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// iron mace
 			item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -195,7 +194,7 @@ void initClass(const int player)
 
 		// iron spear
 		item = newItem(IRON_SPEAR, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -209,7 +208,7 @@ void initClass(const int player)
 
 		// bronze shield
 		item = newItem(BRONZE_SHIELD, SERVICABLE, 0, 1, 1, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -223,7 +222,7 @@ void initClass(const int player)
 
 		// leather helm
 		item = newItem(LEATHER_HELM, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -236,7 +235,7 @@ void initClass(const int player)
 
 		// iron armor
 		item = newItem(IRON_BREASTPIECE, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -249,7 +248,7 @@ void initClass(const int player)
 
 		// boots
 		item = newItem(LEATHER_BOOTS, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -260,7 +259,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// iron sword
 			item = newItem(IRON_SWORD, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -308,7 +307,7 @@ void initClass(const int player)
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -322,7 +321,7 @@ void initClass(const int player)
 
 		// phrygian hat
 		item = newItem(HAT_PHRYGIAN, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -335,7 +334,7 @@ void initClass(const int player)
 
 		// healer doublet
 		item = newItem(HEALER_DOUBLET, SERVICABLE, 0, 1, 2, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -348,7 +347,7 @@ void initClass(const int player)
 		
 		// cloak (red, protection)
 		item = newItem(CLOAK, SERVICABLE, 0, 1, 2, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -360,7 +359,7 @@ void initClass(const int player)
 		}
 
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// fish
 			item = newItem(FOOD_FISH, EXCELLENT, 0, 1, 0, true, nullptr);
@@ -427,7 +426,7 @@ void initClass(const int player)
 
 		// bronze sword
 		item = newItem(BRONZE_SWORD, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -441,7 +440,7 @@ void initClass(const int player)
 
 		// cloak (green)
 		item = newItem(CLOAK, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -454,7 +453,7 @@ void initClass(const int player)
 
 		// hood (green)
 		item = newItem(HAT_HOOD, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -467,7 +466,7 @@ void initClass(const int player)
 
 		// gloves
 		item = newItem(GLOVES, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -480,7 +479,7 @@ void initClass(const int player)
 
 		// leather breastpiece
 		item = newItem(LEATHER_BREASTPIECE, DECREPIT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -491,7 +490,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// shortbow
 			item = newItem(SHORTBOW, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -535,7 +534,7 @@ void initClass(const int player)
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -549,7 +548,7 @@ void initClass(const int player)
 
 		// brown hood
 		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -562,7 +561,7 @@ void initClass(const int player)
 
 		// cloak
 		item = newItem(CLOAK, SERVICABLE, 0, 1, 1, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -575,7 +574,7 @@ void initClass(const int player)
 
 		// boots
 		item = newItem(LEATHER_BOOTS, SERVICABLE, curseItems ? -1 : 1, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -586,7 +585,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// crossbow
 			item = newItem(CROSSBOW, WORN, 0, 1, 0, true, nullptr);
@@ -651,7 +650,7 @@ void initClass(const int player)
 
 		// iron mace
 		item = newItem(IRON_MACE, SERVICABLE, curseItems ? -1 : 1, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -665,7 +664,7 @@ void initClass(const int player)
 
 		// wooden shield
 		item = newItem(WOODEN_SHIELD, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -679,7 +678,7 @@ void initClass(const int player)
 
 		// leather breastpiece
 		item = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -692,7 +691,7 @@ void initClass(const int player)
 
 		// cloak (purple)
 		item = newItem(CLOAK, SERVICABLE, 0, 1, 3, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -705,7 +704,7 @@ void initClass(const int player)
 
 		// gloves
 		item = newItem(BRACERS, WORN, curseItems ? -1 : 1, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -716,7 +715,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// torch
 			item = newItem(TOOL_TORCH, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -764,7 +763,7 @@ void initClass(const int player)
 
 		// bronze axe
 		item = newItem(BRONZE_AXE, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -778,7 +777,7 @@ void initClass(const int player)
 
 		// phrygian hat
 		item = newItem(HAT_PHRYGIAN, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -791,7 +790,7 @@ void initClass(const int player)
 
 		// leather breastpiece
 		item = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -804,7 +803,7 @@ void initClass(const int player)
 
 		// glasses
 		item = newItem(TOOL_GLASSES, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -815,7 +814,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// pickaxe
 			item = newItem(TOOL_PICKAXE, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -867,7 +866,7 @@ void initClass(const int player)
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -881,7 +880,7 @@ void initClass(const int player)
 
 		// wizard hat
 		item = newItem(HAT_WIZARD, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -894,7 +893,7 @@ void initClass(const int player)
 
 		// wizard doublet
 		item = newItem(WIZARD_DOUBLET, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -907,7 +906,7 @@ void initClass(const int player)
 
 		// cloak (purple, protection)
 		item = newItem(CLOAK_PROTECTION, SERVICABLE, 0, 1, 3, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -920,7 +919,7 @@ void initClass(const int player)
 
 		// amulet of magic reflection
 		item = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 0, 1, 1, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -933,7 +932,7 @@ void initClass(const int player)
 
 		// leather boots
 		item = newItem(LEATHER_BOOTS, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -944,7 +943,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// magicstaff of light
 			item = newItem(MAGICSTAFF_LIGHT, EXCELLENT, 0, 1, 3, true, nullptr);
@@ -998,7 +997,7 @@ void initClass(const int player)
 
 		// iron sword
 		item = newItem(IRON_SWORD, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1012,7 +1011,7 @@ void initClass(const int player)
 
 		// crossbow
 		item = newItem(CROSSBOW, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1026,7 +1025,7 @@ void initClass(const int player)
 
 		// leather armor
 		item = newItem(LEATHER_BREASTPIECE, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1039,7 +1038,7 @@ void initClass(const int player)
 
 		// leather boots
 		item = newItem(LEATHER_BOOTS, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1052,7 +1051,7 @@ void initClass(const int player)
 
 		// cloak (purple)
 		item = newItem(CLOAK, WORN, 0, 1, 3, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1065,7 +1064,7 @@ void initClass(const int player)
 
 		// hood (purple)
 		item = newItem(HAT_HOOD, WORN, 0, 1, 3, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1076,7 +1075,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// magicstaff of opening
 			item = newItem(MAGICSTAFF_OPENING, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -1117,7 +1116,7 @@ void initClass(const int player)
 
 		// jester hat
 		item = newItem(HAT_JESTER, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1128,7 +1127,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// slingshot
 			item = newItem(SLING, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -1202,7 +1201,7 @@ void initClass(const int player)
 
 		// bronze mace
 		item = newItem(BRONZE_MACE, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1216,7 +1215,7 @@ void initClass(const int player)
 
 		// shard
 		item = newItem(TOOL_CRYSTALSHARD, SERVICABLE, 0, 2, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1230,7 +1229,7 @@ void initClass(const int player)
 
 		// leather breastpiece
 		item = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1243,7 +1242,7 @@ void initClass(const int player)
 
 		// leather boots
 		item = newItem(LEATHER_BOOTS, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1256,7 +1255,7 @@ void initClass(const int player)
 
 		// purple hood
 		item = newItem(HAT_FEZ, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1267,7 +1266,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// chakram
 			item = newItem(STEEL_CHAKRAM, SERVICABLE, 0, 3, 0, true, nullptr);
@@ -1321,7 +1320,7 @@ void initClass(const int player)
 
 		// katana
 		item = newItem(CRYSTAL_SWORD, DECREPIT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1335,7 +1334,7 @@ void initClass(const int player)
 
 		// black hood
 		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 2, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1348,7 +1347,7 @@ void initClass(const int player)
 
 		// tunic
 		item = newItem(TUNIC, SERVICABLE, 0, 1, 1, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1361,7 +1360,7 @@ void initClass(const int player)
 
 		// leather boots
 		item = newItem(LEATHER_BOOTS_SPEED, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1374,7 +1373,7 @@ void initClass(const int player)
 
 		// black cloak
 		item = newItem(CLOAK_BLACK, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1385,7 +1384,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// daggers
 			item = newItem(IRON_DAGGER, WORN, 0, 5, 0, true, nullptr);
@@ -1440,7 +1439,7 @@ void initClass(const int player)
 
 		// knuckles
 		item = newItem(BRASS_KNUCKLES, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1454,7 +1453,7 @@ void initClass(const int player)
 
 		// tunic
 		item = newItem(TUNIC, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1467,7 +1466,7 @@ void initClass(const int player)
 
 		// ring slow digestion
 		item = newItem(RING_SLOWDIGESTION, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1478,7 +1477,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// light book
 			item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, nullptr);
@@ -1511,7 +1510,7 @@ void initClass(const int player)
 
 		// weapon
 		item = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1524,7 +1523,7 @@ void initClass(const int player)
 		}
 
 		item = newItem(TOOL_LANTERN, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1538,7 +1537,7 @@ void initClass(const int player)
 
 		// red hood
 		item = newItem(HAT_HOOD_RED, SERVICABLE, 0, 1, 1, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1551,7 +1550,7 @@ void initClass(const int player)
 
 		// red cloak
 		item = newItem(CLOAK, SERVICABLE, 0, 1, 2, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1562,7 +1561,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// slow book
 			item = newItem(SPELLBOOK_SLOW, WORN, 0, 1, 8, true, nullptr);
@@ -1600,7 +1599,7 @@ void initClass(const int player)
 
 		// doublet
 		item = newItem(SILVER_DOUBLET, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1613,7 +1612,7 @@ void initClass(const int player)
 
 		// gloves
 		item = newItem(SUEDE_GLOVES, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1626,7 +1625,7 @@ void initClass(const int player)
 
 		// boots
 		item = newItem(SUEDE_BOOTS, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1637,7 +1636,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// invis book
 			item = newItem(SPELLBOOK_INVISIBILITY, WORN, 0, 1, 2, true, nullptr);
@@ -1681,7 +1680,7 @@ void initClass(const int player)
 
 		// ring
 		item = newItem(RING_PROTECTION, EXCELLENT, curseItems ? -2 : 2, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1694,7 +1693,7 @@ void initClass(const int player)
 
 		// hood silver
 		item = newItem(HAT_HOOD_SILVER, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1707,7 +1706,7 @@ void initClass(const int player)
 
 		// cloak silver
 		item = newItem(CLOAK_SILVER, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1720,7 +1719,7 @@ void initClass(const int player)
 
 		// weapon
 		item = newItem(MAGICSTAFF_CHARM, EXCELLENT, curseItems ? -1 : 1, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1732,7 +1731,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// spear
 			item = newItem(IRON_SPEAR, SERVICABLE, curseItems ? -1 : 1, 1, 1, true, nullptr);
@@ -1794,7 +1793,7 @@ void initClass(const int player)
 
 		// booze
 		item = newItem(IRON_AXE, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			hotbar[0].item = item2->uid;
@@ -1803,7 +1802,7 @@ void initClass(const int player)
 
 		// empty bottles
 		item = newItem(POTION_EMPTY, SERVICABLE, 0, 3, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			equipItem(item2, &stats[player]->weapon, player);
@@ -1817,7 +1816,7 @@ void initClass(const int player)
 
 		// boots
 		item = newItem(IRON_BOOTS, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1830,7 +1829,7 @@ void initClass(const int player)
 
 		// backpack
 		item = newItem(CLOAK_BACKPACK, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1841,7 +1840,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			//// weapon
 			//item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, NULL);
@@ -1925,7 +1924,7 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;*/
 
 		item = newItem(MAGICSTAFF_POISON, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1938,7 +1937,7 @@ void initClass(const int player)
 		}
 
 		item = newItem(MASK_SHAMAN, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -1951,7 +1950,7 @@ void initClass(const int player)
 
 		//// ring slow digestion
 		//item = newItem(RING_SLOWDIGESTION, SERVICABLE, 0, 1, 0, true, NULL);
-		//if ( player == clientnum )
+		//if ( isLocalPlayer )
 		//{
 		//	item2 = itemPickup(player, item);
 		//	useItem(item2, player);
@@ -1962,7 +1961,7 @@ void initClass(const int player)
 		//	useItem(item, player);
 		//}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item = newItem(BRONZE_SWORD, WORN, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
@@ -2006,7 +2005,7 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
 
 		item = newItem(TOOL_WHIP, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2019,7 +2018,7 @@ void initClass(const int player)
 		}
 
 		item = newItem(PUNISHER_HOOD, SERVICABLE, 0, 1, 1, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2032,7 +2031,7 @@ void initClass(const int player)
 
 		//// ring slow digestion
 		//item = newItem(RING_SLOWDIGESTION, SERVICABLE, 0, 1, 0, true, NULL);
-		//if ( player == clientnum )
+		//if ( isLocalPlayer )
 		//{
 		//	item2 = itemPickup(player, item);
 		//	useItem(item2, player);
@@ -2043,7 +2042,7 @@ void initClass(const int player)
 		//	useItem(item, player);
 		//}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item = newItem(CRYSTAL_BATTLEAXE, DECREPIT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
@@ -2083,7 +2082,7 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 10;
 
 		item = newItem(LONGBOW, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2096,7 +2095,7 @@ void initClass(const int player)
 		}
 
 		item = newItem(AMULET_POISONRESISTANCE, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2108,7 +2107,7 @@ void initClass(const int player)
 		}
 
 		item = newItem(BRACERS, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2120,7 +2119,7 @@ void initClass(const int player)
 		}
 
 		item = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2131,7 +2130,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item = newItem(BOOMERANG, DECREPIT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
@@ -2228,7 +2227,7 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 10;
 
 		item = newItem(CROSSBOW, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2241,7 +2240,7 @@ void initClass(const int player)
 		}
 
 		item = newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2254,7 +2253,7 @@ void initClass(const int player)
 		}
 
 		item = newItem(MACHINIST_APRON, EXCELLENT, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2265,7 +2264,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item = newItem(TOOL_BEARTRAP, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
@@ -2329,7 +2328,7 @@ void initClass(const int player)
 	{
 		stats[player]->EFFECTS[EFF_ASLEEP] = true;
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// extra booze for hangover :)
 			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 2, true, nullptr);
@@ -2352,7 +2351,7 @@ void initClass(const int player)
 		&& client_classes[player] <= CLASS_MONK 
 		&& stats[player]->playerRace != RACE_HUMAN )
 	{
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// bonus polymorph potions
 			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 2, 0, true, nullptr);
@@ -2365,7 +2364,7 @@ void initClass(const int player)
 		&& client_classes[player] <= CLASS_HUNTER 
 		&& stats[player]->playerRace != RACE_HUMAN )
 	{
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			// bonus polymorph potions
 			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 3, 0, true, nullptr);
@@ -2377,7 +2376,7 @@ void initClass(const int player)
 	if ( svFlags & SV_FLAG_LIFESAVING )
 	{
 		item = newItem(AMULET_LIFESAVING, WORN, 0, 1, 0, true, nullptr);
-		if ( player == clientnum )
+		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
@@ -2388,7 +2387,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 	}
-	if ( player == clientnum )
+	if ( isLocalPlayer )
 	{
 		if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
 		{
@@ -2422,30 +2421,30 @@ void initClass(const int player)
 			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 0 )
 			{
 				ItemType potion = POTION_WATER;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
 			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 20 )
 			{
 				ItemType potion = POTION_JUICE;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 				potion = POTION_BOOZE;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
 			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 40 )
 			{
 				ItemType potion = POTION_ACID;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
 			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 60 )
 			{
 				ItemType potion = POTION_INVISIBILITY;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 				potion = POTION_POLYMORPH;
-				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
 		}
 
-		if ( client_classes[clientnum] == CLASS_SHAMAN )
+		if ( client_classes[player] == CLASS_SHAMAN )
 		{
 			addSpell(SPELL_RAT_FORM, player, true);
 			addSpell(SPELL_SPIDER_FORM, player, true);
@@ -2464,12 +2463,12 @@ void initClass(const int player)
 			addSpell(SPELL_TROLLS_BLOOD, player, true);
 			addSpell(SPELL_AMPLIFY_MAGIC, player, true);
 		}
-		else if ( client_classes[clientnum] == CLASS_PUNISHER )
+		else if ( client_classes[player] == CLASS_PUNISHER )
 		{
 			addSpell(SPELL_TELEPULL, player, true);
 			addSpell(SPELL_DEMON_ILLUSION, player, true);
 		}
-		else if ( client_classes[clientnum] == CLASS_CONJURER )
+		else if ( client_classes[player] == CLASS_CONJURER )
 		{
 			addSpell(SPELL_SUMMON, player, true);
 		}
@@ -2481,12 +2480,12 @@ void initClass(const int player)
 			Item* item = static_cast<Item*>(node->element);
 			if ( item )
 			{
-				item->x = INVENTORY_SIZEX - item->x - 1;
+				item->x = players[player]->inventoryUI.getSizeX() - item->x - 1;
 				if ( item->type == SPELL_ITEM )
 				{
 					bool skipSpellRearrange = false;
-					spell_t* spell = getSpellFromItem(item);
-					if ( spell && client_classes[clientnum] == CLASS_SHAMAN )
+					spell_t* spell = getSpellFromItem(player, item);
+					if ( spell && client_classes[player] == CLASS_SHAMAN )
 					{
 						// don't add shapeshift spells to hotbar.
 						switch ( spell->ID )
@@ -2526,92 +2525,96 @@ void initClass(const int player)
 			}
 		}
 	}
-	//stats[clientnum]->printStats();
+	//stats[player]->printStats();
 	//PlayerCharacterClassManager playerCharacterClassManager(stats[player], client_classes[player]);
 	//playerCharacterClassManager.writeToFile();
 	//playerCharacterClassManager.readFromFile();
 }
 
-void initShapeshiftHotbar()
+void initShapeshiftHotbar(int player)
 {
 	Uint32 spellRevertUid = 0;
 	std::vector<Uint32> monsterSpells;
 
-	if ( stats[clientnum]->type == HUMAN )
+	if ( stats[player]->type == HUMAN )
 	{
 		return;
 	}
 
-	swapHotbarOnShapeshift = stats[clientnum]->type;
-	hotbar_slot_t* newHotbar = hotbar_alternate[HOTBAR_DEFAULT]; // the monster's special hotbar.
-	spell_t* newSpell = selected_spell_alternate[HOTBAR_DEFAULT];
+	auto& hotbar_t = players[player]->hotbar;
+	auto& hotbar = hotbar_t->slots();
+	auto& hotbar_alternate = hotbar_t->slotsAlternate();
+
+	hotbar_t->swapHotbarOnShapeshift = stats[player]->type;
+	std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS> newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_DEFAULT]; // the monster's special hotbar.
+	spell_t* newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT];
 	bool shapeshiftHotbarInit = false;
-	if ( swapHotbarOnShapeshift > 0 )
+	if ( hotbar_t->swapHotbarOnShapeshift > 0 )
 	{
-		if ( swapHotbarOnShapeshift == RAT )
+		if ( hotbar_t->swapHotbarOnShapeshift == RAT )
 		{
-			newHotbar = hotbar_alternate[HOTBAR_RAT];
-			newSpell = selected_spell_alternate[HOTBAR_RAT];
-			shapeshiftHotbarInit = hotbarShapeshiftInit[HOTBAR_RAT];
-			hotbarShapeshiftInit[HOTBAR_RAT] = true;
+			newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_RAT];
+			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_RAT];
+			shapeshiftHotbarInit = hotbar_t->hotbarShapeshiftInit[Player::Hotbar_t::HOTBAR_RAT];
+			hotbar_t->hotbarShapeshiftInit[Player::Hotbar_t::HOTBAR_RAT] = true;
 		}
-		else if ( swapHotbarOnShapeshift == SPIDER )
+		else if ( hotbar_t->swapHotbarOnShapeshift == SPIDER )
 		{
-			newHotbar = hotbar_alternate[HOTBAR_SPIDER];
-			newSpell = selected_spell_alternate[HOTBAR_SPIDER];
-			shapeshiftHotbarInit = hotbarShapeshiftInit[HOTBAR_SPIDER];
-			hotbarShapeshiftInit[HOTBAR_SPIDER] = true;
+			newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
+			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
+			shapeshiftHotbarInit = hotbar_t->hotbarShapeshiftInit[Player::Hotbar_t::HOTBAR_SPIDER];
+			hotbar_t->hotbarShapeshiftInit[Player::Hotbar_t::HOTBAR_SPIDER] = true;
 		}
-		else if ( swapHotbarOnShapeshift == TROLL )
+		else if ( hotbar_t->swapHotbarOnShapeshift == TROLL )
 		{
-			newHotbar = hotbar_alternate[HOTBAR_TROLL];
-			newSpell = selected_spell_alternate[HOTBAR_TROLL];
-			shapeshiftHotbarInit = hotbarShapeshiftInit[HOTBAR_TROLL];
-			hotbarShapeshiftInit[HOTBAR_TROLL] = true;
+			newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_TROLL];
+			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_TROLL];
+			shapeshiftHotbarInit = hotbar_t->hotbarShapeshiftInit[Player::Hotbar_t::HOTBAR_TROLL];
+			hotbar_t->hotbarShapeshiftInit[Player::Hotbar_t::HOTBAR_TROLL] = true;
 		}
-		else if ( swapHotbarOnShapeshift == CREATURE_IMP )
+		else if ( hotbar_t->swapHotbarOnShapeshift == CREATURE_IMP )
 		{
-			newHotbar = hotbar_alternate[HOTBAR_IMP];
-			newSpell = selected_spell_alternate[HOTBAR_IMP];
-			shapeshiftHotbarInit = hotbarShapeshiftInit[HOTBAR_IMP];
-			hotbarShapeshiftInit[HOTBAR_IMP] = true;
+			newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_IMP];
+			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_IMP];
+			shapeshiftHotbarInit = hotbar_t->hotbarShapeshiftInit[Player::Hotbar_t::HOTBAR_IMP];
+			hotbar_t->hotbarShapeshiftInit[Player::Hotbar_t::HOTBAR_IMP] = true;
 		}
 	}
 
 	for ( Uint32 slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
 	{
-		hotbar_alternate[HOTBAR_DEFAULT][slotIndex].item = hotbar[slotIndex].item; // store our current hotbar.
+		hotbar_alternate[Player::Hotbar_t::HOTBAR_DEFAULT][slotIndex].item = hotbar[slotIndex].item; // store our current hotbar.
 		hotbar[slotIndex].item = newHotbar[slotIndex].item; // load from the monster's hotbar.
 	}
 
 	// find "shapeshift" only spells, add em to view.
-	for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
+	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 	{
 		Item* item = static_cast<Item*>(node->element);
 		if ( item && item->type == SPELL_ITEM )
 		{
-			spell_t* spell = getSpellFromItem(item);
+			spell_t* spell = getSpellFromItem(player, item);
 			if ( spell )
 			{
 				if ( spell->ID == SPELL_REVERT_FORM )
 				{
 					spellRevertUid = item->uid;
-					selected_spell_alternate[HOTBAR_DEFAULT] = selected_spell;
+					players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT] = players[player]->magic.selectedSpell();
 					if ( !newSpell )
 					{
-						selected_spell = spell; // revert form add to spell equipped.
-						selected_spell_last_appearance = selected_spell->ID;
+						players[player]->magic.equipSpell(spell); // revert form add to spell equipped.
+						players[player]->magic.selected_spell_last_appearance = players[player]->magic.selectedSpell()->ID;
 
 					}
 					else
 					{
-						selected_spell = newSpell;
-						selected_spell_last_appearance = selected_spell->ID;
+						players[player]->magic.equipSpell(newSpell);
+						players[player]->magic.selected_spell_last_appearance = players[player]->magic.selectedSpell()->ID;
 					}
 				}
 				else if ( item->appearance >= 1000 )
 				{
-					if ( canUseShapeshiftSpellInCurrentForm(*item) == 1 )
+					if ( canUseShapeshiftSpellInCurrentForm(player, *item) == 1 )
 					{
 						monsterSpells.push_back(item->uid);
 						item->y += 100;
@@ -2622,17 +2625,17 @@ void initShapeshiftHotbar()
 						int x = 0;
 						bool notfree = false;
 						bool foundaspot = false;
-						const bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
-						int numRows = INVENTORY_SIZEY;
-						if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
+						const bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= players[player]->inventoryUI.getSizeX() * 3);
+						int numRows = players[player]->inventoryUI.getSizeY();
+						if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 						{
-							numRows = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+							numRows = 4 + ((list_Size(&players[player]->magic.spellList) - (players[player]->inventoryUI.getSizeX() * 3)) / players[player]->inventoryUI.getSizeX());
 						}
 						while ( true )
 						{
 							for ( int y = 0; y < numRows; y++ )
 							{
-								for ( node_t* node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
+								for ( node_t* node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
 								{
 									Item* tempItem = static_cast<Item*>(node2->element);
 									if ( tempItem == item )
@@ -2716,72 +2719,77 @@ void initShapeshiftHotbar()
 	}
 }
 
-void deinitShapeshiftHotbar()
+void deinitShapeshiftHotbar(int player)
 {
 	Uint32 swapItem = 0;
-	hotbar_slot_t* newHotbar = hotbar_alternate[HOTBAR_DEFAULT]; // the monster's special hotbar.
-	spell_t* newSpell = selected_spell_alternate[HOTBAR_DEFAULT];
-	if ( swapHotbarOnShapeshift > 0 )
+
+	auto& hotbar_t = players[player]->hotbar;
+	auto& hotbar = hotbar_t->slots();
+	auto& hotbar_alternate = hotbar_t->slotsAlternate();
+
+	std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS> newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_DEFAULT]; // the monster's special hotbar.
+	spell_t* newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT];
+	if ( hotbar_t->swapHotbarOnShapeshift > 0 )
 	{
-		if ( swapHotbarOnShapeshift == RAT )
+		if ( hotbar_t->swapHotbarOnShapeshift == RAT )
 		{
-			newHotbar = hotbar_alternate[HOTBAR_RAT];
-			newSpell = selected_spell_alternate[HOTBAR_RAT];
+			newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_RAT];
+			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_RAT];
 		}
-		else if ( swapHotbarOnShapeshift == SPIDER )
+		else if ( hotbar_t->swapHotbarOnShapeshift == SPIDER )
 		{
-			newHotbar = hotbar_alternate[HOTBAR_SPIDER];
-			newSpell = selected_spell_alternate[HOTBAR_SPIDER];
+			newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
+			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
 		}
-		else if ( swapHotbarOnShapeshift == TROLL )
+		else if ( hotbar_t->swapHotbarOnShapeshift == TROLL )
 		{
-			newHotbar = hotbar_alternate[HOTBAR_TROLL];
-			newSpell = selected_spell_alternate[HOTBAR_TROLL];
+			newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_TROLL];
+			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_TROLL];
 		}
-		else if ( swapHotbarOnShapeshift == CREATURE_IMP )
+		else if ( hotbar_t->swapHotbarOnShapeshift == CREATURE_IMP )
 		{
-			newHotbar = hotbar_alternate[HOTBAR_IMP];
-			newSpell = selected_spell_alternate[HOTBAR_IMP];
+			newHotbar = hotbar_alternate[Player::Hotbar_t::HOTBAR_IMP];
+			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_IMP];
 		}
 	}
 	for ( Uint32 slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
 	{
 		swapItem = hotbar[slotIndex].item;
-		hotbar[slotIndex].item = hotbar_alternate[HOTBAR_DEFAULT][slotIndex].item; // swap back to default loadout
+		hotbar[slotIndex].item = hotbar_alternate[Player::Hotbar_t::HOTBAR_DEFAULT][slotIndex].item; // swap back to default loadout
 		newHotbar[slotIndex].item = swapItem;
 
 		// double check for shapeshift spells and remove them.
 		Item* item = uidToItem(hotbar[slotIndex].item);
 		if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
 		{
-			if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 ) // not allowed to use spell.
+			if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 ) // not allowed to use spell.
 			{
 				hotbar[slotIndex].item = 0;
-				hotbar_alternate[HOTBAR_DEFAULT][slotIndex].item = 0;
+				hotbar_alternate[Player::Hotbar_t::HOTBAR_DEFAULT][slotIndex].item = 0;
 			}
 		}
 	}
-	swapHotbarOnShapeshift = 0;
-	newSpell = selected_spell;
-	selected_spell = selected_spell_alternate[HOTBAR_DEFAULT];
-	if ( selected_spell )
+	hotbar_t->swapHotbarOnShapeshift = 0;
+	newSpell = players[player]->magic.selectedSpell();
+	players[player]->magic.equipSpell(players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT]);
+	if ( players[player]->magic.selectedSpell() )
 	{
-		selected_spell_last_appearance = selected_spell->ID;
+		players[player]->magic.selected_spell_last_appearance = players[player]->magic.selectedSpell()->ID;
 	}
 	else
 	{
-		selected_spell_last_appearance = -1;
+		players[player]->magic.selected_spell_last_appearance = -1;
 	}
 
-	for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
+	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 	{
 		Item* item = static_cast<Item*>(node->element);
 		if ( item )
 		{
 			if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
 			{
-				spell_t* spell = getSpellFromItem(item);
-				if ( spell && client_classes[clientnum] == CLASS_SHAMAN )
+				spell_t* spell = getSpellFromItem(player, item);
+				if ( spell && client_classes[player] == CLASS_SHAMAN )
 				{
 					// move shapeshift spells out of inventory. 
 					// if somehow the spell got added to your selected spell then remove it.
@@ -2801,14 +2809,14 @@ void deinitShapeshiftHotbar()
 							{
 								item->y -= 100;
 							}
-							if ( selected_spell == spell )
+							if ( players[player]->magic.selectedSpell() == spell )
 							{
-								selected_spell = nullptr;
-								selected_spell_last_appearance = -1;
+								players[player]->magic.equipSpell(nullptr);
+								players[player]->magic.selected_spell_last_appearance = -1;
 							}
-							if ( selected_spell_alternate[HOTBAR_DEFAULT] == spell )
+							if ( players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT] == spell )
 							{
-								selected_spell_alternate[HOTBAR_DEFAULT] = nullptr;
+								players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT] = nullptr;
 							}
 							break;
 						default:
@@ -2832,7 +2840,7 @@ bool playerUnlockedShamanSpell(const int player, Item* const item)
 		return false;
 	}
 
-	spell_t* spell = getSpellFromItem(item);
+	spell_t* spell = getSpellFromItem(player, item);
 	int levelRequirement = 0;
 	if ( spell && client_classes[player] == CLASS_SHAMAN )
 	{

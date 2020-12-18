@@ -45,6 +45,7 @@ void actDoor(Entity* my)
 		my->doorStartAng = my->yaw;
 		my->doorHealth = 15 + rand() % 5;
 		my->doorMaxHealth = my->doorHealth;
+		my->doorOldHealth = my->doorHealth;
 		my->doorPreventLockpickExploit = 1;
 		my->doorLockpickHealth = 20;
 		if ( my->doorForceLockedUnlocked == 2 )
@@ -74,6 +75,8 @@ void actDoor(Entity* my)
 					my->doorHealth--;
 				}
 			}
+
+			my->doorOldHealth = my->doorHealth;
 
 			// door mortality :p
 			if ( my->doorHealth <= 0 )
@@ -129,7 +132,7 @@ void actDoor(Entity* my)
 			// using door
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+				if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 				{
 					if ( players[i]->entity && inrange[i])
 					{

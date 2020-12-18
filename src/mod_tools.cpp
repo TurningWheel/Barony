@@ -13,6 +13,7 @@ See LICENSE for details.
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "draw.hpp"
+#include "player.hpp"
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -94,6 +95,12 @@ void GameModeManager_t::Tutorial_t::buttonRestartTrial(button_t* my)
 	buttonReturnToTutorialHub(nullptr);
 }
 
+#ifdef EDITOR
+void GameModeManager_t::Tutorial_t::openGameoverWindow()
+{
+	return;
+}
+#else
 void GameModeManager_t::Tutorial_t::openGameoverWindow()
 {
 	node_t* node;
@@ -108,7 +115,7 @@ void GameModeManager_t::Tutorial_t::openGameoverWindow()
 	suby2 = yres / 2 + 160;
 	button_t* button;
 
-	shootmode = false;
+	players[clientnum]->shootmode = false;
 	strcpy(subtext, language[1133]);
 	strcat(subtext, language[1134]);
 	strcat(subtext, language[1137]);
@@ -164,6 +171,7 @@ void GameModeManager_t::Tutorial_t::openGameoverWindow()
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
+#endif
 
 //TODO: NX PORT: Update for the Switch?
 void GameModeManager_t::Tutorial_t::readFromFile()

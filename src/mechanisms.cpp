@@ -170,12 +170,47 @@ void actSwitch(Entity* my)
 	//So then when that second switch's actSwitch() comes up, and if it's on, it'll repower the entire network -- which will stay powered until ALL connected switches go off.
 	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
 
+	if ( my->ticks == 1 )
+	{
+		for ( int i = 0; i < MAXPLAYERS && i < 4; ++i )
+		{
+			if ( !players[i]->isLocalPlayerAlive() )
+			{
+				continue;
+			}
+			Entity* worldTooltip = newEntity(-1, 1, map.entities, nullptr);
+			worldTooltip->x = my->x;
+			worldTooltip->y = my->y;
+			worldTooltip->z = my->z;
+			worldTooltip->sizex = 1;
+			worldTooltip->sizey = 1;
+			worldTooltip->flags[NOUPDATE] = true;
+			worldTooltip->flags[PASSABLE] = true;
+			worldTooltip->flags[SPRITE] = true;
+			worldTooltip->flags[BRIGHT] = true;
+			worldTooltip->flags[UNCLICKABLE] = true;
+			worldTooltip->behavior = &actSpriteWorldTooltip;
+			worldTooltip->parent = my->getUID();
+			worldTooltip->scalex = 0.05;
+			worldTooltip->scaley = 0.05;
+			worldTooltip->scalez = 0.05;
+			worldTooltip->worldTooltipPlayer = i;
+			worldTooltip->worldTooltipZ = 1.5;
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			players[i]->worldUI.setTooltipDisabled(*worldTooltip);
+			worldTooltip->addToWorldUIList(map.worldUI);
+		}
+	}
+
 	if ( multiplayer != CLIENT )
 	{
 		int i = 0;
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if (inrange[i])   //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
 				{
@@ -246,7 +281,7 @@ void actSwitchWithTimer(Entity* my)
 		int i = 0;
 		for ( i = 0; i < MAXPLAYERS; ++i )
 		{
-			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				// server/client has clicked on the entity.
 				if ( inrange[i] )   //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.

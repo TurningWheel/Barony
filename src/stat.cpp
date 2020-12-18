@@ -17,6 +17,7 @@
 #include "items.hpp"
 #include "magic/magic.hpp"
 #include "net.hpp"
+#include "player.hpp"
 
 Stat* stats[MAXPLAYERS];
 
@@ -845,7 +846,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 
 	this->GOLD = src.GOLD;
 	bool oldIntro = intro;
-	if ( player == clientnum )
+	if ( player >= 0 && players[player]->isLocalPlayer() )
 	{
 		intro = true;
 	}
@@ -856,7 +857,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.helmet);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -888,7 +889,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.breastplate);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -920,7 +921,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.gloves);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -952,7 +953,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.shoes);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -984,7 +985,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.shield);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -1016,7 +1017,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.weapon);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -1048,7 +1049,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.cloak);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -1080,7 +1081,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.amulet);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -1112,7 +1113,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.ring);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -1144,7 +1145,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 			Item* item = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, true, nullptr);
 			copyItem(item, src.mask);
 			item->identified = true;
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				Item* pickedUp = itemPickup(player, item);
 				useItem(pickedUp, player);
@@ -1183,7 +1184,7 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 				Item* pickedUp = itemPickup(player, item);
 				if ( pickedUp )
 				{
-					if ( player == clientnum )
+					if ( players[player]->isLocalPlayer() )
 					{
 						free(item);
 					}

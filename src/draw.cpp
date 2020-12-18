@@ -15,6 +15,7 @@
 #include "hash.hpp"
 #include "entity.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 #ifndef NINTENDO
 #include "editor.hpp"
 #endif
@@ -671,9 +672,9 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 			real_t arcx2 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
 			real_t arcy2 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
 			//glTexCoord2f(1.f, 0.f);
-			glVertex2f(xres / 2 + arcx1, yres / 2 + arcy1);
+			glVertex2f(src->x + arcx1, yres - src->y + arcy1);
 			//glTexCoord2f(0.f, 1.f);
-			glVertex2f(xres / 2 + arcx2, yres / 2 + arcy2);
+			glVertex2f(src->x + arcx2, yres - src->y + arcy2);
 			//s = i % first + 0.01;
 			//arcAngle = (((j + 1) % segments) * 2 * PI / segments) + angStart; // angle of the line.
 			//real_t arcx3 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
@@ -1390,6 +1391,44 @@ void drawEntities3D(view_t* camera, int mode)
 					continue;
 				}
 		}
+		if ( entity->flags[OVERDRAW] && splitscreen )
+		{
+			// need to skip some HUD models in splitscreen.
+			int currentPlayerViewport = -1;
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( &cameras[c] == camera )
+				{
+					currentPlayerViewport = c;
+					break;
+				}
+			}
+			if ( currentPlayerViewport >= 0 )
+			{
+				if ( entity->behavior == &actHudWeapon 
+					|| entity->behavior == &actHudArm 
+					|| entity->behavior == &actGib
+					|| entity->behavior == &actFlame )
+				{
+					// the gibs are from casting magic in the HUD
+					if ( entity->skill[11] != currentPlayerViewport )
+					{
+						continue;
+					}
+				}
+				else if ( entity->behavior == &actHudAdditional
+					|| entity->behavior == &actHudArrowModel
+					|| entity->behavior == &actHudShield
+					|| entity->behavior == &actLeftHandMagic
+					|| entity->behavior == &actRightHandMagic )
+				{
+					if ( entity->skill[2] != currentPlayerViewport )
+					{
+						continue;
+					}
+				}
+			}
+		}
 		x = entity->x / 16;
 		y = entity->y / 16;
 		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
@@ -1410,6 +1449,10 @@ void drawEntities3D(view_t* camera, int mode)
 							glDrawSpriteFromImage(camera, entity, stats[playersTag]->name, mode);
 						}
 					}
+					else if ( entity->behavior == &actSpriteWorldTooltip )
+					{
+						glDrawWorldUISprite(camera, entity, mode);
+					}
 					else
 					{
 						glDrawSprite(camera, entity, mode);
@@ -1423,7 +1466,11 @@ void drawEntities3D(view_t* camera, int mode)
 			{
 				glDrawVoxel(camera, entity, mode);
 			}
-			else
+			else if ( entity->behavior == &actSpriteWorldTooltip )
+			{
+				glDrawWorldUISprite(camera, entity, mode);
+			}
+			else 
 			{
 				glDrawSprite(camera, entity, mode);
 			}
@@ -1474,7 +1521,7 @@ void drawEntities2D(long camx, long camy)
 		{
 			if ( sprites[entity->sprite] != nullptr )
 			{
-				if ( entity == selectedEntity )
+				if ( entity == selectedEntity[0] )
 				{
 					// draws a box around the sprite
 					box.w = TEXTURESIZE;
@@ -1525,7 +1572,7 @@ void drawEntities2D(long camx, long camy)
 			}
 			else
 			{
-				if ( entity == selectedEntity )
+				if ( entity == selectedEntity[0] )
 				{
 					// draws a box around the sprite
 					box.w = TEXTURESIZE;
@@ -1544,7 +1591,7 @@ void drawEntities2D(long camx, long camy)
 		}
 		else
 		{
-			if ( entity == selectedEntity )
+			if ( entity == selectedEntity[0] )
 			{
 				// draws a box around the sprite
 				box.w = TEXTURESIZE;
@@ -1588,9 +1635,9 @@ void drawEntities2D(long camx, long camy)
 		{
 			if ( sprites[entity->sprite] != nullptr )
 			{
-				if ( entity == selectedEntity )
+				if ( entity == selectedEntity[0] )
 				{
-					int spriteType = checkSpriteType(selectedEntity->sprite);
+					int spriteType = checkSpriteType(selectedEntity[0]->sprite);
 					char tmpStr[1024] = "";
 					char tmpStr2[1024] = "";
 					int padx = pos.x + 10;
@@ -1602,7 +1649,7 @@ void drawEntities2D(long camx, long camy)
 						case 1: //monsters
 							pady += 10;
 							if ( entity->getStats() != nullptr ) {
-								strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+								strcpy(tmpStr, spriteEditorNameStrings[selectedEntity[0]->sprite]);
 								ttfPrintText(ttf8, padx, pady - 10, tmpStr);
 								snprintf(tmpStr, sizeof(entity->getStats()->name), "Name: %s", entity->getStats()->name);
 								ttfPrintText(ttf8, padx, pady, tmpStr);
@@ -1616,7 +1663,7 @@ void drawEntities2D(long camx, long camy)
 							break;
 						case 2: //chest
 							pady += 5;
-							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity[0]->sprite]);
 							ttfPrintText(ttf8, padx, pady, tmpStr);
 							switch ( (int)entity->yaw )
 							{
@@ -1677,14 +1724,14 @@ void drawEntities2D(long camx, long camy)
 
 						case 3: //Items
 							pady += 5;
-							strcpy(tmpStr, itemNameStrings[selectedEntity->skill[10]]);
+							strcpy(tmpStr, itemNameStrings[selectedEntity[0]->skill[10]]);
 							ttfPrintText(ttf8, padx, pady - 20, tmpStr);
 							color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
 							pady += 2;
 
 							strcpy(tmpStr, "Status: ");
 							ttfPrintTextColor(ttf8, padx, pady - 10, colorWhite, 1, tmpStr);
-							switch ( (int)selectedEntity->skill[11] )
+							switch ( (int)selectedEntity[0]->skill[11] )
 							{
 								case 1:
 									strcpy(tmpStr, "Broken");
@@ -1715,42 +1762,42 @@ void drawEntities2D(long camx, long camy)
 
 							strcpy(tmpStr, "Bless: ");
 							ttfPrintTextColor(ttf8, padx, pady, colorWhite, 1, tmpStr);
-							if ( selectedEntity->skill[12] < 0 )
+							if ( selectedEntity[0]->skill[12] < 0 )
 							{
-								snprintf(tmpStr2, 10, "%d", selectedEntity->skill[12]);
+								snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[12]);
 								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 							}
-							else if ( selectedEntity->skill[12] == 0 )
+							else if ( selectedEntity[0]->skill[12] == 0 )
 							{
-								snprintf(tmpStr2, 10, "%d", selectedEntity->skill[12]);
+								snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[12]);
 								color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
 							}
-							else if ( selectedEntity->skill[12] == 10 )
+							else if ( selectedEntity[0]->skill[12] == 10 )
 							{
 								strcpy(tmpStr2, "?");
 								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
 							}
 							else
 							{
-								snprintf(tmpStr2, 10, "+%d", selectedEntity->skill[12]);
+								snprintf(tmpStr2, 10, "+%d", selectedEntity[0]->skill[12]);
 								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							}
 							ttfPrintTextColor(ttf8, padx + 48, pady, color, 1, tmpStr2);
 
 							strcpy(tmpStr, "Qty: ");
 							ttfPrintTextColor(ttf8, padx, pady + 10, colorWhite, 1, tmpStr);
-							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[13]);
+							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[13]);
 							ttfPrintTextColor(ttf8, padx + 32, pady + 10, colorWhite, 1, tmpStr2);
 
 							pady += 2;
 							strcpy(tmpStr, "Identified: ");
 							ttfPrintTextColor(ttf8, padx, pady + 20, colorWhite, 1, tmpStr);
-							if ( (int)selectedEntity->skill[15] == 0 )
+							if ( (int)selectedEntity[0]->skill[15] == 0 )
 							{
 								strcpy(tmpStr2, "No");
 								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 							}
-							else if ( (int)selectedEntity->skill[15] == 1 )
+							else if ( (int)selectedEntity[0]->skill[15] == 1 )
 							{
 								strcpy(tmpStr2, "Yes");
 								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
@@ -1765,7 +1812,7 @@ void drawEntities2D(long camx, long camy)
 						case 4: //summoning trap
 							pady += 5;
 							offsety = -40;
-							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity[0]->sprite]);
 							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
 
 							offsety += 10;
@@ -1779,28 +1826,28 @@ void drawEntities2D(long camx, long camy)
 							strcpy(tmpStr, "Qty: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
-							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[1]);
+							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[1]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Time: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
-							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[2]);
+							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[2]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Amount: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
-							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[3]);
+							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[3]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Power to: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
-							if ( selectedEntity->skill[4] == 1 )
+							if ( selectedEntity[0]->skill[4] == 1 )
 							{
 								strcpy(tmpStr2, "Spawn");
 							}
@@ -1814,13 +1861,13 @@ void drawEntities2D(long camx, long camy)
 							strcpy(tmpStr, "Stop Chance: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
-							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[5]);
+							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[5]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 							break;
 						case 5: //power crystal
 							pady += 5;
 							offsety = -20;
-							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity[0]->sprite]);
 							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
 
 							offsety += 10;
@@ -1852,7 +1899,7 @@ void drawEntities2D(long camx, long camy)
 							strcpy(tmpStr, "Nodes: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
-							snprintf(tmpStr2, 10, "%d", selectedEntity->crystalNumElectricityNodes);
+							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->crystalNumElectricityNodes);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
@@ -1900,18 +1947,18 @@ void drawEntities2D(long camx, long camy)
 							int totalChars = 0;
 							for ( int i = (spriteType == 16 ? 4 : 8); i < 60; ++i )
 							{
-								if ( selectedEntity->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
+								if ( selectedEntity[0]->skill[i] != 0 && i != 28 ) // skill[28] is circuit status.
 								{
 									for ( int c = 0; c < 4; ++c )
 									{
-										if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
-											&& i != 59 && selectedEntity->skill[i + 1] != 0 )
+										if ( static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF) == '\0'
+											&& i != 59 && selectedEntity[0]->skill[i + 1] != 0 )
 										{
 											// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
 										}
 										else
 										{
-											buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+											buf[totalChars] = static_cast<char>((selectedEntity[0]->skill[i] >> (c * 8)) & 0xFF);
 											++totalChars;
 										}
 									}
@@ -1923,7 +1970,7 @@ void drawEntities2D(long camx, long camy)
 							}
 							int numLines = 0;
 							std::vector<std::string> lines;
-							lines.push_back(spriteEditorNameStrings[selectedEntity->sprite]);
+							lines.push_back(spriteEditorNameStrings[selectedEntity[0]->sprite]);
 
 							strncpy(tmpStr, buf, 48);
 							if ( strcmp(tmpStr, "") )
@@ -1978,7 +2025,7 @@ void drawEntities2D(long camx, long camy)
 						}
 							break;
 						default:
-							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity[0]->sprite]);
 							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
 							break;
 
@@ -1986,7 +2033,7 @@ void drawEntities2D(long camx, long camy)
 				}
 				else if ( (omousex / TEXTURESIZE) * 32 == pos.x
 						&& (omousey / TEXTURESIZE) * 32 == pos.y
-						&& selectedEntity == NULL
+						&& selectedEntity[0] == NULL
 #ifndef NINTENDO
 						&& hovertext
 #endif

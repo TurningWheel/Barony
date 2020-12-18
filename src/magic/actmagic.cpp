@@ -458,7 +458,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 	{
 		my->removeLightField();
 
-		if (clientnum == 0 || multiplayer == SERVER)
+		if ( multiplayer != CLIENT )
 		{
 			//Handle the missile's life.
 			MAGIC_LIFE++;
@@ -833,7 +833,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							// set armornum to the relevant equipment slot to send to clients
 							int armornum = 5 + reflection;
-							if ( player == clientnum || player < 0 )
+							if ( (player >= 0 && players[player]->isLocalPlayer()) || player < 0 )
 							{
 								if ( reflection == 1 )
 								{
@@ -4310,7 +4310,7 @@ void actParticleSapCenter(Entity* my)
 					achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING);
 					if ( pickedUp )
 					{
-						if ( parent->skill[2] == 0 )
+						if ( parent->skill[2] == 0 || (parent->skill[2] > 0 && splitscreen) )
 						{
 							// pickedUp is the new inventory stack for server, free the original items
 							free(item);
@@ -4319,12 +4319,15 @@ void actParticleSapCenter(Entity* my)
 							{
 								useItem(pickedUp, parent->skill[2]);
 							}
-							if ( magicBoomerangHotbarSlot >= 0 )
+							auto& hotbar_t = players[parent->skill[2]]->hotbar;
+							if ( hotbar_t->magicBoomerangHotbarSlot >= 0 )
 							{
-								hotbar[magicBoomerangHotbarSlot].item = pickedUp->uid;
+								auto& hotbar = hotbar_t->slots();
+								hotbar[hotbar_t->magicBoomerangHotbarSlot].item = pickedUp->uid;
 								for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 								{
-									if ( i != magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+									if ( i != hotbar_t->magicBoomerangHotbarSlot
+										&& hotbar[i].item == pickedUp->uid )
 									{
 										hotbar[i].item = 0;
 									}

@@ -131,7 +131,7 @@ void actSpearTrap(Entity* my)
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									messagePlayerColor(entity->skill[2], color, language[586]);
-									if ( entity->skill[2] == clientnum || (splitscreen && entity->skill[2] > 0) )
+									if ( players[entity->skill[2]]->isLocalPlayer() )
 									{
 										cameravars[entity->skill[2]].shakex += .1;
 										cameravars[entity->skill[2]].shakey += 10;

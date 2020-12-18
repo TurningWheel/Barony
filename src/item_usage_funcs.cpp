@@ -60,7 +60,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -69,7 +69,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -161,7 +161,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				serverUpdateHunger(player);
 			}
 		}
-		if ( player != clientnum )
+		if ( player >= 0 && !players[player]->isLocalPlayer() )
 		{
 			consumeItem(item, player);
 			return true;
@@ -330,14 +330,14 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			if ( multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "BEAT");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = player;
 				net_packet->data[5] = armornum;
 				net_packet->data[6] = toCurse->beatitude + 100;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				net_packet->len = 7;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
-				//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
 			consumeItem(item, player);
 			return true;
@@ -424,7 +424,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -433,7 +433,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -561,7 +561,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -570,7 +570,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -739,7 +739,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -748,7 +748,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -829,7 +829,7 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -838,7 +838,7 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -907,7 +907,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -916,7 +916,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -1012,7 +1012,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1021,7 +1021,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -1090,7 +1090,7 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1099,7 +1099,7 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -1181,7 +1181,7 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1190,7 +1190,7 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -1258,7 +1258,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1267,7 +1267,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -1358,7 +1358,7 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1367,7 +1367,7 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -1455,7 +1455,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1464,7 +1464,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -1545,7 +1545,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1554,15 +1554,15 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
 		return false;
 	}
-	if ( multiplayer == CLIENT || player == 0 )
+	if ( multiplayer == CLIENT || (player >= 0 && players[player]->isLocalPlayer()) )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			camera_shakex += .1;
 			camera_shakey += 10;
@@ -1688,7 +1688,7 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1697,7 +1697,7 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -1768,7 +1768,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1777,7 +1777,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -1913,7 +1913,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -1922,7 +1922,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -2061,7 +2061,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -2070,7 +2070,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -2180,7 +2180,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[750]);
 			}
@@ -2189,7 +2189,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[751]);
 		}
@@ -2229,7 +2229,7 @@ void item_ScrollMail(Item* item, int player)
 		return;
 	}
 
-	if ( player != clientnum )
+	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -2240,7 +2240,7 @@ void item_ScrollMail(Item* item, int player)
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductIlliterate = false;
 	}
@@ -2329,8 +2329,9 @@ void item_ScrollIdentify(Item* item, int player)
 		return;
 	}
 
-	if (player != clientnum)
+	if (!players[player]->isLocalPlayer())
 	{
+		consumeItem(item, player);
 		return;
 	}
 
@@ -2340,26 +2341,33 @@ void item_ScrollIdentify(Item* item, int player)
 		return;
 	}
 
-	//identifygui_mode = true;
-	identifygui_active = true;
-	identifygui_appraising = false;
-	shootmode = false;
-	openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	conductIlliterate = false;
 
-	if ( removecursegui_active )
+	if ( item->identified )
 	{
-		closeRemoveCurseGUI();
+		// Uncurse an item
+		// quickly check if we have any items available so we don't waste our scroll
+		bool foundIdentifiable = false;
+		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+		{
+			Item* inventoryItem = (Item*)node->element;
+			if ( GenericGUI[player].isItemIdentifiable(inventoryItem) )
+			{
+				foundIdentifiable = true;
+				break;
+			}
+		}
+		if ( !foundIdentifiable )
+		{
+			messagePlayer(player, language[3996]);
+			return;
+		}
 	}
 
-	GenericGUI.closeGUI();
-
-	if ( openedChest[clientnum] )
-	{
-		openedChest[clientnum]->closeChest();
-	}
-
-	//Initialize Identify GUI game controller code here.
-	initIdentifyGUIControllerCode();
+	item->identified = true;
+	messagePlayer(player, language[848]);
+	GenericGUI[player].openGUI(GUI_TYPE_IDENTIFY, item->beatitude, item->type);
+	consumeItem(item, player);
 }
 
 void item_ScrollLight(Item* item, int player)
@@ -2382,7 +2390,7 @@ void item_ScrollLight(Item* item, int player)
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductIlliterate = false;
 	}
@@ -2421,7 +2429,7 @@ void item_ScrollBlank(Item* item, int player)
 		return;
 	}
 
-	if (player != clientnum)
+	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -2432,7 +2440,7 @@ void item_ScrollBlank(Item* item, int player)
 		return;
 	}
 
-	if (player == clientnum)
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductIlliterate = false;
 	}
@@ -2447,7 +2455,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 		return;
 	}
 
-	if ( player != clientnum )
+	if ( !players[player]->isLocalPlayer() )
 	{
 		consumeItem(item, player);
 		return;
@@ -2510,7 +2518,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			if ( (*toEnchant)->beatitude > 0 )
 			{
 				(*toEnchant)->beatitude = -(*toEnchant)->beatitude;
-				if ( stats[clientnum]->type == SUCCUBUS )
+				if ( stats[player]->type == SUCCUBUS )
 				{
 					steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
 				}
@@ -2550,14 +2558,14 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 		if ( multiplayer == CLIENT )
 		{
 			strcpy((char*)net_packet->data, "BEAT");
-			net_packet->data[4] = clientnum;
+			net_packet->data[4] = player;
 			net_packet->data[5] = 0; // weapon index
 			net_packet->data[6] = (*toEnchant)->beatitude + 100;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 7;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
-			//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		}
 	}
 	consumeItem(item, player);
@@ -2576,7 +2584,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		return;
 	}
 
-	if ( player != clientnum )
+	if ( !players[player]->isLocalPlayer() )
 	{
 		consumeItem(item, player);
 		return;
@@ -2714,14 +2722,14 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		if ( multiplayer == CLIENT )
 		{
 			strcpy((char*)net_packet->data, "BEAT");
-			net_packet->data[4] = clientnum;
+			net_packet->data[4] = player;
 			net_packet->data[5] = armornum;
 			net_packet->data[6] = armor->beatitude + 100;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 7;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
-			//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		}
 	}
 	consumeItem(item, player);
@@ -2734,7 +2742,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		return;
 	}
 
-	if ( player != clientnum )
+	if ( !players[player]->isLocalPlayer() )
 	{
 		consumeItem(item, player);
 		return;
@@ -2746,28 +2754,31 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		return;
 	}
 
-	if (item->beatitude >= 0)
+	conductIlliterate = false;
+	if ( item->identified && item->beatitude >= 0 )
 	{
 		// Uncurse an item
-		shootmode = false;
-		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-		removecursegui_active = true;
-		if ( identifygui_active )
+		// quickly check if we have any items available so we don't waste our scroll
+		bool foundUncurseable = false;
+		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
-			CloseIdentifyGUI();
+			Item* inventoryItem = (Item*)node->element;
+			if ( GenericGUI[player].isItemRemoveCursable(inventoryItem) )
+			{
+				foundUncurseable = true;
+				break;
+			}
 		}
-		GenericGUI.closeGUI();
-
-		if ( openedChest[player] )
+		if ( !foundUncurseable )
 		{
-			openedChest[player]->closeChest();
+			messagePlayer(player, language[3995]);
+			return;
 		}
-
-		initRemoveCurseGUIControllerCode();
-		consumeItem(item, player);
-		return;
 	}
-	else
+
+	item->identified = true;
+	messagePlayer(player, language[848]);
+	if ( item->beatitude < 0 )
 	{
 		// choose a random piece of worn equipment to curse!
 		int tryIndex = rand() % 8;
@@ -2863,7 +2874,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 			else
 			{
 				toCurse->beatitude = -toCurse->beatitude;
-				if ( itemCategory(toCurse) == WEAPON && stats[clientnum]->type == SUCCUBUS )
+				if ( itemCategory(toCurse) == WEAPON && stats[player]->type == SUCCUBUS )
 				{
 					steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
 				}
@@ -2872,20 +2883,24 @@ void item_ScrollRemoveCurse(Item* item, int player)
 			if ( multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "BEAT");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = player;
 				net_packet->data[5] = armornum;
 				net_packet->data[6] = toCurse->beatitude + 100;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				net_packet->len = 7;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
-				//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
 		}
 		else
 		{
 			messagePlayer(player, language[862]);
 		}
+	}
+	else
+	{
+		GenericGUI[player].openGUI(GUI_TYPE_REMOVECURSE, item->beatitude, item->type);
 	}
 	consumeItem(item, player);
 }
@@ -2908,7 +2923,7 @@ bool item_ScrollFire(Item* item, int player)
 		return false;
 	}
 
-	if (player == clientnum)
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductIlliterate = false;
 	}
@@ -2960,7 +2975,7 @@ void item_ScrollFood(Item* item, int player)
 	}
 
 	// this is a CLIENT function
-	if (player != clientnum)
+	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -2971,7 +2986,7 @@ void item_ScrollFood(Item* item, int player)
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductIlliterate = false;
 	}
@@ -3021,7 +3036,7 @@ void item_ScrollConjureArrow(Item* item, int player)
 	}
 
 	// this is a CLIENT function
-	if ( player != clientnum )
+	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -3032,7 +3047,7 @@ void item_ScrollConjureArrow(Item* item, int player)
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductIlliterate = false;
 	}
@@ -3081,7 +3096,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductIlliterate = false;
 	}
@@ -3114,7 +3129,7 @@ void item_ScrollRepair(Item* item, int player)
 	}
 
 	// client function only
-	if ( player != clientnum )
+	if ( !players[player]->isLocalPlayer() )
 	{
 		consumeItem(item, player);
 		return;
@@ -3134,7 +3149,7 @@ void item_ScrollRepair(Item* item, int player)
 		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
 			Item* inventoryItem = (Item*)node->element;
-			if ( GenericGUI.isItemRepairable(inventoryItem, item->type) )
+			if ( GenericGUI[player].isItemRepairable(inventoryItem, item->type) )
 			{
 				foundRepairableItem = true;
 				break;
@@ -3252,7 +3267,7 @@ void item_ScrollRepair(Item* item, int player)
 			if ( multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "REPA");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = player;
 				net_packet->data[5] = armornum;
 				net_packet->data[6] = armor->status;
 				net_packet->address.host = net_server.host;
@@ -3260,7 +3275,7 @@ void item_ScrollRepair(Item* item, int player)
 				net_packet->len = 7;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 
-				//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
 			if ( armor->status > BROKEN )
 			{
@@ -3291,7 +3306,7 @@ void item_ScrollRepair(Item* item, int player)
 	else
 	{
 		// Repair an item
-		GenericGUI.openGUI(GUI_TYPE_REPAIR, item->beatitude, item->type);
+		GenericGUI[player].openGUI(GUI_TYPE_REPAIR, item->beatitude, item->type);
 	}
 	consumeItem(item, player);
 }
@@ -3305,7 +3320,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	}
 
 	// client function only
-	if ( player != clientnum )
+	if ( !players[player]->isLocalPlayer() )
 	{
 		consumeItem(item, player);
 		return;
@@ -3418,7 +3433,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 			if ( multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "REPA");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = player;
 				net_packet->data[5] = armornum;
 				net_packet->data[6] = armor->status;
 				net_packet->address.host = net_server.host;
@@ -3426,7 +3441,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 				net_packet->len = 7;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 
-				//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
 
 			if ( armor->status == BROKEN )
@@ -3461,14 +3476,14 @@ void item_ScrollTeleportation(Item* item, int player)
 
 	if (players[player]->entity->isBlind())
 	{
-		if (player == clientnum)
+		if ( players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[775]);
 		}
 		return;
 	}
 
-	if (player == clientnum)
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductIlliterate = false;
 	}
@@ -3495,16 +3510,16 @@ void item_ScrollSummon(Item* item, int player)
 		return;
 	}
 
-	if (players[player]->entity->isBlind())
+	if ( players[player]->entity->isBlind() )
 	{
-		if (player == clientnum)
+		if ( players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[775]);
 		}
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductIlliterate = false;
 	}
@@ -3657,9 +3672,9 @@ void item_ScrollSummon(Item* item, int player)
 					serverUpdateAllyStat(player, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 				}
 
-				if ( !FollowerMenu.recentEntity && player == clientnum )
+				if ( !FollowerMenu[player].recentEntity && players[player]->isLocalPlayer() )
 				{
-					FollowerMenu.recentEntity = monster;
+					FollowerMenu[player].recentEntity = monster;
 				}
 			}
 		}
@@ -3733,7 +3748,7 @@ void item_ScrollSummon(Item* item, int player)
 
 void item_ToolTowel(Item*& item, int player)
 {
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, language[883]);
 	}
@@ -3752,7 +3767,7 @@ void item_ToolTowel(Item*& item, int player)
 	// stop bleeding
 	if ( stats[player]->EFFECTS[EFF_BLEEDING] )
 	{
-		if ( player == clientnum )
+		if ( players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[884]);
 			messagePlayer(player, language[885]);
@@ -3788,13 +3803,13 @@ void item_ToolMirror(Item*& item, int player)
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, language[889]);
 	}
 	if ( players[player]->entity->isInvisible() || (stats[player]->type == VAMPIRE) )
 	{
-		if ( player == clientnum )
+		if ( players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[893]);
 		}
@@ -3812,7 +3827,7 @@ void item_ToolMirror(Item*& item, int player)
 			players[player]->entity->teleportRandom();
 		}
 	}
-	if (player != clientnum)   //TODO: Hotseat? (player != clientnum || !players[player]->hotseat
+	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -3963,7 +3978,7 @@ void item_ToolBeartrap(Item*& item, int player)
 	}
 	if (item->beatitude < 0 || failed)
 	{
-		if (player == clientnum)
+		if ( players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[905]);
 		}
@@ -4030,11 +4045,11 @@ void item_Food(Item*& item, int player)
 	{
 		if ( stats[player]->type == SKELETON )
 		{
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				steamAchievement("BARONY_ACH_BONEHEADED");
 				dropItem(item, player); // client drop item
-				messagePlayer(clientnum, language[3179]);
+				messagePlayer(player, language[3179]);
 			}
 			return;
 		}
@@ -4044,7 +4059,7 @@ void item_Food(Item*& item, int player)
 	{
 		if ( stats[player]->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[756]);
 			}
@@ -4055,14 +4070,14 @@ void item_Food(Item*& item, int player)
 	// can't eat while vomiting
 	if ( stats[player]->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[757]);
 		}
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductFoodless = false;
 		if ( item->type == FOOD_MEAT || item->type == FOOD_FISH || item->type == FOOD_TOMALLEY || item->type == FOOD_BLOOD )
@@ -4316,11 +4331,11 @@ void item_FoodTin(Item*& item, int player)
 	{
 		if ( stats[player]->type == SKELETON )
 		{
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				steamAchievement("BARONY_ACH_BONEHEADED");
 				dropItem(item, player); // client drop item
-				messagePlayer(clientnum, language[3179]);
+				messagePlayer(player, language[3179]);
 			}
 			return;
 		}
@@ -4330,7 +4345,7 @@ void item_FoodTin(Item*& item, int player)
 	{
 		if ( stats[player]->amulet->type == AMULET_STRANGULATION )
 		{
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[756]);
 			}
@@ -4341,14 +4356,14 @@ void item_FoodTin(Item*& item, int player)
 	// can't eat while vomiting
 	if ( stats[player]->EFFECTS[EFF_VOMITING] )
 	{
-		if ( player == clientnum )
+		if ( players[player]->isLocalPlayer() )
 		{
 			messagePlayer(player, language[757]);
 		}
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		conductFoodless = false;
 		conductVegetarian = false;
@@ -4552,7 +4567,7 @@ void item_AmuletSexChange(Item* item, int player)
 	{
 		if ( !stats[player]->amulet->canUnequip(stats[player]) )
 		{
-			if ( player == clientnum )
+			if ( players[player]->isLocalPlayer() )
 			{
 				if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
 				{
@@ -4569,7 +4584,7 @@ void item_AmuletSexChange(Item* item, int player)
 	stats[player]->amulet = NULL;
 	stats[player]->sex = static_cast<sex_t>((stats[player]->sex == 0));
 
-	if ( player != clientnum )
+	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -4589,7 +4604,7 @@ void item_Spellbook(Item*& item, int player)
 	node_t* node, *nextnode;
 
 	item->identified = true;
-	if (player != clientnum)
+	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -4599,7 +4614,7 @@ void item_Spellbook(Item*& item, int player)
 		messagePlayer(player, language[970]);
 		return;
 	}
-	if ( itemIsEquipped(item, clientnum) )
+	if ( itemIsEquipped(item, player) )
 	{
 		messagePlayer(player, language[3460]);
 		return;
@@ -4623,12 +4638,12 @@ void item_Spellbook(Item*& item, int player)
 
 	if ( item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]) )
 	{
-		messagePlayer(clientnum, language[971]);
-		if ( list_Size(&spellList) > 0 && stats[player]->type != AUTOMATON )
+		messagePlayer(player, language[971]);
+		if ( list_Size(&players[player]->magic.spellList) > 0 && stats[player]->type != AUTOMATON )
 		{
 			// randomly delete a spell
-			int spellToDelete = rand() % list_Size(&spellList);
-			node = list_Node(&spellList, spellToDelete);
+			int spellToDelete = rand() % list_Size(&players[player]->magic.spellList);
+			node = list_Node(&players[player]->magic.spellList, spellToDelete);
 			spell_t* spell = (spell_t*)node->element;
 			int spellID = spell->ID;
 			bool deleted = false;
@@ -4636,20 +4651,20 @@ void item_Spellbook(Item*& item, int player)
 
 			// delete its accompanying spell item(s)
 
-			if ( client_classes[clientnum] == CLASS_SHAMAN )
+			if ( client_classes[player] == CLASS_SHAMAN )
 			{
 				// don't forget your racial spells otherwise borked.
 				// special roll checking.
-				if ( list_Size(&spellList) <= CLASS_SHAMAN_NUM_STARTING_SPELLS )
+				if ( list_Size(&players[player]->magic.spellList) <= CLASS_SHAMAN_NUM_STARTING_SPELLS )
 				{
 					// no spells to delete. return early.
-					messagePlayer(clientnum, language[973]);
+					messagePlayer(player, language[973]);
 					consumeItem(item, player);
 					return;
 				}
-				spellToDelete = rand() % (list_Size(&spellList) - CLASS_SHAMAN_NUM_STARTING_SPELLS);
+				spellToDelete = rand() % (list_Size(&players[player]->magic.spellList) - CLASS_SHAMAN_NUM_STARTING_SPELLS);
 				spellToDelete += CLASS_SHAMAN_NUM_STARTING_SPELLS; // e.g 16 spells is 0 + 15, 15th index.
-				node = list_Node(&spellList, spellToDelete);
+				node = list_Node(&players[player]->magic.spellList, spellToDelete);
 				spell = (spell_t*)node->element;
 				spellID = spell->ID;
 			}
@@ -4715,22 +4730,22 @@ void item_Spellbook(Item*& item, int player)
 			if ( !deleted )
 			{
 				// maybe we've got an inventory full of shapeshift spells?
-				messagePlayer(clientnum, language[973]);
+				messagePlayer(player, language[973]);
 				consumeItem(item, player);
 				return;
 			}
 			else if ( deleted )
 			{
-				messagePlayer(clientnum, language[972]);
-				if ( spell == selected_spell )
+				messagePlayer(player, language[972]);
+				if ( spell == players[player]->magic.selectedSpell() )
 				{
-					selected_spell = nullptr;
+					players[player]->magic.equipSpell(nullptr);
 				}
 				for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
 				{
-					if ( selected_spell_alternate[i] == spell )
+					if ( players[player]->magic.selected_spell_alternate[i] == spell )
 					{
-						selected_spell_alternate[i] = nullptr;
+						players[player]->magic.selected_spell_alternate[i] = nullptr;
 					}
 				}
 				list_RemoveNode(node);
@@ -4738,7 +4753,7 @@ void item_Spellbook(Item*& item, int player)
 		}
 		else
 		{
-			messagePlayer(clientnum, language[973]);
+			messagePlayer(player, language[973]);
 		}
 		consumeItem(item, player);
 		return;
@@ -4918,7 +4933,7 @@ void item_Spellbook(Item*& item, int player)
 			{
 				ItemType originalSpellbook = item->type;
 				item->type = SPELLBOOK_REVERT_FORM;
-				if ( !playerLearnedSpellbook(item) ) // have we learnt "revert form"?
+				if ( !playerLearnedSpellbook(player, item) ) // have we learnt "revert form"?
 				{
 					addSpell(SPELL_REVERT_FORM, player, true); // add it.
 				}
@@ -4939,7 +4954,7 @@ void item_Spellbook(Item*& item, int player)
 			{
 				steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
 			}
-			if ( list_Size(&spellList) >= 20 )
+			if ( list_Size(&players[player]->magic.spellList) >= 20 )
 			{
 				steamAchievement("BARONY_ACH_MAGIC_MASTERY");
 			}

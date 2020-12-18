@@ -105,7 +105,7 @@ void actCampfire(Entity* my)
 		// using campfire
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if (inrange[i])
 				{

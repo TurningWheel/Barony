@@ -38,20 +38,6 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 		return;
 	}
 
-	if ( hudweapon )
-	{
-		if ( hudweapon->skill[0] != 0 )   //HUDWEAPON_CHOP.
-		{
-			return; //Can't cast spells while attacking.
-		}
-	}
-
-	if ( cast_animation.active || cast_animation.active_spellbook )
-	{
-		//Already casting spell.
-		return;
-	}
-
 	int player = -1;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -59,6 +45,20 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 		{
 			player = i; //Set the player.
 		}
+	}
+
+	if ( player >= 0 && players[player]->hud.weapon )
+	{
+		if ( players[player]->hud.weapon->skill[0] != 0 )   //HUDWEAPON_CHOP.
+		{
+			return; //Can't cast spells while attacking.
+		}
+	}
+
+	if ( cast_animation[player].active || cast_animation[player].active_spellbook )
+	{
+		//Already casting spell.
+		return;
 	}
 
 	if ( player > -1 )
@@ -112,7 +112,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 			{
 				return;
 			}
-			if ( spell->ID == SPELL_VAMPIRIC_AURA && client_classes[player] == CLASS_ACCURSED && 
+			if ( spell->ID == SPELL_VAMPIRIC_AURA && player >= 0 && client_classes[player] == CLASS_ACCURSED &&
 				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
 			{
 				if ( multiplayer == CLIENT )
@@ -193,7 +193,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 	}
 
 	//Hand the torch off to the spell animator. And stuff. Stuff. I mean spell animation handler thingymabobber.
-	fireOffSpellAnimation(&cast_animation, caster->getUID(), spell, usingSpellbook);
+	fireOffSpellAnimation(&cast_animation[player], caster->getUID(), spell, usingSpellbook);
 
 	//castSpell(caster, spell); //For now, do this while the spell animations are worked on.
 }
@@ -277,7 +277,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				spellBookBonusPercent += abs(stat->shield->beatitude) * 25;
 			}
-			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(stat->shield) )
+			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(player, stat->shield) )
 			{
 				// bypass newbie penalty since we're good enough to cast the spell.
 				newbie = false; 
@@ -309,7 +309,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else
 			{
-				magiccost = cast_animation.mana_left;
+				magiccost = cast_animation[player].mana_left;
 			}
 			caster->drainMP(magiccost, false);
 		}
@@ -479,7 +479,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	if (!waterwalkingboots && !levitating && !trap && player >= 0)
 	{
 		bool swimming = false;
-		if (players[player] && players[player]->entity)
+		if ( player >= 0 && players[player] && players[player]->entity)
 		{
 			int x = std::min<int>(std::max<int>(0, floor(caster->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(caster->y / 16)), map.height - 1);
@@ -874,7 +874,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					if (i != 0)
+					if (i != 0 && !players[i]->isLocalPlayer() )
 					{
 						//Tell the client to identify an item.
 						strcpy((char*)net_packet->data, "IDEN");
@@ -886,13 +886,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						//Identify an item.
-						closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-						openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-
-						identifygui_active = true;
-						identifygui_appraising = false;
-						//Initialize Identify GUI game controller code here.
-						initIdentifyGUIControllerCode();
+						GenericGUI[i].openGUI(GUI_TYPE_IDENTIFY, nullptr);
 					}
 				}
 			}
@@ -906,7 +900,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( players[i] && (caster == players[i]->entity) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
-					if (i != 0)
+					if ( i != 0 && !players[i]->isLocalPlayer() )
 					{
 						//Tell the client to uncurse an item.
 						strcpy((char*)net_packet->data, "CRCU");
@@ -918,12 +912,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						//Uncurse an item
-						closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-						openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-
-						removecursegui_active = true;
-						identifygui_active = false;
-						initRemoveCurseGUIControllerCode();
+						GenericGUI[i].openGUI(GUI_TYPE_REMOVECURSE, nullptr);
 					}
 				}
 			}
@@ -979,11 +968,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							if ( itemEntity && itemEntity->behavior == &actItem && entityDist(itemEntity, caster) < TOUCHRANGE )
 							{
 								Item* toSalvage = newItemFromEntity(itemEntity);
-								if ( toSalvage && GenericGUI.isItemSalvageable(toSalvage, i) )
+								if ( toSalvage && GenericGUI[i].isItemSalvageable(toSalvage, i) )
 								{
 									int metal = 0;
 									int magic = 0;
-									GenericGUI.tinkeringGetItemValue(toSalvage, &metal, &magic);
+									GenericGUIMenu::tinkeringGetItemValue(toSalvage, &metal, &magic);
 									totalMetal += metal;
 									totalMagic += magic;
 									++numItems;
@@ -1015,11 +1004,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							Item* pickedUp = itemPickup(player, crafted);
 							messagePlayer(player, language[3665], totalMetal, items[pickedUp->type].name_identified);
-							if ( i == 0 ) // server/singleplayer
+							if ( i == 0 || players[i]->isLocalPlayer() ) // server/singleplayer
 							{
 								free(crafted); // if player != clientnum, then crafted == pickedUp
 							}
-							if ( i != 0 )
+							if ( i != 0 && !players[i]->isLocalPlayer() )
 							{
 								free(pickedUp);
 							}
@@ -1032,11 +1021,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							Item* pickedUp = itemPickup(player, crafted);
 							messagePlayer(player, language[3665], totalMagic, items[pickedUp->type].name_identified);
-							if ( i == 0 ) // server/singleplayer
+							if ( i == 0 || players[i]->isLocalPlayer() ) // server/singleplayer
 							{
 								free(crafted); // if player != clientnum, then crafted == pickedUp
 							}
-							if ( i != 0 )
+							if ( i != 0 && !players[i]->isLocalPlayer() )
 							{
 								free(pickedUp);
 							}

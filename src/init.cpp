@@ -81,14 +81,14 @@ int initApp(char const * const title, int fullscreen)
 		openLogFile();
 	}
 
-	for (c = 0; c < NUM_JOY_STATUS; ++c)
+	/*for (c = 0; c < NUM_JOY_STATUS; ++c)
 	{
 		joystatus[c] = 0;
 	}
 	for (c = 0; c < NUM_JOY_TRIGGER_STATUS; ++c)
 	{
 		joy_trigger_status[c] = 0;
-	}
+	}*/
 
 	// init some lists
 	button_l.first = NULL;
@@ -211,7 +211,9 @@ int initApp(char const * const title, int fullscreen)
 
 	window_title = title;
 	printlog("initializing SDL...\n");
-	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER ) == -1 )
+	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER 
+		| SDL_INIT_EVENTS | SDL_INIT_JOYSTICK 
+		| SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) == -1 )
 	{
 		printlog("failed to initialize SDL: %s\n", SDL_GetError());
 		return 1;
@@ -2146,6 +2148,11 @@ int deinitApp()
 	{
 		list_FreeAll(map.creatures); //TODO: Need to call this? Entities are only pointed to by the thing, not owned.
 		delete map.creatures;
+	}
+	if ( map.worldUI != nullptr )
+	{
+		list_FreeAll(map.worldUI);
+		delete map.worldUI;
 	}
 	list_FreeAll(&light_l);
 	if ( map.tiles != NULL )

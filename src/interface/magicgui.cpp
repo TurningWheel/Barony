@@ -27,182 +27,186 @@
 
 -------------------------------------------------------------------------------*/
 
-void renderMagicGUI(int winx, int winy, int winw, int winh)
-{
-	/*if (!spellList) { //I woke up with this commented out for some reason. TODO: Look into it.
-		return; //Can't continue without a spell list!
-	}*/
-	SDL_Rect pos;
-	//pos.x = MAGICSPELL_LIST_X; pos.y = MAGICSPELL_LIST_Y;
-	pos.x = 0;
-	pos.y = 0;
-	pos.w = 0;
-	pos.h = 0;
+//void renderMagicGUI(int winx, int winy, int winw, int winh)
+//{
+//	/*if (!spellList) { //I woke up with this commented out for some reason. TODO: Look into it.
+//		return; //Can't continue without a spell list!
+//	}*/
+//	SDL_Rect pos;
+//	//pos.x = MAGICSPELL_LIST_X; pos.y = MAGICSPELL_LIST_Y;
+//	pos.x = 0;
+//	pos.y = 0;
+//	pos.w = 0;
+//	pos.h = 0;
+//
+//	if (magic_GUI_state == 0)   //TODO: use defines, not numbers.
+//	{
+//		//drawImage(magicspellList_bmp, NULL, &pos);
+//		//TODO: Assemble the interface.
+//		//First off, calculate how big the end shebang is gonna be.
+//		//Titlebar
+//		//One box for each spell up to max spells that can be displayed onscreen at once.
+//		//Set position such that it renders right in the middle of the game view.
+//		//Render title bar, increment position and draw all the boxes.
+//		//Draw arrow selector thingies if needed.
+//		//Keep track of all needed data to make sure clicking on a box interacts with that spell and the arrow thingies work.
+//		//Don't forget to keep track of spell list scroll, just like in chests.
+//		//TODO: Scroll through spells.
+//
+//		int height = spell_list_titlebar_bmp->h;
+//		int numspells = 0;
+//		node_t* node;
+//		for (node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next)   //TODO: Create spellList. -- Done?
+//		{
+//			numspells++;
+//		}
+//		int maxSpellsOnscreen = winh / spell_list_gui_slot_bmp->h;
+//		numspells = std::min(numspells, maxSpellsOnscreen);
+//		height += numspells * spell_list_gui_slot_bmp->h;
+//		//Now calculate the position.
+//		pos.x = winx + (winw / 2) - (spell_list_gui_slot_bmp->w / 2) + magicspell_list_offset_x;
+//		pos.y = winy + ((winh / 2) - (height / 2)) + magicspell_list_offset_x;
+//		magic_gui_pos.x = pos.x;
+//		magic_gui_pos.y = pos.y;
+//
+//		drawImage(spell_list_titlebar_bmp, NULL, &pos);
+//		int text_x = pos.x + (spell_list_titlebar_bmp->w / 2) - ((6 * 8) / 2 /*text characers * font width / 2*/ );
+//		int text_y = pos.y + (spell_list_titlebar_bmp->h / 2) - (8 / 2 /*font height / 2*/);
+//		printText(font8x8_bmp, text_x, text_y, language[322]);
+//
+//		pos.y += spell_list_titlebar_bmp->h;
+//		int i = 0;
+//		//Draw all the spell GUI slots.
+//		node = players[clientnum]->magic.spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
+//		for (i = 0; i < spellscroll; ++i)
+//		{
+//			if (node)
+//			{
+//				node = node->next;
+//			}
+//		}
+//		for (i = 0; i < numspells; ++i)
+//		{
+//			if (node)   //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
+//			{
+//				spell_t* spell = (spell_t*)node->element;
+//				if (spell)
+//				{
+//					//If the mouse is over the slot, then draw the highlighted version.
+//					if (mouseInBounds(clientnum, pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
+//					{
+//						drawImage(spell_list_gui_slot_highlighted_bmp, NULL, &pos);
+//					}
+//					else
+//					{
+//						drawImage(spell_list_gui_slot_bmp, NULL, &pos);
+//					}
+//
+//					text_x = pos.x + (spell_list_gui_slot_bmp->w / 2) - ((strlen(spell->name) * 8) / 2 /*text characers * font width / 2*/ );
+//					text_y = pos.y + (spell_list_gui_slot_bmp->h / 2) - (8 / 2 /*font height / 2*/);
+//					printText(font8x8_bmp, text_x, text_y, spell->name);
+//
+//					//Advance the position and the node in the spell list.
+//					pos.y += spell_list_gui_slot_bmp->h;
+//					node = node->next;
+//				}
+//			}
+//		}
+//	}
+//	else if (magic_GUI_state == 1)
+//	{
+//		//TODO: Spell editor.
+//	}
+//}
+//
+///*-------------------------------------------------------------------------------
+//
+//	updateMagicGUI - DEPRECATED, called from updateRightSidebar()
+//
+//	Handles all buttons and such.
+//	If the spell list is open, it "equips" spells the player clicks on.
+//	If the spell editor is open, well, there's a lot going on there, and it's
+//	updating all that.
+//
+//-------------------------------------------------------------------------------*/
+//
+//void updateMagicGUI()
+//{
+//	/*if (!spellList) { //I woke up with this commented out for some reason. TODO: Look into it.
+//		return; //Can't continue without a spell list!
+//	}*/
+//	SDL_Rect pos;
+//
+//	renderMagicGUI(0, 0, xres, yres);
+//	if (magic_GUI_state == 0)   //TODO: use defines, not numbers.
+//	{
+//		if (mousestatus[SDL_BUTTON_LEFT])
+//		{
+//			//TODO: Check if a spell was clicked on.
+//			//TODO: Loop through all spells then run the if check below.
+//			int height = spell_list_titlebar_bmp->h;
+//			int numspells = 0;
+//			node_t* node;
+//			for (node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next)
+//			{
+//				numspells++;
+//			}
+//			int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
+//			numspells = std::min(numspells, maxSpellsOnscreen);
+//			height += numspells * spell_list_gui_slot_bmp->h;
+//			//Now calculate the position.
+//			pos.x = 0 + (xres / 2) - (spell_list_gui_slot_bmp->w / 2) + magicspell_list_offset_x;
+//			pos.y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
+//			magic_gui_pos.x = pos.x;
+//			magic_gui_pos.y = pos.y;
+//
+//			pos.y += spell_list_titlebar_bmp->h;
+//			int i = 0;
+//			node = players[clientnum]->magic.spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
+//			for (i = 0; i < spellscroll; ++i)
+//			{
+//				if (node)
+//				{
+//					node = node->next;
+//				}
+//			}
+//
+//			for (i = 0; i < numspells; ++i)
+//			{
+//				if (node)   //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
+//				{
+//					if (mouseInBounds(clientnum, pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
+//					{
+//						mousestatus[SDL_BUTTON_LEFT] = 0;
+//						spell_t* spell = (spell_t*)node->element;
+//						if (spell)
+//						{
+//							//equipSpell(spell, clientnum);
+//							//selected_spell = spell;
+//						}
+//					}
+//					pos.y += spell_list_gui_slot_bmp->h;
+//					node = node->next;
+//				}
+//			}
+//		}
+//	}
+//	else if (magic_GUI_state == 1)
+//	{
+//		//TODO: Spell editor.
+//	}
+//}
 
-	if (magic_GUI_state == 0)   //TODO: use defines, not numbers.
-	{
-		//drawImage(magicspellList_bmp, NULL, &pos);
-		//TODO: Assemble the interface.
-		//First off, calculate how big the end shebang is gonna be.
-		//Titlebar
-		//One box for each spell up to max spells that can be displayed onscreen at once.
-		//Set position such that it renders right in the middle of the game view.
-		//Render title bar, increment position and draw all the boxes.
-		//Draw arrow selector thingies if needed.
-		//Keep track of all needed data to make sure clicking on a box interacts with that spell and the arrow thingies work.
-		//Don't forget to keep track of spell list scroll, just like in chests.
-		//TODO: Scroll through spells.
-
-		int height = spell_list_titlebar_bmp->h;
-		int numspells = 0;
-		node_t* node;
-		for (node = spellList.first; node != NULL; node = node->next)   //TODO: Create spellList. -- Done?
-		{
-			numspells++;
-		}
-		int maxSpellsOnscreen = winh / spell_list_gui_slot_bmp->h;
-		numspells = std::min(numspells, maxSpellsOnscreen);
-		height += numspells * spell_list_gui_slot_bmp->h;
-		//Now calculate the position.
-		pos.x = winx + (winw / 2) - (spell_list_gui_slot_bmp->w / 2) + magicspell_list_offset_x;
-		pos.y = winy + ((winh / 2) - (height / 2)) + magicspell_list_offset_x;
-		magic_gui_pos.x = pos.x;
-		magic_gui_pos.y = pos.y;
-
-		drawImage(spell_list_titlebar_bmp, NULL, &pos);
-		int text_x = pos.x + (spell_list_titlebar_bmp->w / 2) - ((6 * 8) / 2 /*text characers * font width / 2*/ );
-		int text_y = pos.y + (spell_list_titlebar_bmp->h / 2) - (8 / 2 /*font height / 2*/);
-		printText(font8x8_bmp, text_x, text_y, language[322]);
-
-		pos.y += spell_list_titlebar_bmp->h;
-		int i = 0;
-		//Draw all the spell GUI slots.
-		node = spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
-		for (i = 0; i < spellscroll; ++i)
-		{
-			if (node)
-			{
-				node = node->next;
-			}
-		}
-		for (i = 0; i < numspells; ++i)
-		{
-			if (node)   //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
-			{
-				spell_t* spell = (spell_t*)node->element;
-				if (spell)
-				{
-					//If the mouse is over the slot, then draw the highlighted version.
-					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
-					{
-						drawImage(spell_list_gui_slot_highlighted_bmp, NULL, &pos);
-					}
-					else
-					{
-						drawImage(spell_list_gui_slot_bmp, NULL, &pos);
-					}
-
-					text_x = pos.x + (spell_list_gui_slot_bmp->w / 2) - ((strlen(spell->name) * 8) / 2 /*text characers * font width / 2*/ );
-					text_y = pos.y + (spell_list_gui_slot_bmp->h / 2) - (8 / 2 /*font height / 2*/);
-					printText(font8x8_bmp, text_x, text_y, spell->name);
-
-					//Advance the position and the node in the spell list.
-					pos.y += spell_list_gui_slot_bmp->h;
-					node = node->next;
-				}
-			}
-		}
-	}
-	else if (magic_GUI_state == 1)
-	{
-		//TODO: Spell editor.
-	}
-}
-
-/*-------------------------------------------------------------------------------
-
-	updateMagicGUI - DEPRECATED, called from updateRightSidebar()
-
-	Handles all buttons and such.
-	If the spell list is open, it "equips" spells the player clicks on.
-	If the spell editor is open, well, there's a lot going on there, and it's
-	updating all that.
-
--------------------------------------------------------------------------------*/
-
-void updateMagicGUI()
-{
-	/*if (!spellList) { //I woke up with this commented out for some reason. TODO: Look into it.
-		return; //Can't continue without a spell list!
-	}*/
-	SDL_Rect pos;
-
-	renderMagicGUI(0, 0, xres, yres);
-	if (magic_GUI_state == 0)   //TODO: use defines, not numbers.
-	{
-		if (mousestatus[SDL_BUTTON_LEFT])
-		{
-			//TODO: Check if a spell was clicked on.
-			//TODO: Loop through all spells then run the if check below.
-			int height = spell_list_titlebar_bmp->h;
-			int numspells = 0;
-			node_t* node;
-			for (node = spellList.first; node != NULL; node = node->next)
-			{
-				numspells++;
-			}
-			int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
-			numspells = std::min(numspells, maxSpellsOnscreen);
-			height += numspells * spell_list_gui_slot_bmp->h;
-			//Now calculate the position.
-			pos.x = 0 + (xres / 2) - (spell_list_gui_slot_bmp->w / 2) + magicspell_list_offset_x;
-			pos.y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
-			magic_gui_pos.x = pos.x;
-			magic_gui_pos.y = pos.y;
-
-			pos.y += spell_list_titlebar_bmp->h;
-			int i = 0;
-			node = spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
-			for (i = 0; i < spellscroll; ++i)
-			{
-				if (node)
-				{
-					node = node->next;
-				}
-			}
-
-			for (i = 0; i < numspells; ++i)
-			{
-				if (node)   //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
-				{
-					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
-					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						spell_t* spell = (spell_t*)node->element;
-						if (spell)
-						{
-							//equipSpell(spell, clientnum);
-							//selected_spell = spell;
-						}
-					}
-					pos.y += spell_list_gui_slot_bmp->h;
-					node = node->next;
-				}
-			}
-		}
-	}
-	else if (magic_GUI_state == 1)
-	{
-		//TODO: Spell editor.
-	}
-}
-
-void drawSustainedSpells()
+void drawSustainedSpells(const int player)
 {
 	SDL_Surface** sprite;
 	SDL_Rect pos;
 	pos.x = SUST_SPELLS_X;
 	pos.y = SUST_SPELLS_Y;
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+
 	if (SUST_SPELLS_RIGHT_ALIGN)
 	{
 		//Alright, so, the list should be right-aligned.
@@ -216,13 +220,13 @@ void drawSustainedSpells()
 		pos.x = xres - (*surface)->w - SUST_SPELLS_X;
 
 		//Draw under the skills sheet if inventory open or the sidebar lock has been enabled.
-		int iconHeightOffset = interfaceSkillsSheet.y + interfaceSkillsSheet.h;
-		if ( proficienciesPage == 1 )
+		int iconHeightOffset = players[player]->characterSheet.skillsSheetBox.y + players[player]->characterSheet.skillsSheetBox.h;
+		if ( players[player]->characterSheet.proficienciesPage == 1 )
 		{
-			iconHeightOffset = std::max(iconHeightOffset, interfacePartySheet.y + interfacePartySheet.h);
+			iconHeightOffset = std::max(iconHeightOffset, players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h);
 		}
 
-		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (iconHeightOffset) : 0);
+		pos.y = 32 + ( (!players[player]->shootmode || players[player]->characterSheet.lock_right_sidebar) ? (iconHeightOffset) : 0);
 	}
 
 	bool isChanneled = false;
@@ -238,7 +242,7 @@ void drawSustainedSpells()
 		fontWidth = TTF16_WIDTH;
 	}
 
-	for ( int i = 0; showStatusEffectIcons && i <= NUMEFFECTS && stats[clientnum]; ++i )
+	for ( int i = 0; showStatusEffectIcons && i <= NUMEFFECTS && stats[player]; ++i )
 	{
 		node_t* effectImageNode = nullptr;
 		sprite = nullptr;
@@ -246,13 +250,13 @@ void drawSustainedSpells()
 
 		if ( i == NUMEFFECTS )
 		{
-			if ( players[clientnum] && players[clientnum]->entity )
+			if ( players[player] && players[player]->entity )
 			{
-				if ( players[clientnum]->entity->creatureShadowTaggedThisUid != 0
-					&& uidToEntity(players[clientnum]->entity->creatureShadowTaggedThisUid) )
+				if ( players[player]->entity->creatureShadowTaggedThisUid != 0
+					&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SHADOW_TAG);
-					Entity* tagged = uidToEntity(players[clientnum]->entity->creatureShadowTaggedThisUid);
+					Entity* tagged = uidToEntity(players[player]->entity->creatureShadowTaggedThisUid);
 					if ( tagged->behavior == &actMonster )
 					{
 						int type = tagged->getMonsterTypeFromSprite();
@@ -280,7 +284,7 @@ void drawSustainedSpells()
 				}
 			}
 		}
-		else if ( stats[clientnum]->EFFECTS[i] )
+		else if ( stats[player]->EFFECTS[i] )
 		{
 			switch ( i )
 			{
@@ -315,7 +319,7 @@ void drawSustainedSpells()
 				case EFF_MAGICAMPLIFY:
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_AMPLIFY_MAGIC);
-					node_t* node = channeledSpells[clientnum].first;
+					node_t* node = channeledSpells[player].first;
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
@@ -341,9 +345,9 @@ void drawSustainedSpells()
 					tooltipText = language[3493];
 					break;
 				case EFF_SHAPESHIFT:
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						switch ( players[clientnum]->entity->effectShapeshift )
+						switch ( players[player]->entity->effectShapeshift )
 						{
 							case RAT:
 								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_RAT_FORM);
@@ -370,7 +374,7 @@ void drawSustainedSpells()
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
 					tooltipText = language[3389];
-					node_t* node = channeledSpells[clientnum].first;
+					node_t* node = channeledSpells[player].first;
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
@@ -414,7 +418,7 @@ void drawSustainedSpells()
 				case EFF_LEVITATING:
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LEVITATION);
-					node_t* node = channeledSpells[clientnum].first;
+					node_t* node = channeledSpells[player].first;
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
@@ -430,7 +434,7 @@ void drawSustainedSpells()
 				case EFF_INVISIBLE:
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_INVISIBILITY);
-					node_t* node = channeledSpells[clientnum].first;
+					node_t* node = channeledSpells[player].first;
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
@@ -450,8 +454,8 @@ void drawSustainedSpells()
 			}
 		}
 
-		if ( tooltipText && !shootmode && mouseInBounds(pos.x, pos.x + 32,
-			pos.y, pos.y + 32) )
+		if ( tooltipText && !players[player]->shootmode 
+			&& mouseInBounds(player, pos.x, pos.x + 32, pos.y, pos.y + 32) )
 		{
 			// draw tooltip.
 			currentTooltip = tooltipText;
@@ -465,8 +469,8 @@ void drawSustainedSpells()
 			}
 
 			bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-			bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[i] > 0 && 
-				(stats[clientnum]->EFFECTS_TIMERS[i] < TICKS_PER_SECOND * 5);
+			bool lowDuration = stats[player]->EFFECTS_TIMERS[i] > 0 &&
+				(stats[player]->EFFECTS_TIMERS[i] < TICKS_PER_SECOND * 5);
 			if ( i == EFF_VAMPIRICAURA )
 			{
 				lowDuration = false;
@@ -498,7 +502,7 @@ void drawSustainedSpells()
 		}
 	}
 
-	if ( !channeledSpells[clientnum].first )
+	if ( !channeledSpells[player].first )
 	{
 		if ( currentTooltip )
 		{
@@ -537,7 +541,7 @@ void drawSustainedSpells()
 
 
 	int count = 0; //This is just for debugging purposes.
-	node_t* node = channeledSpells[clientnum].first;
+	node_t* node = channeledSpells[player].first;
 	for (; node; node = node->next, count++)
 	{
 		tooltipText = nullptr;
@@ -578,7 +582,7 @@ void drawSustainedSpells()
 
 		drawImage(*sprite, NULL, &pos);
 
-		if ( !shootmode && mouseInBounds(pos.x, pos.x + 32, pos.y, pos.y + 32) && tooltipText )
+		if ( !players[player]->shootmode && mouseInBounds(player, pos.x, pos.x + 32, pos.y, pos.y + 32) && tooltipText )
 		{
 			// draw tooltip.
 			currentTooltip = tooltipText;

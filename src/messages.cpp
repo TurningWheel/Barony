@@ -13,10 +13,8 @@
 #include "draw.hpp"
 #include "messages.hpp"
 #include "main.hpp"
+#include "player.hpp"
 #include <regex>
-
-Uint32 old_sdl_ticks;
-std::list<Message*> notification_messages;
 
 void messageDeconstructor(void* data)
 {
@@ -28,7 +26,7 @@ void messageDeconstructor(void* data)
 	}
 }
 
-void addMessage(Uint32 color, char* content, ...)
+void Player::MessageZone_t::addMessage(Uint32 color, char* content, ...)
 {
 	//Add a message to notification_messages (the list of messages) -- and pop off (and delete) and excess messages.
 
@@ -65,10 +63,10 @@ void addMessage(Uint32 color, char* content, ...)
 		line_count += m->text->lines;
 	}
 
-	if (MESSAGE_MAX_TOTAL_LINES > 0)
+	if (getMaxTotalLines() > 0)
 	{
 		for (auto last_message = notification_messages.rbegin(); last_message != notification_messages.rend(); last_message++) {
-			if ( line_count < (MESSAGE_MAX_TOTAL_LINES - lines_needed) )
+			if ( line_count < (getMaxTotalLines() - lines_needed) )
 			{
 				break;
 			}
@@ -135,10 +133,10 @@ void addMessage(Uint32 color, char* content, ...)
 			strncpy(new_message->text->data, str, i);
 
 			//Make sure we don't exceed the maximum number of lines permissible.
-			if (line_count + new_message->text->lines > MESSAGE_MAX_TOTAL_LINES)
+			if (line_count + new_message->text->lines > getMaxTotalLines() )
 			{
 				//Remove lines until we have an okay amount.
-				while (line_count + new_message->text->lines > MESSAGE_MAX_TOTAL_LINES)
+				while (line_count + new_message->text->lines > getMaxTotalLines() )
 				{
 					for (c = 0; c < i; ++c)
 					{
@@ -172,19 +170,32 @@ void addMessage(Uint32 color, char* content, ...)
 	notification_messages.push_front(new_message);
 
 	//Set the message location.
-	new_message->x = MESSAGE_X_OFFSET;
-	new_message->y = MESSAGE_Y_OFFSET - MESSAGE_FONT_SIZE * new_message->text->lines;
+	new_message->x = getMessageZoneStartX();
+	new_message->y = getMessageZoneStartY() - fontSize() * new_message->text->lines;
 
 	//Update the position of the other messages;
 	Message *prev = nullptr;
 	for (Message *m : notification_messages)
 	{
-		m->y = (prev ? prev->y : MESSAGE_Y_OFFSET) - MESSAGE_FONT_SIZE * m -> text->lines;
+		m->y = (prev ? prev->y : getMessageZoneStartY()) - fontSize() * m -> text->lines;
 		prev = m;
 	}
 }
 
-void updateMessages()
+int Player::MessageZone_t::getMessageZoneStartX()
+{
+	return players[player.playernum]->camera_x1() + MESSAGE_X_OFFSET;
+}
+int Player::MessageZone_t::getMessageZoneStartY()
+{
+	return ((players[player.playernum]->camera_y2() - (status_bmp->h * uiscale_chatlog)) - fontSize() - 20 - (60 * uiscale_playerbars * uiscale_playerbars));
+}
+int Player::MessageZone_t::getMaxTotalLines()
+{
+	return ((players[player.playernum]->camera_y2() - (status_bmp->h * uiscale_chatlog)) / fontSize());
+}
+
+void Player::MessageZone_t::updateMessages()
 {
 	int time_passed = 0;
 
@@ -234,7 +245,7 @@ void updateMessages()
 	}
 }
 
-void drawMessages()
+void Player::MessageZone_t::drawMessages()
 {
 	for ( Message *current : notification_messages )
 	{
@@ -281,21 +292,21 @@ void drawMessages()
 			}
 			if ( doHighlight )
 			{
-				ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, "%s", data.c_str());
+				ttfPrintTextFormattedColor(font, current->x, current->y, color, "%s", data.c_str());
 
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 192, 255) ^ mainsurface->format->Amask;
 				color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
-				ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, "%s", highlightedWords.c_str());
+				ttfPrintTextFormattedColor(font, current->x, current->y, color, "%s", highlightedWords.c_str());
 			}
 		}
 		if ( !doHighlight )
 		{
-			ttfPrintTextFormattedColor(MESSAGE_FONT, current->x, current->y, color, current->text->data);
+			ttfPrintTextFormattedColor(font, current->x, current->y, color, current->text->data);
 		}
 	}
 }
 
-void deleteAllNotificationMessages()
+void Player::MessageZone_t::deleteAllNotificationMessages()
 {
 	std::for_each(notification_messages.begin(), notification_messages.end(), messageDeconstructor);
 	notification_messages.clear();

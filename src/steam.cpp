@@ -564,9 +564,13 @@ void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t* ca
 	}
 	else
 	{
-		if (shootmode && !gamePaused)
+		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			SDL_SetRelativeMouseMode(SDL_TRUE); //Recapture mouse.
+			if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) 
+				&& players[i]->shootmode && !gamePaused)
+			{
+				SDL_SetRelativeMouseMode(SDL_TRUE); //Recapture mouse.
+			}
 		}
 		SDL_ShowCursor(SDL_FALSE);
 	}

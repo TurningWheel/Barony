@@ -246,13 +246,13 @@ static std::vector<std::vector<int>> classStatGrowth =
 	//	STR	DEX	CON	INT	PER	CHR -- sum is approx 24.
 	{	6,	5,	2,	2,	4,	5 }, // BARB 0
 	{	7,	2,	6,	1,	2,	6 }, // WARRIOR 1
-	{	4,	2,	5,	5,	4,	4 }, // CLERIC 2
-	{	3,	3,	4,	6,	5,	3 }, // HEALER 3
+	{	3,	3,	4,	6,	5,	3 }, // HEALER 2
+	{	2,	7,	1,	2,	7,	5 }, // ROGUE 3
 	{	5,	4,	5,	3,	5,	2 }, // WANDERER 4
-	{	2,	7,	1,	2,	7,	5 }, // ROGUE 5
-	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 6
+	{	4,	2,	5,	5,	4,	4 }, // CLERIC 5
+	{	3,	2,	4,	3,	5,	7 }, // MERCHANT 6
 	{	1,	3,	2,	7,	6,	5 }, // WIZARD 7
-	{	3,	2,	4,	3,	5,	7 }, // MERCHANT 8
+	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 8
 	{	4,	4,	4,	4,	4,	4 }, // JOKER 9
 	{	4,	4,	2,	4,	2,	2 }, // SEXTON 10
 	{	5,	5,	3,	2,	2,	1 }, // NINJA 11

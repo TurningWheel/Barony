@@ -145,6 +145,46 @@ void actItem(Entity* my)
 		free(item);
 	}
 
+	if ( ITEM_LIFE == 0 && !hide_playertags )
+	{
+		for ( int i = 0; i < MAXPLAYERS && i < 4; ++i )
+		{
+			if ( !players[i]->isLocalPlayerAlive() )
+			{
+				continue;
+			}
+			Entity* worldTooltip = newEntity(-1, 1, map.entities, nullptr);
+			worldTooltip->x = my->x;
+			worldTooltip->y = my->y;
+			worldTooltip->z = my->z;
+			worldTooltip->sizex = 1;
+			worldTooltip->sizey = 1;
+			worldTooltip->flags[NOUPDATE] = true;
+			worldTooltip->flags[PASSABLE] = true;
+			worldTooltip->flags[SPRITE] = true;
+			worldTooltip->flags[BRIGHT] = true;
+			worldTooltip->flags[UNCLICKABLE] = true;
+			worldTooltip->behavior = &actSpriteWorldTooltip;
+			worldTooltip->parent = my->getUID();
+			worldTooltip->scalex = 0.05;
+			worldTooltip->scaley = 0.05;
+			worldTooltip->scalez = 0.05;
+			worldTooltip->worldTooltipPlayer = i;
+			worldTooltip->worldTooltipZ = 1.5;
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			players[i]->worldUI.setTooltipDisabled(*worldTooltip);
+			worldTooltip->addToWorldUIList(map.worldUI);
+		}
+
+		//node_t* node = list_AddNodeLast(&my->children);
+		//node->element = worldTooltip; // add the node to the children list.
+		//node->deconstructor = &entityDeconstructor;
+		//node->size = sizeof(Entity*);
+	}
+
 	ITEM_LIFE++;
 
 	// pick up item
@@ -209,26 +249,26 @@ void actItem(Entity* my)
 							}
 							list_RemoveNode(copyOfItem->mynode);
 							copyOfItem = nullptr;
-							if ( pickedUpItem )
+							if ( pickedUpItem && monsterInteracting->monsterAllyIndex >= 0 )
 							{
-								FollowerMenu.entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
+								FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 								return;
 							}
 						}
 					}
 					else if ( items[my->skill[10]].category == Category::FOOD && monsterInteracting->getMonsterTypeFromSprite() != SLIME )
 					{
-						if ( monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats()) )
+						if ( monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats()) && monsterInteracting->monsterAllyIndex >= 0 )
 						{
-							FollowerMenu.entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
+							FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 							return;
 						}
 					}
 					else
 					{
-						if ( monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my) )
+						if ( monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my) && monsterInteracting->monsterAllyIndex >= 0 )
 						{
-							FollowerMenu.entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
+							FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 							return;
 						}
 					}
@@ -240,7 +280,7 @@ void actItem(Entity* my)
 		}
 		for ( i = 0; i < MAXPLAYERS; i++)
 		{
-			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my))
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if ( inrange[i] && players[i] && players[i]->entity )
 				{
@@ -266,9 +306,9 @@ void actItem(Entity* my)
 						{
 							// auto salvage this item, don't pick it up.
 							bool salvaged = false;
-							if ( GenericGUI.isItemSalvageable(item2, i) )
+							if ( GenericGUI[i].isItemSalvageable(item2, i) )
 							{
-								if ( GenericGUI.tinkeringSalvageItem(item2, true, i) )
+								if ( GenericGUI[i].tinkeringSalvageItem(item2, true, i) )
 								{
 									salvaged = true;
 								}
@@ -295,7 +335,7 @@ void actItem(Entity* my)
 							item = itemPickup(i, item2);
 							if (item)
 							{
-								if (i == 0)
+								if (i == 0 || (splitscreen && i > 0) )
 								{
 									// item is the new inventory stack for server, free the picked up items
 									free(item2); 
@@ -330,7 +370,7 @@ void actItem(Entity* my)
 										}
 									}
 								}
-								if (i != 0)
+								if ( i != 0 && !splitscreen )
 								{
 									free(item); // item is the picked up items (item == item2)
 								}

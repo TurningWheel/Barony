@@ -451,7 +451,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		// function sets dark level for us.
 		if ( darkmap )
 		{
-			messagePlayer(clientnum, language[1108]);
+			messageLocalPlayers(language[1108]);
 		}
 	}
 	else if ( !secretlevel )
@@ -461,7 +461,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) )
 			{
 				darkmap = true;
-				messagePlayer(clientnum, language[1108]);
+				messageLocalPlayers(language[1108]);
 			}
 			else
 			{
@@ -473,7 +473,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( prng_get_uint() % 4 == 0 )
 			{
 				darkmap = true;
-				messagePlayer(clientnum, language[1108]);
+				messageLocalPlayers(language[1108]);
 			}
 		}
 	}
@@ -3422,6 +3422,7 @@ void assignActions(map_t* map)
 						node2 = list_AddNodeLast(&entity->children);
 						node2->element = myStats;
 						//					node2->deconstructor = &myStats->~Stat;
+						node2->deconstructor = &statDeconstructor;
 						node2->size = sizeof(myStats);
 					}
 					else if ( entity->sprite == 10 )

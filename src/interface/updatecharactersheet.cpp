@@ -23,7 +23,7 @@
 #include "../net.hpp"
 #include "../scores.hpp"
 
-void statsHoverText(Stat* tmpStat);
+void statsHoverText(const int player, Stat* tmpStat);
 
 /*-------------------------------------------------------------------------------
 
@@ -33,7 +33,7 @@ void statsHoverText(Stat* tmpStat);
 
 -------------------------------------------------------------------------------*/
 
-void updateCharacterSheet()
+void updateCharacterSheet(const int player)
 {
 	int i = 0;
 	int x = 0;
@@ -44,68 +44,76 @@ void updateCharacterSheet()
 	Item* item = NULL;
 	int c;
 
+	const int x1 = players[player]->camera_x1();
+	const int x2 = players[player]->camera_x2();
+	const int y1 = players[player]->camera_y1();
+	const int y2 = players[player]->camera_y2();
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+
+	// mostly a copy of the code below.
+	// sets values into players[player]->characterSheet.partySheetBox for elsewhere
+	players[player]->characterSheet.setDefaultCharacterSheetBox(); 
+
 	// draw window
-	pos.x = 8;
-	pos.y = 8;
+	pos.x = x1 + 8;
+	pos.y = y1 + 8;
 	pos.w = 208;
 	pos.h = 180;
 	//drawImage(character_bmp, NULL, &pos);
 	//pos.x=0; pos.y=196;
 	//pos.w=222; pos.h=392-196;
 	//drawTooltip(&pos);
-	int statWindowY = 196;
-	int statWindowY2 = 404;
+	int statWindowY = y1 + 196;
+	int statWindowY2 = y1 + 404;
 	if ( uiscale_charactersheet )
 	{
 		pos.h = 236;
 		pos.w = 276;
-		statWindowY = pos.h + 16;
-		statWindowY2 = 554;
+		statWindowY = y1 + pos.h + 16;
+		statWindowY2 = y1 + 554;
 	}
 
-
-	drawWindowFancy(0, 0, pos.w + 16, pos.h + 16);
+	drawWindowFancy(x1, y1, x1 + pos.w + 16, y1 + pos.h + 16);
 	drawRect(&pos, 0, 255);
-	drawWindowFancy(0, pos.h + 16, pos.w + 16, statWindowY2);
-
-	interfaceCharacterSheet.x = pos.x - 8;
-	interfaceCharacterSheet.y = pos.y - 8;
-	interfaceCharacterSheet.w = pos.w + 16;
-	interfaceCharacterSheet.h = statWindowY2;
+	drawWindowFancy(x1, y1 + pos.h + 16, x1 + pos.w + 16, statWindowY2);
 
 	// character sheet
 	double ofov = fov;
 	fov = 50;
-	if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+	if (players[player] != nullptr && players[player]->entity != nullptr)
 	{
 		if (!softwaremode)
 		{
 			glClear(GL_DEPTH_BUFFER_BIT);
 		}
 		//TODO: These two NOT PLAYERSWAP
-		//camera.x=players[clientnum]->x/16.0+.5*cos(players[clientnum]->yaw)-.4*sin(players[clientnum]->yaw);
-		//camera.y=players[clientnum]->y/16.0+.5*sin(players[clientnum]->yaw)+.4*cos(players[clientnum]->yaw);
-		camera_charsheet.x = players[clientnum]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
-		camera_charsheet.y = players[clientnum]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
-		camera_charsheet.z = players[clientnum]->entity->z * 2;
-		//camera.ang=atan2(players[clientnum]->y/16.0-camera.y,players[clientnum]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
+		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
+		//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
+		camera_charsheet.x = players[player]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
+		camera_charsheet.y = players[player]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
+		camera_charsheet.z = players[player]->entity->z * 2;
+		//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
 		camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
 		camera_charsheet.vang = PI / 20;
-		camera_charsheet.winx = 8;
-		camera_charsheet.winy = 8;
+		camera_charsheet.winx = x1 + 8;
+		camera_charsheet.winy = y1 + 8;
 		camera_charsheet.winw = pos.w;
 		camera_charsheet.winh = pos.h;
-		b = players[clientnum]->entity->flags[BRIGHT];
-		players[clientnum]->entity->flags[BRIGHT] = true;
-		if ( !players[clientnum]->entity->flags[INVISIBLE] )
+		b = players[player]->entity->flags[BRIGHT];
+		players[player]->entity->flags[BRIGHT] = true;
+		if ( !players[player]->entity->flags[INVISIBLE] )
 		{
-			glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
+			glDrawVoxel(&camera_charsheet, players[player]->entity, REALCOLORS);
 		}
-		players[clientnum]->entity->flags[BRIGHT] = b;
+		players[player]->entity->flags[BRIGHT] = b;
 		c = 0;
 		if (multiplayer != CLIENT)
 		{
-			for (node = players[clientnum]->entity->children.first; node != nullptr; node = node->next)
+			for (node = players[player]->entity->children.first; node != nullptr; node = node->next)
 			{
 				if (c == 0)
 				{
@@ -136,7 +144,7 @@ void updateCharacterSheet()
 			for ( node = map.entities->first; node != NULL; node = node->next )
 			{
 				entity = (Entity*) node->element;
-				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
+				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
 				{
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
@@ -159,9 +167,9 @@ void updateCharacterSheet()
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 		{
-			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+			if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
 				camera_charsheet_offsetyaw += 0.05;
 				if ( camera_charsheet_offsetyaw > 2 * PI )
@@ -176,9 +184,9 @@ void updateCharacterSheet()
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 		{
-			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+			if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
 				camera_charsheet_offsetyaw -= 0.05;
 				if ( camera_charsheet_offsetyaw < 0.f )
@@ -193,6 +201,7 @@ void updateCharacterSheet()
 	fov = ofov;
 
 	TTF_Font* fontStat = ttf12;
+	int text_x = x1 + 8;
 	int text_y = 0;
 	int pad_y = 12;
 	int fontWidth = TTF12_WIDTH;
@@ -203,18 +212,18 @@ void updateCharacterSheet()
 		fontWidth = TTF16_WIDTH;
 	}
 	text_y = statWindowY + 6;
-	ttfPrintTextFormatted(fontStat, 8, text_y, "%s", stats[clientnum]->name);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, "%s", stats[player]->name);
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum], clientnum));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[359], stats[player]->LVL, playerClassLangEntry(client_classes[player], player));
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[360], stats[clientnum]->EXP);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[360], stats[player]->EXP);
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[361], currentlevel);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[361], currentlevel);
 
 	Entity* playerEntity = nullptr;
-	if ( players[clientnum] )
+	if ( players[player] )
 	{
-		playerEntity = players[clientnum]->entity;
+		playerEntity = players[player]->entity;
 	}
 
 	// attributes
@@ -222,47 +231,47 @@ void updateCharacterSheet()
 	char statText[64] = "";
 	//Uint32 statColor = uint32ColorWhite(*mainsurface);
 	text_y += pad_y * 2;
-	snprintf(statText, 64, language[1200], stats[clientnum]->STR);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->STR, statGetSTR(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1200], stats[player]->STR);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->STR, statGetSTR(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1201], stats[clientnum]->DEX);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->DEX, statGetDEX(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1201], stats[player]->DEX);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->DEX, statGetDEX(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1202], stats[clientnum]->CON);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->CON, statGetCON(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1202], stats[player]->CON);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->CON, statGetCON(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1203], stats[clientnum]->INT);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->INT, statGetINT(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1203], stats[player]->INT);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->INT, statGetINT(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1204], stats[clientnum]->PER);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->PER, statGetPER(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1204], stats[player]->PER);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->PER, statGetPER(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1205], stats[clientnum]->CHR);
-	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->CHR, statGetCHR(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
+	snprintf(statText, 64, language[1205], stats[player]->CHR);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
+	printStatBonus(fontStat, stats[player]->CHR, statGetCHR(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	// armor, gold, and weight
 	int attackInfo[6] = { 0 };
 	text_y += pad_y * 2;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[2542], displayAttackPower(attackInfo));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[2542], displayAttackPower(player, attackInfo));
 
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[371], AC(stats[clientnum]));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[371], AC(stats[player]));
 
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[370], stats[clientnum]->GOLD);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[370], stats[player]->GOLD);
 	Uint32 weight = 0;
-	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		item = (Item*)node->element;
 		int itemWeight = items[item->type].weight * item->count;
@@ -272,12 +281,12 @@ void updateCharacterSheet()
 		}
 		weight += itemWeight;
 	}
-	weight += stats[clientnum]->GOLD / 100;
+	weight += stats[player]->GOLD / 100;
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[372], weight);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, language[372], weight);
 
-	statsHoverText(stats[clientnum]);
-	attackHoverText(attackInfo);
+	statsHoverText(player, stats[player]);
+	attackHoverText(player, attackInfo);
 
 	// gold hover text.
 	SDL_Rect src;
@@ -285,29 +294,188 @@ void updateCharacterSheet()
 	src.y = mousey + 16;
 	src.h = TTF12_HEIGHT + 8;
 	src.w = ( longestline(language[2968]) + strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
-	if ( mouseInBounds(pos.x + 4, pos.x + pos.w, text_y - pad_y, text_y) )
+	bool dropGold = false;
+	if ( mouseInBounds(player, pos.x + 4, pos.x + pos.w, text_y - pad_y, text_y) )
 	{
 		drawTooltip(&src);
 		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 6, language[2968], getInputName(impulses[IN_USE]));
-		if ( *inputPressed(impulses[IN_USE]) )
+		if ( *inputPressedForPlayer(player, impulses[IN_USE]) )
 		{
-			consoleCommand("/dropgold");
-			*inputPressed(impulses[IN_USE]) = 0;
+			dropGold = true;
+			*inputPressedForPlayer(player, impulses[IN_USE]) = 0;
 		}
-		else if ( *inputPressed(joyimpulses[INJOY_GAME_USE]) )
+		else if ( inputs.bControllerInputPressed(player, INJOY_GAME_USE) )
 		{
-			consoleCommand("/dropgold");
-			*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+			dropGold = true;
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
+		}
+	}
+
+	if ( dropGold && stats[player] && stats[player]->HP > 0 && players[player]->entity )
+	{
+		int amount = 100;
+		if ( stats[player]->GOLD - amount < 0 )
+		{
+			amount = stats[player]->GOLD;
+		}
+		if ( amount == 0 )
+		{
+			messagePlayer(player, language[2593]);
+			return;
+		}
+		stats[player]->GOLD -= amount;
+		stats[player]->GOLD = std::max(stats[player]->GOLD, 0);
+
+		if ( multiplayer == CLIENT )
+		{
+			//Tell the server we dropped some gold.
+			strcpy((char*)net_packet->data, "DGLD");
+			net_packet->data[4] = player;
+			SDLNet_Write32(amount, &net_packet->data[5]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else
+		{
+			//Drop gold.
+			int x = std::min<int>(std::max(0, (int)(players[player]->entity->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max(0, (int)(players[player]->entity->y / 16)), map.height - 1);
+			if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x = players[player]->entity->x;
+				entity->y = players[player]->entity->y;
+				entity->z = 6;
+				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->behavior = &actGoldBag;
+				entity->goldAmount = amount; // amount
+			}
+			playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
+		}
+		messagePlayer(player, language[2594], amount);
+	}
+}
+
+void Player::CharacterSheet_t::setDefaultCharacterSheetBox()
+{
+	const int x1 = players[player.playernum]->camera_x1();
+	const int y1 = players[player.playernum]->camera_y1();
+
+	// draw window
+	SDL_Rect pos;
+	pos.x = x1 + 8;
+	pos.y = y1 + 8;
+	pos.w = 208;
+	pos.h = 180;
+
+	int statWindowY = y1 + 196;
+	int statWindowY2 = y1 + 404;
+	if ( uiscale_charactersheet )
+	{
+		pos.h = 236;
+		pos.w = 276;
+		statWindowY = y1 + pos.h + 16;
+		statWindowY2 = y1 + 554;
+	}
+
+	characterSheetBox.x = pos.x - 8;
+	characterSheetBox.y = pos.y - 8;
+	characterSheetBox.w = pos.w + 16;
+	characterSheetBox.h = statWindowY2;
+}
+
+void Player::CharacterSheet_t::setDefaultPartySheetBox()
+{
+	const int x2 = players[player.playernum]->camera_x2();
+	const int y1 = players[player.playernum]->camera_y1();
+
+	partySheetBox.w = 208;
+
+	TTF_Font* fontPlayer = ttf12;
+	int fontHeight = TTF12_HEIGHT;
+	int fontWidth = TTF12_WIDTH;
+	if ( uiscale_skillspage )
+	{
+		fontPlayer = ttf16;
+		fontHeight = TTF16_HEIGHT;
+		fontWidth = TTF16_WIDTH;
+		partySheetBox.w = 276;
+	}
+	int playerCnt = 0;
+	for ( playerCnt = MAXPLAYERS - 1; playerCnt > 0; --playerCnt )
+	{
+		if ( !client_disconnected[playerCnt] )
+		{
+			break;
+		}
+	}
+	partySheetBox.x = x2 - partySheetBox.w;
+	partySheetBox.y = y1 + 32;
+	partySheetBox.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
+
+	int numFollowers = 0;
+	if ( stats[player.playernum] )
+	{
+		numFollowers = list_Size(&stats[player.playernum]->FOLLOWERS);
+	}
+
+	if ( playerCnt == 0 ) // 1 player.
+	{
+		if ( numFollowers == 0 )
+		{
+			if ( players[player.playernum]->shootmode )
+			{
+				// don't show menu if not in inventory, no point reminding the player they have no friends!
+			}
+			else
+			{
+				partySheetBox.h = (fontHeight * 4 + 12);
+			}
+		}
+		else
+		{
+			partySheetBox.h = (fontHeight + 12);
 		}
 	}
 }
 
-void drawSkillsSheet()
+void Player::CharacterSheet_t::setDefaultSkillsSheetBox()
 {
-	SDL_Rect pos;
-	pos.w = 208;
-	pos.y = 32;
+	int y1 = players[player.playernum]->camera_y1();
+	int x2 = players[player.playernum]->camera_x2();
 
+	skillsSheetBox.w = 208;
+	skillsSheetBox.y = y1 + 32;
+
+	int fontHeight = TTF12_HEIGHT;
+	if ( uiscale_skillspage )
+	{
+		fontHeight = TTF16_HEIGHT;
+		skillsSheetBox.w = 276;
+	}
+	skillsSheetBox.x = x2 - skillsSheetBox.w;
+	skillsSheetBox.h = (NUMPROFICIENCIES * fontHeight) + (fontHeight * 3);
+}
+
+void drawSkillsSheet(const int player)
+{
+	int x1 = players[player]->camera_x1();
+	int x2 = players[player]->camera_x2();
+	int y1 = players[player]->camera_y1();
+	int y2 = players[player]->camera_y2();
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+
+	SDL_Rect pos;
 	TTF_Font* fontSkill = ttf12;
 	int fontHeight = TTF12_HEIGHT;
 	int fontWidth = TTF12_WIDTH;
@@ -316,50 +484,48 @@ void drawSkillsSheet()
 		fontSkill = ttf16;
 		fontHeight = TTF16_HEIGHT;
 		fontWidth = TTF16_WIDTH;
-		pos.w = 276;
 	}
-	pos.x = xres - pos.w;
+	players[player]->characterSheet.setDefaultSkillsSheetBox();
 
-
-	pos.h = (NUMPROFICIENCIES * fontHeight) + (fontHeight * 3);
+	pos.x = players[player]->characterSheet.skillsSheetBox.x;
+	pos.y = players[player]->characterSheet.skillsSheetBox.y;
+	pos.w = players[player]->characterSheet.skillsSheetBox.w;
+	pos.h = players[player]->characterSheet.skillsSheetBox.h;
 
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
-	interfaceSkillsSheet.x = pos.x;
-	interfaceSkillsSheet.y = pos.y;
-	interfaceSkillsSheet.w = pos.w;
-	interfaceSkillsSheet.h = pos.h;
 
 	ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y + 8, language[1883]);
 
 	SDL_Rect button;
-	button.x = xres - attributesright_bmp->w - 8;
+	button.x = x2 - attributesright_bmp->w - 8;
 	button.w = attributesright_bmp->w;
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
 	if ( uiscale_skillspage )
 	{
 		button.w = attributesright_bmp->w * 1.3;
-		button.x = xres - button.w - 8;
+		button.x = x2 - button.w - 8;
 		button.y = pos.y;
 		button.h = attributesright_bmp->h * 1.3;
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 	{
 		if ( omousex >= button.x && omousex <= button.x + button.w
 			&& omousey >= button.y && omousey <= button.y + button.h )
 		{
 			buttonclick = 14;
 			playSound(139, 64);
-			if ( proficienciesPage == 0 )
+			if ( players[player]->characterSheet.proficienciesPage == 0 )
 			{
-				proficienciesPage = 1;
+				players[player]->characterSheet.proficienciesPage = 1;
 			}
 			else
 			{
-				proficienciesPage = 0;
+				players[player]->characterSheet.proficienciesPage = 0;
 			}
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(player);
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
 	}
 	if ( buttonclick == 14 )
@@ -385,7 +551,7 @@ void drawSkillsSheet()
 	{
 		lockbtn.x -= 32;
 	}
-	if ( lock_right_sidebar )
+	if ( players[player]->characterSheet.lock_right_sidebar )
 	{
 		drawImageScaled(sidebar_lock_bmp, nullptr, &lockbtn);
 	}
@@ -394,14 +560,15 @@ void drawSkillsSheet()
 		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 	{
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
 		{
 			playSound(139, 64);
-			lock_right_sidebar = !lock_right_sidebar;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			players[player]->characterSheet.lock_right_sidebar = !players[player]->characterSheet.lock_right_sidebar;
+			inputs.mouseClearLeft(player);
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
 	}
 
@@ -419,7 +586,7 @@ void drawSkillsSheet()
 	Uint32 color;
 	for ( int i = 0; i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
 	{
-		if ( skillCapstoneUnlocked(clientnum, i) )
+		if ( skillCapstoneUnlocked(player, i) )
 		{
 			color = uint32ColorGreen(*mainsurface);
 		}
@@ -431,33 +598,33 @@ void drawSkillsSheet()
 
 		if ( show_skill_values )
 		{
-			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, "%15d / 100", stats[clientnum]->PROFICIENCIES[i]);
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, "%15d / 100", stats[player]->PROFICIENCIES[i]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] == 0 )
+		else if ( stats[player]->PROFICIENCIES[i] == 0 )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[363]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
+		else if ( stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[364]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_BASIC && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_SKILLED )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_BASIC && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_SKILLED )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[365]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_SKILLED && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_EXPERT )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_SKILLED && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_EXPERT )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[366]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_MASTER )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_MASTER )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[367]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_MASTER && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_LEGENDARY )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_MASTER && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_LEGENDARY )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[368]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_LEGENDARY )
+		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_LEGENDARY )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[369]);
 		}
@@ -465,9 +632,9 @@ void drawSkillsSheet()
 	pos = initialSkillPos;
 	SDL_Rect skillTooltipRect;
 	std::string skillTooltip;
-	for ( int i = 0; !shootmode && i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
+	for ( int i = 0; !players[player]->shootmode && i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
 	{
-		if ( mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + fontHeight) && stats[clientnum] )
+		if ( mouseInBounds(player, pos.x, pos.x + pos.w, pos.y, pos.y + fontHeight) && stats[player] )
 		{
 			skillTooltipRect.w = (longestline(language[3255 + i]) * fontWidth) + 8;
 			skillTooltip = language[3255 + i];
@@ -478,7 +645,7 @@ void drawSkillsSheet()
 			skillTooltipRect.y = mousey + 16;
 
 			Uint32 capstoneTextColor = uint32ColorGray(*mainsurface);
-			if ( skillCapstoneUnlocked(clientnum, i) )
+			if ( skillCapstoneUnlocked(player, i) )
 			{
 				capstoneTextColor = uint32ColorGreen(*mainsurface);
 			}
@@ -587,7 +754,7 @@ void drawSkillsSheet()
 			}
 
 			Uint32 headerColor = uint32ColorBaronyBlue(*mainsurface);
-			if ( skillCapstoneUnlocked(clientnum, i) )
+			if ( skillCapstoneUnlocked(player, i) )
 			{
 				headerColor = uint32ColorGreen(*mainsurface);
 			}
@@ -595,7 +762,7 @@ void drawSkillsSheet()
 			if ( i != PRO_MAGIC && i != PRO_ALCHEMY )
 			{
 				ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8, 
-					headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+					headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 			}
 
 			real_t skillDetails[6] = { 0.f };
@@ -605,46 +772,46 @@ void drawSkillsSheet()
 				case PRO_LOCKPICKING:
 				{
 					Sint32 PER = 0;
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						PER = statGetPER(stats[clientnum], players[clientnum]->entity);
+						PER = statGetPER(stats[player], players[player]->entity);
 					}
-					skillDetails[0] = stats[clientnum]->PROFICIENCIES[i] / 2.f; // lockpick chests/doors
-					if ( stats[clientnum]->PROFICIENCIES[i] == SKILL_LEVEL_LEGENDARY )
+					skillDetails[0] = stats[player]->PROFICIENCIES[i] / 2.f; // lockpick chests/doors
+					if ( stats[player]->PROFICIENCIES[i] == SKILL_LEVEL_LEGENDARY )
 					{
 						skillDetails[0] = 100.f;
 					}
-					skillDetails[1] = std::min(100.f, stats[clientnum]->PROFICIENCIES[i] + 50.f);
-					if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT )
+					skillDetails[1] = std::min(100.f, stats[player]->PROFICIENCIES[i] + 50.f);
+					if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT )
 					{
 						skillDetails[2] = 100.f; // lockpick automatons
 					}
 					else
 					{
-						skillDetails[2] = (100 - 100 / (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
+						skillDetails[2] = (100 - 100 / (static_cast<int>(stats[player]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
 					}
-					skillDetails[3] = (100 - 100 / (std::max(1, static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10)))); // disarm arrow traps
-					if ( stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
+					skillDetails[3] = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->PROFICIENCIES[i] / 10)))); // disarm arrow traps
+					if ( stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
 					{
 						skillDetails[3] = 0.f;
 					}
 					std::string canRepairItems = "  no";
-					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + (stats[clientnum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
+					if ( (stats[player]->PROFICIENCIES[i] + PER + (stats[player]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
 					{
 						canRepairItems = "all";
 					}
-					else if ( (stats[clientnum]->PROFICIENCIES[i] + PER + (stats[clientnum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
+					else if ( (stats[player]->PROFICIENCIES[i] + PER + (stats[player]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
 					{
 						canRepairItems = "2/0";
 					}
-					else if ( (stats[clientnum]->PROFICIENCIES[i] + PER + (stats[clientnum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
+					else if ( (stats[player]->PROFICIENCIES[i] + PER + (stats[player]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
 					{
 						canRepairItems = "1/0";
 					}
-					skillDetails[4] = maximumTinkeringBotsCanBeDeployed(stats[clientnum]);
+					skillDetails[4] = maximumTinkeringBotsCanBeDeployed(stats[player]);
 
 					// bonus scrapping chances.
-					switch ( std::min(5, static_cast<int>((stats[clientnum]->PROFICIENCIES[i] + PER) / 20)) )
+					switch ( std::min(5, static_cast<int>((stats[player]->PROFICIENCIES[i] + PER) / 20)) )
 					{
 						case 5:
 							skillDetails[5] = 150.f;
@@ -671,14 +838,14 @@ void drawSkillsSheet()
 					break;
 				}
 				case PRO_STEALTH:
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[0] = players[clientnum]->entity->entityLightAfterReductions(*stats[clientnum], nullptr); 
+						skillDetails[0] = players[player]->entity->entityLightAfterReductions(*stats[player], nullptr); 
 						skillDetails[0] = std::max(1, (static_cast<int>(skillDetails[0] / 32))); // general visibility
-						skillDetails[1] = stats[clientnum]->PROFICIENCIES[i] * 2 * 100 / 512.f; // % visibility reduction of above
-						skillDetails[2] = (2 + (stats[clientnum]->PROFICIENCIES[PRO_STEALTH] / 40)); // night vision when sneaking
-						skillDetails[3] = (stats[clientnum]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * 2; // backstab dmg
-						if ( skillCapstoneUnlocked(clientnum, i) )
+						skillDetails[1] = stats[player]->PROFICIENCIES[i] * 2 * 100 / 512.f; // % visibility reduction of above
+						skillDetails[2] = (2 + (stats[player]->PROFICIENCIES[PRO_STEALTH] / 40)); // night vision when sneaking
+						skillDetails[3] = (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * 2; // backstab dmg
+						if ( skillCapstoneUnlocked(player, i) )
 						{
 							skillDetails[3] *= 2;
 						}
@@ -689,22 +856,22 @@ void drawSkillsSheet()
 					
 					break;
 				case PRO_TRADING:
-					skillDetails[0] = 1 / ((50 + stats[clientnum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
-					skillDetails[1] = (50 + stats[clientnum]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
+					skillDetails[0] = 1 / ((50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
+					skillDetails[1] = (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
 						skillDetails[0], skillDetails[1]);
 					break;
 				case PRO_APPRAISAL:
-					skillDetails[0] = (60.f / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
-					if ( players[clientnum] && players[clientnum]->entity )
+					skillDetails[0] = (60.f / (stats[player]->PROFICIENCIES[PRO_APPRAISAL] + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[1] = 10 * (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + players[clientnum]->entity->getPER() * 5); // max gold value can appraise
+						skillDetails[1] = 10 * (stats[player]->PROFICIENCIES[PRO_APPRAISAL] + players[player]->entity->getPER() * 5); // max gold value can appraise
 						if ( skillDetails[1] < 0.1 )
 						{
 							skillDetails[1] = 9;
 						}
-						if ( (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + players[clientnum]->entity->getPER() * 5) >= 100 )
+						if ( (stats[player]->PROFICIENCIES[PRO_APPRAISAL] + players[player]->entity->getPER() * 5) >= 100 )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 								uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -725,27 +892,27 @@ void drawSkillsSheet()
 					}
 					break;
 				case PRO_SWIMMING:
-					skillDetails[0] = (((stats[clientnum]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50); // water movement speed
+					skillDetails[0] = (((stats[player]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50); // water movement speed
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
 						skillDetails[0]);
 					break;
 				case PRO_LEADERSHIP:
-					skillDetails[0] = std::min(8, std::max(4, 2 * (stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] / 20))); // max followers
-					if ( players[clientnum] && players[clientnum]->entity )
+					skillDetails[0] = std::min(8, std::max(4, 2 * (stats[player]->PROFICIENCIES[PRO_LEADERSHIP] / 20))); // max followers
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[1] = 1 + (stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] / 20);
-						skillDetails[2] = 80 + ((players[clientnum]->entity->getCHR() + stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+						skillDetails[1] = 1 + (stats[player]->PROFICIENCIES[PRO_LEADERSHIP] / 20);
+						skillDetails[2] = 80 + ((players[player]->entity->getCHR() + stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
 					}
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
 						getInputName(impulses[IN_USE]),skillDetails[0], skillDetails[1], skillDetails[2], getInputName(impulses[IN_FOLLOWERMENU]));
 					break;
 				case PRO_SPELLCASTING:
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[0] = players[clientnum]->entity->getManaRegenInterval(*(stats[clientnum])) / (TICKS_PER_SECOND * 1.f);
-						if ( players[clientnum]->entity->isSpellcasterBeginner() )
+						skillDetails[0] = players[player]->entity->getManaRegenInterval(*(stats[player])) / (TICKS_PER_SECOND * 1.f);
+						if ( players[player]->entity->isSpellcasterBeginner() )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 								uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -770,10 +937,10 @@ void drawSkillsSheet()
 					int skillLVL = 0;
 					std::string magics = "";
 					int lines = 0;
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + players[clientnum]->entity->getINT());
-						if ( stats[clientnum]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+						skillLVL = (stats[player]->PROFICIENCIES[PRO_MAGIC] + players[player]->entity->getINT());
+						if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
 						{
 							skillLVL = 100;
 						}
@@ -828,7 +995,7 @@ void drawSkillsSheet()
 						capstoneTextColor, language[3277]);
 
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
-						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -840,23 +1007,23 @@ void drawSkillsSheet()
 				}
 				case PRO_RANGED:
 				{
-					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[PRO_RANGED]) / 2.f; // lowest damage roll
-					skillDetails[1] = 50 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
-					if ( stats[clientnum]->type == GOBLIN )
+					skillDetails[0] = 100 - (100 - stats[player]->PROFICIENCIES[PRO_RANGED]) / 2.f; // lowest damage roll
+					skillDetails[1] = 50 + static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 10;
+					if ( stats[player]->type == GOBLIN )
 					{
 						skillDetails[1] += 20;
-						if ( stats[clientnum]->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_LEGENDARY )
+						if ( stats[player]->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_LEGENDARY )
 						{
 							skillDetails[1] = std::min(skillDetails[1], 90.0);
 						}
 					}
-					if ( players[clientnum] && players[clientnum]->entity )
+					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[2] = std::min(std::max(players[clientnum]->entity->getPER() / 2, 0), 50);
+						skillDetails[2] = std::min(std::max(players[player]->entity->getPER() / 2, 0), 50);
 					}
-					int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 20; // thrown dmg bonus
+					int skillLVL = stats[player]->PROFICIENCIES[PRO_RANGED] / 20; // thrown dmg bonus
 					skillDetails[3] = 100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
-					if ( skillCapstoneUnlocked(clientnum, i) )
+					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -876,13 +1043,13 @@ void drawSkillsSheet()
 				case PRO_POLEARM:
 					if ( i == PRO_POLEARM )
 					{
-						skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 3.f; // lowest damage roll
+						skillDetails[0] = 100 - (100 - stats[player]->PROFICIENCIES[i]) / 3.f; // lowest damage roll
 					}
 					else
 					{
-						skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
+						skillDetails[0] = 100 - (100 - stats[player]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
 					}
-					if ( skillCapstoneUnlocked(clientnum, i) )
+					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -890,10 +1057,10 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 50 + (stats[clientnum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
-						skillDetails[2] = 4 + (stats[clientnum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
-						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
-						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
+						skillDetails[1] = 50 + (stats[player]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+						skillDetails[2] = 4 + (stats[player]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[player]->PROFICIENCIES[i] / 20)) * 10;
+						skillDetails[2] += static_cast<int>(stats[player]->PROFICIENCIES[i] / 20);
 						if ( svFlags & SV_FLAG_HARDCORE )
 						{
 							skillDetails[1] *= 2;
@@ -905,10 +1072,10 @@ void drawSkillsSheet()
 					}
 					break;
 				case PRO_UNARMED:
-					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
-					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
-					skillDetails[4] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 20;
-					if ( skillCapstoneUnlocked(clientnum, i) )
+					skillDetails[0] = 100 - (100 - stats[player]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
+					skillDetails[3] = static_cast<int>(stats[player]->PROFICIENCIES[i] / 20);
+					skillDetails[4] = static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 20;
+					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -916,10 +1083,10 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 100 + (stats[clientnum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
-						skillDetails[2] = 8 + (stats[clientnum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
-						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
-						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
+						skillDetails[1] = 100 + (stats[player]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+						skillDetails[2] = 8 + (stats[player]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[player]->PROFICIENCIES[i] / 20)) * 10;
+						skillDetails[2] += static_cast<int>(stats[player]->PROFICIENCIES[i] / 20);
 						if ( svFlags & SV_FLAG_HARDCORE )
 						{
 							skillDetails[1] *= 2;
@@ -931,8 +1098,8 @@ void drawSkillsSheet()
 					}
 					break;
 				case PRO_SHIELD:
-					skillDetails[0] = 5 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 5);
-					if ( skillCapstoneUnlocked(clientnum, i) )
+					skillDetails[0] = 5 + static_cast<int>(stats[player]->PROFICIENCIES[i] / 5);
+					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -940,13 +1107,13 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 25 + (stats[clientnum]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
-						skillDetails[2] = 10 + (stats[clientnum]->type == GOBLIN ? 10 : 0); // degrade on 0 dmg
-						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
-						skillDetails[2] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
+						skillDetails[1] = 25 + (stats[player]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
+						skillDetails[2] = 10 + (stats[player]->type == GOBLIN ? 10 : 0); // degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[player]->PROFICIENCIES[i] / 10));
+						skillDetails[2] += (static_cast<int>(stats[player]->PROFICIENCIES[i] / 10));
 						if ( svFlags & SV_FLAG_HARDCORE )
 						{
-							skillDetails[2] = 40 + (stats[clientnum]->type == GOBLIN ? 10 : 0);
+							skillDetails[2] = 40 + (stats[player]->type == GOBLIN ? 10 : 0);
 						}
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -962,7 +1129,7 @@ void drawSkillsSheet()
 					for ( auto it = clientLearnedAlchemyIngredients.begin(); it != clientLearnedAlchemyIngredients.end(); ++it )
 					{
 						auto alchemyEntry = *it;
-						if ( GenericGUI.isItemBaseIngredient(alchemyEntry) )
+						if ( GenericGUI[player].isItemBaseIngredient(alchemyEntry) )
 						{
 							baseIngredients += " -[";
 							std::string itemName = items[alchemyEntry].name_identified;
@@ -971,7 +1138,7 @@ void drawSkillsSheet()
 							baseIngredients += "]\n";
 							++lines;
 						}
-						if ( GenericGUI.isItemSecondaryIngredient(alchemyEntry) )
+						if ( GenericGUI[player].isItemSecondaryIngredient(alchemyEntry) )
 						{
 							secondaryIngredients += " -[";
 							std::string itemName = items[alchemyEntry].name_identified;
@@ -982,12 +1149,12 @@ void drawSkillsSheet()
 						}
 					}
 					lines = std::max(lines, lines2);
-					int skillLVL = stats[clientnum]->PROFICIENCIES[i] / 20;
+					int skillLVL = stats[player]->PROFICIENCIES[i] / 20;
 					skillDetails[0] = 100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
 					skillDetails[1] = skillDetails[0];
-					skillDetails[2] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
-					skillDetails[3] = std::min(80, (60 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10));
-					skillDetails[4] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
+					skillDetails[2] = 50.f + static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 10;
+					skillDetails[3] = std::min(80, (60 + static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 10));
+					skillDetails[4] = 50.f + static_cast<int>(stats[player]->PROFICIENCIES[i] / 20) * 5;
 
 					skillTooltipRect.h = fontHeight * (5 + 2) + 8;
 					skillTooltipRect.h += 4 + (6 + lines) * (fontHeight + lines / 6);
@@ -997,7 +1164,7 @@ void drawSkillsSheet()
 						capstoneTextColor, language[3347]);
 					// header text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
-						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 					// effect text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3348], 
@@ -1019,10 +1186,17 @@ void drawSkillsSheet()
 	}
 }
 
-void drawPartySheet()
+void drawPartySheet(const int player)
 {
-	SDL_Rect pos;
-	pos.w = 208;
+	const int x1 = players[player]->camera_x1();
+	const int x2 = players[player]->camera_x2();
+	const int y1 = players[player]->camera_y1();
+	const int y2 = players[player]->camera_y2();
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
 	TTF_Font* fontPlayer = ttf12;
 	int fontHeight = TTF12_HEIGHT;
@@ -1032,8 +1206,9 @@ void drawPartySheet()
 		fontPlayer = ttf16;
 		fontHeight = TTF16_HEIGHT;
 		fontWidth = TTF16_WIDTH;
-		pos.w = 276;
 	}
+	players[player]->characterSheet.setDefaultPartySheetBox();
+
 	int playerCnt = 0;
 	for ( playerCnt = MAXPLAYERS - 1; playerCnt > 0; --playerCnt )
 	{
@@ -1042,69 +1217,64 @@ void drawPartySheet()
 			break;
 		}
 	}
-	pos.x = xres - pos.w;
-	pos.y = 32;
-	pos.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
 
 	int numFollowers = 0;
-	if ( stats[clientnum] )
+	if ( stats[player] )
 	{
-		numFollowers = list_Size(&stats[clientnum]->FOLLOWERS);
+		numFollowers = list_Size(&stats[player]->FOLLOWERS);
 	}
 
 	if ( playerCnt == 0 ) // 1 player.
 	{
 		if ( numFollowers == 0 )
 		{
-			if ( shootmode )
+			if ( players[player]->shootmode )
 			{
 				return; // don't show menu if not in inventory, no point reminding the player they have no friends!
 			}
-			pos.h = (fontHeight * 4 + 12);
-		}
-		else
-		{
-			pos.h = (fontHeight + 12);
 		}
 	}
+
+	SDL_Rect pos;
+	pos.x = players[player]->characterSheet.partySheetBox.x;
+	pos.y = players[player]->characterSheet.partySheetBox.y;
+	pos.w = players[player]->characterSheet.partySheetBox.w;
+	pos.h = players[player]->characterSheet.partySheetBox.h;
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
-	interfacePartySheet.x = pos.x;
-	interfacePartySheet.y = pos.y;
-	interfacePartySheet.w = pos.w;
-	interfacePartySheet.h = pos.h;
 
 	ttfPrintTextFormatted(fontPlayer, pos.x + 4, pos.y + 8, "Party Stats");
 
 	SDL_Rect button;
-	button.x = xres - attributesright_bmp->w - 8;
+	button.x = x2 - attributesright_bmp->w - 8;
 	button.w = attributesright_bmp->w;
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
 	if ( uiscale_skillspage )
 	{
 		button.w = attributesright_bmp->w * 1.3;
-		button.x = xres - button.w - 8;
+		button.x = x2 - button.w - 8;
 		button.y = pos.y;
 		button.h = attributesright_bmp->h * 1.3;
 	}
 
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 	{
 		if ( omousex >= button.x && omousex <= button.x + button.w
 			&& omousey >= button.y && omousey <= button.y + button.h )
 		{
 			buttonclick = 14;
 			playSound(139, 64);
-			if ( proficienciesPage == 0 )
+			if ( players[player]->characterSheet.proficienciesPage == 0 )
 			{
-				proficienciesPage = 1;
+				players[player]->characterSheet.proficienciesPage = 1;
 			}
 			else
 			{
-				proficienciesPage = 0;
+				players[player]->characterSheet.proficienciesPage = 0;
 			}
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(player);
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
 	}
 	if ( buttonclick == 14 )
@@ -1130,7 +1300,7 @@ void drawPartySheet()
 	{
 		lockbtn.x -= 32;
 	}
-	if ( lock_right_sidebar )
+	if ( players[player]->characterSheet.lock_right_sidebar )
 	{
 		drawImageScaled(sidebar_lock_bmp, nullptr, &lockbtn);
 	}
@@ -1139,14 +1309,15 @@ void drawPartySheet()
 		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
+	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 	{
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
 		{
 			playSound(139, 64);
-			lock_right_sidebar = !lock_right_sidebar;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			players[player]->characterSheet.lock_right_sidebar = !players[player]->characterSheet.lock_right_sidebar;
+			inputs.mouseClearLeft(player);
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
 	}
 
@@ -1183,7 +1354,7 @@ void drawPartySheet()
 				}
 
 				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i], i));
-				ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
+				ttfPrintTextFormattedColor(fontPlayer, x2 - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
 
 				playerBar.x = pos.x + 64;
 				playerBar.w = 10 * 11;
@@ -1236,12 +1407,13 @@ void drawPartySheet()
 	// draw follower stats
 	if ( numFollowers > 0 )
 	{
-		int monstersToDisplay = FollowerMenu.maxMonstersToDraw;
+		FollowerRadialMenu& followerMenu = FollowerMenu[player];
+		int monstersToDisplay = followerMenu.maxMonstersToDraw;
 		if ( playerCnt != 0 )
 		{
 			pos.y -= (fontHeight * 4) * 2;
 			pos.y += std::max(playerCnt - 1, 0) * (fontHeight * 4 + 8);
-			monstersToDisplay = FollowerMenu.numMonstersToDrawInParty();
+			monstersToDisplay = followerMenu.numMonstersToDrawInParty();
 		}
 		int i = 0;
 		SDL_Rect monsterEntryWindow;
@@ -1254,7 +1426,7 @@ void drawPartySheet()
 		SDL_Rect slider = monsterEntryWindow;
 		slider.y = pos.y;
 
-		for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
+		for ( node_t* node = stats[player]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
 		{
 			Entity* follower = nullptr;
 			if ( (Uint32*)node->element )
@@ -1272,11 +1444,11 @@ void drawPartySheet()
 					bool hideDetail = false;
 					if ( numFollowers > monstersToDisplay )
 					{
-						if ( i < FollowerMenu.sidebarScrollIndex )
+						if ( i < followerMenu.sidebarScrollIndex )
 						{
 							hideDetail = true;
 						}
-						else if ( i > FollowerMenu.sidebarScrollIndex + monstersToDisplay )
+						else if ( i > followerMenu.sidebarScrollIndex + monstersToDisplay )
 						{
 							hideDetail = true;
 						}
@@ -1287,49 +1459,49 @@ void drawPartySheet()
 						drawWindowFancy(monsterEntryWindow.x, monsterEntryWindow.y, 
 							monsterEntryWindow.x + monsterEntryWindow.w, monsterEntryWindow.y + monsterEntryWindow.h);
 
-						if ( !FollowerMenu.recentEntity )
+						if ( !followerMenu.recentEntity )
 						{
-							FollowerMenu.recentEntity = follower;
+							followerMenu.recentEntity = follower;
 						}
-						if ( FollowerMenu.recentEntity == follower )
+						if ( followerMenu.recentEntity == follower )
 						{
 							// draw highlight on current selected monster.
 							drawRect(&monsterEntryWindow, uint32ColorBaronyBlue(*mainsurface), 32);
-							// ttfPrintText(ttf16, xres - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
+							// ttfPrintText(ttf16, x2 - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
 						}
 
-						if ( stats[clientnum] && stats[clientnum]->HP > 0 && !shootmode 
-							&& (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE]))) )
+						if ( stats[player] && stats[player]->HP > 0 && !players[player]->shootmode
+							&& (inputs.bMouseLeft(player) || (*inputPressedForPlayer(player, impulses[IN_USE]) || inputs.bControllerInputPressed(player, INJOY_GAME_USE))) )
 						{
-							bool inBounds = mouseInBounds(monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
+							bool inBounds = mouseInBounds(player, monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
 								monsterEntryWindow.y, monsterEntryWindow.y + monsterEntryWindow.h);
 							if ( inBounds )
 							{
-								if ( mousestatus[SDL_BUTTON_LEFT] )
+								if ( inputs.bMouseLeft(player) )
 								{
-									FollowerMenu.recentEntity = follower;
+									followerMenu.recentEntity = follower;
 									playSound(139, 64);
-									FollowerMenu.accessedMenuFromPartySheet = true;
-									FollowerMenu.partySheetMouseX = omousex;
-									FollowerMenu.partySheetMouseY = omousey;
-									mousestatus[SDL_BUTTON_LEFT] = 0;
-									if ( FollowerMenu.recentEntity )
+									followerMenu.accessedMenuFromPartySheet = true;
+									followerMenu.partySheetMouseX = omousex;
+									followerMenu.partySheetMouseY = omousey;
+									inputs.mouseClearLeft(player);
+									if ( followerMenu.recentEntity )
 									{
-										createParticleFollowerCommand(FollowerMenu.recentEntity->x, FollowerMenu.recentEntity->y, 0, 174);
+										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, 174);
 									}
 								}
-								else if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
+								else if ( (*inputPressedForPlayer(player, impulses[IN_USE]) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) )
 								{
-									FollowerMenu.followerToCommand = follower;
-									FollowerMenu.recentEntity = follower;
-									FollowerMenu.accessedMenuFromPartySheet = true;
-									FollowerMenu.partySheetMouseX = omousex;
-									FollowerMenu.partySheetMouseY = omousey;
-									FollowerMenu.initFollowerMenuGUICursor();
-									FollowerMenu.updateScrollPartySheet();
-									if ( FollowerMenu.recentEntity )
+									followerMenu.followerToCommand = follower;
+									followerMenu.recentEntity = follower;
+									followerMenu.accessedMenuFromPartySheet = true;
+									followerMenu.partySheetMouseX = omousex;
+									followerMenu.partySheetMouseY = omousey;
+									followerMenu.initfollowerMenuGUICursor(true);
+									followerMenu.updateScrollPartySheet();
+									if ( followerMenu.recentEntity )
 									{
-										createParticleFollowerCommand(FollowerMenu.recentEntity->x, FollowerMenu.recentEntity->y, 0, 174);
+										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, 174);
 									}
 								}
 							}
@@ -1382,7 +1554,7 @@ void drawPartySheet()
 								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
 							}
 						}
-						ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 11, pos.y, color, "LVL %2d", followerStats->LVL);
+						ttfPrintTextFormattedColor(fontPlayer, x2 - 8 * 11, pos.y, color, "LVL %2d", followerStats->LVL);
 
 						playerBar.x = pos.x + 64;
 						playerBar.w = 10 * 11;
@@ -1410,47 +1582,49 @@ void drawPartySheet()
 				}
 			}
 		}
-		slider.x = xres - 16;
+		slider.x = x1 + x2 - 16;
 		slider.w = 16;
 		slider.h = (fontHeight * 2 + 12) * (std::min(monstersToDisplay + 1, numFollowers));
-		interfacePartySheet.h += slider.h + 6;
+		players[player]->characterSheet.partySheetBox.h += slider.h + 6;
 
 		if ( numFollowers > (monstersToDisplay + 1) )
 		{
 			drawDepressed(slider.x, slider.y, slider.x + slider.w,
 				slider.y + slider.h);
 
-			bool mouseInScrollbarTotalHeight = mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
+			bool mouseInScrollbarTotalHeight = mouseInBounds(player, x2 - monsterEntryWindow.w, x2, slider.y,
 				slider.y + slider.h);
 
 			if ( mousestatus[SDL_BUTTON_WHEELDOWN] && mouseInScrollbarTotalHeight )
 			{
 				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-				FollowerMenu.sidebarScrollIndex = std::min(FollowerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
+				followerMenu.sidebarScrollIndex = std::min(followerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
 			}
 			else if ( mousestatus[SDL_BUTTON_WHEELUP] && mouseInScrollbarTotalHeight )
 			{
 				mousestatus[SDL_BUTTON_WHEELUP] = 0;
-				FollowerMenu.sidebarScrollIndex = std::max(FollowerMenu.sidebarScrollIndex - 1, 0);
+				followerMenu.sidebarScrollIndex = std::max(followerMenu.sidebarScrollIndex - 1, 0);
 			}
 
 			slider.h *= (1 / static_cast<real_t>(std::max(1, numFollowers - monstersToDisplay)));
-			slider.y += slider.h * FollowerMenu.sidebarScrollIndex;
+			slider.y += slider.h * followerMenu.sidebarScrollIndex;
 			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
-			if ( mouseInScrollbarTotalHeight && mousestatus[SDL_BUTTON_LEFT] )
+			if ( mouseInScrollbarTotalHeight && (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) )
 			{
-				if ( !mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
+				if ( !mouseInBounds(player, x2 - monsterEntryWindow.w, x2, slider.y,
 					slider.y + slider.h) )
 				{
 					if ( omousey < slider.y )
 					{
-						FollowerMenu.sidebarScrollIndex = std::max(FollowerMenu.sidebarScrollIndex - 1, 0);
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						followerMenu.sidebarScrollIndex = std::max(followerMenu.sidebarScrollIndex - 1, 0);
+						inputs.mouseClearLeft(player);
+						inputs.controllerClearInput(player, INJOY_GAME_USE);
 					}
 					else if ( omousey > slider.y + slider.h )
 					{
-						FollowerMenu.sidebarScrollIndex = std::min(FollowerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						followerMenu.sidebarScrollIndex = std::min(followerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
+						inputs.mouseClearLeft(player);
+						inputs.controllerClearInput(player, INJOY_GAME_USE);
 					}
 				}
 			}
@@ -1458,15 +1632,20 @@ void drawPartySheet()
 	}
 }
 
-void statsHoverText(Stat* tmpStat)
+void statsHoverText(const int player, Stat* tmpStat)
 {
 	if ( tmpStat == nullptr )
 	{
 		return;
 	}
 
-	int pad_y = 262; // 262 px.
-	int pad_x = 8; // 8 px.
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+
+	int pad_y = players[player]->camera_y1() + 262; // 262 px.
+	int pad_x = players[player]->camera_x1() + 8; // 8 px.
 	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
 	int off_w = 216; // 216px. width of stat line.
 	int i = 0;
@@ -1542,12 +1721,12 @@ void statsHoverText(Stat* tmpStat)
 	SDL_Surface *tmp_bmp = NULL;
 
 	Entity* playerEntity = nullptr;
-	if ( players[clientnum] )
+	if ( players[player] )
 	{
-		playerEntity = players[clientnum]->entity;
+		playerEntity = players[player]->entity;
 	}
 
-	if ( attributespage == 0 )
+	if ( players[player]->characterSheet.attributespage == 0 )
 	{
 		for ( i = 0; i < 6; i++ ) // cycle through 6 stats.
 		{
@@ -1595,7 +1774,7 @@ void statsHoverText(Stat* tmpStat)
 					break;
 			}
 
-			if ( mouseInBounds(pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
+			if ( mouseInBounds(player, pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
 			{
 				src.x = mousex + tooltip_offset_x;
 				src.y = mousey + tooltip_offset_y;
@@ -1646,19 +1825,19 @@ void statsHoverText(Stat* tmpStat)
 						if ( i == 3 )
 						{
 							Entity* tmp = nullptr;
-							if ( players[clientnum] && players[clientnum]->entity )
+							if ( players[player] && players[player]->entity )
 							{
-								tmp = players[clientnum]->entity;
+								tmp = players[player]->entity;
 								real_t regen = (static_cast<real_t>(tmp->getManaRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
-								if ( stats[clientnum]->type == AUTOMATON )
+								if ( stats[player]->type == AUTOMATON )
 								{
-									if ( stats[clientnum]->HUNGER <= 300 )
+									if ( stats[player]->HUNGER <= 300 )
 									{
 										regen /= 6; // degrade faster
 									}
-									else if ( stats[clientnum]->HUNGER > 1200 )
+									else if ( stats[player]->HUNGER > 1200 )
 									{
-										if ( stats[clientnum]->MP / static_cast<real_t>(std::max(1, stats[clientnum]->MAXMP)) <= 0.5 )
+										if ( stats[player]->MP / static_cast<real_t>(std::max(1, stats[player]->MAXMP)) <= 0.5 )
 										{
 											regen /= 4; // increase faster at < 50% mana
 										}
@@ -1667,13 +1846,13 @@ void statsHoverText(Stat* tmpStat)
 											regen /= 2; // increase less faster at > 50% mana
 										}
 									}
-									else if ( stats[clientnum]->HUNGER > 300 )
+									else if ( stats[player]->HUNGER > 300 )
 									{
 										// normal manaRegenInterval 300-1200 hunger.
 									}
 								}
 
-								if ( regen < 0.f /*stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0*/ )
+								if ( regen < 0.f /*stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0*/ )
 								{
 									regen = 0.f;
 									snprintf(buf, longestline("MP regen rate: 0 / %2.1fs"), "MP regen rate: 0 / %2.1fs", (static_cast<real_t>(MAGIC_REGEN_TIME) / TICKS_PER_SECOND));
@@ -1683,9 +1862,9 @@ void statsHoverText(Stat* tmpStat)
 									snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
 								}
 
-								if ( stats[clientnum]->type == AUTOMATON )
+								if ( stats[player]->type == AUTOMATON )
 								{
-									if ( stats[clientnum]->HUNGER <= 300 )
+									if ( stats[player]->HUNGER <= 300 )
 									{
 										color = uint32ColorRed(*mainsurface);
 									}
@@ -1694,7 +1873,7 @@ void statsHoverText(Stat* tmpStat)
 										color = uint32ColorGreen(*mainsurface);
 									}
 								}
-								else if ( stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0 )
+								else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 								{
 									if ( !(svFlags & SV_FLAG_HUNGER) )
 									{
@@ -1719,9 +1898,9 @@ void statsHoverText(Stat* tmpStat)
 						else if ( i == 2 )
 						{
 							Entity* tmp = nullptr;
-							if ( players[clientnum] && players[clientnum]->entity )
+							if ( players[player] && players[player]->entity )
 							{
-								tmp = players[clientnum]->entity;
+								tmp = players[player]->entity;
 								real_t regen = (static_cast<real_t>(tmp->getHealthRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
 								if ( tmpStat->type == SKELETON )
 								{
@@ -1763,9 +1942,9 @@ void statsHoverText(Stat* tmpStat)
 						if ( i == 3 )
 						{
 							int bonusDamage = 100;
-							if ( players[clientnum] && players[clientnum]->entity )
+							if ( players[player] && players[player]->entity )
 							{
-								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[clientnum]->entity, nullptr));
+								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[player]->entity, nullptr));
 							}
 							snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], bonusDamage);
 						}
@@ -1776,9 +1955,9 @@ void statsHoverText(Stat* tmpStat)
 						{
 							Entity* tmp = nullptr;
 							real_t resistance = 0.f;
-							if ( players[clientnum] && players[clientnum]->entity )
+							if ( players[player] && players[player]->entity )
 							{
-								tmp = players[clientnum]->entity;
+								tmp = players[player]->entity;
 								real_t resistance = 100 - 100 / (tmp->getMagicResistance() + 1);
 								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], resistance);
 								if ( resistance > 0.f )
@@ -1801,93 +1980,93 @@ void statsHoverText(Stat* tmpStat)
 	}
 }
 
-Sint32 displayAttackPower(Sint32 output[6])
+Sint32 displayAttackPower(const int player, Sint32 output[6])
 {
 	Sint32 attack = 0;
 	Entity* entity = nullptr;
-	if ( players[clientnum] && (entity = players[clientnum]->entity) )
+	if ( players[player] && (entity = players[player]->entity) )
 	{
-		if ( stats[clientnum] )
+		if ( stats[player] )
 		{
 			bool shapeshiftUseMeleeAttack = false;
 			if ( entity->effectShapeshift != NOTHING )
 			{
 				shapeshiftUseMeleeAttack = true;
 				if ( entity->effectShapeshift == CREATURE_IMP
-					&& stats[clientnum]->weapon && itemCategory(stats[clientnum]->weapon) == MAGICSTAFF )
+					&& stats[player]->weapon && itemCategory(stats[player]->weapon) == MAGICSTAFF )
 				{
 					shapeshiftUseMeleeAttack = false;
 				}
 			}
 
-			if ( !stats[clientnum]->weapon || shapeshiftUseMeleeAttack )
+			if ( !stats[player]->weapon || shapeshiftUseMeleeAttack )
 			{
 				// fists
 				attack += entity->getAttack();
 				output[0] = 0; // melee
 				output[1] = attack;
-				output[2] = (stats[clientnum]->PROFICIENCIES[PRO_UNARMED] / 20); // bonus from proficiency
+				output[2] = (stats[player]->PROFICIENCIES[PRO_UNARMED] / 20); // bonus from proficiency
 				output[3] = entity->getSTR(); // bonus from main attribute
 				output[5] = attack - entity->getSTR() - BASE_PLAYER_UNARMED_DAMAGE - output[2]; // bonus from equipment
 				// get damage variances.
-				output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[PRO_UNARMED]) / 100.f;
+				output[4] = (attack / 2) * (100 - stats[player]->PROFICIENCIES[PRO_UNARMED]) / 100.f;
 				attack -= (output[4] / 2); // attack is the midpoint between max and min damage.
 				output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
 				output[1] = attack;
 			}
 			else
 			{
-				int weaponskill = getWeaponSkill(stats[clientnum]->weapon);
+				int weaponskill = getWeaponSkill(stats[player]->weapon);
 				real_t variance = 0;
 				if ( weaponskill == PRO_RANGED )
 				{
-					if ( isRangedWeapon(*stats[clientnum]->weapon) )
+					if ( isRangedWeapon(*stats[player]->weapon) )
 					{
 						attack += entity->getRangedAttack();
 						output[0] = 1; // ranged
 						output[1] = attack;
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+						output[2] = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
 						output[5] = 0;
-						if ( stats[clientnum]->shield && rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+						if ( stats[player]->shield && rangedWeaponUseQuiverOnAttack(stats[player]) )
 						{
-							int quiverATK = stats[clientnum]->shield->weaponGetAttack(stats[clientnum]);
+							int quiverATK = stats[player]->shield->weaponGetAttack(stats[player]);
 							output[5] += quiverATK;
 							attack += quiverATK;
 						}
 						output[3] = entity->getDEX(); // bonus from main attribute
 						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
 
-						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						output[4] = (attack / 2) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
 						attack -= (output[4] / 2);
 						output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
 						output[1] = attack;
 					}
-					else if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP )
+					else if ( stats[player]->weapon && stats[player]->weapon->type == TOOL_WHIP )
 					{
 						attack += entity->getAttack();
 						output[0] = 6; // ranged
 						output[1] = attack;
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+						output[2] = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
 						int atk = entity->getSTR() + entity->getDEX();
 						atk = std::min(atk / 2, atk);
 						output[3] = atk; // bonus from main attribute
 						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
 
-						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						output[4] = (attack / 2) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
 						attack -= (output[4] / 2);
 						output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
 						output[1] = attack;
 					}
 					else
 					{
-						int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 20;
+						int skillLVL = stats[player]->PROFICIENCIES[PRO_RANGED] / 20;
 						attack += entity->getThrownAttack();
 						output[0] = 2; // thrown
 						output[1] = attack;
 						// bonus from weapon
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]);
+						output[2] = stats[player]->weapon->weaponGetAttack(stats[player]);
 						// bonus from dex
-						if ( itemCategory(stats[clientnum]->weapon) != POTION )
+						if ( itemCategory(stats[player]->weapon) != POTION )
 						{
 							output[3] = entity->getDEX() / 4;
 						}
@@ -1906,7 +2085,7 @@ Sint32 displayAttackPower(Sint32 output[6])
 					attack += entity->getAttack();
 					output[0] = 3; // melee
 					output[1] = attack;
-					output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+					output[2] = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
 					output[3] = entity->getSTR(); // bonus from main attribute
 					if ( weaponskill == PRO_AXE )
 					{
@@ -1916,17 +2095,17 @@ Sint32 displayAttackPower(Sint32 output[6])
 					// get damage variances.
 					if ( weaponskill == PRO_POLEARM )
 					{
-						output[4] = (attack / 3) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						output[4] = (attack / 3) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
 					}
 					else
 					{
-						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						output[4] = (attack / 2) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
 					}
 					attack -= (output[4] / 2); // attack is the midpoint between max and min damage.
 					output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
 					output[1] = attack;
 				}
-				else if ( itemCategory(stats[clientnum]->weapon) == MAGICSTAFF ) // staffs.
+				else if ( itemCategory(stats[player]->weapon) == MAGICSTAFF ) // staffs.
 				{
 					attack = 0;
 					output[0] = 5; // staffs
@@ -1956,10 +2135,15 @@ Sint32 displayAttackPower(Sint32 output[6])
 	return attack;
 }
 
-void attackHoverText(Sint32 input[6])
+void attackHoverText(const int player, Sint32 input[6])
 {
-	int pad_y = 346; // 262 px.
-	int pad_x = 8; // 8 px.
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+
+	int pad_y = players[player]->camera_y1() + 346; // 262 px.
+	int pad_x = players[player]->camera_x1() + 8; // 8 px.
 	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
 	int off_w = 216; // 216px. width of stat line.
 	int i = 0;
@@ -1981,9 +2165,9 @@ void attackHoverText(Sint32 input[6])
 		off_w = 280;
 	}
 
-	if ( attributespage == 0 )
+	if ( players[player]->characterSheet.attributespage == 0 )
 	{
-		if ( mouseInBounds(pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
+		if ( mouseInBounds(player, pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
 		{
 			char tooltipHeader[32] = "";
 			switch ( input[0] )

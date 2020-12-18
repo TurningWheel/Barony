@@ -22,6 +22,7 @@ See LICENSE for details.
 #include "collision.hpp"
 #include "paths.hpp"
 #include "book.hpp"
+#include "shops.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #endif
@@ -63,6 +64,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	chestPreventLockpickCapstoneExploit(skill[10]),
 	chestHasVampireBook(skill[11]),
 	chestLockpickHealth(skill[12]),
+	chestOldHealth(skill[15]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
 	monsterTargetX(fskill[2]),
@@ -181,6 +183,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	doorDisableLockpicks(skill[12]),
 	doorDisableOpening(skill[13]),
 	doorLockpickHealth(skill[14]),
+	doorOldHealth(skill[15]),
 	particleTimerDuration(skill[0]),
 	particleTimerEndAction(skill[1]),
 	particleTimerEndSprite(skill[3]),
@@ -256,6 +259,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	furnitureMaxHealth(skill[9]),
 	furnitureTableRandomItemChance(skill[10]),
 	furnitureTableSpawnChairs(skill[11]),
+	furnitureOldHealth(skill[15]),
 	pistonCamDir(skill[0]),
 	pistonCamTimer(skill[1]),
 	pistonCamRotateSpeed(fskill[0]),
@@ -295,6 +299,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
 	interactedByMonster(skill[47]),
+	highlightForUI(skill[56]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
@@ -325,7 +330,13 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	entityShowOnMap(skill[59]),
 	thrownProjectilePower(skill[19]),
 	thrownProjectileCharge(skill[20]),
-	playerStartDir(skill[1])
+	playerStartDir(skill[1]),
+	worldTooltipAlpha(fskill[0]),
+	worldTooltipZ(fskill[1]),
+	worldTooltipActive(skill[0]),
+	worldTooltipPlayer(skill[1]),
+	worldTooltipInit(skill[3]),
+	worldTooltipFadeDelay(skill[4])
 {
 	int c;
 	// add the entity to the entity list
@@ -346,6 +357,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	{
 		addToCreatureList(creaturelist);
 	}
+	myWorldUIListNode = nullptr;
 	myTileListNode = nullptr;
 
 	// now reset all of my data elements
@@ -469,6 +481,11 @@ Entity::~Entity()
 		list_RemoveNode(myCreatureListNode);
 		myCreatureListNode = nullptr;
 	}
+	if ( myWorldUIListNode )
+	{
+		list_RemoveNode(myWorldUIListNode);
+		myWorldUIListNode = nullptr;
+	}
 	if ( myTileListNode )
 	{
 		list_RemoveNode(myTileListNode);
@@ -519,6 +536,7 @@ Entity::~Entity()
 		if ( this == players[i]->entity )
 		{
 			players[i]->entity = nullptr;    //TODO: PLAYERSWAP VERIFY. Should this do anything to the player itself?
+			players[i]->cleanUpOnEntityRemoval();
 		}
 	}
 	// destroy my children
@@ -1245,7 +1263,7 @@ void Entity::effectTimes()
 						{
 							setEffect(EFF_TELEPATH, false, 0, true);
 							messagePlayer(player, language[608]);
-							if ( player == clientnum )
+							if ( player >= 0 && players[player]->isLocalPlayer() )
 							{
 								for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 								{
@@ -1616,7 +1634,7 @@ void Entity::increaseSkill(int skill, bool notify)
 
 		if ( skill == PRO_STEALTH && myStats->PROFICIENCIES[skill] == 100 )
 		{
-			if ( client_classes[player] == CLASS_ACCURSED )
+			if ( player >= 0 && client_classes[player] == CLASS_ACCURSED )
 			{
 				steamAchievementClient(player, "BARONY_ACH_BLOOD_RUNS_CLEAR");
 			}
@@ -1641,9 +1659,9 @@ void Entity::increaseSkill(int skill, bool notify)
 
 		if ( skill == PRO_ALCHEMY )
 		{
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
-				GenericGUI.alchemyLearnRecipeOnLevelUp(myStats->PROFICIENCIES[skill]);
+				GenericGUI[player].alchemyLearnRecipeOnLevelUp(myStats->PROFICIENCIES[skill]);
 			}
 		}
 
@@ -2151,6 +2169,11 @@ void Entity::setHP(int amount)
 		entitystats->HP = 1; //Buddhas never die!
 	}
 
+	if ( this->behavior == &actPlayer && entitystats->OLDHP >= entitystats->HP )
+	{
+		inputs.addRumbleForPlayerHPLoss(skill[2], amount);
+	}
+
 	if ( multiplayer == SERVER )
 	{
 		for ( int i = 1; i < MAXPLAYERS; i++ )
@@ -2214,8 +2237,13 @@ void Entity::modHP(int amount)
 			return;
 		}
 	}
+
 	if ( !entitystats || amount == 0 )
 	{
+		if ( this->behavior == &actPlayer )
+		{
+			inputs.addRumbleForPlayerHPLoss(skill[2], amount);
+		}
 		return;
 	}
 
@@ -3112,7 +3140,7 @@ void Entity::handleEffects(Stat* myStats)
 					// Shake the Host's screen
 					if ( myStats->HP <= 10 )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							camera_shakex += .1;
 							camera_shakey += 10;
@@ -3269,7 +3297,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 
 					// Shake the Host's screen
-					if ( player == clientnum )
+					if ( player >= 0 && players[player]->isLocalPlayer() )
 					{
 						camera_shakex += .1;
 						camera_shakey += 10;
@@ -3323,7 +3351,7 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->EFFECTS[EFF_VOMITING] = true;
 			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + rand() % 20;
 			serverUpdateEffects(player);
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				camera_shakey += 9;
 			}
@@ -3627,7 +3655,7 @@ void Entity::handleEffects(Stat* myStats)
 			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10260) )
 			{
 				this->char_torchtime = 0;
-				if ( player == clientnum )
+				if ( player >= 0 && players[player]->isLocalPlayer() )
 				{
 					if ( myStats->shield->count > 1 )
 					{
@@ -3738,7 +3766,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			this->setObituary(language[1531]);
 			playSoundEntity(this, 28, 64);
-			if ( player == clientnum )
+			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
 				camera_shakex += .1;
 				camera_shakey += 10;
@@ -3808,7 +3836,7 @@ void Entity::handleEffects(Stat* myStats)
 				this->setObituary(language[1532]);
 				Entity* gib = spawnGib(this);
 				serverSpawnGibForClient(gib);
-				if ( player == clientnum )
+				if ( player >= 0 && players[player]->isLocalPlayer() )
 				{
 					camera_shakex -= .03;
 					camera_shakey += 3;
@@ -4068,7 +4096,7 @@ void Entity::handleEffects(Stat* myStats)
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
 				// Shake the Camera
-				if ( player == clientnum )
+				if ( player >= 0 && players[player]->isLocalPlayer() )
 				{
 					camera_shakey += 5;
 				}
@@ -4089,7 +4117,7 @@ void Entity::handleEffects(Stat* myStats)
 					// 1 in 10 chance of dealing damage to Entity's cloak
 					if ( rand() % 10 == 0 && myStats->cloak->type != ARTIFACT_CLOAK && myStats->cloak->type != CLOAK_BACKPACK )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( myStats->cloak->count > 1 )
 							{
@@ -4282,7 +4310,7 @@ void Entity::handleEffects(Stat* myStats)
 								int amount = 2 + rand() % 2;
 								int oldMP = myStats->MP;
 								this->modMP(amount);
-								if ( stats[player]->appearance == 0 )
+								if ( player >= 0 && stats[player]->appearance == 0 )
 								{
 									if ( stats[player]->playerRace == RACE_INCUBUS || stats[player]->playerRace == RACE_SUCCUBUS )
 									{
@@ -4320,7 +4348,7 @@ void Entity::handleEffects(Stat* myStats)
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
-					if ( player == clientnum )
+					if ( player >= 0 && players[player]->isLocalPlayer() )
 					{
 						camera_shakey += 8;
 					}
@@ -6132,7 +6160,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( (rand() % 3 == 0 && degradeWeapon && !(svFlags & SV_FLAG_HARDCORE)) || forceDegrade
 						|| ((svFlags & SV_FLAG_HARDCORE) && rand() % 6 == 0 && degradeWeapon) )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( myStats->weapon->count > 1 )
 							{
@@ -6152,17 +6180,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 								steamAchievementClient(player, "BARONY_ACH_ONE_MANS_TRASH");
 							}
 							messagePlayer(player, language[660]);
-							if ( player == clientnum && client_classes[player] == CLASS_MESMER )
+							if ( player >= 0 && players[player]->isLocalPlayer() && client_classes[player] == CLASS_MESMER )
 							{
 								if ( myStats->weapon->type == MAGICSTAFF_CHARM )
 								{
 									bool foundCharmSpell = false;
-									for ( node_t* spellnode = stats[clientnum]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
+									for ( node_t* spellnode = stats[player]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
 									{
 										Item* item = (Item*)spellnode->element;
 										if ( item && itemCategory(item) == SPELL_CAT )
 										{
-											spell_t* spell = getSpellFromItem(item);
+											spell_t* spell = getSpellFromItem(player, item);
 											if ( spell && spell->ID == SPELL_CHARM_MONSTER )
 											{
 												foundCharmSpell = true;
@@ -6347,7 +6375,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( myStats->weapon != NULL )
 					{
-						if ( player == clientnum )
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( myStats->weapon->count > 1 )
 							{
@@ -7233,7 +7261,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				if ( behavior == &actPlayer )
 				{
-					if ( skill[2] != clientnum )
+					if ( !players[skill[2]]->isLocalPlayer() )
 					{
 						if ( achievementRangedMode[skill[2]] && !playerFailedRangedOnlyConduct[skill[2]] )
 						{
@@ -7250,7 +7278,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							serverUpdatePlayerConduct(skill[2], CONDUCT_RANGED_ONLY, 0);
 						}
 					}
-					else if ( skill[2] == clientnum )
+					else
 					{
 						if ( achievementRangedMode[skill[2]] && conductGameChallenges[CONDUCT_RANGED_ONLY] )
 						{
@@ -7730,7 +7758,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( degradeWeapon )
 							{
-								if ( player == clientnum || player < 0 )
+								if ( (player >= 0 && players[player]->isLocalPlayer()) || player < 0 )
 								{
 									if ( (*weaponToBreak)->count > 1 )
 									{
@@ -8071,7 +8099,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								tangent -= 2 * PI;
 							}
-							if ( hit.entity->skill[2] != clientnum )
+							if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
 							{
 								hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
 								hit.entity->monsterKnockbackTangentDir = tangent;
@@ -8183,7 +8211,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									tangent -= 2 * PI;
 								}
-								if ( hit.entity->skill[2] != clientnum )
+								if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
 								{
 									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
 									hit.entity->monsterKnockbackTangentDir = tangent;
@@ -8433,7 +8461,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								if ( armor != nullptr )
 								{
-									if ( playerhit == clientnum || playerhit < 0 )
+									if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )
 									{
 										if ( armor->count > 1 )
 										{
@@ -9098,7 +9126,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								updateAchievementRhythmOfTheKnight(playerhit, this, true);
 								updateAchievementThankTheTank(playerhit, this, false);
 							}
-							else if ( !achievementStatusRhythmOfTheKnight[player] )
+							else if ( !achievementStatusRhythmOfTheKnight[playerhit] )
 							{
 								achievementRhythmOfTheKnightVec[playerhit].clear();
 								//messagePlayer(0, "used AC!");
@@ -14199,6 +14227,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	}
 
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
+	Sint32 oldMonsterState = monsterState;
 
 	if ( target.getRace() == GYROBOT )
 	{
@@ -14376,6 +14405,27 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			{
 				messagePlayer(target.skill[2], language[516 + rand() % 4], namesays);
 			}
+
+			if ( oldMonsterState == MONSTER_STATE_TALK && monsterState != MONSTER_STATE_TALK )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( players[i]->isLocalPlayer() && shopkeeper[i] == getUID() )
+					{
+						players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+					}
+					else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER )
+					{
+						// inform client of abandonment
+						strcpy((char*)net_packet->data, "SHPC");
+						SDLNet_Write32(getUID(), &net_packet->data[4]);
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
+			}
 		}
 	}
 
@@ -14536,9 +14586,16 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 	//X and Y in terms of tiles.
 	if ( forcePickupItem != nullptr && forcePickupItem->behavior == &actItem )
 	{
-		if ( !FollowerMenu.allowedInteractItems(myStats->type) )
+		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			return false;
+			if ( FollowerMenu[i].followerToCommand == this )
+			{
+				if ( !FollowerMenu[i].allowedInteractItems(myStats->type) )
+				{
+					return false;
+				}
+				break;
+			}
 		}
 		
 		//If this is the first item found, the list needs to be created.
@@ -15425,7 +15482,7 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		playerhit = this->skill[2];
 	}
 
-	if ( playerhit == clientnum || playerhit < 0 )
+	if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )
 	{
 		if ( armor.count > 1 )
 		{
@@ -17395,6 +17452,24 @@ void Entity::addToCreatureList(list_t *list)
 	}
 }
 
+void Entity::addToWorldUIList(list_t *list)
+{
+	//printlog("*ATTEMPTING* to add Dennis to creature list.");
+	if ( list )
+	{
+		if ( myWorldUIListNode )
+		{
+			list_RemoveNode(myWorldUIListNode);
+			myWorldUIListNode = nullptr;
+		}
+		myWorldUIListNode = list_AddNodeLast(list);
+		myWorldUIListNode->element = this;
+		myWorldUIListNode->deconstructor = &emptyDeconstructor;
+		myWorldUIListNode->size = sizeof(Entity);
+		//printlog("Added dennis to creature list.");
+	}
+}
+
 int Entity::getMagicResistance()
 {
 	int resistance = 0;
@@ -17535,7 +17610,7 @@ node_t* TileEntityListHandler::addEntity(Entity& entity)
 		return nullptr;
 	}
 
-	if ( entity.getUID() == -3 )
+	if ( static_cast<Sint32>(entity.getUID()) <= -3 )
 	{
 		return nullptr;
 	}
@@ -18464,7 +18539,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 
 	if ( flameEntity && player >= 0 )
 	{
-		if ( player == clientnum )
+		if ( players[player]->isLocalPlayer() )
 		{
 			flameEntity->flags[GENIUS] = true;
 			flameEntity->setUID(-4);

@@ -161,6 +161,7 @@ public:
 	Sint32& chestPreventLockpickCapstoneExploit;
 	Sint32& chestHasVampireBook; // skill[11]
 	Sint32& chestLockpickHealth; // skill[12]
+	Sint32& chestOldHealth; //skill[15]
 
 	//--PUBLIC MONSTER SKILLS--
 	Sint32& monsterState; //skill[0]
@@ -216,6 +217,7 @@ public:
 
 	//--PUBLIC GENERAL ENTITY STUFF--
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
+	Sint32& highlightForUI; //skill[56] for highlighting interactibles
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
@@ -307,6 +309,7 @@ public:
 	Sint32& doorDisableLockpicks; //skill[12]
 	Sint32& doorDisableOpening; //skill[13]
 	Sint32& doorLockpickHealth; //skill[14]
+	Sint32& doorOldHealth; //skill[15]
 
 	//--PUBLIC PEDESTAL SKILLS--
 	Sint32& pedestalHasOrb; //skill[0]
@@ -385,6 +388,7 @@ public:
 	Sint32& furnitureMaxHealth; //skill[9]
 	Sint32& furnitureTableRandomItemChance; //skill[10]
 	Sint32& furnitureTableSpawnChairs; //skill[11]
+	Sint32& furnitureOldHealth; //skill[15]
 
 	//--PUBLIC PISTON SKILLS--
 	Sint32& pistonCamDir; //skill[0]
@@ -489,12 +493,21 @@ public:
 	//--PLAYER SPAWN POINT--
 	Sint32& playerStartDir; //skill[1]
 
+	//--WORLDTOOLTIP--
+	real_t& worldTooltipAlpha; //fskill[0]
+	real_t& worldTooltipZ; //fskill[1]
+	Sint32& worldTooltipActive; //skill[0]
+	Sint32& worldTooltipPlayer;  //skill[1]
+	Sint32& worldTooltipInit; //skill[3]
+	Sint32& worldTooltipFadeDelay; //skill[4]
+
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
 	node_t* myCreatureListNode;
 	node_t* myTileListNode;
+	node_t* myWorldUIListNode;
 
 	list_t* path; // pathfinding stuff. Most of the code currently stuffs that into children, but the magic code makes use of this variable instead.
 
@@ -863,6 +876,7 @@ public:
 	void SetEntityOnFire(Entity* sourceOfFire = nullptr);
 
 	void addToCreatureList(list_t* list);
+	void addToWorldUIList(list_t *list);
 	std::vector<Entity*> bodyparts;
 
 	// special magic functions/trickery
@@ -936,11 +950,6 @@ void getItemsOnTile(int x, int y, list_t** list);
 //--- Entity act* functions ---
 void actMonster(Entity* my);
 void actPlayer(Entity* my);
-void handlePlayerCameraUpdate(Entity* my, int playernum, bool useRefreshRateDelta);
-void handlePlayerMovement(Entity* my, int playernum, bool useRefreshRateDelta);
-void handlePlayerCameraBobbing(Entity* my, int playernum, bool useRefreshRateDelta);
-void handlePlayerCameraPosition(Entity* my, int playernum, bool useRefreshRateDelta);
-bool isPlayerSwimming(Entity* my);
 void playerAnimateRat(Entity* my);
 void playerAnimateSpider(Entity* my);
 
@@ -987,8 +996,8 @@ void actSwitchWithTimer(Entity* my);
 //---Chest/container functions---
 void actChest(Entity* my);
 void actChestLid(Entity* my);
-void closeChestClientside(); //Called by the client to manage all clientside stuff relating to closing a chest.
-void addItemToChestClientside(Item* item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
+void closeChestClientside(const int player); //Called by the client to manage all clientside stuff relating to closing a chest.
+void addItemToChestClientside(const int player, Item* item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
 
 //---Stalag functions---
 void actStalagFloor(Entity* my);

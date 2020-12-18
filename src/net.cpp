@@ -227,6 +227,32 @@ int power(int a, int b)
 
 /*-------------------------------------------------------------------------------
 
+messageLocalPlayers
+
+Support function, messages all local players with the message "message"
+
+-------------------------------------------------------------------------------*/
+
+void messageLocalPlayers(char const * const message, ...)
+{
+	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
+
+	va_list argptr;
+	va_start(argptr, message);
+	vsnprintf(str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr);
+	va_end(argptr);
+
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, str);
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 	messagePlayer
 
 	Support function, messages the player number given by "player" with the
@@ -240,14 +266,41 @@ void messagePlayer(int player, char const * const message, ...)
 	{
 		return;
 	}
-	char str[256] = { 0 };
+	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
 	va_list argptr;
 	va_start( argptr, message );
-	vsnprintf( str, 255, message, argptr );
+	vsnprintf( str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr );
 	va_end( argptr );
 
 	messagePlayerColor(player, 0xFFFFFFFF, str);
+}
+
+/*-------------------------------------------------------------------------------
+
+messageLocalPlayersColor
+
+Messages all local players with the message "message"
+and color "color"
+
+-------------------------------------------------------------------------------*/
+
+void messageLocalPlayersColor(Uint32 color, char const * const message, ...)
+{
+	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
+
+	va_list argptr;
+	va_start(argptr, message);
+	vsnprintf(str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr);
+	va_end(argptr);
+
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayerColor(player, color, str);
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -261,7 +314,7 @@ void messagePlayer(int player, char const * const message, ...)
 
 void messagePlayerColor(int player, Uint32 color, char const * const message, ...)
 {
-	char str[ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
+	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 	va_list argptr;
 
 	if ( message == NULL )
@@ -275,7 +328,7 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 
 	// format the content
 	va_start( argptr, message );
-	vsnprintf( str, 255, message, argptr );
+	vsnprintf( str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr );
 	va_end( argptr );
 
 	// fixes crash when reading config at start of game
@@ -285,10 +338,10 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 		return;
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		printlog("%s\n", str);
-		strncpy(str, messageSanitizePercentSign(str, nullptr).c_str(), ADD_MESSAGE_BUFFER_LENGTH - 1);
+		strncpy(str, messageSanitizePercentSign(str, nullptr).c_str(), Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1);
 		newString(&messages, color, str);
 		while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
 		{
@@ -296,10 +349,10 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 		}
 		if ( !disable_messages )
 		{
-			addMessage(color, str);
+			players[player]->messageZone.addMessage(color, str);
 		}
 	}
-	else if ( multiplayer == SERVER && player > 0 )
+	else if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "MSGS");
 		SDLNet_Write32(color, &net_packet->data[4]);
@@ -342,7 +395,7 @@ void sendEntityTCP(Entity* entity, int c)
 	{
 		return;
 	}
-	if ( client_disconnected[c] == true )
+	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -407,7 +460,7 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 	{
 		return;
 	}
-	if ( client_disconnected[c] == true )
+	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -477,7 +530,7 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 
 void sendMapSeedTCP(int c)
 {
-	if ( client_disconnected[c] == true )
+	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -511,7 +564,7 @@ void sendMapTCP(int c)
 {
 	Uint32 x, y, z;
 
-	if ( client_disconnected[c] == true )
+	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -560,7 +613,7 @@ void serverUpdateBodypartIDs(Entity* entity)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -612,7 +665,7 @@ void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -670,7 +723,7 @@ void serverUpdateEntitySprite(Entity* entity)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -701,7 +754,7 @@ void serverUpdateEntitySkill(Entity* entity, int skill)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -737,7 +790,7 @@ void serverUpdateEntityStatFlag(Entity* entity, int flag)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -769,7 +822,7 @@ void serverUpdateEntityFSkill(Entity* entity, int fskill)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -801,7 +854,7 @@ void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSpri
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -834,7 +887,7 @@ void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int partic
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -868,7 +921,7 @@ void serverUpdateEntityFlag(Entity* entity, int flag)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -904,7 +957,7 @@ void serverUpdateEffects(int player)
 	{
 		return;
 	}
-	if ( client_disconnected[player] == true )
+	if ( client_disconnected[player] == true || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -956,7 +1009,7 @@ void serverUpdateHunger(int player)
 	{
 		return;
 	}
-	if ( client_disconnected[player] == true )
+	if ( client_disconnected[player] == true || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -986,7 +1039,7 @@ void serverUpdatePlayerStats()
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -1095,7 +1148,7 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 			gameStatistics[gameplayStat] += changeval;
 		}
 	}
-	else
+	else if ( !players[player]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "GPST");
 		SDLNet_Write32(gameplayStat, &net_packet->data[4]);
@@ -1114,7 +1167,7 @@ void serverUpdatePlayerConduct(int player, int conduct, int value)
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1144,7 +1197,7 @@ void serverUpdatePlayerLVL()
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -1171,7 +1224,7 @@ void serverRemoveClientFollower(int player, Uint32 uidToRemove)
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1190,7 +1243,7 @@ void serverSendItemToPickupAndEquip(int player, Item* item)
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1216,7 +1269,7 @@ void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int M
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1243,7 +1296,7 @@ void serverUpdatePlayerSummonStrength(int player)
 	{
 		return;
 	}
-	if ( client_disconnected[player] || !stats[player] )
+	if ( client_disconnected[player] || !stats[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1271,7 +1324,7 @@ void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool 
 	{
 		return;
 	}
-	if ( client_disconnected[player] )
+	if ( client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1295,11 +1348,6 @@ void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool 
 
 void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 {
-	if ( multiplayer == SINGLE )
-	{
-		return;
-	}
-
 	if ( multiplayer == CLIENT )
 	{
 		// send to host to relay info.
@@ -1315,22 +1363,31 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 	}
 	else
 	{
-		for ( int c = 1; c < MAXPLAYERS; c++ )
+		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
 			if ( client_disconnected[c] )
 			{
 				continue;
 			}
-			// send to all clients.
-			strcpy((char*)net_packet->data, "PMAP");
-			net_packet->data[4] = player;
-			net_packet->data[5] = x;
-			net_packet->data[6] = y;
+			if ( players[c]->isLocalPlayer() )
+			{
+				minimapPingAdd(player, c, MinimapPing(ticks, player, x, y));
+				continue;
+			}
 
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 7;
-			sendPacket(net_sock, -1, net_packet, c - 1);
+			if ( multiplayer == SERVER )
+			{
+				// send to all clients.
+				strcpy((char*)net_packet->data, "PMAP");
+				net_packet->data[4] = player;
+				net_packet->data[5] = x;
+				net_packet->data[6] = y;
+
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 7;
+				sendPacket(net_sock, -1, net_packet, c - 1);
+			}
 		}
 	}
 }
@@ -2388,7 +2445,7 @@ void clientHandlePacket()
 		}
 		char enemy_name[128] = "";
 		strcpy(enemy_name, (char*)(&net_packet->data[25]));
-		enemyHPDamageBarHandler.addEnemyToList(enemy_hp, enemy_maxhp, oldhp, enemy_bar_color, uid, enemy_name, lowPriorityTick);
+		enemyHPDamageBarHandler[clientnum].addEnemyToList(enemy_hp, enemy_maxhp, oldhp, enemy_bar_color, uid, enemy_name, lowPriorityTick);
 		return;
 	}
 
@@ -2558,6 +2615,7 @@ void clientHandlePacket()
 							}
 						}
 						players[j]->entity = nullptr;
+						players[j]->cleanUpOnEntityRemoval();
 					}
 				}
 				if ( entity->light )
@@ -2653,7 +2711,7 @@ void clientHandlePacket()
 								Item* item = (Item*)spellnode->element;
 								if ( item && itemCategory(item) == SPELL_CAT )
 								{
-									spell_t* spell = getSpellFromItem(item);
+									spell_t* spell = getSpellFromItem(clientnum, item);
 									if ( spell && spell->ID == SPELL_CHARM_MONSTER )
 									{
 										foundCharmSpell = true;
@@ -2737,7 +2795,7 @@ void clientHandlePacket()
 	// damage indicator
 	else if (!strncmp((char*)net_packet->data, "DAMI", 4))
 	{
-		newDamageIndicator(SDLNet_Read32(&net_packet->data[4]), SDLNet_Read32(&net_packet->data[8]));
+		newDamageIndicator(clientnum, SDLNet_Read32(&net_packet->data[4]), SDLNet_Read32(&net_packet->data[8]));
 		return;
 	}
 
@@ -2867,12 +2925,15 @@ void clientHandlePacket()
 			if ( pickedUp && pickedUp->type == BOOMERANG && !stats[clientnum]->weapon && item->ownerUid == players[clientnum]->entity->getUID() )
 			{
 				useItem(pickedUp, clientnum);
-				if ( magicBoomerangHotbarSlot >= 0 )
+
+				auto& hotbar_t = players[clientnum]->hotbar;
+				auto& hotbar = hotbar_t->slots();
+				if ( hotbar_t->magicBoomerangHotbarSlot >= 0 )
 				{
-					hotbar[magicBoomerangHotbarSlot].item = pickedUp->uid;
+					hotbar[hotbar_t->magicBoomerangHotbarSlot].item = pickedUp->uid;
 					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 					{
-						if ( i != magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+						if ( i != hotbar_t->magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
 						{
 							hotbar[i].item = 0;
 						}
@@ -2929,9 +2990,9 @@ void clientHandlePacket()
 			return;
 		}
 
-		if ( *armor == selectedItem )
+		if ( *armor == inputs.getUIInteraction(clientnum)->selectedItem )
 		{
-			selectedItem = nullptr;
+			inputs.getUIInteraction(clientnum)->selectedItem = nullptr;
 		}
 
 		if ( (*armor)->count > 1 )
@@ -2963,26 +3024,26 @@ void clientHandlePacket()
 	// open shop
 	else if (!strncmp((char*)net_packet->data, "SHOP", 4))
 	{
-		closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
-		openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
-		shopkeeper = (Uint32)SDLNet_Read32(&net_packet->data[4]);
-		shopkeepertype = net_packet->data[8];
-		strcpy( shopkeepername_client, (char*)(&net_packet->data[9]) );
-		shopkeepername = shopkeepername_client;
-		shoptimer = ticks - 1;
-		shopspeech = language[194 + rand() % 3];
-		shopinventorycategory = 7;
-		sellitem = NULL;
-		shopitemscroll = 0;
+		players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
+		shopkeeper[clientnum] = (Uint32)SDLNet_Read32(&net_packet->data[4]);
+		shopkeepertype[clientnum] = net_packet->data[8];
+		strcpy( shopkeepername_client[clientnum], (char*)(&net_packet->data[9]) );
+		shopkeepername[clientnum] = shopkeepername_client[clientnum];
+		shoptimer[clientnum] = ticks - 1;
+		shopspeech[clientnum] = language[194 + rand() % 3];
+		shopinventorycategory[clientnum] = 7;
+		sellitem[clientnum] = NULL;
+		shopitemscroll[clientnum] = 0;
 		//Initialize shop gamepad code here.
-		if ( shopinvitems[0] != nullptr )
+		if ( shopinvitems[clientnum][0] != nullptr )
 		{
-			selectedShopSlot = 0;
-			warpMouseToSelectedShopSlot();
+			selectedShopSlot[clientnum] = 0;
+			warpMouseToSelectedShopSlot(clientnum);
 		}
 		else
 		{
-			selectedShopSlot = -1;
+			selectedShopSlot[clientnum] = -1;
 		}
 		return;
 	}
@@ -2990,21 +3051,22 @@ void clientHandlePacket()
 	// shop item
 	else if (!strncmp((char*)net_packet->data, "SHPI", 4))
 	{
-		if ( !shopInv )
+		if ( !shopInv[clientnum] )
 		{
 			return;
 		}
-		newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>((char)net_packet->data[8]), (char)net_packet->data[9], (unsigned char)net_packet->data[10], SDLNet_Read32(&net_packet->data[11]), (bool)net_packet->data[15], shopInv);
+		newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>((char)net_packet->data[8]), (char)net_packet->data[9], (unsigned char)net_packet->data[10], SDLNet_Read32(&net_packet->data[11]), (bool)net_packet->data[15], shopInv[clientnum]);
 	}
 
 	// close shop
 	else if (!strncmp((char*)net_packet->data, "SHPC", 4))
 	{
-		shopkeeper = 0;
-		closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-		list_FreeAll(shopInv);
-		//Clean up shop gamepad code here.
-		selectedShopSlot = -1;
+		Uint32 id = SDLNet_Read32(&net_packet->data[4]);
+		if ( id == shopkeeper[clientnum] )
+		{
+			closeShop(clientnum);
+			players[clientnum]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+		}
 		return;
 	}
 
@@ -3297,7 +3359,7 @@ void clientHandlePacket()
 
 		if ( net_packet->data[5] == PRO_ALCHEMY )
 		{
-			GenericGUI.alchemyLearnRecipeOnLevelUp(stats[clientnum]->PROFICIENCIES[net_packet->data[5]]);
+			GenericGUI[clientnum].alchemyLearnRecipeOnLevelUp(stats[clientnum]->PROFICIENCIES[net_packet->data[5]]);
 		}
 		return;
 	}
@@ -3466,10 +3528,13 @@ void clientHandlePacket()
 		}
 
 		// hack to fix these things from breaking everything...
-		hudarm = nullptr;
-		hudweapon = nullptr;
-		magicLeftHand = nullptr;
-		magicRightHand = nullptr;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			players[i]->hud.arm = nullptr;
+			players[i]->hud.weapon = nullptr;
+			players[i]->hud.magicLeftHand = nullptr;
+			players[i]->hud.magicRightHand = nullptr;
+		}
 
 		// stop all sounds
 #ifdef USE_FMOD
@@ -3501,7 +3566,7 @@ void clientHandlePacket()
 #endif
 		if ( openedChest[clientnum] )
 		{
-			closeChestClientside();
+			closeChestClientside(clientnum);
 		}
 
 		// show loading message
@@ -3592,11 +3657,14 @@ void clientHandlePacket()
 			conductGameChallenges[CONDUCT_MODDED] = 1;
 		}
 
-		minimapPings.clear(); // clear minimap pings
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			minimapPings[i].clear(); // clear minimap pings
+		}
 		globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 		// clear follower menu entities.
-		FollowerMenu.closeFollowerMenuGUI(true);
+		FollowerMenu[clientnum].closeFollowerMenuGUI(true);
 
 		numplayers = 0;
 		assignActions(&map);
@@ -3704,9 +3772,9 @@ void clientHandlePacket()
 			{
 				strcpy(monster->clientStats->name, (char*)&net_packet->data[8]);
 			}
-			if ( !FollowerMenu.recentEntity )
+			if ( !FollowerMenu[clientnum].recentEntity )
 			{
-				FollowerMenu.recentEntity = monster;
+				FollowerMenu[clientnum].recentEntity = monster;
 			}
 		}
 		return;
@@ -3722,14 +3790,14 @@ void clientHandlePacket()
 			{
 				if ( (Uint32*)allyNode->element && *((Uint32*)allyNode->element) == uidnum )
 				{
-					if ( FollowerMenu.recentEntity && (FollowerMenu.recentEntity->getUID() == 0
-						|| FollowerMenu.recentEntity->getUID() == uidnum) )
+					if ( FollowerMenu[clientnum].recentEntity && (FollowerMenu[clientnum].recentEntity->getUID() == 0
+						|| FollowerMenu[clientnum].recentEntity->getUID() == uidnum) )
 					{
-						FollowerMenu.recentEntity = nullptr;
+						FollowerMenu[clientnum].recentEntity = nullptr;
 					}
-					if ( FollowerMenu.followerToCommand == uidToEntity(uidnum) )
+					if ( FollowerMenu[clientnum].followerToCommand == uidToEntity(uidnum) )
 					{
-						FollowerMenu.closeFollowerMenuGUI();
+						FollowerMenu[clientnum].closeFollowerMenuGUI();
 					}
 					list_RemoveNode(allyNode);
 					break;
@@ -3939,23 +4007,18 @@ void clientHandlePacket()
 		if ( openedChest[clientnum] )
 		{
 			//Close the chest.
-			closeChestClientside();
+			closeChestClientside(clientnum);
 		}
 
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
 		{
 			openedChest[clientnum] = entity; //Set the opened chest to this.
-			if ( removecursegui_active )
-			{
-				closeRemoveCurseGUI();
-			}
-			GenericGUI.closeGUI();
-			identifygui_active = false;
-			list_FreeAll(&chestInv);
-			chestInv.first = nullptr;
-			chestInv.last = nullptr;
-			openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+			GenericGUI[clientnum].closeGUI();
+			list_FreeAll(&chestInv[clientnum]);
+			chestInv[clientnum].first = nullptr;
+			chestInv[clientnum].last = nullptr;
+			players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 		}
 		return;
 	}
@@ -3984,61 +4047,29 @@ void clientHandlePacket()
 			newitem->identified = false;
 		}
 
-		addItemToChestClientside(newitem);
+		addItemToChestClientside(clientnum, newitem);
 		return;
 	}
 
 	//Close the chest.
 	else if (!strncmp((char*)net_packet->data, "CCLS", 4))
 	{
-		closeChestClientside();
+		closeChestClientside(clientnum);
 		return;
 	}
 
 	//Open up the GUI to identify an item.
 	else if (!strncmp((char*)net_packet->data, "IDEN", 4))
 	{
-		//identifygui_mode = true;
-		identifygui_active = true;
-		identifygui_appraising = false;
-		shootmode = false;
-		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-		if ( removecursegui_active )
-		{
-			closeRemoveCurseGUI();
-		}
-		GenericGUI.closeGUI();
-		if ( openedChest[clientnum] )
-		{
-			openedChest[clientnum]->closeChest();
-		}
-
-		//Initialize Identify GUI game controller code here.
-		initIdentifyGUIControllerCode();
-
+		GenericGUI[clientnum].openGUI(GUI_TYPE_IDENTIFY, nullptr);
 		return;
 	}
 
 	// Open up the Remove Curse GUI
 	else if ( !strncmp((char*)net_packet->data, "CRCU", 4) )
 	{
-		removecursegui_active = true;
-		shootmode = false;
-		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-
-		if ( identifygui_active )
-		{
-			CloseIdentifyGUI();
-		}
-		GenericGUI.closeGUI();
-
-		if ( openedChest[clientnum] )
-		{
-			openedChest[clientnum]->closeChest();
-		}
-
-		initRemoveCurseGUIControllerCode();
-
+		//Uncurse an item
+		GenericGUI[clientnum].openGUI(GUI_TYPE_REMOVECURSE, nullptr);
 		return;
 	}
 
@@ -4091,7 +4122,7 @@ void clientHandlePacket()
 
 	else if ( !strncmp((char*)net_packet->data, "TKIT", 4) )
 	{
-		GenericGUI.tinkeringKitDegradeOnUse(clientnum);
+		GenericGUI[clientnum].tinkeringKitDegradeOnUse(clientnum);
 		return;
 	}
 
@@ -4225,7 +4256,13 @@ void clientHandlePacket()
 	else if ( !strncmp((char*)net_packet->data, "PMAP", 4) )
 	{
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
-		minimapPingAdd(newPing);
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			if ( players[c]->isLocalPlayer() )
+			{
+				minimapPingAdd(newPing.player, c, newPing);
+			}
+		}
 	}
 	else if ( !strncmp((char*)net_packet->data, "DASH", 4) )
 	{
@@ -4924,7 +4961,7 @@ void serverHandlePacket()
 				printlog("client %d bought item from shop (uid=%d)\n", client, uidnum);
 				if ( shopIsMysteriousShopkeeper(entity) )
 				{
-					buyItemFromMysteriousShopkeepConsumeOrb(*entity, *item2);
+					buyItemFromMysteriousShopkeepConsumeOrb(client, *entity, *item2);
 				}
 				consumeItem(item2, client);
 				break;
@@ -5428,7 +5465,7 @@ void serverHandlePacket()
 			for ( int c = 1; c < MAXPLAYERS; ++c )
 			{
 				// send to all other players
-				if ( c != player && !client_disconnected[c] )
+				if ( c != player && !client_disconnected[c] && !players[c]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "SNEL");
 					SDLNet_Write16(sfx, &net_packet->data[4]);
@@ -5474,8 +5511,7 @@ void serverHandlePacket()
 	else if ( !strncmp((char*)net_packet->data, "PMAP", 4) )
 	{
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
-		minimapPingAdd(newPing);
-		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay to other clients.
+		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay self and to other clients.
 		return;
 	}
 

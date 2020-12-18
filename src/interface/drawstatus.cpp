@@ -26,8 +26,6 @@
 //Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
 //Uint32 enemy_timer = 0, enemy_lastuid = 0;
 //Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
-int magicBoomerangHotbarSlot = -1;
-Uint32 hotbarTooltipLastGameTick = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -40,7 +38,7 @@ Uint32 hotbarTooltipLastGameTick = 0;
 void handleDamageIndicators(int player)
 {
 	node_t* node, *nextnode;
-	for ( node = damageIndicators.first; node != NULL; node = nextnode )
+	for ( node = damageIndicators[player].first; node != NULL; node = nextnode )
 	{
 		nextnode = node->next;
 		damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
@@ -57,13 +55,13 @@ void handleDamageIndicators(int player)
 			angle += PI * 2;
 		}
 		SDL_Rect pos;
-		pos.x = xres / 2;
-		pos.y = yres / 2;
+		pos.x = players[player]->camera_midx();
+		pos.y = players[player]->camera_midy();
 		pos.x += 200 * cos(angle);
 		pos.y += 200 * sin(angle);
 		pos.w = damage_bmp->w;
 		pos.h = damage_bmp->h;
-		if ( stats[clientnum]->HP > 0 )
+		if ( stats[player]->HP > 0 )
 		{
 			drawImageRotatedAlpha( damage_bmp, NULL, &pos, angle, (Uint8)(damageIndicator->alpha * 255) );
 		}
@@ -79,10 +77,13 @@ void handleDamageIndicators(int player)
 void handleDamageIndicatorTicks()
 {
 	node_t* node;
-	for ( node = damageIndicators.first; node != NULL; node = node->next )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
-		damageIndicator->ticks--;
+		for ( node = damageIndicators[i].first; node != NULL; node = node->next )
+		{
+			damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
+			damageIndicator->ticks--;
+		}
 	}
 }
 
@@ -94,7 +95,7 @@ void handleDamageIndicatorTicks()
 
 -------------------------------------------------------------------------------*/
 
-damageIndicator_t* newDamageIndicator(double x, double y)
+damageIndicator_t* newDamageIndicator(const int player, double x, double y)
 {
 	damageIndicator_t* damageIndicator;
 
@@ -106,7 +107,7 @@ damageIndicator_t* newDamageIndicator(double x, double y)
 	}
 
 	// add the indicator to the list of indicators
-	damageIndicator->node = list_AddNodeLast(&damageIndicators);
+	damageIndicator->node = list_AddNodeLast(&damageIndicators[player]);
 	damageIndicator->node->element = damageIndicator;
 	damageIndicator->node->deconstructor = &defaultDeconstructor;
 	damageIndicator->node->size = sizeof(damageIndicator_t);
@@ -133,32 +134,32 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 	{
 		if ( colorblind )
 		{
-			enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 0, 0, 64); // Display blue
+			enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 0, 0, 64); // Display blue
 		}
 		else
 		{
-			enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 0, 64, 0); // Display green
+			enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 0, 64, 0); // Display green
 		}
 	}
 	else if ( targetStats.EFFECTS[EFF_PARALYZED] )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 112, 112, 0);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 112, 112, 0);
 	}
 	else if ( targetStats.EFFECTS[EFF_CONFUSED] || targetStats.EFFECTS[EFF_DISORIENTED] )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 92, 0, 92);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 92, 0, 92);
 	}
 	else if ( targetStats.EFFECTS[EFF_PACIFY] )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 128, 32, 80);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 128, 32, 80);
 	}
 	else if ( targetStats.EFFECTS[EFF_BLIND] )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = SDL_MapRGB(mainsurface->format, 64, 64, 64);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 64, 64, 64);
 	}
 	else
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = 0;
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = 0;
 	}
 }
 
@@ -233,9 +234,9 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 	{
 		if ( stats->HP != stats->OLDHP )
 		{
-			if ( playertarget == clientnum )
+			if ( playertarget >= 0 && players[playertarget]->isLocalPlayer() )
 			{
-				newDamageIndicator(source->x, source->y);
+				newDamageIndicator(playertarget, source->x, source->y);
 			}
 			else if ( playertarget > 0 && multiplayer == SERVER )
 			{
@@ -254,9 +255,9 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 			updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
 		}
 	}
-	else if ( player >= 0 )
+	else if ( player >= 0 && players[player]->isLocalPlayer() )
 	{
-		enemyHPDamageBarHandler.enemy_bar_client_colors[player] = 0;
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = 0;
 	}
 
 	//if ( player >= 0 )
@@ -275,17 +276,43 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 	//	}
 	//	enemy_lastuid = target->getUID();
 	//}
-	if ( player == clientnum )
+
+	int oldhp = 0;
+	if ( stats )
 	{
-		if ( stats )
+		oldhp = stats->OLDHP;
+	}
+	else
+	{
+		if ( target->behavior == &actDoor )
 		{
-			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, stats->OLDHP, 
-				enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name, lowPriorityTick);
+			oldhp = target->doorOldHealth;
+		}
+		else if ( target->behavior == &actFurniture )
+		{
+			oldhp = target->furnitureOldHealth;
+		}
+		else if ( target->behavior == &actChest )
+		{
+			oldhp = target->chestOldHealth;
 		}
 		else
 		{
-			enemyHPDamageBarHandler.addEnemyToList(hp, maxhp, hp, 
-				enemyHPDamageBarHandler.enemy_bar_client_colors[player], target->getUID(), name, lowPriorityTick);
+			oldhp = hp;
+		}
+	}
+
+	if ( player >= 0 && players[player]->isLocalPlayer() )
+	{
+		if ( stats )
+		{
+			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, oldhp,
+				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
+		}
+		else
+		{
+			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, oldhp,
+				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
 		}
 	}
 	else if ( player > 0 && multiplayer == SERVER )
@@ -293,14 +320,14 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		strcpy((char*)net_packet->data, "ENHP");
 		SDLNet_Write32(hp, &net_packet->data[4]);
 		SDLNet_Write32(maxhp, &net_packet->data[8]);
-		SDLNet_Write32(enemyHPDamageBarHandler.enemy_bar_client_colors[player], &net_packet->data[12]);
+		SDLNet_Write32(enemyHPDamageBarHandler[player].enemy_bar_client_color, &net_packet->data[12]);
 		if ( stats )
 		{
-			SDLNet_Write32(stats->OLDHP, &net_packet->data[16]);
+			SDLNet_Write32(oldhp, &net_packet->data[16]);
 		}
 		else
 		{
-			SDLNet_Write32(hp, &net_packet->data[16]);
+			SDLNet_Write32(oldhp, &net_packet->data[16]);
 		}
 		SDLNet_Write32(target->getUID(), &net_packet->data[20]);
 		net_packet->data[24] = lowPriorityTick ? 1 : 0; // 1 == true
@@ -322,38 +349,60 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 
 -------------------------------------------------------------------------------*/
 
-bool mouseInBoundsRealtimeCoords(int, int, int, int); //Defined in playerinventory.cpp. Dirty hack, you should be ashamed of yourself.
+bool mouseInBoundsRealtimeCoords(int, int, int, int, int); //Defined in playerinventory.cpp. Dirty hack, you should be ashamed of yourself.
 
-void warpMouseToSelectedHotbarSlot()
+void warpMouseToSelectedHotbarSlot(const int player)
 {
-	if (shootmode == true)
+	if ( players[player]->shootmode == true)
 	{
 		return;
 	}
 	SDL_Rect pos;
-	pos.x = ((xres / 2) - 5 * hotbar_img->w * uiscale_hotbar) + (current_hotbar * hotbar_img->w * uiscale_hotbar) + (hotbar_img->w * uiscale_hotbar / 2);
-	pos.y = STATUS_Y - (hotbar_img->h * uiscale_hotbar / 2);
-	SDL_WarpMouseInWindow(screen, pos.x, pos.y);
+
+	const int hotbarSlotSize = players[player]->hotbar->getSlotSize();
+	pos.x = players[player]->hotbar->getStartX() + (players[player]->hotbar->current_hotbar * hotbarSlotSize) + (hotbarSlotSize / 2);
+	pos.y = players[player]->statusBarUI.getStartY() - (hotbarSlotSize / 2);
+
+	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
+	inputs.warpMouse(player, pos.x, pos.y, flags);
 }
 
-void drawStatus()
+void drawStatus(int player)
 {
 	SDL_Rect pos, initial_position;
 	Sint32 x, y, z, c, i;
 	node_t* node;
 	string_t* string;
-	pos.x = STATUS_X;
+
+	const int x1 = players[player]->camera_x1();
+	const int x2 = players[player]->camera_x2();
+	const int y1 = players[player]->camera_y1();
+	const int y2 = players[player]->camera_y2();
+
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+	const Sint32 mousexrel = inputs.getMouse(player, Inputs::XREL);
+	const Sint32 mouseyrel = inputs.getMouse(player, Inputs::YREL);
+
+	pos.x = players[player]->statusBarUI.getStartX();
+	auto& hotbar_t = players[player]->hotbar;
+	auto& hotbar = hotbar_t->slots();
+
+	bool gui_mode = players[player]->gui_mode;
+	bool shootmode = players[player]->shootmode;
 
 	if ( !hide_statusbar )
 	{
-		pos.y = STATUS_Y;
+		pos.y = players[player]->statusBarUI.getStartY();
 	}
 	else
 	{
-		pos.y = yres - 16;
+		pos.y = y2 - 16;
 	}
 	//To garner the position of the hotbar.
-	initial_position.x = HOTBAR_START_X;
+	initial_position.x = hotbar_t->getStartX();
 	initial_position.y = pos.y;
 	initial_position.w = 0;
 	initial_position.h = 0;
@@ -364,19 +413,19 @@ void drawStatus()
 		drawImageScaled(status_bmp, NULL, &pos);
 	}
 
-	interfaceMessageStatusBar.x = pos.x;
-	interfaceMessageStatusBar.y = pos.y;
-	interfaceMessageStatusBar.w = pos.w;
-	interfaceMessageStatusBar.h = pos.h;
+	players[player]->statusBarUI.messageStatusBarBox.x = pos.x;
+	players[player]->statusBarUI.messageStatusBarBox.y = pos.y;
+	players[player]->statusBarUI.messageStatusBarBox.w = pos.w;
+	players[player]->statusBarUI.messageStatusBarBox.h = pos.h;
 
 	// enemy health
-	enemyHPDamageBarHandler.displayCurrentHPBar();
+	enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
 
 	// messages
 	if ( !hide_statusbar )
 	{
-		x = xres / 2 - (status_bmp->w * uiscale_chatlog / 2) + 24 * uiscale_chatlog;
-		y = yres;
+		x = players[player]->statusBarUI.getStartX() + 24 * uiscale_chatlog;
+		y = players[player]->camera_y2();
 		textscroll = std::max(std::min<Uint32>(list_Size(&messages) - 3, textscroll), 0u);
 		c = 0;
 		for ( node = messages.last; node != NULL; node = node->prev )
@@ -390,7 +439,7 @@ void drawStatus()
 			if ( uiscale_chatlog >= 1.5 )
 			{
 				y -= TTF16_HEIGHT * string->lines;
-				if ( y < yres - (status_bmp->h * uiscale_chatlog) + 8 * uiscale_chatlog )
+				if ( y < y2 - (status_bmp->h * uiscale_chatlog) + 8 * uiscale_chatlog )
 				{
 					break;
 				}
@@ -398,7 +447,7 @@ void drawStatus()
 			else if ( uiscale_chatlog != 1.f )
 			{
 				y -= TTF12_HEIGHT * string->lines;
-				if ( y < yres - status_bmp->h * 1.1 + 4 )
+				if ( y < y2 - status_bmp->h * 1.1 + 4 )
 				{
 					break;
 				}
@@ -406,7 +455,7 @@ void drawStatus()
 			else
 			{
 				y -= TTF12_HEIGHT * string->lines;
-				if ( y < yres - status_bmp->h + 4 )
+				if ( y < y2 - status_bmp->h + 4 )
 				{
 					break;
 				}
@@ -447,21 +496,23 @@ void drawStatus()
 				ttfPrintTextColor(ttf12, x, y, color, false, string->data);
 			}
 		}
-		if ( mousestatus[SDL_BUTTON_LEFT] )
+		if ( inputs.bMouseLeft(player) )
 		{
-			if ( omousey >= yres - status_bmp->h * uiscale_chatlog + 7 && omousey < yres - status_bmp->h * uiscale_chatlog + (7 + 27) * uiscale_chatlog )
+			if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 7 && omousey < y2 - status_bmp->h * uiscale_chatlog + (7 + 27) * uiscale_chatlog )
 			{
-				if ( omousex >= xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog && omousex < xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+				if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
+					&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
 				{
 					// text scroll up
 					buttonclick = 3;
 					textscroll++;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 			}
-			else if ( omousey >= yres - status_bmp->h * uiscale_chatlog + 34 && omousey < yres - status_bmp->h * uiscale_chatlog + (34 + 28) * uiscale_chatlog )
+			else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 34 && omousey < y2 - status_bmp->h * uiscale_chatlog + (34 + 28) * uiscale_chatlog )
 			{
-				if ( omousex >= xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog && omousex < xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+				if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
+					&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
 				{
 					// text scroll down
 					buttonclick = 12;
@@ -470,21 +521,22 @@ void drawStatus()
 					{
 						textscroll = 0;
 					}
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 			}
-			else if ( omousey >= yres - status_bmp->h * uiscale_chatlog + 62 && omousey < yres - status_bmp->h * uiscale_chatlog + (62 + 31) * uiscale_chatlog )
+			else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 62 && omousey < y2 - status_bmp->h * uiscale_chatlog + (62 + 31) * uiscale_chatlog )
 			{
-				if ( omousex >= xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog && omousex < xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+				if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
+					&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
 				{
 					// text scroll down all the way
 					buttonclick = 4;
 					textscroll = 0;
-					mousestatus[SDL_BUTTON_LEFT] = 0;
+					inputs.mouseClearLeft(player);
 				}
 			}
-			/*else if( omousey>=yres-status_bmp->h+8 && omousey<yres-status_bmp->h+8+30 ) {
-				if( omousex>=xres/2-status_bmp->w/2+618 && omousex<xres/2-status_bmp->w/2+618+11 ) {
+			/*else if( omousey>=y2-status_bmp->h+8 && omousey<y2-status_bmp->h+8+30 ) {
+				if( omousex>=players[player]->statusBarUI.getStartX()+618 && omousex<players[player]->statusBarUI.getStartX()+618+11 ) {
 					// text scroll up all the way
 					buttonclick=13;
 					textscroll=list_Size(&messages)-4;
@@ -496,7 +548,7 @@ void drawStatus()
 		// mouse wheel
 		if ( !shootmode )
 		{
-			if ( mousex >= STATUS_X && mousex < STATUS_X + status_bmp->w * uiscale_chatlog )
+			if ( mousex >= players[player]->statusBarUI.getStartX() && mousex < players[player]->statusBarUI.getStartX() + status_bmp->w * uiscale_chatlog )
 			{
 				if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
 				{
@@ -526,8 +578,8 @@ void drawStatus()
 		//Text scroll up button.
 		if ( buttonclick == 3 )
 		{
-			pos.x = xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 617 * uiscale_chatlog;
-			pos.y = yres - status_bmp->h * uiscale_chatlog + 7 * uiscale_chatlog;
+			pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
+			pos.y = y2 - status_bmp->h * uiscale_chatlog + 7 * uiscale_chatlog;
 			pos.w = 11 * uiscale_chatlog;
 			pos.h = 27 * uiscale_chatlog;
 			drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
@@ -536,8 +588,8 @@ void drawStatus()
 		//Text scroll down all the way button.
 		if ( buttonclick == 4 )
 		{
-			pos.x = xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 617 * uiscale_chatlog;
-			pos.y = yres - status_bmp->h * uiscale_chatlog + 62 * uiscale_chatlog;
+			pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
+			pos.y = y2 - status_bmp->h * uiscale_chatlog + 62 * uiscale_chatlog;
 			pos.w = 11 * uiscale_chatlog;
 			pos.h = 31 * uiscale_chatlog;
 			drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
@@ -546,8 +598,8 @@ void drawStatus()
 		//Text scroll down button.
 		if ( buttonclick == 12 )
 		{
-			pos.x = xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 617 * uiscale_chatlog;
-			pos.y = yres - status_bmp->h * uiscale_chatlog + 34 * uiscale_chatlog;
+			pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
+			pos.y = y2 - status_bmp->h * uiscale_chatlog + 34 * uiscale_chatlog;
 			pos.w = 11 * uiscale_chatlog;
 			pos.h = 28 * uiscale_chatlog;
 			drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
@@ -555,7 +607,7 @@ void drawStatus()
 		}
 		//Text scroll up all the way button.
 		/*if( buttonclick==13 ) {
-			pos.x=xres/2-status_bmp->w/2+617; pos.y=yres-status_bmp->h+8;
+			pos.x=players[player]->statusBarUI.getStartX()+617; pos.y=y2-status_bmp->h+8;
 			pos.w=11; pos.h=30;
 			drawRect(&pos,SDL_MapRGB(mainsurface->format,255,255,255),80);
 			//drawImage(textdown_bmp, NULL, &pos);
@@ -567,17 +619,17 @@ void drawStatus()
 
 	// PLAYER HEALTH BAR
 	// Display Health bar border
-	pos.x = 38 + 38 * uiscale_playerbars;
+	pos.x = x1 + 38 + 38 * uiscale_playerbars;
 	pos.w = playerStatusBarWidth;
 	pos.h = playerStatusBarHeight;
-	pos.y = yres - (playerStatusBarHeight + 12);
+	pos.y = y2 - (playerStatusBarHeight + 12);
 	drawTooltip(&pos);
-	if ( stats[clientnum] && stats[clientnum]->HP > 0 
-		&& stats[clientnum]->EFFECTS[EFF_HP_REGEN] )
+	if ( stats[player] && stats[player]->HP > 0
+		&& stats[player]->EFFECTS[EFF_HP_REGEN] )
 	{
 		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-		bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
-			(stats[clientnum]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
+		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
+			(stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
 		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
 		{
 			if ( colorblind )
@@ -598,14 +650,14 @@ void drawStatus()
 	//pos.x = 76;
 	pos.w = playerStatusBarWidth;
 	pos.h = 0;
-	pos.y = yres - (playerStatusBarHeight - 9);
+	pos.y = y2 - (playerStatusBarHeight - 9);
 	drawTooltip(&pos);
-	if ( stats[clientnum] && stats[clientnum]->HP > 0
-		&& stats[clientnum]->EFFECTS[EFF_HP_REGEN] )
+	if ( stats[player] && stats[player]->HP > 0
+		&& stats[player]->EFFECTS[EFF_HP_REGEN] )
 	{
 		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-		bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
-			(stats[clientnum]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
+		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
+			(stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
 		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
 		{
 			if ( colorblind )
@@ -620,14 +672,14 @@ void drawStatus()
 	}
 
 	// Display the actual Health bar's faint background
-	pos.x = 42 + 38 * uiscale_playerbars;
+	pos.x = x1 + 42 + 38 * uiscale_playerbars;
 	pos.w = playerStatusBarWidth - 5;
 	pos.h = playerStatusBarHeight - 27;
-	pos.y = yres - 15 - pos.h;
+	pos.y = y2 - 15 - pos.h;
 
 	// Change the color depending on if you are poisoned
 	Uint32 color = 0;
-	if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_POISONED] )
+	if ( stats[player] && stats[player]->EFFECTS[EFF_POISONED] )
 	{
 		if ( colorblind )
 		{
@@ -647,14 +699,14 @@ void drawStatus()
 	drawRect(&pos, color, 255);
 
 	// If the Player is alive, base the size of the actual Health bar off remaining HP
-	if ( stats[clientnum] && stats[clientnum]->HP > 0 )
+	if ( stats[player] && stats[player]->HP > 0 )
 	{
 		//pos.x = 80;
 		pos.w = playerStatusBarWidth - 5;
-		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[clientnum]->HP) / stats[clientnum]->MAXHP);
-		pos.y = yres - 15 - pos.h;
+		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[player]->HP) / stats[player]->MAXHP);
+		pos.y = y2 - 15 - pos.h;
 
-		if ( stats[clientnum]->EFFECTS[EFF_POISONED] )
+		if ( stats[player]->EFFECTS[EFF_POISONED] )
 		{
 			if ( !colorblind )
 			{
@@ -675,9 +727,9 @@ void drawStatus()
 	}
 
 	// Print out the amount of HP the Player currently has
-	if ( stats[clientnum] )
+	if ( stats[player] )
 	{
-		snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
+		snprintf(tempstr, 4, "%d", stats[player]->HP);
 	}
 	else
 	{
@@ -687,18 +739,18 @@ void drawStatus()
 	{
 		pos.x += uiscale_playerbars * 2;
 	}
-	printTextFormatted(font12x12_bmp, pos.x + 16 * uiscale_playerbars - strlen(tempstr) * 6, yres - (playerStatusBarHeight / 2 + 8), tempstr);
+	printTextFormatted(font12x12_bmp, pos.x + 16 * uiscale_playerbars - strlen(tempstr) * 6, y2 - (playerStatusBarHeight / 2 + 8), tempstr);
 	int xoffset = pos.x;
 
 	// hunger icon
-	if ( stats[clientnum] && stats[clientnum]->type != AUTOMATON
-		&& (svFlags & SV_FLAG_HUNGER) && stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
+	if ( stats[player] && stats[player]->type != AUTOMATON
+		&& (svFlags & SV_FLAG_HUNGER) && stats[player]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
-		pos.y = yres - 160;
+		pos.x = x1 + xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+		pos.y = y2 - 160;
 		pos.w = 64;
 		pos.h = 64;
-		if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->playerRequiresBloodToSustain() )
+		if ( players[player] && players[player]->entity && players[player]->entity->playerRequiresBloodToSustain() )
 		{
 			drawImageScaled(hunger_blood_bmp, NULL, &pos);
 		}
@@ -708,27 +760,27 @@ void drawStatus()
 		}
 	}
 
-	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON )
+	if ( stats[player] && stats[player]->type == AUTOMATON )
 	{
-		if ( stats[clientnum]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
+		if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
 		{
-			pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
-			pos.y = yres - 160;
+			pos.x = x1 + xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+			pos.y = y2 - 160;
 			pos.w = 64;
 			pos.h = 64;
-			if ( stats[clientnum]->HUNGER > 1200 )
+			if ( stats[player]->HUNGER > 1200 )
 			{
 				drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
 			}
 			else
 			{
-				if ( stats[clientnum]->HUNGER > 600 )
+				if ( stats[player]->HUNGER > 600 )
 				{
 					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, 1.f);
 				}
 				else
 				{
-					float percent = (stats[clientnum]->HUNGER - 300) / 300.f; // always show a little bit more at the bottom (10-20%)
+					float percent = (stats[player]->HUNGER - 300) / 300.f; // always show a little bit more at the bottom (10-20%)
 					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, percent);
 				}
 			}
@@ -739,8 +791,8 @@ void drawStatus()
 	// minotaur icon
 	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
-		pos.y = yres - 160 + 64 + 2;
+		pos.x = x1 + xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+		pos.y = y2 - 160 + 64 + 2;
 		pos.w = 64;
 		pos.h = 64;
 		drawImageScaled(minotaur_bmp, nullptr, &pos);
@@ -749,17 +801,17 @@ void drawStatus()
 
 	// PLAYER MAGIC BAR
 	// Display the Magic bar border
-	pos.x = 12 * uiscale_playerbars;
+	pos.x = x1 + 12 * uiscale_playerbars;
 	pos.w = playerStatusBarWidth;
 	pos.h = playerStatusBarHeight;
-	pos.y = yres - (playerStatusBarHeight + 12);
+	pos.y = y2 - (playerStatusBarHeight + 12);
 	drawTooltip(&pos);
-	if ( stats[clientnum] && stats[clientnum]->HP > 0
-		&& stats[clientnum]->EFFECTS[EFF_MP_REGEN] )
+	if ( stats[player] && stats[player]->HP > 0
+		&& stats[player]->EFFECTS[EFF_MP_REGEN] )
 	{
 		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-		bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
-			(stats[clientnum]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
+		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
+			(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
 		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
 		{
 			if ( colorblind )
@@ -774,13 +826,13 @@ void drawStatus()
 	}
 	Uint32 mpColorBG = SDL_MapRGB(mainsurface->format, 0, 0, 48);
 	Uint32 mpColorFG = SDL_MapRGB(mainsurface->format, 0, 24, 128);
-	if ( stats[clientnum] && stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0 )
+	if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 	{
 		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3768]);
 		mpColorBG = SDL_MapRGB(mainsurface->format, 32, 48, 0);
 		mpColorFG = SDL_MapRGB(mainsurface->format, 92, 192, 0);
 	}
-	else if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON )
+	else if ( stats[player] && stats[player]->type == AUTOMATON )
 	{
 		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3474]);
 		mpColorBG = SDL_MapRGB(mainsurface->format, 64, 32, 0);
@@ -796,14 +848,14 @@ void drawStatus()
 	//pos.x = 12;
 	pos.w = playerStatusBarWidth;
 	pos.h = 0;
-	pos.y = yres - (playerStatusBarHeight - 9);
+	pos.y = y2 - (playerStatusBarHeight - 9);
 	drawTooltip(&pos);
-	if ( stats[clientnum] && stats[clientnum]->HP > 0
-		&& stats[clientnum]->EFFECTS[EFF_MP_REGEN] )
+	if ( stats[player] && stats[player]->HP > 0
+		&& stats[player]->EFFECTS[EFF_MP_REGEN] )
 	{
 		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-		bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
-			(stats[clientnum]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
+		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
+			(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
 		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
 		{
 			if ( colorblind )
@@ -818,48 +870,54 @@ void drawStatus()
 	}
 
 	// Display the actual Magic bar's faint background
-	pos.x = 4 + 12 * uiscale_playerbars;
+	pos.x = x1 + 4 + 12 * uiscale_playerbars;
 	pos.w = playerStatusBarWidth - 5;
 	pos.h = playerStatusBarHeight - 27;
-	pos.y = yres - 15 - pos.h;
+	pos.y = y2 - 15 - pos.h;
 
 	// Draw the actual Magic bar's faint background
 	drawRect(&pos, mpColorBG, 255); // Display blue
 
 	// If the Player has MP, base the size of the actual Magic bar off remaining MP
-	if ( stats[clientnum] && stats[clientnum]->MP > 0 )
+	if ( stats[player] && stats[player]->MP > 0 )
 	{
 		//pos.x = 16;
 		pos.w = playerStatusBarWidth - 5;
-		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[clientnum]->MP) / stats[clientnum]->MAXMP);
-		pos.y = yres - 15 - pos.h;
+		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[player]->MP) / stats[player]->MAXMP);
+		pos.y = y2 - 15 - pos.h;
 
 		// Only draw the actual Magic bar if the Player has MP
 		drawRect(&pos, mpColorFG, 255); // Display blue
 	}
 
 	// Print out the amount of MP the Player currently has
-	if ( stats[clientnum] )
+	if ( stats[player] )
 	{
-		snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
+		snprintf(tempstr, 4, "%d", stats[player]->MP);
 	}
 	else
 	{
 		snprintf(tempstr, 4, "%d", 0);
 	}
-	printTextFormatted(font12x12_bmp, 32 * uiscale_playerbars - strlen(tempstr) * 6, yres - (playerStatusBarHeight / 2 + 8), tempstr);
+	printTextFormatted(font12x12_bmp, x1 + 32 * uiscale_playerbars - strlen(tempstr) * 6, y2 - (playerStatusBarHeight / 2 + 8), tempstr);
 
 	Item* item = nullptr;
 	//Now the hotbar.
 	int num = 0;
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
 	//pos.x = initial_position.x;
-	pos.x = (xres / 2) - 5 * hotbar_img->w * uiscale_hotbar;
-	pos.y = initial_position.y - hotbar_img->h * uiscale_hotbar;
-	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w * uiscale_hotbar )
+	pos.x = hotbar_t->getStartX();
+	pos.y = initial_position.y - hotbar_t->getSlotSize();
+
+	hotbar_t->hotbarBox.x = pos.x;
+	hotbar_t->hotbarBox.y = pos.y;
+	hotbar_t->hotbarBox.w = NUM_HOTBAR_SLOTS * hotbar_t->getSlotSize();
+	hotbar_t->hotbarBox.h = hotbar_t->getSlotSize();
+
+	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_t->getSlotSize() )
 	{
 		Uint32 color;
-		if ( current_hotbar == num && !openedChest[clientnum] )
+		if ( players[player]->hotbar->current_hotbar == num && !openedChest[player] )
 		{
 			color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255); //Draw gold border around currently selected hotbar.
 		}
@@ -867,19 +925,19 @@ void drawStatus()
 		{
 			color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 60); //Draw normal grey border.
 		}
-		pos.w = hotbar_img->w * uiscale_hotbar;
-		pos.h = hotbar_img->h * uiscale_hotbar;
+		pos.w = hotbar_t->getSlotSize();
+		pos.h = hotbar_t->getSlotSize();
 		drawImageScaledColor(hotbar_img, NULL, &pos, color);
 		item = uidToItem(hotbar[num].item);
 		if ( item )
 		{
 			if ( item->type == BOOMERANG )
 			{
-				magicBoomerangHotbarSlot = num;
+				hotbar_t->magicBoomerangHotbarSlot = num;
 			}
 			bool used = false;
-			pos.w = hotbar_img->w * uiscale_hotbar;
-			pos.h = hotbar_img->h * uiscale_hotbar;
+			pos.w = hotbar_t->getSlotSize();
+			pos.h = hotbar_t->getSlotSize();
 
 			SDL_Rect highlightBox;
 			highlightBox.x = pos.x + 2;
@@ -918,38 +976,38 @@ void drawStatus()
 
 			bool disableItemUsage = false;
 
-			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
 			{
 				// shape shifted, disable some items
-				if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+				if ( !item->usableWhileShapeshifted(stats[player]) )
 				{
 					disableItemUsage = true;
 					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
 				}
 			}
-			if ( client_classes[clientnum] == CLASS_SHAMAN )
+			if ( client_classes[player] == CLASS_SHAMAN )
 			{
-				if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+				if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
 				{
 					disableItemUsage = true;
 					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
 				}
 			}
 
-			if ( stats[clientnum] && stats[clientnum]->HP > 0 )
+			if ( stats[player] && stats[player]->HP > 0 )
 			{
-				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+				Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+
+				if ( !shootmode && mouseInBounds(player, pos.x, pos.x + hotbar_t->getSlotSize(), pos.y, pos.y + hotbar_t->getSlotSize()) )
 				{
-					if ( (mousestatus[SDL_BUTTON_LEFT] 
-						|| (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) 
-							&& !openedChest[clientnum] 
+					if ( (inputs.bMouseLeft(player)
+						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
+							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
-							&& !identifygui_active
-							&& !removecursegui_active
-							&& !GenericGUI.isGUIOpen())) 
+							&& !GenericGUI[player].isGUIOpen())) 
 						&& !selectedItem )
 					{
-						toggleclick = false;
+						inputs.getUIInteraction(player)->toggleclick = false;
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 						{
 							hotbar[num].item = 0;
@@ -964,27 +1022,25 @@ void drawStatus()
 							}
 							hotbar[num].item = 0;
 
-							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active )
+							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
-								*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
+								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
-								toggleclick = true;
-								selectedItemFromHotbar = num;
+								inputs.getUIInteraction(player)->toggleclick = true;
+								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
 								//TODO: Change the mouse cursor to THE HAND.
 							}
 						}
 					}
-					if ( mousestatus[SDL_BUTTON_RIGHT] 
-						|| (*inputPressed(joyimpulses[INJOY_MENU_USE]) 
-							&& !openedChest[clientnum] 
+					if ( inputs.bMouseRight(player)
+						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
+							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP) 
-							&& !identifygui_active 
-							&& !removecursegui_active
-							&& !GenericGUI.isGUIOpen()) )
+							&& !GenericGUI[player].isGUIOpen()) )
 					{
 						//Use the item if right clicked.
-						mousestatus[SDL_BUTTON_RIGHT] = 0;
-						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+						inputs.mouseClearRight(player);
+						inputs.controllerClearInput(player, INJOY_MENU_USE);
 						bool badpotion = false;
 						bool learnedSpell = false;
 
@@ -996,21 +1052,15 @@ void drawStatus()
 						{
 							badpotion = true;
 						}
-						if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, clientnum)) )
+						if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, player)) )
 						{
 							// equipped spellbook will unequip on use.
-							learnedSpell = (playerLearnedSpellbook(item) || itemIsEquipped(item, clientnum));
+							learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
 						}
 
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 						{
-							identifygui_active = false;
-							identifygui_appraising = true;
-
-							//Cleanup identify GUI gamecontroller code here.
-							selectedIdentifySlot = -1;
-
-							identifyGUIIdentify(item);
+							players[player]->inventoryUI.appraisal.appraiseItem(item);
 						}
 						else
 						{
@@ -1022,14 +1072,14 @@ void drawStatus()
 							}
 
 							if ( !learnedSpell && item->identified 
-								&& itemCategory(item) == SPELLBOOK && players[clientnum] && players[clientnum]->entity )
+								&& itemCategory(item) == SPELLBOOK && players[player] && players[player]->entity )
 							{
 								learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
 								spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 								if ( currentSpell )
 								{
-									int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity);
-									if ( stats[clientnum]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+									int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
+									if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
 									{
 										skillLVL = 100;
 									}
@@ -1041,18 +1091,18 @@ void drawStatus()
 								}
 							}
 
-							if ( itemCategory(item) == SPELLBOOK && stats[clientnum] && stats[clientnum]->type == GOBLIN )
+							if ( itemCategory(item) == SPELLBOOK && stats[player] && stats[player]->type == GOBLIN )
 							{
 								learnedSpell = true; // goblinos can't learn spells but always equip books.
 							}
 
 							if ( !badpotion && !learnedSpell )
 							{
-								if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
+								if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
 								{
 									if ( !disableItemUsage )
 									{
-										if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON
+										if ( stats[player] && stats[player]->type == AUTOMATON
 											&& (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
 										{
 											// consume item
@@ -1065,28 +1115,28 @@ void drawStatus()
 												SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
 												SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 												net_packet->data[24] = item->identified;
-												net_packet->data[25] = clientnum;
+												net_packet->data[25] = player;
 												net_packet->address.host = net_server.host;
 												net_packet->address.port = net_server.port;
 												net_packet->len = 26;
 												sendPacketSafe(net_sock, -1, net_packet, 0);
 											}
-											item_FoodAutomaton(item, clientnum);
+											item_FoodAutomaton(item, player);
 										}
 										else
 										{
-											useItem(item, clientnum);
+											useItem(item, player);
 										}
 									}
 									else
 									{
-										if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+										if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 										{
-											messagePlayer(clientnum, language[3488]); // unable to use with current level.
+											messagePlayer(player, language[3488]); // unable to use with current level.
 										}
 										else
 										{
-											messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+											messagePlayer(player, language[3432]); // unable to use in current form message.
 										}
 									}
 								}
@@ -1095,17 +1145,17 @@ void drawStatus()
 							{
 								if ( !disableItemUsage )
 								{
-									playerTryEquipItemAndUpdateServer(item);
+									playerTryEquipItemAndUpdateServer(player, item);
 								}
 								else
 								{
-									if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+									if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 									{
-										messagePlayer(clientnum, language[3488]); // unable to use with current level.
+										messagePlayer(player, language[3488]); // unable to use with current level.
 									}
 									else
 									{
-										messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+										messagePlayer(player, language[3432]); // unable to use in current form message.
 									}
 								}
 							}
@@ -1129,24 +1179,24 @@ void drawStatus()
 					if ( uiscale_hotbar >= 1.5 )
 					{
 						digitFont = font16x16_bmp;
-						printTextFormatted(digitFont, pos.x + hotbar_img->w * uiscale_hotbar - (24 * digits), pos.y + hotbar_img->h * uiscale_hotbar - 24, "%d", item->count);
+						printTextFormatted(digitFont, pos.x + hotbar_t->getSlotSize() - (24 * digits), pos.y + hotbar_t->getSlotSize() - 24, "%d", item->count);
 					}
 					else
 					{
-						printTextFormatted(digitFont, pos.x + hotbar_img->w * uiscale_hotbar - (14 * digits), pos.y + hotbar_img->h * uiscale_hotbar - 14, "%d", item->count);
+						printTextFormatted(digitFont, pos.x + hotbar_t->getSlotSize() - (14 * digits), pos.y + hotbar_t->getSlotSize() - 14, "%d", item->count);
 					}
 				}
 
 				SDL_Rect src;
 				src.x = pos.x + 2;
 				src.h = 16 * uiscale_hotbar;
-				src.y = pos.y + hotbar_img->h * uiscale_hotbar - src.h - 2;
+				src.y = pos.y + hotbar_t->getSlotSize() - src.h - 2;
 				src.w = 16 * uiscale_hotbar;
 
 				// item equipped
 				if ( itemCategory(item) != SPELL_CAT )
 				{
-					if ( itemIsEquipped(item, clientnum) )
+					if ( itemIsEquipped(item, player) )
 					{
 						drawImageScaled(equipped_bmp, NULL, &src);
 					}
@@ -1157,9 +1207,9 @@ void drawStatus()
 				}
 				else
 				{
-					spell_t* spell = getSpellFromItem(item);
-					if ( selected_spell == spell 
-						&& (selected_spell_last_appearance == item->appearance || selected_spell_last_appearance == -1 ) )
+					spell_t* spell = getSpellFromItem(player, item);
+					if ( players[player]->magic.selectedSpell() == spell
+						&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1 ) )
 					{
 						drawImageScaled(equipped_bmp, NULL, &src);
 					}
@@ -1177,7 +1227,7 @@ void drawStatus()
 	}
 
 	bool drawHotBarTooltipOnCycle = false;
-	if ( !intro && hotbarTooltipLastGameTick != 0 && (ticks - hotbarTooltipLastGameTick) < TICKS_PER_SECOND * 2 )
+	if ( !intro && hotbar_t->hotbarTooltipLastGameTick != 0 && (ticks - hotbar_t->hotbarTooltipLastGameTick) < TICKS_PER_SECOND * 2 )
 	{
 		drawHotBarTooltipOnCycle = true;
 	}
@@ -1186,15 +1236,15 @@ void drawStatus()
 	{
 		pos.x = initial_position.x;
 		//Go back through all of the hotbar slots and draw the tooltips.
-		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w * uiscale_hotbar )
+		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_t->getSlotSize() )
 		{
 			item = uidToItem(hotbar[num].item);
 			if ( item )
 			{
-				bool drawTooltipOnSlot = !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar);
+				bool drawTooltipOnSlot = !shootmode && mouseInBounds(player, pos.x, pos.x + hotbar_t->getSlotSize(), pos.y, pos.y + hotbar_t->getSlotSize());
 				if ( !drawTooltipOnSlot )
 				{
-					if ( drawHotBarTooltipOnCycle && current_hotbar == num )
+					if ( drawHotBarTooltipOnCycle && players[player]->hotbar->current_hotbar == num )
 					{
 						drawTooltipOnSlot = true;
 					}
@@ -1204,7 +1254,7 @@ void drawStatus()
 					if ( !shootmode )
 					{
 						// reset timer.
-						hotbarTooltipLastGameTick = 0;
+						hotbar_t->hotbarTooltipLastGameTick = 0;
 						drawHotBarTooltipOnCycle = false;
 					}
 					else
@@ -1225,21 +1275,21 @@ void drawStatus()
 
 					if ( drawHotBarTooltipOnCycle )
 					{
-						src.x = pos.x + hotbar_img->w * uiscale_hotbar;
-						src.y = pos.y + hotbar_img->h * uiscale_hotbar;
+						src.x = pos.x + hotbar_t->getSlotSize();
+						src.y = pos.y + hotbar_t->getSlotSize();
 						src.y -= 16;
 					}
 
 					if ( itemCategory(item) == SPELL_CAT )
 					{
-						spell_t* spell = getSpellFromItem(item);
+						spell_t* spell = getSpellFromItem(player, item);
 						if ( drawHotBarTooltipOnCycle )
 						{
-							drawSpellTooltip(spell, item, &src);
+							drawSpellTooltip(player, spell, item, &src);
 						}
 						else
 						{
-							drawSpellTooltip(spell, item, nullptr);
+							drawSpellTooltip(player, spell, item, nullptr);
 						}
 					}
 					else
@@ -1252,11 +1302,11 @@ void drawStatus()
 							bool learnedSpellbook = false;
 							if ( itemCategory(item) == SPELLBOOK )
 							{
-								learnedSpellbook = playerLearnedSpellbook(item);
-								if ( !learnedSpellbook && stats[clientnum] && players[clientnum] && players[clientnum]->entity )
+								learnedSpellbook = playerLearnedSpellbook(player, item);
+								if ( !learnedSpellbook && stats[player] && players[player] && players[player]->entity )
 								{
 									// spellbook tooltip shows if you have the magic requirement as well (for goblins)
-									int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity);
+									int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
 									spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 									if ( spell && skillLVL >= spell->difficulty )
 									{
@@ -1280,7 +1330,7 @@ void drawStatus()
 								int height = 1;
 								char effectType[32] = "";
 								int spellID = getSpellIDFromSpellbook(item->type);
-								int damage = drawSpellTooltip(getSpellFromID(spellID), item, nullptr);
+								int damage = drawSpellTooltip(player, getSpellFromID(spellID), item, nullptr);
 								real_t dummy = 0.f;
 								getSpellEffectString(spellID, spellEffectText, effectType, damage, &height, &dummy);
 								int width = longestline(spellEffectText) * TTF12_WIDTH + 8;
@@ -1298,28 +1348,28 @@ void drawStatus()
 							}
 						}
 
-						int furthestX = xres;
-						if ( proficienciesPage == 0 )
+						int furthestX = players[player]->camera_x2();
+						if ( players[player]->characterSheet.proficienciesPage == 0 )
 						{
-							if ( src.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+							if ( src.y < players[player]->characterSheet.skillsSheetBox.y + players[player]->characterSheet.skillsSheetBox.h )
 							{
-								furthestX = xres - interfaceSkillsSheet.w;
+								furthestX = players[player]->camera_x2() - players[player]->characterSheet.skillsSheetBox.w;
 							}
 						}
 						else
 						{
-							if ( src.y < interfacePartySheet.y + interfacePartySheet.h )
+							if ( src.y < players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h )
 							{
-								furthestX = xres - interfacePartySheet.w;
+								furthestX = players[player]->camera_x2() - players[player]->characterSheet.partySheetBox.w;
 							}
 						}
 						if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
 						{
 							src.x -= (src.w + 32);
 						}
-						if ( src.y + src.h + 16 > yres ) // overflow bottom of screen
+						if ( src.y + src.h + 16 > y2 ) // overflow bottom of screen
 						{
-							src.y -= (src.y + src.h + 16 - yres);
+							src.y -= (src.y + src.h + 16 - y2);
 						}
 
 						if ( drawHotBarTooltipOnCycle )
@@ -1388,28 +1438,28 @@ void drawStatus()
 							itemWeight = std::max(1, itemWeight / 5);
 						}
 						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
-						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
+						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(player));
 						if ( strcmp(spellEffectText, "") )
 						{
 							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, SDL_MapRGB(mainsurface->format, 0, 255, 255), spellEffectText);
 						}
 
-						if ( item->identified && stats[clientnum] )
+						if ( item->identified && stats[player] )
 						{
 							if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN
 								|| itemTypeIsQuiver(item->type) )
 							{
-								Monster tmpRace = stats[clientnum]->type;
-								if ( stats[clientnum]->type == TROLL
-									|| stats[clientnum]->type == RAT
-									|| stats[clientnum]->type == SPIDER
-									|| stats[clientnum]->type == CREATURE_IMP )
+								Monster tmpRace = stats[player]->type;
+								if ( stats[player]->type == TROLL
+									|| stats[player]->type == RAT
+									|| stats[player]->type == SPIDER
+									|| stats[player]->type == CREATURE_IMP )
 								{
 									// these monsters have 0 bonus from weapons, but want the tooltip to say the normal amount.
-									stats[clientnum]->type = HUMAN;
+									stats[player]->type = HUMAN;
 								}
 
-								if ( item->weaponGetAttack(stats[clientnum]) >= 0 )
+								if ( item->weaponGetAttack(stats[player]) >= 0 )
 								{
 									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 								}
@@ -1417,27 +1467,27 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								if ( stats[clientnum]->type != tmpRace )
+								if ( stats[player]->type != tmpRace )
 								{
 									color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
 								}
 
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[clientnum]));
-								stats[clientnum]->type = tmpRace;
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[player]));
+								stats[player]->type = tmpRace;
 							}
 							else if ( itemCategory(item) == ARMOR )
 							{
-								Monster tmpRace = stats[clientnum]->type;
-								if ( stats[clientnum]->type == TROLL
-									|| stats[clientnum]->type == RAT
-									|| stats[clientnum]->type == SPIDER
-									|| stats[clientnum]->type == CREATURE_IMP )
+								Monster tmpRace = stats[player]->type;
+								if ( stats[player]->type == TROLL
+									|| stats[player]->type == RAT
+									|| stats[player]->type == SPIDER
+									|| stats[player]->type == CREATURE_IMP )
 								{
 									// these monsters have 0 bonus from armor, but want the tooltip to say the normal amount.
-									stats[clientnum]->type = HUMAN;
+									stats[player]->type = HUMAN;
 								}
 
-								if ( item->armorGetAC(stats[clientnum]) >= 0 )
+								if ( item->armorGetAC(stats[player]) >= 0 )
 								{
 									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 								}
@@ -1445,13 +1495,13 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								if ( stats[clientnum]->type != tmpRace )
+								if ( stats[player]->type != tmpRace )
 								{
 									color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
 								}
 
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[clientnum]));
-								stats[clientnum]->type = tmpRace;
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[player]));
+								stats[player]->type = tmpRace;
 							}
 							else if ( itemCategory(item) == SCROLL )
 							{
@@ -1460,7 +1510,7 @@ void drawStatus()
 							}
 						}
 					}
-					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add )
+					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						Uint32 swapItem = 0;
 						if ( keystatus[SDL_SCANCODE_1] )
@@ -1552,45 +1602,47 @@ void drawStatus()
 			}
 			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
 		}
-		if ( !FollowerMenu.selectMoveTo && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+		if ( !FollowerMenu[player].selectMoveTo && mouseInBounds(player, minimaps[player].x, minimaps[player].x + minimaps[player].w, 
+			yres - minimaps[player].y - minimaps[player].h, yres - minimaps[player].y) ) // mouse within minimap pixels (each map tile is 4 pixels)
 		{
-			if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE])) )
+			if ( inputs.bMouseRight(player) || (inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
 			{
-				mousestatus[SDL_BUTTON_RIGHT] = 0;
-				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
-				if ( minimapPingGimpTimer == -1 )
+				inputs.mouseClearRight(player);
+				inputs.controllerClearInput(player, INJOY_MENU_USE);
+				if ( minimapPingGimpTimer[player] == -1 )
 				{
-					MinimapPing newPing(ticks, clientnum, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
-					minimapPingGimpTimer = TICKS_PER_SECOND / 4;
+					MinimapPing newPing(ticks, player, (omousex - (minimaps[player].x)) / minimapTotalScale, (omousey - (yres - minimaps[player].y - minimaps[player].h)) / minimapTotalScale);
+					minimapPingGimpTimer[player] = TICKS_PER_SECOND / 4;
 					if ( multiplayer != CLIENT )
 					{
-						minimapPingAdd(newPing);
+						minimapPingAdd(player, player, newPing);
 					}
-					sendMinimapPing(clientnum, newPing.x, newPing.y);
+					sendMinimapPing(player, newPing.x, newPing.y);
 				}
 			}
 		}
 	}
-	if ( minimapPingGimpTimer >= 0 )
+	if ( minimapPingGimpTimer[player] >= 0 )
 	{
-		--minimapPingGimpTimer;
+		--minimapPingGimpTimer[player];
 	}
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.
-	if ( !command && stats[clientnum] && stats[clientnum]->HP > 0 )
+	if ( !command && stats[player] && stats[player]->HP > 0 )
 	{
 		Item* item = NULL;
+		const auto& inventoryUI = players[player]->inventoryUI;
 		if ( !(!shootmode && hotbar_numkey_quick_add &&
 				(
-					(omousex >= INVENTORY_STARTX
-						&& omousex <= INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE
-						&& omousey >= INVENTORY_STARTY 
-						&& omousey <= INVENTORY_STARTY + INVENTORY_SIZEY * INVENTORY_SLOTSIZE
+					(omousex >= inventoryUI.getStartX()
+						&& omousex <= inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize()
+						&& omousey >= inventoryUI.getStartY()
+						&& omousey <= inventoryUI.getStartY() + inventoryUI.getSizeY() * inventoryUI.getSlotSize()
 					)
 					||
 					(omousex >= initial_position.x 
-						&& omousex <= initial_position.x + hotbar_img->w * uiscale_hotbar * 10
-						&& omousey >= initial_position.y - hotbar_img->h * uiscale_hotbar
+						&& omousex <= initial_position.x + hotbar_t->getSlotSize() * NUM_HOTBAR_SLOTS
+						&& omousey >= initial_position.y - hotbar_t->getSlotSize()
 						&& omousey <= initial_position.y
 					)
 				)
@@ -1598,55 +1650,58 @@ void drawStatus()
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
-			if ( keystatus[SDL_SCANCODE_1] )
+			if ( inputs.bPlayerUsingKeyboardControl(player) )
 			{
-				keystatus[SDL_SCANCODE_1] = 0;
-				item = uidToItem(hotbar[0].item);
-			}
-			if ( keystatus[SDL_SCANCODE_2] )
-			{
-				keystatus[SDL_SCANCODE_2] = 0;
-				item = uidToItem(hotbar[1].item);
-			}
-			if ( keystatus[SDL_SCANCODE_3] )
-			{
-				keystatus[SDL_SCANCODE_3] = 0;
-				item = uidToItem(hotbar[2].item);
-			}
-			if ( keystatus[SDL_SCANCODE_4] )
-			{
-				keystatus[SDL_SCANCODE_4] = 0;
-				item = uidToItem(hotbar[3].item);
-			}
-			if ( keystatus[SDL_SCANCODE_5] )
-			{
-				keystatus[SDL_SCANCODE_5] = 0;
-				item = uidToItem(hotbar[4].item);
-			}
-			if ( keystatus[SDL_SCANCODE_6] )
-			{
-				keystatus[SDL_SCANCODE_6] = 0;
-				item = uidToItem(hotbar[5].item);
-			}
-			if ( keystatus[SDL_SCANCODE_7] )
-			{
-				keystatus[SDL_SCANCODE_7] = 0;
-				item = uidToItem(hotbar[6].item);
-			}
-			if ( keystatus[SDL_SCANCODE_8] )
-			{
-				keystatus[SDL_SCANCODE_8] = 0;
-				item = uidToItem(hotbar[7].item);
-			}
-			if ( keystatus[SDL_SCANCODE_9] )
-			{
-				keystatus[SDL_SCANCODE_9] = 0;
-				item = uidToItem(hotbar[8].item);
-			}
-			if ( keystatus[SDL_SCANCODE_0] )
-			{
-				keystatus[SDL_SCANCODE_0] = 0;
-				item = uidToItem(hotbar[9].item);
+				if ( keystatus[SDL_SCANCODE_1] )
+				{
+					keystatus[SDL_SCANCODE_1] = 0;
+					item = uidToItem(hotbar[0].item);
+				}
+				if ( keystatus[SDL_SCANCODE_2] )
+				{
+					keystatus[SDL_SCANCODE_2] = 0;
+					item = uidToItem(hotbar[1].item);
+				}
+				if ( keystatus[SDL_SCANCODE_3] )
+				{
+					keystatus[SDL_SCANCODE_3] = 0;
+					item = uidToItem(hotbar[2].item);
+				}
+				if ( keystatus[SDL_SCANCODE_4] )
+				{
+					keystatus[SDL_SCANCODE_4] = 0;
+					item = uidToItem(hotbar[3].item);
+				}
+				if ( keystatus[SDL_SCANCODE_5] )
+				{
+					keystatus[SDL_SCANCODE_5] = 0;
+					item = uidToItem(hotbar[4].item);
+				}
+				if ( keystatus[SDL_SCANCODE_6] )
+				{
+					keystatus[SDL_SCANCODE_6] = 0;
+					item = uidToItem(hotbar[5].item);
+				}
+				if ( keystatus[SDL_SCANCODE_7] )
+				{
+					keystatus[SDL_SCANCODE_7] = 0;
+					item = uidToItem(hotbar[6].item);
+				}
+				if ( keystatus[SDL_SCANCODE_8] )
+				{
+					keystatus[SDL_SCANCODE_8] = 0;
+					item = uidToItem(hotbar[7].item);
+				}
+				if ( keystatus[SDL_SCANCODE_9] )
+				{
+					keystatus[SDL_SCANCODE_9] = 0;
+					item = uidToItem(hotbar[8].item);
+				}
+				if ( keystatus[SDL_SCANCODE_0] )
+				{
+					keystatus[SDL_SCANCODE_0] = 0;
+					item = uidToItem(hotbar[9].item);
+				}
 			}
 		}
 
@@ -1654,127 +1709,129 @@ void drawStatus()
 		if ( (mousexrel || mouseyrel) && !shootmode )
 		{
 			pos.x = initial_position.x;
-			pos.y = initial_position.y - hotbar_img->h * uiscale_hotbar;
-			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w * uiscale_hotbar )
+			pos.y = initial_position.y - hotbar_t->getSlotSize();
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_t->getSlotSize() )
 			{
-				if ( mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+				if ( mouseInBoundsRealtimeCoords(player, pos.x, pos.x + hotbar_t->getSlotSize(), pos.y, pos.y + hotbar_t->getSlotSize()) )
 				{
-					selectHotbarSlot(c);
+					players[player]->hotbar->selectHotbarSlot(c);
 				}
 			}
 		}
 
 		bool bumper_moved = false;
+
 		//Gamepad change hotbar selection.
-		if ( (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT])) )
+		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_NEXT)
+			|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 		{
-			if ( shootmode && !itemMenuOpen && !openedChest[clientnum] 
+			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-				&& !identifygui_active && !removecursegui_active
-				&& !GenericGUI.isGUIOpen() )
+				&& !GenericGUI[player].isGUIOpen() )
 			{
-				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 				{
-					*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-					hotbarTooltipLastGameTick = ticks;
+					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+					hotbar_t->hotbarTooltipLastGameTick = ticks;
 				}
 				else
 				{
-					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
+					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_NEXT);
 					bumper_moved = true;
 				}
-				selectHotbarSlot(current_hotbar + 1);
+				players[player]->hotbar->selectHotbarSlot(players[player]->hotbar->current_hotbar + 1);
 			}
 			else
 			{
-				hotbarTooltipLastGameTick = 0;
+				hotbar_t->hotbarTooltipLastGameTick = 0;
 				/*if ( intro || shootmode )
 				{
-					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+					if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 					{
-						*inputPressed(impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
+						*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
 					}
 				}*/
 			}
 		}
-		if ( *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_PREV) || *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 		{
-			if ( shootmode && !itemMenuOpen && !openedChest[clientnum] 
+			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
-				&& !identifygui_active && !removecursegui_active
-				&& !GenericGUI.isGUIOpen() )
+				&& !GenericGUI[player].isGUIOpen() )
 			{
-				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 				{
-					*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-					hotbarTooltipLastGameTick = ticks;
+					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+					hotbar_t->hotbarTooltipLastGameTick = ticks;
 				}
 				else
 				{
-					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
+					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_PREV);
 					bumper_moved = true;
 				}
-				selectHotbarSlot(current_hotbar - 1);
+				hotbar_t->selectHotbarSlot(hotbar_t->current_hotbar - 1);
 			}
 			else
 			{
-				hotbarTooltipLastGameTick = 0;
+				hotbar_t->hotbarTooltipLastGameTick = 0;
 				/*if ( intro || shootmode )
 				{
-					if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) )
+					if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 					{
-						*inputPressed(impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
+						*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
 					}
 				}*/
 			}
 		}
 
-		if ( bumper_moved && !itemMenuOpen 
-			&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
-			&& !book_open && !identifygui_active 
-			&& !removecursegui_active && !GenericGUI.isGUIOpen() )
+		if ( bumper_moved && !inputs.getUIInteraction(player)->itemMenuOpen
+			&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) 
+			&& !book_open
+			&& !GenericGUI[player].isGUIOpen() )
 		{
-			warpMouseToSelectedHotbarSlot();
+			warpMouseToSelectedHotbarSlot(player);
 		}
 
-		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
+		if ( !inputs.getUIInteraction(player)->itemMenuOpen && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && (*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) || *inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]))
-				&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
-				&& !book_open && !identifygui_active 
-				&& !removecursegui_active && !GenericGUI.isGUIOpen() )
+			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
+				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
+				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
+				&& !book_open
+				&& !GenericGUI[player].isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
-				if ( *inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]) )
+				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) )
 				{
-					hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbarTooltipLastGameTick);
-					*inputPressed(impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
+					hotbar_t->hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t->hotbarTooltipLastGameTick);
+					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
 				}
 				else
 				{
-					*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
+					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
 				}
-				item = uidToItem(hotbar[current_hotbar].item);
+				item = uidToItem(hotbar[hotbar_t->current_hotbar].item);
 			}
 
-			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) && !book_open ) //TODO: Don't activate if any of the previous if statement's conditions are true?
+			if ( !shootmode && inputs.bControllerInputPressed(player, INJOY_MENU_HOTBAR_CLEAR) && !book_open ) //TODO: Don't activate if any of the previous if statement's conditions are true?
 			{
 				//Clear a hotbar slot if in-inventory.
-				*inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) = 0;
+				inputs.controllerClearInput(player, INJOY_MENU_HOTBAR_CLEAR);
 
-				hotbar[current_hotbar].item = 0;
+				hotbar[hotbar_t->current_hotbar].item = 0;
 			}	
 
-			pos.x = initial_position.x + (current_hotbar * hotbar_img->w * uiscale_hotbar);
-			pos.y = initial_position.y - hotbar_img->h * uiscale_hotbar;
-			if ( !shootmode && !book_open && !openedChest[clientnum] && *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+			pos.x = initial_position.x + (hotbar_t->current_hotbar * hotbar_t->getSlotSize());
+			pos.y = initial_position.y - hotbar_t->getSlotSize();
+			if ( !shootmode && !book_open && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM) 
+				&& mouseInBounds(player, pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 			{
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
-				Item* itemToDrop = uidToItem(hotbar[current_hotbar].item);
+				inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
+				Item* itemToDrop = uidToItem(hotbar[hotbar_t->current_hotbar].item);
 				if ( itemToDrop )
 				{
-					dropItem(itemToDrop, clientnum);
+					dropItem(itemToDrop, player);
 				}
 			}
 		}
@@ -1791,10 +1848,10 @@ void drawStatus()
 			{
 				badpotion = true; //So that you wield empty potions be default.
 			}
-			if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, clientnum)) )
+			if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, player)) )
 			{
 				// equipped spellbook will unequip on use.
-				learnedSpell = (playerLearnedSpellbook(item) || itemIsEquipped(item, clientnum));
+				learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
 			}
 
 			if ( (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
@@ -1805,14 +1862,14 @@ void drawStatus()
 			}
 
 			if ( !learnedSpell && item->identified
-				&& itemCategory(item) == SPELLBOOK && players[clientnum] && players[clientnum]->entity )
+				&& itemCategory(item) == SPELLBOOK && players[player] && players[player]->entity )
 			{
 				learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
 				spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-				if ( currentSpell && stats[clientnum] )
+				if ( currentSpell && stats[player] )
 				{
-					int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity);
-					if ( stats[clientnum]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+					int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
+					if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
 					{
 						skillLVL = 100;
 					}
@@ -1824,20 +1881,20 @@ void drawStatus()
 				}
 			}
 
-			if ( itemCategory(item) == SPELLBOOK && stats[clientnum] )
+			if ( itemCategory(item) == SPELLBOOK && stats[player] )
 			{
-				if ( stats[clientnum]->type == GOBLIN || stats[clientnum]->type == CREATURE_IMP )
+				if ( stats[player]->type == GOBLIN || stats[player]->type == CREATURE_IMP )
 				{
 					learnedSpell = true; // goblinos can't learn spells but always equip books.
 				}
 			}
 
 			bool disableItemUsage = false;
-			if ( players[clientnum] && players[clientnum]->entity )
+			if ( players[player] && players[player]->entity )
 			{
-				if ( players[clientnum]->entity->effectShapeshift != NOTHING )
+				if ( players[player]->entity->effectShapeshift != NOTHING )
 				{
-					if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+					if ( !item->usableWhileShapeshifted(stats[player]) )
 					{
 						disableItemUsage = true;
 					}
@@ -1846,16 +1903,16 @@ void drawStatus()
 				{
 					if ( itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
 					{
-						if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 )
+						if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 )
 						{
 							disableItemUsage = true;
 						}
 					}
 				}
 			}
-			if ( client_classes[clientnum] == CLASS_SHAMAN )
+			if ( client_classes[player] == CLASS_SHAMAN )
 			{
-				if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+				if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
 				{
 					disableItemUsage = true;
 				}
@@ -1865,9 +1922,9 @@ void drawStatus()
 			{
 				if ( !badpotion && !learnedSpell )
 				{
-					if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
+					if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
 					{
-						if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON
+						if ( stats[player] && stats[player]->type == AUTOMATON
 							&& (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
 						{
 							// consume item
@@ -1880,65 +1937,76 @@ void drawStatus()
 								SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
 								SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 								net_packet->data[24] = item->identified;
-								net_packet->data[25] = clientnum;
+								net_packet->data[25] = player;
 								net_packet->address.host = net_server.host;
 								net_packet->address.port = net_server.port;
 								net_packet->len = 26;
 								sendPacketSafe(net_sock, -1, net_packet, 0);
 							}
-							item_FoodAutomaton(item, clientnum);
+							item_FoodAutomaton(item, player);
 						}
 						else
 						{
-							useItem(item, clientnum);
+							useItem(item, player);
 						}
 					}
 				}
 				else
 				{
-					playerTryEquipItemAndUpdateServer(item);
+					playerTryEquipItemAndUpdateServer(player, item);
 				}
 			}
 			else
 			{
-				if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(clientnum, language[3488]); // unable to use with current level.
+					messagePlayer(player, language[3488]); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+					messagePlayer(player, language[3432]); // unable to use in current form message.
 				}
 			}
 		}
 	}
 
-	FollowerMenu.drawFollowerMenu();
+	FollowerMenu[player].drawFollowerMenu();
 
 	// stat increase icons
 	pos.w = 64;
 	pos.h = 64;
-	pos.x = xres - pos.w * 3 - 9;
-	pos.y = (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) + (32 + 64 + 64 + 3); // 131px from end of prof window.
+	pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
+	pos.y = players[player]->characterSheet.skillsSheetBox.h + (32 + pos.h * 2 + 3); // 131px from end of prof window.
 
-	if ( (!shootmode || lock_right_sidebar) && proficienciesPage == 1 
-		&& pos.y < (interfacePartySheet.y + interfacePartySheet.h + 16) )
+	if ( (!shootmode || players[player]->characterSheet.lock_right_sidebar) && players[player]->characterSheet.proficienciesPage == 1
+		&& pos.y < (players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16) )
 	{
-		pos.y = interfacePartySheet.y + interfacePartySheet.h + 16;
+		pos.y = players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16;
 	}
 
-	if ( pos.y + pos.h > (yres - map.height * 4) ) // check if overlapping minimap
+	if ( splitscreen )
 	{
-		pos.y = (yres - map.height * 4) - (64 + 3); // align above minimap
+		// todo - adjust position.
+		pos.w = 48;
+		pos.h = 48;
+		pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
+		pos.y = players[player]->characterSheet.skillsSheetBox.h + (16 + pos.h * 2 + 3);
+	}
+	else
+	{
+		if ( pos.y + pos.h > (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) ) // check if overlapping minimap
+		{
+			pos.y = (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) - (64 + 3); // align above minimap
+		}
 	}
 	
 	SDL_Surface *tmp_bmp = NULL;
 
 	for ( i = 0; i < NUMSTATS; i++ )
 	{
-		if ( stats[clientnum] && stats[clientnum]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
+		if ( stats[player] && stats[player]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
 		{
-			stats[clientnum]->PLAYER_LVL_STAT_TIMER[i]--;
+			stats[player]->PLAYER_LVL_STAT_TIMER[i]--;
 
 			switch ( i )
 			{
@@ -1965,13 +2033,13 @@ void drawStatus()
 					break;
 			}
 			drawImageScaled(tmp_bmp, NULL, &pos);
-			if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS] > 0 )
+			if ( stats[player]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS] > 0 )
 			{
 				// bonus stat acheived, draw additional stat icon above.
 				pos.y -= 64 + 3;
 				drawImageScaled(tmp_bmp, NULL, &pos);
 				pos.y += 64 + 3;
-				stats[clientnum]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS]--;
+				stats[player]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS]--;
 			}
 
 			pos.x += pos.h + 3;
@@ -1979,8 +2047,11 @@ void drawStatus()
 	}
 }
 
-int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
+int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src)
 {
+	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
+	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
+
 	SDL_Rect pos;
 	if ( src )
 	{
@@ -2022,21 +2093,21 @@ int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 					damage = primaryElement->damage;
 				}
 			}
-			if ( players[clientnum] )
+			if ( players[player] )
 			{
 				int bonus = 0;
 				if ( spellbook )
 				{
-					bonus = 25 * ((shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(item->beatitude) : item->beatitude));
-					if ( stats[clientnum] )
+					bonus = 25 * ((shouldInvertEquipmentBeatitude(stats[player]) ? abs(item->beatitude) : item->beatitude));
+					if ( stats[player] )
 					{
-						if ( players[clientnum] && players[clientnum]->entity )
+						if ( players[player] && players[player]->entity )
 						{
-							bonus += players[clientnum]->entity->getINT() * 0.5;
+							bonus += players[player]->entity->getINT() * 0.5;
 						}
 						else
 						{
-							bonus += statGetINT(stats[clientnum], nullptr) * 0.5;
+							bonus += statGetINT(stats[player], nullptr) * 0.5;
 						}
 					}
 					if ( bonus < 0 )
@@ -2044,8 +2115,8 @@ int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 						bonus = 0;
 					}
 				}
-				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
-				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, primaryElement)));
+				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, primaryElement)));
 			}
 			if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
 			{
@@ -2102,16 +2173,16 @@ int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 		}
 		else
 		{
-			if ( players[clientnum] && players[clientnum]->entity )
+			if ( players[player] && players[player]->entity )
 			{
 				if ( sustainCostPerSecond > 0.01 )
 				{
 					snprintf(tempstr, 31, language[3325],
-						getCostOfSpell(spell, players[clientnum]->entity), sustainCostPerSecond);
+						getCostOfSpell(spell, players[player]->entity), sustainCostPerSecond);
 				}
 				else
 				{
-					snprintf(tempstr, 31, language[308], getCostOfSpell(spell, players[clientnum]->entity));
+					snprintf(tempstr, 31, language[308], getCostOfSpell(spell, players[player]->entity));
 				}
 			}
 			else
@@ -2136,19 +2207,19 @@ int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 			pos.w = std::max(longestline(spellNameString), longestline(tempstr)) * TTF12_WIDTH + 8;
 		}
 
-		int furthestX = xres;
-		if ( proficienciesPage == 0 )
+		int furthestX = players[player]->camera_x2();
+		if ( players[player]->characterSheet.proficienciesPage == 0 )
 		{
-			if ( pos.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+			if ( pos.y < players[player]->characterSheet.skillsSheetBox.y + players[player]->characterSheet.skillsSheetBox.h )
 			{
-				furthestX = xres - interfaceSkillsSheet.w;
+				furthestX = players[player]->camera_x2() - players[player]->characterSheet.skillsSheetBox.w;
 			}
 		}
 		else
 		{
-			if ( pos.y < interfacePartySheet.y + interfacePartySheet.h )
+			if ( pos.y < players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h )
 			{
-				furthestX = xres - interfacePartySheet.w;
+				furthestX = players[player]->camera_x2() - players[player]->characterSheet.partySheetBox.w;
 			}
 		}
 
@@ -2165,9 +2236,9 @@ int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src)
 		{
 			pos.h += 2;
 		}
-		if ( pos.y + pos.h + 16 > yres ) // overflow bottom of screen
+		if ( pos.y + pos.h + 16 > players[player]->camera_y2() ) // overflow bottom of screen
 		{
-			pos.y -= (pos.y + pos.h + 16 - yres);
+			pos.y -= (pos.y + pos.h + 16 - players[player]->camera_y2());
 		}
 		if ( spellbook )
 		{

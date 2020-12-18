@@ -22,6 +22,7 @@ typedef double real_t;
 #include <list>
 #include <string>
 #include <vector>
+#include <array>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
 #include <map>
@@ -365,6 +366,7 @@ typedef struct map_t
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 	list_t* creatures; //A list of Entity* pointers.
+	list_t* worldUI; //A list of Entity* pointers.
 } map_t;
 
 #define MAPLAYERS 3 // number of layers contained in a single map
@@ -563,10 +565,10 @@ extern int lastCreatedCharacterRace;
 static const unsigned NUM_MOUSE_STATUS = 6;
 extern Sint8 mousestatus[NUM_MOUSE_STATUS];
 //extern Sint8 omousestatus[NUM_MOUSE_STATUS];
-const int NUM_JOY_STATUS = 32;
-extern Sint8 joystatus[NUM_JOY_STATUS];
-const int NUM_JOY_TRIGGER_STATUS = 2;
-extern Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS]; //0 = left, 1 = right.
+const int NUM_JOY_STATUS = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX;
+//extern Sint8 joystatus[NUM_JOY_STATUS];
+const int NUM_JOY_AXIS_STATUS = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX;
+//extern Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS]; //0 = left, 1 = right.
 extern Uint32 cursorflash;
 extern Sint32 camx, camy;
 extern Sint32 newcamx, newcamy;
@@ -739,6 +741,7 @@ node_t* list_Node(list_t* list, int index);
 void defaultDeconstructor(void* data);
 void emptyDeconstructor(void* data);
 void entityDeconstructor(void* data);
+void statDeconstructor(void* data);
 void lightDeconstructor(void* data);
 void mapDeconstructor(void* data);
 void stringDeconstructor(void* data);
@@ -754,6 +757,7 @@ pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Si
 real_t getLightForEntity(real_t x, real_t y);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
+void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
 real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);

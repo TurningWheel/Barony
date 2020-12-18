@@ -419,12 +419,8 @@ typedef struct spell_t
 	//TODO: Some way to make spells work with "need to cast more to get better at casting the spell." A sort of spell learning curve. The first time you cast it, prone to failure. Less the more you cast it.
 } spell_t;
 
-extern list_t spellList; //All of the player's spells are stored here.
-extern spell_t* selected_spell; //The spell the player's currently selected.
-extern spell_t* selected_spell_alternate[5];
 extern list_t channeledSpells[MAXPLAYERS]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
 extern std::vector<spell_t*> allGameSpells; // to iterate over for quickly finding attributes of all spells.
-extern int selected_spell_last_appearance;
 
 //TODO: Add stock spells.
 
@@ -491,13 +487,13 @@ extern spell_t spell_polymorph;
 //TODO: Targeting method?
 
 void setupSpells();
-
 void equipSpell(spell_t* spell, int playernum, Item* spellItem);
 Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook = false);
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 int spellGetCastSound(spell_t* spell);
+#ifndef EDITOR // hack for Stat* error
 bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
-
+#endif
 void actMagicTrap(Entity* my);
 void actMagicStatusEffect(Entity* my);
 void actMagicMissile(Entity* my);
@@ -575,6 +571,7 @@ typedef struct spellcastingAnimationManager
 	//The data to pass on to the castSpell function.
 	spell_t* spell;
 	Uint32 caster;
+	int player;
 
 	bool active;
 	bool active_spellbook;
@@ -592,19 +589,17 @@ typedef struct spellcastingAnimationManager
 	float lefthand_movey;
 	float lefthand_angle;
 } spellcasting_animation_manager_t;
-extern spellcasting_animation_manager_t cast_animation;
+extern spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 
 void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook);
-extern Entity* magicLeftHand;
-extern Entity* magicRightHand;
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager);
 void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager);
 
 class Item;
 
-spell_t* getSpellFromItem(Item* item);
+spell_t* getSpellFromItem(const int player, Item* item);
 int getSpellIDFromSpellbook(int spellbookType);
-int canUseShapeshiftSpellInCurrentForm(Item& item);
+int canUseShapeshiftSpellInCurrentForm(const int player, Item& item);
 
 //Spell implementation stuff.
 bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
@@ -613,7 +608,9 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
+#ifndef EDITOR // hack for Stat* error
 Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent, bool fromMagicSpell, int customDuration = 0); // returns nullptr if target was monster, otherwise returns pointer to new creature
+#endif
 void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance);
@@ -622,5 +619,5 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 
 void freeSpells();
-int drawSpellTooltip(spell_t* spell, Item* item, SDL_Rect* src);
+int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src);
 void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellType[32], int value, int* spellInfoLines, real_t* sustainCostPerSecond);

@@ -175,6 +175,11 @@ Item* newItemFromEntity(const Entity* const entity)
 	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
 }
 
+char* Item::description() const
+{
+	return tempstr;
+}
+
 int loadItems()
 {
 	int c, x;

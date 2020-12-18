@@ -31,6 +31,41 @@ void actGoldBag(Entity* my)
 {
 	int i;
 
+	if ( my->ticks == 1 )
+	{
+		for ( int i = 0; i < MAXPLAYERS && i < 4; ++i )
+		{
+			if ( !players[i]->isLocalPlayerAlive() )
+			{
+				continue;
+			}
+			Entity* worldTooltip = newEntity(-1, 1, map.entities, nullptr);
+			worldTooltip->x = my->x;
+			worldTooltip->y = my->y;
+			worldTooltip->z = my->z;
+			worldTooltip->sizex = 1;
+			worldTooltip->sizey = 1;
+			worldTooltip->flags[NOUPDATE] = true;
+			worldTooltip->flags[PASSABLE] = true;
+			worldTooltip->flags[SPRITE] = true;
+			worldTooltip->flags[BRIGHT] = true;
+			worldTooltip->flags[UNCLICKABLE] = true;
+			worldTooltip->behavior = &actSpriteWorldTooltip;
+			worldTooltip->parent = my->getUID();
+			worldTooltip->scalex = 0.05;
+			worldTooltip->scaley = 0.05;
+			worldTooltip->scalez = 0.05;
+			worldTooltip->worldTooltipPlayer = i;
+			worldTooltip->worldTooltipZ = 1.5;
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			players[i]->worldUI.setTooltipDisabled(*worldTooltip);
+			worldTooltip->addToWorldUIList(map.worldUI);
+		}
+	}
+
 	if ( my->flags[INVISIBLE] && my->goldSokoban == 1 )
 	{
 		if ( multiplayer != CLIENT )
@@ -72,7 +107,7 @@ void actGoldBag(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
 			{
 				if (inrange[i])
 				{

@@ -1360,10 +1360,10 @@ int saveGame(int saveIndex)
 	fp->write(&svFlags, sizeof(Uint32), 1);
 
 	// write hotbar items
-	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+	for ( auto& hotbarSlot : players[clientnum]->hotbar->slots() )
 	{
 		int index = list_Size(&stats[clientnum]->inventory);
-		Item* item = uidToItem(hotbar[c].item);
+		Item* item = uidToItem(hotbarSlot.item);
 		if ( item )
 		{
 			index = list_Index(item->node);
@@ -1372,9 +1372,9 @@ int saveGame(int saveIndex)
 	}
 
 	// write spells
-	Uint32 numspells = list_Size(&spellList);
+	Uint32 numspells = list_Size(&players[clientnum]->magic.spellList);
 	fp->write(&numspells, sizeof(Uint32), 1);
-	for ( node = spellList.first; node != NULL; node = node->next )
+	for ( node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next )
 	{
 		spell_t* spell = (spell_t*)node->element;
 		fp->write(&spell->ID, sizeof(Uint32), 1);
@@ -2090,7 +2090,7 @@ int loadGame(int player, int saveIndex)
 	}
 
 	// read spells
-	list_FreeAll(&spellList);
+	list_FreeAll(&players[player]->magic.spellList);
 	Uint32 numspells = 0;
 	fp->read(&numspells, sizeof(Uint32), 1);
 	for ( c = 0; c < numspells; c++ )
@@ -2099,7 +2099,7 @@ int loadGame(int player, int saveIndex)
 		fp->read(&spellnum, sizeof(Uint32), 1);
 		spell_t* spell = copySpell(getSpellFromID(spellnum));
 
-		node = list_AddNodeLast(&spellList);
+		node = list_AddNodeLast(&players[player]->magic.spellList);
 		node->element = spell;
 		node->deconstructor = &spellDeconstructor;
 		node->size = sizeof(spell);
@@ -2486,6 +2486,8 @@ int loadGame(int player, int saveIndex)
 	}
 
 	// assign hotbar items
+	auto& hotbar = players[player]->hotbar->slots();
+	auto& hotbar_alternate = players[player]->hotbar->slotsAlternate();
 	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 	{
 		node = list_Node(&stats[player]->inventory, temp_hotbar[c]);
@@ -3586,7 +3588,7 @@ void updateGameplayStatisticsInMainLoop()
 			bool learned = gameStatistics[STATISTICS_ALCHEMY_RECIPES] & (1 << i);
 			auto typeAppearance = potionStandardAppearanceMap.at(i);
 			int type = typeAppearance.first;
-			if ( !learned && (GenericGUI.isItemBaseIngredient(type) || GenericGUI.isItemSecondaryIngredient(type)) )
+			if ( !learned && (GenericGUI[clientnum].isItemBaseIngredient(type) || GenericGUI[clientnum].isItemSecondaryIngredient(type)) )
 			{
 				failAchievement = true;
 				break;
@@ -3717,7 +3719,7 @@ void updateGameplayStatisticsInMainLoop()
 						bowList.insert(SHORTBOW);
 					}
 				}
-				if ( GenericGUI.tinkeringGetCraftingCost(item, &dummy1, &dummy2) )
+				if ( GenericGUI[clientnum].tinkeringGetCraftingCost(item, &dummy1, &dummy2) )
 				{
 					utilityBeltList.insert(item->type);
 				}

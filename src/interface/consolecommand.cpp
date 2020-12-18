@@ -996,6 +996,7 @@ void consoleCommand(char const * const command_str)
 			}
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
+				auto& hotbar = players[clientnum]->hotbar->slots();
 				hotbar[c].item = 0;
 			}
 			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
@@ -1050,6 +1051,7 @@ void consoleCommand(char const * const command_str)
 			}
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
+				auto& hotbar = players[clientnum]->hotbar->slots();
 				hotbar[c].item = 0;
 			}
 			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
@@ -1091,6 +1093,7 @@ void consoleCommand(char const * const command_str)
 			}
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
+				auto& hotbar = players[clientnum]->hotbar->slots();
 				hotbar[c].item = 0;
 			}
 			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
@@ -1695,10 +1698,13 @@ void consoleCommand(char const * const command_str)
 	}
 	else if ( !strncmp(command_str, "/locksidebar", 12) )
 	{
-		lock_right_sidebar = (lock_right_sidebar == false);
-		if ( lock_right_sidebar )
+		if ( players[clientnum] )
 		{
-			proficienciesPage = 1;
+			players[clientnum]->characterSheet.lock_right_sidebar = (players[clientnum]->characterSheet.lock_right_sidebar == false);
+			if ( players[clientnum]->characterSheet.lock_right_sidebar )
+			{
+				players[clientnum]->characterSheet.proficienciesPage = 1;
+			}
 		}
 	}
 	else if ( !strncmp(command_str, "/showgametimer", 14) )
@@ -1743,9 +1749,147 @@ void consoleCommand(char const * const command_str)
 	else if (!strncmp(command_str, "/splitscreen", 12))
 	{
 		splitscreen = !splitscreen;
-		client_disconnected[1] = false;
-		client_disconnected[2] = false;
-		client_disconnected[3] = false;
+		if ( splitscreen )
+		{
+			client_disconnected[1] = false;
+			client_disconnected[2] = false;
+			client_disconnected[3] = false;
+		}
+		else
+		{
+			client_disconnected[1] = true;
+			client_disconnected[2] = true;
+			client_disconnected[3] = true;
+		}
+
+		int playercount = 1;
+		for ( int i = 1; i < MAXPLAYERS; ++i )
+		{
+			players[i]->bSplitscreen = true;
+			if ( players[i]->isLocalPlayer() )
+			{
+				++playercount;
+			}
+		}
+
+
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !splitscreen )
+			{
+				players[i]->camera().winx = 0;
+				players[i]->camera().winy = 0;
+				players[i]->camera().winw = xres;
+				players[i]->camera().winh = yres;
+			}
+			else
+			{
+				if ( playercount == 1 )
+				{
+					players[i]->camera().winx = 0;
+					players[i]->camera().winy = 0;
+					players[i]->camera().winw = xres;
+					players[i]->camera().winh = yres;
+				}
+				else if ( playercount == 2 )
+				{
+					// divide screen horizontally
+					players[i]->camera().winx = 0;
+					players[i]->camera().winy = c * yres / 2;
+					players[i]->camera().winw = xres;
+					players[i]->camera().winh = yres / 2;
+				}
+				else if ( playercount >= 3 )
+				{
+					// divide screen into quadrants
+					players[i]->camera().winx = (c % 2) * xres / 2;
+					players[i]->camera().winy = (c / 2) * yres / 2;
+					players[i]->camera().winw = xres / 2;
+					players[i]->camera().winh = yres / 2;
+				}
+			}
+
+			inputs.getVirtualMouse(i)->x = players[i]->camera_x1() + players[i]->camera_width() / 2;
+			inputs.getVirtualMouse(i)->y = players[i]->camera_y1() + players[i]->camera_height() / 2;
+
+			if ( i > 0 )
+			{
+				stats[i]->sex = static_cast<sex_t>(rand() % 2);
+				stats[i]->appearance = rand() % 18;
+				stats[i]->clearStats();
+				client_classes[i] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
+				stats[i]->playerRace = RACE_HUMAN;
+				if ( enabledDLCPack1 || enabledDLCPack2 )
+				{
+					stats[i]->playerRace = rand() % NUMPLAYABLERACES;
+					if ( !enabledDLCPack1 )
+					{
+						while ( stats[i]->playerRace == RACE_SKELETON || stats[i]->playerRace == RACE_VAMPIRE
+							|| stats[i]->playerRace == RACE_SUCCUBUS || stats[i]->playerRace == RACE_GOATMAN )
+						{
+							stats[i]->playerRace = rand() % NUMPLAYABLERACES;
+						}
+					}
+					else if ( !enabledDLCPack2 )
+					{
+						while ( stats[i]->playerRace == RACE_AUTOMATON || stats[i]->playerRace == RACE_GOBLIN
+							|| stats[i]->playerRace == RACE_INCUBUS || stats[i]->playerRace == RACE_INSECTOID )
+						{
+							stats[i]->playerRace = rand() % NUMPLAYABLERACES;
+						}
+					}
+					if ( stats[i]->playerRace == RACE_INCUBUS )
+					{
+						stats[i]->sex = MALE;
+					}
+					else if ( stats[i]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[i]->sex = FEMALE;
+					}
+
+					if ( stats[i]->playerRace == RACE_HUMAN )
+					{
+						client_classes[i] = rand() % (NUMCLASSES);
+						if ( !enabledDLCPack1 )
+						{
+							while ( client_classes[i] == CLASS_CONJURER || client_classes[i] == CLASS_ACCURSED
+								|| client_classes[i] == CLASS_MESMER || client_classes[i] == CLASS_BREWER )
+							{
+								client_classes[i] = rand() % (NUMCLASSES);
+							}
+						}
+						else if ( !enabledDLCPack2 )
+						{
+							while ( client_classes[i] == CLASS_HUNTER || client_classes[i] == CLASS_SHAMAN
+								|| client_classes[i] == CLASS_PUNISHER || client_classes[i] == CLASS_MACHINIST )
+							{
+								client_classes[i] = rand() % (NUMCLASSES);
+							}
+						}
+						stats[i]->appearance = rand() % 18;
+					}
+					else
+					{
+						client_classes[i] = rand() % (CLASS_MONK + 2);
+						if ( client_classes[i] > CLASS_MONK )
+						{
+							client_classes[i] = CLASS_MONK + stats[i]->playerRace; // monster specific classes.
+						}
+						stats[i]->appearance = 0;
+					}
+				}
+				else
+				{
+					stats[i]->playerRace = RACE_HUMAN;
+					stats[i]->appearance = rand() % 18;
+				}
+				strcpy(stats[i]->name, randomPlayerNamesFemale[rand() % randomPlayerNamesFemale.size()].c_str());
+				bool oldIntro = intro;
+				intro = true; // so initClass doesn't add items to hotbar.
+				initClass(i);
+				intro = oldIntro;
+			}
+		}
 	}
 	else if (!strncmp(command_str, "/gamepad_deadzone ", 18))
 	{
@@ -2788,7 +2932,7 @@ void consoleCommand(char const * const command_str)
 		}
 		else if ( !strncmp(command_str, "/jsonexportfromcursor", 21) )
 		{
-			Entity* target = entityClicked(nullptr, true, clientnum);
+			Entity* target = entityClicked(nullptr, true, clientnum, EntityClickType::ENTITY_CLICK_USE);
 			if ( target )
 			{
 				Entity* parent = uidToEntity(target->skill[2]);
@@ -2850,7 +2994,113 @@ void consoleCommand(char const * const command_str)
 		{
 			sfxEnvironmentVolume = atoi(&command_str[22]);
 		}
-#endif // (defined SOUND)
+#endif
+		else if ( !strncmp(command_str, "/cyclekeyboard", 14) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					if ( i + 1 >= MAXPLAYERS )
+					{
+						inputs.setPlayerIDAllowedKeyboard(0);
+						messagePlayer(clientnum, "Keyboard controlled by player %d", 0);
+					}
+					else
+					{
+						inputs.setPlayerIDAllowedKeyboard(i + 1);
+						messagePlayer(clientnum, "Keyboard controlled by player %d", i + 1);
+					}
+					break;
+				}
+			}
+		}
+		else if ( !strncmp(command_str, "/cyclegamepad", 13) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					int id = inputs.getControllerID(i);
+					inputs.removeControllerWithDeviceID(id);
+					if ( i + 1 >= MAXPLAYERS )
+					{
+						inputs.setControllerID(0, id);
+					}
+					else
+					{
+						inputs.setControllerID(i + 1, id);
+					}
+					break;
+				}
+			}
+		}
+		else if ( !strncmp(command_str, "/cycledeadzoneleft", 18) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					switch ( inputs.getController(i)->leftStickDeadzoneType )
+					{
+						case GameController::DEADZONE_PER_AXIS:
+							inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_LINEAR;
+							messagePlayer(i, "Using radial deadzone on left stick.");
+							break;
+						case GameController::DEADZONE_MAGNITUDE_LINEAR:
+							inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_HALFPIPE;
+							messagePlayer(i, "Using curved radial deadzone on left stick.");
+							break;
+						case GameController::DEADZONE_MAGNITUDE_HALFPIPE:
+							inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_PER_AXIS;
+							messagePlayer(i, "Using per-axis deadzone on left stick.");
+							break;
+					}
+				}
+			}
+		}
+		else if ( !strncmp(command_str, "/cycledeadzoneright", 19) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					switch ( inputs.getController(i)->rightStickDeadzoneType )
+					{
+						case GameController::DEADZONE_PER_AXIS:
+							inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_LINEAR;
+							messagePlayer(i, "Using radial deadzone on right stick.");
+							break;
+						case GameController::DEADZONE_MAGNITUDE_LINEAR:
+							inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_HALFPIPE;
+							messagePlayer(i, "Using curved radial deadzone on right stick.");
+							break;
+						case GameController::DEADZONE_MAGNITUDE_HALFPIPE:
+							inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_PER_AXIS;
+							messagePlayer(i, "Using per-axis deadzone on right stick.");
+							break;
+					}
+				}
+			}
+		}
+		else if ( !strncmp(command_str, "/vibration", 10) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					inputs.getController(i)->haptics.vibrationEnabled = !inputs.getController(i)->haptics.vibrationEnabled;
+					if ( inputs.getController(i)->haptics.vibrationEnabled )
+					{
+						messagePlayer(i, "Controller vibration is enabled.");
+					}
+					else
+					{
+						messagePlayer(i, "Controller vibration is disabled.");
+					}
+				}
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

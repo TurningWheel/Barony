@@ -160,7 +160,11 @@ void actScorpionTail(Entity* my)
 		{
 			if ( inrange[i] )
 			{
-				if ( i == 0 && selectedEntity == my )
+				if ( i == 0 && selectedEntity[0] == my )
+				{
+					parent->skill[13] = i + 1;
+				}
+				else if ( i > 0 && splitscreen && selectedEntity[i] == my )
 				{
 					parent->skill[13] = i + 1;
 				}

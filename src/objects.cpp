@@ -91,6 +91,26 @@ void entityDeconstructor(void* data)
 
 /*-------------------------------------------------------------------------------
 
+statDeconstructor
+
+Frees the memory occupied by a node pointing to stat
+
+-------------------------------------------------------------------------------*/
+
+void statDeconstructor(void* data)
+{
+	Stat* stat;
+
+	if ( data != nullptr )
+	{
+		stat = (Stat*)data;
+		//free(data);
+		delete stat;
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 	lightDeconstructor
 
 	Frees the memory occupied by a node pointing to a light

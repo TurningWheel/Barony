@@ -414,14 +414,17 @@ int initGame()
 	topscoresMultiplayer.last = NULL;
 	messages.first = NULL;
 	messages.last = NULL;
-	chestInv.first = NULL;
-	chestInv.last = NULL;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		chestInv[i].first = NULL;
+		chestInv[i].last = NULL;
+		for ( c = 0; c < kNumChestItemsToDisplay; c++ )
+		{
+			invitemschest[i][c] = NULL;
+		}
+	}
 	command_history.first = NULL;
 	command_history.last = NULL;
-	for ( c = 0; c < kNumChestItemsToDisplay; c++ )
-	{
-		invitemschest[c] = NULL;
-	}
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		openedChest[c] = NULL;
@@ -429,11 +432,11 @@ int initGame()
 	mousex = xres / 2;
 	mousey = yres / 2;
 
-	players = new Player*[MAXPLAYERS];
 	// default player stats
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
-		players[c] = new Player();
+		players[c] = new Player(c, true);
+		players[c]->init();
 		// Stat set to 0 as monster type not needed, values will be filled with default, then overwritten by savegame or the charclass.cpp file
 		stats[c] = new Stat(0);
 		if (c > 0)
@@ -457,6 +460,12 @@ int initGame()
 		{
 			initClass(c);
 		}
+		GenericGUI[c].setPlayer(c);
+		FollowerMenu[c].setPlayer(c);
+		cameras[c].winx = 0;
+		cameras[c].winy = 0;
+		cameras[c].winw = xres;
+		cameras[c].winh = yres;
 	}
 
 	// load music
@@ -726,7 +735,10 @@ void deinitGame()
 	saveAllScores(SCORESFILE_MULTIPLAYER);
 	list_FreeAll(&topscores);
 	list_FreeAll(&topscoresMultiplayer);
-	deleteAllNotificationMessages();
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->messageZone.deleteAllNotificationMessages();
+	}
 	list_FreeAll(&removedEntities);
 	if ( title_bmp != nullptr )
 	{
@@ -746,7 +758,10 @@ void deinitGame()
 	}
 	//if(sky_bmp!=NULL)
 	//	SDL_FreeSurface(sky_bmp);
-	list_FreeAll(&chestInv);
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		list_FreeAll(&chestInv[i]);
+	}
 	freeInterfaceResources();
 	if ( books )
 	{
@@ -772,25 +787,29 @@ void deinitGame()
 		}
 		free(books);
 	}
-	appraisal_timer = 0;
-	appraisal_item = 0;
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
+		players[c]->inventoryUI.appraisal.timer = 0;
+		players[c]->inventoryUI.appraisal.current_item = 0;
 		list_FreeAll(&stats[c]->inventory);
-	}
-	if ( multiplayer == CLIENT )
-	{
-		if ( shopInv )
+		if ( multiplayer == CLIENT )
 		{
-			list_FreeAll(shopInv);
-			free(shopInv);
-			shopInv = NULL;
+			if ( shopInv[c] )
+			{
+				list_FreeAll(shopInv[c]);
+				free(shopInv[c]);
+				shopInv[c] = NULL;
+			}
 		}
 	}
 	list_FreeAll(map.entities);
 	if ( map.creatures )
 	{
 		list_FreeAll(map.creatures); //TODO: Need to do this?
+	}
+	if ( map.worldUI )
+	{
+		list_FreeAll(map.worldUI); //TODO: Need to do this?
 	}
 	list_FreeAll(&messages);
 	if ( multiplayer == SINGLE )
@@ -808,7 +827,11 @@ void deinitGame()
 			list_FreeAll(&channeledSpells[c]);
 		}
 	}
-	list_FreeAll(&spellList);
+
+	for ( c = 0; c < MAXPLAYERS; c++ )
+	{
+		list_FreeAll(&players[c]->magic.spellList);
+	}
 	list_FreeAll(&command_history);
 
 	list_FreeAll(&safePacketsSent);
@@ -1035,10 +1058,10 @@ void deinitGame()
 		SDL_GameControllerClose(game_controller);
 		game_controller = nullptr;
 	}*/
-	if (game_controller)
+	/*if (game_controller)
 	{
 		delete game_controller;
-	}
+	}*/
 
 	if ( shoparea )
 	{
@@ -1048,6 +1071,6 @@ void deinitGame()
 	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
 		delete players[i];
+		players[i] = nullptr;
 	}
-	delete[] players;
 }
