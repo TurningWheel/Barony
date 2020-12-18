@@ -3,7 +3,7 @@
 #include "../main.hpp"
 #include "Font.hpp"
 
-const char* Font::defaultFont = "lang/en.ttf#16";
+const char* Font::defaultFont = "lang/en.ttf#24";
 
 Font::Font(const char* _name) {
 	name = _name;

@@ -51,8 +51,9 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	_size.y += std::max(0, size.y - _actualSize.y);
 	_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
-	if (_size.w <= 0 || _size.h <= 0)
+	if (_size.w <= 0 || _size.h <= 0) {
 		return;
+	}
 
 	{
 		int x = (_size.x) * (float)xres / (float)Frame::virtualScreenX;
@@ -66,18 +67,40 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		}
 	}
 
+	SDL_Rect scroll{0, 0, 0, 0};
+	if (size.x - _actualSize.x < 0) {
+		scroll.x -= size.x - _actualSize.x;
+	}
+	if (size.y - _actualSize.y < 0) {
+		scroll.y -= size.y - _actualSize.y;
+	}
+
 	if (style != STYLE_CHECKBOX || pressed) {
 		if (!text.empty()) {
 			Text* _text = Text::get(text.c_str(), font.c_str());
 			if (_text) {
-				SDL_Rect pos;
-				int textX = (style != STYLE_DROPDOWN) ?
-					_size.w / 2 - _text->getWidth() / 2 :
+				int w = _text->getWidth();
+				int h = _text->getHeight();
+				int x = (style != STYLE_DROPDOWN) ?
+					(size.w - w) / 2 :
 					5 + border;
-				int textY = _size.h / 2 - _text->getHeight() / 2;
-				pos.x = _size.x + textX; pos.w = std::min((int)_text->getWidth(), _size.w);
-				pos.y = _size.y + textY; pos.h = std::min((int)_text->getHeight(), _size.h);
+				int y = (size.h - h) / 2;
+
+				SDL_Rect pos = _size;
+				pos.x += std::max(0, x - scroll.x);
+				pos.y += std::max(0, y - scroll.y);
+				pos.w = std::min(w, _size.w - x + scroll.x) + std::min(0, x - scroll.x);
+				pos.h = std::min(h, _size.h - y + scroll.y) + std::min(0, y - scroll.y);
 				if (pos.w <= 0 || pos.h <= 0) {
+					return;
+				}
+
+				SDL_Rect section;
+				section.x = x - scroll.x < 0 ? -(x - scroll.x) : 0;
+				section.y = y - scroll.y < 0 ? -(y - scroll.y) : 0;
+				section.w = ((float)pos.w / (size.w - x * 2)) * w;
+				section.h = ((float)pos.h / (size.h - y * 2)) * h;
+				if (section.w == 0 || section.h == 0) {
 					return;
 				}
 
@@ -86,27 +109,35 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
 				scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
 				scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
-				_text->drawColor(SDL_Rect(), scaledPos, textColor);
+				_text->drawColor(section, scaledPos, textColor);
 			}
 		} else if (icon.c_str()) {
-			// we check a second time, just incase the cache was dumped and the original pointer invalidated.
 			Image* iconImg = Image::get(icon.c_str());
 			if (iconImg) {
-				SDL_Rect pos;
-				pos.x = _size.x + border; pos.w = _size.w - border * 2;
-				pos.y = _size.y + border; pos.h = _size.h - border * 2;
+				int w = iconImg->getWidth();
+				int h = iconImg->getHeight();
+				int x = (style != STYLE_DROPDOWN) ?
+					(size.w - w) / 2 :
+					5 + border;
+				int y = (size.h - h) / 2;
+
+				SDL_Rect pos = _size;
+				pos.x += std::max(0, x - scroll.x);
+				pos.y += std::max(0, y - scroll.y);
+				pos.w = std::min(w, _size.w - x + scroll.x) + std::min(0, x - scroll.x);
+				pos.h = std::min(h, _size.h - y + scroll.y) + std::min(0, y - scroll.y);
 				if (pos.w <= 0 || pos.h <= 0) {
 					return;
 				}
 
-				float w = iconImg->getWidth();
-				float h = iconImg->getHeight();
-
 				SDL_Rect section;
-				section.x = size.x - _actualSize.x < 0 ? -(size.x - _actualSize.x) * (w / (size.w - border * 2)) : 0;
-				section.y = size.y - _actualSize.y < 0 ? -(size.y - _actualSize.y) * (h / (size.h - border * 2)) : 0;
-				section.w = ((float)pos.w / (size.w - border * 2)) * w;
-				section.h = ((float)pos.h / (size.h - border * 2)) * h;
+				section.x = x - scroll.x < 0 ? -(x - scroll.x) : 0;
+				section.y = y - scroll.y < 0 ? -(y - scroll.y) : 0;
+				section.w = ((float)pos.w / (size.w - x * 2)) * w;
+				section.h = ((float)pos.h / (size.h - y * 2)) * h;
+				if (section.w == 0 || section.h == 0) {
+					return;
+				}
 
 				SDL_Rect scaledPos;
 				scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
@@ -138,6 +169,9 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			section.y = size.y - _actualSize.y < 0 ? -(size.y - _actualSize.y) * (h / (size.h - border * 2)) : 0;
 			section.w = ((float)pos.w / (size.h - border * 2)) * w;
 			section.h = ((float)pos.h / (size.h - border * 2)) * h;
+			if (section.w <= 0 || section.h <= 0) {
+				return;
+			}
 
 			SDL_Rect scaledPos;
 			scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
