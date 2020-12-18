@@ -1404,6 +1404,7 @@ void Player::WorldUI_t::reset()
 		}
 	}
 	tooltipsInRange.clear();
+	bTooltipInView = false;
 }
 
 real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
@@ -1451,6 +1452,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 	{
 		uidToEntity(tooltip.parent)->highlightForUI = 1;
 	}
+	bTooltipInView = true;
 }
 void Player::WorldUI_t::setTooltipDisabled(Entity& tooltip)
 {
@@ -1540,6 +1542,44 @@ void Player::WorldUI_t::cycleToPreviousTooltip()
 	}
 }
 
+bool entityBlocksTooltipInteraction(Entity& entity)
+{
+	if ( entity.behavior == &actGate )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actFurniture )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actStalagCeiling )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actStalagFloor )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actStalagColumn )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actPedestalBase )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actColumn )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actDoorFrame )
+	{
+		return false;
+	}
+
+	return true;
+}
+
 void Player::WorldUI_t::handleTooltips()
 {
 	for ( int player = 0; player < MAXPLAYERS && !gamePaused && !hide_playertags; ++player )
@@ -1568,6 +1608,12 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
+		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
+		if ( radialMenuOpen )
+		{
+			continue;
+		}
+
 		bool bDoingActionHideTooltips = false;
 		if ( players[player]->hud.arm && players[player]->hud.weapon->skill[0] != 0 )
 		{
@@ -1589,7 +1635,7 @@ void Player::WorldUI_t::handleTooltips()
 			Entity* ohitentity = hit.entity;
 			lineTrace(players[player]->entity, players[player]->entity->x, players[player]->entity->y,
 				players[player]->entity->yaw, STRIKERANGE, 0, true);
-			if ( hit.entity )
+			if ( hit.entity && entityBlocksTooltipInteraction (*hit.entity) )
 			{
 				bDoingActionHideTooltips = true;
 			}

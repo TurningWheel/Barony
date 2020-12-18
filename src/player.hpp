@@ -852,6 +852,7 @@ public:
 		void setTooltipActive(Entity& tooltip);
 		void setTooltipDisabled(Entity& tooltip);
 		bool bTooltipActiveForPlayer(Entity& tooltip);
+		bool bTooltipInView = false;
 		void enable() { bEnabled = true; }
 		void disable() { 
 			bEnabled = false; 

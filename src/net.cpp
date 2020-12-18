@@ -2159,9 +2159,15 @@ void clientHandlePacket()
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
 		{
-			entity->skill[10] = SDLNet_Read32(&net_packet->data[8]); // item type
-			entity->skill[11] = SDLNet_Read32(&net_packet->data[12]); // status
-			entity->skill[12] = SDLNet_Read32(&net_packet->data[16]); // beatitude
+			Uint32 itemTypeAndIdentified = SDLNet_Read32(&net_packet->data[8]);
+			Uint32 statusBeatitudeQuantityAppearance = SDLNet_Read32(&net_packet->data[12]);
+
+			entity->skill[10] = static_cast<ItemType>((itemTypeAndIdentified >> 16) & 0xFFFF); //type
+			entity->skill[15] = (itemTypeAndIdentified) & 0xFFFF;
+			entity->skill[11] = static_cast<Uint8>((statusBeatitudeQuantityAppearance >> 24) & 0xFF); // status
+			entity->skill[12] = static_cast<Sint8>((statusBeatitudeQuantityAppearance >> 16) & 0xFF); // beatitude
+			entity->skill[13] = static_cast<Uint8>((statusBeatitudeQuantityAppearance >> 8) & 0xFF); // quantity
+			entity->skill[14] = static_cast<Uint8>((statusBeatitudeQuantityAppearance) & 0xFF); // appearance
 			entity->itemReceivedDetailsFromServer = 1;
 		}
 		return;
@@ -4592,12 +4598,24 @@ void serverHandlePacket()
 		{
 			strcpy((char*)net_packet->data, "ITMU");
 			SDLNet_Write32(uid, &net_packet->data[4]);
-			SDLNet_Write32(entity->skill[10], &net_packet->data[8]); // item type
-			SDLNet_Write32(entity->skill[11], &net_packet->data[12]); // status
-			SDLNet_Write32(entity->skill[12], &net_packet->data[16]); // beatitude
+
+			Uint32 itemTypeAndIdentified = (static_cast<Uint16>(entity->skill[10]) << 16); // type
+			itemTypeAndIdentified |= static_cast<Uint16>(entity->skill[15]); // identified
+
+			SDLNet_Write32(itemTypeAndIdentified, &net_packet->data[8]);
+
+			Uint32 statusBeatitudeQuantityAppearance = 0;
+			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(entity->skill[11]) << 24); // status
+			statusBeatitudeQuantityAppearance |= (static_cast<Sint8>(entity->skill[12]) << 16); // beatitude
+			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(entity->skill[13]) << 8); // quantity
+			Uint8 appearance = entity->skill[14] % items[entity->skill[10]].variations;
+			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(appearance)); // appearance
+
+			SDLNet_Write32(statusBeatitudeQuantityAppearance, &net_packet->data[12]);
+
 			net_packet->address.host = net_clients[x - 1].host;
 			net_packet->address.port = net_clients[x - 1].port;
-			net_packet->len = 20;
+			net_packet->len = 16;
 			sendPacketSafe(net_sock, -1, net_packet, x - 1);
 			return; // found entity.
 		}

@@ -902,6 +902,52 @@ void gameLogic(void)
 			}
 			real_t accum = 0.0;
 			DebugStats.eventsT3 = std::chrono::high_resolution_clock::now();
+
+			// run world UI entities
+			for ( node = map.worldUI->first; node != nullptr; node = nextnode )
+			{
+				nextnode = node->next;
+				entity = (Entity*)node->element;
+				if ( entity && !entity->ranbehavior )
+				{
+					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
+					{
+						++entity->ticks;
+					}
+					if ( entity->behavior != nullptr )
+					{
+						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
+						{
+							(*entity->behavior)(entity);
+						}
+						if ( entitiesdeleted.first != nullptr )
+						{
+							entitydeletedself = false;
+							for ( node2 = entitiesdeleted.first; node2 != nullptr; node2 = node2->next )
+							{
+								if ( entity == (Entity*)node2->element )
+								{
+									//printlog("DEBUG: Entity deleted self, sprite: %d", entity->sprite);
+									entitydeletedself = true;
+									break;
+								}
+							}
+							if ( entitydeletedself == false )
+							{
+								entity->ranbehavior = true;
+							}
+							nextnode = map.worldUI->first;
+							list_FreeAll(&entitiesdeleted);
+						}
+						else
+						{
+							entity->ranbehavior = true;
+							nextnode = node->next;
+						}
+					}
+				}
+			}
+
 			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1579,6 +1625,11 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
 			}
+			for ( node = map.worldUI->first; node != nullptr; node = node->next )
+			{
+				entity = (Entity*)node->element;
+				entity->ranbehavior = false;
+			}
 			DebugStats.eventsT4 = std::chrono::high_resolution_clock::now();
 			if ( multiplayer == SERVER )
 			{
@@ -2116,6 +2167,51 @@ void gameLogic(void)
 				}
 			}
 
+			// run world UI entities
+			for ( node = map.worldUI->first; node != nullptr; node = nextnode )
+			{
+				nextnode = node->next;
+				entity = (Entity*)node->element;
+				if ( entity && !entity->ranbehavior )
+				{
+					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
+					{
+						++entity->ticks;
+					}
+					if ( entity->behavior != nullptr )
+					{
+						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
+						{
+							(*entity->behavior)(entity);
+						}
+						if ( entitiesdeleted.first != nullptr )
+						{
+							entitydeletedself = false;
+							for ( node2 = entitiesdeleted.first; node2 != nullptr; node2 = node2->next )
+							{
+								if ( entity == (Entity*)node2->element )
+								{
+									//printlog("DEBUG: Entity deleted self, sprite: %d", entity->sprite);
+									entitydeletedself = true;
+									break;
+								}
+							}
+							if ( entitydeletedself == false )
+							{
+								entity->ranbehavior = true;
+							}
+							nextnode = map.worldUI->first;
+							list_FreeAll(&entitiesdeleted);
+						}
+						else
+						{
+							entity->ranbehavior = true;
+							nextnode = node->next;
+						}
+					}
+				}
+			}
+
 			// run entity actions
 			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
@@ -2321,9 +2417,16 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
 			}
+			for ( node = map.worldUI->first; node != nullptr; node = node->next )
+			{
+				entity = (Entity*)node->element;
+				entity->ranbehavior = false;
+			}
+
+			// world UI
+			Player::WorldUI_t::handleTooltips();
 
 			const int inventorySizeX = players[clientnum]->inventoryUI.getSizeX();
-
 
 			bool tooManySpells = (list_Size(&players[clientnum]->magic.spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
 			int backpack_sizey = 3;
@@ -4582,7 +4685,8 @@ int main(int argc, char** argv)
 
 						if ( !command && (*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT]) 
 							|| (inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE) 
-								&& (players[player]->shootmode || FollowerMenu[player].followerMenuIsOpen()) )) )
+								&& ((players[player]->shootmode && !players[player]->worldUI.bTooltipInView)
+									|| FollowerMenu[player].followerMenuIsOpen()) )) )
 						{
 							// can select next follower in inventory or shootmode
 							FollowerMenu[player].selectNextFollower();

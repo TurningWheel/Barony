@@ -3617,7 +3617,8 @@ void actPlayer(Entity* my)
 			if ( !command && !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
 				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU]) 
-					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) && players[PLAYER_NUM]->shootmode) )
+					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) 
+						&& players[PLAYER_NUM]->shootmode && !players[PLAYER_NUM]->worldUI.bTooltipInView) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
@@ -3635,7 +3636,8 @@ void actPlayer(Entity* my)
 					}
 				}
 				else if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) 
-					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD) && players[PLAYER_NUM]->shootmode) )
+					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD) 
+						&& players[PLAYER_NUM]->shootmode && !players[PLAYER_NUM]->worldUI.bTooltipInView) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )

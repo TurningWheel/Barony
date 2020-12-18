@@ -563,6 +563,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			shopmap.creatures = new list_t;
 			shopmap.creatures->first = nullptr;
 			shopmap.creatures->last = nullptr;
+			shopmap.worldUI = nullptr;
 			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &shopmap, shopmap.entities, shopmap.creatures, &checkMapHash) == -1 )
 			{
 				list_FreeAll(shopmap.entities);
@@ -610,6 +611,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		tempMap->creatures = new list_t;
 		tempMap->creatures->first = nullptr;
 		tempMap->creatures->last = nullptr;
+		tempMap->worldUI = nullptr;
 		if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), tempMap, tempMap->entities, tempMap->creatures, &checkMapHash) == -1 )
 		{
 			mapDeconstructor((void*)tempMap);
@@ -713,6 +715,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			subRoomMap->creatures = new list_t;
 			subRoomMap->creatures->first = nullptr;
 			subRoomMap->creatures->last = nullptr;
+			subRoomMap->worldUI = nullptr;
 			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), subRoomMap, subRoomMap->entities, subRoomMap->creatures, &checkMapHash) == -1 )
 			{
 				mapDeconstructor((void*)subRoomMap);
@@ -852,6 +855,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				secretlevelmap.creatures = new list_t;
 				secretlevelmap.creatures->first = nullptr;
 				secretlevelmap.creatures->last = nullptr;
+				secretlevelmap.worldUI = nullptr;
 				char secretmapname[128];
 				switch ( secretlevelexit )
 				{
