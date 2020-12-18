@@ -1009,6 +1009,14 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\stat_shared.cpp" />
     <ClCompile Include="..\..\src\steam.cpp" />
     <ClCompile Include="..\..\src\steam_shared.cpp" />
+    <ClCompile Include="..\..\src\ui\Button.cpp" />
+    <ClCompile Include="..\..\src\ui\Field.cpp" />
+    <ClCompile Include="..\..\src\ui\Font.cpp" />
+    <ClCompile Include="..\..\src\ui\Frame.cpp" />
+    <ClCompile Include="..\..\src\ui\Image.cpp" />
+    <ClCompile Include="..\..\src\ui\Slider.cpp" />
+    <ClCompile Include="..\..\src\ui\Text.cpp" />
+    <ClCompile Include="..\..\src\ui\Widget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\book.hpp" />
@@ -1040,6 +1048,14 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\sound.hpp" />
     <ClInclude Include="..\..\src\stat.hpp" />
     <ClInclude Include="..\..\src\steam.hpp" />
+    <ClInclude Include="..\..\src\ui\Button.hpp" />
+    <ClInclude Include="..\..\src\ui\Field.hpp" />
+    <ClInclude Include="..\..\src\ui\Font.hpp" />
+    <ClInclude Include="..\..\src\ui\Frame.hpp" />
+    <ClInclude Include="..\..\src\ui\Image.hpp" />
+    <ClInclude Include="..\..\src\ui\Slider.hpp" />
+    <ClInclude Include="..\..\src\ui\Text.hpp" />
+    <ClInclude Include="..\..\src\ui\Widget.hpp" />
     <ClInclude Include="..\..\src\UnicodeDecoder.h" />
     <ClInclude Include="..\..\VS-includes\Config.hpp" />
   </ItemGroup>
