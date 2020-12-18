@@ -264,12 +264,14 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			}
 
 			SDL_Rect src;
-			src.x = std::max(0, _size.x - pos.x);
-			src.y = std::max(0, _size.y - pos.y);
 			if (image->tiled) {
+				src.x = std::max(0, _size.x - pos.x);
+				src.y = std::max(0, _size.y - pos.y);
 				src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
 				src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 			} else {
+				src.x = std::max(0.f, (_size.x - pos.x) * ((float)actualImage->getWidth() / image->pos.w));
+				src.y = std::max(0.f, (_size.y - pos.y) * ((float)actualImage->getHeight() / image->pos.h));
 				src.w = ((float)dest.w / pos.w) * actualImage->getWidth();
 				src.h = ((float)dest.h / pos.h) * actualImage->getHeight();
 			}
