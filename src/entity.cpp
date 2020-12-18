@@ -2169,6 +2169,11 @@ void Entity::setHP(int amount)
 		entitystats->HP = 1; //Buddhas never die!
 	}
 
+	if ( this->behavior == &actPlayer && entitystats->OLDHP >= entitystats->HP )
+	{
+		inputs.addRumbleForPlayerHPLoss(skill[2], amount);
+	}
+
 	if ( multiplayer == SERVER )
 	{
 		for ( int i = 1; i < MAXPLAYERS; i++ )
@@ -2232,8 +2237,13 @@ void Entity::modHP(int amount)
 			return;
 		}
 	}
+
 	if ( !entitystats || amount == 0 )
 	{
+		if ( this->behavior == &actPlayer )
+		{
+			inputs.addRumbleForPlayerHPLoss(skill[2], amount);
+		}
 		return;
 	}
 

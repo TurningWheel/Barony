@@ -3029,6 +3029,13 @@ void handleEvents(void)
 					mousexrel = 0;
 					mouseyrel = 0;
 					inputs.updateAllRelMouse();
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( inputs.hasController(i) )
+						{
+							inputs.getController(i)->handleRumble();
+						}
+					}
 				}
 				else
 				{

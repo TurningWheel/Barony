@@ -249,7 +249,7 @@ void GameController::handleAnalog(int player)
 				{
 					// unconsume the input whenever it's released or pressed again.
 					virtualDpad.consumed = false;
-					messagePlayer(0, "%d", virtualDpad.padVirtualDpad);
+					//messagePlayer(0, "%d", virtualDpad.padVirtualDpad);
 				}
 			}
 			rightx = 0;
@@ -1100,7 +1100,11 @@ void GameController::handleRumble()
 	}
 
 	if ( rumbleToPlay != haptics.activeRumbles.end() 
-		&& (!rumbleToPlay->second.isPlaying || rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER || rumbleToPlay->second.pattern == Haptic_t::RUMBLE_TMP))
+		&& (!rumbleToPlay->second.isPlaying 
+			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER 
+			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER_BOUNCE
+			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_DEATH
+			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_TMP))
 	{
 		Uint32 newStartTime = (haptics.hapticTick - rumbleToPlay->second.startTick);
 		rumbleToPlay->second.startTime = newStartTime; // move the playhead forward.
@@ -1109,7 +1113,7 @@ void GameController::handleRumble()
 	}
 }
 
-void GameController::addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length)
+void GameController::addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid)
 {
 	if ( !sdl_haptic )
 	{
@@ -1119,31 +1123,70 @@ void GameController::addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagn
 	{
 		return;
 	}
-
+	Uint32 priority = 1;
 	if ( pattern == Haptic_t::RumblePattern::RUMBLE_NORMAL )
 	{
-		haptics.activeRumbles.push_back(std::make_pair(1, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick)));
-		haptics.activeRumbles.back().second.pattern = pattern;
+		priority = 1;
 	}
 	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_DEATH )
 	{
-		haptics.activeRumbles.push_back(std::make_pair(10, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick))); // higher priority
-		haptics.activeRumbles.back().second.pattern = pattern;
+		priority = 20;
 	}
 	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_BOULDER )
 	{
-		haptics.activeRumbles.push_back(std::make_pair(10, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick))); // higher priority
-		haptics.activeRumbles.back().second.pattern = pattern;
+		priority = 9;
+	}
+	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_BOULDER_BOUNCE )
+	{
+		priority = 10;
+	}
+	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_BOULDER_ROLLING )
+	{
+		priority = 1;
 	}
 	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_TMP )
 	{
-		haptics.activeRumbles.push_back(std::make_pair(5, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick))); // higher priority
-		haptics.activeRumbles.back().second.pattern = pattern;
+		priority = 5;
 	}
 	else
 	{
-		haptics.activeRumbles.push_back(std::make_pair(1, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick)));
-		haptics.activeRumbles.back().second.pattern = pattern;
+		priority = 1;
+	}
+	haptics.activeRumbles.push_back(std::make_pair(priority, Haptic_t::Rumble(smallMagnitude, largeMagnitude, length, haptics.hapticTick, srcEntityUid)));
+	haptics.activeRumbles.back().second.pattern = pattern;
+}
+
+void Inputs::addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount)
+{
+	if ( player >= 0 && players[player]->isLocalPlayer() && stats[player] && stats[player]->OLDHP >= stats[player]->HP )
+	{
+		if ( stats[player]->HP <= 0 && stats[player]->OLDHP <= 0 )
+		{
+			// already ded.
+			return;
+		}
+
+		real_t percentHPLost = std::min(1.0, (stats[player]->OLDHP - stats[player]->HP) / static_cast<real_t>(std::max(1, stats[player]->MAXHP)));
+		if ( stats[player]->HP <= 0 )
+		{
+			rumble(player, GameController::Haptic_t::RUMBLE_DEATH, 32000, 32000, 2 * TICKS_PER_SECOND, 0);
+		}
+		else if ( stats[player]->OLDHP == stats[player]->HP )
+		{
+			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 8000, 8000, 6, 0);
+		}
+		else if ( percentHPLost < .05 )
+		{
+			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 16000, 16000, 6, 0);
+		}
+		else if ( percentHPLost < .25 )
+		{
+			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 24000, 24000, 11, 0);
+		}
+		else
+		{
+			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 32000, 32000, 11, 0);
+		}
 	}
 }
 
@@ -1158,9 +1201,30 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 	haptics.hapticEffect.type = SDL_HAPTIC_LEFTRIGHT;
 	haptics.hapticEffect.leftright.type = SDL_HAPTIC_LEFTRIGHT;
 
-	if ( r->pattern == Haptic_t::RUMBLE_BOULDER )
+	Entity* ent = uidToEntity(r->entityUid);
+	real_t dampening = 1.0;
+	if ( ent )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i]->isLocalPlayerAlive() && inputs.getController(i) == this )
+			{
+				int dist = static_cast<int>(entityDist(ent, players[i]->entity));
+				dampening = 1.0 - std::min((dist / TOUCHRANGE) * .1, 1.0);
+			}
+		}
+	}
+
+	if ( r->pattern == Haptic_t::RUMBLE_BOULDER_BOUNCE )
+	{
+		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * dampening;
+		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * dampening;
+	}
+	else if ( r->pattern == Haptic_t::RUMBLE_BOULDER )
 	{
 		real_t currentPlayheadPercent = r->startTime / static_cast<real_t>(r->length);
+		r->customEffect = (currentPlayheadPercent);
+		/*real_t currentPlayheadPercent = r->startTime / static_cast<real_t>(r->length);
 		if ( currentPlayheadPercent < .33 )
 		{
 			r->customEffect = (currentPlayheadPercent) / .33;
@@ -1172,9 +1236,23 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 		else
 		{
 			r->customEffect = std::max(0.1, (currentPlayheadPercent - .66) / .33);
-		}
-		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * r->customEffect;
-		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * r->customEffect;
+		}*/
+		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * r->customEffect * dampening;
+		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * r->customEffect * dampening;
+	}
+	else if ( r->pattern == Haptic_t::RUMBLE_BOULDER_ROLLING )
+	{
+		//real_t currentPlayheadPercent = r->startTime / static_cast<real_t>(r->length);
+		//if ( currentPlayheadPercent > .5 )
+		//{
+		//	r->customEffect = std::max(0.1, (1 - ((currentPlayheadPercent - .5) / .5)));
+		//}
+		//else
+		//{
+		//	r->customEffect = 1.0;
+		//}
+		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * dampening;
+		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * dampening;
 	}
 	else if ( r->pattern == Haptic_t::RUMBLE_TMP )
 	{
@@ -1198,6 +1276,20 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 		else
 		{
 			r->customEffect = std::max(0.1, (currentPlayheadPercent - .66) / .165);
+		}
+		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * r->customEffect;
+		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * r->customEffect;
+	}
+	else if ( r->pattern == Haptic_t::RUMBLE_DEATH )
+	{
+		real_t currentPlayheadPercent = r->startTime / static_cast<real_t>(r->length);
+		if ( currentPlayheadPercent > .5 )
+		{
+			r->customEffect = std::max(0.1, (1 - ((currentPlayheadPercent - .5) / .5)));
+		}
+		else
+		{
+			r->customEffect = 1.0;
 		}
 		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * r->customEffect;
 		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * r->customEffect;

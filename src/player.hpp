@@ -72,6 +72,8 @@ public:
 		{
 			RUMBLE_NORMAL,
 			RUMBLE_BOULDER,
+			RUMBLE_BOULDER_BOUNCE,
+			RUMBLE_BOULDER_ROLLING,
 			RUMBLE_DEATH,
 			RUMBLE_TMP
 		};
@@ -90,11 +92,13 @@ public:
 			Uint32 length = 0;
 			real_t customEffect = 0.0;
 			RumblePattern pattern = RUMBLE_NORMAL;
+			Uint32 entityUid = 0;
 			bool isPlaying = false;
-			Rumble(int sm, int lg, int len, Uint32 tick) :
+			Rumble(int sm, int lg, int len, Uint32 tick, Uint32 uid) :
 				smallMagnitude(sm),
 				largeMagnitude(lg),
-				length(len)
+				length(len),
+				entityUid(uid)
 			{
 				startTick = tick;
 			};
@@ -184,7 +188,7 @@ public:
 	const SDL_GameController* getControllerDevice() { return sdl_device; }
 	SDL_Haptic* getHaptic() { return sdl_haptic; }
 	const bool isActive();
-	void addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length);
+	void addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid);
 	void doRumble(Haptic_t::Rumble* r);
 	void stopRumble();
 	void handleRumble();
@@ -531,13 +535,13 @@ public:
 			vmouse[i].floatyrel = 0.0;
 		}
 	}
-	void rumble(const int player, GameController::Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length)
+	void rumble(const int player, GameController::Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid)
 	{
 		if ( !hasController(player) )
 		{
 			return;
 		}
-		getController(player)->addRumble(pattern, smallMagnitude, largeMagnitude, length);
+		getController(player)->addRumble(pattern, smallMagnitude, largeMagnitude, length, srcEntityUid);
 	}
 	void rumbleStop(const int player)
 	{
@@ -547,6 +551,7 @@ public:
 		}
 		getController(player)->stopRumble();
 	}
+	void addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount);
 };
 extern Inputs inputs;
 void initGameControllers();
