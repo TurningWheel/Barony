@@ -1604,7 +1604,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 	return;
 }
 
-Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent, bool fromMagicSpell, int customDuration)
+Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell, int customDuration)
 {
 	int effectDuration = 0;
 	effectDuration = TICKS_PER_SECOND * 60 * (4 + rand() % 3); // 4-6 minutes
@@ -1612,7 +1612,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent, 
 	{
 		effectDuration = customDuration;
 	}
-	if ( !target || !targetStats )
+	if ( !target || !target->getStats() )
 	{
 		if ( parent && parent->behavior == &actPlayer )
 		{
@@ -1620,6 +1620,8 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent, 
 		}
 		return nullptr;
 	}
+
+	Stat* targetStats = target->getStats();
 
 	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
 		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE

@@ -2214,7 +2214,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
 	{
-		transformedEntity = spellEffectPolymorph(entity, stats, usedBy, false);
+		transformedEntity = spellEffectPolymorph(entity, usedBy, false);
 	}
 
 	consumeItem(item, player);

@@ -23,6 +23,8 @@
 #include "../scores.hpp"
 #include "../colors.hpp"
 
+bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
+
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 {
 	Entity* caster = uidToEntity(caster_uid);
@@ -770,11 +772,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			if ( caster->behavior == &actPlayer )
 			{
-				spellEffectPolymorph(caster, caster->getStats(), caster, true, TICKS_PER_SECOND * 60 * 2); // 2 minutes.
+				spellEffectPolymorph(caster, caster, true, TICKS_PER_SECOND * 60 * 2); // 2 minutes.
 			}
 			else if ( caster->behavior == &actMonster )
 			{
-				spellEffectPolymorph(caster, caster->getStats(), caster, true);
+				spellEffectPolymorph(caster, caster, true);
 			}
 		}
 		else if ( !strcmp(element->name, spellElement_strike.name) )

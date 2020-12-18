@@ -1443,7 +1443,7 @@ void updatePlayerInventory(const int player)
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !itemMenuOpen && !selectedItem )
 					{
-						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(inputs.bControllerInputPressed(player, INJOY_MENU_USE) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
+						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(inputs.bControllerInputPressed(player, INJOY_MENU_USE) && selectedChestSlot[player] < 0) ) //TODO: selected shop slot, identify, remove curse?
 						{
 							// auto-appraise the item
 							players[player]->inventoryUI.appraisal.appraiseItem(item);
