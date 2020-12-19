@@ -911,6 +911,7 @@ public:
 	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
 	real_t getDamageTableMultiplier(Stat& myStats, DamageTableType damageType);
 	bool isBoulderSprite();
+	void createWorldUITooltip();
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);

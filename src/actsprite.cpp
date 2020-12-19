@@ -90,6 +90,8 @@ void actSpriteNametag(Entity* my)
 
 void actSpriteWorldTooltip(Entity* my)
 {
+	//list_RemoveNode(my->mynode);
+	//return;
 	Entity* parent = uidToEntity(my->parent);
 	if ( parent )
 	{

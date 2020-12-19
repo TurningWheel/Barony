@@ -1318,7 +1318,7 @@ void actHudWeapon(Entity* my)
 					{
 						if (itemCategory(item) == SPELLBOOK)
 						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
+							inputs.mouseClearLeft(HUDWEAPON_PLAYERNUM);
 							players[HUDWEAPON_PLAYERNUM]->entity->attack(2, 0, nullptr); // will need to add some delay to this so you can't rapid fire spells
 						}
 						else if ( itemIsThrowableTinkerTool(item) )

@@ -1792,9 +1792,9 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 		}
 		// process commands if option selected on the wheel.
-		if ( (!(*inputPressedForPlayer(gui_player, impulses[IN_USE])) && !(inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE)) && !menuToggleClick && !holdWheel)
-			|| ((*inputPressedForPlayer(gui_player, impulses[IN_USE]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE)) && menuToggleClick)
-			|| (!(*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU] || !(inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU)) )) && holdWheel && !menuToggleClick)
+		if ( (!(*inputPressedForPlayer(gui_player, impulses[IN_USE])) && !(inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE)) && !inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU) && !menuToggleClick && !holdWheel)
+			|| ((*inputPressedForPlayer(gui_player, impulses[IN_USE]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU)) && menuToggleClick)
+			|| (!(*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU])) && holdWheel && !menuToggleClick)
 			|| (*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD] || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD)) && optionPrevious != -1)
 			)
 		{
@@ -1802,6 +1802,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				*inputPressedForPlayer(gui_player, impulses[IN_USE]) = 0;
 				inputs.controllerClearInput(gui_player, INJOY_GAME_USE);
+				inputs.controllerClearInput(gui_player, INJOY_GAME_FOLLOWERMENU);
 				menuToggleClick = false;
 				if ( optionSelected == -1 )
 				{

@@ -54,7 +54,6 @@ void actThrown(Entity* my)
 	Category cat = GEM;
 	ItemType type = WOODEN_SHIELD;
 	char* itemname = nullptr;
-	node_t* node;
 
 	item = newItemFromEntity(my);
 	if ( item )

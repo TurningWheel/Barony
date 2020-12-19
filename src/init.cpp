@@ -2097,10 +2097,13 @@ int deinitApp()
 	// close engine
 	printlog("closing engine...\n");
 	printlog("removing engine timer...\n");
+#ifndef NINTENDO
 	if ( timer )
 	{
 		SDL_RemoveTimer(timer);
 	}
+#endif // !NINTENDO
+
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);
 	list_FreeAll(&entitiesdeleted);
@@ -2479,6 +2482,8 @@ int deinitApp()
 	completePath(logToArchive, "log.txt", outputdir);
 #ifdef WINDOWS
 	CopyFileA(logToArchive, logarchiveFilePath.c_str(), false);
+#elif defined NINTENDO
+	// TODO?
 #else //LINUX & APPLE
 	std::stringstream ss;
 	ss << "cp " << logToArchive << " " << logarchiveFilePath.c_str();
@@ -2808,8 +2813,6 @@ loads the global item whitelist/blacklists and level curve.
 
 bool loadItemLists()
 {
-	int c;
-
 	// open log file
 	if ( !logfile )
 	{

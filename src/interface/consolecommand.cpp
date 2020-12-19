@@ -726,30 +726,30 @@ void consoleCommand(char const * const command_str)
 			joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_ACTIVATE: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_MINIMAPSCALE") )
+		else if ( strstr(command_str, "INJOY_GAME_MINIMAPSCALE") )
 		{
 			joyimpulses[INJOY_GAME_MINIMAPSCALE] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_MINIMAPSCALE: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_MINIMAPSCALE: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_TOGGLECHATLOG") )
+		else if ( strstr(command_str, "INJOY_GAME_TOGGLECHATLOG") )
 		{
 			joyimpulses[INJOY_GAME_TOGGLECHATLOG] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_TOGGLECHATLOG: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_TOGGLECHATLOG: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_FOLLOWERMENU_OPEN") )
+		else if ( strstr(command_str, "INJOY_GAME_FOLLOWERMENU_OPEN") )
 		{
 			joyimpulses[INJOY_GAME_FOLLOWERMENU] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_FOLLOWERMENU_OPEN: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_FOLLOWERMENU_OPEN: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_FOLLOWERMENU_LASTCMD") )
+		else if ( strstr(command_str, "INJOY_GAME_FOLLOWERMENU_LASTCMD") )
 		{
 			joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_FOLLOWERMENU_LASTCMD: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_FOLLOWERMENU_LASTCMD: %d\n", atoi(&command_str[9]));
 		}
-		else if ( strstr(command_str, "INJOY_GAME_GAME_FOLLOWERMENU_CYCLENEXT") )
+		else if ( strstr(command_str, "INJOY_GAME_FOLLOWERMENU_CYCLENEXT") )
 		{
 			joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_GAME_GAME_FOLLOWERMENU_CYCLENEXT: %d\n", atoi(&command_str[9]));
+			printlog("[GAMEPAD] Bound INJOY_GAME_FOLLOWERMENU_CYCLENEXT: %d\n", atoi(&command_str[9]));
 		}
 		else if ( strstr(command_str, "INJOY_MENU_CHEST_GRAB_ALL"))
 		{
@@ -1795,15 +1795,15 @@ void consoleCommand(char const * const command_str)
 				{
 					// divide screen horizontally
 					players[i]->camera().winx = 0;
-					players[i]->camera().winy = c * yres / 2;
+					players[i]->camera().winy = i * yres / 2;
 					players[i]->camera().winw = xres;
 					players[i]->camera().winh = yres / 2;
 				}
 				else if ( playercount >= 3 )
 				{
 					// divide screen into quadrants
-					players[i]->camera().winx = (c % 2) * xres / 2;
-					players[i]->camera().winy = (c / 2) * yres / 2;
+					players[i]->camera().winx = (i % 2) * xres / 2;
+					players[i]->camera().winy = (i / 2) * yres / 2;
 					players[i]->camera().winw = xres / 2;
 					players[i]->camera().winh = yres / 2;
 				}

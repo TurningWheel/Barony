@@ -173,6 +173,11 @@ void mapDeconstructor(void* data)
 			list_FreeAll(map->entities);
 			free(map->entities);
 		}
+		if ( map->worldUI )
+		{
+			list_FreeAll(map->worldUI);
+			delete map->worldUI;
+		}
 		free(data);
 	}
 }

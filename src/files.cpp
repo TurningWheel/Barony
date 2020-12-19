@@ -794,10 +794,16 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	}
 
 	list_FreeAll(entlist);
+
 	if ( destmap == &map )
 	{
 		// remove old lights
 		list_FreeAll(&light_l);
+		// remove old world UI
+		if ( destmap->worldUI )
+		{
+			list_FreeAll(map.worldUI);
+		}
 	}
 	if ( destmap->tiles != NULL )
 	{
@@ -2345,7 +2351,6 @@ bool physfsIsMapLevelListModded()
 			continue;
 		}
 		std::size_t found = line.find(' ');
-		char tempstr[1024];
 		if ( found != std::string::npos )
 		{
 			std::string mapType = line.substr(0, found);
@@ -2398,7 +2403,6 @@ bool physfsIsMapLevelListModded()
 			continue;
 		}
 		std::size_t found = line.find(' ');
-		char tempstr[1024];
 		if ( found != std::string::npos )
 		{
 			std::string mapType = line.substr(0, found);

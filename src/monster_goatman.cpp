@@ -30,7 +30,6 @@ const int BOSS_GHARBAD = 1;
 
 void initGoatman(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 	int boss = 0;
 

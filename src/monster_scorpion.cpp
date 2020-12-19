@@ -22,8 +22,6 @@
 
 void initScorpion(Entity* my, Stat* myStats)
 {
-	int c;
-
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 

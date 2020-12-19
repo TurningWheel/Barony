@@ -23,7 +23,6 @@
 
 void initInsectoid(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 
  	//Sprite 455 = Insectoid head model

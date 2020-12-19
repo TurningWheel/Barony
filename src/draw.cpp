@@ -1370,10 +1370,20 @@ void drawEntities3D(view_t* camera, int mode)
 
 	glEnable(GL_SCISSOR_TEST);
 	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	node_t* nextnode = nullptr;
+	for ( node = map.entities->first; node != nullptr; node = nextnode )
 	{
 		entity = (Entity*)node->element;
+		nextnode = node->next;
+		if ( node->next == nullptr && node->list == map.entities )
+		{
+			if ( map.worldUI->first )
+			{
+				// quick way to attach worldUI to the end of map.entities.
+				nextnode = map.worldUI->first;
+			}
+		}
+
 		if ( entity->flags[INVISIBLE] )
 		{
 			continue;

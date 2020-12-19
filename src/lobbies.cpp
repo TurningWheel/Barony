@@ -425,7 +425,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 		// directory list offset from slider
 		Sint32 y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSearchResults + 1);
 		Sint32 old_y2 = y2;
-		if ( mousestatus[SDL_BUTTON_LEFT] 
+		if ( inputs.bMouseLeft(clientnum)
 			&& (omousex >= sliderExtents.x && omousex < sliderExtents.x + sliderExtents.w)
 			&& (omousey >= sliderExtents.y && omousey < sliderExtents.y + sliderExtents.h) )
 		{
@@ -548,9 +548,9 @@ void LobbyHandler_t::handleLobbyBrowser()
 			}
 
 			// selecting lobby
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( inputs.bMouseLeft(clientnum) )
 			{
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				inputs.mouseClearLeft(clientnum);
 				if ( getDisplayedResultLobbyType(hoveringSelection) == LOBBY_DISABLE && hoveringSelection > 0 && numSearchResults >= 1 )
 				{
 					this->selectedLobbyInList = numSearchResults - 1;
@@ -820,13 +820,13 @@ void LobbyHandler_t::drawLobbyFilters()
 
 	// show in-progress lobbies
 	ttfPrintTextFormatted(ttf12, text.x, text.y, language[3955], filterShowInProgressLobbies ? 'x' : ' ');
-	if ( mousestatus[SDL_BUTTON_LEFT] )
+	if ( inputs.bMouseLeft(clientnum) )
 	{
 		if ( mouseInBounds(clientnum, text.x + strlen("crossplay lobbies: ") * TTF12_WIDTH, text.x + strlen("crossplay lobbies: [x]") * TTF12_WIDTH,
 			text.y + TTF12_HEIGHT, text.y + TTF12_HEIGHT * 2) )
 		{
 			filterShowInProgressLobbies = !filterShowInProgressLobbies;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			inputs.mouseClearLeft(clientnum);
 		}
 	}
 #endif

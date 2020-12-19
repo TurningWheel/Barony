@@ -24,7 +24,6 @@ See LICENSE for details.
 
 void initShadow(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 	my->monsterShadowDontChangeName = 0; //By default, it does.
 	if ( myStats && strcmp(myStats->name, "") != 0 )

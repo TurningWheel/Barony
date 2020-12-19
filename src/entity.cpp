@@ -18932,3 +18932,54 @@ real_t Entity::getDamageTableMultiplier(Stat& myStats, DamageTableType damageTyp
 	//messagePlayer(0, "%f", damageMultiplier);
 	return damageMultiplier;
 }
+
+void Entity::createWorldUITooltip()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( !players[i]->isLocalPlayerAlive() )
+		{
+			continue;
+		}
+		Entity* worldTooltip = nullptr;
+#ifndef NINTENDO
+		bool failedToAllocate = false;
+		try
+		{
+			worldTooltip = new Entity(-1, 1, map.worldUI, nullptr);
+		}
+		catch ( std::bad_alloc& ba )
+		{
+			failedToAllocate = true;
+		}
+
+		if ( failedToAllocate || !worldTooltip )
+		{
+			printlog("failed to allocate memory for new entity!\n");
+			exit(1);
+		}
+#else
+		entity = new Entity(-1, 1, map.worldUI, nullptr);
+#endif
+
+		worldTooltip->x = this->x;
+		worldTooltip->y = this->y;
+		worldTooltip->z = this->z;
+		worldTooltip->sizex = 1;
+		worldTooltip->sizey = 1;
+		worldTooltip->flags[NOUPDATE] = true;
+		worldTooltip->flags[PASSABLE] = true;
+		worldTooltip->flags[SPRITE] = true;
+		worldTooltip->flags[BRIGHT] = true;
+		worldTooltip->flags[UNCLICKABLE] = true;
+		worldTooltip->behavior = &actSpriteWorldTooltip;
+		worldTooltip->parent = this->getUID();
+		worldTooltip->scalex = 0.05;
+		worldTooltip->scaley = 0.05;
+		worldTooltip->scalez = 0.05;
+		worldTooltip->worldTooltipPlayer = i;
+		worldTooltip->worldTooltipZ = 1.5;
+		players[i]->worldUI.setTooltipDisabled(*worldTooltip);
+		//worldTooltip->addToWorldUIList(map.worldUI);
+	}
+}

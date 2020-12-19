@@ -629,7 +629,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		SDL_UnlockSurface(sprite);
 		//
 		//
-		if ( parent->behavior == &actItem )
+		if ( parent->behavior == &actItem && (multiplayer != CLIENT || (multiplayer == CLIENT && parent->itemReceivedDetailsFromServer != 0)) )
 		{
 			Item* item = newItemFromEntity(uidToEntity(entity->parent));
 			if ( !item )
@@ -675,6 +675,11 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 				{
 					pos.x = 32 + 16;
 					pos.y += 32;
+					if ( multiplayer == CLIENT && parent->itemReceivedDetailsFromServer == 0 )
+					{
+						// no details yet.
+						pos.y -= 24;
+					}
 					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
 				}
 			}

@@ -3173,7 +3173,6 @@ Returns the savefile version
 int getSaveGameVersionNum(bool singleplayer, int saveIndex)
 {
 	File* fp;
-	Uint32 gameKey;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
 	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
@@ -4810,10 +4809,10 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 
 					if ( levelnum >= 1 && levelnum <= gameModeManager.Tutorial.getNumTutorialLevels() )
 					{
-						if ( !(g_SteamStats[statBitCounter].m_iValue & (1 << levelnum - 1)) ) // bit not set
+						if ( !(g_SteamStats[statBitCounter].m_iValue & (1 << (levelnum - 1))) ) // bit not set
 						{
 							// update with the difference in values.
-							steamStatisticUpdate(statBitCounter, STEAM_STAT_INT, (1 << levelnum - 1));
+							steamStatisticUpdate(statBitCounter, STEAM_STAT_INT, (1 << (levelnum - 1)));
 						}
 
 						int levelsCompleted = 0;

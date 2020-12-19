@@ -733,7 +733,12 @@ void updatePlayerInventory(const int player)
 
 	if ( inputs.hasController(player) )
 	{
-		if ( players[player]->gui_mode == GUI_MODE_SHOP )
+		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
+		if ( radialMenuOpen )
+		{
+			// do nothing?
+		}
+		else if ( players[player]->gui_mode == GUI_MODE_SHOP )
 		{
 			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_LEFT) )
 			{
@@ -746,8 +751,7 @@ void updatePlayerInventory(const int player)
 				cycleShopCategories(player, 1);
 			}
 		}
-
-		if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0 
+		else if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0 
 			&& !itemMenuOpen && GenericGUI[player].selectedSlot < 0
 			&& inputs.getController(player)->handleInventoryMovement(player) ) // handleInventoryMovement should be at the end of this check
 		{
@@ -1443,7 +1447,7 @@ void updatePlayerInventory(const int player)
 							&& GenericGUI[player].selectedSlot < 0))
 						&& !itemMenuOpen && !selectedItem )
 					{
-						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(inputs.bControllerInputPressed(player, INJOY_MENU_USE) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
+						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(inputs.bControllerInputPressed(player, INJOY_MENU_USE) && selectedChestSlot[player] < 0) ) //TODO: selected shop slot, identify, remove curse?
 						{
 							// auto-appraise the item
 							players[player]->inventoryUI.appraisal.appraiseItem(item);

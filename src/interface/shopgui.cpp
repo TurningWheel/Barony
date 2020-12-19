@@ -779,7 +779,7 @@ void cycleShopCategories(const int player, int direction)
 		++shopinventorycategory[player];
 	}
 
-	if ( shopinventorycategory < 0 )
+	if ( shopinventorycategory[player] < 0 )
 	{
 		shopinventorycategory[player] = NUM_SHOP_CATEGORIES - 1;
 	}

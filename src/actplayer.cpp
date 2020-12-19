@@ -2585,6 +2585,12 @@ void actPlayer(Entity* my)
 						// if items are the same, check to see if they should stack
 						if ( item2->shouldItemStack(PLAYER_NUM) )
 						{
+							if ( itemIsEquipped(tempItem, PLAYER_NUM) )
+							{
+								// dont try to move our equipped item - it's an edge case to crash
+								continue;
+							}
+
 							item2->count += tempItem->count;
 							if ( multiplayer == CLIENT && itemIsEquipped(item2, PLAYER_NUM) )
 							{
@@ -2731,6 +2737,11 @@ void actPlayer(Entity* my)
 										// identified item is at max count so don't stack, abort.
 										break;
 									}
+									if ( itemIsEquipped(tempItem, PLAYER_NUM) )
+									{
+										// dont try to move our equipped item - it's an edge case to crash
+										break;
+									}
 									if ( item2->count >= (maxStack - 1) )
 									{
 										// if we're at max count then skip this check.
@@ -2791,6 +2802,11 @@ void actPlayer(Entity* my)
 								// if items are the same, check to see if they should stack
 								else if ( item2->shouldItemStack(PLAYER_NUM) )
 								{
+									if ( itemIsEquipped(tempItem, PLAYER_NUM) )
+									{
+										// dont try to move our equipped item - it's an edge case to crash
+										continue;
+									}
 									item2->count += tempItem->count;
 									if ( multiplayer == CLIENT && itemIsEquipped(item2, PLAYER_NUM) )
 									{
@@ -3616,7 +3632,9 @@ void actPlayer(Entity* my)
 
 			if ( !command && !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
-				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) )
+				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU]) 
+					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) 
+						&& players[PLAYER_NUM]->shootmode && !players[PLAYER_NUM]->worldUI.bTooltipInView) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
@@ -3627,9 +3645,15 @@ void actPlayer(Entity* my)
 					{
 						selectedEntity[PLAYER_NUM] = followerMenu.recentEntity;
 						followerMenu.holdWheel = true;
+						if ( inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) )
+						{
+							followerMenu.holdWheel = false;
+						}
 					}
 				}
-				else if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD) )
+				else if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) 
+					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD) 
+						&& players[PLAYER_NUM]->shootmode && !players[PLAYER_NUM]->worldUI.bTooltipInView) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
