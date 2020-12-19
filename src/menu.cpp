@@ -12081,8 +12081,6 @@ void getResolutionList()
 	int numdisplays = SDL_GetNumVideoDisplays();
 	int nummodes = SDL_GetNumDisplayModes(0);
 	int im;
-	int c;
-
 	printlog("display count: %d.\n", numdisplays);
 	printlog("display mode count: %d.\n", nummodes);
 
@@ -13081,8 +13079,6 @@ Uint32 charcreation_ticks = 0;
 // move player forward through creation dialogue
 void buttonContinue(button_t* my)
 {
-	button_t* button;
-
 	if ( ticks - charcreation_ticks < TICKS_PER_SECOND / 10 )
 	{
 		return;
@@ -13179,6 +13175,7 @@ void buttonContinue(button_t* my)
 			strcpy(subtext, language[1447]);
 
 			// close button
+			button_t* button = nullptr;
 			button = newButton();
 			strcpy(button->label, "x");
 			button->x = subx2 - 20;

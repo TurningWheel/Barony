@@ -1857,7 +1857,6 @@ void clientHandlePacket()
 		return;
 	}
 
-	Uint32 x, y;
 	node_t* node;
 	node_t* nextnode;
 	Entity* entity, *entity2;
@@ -5716,7 +5715,6 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 
 bool handleSafePacket()
 {
-	packetsend_t* packet;
 	node_t* node;
 	int c, j;
 

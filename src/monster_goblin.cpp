@@ -22,7 +22,6 @@
 
 void initGoblin(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 
 	//Sprite 180 = Goblin head model.

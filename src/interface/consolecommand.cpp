@@ -1795,15 +1795,15 @@ void consoleCommand(char const * const command_str)
 				{
 					// divide screen horizontally
 					players[i]->camera().winx = 0;
-					players[i]->camera().winy = c * yres / 2;
+					players[i]->camera().winy = i * yres / 2;
 					players[i]->camera().winw = xres;
 					players[i]->camera().winh = yres / 2;
 				}
 				else if ( playercount >= 3 )
 				{
 					// divide screen into quadrants
-					players[i]->camera().winx = (c % 2) * xres / 2;
-					players[i]->camera().winy = (c / 2) * yres / 2;
+					players[i]->camera().winx = (i % 2) * xres / 2;
+					players[i]->camera().winy = (i / 2) * yres / 2;
 					players[i]->camera().winw = xres / 2;
 					players[i]->camera().winh = yres / 2;
 				}

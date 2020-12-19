@@ -21,8 +21,6 @@
 
 void initRat(Entity* my, Stat* myStats)
 {
-	int c;
-
 	my->sprite = 131; // rat model
 
 	my->flags[UPDATENEEDED] = true;

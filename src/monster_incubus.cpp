@@ -23,7 +23,6 @@
 
 void initIncubus(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 
 	//Sprite 445 = incubus head sprite

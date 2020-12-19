@@ -24,7 +24,6 @@
 
 void initMinotaur(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 
 	my->initMonster(239);
@@ -635,8 +634,6 @@ void actMinotaurTrap(Entity* my)
 
 void actMinotaurTimer(Entity* my)
 {
-	node_t* node;
-
 	MINOTAURTIMER_LIFE++;
 	if (( (currentlevel < 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120)
 			|| (currentlevel >= 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 180)

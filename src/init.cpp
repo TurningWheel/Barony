@@ -2813,8 +2813,6 @@ loads the global item whitelist/blacklists and level curve.
 
 bool loadItemLists()
 {
-	int c;
-
 	// open log file
 	if ( !logfile )
 	{

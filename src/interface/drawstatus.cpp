@@ -390,7 +390,7 @@ void drawStatus(int player)
 	auto& hotbar_t = players[player]->hotbar;
 	auto& hotbar = hotbar_t->slots();
 
-	bool gui_mode = players[player]->gui_mode;
+	int gui_mode = players[player]->gui_mode;
 	bool shootmode = players[player]->shootmode;
 
 	if ( !hide_statusbar )

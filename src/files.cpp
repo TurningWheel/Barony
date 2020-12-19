@@ -2351,7 +2351,6 @@ bool physfsIsMapLevelListModded()
 			continue;
 		}
 		std::size_t found = line.find(' ');
-		char tempstr[1024];
 		if ( found != std::string::npos )
 		{
 			std::string mapType = line.substr(0, found);
@@ -2404,7 +2403,6 @@ bool physfsIsMapLevelListModded()
 			continue;
 		}
 		std::size_t found = line.find(' ');
-		char tempstr[1024];
 		if ( found != std::string::npos )
 		{
 			std::string mapType = line.substr(0, found);

@@ -22,7 +22,6 @@
 
 void initImp(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 
 	my->initMonster(289);

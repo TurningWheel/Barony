@@ -580,9 +580,6 @@ public:
 	void init();
 	void cleanUpOnEntityRemoval();
 
-	class Hotbar_t;
-	Hotbar_t* hotbar;
-
 	view_t& camera() const { return *cam; }
 	const int camera_x1() const { return cam->winx; }
 	const int camera_x2() const { return cam->winx + cam->winw; }
@@ -863,78 +860,79 @@ public:
 		void cycleToNextTooltip();
 		void cycleToPreviousTooltip();
 	} worldUI;
-};
 
-class Player::Hotbar_t {
-	std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS> hotbar;
-	std::array<std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS>, NUM_HOTBAR_ALTERNATES> hotbar_alternate;
-	Player& player;
-public:
-	int current_hotbar = 0;
-	bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
-	int swapHotbarOnShapeshift = 0;
-	bool hotbarHasFocus = false;
-	int magicBoomerangHotbarSlot = -1;
-	Uint32 hotbarTooltipLastGameTick = 0;
-	SDL_Rect hotbarBox;
+	class Hotbar_t {
+		std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS> hotbar;
+		std::array<std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS>, NUM_HOTBAR_ALTERNATES> hotbar_alternate;
+		Player& player;
+	public:
+		int current_hotbar = 0;
+		bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
+		int swapHotbarOnShapeshift = 0;
+		bool hotbarHasFocus = false;
+		int magicBoomerangHotbarSlot = -1;
+		Uint32 hotbarTooltipLastGameTick = 0;
+		SDL_Rect hotbarBox;
 
-	const int getStartX() const
-	{
-		return (player.camera_midx() - ((NUM_HOTBAR_SLOTS / 2) * getSlotSize()));
-	}
-	const int getSlotSize() const { return hotbar_img->w * uiscale_hotbar; }
-
-	Player::Hotbar_t(Player& p) : player(p)
-	{
-		clear();
-	}
-
-	enum HotbarLoadouts : int
-	{
-		HOTBAR_DEFAULT,
-		HOTBAR_RAT,
-		HOTBAR_SPIDER,
-		HOTBAR_TROLL,
-		HOTBAR_IMP
-	};
-
-	void clear()
-	{
-		swapHotbarOnShapeshift = 0;
-		current_hotbar = 0;
-		hotbarHasFocus = false;
-		magicBoomerangHotbarSlot = -1;
-		hotbarTooltipLastGameTick = 0;
-		for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+		const int getStartX() const
 		{
-			hotbarShapeshiftInit[j] = false;
+			return (player.camera_midx() - ((NUM_HOTBAR_SLOTS / 2) * getSlotSize()));
 		}
-		for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+		const int getSlotSize() const { return hotbar_img->w * uiscale_hotbar; }
+
+		Player::Hotbar_t(Player& p) : player(p)
 		{
-			hotbar[i].item = 0;
+			clear();
+		}
+
+		enum HotbarLoadouts : int
+		{
+			HOTBAR_DEFAULT,
+			HOTBAR_RAT,
+			HOTBAR_SPIDER,
+			HOTBAR_TROLL,
+			HOTBAR_IMP
+		};
+
+		void clear()
+		{
+			swapHotbarOnShapeshift = 0;
+			current_hotbar = 0;
+			hotbarHasFocus = false;
+			magicBoomerangHotbarSlot = -1;
+			hotbarTooltipLastGameTick = 0;
 			for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
 			{
-				hotbar_alternate[j][i].item = 0;
+				hotbarShapeshiftInit[j] = false;
+			}
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				hotbar[i].item = 0;
+				for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+				{
+					hotbar_alternate[j][i].item = 0;
+				}
 			}
 		}
-	}
 
-	auto& slots() { return hotbar; };
-	auto& slotsAlternate(int alternate) { return hotbar_alternate[alternate]; };
-	auto& slotsAlternate() { return hotbar_alternate;  }
-	void selectHotbarSlot(int slot)
-	{
-		if ( slot < 0 )
+		auto& slots() { return hotbar; };
+		auto& slotsAlternate(int alternate) { return hotbar_alternate[alternate]; };
+		auto& slotsAlternate() { return hotbar_alternate; }
+		void selectHotbarSlot(int slot)
 		{
-			slot = NUM_HOTBAR_SLOTS - 1;
+			if ( slot < 0 )
+			{
+				slot = NUM_HOTBAR_SLOTS - 1;
+			}
+			if ( slot >= NUM_HOTBAR_SLOTS )
+			{
+				slot = 0;
+			}
+			current_hotbar = slot;
+			hotbarHasFocus = true;
 		}
-		if ( slot >= NUM_HOTBAR_SLOTS )
-		{
-			slot = 0;
-		}
-		current_hotbar = slot;
-		hotbarHasFocus = true;
-	}
+	};
+	Hotbar_t* hotbar = nullptr;
 };
 
 extern Player* players[MAXPLAYERS];

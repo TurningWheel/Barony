@@ -384,7 +384,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 		if ( std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) != 0 )
 		{
-			snprintf(tmpBuffer, 31, ", disabled normal exit", std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters));
+			snprintf(tmpBuffer, 31, ", disabled normal exit %d%%%%", std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters));
 			strcat(generationLog, tmpBuffer);
 		}
 		strcat(generationLog, ", (seed %d)...\n");
@@ -797,7 +797,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					possiblelocations[x + y * map.width] = true;
 				}
 				trapexcludelocations[x + y * map.width] = false;
-				if ( map.flags[MAP_FLAG_DISABLEMONSTERS] == true )
+				if ( map.flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
 				{
 					// the base map excludes all monsters
 					monsterexcludelocations[x + y * map.width] = true;
@@ -806,7 +806,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					monsterexcludelocations[x + y * map.width] = false;
 				}
-				if ( map.flags[MAP_FLAG_DISABLELOOT] == true )
+				if ( map.flags[MAP_FLAG_DISABLELOOT] == 1 )
 				{
 					// the base map excludes all monsters
 					lootexcludelocations[x + y * map.width] = true;

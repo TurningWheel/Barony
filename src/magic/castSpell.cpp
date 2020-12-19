@@ -1564,7 +1564,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				timer->particleTimerCountdownSprite = 791;
 				timer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPELL_SUMMON;
 				timer->particleTimerPreDelay = 40;
-				timer->particleTimerEndAction == PARTICLE_EFFECT_SPELL_SUMMON;
+				timer->particleTimerEndAction = PARTICLE_EFFECT_SPELL_SUMMON;
 				timer->z = 0;
 				Entity* sapParticle = createParticleSapCenter(caster, caster, SPELL_SUMMON, 599, 599);
 				sapParticle->parent = 0;

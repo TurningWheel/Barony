@@ -2149,7 +2149,6 @@ void attackHoverText(const int player, Sint32 input[6])
 	int i = 0;
 	int j = 0;
 	SDL_Rect src;
-	SDL_Rect pos;
 	int tooltip_offset_x = 16; // 16px.
 	int tooltip_offset_y = 16; // 16px.
 	int tooltip_base_h = TTF12_HEIGHT;

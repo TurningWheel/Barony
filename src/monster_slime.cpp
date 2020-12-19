@@ -21,8 +21,6 @@
 
 void initSlime(Entity* my, Stat* myStats)
 {
-	int c;
-
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
@@ -123,7 +121,6 @@ void slimeAnimate(Entity* my, double dist)
 
 void slimeDie(Entity* my)
 {
-	Entity* entity;
 	int c = 0;
 	for ( c = 0; c < 5; c++ )
 	{
