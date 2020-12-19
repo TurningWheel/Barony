@@ -2585,6 +2585,12 @@ void actPlayer(Entity* my)
 						// if items are the same, check to see if they should stack
 						if ( item2->shouldItemStack(PLAYER_NUM) )
 						{
+							if ( itemIsEquipped(tempItem, PLAYER_NUM) )
+							{
+								// dont try to move our equipped item - it's an edge case to crash
+								continue;
+							}
+
 							item2->count += tempItem->count;
 							if ( multiplayer == CLIENT && itemIsEquipped(item2, PLAYER_NUM) )
 							{
@@ -2731,6 +2737,11 @@ void actPlayer(Entity* my)
 										// identified item is at max count so don't stack, abort.
 										break;
 									}
+									if ( itemIsEquipped(tempItem, PLAYER_NUM) )
+									{
+										// dont try to move our equipped item - it's an edge case to crash
+										break;
+									}
 									if ( item2->count >= (maxStack - 1) )
 									{
 										// if we're at max count then skip this check.
@@ -2791,6 +2802,11 @@ void actPlayer(Entity* my)
 								// if items are the same, check to see if they should stack
 								else if ( item2->shouldItemStack(PLAYER_NUM) )
 								{
+									if ( itemIsEquipped(tempItem, PLAYER_NUM) )
+									{
+										// dont try to move our equipped item - it's an edge case to crash
+										continue;
+									}
 									item2->count += tempItem->count;
 									if ( multiplayer == CLIENT && itemIsEquipped(item2, PLAYER_NUM) )
 									{
