@@ -40,6 +40,7 @@
 #include "lobbies.hpp"
 #include "interface/ui.hpp"
 #include "ui/Frame.hpp"
+#include "ui/GameUI.hpp"
 #include <limits>
 
 #include "UnicodeDecoder.h"
@@ -5244,7 +5245,8 @@ int main(int argc, char** argv)
 
 				if ( !gamePaused )
 				{
-					ingameHud();
+					//ingameHud();
+					newIngameHud();
 				}
 				else if ( !multiplayer )
 				{
