@@ -256,6 +256,8 @@ enum GUICurrentType
 class GenericGUIMenu
 {
 	int gui_player = 0;
+	int offsetx = 0;
+	int offsety = 0;
 	int gui_starty = ((xres / 2) - (420 / 2)) + offsetx;
 	int gui_startx = ((yres / 2) - (96 / 2)) + offsety;
 	int windowX1 = 0;
@@ -263,8 +265,6 @@ class GenericGUIMenu
 	int windowY1 = 0;
 	int windowY2 = 0;
 	int usingScrollBeatitude = 0;
-	int offsetx = 0;
-	int offsety = 0;
 	int scroll = 0;
 	GUICurrentType guiType;
 public:

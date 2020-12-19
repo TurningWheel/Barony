@@ -868,7 +868,7 @@ void actChestLid(Entity* my)
 	}
 }
 
-int getChestOpenerFromEntity(const Entity& const chest)
+int getChestOpenerFromEntity(const Entity& chest)
 {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
