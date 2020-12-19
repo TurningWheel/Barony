@@ -270,7 +270,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 				}
 				if ( stats[i] && inventory == &stats[i]->inventory )
 				{
-					for ( auto& hotbarSlot : players[i]->hotbar->slots() )
+					for ( auto& hotbarSlot : players[i]->hotbar.slots() )
 					{
 						if ( !uidToItem(hotbarSlot.item) )
 						{

@@ -687,17 +687,17 @@ bool GameController::handleInventoryMovement(const int player)
 
 	auto& hotbar_t = players[player]->hotbar;
 
-	if ( hotbar_t->hotbarHasFocus && !hotbarGamepadControlEnabled(player) )
+	if ( hotbar_t.hotbarHasFocus && !hotbarGamepadControlEnabled(player) )
 	{
-		hotbar_t->hotbarHasFocus = false;
+		hotbar_t.hotbarHasFocus = false;
 	}
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_LEFT) )
 	{
-		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled(player) )
+		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			hotbar_t->selectHotbarSlot(hotbar_t->current_hotbar - 1);
+			hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar - 1);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
@@ -714,10 +714,10 @@ bool GameController::handleInventoryMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_RIGHT) )
 	{
-		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled(player) )
+		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			hotbar_t->selectHotbarSlot(hotbar_t->current_hotbar + 1);
+			hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar + 1);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
@@ -734,11 +734,11 @@ bool GameController::handleInventoryMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
 	{
-		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled(player) )
+		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//Warp back to top of inventory.
-			hotbar_t->hotbarHasFocus = false;
-			float percentage = static_cast<float>(hotbar_t->current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+			hotbar_t.hotbarHasFocus = false;
+			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
 			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1);
 		}
 		else
@@ -754,11 +754,11 @@ bool GameController::handleInventoryMovement(const int player)
 
 	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
 	{
-		if ( hotbar_t->hotbarHasFocus && hotbarGamepadControlEnabled(player) )
+		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//Warp back to bottom of inventory.
-			hotbar_t->hotbarHasFocus = false;
-			float percentage = static_cast<float>(hotbar_t->current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+			hotbar_t.hotbarHasFocus = false;
+			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
 			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0);
 		}
 		else
@@ -1330,13 +1330,13 @@ Player::Player(int in_playernum, bool in_local_host) :
 	characterSheet(*this),
 	movement(*this),
 	messageZone(*this),
-	worldUI(*this)
+	worldUI(*this),
+	hotbar(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
 	entity = nullptr;
 	cam = &cameras[playernum];
-	hotbar = new Hotbar_t(*this);
 }
 
 Player::~Player()
@@ -1344,10 +1344,6 @@ Player::~Player()
 	if (entity)
 	{
 		delete entity;
-	}
-	if ( hotbar )
-	{
-		delete hotbar;
 	}
 }
 

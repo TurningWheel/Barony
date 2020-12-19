@@ -1083,14 +1083,14 @@ void gameLogic(void)
 										}
 
 										auto& hotbar_t = players[parent->skill[2]]->hotbar;
-										auto& hotbar = hotbar_t->slots();
+										auto& hotbar = hotbar_t.slots();
 
-										if ( hotbar_t->magicBoomerangHotbarSlot >= 0 )
+										if ( hotbar_t.magicBoomerangHotbarSlot >= 0 )
 										{
-											hotbar[hotbar_t->magicBoomerangHotbarSlot].item = pickedUp->uid;
+											hotbar[hotbar_t.magicBoomerangHotbarSlot].item = pickedUp->uid;
 											for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 											{
-												if ( i != hotbar_t->magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+												if ( i != hotbar_t.magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
 												{
 													hotbar[i].item = 0;
 												}

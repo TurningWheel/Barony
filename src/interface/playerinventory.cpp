@@ -342,9 +342,9 @@ void select_inventory_slot(const int player, int x, int y)
 		y = players[player]->inventoryUI.getSizeY() - 1;
 		if ( hotbarGamepadControlEnabled(player) )
 		{
-			hotbar_t->hotbarHasFocus = true; //Warp to hotbar.
+			hotbar_t.hotbarHasFocus = true; //Warp to hotbar.
 			float percentage = static_cast<float>(x + 1) / static_cast<float>(players[player]->inventoryUI.getSizeX());
-			hotbar_t->selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
+			hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 	}
@@ -398,9 +398,9 @@ void select_inventory_slot(const int player, int x, int y)
 
 			if ( hotbarGamepadControlEnabled(player) )
 			{
-				hotbar_t->hotbarHasFocus = true;
+				hotbar_t.hotbarHasFocus = true;
 				float percentage = static_cast<float>(x + 1) / static_cast<float>(players[player]->inventoryUI.getSizeX());
-				hotbar_t->selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
+				hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
 				warpMouseToSelectedHotbarSlot(player);
 			}
 		}
@@ -441,14 +441,14 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
 
-	auto& hotbar = players[player]->hotbar->slots();
+	auto& hotbar = players[player]->hotbar.slots();
 
 	if ( inputs.bControllerInputPressed(player, INJOY_MENU_CANCEL) )
 	{
 		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS)
 		{
 			//Warp cursor back into hotbar, for gamepad convenience.
-			int newx = (players[player]->hotbar->getStartX())+(selectedItemFromHotbar * hotbar_img->w) + (hotbar_img->w / 2);
+			int newx = (players[player]->hotbar.getStartX())+(selectedItemFromHotbar * hotbar_img->w) + (hotbar_img->w / 2);
 			int newy = (players[player]->statusBarUI.getStartY())-(hotbar_img->h / 2);
 			//SDL_WarpMouseInWindow(screen, newx, newy);
 			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
@@ -703,8 +703,8 @@ void updatePlayerInventory(const int player)
 	node_t* node, *nextnode;
 	int x, y;
 
-	const auto& hotbar_t = players[player]->hotbar;
-	auto& hotbar = hotbar_t->slots();
+	auto& hotbar_t = players[player]->hotbar;
+	auto& hotbar = hotbar_t.slots();
 
 	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
 	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
@@ -758,7 +758,7 @@ void updatePlayerInventory(const int player)
 			if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
-				if ( !hotbar_t->hotbarHasFocus )
+				if ( !hotbar_t.hotbarHasFocus )
 				{
 					warpMouseToSelectedInventorySlot(player);
 				}
@@ -857,15 +857,15 @@ void updatePlayerInventory(const int player)
 				if (mouseInBoundsRealtimeCoords(player, pos.x, pos.x + pos.w, pos.y, pos.y + pos.h))
 				{
 					players[player]->inventoryUI.selectSlot(x, y);
-					if ( hotbar_t->hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+					if ( hotbar_t.hotbarHasFocus && !disableMouseDisablingHotbarFocus )
 					{
-						hotbar_t->hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+						hotbar_t.hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
 					}
 				}
 
 				if ( x == players[player]->inventoryUI.getSelectedSlotX() 
 					&& y == players[player]->inventoryUI.getSelectedSlotY()
-					&& !hotbar_t->hotbarHasFocus )
+					&& !hotbar_t.hotbarHasFocus )
 				{
 					Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
 					drawBox(&pos, color, 127);
@@ -3010,7 +3010,7 @@ bool mouseInsidePlayerInventory(const int player)
 bool mouseInsidePlayerHotbar(const int player)
 {
 	SDL_Rect pos;
-	pos.x = players[player]->hotbar->getStartX();
+	pos.x = players[player]->hotbar.getStartX();
 	pos.y = players[player]->statusBarUI.getStartY() - hotbar_img->h * uiscale_hotbar;
 	pos.w = NUM_HOTBAR_SLOTS * hotbar_img->w * uiscale_hotbar;
 	pos.h = hotbar_img->h * uiscale_hotbar;

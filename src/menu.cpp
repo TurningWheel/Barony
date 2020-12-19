@@ -9413,7 +9413,7 @@ void handleMainMenu(bool mode)
 				deinitShapeshiftHotbar(i);
 				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 				{
-					players[i]->hotbar->hotbarShapeshiftInit[c] = false;
+					players[i]->hotbar.hotbarShapeshiftInit[c] = false;
 				}
 				players[i]->shootmode = true;
 				players[i]->magic.clearSelectedSpells();
@@ -10392,7 +10392,7 @@ void handleMainMenu(bool mode)
 				deinitShapeshiftHotbar(i);
 				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 				{
-					players[i]->hotbar->hotbarShapeshiftInit[c] = false;
+					players[i]->hotbar.hotbarShapeshiftInit[c] = false;
 				}
 				players[i]->shootmode = true;
 				players[i]->magic.clearSelectedSpells();

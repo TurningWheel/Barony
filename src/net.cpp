@@ -2932,13 +2932,13 @@ void clientHandlePacket()
 				useItem(pickedUp, clientnum);
 
 				auto& hotbar_t = players[clientnum]->hotbar;
-				auto& hotbar = hotbar_t->slots();
-				if ( hotbar_t->magicBoomerangHotbarSlot >= 0 )
+				auto& hotbar = hotbar_t.slots();
+				if ( hotbar_t.magicBoomerangHotbarSlot >= 0 )
 				{
-					hotbar[hotbar_t->magicBoomerangHotbarSlot].item = pickedUp->uid;
+					hotbar[hotbar_t.magicBoomerangHotbarSlot].item = pickedUp->uid;
 					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 					{
-						if ( i != hotbar_t->magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+						if ( i != hotbar_t.magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
 						{
 							hotbar[i].item = 0;
 						}

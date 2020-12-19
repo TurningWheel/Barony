@@ -768,6 +768,8 @@ public:
 	class PlayerSettings_t
 	{
 	public:
+		PlayerSettings_t() {};
+		~PlayerSettings_t() {};
 		int quickTurnDirection = 1; // 1 == right, -1 == left
 		real_t quickTurnSpeed = PI / 15;
 	} settings;
@@ -779,13 +781,14 @@ public:
 		bool bDoingQuickTurn = false;
 		Player& player;
 	public:
+		PlayerMovement_t(Player& p) : player(p)
+		{};
+		~PlayerMovement_t() {};
+
 		int monsterEmoteGimpTimer = 0;
 		int selectedEntityGimpTimer = 0;
 		bool insectoidLevitating = false;
 
-		PlayerMovement_t(Player& p) : player(p)
-		{};
-		~PlayerMovement_t() {};
 		bool handleQuickTurn(bool useRefreshRateDelta);
 		void startQuickTurn();
 		bool isPlayerSwimming();
@@ -808,8 +811,8 @@ public:
 		Player& player;
 	public:
 		static const int ADD_MESSAGE_BUFFER_LENGTH = 256;
-		MessageZone_t(Player& p) : player(p)
-		{};
+		MessageZone_t(Player& p) : player(p) {};
+		~MessageZone_t() {};
 		std::list<Message*> notification_messages;
 		//Adds a message to the list of messages.
 		void addMessage(Uint32 color, char* content, ...);
@@ -889,6 +892,7 @@ public:
 		{
 			clear();
 		};
+		~Hotbar_t() {};
 
 		enum HotbarLoadouts : int
 		{
@@ -936,8 +940,7 @@ public:
 			current_hotbar = slot;
 			hotbarHasFocus = true;
 		}
-	};
-	Hotbar_t* hotbar = nullptr;
+	} hotbar;
 };
 
 extern Player* players[MAXPLAYERS];

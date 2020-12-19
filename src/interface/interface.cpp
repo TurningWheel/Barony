@@ -1361,15 +1361,15 @@ bool mouseInBounds(const int player, int x1, int x2, int y1, int y2)
 
 hotbar_slot_t* getHotbar(int player, int x, int y)
 {
-	if ( x >= players[player]->hotbar->getStartX() 
-		&& x < players[player]->hotbar->getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar->getSlotSize())
-		&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar->getSlotSize()
+	if ( x >= players[player]->hotbar.getStartX() 
+		&& x < players[player]->hotbar.getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar.getSlotSize())
+		&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar.getSlotSize()
 		&& y < players[player]->statusBarUI.getStartY() )
 	{
-		int relx = x - players[player]->hotbar->getStartX(); //X relative to the start of the hotbar.
-		int slot = std::max(0, std::min(relx / (players[player]->hotbar->getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
+		int relx = x - players[player]->hotbar.getStartX(); //X relative to the start of the hotbar.
+		int slot = std::max(0, std::min(relx / (players[player]->hotbar.getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
 
-		return &players[player]->hotbar->slots()[slot]; //The slot will clearly be the x divided by the width of a slot
+		return &players[player]->hotbar.slots()[slot]; //The slot will clearly be the x divided by the width of a slot
 	}
 
 	return NULL;
@@ -7436,7 +7436,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[gui_player]->hotbar->slots() )
+							for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
 							{
 								if ( hotbarSlot.item == item->uid )
 								{
@@ -7489,7 +7489,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[gui_player]->hotbar->slots() )
+							for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
 							{
 								if ( hotbarSlot.item == item->uid )
 								{
@@ -7549,7 +7549,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[gui_player]->hotbar->slots() )
+							for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
 							{
 								if ( hotbarSlot.item == item->uid )
 								{
@@ -8216,7 +8216,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 			{
 				pos.w *= 0.8;
 			}
-			pos.y = players[player]->hotbar->hotbarBox.y - pos.h - 8;
+			pos.y = players[player]->hotbar.hotbarBox.y - pos.h - 8;
 		}
 		pos.x = players[player]->camera_midx() - (pos.w / 2);
 
