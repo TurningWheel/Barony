@@ -1058,7 +1058,7 @@ void GameController::handleRumble()
 
 	Uint32 highestPriority = 0;
 	Uint32 earliestTick = std::numeric_limits<Uint32>::max();
-	for ( auto& it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); /*blank*/ )
+	for ( auto it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); /*blank*/ )
 	{
 		Uint32 priority = it->first;
 		auto& rumble = it->second;
@@ -1071,7 +1071,7 @@ void GameController::handleRumble()
 	}
 
 	std::vector<std::pair<Uint32, Haptic_t::Rumble>>::iterator rumbleToPlay = haptics.activeRumbles.end();
-	for ( auto& it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); ++it )
+	for ( auto it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); ++it )
 	{
 		Uint32 priority = it->first;
 		auto& rumble = it->second;
@@ -1091,7 +1091,7 @@ void GameController::handleRumble()
 		}
 	}
 
-	for ( auto& it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); ++it )
+	for ( auto it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); ++it )
 	{
 		if ( it != rumbleToPlay )
 		{
