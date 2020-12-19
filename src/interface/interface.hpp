@@ -263,9 +263,9 @@ class GenericGUIMenu
 	int windowY1 = 0;
 	int windowY2 = 0;
 	int usingScrollBeatitude = 0;
-	int offsetx;
-	int offsety;
-	int scroll;
+	int offsetx = 0;
+	int offsety = 0;
+	int scroll = 0;
 	GUICurrentType guiType;
 public:
 	static const int kNumShownItems = 4;

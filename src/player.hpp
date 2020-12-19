@@ -880,10 +880,10 @@ public:
 		}
 		const int getSlotSize() const { return hotbar_img->w * uiscale_hotbar; }
 
-		Player::Hotbar_t(Player& p) : player(p)
+		Hotbar_t(Player& p) : player(p)
 		{
 			clear();
-		}
+		};
 
 		enum HotbarLoadouts : int
 		{
