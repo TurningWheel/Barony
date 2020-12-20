@@ -3854,7 +3854,7 @@ void assignActions(map_t* map)
 				entity->sizey = 1;
 				entity->x += 8;
 				entity->y += 8;
-				entity->z = 7;
+				entity->z = 7.5;
 				entity->sprite = 184; // this is the switch base.
 				entity->flags[PASSABLE] = true;
 				childEntity = newEntity(186, 0, map->entities, nullptr); //Switch entity.
@@ -3862,7 +3862,7 @@ void assignActions(map_t* map)
 				childEntity->y = entity->y;
 				TileEntityList.addEntity(*childEntity);
 				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-				childEntity->z = 8;
+				childEntity->z = 8.5;
 				childEntity->focalz = -4.5;
 				childEntity->sizex = 1;
 				childEntity->sizey = 1;
@@ -3988,7 +3988,7 @@ void assignActions(map_t* map)
 				entity->sizey = 2;
 				entity->x += 8;
 				entity->y += 8;
-				entity->z = 5.5;
+				entity->z = 6;
 				entity->yaw = entity->yaw * (PI / 2); //set to 0 by default in editor, can be set 0-3
 				entity->behavior = &actChest;
 				entity->sprite = 188;
@@ -5035,7 +5035,7 @@ void assignActions(map_t* map)
 				entity->sizey = 1;
 				entity->x += 8;
 				entity->y += 8;
-				entity->z = 7;
+				entity->z = 7.5;
 				entity->sprite = 585; // this is the switch base.
 				entity->flags[PASSABLE] = true;
 				childEntity = newEntity(586, 0, map->entities, nullptr);
@@ -5043,7 +5043,7 @@ void assignActions(map_t* map)
 				childEntity->y = entity->y;
 				TileEntityList.addEntity(*childEntity);
 				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-				childEntity->z = 8;
+				childEntity->z = 8.5;
 				childEntity->leverTimerTicks = std::max(entity->leverTimerTicks, 1) * TICKS_PER_SECOND; // convert seconds to ticks from editor, make sure not less than 1
 				childEntity->leverStatus = 0; // set default to off.
 				childEntity->focalz = -4.5;
