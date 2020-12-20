@@ -1189,9 +1189,9 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		net_packet->address.port = net_server.port;
 		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
-		if ( item == open_book_item )
+		if ( item == players[player]->bookGUI.openBookItem )
 		{
-			closeBookGUI();
+			players[player]->bookGUI.closeBookGUI();
 		}
 
 		oldcount = item->count;
@@ -1247,9 +1247,9 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 	}
 	else
 	{
-		if (item == open_book_item)
+		if ( item == players[player]->bookGUI .openBookItem )
 		{
-			closeBookGUI();
+			players[player]->bookGUI.closeBookGUI();
 		}
 		int qtyToDrop = 1;
 		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
@@ -2529,7 +2529,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 				{
 					if (!players[player]->entity->isBlind())
 					{
-						openBook(books[item->appearance % numbooks], item);
+						players[player]->bookGUI.openBook(books[item->appearance % numbooks], item);
 						conductIlliterate = false;
 					}
 					else

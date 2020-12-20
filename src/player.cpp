@@ -1331,7 +1331,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	movement(*this),
 	messageZone(*this),
 	worldUI(*this),
-	hotbar(*this)
+	hotbar(*this),
+	bookGUI(*this)
 {
 	local_host = false;
 	playernum = in_playernum;

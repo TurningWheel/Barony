@@ -4236,7 +4236,7 @@ void actPlayer(Entity* my)
 								}
 							}
 
-							closeBookGUI();
+							players[PLAYER_NUM]->bookGUI.closeBookGUI();
 
 #ifdef SOUND
 							levelmusicplaying = true;

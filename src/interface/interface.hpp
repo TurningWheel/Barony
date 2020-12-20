@@ -123,9 +123,9 @@ extern list_t chestInv[MAXPLAYERS]; //This is just for the client, so that it ca
 static const int kNumChestItemsToDisplay = 4;
 extern Item* invitemschest[MAXPLAYERS][kNumChestItemsToDisplay];
 
-extern bool gui_clickdrag; //True as long as an interface element is being dragged.
-extern int dragoffset_x;
-extern int dragoffset_y;
+extern bool gui_clickdrag[MAXPLAYERS]; //True as long as an interface element is being dragged.
+extern int dragoffset_x[MAXPLAYERS];
+extern int dragoffset_y[MAXPLAYERS];
 extern int buttonclick;
 
 // function prototypes
@@ -500,38 +500,36 @@ extern SDL_Surface* bookgui_img;
 //extern SDL_Surface *bookclose_img;
 extern SDL_Surface* book_highlighted_left_img; //Draw this when the mouse is over the left half of the book.
 extern SDL_Surface* book_highlighted_right_img; //Draw this when the mouse is over the right half of the book.
-extern node_t* book_page;
-extern int bookgui_offset_x;
-extern int bookgui_offset_y;
-#define BOOK_GUI_X (((xres / 2) - (bookgui_img->w / 2)) + bookgui_offset_x)
-#define BOOK_GUI_Y (((yres / 2) - (bookgui_img->h / 2)) + bookgui_offset_y)
-extern bool dragging_book_GUI; //The book GUI is being dragged.
-extern bool book_open; //Is there a book open?
+//extern node_t* book_page;
+//extern int bookgui_offset_x;
+//extern int bookgui_offset_y;
+//extern bool dragging_book_GUI; //The book GUI is being dragged.
+//extern bool book_open; //Is there a book open?
 struct book_t;
-extern struct book_t* open_book;
-extern Item* open_book_item; //A pointer to the open book's item, so that the game knows to close the book when the player drops that item.
+//extern struct book_t* open_book;
+//extern Item* open_book_item; //A pointer to the open book's item, so that the game knows to close the book when the player drops that item.
 #define BOOK_FONT ttf12
 #define BOOK_FONT_WIDTH TTF12_WIDTH
 #define BOOK_FONT_HEIGHT TTF12_HEIGHT
 //TODO: Calculate these two automatically based off of the buttons?
-#define BOOK_PAGE_WIDTH 248
-#define BOOK_PAGE_HEIGHT 256
-#define BOOK_TITLE_PADDING 2 //The amount of empty space above and below the book titlename.
+//#define BOOK_PAGE_WIDTH 248
+//#define BOOK_PAGE_HEIGHT 256
+//#define BOOK_TITLE_PADDING 2 //The amount of empty space above and below the book titlename.
 //#define BOOK_TITLE_HEIGHT (BOOK_TITLE_FONT_SIZE + BOOK_TITLE_PADDING) //The total y space the book's title takes up. Used for calculating BOOK_DRAWSPACE_Y.
-int bookTitleHeight(struct book_t* book); //Returns how much space the book's title will occupy.
+//int bookTitleHeight(struct book_t* book); //Returns how much space the book's title will occupy.
 //#define BOOK_DRAWSPACE_X 280
 //#define BOOK_DRAWSPACE_X (bookgui_img->w - (BOOK_BORDER_THICKNESS * 2))
-#define START_OF_BOOKDRAWSPACE_X (BOOK_BORDER_THICKNESS) //This is the amount to add to BOOK_GUI_X to get the render area for the text.
+//#define START_OF_BOOKDRAWSPACE_X (BOOK_BORDER_THICKNESS) //This is the amount to add to BOOK_GUI_X to get the render area for the text.
 //#define BOOK_DRAWSPACE_Y 180
 //#define BOOK_DRAWSPACE_Y (bookgui_img->h - (BOOK_BORDER_THICKNESS * 2) - std::max(previouspage_img->h, nextpage_img->h)) //NOTE: You need to manually add  "- bookTitleHeight(open_book)" wherever you use this define.
-#define START_OF_BOOK_DRAWSPACE_Y (BOOK_BORDER_THICKNESS) //This is the amount to add to BOOK_GUI_Y to get the render area for the text. //NOTE: You need to manually add  "+ bookTitleHeight(open_book)" wherever you use this define.
-#define FLIPMARGIN 240
-#define DRAGHEIGHT_BOOK 32
+//#define START_OF_BOOK_DRAWSPACE_Y (BOOK_BORDER_THICKNESS) //This is the amount to add to BOOK_GUI_Y to get the render area for the text. //NOTE: You need to manually add  "+ bookTitleHeight(open_book)" wherever you use this define.
+//#define FLIPMARGIN 240
+//#define DRAGHEIGHT_BOOK 32
 //extern int book_characterspace_x; //How many characters can fit along the x axis.
 //extern int book_characterspace_y; //How many characters can fit along the y axis.
-void updateBookGUI();
-void closeBookGUI();
-void openBook(struct book_t* book, Item* item);
+//void updateBookGUI();
+//void closeBookGUI();
+//void openBook(struct book_t* book, Item* item);
 
 
 //------Hotbar Defines-----

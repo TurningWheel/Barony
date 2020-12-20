@@ -1726,7 +1726,7 @@ void drawStatus(int player)
 			|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
-				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
@@ -1756,7 +1756,7 @@ void drawStatus(int player)
 		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_PREV) || *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
-				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
@@ -1786,7 +1786,7 @@ void drawStatus(int player)
 
 		if ( bumper_moved && !inputs.getUIInteraction(player)->itemMenuOpen
 			&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) 
-			&& !book_open
+			&& !players[player]->bookGUI.bBookOpen
 			&& !GenericGUI[player].isGUIOpen() )
 		{
 			warpMouseToSelectedHotbarSlot(player);
@@ -1797,7 +1797,7 @@ void drawStatus(int player)
 			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
 				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
-				&& !book_open
+				&& !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
@@ -1813,7 +1813,7 @@ void drawStatus(int player)
 				item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 			}
 
-			if ( !shootmode && inputs.bControllerInputPressed(player, INJOY_MENU_HOTBAR_CLEAR) && !book_open ) //TODO: Don't activate if any of the previous if statement's conditions are true?
+			if ( !shootmode && inputs.bControllerInputPressed(player, INJOY_MENU_HOTBAR_CLEAR) && !players[player]->bookGUI.bBookOpen ) //TODO: Don't activate if any of the previous if statement's conditions are true?
 			{
 				//Clear a hotbar slot if in-inventory.
 				inputs.controllerClearInput(player, INJOY_MENU_HOTBAR_CLEAR);
@@ -1823,7 +1823,7 @@ void drawStatus(int player)
 
 			pos.x = initial_position.x + (hotbar_t.current_hotbar * hotbar_t.getSlotSize());
 			pos.y = initial_position.y - hotbar_t.getSlotSize();
-			if ( !shootmode && !book_open && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM) 
+			if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
 				&& mouseInBounds(player, pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 			{
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").

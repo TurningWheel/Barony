@@ -114,9 +114,12 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				return NULL;    //Click falls inside the generic gui.
 			}
 		}
-		if ( book_open )
+		if ( players[player]->bookGUI.bBookOpen )
 		{
-			if ( mouseInBounds(player, BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) )
+			if ( mouseInBounds(player,
+				players[player]->bookGUI.getStartX(),
+				players[player]->bookGUI.getStartX() + players[player]->bookGUI.getBookWidth(),
+				players[player]->bookGUI.getStartY(), players[player]->bookGUI.getStartY() + players[player]->bookGUI.getBookHeight()) )
 			{
 				if ( clickedOnGUI )
 				{

@@ -56,9 +56,9 @@ SDL_Surface* inventoryChest_bmp = NULL;
 SDL_Surface* invclose_bmp = NULL;
 SDL_Surface* invgraball_bmp = NULL;
 SDL_Surface* button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
-bool gui_clickdrag = false;
-int dragoffset_x = 0;
-int dragoffset_y = 0;
+bool gui_clickdrag[MAXPLAYERS] = { false };
+int dragoffset_x[MAXPLAYERS] = { 0 };
+int dragoffset_y[MAXPLAYERS] = { 0 };
 
 list_t chestInv[MAXPLAYERS];
 int chestitemscroll[MAXPLAYERS] = { 0 };
@@ -77,13 +77,13 @@ SDL_Surface* bookgui_img = NULL;
 //SDL_Surface *nextpage_img = NULL;
 //SDL_Surface *previouspage_img = NULL;
 //SDL_Surface *bookclose_img = NULL;
-node_t* book_page = NULL;
-int bookgui_offset_x = 0;
-int bookgui_offset_y = 0;
-bool dragging_book_GUI = false;
-bool book_open = false;
-book_t* open_book = NULL;
-Item* open_book_item = NULL;
+//node_t* book_page = NULL;
+//int bookgui_offset_x = 0;
+//int bookgui_offset_y = 0;
+//bool dragging_book_GUI = false;
+//bool book_open = false;
+//book_t* open_book = NULL;
+//Item* open_book_item = NULL;
 //int book_characterspace_x = 0;
 //int book_characterspace_y = 0;
 
@@ -4007,10 +4007,10 @@ void GenericGUIMenu::updateGUI()
 				}
 				if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
 				{
-					gui_clickdrag = true;
+					gui_clickdrag[gui_player] = true;
 					draggingGUI = true;
-					dragoffset_x = omousex - gui_starty;
-					dragoffset_y = omousey - gui_startx;
+					dragoffset_x[gui_player] = omousex - gui_starty;
+					dragoffset_y[gui_player] = omousey - gui_startx;
 					inputs.mouseClearLeft(gui_player);
 				}
 			}
@@ -4036,10 +4036,10 @@ void GenericGUIMenu::updateGUI()
 
 		if ( draggingGUI )
 		{
-			if ( gui_clickdrag )
+			if ( gui_clickdrag[gui_player] )
 			{
-				offsetx = (omousex - dragoffset_x) - (gui_starty - offsetx);
-				offsety = (omousey - dragoffset_y) - (gui_startx - offsety);
+				offsetx = (omousex - dragoffset_x[gui_player]) - (gui_starty - offsetx);
+				offsety = (omousey - dragoffset_y[gui_player]) - (gui_startx - offsety);
 				if ( gui_starty <= 0 )
 				{
 					offsetx = 0 - (gui_starty - offsetx);

@@ -3117,7 +3117,7 @@ void clientHandlePacket()
 
 			//deleteSaveGame(multiplayer); // stops save scumming c: //Not here, because it'll make the game unresumable if the game crashes but not all players have died.
 
-			closeBookGUI();
+			players[clientnum]->bookGUI.closeBookGUI();
 
 #ifdef SOUND
 			levelmusicplaying = true;
