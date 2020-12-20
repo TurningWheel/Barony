@@ -127,17 +127,22 @@ void Player::BookGUI_t::updateBookGUI()
 			// closing book
 			closeBookGUI();
 		}
-		if ( mouseInBounds(player.playernum, getStartX() + FLIPMARGIN, getStartX() + getBookWidth() - FLIPMARGIN,
-			getStartY(), getStartY() + getBookHeight())
-			|| mouseInBounds(player.playernum, getStartX(), getStartX() + getBookWidth(),
-				getStartY(), getStartY() + DRAGHEIGHT_BOOK) )
+
+		// 20/12/20 - disabling this for now. unnecessary
+		if ( false )
 		{
-			// moving book
-			gui_clickdrag[player.playernum] = true;
-			draggingBookGUI = true;
-			dragoffset_x[player.playernum] = inputs.getMouse(player.playernum, Inputs::MouseInputs::OX) - getStartX();
-			dragoffset_y[player.playernum] = inputs.getMouse(player.playernum, Inputs::MouseInputs::OY) - getStartY();
-			inputs.mouseClearLeft(player.playernum);
+			if ( mouseInBounds(player.playernum, getStartX() + FLIPMARGIN, getStartX() + getBookWidth() - FLIPMARGIN,
+				getStartY(), getStartY() + getBookHeight())
+				|| mouseInBounds(player.playernum, getStartX(), getStartX() + getBookWidth(),
+					getStartY(), getStartY() + DRAGHEIGHT_BOOK) )
+			{
+				// moving book
+				gui_clickdrag[player.playernum] = true;
+				draggingBookGUI = true;
+				dragoffset_x[player.playernum] = inputs.getMouse(player.playernum, Inputs::MouseInputs::OX) - getStartX();
+				dragoffset_y[player.playernum] = inputs.getMouse(player.playernum, Inputs::MouseInputs::OY) - getStartY();
+				inputs.mouseClearLeft(player.playernum);
+			}
 		}
 	}
 

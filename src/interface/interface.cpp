@@ -4005,13 +4005,18 @@ void GenericGUIMenu::updateGUI()
 					buttonclick = 9;
 					inputs.mouseClearLeft(gui_player);
 				}
-				if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
+
+				// 20/12/20 - disabling this for now. unnecessary
+				if ( false )
 				{
-					gui_clickdrag[gui_player] = true;
-					draggingGUI = true;
-					dragoffset_x[gui_player] = omousex - gui_starty;
-					dragoffset_y[gui_player] = omousey - gui_startx;
-					inputs.mouseClearLeft(gui_player);
+					if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
+					{
+						gui_clickdrag[gui_player] = true;
+						draggingGUI = true;
+						dragoffset_x[gui_player] = omousex - gui_starty;
+						dragoffset_y[gui_player] = omousey - gui_startx;
+						inputs.mouseClearLeft(gui_player);
+					}
 				}
 			}
 		}
