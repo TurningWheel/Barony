@@ -1732,13 +1732,13 @@ void drawStatus(int player)
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 				{
 					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-					hotbar_t.hotbarTooltipLastGameTick = ticks;
 				}
 				else
 				{
 					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_NEXT);
 					bumper_moved = true;
 				}
+				hotbar_t.hotbarTooltipLastGameTick = ticks;
 				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
 			}
 			else
@@ -1762,13 +1762,13 @@ void drawStatus(int player)
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 				{
 					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-					hotbar_t.hotbarTooltipLastGameTick = ticks;
 				}
 				else
 				{
 					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_PREV);
 					bumper_moved = true;
 				}
+				hotbar_t.hotbarTooltipLastGameTick = ticks;
 				hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar - 1);
 			}
 			else
@@ -1800,16 +1800,12 @@ void drawStatus(int player)
 				&& !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
+				//Show a tooltip
+				hotbar_t.hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t.hotbarTooltipLastGameTick);
+
 				//Activate a hotbar slot if in-game.
-				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) )
-				{
-					hotbar_t.hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t.hotbarTooltipLastGameTick);
-					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
-				}
-				else
-				{
-					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
-				}
+				*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
+				inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
 				item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 			}
 
