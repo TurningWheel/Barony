@@ -178,7 +178,7 @@ SDL_Surface* identifyGUI_img;
 //
 //		if (dragging_identifyGUI)
 //		{
-//			if (gui_clickdrag)
+//			if (gui_clickdrag[player.playernum])
 //			{
 //				identifygui_offset_x[player] = (omousex - dragoffset_x) - (getIdentifyGUIStartX(player) - identifygui_offset_x[player]);
 //				identifygui_offset_y[player] = (omousey - dragoffset_y) - (getIdentifyGUIStartY(player) - identifygui_offset_y[player]);

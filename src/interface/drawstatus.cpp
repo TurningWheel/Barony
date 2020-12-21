@@ -359,8 +359,8 @@ void warpMouseToSelectedHotbarSlot(const int player)
 	}
 	SDL_Rect pos;
 
-	const int hotbarSlotSize = players[player]->hotbar->getSlotSize();
-	pos.x = players[player]->hotbar->getStartX() + (players[player]->hotbar->current_hotbar * hotbarSlotSize) + (hotbarSlotSize / 2);
+	const int hotbarSlotSize = players[player]->hotbar.getSlotSize();
+	pos.x = players[player]->hotbar.getStartX() + (players[player]->hotbar.current_hotbar * hotbarSlotSize) + (hotbarSlotSize / 2);
 	pos.y = players[player]->statusBarUI.getStartY() - (hotbarSlotSize / 2);
 
 	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
@@ -388,7 +388,7 @@ void drawStatus(int player)
 
 	pos.x = players[player]->statusBarUI.getStartX();
 	auto& hotbar_t = players[player]->hotbar;
-	auto& hotbar = hotbar_t->slots();
+	auto& hotbar = hotbar_t.slots();
 
 	int gui_mode = players[player]->gui_mode;
 	bool shootmode = players[player]->shootmode;
@@ -402,7 +402,7 @@ void drawStatus(int player)
 		pos.y = y2 - 16;
 	}
 	//To garner the position of the hotbar.
-	initial_position.x = hotbar_t->getStartX();
+	initial_position.x = hotbar_t.getStartX();
 	initial_position.y = pos.y;
 	initial_position.w = 0;
 	initial_position.h = 0;
@@ -906,18 +906,18 @@ void drawStatus(int player)
 	int num = 0;
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
 	//pos.x = initial_position.x;
-	pos.x = hotbar_t->getStartX();
-	pos.y = initial_position.y - hotbar_t->getSlotSize();
+	pos.x = hotbar_t.getStartX();
+	pos.y = initial_position.y - hotbar_t.getSlotSize();
 
-	hotbar_t->hotbarBox.x = pos.x;
-	hotbar_t->hotbarBox.y = pos.y;
-	hotbar_t->hotbarBox.w = NUM_HOTBAR_SLOTS * hotbar_t->getSlotSize();
-	hotbar_t->hotbarBox.h = hotbar_t->getSlotSize();
+	hotbar_t.hotbarBox.x = pos.x;
+	hotbar_t.hotbarBox.y = pos.y;
+	hotbar_t.hotbarBox.w = NUM_HOTBAR_SLOTS * hotbar_t.getSlotSize();
+	hotbar_t.hotbarBox.h = hotbar_t.getSlotSize();
 
-	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_t->getSlotSize() )
+	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_t.getSlotSize() )
 	{
 		Uint32 color;
-		if ( players[player]->hotbar->current_hotbar == num && !openedChest[player] )
+		if ( players[player]->hotbar.current_hotbar == num && !openedChest[player] )
 		{
 			color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255); //Draw gold border around currently selected hotbar.
 		}
@@ -925,19 +925,19 @@ void drawStatus(int player)
 		{
 			color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 60); //Draw normal grey border.
 		}
-		pos.w = hotbar_t->getSlotSize();
-		pos.h = hotbar_t->getSlotSize();
+		pos.w = hotbar_t.getSlotSize();
+		pos.h = hotbar_t.getSlotSize();
 		drawImageScaledColor(hotbar_img, NULL, &pos, color);
 		item = uidToItem(hotbar[num].item);
 		if ( item )
 		{
 			if ( item->type == BOOMERANG )
 			{
-				hotbar_t->magicBoomerangHotbarSlot = num;
+				hotbar_t.magicBoomerangHotbarSlot = num;
 			}
 			bool used = false;
-			pos.w = hotbar_t->getSlotSize();
-			pos.h = hotbar_t->getSlotSize();
+			pos.w = hotbar_t.getSlotSize();
+			pos.h = hotbar_t.getSlotSize();
 
 			SDL_Rect highlightBox;
 			highlightBox.x = pos.x + 2;
@@ -998,7 +998,7 @@ void drawStatus(int player)
 			{
 				Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
-				if ( !shootmode && mouseInBounds(player, pos.x, pos.x + hotbar_t->getSlotSize(), pos.y, pos.y + hotbar_t->getSlotSize()) )
+				if ( !shootmode && mouseInBounds(player, pos.x, pos.x + hotbar_t.getSlotSize(), pos.y, pos.y + hotbar_t.getSlotSize()) )
 				{
 					if ( (inputs.bMouseLeft(player)
 						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
@@ -1179,18 +1179,18 @@ void drawStatus(int player)
 					if ( uiscale_hotbar >= 1.5 )
 					{
 						digitFont = font16x16_bmp;
-						printTextFormatted(digitFont, pos.x + hotbar_t->getSlotSize() - (24 * digits), pos.y + hotbar_t->getSlotSize() - 24, "%d", item->count);
+						printTextFormatted(digitFont, pos.x + hotbar_t.getSlotSize() - (24 * digits), pos.y + hotbar_t.getSlotSize() - 24, "%d", item->count);
 					}
 					else
 					{
-						printTextFormatted(digitFont, pos.x + hotbar_t->getSlotSize() - (14 * digits), pos.y + hotbar_t->getSlotSize() - 14, "%d", item->count);
+						printTextFormatted(digitFont, pos.x + hotbar_t.getSlotSize() - (14 * digits), pos.y + hotbar_t.getSlotSize() - 14, "%d", item->count);
 					}
 				}
 
 				SDL_Rect src;
 				src.x = pos.x + 2;
 				src.h = 16 * uiscale_hotbar;
-				src.y = pos.y + hotbar_t->getSlotSize() - src.h - 2;
+				src.y = pos.y + hotbar_t.getSlotSize() - src.h - 2;
 				src.w = 16 * uiscale_hotbar;
 
 				// item equipped
@@ -1227,7 +1227,7 @@ void drawStatus(int player)
 	}
 
 	bool drawHotBarTooltipOnCycle = false;
-	if ( !intro && hotbar_t->hotbarTooltipLastGameTick != 0 && (ticks - hotbar_t->hotbarTooltipLastGameTick) < TICKS_PER_SECOND * 2 )
+	if ( !intro && hotbar_t.hotbarTooltipLastGameTick != 0 && (ticks - hotbar_t.hotbarTooltipLastGameTick) < TICKS_PER_SECOND * 2 )
 	{
 		drawHotBarTooltipOnCycle = true;
 	}
@@ -1236,15 +1236,15 @@ void drawStatus(int player)
 	{
 		pos.x = initial_position.x;
 		//Go back through all of the hotbar slots and draw the tooltips.
-		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_t->getSlotSize() )
+		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_t.getSlotSize() )
 		{
 			item = uidToItem(hotbar[num].item);
 			if ( item )
 			{
-				bool drawTooltipOnSlot = !shootmode && mouseInBounds(player, pos.x, pos.x + hotbar_t->getSlotSize(), pos.y, pos.y + hotbar_t->getSlotSize());
+				bool drawTooltipOnSlot = !shootmode && mouseInBounds(player, pos.x, pos.x + hotbar_t.getSlotSize(), pos.y, pos.y + hotbar_t.getSlotSize());
 				if ( !drawTooltipOnSlot )
 				{
-					if ( drawHotBarTooltipOnCycle && players[player]->hotbar->current_hotbar == num )
+					if ( drawHotBarTooltipOnCycle && players[player]->hotbar.current_hotbar == num )
 					{
 						drawTooltipOnSlot = true;
 					}
@@ -1254,7 +1254,7 @@ void drawStatus(int player)
 					if ( !shootmode )
 					{
 						// reset timer.
-						hotbar_t->hotbarTooltipLastGameTick = 0;
+						hotbar_t.hotbarTooltipLastGameTick = 0;
 						drawHotBarTooltipOnCycle = false;
 					}
 					else
@@ -1275,8 +1275,8 @@ void drawStatus(int player)
 
 					if ( drawHotBarTooltipOnCycle )
 					{
-						src.x = pos.x + hotbar_t->getSlotSize();
-						src.y = pos.y + hotbar_t->getSlotSize();
+						src.x = pos.x + hotbar_t.getSlotSize();
+						src.y = pos.y + hotbar_t.getSlotSize();
 						src.y -= 16;
 					}
 
@@ -1641,8 +1641,8 @@ void drawStatus(int player)
 					)
 					||
 					(omousex >= initial_position.x 
-						&& omousex <= initial_position.x + hotbar_t->getSlotSize() * NUM_HOTBAR_SLOTS
-						&& omousey >= initial_position.y - hotbar_t->getSlotSize()
+						&& omousex <= initial_position.x + hotbar_t.getSlotSize() * NUM_HOTBAR_SLOTS
+						&& omousey >= initial_position.y - hotbar_t.getSlotSize()
 						&& omousey <= initial_position.y
 					)
 				)
@@ -1709,12 +1709,12 @@ void drawStatus(int player)
 		if ( (mousexrel || mouseyrel) && !shootmode )
 		{
 			pos.x = initial_position.x;
-			pos.y = initial_position.y - hotbar_t->getSlotSize();
-			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_t->getSlotSize() )
+			pos.y = initial_position.y - hotbar_t.getSlotSize();
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_t.getSlotSize() )
 			{
-				if ( mouseInBoundsRealtimeCoords(player, pos.x, pos.x + hotbar_t->getSlotSize(), pos.y, pos.y + hotbar_t->getSlotSize()) )
+				if ( mouseInBoundsRealtimeCoords(player, pos.x, pos.x + hotbar_t.getSlotSize(), pos.y, pos.y + hotbar_t.getSlotSize()) )
 				{
-					players[player]->hotbar->selectHotbarSlot(c);
+					players[player]->hotbar.selectHotbarSlot(c);
 				}
 			}
 		}
@@ -1726,24 +1726,24 @@ void drawStatus(int player)
 			|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
-				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 				{
 					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-					hotbar_t->hotbarTooltipLastGameTick = ticks;
 				}
 				else
 				{
 					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_NEXT);
 					bumper_moved = true;
 				}
-				players[player]->hotbar->selectHotbarSlot(players[player]->hotbar->current_hotbar + 1);
+				hotbar_t.hotbarTooltipLastGameTick = ticks;
+				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
 			}
 			else
 			{
-				hotbar_t->hotbarTooltipLastGameTick = 0;
+				hotbar_t.hotbarTooltipLastGameTick = 0;
 				/*if ( intro || shootmode )
 				{
 					if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
@@ -1756,24 +1756,24 @@ void drawStatus(int player)
 		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_PREV) || *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
-				&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
 				{
 					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-					hotbar_t->hotbarTooltipLastGameTick = ticks;
 				}
 				else
 				{
 					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_PREV);
 					bumper_moved = true;
 				}
-				hotbar_t->selectHotbarSlot(hotbar_t->current_hotbar - 1);
+				hotbar_t.hotbarTooltipLastGameTick = ticks;
+				hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar - 1);
 			}
 			else
 			{
-				hotbar_t->hotbarTooltipLastGameTick = 0;
+				hotbar_t.hotbarTooltipLastGameTick = 0;
 				/*if ( intro || shootmode )
 				{
 					if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
@@ -1786,7 +1786,7 @@ void drawStatus(int player)
 
 		if ( bumper_moved && !inputs.getUIInteraction(player)->itemMenuOpen
 			&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) 
-			&& !book_open
+			&& !players[player]->bookGUI.bBookOpen
 			&& !GenericGUI[player].isGUIOpen() )
 		{
 			warpMouseToSelectedHotbarSlot(player);
@@ -1797,38 +1797,34 @@ void drawStatus(int player)
 			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
 				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
-				&& !book_open
+				&& !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
+				//Show a tooltip
+				hotbar_t.hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t.hotbarTooltipLastGameTick);
+
 				//Activate a hotbar slot if in-game.
-				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) )
-				{
-					hotbar_t->hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t->hotbarTooltipLastGameTick);
-					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
-				}
-				else
-				{
-					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
-				}
-				item = uidToItem(hotbar[hotbar_t->current_hotbar].item);
+				*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
+				inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
+				item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 			}
 
-			if ( !shootmode && inputs.bControllerInputPressed(player, INJOY_MENU_HOTBAR_CLEAR) && !book_open ) //TODO: Don't activate if any of the previous if statement's conditions are true?
+			if ( !shootmode && inputs.bControllerInputPressed(player, INJOY_MENU_HOTBAR_CLEAR) && !players[player]->bookGUI.bBookOpen ) //TODO: Don't activate if any of the previous if statement's conditions are true?
 			{
 				//Clear a hotbar slot if in-inventory.
 				inputs.controllerClearInput(player, INJOY_MENU_HOTBAR_CLEAR);
 
-				hotbar[hotbar_t->current_hotbar].item = 0;
+				hotbar[hotbar_t.current_hotbar].item = 0;
 			}	
 
-			pos.x = initial_position.x + (hotbar_t->current_hotbar * hotbar_t->getSlotSize());
-			pos.y = initial_position.y - hotbar_t->getSlotSize();
-			if ( !shootmode && !book_open && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM) 
+			pos.x = initial_position.x + (hotbar_t.current_hotbar * hotbar_t.getSlotSize());
+			pos.y = initial_position.y - hotbar_t.getSlotSize();
+			if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
 				&& mouseInBounds(player, pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 			{
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
 				inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
-				Item* itemToDrop = uidToItem(hotbar[hotbar_t->current_hotbar].item);
+				Item* itemToDrop = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 				if ( itemToDrop )
 				{
 					dropItem(itemToDrop, player);

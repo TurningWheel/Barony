@@ -16,6 +16,7 @@
 #include "book.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
+#include "player.hpp"
 
 namespace
 {
@@ -296,8 +297,8 @@ void createBook(book_t* const book)
 		return; //Failed to open the file.
 	}
 
-	const int book_characterspace_x = BOOK_PAGE_WIDTH / BOOK_FONT_WIDTH;
-	const int book_characterspace_y = BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
+	const int book_characterspace_x = Player::BookGUI_t::BOOK_PAGE_WIDTH / BOOK_FONT_WIDTH;
+	const int book_characterspace_y = Player::BookGUI_t::BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
 	const int max_characters = book_characterspace_x * book_characterspace_y;
 
 	book->pages.first = nullptr;

@@ -1266,18 +1266,18 @@ void actPlayer(Entity* my)
 	{
 		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
 		{
-			if ( players[PLAYER_NUM]->hotbar->swapHotbarOnShapeshift == 0 )
+			if ( players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift == 0 )
 			{
 				initShapeshiftHotbar(PLAYER_NUM);
 			}
-			else if ( players[PLAYER_NUM]->hotbar->swapHotbarOnShapeshift != stats[PLAYER_NUM]->type )
+			else if ( players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift != stats[PLAYER_NUM]->type )
 			{
 				// we likely transformed while still shapeshifted, fully init the hotbar code again.
 				deinitShapeshiftHotbar(PLAYER_NUM);
 				initShapeshiftHotbar(PLAYER_NUM);
 			}
 		}
-		else if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] && players[PLAYER_NUM]->hotbar->swapHotbarOnShapeshift > 0 )
+		else if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] && players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift > 0 )
 		{
 			deinitShapeshiftHotbar(PLAYER_NUM);
 		}
@@ -4236,7 +4236,7 @@ void actPlayer(Entity* my)
 								}
 							}
 
-							closeBookGUI();
+							players[PLAYER_NUM]->bookGUI.closeBookGUI();
 
 #ifdef SOUND
 							levelmusicplaying = true;

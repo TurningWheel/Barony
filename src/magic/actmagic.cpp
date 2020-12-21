@@ -4320,13 +4320,13 @@ void actParticleSapCenter(Entity* my)
 								useItem(pickedUp, parent->skill[2]);
 							}
 							auto& hotbar_t = players[parent->skill[2]]->hotbar;
-							if ( hotbar_t->magicBoomerangHotbarSlot >= 0 )
+							if ( hotbar_t.magicBoomerangHotbarSlot >= 0 )
 							{
-								auto& hotbar = hotbar_t->slots();
-								hotbar[hotbar_t->magicBoomerangHotbarSlot].item = pickedUp->uid;
+								auto& hotbar = hotbar_t.slots();
+								hotbar[hotbar_t.magicBoomerangHotbarSlot].item = pickedUp->uid;
 								for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 								{
-									if ( i != hotbar_t->magicBoomerangHotbarSlot
+									if ( i != hotbar_t.magicBoomerangHotbarSlot
 										&& hotbar[i].item == pickedUp->uid )
 									{
 										hotbar[i].item = 0;

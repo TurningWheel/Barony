@@ -996,7 +996,7 @@ void consoleCommand(char const * const command_str)
 			}
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
-				auto& hotbar = players[clientnum]->hotbar->slots();
+				auto& hotbar = players[clientnum]->hotbar.slots();
 				hotbar[c].item = 0;
 			}
 			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
@@ -1051,7 +1051,7 @@ void consoleCommand(char const * const command_str)
 			}
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
-				auto& hotbar = players[clientnum]->hotbar->slots();
+				auto& hotbar = players[clientnum]->hotbar.slots();
 				hotbar[c].item = 0;
 			}
 			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
@@ -1093,7 +1093,7 @@ void consoleCommand(char const * const command_str)
 			}
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 			{
-				auto& hotbar = players[clientnum]->hotbar->slots();
+				auto& hotbar = players[clientnum]->hotbar.slots();
 				hotbar[c].item = 0;
 			}
 			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);

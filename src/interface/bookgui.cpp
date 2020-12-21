@@ -28,27 +28,29 @@
 
 -------------------------------------------------------------------------------*/
 
-void updateBookGUI()
+void Player::BookGUI_t::updateBookGUI()
 {
-	if ( !book_open || !book_page || !open_book)
+	if ( !bBookOpen || !bookPageNode || !book )
 	{
-		book_open = false;
-		book_page = nullptr;
-		open_book = nullptr;
-		dragging_book_GUI = false;
+		bBookOpen = false;
+		bookPageNode = nullptr;
+		book = nullptr;
+		draggingBookGUI = false;
 		return;
 	}
 
 	SDL_Rect pos;
 
 	//Center the book GUI.
-	pos.x = BOOK_GUI_X;
-	pos.y = BOOK_GUI_Y;
-	if (mouseInBounds(clientnum, BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+	pos.x = getStartX();
+	pos.y = getStartY();
+	if (mouseInBounds(player.playernum, getStartX() + getBookWidth() - FLIPMARGIN, getStartX() + getBookWidth(),
+		getStartY() + DRAGHEIGHT_BOOK, getStartY() + getBookHeight()) )
 	{
 		drawImage(book_highlighted_right_img, NULL, &pos);
 	}
-	else if (mouseInBounds(clientnum, BOOK_GUI_X, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+	else if (mouseInBounds(player.playernum, getStartX(), getStartX() + FLIPMARGIN,
+		getStartY() + DRAGHEIGHT_BOOK, getStartY() + getBookHeight()) )
 	{
 		drawImage(book_highlighted_left_img, NULL, &pos);
 	}
@@ -57,119 +59,129 @@ void updateBookGUI()
 		drawImage(bookgui_img, NULL, &pos);
 	}
 
-	if ( *inputPressed(joyimpulses[INJOY_MENU_BOOK_NEXT]) )
+	if ( inputs.bControllerInputPressed(player.playernum, INJOY_MENU_BOOK_NEXT) )
 	{
-		*inputPressed(joyimpulses[INJOY_MENU_BOOK_NEXT]) = 0;
-		if (book_page->next)
+		inputs.controllerClearInput(player.playernum, INJOY_MENU_BOOK_NEXT);
+		if ( bookPageNode->next)
 		{
-			if (book_page->next->next)
+			if ( bookPageNode->next->next)
 			{
-				book_page = book_page->next->next;
+				bookPageNode = bookPageNode->next->next;
 				playSound(83 + rand() % 6, 128);
 			}
 		}
 	}
 
-	if ( *inputPressed(joyimpulses[INJOY_MENU_BOOK_PREV]) )
+	if ( inputs.bControllerInputPressed(player.playernum, INJOY_MENU_BOOK_PREV) )
 	{
-		*inputPressed(joyimpulses[INJOY_MENU_BOOK_PREV]) = 0;
-		if (book_page->prev)
+		inputs.controllerClearInput(player.playernum, INJOY_MENU_BOOK_PREV);
+		if ( bookPageNode->prev)
 		{
-			if (book_page->prev->prev)
+			if ( bookPageNode->prev->prev)
 			{
-				book_page = book_page->prev->prev;
+				bookPageNode = bookPageNode->prev->prev;
 				playSound(83 + rand() % 6, 128);
 			}
 		}
 	}
 
-	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) )
+	if ( inputs.bControllerInputPressed(player.playernum, INJOY_MENU_CANCEL) )
 	{
-		*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
+		inputs.controllerClearInput(player.playernum, INJOY_MENU_CANCEL);
 		closeBookGUI();
 	}
 
 	// book gui
-	if ( mousestatus[SDL_BUTTON_LEFT] )
+	if ( inputs.bMouseLeft(player.playernum) )
 	{
 		//book_t GUI next page button.
-		if ( mouseInBounds(clientnum, BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+		if ( mouseInBounds(player.playernum, getStartX() + getBookWidth() - FLIPMARGIN, getStartX() + getBookWidth(),
+			getStartY() + DRAGHEIGHT_BOOK, getStartY() + getBookHeight()) )
 		{
-			mousestatus[SDL_BUTTON_LEFT] = 0;
-			if (book_page->next)
+			inputs.mouseClearLeft(player.playernum);
+			if ( bookPageNode->next)
 			{
-				if (book_page->next->next)
+				if ( bookPageNode->next->next)
 				{
-					book_page = book_page->next->next;
+					bookPageNode = bookPageNode->next->next;
 					playSound(83 + rand() % 6, 128);
 				}
 			}
 		}
-		else if ( mouseInBounds(clientnum, BOOK_GUI_X, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+		else if ( mouseInBounds(player.playernum, getStartX(), getStartX() + FLIPMARGIN,
+			getStartY() + DRAGHEIGHT_BOOK, getStartY() + getBookHeight()) )
 		{
-			mousestatus[SDL_BUTTON_LEFT] = 0;
-			if (book_page->prev)
+			inputs.mouseClearLeft(player.playernum);
+			if ( bookPageNode->prev)
 			{
-				if (book_page->prev->prev)
+				if ( bookPageNode->prev->prev)
 				{
-					book_page = book_page->prev->prev;
+					bookPageNode = bookPageNode->prev->prev;
 					playSound(83 + rand() % 6, 128);
 				}
 			}
 		}
-		if ( !mouseInBounds(clientnum, BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) )
+		if ( !mouseInBounds(player.playernum, getStartX(), getStartX() + getBookWidth(),
+			getStartY(), getStartY() + getBookHeight()) )
 		{
 			// closing book
 			closeBookGUI();
 		}
-		if ( mouseInBounds(clientnum, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) 
-			|| mouseInBounds(clientnum, BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + DRAGHEIGHT_BOOK) )
+
+		// 20/12/20 - disabling this for now. unnecessary
+		if ( false )
 		{
-			// moving book
-			gui_clickdrag = true;
-			dragging_book_GUI = true;
-			dragoffset_x = omousex - BOOK_GUI_X;
-			dragoffset_y = omousey - BOOK_GUI_Y;
-			mousestatus[SDL_BUTTON_LEFT] = 0;
+			if ( mouseInBounds(player.playernum, getStartX() + FLIPMARGIN, getStartX() + getBookWidth() - FLIPMARGIN,
+				getStartY(), getStartY() + getBookHeight())
+				|| mouseInBounds(player.playernum, getStartX(), getStartX() + getBookWidth(),
+					getStartY(), getStartY() + DRAGHEIGHT_BOOK) )
+			{
+				// moving book
+				gui_clickdrag[player.playernum] = true;
+				draggingBookGUI = true;
+				dragoffset_x[player.playernum] = inputs.getMouse(player.playernum, Inputs::MouseInputs::OX) - getStartX();
+				dragoffset_y[player.playernum] = inputs.getMouse(player.playernum, Inputs::MouseInputs::OY) - getStartY();
+				inputs.mouseClearLeft(player.playernum);
+			}
 		}
 	}
 
 	// render the book's text
 	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
-	string_t* pagetext = (string_t*)book_page->element;
-	ttfPrintTextColor(BOOK_FONT, BOOK_GUI_X + 44, BOOK_GUI_Y + 20, color, false, pagetext->data );
-	if ( book_page->next != NULL )
+	string_t* pagetext = (string_t*)bookPageNode->element;
+	ttfPrintTextColor(BOOK_FONT, getStartX() + 44, getStartY() + 20, color, false, pagetext->data );
+	if ( bookPageNode->next != NULL )
 	{
-		string_t* pagetext = (string_t*)book_page->next->element;
-		ttfPrintTextColor(BOOK_FONT, BOOK_GUI_X + 316, BOOK_GUI_Y + 20, color, false, pagetext->data );
+		string_t* pagetext = (string_t*)bookPageNode->next->element;
+		ttfPrintTextColor(BOOK_FONT, getStartX() + 316, getStartY() + 20, color, false, pagetext->data );
 	}
 
-	if (dragging_book_GUI)
+	if ( draggingBookGUI )
 	{
-		if (gui_clickdrag)
+		if ( gui_clickdrag[player.playernum] )
 		{
-			bookgui_offset_x = (omousex - dragoffset_x) - (BOOK_GUI_X - bookgui_offset_x);
-			bookgui_offset_y = (omousey - dragoffset_y) - (BOOK_GUI_Y - bookgui_offset_y);
-			if (BOOK_GUI_X <= 0)
+			offsetx = (inputs.getMouse(player.playernum, Inputs::MouseInputs::OX) - dragoffset_x[player.playernum]) - (getStartX() - offsetx);
+			offsety = (inputs.getMouse(player.playernum, Inputs::MouseInputs::OY) - dragoffset_y[player.playernum]) - (getStartY() - offsety);
+			if ( getStartX() <= player.camera_x1() )
 			{
-				bookgui_offset_x = 0 - (BOOK_GUI_X - bookgui_offset_x);
+				offsetx = player.camera_x1() - (getStartX() - offsetx);
 			}
-			if (BOOK_GUI_X > 0 + xres - bookgui_img->w)
+			if ( getStartX() > player.camera_x2() - getBookWidth())
 			{
-				bookgui_offset_x = (0 + xres - bookgui_img->w) - (BOOK_GUI_X - bookgui_offset_x);
+				offsetx = (player.camera_x2() - getBookWidth()) - (getStartX() - offsetx);
 			}
-			if (BOOK_GUI_Y <= 0)
+			if ( getStartY() <= player.camera_y1() )
 			{
-				bookgui_offset_y = 0 - (BOOK_GUI_Y - bookgui_offset_y);
+				offsety = player.camera_y1() - (getStartY() - offsety);
 			}
-			if (BOOK_GUI_Y > 0 + yres - bookgui_img->h)
+			if ( getStartY() > player.camera_y2() - getBookHeight())
 			{
-				bookgui_offset_y = (0 + yres - bookgui_img->h) - (BOOK_GUI_Y - bookgui_offset_y);
+				offsety = (player.camera_y2() - getBookHeight()) - (getStartY() - offsety);
 			}
 		}
 		else
 		{
-			dragging_book_GUI = false;
+			draggingBookGUI = false;
 		}
 	}
 }
@@ -182,14 +194,14 @@ void updateBookGUI()
 
 -------------------------------------------------------------------------------*/
 
-void closeBookGUI()
+void Player::BookGUI_t::closeBookGUI()
 {
-	book_open = false;
+	bBookOpen = false;
 	/*if (book_page)
 		free(book_page);*/
-	dragging_book_GUI = false;
-	open_book = NULL;
-	open_book_item = NULL;
+	draggingBookGUI = false;
+	book = nullptr;
+	openBookItem = nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -200,27 +212,26 @@ void closeBookGUI()
 
 -------------------------------------------------------------------------------*/
 
-void openBook(book_t* book, Item* item)
+void Player::BookGUI_t::openBook(book_t* bookToOpen, Item* item)
 {
-	if (!book || !book->pages.first)
+	if (!bookToOpen || !bookToOpen->pages.first)
 	{
 		return;
 	}
 
-	players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-	players[clientnum]->shootmode = false;
-	book_page = book->pages.first;
-	book_open = true;
-	open_book = book;
+	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	bookPageNode = bookToOpen->pages.first;
+	bBookOpen = true;
+	book = bookToOpen;
 
-	open_book_item = item;
+	openBookItem = item;
 
 	// add the book to the list of read books
 	bool hasreadbook = false;
 	node_t* node;
 	for ( node = booksRead.first; node != NULL; node = node->next )
 	{
-		if ( !strcmp(book->name, (char*)node->element) )
+		if ( !strcmp(bookToOpen->name, (char*)node->element) )
 		{
 			hasreadbook = true;
 			break;
@@ -228,12 +239,12 @@ void openBook(book_t* book, Item* item)
 	}
 	if ( !hasreadbook )
 	{
-		char* bookName = (char*) malloc(sizeof(char) * (strlen(book->name) + 1));
-		strcpy(bookName, book->name);
+		char* bookName = (char*) malloc(sizeof(char) * (strlen(bookToOpen->name) + 1));
+		strcpy(bookName, bookToOpen->name);
 
 		node = list_AddNodeFirst(&booksRead);
 		node->element = bookName;
-		node->size = sizeof(char) * (strlen(book->name) + 1);
+		node->size = sizeof(char) * (strlen(bookToOpen->name) + 1);
 		node->deconstructor = &defaultDeconstructor;
 	}
 

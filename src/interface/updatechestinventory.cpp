@@ -247,6 +247,9 @@ void updateChestInventory(const int player)
 	pos.y = getChestGUIStartY(player); //(winy + ((winh - winy) - (inventoryChest_bmp->h / 2)));
 	drawImage(inventoryChest_bmp, NULL, &pos);
 
+	const Sint32 omousex = inputs.getMouse(player, Inputs::MouseInputs::OX);
+	const Sint32 omousey = inputs.getMouse(player, Inputs::MouseInputs::OY);
+
 	// buttons
 	if ( inputs.bMouseLeft(player) && !inputs.getUIInteraction(player)->selectedItem )
 	{
@@ -286,13 +289,17 @@ void updateChestInventory(const int player)
 					chest_buttonclick = 10;
 					inputs.mouseClearLeft(player);
 				}
-				if (omousex >= getChestGUIStartX(player) && omousex < getChestGUIStartX(player) + 377 && omousey >= getChestGUIStartY(player) && omousey < getChestGUIStartY(player) + 15)
+				// 20/12/20 - disabling this for now. unnecessary
+				if ( false )
 				{
-					gui_clickdrag = true;
-					dragging_chestGUI[player] = true;
-					dragoffset_x = omousex - getChestGUIStartX(player);
-					dragoffset_y = omousey - getChestGUIStartY(player);
-					inputs.mouseClearLeft(player);
+					if (omousex >= getChestGUIStartX(player) && omousex < getChestGUIStartX(player) + 377 && omousey >= getChestGUIStartY(player) && omousey < getChestGUIStartY(player) + 15)
+					{
+						gui_clickdrag[player] = true;
+						dragging_chestGUI[player] = true;
+						dragoffset_x[player] = omousex - getChestGUIStartX(player);
+						dragoffset_y[player] = omousey - getChestGUIStartY(player);
+						inputs.mouseClearLeft(player);
+					}
 				}
 			}
 		}
@@ -322,12 +329,12 @@ void updateChestInventory(const int player)
 		}
 	}
 
-	if (dragging_chestGUI)
+	if ( dragging_chestGUI )
 	{
-		if (gui_clickdrag)
+		if (gui_clickdrag[player] )
 		{
-			chestgui_offset_x[player] = (omousex - dragoffset_x) - (getChestGUIStartX(player) - chestgui_offset_x[player]);
-			chestgui_offset_y[player] = (omousey - dragoffset_y) - (getChestGUIStartY(player) - chestgui_offset_y[player]);
+			chestgui_offset_x[player] = (omousex - dragoffset_x[player]) - (getChestGUIStartX(player) - chestgui_offset_x[player]);
+			chestgui_offset_y[player] = (omousey - dragoffset_y[player]) - (getChestGUIStartY(player) - chestgui_offset_y[player]);
 			if ( getChestGUIStartX(player) <= 0)
 			{
 				chestgui_offset_x[player] = 0 - (getChestGUIStartX(player) - chestgui_offset_x[player]);

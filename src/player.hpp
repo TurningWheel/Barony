@@ -666,6 +666,40 @@ public:
 		const int getOffsetY() const { return (status_bmp->h * uiscale_chatlog * (hide_statusbar ? 0 : 1)); }
 	} statusBarUI;
 
+	class BookGUI_t
+	{
+		Player& player;
+		static const int BOOK_TITLE_PADDING = 2; //The amount of empty space above and below the book titlename.
+		static const int FLIPMARGIN = 240;
+		static const int DRAGHEIGHT_BOOK = 32;
+	public:
+		static const int BOOK_PAGE_WIDTH = 248;
+		static const int BOOK_PAGE_HEIGHT = 256;
+		BookGUI_t(Player& p) : player(p)
+		{};
+		~BookGUI_t() {};
+		int offsetx = 0;
+		int offsety = 0;
+		bool draggingBookGUI = false;
+		bool bBookOpen = false;
+		node_t* bookPageNode = nullptr;
+		Item* openBookItem = nullptr;
+		book_t* book = nullptr;
+		const int getStartX() const
+		{
+			return ((player.camera_midx() - (getBookWidth() / 2)) + offsetx);
+		}
+		const int getStartY() const
+		{
+			return ((player.camera_midy() - (getBookHeight() / 2)) + offsety);
+		}
+		const int getBookWidth() const { return bookgui_img->w; }
+		const int getBookHeight() const { return bookgui_img->h; }
+		void updateBookGUI();
+		void closeBookGUI();
+		void openBook(struct book_t* book, Item* item);
+	} bookGUI;
+
 	class CharacterSheet_t
 	{
 		Player& player;
@@ -709,14 +743,12 @@ public:
 		bool bowIsBeingDrawn = false;
 		Uint32 bowStartDrawingTick = 0;
 		Uint32 bowDrawBaseTicks = 50;
-#ifdef SOUND
 #ifdef USE_FMOD
 		FMOD_CHANNEL* bowDrawingSoundChannel = NULL;
 		FMOD_BOOL bowDrawingSoundPlaying = 0;
 #elif defined USE_OPENAL
 		OPENAL_SOUND* bowDrawingSoundChannel = NULL;
 		ALboolean bowDrawingSoundPlaying = 0;
-#endif
 #endif
 		HUD_t(Player& p) : player(p)
 		{};
@@ -768,6 +800,8 @@ public:
 	class PlayerSettings_t
 	{
 	public:
+		PlayerSettings_t() {};
+		~PlayerSettings_t() {};
 		int quickTurnDirection = 1; // 1 == right, -1 == left
 		real_t quickTurnSpeed = PI / 15;
 	} settings;
@@ -779,13 +813,14 @@ public:
 		bool bDoingQuickTurn = false;
 		Player& player;
 	public:
+		PlayerMovement_t(Player& p) : player(p)
+		{};
+		~PlayerMovement_t() {};
+
 		int monsterEmoteGimpTimer = 0;
 		int selectedEntityGimpTimer = 0;
 		bool insectoidLevitating = false;
 
-		PlayerMovement_t(Player& p) : player(p)
-		{};
-		~PlayerMovement_t() {};
 		bool handleQuickTurn(bool useRefreshRateDelta);
 		void startQuickTurn();
 		bool isPlayerSwimming();
@@ -808,8 +843,8 @@ public:
 		Player& player;
 	public:
 		static const int ADD_MESSAGE_BUFFER_LENGTH = 256;
-		MessageZone_t(Player& p) : player(p)
-		{};
+		MessageZone_t(Player& p) : player(p) {};
+		~MessageZone_t() {};
 		std::list<Message*> notification_messages;
 		//Adds a message to the list of messages.
 		void addMessage(Uint32 color, char* content, ...);
@@ -889,6 +924,7 @@ public:
 		{
 			clear();
 		};
+		~Hotbar_t() {};
 
 		enum HotbarLoadouts : int
 		{
@@ -936,8 +972,7 @@ public:
 			current_hotbar = slot;
 			hotbarHasFocus = true;
 		}
-	};
-	Hotbar_t* hotbar = nullptr;
+	} hotbar;
 };
 
 extern Player* players[MAXPLAYERS];

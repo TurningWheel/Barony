@@ -163,7 +163,7 @@
 //
 //		if (dragging_removecurseGUI)
 //		{
-//			if (gui_clickdrag)
+//			if (gui_clickdrag[player.playernum])
 //			{
 //				removecursegui_offset_x = (omousex - dragoffset_x) - (REMOVECURSE_GUI_X - removecursegui_offset_x);
 //				removecursegui_offset_y = (omousey - dragoffset_y) - (REMOVECURSE_GUI_Y - removecursegui_offset_y);

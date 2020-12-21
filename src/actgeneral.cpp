@@ -2385,7 +2385,7 @@ void TextSourceScript::playerClearInventory(bool clearStats)
 	deinitShapeshiftHotbar(clientnum);
 	for ( int c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 	{
-		players[clientnum]->hotbar->hotbarShapeshiftInit[c] = false;
+		players[clientnum]->hotbar.hotbarShapeshiftInit[c] = false;
 	}
 	players[clientnum]->magic.clearSelectedSpells(); //So you don't start off with a spell when the game restarts.
 	spellcastingAnimationManager_deactivate(&cast_animation[clientnum]);

@@ -2137,9 +2137,12 @@ int deinitApp()
 	}
 
 	printlog("freeing ui resources...\n");
+#ifndef EDITOR
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
+#endif // !EDITOR
+
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )

@@ -56,9 +56,9 @@ SDL_Surface* inventoryChest_bmp = NULL;
 SDL_Surface* invclose_bmp = NULL;
 SDL_Surface* invgraball_bmp = NULL;
 SDL_Surface* button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
-bool gui_clickdrag = false;
-int dragoffset_x = 0;
-int dragoffset_y = 0;
+bool gui_clickdrag[MAXPLAYERS] = { false };
+int dragoffset_x[MAXPLAYERS] = { 0 };
+int dragoffset_y[MAXPLAYERS] = { 0 };
 
 list_t chestInv[MAXPLAYERS];
 int chestitemscroll[MAXPLAYERS] = { 0 };
@@ -77,13 +77,13 @@ SDL_Surface* bookgui_img = NULL;
 //SDL_Surface *nextpage_img = NULL;
 //SDL_Surface *previouspage_img = NULL;
 //SDL_Surface *bookclose_img = NULL;
-node_t* book_page = NULL;
-int bookgui_offset_x = 0;
-int bookgui_offset_y = 0;
-bool dragging_book_GUI = false;
-bool book_open = false;
-book_t* open_book = NULL;
-Item* open_book_item = NULL;
+//node_t* book_page = NULL;
+//int bookgui_offset_x = 0;
+//int bookgui_offset_y = 0;
+//bool dragging_book_GUI = false;
+//bool book_open = false;
+//book_t* open_book = NULL;
+//Item* open_book_item = NULL;
 //int book_characterspace_x = 0;
 //int book_characterspace_y = 0;
 
@@ -1361,15 +1361,15 @@ bool mouseInBounds(const int player, int x1, int x2, int y1, int y2)
 
 hotbar_slot_t* getHotbar(int player, int x, int y)
 {
-	if ( x >= players[player]->hotbar->getStartX() 
-		&& x < players[player]->hotbar->getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar->getSlotSize())
-		&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar->getSlotSize()
+	if ( x >= players[player]->hotbar.getStartX() 
+		&& x < players[player]->hotbar.getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar.getSlotSize())
+		&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar.getSlotSize()
 		&& y < players[player]->statusBarUI.getStartY() )
 	{
-		int relx = x - players[player]->hotbar->getStartX(); //X relative to the start of the hotbar.
-		int slot = std::max(0, std::min(relx / (players[player]->hotbar->getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
+		int relx = x - players[player]->hotbar.getStartX(); //X relative to the start of the hotbar.
+		int slot = std::max(0, std::min(relx / (players[player]->hotbar.getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
 
-		return &players[player]->hotbar->slots()[slot]; //The slot will clearly be the x divided by the width of a slot
+		return &players[player]->hotbar.slots()[slot]; //The slot will clearly be the x divided by the width of a slot
 	}
 
 	return NULL;
@@ -4005,13 +4005,18 @@ void GenericGUIMenu::updateGUI()
 					buttonclick = 9;
 					inputs.mouseClearLeft(gui_player);
 				}
-				if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
+
+				// 20/12/20 - disabling this for now. unnecessary
+				if ( false )
 				{
-					gui_clickdrag = true;
-					draggingGUI = true;
-					dragoffset_x = omousex - gui_starty;
-					dragoffset_y = omousey - gui_startx;
-					inputs.mouseClearLeft(gui_player);
+					if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
+					{
+						gui_clickdrag[gui_player] = true;
+						draggingGUI = true;
+						dragoffset_x[gui_player] = omousex - gui_starty;
+						dragoffset_y[gui_player] = omousey - gui_startx;
+						inputs.mouseClearLeft(gui_player);
+					}
 				}
 			}
 		}
@@ -4036,10 +4041,10 @@ void GenericGUIMenu::updateGUI()
 
 		if ( draggingGUI )
 		{
-			if ( gui_clickdrag )
+			if ( gui_clickdrag[gui_player] )
 			{
-				offsetx = (omousex - dragoffset_x) - (gui_starty - offsetx);
-				offsety = (omousey - dragoffset_y) - (gui_startx - offsety);
+				offsetx = (omousex - dragoffset_x[gui_player]) - (gui_starty - offsetx);
+				offsety = (omousey - dragoffset_y[gui_player]) - (gui_startx - offsety);
 				if ( gui_starty <= 0 )
 				{
 					offsetx = 0 - (gui_starty - offsetx);
@@ -7436,7 +7441,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[gui_player]->hotbar->slots() )
+							for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
 							{
 								if ( hotbarSlot.item == item->uid )
 								{
@@ -7489,7 +7494,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[gui_player]->hotbar->slots() )
+							for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
 							{
 								if ( hotbarSlot.item == item->uid )
 								{
@@ -7549,7 +7554,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
 							pickedUp->x = item->x;
 							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[gui_player]->hotbar->slots() )
+							for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
 							{
 								if ( hotbarSlot.item == item->uid )
 								{
@@ -8216,7 +8221,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 			{
 				pos.w *= 0.8;
 			}
-			pos.y = players[player]->hotbar->hotbarBox.y - pos.h - 8;
+			pos.y = players[player]->hotbar.hotbarBox.y - pos.h - 8;
 		}
 		pos.x = players[player]->camera_midx() - (pos.w / 2);
 
