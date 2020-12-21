@@ -87,7 +87,7 @@ private:
 	std::string icon;								//!< icon, if any (supersedes text content)
 	std::string tooltip;							//!< if empty, button has no tooltip; otherwise, it does
 	Widget::Args params;							//!< optional function parameters to use when the button function is called	
-	int border = 3;									//!< size of the button border in pixels
+	int border = 2;									//!< size of the button border in pixels
 	SDL_Rect size;									//!< size and position of the button within its parent frame
 	Uint32 color;									//!< the button's color
 	Uint32 textColor;								//!< text color

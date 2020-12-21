@@ -104,13 +104,10 @@ public:
 	static const Sint32 sliderSize;
 
 	//! virtual screen size (width)
-	static const int virtualScreenX = 1920;
+	static const int virtualScreenX = 1280;
 
 	//! virtual screen size (height)
-	static const int virtualScreenY = 1080;
-
-	//! vertical size of a list entry
-	static const int entrySize = 20;
+	static const int virtualScreenY = 720;
 
 	//! draws the frame and all of its subelements
 	void draw();
@@ -270,7 +267,7 @@ public:
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
 	std::string font = Font::defaultFont;				//!< name of the font to use for frame entries
-	int border = 3;										//!< size of the frame's border
+	int border = 2;										//!< size of the frame's border
 	SDL_Rect size;										//!< size and position of the frame in its parent frame
 	SDL_Rect actualSize;								//!< size of the frame's whole contents. when larger than size, activates sliders
 	border_style_t borderStyle = BORDER_BEVEL_HIGH;		//!< border style

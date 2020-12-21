@@ -78,7 +78,7 @@ private:
     float value = 0.f;                              //!< value
     float maxValue = 0.f;                           //!< maximum value
     float minValue = 0.f;                           //!< minimum value
-    int border = 3;                                 //!< border size in pixels
+    int border = 2;                                 //!< border size in pixels
     bool activated = false;                         //!< if true, the slider captures all input
     SDL_Rect handleSize;                            //!< size of the handle in pixels
     SDL_Rect railSize;                              //!< size of the rail in pixels

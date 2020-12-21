@@ -124,6 +124,13 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	if (_size.w <= 0 || _size.h <= 0)
 		return;
 
+	int entrySize = 20;
+	Font* _font = Font::get(font.c_str());
+	if (_font != nullptr) {
+		entrySize = _font->height();
+		entrySize += entrySize / 2;
+	}
+
 	SDL_Rect scaledSize;
 	scaledSize.x = _size.x * (float)xres / (float)Frame::virtualScreenX;
 	scaledSize.y = _size.y * (float)yres / (float)Frame::virtualScreenY;
@@ -132,7 +139,29 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 	// draw frame background
 	if (!hollow) {
-		drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
+		Uint8 r = color >> mainsurface->format->Rshift; r = (r / 3) * 2;
+		Uint8 g = color >> mainsurface->format->Gshift; g = (g / 3) * 2;
+		Uint8 b = color >> mainsurface->format->Bshift; b = (b / 3) * 2;
+		Uint8 a = color >> mainsurface->format->Ashift;
+		Uint32 darkColor =
+			(Uint32)r << mainsurface->format->Rshift |
+			(Uint32)g << mainsurface->format->Gshift |
+			(Uint32)b << mainsurface->format->Bshift |
+			(Uint32)a << mainsurface->format->Ashift;
+		SDL_Rect inner;
+		inner.x = (_size.x + border) * (float)xres / (float)Frame::virtualScreenX;
+		inner.y = (_size.y + border) * (float)yres / (float)Frame::virtualScreenY;
+		inner.w = (_size.w - border*2) * (float)xres / (float)Frame::virtualScreenX;
+		inner.h = (_size.h - border*2) * (float)yres / (float)Frame::virtualScreenY;
+		if (borderStyle == BORDER_BEVEL_HIGH) {
+			drawRect(&scaledSize, darkColor, (Uint8)(darkColor>>mainsurface->format->Ashift));
+			drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
+		} else if (borderStyle == BORDER_BEVEL_LOW) {
+			drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
+			drawRect(&inner, darkColor, (Uint8)(darkColor>>mainsurface->format->Ashift));
+		} else {
+			drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
+		}
 	}
 
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
@@ -451,6 +480,13 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	}
 	if (_size.w <= 0 || _size.h <= 0)
 		return result;
+
+	int entrySize = 20;
+	Font* _font = Font::get(font.c_str());
+	if (_font != nullptr) {
+		entrySize = _font->height();
+		entrySize += entrySize / 2;
+	}
 
 	SDL_Rect fullSize = _size;
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
@@ -1086,6 +1122,12 @@ Slider* Frame::findSlider(const char* name) {
 }
 
 void Frame::resizeForEntries() {
+	int entrySize = 20;
+	Font* _font = Font::get(font.c_str());
+	if (_font != nullptr) {
+		entrySize = _font->height();
+		entrySize += entrySize / 2;
+	}
 	actualSize.w = size.w;
 	actualSize.h = (Uint32)list.size() * entrySize;
 	actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
@@ -1177,6 +1219,12 @@ void Frame::scrollToSelection() {
 			break;
 		}
 		++index;
+	}
+	int entrySize = 20;
+	Font* _font = Font::get(font.c_str());
+	if (_font != nullptr) {
+		entrySize = _font->height();
+		entrySize += entrySize / 2;
 	}
 	if (actualSize.y > index * entrySize) {
 		actualSize.y = index * entrySize;

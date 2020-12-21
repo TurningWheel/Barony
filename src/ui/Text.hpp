@@ -22,7 +22,7 @@ private:
 
 public:
 	//! size of the black text outline
-	static const int outlineSize = 1;
+	static const int outlineSize = 0;
 
 	//! special char marks font to be used
 	static const char fontBreak = 8;
