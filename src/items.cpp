@@ -107,7 +107,8 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 
 		if ( !playerInventoryUI )
 		{
-			printlog("warning: newItem inventory was not a local player?");
+			//printlog("warning: newItem inventory was not a local player?");
+			itemuids++;
 			return item;
 		}
 

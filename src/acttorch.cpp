@@ -38,6 +38,11 @@ void actTorch(Entity* my)
 {
 	int i;
 
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
+
 	// ambient noises (yeah, torches can make these...)
 	TORCH_FIRE--;
 	if ( TORCH_FIRE <= 0 )
@@ -180,6 +185,11 @@ void actTorch(Entity* my)
 void actCrystalShard(Entity* my)
 {
 	int i;
+
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
 
 	// ambient noises (yeah, torches can make these...)
 	TORCH_FIRE--;

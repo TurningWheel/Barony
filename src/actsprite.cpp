@@ -97,6 +97,22 @@ void actSpriteWorldTooltip(Entity* my)
 	{
 		my->x = parent->x;
 		my->y = parent->y;
+
+		if ( parent->behavior == &actDoor )
+		{
+			if ( parent->flags[PASSABLE] )
+			{
+				if ( parent->doorStartAng == 0 )
+				{
+					my->y -= 5;
+				}
+				else
+				{
+					my->x -= 5;
+				}
+			}
+		}
+
 		bool inrange = (my->worldTooltipActive == 1);
 		bool skipUpdating = true;
 		if ( players[my->worldTooltipPlayer]->worldUI.bTooltipActiveForPlayer(*my) )

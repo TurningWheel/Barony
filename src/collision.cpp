@@ -276,7 +276,14 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 		}
 		else
 		{
-			uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), yres - (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
+			if ( players[player]->worldUI.isEnabled() )
+			{
+				uidnum = 0;
+			}
+			else
+			{
+				uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), yres - (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
+			}
 			//messagePlayer(0, "first: %d", uidnum);
 			//uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
 			//messagePlayer(0, "sec: %d", uidnum);
@@ -309,7 +316,17 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				}
 				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
 				{
-					entity = uidToEntity(tooltip->parent);
+					if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
+					{
+						if ( inputs.bControllerInputHeld(player, INJOY_GAME_USE) )
+						{
+							entity = uidToEntity(tooltip->parent);
+						}
+					}
+					else
+					{
+						entity = uidToEntity(tooltip->parent);
+					}
 					break;
 				}
 			}

@@ -17,6 +17,7 @@
 #include "shops.hpp"
 #include "menu.hpp"
 #include "collision.hpp"
+#include "mod_tools.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -1402,6 +1403,7 @@ void Player::WorldUI_t::reset()
 	}
 	tooltipsInRange.clear();
 	bTooltipInView = false;
+	uidForActiveTooltip = 0;
 }
 
 real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
@@ -1412,6 +1414,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 	}
 
 	real_t dist = entityDist(&tooltip, players[player.playernum]->entity);
+	Entity* parent = uidToEntity(tooltip.parent);
 	if ( dist < 24 && dist > 4 )
 	{
 		real_t tangent = atan2(tooltip.y - players[player.playernum]->entity->y, tooltip.x - players[player.playernum]->entity->x);
@@ -1432,7 +1435,25 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		{
 			playerYaw += 2 * PI;
 		}
-		if ( abs(tangent - playerYaw) < (PI / 8) || abs(tangent - playerYaw) > (2 * PI - PI / 8) )
+
+		real_t interactAngle = (PI / 8);
+		if ( parent )
+		{
+			if ( parent->behavior == &actGate && parent->flags[PASSABLE] )
+			{
+				return 0.0;
+			}
+			if ( parent->behavior == &actPlayer || parent->behavior == &actMonster )
+			{
+				interactAngle = PI / 16;
+			}
+			else if ( parent->behavior == &actBeartrap || parent->behavior == &actBomb )
+			{
+				interactAngle = PI / 16;
+			}
+		}
+
+		if ( (abs(tangent - playerYaw) < (interactAngle)) || (abs(tangent - playerYaw) > (2 * PI - interactAngle)) )
 		{
 			//messagePlayer(0, "%.2f", tangent - playerYaw);
 			return dist;
@@ -1447,17 +1468,284 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 	tooltip.worldTooltipActive = 1;
 	if ( uidToEntity(tooltip.parent) )
 	{
-		uidToEntity(tooltip.parent)->highlightForUI = 1;
+		Entity* parent = uidToEntity(tooltip.parent);
+		parent->highlightForUI = 1.0;
+
+		if ( tooltip.worldTooltipRequiresButtonHeld == 1 )
+		{
+			interactText = "(Hold) ";
+		}
+		else
+		{
+			interactText = "";
+		}
+
+		if ( parent->behavior == &actItem )
+		{
+			interactText = "Pick up item";
+		}
+		else if ( parent->behavior == &actGoldBag )
+		{
+			interactText = "Take gold";
+		}
+		else if ( parent->behavior == &actFountain )
+		{
+			interactText = "Drink from fountain";
+		}
+		else if ( parent->behavior == &actSink )
+		{
+			interactText = "Drink from sink";
+		}
+		else if ( parent->behavior == &actChestLid || parent->behavior == &actChest )
+		{
+			if ( parent->skill[1] == 1 )
+			{
+				interactText = "Close chest";
+			}
+			else if ( parent->skill[1] == 0 )
+			{
+				interactText = "Open chest";
+			}
+		}
+		else if ( parent->behavior == &actTorch )
+		{
+			interactText = "Take torch";
+		}
+		else if ( parent->behavior == &actCrystalShard )
+		{
+			interactText = "Take shard";
+		}
+		else if ( parent->behavior == &actHeadstone )
+		{
+			interactText = "Inspect gravestone";
+		}
+		else if ( parent->behavior == &actMonster )
+		{
+			int monsterType = parent->getMonsterTypeFromSprite();
+			std::string name = "follower";
+			if ( parent->getStats() && strcmp(parent->getStats()->name, "") )
+			{
+				name = parent->getStats()->name;
+			}
+			else
+			{
+				if ( monsterType < KOBOLD ) //Original monster count
+				{
+					name = language[90 + monsterType];
+				}
+				else if ( monsterType >= KOBOLD ) //New monsters
+				{
+					name = language[2000 + monsterType - KOBOLD];
+				}
+			}
+
+			if ( parent->monsterAllyGetPlayerLeader() 
+				&& parent->monsterAllyGetPlayerLeader() == players[player.playernum]->entity )
+			{
+				if ( parent->monsterIsTinkeringCreation() )
+				{
+					interactText = "Command " + name;
+				}
+				else
+				{
+					interactText = "Command " + name;
+				}
+			}
+			else if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+			{
+				interactText = "Trade with " + name;
+			}
+			else
+			{
+				interactText = "Interact with " + name;
+			}
+		}
+		else if ( parent->behavior == &actDoor )
+		{
+			if ( parent->flags[PASSABLE] )
+			{
+				interactText = "Close door";
+			}
+			else
+			{
+				interactText = "Open door";
+			}
+		}
+		else if ( parent->behavior == &actGate )
+		{
+			interactText = "Inspect gate";
+		}
+		else if ( parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
+		{
+			if ( parent->skill[0] == 1 )
+			{
+				interactText = "Deactivate switch";
+			}
+			else
+			{
+				interactText = "Activate switch";
+			}
+		}
+		else if ( parent->behavior == &actPowerCrystal )
+		{
+			interactText = "Turn crystal";
+		}
+		else if ( parent->behavior == &actBoulder )
+		{
+			interactText = "Push boulder";
+		}
+		else if ( parent->behavior == &actPedestalBase )
+		{
+			if ( parent->pedestalHasOrb > 0 )
+			{
+				interactText = "Take orb";
+			}
+			else
+			{
+				interactText = "Inspect";
+			}
+		}
+		else if ( parent->behavior == &actCampfire )
+		{
+			interactText = "Pull torch";
+		}
+		else if ( parent->behavior == &actFurniture || parent->behavior == &actMCaxe )
+		{
+			interactText = "Inspect";
+		}
+		else if ( parent->behavior == &actFloorDecoration )
+		{
+			if ( parent->sprite == 991 ) // sign
+			{
+				interactText = "Read sign";
+			}
+			else
+			{
+				interactText = "Inspect";
+			}
+		}
+		else if ( parent->behavior == &actBeartrap )
+		{
+			interactText = "Disarm beartrap";
+		}
+		else if ( parent->behavior == &actLadderUp )
+		{
+			interactText = "Inspect trapdoor";
+		}
+		else if ( parent->behavior == &actLadder )
+		{
+			if ( secretlevel && parent->skill[3] == 1 ) // secret ladder
+			{
+				interactText += "Exit secret level";
+			}
+			else if ( !secretlevel && parent->skill[3] == 1 ) // secret ladder
+			{
+				interactText += "Enter secret level";
+			}
+			else
+			{
+				interactText += "Exit dungeon floor";
+			}
+		}
+		else if ( parent->behavior == &actPortal )
+		{
+			if ( parent->skill[3] == 0 ) // secret entrance portal
+			{
+				if ( secretlevel )
+				{
+					interactText += "Exit secret level";
+				}
+				else
+				{
+					interactText += "Enter secret level";
+				}
+			}
+			else
+			{
+				if ( !strcmp(map.name, "Hell") )
+				{
+					interactText += "Exit dungeon floor"; // hell uses portals instead
+				}
+				else if ( !strcmp(map.name, "Mages Guild") )
+				{
+					interactText += "Exit Hamlet"; // mages guild exit to castle
+				}
+				else
+				{
+					interactText += "Exit dungeon floor";
+				}
+			}
+		}
+		else if ( parent->behavior == &::actMidGamePortal )
+		{
+			interactText += "Step through portal";
+		}
+		else if ( parent->behavior == &actCustomPortal )
+		{
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				if ( !strcmp(map.name, "Tutorial Hub") )
+				{
+					interactText += "Enter trial";
+				}
+				else
+				{
+					interactText += "Exit trial";
+				}
+			}
+			else
+			{
+				if ( parent->portalCustomSpriteAnimationFrames > 0 )
+				{
+					interactText += "Enter portal";
+				}
+				else
+				{
+					interactText += "Enter trapdoor";
+				}
+			}
+		}
+		else if ( parent->behavior == &::actExpansionEndGamePortal
+			|| parent->behavior == &actWinningPortal )
+		{
+			interactText += "Step through portal";
+		}
+		else if ( parent->behavior == &actTeleporter )
+		{
+			if ( parent->teleporterType == 2 ) // portal
+			{
+				interactText += "Enter portal";
+			}
+			else if ( parent->teleporterType == 1 ) // down ladder
+			{
+				interactText += "Descend ladder";
+			}
+			else if ( parent->teleporterType == 0 ) // up ladder
+			{
+				interactText += "Climb ladder";
+			}
+		}
+		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
+		{
+			char* itemName = items[parent->skill[21]].name_identified;
+			interactText = "Disarm ";
+			interactText += itemName;
+		}
+		else
+		{
+			interactText = "Interact";
+		}
 	}
 	bTooltipInView = true;
+	uidForActiveTooltip = tooltip.parent;
 }
 void Player::WorldUI_t::setTooltipDisabled(Entity& tooltip)
 {
 	tooltip.setUID(UID_TOOLTIP_DISABLED);
 	tooltip.worldTooltipActive = 0;
-	if ( uidToEntity(tooltip.parent) )
+	if ( tooltip.parent == uidForActiveTooltip )
 	{
-		uidToEntity(tooltip.parent)->highlightForUI = 0;
+		uidForActiveTooltip = 0;
 	}
 }
 bool Player::WorldUI_t::bTooltipActiveForPlayer(Entity& tooltip)
@@ -1539,7 +1827,7 @@ void Player::WorldUI_t::cycleToPreviousTooltip()
 	}
 }
 
-bool entityBlocksTooltipInteraction(Entity& entity)
+bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 {
 	if ( entity.behavior == &actGate )
 	{
@@ -1565,11 +1853,23 @@ bool entityBlocksTooltipInteraction(Entity& entity)
 	{
 		return false;
 	}
+	else if ( entity.behavior == &actPistonBase || entity.behavior == &actPistonCam )
+	{
+		return false;
+	}
 	else if ( entity.behavior == &actColumn )
 	{
 		return false;
 	}
 	else if ( entity.behavior == &actDoorFrame )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actDoor || entity.behavior == &actFountain || entity.behavior == &actSink
+		|| entity.behavior == &actHeadstone || entity.behavior == &actChest || entity.behavior == &actChestLid
+		|| entity.behavior == &actBoulder || (entity.behavior == &actMonster && !entity.checkEnemy(players[player]->entity) )
+		|| entity.behavior == &actPlayer || entity.behavior == &actPedestalOrb || entity.behavior == &actPowerCrystalBase
+		|| entity.behavior == &actPowerCrystal )
 	{
 		return false;
 	}
@@ -1632,7 +1932,7 @@ void Player::WorldUI_t::handleTooltips()
 			Entity* ohitentity = hit.entity;
 			lineTrace(players[player]->entity, players[player]->entity->x, players[player]->entity->y,
 				players[player]->entity->yaw, STRIKERANGE, 0, true);
-			if ( hit.entity && entityBlocksTooltipInteraction (*hit.entity) )
+			if ( hit.entity && entityBlocksTooltipInteraction(player, *hit.entity) )
 			{
 				bDoingActionHideTooltips = true;
 			}
@@ -1679,6 +1979,7 @@ void Player::WorldUI_t::handleTooltips()
 			players[player]->worldUI.gimpDisplayTimer = std::max(0, players[player]->worldUI.gimpDisplayTimer - 1);
 
 			Entity* closestTooltip = nullptr;
+			Entity* parent = nullptr;
 			real_t dist = 10000.0;
 			for ( node_t* node = map.worldUI->first; node; node = node->next )
 			{
@@ -1688,6 +1989,11 @@ void Player::WorldUI_t::handleTooltips()
 					continue;
 				}
 				if ( tooltip->worldTooltipPlayer != player )
+				{
+					continue;
+				}
+				parent = uidToEntity(tooltip->parent);
+				if ( parent && parent->flags[INVISIBLE] )
 				{
 					continue;
 				}
@@ -2074,6 +2380,32 @@ const bool Inputs::bControllerInputPressed(int player, const unsigned controller
 	}
 }
 
+const bool Inputs::bControllerInputHeld(int player, const unsigned controllerImpulse) const
+{
+	if ( controllerImpulse >= NUM_JOY_IMPULSES )
+	{
+		return false;
+	}
+	if ( !bPlayerIsControllable(player) )
+	{
+		return false;
+	}
+	const GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return false;
+	}
+
+	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 ) // triggers
+	{
+		return controller->binaryToggle(GameController::getSDLTriggerFromImpulse(controllerImpulse));
+	}
+	else
+	{
+		return controller->buttonHeldToggle(GameController::getSDLButtonFromImpulse(controllerImpulse));
+	}
+}
+
 const bool Inputs::bMouseLeft(int player) const
 {
 	if ( !bPlayerIsControllable(player) )
@@ -2299,6 +2631,14 @@ void GameController::updateButtons()
 			// unconsume the input whenever it's released or pressed again.
 			//messagePlayer(0, "%d: %d", i, buttons[i].binary ? 1 : 0);
 			buttons[i].consumed = false;
+			if ( buttons[i].binary && buttons[i].buttonHeldTicks == 0 )
+			{
+				buttons[i].buttonHeldTicks = ticks;
+			}
+			else if ( !buttons[i].binary )
+			{
+				buttons[i].buttonHeldTicks = 0;
+			}
 		}
 	}
 }
@@ -2340,6 +2680,15 @@ bool GameController::binaryToggle(SDL_GameControllerButton binding) const
 		return false;
 	}
 	return (buttons[binding].binary && !buttons[binding].consumed);
+}
+
+bool GameController::buttonHeldToggle(SDL_GameControllerButton binding) const
+{
+	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return false;
+	}
+	return (buttons[binding].binary && !buttons[binding].consumed && (ticks - buttons[binding].buttonHeldTicks) > TICKS_PER_SECOND);
 }
 
 bool GameController::binary(SDL_GameControllerButton binding) const

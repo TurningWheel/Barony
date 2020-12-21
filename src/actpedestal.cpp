@@ -72,6 +72,11 @@ void Entity::actPedestalBase()
 		light = lightSphereShadow(x / 16, y / 16, 3, 255);
 	}
 
+	if ( ticks == 1 )
+	{
+		this->createWorldUITooltip();
+	}
+
 	if ( pedestalInGround )
 	{
 		if ( pedestalInit == 0 )

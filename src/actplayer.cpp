@@ -3492,7 +3492,7 @@ void actPlayer(Entity* my)
 			{
 				bool clickedOnGUI = false;
 				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_USE); // using objects
-				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
+				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI && !players[PLAYER_NUM]->worldUI.isEnabled() )
 				{
 					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
 					if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE])) || (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
@@ -3595,7 +3595,7 @@ void actPlayer(Entity* my)
 										target = parent;
 									}
 								}
-								else if ( target->sprite == 184 ) // switch base.
+								else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
 								{
 									parent = uidToEntity(target->parent);
 									if ( parent )
@@ -6222,7 +6222,10 @@ void actPlayer(Entity* my)
 		PLAYER_ATTACKTIME = 0;
 	}
 
-	players[PLAYER_NUM]->movement.handlePlayerCameraPosition(false);
+	if ( !usecamerasmoothing )
+	{
+		players[PLAYER_NUM]->movement.handlePlayerCameraPosition(false);
+	}
 }
 
 // client function

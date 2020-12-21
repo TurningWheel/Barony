@@ -129,6 +129,8 @@ public:
 		float deadzone = 0.f;
 		bool binary = false;
 		bool consumed = false;
+		Uint32 buttonHeldTicks = 0;
+		bool buttonHeld = false;
 
 		enum Bindtype_t 
 		{
@@ -164,6 +166,7 @@ public:
 	bool binary(SDL_GameControllerButton binding) const;
 	bool binaryToggle(SDL_GameControllerButton binding) const;
 	void consumeBinaryToggle(SDL_GameControllerButton binding);
+	bool buttonHeldToggle(SDL_GameControllerButton binding) const;
 	float analog(SDL_GameControllerButton binding) const;
 	bool binary(SDL_GameControllerAxis binding) const;
 	bool binaryToggle(SDL_GameControllerAxis binding) const;
@@ -392,6 +395,7 @@ public:
 	}
 	void controllerHandleMouse(const int player);
 	const bool bControllerInputPressed(const int player, const unsigned controllerImpulse) const;
+	const bool bControllerInputHeld(int player, const unsigned controllerImpulse) const;
 	const bool bControllerRawInputPressed(const int player, const unsigned button) const;
 	void controllerClearInput(const int player, const unsigned controllerImpulse);
 	void controllerClearRawInput(const int player, const unsigned button);
@@ -890,11 +894,14 @@ public:
 		void setTooltipDisabled(Entity& tooltip);
 		bool bTooltipActiveForPlayer(Entity& tooltip);
 		bool bTooltipInView = false;
+		Uint32 uidForActiveTooltip = 0;
+		std::string interactText = "Interact";
 		void enable() { bEnabled = true; }
 		void disable() { 
 			bEnabled = false; 
 			reset();
 		}
+		bool isEnabled() const { return bEnabled; }
 		static void handleTooltips();
 		real_t tooltipInRange(Entity& tooltip); // returns distance of added tooltip, otherwise 0.
 		void cycleToNextTooltip();

@@ -1232,6 +1232,8 @@ void actMonster(Entity* my)
 		{
 			MONSTER_INIT = 1;
 
+			my->createWorldUITooltip();
+
 			// make two empty nodes
 			node = list_AddNodeLast(&my->children);
 			node->element = nullptr;
@@ -1708,6 +1710,8 @@ void actMonster(Entity* my)
 		{
 			my->monsterTarget = 0;
 		}
+
+		my->createWorldUITooltip();
 
 		/*// create an empty first node for traversal purposes //GOING TO ASSUME THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node = list_AddNodeFirst(my->children);

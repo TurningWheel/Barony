@@ -173,6 +173,7 @@ void Entity::actFurniture()
 {
 	if ( !furnitureInit )
 	{
+		this->createWorldUITooltip();
 		furnitureInit = 1;
 		if ( furnitureType == FURNITURE_TABLE || furnitureType == FURNITURE_BUNKBED || furnitureType == FURNITURE_BED || furnitureType == FURNITURE_PODIUM )
 		{
@@ -290,6 +291,12 @@ void actMCaxe(Entity* my)
 	{
 		my->yaw -= PI * 2;
 	}
+
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
+
 	if ( !MCAXE_USED )
 	{
 		if ( multiplayer != CLIENT )
@@ -499,6 +506,10 @@ void actFloorDecoration(Entity* my)
 	if ( !my->flags[PASSABLE] )
 	{
 		my->flags[PASSABLE] = true;
+	}
+	if ( my->ticks == 1 && !my->flags[UNCLICKABLE] )
+	{
+		my->createWorldUITooltip();
 	}
 
 	if ( multiplayer == CLIENT )

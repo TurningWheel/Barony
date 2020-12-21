@@ -299,7 +299,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
 	interactedByMonster(skill[47]),
-	highlightForUI(skill[56]),
+	highlightForUI(fskill[29]),
+	highlightForUIGlow(fskill[28]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
@@ -336,7 +337,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	worldTooltipActive(skill[0]),
 	worldTooltipPlayer(skill[1]),
 	worldTooltipInit(skill[3]),
-	worldTooltipFadeDelay(skill[4])
+	worldTooltipFadeDelay(skill[4]),
+	worldTooltipIgnoreDrawing(skill[5]),
+	worldTooltipRequiresButtonHeld(skill[6])
 {
 	int c;
 	// add the entity to the entity list
@@ -18981,5 +18984,37 @@ void Entity::createWorldUITooltip()
 		worldTooltip->worldTooltipZ = 1.5;
 		players[i]->worldUI.setTooltipDisabled(*worldTooltip);
 		//worldTooltip->addToWorldUIList(map.worldUI);
+
+		if ( behavior != &actItem )
+		{
+			worldTooltip->worldTooltipIgnoreDrawing = 1;
+		}
+
+		if ( behavior == &actPortal || behavior == &actLadder
+			|| behavior == &::actMidGamePortal || behavior == &::actExpansionEndGamePortal
+			|| behavior == &actWinningPortal || behavior == &actCustomPortal )
+		{
+			worldTooltip->worldTooltipRequiresButtonHeld = 1;
+		}
 	}
+}
+
+bool Entity::bEntityHighlightedForPlayer(const int player) const
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return false;
+	}
+	if ( behavior == &actMonster || behavior == &actPlayer )
+	{
+		return false;
+	}
+	if ( players[player]->worldUI.uidForActiveTooltip != 0 )
+	{
+		if ( players[player]->worldUI.uidForActiveTooltip == getUID() )
+		{
+			return true;
+		}
+	}
+	return false;
 }

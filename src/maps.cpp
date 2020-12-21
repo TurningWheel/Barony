@@ -5053,6 +5053,7 @@ void assignActions(map_t* map)
 				childEntity->roll = -PI / 4; // "off" position
 				childEntity->flags[PASSABLE] = true;
 				childEntity->behavior = &actSwitchWithTimer;
+				entity->parent = childEntity->getUID();
 				break;
 			// pedestal
 			case 116:

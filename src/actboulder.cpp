@@ -481,6 +481,11 @@ void actBoulder(Entity* my)
 		{
 			my->flags[BURNABLE] = true;
 		}
+		if ( !BOULDER_INIT )
+		{
+			BOULDER_INIT = 1;
+			my->createWorldUITooltip();
+		}
 		return;
 	}
 	my->skill[2] = -16; // invokes actBoulder() on clients
@@ -516,6 +521,7 @@ void actBoulder(Entity* my)
 		}
 		BOULDER_INIT = 1;
 		BOULDER_PLAYERPUSHED = -1;
+		my->createWorldUITooltip();
 	}
 
 	if ( BOULDER_LAVA_EXPLODE > 0 )

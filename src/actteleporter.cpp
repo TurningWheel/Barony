@@ -42,6 +42,11 @@ void Entity::actTeleporter()
 {
 	int i;
 
+	if ( this->ticks == 1 )
+	{
+		createWorldUITooltip();
+	}
+
 	teleporterAmbience--;
 	if ( teleporterAmbience <= 0 )
 	{

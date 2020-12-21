@@ -53,6 +53,11 @@ void Entity::actChest()
 		playSoundEntityLocal(this, 149, 32);
 	}
 
+	if ( ticks == 1 )
+	{
+		this->createWorldUITooltip();
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		return;

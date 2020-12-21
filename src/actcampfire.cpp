@@ -42,6 +42,7 @@ void actCampfire(Entity* my)
 	{
 		CAMPFIRE_INIT = 1;
 		CAMPFIRE_HEALTH = MAXPLAYERS;
+		my->createWorldUITooltip();
 	}
 
 	// crackling sounds

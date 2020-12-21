@@ -165,11 +165,25 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	}
 
 	bool highlightEntity = false;
-	bool oldBrightness = entity->flags[BRIGHT];
-	if ( entity->behavior == &actItem && entity->highlightForUI == 1 )
+	bool highlightEntityFromParent = false;
+	int player = -1;
+	for ( player = 0; player < MAXPLAYERS; ++player )
 	{
-		highlightEntity = true;
-		entity->flags[BRIGHT] = true;
+		if ( &cameras[player] == camera )
+		{
+			break;
+		}
+	}
+	highlightEntity = entity->bEntityHighlightedForPlayer(player);
+	if ( !highlightEntity && (entity->sprite == 184 || entity->sprite == 585 || entity->sprite == 216) ) // lever base/chest lid
+	{
+		Entity* parent = uidToEntity(entity->parent);
+		if ( parent && parent->bEntityHighlightedForPlayer(player) )
+		{
+			entity->highlightForUIGlow = parent->highlightForUIGlow;
+			highlightEntityFromParent = true;
+			highlightEntity = highlightEntityFromParent;
+		}
 	}
 
 	// get shade factor
@@ -423,10 +437,35 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
 				}
 				glColorPointer(3, GL_FLOAT, 0, 0);
-				GLfloat params_col[4] = {static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f};
-				glEnable(GL_LIGHTING);
-				glEnable(GL_COLOR_MATERIAL);
-				glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
+				GLfloat params_col[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
+				if ( highlightEntity )
+				{
+					glEnable(GL_LIGHTING);
+					glEnable(GL_LIGHT1);
+					if ( !highlightEntityFromParent )
+					{
+						entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
+					}
+					real_t highlight = entity->highlightForUIGlow;
+					if ( highlight > 1.0 )
+					{
+						highlight = 1.0 - (highlight - 1.0);
+					}
+					GLfloat ambient[4] = { 
+						static_cast<GLfloat>(.15 + highlight * .15), 
+						static_cast<GLfloat>(.15 + highlight * .15), 
+						static_cast<GLfloat>(.15 + highlight * .15),
+						1.f };
+					glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
+					glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
+					glEnable(GL_COLOR_MATERIAL);
+				}
+				else
+				{
+					glEnable(GL_LIGHTING);
+					glEnable(GL_COLOR_MATERIAL);
+					glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
+				}
 			}
 			else
 			{
@@ -443,6 +482,10 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 			{
 				glDisable(GL_COLOR_MATERIAL);
 				glDisable(GL_LIGHTING);
+				if ( highlightEntity )
+				{
+					glDisable(GL_LIGHT1);
+				}
 				glDisableClientState(GL_COLOR_ARRAY); // disable the color array on the client side
 			}
 			glDisableClientState(GL_VERTEX_ARRAY); // disable the vertex array on the client side
@@ -450,11 +493,6 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	}
 	glDepthRange(0, 1);
 	glPopMatrix();
-
-	if ( highlightEntity )
-	{
-		entity->flags[BRIGHT] = oldBrightness;
-	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -530,6 +568,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	}
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
+		if ( entity->worldTooltipIgnoreDrawing != 0 )
+		{
+			return;
+		}
 		int player = -1;
 		for ( player = 0; player < MAXPLAYERS; ++player )
 		{
@@ -557,7 +599,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable(GL_DEPTH_TEST);
-	if ( !entity->flags[OVERDRAW] )
+	if ( !entity->flags[OVERDRAW] || entity->flags[OVERDRAW] )
 	{
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
@@ -590,33 +632,32 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
 		Entity* parent = uidToEntity(entity->parent);
-		if ( parent->behavior == &actGoldBag )
-		{
-			sprite = SDL_CreateRGBSurface(0, 320, 32, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-		}
-		else if ( parent->behavior == &actItem )
+		if ( parent->behavior == &actItem )
 		{
 			sprite = SDL_CreateRGBSurface(0, 320, 64, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+			SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255));
+			SDL_LockSurface(sprite);
+
+			for ( int x = 0; x < sprite->w; x++ )
+			{
+				Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
+				putPixel(sprite, x, 0, color);
+				putPixel(sprite, x, sprite->h - 1, color);
+			}
+			for ( int y = 0; y < sprite->h; y++ )
+			{
+				Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
+				putPixel(sprite, 0, y, color);
+				putPixel(sprite, sprite->w - 1, y, color);
+			}
 		}
-		else if ( parent->behavior == &actSwitch )
+		else
 		{
 			sprite = SDL_CreateRGBSurface(0, 320, 32, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+			SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 0));
+			SDL_LockSurface(sprite);
 		}
-		tex = new TempTexture();
-		SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255));
-		SDL_LockSurface(sprite);
-		for ( int x = 0; x < sprite->w; x++ )
-		{
-			Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
-			putPixel(sprite, x, 0, color);
-			putPixel(sprite, x, sprite->h - 1, color);
-		}
-		for ( int y = 0; y < sprite->h; y++ )
-		{
-			Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
-			putPixel(sprite, 0, y, color);
-			putPixel(sprite, sprite->w - 1, y, color);
-		}
+
 		//for ( int x = 0; x < sprite->w; x++ )
 		//{
 		//	for ( int y = 0; y < sprite->h; y++ )
@@ -683,16 +724,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
 				}
 			}
-			else if ( parent->behavior == &actGoldBag )
-			{
-				SDL_Surface* textSurf = glTextSurface("Press use to pick up!", &tmpTextid);
-				if ( textSurf )
-				{
-					pos.x = 32 + 16;
-					pos.y += 8;
-					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-				}
-			}
 			else
 			{
 				SDL_Surface* textSurf = glTextSurface("Press use to interact!", &tmpTextid);
@@ -701,10 +732,12 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 					pos.x = 32 + 16;
 					pos.y += 8;
 					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
+					SDL_BlitSurface(selected_glyph_bmp, nullptr, sprite, &pos);
 				}
 			}
 		}
 		//
+		tex = new TempTexture();
 		tex->load(sprite, false, true);
 		if ( mode == REALCOLORS )
 		{
@@ -738,7 +771,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	// translate sprite and rotate towards camera
 	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
 	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if ( !entity->flags[OVERDRAW] )
+	if ( !entity->flags[OVERDRAW] || entity->flags[OVERDRAW] )
 	{
 		real_t tangent = 180 - camera->ang * (180 / PI);
 		glRotatef(tangent, 0, 1, 0);
@@ -752,7 +785,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 
 	if ( entity->flags[OVERDRAW] )
 	{
-		glDepthRange(0, 0.1);
+		glDepthRange(0.1, 0.2);
 	}
 
 	// get shade factor

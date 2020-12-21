@@ -103,6 +103,8 @@ void Entity::actGate()
 		this->scalex = 1.01;
 		this->scaley = 1.01;
 		this->scalez = 1.01;
+
+		createWorldUITooltip();
 	}
 
 	// rightclick message

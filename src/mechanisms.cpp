@@ -246,6 +246,11 @@ void actSwitchWithTimer(Entity* my)
 {
 	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
 
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
+
 	if ( multiplayer != CLIENT )
 	{
 		int i = 0;
