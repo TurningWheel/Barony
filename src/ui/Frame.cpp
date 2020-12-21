@@ -407,9 +407,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	if (disabled) {
 		return result;
 	}
+
+#ifndef EDITOR // bad editor no cookie
 	if (players[clientnum]->shootmode) {
 		return result;
 	}
+#endif
 
 	_size.x += std::max(0, size.x - _actualSize.x);
 	_size.y += std::max(0, size.y - _actualSize.y);
