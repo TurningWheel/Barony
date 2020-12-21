@@ -40,6 +40,8 @@
 #include "lobbies.hpp"
 #include "interface/ui.hpp"
 #include <limits>
+#include "ui/Frame.hpp"
+#include "ui/Field.hpp"
 
 #include "UnicodeDecoder.h"
 
@@ -210,6 +212,7 @@ Uint32 networkTickrate = 0;
 bool gameloopFreezeEntities = false;
 Uint32 serverSchedulePlayerHealthUpdate = 0;
 Uint32 serverLastPlayerHealthUpdate = 0;
+Frame* cursorFrame = nullptr;
 
 /*-------------------------------------------------------------------------------
 
@@ -5160,6 +5163,11 @@ int main(int argc, char** argv)
 						{
 							pos.x = cameras[player].winx + (cameras[player].winw / 2) - cross_bmp->w / 2;
 							pos.y = cameras[player].winy + (cameras[player].winh / 2) - cross_bmp->h / 2;
+							if ( players[player]->worldUI.bTooltipInView )
+							{
+								pos.x = cameras[player].winx + (cameras[player].winw / 2) - selected_cursor_bmp->w / 2;
+								pos.y = cameras[player].winy + (cameras[player].winh / 2) - selected_cursor_bmp->h / 2;
+							}
 							pos.w = 0;
 							pos.h = 0;
 							if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
@@ -5223,7 +5231,29 @@ int main(int argc, char** argv)
 										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
 									}
 								}
-								drawImageAlpha(cross_bmp, NULL, &pos, 128);
+								if ( players[player]->worldUI.bTooltipInView )
+								{
+									drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
+									pos.x += 40;
+									pos.y += 20;
+									pos.h = selected_cursor_bmp->h;
+									pos.w = pos.h;
+									if ( ticks % 50 < 25 )
+									{
+										drawImageScaled(selected_glyph_bmp, NULL, &pos);
+									}
+									else
+									{
+										drawImageScaled(selected_glyph_up_bmp, NULL, &pos);
+									}
+									pos.x += pos.w;
+									pos.y += 6;
+									ttfPrintText(ttf12, pos.x, pos.y, players[player]->worldUI.interactText.c_str());
+								}
+								else
+								{
+									drawImageAlpha(cross_bmp, NULL, &pos, 128);
+								}
 							}
 						}
 					}

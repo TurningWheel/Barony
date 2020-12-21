@@ -638,6 +638,9 @@ int fmod_result;
 	logo_bmp = loadImage("images/system/logo.png");
 	cursor_bmp = loadImage("images/system/cursor.png");
 	cross_bmp = loadImage("images/system/cross.png");
+	selected_cursor_bmp = loadImage("images/system/selectedcursor.png");
+	selected_glyph_bmp = loadImage("images/system/glypha.png");
+	selected_glyph_up_bmp = loadImage("images/system/glypha_up.png");
 
 	loadAllScores(SCORESFILE);
 	loadAllScores(SCORESFILE_MULTIPLAYER);
@@ -755,6 +758,18 @@ void deinitGame()
 	if ( cross_bmp != nullptr )
 	{
 		SDL_FreeSurface(cross_bmp);
+	}
+	if ( selected_cursor_bmp != nullptr )
+	{
+		SDL_FreeSurface(selected_cursor_bmp);
+	}
+	if ( selected_glyph_bmp != nullptr )
+	{
+		SDL_FreeSurface(selected_glyph_bmp);
+	}
+	if ( selected_glyph_up_bmp != nullptr )
+	{
+		SDL_FreeSurface(selected_glyph_up_bmp);
 	}
 	//if(sky_bmp!=NULL)
 	//	SDL_FreeSurface(sky_bmp);

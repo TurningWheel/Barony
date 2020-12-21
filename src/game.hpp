@@ -112,6 +112,9 @@ extern SDL_Surface* titleDefault_bmp;
 extern SDL_Surface* logo_bmp;
 extern SDL_Surface* cursor_bmp;
 extern SDL_Surface* cross_bmp;
+extern SDL_Surface* selected_cursor_bmp;
+extern SDL_Surface* selected_glyph_bmp;
+extern SDL_Surface* selected_glyph_up_bmp;
 
 enum PlayerClasses : int
 {
