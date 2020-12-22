@@ -3491,13 +3491,28 @@ void actPlayer(Entity* my)
 			if ( followerMenu.followerToCommand == nullptr && followerMenu.selectMoveTo == false )
 			{
 				bool clickedOnGUI = false;
-				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_USE); // using objects
-				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI && !players[PLAYER_NUM]->worldUI.isEnabled() )
+
+				EntityClickType clickType = ENTITY_CLICK_USE;
+				if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 				{
-					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
-					if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE])) || (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
+					clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
+					Entity* activeTooltipEntity = uidToEntity(players[PLAYER_NUM]->worldUI.uidForActiveTooltip);
+					if ( activeTooltipEntity && activeTooltipEntity->bEntityTooltipRequiresButtonHeld() )
 					{
-						++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
+						clickType = ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY;
+					}
+				}
+
+				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, clickType); // using objects
+				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
+				{
+					if ( clickType == ENTITY_CLICK_USE )
+					{
+						// otherwise if we hold right click we'll keep trying this function, FPS will drop.
+						if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE])) || (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
+						{
+							++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
+						}
 					}
 				}
 			}

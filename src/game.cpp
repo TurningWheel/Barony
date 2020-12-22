@@ -1206,7 +1206,7 @@ void gameLogic(void)
 								{
 									node_t* newNode = list_AddNodeLast(&tempFollowers[c]);
 									newNode->element = followerStats->copyStats();
-//									newNode->deconstructor = &followerStats->~Stat;
+									newNode->deconstructor = &statDeconstructor;
 									newNode->size = sizeof(followerStats);
 								}
 							}
@@ -1508,7 +1508,7 @@ void gameLogic(void)
 
 									node_t* newNode = list_AddNodeLast(&monster->children);
 									newNode->element = tempStats->copyStats();
-//									newNode->deconstructor = &tempStats->~Stat;
+									newNode->deconstructor = &statDeconstructor;
 									newNode->size = sizeof(tempStats);
 
 									Stat* monsterStats = (Stat*)newNode->element;

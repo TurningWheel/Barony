@@ -915,6 +915,7 @@ public:
 	real_t getDamageTableMultiplier(Stat& myStats, DamageTableType damageType);
 	bool isBoulderSprite();
 	void createWorldUITooltip();
+	bool bEntityTooltipRequiresButtonHeld() const;
 	bool bEntityHighlightedForPlayer(const int player) const;
 };
 

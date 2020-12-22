@@ -3425,7 +3425,6 @@ void assignActions(map_t* map)
 						}
 						node2 = list_AddNodeLast(&entity->children);
 						node2->element = myStats;
-						//					node2->deconstructor = &myStats->~Stat;
 						node2->deconstructor = &statDeconstructor;
 						node2->size = sizeof(myStats);
 					}

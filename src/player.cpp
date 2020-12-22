@@ -1451,6 +1451,28 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				interactAngle = PI / 16;
 			}
+			else if ( parent->behavior == &actBoulder )
+			{
+				dist += .5; // distance penalty
+			}
+			else if ( parent->behavior == &actFurniture )
+			{
+				if ( parent->furnitureType == FURNITURE_BED 
+					|| parent->furnitureType == FURNITURE_BUNKBED
+					|| parent->furnitureType == FURNITURE_TABLE )
+				{
+					// wide angle
+				}
+				else
+				{
+					interactAngle = PI / 16;
+				}
+				Entity* itemOnFurniture = uidToEntity(parent->parent);
+				if ( itemOnFurniture )
+				{
+					dist += 2; // distance penalty
+				}
+			}
 		}
 
 		if ( (abs(tangent - playerYaw) < (interactAngle)) || (abs(tangent - playerYaw) > (2 * PI - interactAngle)) )
@@ -1997,6 +2019,10 @@ void Player::WorldUI_t::handleTooltips()
 				{
 					continue;
 				}
+				if ( parent && parent->flags[PASSABLE] && parent->behavior == &actBoulder )
+				{
+					continue;
+				}
 				real_t newDist = players[player]->worldUI.tooltipInRange(*tooltip);
 				if ( newDist > 0.01 )
 				{
@@ -2398,7 +2424,7 @@ const bool Inputs::bControllerInputHeld(int player, const unsigned controllerImp
 
 	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 ) // triggers
 	{
-		return controller->binaryToggle(GameController::getSDLTriggerFromImpulse(controllerImpulse));
+		return controller->buttonHeldToggle(GameController::getSDLTriggerFromImpulse(controllerImpulse));
 	}
 	else
 	{
@@ -2441,6 +2467,24 @@ const bool Inputs::bMouseRight(int player) const
 	return false;
 }
 
+const bool Inputs::bMouseHeldLeft(int player) const
+{
+	if ( bMouseLeft(player) )
+	{
+		return vmouse[player].mouseLeftHeld;
+	}
+	return false;
+}
+
+const bool Inputs::bMouseHeldRight(int player) const
+{
+	if ( bMouseRight(player) )
+	{
+		return vmouse[player].mouseRightHeld;
+	}
+	return false;
+}
+
 const void Inputs::mouseClearLeft(int player)
 {
 	if ( !bPlayerIsControllable(player) )
@@ -2451,7 +2495,8 @@ const void Inputs::mouseClearLeft(int player)
 	{
 		mousestatus[SDL_BUTTON_LEFT] = 0;
 	}
-
+	getVirtualMouse(player)->mouseLeftHeld = false;
+	getVirtualMouse(player)->mouseLeftHeldTicks = 0;
 	controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 	//bool hackFromPreviousCode = bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK);
 	//if ( hackFromPreviousCode )
@@ -2469,6 +2514,8 @@ const void Inputs::mouseClearRight(int player)
 	{
 		mousestatus[SDL_BUTTON_RIGHT] = 0;
 	}
+	getVirtualMouse(player)->mouseRightHeld = false;
+	getVirtualMouse(player)->mouseRightHeldTicks = 0;
 }
 
 void Inputs::controllerClearRawInput(int player, const unsigned button)
@@ -2688,7 +2735,7 @@ bool GameController::buttonHeldToggle(SDL_GameControllerButton binding) const
 	{
 		return false;
 	}
-	return (buttons[binding].binary && !buttons[binding].consumed && (ticks - buttons[binding].buttonHeldTicks) > TICKS_PER_SECOND);
+	return (buttons[binding].binary && !buttons[binding].consumed && (ticks - buttons[binding].buttonHeldTicks) > GameController::BUTTON_HELD_TICKS);
 }
 
 bool GameController::binary(SDL_GameControllerButton binding) const
@@ -2737,6 +2784,15 @@ bool GameController::binary(SDL_GameControllerAxis binding) const
 		return false;
 	}
 	return axis[binding].binary;
+}
+
+bool GameController::buttonHeldToggle(SDL_GameControllerAxis binding) const
+{
+	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	{
+		return false;
+	}
+	return (buttons[binding].binary && !buttons[binding].consumed && (ticks - buttons[binding].buttonHeldTicks) > GameController::BUTTON_HELD_TICKS);
 }
 
 void GameController::consumeBinaryToggle(SDL_GameControllerAxis binding)

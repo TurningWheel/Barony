@@ -55,9 +55,19 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 	Uint32 uidnum;
 	GLubyte pixel[4];
 
-	if ( !clickCheckOverride && !(*inputPressedForPlayer(player, impulses[IN_USE])) && !(inputs.bControllerInputPressed(player, INJOY_GAME_USE)) )
+	if ( clicktype == ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY )
 	{
-		return NULL;
+		if ( !clickCheckOverride && !(*inputPressedForPlayer(player, impulses[IN_USE])) && !(inputs.bControllerInputHeld(player, INJOY_GAME_USE)) )
+		{
+			return NULL;
+		}
+	}
+	else
+	{
+		if ( !clickCheckOverride && !(*inputPressedForPlayer(player, impulses[IN_USE])) && !(inputs.bControllerInputPressed(player, INJOY_GAME_USE)) )
+		{
+			return NULL;
+		}
 	}
 
 	Sint32 mx = inputs.getMouse(player, Inputs::OX);
@@ -262,7 +272,14 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 		}
 		else
 		{
-			uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
+			if ( players[player]->worldUI.isEnabled() )
+			{
+				uidnum = 0;
+			}
+			else
+			{
+				uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
+			}
 			//messagePlayer(0, "first: %d %d", uidnum, selectedEntityGimpTimer[player]);
 		}
 	}
@@ -291,21 +308,23 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 	}
 
 	Entity* entity = uidToEntity(uidnum);
-	if ( clicktype == ENTITY_CLICK_USE && 
-		(!entity 
-			|| (entity && entity->behavior == &actSpriteWorldTooltip)
-			|| (entity && entity->behavior == &actDoorFrame) // door frames eat up clicks
-			|| (players[player]->entity && (entityDist(entity, players[player]->entity) > TOUCHRANGE) ))
+	if (
+		players[player]->worldUI.isEnabled() && clicktype != ENTITY_CLICK_FOLLOWER_INTERACT
+		//&&
+		//(!entity 
+		//	|| (entity && entity->behavior == &actSpriteWorldTooltip)
+		//	|| (entity && entity->behavior == &actDoorFrame) // door frames eat up clicks
+		//	|| (players[player]->entity && (entityDist(entity, players[player]->entity) > TOUCHRANGE) ))
 		)
 	{
-		if ( entity && entity->behavior == &actSpriteWorldTooltip )
+		/*if ( entity && entity->behavior == &actSpriteWorldTooltip )
 		{
 			if ( players[player]->worldUI.bTooltipActiveForPlayer(*entity) )
 			{
 				entity = uidToEntity(entity->parent);
 			}
 		}
-		else
+		else*/
 		{
 			for ( node_t* node = map.worldUI->first; node; node = node->next )
 			{
@@ -318,7 +337,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				{
 					if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
 					{
-						if ( inputs.bControllerInputHeld(player, INJOY_GAME_USE) )
+						if ( inputs.bControllerInputHeld(player, INJOY_GAME_USE) || *inputPressedForPlayer(player, impulses[IN_USE]) )
 						{
 							entity = uidToEntity(tooltip->parent);
 						}
@@ -329,6 +348,12 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 					}
 					break;
 				}
+			}
+			if ( !entity )
+			{
+				// clear the button input if we missed a tooltip, otherwise it'll keep retrying (or pre-fire a button held)
+				inputs.controllerClearInput(player, INJOY_GAME_USE);
+				*inputPressedForPlayer(player, impulses[IN_USE]) = 0;
 			}
 		}
 	}

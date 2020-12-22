@@ -205,7 +205,6 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 		node->element = myStats;
 		node->size = sizeof(myStats);
 		node->deconstructor = &statDeconstructor;
-		//node->deconstructor = myStats->~Stat;
 		if ( entity->parent )
 		{
 			myStats->leader_uid = entity->parent;

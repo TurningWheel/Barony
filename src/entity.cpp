@@ -14742,12 +14742,20 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						)
 					{
 						// player item too new on ground, or monster is set to not pickup player items.
+						if ( item != nullptr )
+						{
+							free(item);
+						}
 						continue;
 					}
 				}
 				if ( entity->itemDelayMonsterPickingUp > 0 && entity->ticks < entity->itemDelayMonsterPickingUp )
 				{
 					// dropped from a disarm skill, don't pick up item until timer is up.
+					if ( item != nullptr )
+					{
+						free(item);
+					}
 					continue;
 				}
 
@@ -18990,13 +18998,22 @@ void Entity::createWorldUITooltip()
 			worldTooltip->worldTooltipIgnoreDrawing = 1;
 		}
 
-		if ( behavior == &actPortal || behavior == &actLadder
-			|| behavior == &::actMidGamePortal || behavior == &::actExpansionEndGamePortal
-			|| behavior == &actWinningPortal || behavior == &actCustomPortal )
+		if ( bEntityTooltipRequiresButtonHeld() )
 		{
 			worldTooltip->worldTooltipRequiresButtonHeld = 1;
 		}
 	}
+}
+
+bool Entity::bEntityTooltipRequiresButtonHeld() const
+{
+	if ( behavior == &actPortal || behavior == &actLadder
+		|| behavior == &::actMidGamePortal || behavior == &::actExpansionEndGamePortal
+		|| behavior == &actWinningPortal || behavior == &actCustomPortal )
+	{
+		return true;
+	}
+	return false;
 }
 
 bool Entity::bEntityHighlightedForPlayer(const int player) const

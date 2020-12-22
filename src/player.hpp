@@ -64,6 +64,7 @@ class GameController
 	SDL_Haptic* sdl_haptic;
 	int id;
 	std::string name;
+	static const int BUTTON_HELD_TICKS = TICKS_PER_SECOND;
 public:
 	GameController();
 	~GameController();
@@ -171,6 +172,7 @@ public:
 	bool binary(SDL_GameControllerAxis binding) const;
 	bool binaryToggle(SDL_GameControllerAxis binding) const;
 	void consumeBinaryToggle(SDL_GameControllerAxis binding);
+	bool buttonHeldToggle(SDL_GameControllerAxis binding) const;
 	float analog(SDL_GameControllerAxis binding) const;
 	DpadDirection dpadDir() const;
 	DpadDirection dpadDirToggle() const;
@@ -311,6 +313,7 @@ class Inputs
 	class VirtualMouse
 	{
 	public:
+		static const int MOUSE_HELD_TICKS = TICKS_PER_SECOND;
 		Sint32 xrel = 0; //mousexrel
 		Sint32 yrel = 0; //mouseyrel
 		Sint32 ox = 0; //omousex
@@ -324,6 +327,11 @@ class Inputs
 		real_t floaty = 0.0;
 		real_t floatox = 0.0;
 		real_t floatoy = 0.0;
+
+		Uint32 mouseLeftHeldTicks = 0;
+		bool mouseLeftHeld = false;
+		Uint32 mouseRightHeldTicks = 0;
+		bool mouseRightHeld = false;
 
 		bool draw_cursor = true; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
 		bool moved = false;
@@ -400,7 +408,9 @@ public:
 	void controllerClearInput(const int player, const unsigned controllerImpulse);
 	void controllerClearRawInput(const int player, const unsigned button);
 	const bool bMouseLeft (const int player) const;
+	const bool bMouseHeldLeft(const int player) const;
 	const bool bMouseRight(const int player) const;
+	const bool bMouseHeldRight(const int player) const;
 	const void mouseClearLeft(int player);
 	const void mouseClearRight(int player);
 	void removeControllerWithDeviceID(const int id)
@@ -524,6 +534,19 @@ public:
 				vmouse[i].floatox = vmouse[i].floatx;
 				vmouse[i].floatoy = vmouse[i].floaty;
 				vmouse[i].moved = false;
+				vmouse[i].mouseLeftHeld = false;
+				vmouse[i].mouseLeftHeldTicks = 0;
+			}
+			else
+			{
+				if ( vmouse[i].mouseLeftHeldTicks == 0 )
+				{
+					vmouse[i].mouseLeftHeldTicks = ticks;
+				}
+				else if ( ticks - vmouse[i].mouseLeftHeldTicks > Inputs::VirtualMouse::MOUSE_HELD_TICKS )
+				{
+					vmouse[i].mouseLeftHeld = true;
+				}
 			}
 		}
 		/*messagePlayer(0, "x: %d | y: %d / x: %d | y: %d / x: %d | y: %d / x: %d | y: %d ", 

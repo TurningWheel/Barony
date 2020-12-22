@@ -898,7 +898,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 							myStats = new Stat(entity->sprite);
 							node2 = list_AddNodeLast(&entity->children);
 							node2->element = myStats;
-							//					node2->deconstructor = &myStats->~Stat;
 							node2->size = sizeof(myStats);
 							node2->deconstructor = &statDeconstructor;
 

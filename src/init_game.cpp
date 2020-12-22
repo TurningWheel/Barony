@@ -807,6 +807,7 @@ void deinitGame()
 		players[c]->inventoryUI.appraisal.timer = 0;
 		players[c]->inventoryUI.appraisal.current_item = 0;
 		list_FreeAll(&stats[c]->inventory);
+		list_FreeAll(&stats[c]->FOLLOWERS);
 		if ( multiplayer == CLIENT )
 		{
 			if ( shopInv[c] )
