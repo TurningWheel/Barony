@@ -466,6 +466,7 @@ int initGame()
 		cameras[c].winy = 0;
 		cameras[c].winw = xres;
 		cameras[c].winh = yres;
+		cast_animation[c].player = c;
 	}
 
 	// load music
