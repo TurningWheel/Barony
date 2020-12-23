@@ -3123,7 +3123,7 @@ void actMonster(Entity* my)
 							{
 								case SHOPKEEPER:
 								case HUMAN:
-									messagePlayer(monsterclicked, language[520 + rand() % 4], namesays);
+									messagePlayer(monsterclicked, language[520 + rand() % 3], namesays);
 									break;
 								default:
 									messagePlayer(monsterclicked, language[524], namesays);

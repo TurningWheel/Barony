@@ -734,11 +734,7 @@ void updatePlayerInventory(const int player)
 	if ( inputs.hasController(player) )
 	{
 		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
-		if ( radialMenuOpen )
-		{
-			// do nothing?
-		}
-		else if ( players[player]->gui_mode == GUI_MODE_SHOP )
+		if ( players[player]->gui_mode == GUI_MODE_SHOP )
 		{
 			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_LEFT) )
 			{
@@ -750,6 +746,11 @@ void updatePlayerInventory(const int player)
 				inputs.controllerClearInput(player, INJOY_MENU_CYCLE_SHOP_RIGHT);
 				cycleShopCategories(player, 1);
 			}
+		}
+		
+		if ( radialMenuOpen )
+		{
+			// do nothing?
 		}
 		else if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0 
 			&& !itemMenuOpen && GenericGUI[player].selectedSlot < 0
