@@ -1934,12 +1934,16 @@ void Player::WorldUI_t::handleTooltips()
 		}
 
 		bool bDoingActionHideTooltips = false;
-		if ( players[player]->hud.arm && players[player]->hud.weapon->skill[0] != 0 )
+		if ( players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0 )
 		{
 			// hudweapon chop
 			bDoingActionHideTooltips = true;
 		}
-		else if ( cast_animation[player].active )
+		else if ( players[player]->hud.bowFire || players[player]->hud.bowIsBeingDrawn )
+		{
+			bDoingActionHideTooltips = true;
+		}
+		else if ( cast_animation[player].active || cast_animation[player].active_spellbook )
 		{
 			// spells
 			bDoingActionHideTooltips = true;
@@ -1994,7 +1998,7 @@ void Player::WorldUI_t::handleTooltips()
 
 			if ( bDoingActionHideTooltips )
 			{
-				players[player]->worldUI.gimpDisplayTimer = 10;
+				players[player]->worldUI.gimpDisplayTimer = 20;
 				continue;
 			}
 
