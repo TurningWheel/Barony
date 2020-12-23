@@ -2364,6 +2364,10 @@ GameController* Inputs::getController(int player) const
 
 const bool Inputs::bControllerRawInputPressed(int player, const unsigned button) const
 {
+	if ( button < 299 || button >= (301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX) )
+	{
+		return false;
+	}
 	const GameController* controller = getController(player);
 	if ( !controller )
 	{
@@ -2520,6 +2524,10 @@ const void Inputs::mouseClearRight(int player)
 
 void Inputs::controllerClearRawInput(int player, const unsigned button)
 {
+	if ( button < 299 || button >= (301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX) )
+	{
+		return;
+	}
 	if ( !bPlayerIsControllable(player) )
 	{
 		return;
@@ -2713,7 +2721,7 @@ void GameController::updateAxis()
 
 float GameController::analog(SDL_GameControllerButton binding) const
 {
-	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
 	{
 		return 0.f;
 	}
@@ -2722,7 +2730,7 @@ float GameController::analog(SDL_GameControllerButton binding) const
 
 bool GameController::binaryToggle(SDL_GameControllerButton binding) const
 {
-	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
 	{
 		return false;
 	}
@@ -2731,7 +2739,7 @@ bool GameController::binaryToggle(SDL_GameControllerButton binding) const
 
 bool GameController::buttonHeldToggle(SDL_GameControllerButton binding) const
 {
-	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
 	{
 		return false;
 	}
@@ -2740,7 +2748,7 @@ bool GameController::buttonHeldToggle(SDL_GameControllerButton binding) const
 
 bool GameController::binary(SDL_GameControllerButton binding) const
 {
-	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
 	{
 		return false;
 	}
@@ -2749,7 +2757,7 @@ bool GameController::binary(SDL_GameControllerButton binding) const
 
 void GameController::consumeBinaryToggle(SDL_GameControllerButton binding)
 {
-	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
 	{
 		return;
 	}
@@ -2761,7 +2769,7 @@ void GameController::consumeBinaryToggle(SDL_GameControllerButton binding)
 
 float GameController::analog(SDL_GameControllerAxis binding) const
 {
-	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
 	{
 		return 0.f;
 	}
@@ -2770,7 +2778,7 @@ float GameController::analog(SDL_GameControllerAxis binding) const
 
 bool GameController::binaryToggle(SDL_GameControllerAxis binding) const
 {
-	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
 	{
 		return false;
 	}
@@ -2779,7 +2787,7 @@ bool GameController::binaryToggle(SDL_GameControllerAxis binding) const
 
 bool GameController::binary(SDL_GameControllerAxis binding) const
 {
-	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
 	{
 		return false;
 	}
@@ -2788,7 +2796,7 @@ bool GameController::binary(SDL_GameControllerAxis binding) const
 
 bool GameController::buttonHeldToggle(SDL_GameControllerAxis binding) const
 {
-	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
 	{
 		return false;
 	}
@@ -2797,7 +2805,7 @@ bool GameController::buttonHeldToggle(SDL_GameControllerAxis binding) const
 
 void GameController::consumeBinaryToggle(SDL_GameControllerAxis binding)
 {
-	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
 	{
 		return;
 	}
