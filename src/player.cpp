@@ -1998,11 +1998,15 @@ void Player::WorldUI_t::handleTooltips()
 
 			if ( bDoingActionHideTooltips )
 			{
-				players[player]->worldUI.gimpDisplayTimer = 20;
+				players[player]->worldUI.gimpDisplayTimer = 10;
 				continue;
 			}
 
 			players[player]->worldUI.gimpDisplayTimer = std::max(0, players[player]->worldUI.gimpDisplayTimer - 1);
+			if ( players[player]->worldUI.gimpDisplayTimer > 0 )
+			{
+				continue;
+			}
 
 			Entity* closestTooltip = nullptr;
 			Entity* parent = nullptr;
