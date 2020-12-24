@@ -566,13 +566,13 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	{
 		return;
 	}
+	int player = -1;
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
 		if ( entity->worldTooltipIgnoreDrawing != 0 )
 		{
 			return;
 		}
-		int player = -1;
 		for ( player = 0; player < MAXPLAYERS; ++player )
 		{
 			if ( &cameras[player] == camera )
@@ -590,6 +590,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			{
 				return;
 			}
+		}
+		else
+		{
+			return;
 		}
 	}
 
@@ -632,45 +636,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
 		Entity* parent = uidToEntity(entity->parent);
-		if ( parent->behavior == &actItem )
-		{
-			sprite = SDL_CreateRGBSurface(0, 320, 64, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-			SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255));
-			SDL_LockSurface(sprite);
-
-			for ( int x = 0; x < sprite->w; x++ )
-			{
-				Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
-				putPixel(sprite, x, 0, color);
-				putPixel(sprite, x, sprite->h - 1, color);
-			}
-			for ( int y = 0; y < sprite->h; y++ )
-			{
-				Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
-				putPixel(sprite, 0, y, color);
-				putPixel(sprite, sprite->w - 1, y, color);
-			}
-		}
-		else
-		{
-			sprite = SDL_CreateRGBSurface(0, 320, 32, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-			SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 0));
-			SDL_LockSurface(sprite);
-		}
-
-		//for ( int x = 0; x < sprite->w; x++ )
-		//{
-		//	for ( int y = 0; y < sprite->h; y++ )
-		//	{
-		//		Uint32 color = 0;
-		//		color = 0x000000ff;
-		//		putPixel(sprite, x, y, color);
-		//	}
-		//}
-		SDL_UnlockSurface(sprite);
-		//
-		//
-		if ( parent->behavior == &actItem && (multiplayer != CLIENT || (multiplayer == CLIENT && parent->itemReceivedDetailsFromServer != 0)) )
+		if ( parent && parent->behavior == &actItem && (multiplayer != CLIENT || (multiplayer == CLIENT && parent->itemReceivedDetailsFromServer != 0)) )
 		{
 			Item* item = newItemFromEntity(uidToEntity(entity->parent));
 			if ( !item )
@@ -678,24 +644,101 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 				return;
 			}
 
+			SDL_Rect tooltip;
+			tooltip.h = TTF12_HEIGHT * 4 + 8;
+			tooltip.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
+			tooltip.w = std::max(20 * TTF12_WIDTH + 8, tooltip.w);
+			if ( parent->behavior == &actItem )
+			{
+				sprite = SDL_CreateRGBSurface(0, tooltip.w, tooltip.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+				SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255));
+				SDL_LockSurface(sprite);
+
+				for ( int x = 0; x < sprite->w; x++ )
+				{
+					Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
+					putPixel(sprite, x, 0, color);
+					putPixel(sprite, x, sprite->h - 1, color);
+				}
+				for ( int y = 0; y < sprite->h; y++ )
+				{
+					Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
+					putPixel(sprite, 0, y, color);
+					putPixel(sprite, sprite->w - 1, y, color);
+				}
+			}
+			else
+			{
+				sprite = SDL_CreateRGBSurface(0, 320, 32, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+				SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 0));
+				SDL_LockSurface(sprite);
+			}
+			SDL_UnlockSurface(sprite);
+
 			node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
 			if ( !node )
 			{
 				return;
 			}
 			SDL_Rect pos;
-			pos.x = 0;
-			pos.y = 0;
-			pos.w = 64;
-			pos.h = 64;
+			pos.w = 48;
+			pos.h = 48;
+			pos.x = tooltip.w - pos.w - 8;
+			pos.y = TTF12_HEIGHT;
 			SDL_Surface** itemSurf = static_cast<SDL_Surface**>(node->element);
-			SDL_BlitSurface(*itemSurf, nullptr, sprite, &pos);
+			SDL_BlitScaled(*itemSurf, nullptr, sprite, &pos);
 
 			GLuint itemTexid = 0;
 			SDL_Surface* textSurf = glTextSurface(item->description(), &itemTexid);
 			if ( textSurf )
 			{
-				pos.x = 32;
+				pos.x = 4;
+				pos.y = 0;
+				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
+			}
+			char buf[256] = "";
+			if ( !item->identified )
+			{
+				textSurf = glTextSurface(language[309], &itemTexid);
+				if ( textSurf )
+				{
+					pos.y += TTF12_HEIGHT;
+					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
+				}
+			}
+			else
+			{
+				if ( item->beatitude < 0 )
+				{
+					textSurf = glTextSurface(language[310], &itemTexid);
+				}
+				else if ( item->beatitude > 0 )
+				{
+					textSurf = glTextSurface(language[312], &itemTexid);
+				}
+				else
+				{
+					textSurf = glTextSurface(language[311], &itemTexid);
+				}
+				if ( textSurf )
+				{
+					pos.y += TTF12_HEIGHT;
+					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
+				}
+			}
+
+			snprintf(buf, 255, language[313], items[item->type].weight);
+			textSurf = glTextSurface(buf, &itemTexid);
+			if ( textSurf )
+			{
+				pos.y += TTF12_HEIGHT;
+				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
+			}
+			snprintf(buf, 255, language[314], item->sellValue(player));
+			textSurf = glTextSurface(buf, &itemTexid);
+			if ( textSurf )
+			{
+				pos.y += TTF12_HEIGHT;
 				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
 			}
 			free(item);
@@ -711,20 +754,20 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			pos.h = 64;
 			if ( parent->behavior == &actItem )
 			{
-				SDL_Surface* textSurf = glTextSurface("Press use to pick up!", &tmpTextid);
-				if ( textSurf )
-				{
-					pos.x = 32 + 16;
-					pos.y += 32;
-					if ( multiplayer == CLIENT && parent->itemReceivedDetailsFromServer == 0 )
-					{
-						// no details yet.
-						pos.y -= 24;
-					}
-					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-				}
+				//SDL_Surface* textSurf = glTextSurface("Press use to pick up!", &tmpTextid);
+				//if ( textSurf )
+				//{
+				//	pos.x = 32 + 16;
+				//	pos.y += 32;
+				//	if ( multiplayer == CLIENT && parent->itemReceivedDetailsFromServer == 0 )
+				//	{
+				//		// no details yet.
+				//		pos.y -= 24;
+				//	}
+				//	SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
+				//}
 			}
-			else
+			/*else
 			{
 				SDL_Surface* textSurf = glTextSurface("Press use to interact!", &tmpTextid);
 				if ( textSurf )
@@ -734,7 +777,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
 					SDL_BlitSurface(selected_glyph_bmp, nullptr, sprite, &pos);
 				}
-			}
+			}*/
 		}
 		//
 		tex = new TempTexture();
