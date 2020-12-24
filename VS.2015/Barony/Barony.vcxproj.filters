@@ -31,6 +31,9 @@
     <Filter Include="Source Files\ui">
       <UniqueIdentifier>{cadc4882-2871-48a0-bc71-392336c3c58c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\engine">
+      <UniqueIdentifier>{3295600d-eb9c-4224-9ba9-69535dea2994}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\actarrow.cpp">
@@ -544,6 +547,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\ui\Widget.hpp">
       <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\engine\filepc.hpp">
+      <Filter>Header Files\engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
