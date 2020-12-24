@@ -177,7 +177,15 @@ void actSpriteWorldTooltip(Entity* my)
 			}
 			my->flags[UNCLICKABLE] = true;
 		}
-		my->z = -1.25 + std::max(0.0, parent->z - 7.75) - my->worldTooltipZ;
+		my->z = -.75 + std::max(0.0, parent->z - 7.75) - my->worldTooltipZ + Player::WorldUI_t::tooltipHeightOffsetZ;
+		if ( parent->behavior == &actItem && parent->z < 4.0 )
+		{
+			if ( (multiplayer != CLIENT && parent->itemNotMoving)
+				|| (multiplayer == CLIENT && parent->itemNotMovingClient) )
+			{
+				my->z -= 3;
+			}
+		}
 	}
 	else
 	{

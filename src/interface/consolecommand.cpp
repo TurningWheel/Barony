@@ -27,6 +27,7 @@
 #include "../magic/magic.hpp"
 #include "../mod_tools.hpp"
 #include "../collision.hpp"
+#include "../player.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -3100,6 +3101,12 @@ void consoleCommand(char const * const command_str)
 					}
 				}
 			}
+		}
+		else if ( !strncmp(command_str, "/tooltipoffset ", 15) )
+		{
+			int offset = atoi((char*)(command_str + 15));
+			Player::WorldUI_t::tooltipHeightOffsetZ = static_cast<real_t>(offset) / 10.0;
+			messagePlayer(clientnum, "Tooltip Z offset set to: %.1f", Player::WorldUI_t::tooltipHeightOffsetZ);
 		}
 		else
 		{

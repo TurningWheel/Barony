@@ -1392,6 +1392,7 @@ void Player::PlayerMovement_t::reset()
 	insectoidLevitating = false;
 }
 
+real_t Player::WorldUI_t::tooltipHeightOffsetZ = 0.0;
 void Player::WorldUI_t::reset()
 {
 	for ( auto& tooltip : tooltipsInRange )
