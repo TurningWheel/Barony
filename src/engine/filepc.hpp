@@ -79,6 +79,11 @@ public:
 		return (long int)ftell(fp);
 	}
 
+	FILE *handle()
+	{
+		return fp;
+	}
+
 private:
 	FilePC(FILE* fp, FileMode mode, const char* path) :
 		FileBase(mode, path),

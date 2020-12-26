@@ -15,7 +15,9 @@
 #include "magic/magic.hpp"
 #include "messages.hpp"
 #ifdef USE_FMOD
-#include "fmod.h"
+ #include "fmod.h"
+#else
+ #include "sound.hpp"
 #endif
 
 
