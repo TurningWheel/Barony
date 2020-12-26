@@ -856,7 +856,6 @@ void OPENAL_RemoveChannelGroup(OPENAL_SOUND *channel, OPENAL_CHANNELGROUP *group
 	group->num--;
 }
 
-#ifdef NINTENDO
 static size_t openal_file_oggread(void* ptr, size_t size, size_t nmemb, void* datasource) {
 	File* file = (File*)datasource;
 	return file->read(ptr, size, nmemb);
@@ -883,7 +882,6 @@ static long int openal_file_oggtell(void* datasource) {
 	File* file = (File*)datasource;
 	return file->tell();
 }
-#endif // ifdef NINTENDO
 
 int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 	*buffer = (OPENAL_BUFFER*)malloc(sizeof(OPENAL_BUFFER));
@@ -895,17 +893,11 @@ int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 		return 0;
 	}
 
-#ifdef NINTENDO
 	ov_callbacks oggcb = { openal_file_oggread, openal_file_oggseek, openal_file_oggclose, openal_file_oggtell };
-#endif
 
 	vorbis_info * pInfo;
 	OggVorbis_File oggFile;
-#ifdef NINTENDO
 	ov_open_callbacks(f, &oggFile, NULL, 0, oggcb);
-#else
-	ov_open(f->handle(), &oggFile, NULL, 0);
-#endif
 	pInfo = ov_info(&oggFile, -1);
 
 	int channels = pInfo->channels;
