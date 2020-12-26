@@ -109,7 +109,6 @@ extern bool autoLimbReload;
  #include <Cocoa/Cocoa.h>
  //#include <OpenGL/OpenGL.h>
  #define GL_GLEXT_PROTOTYPES
- #include <GLUT/glut.h>
  #include <OpenGL/gl3ext.h>
  #include <OpenGL/gl3.h>
  #include <SDL2/SDL_opengl.h>
