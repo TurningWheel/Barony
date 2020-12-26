@@ -332,9 +332,6 @@ elseif (APPLE)
 	include_directories("${PROJECT_SOURCE_DIR}/libraries/fmod/inc")
 	link_directories("${PROJECT_SOURCE_DIR}/libraries/fmod/lib")
   endif()
-
-  find_package(GLUT REQUIRED)
-  include_directories(${GLUT_INCLUDE_DIR})
 endif()
 
 # Add the source directory
@@ -444,7 +441,7 @@ if (GAME_ENABLED)
 	  target_link_libraries(barony ${EOS_LIBRARIES})
 	endif()
 	if (APPLE)
-	  target_link_libraries(barony ${GLUT_LIBRARIES} ${PROJECT_SOURCE_DIR}/libpng16.16.dylib) #Wait...what? if(APPLE) in if(WIN32)? What was I thinking back then, haha.
+	  target_link_libraries(barony ${PROJECT_SOURCE_DIR}/libpng16.16.dylib) #Wait...what? if(APPLE) in if(WIN32)? What was I thinking back then, haha.
 	endif()
 	if (${CMAKE_SYSTEM_NAME} MATCHES "BSD|DragonFly" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
 	  # For backtrace
