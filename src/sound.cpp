@@ -904,7 +904,7 @@ int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 #ifdef NINTENDO
 	ov_open_callbacks(f, &oggFile, NULL, 0, oggcb);
 #else
-	ov_open(f, &oggFile, NULL, 0);
+	ov_open(f->handle(), &oggFile, NULL, 0);
 #endif
 	pInfo = ov_info(&oggFile, -1);
 
