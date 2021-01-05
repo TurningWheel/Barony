@@ -4478,7 +4478,8 @@ Friendly with:
 Ghouls, Automatons
 
 Weaknesses:
-Maces, polearms, blessed water
+Maces, polearms, unarmed,
+ blessed water
 
 Resistances: 
 Swords, ranged, axes, magic

@@ -7297,10 +7297,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 
 				weaponskill = getWeaponSkill(myStats->weapon);
-				if ( behavior == &actMonster && weaponskill == PRO_UNARMED )
-				{
-					weaponskill = -1;
-				}
+				//if ( behavior == &actMonster && weaponskill == PRO_UNARMED ) 
+				//{
+				//	was -1 for legacy monster punching and damage variance. != &actMonster added to PRO_UNARMED check for damage variability.
+				//	weaponskill = -1;
+				//}
 				if ( shapeshifted || pose == PLAYER_POSE_GOLEM_SMASH )
 				{
 					weaponskill = PRO_UNARMED;
@@ -7473,7 +7474,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							gungnir = true;
 						}
 					}
-					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir) || weaponskill == PRO_UNARMED || weaponskill == PRO_RANGED )
+					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir) || (weaponskill == PRO_UNARMED && behavior != &actMonster) || weaponskill == PRO_RANGED )
 					{
 						int chance = 0;
 						if ( weaponskill == PRO_POLEARM )
