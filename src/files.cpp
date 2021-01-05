@@ -1915,11 +1915,11 @@ bool physfsSearchModelsToUpdate()
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 	File* fp = openDataFile(modelsDirectory.c_str(), "r");
-	char name[128];
+	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fp->gets2(name, 128);
+		fp->gets2(name, PATH_MAX);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string modelRealDir = PHYSFS_getRealDir(name);
@@ -1937,14 +1937,14 @@ bool physfsSearchModelsToUpdate()
 bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 {
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-	char modelName[128];
+	char modelName[PATH_MAX];
 	int startnum = 0;
 	int endnum = nummodels;
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 	File *fp = openDataFile(modelsDirectory.c_str(), "r");
 	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fp->gets2(modelName, 128);
+		fp->gets2(modelName, PATH_MAX);
 		bool modelHasBeenModified = false;
 		// has this model index been modified?
 		std::vector<int>::iterator it = gamemods_modelsListModifiedIndexes.end();
@@ -2064,11 +2064,11 @@ bool physfsSearchSoundsToUpdate()
 	}
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
 	File* fp = openDataFile(soundsDirectory.c_str(), "r");
-	char name[128];
+	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fp->gets2(name, 128);
+		fp->gets2(name, PATH_MAX);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string soundRealDir = PHYSFS_getRealDir(name);
@@ -2092,7 +2092,7 @@ void physfsReloadSounds(bool reloadAll)
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
 	File* fp = openDataFile(soundsDirectory.c_str(), "r");
-	char name[128];
+	char name[PATH_MAX];
 
 	printlog("freeing sounds and loading modded sounds...\n");
 	if ( reloadAll )
@@ -2118,7 +2118,7 @@ void physfsReloadSounds(bool reloadAll)
 
 	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fp->gets2(name, 128);
+		fp->gets2(name, PATH_MAX);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string soundRealDir = PHYSFS_getRealDir(name);
@@ -2155,11 +2155,11 @@ bool physfsSearchSpritesToUpdate() //TODO: NX PORT: Any changes needed here?
 	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
 	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
 	File* fp = openDataFile(spritesDirectory.c_str(), "r");
-	char name[128];
+	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); ++c )
 	{
-		fp->gets2(name, 128);
+		fp->gets2(name, PATH_MAX);
 		while ( fp->getc() != '\n' )
 		{
 			if ( fp->eof() )
@@ -2189,11 +2189,11 @@ void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed her
 	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
 	printlog("[PhysFS]: Loading sprites from directory %s...\n", spritesDirectory.c_str());
 	File* fp = openDataFile(spritesDirectory.c_str(), "r");
-	char name[128];
+	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); ++c )
 	{
-		fp->gets2(name, 128);
+		fp->gets2(name, PATH_MAX);
 		while ( fp->getc() != '\n' )
 		{
 			if ( fp->eof() )
@@ -2213,8 +2213,8 @@ void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed her
 				{
 					SDL_FreeSurface(sprites[c]);
 				}
-				char fullname[128];
-				strncpy(fullname, spriteFile.c_str(), 127);
+				char fullname[PATH_MAX];
+				strncpy(fullname, spriteFile.c_str(), PATH_MAX - 1);
 				sprites[c] = loadImage(fullname);
 				if ( nullptr != sprites[c]  )
 				{
@@ -2241,11 +2241,11 @@ bool physfsSearchTilesToUpdate()
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	File* fp = openDataFile(tilesDirectory.c_str(), "r");
-	char name[128];
+	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fp->gets2(name, 128);
+		fp->gets2(name, PATH_MAX);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string tileRealDir = PHYSFS_getRealDir(name);
@@ -2267,11 +2267,11 @@ void physfsReloadTiles(bool reloadAll)
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	printlog("[PhysFS]: Loading tiles from directory %s...\n", tilesDirectory.c_str());
 	File* fp = openDataFile(tilesDirectory.c_str(), "r");
-	char name[128];
+	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); c++ )
 	{
-		fp->gets2(name, 128);
+		fp->gets2(name, PATH_MAX);
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string tileRealDir = PHYSFS_getRealDir(name);
@@ -2283,8 +2283,8 @@ void physfsReloadTiles(bool reloadAll)
 				{
 					SDL_FreeSurface(tiles[c]);
 				}
-				char fullname[128];
-				strncpy(fullname, tileFile.c_str(), 127);
+				char fullname[PATH_MAX];
+				strncpy(fullname, tileFile.c_str(), PATH_MAX - 1);
 				tiles[c] = loadImage(fullname);
 				animatedtiles[c] = false;
 				lavatiles[c] = false;
@@ -2553,7 +2553,7 @@ void physfsReloadItemsTxt()
 	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
 	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
 	File* fp = openDataFile(itemsTxtDirectory.c_str(), "r");
-	char buffer[128];
+	char buffer[PATH_MAX];
 
 	for ( int c = 0; !fp->eof() && c < NUMITEMS; ++c )
 	{
@@ -2571,7 +2571,7 @@ void physfsReloadItemsTxt()
 		items[c].index = fp->geti();
 		items[c].fpindex = fp->geti();
 		items[c].variations = fp->geti();
-		fp->gets2(buffer, 128);
+		fp->gets2(buffer, PATH_MAX);
 		size_t len = strlen(buffer) - 1U;
 		if (buffer[len] == '\n' || buffer[len] == '\r')
 		{
