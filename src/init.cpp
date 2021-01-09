@@ -39,6 +39,8 @@
 #include "ui/Text.hpp"
 #include "ui/Font.hpp"
 #include "ui/Image.hpp"
+#include "ui/Frame.hpp"
+#include "ui/Button.hpp"
 
 #ifdef USE_FMOD
  #include "fmod.h"
@@ -685,6 +687,22 @@ int initApp(char const * const title, int fullscreen)
 	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif // defined USE_OPENAL
+
+	// init new ui engine
+#ifndef EDITOR
+	gui = new Frame("root");
+	SDL_Rect guiRect;
+	guiRect.x = 0;
+	guiRect.y = 0;
+	guiRect.w = Frame::virtualScreenX;
+	guiRect.h = Frame::virtualScreenY;
+	gui->setSize(guiRect);
+	gui->setActualSize(guiRect);
+	gui->setHollow(true);
+
+	createTestUI();
+#endif
+
 	return 0;
 }
 
@@ -2136,13 +2154,16 @@ int deinitApp()
 		TTF_CloseFont(ttf16);
 	}
 
-	printlog("freeing ui resources...\n");
 #ifndef EDITOR
+	printlog("freeing ui resources...\n");
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
-#endif // !EDITOR
-
+	if (gui) {
+		delete gui;
+		gui = nullptr;
+	}
+#endif
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )
@@ -2801,6 +2822,11 @@ bool changeVideoMode()
 	{
 		generateVBOs(0, nummodels);
 	}
+
+	// dump ui resources, these are all no good too!
+	Text::dumpCache();
+	Image::dumpCache();
+	Font::dumpCache();
 #endif
 	// success
 	return true;

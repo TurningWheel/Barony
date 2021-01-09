@@ -2,6 +2,7 @@
 
 #include "../main.hpp"
 #include "../draw.hpp"
+#include "../player.hpp"
 #include "Slider.hpp"
 #include "Frame.hpp"
 #include "Button.hpp"
@@ -89,10 +90,10 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		return result;
 	}
 
-	Sint32 mousex = (mousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (mousey / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	if (rectContainsPoint(_size, omousex, omousey)) {
 		result.highlighted = highlighted = true;

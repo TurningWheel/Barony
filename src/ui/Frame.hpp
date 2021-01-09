@@ -244,11 +244,11 @@ public:
 	const SDL_Rect&					getSize() const { return size; }
 	const SDL_Rect&					getActualSize() const { return actualSize; }
 	int								getBorderStyle() const { return borderStyle; }
-	std::list<Frame*>&				getFrames() { return frames; }
-	std::list<Field*>&				getFields() { return fields; }
-	std::list<Button*>&				getButtons() { return buttons; }
-	std::list<Slider*>&				getSliders() { return sliders; }
-	std::list<entry_t*>&			getEntries() { return list; }
+	std::vector<Frame*>&			getFrames() { return frames; }
+	std::vector<Field*>&			getFields() { return fields; }
+	std::vector<Button*>&			getButtons() { return buttons; }
+	std::vector<Slider*>&			getSliders() { return sliders; }
+	std::vector<entry_t*>&			getEntries() { return list; }
 	const bool						isDisabled() const { return disabled; }
 	const bool						isHollow() const { return hollow; }
 	const bool						isDropDown() const { return dropDown; }
@@ -283,15 +283,19 @@ private:
 	int oldSliderY = 0;									//!< when you start dragging a slider, this is set
 	bool dropDown = false;								//!< if true, the frame is destroyed when specific inputs register
 	Uint32 dropDownClicked = 0;							//!< key states stored for removing drop downs
-	std::list<entry_t*>::iterator selection;			//!< entry selection
+	int selection = -1;									//!< entry selection
 
-	std::list<Frame*> frames;
-	std::list<Button*> buttons;
-	std::list<Field*> fields;
-	std::list<image_t*> images;
-	std::list<Slider*> sliders;
-	std::list<entry_t*> list;
+	std::vector<Frame*> frames;
+	std::vector<Button*> buttons;
+	std::vector<Field*> fields;
+	std::vector<image_t*> images;
+	std::vector<Slider*> sliders;
+	std::vector<entry_t*> list;
 
 	void scrollToSelection();
 	void activateEntry(entry_t& entry);
 };
+
+// root frame object
+extern Frame* gui;
+void createTestUI();

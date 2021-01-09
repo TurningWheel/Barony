@@ -86,7 +86,7 @@ private:
 	Widget::Args params;								//!< script arguments to use when calling script
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field
 	std::string text;									//!< internal text buffer
-	Uint32 color = Uint32(1.f);							//!< text color
+	Uint32 color = 0xFFFFFFFF;							//!< text color
 	SDL_Rect size;										//!< size of the field in pixels
 	justify_t hjustify = LEFT;							//!< horizontal text justification
 	justify_t vjustify = TOP;							//!< vertical text justification

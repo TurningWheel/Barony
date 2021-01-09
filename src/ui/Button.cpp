@@ -66,32 +66,32 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		}
 	}
 
-	if (!text.empty() && style != STYLE_CHECKBOX) {
-		Text* _text = Text::get(text.c_str(), font.c_str());
-		if (_text) {
-			SDL_Rect pos;
-			int textX = (style != STYLE_DROPDOWN) ?
-				_size.w / 2 - _text->getWidth() / 2 :
-				5 + border;
-			int textY = _size.h / 2 - _text->getHeight() / 2;
-			pos.x = _size.x + textX; pos.w = std::min((int)_text->getWidth(), _size.w);
-			pos.y = _size.y + textY; pos.h = std::min((int)_text->getHeight(), _size.h);
-			if (pos.w <= 0 || pos.h <= 0) {
-				return;
-			}
+	if (style != STYLE_CHECKBOX || pressed) {
+		if (!text.empty()) {
+			Text* _text = Text::get(text.c_str(), font.c_str());
+			if (_text) {
+				SDL_Rect pos;
+				int textX = (style != STYLE_DROPDOWN) ?
+					_size.w / 2 - _text->getWidth() / 2 :
+					5 + border;
+				int textY = _size.h / 2 - _text->getHeight() / 2;
+				pos.x = _size.x + textX; pos.w = std::min((int)_text->getWidth(), _size.w);
+				pos.y = _size.y + textY; pos.h = std::min((int)_text->getHeight(), _size.h);
+				if (pos.w <= 0 || pos.h <= 0) {
+					return;
+				}
 
-			SDL_Rect scaledPos;
-			scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
-			scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
-			scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
-			scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
-			_text->drawColor(SDL_Rect(), scaledPos, textColor);
-		}
-	} else if (icon.c_str()) {
-		// we check a second time, just incase the cache was dumped and the original pointer invalidated.
-		Image* iconImg = Image::get(icon.c_str());
-		if (iconImg) {
-			if (style != STYLE_CHECKBOX || pressed == true) {
+				SDL_Rect scaledPos;
+				scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
+				scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
+				scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
+				scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
+				_text->drawColor(SDL_Rect(), scaledPos, textColor);
+			}
+		} else if (icon.c_str()) {
+			// we check a second time, just incase the cache was dumped and the original pointer invalidated.
+			Image* iconImg = Image::get(icon.c_str());
+			if (iconImg) {
 				SDL_Rect pos;
 				pos.x = _size.x + border; pos.w = _size.w - border * 2;
 				pos.y = _size.y + border; pos.h = _size.h - border * 2;
@@ -190,10 +190,10 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		return result;
 	}
 
-	Sint32 mousex = (mousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (mousey / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	if (rectContainsPoint(_size, omousex, omousey)) {
 		result.highlighted = highlighted = true;
@@ -218,10 +218,18 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 			if (pressed != reallyPressed) {
 				result.clicked = true;
 			}
-			pressed = reallyPressed;
+			if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+				reallyPressed = pressed = false;
+			} else {
+				pressed = reallyPressed;
+			}
 		}
 	} else {
-		pressed = reallyPressed;
+		if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+			reallyPressed = pressed = false;
+		} else {
+			pressed = reallyPressed;
+		}
 	}
 
 	return result;

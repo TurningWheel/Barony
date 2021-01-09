@@ -198,8 +198,8 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		return result;
 	}
 
-	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	if (selected) {
 		if (inputstr != text.c_str()) {

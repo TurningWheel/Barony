@@ -39,6 +39,7 @@
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
 #include "interface/ui.hpp"
+#include "ui/Frame.hpp"
 #include <limits>
 
 #include "UnicodeDecoder.h"
@@ -2618,6 +2619,14 @@ void gameLogic(void)
 
 void handleButtons(void)
 {
+	if (gui) {
+		Frame::result_t gui_result = gui->process();
+		gui->draw();
+		if (!gui_result.usable) {
+			return;
+		}
+	}
+
 	node_t* node;
 	node_t* nextnode;
 	button_t* button;

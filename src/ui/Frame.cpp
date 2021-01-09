@@ -14,11 +14,14 @@
 
 const Sint32 Frame::sliderSize = 15;
 
-static const Uint32 tooltip_background = 0x000000EE;
-static const Uint32 tooltip_border_color = 0xFF8800FF;
-static const int tooltip_border_width = 3;
+static const Uint32 tooltip_background = 0xEE000000;
+static const Uint32 tooltip_border_color = 0xFFEE00AA;
+static const int tooltip_border_width = 2;
 static const Uint32 tooltip_text_color = 0xFFFFFFFF;
 static const char* tooltip_text_font = Font::defaultFont;
+
+// root of all widgets
+Frame* gui = nullptr;
 
 void Frame::listener_t::onDeleted() {
 	if (!entry) {
@@ -131,10 +134,10 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
 	}
 
-	Sint32 mousex = (mousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (mousey / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	// horizontal slider
 	if (actualSize.w > size.w) {
@@ -177,7 +180,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		barRect.y = (_size.y) * (float)yres / (float)Frame::virtualScreenY;
 		barRect.w = (sliderSize) * (float)xres / (float)Frame::virtualScreenX;
 		barRect.h = (_size.h) * (float)yres / (float)Frame::virtualScreenY;
-		drawRect(&barRect, color, (Uint8)(color>>mainsurface->format->Ashift));
+		drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
 
 		// handle
 		float winFactor = ((float)_size.h / (float)actualSize.h);
@@ -213,17 +216,17 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		if (border > 0) {
 			switch (borderStyle) {
 			case BORDER_FLAT:
-				drawRect(&barRect, color, (Uint8)(color>>mainsurface->format->Ashift));
+				drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
 				break;
 			case BORDER_BEVEL_HIGH:
-				drawRect(&barRect, color, (Uint8)(color>>mainsurface->format->Ashift));
+				drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
 				break;
 			case BORDER_BEVEL_LOW:
-				drawRect(&barRect, color, (Uint8)(color>>mainsurface->format->Ashift));
+				drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
 				break;
 			}
 		} else {
-			drawRect(&barRect, color, (Uint8)(color>>mainsurface->format->Ashift));
+			drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
 		}
 	}
 
@@ -267,67 +270,69 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	}
 
 	// render list entries
-	int listStart = std::min(std::max(0, scroll.y / entrySize), (int)list.size() - 1);
-	int i = listStart;
-	for (auto it = std::next(list.begin(), listStart); it != list.end(); ++it, ++i) {
-		entry_t& entry = **it;
-		if (entry.text.empty()) {
-			continue;
-		}
+	if (list.size()) {
+		int listStart = std::min(std::max(0, scroll.y / entrySize), (int)list.size() - 1);
+		int i = listStart;
+		for (auto it = std::next(list.begin(), listStart); it != list.end(); ++it, ++i) {
+			entry_t& entry = **it;
+			if (entry.text.empty()) {
+				continue;
+			}
 
-		// get rendered text
-		Text* text = Text::get(entry.text.c_str(), font.c_str());
-		if (text == nullptr) {
-			continue;
-		}
+			// get rendered text
+			Text* text = Text::get(entry.text.c_str(), font.c_str());
+			if (text == nullptr) {
+				continue;
+			}
 
-		// get the size of the rendered text
-		int textSizeW = text->getWidth();
-		int textSizeH = entrySize;
+			// get the size of the rendered text
+			int textSizeW = text->getWidth();
+			int textSizeH = entrySize;
 
-		SDL_Rect pos;
-		pos.x = _size.x + border - scroll.x;
-		pos.y = _size.y + border + i * entrySize - scroll.y;
-		pos.w = textSizeW;
-		pos.h = textSizeH;
+			SDL_Rect pos;
+			pos.x = _size.x + border - scroll.x;
+			pos.y = _size.y + border + i * entrySize - scroll.y;
+			pos.w = textSizeW;
+			pos.h = textSizeH;
 
-		SDL_Rect dest;
-		dest.x = std::max(_size.x, pos.x);
-		dest.y = std::max(_size.y, pos.y);
-		dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
-		dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+			SDL_Rect dest;
+			dest.x = std::max(_size.x, pos.x);
+			dest.y = std::max(_size.y, pos.y);
+			dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+			dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
-		SDL_Rect src;
-		src.x = std::max(0, _size.x - pos.x);
-		src.y = std::max(0, _size.y - pos.y);
-		src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
-		src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+			SDL_Rect src;
+			src.x = std::max(0, _size.x - pos.x);
+			src.y = std::max(0, _size.y - pos.y);
+			src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+			src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
-		if (src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0)
-			break;
+			if (src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0)
+				break;
 
-		// TODO entry highlighting
-		SDL_Rect entryback = dest;
-		entryback.w = _size.w - border * 2;
+			// TODO entry highlighting
+			SDL_Rect entryback = dest;
+			entryback.w = _size.w - border * 2;
 		
-		entryback.x = entryback.x * (float)xres / (float)Frame::virtualScreenX;
-		entryback.y = entryback.y * (float)yres / (float)Frame::virtualScreenY;
-		entryback.w = entryback.w * (float)xres / (float)Frame::virtualScreenX;
-		entryback.h = entryback.h * (float)yres / (float)Frame::virtualScreenY;
-		if (entry.pressed) {
-			drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
-		} else if (entry.highlighted) {
-			drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
-		} else if (selection == it) {
-			drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
-		}
+			entryback.x = entryback.x * (float)xres / (float)Frame::virtualScreenX;
+			entryback.y = entryback.y * (float)yres / (float)Frame::virtualScreenY;
+			entryback.w = entryback.w * (float)xres / (float)Frame::virtualScreenX;
+			entryback.h = entryback.h * (float)yres / (float)Frame::virtualScreenY;
+			if (entry.pressed) {
+				drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
+			} else if (entry.highlighted) {
+				drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
+			} else if (selection >= 0 && list[selection] == *it) {
+				drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
+			}
 
-		SDL_Rect scaledDest;
-		scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
-		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
-		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
-		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
-		text->drawColor(src, scaledDest, entry.color);
+			SDL_Rect scaledDest;
+			scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
+			scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
+			scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
+			scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+			text->drawColor(src, scaledDest, entry.color);
+		}
 	}
 
 	// render fields
@@ -355,20 +360,21 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		if (tooltip && tooltip[0] != '\0') {
 			Font* font = Font::get(tooltip_text_font);
 			if (font) {
+				int border = tooltip_border_width;
+
 				Text* text = Text::get(tooltip, font->getName());
 				SDL_Rect src;
 				src.x = mousex + 20 * ((float)Frame::virtualScreenX / xres);
 				src.y = mousey;
-				src.w = text->getWidth() + 2;
-				src.h = text->getHeight() + 2;
+				src.w = text->getWidth() + border * 2;
+				src.h = text->getHeight() + border * 2;
 
-				int border = tooltip_border_width;
-
-				src.x = src.x * (float)xres / (float)Frame::virtualScreenX;
-				src.y = src.y * (float)yres / (float)Frame::virtualScreenY;
-				src.w = src.w * (float)xres / (float)Frame::virtualScreenX;
-				src.h = src.h * (float)yres / (float)Frame::virtualScreenY;
-				drawRect(&src, tooltip_border_color, (Uint8)(tooltip_border_color>>mainsurface->format->Ashift));
+				SDL_Rect _src = src;
+				_src.x = _src.x * (float)xres / (float)Frame::virtualScreenX;
+				_src.y = _src.y * (float)yres / (float)Frame::virtualScreenY;
+				_src.w = _src.w * (float)xres / (float)Frame::virtualScreenX;
+				_src.h = _src.h * (float)yres / (float)Frame::virtualScreenY;
+				drawRect(&_src, tooltip_border_color, (Uint8)(tooltip_border_color>>mainsurface->format->Ashift));
 
 				SDL_Rect src2{src.x + border, src.y + border, src.w - border * 2, src.h - border * 2};
 				src2.x = src2.x * (float)xres / (float)Frame::virtualScreenX;
@@ -377,7 +383,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				src2.h = src2.h * (float)yres / (float)Frame::virtualScreenY;
 				drawRect(&src2, tooltip_background, (Uint8)(tooltip_background>>mainsurface->format->Ashift));
 
-				text->drawColor(SDL_Rect{0,0,0,0}, SDL_Rect{src.x + 1, src.y + 1, 0, 0}, tooltip_text_color);
+				text->drawColor(SDL_Rect{0,0,0,0}, src2, tooltip_text_color);
 			}
 		}
 	}
@@ -433,10 +439,10 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
-	Sint32 mousex = (mousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (mousey / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	if (selected) {
 		// unselect list
@@ -458,8 +464,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		// activate selection
 		if (keystatus[SDL_SCANCODE_RETURN]) {
 			keystatus[SDL_SCANCODE_RETURN] = 0;
-			if (selection != list.end()) {
-				activateEntry(**selection);
+			if (selection != -1) {
+				activateEntry(*list[selection]);
 			}
 			if (dropDown) {
 				if (!widgetBack.empty()) {
@@ -474,24 +480,26 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		}
 
 		// choose a selection
-		if (selection == list.end()) {
-			if (keystatus[SDL_SCANCODE_UP] || 
-				keystatus[SDL_SCANCODE_DOWN]) {
-				keystatus[SDL_SCANCODE_UP] = 0;
-				keystatus[SDL_SCANCODE_DOWN] = 0;
-				selection = list.begin();
-				scrollToSelection();
-			}
-		} else {
-			if (keystatus[SDL_SCANCODE_UP]) {
-				keystatus[SDL_SCANCODE_UP] = 0;
-				selection = selection == list.begin() ? list.begin() : --selection;
-				scrollToSelection();
-			}
-			if (keystatus[SDL_SCANCODE_DOWN]) {
-				keystatus[SDL_SCANCODE_DOWN] = 0;
-				selection = selection == list.end() ? list.end() : ++selection;
-				scrollToSelection();
+		if (list.size()) {
+			if (selection == -1) {
+				if (keystatus[SDL_SCANCODE_UP] || 
+					keystatus[SDL_SCANCODE_DOWN]) {
+					keystatus[SDL_SCANCODE_UP] = 0;
+					keystatus[SDL_SCANCODE_DOWN] = 0;
+					selection = 0;
+					scrollToSelection();
+				}
+			} else {
+				if (keystatus[SDL_SCANCODE_UP]) {
+					keystatus[SDL_SCANCODE_UP] = 0;
+					--selection;
+					scrollToSelection();
+				}
+				if (keystatus[SDL_SCANCODE_DOWN]) {
+					keystatus[SDL_SCANCODE_DOWN] = 0;
+					selection = selection == list.size() - 1 ? -1 : selection + 1;
+					scrollToSelection();
+				}
 			}
 		}
 	}
@@ -500,18 +508,13 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable) {
 		// x scroll with mouse wheel
 		if (actualSize.w > size.w) {
-			if (mousestatus[SDL_BUTTON_X1]) {
-				actualSize.x += std::min(entrySize * 4, size.w);
-				usable = result.usable = false;
-			} else if (mousestatus[SDL_BUTTON_X2]) {
-				actualSize.x -= std::min(entrySize * 4, size.w);
-				usable = result.usable = false;
-			}
 			if (actualSize.h <= size.h) {
 				if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
+					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 					actualSize.x += std::min(entrySize * 4, size.w);
 					usable = result.usable = false;
 				} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
+					mousestatus[SDL_BUTTON_WHEELUP] = 0;
 					actualSize.x -= std::min(entrySize * 4, size.w);
 					usable = result.usable = false;
 				}
@@ -521,9 +524,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		// y scroll with mouse wheel
 		if (actualSize.h > size.h) {
 			if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
+				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 				actualSize.y += std::min(entrySize * 4, size.h);
 				usable = result.usable = false;
 			} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
+				mousestatus[SDL_BUTTON_WHEELUP] = 0;
 				actualSize.y -= std::min(entrySize * 4, size.h);
 				usable = result.usable = false;
 			}
@@ -737,8 +742,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 
 			entry_t* entry = *it;
 			if (entry->suicide) {
-				if (selection == it) {
-					selection = selection == list.begin() ? list.begin() : --selection;
+				if (list[selection] == *it) {
+					--selection;
 				}
 				delete entry;
 				list.erase(it);
@@ -901,7 +906,6 @@ Frame::entry_t* Frame::addEntry(const char* name, bool resizeFrame) {
 	entry_t* entry = new entry_t();
 	entry->name = name;
 	entry->color = 0xffffffff;
-	entry->image = nullptr;
 	list.push_back(entry);
 
 	if (resizeFrame) {
@@ -951,7 +955,7 @@ void Frame::clear() {
 		delete list.front();
 		list.erase(list.begin());
 	}
-	selection = list.end();
+	selection = -1;
 }
 
 void Frame::clearEntries() {
@@ -959,7 +963,7 @@ void Frame::clearEntries() {
 		delete list.front();
 		list.erase(list.begin());
 	}
-	selection = list.end();
+	selection = -1;
 }
 
 bool Frame::remove(const char* name) {
@@ -1010,8 +1014,8 @@ bool Frame::removeEntry(const char* name, bool resizeFrame) {
 	for (auto it = list.begin(); it != list.end(); ++it) {
 		entry_t* entry = *it;
 		if (entry->name == name) {
-			if (selection == it) {
-				selection = selection == list.begin() ? list.begin() : --selection;
+			if (list[selection] == *it) {
+				--selection;
 			}
 			delete entry;
 			list.erase(it);
@@ -1115,8 +1119,8 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 			if (_size.w <= 0 || _size.h <= 0) {
 				return false;
 			} else {
-				Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
-				Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
+				Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+				Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 				if (rectContainsPoint(_size, omousex, omousey)) {
 					return true;
 				} else {
@@ -1164,16 +1168,16 @@ void Frame::deselect() {
 }
 
 void Frame::setSelection(int index) {
-	selection = std::next(list.begin(), index);
+	selection = index;
 }
 
 void Frame::scrollToSelection() {
-	if (selection == list.end()) {
+	if (selection == -1) {
 		return;
 	}
 	int index = 0;
 	for (auto entry : list) {
-		if (entry == *selection) {
+		if (entry == list[selection]) {
 			break;
 		}
 		++index;
@@ -1196,5 +1200,86 @@ void Frame::activateEntry(entry_t& entry) {
 		if (entry.click) {
 			(*entry.click)(args);
 		}
+	}
+}
+
+void createTestUI() {
+	Frame* window = gui->addFrame("window");
+	window->setSize(SDL_Rect{10, 10, 500, 400});
+	window->setActualSize(SDL_Rect{0, 0, 600, 500});
+	window->setColor(SDL_MapRGBA(mainsurface->format, 128, 128, 160, 255));
+
+	int y = 10;
+
+	{
+		Button* bt = window->addButton("testButton1");
+		bt->setBorder(3);
+		bt->setSize(SDL_Rect{10, y, 200, 40});
+		bt->setText("Normal button");
+		bt->setTooltip("Only pressed when button is held");
+
+		y += 50;
+	}
+
+	{
+		Button* bt = window->addButton("testButton2");
+		bt->setBorder(3);
+		bt->setSize(SDL_Rect{10, y, 200, 40});
+		bt->setText("Toggle button");
+		bt->setTooltip("Toggles on/off state");
+		bt->setStyle(Button::STYLE_TOGGLE);
+
+		y += 50;
+	}
+
+	{
+		Button* bt = window->addButton("testButton3");
+		bt->setBorder(3);
+		bt->setSize(SDL_Rect{10, y, 200, 40});
+		bt->setText("Checkmark");
+		bt->setTooltip("Checkmark style button");
+		bt->setStyle(Button::STYLE_CHECKBOX);
+
+		y += 50;
+	}
+
+	{
+		Field* field = window->addField("testField", 32);
+		field->setSize(SDL_Rect{10, y, 200, 40});
+		field->setText("Editable text");
+		field->setEditable(true);
+
+		y += 50;
+	}
+
+	{
+		Slider* slider = window->addSlider("testSlider");
+		slider->setRailSize(SDL_Rect{10, y, 200, 5});
+		slider->setHandleSize(SDL_Rect{0, 0, 20, 30});
+		slider->setTooltip("Test Slider");
+		slider->setMinValue(0.f);
+		slider->setMaxValue(10.f);
+		slider->setValue(5.f);
+
+		y += 50;
+	}
+
+	{
+		Frame* frame = window->addFrame("testFrame");
+		frame->setSize(SDL_Rect{10, y, 200, 200});
+		frame->setActualSize(SDL_Rect{0, 0, 200, 200});
+		frame->setColor(SDL_MapRGBA(mainsurface->format, 96, 96, 128, 255));
+		{
+			Frame::entry_t* entry = frame->addEntry("entry1", true);
+			entry->text = "Entry #1";
+			entry->tooltip = "The first entry in the frame";
+		}
+		{
+			Frame::entry_t* entry = frame->addEntry("entry2", true);
+			entry->text = "Entry #2";
+			entry->tooltip = "Another entry in the frame";
+		}
+
+		y += 210;
 	}
 }

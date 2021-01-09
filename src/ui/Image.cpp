@@ -121,11 +121,11 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect& dest, const Uint32& c
 	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
 	glVertex2f(dest.x, yres - dest.y);
 	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x, yres - dest.y - src->h);
+	glVertex2f(dest.x, yres - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x + src->w, yres - dest.y - src->h);
+	glVertex2f(dest.x + src->w, yres - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x + src->w, yres - dest.y);
+	glVertex2f(dest.x + dest.w, yres - dest.y);
 	glEnd();
 
 	// unbind texture
