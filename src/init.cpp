@@ -700,7 +700,7 @@ int initApp(char const * const title, int fullscreen)
 	gui->setActualSize(guiRect);
 	gui->setHollow(true);
 
-	createTestUI();
+	//createTestUI();
 #endif
 
 	return 0;
