@@ -21,10 +21,14 @@ void createIngameHud(int player) {
 
     playerHud[player] = frame;
     int playercount = 0;
-    for (int c = 0; c < MAXPLAYERS; ++c) {
-        if (!client_disconnected[c]) {
-            ++playercount;
+    if (multiplayer == SINGLE) {
+        for (int c = 0; c < MAXPLAYERS; ++c) {
+            if (!client_disconnected[c]) {
+                ++playercount;
+            }
         }
+    } else {
+        playercount = 1;
     }
 
     static const char* bigfont = "fonts/pixelmix.ttf#18";
