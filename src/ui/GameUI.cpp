@@ -344,7 +344,15 @@ void newIngameHud() {
             createIngameHud(clientnum);
         }
 
-        // this already works fine, so just reuse it
-        drawMinimap();
+        // original minimap already works fine, so just reuse it
+        if (multiplayer == SINGLE) {
+            for (int c = 0; c < MAXPLAYERS; ++c) {
+                if (!client_disconnected[c]) {
+                    drawMinimap(c);
+                }
+            }
+        } else {
+            drawMinimap(0);
+        }
     }
 }
