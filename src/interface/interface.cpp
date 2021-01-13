@@ -171,8 +171,7 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&cursor_bmp, "images/system/cursor.png"),
 	std::make_pair(&cross_bmp, "images/system/cross.png"),
 	std::make_pair(&selected_cursor_bmp, "images/system/selectedcursor.png"),
-	std::make_pair(&selected_glyph_bmp, "images/system/glypha.png"),
-	std::make_pair(&selected_glyph_up_bmp, "images/system/glypha_up.png"),
+	std::make_pair(&controllerglyphs1_bmp, "images/system/glyphsheet_ns.png"),
 
 	std::make_pair(&fancyWindow_bmp, "images/system/fancyWindow.png"),
 	std::make_pair(&font8x8_bmp, "images/system/font8x8.png"),
@@ -1364,7 +1363,19 @@ bool mouseInBounds(const int player, int x1, int x2, int y1, int y2)
 
 hotbar_slot_t* getHotbar(int player, int x, int y)
 {
-	if ( x >= players[player]->hotbar.getStartX() 
+	if ( players[player]->hotbar.useHotbarFaceMenu )
+	{
+		for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
+		{
+			auto& slotRect = players[player]->hotbar.faceButtonPositions[num];
+			if ( x >= slotRect.x && x < (slotRect.x + slotRect.w)
+				&& y >= slotRect.y && y < (slotRect.y + slotRect.h) )
+			{
+				return &players[player]->hotbar.slots()[num];
+			}
+		}
+	}
+	else if ( x >= players[player]->hotbar.getStartX() 
 		&& x < players[player]->hotbar.getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar.getSlotSize())
 		&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar.getSlotSize()
 		&& y < players[player]->statusBarUI.getStartY() )

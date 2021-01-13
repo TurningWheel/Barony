@@ -64,7 +64,7 @@ class GameController
 	SDL_Haptic* sdl_haptic;
 	int id;
 	std::string name;
-	static const int BUTTON_HELD_TICKS = TICKS_PER_SECOND;
+	static const int BUTTON_HELD_TICKS = TICKS_PER_SECOND / 4;
 public:
 	GameController();
 	~GameController();
@@ -125,6 +125,13 @@ public:
 		UPRIGHT
 	};
 
+	enum RadialSelection : int
+	{
+		RADIAL_INVALID = -2,
+		RADIAL_CENTERED = -1,
+		RADIAL_MAX = 16
+	};
+
 	struct Binding_t {
 		float analog = 0.f;
 		float deadzone = 0.f;
@@ -132,6 +139,8 @@ public:
 		bool consumed = false;
 		Uint32 buttonHeldTicks = 0;
 		bool buttonHeld = false;
+		bool binaryRelease = false;
+		bool binaryReleaseConsumed = false;
 
 		enum Bindtype_t 
 		{
@@ -144,6 +153,7 @@ public:
 			JOYSTICK_BUTTON,
 			JOYSTICK_HAT,
 			VIRTUAL_DPAD,
+			RADIAL_SELECTION,
 			//JOYSTICK_BALL,
 			NUM
 		};
@@ -152,10 +162,12 @@ public:
 		SDL_GameControllerAxis padAxis = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID;
 		SDL_GameControllerButton padButton = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID;
 		DpadDirection padVirtualDpad = DpadDirection::CENTERED;
+		RadialSelection padRadialSelection = RadialSelection::RADIAL_CENTERED;
 		bool padAxisNegative = false;
 	};
 
 	void updateButtons();
+	void updateButtonsReleased();
 	void updateAxis();
 	static SDL_GameControllerButton getSDLButtonFromImpulse(const unsigned controllerImpulse);
 	static SDL_GameControllerAxis getSDLTriggerFromImpulse(const unsigned controllerImpulse);
@@ -163,10 +175,13 @@ public:
 	Binding_t buttons[NUM_JOY_STATUS];
 	Binding_t axis[NUM_JOY_AXIS_STATUS];
 	Binding_t virtualDpad;
+	Binding_t radialSelection;
 
 	bool binary(SDL_GameControllerButton binding) const;
 	bool binaryToggle(SDL_GameControllerButton binding) const;
+	bool binaryReleaseToggle(SDL_GameControllerButton binding) const;
 	void consumeBinaryToggle(SDL_GameControllerButton binding);
+	void consumeBinaryReleaseToggle(SDL_GameControllerButton binding);
 	bool buttonHeldToggle(SDL_GameControllerButton binding) const;
 	float analog(SDL_GameControllerButton binding) const;
 	bool binary(SDL_GameControllerAxis binding) const;
@@ -405,8 +420,10 @@ public:
 	const bool bControllerInputPressed(const int player, const unsigned controllerImpulse) const;
 	const bool bControllerInputHeld(int player, const unsigned controllerImpulse) const;
 	const bool bControllerRawInputPressed(const int player, const unsigned button) const;
+	const bool bControllerRawInputReleased(const int player, const unsigned button) const;
 	void controllerClearInput(const int player, const unsigned controllerImpulse);
 	void controllerClearRawInput(const int player, const unsigned button);
+	void controllerClearRawInputRelease(const int player, const unsigned button);
 	const bool bMouseLeft (const int player) const;
 	const bool bMouseHeldLeft(const int player) const;
 	const bool bMouseRight(const int player) const;
@@ -582,6 +599,7 @@ public:
 		getController(player)->stopRumble();
 	}
 	void addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount);
+	SDL_Rect getGlyphRectForInput(const int player, bool pressed, const unsigned keyboardImpulse, const unsigned controllerImpulse);
 };
 extern Inputs inputs;
 void initGameControllers();
@@ -945,6 +963,18 @@ public:
 		Uint32 hotbarTooltipLastGameTick = 0;
 		SDL_Rect hotbarBox;
 
+		// temp stuff
+		bool useHotbarRadialMenu = false;
+		bool useHotbarFaceMenu = true;
+		bool faceMenuInvertLayout = false;
+		bool faceMenuQuickCastEnabled = true;
+		bool faceMenuQuickCast = true;
+		bool faceMenuButtonHeld = false;
+		int radialHotbarSlots = NUM_HOTBAR_SLOTS;
+		int radialHotbarProgress = 0;
+		// end temp stuff
+
+		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
 		const int getStartX() const
 		{
 			return (player.camera_midx() - ((NUM_HOTBAR_SLOTS / 2) * getSlotSize()));
@@ -1003,6 +1033,8 @@ public:
 			current_hotbar = slot;
 			hotbarHasFocus = true;
 		}
+		void initFaceButtonHotbar();
+		std::string faceButtonSlotToPrompt(Uint32 slot);
 	} hotbar;
 };
 

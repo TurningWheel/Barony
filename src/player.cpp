@@ -150,6 +150,8 @@ void GameController::initBindings()
 		this->buttons[i].padButton = static_cast<SDL_GameControllerButton>(i);
 		this->buttons[i].analog = 0.f;
 		this->buttons[i].binary = false;
+		this->buttons[i].binaryRelease = false;
+		this->buttons[i].binaryReleaseConsumed = false;
 		this->buttons[i].consumed = false;
 	}
 	for ( int i = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX; i < SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX; ++i )
@@ -158,13 +160,25 @@ void GameController::initBindings()
 		this->axis[i].padAxis = static_cast<SDL_GameControllerAxis>(i);
 		this->axis[i].analog = 0.f;
 		this->axis[i].binary = false;
+		this->axis[i].binaryRelease = false;
+		this->axis[i].binaryReleaseConsumed = false;
 		this->axis[i].consumed = false;
 	}
 	this->virtualDpad.padVirtualDpad = DpadDirection::CENTERED;
 	this->virtualDpad.type = Binding_t::Bindtype_t::VIRTUAL_DPAD;
 	this->virtualDpad.analog = 0.f;
 	this->virtualDpad.binary = false;
+	this->virtualDpad.binaryRelease = false;
+	this->virtualDpad.binaryReleaseConsumed = false;
 	this->virtualDpad.consumed = false;
+
+	this->radialSelection.padRadialSelection = RadialSelection::RADIAL_CENTERED;
+	this->radialSelection.type = Binding_t::Bindtype_t::RADIAL_SELECTION;
+	this->radialSelection.analog = 0.f;
+	this->radialSelection.binary = false;
+	this->radialSelection.binaryRelease = false;
+	this->radialSelection.binaryReleaseConsumed = false;
+	this->radialSelection.consumed = false;
 }
 
 const bool GameController::isActive()
@@ -350,7 +364,73 @@ void GameController::handleAnalog(int player)
 		real_t floatx = 0;
 		real_t floaty = 0;
 
-		if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
+		if ( false && players[player]->hotbar.useHotbarRadialMenu
+			&& buttonHeldToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+		{
+			real_t floatx = getRightXPercent();
+			real_t floaty = getRightYPercent();
+			const int numoptions = players[player]->hotbar.radialHotbarSlots;
+			real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
+			RadialSelection dir = RadialSelection::RADIAL_INVALID;
+			if ( magnitude > 1 )
+			{
+				real_t stickAngle = atan2(floaty, floatx);
+				while ( stickAngle >= (2 * PI + (2 * PI /*- (PI / numoptions)*/)) )
+				{
+					stickAngle -= PI * 2;
+				}
+				while ( stickAngle < (2 * PI /*- (PI / numoptions)*/) )
+				{
+					stickAngle += PI * 2;
+				}
+
+				real_t angleStart = 2 * PI /*- (PI / (2 * numoptions))*/;
+				real_t angleMiddle = angleStart + PI / (2 * numoptions);
+				real_t angleEnd = angleMiddle + PI / (2 * numoptions);
+				for ( int i = 0; i < numoptions * 2; ++i )
+				{
+					if ( (stickAngle >= angleStart && stickAngle < angleEnd) )
+					{
+						dir = static_cast<RadialSelection>(i);
+					}
+					angleStart += 2 * PI / (2 * numoptions);
+					angleMiddle = angleStart + PI / (2 * numoptions);
+					angleEnd = angleMiddle + PI / (2 * numoptions);
+				}
+				RadialSelection oldRadial = radialSelection.padRadialSelection;
+				radialSelection.padRadialSelection = dir;
+				if ( oldRadial != radialSelection.padRadialSelection )
+				{
+					// unconsume the input whenever it's released or pressed again.
+					radialSelection.consumed = false;
+
+					if ( radialSelection.padRadialSelection > RADIAL_CENTERED )
+					{
+						int hotbarSlot = -1;
+						if ( radialSelection.padRadialSelection < numoptions )
+						{
+							hotbarSlot = numoptions - radialSelection.padRadialSelection - 1;
+						}
+						else
+						{
+							hotbarSlot = radialSelection.padRadialSelection - numoptions;
+						}
+						if ( hotbarSlot >= 0 )
+						{
+							players[player]->hotbar.selectHotbarSlot(hotbarSlot);
+						}
+						messagePlayer(0, "%d", hotbarSlot);
+					}
+				}
+			}
+			else
+			{
+				radialSelection.consumed = false;
+			}
+			rightx = 0;
+			righty = 0;
+		}
+		else if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 		{
 			rightx = getRightXMove();
 			righty = getRightYMove();
@@ -406,6 +486,7 @@ void GameController::handleAnalog(int player)
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
+
 			if ( inputs.bPlayerUsingKeyboardControl(player) )
 			{
 				SDL_Event e;
@@ -431,7 +512,29 @@ void GameController::handleAnalog(int player)
 				mouse->moved = true;
 			}
 		}
-		if ( abs(floatx) > 0.0001 || abs(floaty) > 0.0001 )
+
+		if ( players[player]->hotbar.useHotbarRadialMenu
+			&& binaryToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+		{
+			if ( floatx > 0.0001 )
+			{
+				players[player]->hotbar.radialHotbarProgress += 5;
+			}
+			else if ( floatx < -0.0001 )
+			{
+				players[player]->hotbar.radialHotbarProgress -= 5;
+			}
+			players[player]->hotbar.radialHotbarProgress = std::max(0, players[player]->hotbar.radialHotbarProgress);
+			players[player]->hotbar.radialHotbarProgress = std::min(1000, players[player]->hotbar.radialHotbarProgress);
+			int slot = players[player]->hotbar.radialHotbarProgress / 100;
+			int oldSlot = players[player]->hotbar.current_hotbar;
+			players[player]->hotbar.selectHotbarSlot(slot);
+			inputs.getController(player)->radialSelection.consumed = false;
+			if ( oldSlot != slot )
+			{
+			}
+		}
+		else if ( abs(floatx) > 0.0001 || abs(floaty) > 0.0001 )
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
@@ -698,7 +801,17 @@ bool GameController::handleInventoryMovement(const int player)
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar - 1);
+			int newSlot = hotbar_t.current_hotbar - 1;
+			/*if ( hotbar_t.useHotbarFaceMenu )
+			{
+				if ( hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6 
+					|| hotbar_t.current_hotbar == 3 || hotbar_t.current_hotbar == 7 )
+				{
+					newSlot = hotbar_t.current_hotbar - 2;
+				}
+			}*/
+
+			hotbar_t.selectHotbarSlot(newSlot);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
@@ -718,7 +831,16 @@ bool GameController::handleInventoryMovement(const int player)
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar + 1);
+			int newSlot = hotbar_t.current_hotbar + 1;
+			/*if ( hotbar_t.useHotbarFaceMenu )
+			{
+				if ( hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5 )
+				{
+					newSlot = hotbar_t.current_hotbar + 2;
+				}
+			}*/
+
+			hotbar_t.selectHotbarSlot(newSlot);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
@@ -737,10 +859,19 @@ bool GameController::handleInventoryMovement(const int player)
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
-			//Warp back to top of inventory.
-			hotbar_t.hotbarHasFocus = false;
-			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1);
+			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6) )
+			{
+				int newSlot = hotbar_t.current_hotbar - 1;
+				hotbar_t.selectHotbarSlot(newSlot);
+				warpMouseToSelectedHotbarSlot(player);
+			}
+			else*/
+			{
+				//Warp back to top of inventory.
+				hotbar_t.hotbarHasFocus = false;
+				float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1);
+			}
 		}
 		else
 		{
@@ -757,10 +888,19 @@ bool GameController::handleInventoryMovement(const int player)
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
-			//Warp back to bottom of inventory.
-			hotbar_t.hotbarHasFocus = false;
-			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0);
+			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5) )
+			{
+				int newSlot = hotbar_t.current_hotbar + 1;
+				hotbar_t.selectHotbarSlot(newSlot);
+				warpMouseToSelectedHotbarSlot(player);
+			}
+			else*/
+			{
+				//Warp back to bottom of inventory.
+				hotbar_t.hotbarHasFocus = false;
+				float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0);
+			}
 		}
 		else
 		{
@@ -1312,6 +1452,7 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 	if ( SDL_HapticUpdateEffect(sdl_haptic, haptics.hapticEffectId, &haptics.hapticEffect) < 0 )
 	{
 		printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
+		return;
 	}
 	if ( SDL_HapticRunEffect(sdl_haptic, haptics.hapticEffectId, 1) < 0 )
 	{
@@ -2112,6 +2253,153 @@ void Player::WorldUI_t::handleTooltips()
 	}
 }
 
+void Player::Hotbar_t::initFaceButtonHotbar()
+{
+	for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
+	{
+		faceButtonPositions[num].w = getSlotSize();
+		faceButtonPositions[num].h = getSlotSize();
+		faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6;
+		faceButtonPositions[num].y = hotbarBox.y - getSlotSize() / 2;
+
+		if ( faceMenuButtonHeld && num == current_hotbar)
+		{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+		}
+
+		switch ( num )
+		{
+			case 0:
+				faceButtonPositions[num].x += 0 * getSlotSize();
+				break;
+			case 1:
+				faceButtonPositions[num].x += 1 * getSlotSize();
+				break;
+			case 2:
+				faceButtonPositions[num].x += 2 * getSlotSize();
+				break;
+			case 3:
+				faceButtonPositions[num].x += 3 * getSlotSize() + getSlotSize() / 3;
+				faceButtonPositions[num].y -= getSlotSize() / 4;
+				break;
+			case 4:
+				faceButtonPositions[num].x += 4 * getSlotSize() + getSlotSize() / 3;
+				faceButtonPositions[num].y -= getSlotSize() / 4;
+				break;
+			case 5:
+				faceButtonPositions[num].x += 5 * getSlotSize() + getSlotSize() / 3;
+				faceButtonPositions[num].y -= getSlotSize() / 4;
+				break;
+			case 6:
+				faceButtonPositions[num].x += 6 * getSlotSize() + 2 * getSlotSize() / 3;
+				break;
+			case 7:
+				faceButtonPositions[num].x += 7 * getSlotSize() + 2 * getSlotSize() / 3;
+				break;
+			case 8:
+				faceButtonPositions[num].x += 8 * getSlotSize() + 2 * getSlotSize() / 3;
+				break;
+			case 9:
+				faceButtonPositions[num].x += 12 * getSlotSize();
+				break;
+			default:
+				break;
+		}
+		/*switch ( num ) // old
+		{
+			case 0:
+				faceButtonPositions[num].x += 1 * getSlotSize();
+				break;
+			case 1:
+				faceButtonPositions[num].x += 2 * getSlotSize();
+				faceButtonPositions[num].y -= getSlotSize() / 2;
+				break;
+			case 2:
+				faceButtonPositions[num].x += 2 * getSlotSize();
+				faceButtonPositions[num].y += getSlotSize() / 2;
+				break;
+			case 3:
+				faceButtonPositions[num].x += 3 * getSlotSize();
+				break;
+			case 4:
+				faceButtonPositions[num].x += 5 * getSlotSize();
+				break;
+			case 5:
+				faceButtonPositions[num].x += 6 * getSlotSize();
+				faceButtonPositions[num].y -= getSlotSize() / 2;
+				break;
+			case 6:
+				faceButtonPositions[num].x += 6 * getSlotSize();
+				faceButtonPositions[num].y += getSlotSize() / 2;
+				break;
+			case 7:
+				faceButtonPositions[num].x += 7 * getSlotSize();
+				break;
+			case 8:
+				faceButtonPositions[num].x += 9 * getSlotSize();
+				break;
+			case 9:
+				faceButtonPositions[num].x += 10 * getSlotSize();
+				break;
+			default:
+				break;
+		}*/
+	}
+}
+
+std::string Player::Hotbar_t::faceButtonSlotToPrompt(Uint32 slot)
+{
+	switch ( slot )
+	{
+		case 0:
+			return ("LB+X");
+		case 1:
+			return ("X");
+		case 2:
+			return ("RB+X");
+		case 3:
+			return ("LB+Y");
+		case 4:
+			return ("Y");
+		case 5:
+			return ("RB+Y");
+		case 6:
+			return ("LB+B");
+		case 7:
+			return ("B");
+		case 8:
+			return ("RB+B");
+		case 9:
+		default:
+			return "";
+			break;
+	}
+	/*switch ( slot )
+	{
+		case 0:
+			return (faceMenuInvertLayout ? "LB+X" : "X");
+		case 1:
+			return (faceMenuInvertLayout ? "LB+Y" : "Y");
+		case 2:
+			return (faceMenuInvertLayout ? "LB+A" : "A");
+		case 3:
+			return (faceMenuInvertLayout ? "LB+B" : "B");
+		case 4:
+			return (faceMenuInvertLayout ? "X" : "LB+X");
+		case 5:
+			return (faceMenuInvertLayout ? "Y" : "LB+Y");
+		case 6:
+			return (faceMenuInvertLayout ? "A" : "LB+A");
+		case 7:
+			return (faceMenuInvertLayout ? "B" : "LB+B");
+		case 8:
+		case 9:
+		default:
+			return "";
+			break;
+	}*/
+}
+
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 {
 	// todo: add condition like getMouse()? && (!getVirtualMouse(player)->lastMovementFromController 
@@ -2393,6 +2681,29 @@ const bool Inputs::bControllerRawInputPressed(int player, const unsigned button)
 	}
 }
 
+const bool Inputs::bControllerRawInputReleased(int player, const unsigned button) const
+{
+	if ( button < 299 || button >= (301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX) )
+	{
+		return false;
+	}
+	const GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return false;
+	}
+
+	if ( button == 299 || button == 300 ) // triggers
+	{
+		return false;
+		//return controller->binaryReleaseToggle(static_cast<SDL_GameControllerAxis>(button - 299 + SDL_CONTROLLER_AXIS_TRIGGERLEFT));
+	}
+	else
+	{
+		return controller->binaryReleaseToggle(static_cast<SDL_GameControllerButton>(button - 301));
+	}
+}
+
 const bool Inputs::bControllerInputPressed(int player, const unsigned controllerImpulse) const
 {
 	if ( controllerImpulse >= NUM_JOY_IMPULSES )
@@ -2415,6 +2726,14 @@ const bool Inputs::bControllerInputPressed(int player, const unsigned controller
 	}
 	else
 	{
+		if ( players[player]->hotbar.faceMenuButtonHeld )
+		{
+			if ( GameController::getSDLButtonFromImpulse(controllerImpulse) == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER
+				|| GameController::getSDLButtonFromImpulse(controllerImpulse) == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER )
+			{
+				return false;
+			}
+		}
 		return controller->binaryToggle(GameController::getSDLButtonFromImpulse(controllerImpulse));
 	}
 }
@@ -2557,6 +2876,32 @@ void Inputs::controllerClearRawInput(int player, const unsigned button)
 	}
 }
 
+void Inputs::controllerClearRawInputRelease(int player, const unsigned button)
+{
+	if ( button < 299 || button >= (301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX) )
+	{
+		return;
+	}
+	if ( !bPlayerIsControllable(player) )
+	{
+		return;
+	}
+	GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return;
+	}
+
+	if ( button == 299 || button == 300 ) // triggers
+	{
+		//controller->consumeBinaryReleaseToggle(static_cast<SDL_GameControllerAxis>(button - 299 + SDL_CONTROLLER_AXIS_TRIGGERLEFT));
+	}
+	else
+	{
+		controller->consumeBinaryReleaseToggle(static_cast<SDL_GameControllerButton>(button - 301));
+	}
+}
+
 void Inputs::controllerClearInput(int player, const unsigned controllerImpulse)
 {
 	if ( controllerImpulse >= NUM_JOY_IMPULSES )
@@ -2622,6 +2967,128 @@ void Inputs::controllerHandleMouse(int player)
 	controller->handleAnalog(player);
 }
 
+SDL_Rect Inputs::getGlyphRectForInput(const int player, bool pressed, const unsigned keyboardImpulse, const unsigned controllerImpulse)
+{
+	SDL_Rect defaultRect{ 0, 0, 0, 0 };
+
+	if ( bPlayerUsingKeyboardControl(player) )
+	{
+		if ( !vmouse[player].lastMovementFromController )
+		{
+			// TODO - keyboard glyphs.
+			// impulses[keyboardImpulse]
+			return defaultRect;
+		}
+	}
+
+	GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return defaultRect;
+	}
+
+	int glyphHeight = 16;
+	int glyphWidth = 16;
+	const int glyphSpacing = 16;
+
+	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 ) // triggers
+	{
+		SDL_GameControllerAxis axis = GameController::getSDLTriggerFromImpulse(controllerImpulse);
+		if ( axis == SDL_CONTROLLER_AXIS_INVALID && controllerImpulse >= 301 )
+		{
+			axis = static_cast<SDL_GameControllerAxis>(controllerImpulse - 299 + SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+		}
+
+		switch ( axis )
+		{
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+				glyphWidth = 13;
+				glyphHeight = 11;
+				return SDL_Rect{ 2 * glyphSpacing, 4 * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+				glyphWidth = 13;
+				glyphHeight = 11;
+				return SDL_Rect{ 3 * glyphSpacing, 4 * glyphSpacing, glyphWidth, glyphHeight };
+			default:
+				return defaultRect;
+		}
+	}
+	else
+	{
+		SDL_GameControllerButton but = static_cast<SDL_GameControllerButton>(controllerImpulse);
+		/*if ( but == SDL_CONTROLLER_BUTTON_INVALID && controllerImpulse >= 299 )
+		{
+			but = static_cast<SDL_GameControllerButton>(controllerImpulse - 301);
+		}*/
+
+		switch ( but )
+		{
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A:
+				glyphWidth = 11;
+				glyphHeight = 12;
+				return SDL_Rect{ 6 * glyphSpacing, (pressed ? 1 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
+				glyphWidth = 11;
+				glyphHeight = 12;
+				return SDL_Rect{ 7 * glyphSpacing, (pressed ? 1 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
+				glyphWidth = 11;
+				glyphHeight = 12;
+				return SDL_Rect{ 5 * glyphSpacing, (pressed ? 1 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
+				glyphWidth = 11;
+				glyphHeight = 12;
+				return SDL_Rect{ 4 * glyphSpacing, (pressed ? 1 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+				glyphWidth = 15;
+				glyphHeight = 7;
+				return SDL_Rect{ 0 * glyphSpacing, (pressed ? 4 : 4) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+				glyphWidth = 15;
+				glyphHeight = 7;
+				return SDL_Rect{ 1 * glyphSpacing, (pressed ? 4 : 4) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
+				glyphWidth = 15;
+				glyphHeight = 7;
+				return SDL_Rect{ 2 * glyphSpacing, (pressed ? 1 : 1) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
+				glyphWidth = 15;
+				glyphHeight = 7;
+				return SDL_Rect{ 3 * glyphSpacing, (pressed ? 1 : 1) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_GUIDE:
+				return defaultRect;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
+				glyphWidth = 19;
+				glyphHeight = 19;
+				return SDL_Rect{ 0 * glyphSpacing, (pressed ? 8 : 8) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
+				glyphWidth = 19;
+				glyphHeight = 19;
+				return SDL_Rect{ 0 * glyphSpacing, (pressed ? 8 : 8) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+				glyphWidth = 10;
+				glyphHeight = 10;
+				return SDL_Rect{ 0 * glyphSpacing, (pressed ? 0 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
+				glyphWidth = 10;
+				glyphHeight = 10;
+				return SDL_Rect{ 1 * glyphSpacing, (pressed ? 0 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+				glyphWidth = 10;
+				glyphHeight = 10;
+				return SDL_Rect{ 2 * glyphSpacing, (pressed ? 0 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+				glyphWidth = 10;
+				glyphHeight = 10;
+				return SDL_Rect{ 3 * glyphSpacing, (pressed ? 0 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			default:
+				return defaultRect;
+		}
+	}
+
+	return defaultRect;
+}
+
 bool GameController::binaryOf(Binding_t& binding) 
 {
 	if ( binding.type == Binding_t::CONTROLLER_AXIS || binding.type == Binding_t::CONTROLLER_BUTTON || binding.type == Binding_t::VIRTUAL_DPAD )
@@ -2678,6 +3145,19 @@ float GameController::analogOf(Binding_t& binding)
 	return 0.f;
 }
 
+void GameController::updateButtonsReleased()
+{
+	if ( !isActive() )
+	{
+		return;
+	}
+
+	for ( int i = 0; i < NUM_JOY_STATUS; ++i )
+	{
+		buttons[i].binaryReleaseConsumed = true;
+	}
+}
+
 void GameController::updateButtons()
 {
 	if ( !isActive() )
@@ -2695,6 +3175,17 @@ void GameController::updateButtons()
 			// unconsume the input whenever it's released or pressed again.
 			//messagePlayer(0, "%d: %d", i, buttons[i].binary ? 1 : 0);
 			buttons[i].consumed = false;
+			buttons[i].binaryReleaseConsumed = false;
+
+			if ( oldBinary && !buttons[i].binary )
+			{
+				buttons[i].binaryRelease = true;
+			}
+			else
+			{
+				buttons[i].binaryRelease = false;
+			}
+
 			if ( buttons[i].binary && buttons[i].buttonHeldTicks == 0 )
 			{
 				buttons[i].buttonHeldTicks = ticks;
@@ -2746,6 +3237,15 @@ bool GameController::binaryToggle(SDL_GameControllerButton binding) const
 	return (buttons[binding].binary && !buttons[binding].consumed);
 }
 
+bool GameController::binaryReleaseToggle(SDL_GameControllerButton binding) const
+{
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return false;
+	}
+	return (buttons[binding].binaryRelease && !buttons[binding].binaryReleaseConsumed);
+}
+
 bool GameController::buttonHeldToggle(SDL_GameControllerButton binding) const
 {
 	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
@@ -2762,6 +3262,18 @@ bool GameController::binary(SDL_GameControllerButton binding) const
 		return false;
 	}
 	return buttons[binding].binary;
+}
+
+void GameController::consumeBinaryReleaseToggle(SDL_GameControllerButton binding)
+{
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return;
+	}
+	if ( buttons[binding].binaryRelease )
+	{
+		buttons[binding].binaryReleaseConsumed = true;
+	}
 }
 
 void GameController::consumeBinaryToggle(SDL_GameControllerButton binding)

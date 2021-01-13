@@ -3108,6 +3108,31 @@ void consoleCommand(char const * const command_str)
 			Player::WorldUI_t::tooltipHeightOffsetZ = static_cast<real_t>(offset) / 10.0;
 			messagePlayer(clientnum, "Tooltip Z offset set to: %.1f", Player::WorldUI_t::tooltipHeightOffsetZ);
 		}
+		else if ( !strncmp(command_str, "/radialhotbar", 13) )
+		{
+			players[clientnum]->hotbar.useHotbarRadialMenu = !players[clientnum]->hotbar.useHotbarRadialMenu;
+		}
+		else if ( !strncmp(command_str, "/radialhotslots ", 16) )
+		{
+			int slots = atoi((char*)(command_str + 16));
+			players[clientnum]->hotbar.radialHotbarSlots = slots;
+			messagePlayer(clientnum, "Slots in use: %d", slots);
+		}
+		else if ( !strncmp(command_str, "/facehotbar", 11) )
+		{
+			players[clientnum]->hotbar.useHotbarFaceMenu = !players[clientnum]->hotbar.useHotbarFaceMenu;
+			messagePlayer(clientnum, "Face button hotbar: %d", players[clientnum]->hotbar.useHotbarFaceMenu ? 1 : 0);
+		}
+		else if ( !strncmp(command_str, "/facebarinvert", 14) )
+		{
+			players[clientnum]->hotbar.faceMenuInvertLayout = !players[clientnum]->hotbar.faceMenuInvertLayout;
+			messagePlayer(clientnum, "Face button invert position: %d", players[clientnum]->hotbar.faceMenuInvertLayout ? 1 : 0);
+		}
+		else if ( !strncmp(command_str, "/facebarquickcast", 17) )
+		{
+			players[clientnum]->hotbar.faceMenuQuickCastEnabled = !players[clientnum]->hotbar.faceMenuQuickCastEnabled;
+			messagePlayer(clientnum, "Face button quickcast: %d", players[clientnum]->hotbar.faceMenuQuickCastEnabled ? 1 : 0);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
