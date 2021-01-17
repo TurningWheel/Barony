@@ -3151,6 +3151,7 @@ void handleEvents(void)
 						if ( inputs.hasController(i) )
 						{
 							inputs.getController(i)->handleRumble();
+							inputs.getController(i)->updateButtonsReleased();
 						}
 					}
 				}
@@ -4573,13 +4574,18 @@ int main(int argc, char** argv)
 						if ( players[player]->isLocalPlayerAlive() )
 						{
 							bool hasSpellbook = false;
+							bool tryQuickCast = players[player]->hotbar.faceMenuQuickCast;
 							if ( stats[player]->shield && itemCategory(stats[player]->shield) == SPELLBOOK )
 							{
 								hasSpellbook = true;
 							}
+
+							players[player]->hotbar.faceMenuQuickCast = false;
+
 							if ( !command &&
 								(*inputPressedForPlayer(player, impulses[IN_CAST_SPELL])
-									|| (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL))
+									|| (players[player]->shootmode 
+										&& (inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL) || tryQuickCast) )
 									|| (hasSpellbook && *inputPressedForPlayer(player, impulses[IN_DEFEND]))
 									|| (hasSpellbook && players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)))
 								)
@@ -5238,22 +5244,53 @@ int main(int argc, char** argv)
 									pos.y += 20;
 									pos.h = selected_cursor_bmp->h;
 									pos.w = pos.h;
+
+									SDL_Rect glyphsrc{ 0, 0, 0, 0 };
+
 									if ( ticks % 50 < 25 )
 									{
-										drawImageScaled(selected_glyph_bmp, NULL, &pos);
+										int button = joyimpulses[INJOY_GAME_USE] - 301;
+										glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
+										pos.w = glyphsrc.w * 3;
+										pos.h = glyphsrc.h * 3;
+										pos.y -= 4;
+										drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
 									}
 									else
 									{
-										drawImageScaled(selected_glyph_up_bmp, NULL, &pos);
+										int button = joyimpulses[INJOY_GAME_USE] - 301;
+										glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
+										pos.w = glyphsrc.w * 3;
+										pos.h = glyphsrc.h * 3;
+										drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
 									}
-									pos.x += pos.w;
-									pos.y += 6;
+									pos.x += pos.w + 4;
+									pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
+									if ( ticks % 50 < 25 )
+									{
+										pos.y += 4;
+									}
 									ttfPrintText(ttf12, pos.x, pos.y, players[player]->worldUI.interactText.c_str());
 								}
 								else
 								{
 									drawImageAlpha(cross_bmp, NULL, &pos, 128);
 								}
+
+								// prints out current pressed glyph
+								/*pos.x += 80;
+								for ( int i = 0; i < SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX; ++i )
+								{
+									auto button = static_cast<SDL_GameControllerButton>(i);
+									if ( inputs.getController(player) && inputs.getController(player)->binary(button) )
+									{
+										SDL_Rect glyphsrc = inputs.getGlyphRectForInput(player, false, 0, i);
+										pos.y += 40;
+										pos.w = glyphsrc.w * 3;
+										pos.h = glyphsrc.h * 3;
+										drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
+									}
+								}*/
 							}
 						}
 					}

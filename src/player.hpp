@@ -969,7 +969,14 @@ public:
 		bool faceMenuInvertLayout = false;
 		bool faceMenuQuickCastEnabled = true;
 		bool faceMenuQuickCast = true;
-		bool faceMenuButtonHeld = false;
+		enum FaceMenuGroup : int
+		{
+			GROUP_NONE,
+			GROUP_LEFT,
+			GROUP_MIDDLE,
+			GROUP_RIGHT
+		};
+		FaceMenuGroup faceMenuButtonHeld = GROUP_NONE;
 		int radialHotbarSlots = NUM_HOTBAR_SLOTS;
 		int radialHotbarProgress = 0;
 		// end temp stuff
@@ -1034,7 +1041,7 @@ public:
 			hotbarHasFocus = true;
 		}
 		void initFaceButtonHotbar();
-		std::string faceButtonSlotToPrompt(Uint32 slot);
+		void drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos);
 	} hotbar;
 };
 

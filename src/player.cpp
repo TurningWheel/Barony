@@ -18,6 +18,7 @@
 #include "menu.hpp"
 #include "collision.hpp"
 #include "mod_tools.hpp"
+#include "draw.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -2262,7 +2263,19 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 		faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6;
 		faceButtonPositions[num].y = hotbarBox.y - getSlotSize() / 2;
 
-		if ( faceMenuButtonHeld && num == current_hotbar)
+		/*if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE && num == current_hotbar)
+		{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+		}*/
+		if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT && num >= 0 && num < 3 )
+		{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+		}
+		else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE && num >= 3 && num < 6 )
+		{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+		}
+		else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT && num >= 6 && num < 9 )
 		{
 			faceButtonPositions[num].y -= getSlotSize() / 4;
 		}
@@ -2271,16 +2284,32 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 		{
 			case 0:
 				faceButtonPositions[num].x += 0 * getSlotSize();
+				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
 				break;
 			case 1:
 				faceButtonPositions[num].x += 1 * getSlotSize();
 				break;
 			case 2:
 				faceButtonPositions[num].x += 2 * getSlotSize();
+				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
+				else
+				{
+
+				}
 				break;
 			case 3:
 				faceButtonPositions[num].x += 3 * getSlotSize() + getSlotSize() / 3;
 				faceButtonPositions[num].y -= getSlotSize() / 4;
+				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
 				break;
 			case 4:
 				faceButtonPositions[num].x += 4 * getSlotSize() + getSlotSize() / 3;
@@ -2289,15 +2318,27 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 			case 5:
 				faceButtonPositions[num].x += 5 * getSlotSize() + getSlotSize() / 3;
 				faceButtonPositions[num].y -= getSlotSize() / 4;
+				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
 				break;
 			case 6:
 				faceButtonPositions[num].x += 6 * getSlotSize() + 2 * getSlotSize() / 3;
+				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
 				break;
 			case 7:
 				faceButtonPositions[num].x += 7 * getSlotSize() + 2 * getSlotSize() / 3;
 				break;
 			case 8:
 				faceButtonPositions[num].x += 8 * getSlotSize() + 2 * getSlotSize() / 3;
+				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
 				break;
 			case 9:
 				faceButtonPositions[num].x += 12 * getSlotSize();
@@ -2305,99 +2346,113 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 			default:
 				break;
 		}
-		/*switch ( num ) // old
-		{
-			case 0:
-				faceButtonPositions[num].x += 1 * getSlotSize();
-				break;
-			case 1:
-				faceButtonPositions[num].x += 2 * getSlotSize();
-				faceButtonPositions[num].y -= getSlotSize() / 2;
-				break;
-			case 2:
-				faceButtonPositions[num].x += 2 * getSlotSize();
-				faceButtonPositions[num].y += getSlotSize() / 2;
-				break;
-			case 3:
-				faceButtonPositions[num].x += 3 * getSlotSize();
-				break;
-			case 4:
-				faceButtonPositions[num].x += 5 * getSlotSize();
-				break;
-			case 5:
-				faceButtonPositions[num].x += 6 * getSlotSize();
-				faceButtonPositions[num].y -= getSlotSize() / 2;
-				break;
-			case 6:
-				faceButtonPositions[num].x += 6 * getSlotSize();
-				faceButtonPositions[num].y += getSlotSize() / 2;
-				break;
-			case 7:
-				faceButtonPositions[num].x += 7 * getSlotSize();
-				break;
-			case 8:
-				faceButtonPositions[num].x += 9 * getSlotSize();
-				break;
-			case 9:
-				faceButtonPositions[num].x += 10 * getSlotSize();
-				break;
-			default:
-				break;
-		}*/
 	}
 }
 
-std::string Player::Hotbar_t::faceButtonSlotToPrompt(Uint32 slot)
+void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 {
+	Uint32 height = 2.25 * uiscale_hotbar;
+	Uint32 width = 2.25 * uiscale_hotbar;
+	Uint32 x = slotPos.x + slotPos.w / 2;
+	Uint32 y = slotPos.y;
+	SDL_Rect glyphsrc;
+	bool draw = true;
+
 	switch ( slot )
 	{
 		case 0:
-			return ("LB+X");
-		case 1:
-			return ("X");
-		case 2:
-			return ("RB+X");
-		case 3:
-			return ("LB+Y");
-		case 4:
-			return ("Y");
-		case 5:
-			return ("RB+Y");
-		case 6:
-			return ("LB+B");
-		case 7:
-			return ("B");
-		case 8:
-			return ("RB+B");
-		case 9:
-		default:
-			return "";
+			if ( faceMenuButtonHeld == GROUP_LEFT )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
 			break;
+		case 1:
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, faceMenuButtonHeld == GROUP_LEFT, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X);
+			break;
+		case 2:
+			if ( faceMenuButtonHeld == GROUP_LEFT )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 3:
+			if ( faceMenuButtonHeld == GROUP_MIDDLE )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 4:
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, faceMenuButtonHeld == GROUP_MIDDLE, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y);
+			break;
+		case 5:
+			if ( faceMenuButtonHeld == GROUP_MIDDLE )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 6:
+			if ( faceMenuButtonHeld == GROUP_RIGHT )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 7:
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, faceMenuButtonHeld == GROUP_RIGHT, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B);
+			break;
+		case 8:
+			if ( faceMenuButtonHeld == GROUP_RIGHT )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 9:
+			return;
+		default:
+			return;
 	}
-	/*switch ( slot )
+
+	if ( draw )
 	{
-		case 0:
-			return (faceMenuInvertLayout ? "LB+X" : "X");
-		case 1:
-			return (faceMenuInvertLayout ? "LB+Y" : "Y");
-		case 2:
-			return (faceMenuInvertLayout ? "LB+A" : "A");
-		case 3:
-			return (faceMenuInvertLayout ? "LB+B" : "B");
-		case 4:
-			return (faceMenuInvertLayout ? "X" : "LB+X");
-		case 5:
-			return (faceMenuInvertLayout ? "Y" : "LB+Y");
-		case 6:
-			return (faceMenuInvertLayout ? "A" : "LB+A");
-		case 7:
-			return (faceMenuInvertLayout ? "B" : "LB+B");
-		case 8:
-		case 9:
-		default:
-			return "";
-			break;
-	}*/
+		height *= glyphsrc.h;
+		width *= glyphsrc.w;
+		x -= width / 2;
+		y -= height;
+		SDL_Rect glyphpos{ x, y, width, height };
+		drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
+	}
 }
 
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
@@ -3165,13 +3220,22 @@ void GameController::updateButtons()
 		return;
 	}
 
+	bool pressed = false;
+
 	for ( int i = 0; i < NUM_JOY_STATUS; ++i )
 	{
 		buttons[i].analog = analogOf(buttons[i]);
 
 		bool oldBinary = buttons[i].binary;
 		buttons[i].binary = binaryOf(buttons[i]);
-		if ( oldBinary != buttons[i].binary ) {
+
+		if ( buttons[i].binary )
+		{
+			pressed = true;
+		}
+
+		if ( oldBinary != buttons[i].binary ) 
+		{
 			// unconsume the input whenever it's released or pressed again.
 			//messagePlayer(0, "%d: %d", i, buttons[i].binary ? 1 : 0);
 			buttons[i].consumed = false;
@@ -3196,6 +3260,18 @@ void GameController::updateButtons()
 			}
 		}
 	}
+
+	if ( pressed )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.getController(i) == this )
+			{
+				inputs.getVirtualMouse(i)->lastMovementFromController = true;
+				break;
+			}
+		}
+	}
 }
 
 void GameController::updateAxis()
@@ -3205,16 +3281,36 @@ void GameController::updateAxis()
 		return;
 	}
 
+	bool pressed = false;
+
 	for ( int i = 0; i < NUM_JOY_AXIS_STATUS; ++i )
 	{
 		axis[i].analog = analogOf(axis[i]);
 
 		bool oldBinary = axis[i].binary;
 		axis[i].binary = binaryOf(axis[i]);
+
+		if ( axis[i].binary )
+		{
+			pressed = true;
+		}
+
 		if ( oldBinary != axis[i].binary ) {
 			// unconsume the input whenever it's released or pressed again.
 			//messagePlayer(0, "%d: %d", i, axis[i].binary ? 1 : 0);
 			axis[i].consumed = false;
+		}
+	}
+
+	if ( pressed )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.getController(i) == this )
+			{
+				inputs.getVirtualMouse(i)->lastMovementFromController = true;
+				break;
+			}
 		}
 	}
 }
