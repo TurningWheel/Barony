@@ -1929,37 +1929,7 @@ void drawStatus(int player)
 
 		if ( !inputs.getUIInteraction(player)->itemMenuOpen && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( players[player]->hotbar.useHotbarRadialMenu && inputs.getController(player) )
-			{
-				//Show a tooltip
-				if ( !inputs.getController(player)->radialSelection.consumed
-					&& inputs.getController(player)->binaryToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
-				{
-					hotbar_t.hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t.hotbarTooltipLastGameTick);
-				}
-				else if ( !inputs.getController(player)->radialSelection.consumed 
-					/*&& inputs.getController(player)->radialSelection.padRadialSelection > GameController::RadialSelection::RADIAL_CENTERED*/ )
-				{
-					inputs.getController(player)->consumeBinaryToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-					//Activate a hotbar slot if in-game.
-					inputs.getController(player)->radialSelection.consumed = true;
-					//inputs.getController(player)->radialSelection.padRadialSelection = GameController::RadialSelection::RADIAL_CENTERED;
-					//*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
-					//inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
-					item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
-				}
-				else if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) )
-				{
-					//Show a tooltip
-					hotbar_t.hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t.hotbarTooltipLastGameTick);
-
-					//Activate a hotbar slot if in-game.
-					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
-					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
-					item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
-				}
-			}
-			else if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
+			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
 				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !players[player]->bookGUI.bBookOpen
