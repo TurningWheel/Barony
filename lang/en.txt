@@ -5939,4 +5939,6 @@ Changing this gameflag is disabled in current game mode.#
 3994 Crossplay search not enabled#
 3995 You have no items able to be uncursed!#
 3996 You have no items able to be identified!#
+3997 You have no room left in your pack to unequip a 
+ %s!#
 3999 end#
