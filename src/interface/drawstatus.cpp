@@ -1163,7 +1163,7 @@ void drawStatus(int player)
 							{
 								if ( !disableItemUsage )
 								{
-									playerTryEquipItemAndUpdateServer(player, item);
+									playerTryEquipItemAndUpdateServer(player, item, false);
 								}
 								else
 								{
@@ -1971,14 +1971,11 @@ void drawStatus(int player)
 		{
 			bool badpotion = false;
 			bool learnedSpell = false;
-			if ( itemCategory(item) == POTION && item->identified )
+			if ( itemCategory(item) == POTION )
 			{
 				badpotion = isPotionBad(*item);
 			}
-			if ( item->type == POTION_EMPTY )
-			{
-				badpotion = true; //So that you wield empty potions be default.
-			}
+
 			if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, player)) )
 			{
 				// equipped spellbook will unequip on use.
@@ -2084,7 +2081,7 @@ void drawStatus(int player)
 				}
 				else
 				{
-					playerTryEquipItemAndUpdateServer(player, item);
+					playerTryEquipItemAndUpdateServer(player, item, false);
 				}
 			}
 			else

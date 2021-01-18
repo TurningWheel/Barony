@@ -677,7 +677,23 @@ public:
 		{
 			sizey = DEFAULT_INVENTORY_SIZEY;
 		}
-
+		const int freeVisibleInventorySlots() const
+		{
+			int x = getPlayerItemInventoryX();
+			int y = getPlayerItemInventoryY();
+			return x * y;
+		}
+		const bool bItemInventoryHasFreeSlot() const;
+		const int getPlayerItemInventoryX() const
+		{
+			int x = DEFAULT_INVENTORY_SIZEX;
+			if ( !stats[player.playernum] || !player.isLocalPlayer() )
+			{
+				return x;
+			}
+			return x;
+		}
+		const int getPlayerItemInventoryY() const;
 		class Appraisal_t
 		{
 			Player& player;
@@ -949,6 +965,72 @@ public:
 		void cycleToNextTooltip();
 		void cycleToPreviousTooltip();
 	} worldUI;
+
+	class PaperDoll_t
+	{
+		Player& player;
+		static const Uint32 kNumPaperDollSlots = 10;
+	public:
+		bool enabled = true;
+		static const int ITEM_PAPERDOLL_COORDINATE = -9999;
+		static const int ITEM_RETURN_TO_INVENTORY_COORDINATE = -99999;
+		PaperDoll_t(Player& p) : player(p)
+		{
+			initSlots();
+		};
+		~PaperDoll_t() {};
+		enum PaperDollSlotType : int
+		{
+			SLOT_GLASSES,
+			SLOT_CLOAK,
+			SLOT_AMULET,
+			SLOT_RING,
+			SLOT_OFFHAND,
+			SLOT_HELM,
+			SLOT_BREASTPLATE,
+			SLOT_GLOVES,
+			SLOT_BOOTS,
+			SLOT_WEAPON,
+			SLOT_MAX
+		};
+		struct PaperDollSlot_t
+		{
+			Uint32 item;
+			PaperDollSlotType slotType;
+			SDL_Rect pos { 0,0,0,0 };
+			PaperDollSlot_t()
+			{
+				item = 0;
+				slotType = SLOT_MAX;
+			}
+			bool bMouseInSlot = false;
+		};
+		std::array<PaperDollSlot_t, kNumPaperDollSlots> dollSlots;
+		const int getSlotSize() const;
+		void initSlots()
+		{
+			for ( int i = 0; i < kNumPaperDollSlots; ++i )
+			{
+				dollSlots[i].item = 0;
+				dollSlots[i].slotType = static_cast<PaperDollSlotType>(i);
+				dollSlots[i].bMouseInSlot = false;
+			}
+		}
+		void clear()
+		{
+			for ( int i = 0; i < kNumPaperDollSlots; ++i )
+			{
+				dollSlots[i].item = 0;
+				dollSlots[i].bMouseInSlot = false;
+				SDL_Rect nullRect{ 0,0,0,0 };
+				dollSlots[i].pos = nullRect;
+			}
+		}
+		void drawSlots();
+		void updateSlots();
+		PaperDollSlotType getSlotForItem(const Item& item) const;
+		bool isItemOnDoll(const Item& item) const { return getSlotForItem(item) != SLOT_MAX; }
+	} paperDoll;
 
 	class Hotbar_t {
 		std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS> hotbar;

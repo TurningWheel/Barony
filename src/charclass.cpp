@@ -43,6 +43,7 @@ void initClass(const int player)
 		//(same for deathStuff() and/or gameEndStuff().
 		players[player]->inventoryUI.selectSlot(0, 0);
 		hotbar_t.clear();
+		players[player]->paperDoll.clear();
 	}
 
 	bool curseItems = false;
@@ -2480,6 +2481,11 @@ void initClass(const int player)
 			Item* item = static_cast<Item*>(node->element);
 			if ( item )
 			{
+				if ( players[player]->paperDoll.enabled && itemIsEquipped(item, player) && item->type != SPELL_CAT )
+				{
+					continue;
+				}
+
 				item->x = players[player]->inventoryUI.getSizeX() - item->x - 1;
 				if ( item->type == SPELL_ITEM )
 				{

@@ -1925,7 +1925,10 @@ void gameLogic(void)
 					}
 
 					// drop any inventory items you don't have room for
-					if ( itemCategory(item) != SPELL_CAT && (item->x >= players[player]->inventoryUI.getSizeX() || item->y >= backpack_sizey[player]) )
+					if ( itemCategory(item) != SPELL_CAT 
+						&& item->x != Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE
+						&& item->x != Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE
+						&& (item->x >= players[player]->inventoryUI.getSizeX() || item->y >= backpack_sizey[player]) )
 					{
 						messagePlayer(player, language[727], item->getName());
 						bool droppedAll = false;
@@ -2553,7 +2556,10 @@ void gameLogic(void)
 				}
 
 				// drop any inventory items you don't have room for
-				if ( itemCategory(item) != SPELL_CAT && (item->x >= players[clientnum]->inventoryUI.getSizeX() || item->y >= backpack_sizey) )
+				if ( itemCategory(item) != SPELL_CAT 
+					&& item->x != Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE
+					&& item->x != Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE
+					&& (item->x >= players[clientnum]->inventoryUI.getSizeX() || item->y >= backpack_sizey) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
 					bool droppedAll = false;
@@ -5007,7 +5013,7 @@ int main(int argc, char** argv)
 							}
 						}
 
-						bool debugMouse = true;
+						bool debugMouse = false;
 						if ( debugMouse )
 						{
 							int x = players[player]->camera_x1() + 12;

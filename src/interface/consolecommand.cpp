@@ -3133,6 +3133,11 @@ void consoleCommand(char const * const command_str)
 			players[clientnum]->hotbar.faceMenuQuickCastEnabled = !players[clientnum]->hotbar.faceMenuQuickCastEnabled;
 			messagePlayer(clientnum, "Face button quickcast: %d", players[clientnum]->hotbar.faceMenuQuickCastEnabled ? 1 : 0);
 		}
+		else if ( !strncmp(command_str, "/paperdoll", 10) )
+		{
+			players[clientnum]->paperDoll.enabled = !players[clientnum]->paperDoll.enabled;
+			messagePlayer(clientnum, "Paper doll: %d", players[clientnum]->paperDoll.enabled ? 1 : 0);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

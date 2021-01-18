@@ -153,7 +153,7 @@ void selectItemMenuSlot(const int player, const Item& item, int entry);
 bool autoAddHotbarFilter(const Item& item);
 void quickStackItems(const int player);
 void sortInventoryItemsOfType(const int player, int categoryInt, bool sortRightToLeft); // sort inventory items matching category. -1 is everything, -2 is only equipped items.
-void autosortInventory(const int player);
+void autosortInventory(const int player, bool sortPaperDoll = false);
 bool mouseInsidePlayerInventory(const int player);
 bool mouseInsidePlayerHotbar(const int player);
 bool playerLearnedSpellbook(const int player, Item* current_item);

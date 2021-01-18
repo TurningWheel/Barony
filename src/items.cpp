@@ -1239,6 +1239,8 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			*slot = nullptr;
 		}
 
+		players[player]->paperDoll.updateSlots();
+
 		if ( item->count <= 0 )
 		{
 			list_RemoveNode(item->node);
@@ -1301,6 +1303,8 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		{
 			*slot = nullptr;
 		}
+
+		players[player]->paperDoll.updateSlots();
 
 		if ( item->node != nullptr )
 		{
@@ -1542,6 +1546,11 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 			*slot = nullptr; // clear the item slot
 		}
 
+		if ( monster->behavior == &actPlayer )
+		{
+			players[monster->skill[2]]->paperDoll.updateSlots();
+		}
+
 		if ( item->node )
 		{
 			list_RemoveNode(item->node);
@@ -1576,7 +1585,7 @@ void consumeItem(Item*& item, const int player)
 		players[player]->inventoryUI.appraisal.timer = 0;
 	}
 
-	if ( player > 0 && multiplayer == SERVER )
+	if ( !players[player]->isLocalPlayer() && multiplayer == SERVER )
 	{
 		Item** slot = nullptr;
 		if ( (slot = itemSlot(stats[player], item)) != nullptr )
@@ -1609,6 +1618,8 @@ void consumeItem(Item*& item, const int player)
 		}
 		item = nullptr;
 	}
+
+	players[player]->paperDoll.updateSlots();
 }
 
 /*-------------------------------------------------------------------------------
@@ -1698,7 +1709,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 				}
 			}
 		}
-		if ( multiplayer == SERVER && player > 0 )
+		if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
 		{
 			if ( *slot != nullptr )
 			{
@@ -1722,7 +1733,16 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 			}
 			item->count = oldcount;
 		}
+
+		if ( players[player]->isLocalPlayer() && players[player]->paperDoll.enabled && item )
+		{
+			// item is going into paperdoll.
+			item->x = Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+			item->y = Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+		}
+
 		*slot = item;
+
 		if ( players[player]->isLocalPlayer() )
 		{
 			if ( slot == &stats[player]->weapon )
@@ -1733,6 +1753,11 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 			{
 				players[player]->hud.shieldSwitch = true;
 			}
+		}
+
+		if ( players[player]->isLocalPlayer() )
+		{
+			players[player]->paperDoll.updateSlots();
 		}
 		return EQUIP_ITEM_SUCCESS_NEWITEM;
 	}
@@ -1759,6 +1784,18 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 					(*slot)->identified = true;
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 				}
+
+				if ( players[player]->isLocalPlayer()
+					&& players[player]->paperDoll.enabled
+					&& players[player]->paperDoll.isItemOnDoll(**slot) )
+				{
+					if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+					{
+						// no backpack space
+						messagePlayer(player, language[3997], item->getName());
+						return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+					}
+				}
 			}
 			else
 			{
@@ -1784,7 +1821,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 				}
 			}
 		}
-		if ( player != 0 && multiplayer == SERVER )
+		if ( !players[player]->isLocalPlayer() && multiplayer == SERVER )
 		{
 			if ( item->node )
 			{
@@ -1816,7 +1853,10 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 			}
 			item->count = oldcount;
 		}
+
 		*slot = nullptr;
+
+		players[player]->paperDoll.updateSlots();
 		return EQUIP_ITEM_SUCCESS_UNEQUIP;
 	}
 }
@@ -3826,14 +3866,20 @@ bool isPotionBad(const Item& potion)
 		return false;
 	}
 
-	if (potion.type == POTION_SICKNESS 
+	if (potion.identified && 
+		(potion.type == POTION_SICKNESS 
 		|| potion.type == POTION_CONFUSION 
 		|| potion.type == POTION_BLINDNESS 
 		|| potion.type == POTION_ACID 
 		|| potion.type == POTION_PARALYSIS
 		|| potion.type == POTION_FIRESTORM 
 		|| potion.type == POTION_ICESTORM 
-		|| potion.type == POTION_THUNDERSTORM )
+		|| potion.type == POTION_THUNDERSTORM) )
+	{
+		return true;
+	}
+
+	if ( potion.type == POTION_EMPTY ) //So that you wield empty potions by default.
 	{
 		return true;
 	}
@@ -4844,12 +4890,27 @@ bool playerCanSpawnMoreTinkeringBots(const Stat* const myStats)
 	return false;
 }
 
-void playerTryEquipItemAndUpdateServer(const int player, Item* const item)
+void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool checkInventorySpaceForPaperDoll)
 {
 	if ( !item )
 	{
 		return;
 	}
+
+	if ( checkInventorySpaceForPaperDoll )
+	{
+		if ( players[player]->isLocalPlayer() 
+			&& players[player]->paperDoll.enabled
+			&& players[player]->paperDoll.isItemOnDoll(*item) )
+		{
+			if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+			{
+				messagePlayer(player, language[3997], item->getName());
+				return;
+			}
+		}
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		// store these to send to server.

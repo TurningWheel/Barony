@@ -166,6 +166,13 @@ void updateCharacterSheet(const int player)
 		rotateBtn.h = 16;
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+
+		if ( players[player]->paperDoll.enabled )
+		{
+			rotateBtn.x -= players[player]->paperDoll.getSlotSize() + 4;
+			rotateBtn.y -= 2;
+		}
+
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 		{
@@ -181,8 +188,8 @@ void updateCharacterSheet(const int player)
 		}
 		ttfPrintText(ttf12, rotateBtn.x + 2, rotateBtn.y + 2, ">");
 
-		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
-		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+		// second button
+		rotateBtn.x -= rotateBtn.w + 4;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 		{

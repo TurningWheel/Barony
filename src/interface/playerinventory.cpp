@@ -37,6 +37,57 @@ SDL_Surface* inventory_mode_spell_highlighted_img = NULL;
 
 selectBehavior_t itemSelectBehavior = BEHAVIOR_MOUSE;
 
+void executeItemMenuOption0(const int player, Item* item, bool is_potion_bad, bool learnedSpell);
+bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	bool isBadPotion = (itemCategory(item) == POTION);
+	bool learnedSpell = (itemCategory(item) == SPELLBOOK);
+
+	if ( !players[player]->isLocalPlayer()
+		|| !players[player]->paperDoll.enabled
+		|| !players[player]->paperDoll.isItemOnDoll(*item) )
+	{
+		return false;
+	}
+
+	if ( itemCategory(item) == SPELL_CAT )
+	{
+		printlog("Warning: executed paper doll menu on spell");
+		return false;
+	}
+
+	if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+	{
+		// no backpack space
+		messagePlayer(player, language[3997], item->getName());
+		return false;
+	}
+
+	Entity* oldChest = openedChest[player];
+	int oldGUI = players[player]->gui_mode;
+
+	players[player]->gui_mode = GUI_MODE_INVENTORY;
+	openedChest[player] = false;
+
+	executeItemMenuOption0(player, item, isBadPotion, learnedSpell);
+
+	openedChest[player] = oldChest;
+	players[player]->gui_mode = oldGUI;
+
+	players[player]->paperDoll.updateSlots();
+	if ( players[player]->paperDoll.isItemOnDoll(*item) )
+	{
+		// cursed or couldn't unequip
+		return false;
+	}
+	return true;
+}
+
 void warpMouseToSelectedInventorySlot(const int player)
 {
 	int xres = players[player]->camera_width();
@@ -513,7 +564,7 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 				{
 					openedChest[player]->addItemToChestFromInventory(
 						player, selectedItem, false);
-					selectedItem = NULL;
+					selectedItem = nullptr;
 					toggleclick = false;
 				}
 			}
@@ -521,17 +572,37 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 
 		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
 
-		if (selectedItem)
+		if ( selectedItem )
 		{
+			bool bPaperDollItem = (players[player]->paperDoll.enabled && players[player]->paperDoll.isItemOnDoll(*selectedItem));
 			if (mousex >= x && mousey >= y
 			        && mousex < x + players[player]->inventoryUI.getSizeX() * inventorySlotSize
 			        && mousey < y + players[player]->inventoryUI.getSizeY() * inventorySlotSize )
 			{
+				if ( bPaperDollItem )
+				{
+					if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+					{
+						// can't drag off into inventory, no slots available
+						messagePlayer(player, language[3997], selectedItem->getName());
+						selectedItem = nullptr;
+						toggleclick = false;
+						if ( inputs.bMouseLeft(player) )
+						{
+							inputs.mouseClearLeft(player);
+						}
+						return;
+					}
+				}
+
 				// within inventory
 				int oldx = selectedItem->x;
 				int oldy = selectedItem->y;
 				selectedItem->x = (mousex - x) / inventorySlotSize;
 				selectedItem->y = (mousey - y) / inventorySlotSize;
+
+				Item* swappedItem = nullptr;
+
 				for (node = stats[player]->inventory.first; node != NULL;
 				        node = nextnode)
 				{
@@ -559,6 +630,35 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 						else
 						{
 							//The player just dropped an item onto another item.
+							if ( bPaperDollItem )
+							{
+								int newx = selectedItem->x;
+								int newy = selectedItem->y;
+
+								bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem);
+								if ( !unequipped )
+								{
+									// failure to unequip
+									selectedItem->x = oldx;
+									selectedItem->y = oldy;
+
+									selectedItem = nullptr;
+									toggleclick = false;
+									if ( inputs.bMouseLeft(player) )
+									{
+										inputs.mouseClearLeft(player);
+									}
+									return;
+								}
+								else
+								{
+									selectedItem->x = newx;
+									selectedItem->y = newy;
+								}
+							}
+
+							swappedItem = selectedItem;
+
 							tempItem->x = oldx;
 							tempItem->y = oldy;
 							selectedItem = tempItem;
@@ -567,9 +667,32 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 						}
 					}
 				}
-				if (!toggleclick)
+
+				if ( bPaperDollItem )
 				{
-					selectedItem = NULL;
+					if ( !swappedItem )
+					{
+						int newx = selectedItem->x;
+						int newy = selectedItem->y;
+
+						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem);
+						if ( !unequipped )
+						{
+							// failure to unequip, reset coords
+							selectedItem->x = oldx;
+							selectedItem->y = oldy;
+						}
+						else
+						{
+							selectedItem->x = newx;
+							selectedItem->y = newy;
+						}
+					}
+				}
+
+				if ( !toggleclick )
+				{
+					selectedItem = nullptr;
 				}
 
 				playSound(139, 64); // click sound
@@ -625,19 +748,40 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 				}
 				else
 				{
-					if (selectedItem->count > 1)
+					if ( bPaperDollItem )
 					{
-						if ( dropItem(selectedItem, player) )
+						int charsheetx = players[player]->characterSheet.characterSheetBox.x;
+						if ( mousex >= players[player]->characterSheet.characterSheetBox.x 
+							&& mousey >= players[player]->characterSheet.characterSheetBox.y
+							&& mousex < players[player]->characterSheet.characterSheetBox.x + players[player]->characterSheet.characterSheetBox.w
+							&& mousey < players[player]->characterSheet.characterSheetBox.y + players[player]->characterSheet.characterSheetBox.h
+							)
 						{
-							selectedItem = NULL;
+							// mouse within character sheet box, no action,
 						}
-						toggleclick = true;
+						else
+						{
+							executeItemMenuOption0ForPaperDoll(player, selectedItem);
+						}
+						selectedItem = NULL;
+						toggleclick = false;
 					}
 					else
 					{
-						dropItem(selectedItem, player);
-						selectedItem = NULL;
-						toggleclick = false;
+						if ( selectedItem->count > 1 )
+						{
+							if ( dropItem(selectedItem, player) )
+							{
+								selectedItem = NULL;
+							}
+							toggleclick = true;
+						}
+						else
+						{
+							dropItem(selectedItem, player);
+							selectedItem = NULL;
+							toggleclick = false;
+						}
 					}
 				}
 			}
@@ -875,7 +1019,8 @@ void updatePlayerInventory(const int player)
 		}
 	}
 
-
+	players[player]->paperDoll.drawSlots();
+	
 	// draw contents of each slot
 	x = players[player]->inventoryUI.getStartX();
 	y = players[player]->inventoryUI.getStartY();
@@ -901,10 +1046,34 @@ void updatePlayerInventory(const int player)
 			continue;
 		}
 
-		pos.x = x + item->x * (inventorySlotSize) + 2;
-		pos.y = y + item->y * (inventorySlotSize) + 1;
-		pos.w = (inventorySlotSize) - 2;
-		pos.h = (inventorySlotSize) - 2;
+		int itemDrawnSlotSize = inventorySlotSize;
+		int itemCoordX = x + item->x * itemDrawnSlotSize;
+		int itemCoordY = y + item->y * itemDrawnSlotSize;
+
+		bool itemOnPaperDoll = false;
+		if ( players[player]->paperDoll.enabled && itemIsEquipped(item, player) )
+		{
+			auto slotType = players[player]->paperDoll.getSlotForItem(*item);
+			if ( slotType != Player::PaperDoll_t::SLOT_MAX )
+			{
+				itemOnPaperDoll = true;
+				auto& paperDollSlot = players[player]->paperDoll.dollSlots[slotType];
+				itemCoordX = paperDollSlot.pos.x;
+				itemCoordY = paperDollSlot.pos.y;
+				itemDrawnSlotSize = paperDollSlot.pos.w;
+			}
+		}
+
+		pos.x = itemCoordX + 2;
+		if ( itemOnPaperDoll )
+		{
+			pos.x -= 1; // outline here is thinner
+		}
+
+		pos.y = itemCoordY + 1;
+		pos.w = (itemDrawnSlotSize) - 2;
+		pos.h = (itemDrawnSlotSize) - 2;
+
 		if (!item->identified)
 		{
 			// give it a yellow background if it is unidentified
@@ -939,10 +1108,24 @@ void updatePlayerInventory(const int player)
 		}
 
 		// draw item
-		pos.x = x + item->x * inventorySlotSize + 4 * uiscale_inventory;
-		pos.y = y + item->y * inventorySlotSize + 4 * uiscale_inventory;
-		pos.w = 32 * uiscale_inventory;
-		pos.h = 32 * uiscale_inventory;
+		real_t itemUIScale = uiscale_inventory;
+		if ( itemOnPaperDoll )
+		{
+			itemUIScale = 1.0;
+		}
+
+		pos.x = itemCoordX + 4 * itemUIScale;
+		pos.y = itemCoordY + 4 * itemUIScale;
+		if ( !itemOnPaperDoll )
+		{
+			pos.w = (32) * itemUIScale;
+			pos.h = (32) * itemUIScale;
+		}
+		else
+		{
+			pos.w = (itemDrawnSlotSize * 0.8) * itemUIScale;
+			pos.h = (itemDrawnSlotSize * 0.8) * itemUIScale;
+		}
 		if ( itemSprite(item) )
 		{
 			drawImageScaled(itemSprite(item), NULL, &pos);
@@ -955,10 +1138,10 @@ void updatePlayerInventory(const int player)
 			if ( !item->usableWhileShapeshifted(stats[player]) )
 			{
 				SDL_Rect greyBox;
-				greyBox.x = x + item->x * (inventorySlotSize)+2;
-				greyBox.y = y + item->y * (inventorySlotSize)+1;
-				greyBox.w = (inventorySlotSize)-2;
-				greyBox.h = (inventorySlotSize)-2;
+				greyBox.x = itemCoordX + 2;
+				greyBox.y = itemCoordY + 1;
+				greyBox.w = (itemDrawnSlotSize) - 2;
+				greyBox.h = (itemDrawnSlotSize) - 2;
 				drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
 				greyedOut = true;
 			}
@@ -967,10 +1150,10 @@ void updatePlayerInventory(const int player)
 			&& item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
 		{
 			SDL_Rect greyBox;
-			greyBox.x = x + item->x * (inventorySlotSize)+2;
-			greyBox.y = y + item->y * (inventorySlotSize)+1;
-			greyBox.w = (inventorySlotSize)-2;
-			greyBox.h = (inventorySlotSize)-2;
+			greyBox.x = itemCoordX + 2;
+			greyBox.y = itemCoordY + 1;
+			greyBox.w = (itemDrawnSlotSize) - 2;
+			greyBox.h = (itemDrawnSlotSize) - 2;
 			drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
 			greyedOut = true;
 		}
@@ -978,9 +1161,9 @@ void updatePlayerInventory(const int player)
 		// item count
 		if ( item->count > 1 )
 		{
-			if ( uiscale_inventory < 1.5 )
+			if ( itemUIScale < 1.5 )
 			{
-				printTextFormatted(font8x8_bmp, pos.x + pos.w - 8 * uiscale_inventory, pos.y + pos.h - 8 * uiscale_inventory, "%d", item->count);
+				printTextFormatted(font8x8_bmp, pos.x + pos.w - 8 * itemUIScale, pos.y + pos.h - 8 * itemUIScale, "%d", item->count);
 			}
 			else
 			{
@@ -993,16 +1176,19 @@ void updatePlayerInventory(const int player)
 		{
 			if ( itemIsEquipped(item, player) )
 			{
-				pos.x = x + item->x * inventorySlotSize + 2;
-				pos.y = y + item->y * inventorySlotSize + inventorySlotSize - 18;
-				pos.w = 16;
-				pos.h = 16;
-				drawImage(equipped_bmp, NULL, &pos);
+				if ( !itemOnPaperDoll )
+				{
+					pos.x = itemCoordX + 2;
+					pos.y = itemCoordY + itemDrawnSlotSize - 18;
+					pos.w = 16;
+					pos.h = 16;
+					drawImage(equipped_bmp, NULL, &pos);
+				}
 			}
 			else if ( item->status == BROKEN )
 			{
-				pos.x = x + item->x * inventorySlotSize + 2;
-				pos.y = y + item->y * inventorySlotSize + inventorySlotSize - 18;
+				pos.x = itemCoordX + 2;
+				pos.y = itemCoordY + itemDrawnSlotSize - 18;
 				pos.w = 16;
 				pos.h = 16;
 				drawImage(itembroken_bmp, NULL, &pos);
@@ -1014,8 +1200,8 @@ void updatePlayerInventory(const int player)
 			if ( players[player]->magic.selectedSpell() == spell 
 				&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1) )
 			{
-				pos.x = x + item->x * inventorySlotSize + 2;
-				pos.y = y + item->y * inventorySlotSize + inventorySlotSize - 18;
+				pos.x = itemCoordX + 2;
+				pos.y = itemCoordY + itemDrawnSlotSize - 18;
 				pos.w = 16;
 				pos.h = 16;
 				drawImage(equipped_bmp, NULL, &pos);
@@ -1131,10 +1317,28 @@ void updatePlayerInventory(const int player)
 
 			if (item)
 			{
-				pos.x = x + item->x * inventorySlotSize + 4;
-				pos.y = y + item->y * inventorySlotSize + 4;
-				pos.w = inventorySlotSize - 8;
-				pos.h = inventorySlotSize - 8;
+				int itemDrawnSlotSize = inventorySlotSize;
+				int itemCoordX = x + item->x * itemDrawnSlotSize;
+				int itemCoordY = y + item->y * itemDrawnSlotSize;
+
+				bool itemOnPaperDoll = false;
+				if ( players[player]->paperDoll.enabled && itemIsEquipped(item, player) )
+				{
+					auto slotType = players[player]->paperDoll.getSlotForItem(*item);
+					if ( slotType != Player::PaperDoll_t::SLOT_MAX )
+					{
+						itemOnPaperDoll = true;
+						auto& paperDollSlot = players[player]->paperDoll.dollSlots[slotType];
+						itemCoordX = paperDollSlot.pos.x;
+						itemCoordY = paperDollSlot.pos.y;
+						itemDrawnSlotSize = paperDollSlot.pos.w;
+					}
+				}
+
+				pos.x = itemCoordX + 4;
+				pos.y = itemCoordY + 4;
+				pos.w = itemDrawnSlotSize - 8;
+				pos.h = itemDrawnSlotSize - 8;
 
 				if ( omousex >= pos.x && omousey >= pos.y && omousex < pos.x + pos.w && omousey < pos.y + pos.h )
 				{
@@ -1460,7 +1664,7 @@ void updatePlayerInventory(const int player)
 						{
 							inputs.mouseClearRight(player);
 							// force equip potion/spellbook
-							playerTryEquipItemAndUpdateServer(player, item);
+							playerTryEquipItemAndUpdateServer(player, item, false);
 						}
 						else
 						{
@@ -1556,6 +1760,111 @@ void updatePlayerInventory(const int player)
 	}
 
 	itemContextMenu(player);
+}
+
+void Player::PaperDoll_t::updateSlots()
+{
+	if ( !stats[player.playernum] || !player.isLocalPlayer() )
+	{
+		return;
+	}
+
+	bool returningItemsToInventory = false;
+
+	for ( auto& slot : dollSlots )
+	{
+		Uint32 prevSlot = slot.item;
+		slot.item = 0;
+		if ( !enabled )
+		{
+			continue;
+		}
+
+		Item* equippedItem = nullptr;
+
+		switch ( slot.slotType )
+		{
+			case SLOT_GLASSES:
+				if ( equippedItem = stats[player.playernum]->mask )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			case SLOT_CLOAK:
+				if ( equippedItem = stats[player.playernum]->cloak )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			case SLOT_AMULET:
+				if ( equippedItem = stats[player.playernum]->amulet )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			case SLOT_RING:
+				if ( equippedItem = stats[player.playernum]->ring )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			case SLOT_OFFHAND:
+				if ( equippedItem = stats[player.playernum]->shield )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			case SLOT_HELM:
+				if ( equippedItem = stats[player.playernum]->helmet )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			case SLOT_BREASTPLATE:
+				if ( equippedItem = stats[player.playernum]->breastplate )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			case SLOT_GLOVES:
+				if ( equippedItem = stats[player.playernum]->gloves )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			case SLOT_BOOTS:
+				if ( equippedItem = stats[player.playernum]->shoes )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			case SLOT_WEAPON:
+				if ( equippedItem = stats[player.playernum]->weapon )
+				{
+					slot.item = equippedItem->uid;
+				}
+				break;
+			default:
+				break;
+		}
+
+		if ( prevSlot != slot.item )
+		{
+			Item* prevItem = uidToItem(prevSlot);
+			if ( prevItem )
+			{
+				// item is returning to inventory
+				prevItem->x = Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE;
+				prevItem->y = Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE;
+				returningItemsToInventory = true;
+			}
+		}
+	}
+
+	if ( returningItemsToInventory )
+	{
+		autosortInventory(player.playernum, true);
+	}
 }
 
 inline bool itemMenuSkipRow1ForShopsAndChests(const int player, const Item& item)
@@ -2084,7 +2393,7 @@ inline void selectItemMenuSlot(const int player, const Item& item, int x, int y,
 /*
  * execteItemMenuOptionX() -  Helper function to itemContextMenu(). Executes the specified menu option for the item.
  */
-inline void executeItemMenuOption0(const int player, Item* item, bool is_potion_bad, bool learnedSpell)
+void executeItemMenuOption0(const int player, Item* item, bool is_potion_bad, bool learnedSpell)
 {
 	if (!item)
 	{
@@ -2185,7 +2494,7 @@ inline void executeItemMenuOption0(const int player, Item* item, bool is_potion_
 			if ( !disableItemUsage )
 			{
 				//Option 0 = equip.
-				playerTryEquipItemAndUpdateServer(player, item);
+				playerTryEquipItemAndUpdateServer(player, item, true);
 			}
 			else
 			{
@@ -2294,7 +2603,7 @@ inline void executeItemMenuOption1(const int player, Item* item, bool is_potion_
 			if (!is_potion_bad && !learnedSpell)
 			{
 				//Option 1 = equip.
-				playerTryEquipItemAndUpdateServer(player, item);
+				playerTryEquipItemAndUpdateServer(player, item, true);
 			}
 			else
 			{
@@ -2406,15 +2715,7 @@ void itemContextMenu(const int player)
 		return;
 	}
 
-	bool is_potion_bad = false;
-	if (current_item->identified)
-	{
-		is_potion_bad = isPotionBad(*current_item);
-	}
-	if ( current_item->type == POTION_EMPTY )
-	{
-		is_potion_bad = true; //So that you wield empty potions by default.
-	}
+	bool is_potion_bad = isPotionBad(*current_item);
 
 	const int slot_width = 100;
 	const int slot_height = 20;
@@ -2690,7 +2991,7 @@ void quickStackItems(int player)
 	}
 }
 
-void autosortInventory(int player)
+void autosortInventory(int player, bool sortPaperDoll)
 {
 	std::vector<std::pair<int, int>> autosortPairs;
 	for ( int i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
@@ -2701,11 +3002,19 @@ void autosortInventory(int player)
 	for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
-		if ( item && (!itemIsEquipped(item, player) || autosort_inventory_categories[11] != 0) && itemCategory(item) != SPELL_CAT )
+		if ( item )
 		{
-			item->x = -1;
-			item->y = 0;
-			// move all items away.
+			if ( sortPaperDoll )
+			{
+				// don't assign any items
+			}
+			else if ( (!itemIsEquipped(item, player) || (autosort_inventory_categories[11] != 0 && !players[player]->paperDoll.enabled)) 
+				&& itemCategory(item) != SPELL_CAT )
+			{
+				item->x = -1;
+				item->y = 0;
+				// move all items away.
+			}
 		}
 	}
 
@@ -2832,7 +3141,7 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 	for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		itemBeingSorted = (Item*)node->element;
-		if ( itemBeingSorted && itemBeingSorted->x == -1 )
+		if ( itemBeingSorted && (itemBeingSorted->x == -1 || itemBeingSorted->x == Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE) )
 		{
 			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
 			{

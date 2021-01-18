@@ -19,6 +19,7 @@
 #include "collision.hpp"
 #include "mod_tools.hpp"
 #include "draw.hpp"
+#include "colors.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -1475,7 +1476,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	messageZone(*this),
 	worldUI(*this),
 	hotbar(*this),
-	bookGUI(*this)
+	bookGUI(*this),
+	paperDoll(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
@@ -1500,6 +1502,7 @@ void Player::init() // for use on new/restart game, UI related
 	characterSheet.setDefaultSkillsSheetBox();
 	characterSheet.setDefaultPartySheetBox();
 	characterSheet.setDefaultCharacterSheetBox();
+	paperDoll.clear();
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -2452,6 +2455,122 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 		y -= height;
 		SDL_Rect glyphpos{ x, y, width, height };
 		drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
+	}
+}
+
+const int Player::Inventory_t::getPlayerItemInventoryY() const
+{
+	int y = DEFAULT_INVENTORY_SIZEY;
+	if ( !stats[player.playernum] || !player.isLocalPlayer() )
+	{
+		return y;
+	}
+	if ( stats[player.playernum]->cloak
+		&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK
+		&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
+	{
+		y = DEFAULT_INVENTORY_SIZEY + 1;
+	}
+	return y;
+}
+
+const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const
+{
+	int numSlots = freeVisibleInventorySlots();
+	int itemCount = 0;
+	if ( !stats[player.playernum] || !player.isLocalPlayer() )
+	{
+		return false;
+	}
+	for ( node_t* node = stats[player.playernum]->inventory.first; node; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( !item )
+		{
+			continue;
+		}
+		if ( itemCategory(item) == SPELL_CAT
+			|| (item->x < 0 || item->x >= getPlayerItemInventoryX())
+			|| (item->y < 0 || item->y >= getPlayerItemInventoryY())
+			)
+		{
+			continue; // ignore spells, or items not present in the grid.
+		}
+		if ( player.paperDoll.enabled
+			&& player.paperDoll.isItemOnDoll(*item) )
+		{
+			continue;
+		}
+		++itemCount;
+	}
+	return itemCount < numSlots;
+}
+
+const int Player::PaperDoll_t::getSlotSize() const
+{
+	return 32;
+}
+
+Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::getSlotForItem(const Item& item) const
+{
+	for ( auto& slot : dollSlots )
+	{
+		if ( slot.item == item.uid )
+		{
+			return slot.slotType;
+		}
+	}
+	return SLOT_MAX;
+}
+
+void Player::PaperDoll_t::drawSlots()
+{
+	updateSlots();
+	if ( player.shootmode || !enabled || !player.isLocalPlayer() )
+	{
+		return;
+	}
+	auto& charSheetBox = player.characterSheet.characterSheetBox;
+
+	int startx = charSheetBox.x + 2 + 8;
+	int starty = charSheetBox.y + 2 + 8;
+
+	SDL_Rect pos{ startx, starty, getSlotSize(), getSlotSize() };
+
+	for ( auto& slot : dollSlots )
+	{
+		slot.bMouseInSlot = false;
+		if ( slot.slotType != PaperDollSlotType::SLOT_MAX )
+		{
+			slot.pos = pos;
+
+			// grey outline
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+			if ( mouseInBounds(player.playernum, pos.x, pos.x + pos.w, pos.y, pos.y + pos.h) )
+			{
+				slot.bMouseInSlot = true;
+				// yellow highlight
+				drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 0), 127);
+			}
+
+			SDL_Rect slotBackground = pos;
+			slotBackground.x += 1;
+			slotBackground.y += 1;
+			slotBackground.w -= 2;
+			slotBackground.h -= 2;
+			// black background
+			drawRect(&slotBackground, 0, 255);
+
+			if ( slot.slotType == SLOT_OFFHAND )
+			{
+				pos.x = charSheetBox.x + charSheetBox.w - 2 - 8 - getSlotSize();
+				pos.y = starty;
+			}
+			else
+			{
+				pos.y += 4 + getSlotSize();
+			}
+		}
 	}
 }
 
