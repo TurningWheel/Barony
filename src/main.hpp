@@ -91,10 +91,10 @@ extern bool autoLimbReload;
 #include <ctype.h>
 #ifdef WINDOWS
 #define GL_GLEXT_PROTOTYPES
-	#ifdef PATH_MAX
-	// replace with our own
-	#undef PATH_MAX
-	#endif
+#ifdef PATH_MAX
+// replace with our own
+#undef PATH_MAX
+#endif
 #define PATH_MAX 1024
 #include <windows.h>
 #pragma warning ( push )

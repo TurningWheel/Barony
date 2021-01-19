@@ -8,7 +8,7 @@
 
 class Frame;
 
-static inline bool rectContainsPoint(SDL_Rect& r, int x, int y) {
+static inline bool rectContainsPoint(SDL_Rect r, int x, int y) {
 	return x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
 }
 
@@ -69,7 +69,7 @@ public:
 
 	void	setBorder(int _border) { border = _border; }
 	void	setPos(int x, int y) { size.x = x; size.y = y; }
-	void	setSize(SDL_Rect& _size) { size = _size; }
+	void	setSize(SDL_Rect _size) { size = _size; }
 	void	setColor(const Uint32& _color) { color = _color; }
 	void	setTextColor(const Uint32& _color) { textColor = _color; }
 	void	setBorderColor(const Uint32& _color) { borderColor = _color; }
@@ -87,7 +87,7 @@ private:
 	std::string icon;								//!< icon, if any (supersedes text content)
 	std::string tooltip;							//!< if empty, button has no tooltip; otherwise, it does
 	Widget::Args params;							//!< optional function parameters to use when the button function is called	
-	int border = 3;									//!< size of the button border in pixels
+	int border = 2;									//!< size of the button border in pixels
 	SDL_Rect size;									//!< size and position of the button within its parent frame
 	Uint32 color;									//!< the button's color
 	Uint32 textColor;								//!< text color

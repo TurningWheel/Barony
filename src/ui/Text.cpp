@@ -121,8 +121,8 @@ void Text::render() {
 	glBindTexture(GL_TEXTURE_2D, texid);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 	SDL_UnlockSurface(surf);
 
@@ -169,11 +169,11 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * ((real_t)src.y / surf->h));
 	glVertex2f(dest.x, yres - dest.y);
 	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
-	glVertex2f(dest.x, yres - dest.y - src.h);
+	glVertex2f(dest.x, yres - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
-	glVertex2f(dest.x + src.w, yres - dest.y - src.h);
+	glVertex2f(dest.x + dest.w, yres - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * ((real_t)src.y / surf->h));
-	glVertex2f(dest.x + src.w, yres - dest.y);
+	glVertex2f(dest.x + dest.w, yres - dest.y);
 	glEnd();
 
 	// unbind texture
@@ -193,10 +193,13 @@ Text* Text::get(const char* str, const char* font) {
 	}
 	size_t len0 = strlen(str);
 	size_t len1 = strlen(font);
-	std::string textAndFont;
+	char textAndFont[65536]; // better not try to render more than 64kb of text...
 	size_t totalLen = len0 + len1 + 2;
-	textAndFont.reserve(totalLen);
-	snprintf(const_cast<char*>(textAndFont.c_str()), totalLen, "%s%c%s", str, Text::fontBreak, font);
+	if (totalLen > sizeof(textAndFont)) {
+		assert(0 && "Trying to render > 64kb of ttf text");
+		return nullptr;
+	}
+	snprintf(textAndFont, totalLen, "%s%c%s", str, Text::fontBreak, font);
 
 	Text* text = nullptr;
 	auto search = hashed_text.find(textAndFont);
@@ -204,7 +207,7 @@ Text* Text::get(const char* str, const char* font) {
 		if (hashed_text.size() > TEXT_BUDGET) {
 			dumpCache();
 		}
-		text = new Text(textAndFont.c_str());
+		text = new Text(textAndFont);
 		hashed_text.insert(std::make_pair(textAndFont, text));
 	} else {
 		text = search->second;

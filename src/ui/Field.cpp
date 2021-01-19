@@ -7,21 +7,16 @@
 #include "Field.hpp"
 #include "Text.hpp"
 
-Field::Field() : Field("") {
-}
-
 Field::Field(const int _textLen) {
-	text.reserve(_textLen + 1);
+	textlen = std::max(_textLen, 1);
+	text = new char[textlen + 1];
+	memset(text, 0, textlen + 1);
 }
 
 Field::Field(const char* _text) {
-	text = _text;
-}
-
-Field::Field(Frame& _parent) {
-	parent = &_parent;
-	_parent.getFields().push_back(this);
-	_parent.adoptWidget(*this);
+	textlen = strlen(_text) + 1;
+	text = new char[textlen];
+	setText(_text);
 }
 
 Field::Field(Frame& _parent, const int _textLen) : Field(_textLen) {
@@ -42,19 +37,28 @@ Field::~Field() {
 		delete callback;
 		callback = nullptr;
 	}
+	if (text) {
+		if (inputstr == text) {
+			inputstr = nullptr;
+			inputlen = 0;
+			SDL_StopTextInput();
+		}
+		delete[] text;
+		text = nullptr;
+	}
 }
 
 void Field::select() {
 	selected = true;
-	inputstr = const_cast<char*>(text.c_str());
-	inputlen = text.size();
+	inputstr = text;
+	inputlen = textlen;
 	SDL_StartTextInput();
 }
 
 void Field::deselect() {
 	selectAll = false;
 	selected = false;
-	if (inputstr == text.c_str()) {
+	if (inputstr == text) {
 		inputstr = nullptr;
 		inputlen = 0;
 		SDL_StopTextInput();
@@ -84,11 +88,11 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 	std::string str;
 	if (selected && showCursor) {
-		str.reserve((Uint32)strlen(text.c_str()) + 2);
+		str.reserve((Uint32)strlen(text) + 2);
 		str.assign(text);
 		str.append("_");
 	} else if (selected) {
-		str.reserve((Uint32)strlen(text.c_str()) + 2);
+		str.reserve((Uint32)strlen(text) + 2);
 		str.assign(text);
 		str.append(" ");
 	} else {
@@ -159,7 +163,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
 
 	// fit text to window
-	if ((hjustify == LEFT || hjustify == TOP) && scroll) {
+	if ((hjustify == LEFT || hjustify == TOP) && scroll && selected) {
 		src.x = std::max(src.x, textSizeW - rect.w);
 	}
 
@@ -198,11 +202,11 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		return result;
 	}
 
-	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	if (selected) {
-		if (inputstr != text.c_str()) {
+		if (inputstr != text) {
 			result.entered = true;
 			deselect();
 			if (inputstr == nullptr) {
@@ -247,4 +251,17 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	}
 
 	return result;
+}
+
+void Field::setText(const char* _text) {
+	if (_text == nullptr || textlen <= 1) {
+		return;
+	}
+	int size = std::min(std::max(0, (int)strlen(_text)), (int)textlen - 1);
+	if (size > 0) {
+		memcpy(text, _text, size);
+		text[size] = '\0';
+	} else {
+		text[0] = '\0';
+	}
 }
