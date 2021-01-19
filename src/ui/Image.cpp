@@ -83,11 +83,11 @@ Image::~Image() {
 	}
 }
 
-void Image::draw(const SDL_Rect* src, const SDL_Rect& dest) const {
+void Image::draw(const SDL_Rect* src, const SDL_Rect dest) const {
 	drawColor(src, dest, 0xffffffff);
 }
 
-void Image::drawColor(const SDL_Rect* src, const SDL_Rect& dest, const Uint32& color) const {
+void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const Uint32& color) const {
 	if (!surf) {
 		return;
 	}

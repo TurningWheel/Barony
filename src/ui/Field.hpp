@@ -58,7 +58,7 @@ public:
 	virtual type_t              getType() const override { return WIDGET_FIELD; }
 	const char*					getText() const { return text; }
 	const char*					getFont() const { return font.c_str(); }
-	const Uint32&				getColor() const { return color; }
+	const Uint32				getColor() const { return color; }
 	const SDL_Rect				getSize() const { return size; }
 	const int					getHJustify() const { return static_cast<int>(hjustify); }
 	const int					getVJustify() const { return static_cast<int>(vjustify); }
@@ -69,8 +69,8 @@ public:
 
 	void	setText(const char* _text);
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
-	void	setSize(const SDL_Rect& _size) { size = _size; }
-	void	setColor(const Uint32& _color) { color = _color; }
+	void	setSize(const SDL_Rect _size) { size = _size; }
+	void	setColor(const Uint32 _color) { color = _color; }
 	void	setEditable(const bool _editable) { editable = _editable; }
 	void	setNumbersOnly(const bool _numbersOnly) { numbersOnly = _numbersOnly; }
 	void	setJustify(const int _justify) { hjustify = vjustify = static_cast<justify_t>(_justify); }

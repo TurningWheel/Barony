@@ -242,14 +242,13 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		barRect.y = scaledSize.y + scaledSize.h;
 		barRect.w = sliderSize * (float)xres / (float)Frame::virtualScreenX;
 		barRect.h = sliderSize * (float)yres / (float)Frame::virtualScreenY;
-		// TODO different border styles
 		if (border > 0) {
 			switch (borderStyle) {
 			case BORDER_FLAT:
-				drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
+				drawRect(&barRect, SDL_MapRGB(mainsurface->format, 160, 160, 192), 255);
 				break;
 			case BORDER_BEVEL_HIGH:
-				drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
+				drawWindow(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
 				break;
 			case BORDER_BEVEL_LOW:
 				drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
@@ -913,7 +912,7 @@ Field* Frame::addField(const char* name, const int len) {
 	return field;
 }
 
-Frame::image_t* Frame::addImage(const SDL_Rect& pos, const Uint32& color, const char* image, const char* name) {
+Frame::image_t* Frame::addImage(const SDL_Rect pos, const Uint32 color, const char* image, const char* name) {
 	if (!image || !name) {
 		return nullptr;
 	}

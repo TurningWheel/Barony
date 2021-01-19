@@ -67,8 +67,8 @@ public:
     void    setMaxValue(float _value) { maxValue = _value; }
     void    setMinValue(float _value) { minValue = _value; }
     void    setBorder(int _border) { border = _border; }
-    void    setHandleSize(const SDL_Rect& rect) { handleSize = rect; }
-    void    setRailSize(const SDL_Rect& rect) { railSize = rect; }
+    void    setHandleSize(const SDL_Rect rect) { handleSize = rect; }
+    void    setRailSize(const SDL_Rect rect) { railSize = rect; }
     void    setTooltip(const char* _tooltip) { tooltip = _tooltip; }
     void    setColor(const Uint32& _color) { color = _color; }
     void	setCallback(const Widget::Callback* fn) { callback = fn; }

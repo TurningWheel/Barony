@@ -8,7 +8,7 @@
 
 class Frame;
 
-static inline bool rectContainsPoint(SDL_Rect& r, int x, int y) {
+static inline bool rectContainsPoint(SDL_Rect r, int x, int y) {
 	return x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
 }
 
@@ -69,7 +69,7 @@ public:
 
 	void	setBorder(int _border) { border = _border; }
 	void	setPos(int x, int y) { size.x = x; size.y = y; }
-	void	setSize(SDL_Rect& _size) { size = _size; }
+	void	setSize(SDL_Rect _size) { size = _size; }
 	void	setColor(const Uint32& _color) { color = _color; }
 	void	setTextColor(const Uint32& _color) { textColor = _color; }
 	void	setBorderColor(const Uint32& _color) { borderColor = _color; }

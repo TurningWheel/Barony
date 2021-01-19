@@ -153,7 +153,7 @@ public:
 	//! @param image the image to draw
 	//! @param name the name of the image (unique id)
 	//! @return the newly created image object
-	image_t* addImage(const SDL_Rect& pos, const Uint32& color, const char* image, const char* name = "");
+	image_t* addImage(const SDL_Rect pos, const Uint32 color, const char* image, const char* name = "");
 
 	//! adds a new entry to the frame's list
 	//! @param name internal name of the new entry
@@ -254,8 +254,8 @@ public:
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
-	void	setSize(SDL_Rect& _size) { size = _size; }
-	void	setActualSize(SDL_Rect& _actualSize) { actualSize = _actualSize; }
+	void	setSize(SDL_Rect _size) { size = _size; }
+	void	setActualSize(SDL_Rect _actualSize) { actualSize = _actualSize; }
 	void	setBorderStyle(int _borderStyle) { borderStyle = static_cast<border_style_t>(_borderStyle); }
 	void	setHigh(bool b) { borderStyle = b ? BORDER_BEVEL_HIGH : BORDER_BEVEL_LOW; }
 	void	setColor(const Uint32& _color) { color = _color; }

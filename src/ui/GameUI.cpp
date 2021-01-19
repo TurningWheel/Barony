@@ -13,6 +13,7 @@
 #include <assert.h>
 
 static Frame* playerHud[MAXPLAYERS] = { nullptr };
+bool newui = false;
 
 void createIngameHud(int player) {
     char name[32];
@@ -80,7 +81,7 @@ void createIngameHud(int player) {
         e->text = "Player 2: Chatlog text is the best, I swear my life on it.";
     }
 
-    // other player statuses
+    // other players' statuses
     for (int i = 0, c = 0; c < MAXPLAYERS; ++c) {
         if (c == player) {
             continue;

@@ -5245,8 +5245,11 @@ int main(int argc, char** argv)
 
 				if ( !gamePaused )
 				{
-					//ingameHud();
-					newIngameHud();
+					if (newui) {
+						newIngameHud();
+					} else {
+						ingameHud();
+					}
 				}
 				else if ( !multiplayer )
 				{
