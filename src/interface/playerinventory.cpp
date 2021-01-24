@@ -857,7 +857,7 @@ void updatePlayerInventory(const int player)
 	bool disableMouseDisablingHotbarFocus = false;
 	SDL_Rect pos, mode_pos;
 	node_t* node, *nextnode;
-	int x, y;
+	int x, y; // inventory start x and y
 
 	auto& hotbar_t = players[player]->hotbar;
 	auto& hotbar = hotbar_t.slots();
@@ -1221,8 +1221,13 @@ void updatePlayerInventory(const int player)
 		}
 	}
 	// autosort button
-	mode_pos.x = x + players[player]->inventoryUI.getSizeX() * inventorySlotSize + inventory_mode_item_img->w * uiscale_inventory + 2;
-	mode_pos.y = y;
+	mode_pos.x = players[player]->inventoryUI.getStartX() + players[player]->inventoryUI.getSizeX() * inventorySlotSize + inventory_mode_item_img->w * uiscale_inventory + 2;
+	mode_pos.y = players[player]->inventoryUI.getStartY();
+	if ( players[player]->inventoryUI.bNewInventoryLayout )
+	{
+		// draw halfway down
+		mode_pos.y += (players[player]->inventoryUI.getSizeY() / 2) * inventorySlotSize;
+	}
 	mode_pos.w = 24;
 	mode_pos.h = 24;
 	bool mouse_in_bounds = mouseInBounds(player, mode_pos.x, mode_pos.x + mode_pos.w, mode_pos.y, mode_pos.y + mode_pos.h);
@@ -1258,8 +1263,13 @@ void updatePlayerInventory(const int player)
 		}
 	}
 	// do inventory mode buttons
-	mode_pos.x = x + players[player]->inventoryUI.getSizeX() * inventorySlotSize + 1;
-	mode_pos.y = y + inventory_mode_spell_img->h * uiscale_inventory;
+	mode_pos.x = players[player]->inventoryUI.getStartX() + players[player]->inventoryUI.getSizeX() * inventorySlotSize + 1;
+	mode_pos.y = players[player]->inventoryUI.getStartY() + inventory_mode_spell_img->h * uiscale_inventory;
+	if ( players[player]->inventoryUI.bNewInventoryLayout )
+	{
+		// draw halfway down
+		mode_pos.y += (players[player]->inventoryUI.getSizeY() / 2) * inventorySlotSize;
+	}
 	mode_pos.w = inventory_mode_spell_img->w * uiscale_inventory;
 	mode_pos.h = inventory_mode_spell_img->h * uiscale_inventory + 1;
 	mouse_in_bounds = mouseInBounds(player, mode_pos.x, mode_pos.x + mode_pos.w,
@@ -1288,8 +1298,13 @@ void updatePlayerInventory(const int player)
 	{
 		drawImageScaled(inventory_mode_spell_img, NULL, &mode_pos);
 	}
-	mode_pos.x = x + players[player]->inventoryUI.getSizeX() * inventorySlotSize + 1;
-	mode_pos.y = y - 1;
+	mode_pos.x = players[player]->inventoryUI.getStartX() + players[player]->inventoryUI.getSizeX() * inventorySlotSize + 1;
+	mode_pos.y = players[player]->inventoryUI.getStartY() - 1;
+	if ( players[player]->inventoryUI.bNewInventoryLayout )
+	{
+		// draw halfway down
+		mode_pos.y += (players[player]->inventoryUI.getSizeY() / 2) * inventorySlotSize;
+	}
 	mode_pos.w = inventory_mode_item_img->w * uiscale_inventory;
 	mode_pos.h = inventory_mode_item_img->h * uiscale_inventory + 2;
 	mouse_in_bounds = mouseInBounds(player, mode_pos.x, mode_pos.x + mode_pos.w,
@@ -3185,11 +3200,11 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 			bool notfree = false, foundaspot = false;
 
 			bool is_spell = false;
-			int inventory_y = std::min(std::max(players[player]->inventoryUI.getSizeY(), 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
+			int inventory_y = std::min(std::max(players[player]->inventoryUI.getSizeY(), 2), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
 			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
 			{
 				is_spell = true;
-				inventory_y = std::min(inventory_y, 3);
+				inventory_y = std::min(inventory_y, players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY);
 			}
 
 			if ( sortRightToLeft )
@@ -3252,7 +3267,7 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 			}
 
 			// backpack sorting, sort into here as last priority.
-			if ( (x < 0 || x > players[player]->inventoryUI.getSizeX() - 1) && players[player]->inventoryUI.getSizeY() > 3 )
+			if ( (x < 0 || x > players[player]->inventoryUI.getSizeX() - 1) && players[player]->inventoryUI.getSizeY() > players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY )
 			{
 				foundaspot = false;
 				notfree = false;
@@ -3266,7 +3281,7 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 				}
 				while ( 1 )
 				{
-					for ( y = 3; y < players[player]->inventoryUI.getSizeY(); y++ )
+					for ( y = players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; y < players[player]->inventoryUI.getSizeY(); y++ )
 					{
 						node_t* node2 = nullptr;
 						for ( node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )

@@ -2378,7 +2378,7 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 	{
 		faceButtonPositions[num].w = getSlotSize();
 		faceButtonPositions[num].h = getSlotSize();
-		faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6 - getSlotSize();
+		faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6;
 		faceButtonPositions[num].y = hotbarBox.y - getSlotSize() / 2;
 
 		/*if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE && num == current_hotbar)
@@ -2455,7 +2455,7 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 				}
 				break;
 			case 9:
-				faceButtonPositions[num].x += 14 * getSlotSize();
+				faceButtonPositions[num].x += 12 * getSlotSize();
 				break;
 			default:
 				break;
@@ -2752,6 +2752,29 @@ const int Player::Inventory_t::getPlayerItemInventoryY() const
 		y = DEFAULT_INVENTORY_SIZEY + 1;
 	}
 	return y;
+}
+
+const int Player::Inventory_t::getStartX() const 
+{
+	if ( bNewInventoryLayout )
+	{
+		return (player.characterSheet.characterSheetBox.x) + 8;
+	}
+	else
+	{
+		return (player.camera_midx() - (sizex) * (getSlotSize()) / 2 - inventory_mode_item_img->w / 2);
+	}
+}
+const int Player::Inventory_t::getStartY() const
+{
+	if ( bNewInventoryLayout )
+	{
+		return player.characterSheet.characterSheetBox.y + player.characterSheet.characterSheetBox.h + 2;
+	}
+	else
+	{
+		return player.camera_y1() + starty;
+	}
 }
 
 const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const

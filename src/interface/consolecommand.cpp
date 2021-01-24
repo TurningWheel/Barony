@@ -3143,6 +3143,12 @@ void consoleCommand(char const * const command_str)
 			players[clientnum]->hotbar.faceMenuAlternateLayout = !players[clientnum]->hotbar.faceMenuAlternateLayout;
 			messagePlayer(clientnum, "Face button alternate: %d", players[clientnum]->hotbar.faceMenuAlternateLayout ? 1 : 0);
 		}
+		else if ( !strncmp(command_str, "/inventorynew", 13) )
+		{
+			players[clientnum]->inventoryUI.bNewInventoryLayout = !players[clientnum]->inventoryUI.bNewInventoryLayout;
+			players[clientnum]->inventoryUI.resetInventory();
+			messagePlayer(clientnum, "New Inventory layout: %d", players[clientnum]->inventoryUI.bNewInventoryLayout ? 1 : 0);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

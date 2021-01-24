@@ -649,7 +649,7 @@ public:
 
 	class Inventory_t
 	{
-		const int sizex = DEFAULT_INVENTORY_SIZEX;
+		int sizex = DEFAULT_INVENTORY_SIZEX;
 		int sizey = DEFAULT_INVENTORY_SIZEY;
 		const int starty = 10;
 		Player& player;
@@ -657,17 +657,15 @@ public:
 		int selectedSlotX = 0;
 		int selectedSlotY = 0;
 	public:
-		static const int DEFAULT_INVENTORY_SIZEX = 12;
-		static const int DEFAULT_INVENTORY_SIZEY = 3;
+		int DEFAULT_INVENTORY_SIZEX = 12;
+		int DEFAULT_INVENTORY_SIZEY = 3;
 		Inventory_t(Player& p) : player(p), appraisal(p) {};
 		~Inventory_t() {};
 		const int getTotalSize() const { return sizex * sizey; }
 		const int getSizeX() const { return sizex; }
 		const int getSizeY() const { return sizey; }
-		const int getStartX() const {
-			return (player.camera_midx() - (sizex) * (getSlotSize()) / 2 - inventory_mode_item_img->w / 2);
-		}
-		const int getStartY() const { return player.camera_y1() + starty; }
+		const int getStartX() const;
+		const int getStartY() const;
 		const int getSlotSize() const { return static_cast<int>(40 * uiscale_inventory); }
 		void setSizeY(int size) { sizey = size; }
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
@@ -675,6 +673,17 @@ public:
 		const int getSelectedSlotY() const { return selectedSlotY; }
 		void resetInventory()
 		{
+			if ( bNewInventoryLayout )
+			{
+				DEFAULT_INVENTORY_SIZEX = 5;
+				DEFAULT_INVENTORY_SIZEY = 6;
+			}
+			else
+			{
+				DEFAULT_INVENTORY_SIZEX = 12;
+				DEFAULT_INVENTORY_SIZEY = 3;
+			}
+			sizex = DEFAULT_INVENTORY_SIZEX;
 			sizey = DEFAULT_INVENTORY_SIZEY;
 		}
 		const int freeVisibleInventorySlots() const
@@ -694,6 +703,14 @@ public:
 			return x;
 		}
 		const int getPlayerItemInventoryY() const;
+		const int getPlayerBackpackBonusSizeY() const
+		{
+			if ( bNewInventoryLayout )
+			{
+				return 2;
+			}
+			return 1;
+		}
 		class Appraisal_t
 		{
 			Player& player;
@@ -706,6 +723,7 @@ public:
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
 		} appraisal;
+		bool bNewInventoryLayout = true;
 	} inventoryUI;
 
 	class StatusBar_t
@@ -771,6 +789,7 @@ public:
 		SDL_Rect skillsSheetBox;
 		SDL_Rect partySheetBox;
 		SDL_Rect characterSheetBox;
+		SDL_Rect statsSheetBox;
 
 		void setDefaultSkillsSheetBox();
 		void setDefaultPartySheetBox();

@@ -1786,28 +1786,29 @@ void gameLogic(void)
 				{
 					continue;
 				}
-				backpack_sizey[player] = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY;
+				backpack_sizey[player] = players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY;
 				const int inventorySizeX = players[player]->inventoryUI.getSizeX();
+				auto& playerInventory = players[player]->inventoryUI;
 
-				bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
+				bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY);
 				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK
 					&& (shouldInvertEquipmentBeatitude(stats[player]) ? abs(stats[player]->cloak->beatitude) >= 0 : stats[player]->cloak->beatitude >= 0) )
 				{
-					backpack_sizey[player] = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1;
+					backpack_sizey[player] = playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY();
 				}
 
 				if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 				{
-					players[player]->inventoryUI.setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1) 
-						+ ((list_Size(&players[player]->magic.spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
+					playerInventory.setSizeY((playerInventory.DEFAULT_INVENTORY_SIZEY + 1)
+						+ ((list_Size(&players[player]->magic.spellList) - (inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
 				}
-				else if ( backpack_sizey[player] == Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1 )
+				else if ( backpack_sizey[player] == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
 				{
-					players[player]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1);
+					playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY());
 				}
 				else
 				{
-					if ( players[player]->inventoryUI.getSizeY() > Player::Inventory_t::DEFAULT_INVENTORY_SIZEY && !tooManySpells )
+					if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY && !tooManySpells )
 					{
 						// we should rearrange our spells.
 						for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
@@ -1827,7 +1828,7 @@ void gameLogic(void)
 							}
 							while ( 1 )
 							{
-								for ( scany = 0; scany < Player::Inventory_t::DEFAULT_INVENTORY_SIZEY; scany++ )
+								for ( scany = 0; scany < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; scany++ )
 								{
 									node_t* node2;
 									for ( node2 = stats[player]->inventory.first; node2 != NULL; node2 = node2->next )
@@ -1866,7 +1867,7 @@ void gameLogic(void)
 							}
 						}
 					}
-					players[player]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
+					players[player]->inventoryUI.setSizeY(players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY);
 				}
 			}
 
@@ -2432,28 +2433,28 @@ void gameLogic(void)
 			// world UI
 			Player::WorldUI_t::handleTooltips();
 
-			const int inventorySizeX = players[clientnum]->inventoryUI.getSizeX();
-
-			bool tooManySpells = (list_Size(&players[clientnum]->magic.spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
-			int backpack_sizey = 3;
+			auto& playerInventory = players[clientnum]->inventoryUI;
+			const int inventorySizeX = playerInventory.getSizeX();
+			bool tooManySpells = (list_Size(&players[clientnum]->magic.spellList) >= inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY);
+			int backpack_sizey = playerInventory.DEFAULT_INVENTORY_SIZEY;
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
 				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
 			{
-				backpack_sizey = 4;
+				backpack_sizey += playerInventory.getPlayerBackpackBonusSizeY();
 			}
 
 			if ( tooManySpells && players[clientnum]->gui_mode == GUI_MODE_INVENTORY && players[clientnum]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
-				players[clientnum]->inventoryUI.setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1) 
-					+ ((list_Size(&players[clientnum]->magic.spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
+				playerInventory.setSizeY((playerInventory.DEFAULT_INVENTORY_SIZEY + 1)
+					+ ((list_Size(&players[clientnum]->magic.spellList) - (inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
 			}
-			else if ( backpack_sizey == 4 )
+			else if ( backpack_sizey == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
 			{
-				players[clientnum]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1);
+				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY());
 			}
 			else
 			{
-				if ( players[clientnum]->inventoryUI.getSizeY() > Player::Inventory_t::DEFAULT_INVENTORY_SIZEY && !tooManySpells )
+				if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY && !tooManySpells )
 				{
 					// we should rearrange our spells.
 					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
@@ -2473,7 +2474,7 @@ void gameLogic(void)
 						}
 						while ( 1 )
 						{
-							for ( scany = 0; scany < 3; scany++ )
+							for ( scany = 0; scany < playerInventory.DEFAULT_INVENTORY_SIZEY; scany++ )
 							{
 								node_t* node2;
 								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
@@ -2512,7 +2513,7 @@ void gameLogic(void)
 						}
 					}
 				}
-				players[clientnum]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
+				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY);
 			}
 
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )

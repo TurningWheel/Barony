@@ -752,7 +752,7 @@ void drawStatus(int player)
 	if ( stats[player] && stats[player]->type != AUTOMATON
 		&& (svFlags & SV_FLAG_HUNGER) && stats[player]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = x1 + xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 		pos.y = y2 - 160;
 		pos.w = 64;
 		pos.h = 64;
@@ -770,7 +770,7 @@ void drawStatus(int player)
 	{
 		if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
 		{
-			pos.x = x1 + xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+			pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 			pos.y = y2 - 160;
 			pos.w = 64;
 			pos.h = 64;
@@ -797,7 +797,7 @@ void drawStatus(int player)
 	// minotaur icon
 	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = x1 + xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 		pos.y = y2 - 160 + 64 + 2;
 		pos.w = 64;
 		pos.h = 64;

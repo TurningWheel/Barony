@@ -89,14 +89,16 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 			is_spell = true;
 		}
 
-		int inventory_sizex = Player::Inventory_t::DEFAULT_INVENTORY_SIZEX;
-		int inventory_sizey = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY;
+		int inventory_sizex = 0;
+		int inventory_sizey = 0;
 		Player::Inventory_t* playerInventoryUI = nullptr;
 		Player::Magic_t* playerMagic = nullptr;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( stats[i] && inventory == &stats[i]->inventory )
 			{
+				inventory_sizex = players[i]->inventoryUI.DEFAULT_INVENTORY_SIZEX;
+				inventory_sizey = players[i]->inventoryUI.DEFAULT_INVENTORY_SIZEY;
 				inventory_sizex = players[i]->inventoryUI.getSizeX();
 				inventory_sizey = players[i]->inventoryUI.getSizeY();
 				playerInventoryUI = &players[i]->inventoryUI;
@@ -115,17 +117,17 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		int x = 0;
 		if ( is_spell )
 		{
-			if ( playerMagic && list_Size(&playerMagic->spellList) >= inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY )
+			if ( playerMagic && list_Size(&playerMagic->spellList) >= inventory_sizex * playerInventoryUI->DEFAULT_INVENTORY_SIZEY )
 			{
 				// original commented out code to investigate -- why a double = sign?
 				//inventory_y = INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex);
 
-				playerInventoryUI->setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1)
-					+ ((list_Size(&playerMagic->spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex));
+				playerInventoryUI->setSizeY((playerInventoryUI->DEFAULT_INVENTORY_SIZEY + 1)
+					+ ((list_Size(&playerMagic->spellList) - (inventory_sizex * playerInventoryUI->DEFAULT_INVENTORY_SIZEY)) / inventory_sizex));
 			}
 			else
 			{
-				playerInventoryUI->setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
+				playerInventoryUI->setSizeY(playerInventoryUI->DEFAULT_INVENTORY_SIZEY);
 			}
 		}
 		else if ( multiplayer != CLIENT )
@@ -137,7 +139,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
 						&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
 					{
-						playerInventoryUI->setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1);
+						playerInventoryUI->setSizeY(playerInventoryUI->DEFAULT_INVENTORY_SIZEY + playerInventoryUI->getPlayerBackpackBonusSizeY());
 						break;
 					}
 					break;
@@ -157,14 +159,14 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
 						&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
 					{
-						players[i]->inventoryUI.setSizeY(4);
+						players[i]->inventoryUI.setSizeY(players[i]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[i]->inventoryUI.getPlayerBackpackBonusSizeY());
 						break;
 					}
 					break;
 				}
 			}
 		}
-		const int sort_y = std::min(std::max(playerInventoryUI->getSizeY(), 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
+		const int sort_y = std::min(std::max(playerInventoryUI->getSizeY(), 2), playerInventoryUI->DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
 
 		while ( true )
 		{
@@ -211,14 +213,14 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 
 
 		// backpack sorting, sort into here as last priority.
-		if ( x > playerInventoryUI->getSizeX() - 1 && playerInventoryUI->getSizeY() > Player::Inventory_t::DEFAULT_INVENTORY_SIZEY )
+		if ( x > playerInventoryUI->getSizeX() - 1 && playerInventoryUI->getSizeY() > playerInventoryUI->DEFAULT_INVENTORY_SIZEY )
 		{
 			x = 0;
 			foundaspot = false;
 			notfree = false;
 			while ( true )
 			{
-				for ( y = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY; y < playerInventoryUI->getSizeY(); y++ )
+				for ( y = playerInventoryUI->DEFAULT_INVENTORY_SIZEY; y < playerInventoryUI->getSizeY(); y++ )
 				{
 					for ( node_t* node = inventory->first; node != nullptr; node = node->next )
 					{
