@@ -727,12 +727,13 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 			else
 			{
 				// outside inventory
-				hotbar_slot_t* slot = getHotbar(player, mousex, mousey);
+				int slotNum = 0;
+				hotbar_slot_t* slot = getHotbar(player, mousex, mousey, &slotNum);
 				if (slot)
 				{
 					//Add item to hotbar.
 					Item* tempItem = uidToItem(slot->item);
-					if (tempItem)
+					if (tempItem && tempItem != selectedItem)
 					{
 						slot->item = selectedItem->uid;
 						selectedItem = tempItem;
@@ -743,6 +744,17 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 						slot->item = selectedItem->uid;
 						selectedItem = NULL;
 						toggleclick = false;
+					}
+
+					// empty out duplicate slots that match this item uid.
+					int i = 0;
+					for ( auto& s : players[player]->hotbar.slots() )
+					{
+						if ( i != slotNum && s.item == slot->item )
+						{
+							s.item = 0;
+						}
+						++i;
 					}
 					playSound(139, 64); // click sound
 				}

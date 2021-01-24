@@ -641,6 +641,7 @@ int fmod_result;
 	cross_bmp = loadImage("images/system/cross.png");
 	selected_cursor_bmp = loadImage("images/system/selectedcursor.png");
 	controllerglyphs1_bmp = loadImage("images/system/glyphsheet_ns.png");
+	skillIcons_bmp = loadImage("images/system/skillicons_sheet.png");
 
 	loadAllScores(SCORESFILE);
 	loadAllScores(SCORESFILE_MULTIPLAYER);
@@ -766,6 +767,10 @@ void deinitGame()
 	if ( controllerglyphs1_bmp != nullptr )
 	{
 		SDL_FreeSurface(controllerglyphs1_bmp);
+	}
+	if ( skillIcons_bmp != nullptr )
+	{
+		SDL_FreeSurface(skillIcons_bmp);
 	}
 	//if(sky_bmp!=NULL)
 	//	SDL_FreeSurface(sky_bmp);

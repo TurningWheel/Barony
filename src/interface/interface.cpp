@@ -172,6 +172,7 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&cross_bmp, "images/system/cross.png"),
 	std::make_pair(&selected_cursor_bmp, "images/system/selectedcursor.png"),
 	std::make_pair(&controllerglyphs1_bmp, "images/system/glyphsheet_ns.png"),
+	std::make_pair(&skillIcons_bmp, "images/system/skillicons_sheet.png"),
 
 	std::make_pair(&fancyWindow_bmp, "images/system/fancyWindow.png"),
 	std::make_pair(&font8x8_bmp, "images/system/font8x8.png"),
@@ -1361,7 +1362,7 @@ bool mouseInBounds(const int player, int x1, int x2, int y1, int y2)
 	return false;
 }
 
-hotbar_slot_t* getHotbar(int player, int x, int y)
+hotbar_slot_t* getHotbar(int player, int x, int y, int* outSlotNum)
 {
 	if ( players[player]->hotbar.useHotbarFaceMenu )
 	{
@@ -1371,6 +1372,10 @@ hotbar_slot_t* getHotbar(int player, int x, int y)
 			if ( x >= slotRect.x && x < (slotRect.x + slotRect.w)
 				&& y >= slotRect.y && y < (slotRect.y + slotRect.h) )
 			{
+				if ( outSlotNum )
+				{
+					*outSlotNum = num;
+				}
 				return &players[player]->hotbar.slots()[num];
 			}
 		}
@@ -1382,7 +1387,10 @@ hotbar_slot_t* getHotbar(int player, int x, int y)
 	{
 		int relx = x - players[player]->hotbar.getStartX(); //X relative to the start of the hotbar.
 		int slot = std::max(0, std::min(relx / (players[player]->hotbar.getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
-
+		if ( outSlotNum )
+		{
+			*outSlotNum = slot;
+		}
 		return &players[player]->hotbar.slots()[slot]; //The slot will clearly be the x divided by the width of a slot
 	}
 
@@ -8319,4 +8327,53 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 	{
 		HPBars.insert(std::make_pair(uid, EnemyHPDetails(HP, maxHP, oldHP, color, name, isLowPriority)));
 	}
+}
+
+SDL_Rect getRectForSkillIcon(const int skill)
+{
+	SDL_Rect defaultRect{ 0, 0, 0, 0 };
+
+	int glyphHeight = 32;
+	int glyphWidth = 32;
+	const int glyphSpacing = 32;
+
+	switch ( skill )
+	{
+		case PRO_LOCKPICKING:
+			return SDL_Rect{ 1 * glyphSpacing, 3 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_STEALTH:
+			return SDL_Rect{ 1 * glyphSpacing, 2 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_TRADING:
+			return SDL_Rect{ 2 * glyphSpacing, 3 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_APPRAISAL:
+			return SDL_Rect{ 1 * glyphSpacing, 0 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_SWIMMING:
+			return SDL_Rect{ 2 * glyphSpacing, 2 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_LEADERSHIP:
+			return SDL_Rect{ 1 * glyphSpacing, 1 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_SPELLCASTING:
+			return SDL_Rect{ 0 * glyphSpacing, 1 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_MAGIC:
+			return SDL_Rect{ 3 * glyphSpacing, 1 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_RANGED:
+			return SDL_Rect{ 3 * glyphSpacing, 2 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_SWORD:
+			return SDL_Rect{ 0 * glyphSpacing, 3 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_MACE:
+			return SDL_Rect{ 2 * glyphSpacing, 1 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_AXE:
+			return SDL_Rect{ 2 * glyphSpacing, 0 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_POLEARM:
+			return SDL_Rect{ 0 * glyphSpacing, 2 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_UNARMED:
+			return SDL_Rect{ 3 * glyphSpacing, 3 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_SHIELD:
+			return SDL_Rect{ 3 * glyphSpacing, 0 * glyphSpacing, glyphWidth, glyphHeight };
+		case PRO_ALCHEMY:
+			return SDL_Rect{ 0 * glyphSpacing, 0 * glyphSpacing, glyphWidth, glyphHeight };
+		default:
+			break;
+	}
+
+	return defaultRect;
 }

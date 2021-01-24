@@ -389,6 +389,7 @@ SDL_Surface* cursor_bmp = nullptr;
 SDL_Surface* cross_bmp = nullptr;
 SDL_Surface* selected_cursor_bmp = nullptr;
 SDL_Surface* controllerglyphs1_bmp = nullptr;
+SDL_Surface* skillIcons_bmp = nullptr;
 int shaking = 0, bobbing = 0;
 bool fadeout = false, fadefinished = false;
 int fadealpha = 0;

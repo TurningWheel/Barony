@@ -2259,26 +2259,141 @@ void Player::WorldUI_t::handleTooltips()
 
 void Player::Hotbar_t::initFaceButtonHotbar()
 {
+	if ( faceMenuAlternateLayout )
+	{
+		for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
+		{
+			faceButtonPositions[num].w = getSlotSize();
+			faceButtonPositions[num].h = getSlotSize();
+			faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6;
+			faceButtonPositions[num].y = hotbarBox.y - getSlotSize() / 2;
+
+			/*if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE && num == current_hotbar)
+			{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+			}*/
+			if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_LEFT )
+			{
+				//faceButtonPositions[num].y -= getSlotSize() / 4;
+			}
+			else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_MIDDLE )
+			{
+				//faceButtonPositions[num].y -= getSlotSize() / 4;
+			}
+			else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_RIGHT )
+			{
+				//faceButtonPositions[num].y -= getSlotSize() / 4;
+			}
+
+			if ( getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_LEFT )
+			{
+				faceButtonPositions[num].x += getSlotSize() / 1;
+				faceButtonPositions[num].y += getSlotSize() / 8;
+			}
+			else if ( getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_MIDDLE )
+			{
+				faceButtonPositions[num].y -= getSlotSize();
+			}
+			else if ( getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_RIGHT )
+			{
+				faceButtonPositions[num].x -= getSlotSize() / 1;
+				faceButtonPositions[num].y += getSlotSize() / 8;
+			}
+
+			switch ( num )
+			{
+				case 0:
+					faceButtonPositions[num].x += 0 * getSlotSize();
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 1:
+					{
+						faceButtonPositions[num].x += 1 * getSlotSize();
+					}
+					break;
+				case 2:
+					faceButtonPositions[num].x += 2 * getSlotSize();
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					else
+					{
+
+					}
+					break;
+				case 3:
+					faceButtonPositions[num].x += 3 * getSlotSize() + getSlotSize() / 3;
+					faceButtonPositions[num].y -= getSlotSize() / 4;
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 4:
+					faceButtonPositions[num].x += 4 * getSlotSize() + getSlotSize() / 3;
+					faceButtonPositions[num].y -= getSlotSize() / 4;
+					break;
+				case 5:
+					faceButtonPositions[num].x += 5 * getSlotSize() + getSlotSize() / 3;
+					faceButtonPositions[num].y -= getSlotSize() / 4;
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 6:
+					faceButtonPositions[num].x += 6 * getSlotSize() + 2 * getSlotSize() / 3;
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 7:
+					{
+						faceButtonPositions[num].x += 7 * getSlotSize() + 2 * getSlotSize() / 3;
+					}
+					break;
+				case 8:
+					faceButtonPositions[num].x += 8 * getSlotSize() + 2 * getSlotSize() / 3;
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 9:
+					faceButtonPositions[num].x += 14 * getSlotSize();
+					break;
+				default:
+					break;
+			}
+		}
+		return;
+	}
+
 	for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 	{
 		faceButtonPositions[num].w = getSlotSize();
 		faceButtonPositions[num].h = getSlotSize();
-		faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6;
+		faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6 - getSlotSize();
 		faceButtonPositions[num].y = hotbarBox.y - getSlotSize() / 2;
 
 		/*if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE && num == current_hotbar)
 		{
 			faceButtonPositions[num].y -= getSlotSize() / 4;
 		}*/
-		if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT && num >= 0 && num < 3 )
+		if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_LEFT )
 		{
 			faceButtonPositions[num].y -= getSlotSize() / 4;
 		}
-		else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE && num >= 3 && num < 6 )
+		else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_MIDDLE )
 		{
 			faceButtonPositions[num].y -= getSlotSize() / 4;
 		}
-		else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT && num >= 6 && num < 9 )
+		else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_RIGHT )
 		{
 			faceButtonPositions[num].y -= getSlotSize() / 4;
 		}
@@ -2287,7 +2402,7 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 		{
 			case 0:
 				faceButtonPositions[num].x += 0 * getSlotSize();
-				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT )
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
 				{
 					faceButtonPositions[num].y += getSlotSize() / 8;
 				}
@@ -2297,19 +2412,15 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 				break;
 			case 2:
 				faceButtonPositions[num].x += 2 * getSlotSize();
-				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT )
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
 				{
 					faceButtonPositions[num].y += getSlotSize() / 8;
-				}
-				else
-				{
-
 				}
 				break;
 			case 3:
 				faceButtonPositions[num].x += 3 * getSlotSize() + getSlotSize() / 3;
 				faceButtonPositions[num].y -= getSlotSize() / 4;
-				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE )
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
 				{
 					faceButtonPositions[num].y += getSlotSize() / 8;
 				}
@@ -2321,14 +2432,14 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 			case 5:
 				faceButtonPositions[num].x += 5 * getSlotSize() + getSlotSize() / 3;
 				faceButtonPositions[num].y -= getSlotSize() / 4;
-				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE )
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
 				{
 					faceButtonPositions[num].y += getSlotSize() / 8;
 				}
 				break;
 			case 6:
 				faceButtonPositions[num].x += 6 * getSlotSize() + 2 * getSlotSize() / 3;
-				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT )
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
 				{
 					faceButtonPositions[num].y += getSlotSize() / 8;
 				}
@@ -2338,18 +2449,35 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 				break;
 			case 8:
 				faceButtonPositions[num].x += 8 * getSlotSize() + 2 * getSlotSize() / 3;
-				if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT )
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
 				{
 					faceButtonPositions[num].y += getSlotSize() / 8;
 				}
 				break;
 			case 9:
-				faceButtonPositions[num].x += 12 * getSlotSize();
+				faceButtonPositions[num].x += 14 * getSlotSize();
 				break;
 			default:
 				break;
 		}
 	}
+}
+
+Player::Hotbar_t::FaceMenuGroup Player::Hotbar_t::getFaceMenuGroupForSlot(int hotbarSlot)
+{
+	if ( hotbarSlot < 3 )
+	{
+		return FaceMenuGroup::GROUP_LEFT;
+	}
+	else if ( hotbarSlot < 6 )
+	{
+		return FaceMenuGroup::GROUP_MIDDLE;
+	}
+	else if ( hotbarSlot < 9 )
+	{
+		return FaceMenuGroup::GROUP_RIGHT;
+	}
+	return FaceMenuGroup::GROUP_NONE;
 }
 
 void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
@@ -2456,6 +2584,158 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 		SDL_Rect glyphpos{ x, y, width, height };
 		drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
 	}
+}
+
+const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt) const
+{
+	if ( prompt == ACTION_PROMPT_MAGIC ) { return PRO_SPELLCASTING; }
+
+	bool shapeshifted = false;
+	Monster playerRace = HUMAN;
+	
+	if ( players[player.playernum]->entity )
+	{
+		playerRace = players[player.playernum]->entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
+		if ( players[player.playernum]->entity->effectShapeshift != NOTHING )
+		{
+			playerRace = static_cast<Monster>(players[player.playernum]->entity->effectShapeshift);
+			shapeshifted = true;
+		}
+	}
+
+	if ( prompt == ACTION_PROMPT_OFFHAND )
+	{
+		int skill = PRO_SHIELD;
+		if ( stats[player.playernum] )
+		{
+			if ( stats[player.playernum]->shield )
+			{
+				bool hasSpellBook = itemCategory(stats[player.playernum]->shield) == SPELLBOOK;
+				bool allowCasting = true;
+				bool allowDefending = true;
+				if ( shapeshifted && playerRace == CREATURE_IMP )
+				{
+					// imp allowed to cast via spellbook.
+					allowCasting = false;
+				}
+				if ( hasSpellBook && allowCasting )
+				{
+					return PRO_MAGIC;
+				}
+
+				if ( shapeshifted || itemTypeIsQuiver(stats[player.playernum]->shield->type) )
+				{
+					allowDefending = false;
+				}
+
+				if ( allowDefending )
+				{ 
+					return PRO_SHIELD; 
+				}
+				return PRO_STEALTH;
+			}
+			else
+			{
+				skill = PRO_STEALTH;
+			}
+		}
+		return skill;
+	}
+	else // prompt == ACTION_PROMPT_MAINHAND
+	{
+		int skill = PRO_UNARMED;
+		if ( stats[player.playernum] )
+		{
+			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
+			{
+				if ( !shapeshifted && stats[player.playernum]->defending )
+				{
+					return PRO_LOCKPICKING;
+				}
+			}
+			if ( stats[player.playernum]->weapon )
+			{
+				if ( itemCategory(stats[player.playernum]->weapon) == MAGICSTAFF )
+				{
+					if ( !shapeshifted || (shapeshifted && playerRace == CREATURE_IMP) )
+					{
+						skill = PRO_SPELLCASTING;
+					}
+				}
+				else if ( !shapeshifted )
+				{
+					if ( itemCategory(stats[player.playernum]->weapon) == POTION )
+					{
+						skill = PRO_ALCHEMY;
+					}
+					else if ( itemCategory(stats[player.playernum]->weapon) == TOOL )
+					{
+						skill = PRO_LOCKPICKING;
+					}
+					else
+					{
+						skill = getWeaponSkill(stats[player.playernum]->weapon);
+						if ( skill == -1 )
+						{
+							skill =  PRO_UNARMED;
+						}
+					}
+				}
+			}
+		}
+		return skill;
+	}
+}
+
+void Player::HUD_t::drawActionIcon(SDL_Rect& pos, int skill) const
+{
+	SDL_Rect skillIconSrc = getRectForSkillIcon(skill);
+	SDL_Rect skillIconPos{ pos.x, pos.y, pos.w, pos.h };
+
+	drawImageScaled(skillIcons_bmp, &skillIconSrc, &skillIconPos);
+}
+
+void Player::HUD_t::drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const
+{
+	if ( !bShowActionPrompts )
+	{
+		return;
+	}
+
+	real_t scale = 2.25;
+	Uint32 height = scale;
+	Uint32 width = scale;
+	Uint32 x = pos.x + pos.w / 2;
+	Uint32 y = pos.y + pos.h;
+	SDL_Rect glyphsrc;
+
+	switch ( prompt )
+	{
+		case ACTION_PROMPT_MAINHAND:
+			// replace these dirty hax
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				INJOY_GAME_ATTACK);
+			break;
+		case ACTION_PROMPT_OFFHAND:
+			// replace these dirty hax
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				INJOY_GAME_DEFEND);
+			break;
+		case ACTION_PROMPT_MAGIC:
+			// replace these dirty hax
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				std::min(joyimpulses[INJOY_GAME_CAST_SPELL] - 301U, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX - 1U));
+			break;
+		default:
+			return;
+	}
+
+	height *= glyphsrc.h;
+	width *= glyphsrc.w;
+	x -= width / 2;
+	y -= 8;
+	SDL_Rect glyphpos{ x, y, width, height };
+	drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
 }
 
 const int Player::Inventory_t::getPlayerItemInventoryY() const

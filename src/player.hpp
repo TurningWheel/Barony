@@ -828,6 +828,16 @@ public:
 			weaponSwitch = false;
 			shieldSwitch = false;
 		}
+		bool bShowActionPrompts = true;
+		enum ActionPrompts : int
+		{
+			ACTION_PROMPT_MAINHAND,
+			ACTION_PROMPT_OFFHAND,
+			ACTION_PROMPT_MAGIC
+		};
+		void drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const;
+		void drawActionIcon(SDL_Rect& pos, int skill) const;
+		const int getActionIconForPlayer(ActionPrompts prompt) const;
 	} hud;
 
 	class Magic_t
@@ -854,7 +864,10 @@ public:
 			}
 			selected_spell_last_appearance = -1;
 		}
-		void equipSpell(spell_t* spell) { selected_spell = spell; }
+		void equipSpell(spell_t* spell) 
+		{ 
+			selected_spell = spell; 
+		}
 		spell_t* selectedSpell() const { return selected_spell; }
 
 	} magic;
@@ -1051,6 +1064,7 @@ public:
 		bool faceMenuInvertLayout = false;
 		bool faceMenuQuickCastEnabled = true;
 		bool faceMenuQuickCast = true;
+		bool faceMenuAlternateLayout = false;
 		enum FaceMenuGroup : int
 		{
 			GROUP_NONE,
@@ -1124,6 +1138,7 @@ public:
 		}
 		void initFaceButtonHotbar();
 		void drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos);
+		FaceMenuGroup getFaceMenuGroupForSlot(int hotbarSlot);
 	} hotbar;
 };
 

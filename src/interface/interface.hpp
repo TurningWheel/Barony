@@ -556,7 +556,7 @@ typedef struct hotbar_slot_t
 
 
 //Returns a pointer to a hotbar slot if the specified coordinates are in the area of the hotbar. Used for such things as dragging and dropping items.
-hotbar_slot_t* getHotbar(int player, int x, int y);
+hotbar_slot_t* getHotbar(int player, int x, int y, int* outSlotNum = nullptr);
 
 void warpMouseToSelectedHotbarSlot(const int player);
 
@@ -727,3 +727,5 @@ public:
 	const int getPlayer() const { return gui_player; }
 };
 extern FollowerRadialMenu FollowerMenu[MAXPLAYERS];
+
+SDL_Rect getRectForSkillIcon(const int skill);

@@ -3138,6 +3138,11 @@ void consoleCommand(char const * const command_str)
 			players[clientnum]->paperDoll.enabled = !players[clientnum]->paperDoll.enabled;
 			messagePlayer(clientnum, "Paper doll: %d", players[clientnum]->paperDoll.enabled ? 1 : 0);
 		}
+		else if ( !strncmp(command_str, "/facebaralternate", 17) )
+		{
+			players[clientnum]->hotbar.faceMenuAlternateLayout = !players[clientnum]->hotbar.faceMenuAlternateLayout;
+			messagePlayer(clientnum, "Face button alternate: %d", players[clientnum]->hotbar.faceMenuAlternateLayout ? 1 : 0);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
