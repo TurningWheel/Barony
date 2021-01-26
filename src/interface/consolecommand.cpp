@@ -1748,14 +1748,25 @@ void consoleCommand(char const * const command_str)
 		//startfloor = std::min(startfloor, numlevels);
 		printlog("Start floor is %d.", startfloor);
 	}
-	else if (!strncmp(command_str, "/splitscreen", 12))
+	else if ( !strncmp(command_str, "/splitscreen ", 13) || !strncmp(command_str, "/splitscreen", 12) )
 	{
 		splitscreen = !splitscreen;
+
+		int numPlayers = 4;
+		if ( !strncmp(command_str, "/splitscreen ", 13) )
+		{
+			numPlayers = std::min(4, std::max(atoi(&command_str[13]), 2));
+		}
+
 		if ( splitscreen )
 		{
-			client_disconnected[1] = false;
-			client_disconnected[2] = false;
-			client_disconnected[3] = false;
+			for ( int i = 1; i < MAXPLAYERS; ++i )
+			{
+				if ( i < numPlayers )
+				{
+					client_disconnected[i] = false;
+				}
+			}
 		}
 		else
 		{
@@ -1767,7 +1778,15 @@ void consoleCommand(char const * const command_str)
 		int playercount = 1;
 		for ( int i = 1; i < MAXPLAYERS; ++i )
 		{
-			players[i]->bSplitscreen = true;
+			if ( client_disconnected[i] )
+			{
+				players[i]->bSplitscreen = false;
+			}
+			else
+			{
+				players[i]->bSplitscreen = true;
+			}
+
 			if ( players[i]->isLocalPlayer() )
 			{
 				++playercount;
