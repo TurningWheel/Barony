@@ -62,7 +62,7 @@ bool Image::finalize() {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		} else {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		}
 		SDL_UnlockSurface(surf);
 
@@ -83,11 +83,14 @@ Image::~Image() {
 	}
 }
 
-void Image::draw(const SDL_Rect* src, const SDL_Rect& dest) const {
+void Image::draw(const SDL_Rect* src, const SDL_Rect dest) const {
 	drawColor(src, dest, 0xffffffff);
 }
 
-void Image::drawColor(const SDL_Rect* src, const SDL_Rect& dest, const Uint32& color) const {
+void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const Uint32& color) const {
+	if (!surf) {
+		return;
+	}
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
@@ -121,11 +124,11 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect& dest, const Uint32& c
 	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
 	glVertex2f(dest.x, yres - dest.y);
 	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x, yres - dest.y - src->h);
+	glVertex2f(dest.x, yres - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x + src->w, yres - dest.y - src->h);
+	glVertex2f(dest.x + dest.w, yres - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x + src->w, yres - dest.y);
+	glVertex2f(dest.x + dest.w, yres - dest.y);
 	glEnd();
 
 	// unbind texture

@@ -332,9 +332,6 @@ elseif (APPLE)
 	include_directories("${PROJECT_SOURCE_DIR}/libraries/fmod/inc")
 	link_directories("${PROJECT_SOURCE_DIR}/libraries/fmod/lib")
   endif()
-
-  find_package(GLUT REQUIRED)
-  include_directories(${GLUT_INCLUDE_DIR})
 endif()
 
 # Add the source directory
@@ -444,7 +441,7 @@ if (GAME_ENABLED)
 	  target_link_libraries(barony ${EOS_LIBRARIES})
 	endif()
 	if (APPLE)
-	  target_link_libraries(barony ${GLUT_LIBRARIES} ${PROJECT_SOURCE_DIR}/libpng16.16.dylib) #Wait...what? if(APPLE) in if(WIN32)? What was I thinking back then, haha.
+	  target_link_libraries(barony ${PROJECT_SOURCE_DIR}/libpng16.16.dylib) #Wait...what? if(APPLE) in if(WIN32)? What was I thinking back then, haha.
 	endif()
 	if (${CMAKE_SYSTEM_NAME} MATCHES "BSD|DragonFly" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
 	  # For backtrace
@@ -535,6 +532,7 @@ if (EDITOR_ENABLED)
   else()
 	add_executable(${EDITOR_EXE_NAME} ${EDITOR_SOURCES} ${EDITOR_RESOURCE_FILE})
   endif()
+  target_compile_definitions(${EDITOR_EXE_NAME} PUBLIC EDITOR) # So that shared source files know this is the editor they're dealing with.
 
   target_link_libraries(${EDITOR_EXE_NAME} ${SDL2_LIBRARIES} ${SDL2_LIBRARY} ${SDL2IMAGE_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_NET_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2TTF_LIBRARY})
   if(STEAMWORKS_ENABLED)

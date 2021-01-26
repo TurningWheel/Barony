@@ -28,6 +28,7 @@
 #include "../mod_tools.hpp"
 #include "../collision.hpp"
 #include "../player.hpp"
+#include "../ui/GameUI.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -2947,6 +2948,9 @@ void consoleCommand(char const * const command_str)
 				}
 				monsterStatCustomManager.writeAllFromStats(target->getStats());
 			}
+		}
+		else if ( !strncmp(command_str, "/newui", 6) ) {
+			newui = !newui;
 		}
 		else if ( !strncmp(command_str, "/jsonexportgameplaymodifiers", 28) )
 		{

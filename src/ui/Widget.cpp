@@ -173,7 +173,7 @@ Widget* Widget::findWidget(const char* name, bool recursive) {
 
 void Widget::adoptWidget(Widget& widget) {
 	if (widget.parent) {
-		for (auto node = parent->widgets.begin(); node != parent->widgets.end(); ++node) {
+		for (auto node = widget.parent->widgets.begin(); node != widget.parent->widgets.end(); ++node) {
 			if (*node == &widget) {
 				widget.parent->widgets.erase(node);
 				break;

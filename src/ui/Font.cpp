@@ -3,7 +3,7 @@
 #include "../main.hpp"
 #include "Font.hpp"
 
-const char* Font::defaultFont = "fonts/mono.ttf#16";
+const char* Font::defaultFont = "lang/en.ttf#24";
 
 Font::Font(const char* _name) {
 	name = _name;
@@ -19,7 +19,7 @@ Font::Font(const char* _name) {
 		printlog("failed to load '%s': %s", path.c_str(), TTF_GetError());
 		return;
 	}
-	TTF_SetFontHinting(font, TTF_HINTING_MONO);
+	TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
 	TTF_SetFontKerning(font, 0);
 }
 

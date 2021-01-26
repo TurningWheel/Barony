@@ -2,6 +2,7 @@
 
 #include "../main.hpp"
 #include "../draw.hpp"
+#include "../player.hpp"
 #include "Slider.hpp"
 #include "Frame.hpp"
 #include "Button.hpp"
@@ -23,7 +24,11 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	_railSize.w = std::min(railSize.w, _size.w - railSize.x + _actualSize.x) + std::min(0, railSize.x - _actualSize.x);
 	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 	if (_railSize.w > 0 && _railSize.h > 0) {
-		drawDepressed(_railSize.x, _railSize.y, _railSize.x + _railSize.w, _railSize.y + _railSize.h);
+		int x = (_railSize.x) * (float)xres / (float)Frame::virtualScreenX;
+		int y = (_railSize.y) * (float)yres / (float)Frame::virtualScreenY;
+		int w = (_railSize.x + _railSize.w) * (float)xres / (float)Frame::virtualScreenX;
+		int h = (_railSize.y + _railSize.h) * (float)yres / (float)Frame::virtualScreenY;
+		drawDepressed(x, y, w, h);
 	}
 	
 	// draw handle
@@ -32,8 +37,11 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
 	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
 	if (_handleSize.w > 0 && _handleSize.h > 0) {
-		bool h = highlighted | selected;
-		drawWindow(_handleSize.x, _handleSize.y, _handleSize.x + _handleSize.w, _handleSize.y + _handleSize.h);
+		int x = (_handleSize.x) * (float)xres / (float)Frame::virtualScreenX;
+		int y = (_handleSize.y) * (float)yres / (float)Frame::virtualScreenY;
+		int w = (_handleSize.x + _handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
+		int h = (_handleSize.y + _handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
+		drawWindow(x, y, w, h);
 	}
 }
 
@@ -82,10 +90,10 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		return result;
 	}
 
-	Sint32 mousex = (mousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (mousey / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	if (rectContainsPoint(_size, omousex, omousey)) {
 		result.highlighted = highlighted = true;

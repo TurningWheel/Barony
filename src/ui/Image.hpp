@@ -11,7 +11,7 @@ private:
 	Image(const char* _name);
 	Image(const Image&) = delete;
 	Image(Image&&) = delete;
-	virtual ~Image();
+	~Image();
 
 	Image& operator=(const Image&) = delete;
 	Image& operator=(Image&&) = delete;
@@ -23,13 +23,13 @@ public:
 	//! draws the image
 	//! @param src the section of the image to be used for drawing, or nullptr for the whole image
 	//! @param dest the location and size by which the image should be drawn
-	void draw(const SDL_Rect* src, const SDL_Rect& dest) const;
+	void draw(const SDL_Rect* src, const SDL_Rect dest) const;
 
 	//! draws the image with the given color
 	//! @param src the section of the image to be used for drawing, or nullptr for the whole image
 	//! @param dest the location and size by which the image should be drawn
 	//! @param color a 32-bit color to mix with the image
-	void drawColor(const SDL_Rect* src, const SDL_Rect& dest, const Uint32& color) const;
+	void drawColor(const SDL_Rect* src, const SDL_Rect dest, const Uint32& color) const;
 
 	//! get an Image object from the engine
 	//! @param name The Image name

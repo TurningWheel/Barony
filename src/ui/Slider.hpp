@@ -67,8 +67,8 @@ public:
     void    setMaxValue(float _value) { maxValue = _value; }
     void    setMinValue(float _value) { minValue = _value; }
     void    setBorder(int _border) { border = _border; }
-    void    setHandleSize(const SDL_Rect& rect) { handleSize = rect; }
-    void    setRailSize(const SDL_Rect& rect) { railSize = rect; }
+    void    setHandleSize(const SDL_Rect rect) { handleSize = rect; }
+    void    setRailSize(const SDL_Rect rect) { railSize = rect; }
     void    setTooltip(const char* _tooltip) { tooltip = _tooltip; }
     void    setColor(const Uint32& _color) { color = _color; }
     void	setCallback(const Widget::Callback* fn) { callback = fn; }
@@ -78,7 +78,7 @@ private:
     float value = 0.f;                              //!< value
     float maxValue = 0.f;                           //!< maximum value
     float minValue = 0.f;                           //!< minimum value
-    int border = 3;                                 //!< border size in pixels
+    int border = 2;                                 //!< border size in pixels
     bool activated = false;                         //!< if true, the slider captures all input
     SDL_Rect handleSize;                            //!< size of the handle in pixels
     SDL_Rect railSize;                              //!< size of the rail in pixels
