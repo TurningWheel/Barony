@@ -5428,8 +5428,8 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = entity->floorDecorationModel;
-				entity->sizex = 0.01;
-				entity->sizey = 0.01;
+				entity->sizex = 0;
+				entity->sizey = 0;
 				entity->z = 7.5 - entity->floorDecorationHeightOffset * 0.25;
 				entity->x += entity->floorDecorationXOffset * 0.25;
 				entity->y += entity->floorDecorationYOffset * 0.25;
