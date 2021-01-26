@@ -1565,12 +1565,56 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	}
 
 	shootmode = false;
+
+	bool warpMouseToInventorySlot = false;
+	if ( inputs.hasController(playernum) 
+		&& gui_mode == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE
+		&& !FollowerMenu[playernum].followerToCommand )
+	{
+		warpMouseToInventorySlot = true;
+	}
+
 	gui_mode = whichGUIMode;
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 	inventory_mode = whichInventoryMode;
 
 	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
-	inputs.warpMouse(playernum, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2), flags);
+
+	bool warped = false;
+	if ( warpMouseToInventorySlot )
+	{
+		// hide cursor, select an inventory slot and disable hotbar focus.
+		if ( auto vmouse = inputs.getVirtualMouse(playernum) )
+		{
+			if ( vmouse->lastMovementFromController )
+			{
+				vmouse->draw_cursor = false;
+				hotbar.hotbarHasFocus = false;
+				warped = true;
+				if ( inventoryUI.selectedSlotInPaperDoll() )
+				{
+					int x = inventoryUI.getSelectedSlotX();
+					int y = inventoryUI.getSelectedSlotY();
+					if ( x == Inventory_t::DOLL_COLUMN_LEFT )
+					{
+						x = 0; // warp top left
+					}
+					else
+					{
+						x = inventoryUI.getSizeX() - 1; // warp top right
+					}
+					y = 0;
+					inventoryUI.selectSlot(x, y);
+				}
+				warpMouseToSelectedInventorySlot(playernum);
+			}
+		}
+	}
+
+	if ( !warped )
+	{
+		inputs.warpMouse(playernum, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2), flags);
+	}
 
 	//if ( inputs.bPlayerUsingKeyboardControl(playernum) )
 	//{
@@ -1817,7 +1861,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		if ( (!(*inputPressedForPlayer(gui_player, impulses[IN_USE])) && !(inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE)) && !inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU) && !menuToggleClick && !holdWheel)
 			|| ((*inputPressedForPlayer(gui_player, impulses[IN_USE]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU)) && menuToggleClick)
 			|| (!(*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU])) && holdWheel && !menuToggleClick)
-			|| (*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD] || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD)) && optionPrevious != -1)
+			|| ((*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD)) && optionPrevious != -1)
 			)
 		{
 			if ( menuToggleClick )
@@ -6131,12 +6175,12 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		switch ( skillLVL )
 		{
 			case 5:
-				bonusMetalScrap = (1 + (rand() % 2 == 0) ? 1 : 0) * metal; // 2x or 50% 3x extra scrap
-				bonusMagicScrap = (1 + (rand() % 2 == 0) ? 1 : 0) * magic; // 2x or 50% 3x extra scrap
+				bonusMetalScrap = (1 + ((rand() % 2 == 0) ? 1 : 0)) * metal; // 2x or 50% 3x extra scrap
+				bonusMagicScrap = (1 + ((rand() % 2 == 0) ? 1 : 0)) * magic; // 2x or 50% 3x extra scrap
 				break;
 			case 4:
-				bonusMetalScrap = (1 + (rand() % 4 == 0) ? 1 : 0) * metal; // 2x or 25% 3x extra scrap
-				bonusMagicScrap = (1 + (rand() % 4 == 0) ? 1 : 0) * magic; // 2x or 25% 3x extra scrap
+				bonusMetalScrap = (1 + ((rand() % 4 == 0) ? 1 : 0)) * metal; // 2x or 25% 3x extra scrap
+				bonusMagicScrap = (1 + ((rand() % 4 == 0) ? 1 : 0)) * magic; // 2x or 25% 3x extra scrap
 				break;
 			case 3:
 				bonusMetalScrap = ((rand() % 2 == 0) ? 1 : 0) * metal; // 50% 2x scrap value

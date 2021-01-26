@@ -72,7 +72,7 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 	int oldGUI = players[player]->gui_mode;
 
 	players[player]->gui_mode = GUI_MODE_INVENTORY;
-	openedChest[player] = false;
+	openedChest[player] = nullptr;
 
 	executeItemMenuOption0(player, item, isBadPotion, learnedSpell);
 
@@ -369,20 +369,6 @@ void updateAppraisalItemBox(const int player)
 	}
 }
 
-enum PaperDollRows : int
-{
-	ROW_1 = -5,
-	ROW_2,
-	ROW_3,
-	ROW_4,
-	ROW_5,
-};
-enum PaperDollColumns : int
-{
-	COLUMN_LEFT = 0,
-	COLUMN_RIGHT
-};
-
 Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::paperDollSlotFromCoordinates(int x, int y) const
 {
 	auto slot = PaperDollSlotType::SLOT_MAX;
@@ -397,46 +383,46 @@ Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::paperDollSlotFromCoo
 		const int selectedSlotX = player.inventoryUI.getSelectedSlotX();
 		if ( x > selectedSlotX ) // moving right
 		{
-			if ( x > COLUMN_RIGHT )
+			if ( x > Player::Inventory_t::DOLL_COLUMN_RIGHT )
 			{
-				x = COLUMN_LEFT;
+				x = Player::Inventory_t::DOLL_COLUMN_LEFT;
 			}
 		}
 		else if ( x < selectedSlotX ) // moving left
 		{
-			if ( x < COLUMN_LEFT )
+			if ( x < Player::Inventory_t::DOLL_COLUMN_LEFT )
 			{
-				x = COLUMN_RIGHT;
+				x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
 			}
 		}
-		x = std::max(std::min(x, static_cast<int>(COLUMN_RIGHT)), static_cast<int>(COLUMN_LEFT));
+		x = std::max(std::min(x, static_cast<int>(Player::Inventory_t::DOLL_COLUMN_RIGHT)), static_cast<int>(Player::Inventory_t::DOLL_COLUMN_LEFT));
 
-		if ( y < ROW_1 || y > ROW_5 )
+		if ( y < Player::Inventory_t::DOLL_ROW_1 || y > Player::Inventory_t::DOLL_ROW_5 )
 		{
 			// in inventory
 			return SLOT_MAX;
 		}
 
-		y = std::min(std::max(y, static_cast<int>(ROW_1)), std::min(y, static_cast<int>(ROW_5)));
-		if ( y == ROW_5 )
+		y = std::min(std::max(y, static_cast<int>(Player::Inventory_t::DOLL_ROW_1)), std::min(y, static_cast<int>(Player::Inventory_t::DOLL_ROW_5)));
+		if ( y == Player::Inventory_t::DOLL_ROW_5 )
 		{
-			slot = (x == COLUMN_LEFT ? SLOT_OFFHAND : SLOT_WEAPON);
+			slot = (x == Player::Inventory_t::DOLL_COLUMN_LEFT ? SLOT_OFFHAND : SLOT_WEAPON);
 		}
-		else if ( y == ROW_4 )
+		else if ( y == Player::Inventory_t::DOLL_ROW_4 )
 		{
-			slot = (x == COLUMN_LEFT ? SLOT_RING : SLOT_BOOTS);
+			slot = (x == Player::Inventory_t::DOLL_COLUMN_LEFT ? SLOT_RING : SLOT_BOOTS);
 		}
-		else if ( y == ROW_3 )
+		else if ( y == Player::Inventory_t::DOLL_ROW_3 )
 		{
-			slot = (x == COLUMN_LEFT ? SLOT_AMULET : SLOT_GLOVES);
+			slot = (x == Player::Inventory_t::DOLL_COLUMN_LEFT ? SLOT_AMULET : SLOT_GLOVES);
 		}
-		else if ( y == ROW_2 )
+		else if ( y == Player::Inventory_t::DOLL_ROW_2 )
 		{
-			slot = (x == COLUMN_LEFT ? SLOT_CLOAK : SLOT_BREASTPLATE);
+			slot = (x == Player::Inventory_t::DOLL_COLUMN_LEFT ? SLOT_CLOAK : SLOT_BREASTPLATE);
 		}
-		else if ( y == ROW_1 )
+		else if ( y == Player::Inventory_t::DOLL_ROW_1 )
 		{
-			slot = (x == COLUMN_LEFT ? SLOT_GLASSES : SLOT_HELM);
+			slot = (x == Player::Inventory_t::DOLL_COLUMN_LEFT ? SLOT_GLASSES : SLOT_HELM);
 		}
 		return slot;
 	}
@@ -480,11 +466,11 @@ void Player::PaperDoll_t::selectPaperDollCoordinatesFromSlotType(Player::PaperDo
 	{
 		return;
 	}
-	int x = COLUMN_LEFT;
-	int y = ROW_1;
+	int x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+	int y = Player::Inventory_t::DOLL_ROW_1;
 	if ( slot >= SLOT_HELM )
 	{
-		x = COLUMN_RIGHT;
+		x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
 		y += (static_cast<int>(slot - SLOT_HELM));
 		player.inventoryUI.selectSlot(x, y);
 	}
@@ -550,11 +536,11 @@ void select_inventory_slot(const int player, int x, int y)
 			// left column
 			x = 0;
 		}
-		if ( y < ROW_1 )
+		if ( y < Player::Inventory_t::DOLL_ROW_1 )
 		{
 			y = inventoryUI.getSizeY() - 1;
 		}
-		else if ( y >= ROW_1 && y <= ROW_5 )
+		else if ( y >= Player::Inventory_t::DOLL_ROW_1 && y <= Player::Inventory_t::DOLL_ROW_5 )
 		{
 			// should not happen, failsafe.
 			y = 0;

@@ -661,7 +661,12 @@ public:
 	public:
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
-		Inventory_t(Player& p) : player(p), appraisal(p) {};
+		Inventory_t(Player& p) : 
+			player(p), 
+			appraisal(p), 
+			DEFAULT_INVENTORY_SIZEX(12),
+			DEFAULT_INVENTORY_SIZEY(3)
+		{};
 		~Inventory_t() {};
 		const int getTotalSize() const { return sizex * sizey; }
 		const int getSizeX() const { return sizex; }
@@ -698,15 +703,7 @@ public:
 			return x * y;
 		}
 		const bool bItemInventoryHasFreeSlot() const;
-		const int getPlayerItemInventoryX() const
-		{
-			int x = DEFAULT_INVENTORY_SIZEX;
-			if ( !stats[player.playernum] || !player.isLocalPlayer() )
-			{
-				return x;
-			}
-			return x;
-		}
+		const int getPlayerItemInventoryX() const;
 		const int getPlayerItemInventoryY() const;
 		const int getPlayerBackpackBonusSizeY() const
 		{
@@ -716,6 +713,21 @@ public:
 			}
 			return 1;
 		}
+
+		enum PaperDollRows : int
+		{
+			DOLL_ROW_1 = -5,
+			DOLL_ROW_2,
+			DOLL_ROW_3,
+			DOLL_ROW_4,
+			DOLL_ROW_5,
+		};
+		enum PaperDollColumns : int
+		{
+			DOLL_COLUMN_LEFT = 0,
+			DOLL_COLUMN_RIGHT
+		};
+
 		class Appraisal_t
 		{
 			Player& player;
@@ -914,7 +926,7 @@ public:
 		PlayerMovement_t(Player& p) : player(p)
 		{};
 		~PlayerMovement_t() {};
-
+		
 		int monsterEmoteGimpTimer = 0;
 		int selectedEntityGimpTimer = 0;
 		bool insectoidLevitating = false;

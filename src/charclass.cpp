@@ -2481,7 +2481,7 @@ void initClass(const int player)
 			Item* item = static_cast<Item*>(node->element);
 			if ( item )
 			{
-				if ( players[player]->paperDoll.enabled && itemIsEquipped(item, player) && item->type != SPELL_CAT )
+				if ( players[player]->paperDoll.enabled && itemIsEquipped(item, player) && item->type != SPELL_ITEM )
 				{
 					continue;
 				}

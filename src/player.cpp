@@ -311,6 +311,11 @@ void GameController::handleAnalog(int player)
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
 
+			if ( !mouse->draw_cursor )
+			{
+				mouse->draw_cursor = true;
+			}
+
 			if ( inputs.bPlayerUsingKeyboardControl(player) )
 			{
 				//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
@@ -805,6 +810,7 @@ bool GameController::handleInventoryMovement(const int player)
 			warpMouseToSelectedInventorySlot(player);
 		}
 		inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+		inputs.getVirtualMouse(player)->draw_cursor = false;
 	}
 
 	if ( hotbar_t.hotbarHasFocus && !hotbarGamepadControlEnabled(player) )
@@ -932,7 +938,7 @@ bool GameController::handleInventoryMovement(const int player)
 	if (dpad_moved)
 	{
 		dpad_moved = false;
-		//inputs.getVirtualMouse(player)->draw_cursor = false;
+		inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -2282,23 +2288,6 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 			faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6;
 			faceButtonPositions[num].y = hotbarBox.y - getSlotSize() / 2;
 
-			/*if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE && num == current_hotbar)
-			{
-			faceButtonPositions[num].y -= getSlotSize() / 4;
-			}*/
-			if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_LEFT )
-			{
-				//faceButtonPositions[num].y -= getSlotSize() / 4;
-			}
-			else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_MIDDLE )
-			{
-				//faceButtonPositions[num].y -= getSlotSize() / 4;
-			}
-			else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_RIGHT )
-			{
-				//faceButtonPositions[num].y -= getSlotSize() / 4;
-			}
-
 			if ( getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_LEFT )
 			{
 				faceButtonPositions[num].x += getSlotSize() / 1;
@@ -2324,20 +2313,14 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 					}
 					break;
 				case 1:
-					{
-						faceButtonPositions[num].x += 1 * getSlotSize();
-					}
-					break;
-				case 2:
-					faceButtonPositions[num].x += 2 * getSlotSize();
+					faceButtonPositions[num].x += 1 * getSlotSize();
 					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT )
 					{
 						faceButtonPositions[num].y += getSlotSize() / 8;
 					}
-					else
-					{
-
-					}
+					break;
+				case 2:
+					faceButtonPositions[num].x += 2 * getSlotSize();
 					break;
 				case 3:
 					faceButtonPositions[num].x += 3 * getSlotSize() + getSlotSize() / 3;
@@ -2361,14 +2344,12 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 					break;
 				case 6:
 					faceButtonPositions[num].x += 6 * getSlotSize() + 2 * getSlotSize() / 3;
+					break;
+				case 7:
+					faceButtonPositions[num].x += 7 * getSlotSize() + 2 * getSlotSize() / 3;
 					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT )
 					{
 						faceButtonPositions[num].y += getSlotSize() / 8;
-					}
-					break;
-				case 7:
-					{
-						faceButtonPositions[num].x += 7 * getSlotSize() + 2 * getSlotSize() / 3;
 					}
 					break;
 				case 8:
@@ -2589,12 +2570,26 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 			return;
 	}
 
+	// temporary
+	/*if ( faceMenuAlternateLayout )
+	{
+		if ( slot == 2 )
+		{
+			x -= slotPos.w;
+		}
+		else if ( slot == 6 )
+		{
+			x += slotPos.w;
+		}
+	}*/
+
 	if ( draw )
 	{
 		height *= glyphsrc.h;
 		width *= glyphsrc.w;
 		x -= width / 2;
 		y -= height;
+
 		SDL_Rect glyphpos{ x, y, width, height };
 		drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
 	}
@@ -2750,6 +2745,16 @@ void Player::HUD_t::drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const
 	y -= 8;
 	SDL_Rect glyphpos{ x, y, width, height };
 	drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
+}
+
+const int Player::Inventory_t::getPlayerItemInventoryX() const
+{
+	int x = DEFAULT_INVENTORY_SIZEX;
+	if ( !stats[player.playernum] || !player.isLocalPlayer() )
+	{
+		return x;
+	}
+	return x;
 }
 
 const int Player::Inventory_t::getPlayerItemInventoryY() const
