@@ -2477,10 +2477,10 @@ Player::Hotbar_t::FaceMenuGroup Player::Hotbar_t::getFaceMenuGroupForSlot(int ho
 
 void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 {
-	Uint32 height = 2.25 * uiscale_hotbar;
-	Uint32 width = 2.25 * uiscale_hotbar;
-	Uint32 x = slotPos.x + slotPos.w / 2;
-	Uint32 y = slotPos.y;
+	int height = 2.25 * uiscale_hotbar;
+	int width = 2.25 * uiscale_hotbar;
+	int x = slotPos.x + slotPos.w / 2;
+	int y = slotPos.y;
 	SDL_Rect glyphsrc;
 	bool draw = true;
 
@@ -2712,10 +2712,10 @@ void Player::HUD_t::drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const
 	}
 
 	real_t scale = 2.25;
-	Uint32 height = scale;
-	Uint32 width = scale;
-	Uint32 x = pos.x + pos.w / 2;
-	Uint32 y = pos.y + pos.h;
+	int height = scale;
+	int width = scale;
+	int x = pos.x + pos.w / 2;
+	int y = pos.y + pos.h;
 	SDL_Rect glyphsrc;
 
 	switch ( prompt )
