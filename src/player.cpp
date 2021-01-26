@@ -793,6 +793,20 @@ bool GameController::handleInventoryMovement(const int player)
 
 	auto& hotbar_t = players[player]->hotbar;
 
+	if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
+	{
+		hotbar_t.hotbarHasFocus = !hotbar_t.hotbarHasFocus;
+		if ( hotbar_t.hotbarHasFocus )
+		{
+			warpMouseToSelectedHotbarSlot(player);
+		}
+		else
+		{
+			warpMouseToSelectedInventorySlot(player);
+		}
+		inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+	}
+
 	if ( hotbar_t.hotbarHasFocus && !hotbarGamepadControlEnabled(player) )
 	{
 		hotbar_t.hotbarHasFocus = false;
@@ -2047,7 +2061,7 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 
 void Player::WorldUI_t::handleTooltips()
 {
-	for ( int player = 0; player < MAXPLAYERS && !gamePaused && !hide_playertags; ++player )
+	for ( int player = 0; player < MAXPLAYERS && !gamePaused; ++player )
 	{
 		if ( !players[player]->isLocalPlayerAlive() )
 		{
@@ -2777,6 +2791,76 @@ const int Player::Inventory_t::getStartY() const
 	}
 }
 
+const int Player::Inventory_t::getSelectedSlotPositionX(Item* snapToItem) const
+{
+	int x = getSelectedSlotX();
+	int y = getSelectedSlotY();
+	if ( snapToItem )
+	{
+		x = snapToItem->x;
+		y = snapToItem->y;
+	}
+	if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
+	{
+		auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+		if ( snapToItem )
+		{
+			slot = player.paperDoll.getSlotForItem(*snapToItem);
+		}
+		else
+		{
+			slot = player.paperDoll.paperDollSlotFromCoordinates(x, y);
+		}
+		if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
+		{
+			return player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.x
+				+ player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.w / 2;
+		}
+		return player.paperDoll.dollSlots[slot].pos.x + player.paperDoll.dollSlots[slot].pos.w / 2;
+	}
+	else
+	{
+		return getStartX()
+			+ (x * getSlotSize())
+			+ (getSlotSize() / 2);
+	}
+}
+
+const int Player::Inventory_t::getSelectedSlotPositionY(Item* snapToItem) const
+{
+	int x = getSelectedSlotX();
+	int y = getSelectedSlotY();
+	if ( snapToItem )
+	{
+		x = snapToItem->x;
+		y = snapToItem->y;
+	}
+	if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
+	{
+		auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+		if ( snapToItem )
+		{
+			slot = player.paperDoll.getSlotForItem(*snapToItem);
+		}
+		else
+		{
+			slot = player.paperDoll.paperDollSlotFromCoordinates(x, y);
+		}
+		if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
+		{
+			return player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.y
+				+ player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.h / 2;
+		}
+		return player.paperDoll.dollSlots[slot].pos.y + player.paperDoll.dollSlots[slot].pos.h / 2;
+	}
+	else
+	{
+		return getStartY()
+			+ (y * getSlotSize())
+			+ (getSlotSize() / 2);
+	}
+}
+
 const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const
 {
 	int numSlots = freeVisibleInventorySlots();
@@ -2853,7 +2937,12 @@ void Player::PaperDoll_t::drawSlots()
 			{
 				slot.bMouseInSlot = true;
 				// yellow highlight
-				drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 0), 127);
+
+				selectPaperDollCoordinatesFromSlotType(slot.slotType);
+				if ( !player.hotbar.hotbarHasFocus )
+				{
+					drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 0), 127);
+				}
 			}
 
 			SDL_Rect slotBackground = pos;

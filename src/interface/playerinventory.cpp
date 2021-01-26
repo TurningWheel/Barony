@@ -92,13 +92,8 @@ void warpMouseToSelectedInventorySlot(const int player)
 {
 	int xres = players[player]->camera_width();
 	int yres = players[player]->camera_height();
-	int x = players[player]->inventoryUI.getStartX() 
-		+ (players[player]->inventoryUI.getSelectedSlotX() * players[player]->inventoryUI.getSlotSize())
-		+ (players[player]->inventoryUI.getSlotSize() / 2);
-
-	int y = players[player]->inventoryUI.getStartY() 
-		+ (players[player]->inventoryUI.getSelectedSlotY() * players[player]->inventoryUI.getSlotSize())
-		+ (players[player]->inventoryUI.getSlotSize() / 2);
+	int x = players[player]->inventoryUI.getSelectedSlotPositionX(nullptr);
+	int y = players[player]->inventoryUI.getSelectedSlotPositionY(nullptr);
 
 	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 	inputs.warpMouse(player, x, y, flags);
@@ -374,15 +369,196 @@ void updateAppraisalItemBox(const int player)
 	}
 }
 
+enum PaperDollRows : int
+{
+	ROW_1 = -5,
+	ROW_2,
+	ROW_3,
+	ROW_4,
+	ROW_5,
+};
+enum PaperDollColumns : int
+{
+	COLUMN_LEFT = 0,
+	COLUMN_RIGHT
+};
+
+Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::paperDollSlotFromCoordinates(int x, int y) const
+{
+	auto slot = PaperDollSlotType::SLOT_MAX;
+	if ( !enabled )
+	{
+		// in inventory
+		return SLOT_MAX;
+	}
+
+	if ( player.inventoryUI.selectedSlotInPaperDoll() )
+	{
+		const int selectedSlotX = player.inventoryUI.getSelectedSlotX();
+		if ( x > selectedSlotX ) // moving right
+		{
+			if ( x > COLUMN_RIGHT )
+			{
+				x = COLUMN_LEFT;
+			}
+		}
+		else if ( x < selectedSlotX ) // moving left
+		{
+			if ( x < COLUMN_LEFT )
+			{
+				x = COLUMN_RIGHT;
+			}
+		}
+		x = std::max(std::min(x, static_cast<int>(COLUMN_RIGHT)), static_cast<int>(COLUMN_LEFT));
+
+		if ( y < ROW_1 || y > ROW_5 )
+		{
+			// in inventory
+			return SLOT_MAX;
+		}
+
+		y = std::min(std::max(y, static_cast<int>(ROW_1)), std::min(y, static_cast<int>(ROW_5)));
+		if ( y == ROW_5 )
+		{
+			slot = (x == COLUMN_LEFT ? SLOT_OFFHAND : SLOT_WEAPON);
+		}
+		else if ( y == ROW_4 )
+		{
+			slot = (x == COLUMN_LEFT ? SLOT_RING : SLOT_BOOTS);
+		}
+		else if ( y == ROW_3 )
+		{
+			slot = (x == COLUMN_LEFT ? SLOT_AMULET : SLOT_GLOVES);
+		}
+		else if ( y == ROW_2 )
+		{
+			slot = (x == COLUMN_LEFT ? SLOT_CLOAK : SLOT_BREASTPLATE);
+		}
+		else if ( y == ROW_1 )
+		{
+			slot = (x == COLUMN_LEFT ? SLOT_GLASSES : SLOT_HELM);
+		}
+		return slot;
+	}
+
+	if ( y < 0 )
+	{
+		if ( x <= (player.inventoryUI.getSizeX() / 2) )
+		{
+			// left half.
+			slot = SLOT_OFFHAND;
+		}
+		else
+		{
+			// right half.
+			slot = SLOT_WEAPON;
+		}
+		return slot;
+	}
+	else if ( y >= player.inventoryUI.getSizeY() )
+	{
+		if ( x <= (player.inventoryUI.getSizeX() / 2) )
+		{
+			// left half.
+			slot = SLOT_GLASSES;
+		}
+		else
+		{
+			// right half.
+			slot = SLOT_HELM;
+		}
+		return slot;
+	}
+
+	// in inventory
+	return SLOT_MAX;
+}
+
+void Player::PaperDoll_t::selectPaperDollCoordinatesFromSlotType(Player::PaperDoll_t::PaperDollSlotType slot) const
+{
+	if ( slot == SLOT_MAX )
+	{
+		return;
+	}
+	int x = COLUMN_LEFT;
+	int y = ROW_1;
+	if ( slot >= SLOT_HELM )
+	{
+		x = COLUMN_RIGHT;
+		y += (static_cast<int>(slot - SLOT_HELM));
+		player.inventoryUI.selectSlot(x, y);
+	}
+	else if ( slot >= SLOT_GLASSES )
+	{
+		y += (static_cast<int>(slot));
+		player.inventoryUI.selectSlot(x, y);
+	}
+}
+
+void Player::PaperDoll_t::warpMouseToPaperDollSlot(Player::PaperDoll_t::PaperDollSlotType slot)
+{
+	if ( player.shootmode == true )
+	{
+		return;
+	}
+	if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
+	{
+		return;
+	}
+
+	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
+	inputs.warpMouse(player.playernum, dollSlots[slot].pos.x, dollSlots[slot].pos.y, flags);
+}
+
 void select_inventory_slot(const int player, int x, int y)
 {
+	auto& inventoryUI = players[player]->inventoryUI;
+	auto paperDollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+	if ( players[player]->paperDoll.enabled )
+	{
+		paperDollSlot = players[player]->paperDoll.paperDollSlotFromCoordinates(x, y);
+	}
+	bool doPaperDollMovement = (paperDollSlot != Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX);
+
+	if ( doPaperDollMovement )
+	{
+		players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(paperDollSlot);
+		players[player]->paperDoll.warpMouseToPaperDollSlot(paperDollSlot);
+		return;
+	}
+
 	if ( x < 0 )   //Wrap around left boundary.
 	{
-		x = players[player]->inventoryUI.getSizeX() - 1;
+		x = inventoryUI.getSizeX() - 1;
 	}
-	if ( x >= players[player]->inventoryUI.getSizeX() )   //Wrap around right boundary.
+
+	if ( x >= inventoryUI.getSizeX() )   //Wrap around right boundary.
 	{
 		x = 0;
+	}
+
+	if ( inventoryUI.selectedSlotInPaperDoll() )
+	{
+		auto oldSlot = players[player]->paperDoll.paperDollSlotFromCoordinates(inventoryUI.getSelectedSlotX(), inventoryUI.getSelectedSlotY());
+		if ( oldSlot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_HELM )
+		{
+			// right column
+			x = inventoryUI.getSizeX() - 1;
+		}
+		else
+		{
+			// left column
+			x = 0;
+		}
+		if ( y < ROW_1 )
+		{
+			y = inventoryUI.getSizeY() - 1;
+		}
+		else if ( y >= ROW_1 && y <= ROW_5 )
+		{
+			// should not happen, failsafe.
+			y = 0;
+		}
 	}
 
 	bool warpInv = true;
@@ -390,22 +566,23 @@ void select_inventory_slot(const int player, int x, int y)
 
 	if ( y < 0 )   //Wrap around top to bottom.
 	{
-		y = players[player]->inventoryUI.getSizeY() - 1;
+		y = inventoryUI.getSizeY() - 1;
+
 		if ( hotbarGamepadControlEnabled(player) )
 		{
 			hotbar_t.hotbarHasFocus = true; //Warp to hotbar.
-			float percentage = static_cast<float>(x + 1) / static_cast<float>(players[player]->inventoryUI.getSizeX());
+			float percentage = static_cast<float>(x + 1) / static_cast<float>(inventoryUI.getSizeX());
 			hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 	}
-	if ( y >= players[player]->inventoryUI.getSizeY() )   //Hit bottom. Wrap around or go to shop/chest?
+	if ( y >= inventoryUI.getSizeY() )   //Hit bottom. Wrap around or go to shop/chest?
 	{
 		if ( openedChest[player] )
 		{
 			//Do not want to wrap around if opened chest or shop.
 			warpInv = false;
-			y = players[player]->inventoryUI.getSizeY() - 1; //Keeps the selected slot within the inventory, to warp back to later.
+			y = inventoryUI.getSizeY() - 1; //Keeps the selected slot within the inventory, to warp back to later.
 
 			if ( numItemsInChest(player) > 0 )   //If chest even has an item...
 			{
@@ -421,7 +598,7 @@ void select_inventory_slot(const int player, int x, int y)
 		else if ( players[player]->gui_mode == GUI_MODE_SHOP )
 		{
 			warpInv = false;
-			y = players[player]->inventoryUI.getSizeY() - 1; //Keeps the selected slot within the inventory, to warp back to later.
+			y = inventoryUI.getSizeY() - 1; //Keeps the selected slot within the inventory, to warp back to later.
 
 			//Warp into shop inventory if shopkeep has any items.
 			if ( shopinvitems[player][0] )
@@ -433,7 +610,7 @@ void select_inventory_slot(const int player, int x, int y)
 		else if ( GenericGUI[player].isGUIOpen() )
 		{
 			warpInv = false;
-			y = players[player]->inventoryUI.getSizeY() - 1;
+			y = inventoryUI.getSizeY() - 1;
 
 			//Warp into GUI "inventory"...if there is anything there.
 			if ( GenericGUI[player].itemsDisplayed[0] )
@@ -450,14 +627,14 @@ void select_inventory_slot(const int player, int x, int y)
 			if ( hotbarGamepadControlEnabled(player) )
 			{
 				hotbar_t.hotbarHasFocus = true;
-				float percentage = static_cast<float>(x + 1) / static_cast<float>(players[player]->inventoryUI.getSizeX());
+				float percentage = static_cast<float>(x + 1) / static_cast<float>(inventoryUI.getSizeX());
 				hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
 				warpMouseToSelectedHotbarSlot(player);
 			}
 		}
 	}
 
-	players[player]->inventoryUI.selectSlot(x, y);
+	inventoryUI.selectSlot(x, y);
 }
 
 /*-------------------------------------------------------------------------------
@@ -509,13 +686,8 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 		else
 		{
 			//Warp cursor back into inventory, for gamepad convenience.
-			int newx = players[player]->inventoryUI.getStartX() 
-				+ (selectedItem->x * players[player]->inventoryUI.getSlotSize())
-				+ (players[player]->inventoryUI.getSlotSize() / 2);
-
-			int newy = players[player]->inventoryUI.getStartY() 
-				+ (selectedItem->y * players[player]->inventoryUI.getSlotSize())
-				+ (players[player]->inventoryUI.getSlotSize() / 2);
+			int newx = players[player]->inventoryUI.getSelectedSlotPositionX(selectedItem);
+			int newy = players[player]->inventoryUI.getSelectedSlotPositionY(selectedItem);
 
 			//SDL_WarpMouseInWindow(screen, newx, newy);
 			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
@@ -1789,14 +1961,33 @@ void updatePlayerInventory(const int player)
 	itemContextMenu(player);
 }
 
+void Player::PaperDoll_t::warpMouseToMostRecentReturnedInventoryItem()
+{
+	if ( returningItemsToInventory.empty() || !enabled )
+	{
+		return;
+	}
+	Uint32 uid = returningItemsToInventory[returningItemsToInventory.size() - 1]; // get last item and select it's new position
+	Item* item = uidToItem(uid);
+	if ( item && !isItemOnDoll(*item) )
+	{
+		if ( item->x >= 0 && item->x < player.inventoryUI.getSizeX()
+			&& item->y >= 0 && item->y < player.inventoryUI.getSizeY() )
+		{
+			player.inventoryUI.selectSlot(item->x, item->y);
+			warpMouseToSelectedInventorySlot(player.playernum);
+		}
+	}
+	returningItemsToInventory.clear();
+}
+
 void Player::PaperDoll_t::updateSlots()
 {
+	returningItemsToInventory.clear();
 	if ( !stats[player.playernum] || !player.isLocalPlayer() )
 	{
 		return;
 	}
-
-	bool returningItemsToInventory = false;
 
 	for ( auto& slot : dollSlots )
 	{
@@ -1883,12 +2074,13 @@ void Player::PaperDoll_t::updateSlots()
 				// item is returning to inventory
 				prevItem->x = Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE;
 				prevItem->y = Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE;
-				returningItemsToInventory = true;
+				returningItemsToInventory.push_back(prevSlot);
+
 			}
 		}
 	}
 
-	if ( returningItemsToInventory )
+	if ( !returningItemsToInventory.empty() )
 	{
 		autosortInventory(player.playernum, true);
 	}
@@ -2725,8 +2917,8 @@ void itemContextMenu(const int player)
 		itemMenuOpen = false;
 		//Warp cursor back into inventory, for gamepad convenience.
 
-		int newx = players[player]->inventoryUI.getStartX() + (uidToItem(itemMenuItem)->x * inventorySlotSize) + (inventorySlotSize / 2);
-		int newy = players[player]->inventoryUI.getStartY() + (uidToItem(itemMenuItem)->y * inventorySlotSize) + (inventorySlotSize / 2);
+		int newx = players[player]->inventoryUI.getSelectedSlotPositionX(uidToItem(itemMenuItem));
+		int newy = players[player]->inventoryUI.getSelectedSlotPositionY(uidToItem(itemMenuItem));
 		//SDL_WarpMouseInWindow(screen, newx, newy);
 		Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 		inputs.warpMouse(player, newx, newy, flags);
@@ -2819,12 +3011,14 @@ void itemContextMenu(const int player)
 		inputs.controllerClearInput(player, INJOY_MENU_USE);
 		activateSelection = true;
 		//Warp cursor back into inventory, for gamepad convenience.
-		int newx = players[player]->inventoryUI.getStartX() + (players[player]->inventoryUI.getSelectedSlotX() * inventorySlotSize) + (inventorySlotSize / 2);
-		int newy = players[player]->inventoryUI.getStartY() + (players[player]->inventoryUI.getSelectedSlotY() * inventorySlotSize) + (inventorySlotSize / 2);
+		int newx = players[player]->inventoryUI.getSelectedSlotPositionX(nullptr);
+		int newy = players[player]->inventoryUI.getSelectedSlotPositionY(nullptr);
 		//SDL_WarpMouseInWindow(screen, newx, newy);
 		Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 		inputs.warpMouse(player, newx, newy, flags);
 	}
+
+	bool itemWasOnPaperDoll = players[player]->paperDoll.isItemOnDoll(*current_item);
 
 	if (activateSelection)
 	{
@@ -2844,6 +3038,11 @@ void itemContextMenu(const int player)
 				break;
 			default:
 				break;
+		}
+
+		if ( itemWasOnPaperDoll )
+		{
+			players[player]->paperDoll.warpMouseToMostRecentReturnedInventoryItem();
 		}
 
 		//Close the menu.

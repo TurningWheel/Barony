@@ -671,6 +671,9 @@ public:
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
 		const int getSelectedSlotX() const { return selectedSlotX; }
 		const int getSelectedSlotY() const { return selectedSlotY; }
+		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
+		const int getSelectedSlotPositionX(Item* snapToItem) const;
+		const int getSelectedSlotPositionY(Item* snapToItem) const;
 		void resetInventory()
 		{
 			if ( bNewInventoryLayout )
@@ -1041,6 +1044,7 @@ public:
 		const int getSlotSize() const;
 		void initSlots()
 		{
+			returningItemsToInventory.clear();
 			for ( int i = 0; i < kNumPaperDollSlots; ++i )
 			{
 				dollSlots[i].item = 0;
@@ -1050,6 +1054,7 @@ public:
 		}
 		void clear()
 		{
+			returningItemsToInventory.clear();
 			for ( int i = 0; i < kNumPaperDollSlots; ++i )
 			{
 				dollSlots[i].item = 0;
@@ -1062,6 +1067,11 @@ public:
 		void updateSlots();
 		PaperDollSlotType getSlotForItem(const Item& item) const;
 		bool isItemOnDoll(const Item& item) const { return getSlotForItem(item) != SLOT_MAX; }
+		PaperDollSlotType paperDollSlotFromCoordinates(int x, int y) const;
+		void selectPaperDollCoordinatesFromSlotType(PaperDollSlotType slot) const;
+		void warpMouseToPaperDollSlot(PaperDollSlotType slot);
+		std::vector<Uint32> returningItemsToInventory;
+		void warpMouseToMostRecentReturnedInventoryItem();
 	} paperDoll;
 
 	class Hotbar_t {
