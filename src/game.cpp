@@ -3041,7 +3041,7 @@ void handleEvents(void)
 				{
 					if ( inputs.bPlayerUsingKeyboardControl(i) )
 					{
-						if ( !inputs.getVirtualMouse(i)->draw_cursor )
+						if ( !inputs.getVirtualMouse(i)->draw_cursor && !inputs.getVirtualMouse(i)->lastMovementFromController )
 						{
 							inputs.getVirtualMouse(i)->draw_cursor = true;
 						}
@@ -4016,6 +4016,7 @@ void ingameHud()
 				}
 			}
 		}
+
 
 		bool debugMouse = false;
 		if ( debugMouse )

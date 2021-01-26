@@ -1870,29 +1870,82 @@ void drawStatus(int player)
 								break;
 						}
 
+						std::array<int, 3> slotOrder = { 0, 1, 2 };
 						int centerSlot = 1;
+						if ( hotbar_t.faceMenuAlternateLayout )
+						{
+							slotOrder = { 0, 2, 1 };
+						}
 						if ( button == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B )
 						{
 							centerSlot = 7;
+							if ( hotbar_t.faceMenuAlternateLayout )
+							{
+								slotOrder = { 7, 6, 8 };
+							}
+							else
+							{
+								slotOrder = { 6, 7, 8 };
+							}
 						}
 						else if ( button == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y )
 						{
 							centerSlot = 4;
+							slotOrder = { 3, 4, 5 };
 						}
 
-						if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+						if ( hotbar_t.faceMenuAlternateLayout )
 						{
-							hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
-							inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+							if ( false )
+							{
+								// temp test
+								if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+								{
+									hotbar_t.selectHotbarSlot(slotOrder[0]);
+								}
+								else if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
+								{
+									hotbar_t.selectHotbarSlot(slotOrder[2]);
+								}
+								else
+								{
+									hotbar_t.selectHotbarSlot(slotOrder[1]);
+								}
+							}
+							else
+							{
+								if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+								{
+									hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
+									inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+								}
+								else if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
+								{
+									hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
+									inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+								}
+								else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
+								{
+									hotbar_t.selectHotbarSlot(slotOrder[1]);
+								}
+							}
 						}
-						else if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
+						else
 						{
-							hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
-							inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-						}
-						else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
-						{
-							hotbar_t.selectHotbarSlot(centerSlot);
+							if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+							{
+								hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
+								inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+							}
+							else if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
+							{
+								hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
+								inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+							}
+							else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
+							{
+								hotbar_t.selectHotbarSlot(slotOrder[1]);
+							}
 						}
 						break;
 					}

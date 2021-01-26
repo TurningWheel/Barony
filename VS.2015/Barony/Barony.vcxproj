@@ -1013,6 +1013,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\ui\Field.cpp" />
     <ClCompile Include="..\..\src\ui\Font.cpp" />
     <ClCompile Include="..\..\src\ui\Frame.cpp" />
+    <ClCompile Include="..\..\src\ui\GameUI.cpp" />
     <ClCompile Include="..\..\src\ui\Image.cpp" />
     <ClCompile Include="..\..\src\ui\Slider.cpp" />
     <ClCompile Include="..\..\src\ui\Text.cpp" />
@@ -1053,6 +1054,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\ui\Field.hpp" />
     <ClInclude Include="..\..\src\ui\Font.hpp" />
     <ClInclude Include="..\..\src\ui\Frame.hpp" />
+    <ClInclude Include="..\..\src\ui\GameUI.hpp" />
     <ClInclude Include="..\..\src\ui\Image.hpp" />
     <ClInclude Include="..\..\src\ui\Slider.hpp" />
     <ClInclude Include="..\..\src\ui\Text.hpp" />

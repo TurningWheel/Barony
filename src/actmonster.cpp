@@ -10395,7 +10395,6 @@ bool Entity::monsterAllyEquipmentInClass(const Item& item) const
 				case RING:
 				case AMULET:
 				case MAGICSTAFF:
-				case CLOAK:
 					return true;
 					break;
 				case TOOL:

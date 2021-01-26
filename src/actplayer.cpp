@@ -2104,6 +2104,13 @@ void actPlayer(Entity* my)
 			}
 		}
 	}
+
+	// debug stuff
+	if ( !command && keystatus[SDL_SCANCODE_O] )
+	{
+		consoleCommand("/facebaralternate");
+		keystatus[SDL_SCANCODE_O] = 0;
+	}
 	if ( inputs.hasController(PLAYER_NUM) )
 	{
 		if ( keystatus[SDL_SCANCODE_KP_1] )
