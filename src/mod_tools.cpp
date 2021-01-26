@@ -426,7 +426,7 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::drawDialogue()
 	scaled.y = 0;
 	scaled.w = title_bmp->w * 0.75;
 	scaled.h = title_bmp->h * 0.75;
-	drawImageScaled(title_bmp, &scaled, &pos);
+	drawImageScaled(title_bmp, nullptr, &pos);
 	
 	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3936]);
 	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3967]);

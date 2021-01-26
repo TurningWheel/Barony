@@ -18,7 +18,8 @@ real_t entityDist(Entity* my, Entity* your);
 enum EntityClickType
 {
 	ENTITY_CLICK_USE,
-	ENTITY_CLICK_USE_NO_TOOLTIPS,
+	ENTITY_CLICK_USE_TOOLTIPS_ONLY,
+	ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY,
 	ENTITY_CLICK_FOLLOWER_INTERACT
 };
 Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, EntityClickType clicktype);

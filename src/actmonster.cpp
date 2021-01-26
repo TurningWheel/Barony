@@ -205,7 +205,6 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 		node->element = myStats;
 		node->size = sizeof(myStats);
 		node->deconstructor = &statDeconstructor;
-		//node->deconstructor = myStats->~Stat;
 		if ( entity->parent )
 		{
 			myStats->leader_uid = entity->parent;
@@ -1232,6 +1231,8 @@ void actMonster(Entity* my)
 		{
 			MONSTER_INIT = 1;
 
+			my->createWorldUITooltip();
+
 			// make two empty nodes
 			node = list_AddNodeLast(&my->children);
 			node->element = nullptr;
@@ -1708,6 +1709,8 @@ void actMonster(Entity* my)
 		{
 			my->monsterTarget = 0;
 		}
+
+		my->createWorldUITooltip();
 
 		/*// create an empty first node for traversal purposes //GOING TO ASSUME THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node = list_AddNodeFirst(my->children);
@@ -3120,7 +3123,7 @@ void actMonster(Entity* my)
 							{
 								case SHOPKEEPER:
 								case HUMAN:
-									messagePlayer(monsterclicked, language[520 + rand() % 4], namesays);
+									messagePlayer(monsterclicked, language[520 + rand() % 3], namesays);
 									break;
 								default:
 									messagePlayer(monsterclicked, language[524], namesays);

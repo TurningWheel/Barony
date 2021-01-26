@@ -9706,7 +9706,7 @@ void handleMainMenu(bool mode)
 
 											node_t* newNode = list_AddNodeLast(&monster->children);
 											newNode->element = tempStats->copyStats();
-											//newNode->deconstructor = &tempStats->~Stat;
+											newNode->deconstructor = &statDeconstructor;
 											newNode->size = sizeof(tempStats);
 
 											Stat* monsterStats = (Stat*)newNode->element;

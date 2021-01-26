@@ -163,7 +163,6 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	{
 		players[animation_manager->player]->hud.magicRightHand->flags[INVISIBLE] = true;
 	}
-	animation_manager->player = -1;
 }
 
 void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager)

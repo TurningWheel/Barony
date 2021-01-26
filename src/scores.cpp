@@ -2622,7 +2622,7 @@ list_t* loadGameFollowers(int saveIndex)
 
 			node_t* node = list_AddNodeLast(followerList);
 			node->element = followerStats;
-			//node->deconstructor = &followerStats->~Stat;
+			node->deconstructor = &statDeconstructor;
 			node->size = sizeof(followerStats);
 
 			// read follower attributes

@@ -1075,16 +1075,10 @@ public:
 		{
 			return;
 		}
-		char buf[65536];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
-		buf[count] = '\0';
-		rapidjson::StringStream os(buf);
-		rapidjson::PrettyWriter<rapidjson::StringStream> writer(os);
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
 		d.Accept(writer);
-		for (int c = 0; buf[c] != '\0'; ++c) {
-			fp->write(&(buf[c]), sizeof(char), 1);
-		}
-
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
 		FileIO::close(fp);
 	}
 
@@ -1809,11 +1803,10 @@ public:
 		{
 			return;
 		}
-		char buf[65536];
-		rapidjson::StringStream os(buf);
-		rapidjson::PrettyWriter<rapidjson::StringStream> writer(os);
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
 		d.Accept(writer);
-		fp->write(buf, sizeof(char), os.Tell());
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
 
 		FileIO::close(fp);
 	}
@@ -2020,11 +2013,10 @@ public:
 		{
 			return;
 		}
-		char buf[65536];
-		rapidjson::StringStream os(buf);
-		rapidjson::PrettyWriter<rapidjson::StringStream> writer(os);
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
 		d.Accept(writer);
-		fp->write(buf, sizeof(char), os.Tell());
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
 
 		FileIO::close(fp);
 	}
@@ -2576,11 +2568,10 @@ public:
 			{
 				return;
 			}
-			char buf[65536];
-			rapidjson::StringStream os(buf);
-			rapidjson::PrettyWriter<rapidjson::StringStream> writer(os);
+			rapidjson::StringBuffer os;
+			rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
 			d.Accept(writer);
-			fp->write(buf, sizeof(char), os.Tell());
+			fp->write(os.GetString(), sizeof(char), os.GetSize());
 
 			FileIO::close(fp);
 		}

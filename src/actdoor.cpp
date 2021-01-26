@@ -41,6 +41,8 @@ void actDoor(Entity* my)
 
 	if ( !my->doorInit )
 	{
+		my->createWorldUITooltip();
+
 		my->doorInit = 1;
 		my->doorStartAng = my->yaw;
 		my->doorHealth = 15 + rand() % 5;

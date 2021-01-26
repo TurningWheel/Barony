@@ -27,6 +27,7 @@
 #include "../magic/magic.hpp"
 #include "../mod_tools.hpp"
 #include "../collision.hpp"
+#include "../player.hpp"
 #include "../ui/GameUI.hpp"
 
 bool spamming = false;
@@ -3104,6 +3105,53 @@ void consoleCommand(char const * const command_str)
 					}
 				}
 			}
+		}
+		else if ( !strncmp(command_str, "/tooltipoffset ", 15) )
+		{
+			int offset = atoi((char*)(command_str + 15));
+			Player::WorldUI_t::tooltipHeightOffsetZ = static_cast<real_t>(offset) / 10.0;
+			messagePlayer(clientnum, "Tooltip Z offset set to: %.1f", Player::WorldUI_t::tooltipHeightOffsetZ);
+		}
+		else if ( !strncmp(command_str, "/radialhotbar", 13) )
+		{
+			players[clientnum]->hotbar.useHotbarRadialMenu = !players[clientnum]->hotbar.useHotbarRadialMenu;
+		}
+		else if ( !strncmp(command_str, "/radialhotslots ", 16) )
+		{
+			int slots = atoi((char*)(command_str + 16));
+			players[clientnum]->hotbar.radialHotbarSlots = slots;
+			messagePlayer(clientnum, "Slots in use: %d", slots);
+		}
+		else if ( !strncmp(command_str, "/facehotbar", 11) )
+		{
+			players[clientnum]->hotbar.useHotbarFaceMenu = !players[clientnum]->hotbar.useHotbarFaceMenu;
+			messagePlayer(clientnum, "Face button hotbar: %d", players[clientnum]->hotbar.useHotbarFaceMenu ? 1 : 0);
+		}
+		else if ( !strncmp(command_str, "/facebarinvert", 14) )
+		{
+			players[clientnum]->hotbar.faceMenuInvertLayout = !players[clientnum]->hotbar.faceMenuInvertLayout;
+			messagePlayer(clientnum, "Face button invert position: %d", players[clientnum]->hotbar.faceMenuInvertLayout ? 1 : 0);
+		}
+		else if ( !strncmp(command_str, "/facebarquickcast", 17) )
+		{
+			players[clientnum]->hotbar.faceMenuQuickCastEnabled = !players[clientnum]->hotbar.faceMenuQuickCastEnabled;
+			messagePlayer(clientnum, "Face button quickcast: %d", players[clientnum]->hotbar.faceMenuQuickCastEnabled ? 1 : 0);
+		}
+		else if ( !strncmp(command_str, "/paperdoll", 10) )
+		{
+			players[clientnum]->paperDoll.enabled = !players[clientnum]->paperDoll.enabled;
+			messagePlayer(clientnum, "Paper doll: %d", players[clientnum]->paperDoll.enabled ? 1 : 0);
+		}
+		else if ( !strncmp(command_str, "/facebaralternate", 17) )
+		{
+			players[clientnum]->hotbar.faceMenuAlternateLayout = !players[clientnum]->hotbar.faceMenuAlternateLayout;
+			messagePlayer(clientnum, "Face button alternate: %d", players[clientnum]->hotbar.faceMenuAlternateLayout ? 1 : 0);
+		}
+		else if ( !strncmp(command_str, "/inventorynew", 13) )
+		{
+			players[clientnum]->inventoryUI.bNewInventoryLayout = !players[clientnum]->inventoryUI.bNewInventoryLayout;
+			players[clientnum]->inventoryUI.resetInventory();
+			messagePlayer(clientnum, "New Inventory layout: %d", players[clientnum]->inventoryUI.bNewInventoryLayout ? 1 : 0);
 		}
 		else
 		{

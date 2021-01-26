@@ -53,6 +53,11 @@ void Entity::actChest()
 		playSoundEntityLocal(this, 149, 32);
 	}
 
+	if ( ticks == 1 )
+	{
+		this->createWorldUITooltip();
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		return;
@@ -1076,11 +1081,11 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 		{
 			if ( slot == &stats[player]->weapon )
 			{
-				playerTryEquipItemAndUpdateServer(player, item);
+				playerTryEquipItemAndUpdateServer(player, item, false);
 			}
 			else if ( slot == &stats[player]->shield && itemCategory(newitem) == SPELLBOOK )
 			{
-				playerTryEquipItemAndUpdateServer(player, item);
+				playerTryEquipItemAndUpdateServer(player, item, false);
 			}
 			else
 			{

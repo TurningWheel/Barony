@@ -78,8 +78,17 @@ void updateCharacterSheet(const int player)
 	}
 
 	drawWindowFancy(x1, y1, x1 + pos.w + 16, y1 + pos.h + 16);
-	drawRect(&pos, 0, 255);
-	drawWindowFancy(x1, y1 + pos.h + 16, x1 + pos.w + 16, statWindowY2);
+
+	SDL_Rect bgBox{ 
+		players[player]->characterSheet.characterSheetBox.x + 8,
+		players[player]->characterSheet.characterSheetBox.y + 8,
+		players[player]->characterSheet.characterSheetBox.w - 16,
+		players[player]->characterSheet.characterSheetBox.h - 16,
+	};
+	drawRect(&bgBox, 0, 255);
+
+	SDL_Rect& statWindowBox = players[player]->characterSheet.statsSheetBox;
+	drawWindowFancy(statWindowBox.x, statWindowBox.y, statWindowBox.x + statWindowBox.w, statWindowBox.y + statWindowBox.h);
 
 	// character sheet
 	double ofov = fov;
@@ -166,6 +175,13 @@ void updateCharacterSheet(const int player)
 		rotateBtn.h = 16;
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+
+		if ( players[player]->paperDoll.enabled )
+		{
+			rotateBtn.x -= players[player]->paperDoll.getSlotSize() + 4;
+			rotateBtn.y -= 2;
+		}
+
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 		{
@@ -181,8 +197,8 @@ void updateCharacterSheet(const int player)
 		}
 		ttfPrintText(ttf12, rotateBtn.x + 2, rotateBtn.y + 2, ">");
 
-		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
-		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+		// second button
+		rotateBtn.x -= rotateBtn.w + 4;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
 		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
 		{
@@ -201,8 +217,8 @@ void updateCharacterSheet(const int player)
 	fov = ofov;
 
 	TTF_Font* fontStat = ttf12;
-	int text_x = x1 + 8;
-	int text_y = 0;
+	int text_x = statWindowBox.x + 8;
+	int text_y = statWindowBox.y;
 	int pad_y = 12;
 	int fontWidth = TTF12_WIDTH;
 	if ( uiscale_charactersheet )
@@ -211,7 +227,7 @@ void updateCharacterSheet(const int player)
 		pad_y = 18;
 		fontWidth = TTF16_WIDTH;
 	}
-	text_y = statWindowY + 6;
+	text_y = statWindowBox.y + 6;
 	ttfPrintTextFormatted(fontStat, text_x, text_y, "%s", stats[player]->name);
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, text_x, text_y, language[359], stats[player]->LVL, playerClassLangEntry(client_classes[player], player));
@@ -295,7 +311,7 @@ void updateCharacterSheet(const int player)
 	src.h = TTF12_HEIGHT + 8;
 	src.w = ( longestline(language[2968]) + strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
 	bool dropGold = false;
-	if ( mouseInBounds(player, pos.x + 4, pos.x + pos.w, text_y - pad_y, text_y) )
+	if ( mouseInBounds(player, statWindowBox.x + 8, statWindowBox.x + statWindowBox.w, text_y - pad_y, text_y) )
 	{
 		drawTooltip(&src);
 		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 6, language[2968], getInputName(impulses[IN_USE]));
@@ -387,7 +403,20 @@ void Player::CharacterSheet_t::setDefaultCharacterSheetBox()
 	characterSheetBox.x = pos.x - 8;
 	characterSheetBox.y = pos.y - 8;
 	characterSheetBox.w = pos.w + 16;
-	characterSheetBox.h = statWindowY2;
+	characterSheetBox.h = statWindowY;
+
+	statsSheetBox.x = characterSheetBox.x;
+	statsSheetBox.y = statWindowY;
+	statsSheetBox.w = characterSheetBox.w;
+	statsSheetBox.h = statWindowY2 - statWindowY;
+
+	if ( player.inventoryUI.bNewInventoryLayout )
+	{
+		statsSheetBox.x = characterSheetBox.x + characterSheetBox.w;
+		statsSheetBox.y = characterSheetBox.y;
+
+		characterSheetBox.h = pos.h + 16;
+	}
 }
 
 void Player::CharacterSheet_t::setDefaultPartySheetBox()
@@ -1644,10 +1673,10 @@ void statsHoverText(const int player, Stat* tmpStat)
 	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
 	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
-	int pad_y = players[player]->camera_y1() + 262; // 262 px.
-	int pad_x = players[player]->camera_x1() + 8; // 8 px.
+	int pad_y = players[player]->characterSheet.statsSheetBox.y + 66; // was 262px
+	int pad_x = players[player]->characterSheet.statsSheetBox.x + 8; // 8 px. offset
 	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
-	int off_w = 216; // 216px. width of stat line.
+	int off_w = players[player]->characterSheet.statsSheetBox.w - 8;
 	int i = 0;
 	int j = 0;
 	SDL_Rect src;
@@ -2142,10 +2171,10 @@ void attackHoverText(const int player, Sint32 input[6])
 	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
 	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
-	int pad_y = players[player]->camera_y1() + 346; // 262 px.
-	int pad_x = players[player]->camera_x1() + 8; // 8 px.
+	int pad_y = players[player]->characterSheet.statsSheetBox.y + 66 + 84; // was 346px
+	int pad_x = players[player]->characterSheet.statsSheetBox.x + 8; // 8 px. offset
 	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
-	int off_w = 216; // 216px. width of stat line.
+	int off_w = players[player]->characterSheet.statsSheetBox.w - 8;
 	int i = 0;
 	int j = 0;
 	SDL_Rect src;

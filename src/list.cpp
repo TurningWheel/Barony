@@ -77,6 +77,14 @@ void list_RemoveNode(node_t* node)
 				{
 					GenericGUI[i].clearCurrentGUIFromItem(*tmp);
 				}
+				if ( players[i]->paperDoll.enabled )
+				{
+					auto slot = players[i]->paperDoll.getSlotForItem(*tmp);
+					if ( slot != Player::PaperDoll_t::SLOT_MAX )
+					{
+						players[i]->paperDoll.dollSlots[slot].item = 0;
+					}
+				}
 			}
 		}
 	}

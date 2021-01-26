@@ -72,6 +72,12 @@ void actDeathCam(Entity* my)
 	mousex_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_XREL);
 	mousey_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_YREL);
 
+	real_t mouse_speed = mousespeed;
+	if ( inputs.getVirtualMouse(DEATHCAM_PLAYERNUM)->lastMovementFromController )
+	{
+		mouse_speed = 32.0;
+	}
+
 	if ( DEATHCAM_TIME == 1 )
 	{
 		DEATHCAM_PLAYERTARGET = -1;
@@ -106,12 +112,12 @@ void actDeathCam(Entity* my)
 	{
 		if ( smoothmouse )
 		{
-			DEATHCAM_ROTX += mousex_relative * .006 * (mousespeed / 128.f);
+			DEATHCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
 			DEATHCAM_ROTX = fmin(fmax(-0.35, DEATHCAM_ROTX), 0.35);
 		}
 		else
 		{
-			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mousespeed / 128.f)), 0.35f);
+			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
 		}
 		my->yaw += DEATHCAM_ROTX;
 		if ( my->yaw >= PI * 2 )
@@ -125,12 +131,12 @@ void actDeathCam(Entity* my)
 
 		if ( smoothmouse )
 		{
-			DEATHCAM_ROTY += mousey_relative * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+			DEATHCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
 			DEATHCAM_ROTY = fmin(fmax(-0.35, DEATHCAM_ROTY), 0.35);
 		}
 		else
 		{
-			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 		}
 		my->pitch -= DEATHCAM_ROTY;
 		if ( my->pitch > PI / 2 )
@@ -390,6 +396,12 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	mousex_relative = inputs.getMouseFloat(playernum, Inputs::ANALOGUE_XREL);
 	mousey_relative = inputs.getMouseFloat(playernum, Inputs::ANALOGUE_YREL);
 
+	real_t mouse_speed = mousespeed;
+	if ( inputs.getVirtualMouse(PLAYER_NUM)->lastMovementFromController )
+	{
+		mouse_speed = 32.0;
+	}
+
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
@@ -437,7 +449,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTX += mousex_relative * .006 * (mousespeed / 128.f);
+					PLAYER_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
 				}
 				if ( !disablemouserotationlimit )
 				{
@@ -451,11 +463,11 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 				{
 					if ( disablemouserotationlimit )
 					{
-						PLAYER_ROTX = mousex_relative * .01f * (mousespeed / 128.f);
+						PLAYER_ROTX = mousex_relative * .01f * (mouse_speed / 128.f);
 					}
 					else
 					{
-						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mousespeed / 128.f)), 0.35f);
+						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
 					}
 				}
 				else
@@ -470,7 +482,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTX -= mousex_relative * .006f * (mousespeed / 128.f);
+					PLAYER_ROTX -= mousex_relative * .006f * (mouse_speed / 128.f);
 				}
 				if ( !disablemouserotationlimit )
 				{
@@ -484,11 +496,11 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 				{
 					if ( disablemouserotationlimit )
 					{
-						PLAYER_ROTX = -mousex_relative * .01f * (mousespeed / 128.f);
+						PLAYER_ROTX = -mousex_relative * .01f * (mouse_speed / 128.f);
 					}
 					else
 					{
-						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mousespeed / 128.f)), 0.35f);
+						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
 					}
 				}
 				else
@@ -538,7 +550,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTY += mousey_relative * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+					PLAYER_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
 				}
 				PLAYER_ROTY = fmin(fmax(-0.35, PLAYER_ROTY), 0.35);
 				PLAYER_ROTY *= pow(0.5, refreshRateDelta);
@@ -548,7 +560,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 				if ( my->isMobile() )
 				{
 					PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, 
-						mousey_relative * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+						mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 				}
 				else
 				{
@@ -562,7 +574,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTY -= mousey_relative * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+					PLAYER_ROTY -= mousey_relative * .006f * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
 				}
 				PLAYER_ROTY = fmin(fmax(-0.35f, PLAYER_ROTY), 0.35f);
 				PLAYER_ROTY *= pow(0.5, refreshRateDelta);
@@ -572,7 +584,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 				if ( my->isMobile() )
 				{
 					PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, 
-						mousey_relative * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+						mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 				}
 				else
 				{
@@ -3491,13 +3503,28 @@ void actPlayer(Entity* my)
 			if ( followerMenu.followerToCommand == nullptr && followerMenu.selectMoveTo == false )
 			{
 				bool clickedOnGUI = false;
-				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_USE); // using objects
+
+				EntityClickType clickType = ENTITY_CLICK_USE;
+				if ( players[PLAYER_NUM]->worldUI.isEnabled() )
+				{
+					clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
+					Entity* activeTooltipEntity = uidToEntity(players[PLAYER_NUM]->worldUI.uidForActiveTooltip);
+					if ( activeTooltipEntity && activeTooltipEntity->bEntityTooltipRequiresButtonHeld() )
+					{
+						clickType = ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY;
+					}
+				}
+
+				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, clickType); // using objects
 				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
 				{
-					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
-					if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE])) || (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
+					if ( clickType == ENTITY_CLICK_USE )
 					{
-						++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
+						// otherwise if we hold right click we'll keep trying this function, FPS will drop.
+						if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE])) || (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
+						{
+							++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
+						}
 					}
 				}
 			}
@@ -3595,7 +3622,7 @@ void actPlayer(Entity* my)
 										target = parent;
 									}
 								}
-								else if ( target->sprite == 184 ) // switch base.
+								else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
 								{
 									parent = uidToEntity(target->parent);
 									if ( parent )
@@ -6222,7 +6249,10 @@ void actPlayer(Entity* my)
 		PLAYER_ATTACKTIME = 0;
 	}
 
-	players[PLAYER_NUM]->movement.handlePlayerCameraPosition(false);
+	if ( !usecamerasmoothing )
+	{
+		players[PLAYER_NUM]->movement.handlePlayerCameraPosition(false);
+	}
 }
 
 // client function

@@ -778,14 +778,27 @@ void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	glColor4f(1, 1, 1, 1);
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glTexCoord2f(0.f, 0.f);
+
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(0.f, 1.f);
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(pos->x, yres - pos->y - pos->h);
-	glTexCoord2f(1.f, 1.f);
+	//glVertex2f(pos->x, yres - pos->y - src->h);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
-	glTexCoord2f(1.f, 0.f);
+	//glVertex2f(pos->x + src->w, yres - pos->y - src->h);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
+	//glVertex2f(pos->x + src->w, yres - pos->y);
 	glVertex2f(pos->x + pos->w, yres - pos->y);
+
+	//glTexCoord2f(0.f, 0.f);
+	//glVertex2f(pos->x, yres - pos->y);
+	//glTexCoord2f(0.f, 1.f);
+	//glVertex2f(pos->x, yres - pos->y - pos->h);
+	//glTexCoord2f(1.f, 1.f);
+	//glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
+	//glTexCoord2f(1.f, 0.f);
+	//glVertex2f(pos->x + pos->w, yres - pos->y);
 	glEnd();
 	glPopMatrix();
 	glEnable(GL_DEPTH_TEST);

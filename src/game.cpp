@@ -39,9 +39,10 @@
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
 #include "interface/ui.hpp"
-#include "ui/Frame.hpp"
 #include "ui/GameUI.hpp"
 #include <limits>
+#include "ui/Frame.hpp"
+#include "ui/Field.hpp"
 
 #include "UnicodeDecoder.h"
 
@@ -212,6 +213,7 @@ Uint32 networkTickrate = 0;
 bool gameloopFreezeEntities = false;
 Uint32 serverSchedulePlayerHealthUpdate = 0;
 Uint32 serverLastPlayerHealthUpdate = 0;
+Frame* cursorFrame = nullptr;
 
 /*-------------------------------------------------------------------------------
 
@@ -1205,7 +1207,7 @@ void gameLogic(void)
 								{
 									node_t* newNode = list_AddNodeLast(&tempFollowers[c]);
 									newNode->element = followerStats->copyStats();
-//									newNode->deconstructor = &followerStats->~Stat;
+									newNode->deconstructor = &statDeconstructor;
 									newNode->size = sizeof(followerStats);
 								}
 							}
@@ -1507,7 +1509,7 @@ void gameLogic(void)
 
 									node_t* newNode = list_AddNodeLast(&monster->children);
 									newNode->element = tempStats->copyStats();
-//									newNode->deconstructor = &tempStats->~Stat;
+									newNode->deconstructor = &statDeconstructor;
 									newNode->size = sizeof(tempStats);
 
 									Stat* monsterStats = (Stat*)newNode->element;
@@ -1785,28 +1787,29 @@ void gameLogic(void)
 				{
 					continue;
 				}
-				backpack_sizey[player] = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY;
+				backpack_sizey[player] = players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY;
 				const int inventorySizeX = players[player]->inventoryUI.getSizeX();
+				auto& playerInventory = players[player]->inventoryUI;
 
-				bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
+				bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY);
 				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK
 					&& (shouldInvertEquipmentBeatitude(stats[player]) ? abs(stats[player]->cloak->beatitude) >= 0 : stats[player]->cloak->beatitude >= 0) )
 				{
-					backpack_sizey[player] = Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1;
+					backpack_sizey[player] = playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY();
 				}
 
 				if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 				{
-					players[player]->inventoryUI.setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1) 
-						+ ((list_Size(&players[player]->magic.spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
+					playerInventory.setSizeY((playerInventory.DEFAULT_INVENTORY_SIZEY + 1)
+						+ ((list_Size(&players[player]->magic.spellList) - (inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
 				}
-				else if ( backpack_sizey[player] == Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1 )
+				else if ( backpack_sizey[player] == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
 				{
-					players[player]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1);
+					playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY());
 				}
 				else
 				{
-					if ( players[player]->inventoryUI.getSizeY() > Player::Inventory_t::DEFAULT_INVENTORY_SIZEY && !tooManySpells )
+					if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY && !tooManySpells )
 					{
 						// we should rearrange our spells.
 						for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
@@ -1826,7 +1829,7 @@ void gameLogic(void)
 							}
 							while ( 1 )
 							{
-								for ( scany = 0; scany < Player::Inventory_t::DEFAULT_INVENTORY_SIZEY; scany++ )
+								for ( scany = 0; scany < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; scany++ )
 								{
 									node_t* node2;
 									for ( node2 = stats[player]->inventory.first; node2 != NULL; node2 = node2->next )
@@ -1865,7 +1868,7 @@ void gameLogic(void)
 							}
 						}
 					}
-					players[player]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
+					players[player]->inventoryUI.setSizeY(players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY);
 				}
 			}
 
@@ -1924,7 +1927,10 @@ void gameLogic(void)
 					}
 
 					// drop any inventory items you don't have room for
-					if ( itemCategory(item) != SPELL_CAT && (item->x >= players[player]->inventoryUI.getSizeX() || item->y >= backpack_sizey[player]) )
+					if ( itemCategory(item) != SPELL_CAT 
+						&& item->x != Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE
+						&& item->x != Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE
+						&& (item->x >= players[player]->inventoryUI.getSizeX() || item->y >= backpack_sizey[player]) )
 					{
 						messagePlayer(player, language[727], item->getName());
 						bool droppedAll = false;
@@ -2428,28 +2434,28 @@ void gameLogic(void)
 			// world UI
 			Player::WorldUI_t::handleTooltips();
 
-			const int inventorySizeX = players[clientnum]->inventoryUI.getSizeX();
-
-			bool tooManySpells = (list_Size(&players[clientnum]->magic.spellList) >= inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
-			int backpack_sizey = 3;
+			auto& playerInventory = players[clientnum]->inventoryUI;
+			const int inventorySizeX = playerInventory.getSizeX();
+			bool tooManySpells = (list_Size(&players[clientnum]->magic.spellList) >= inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY);
+			int backpack_sizey = playerInventory.DEFAULT_INVENTORY_SIZEY;
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
 				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
 			{
-				backpack_sizey = 4;
+				backpack_sizey += playerInventory.getPlayerBackpackBonusSizeY();
 			}
 
 			if ( tooManySpells && players[clientnum]->gui_mode == GUI_MODE_INVENTORY && players[clientnum]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
-				players[clientnum]->inventoryUI.setSizeY((Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1) 
-					+ ((list_Size(&players[clientnum]->magic.spellList) - (inventorySizeX * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
+				playerInventory.setSizeY((playerInventory.DEFAULT_INVENTORY_SIZEY + 1)
+					+ ((list_Size(&players[clientnum]->magic.spellList) - (inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
 			}
-			else if ( backpack_sizey == 4 )
+			else if ( backpack_sizey == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
 			{
-				players[clientnum]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY + 1);
+				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY());
 			}
 			else
 			{
-				if ( players[clientnum]->inventoryUI.getSizeY() > Player::Inventory_t::DEFAULT_INVENTORY_SIZEY && !tooManySpells )
+				if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY && !tooManySpells )
 				{
 					// we should rearrange our spells.
 					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
@@ -2469,7 +2475,7 @@ void gameLogic(void)
 						}
 						while ( 1 )
 						{
-							for ( scany = 0; scany < 3; scany++ )
+							for ( scany = 0; scany < playerInventory.DEFAULT_INVENTORY_SIZEY; scany++ )
 							{
 								node_t* node2;
 								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
@@ -2508,7 +2514,7 @@ void gameLogic(void)
 						}
 					}
 				}
-				players[clientnum]->inventoryUI.setSizeY(Player::Inventory_t::DEFAULT_INVENTORY_SIZEY);
+				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY);
 			}
 
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
@@ -2552,7 +2558,10 @@ void gameLogic(void)
 				}
 
 				// drop any inventory items you don't have room for
-				if ( itemCategory(item) != SPELL_CAT && (item->x >= players[clientnum]->inventoryUI.getSizeX() || item->y >= backpack_sizey) )
+				if ( itemCategory(item) != SPELL_CAT 
+					&& item->x != Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE
+					&& item->x != Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE
+					&& (item->x >= players[clientnum]->inventoryUI.getSizeX() || item->y >= backpack_sizey) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
 					bool droppedAll = false;
@@ -2620,14 +2629,14 @@ void gameLogic(void)
 
 void handleButtons(void)
 {
-	if (gui) {
+	if ( gui ) 
+	{
 		Frame::result_t gui_result = gui->process();
 		gui->draw();
-		if (!gui_result.usable) {
+		if ( !gui_result.usable ) {
 			return;
 		}
 	}
-
 	node_t* node;
 	node_t* nextnode;
 	button_t* button;
@@ -3158,6 +3167,7 @@ void handleEvents(void)
 						if ( inputs.hasController(i) )
 						{
 							inputs.getController(i)->handleRumble();
+							inputs.getController(i)->updateButtonsReleased();
 						}
 					}
 				}
@@ -3528,30 +3538,8 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator)
 	}
 }
 
-void ingameHud() {
-	DebugStats.t5MainDraw = std::chrono::high_resolution_clock::now();
-
-	for ( int player = 0; player < MAXPLAYERS; ++player )
-	{
-		if ( players[player]->isLocalPlayer() )
-		{
-			players[player]->messageZone.updateMessages();
-		}
-	}
-	if ( !nohud )
-	{
-		for ( int player = 0; player < MAXPLAYERS; ++player )
-		{
-			if ( players[player]->isLocalPlayer() )
-			{
-				handleDamageIndicators(player);
-				players[player]->messageZone.drawMessages();
-			}
-		}
-	}
-
-	DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
-
+void ingameHud()
+{
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		// inventory interface
@@ -3596,13 +3584,18 @@ void ingameHud() {
 		if ( players[player]->isLocalPlayerAlive() )
 		{
 			bool hasSpellbook = false;
+			bool tryQuickCast = players[player]->hotbar.faceMenuQuickCast;
 			if ( stats[player]->shield && itemCategory(stats[player]->shield) == SPELLBOOK )
 			{
 				hasSpellbook = true;
 			}
+
+			players[player]->hotbar.faceMenuQuickCast = false;
+
 			if ( !command &&
 				(*inputPressedForPlayer(player, impulses[IN_CAST_SPELL])
-					|| (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL))
+					|| (players[player]->shootmode
+						&& (inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL) || tryQuickCast))
 					|| (hasSpellbook && *inputPressedForPlayer(player, impulses[IN_DEFEND]))
 					|| (hasSpellbook && players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)))
 				)
@@ -3634,8 +3627,8 @@ void ingameHud() {
 						}
 					}
 
-					if ( *inputPressedForPlayer(player, impulses[IN_DEFEND]) 
-						&& impulses[IN_DEFEND] == 285 
+					if ( *inputPressedForPlayer(player, impulses[IN_DEFEND])
+						&& impulses[IN_DEFEND] == 285
 						&& inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
 					{
 						allowCasting = false;
@@ -3673,7 +3666,7 @@ void ingameHud() {
 								{
 									messagePlayer(player, language[2998]); // notify no longer eligible for achievement but still cast.
 								}
-								if ( hasSpellbook 
+								if ( hasSpellbook
 									&& (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
 								{
 									castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
@@ -3706,7 +3699,7 @@ void ingameHud() {
 			}
 		}
 
-		if ( !command && *inputPressedForPlayer(player, impulses[IN_TOGGLECHATLOG]) 
+		if ( !command && *inputPressedForPlayer(player, impulses[IN_TOGGLECHATLOG])
 			|| (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_TOGGLECHATLOG)) )
 		{
 			hide_statusbar = !hide_statusbar;
@@ -3715,10 +3708,10 @@ void ingameHud() {
 			playSound(139, 64);
 		}
 
-		if ( !command && (*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT]) 
-			|| (inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE) 
+		if ( !command && (*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT])
+			|| (inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE)
 				&& ((players[player]->shootmode && !players[player]->worldUI.bTooltipInView)
-					|| FollowerMenu[player].followerMenuIsOpen()) )) )
+					|| FollowerMenu[player].followerMenuIsOpen()))) )
 		{
 			// can select next follower in inventory or shootmode
 			FollowerMenu[player].selectNextFollower();
@@ -3734,7 +3727,7 @@ void ingameHud() {
 
 
 	// commands - uses local clientnum only
-	if ( ( *inputPressed(impulses[IN_CHAT]) || *inputPressed(impulses[IN_COMMAND]) ) && !command )
+	if ( (*inputPressed(impulses[IN_CHAT]) || *inputPressed(impulses[IN_COMMAND])) && !command )
 	{
 		*inputPressed(impulses[IN_CHAT]) = 0;
 		cursorflash = ticks;
@@ -3802,7 +3795,7 @@ void ingameHud() {
 				}
 				else
 				{
-					if (strcmp(command_str, ""))
+					if ( strcmp(command_str, "") )
 					{
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
@@ -3855,7 +3848,7 @@ void ingameHud() {
 				}
 				else
 				{
-					if (strcmp(command_str, ""))
+					if ( strcmp(command_str, "") )
 					{
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
@@ -3881,19 +3874,19 @@ void ingameHud() {
 				}
 			}
 			//In either case, save this in the command history.
-			if (strcmp(command_str, ""))
+			if ( strcmp(command_str, "") )
 			{
 				saveCommand(command_str);
 			}
 			chosen_command = NULL;
 		}
-		ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX(), 
+		ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX(),
 			players[commandPlayer]->messageZone.getMessageZoneStartY(), ">%s", command_str);
 		if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 		{
 			int x;
 			getSizeOfText(ttf16, command_str, &x, NULL);
-			ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX() + x + TTF16_WIDTH, 
+			ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX() + x + TTF16_WIDTH,
 				players[commandPlayer]->messageZone.getMessageZoneStartY(), "_");
 		}
 	}
@@ -4024,7 +4017,7 @@ void ingameHud() {
 			}
 		}
 
-		bool debugMouse = true;
+		bool debugMouse = false;
 		if ( debugMouse )
 		{
 			int x = players[player]->camera_x1() + 12;
@@ -4080,6 +4073,8 @@ void ingameHud() {
 			continue;
 		}
 
+		SDL_Rect pos;
+
 		FollowerRadialMenu& followerMenu = FollowerMenu[player];
 
 		if ( players[player]->shootmode == false )
@@ -4088,7 +4083,6 @@ void ingameHud() {
 			if ( inputs.getUIInteraction(player)->selectedItem )
 			{
 				Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
-				SDL_Rect pos;
 				pos.x = inputs.getMouse(player, Inputs::X) - 15;
 				pos.y = inputs.getMouse(player, Inputs::Y) - 15;
 				pos.w = 32 * uiscale_inventory;
@@ -4127,7 +4121,6 @@ void ingameHud() {
 				(followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 					|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 			{
-				SDL_Rect pos;
 				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
 				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
 				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
@@ -4177,7 +4170,6 @@ void ingameHud() {
 			}
 			else if ( inputs.getVirtualMouse(player)->draw_cursor )
 			{
-				SDL_Rect pos;
 				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
 				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
 				pos.w = 0;
@@ -4187,9 +4179,13 @@ void ingameHud() {
 		}
 		else if ( !nohud )
 		{
-			SDL_Rect pos;
 			pos.x = cameras[player].winx + (cameras[player].winw / 2) - cross_bmp->w / 2;
 			pos.y = cameras[player].winy + (cameras[player].winh / 2) - cross_bmp->h / 2;
+			if ( players[player]->worldUI.bTooltipInView )
+			{
+				pos.x = cameras[player].winx + (cameras[player].winw / 2) - selected_cursor_bmp->w / 2;
+				pos.y = cameras[player].winy + (cameras[player].winh / 2) - selected_cursor_bmp->h / 2;
+			}
 			pos.w = 0;
 			pos.h = 0;
 			if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
@@ -4253,7 +4249,60 @@ void ingameHud() {
 						ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
 					}
 				}
-				drawImageAlpha(cross_bmp, NULL, &pos, 128);
+				if ( players[player]->worldUI.bTooltipInView )
+				{
+					drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
+					pos.x += 40;
+					pos.y += 20;
+					pos.h = selected_cursor_bmp->h;
+					pos.w = pos.h;
+
+					SDL_Rect glyphsrc{ 0, 0, 0, 0 };
+
+					if ( ticks % 50 < 25 )
+					{
+						int button = joyimpulses[INJOY_GAME_USE] - 301;
+						glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
+						pos.w = glyphsrc.w * 3;
+						pos.h = glyphsrc.h * 3;
+						pos.y -= 4;
+						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
+					}
+					else
+					{
+						int button = joyimpulses[INJOY_GAME_USE] - 301;
+						glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
+						pos.w = glyphsrc.w * 3;
+						pos.h = glyphsrc.h * 3;
+						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
+					}
+					pos.x += pos.w + 4;
+					pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
+					if ( ticks % 50 < 25 )
+					{
+						pos.y += 4;
+					}
+					ttfPrintText(ttf12, pos.x, pos.y, players[player]->worldUI.interactText.c_str());
+				}
+				else
+				{
+					drawImageAlpha(cross_bmp, NULL, &pos, 128);
+				}
+
+				// prints out current pressed glyph
+				/*pos.x += 80;
+				for ( int i = 0; i < SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX; ++i )
+				{
+				auto button = static_cast<SDL_GameControllerButton>(i);
+				if ( inputs.getController(player) && inputs.getController(player)->binary(button) )
+				{
+				SDL_Rect glyphsrc = inputs.getGlyphRectForInput(player, false, 0, i);
+				pos.y += 40;
+				pos.w = glyphsrc.w * 3;
+				pos.h = glyphsrc.h * 3;
+				drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
+				}
+				}*/
 			}
 		}
 	}
@@ -4277,7 +4326,6 @@ void ingameHud() {
 
 int main(int argc, char** argv)
 {
-
 #ifdef WINDOWS
 	SetUnhandledExceptionFilter(unhandled_handler);
 #endif // WINDOWS
@@ -4364,13 +4412,13 @@ int main(int argc, char** argv)
 #ifdef WINDOWS
 		strcpy(outputdir, "./");
 #else
-#ifndef NINTENDO
+ #ifndef NINTENDO
 		char *basepath = getenv("HOME");
-#ifdef USE_EOS
-#ifdef STEAMWORKS
+  #ifdef USE_EOS
+   #ifdef STEAMWORKS
 		//Steam + EOS
 		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
-#else
+   #else
 		//Just EOS.
 		std::string firstDotdir(basepath);
 		firstDotdir += "/.barony/";
@@ -4379,18 +4427,18 @@ int main(int argc, char** argv)
 			mkdir(firstDotdir.c_str(), 0777); //Since this mkdir is not equivalent to mkdir -p, have to create each part of the path manually.
 		}
 		snprintf(outputdir, sizeof(outputdir), "%s/epicgames", firstDotdir.c_str());
-#endif
-#else //USE_EOS
+   #endif
+  #else //USE_EOS
 		//No EOS. Could be Steam though. Or could also not.
 		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
-#endif
+  #endif
 		if (access(outputdir, F_OK) == -1)
 		{
 			mkdir(outputdir, 0777);
 		}
-#else // !NINTENDO
+ #else // !NINTENDO
 		strcpy(outputdir, "save:");
-#endif // NINTENDO
+ #endif // NINTENDO
 #endif
 		// read command line arguments
 		if ( argc > 1 )
@@ -4452,7 +4500,7 @@ int main(int argc, char** argv)
 		printlog("Output path is %s", outputdir);
 
 #ifdef NINTENDO
-		//		strcpy(classtoquickstart, "warrior");
+//		strcpy(classtoquickstart, "warrior");
 #endif
 
 		// load default language file (english)
@@ -4482,10 +4530,10 @@ int main(int argc, char** argv)
 			printlog("Critical error: %d\n", c);
 #ifdef STEAMWORKS
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
-				"Barony has encountered a critical error and cannot start.\n\n"
-				"Please check the log.txt file in the game directory for additional info\n"
-				"and verify Steam is running. Alternatively, contact us through our website\n"
-				"at http://www.baronygame.com/ for support.",
+									"Barony has encountered a critical error and cannot start.\n\n"
+									"Please check the log.txt file in the game directory for additional info\n"
+									"and verify Steam is running. Alternatively, contact us through our website\n"
+									"at http://www.baronygame.com/ for support.",
 				screen);
 #elif defined USE_EOS
 			if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
@@ -4503,10 +4551,10 @@ int main(int argc, char** argv)
 			}
 #else
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
-				"Barony has encountered a critical error and cannot start.\n\n"
-				"Please check the log.txt file in the game directory for additional info,\n"
-				"or contact us through our website at http://www.baronygame.com/ for support.",
-				screen);
+									"Barony has encountered a critical error and cannot start.\n\n"
+									"Please check the log.txt file in the game directory for additional info,\n"
+									"or contact us through our website at http://www.baronygame.com/ for support.",
+									screen);
 #endif
 			deinitApp();
 			exit(c);
@@ -4526,10 +4574,10 @@ int main(int argc, char** argv)
 		{
 			printlog("Critical error in initGame: %d\n", c);
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
-				"Barony has encountered a critical error and cannot start.\n\n"
-				"Please check the log.txt file in the game directory for additional info,\n"
-				"or contact us through our website at http://www.baronygame.com/ for support.",
-				screen);
+			                         "Barony has encountered a critical error and cannot start.\n\n"
+			                         "Please check the log.txt file in the game directory for additional info,\n"
+			                         "or contact us through our website at http://www.baronygame.com/ for support.",
+			                         screen);
 			deinitGame();
 			deinitApp();
 			exit(c);
@@ -4660,16 +4708,16 @@ int main(int argc, char** argv)
 						int menuMapType = 0;
 						switch ( rand() % 4 ) // STEAM VERSION INTRO
 						{
-						case 0:
-						case 1:
-						case 2:
-							menuMapType = loadMainMenuMap(true, false);
-							break;
-						case 3:
-							menuMapType = loadMainMenuMap(false, false);
-							break;
-						default:
-							break;
+							case 0:
+							case 1:
+							case 2:
+								menuMapType = loadMainMenuMap(true, false);
+								break;
+							case 3:
+								menuMapType = loadMainMenuMap(false, false);
+								break;
+							default:
+								break;
 						}
 						numplayers = 0;
 						multiplayer = 0;
@@ -4740,16 +4788,16 @@ int main(int argc, char** argv)
 					{
 						switch ( rand() % 4 ) // DRM FREE VERSION INTRO
 						{
-						case 0:
-						case 1:
-						case 2:
-							menuMapType = loadMainMenuMap(true, false);
-							break;
-						case 3:
-							menuMapType = loadMainMenuMap(false, false);
-							break;
-						default:
-							break;
+							case 0:
+							case 1:
+							case 2:
+								menuMapType = loadMainMenuMap(true, false);
+								break;
+							case 3:
+								menuMapType = loadMainMenuMap(false, false);
+								break;
+							default:
+								break;
 						}
 						numplayers = 0;
 						multiplayer = 0;
@@ -4931,7 +4979,7 @@ int main(int argc, char** argv)
 
 						UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
 
-																				   // draw mouse
+						// draw mouse
 						if ( !movie )
 						{
 							for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -5243,11 +5291,37 @@ int main(int argc, char** argv)
 					}
 				}
 
+				DebugStats.t5MainDraw = std::chrono::high_resolution_clock::now();
+
+				for ( int player = 0; player < MAXPLAYERS; ++player )
+				{
+					if ( players[player]->isLocalPlayer() )
+					{
+						players[player]->messageZone.updateMessages();
+					}
+				}
+				if ( !nohud )
+				{
+					for ( int player = 0; player < MAXPLAYERS; ++player )
+					{
+						if ( players[player]->isLocalPlayer() )
+						{
+							handleDamageIndicators(player);
+							players[player]->messageZone.drawMessages();
+						}
+					}
+				}
+
+				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
+
 				if ( !gamePaused )
 				{
-					if (newui) {
+					if ( newui ) 
+					{
 						newIngameHud();
-					} else {
+					}
+					else 
+					{
 						ingameHud();
 					}
 				}

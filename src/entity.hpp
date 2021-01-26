@@ -217,7 +217,8 @@ public:
 
 	//--PUBLIC GENERAL ENTITY STUFF--
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
-	Sint32& highlightForUI; //skill[56] for highlighting interactibles
+	real_t& highlightForUI; //fskill[29] for highlighting interactibles
+	real_t& highlightForUIGlow; //fskill[28] for highlighting animation
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
@@ -500,6 +501,8 @@ public:
 	Sint32& worldTooltipPlayer;  //skill[1]
 	Sint32& worldTooltipInit; //skill[3]
 	Sint32& worldTooltipFadeDelay; //skill[4]
+	Sint32& worldTooltipIgnoreDrawing; //skill[5]
+	Sint32& worldTooltipRequiresButtonHeld; //skill[6]
 
 	void pedestalOrbInit(); // init orb properties
 
@@ -912,6 +915,8 @@ public:
 	real_t getDamageTableMultiplier(Stat& myStats, DamageTableType damageType);
 	bool isBoulderSprite();
 	void createWorldUITooltip();
+	bool bEntityTooltipRequiresButtonHeld() const;
+	bool bEntityHighlightedForPlayer(const int player) const;
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);

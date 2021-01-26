@@ -466,6 +466,7 @@ int initGame()
 		cameras[c].winy = 0;
 		cameras[c].winw = xres;
 		cameras[c].winh = yres;
+		cast_animation[c].player = c;
 	}
 
 	// load music
@@ -638,6 +639,9 @@ int fmod_result;
 	logo_bmp = loadImage("images/system/logo.png");
 	cursor_bmp = loadImage("images/system/cursor.png");
 	cross_bmp = loadImage("images/system/cross.png");
+	selected_cursor_bmp = loadImage("images/system/selectedcursor.png");
+	controllerglyphs1_bmp = loadImage("images/system/glyphsheet_ns.png");
+	skillIcons_bmp = loadImage("images/system/skillicons_sheet.png");
 
 	loadAllScores(SCORESFILE);
 	loadAllScores(SCORESFILE_MULTIPLAYER);
@@ -756,6 +760,18 @@ void deinitGame()
 	{
 		SDL_FreeSurface(cross_bmp);
 	}
+	if ( selected_cursor_bmp != nullptr )
+	{
+		SDL_FreeSurface(selected_cursor_bmp);
+	}
+	if ( controllerglyphs1_bmp != nullptr )
+	{
+		SDL_FreeSurface(controllerglyphs1_bmp);
+	}
+	if ( skillIcons_bmp != nullptr )
+	{
+		SDL_FreeSurface(skillIcons_bmp);
+	}
 	//if(sky_bmp!=NULL)
 	//	SDL_FreeSurface(sky_bmp);
 	for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -792,6 +808,7 @@ void deinitGame()
 		players[c]->inventoryUI.appraisal.timer = 0;
 		players[c]->inventoryUI.appraisal.current_item = 0;
 		list_FreeAll(&stats[c]->inventory);
+		list_FreeAll(&stats[c]->FOLLOWERS);
 		if ( multiplayer == CLIENT )
 		{
 			if ( shopInv[c] )

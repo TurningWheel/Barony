@@ -142,6 +142,11 @@ void actFountain(Entity* my)
 		entity->fskill[3] = 0.03;
 	}
 
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
+
 	// the rest of the function is server-side.
 	if ( multiplayer == CLIENT )
 	{

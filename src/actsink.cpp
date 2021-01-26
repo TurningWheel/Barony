@@ -42,6 +42,11 @@ void actSink(Entity* my)
 		playSoundEntityLocal( my, 149, 32 );
 	}
 
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
+
 	if ( my->skill[2] > 0 )
 	{
 		Entity* entity = spawnGib(my);

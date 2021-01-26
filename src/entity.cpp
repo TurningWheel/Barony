@@ -299,7 +299,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
 	interactedByMonster(skill[47]),
-	highlightForUI(skill[56]),
+	highlightForUI(fskill[29]),
+	highlightForUIGlow(fskill[28]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
@@ -336,7 +337,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	worldTooltipActive(skill[0]),
 	worldTooltipPlayer(skill[1]),
 	worldTooltipInit(skill[3]),
-	worldTooltipFadeDelay(skill[4])
+	worldTooltipFadeDelay(skill[4]),
+	worldTooltipIgnoreDrawing(skill[5]),
+	worldTooltipRequiresButtonHeld(skill[6])
 {
 	int c;
 	// add the entity to the entity list
@@ -7294,10 +7297,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 
 				weaponskill = getWeaponSkill(myStats->weapon);
-				if ( behavior == &actMonster && weaponskill == PRO_UNARMED )
-				{
-					weaponskill = -1;
-				}
+				//if ( behavior == &actMonster && weaponskill == PRO_UNARMED ) 
+				//{
+				//	was -1 for legacy monster punching and damage variance. != &actMonster added to PRO_UNARMED check for damage variability.
+				//	weaponskill = -1;
+				//}
 				if ( shapeshifted || pose == PLAYER_POSE_GOLEM_SMASH )
 				{
 					weaponskill = PRO_UNARMED;
@@ -7470,7 +7474,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							gungnir = true;
 						}
 					}
-					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir) || weaponskill == PRO_UNARMED || weaponskill == PRO_RANGED )
+					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir) || (weaponskill == PRO_UNARMED && behavior != &actMonster) || weaponskill == PRO_RANGED )
 					{
 						int chance = 0;
 						if ( weaponskill == PRO_POLEARM )
@@ -14739,12 +14743,20 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						)
 					{
 						// player item too new on ground, or monster is set to not pickup player items.
+						if ( item != nullptr )
+						{
+							free(item);
+						}
 						continue;
 					}
 				}
 				if ( entity->itemDelayMonsterPickingUp > 0 && entity->ticks < entity->itemDelayMonsterPickingUp )
 				{
 					// dropped from a disarm skill, don't pick up item until timer is up.
+					if ( item != nullptr )
+					{
+						free(item);
+					}
 					continue;
 				}
 
@@ -18981,5 +18993,46 @@ void Entity::createWorldUITooltip()
 		worldTooltip->worldTooltipZ = 1.5;
 		players[i]->worldUI.setTooltipDisabled(*worldTooltip);
 		//worldTooltip->addToWorldUIList(map.worldUI);
+
+		if ( behavior != &actItem )
+		{
+			worldTooltip->worldTooltipIgnoreDrawing = 1;
+		}
+
+		if ( bEntityTooltipRequiresButtonHeld() )
+		{
+			worldTooltip->worldTooltipRequiresButtonHeld = 1;
+		}
 	}
+}
+
+bool Entity::bEntityTooltipRequiresButtonHeld() const
+{
+	if ( behavior == &actPortal || behavior == &actLadder
+		|| behavior == &::actMidGamePortal || behavior == &::actExpansionEndGamePortal
+		|| behavior == &actWinningPortal || behavior == &actCustomPortal )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool Entity::bEntityHighlightedForPlayer(const int player) const
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return false;
+	}
+	if ( behavior == &actMonster || behavior == &actPlayer )
+	{
+		return false;
+	}
+	if ( players[player]->worldUI.uidForActiveTooltip != 0 )
+	{
+		if ( players[player]->worldUI.uidForActiveTooltip == getUID() )
+		{
+			return true;
+		}
+	}
+	return false;
 }

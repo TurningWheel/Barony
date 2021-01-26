@@ -1024,6 +1024,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\classdescriptions.hpp" />
     <ClInclude Include="..\..\src\cppfuncs.hpp" />
     <ClInclude Include="..\..\src\credits.hpp" />
+    <ClInclude Include="..\..\src\engine\filepc.hpp" />
     <ClInclude Include="..\..\src\interface\ui.hpp" />
     <ClInclude Include="..\..\src\lobbies.hpp" />
     <ClInclude Include="..\..\src\mod_tools.hpp" />

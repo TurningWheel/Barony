@@ -71,7 +71,12 @@ void Player::MessageZone_t::addMessage(Uint32 color, char* content, ...)
 				break;
 			}
 			line_count -= (*last_message)->text->lines;
+
+			// make sure to call destructor when popping back.
+			Message *msg = notification_messages.back();
+			messageDeconstructor(msg);
 			notification_messages.pop_back();
+
 			if ( last_message != notification_messages.rend() )
 			{
 				last_message++;

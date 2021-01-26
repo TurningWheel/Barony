@@ -66,6 +66,7 @@ class GameController
 	SDL_Haptic* sdl_haptic;
 	int id;
 	std::string name;
+	static const int BUTTON_HELD_TICKS = TICKS_PER_SECOND / 4;
 public:
 	GameController();
 	~GameController();
@@ -126,11 +127,22 @@ public:
 		UPRIGHT
 	};
 
+	enum RadialSelection : int
+	{
+		RADIAL_INVALID = -2,
+		RADIAL_CENTERED = -1,
+		RADIAL_MAX = 16
+	};
+
 	struct Binding_t {
 		float analog = 0.f;
 		float deadzone = 0.f;
 		bool binary = false;
 		bool consumed = false;
+		Uint32 buttonHeldTicks = 0;
+		bool buttonHeld = false;
+		bool binaryRelease = false;
+		bool binaryReleaseConsumed = false;
 
 		enum Bindtype_t 
 		{
@@ -143,6 +155,7 @@ public:
 			JOYSTICK_BUTTON,
 			JOYSTICK_HAT,
 			VIRTUAL_DPAD,
+			RADIAL_SELECTION,
 			//JOYSTICK_BALL,
 			NUM
 		};
@@ -151,10 +164,12 @@ public:
 		SDL_GameControllerAxis padAxis = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID;
 		SDL_GameControllerButton padButton = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID;
 		DpadDirection padVirtualDpad = DpadDirection::CENTERED;
+		RadialSelection padRadialSelection = RadialSelection::RADIAL_CENTERED;
 		bool padAxisNegative = false;
 	};
 
 	void updateButtons();
+	void updateButtonsReleased();
 	void updateAxis();
 	static SDL_GameControllerButton getSDLButtonFromImpulse(const unsigned controllerImpulse);
 	static SDL_GameControllerAxis getSDLTriggerFromImpulse(const unsigned controllerImpulse);
@@ -162,14 +177,19 @@ public:
 	Binding_t buttons[NUM_JOY_STATUS];
 	Binding_t axis[NUM_JOY_AXIS_STATUS];
 	Binding_t virtualDpad;
+	Binding_t radialSelection;
 
 	bool binary(SDL_GameControllerButton binding) const;
 	bool binaryToggle(SDL_GameControllerButton binding) const;
+	bool binaryReleaseToggle(SDL_GameControllerButton binding) const;
 	void consumeBinaryToggle(SDL_GameControllerButton binding);
+	void consumeBinaryReleaseToggle(SDL_GameControllerButton binding);
+	bool buttonHeldToggle(SDL_GameControllerButton binding) const;
 	float analog(SDL_GameControllerButton binding) const;
 	bool binary(SDL_GameControllerAxis binding) const;
 	bool binaryToggle(SDL_GameControllerAxis binding) const;
 	void consumeBinaryToggle(SDL_GameControllerAxis binding);
+	bool buttonHeldToggle(SDL_GameControllerAxis binding) const;
 	float analog(SDL_GameControllerAxis binding) const;
 	DpadDirection dpadDir() const;
 	DpadDirection dpadDirToggle() const;
@@ -310,6 +330,7 @@ class Inputs
 	class VirtualMouse
 	{
 	public:
+		static const int MOUSE_HELD_TICKS = TICKS_PER_SECOND;
 		Sint32 xrel = 0; //mousexrel
 		Sint32 yrel = 0; //mouseyrel
 		Sint32 ox = 0; //omousex
@@ -323,6 +344,11 @@ class Inputs
 		real_t floaty = 0.0;
 		real_t floatox = 0.0;
 		real_t floatoy = 0.0;
+
+		Uint32 mouseLeftHeldTicks = 0;
+		bool mouseLeftHeld = false;
+		Uint32 mouseRightHeldTicks = 0;
+		bool mouseRightHeld = false;
 
 		bool draw_cursor = true; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
 		bool moved = false;
@@ -394,11 +420,16 @@ public:
 	}
 	void controllerHandleMouse(const int player);
 	const bool bControllerInputPressed(const int player, const unsigned controllerImpulse) const;
+	const bool bControllerInputHeld(int player, const unsigned controllerImpulse) const;
 	const bool bControllerRawInputPressed(const int player, const unsigned button) const;
+	const bool bControllerRawInputReleased(const int player, const unsigned button) const;
 	void controllerClearInput(const int player, const unsigned controllerImpulse);
 	void controllerClearRawInput(const int player, const unsigned button);
+	void controllerClearRawInputRelease(const int player, const unsigned button);
 	const bool bMouseLeft (const int player) const;
+	const bool bMouseHeldLeft(const int player) const;
 	const bool bMouseRight(const int player) const;
+	const bool bMouseHeldRight(const int player) const;
 	const void mouseClearLeft(int player);
 	const void mouseClearRight(int player);
 	void removeControllerWithDeviceID(const int id)
@@ -522,6 +553,19 @@ public:
 				vmouse[i].floatox = vmouse[i].floatx;
 				vmouse[i].floatoy = vmouse[i].floaty;
 				vmouse[i].moved = false;
+				vmouse[i].mouseLeftHeld = false;
+				vmouse[i].mouseLeftHeldTicks = 0;
+			}
+			else
+			{
+				if ( vmouse[i].mouseLeftHeldTicks == 0 )
+				{
+					vmouse[i].mouseLeftHeldTicks = ticks;
+				}
+				else if ( ticks - vmouse[i].mouseLeftHeldTicks > Inputs::VirtualMouse::MOUSE_HELD_TICKS )
+				{
+					vmouse[i].mouseLeftHeld = true;
+				}
 			}
 		}
 		/*messagePlayer(0, "x: %d | y: %d / x: %d | y: %d / x: %d | y: %d / x: %d | y: %d ", 
@@ -557,6 +601,7 @@ public:
 		getController(player)->stopRumble();
 	}
 	void addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount);
+	SDL_Rect getGlyphRectForInput(const int player, bool pressed, const unsigned keyboardImpulse, const unsigned controllerImpulse);
 };
 extern Inputs inputs;
 void initGameControllers();
@@ -606,7 +651,7 @@ public:
 
 	class Inventory_t
 	{
-		const int sizex = DEFAULT_INVENTORY_SIZEX;
+		int sizex = DEFAULT_INVENTORY_SIZEX;
 		int sizey = DEFAULT_INVENTORY_SIZEY;
 		const int starty = 10;
 		Player& player;
@@ -614,27 +659,63 @@ public:
 		int selectedSlotX = 0;
 		int selectedSlotY = 0;
 	public:
-		static const int DEFAULT_INVENTORY_SIZEX = 12;
-		static const int DEFAULT_INVENTORY_SIZEY = 3;
+		int DEFAULT_INVENTORY_SIZEX = 12;
+		int DEFAULT_INVENTORY_SIZEY = 3;
 		Inventory_t(Player& p) : player(p), appraisal(p) {};
 		~Inventory_t() {};
 		const int getTotalSize() const { return sizex * sizey; }
 		const int getSizeX() const { return sizex; }
 		const int getSizeY() const { return sizey; }
-		const int getStartX() const {
-			return (player.camera_midx() - (sizex) * (getSlotSize()) / 2 - inventory_mode_item_img->w / 2);
-		}
-		const int getStartY() const { return player.camera_y1() + starty; }
+		const int getStartX() const;
+		const int getStartY() const;
 		const int getSlotSize() const { return static_cast<int>(40 * uiscale_inventory); }
 		void setSizeY(int size) { sizey = size; }
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
 		const int getSelectedSlotX() const { return selectedSlotX; }
 		const int getSelectedSlotY() const { return selectedSlotY; }
+		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
+		const int getSelectedSlotPositionX(Item* snapToItem) const;
+		const int getSelectedSlotPositionY(Item* snapToItem) const;
 		void resetInventory()
 		{
+			if ( bNewInventoryLayout )
+			{
+				DEFAULT_INVENTORY_SIZEX = 5;
+				DEFAULT_INVENTORY_SIZEY = 6;
+			}
+			else
+			{
+				DEFAULT_INVENTORY_SIZEX = 12;
+				DEFAULT_INVENTORY_SIZEY = 3;
+			}
+			sizex = DEFAULT_INVENTORY_SIZEX;
 			sizey = DEFAULT_INVENTORY_SIZEY;
 		}
-
+		const int freeVisibleInventorySlots() const
+		{
+			int x = getPlayerItemInventoryX();
+			int y = getPlayerItemInventoryY();
+			return x * y;
+		}
+		const bool bItemInventoryHasFreeSlot() const;
+		const int getPlayerItemInventoryX() const
+		{
+			int x = DEFAULT_INVENTORY_SIZEX;
+			if ( !stats[player.playernum] || !player.isLocalPlayer() )
+			{
+				return x;
+			}
+			return x;
+		}
+		const int getPlayerItemInventoryY() const;
+		const int getPlayerBackpackBonusSizeY() const
+		{
+			if ( bNewInventoryLayout )
+			{
+				return 2;
+			}
+			return 1;
+		}
 		class Appraisal_t
 		{
 			Player& player;
@@ -647,6 +728,7 @@ public:
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
 		} appraisal;
+		bool bNewInventoryLayout = true;
 	} inventoryUI;
 
 	class StatusBar_t
@@ -712,6 +794,7 @@ public:
 		SDL_Rect skillsSheetBox;
 		SDL_Rect partySheetBox;
 		SDL_Rect characterSheetBox;
+		SDL_Rect statsSheetBox;
 
 		void setDefaultSkillsSheetBox();
 		void setDefaultPartySheetBox();
@@ -769,6 +852,16 @@ public:
 			weaponSwitch = false;
 			shieldSwitch = false;
 		}
+		bool bShowActionPrompts = true;
+		enum ActionPrompts : int
+		{
+			ACTION_PROMPT_MAINHAND,
+			ACTION_PROMPT_OFFHAND,
+			ACTION_PROMPT_MAGIC
+		};
+		void drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const;
+		void drawActionIcon(SDL_Rect& pos, int skill) const;
+		const int getActionIconForPlayer(ActionPrompts prompt) const;
 	} hud;
 
 	class Magic_t
@@ -795,7 +888,10 @@ public:
 			}
 			selected_spell_last_appearance = -1;
 		}
-		void equipSpell(spell_t* spell) { selected_spell = spell; }
+		void equipSpell(spell_t* spell) 
+		{ 
+			selected_spell = spell; 
+		}
 		spell_t* selectedSpell() const { return selected_spell; }
 
 	} magic;
@@ -885,6 +981,7 @@ public:
 		~WorldUI_t() {};
 		TooltipView tooltipView = TOOLTIP_VIEW_FREE;
 		std::vector<std::pair<Entity*, real_t>> tooltipsInRange;
+		static real_t tooltipHeightOffsetZ;
 		real_t playerLastYaw = 0.0;
 		int gimpDisplayTimer = 0;
 		void reset();
@@ -892,16 +989,92 @@ public:
 		void setTooltipDisabled(Entity& tooltip);
 		bool bTooltipActiveForPlayer(Entity& tooltip);
 		bool bTooltipInView = false;
+		Uint32 uidForActiveTooltip = 0;
+		std::string interactText = "Interact";
 		void enable() { bEnabled = true; }
 		void disable() { 
 			bEnabled = false; 
 			reset();
 		}
+		bool isEnabled() const { return bEnabled; }
 		static void handleTooltips();
 		real_t tooltipInRange(Entity& tooltip); // returns distance of added tooltip, otherwise 0.
 		void cycleToNextTooltip();
 		void cycleToPreviousTooltip();
 	} worldUI;
+
+	class PaperDoll_t
+	{
+		Player& player;
+		static const Uint32 kNumPaperDollSlots = 10;
+	public:
+		bool enabled = true;
+		static const int ITEM_PAPERDOLL_COORDINATE = -9999;
+		static const int ITEM_RETURN_TO_INVENTORY_COORDINATE = -99999;
+		PaperDoll_t(Player& p) : player(p)
+		{
+			initSlots();
+		};
+		~PaperDoll_t() {};
+		enum PaperDollSlotType : int
+		{
+			SLOT_GLASSES,
+			SLOT_CLOAK,
+			SLOT_AMULET,
+			SLOT_RING,
+			SLOT_OFFHAND,
+			SLOT_HELM,
+			SLOT_BREASTPLATE,
+			SLOT_GLOVES,
+			SLOT_BOOTS,
+			SLOT_WEAPON,
+			SLOT_MAX
+		};
+		struct PaperDollSlot_t
+		{
+			Uint32 item;
+			PaperDollSlotType slotType;
+			SDL_Rect pos { 0,0,0,0 };
+			PaperDollSlot_t()
+			{
+				item = 0;
+				slotType = SLOT_MAX;
+			}
+			bool bMouseInSlot = false;
+		};
+		std::array<PaperDollSlot_t, kNumPaperDollSlots> dollSlots;
+		const int getSlotSize() const;
+		void initSlots()
+		{
+			returningItemsToInventory.clear();
+			for ( int i = 0; i < kNumPaperDollSlots; ++i )
+			{
+				dollSlots[i].item = 0;
+				dollSlots[i].slotType = static_cast<PaperDollSlotType>(i);
+				dollSlots[i].bMouseInSlot = false;
+			}
+		}
+		void clear()
+		{
+			returningItemsToInventory.clear();
+			for ( int i = 0; i < kNumPaperDollSlots; ++i )
+			{
+				dollSlots[i].item = 0;
+				dollSlots[i].bMouseInSlot = false;
+				SDL_Rect nullRect{ 0,0,0,0 };
+				dollSlots[i].pos = nullRect;
+			}
+		}
+		void drawSlots();
+		void updateSlots();
+		PaperDollSlotType getSlotForItem(const Item& item) const;
+		bool isItemOnDoll(const Item& item) const { return getSlotForItem(item) != SLOT_MAX; }
+		PaperDollSlotType paperDollSlotFromCoordinates(int x, int y) const;
+		void selectPaperDollCoordinatesFromSlotType(PaperDollSlotType slot) const;
+		void warpMouseToPaperDollSlot(PaperDollSlotType slot);
+		std::vector<Uint32> returningItemsToInventory;
+		void warpMouseToMostRecentReturnedInventoryItem();
+	} paperDoll;
 
 	class Hotbar_t {
 		std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS> hotbar;
@@ -916,6 +1089,26 @@ public:
 		Uint32 hotbarTooltipLastGameTick = 0;
 		SDL_Rect hotbarBox;
 
+		// temp stuff
+		bool useHotbarRadialMenu = false;
+		bool useHotbarFaceMenu = true;
+		bool faceMenuInvertLayout = false;
+		bool faceMenuQuickCastEnabled = true;
+		bool faceMenuQuickCast = true;
+		bool faceMenuAlternateLayout = false;
+		enum FaceMenuGroup : int
+		{
+			GROUP_NONE,
+			GROUP_LEFT,
+			GROUP_MIDDLE,
+			GROUP_RIGHT
+		};
+		FaceMenuGroup faceMenuButtonHeld = GROUP_NONE;
+		int radialHotbarSlots = NUM_HOTBAR_SLOTS;
+		int radialHotbarProgress = 0;
+		// end temp stuff
+
+		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
 		const int getStartX() const
 		{
 			return (player.camera_midx() - ((NUM_HOTBAR_SLOTS / 2) * getSlotSize()));
@@ -974,6 +1167,9 @@ public:
 			current_hotbar = slot;
 			hotbarHasFocus = true;
 		}
+		void initFaceButtonHotbar();
+		void drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos);
+		FaceMenuGroup getFaceMenuGroupForSlot(int hotbarSlot);
 	} hotbar;
 };
 

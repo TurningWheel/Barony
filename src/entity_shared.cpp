@@ -1329,7 +1329,6 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 				node2->size = sizeof(myStats);
 			}
 			node2->deconstructor = &statDeconstructor;
-			//					node2->deconstructor = &myStats->~Stat;
 		}
 	}
 	// chests.

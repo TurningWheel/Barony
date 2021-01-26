@@ -48,6 +48,11 @@ void actBeartrap(Entity* my)
 		my->z = 6.75;
 	}
 
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		return;
@@ -640,6 +645,10 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 
 void actBomb(Entity* my)
 {
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
 	my->removeLightField();
 	if ( multiplayer == CLIENT )
 	{

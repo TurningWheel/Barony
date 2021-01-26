@@ -144,13 +144,19 @@ void clickDescription(int player, Entity* entity)
 		SDL_Rect& interfaceMessageStatusBar = players[player]->statusBarUI.messageStatusBarBox;
 		SDL_Rect& interfaceSkillsSheet = players[player]->characterSheet.skillsSheetBox;
 		SDL_Rect& interfacePartySheet = players[player]->characterSheet.partySheetBox;
+		SDL_Rect& interfaceStatsSheet = players[player]->characterSheet.statsSheetBox;
 		if ( mouseInBounds(player, interfaceCharacterSheet.x, interfaceCharacterSheet.x + interfaceCharacterSheet.w,
 			interfaceCharacterSheet.y, interfaceCharacterSheet.y + interfaceCharacterSheet.h) )
 		{
 			// character sheet
 			return;
 		}
-
+		if ( mouseInBounds(player, interfaceStatsSheet.x, interfaceStatsSheet.x + interfaceStatsSheet.w,
+			interfaceStatsSheet.y, interfaceStatsSheet.y + interfaceStatsSheet.h) )
+		{
+			// stats sheet
+			return;
+		}
 		if (!hide_statusbar && 
 			mouseInBounds(player, interfaceMessageStatusBar.x, interfaceMessageStatusBar.x + interfaceMessageStatusBar.w,
 				interfaceMessageStatusBar.y, interfaceMessageStatusBar.y + interfaceMessageStatusBar.h) )

@@ -42,6 +42,11 @@ void actLadder(Entity* my)
 	double dist;
 	int i, c;
 
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
+
 	LADDER_AMBIENCE--;
 	if (LADDER_AMBIENCE <= 0)
 	{
@@ -119,6 +124,10 @@ void actLadderUp(Entity* my)
 		LADDER_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 64 );
 	}*/
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
 
 	// use ladder
 	if ( multiplayer != CLIENT )
@@ -145,6 +154,7 @@ void actPortal(Entity* my)
 
 	if ( !my->portalInit )
 	{
+		my->createWorldUITooltip();
 		my->portalInit = 1;
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
 		if ( !strncmp(map.name, "Cockatrice Lair", 15) )
@@ -352,6 +362,11 @@ void actWinningPortal(Entity* my)
 	double dist;
 	int i, c;
 
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
+
 	if ( multiplayer != CLIENT )
 	{
 		if ( my->flags[INVISIBLE] )
@@ -508,6 +523,11 @@ void Entity::actExpansionEndGamePortal()
 	double dist;
 	int i, c;
 
+	if ( this->ticks == 1 )
+	{
+		this->createWorldUITooltip();
+	}
+
 	if ( multiplayer != CLIENT )
 	{
 		if ( flags[INVISIBLE] )
@@ -647,6 +667,11 @@ void Entity::actMidGamePortal()
 	int playercount = 0;
 	double dist;
 	int i, c;
+
+	if ( this->ticks == 1 )
+	{
+		this->createWorldUITooltip();
+	}
 
 	if ( multiplayer != CLIENT )
 	{
@@ -1001,6 +1026,11 @@ void actCustomPortal(Entity* my)
 	int playercount = 0;
 	double dist;
 	int i, c;
+
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+	}
 
 	if ( multiplayer != CLIENT )
 	{

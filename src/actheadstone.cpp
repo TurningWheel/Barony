@@ -79,11 +79,17 @@ void actHeadstone(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
+		if ( !HEADSTONE_INIT )
+		{
+			HEADSTONE_INIT = 1;
+			my->createWorldUITooltip();
+		}
 		return;
 	}
 
 	if ( !HEADSTONE_INIT )
 	{
+		my->createWorldUITooltip();
 		HEADSTONE_INIT = 1;
 		HEADSTONE_MESSAGE = rand();
 		HEADSTONE_GHOUL = (rand() % 4 == 0);

@@ -17,6 +17,9 @@
 #include "shops.hpp"
 #include "menu.hpp"
 #include "collision.hpp"
+#include "mod_tools.hpp"
+#include "draw.hpp"
+#include "colors.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -149,6 +152,8 @@ void GameController::initBindings()
 		this->buttons[i].padButton = static_cast<SDL_GameControllerButton>(i);
 		this->buttons[i].analog = 0.f;
 		this->buttons[i].binary = false;
+		this->buttons[i].binaryRelease = false;
+		this->buttons[i].binaryReleaseConsumed = false;
 		this->buttons[i].consumed = false;
 	}
 	for ( int i = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX; i < SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX; ++i )
@@ -157,13 +162,25 @@ void GameController::initBindings()
 		this->axis[i].padAxis = static_cast<SDL_GameControllerAxis>(i);
 		this->axis[i].analog = 0.f;
 		this->axis[i].binary = false;
+		this->axis[i].binaryRelease = false;
+		this->axis[i].binaryReleaseConsumed = false;
 		this->axis[i].consumed = false;
 	}
 	this->virtualDpad.padVirtualDpad = DpadDirection::CENTERED;
 	this->virtualDpad.type = Binding_t::Bindtype_t::VIRTUAL_DPAD;
 	this->virtualDpad.analog = 0.f;
 	this->virtualDpad.binary = false;
+	this->virtualDpad.binaryRelease = false;
+	this->virtualDpad.binaryReleaseConsumed = false;
 	this->virtualDpad.consumed = false;
+
+	this->radialSelection.padRadialSelection = RadialSelection::RADIAL_CENTERED;
+	this->radialSelection.type = Binding_t::Bindtype_t::RADIAL_SELECTION;
+	this->radialSelection.analog = 0.f;
+	this->radialSelection.binary = false;
+	this->radialSelection.binaryRelease = false;
+	this->radialSelection.binaryReleaseConsumed = false;
+	this->radialSelection.consumed = false;
 }
 
 const bool GameController::isActive()
@@ -349,7 +366,73 @@ void GameController::handleAnalog(int player)
 		real_t floatx = 0;
 		real_t floaty = 0;
 
-		if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
+		if ( false && players[player]->hotbar.useHotbarRadialMenu
+			&& buttonHeldToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+		{
+			real_t floatx = getRightXPercent();
+			real_t floaty = getRightYPercent();
+			const int numoptions = players[player]->hotbar.radialHotbarSlots;
+			real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
+			RadialSelection dir = RadialSelection::RADIAL_INVALID;
+			if ( magnitude > 1 )
+			{
+				real_t stickAngle = atan2(floaty, floatx);
+				while ( stickAngle >= (2 * PI + (2 * PI /*- (PI / numoptions)*/)) )
+				{
+					stickAngle -= PI * 2;
+				}
+				while ( stickAngle < (2 * PI /*- (PI / numoptions)*/) )
+				{
+					stickAngle += PI * 2;
+				}
+
+				real_t angleStart = 2 * PI /*- (PI / (2 * numoptions))*/;
+				real_t angleMiddle = angleStart + PI / (2 * numoptions);
+				real_t angleEnd = angleMiddle + PI / (2 * numoptions);
+				for ( int i = 0; i < numoptions * 2; ++i )
+				{
+					if ( (stickAngle >= angleStart && stickAngle < angleEnd) )
+					{
+						dir = static_cast<RadialSelection>(i);
+					}
+					angleStart += 2 * PI / (2 * numoptions);
+					angleMiddle = angleStart + PI / (2 * numoptions);
+					angleEnd = angleMiddle + PI / (2 * numoptions);
+				}
+				RadialSelection oldRadial = radialSelection.padRadialSelection;
+				radialSelection.padRadialSelection = dir;
+				if ( oldRadial != radialSelection.padRadialSelection )
+				{
+					// unconsume the input whenever it's released or pressed again.
+					radialSelection.consumed = false;
+
+					if ( radialSelection.padRadialSelection > RADIAL_CENTERED )
+					{
+						int hotbarSlot = -1;
+						if ( radialSelection.padRadialSelection < numoptions )
+						{
+							hotbarSlot = numoptions - radialSelection.padRadialSelection - 1;
+						}
+						else
+						{
+							hotbarSlot = radialSelection.padRadialSelection - numoptions;
+						}
+						if ( hotbarSlot >= 0 )
+						{
+							players[player]->hotbar.selectHotbarSlot(hotbarSlot);
+						}
+						messagePlayer(0, "%d", hotbarSlot);
+					}
+				}
+			}
+			else
+			{
+				radialSelection.consumed = false;
+			}
+			rightx = 0;
+			righty = 0;
+		}
+		else if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 		{
 			rightx = getRightXMove();
 			righty = getRightYMove();
@@ -405,6 +488,7 @@ void GameController::handleAnalog(int player)
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
+
 			if ( inputs.bPlayerUsingKeyboardControl(player) )
 			{
 				SDL_Event e;
@@ -430,7 +514,29 @@ void GameController::handleAnalog(int player)
 				mouse->moved = true;
 			}
 		}
-		if ( abs(floatx) > 0.0001 || abs(floaty) > 0.0001 )
+
+		if ( players[player]->hotbar.useHotbarRadialMenu
+			&& binaryToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+		{
+			if ( floatx > 0.0001 )
+			{
+				players[player]->hotbar.radialHotbarProgress += 5;
+			}
+			else if ( floatx < -0.0001 )
+			{
+				players[player]->hotbar.radialHotbarProgress -= 5;
+			}
+			players[player]->hotbar.radialHotbarProgress = std::max(0, players[player]->hotbar.radialHotbarProgress);
+			players[player]->hotbar.radialHotbarProgress = std::min(1000, players[player]->hotbar.radialHotbarProgress);
+			int slot = players[player]->hotbar.radialHotbarProgress / 100;
+			int oldSlot = players[player]->hotbar.current_hotbar;
+			players[player]->hotbar.selectHotbarSlot(slot);
+			inputs.getController(player)->radialSelection.consumed = false;
+			if ( oldSlot != slot )
+			{
+			}
+		}
+		else if ( abs(floatx) > 0.0001 || abs(floaty) > 0.0001 )
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
@@ -687,6 +793,20 @@ bool GameController::handleInventoryMovement(const int player)
 
 	auto& hotbar_t = players[player]->hotbar;
 
+	if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
+	{
+		hotbar_t.hotbarHasFocus = !hotbar_t.hotbarHasFocus;
+		if ( hotbar_t.hotbarHasFocus )
+		{
+			warpMouseToSelectedHotbarSlot(player);
+		}
+		else
+		{
+			warpMouseToSelectedInventorySlot(player);
+		}
+		inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+	}
+
 	if ( hotbar_t.hotbarHasFocus && !hotbarGamepadControlEnabled(player) )
 	{
 		hotbar_t.hotbarHasFocus = false;
@@ -697,7 +817,17 @@ bool GameController::handleInventoryMovement(const int player)
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar - 1);
+			int newSlot = hotbar_t.current_hotbar - 1;
+			/*if ( hotbar_t.useHotbarFaceMenu )
+			{
+				if ( hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6 
+					|| hotbar_t.current_hotbar == 3 || hotbar_t.current_hotbar == 7 )
+				{
+					newSlot = hotbar_t.current_hotbar - 2;
+				}
+			}*/
+
+			hotbar_t.selectHotbarSlot(newSlot);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
@@ -717,7 +847,16 @@ bool GameController::handleInventoryMovement(const int player)
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar + 1);
+			int newSlot = hotbar_t.current_hotbar + 1;
+			/*if ( hotbar_t.useHotbarFaceMenu )
+			{
+				if ( hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5 )
+				{
+					newSlot = hotbar_t.current_hotbar + 2;
+				}
+			}*/
+
+			hotbar_t.selectHotbarSlot(newSlot);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
@@ -736,10 +875,19 @@ bool GameController::handleInventoryMovement(const int player)
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
-			//Warp back to top of inventory.
-			hotbar_t.hotbarHasFocus = false;
-			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1);
+			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6) )
+			{
+				int newSlot = hotbar_t.current_hotbar - 1;
+				hotbar_t.selectHotbarSlot(newSlot);
+				warpMouseToSelectedHotbarSlot(player);
+			}
+			else*/
+			{
+				//Warp back to top of inventory.
+				hotbar_t.hotbarHasFocus = false;
+				float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1);
+			}
 		}
 		else
 		{
@@ -756,10 +904,19 @@ bool GameController::handleInventoryMovement(const int player)
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
-			//Warp back to bottom of inventory.
-			hotbar_t.hotbarHasFocus = false;
-			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0);
+			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5) )
+			{
+				int newSlot = hotbar_t.current_hotbar + 1;
+				hotbar_t.selectHotbarSlot(newSlot);
+				warpMouseToSelectedHotbarSlot(player);
+			}
+			else*/
+			{
+				//Warp back to bottom of inventory.
+				hotbar_t.hotbarHasFocus = false;
+				float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0);
+			}
 		}
 		else
 		{
@@ -1311,6 +1468,7 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 	if ( SDL_HapticUpdateEffect(sdl_haptic, haptics.hapticEffectId, &haptics.hapticEffect) < 0 )
 	{
 		printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
+		return;
 	}
 	if ( SDL_HapticRunEffect(sdl_haptic, haptics.hapticEffectId, 1) < 0 )
 	{
@@ -1332,7 +1490,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	messageZone(*this),
 	worldUI(*this),
 	hotbar(*this),
-	bookGUI(*this)
+	bookGUI(*this),
+	paperDoll(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
@@ -1357,6 +1516,7 @@ void Player::init() // for use on new/restart game, UI related
 	characterSheet.setDefaultSkillsSheetBox();
 	characterSheet.setDefaultPartySheetBox();
 	characterSheet.setDefaultCharacterSheetBox();
+	paperDoll.clear();
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -1391,6 +1551,7 @@ void Player::PlayerMovement_t::reset()
 	insectoidLevitating = false;
 }
 
+real_t Player::WorldUI_t::tooltipHeightOffsetZ = 0.0;
 void Player::WorldUI_t::reset()
 {
 	for ( auto& tooltip : tooltipsInRange )
@@ -1402,6 +1563,7 @@ void Player::WorldUI_t::reset()
 	}
 	tooltipsInRange.clear();
 	bTooltipInView = false;
+	uidForActiveTooltip = 0;
 }
 
 real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
@@ -1412,6 +1574,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 	}
 
 	real_t dist = entityDist(&tooltip, players[player.playernum]->entity);
+	Entity* parent = uidToEntity(tooltip.parent);
 	if ( dist < 24 && dist > 4 )
 	{
 		real_t tangent = atan2(tooltip.y - players[player.playernum]->entity->y, tooltip.x - players[player.playernum]->entity->x);
@@ -1432,7 +1595,47 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		{
 			playerYaw += 2 * PI;
 		}
-		if ( abs(tangent - playerYaw) < (PI / 8) || abs(tangent - playerYaw) > (2 * PI - PI / 8) )
+
+		real_t interactAngle = (PI / 8);
+		if ( parent )
+		{
+			if ( parent->behavior == &actGate && parent->flags[PASSABLE] )
+			{
+				return 0.0;
+			}
+			if ( parent->behavior == &actPlayer || parent->behavior == &actMonster )
+			{
+				interactAngle = PI / 16;
+			}
+			else if ( parent->behavior == &actBeartrap || parent->behavior == &actBomb )
+			{
+				interactAngle = PI / 16;
+			}
+			else if ( parent->behavior == &actBoulder )
+			{
+				dist += .5; // distance penalty
+			}
+			else if ( parent->behavior == &actFurniture )
+			{
+				if ( parent->furnitureType == FURNITURE_BED 
+					|| parent->furnitureType == FURNITURE_BUNKBED
+					|| parent->furnitureType == FURNITURE_TABLE )
+				{
+					// wide angle
+				}
+				else
+				{
+					interactAngle = PI / 16;
+				}
+				Entity* itemOnFurniture = uidToEntity(parent->parent);
+				if ( itemOnFurniture )
+				{
+					dist += 2; // distance penalty
+				}
+			}
+		}
+
+		if ( (abs(tangent - playerYaw) < (interactAngle)) || (abs(tangent - playerYaw) > (2 * PI - interactAngle)) )
 		{
 			//messagePlayer(0, "%.2f", tangent - playerYaw);
 			return dist;
@@ -1447,17 +1650,284 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 	tooltip.worldTooltipActive = 1;
 	if ( uidToEntity(tooltip.parent) )
 	{
-		uidToEntity(tooltip.parent)->highlightForUI = 1;
+		Entity* parent = uidToEntity(tooltip.parent);
+		parent->highlightForUI = 1.0;
+
+		if ( tooltip.worldTooltipRequiresButtonHeld == 1 )
+		{
+			interactText = "(Hold) ";
+		}
+		else
+		{
+			interactText = "";
+		}
+
+		if ( parent->behavior == &actItem )
+		{
+			interactText = "Pick up item";
+		}
+		else if ( parent->behavior == &actGoldBag )
+		{
+			interactText = "Take gold";
+		}
+		else if ( parent->behavior == &actFountain )
+		{
+			interactText = "Drink from fountain";
+		}
+		else if ( parent->behavior == &actSink )
+		{
+			interactText = "Drink from sink";
+		}
+		else if ( parent->behavior == &actChestLid || parent->behavior == &actChest )
+		{
+			if ( parent->skill[1] == 1 )
+			{
+				interactText = "Close chest";
+			}
+			else if ( parent->skill[1] == 0 )
+			{
+				interactText = "Open chest";
+			}
+		}
+		else if ( parent->behavior == &actTorch )
+		{
+			interactText = "Take torch";
+		}
+		else if ( parent->behavior == &actCrystalShard )
+		{
+			interactText = "Take shard";
+		}
+		else if ( parent->behavior == &actHeadstone )
+		{
+			interactText = "Inspect gravestone";
+		}
+		else if ( parent->behavior == &actMonster )
+		{
+			int monsterType = parent->getMonsterTypeFromSprite();
+			std::string name = "follower";
+			if ( parent->getStats() && strcmp(parent->getStats()->name, "") )
+			{
+				name = parent->getStats()->name;
+			}
+			else
+			{
+				if ( monsterType < KOBOLD ) //Original monster count
+				{
+					name = language[90 + monsterType];
+				}
+				else if ( monsterType >= KOBOLD ) //New monsters
+				{
+					name = language[2000 + monsterType - KOBOLD];
+				}
+			}
+
+			if ( parent->monsterAllyGetPlayerLeader() 
+				&& parent->monsterAllyGetPlayerLeader() == players[player.playernum]->entity )
+			{
+				if ( parent->monsterIsTinkeringCreation() )
+				{
+					interactText = "Command " + name;
+				}
+				else
+				{
+					interactText = "Command " + name;
+				}
+			}
+			else if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+			{
+				interactText = "Trade with " + name;
+			}
+			else
+			{
+				interactText = "Interact with " + name;
+			}
+		}
+		else if ( parent->behavior == &actDoor )
+		{
+			if ( parent->flags[PASSABLE] )
+			{
+				interactText = "Close door";
+			}
+			else
+			{
+				interactText = "Open door";
+			}
+		}
+		else if ( parent->behavior == &actGate )
+		{
+			interactText = "Inspect gate";
+		}
+		else if ( parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
+		{
+			if ( parent->skill[0] == 1 )
+			{
+				interactText = "Deactivate switch";
+			}
+			else
+			{
+				interactText = "Activate switch";
+			}
+		}
+		else if ( parent->behavior == &actPowerCrystal )
+		{
+			interactText = "Turn crystal";
+		}
+		else if ( parent->behavior == &actBoulder )
+		{
+			interactText = "Push boulder";
+		}
+		else if ( parent->behavior == &actPedestalBase )
+		{
+			if ( parent->pedestalHasOrb > 0 )
+			{
+				interactText = "Take orb";
+			}
+			else
+			{
+				interactText = "Inspect";
+			}
+		}
+		else if ( parent->behavior == &actCampfire )
+		{
+			interactText = "Pull torch";
+		}
+		else if ( parent->behavior == &actFurniture || parent->behavior == &actMCaxe )
+		{
+			interactText = "Inspect";
+		}
+		else if ( parent->behavior == &actFloorDecoration )
+		{
+			if ( parent->sprite == 991 ) // sign
+			{
+				interactText = "Read sign";
+			}
+			else
+			{
+				interactText = "Inspect";
+			}
+		}
+		else if ( parent->behavior == &actBeartrap )
+		{
+			interactText = "Disarm beartrap";
+		}
+		else if ( parent->behavior == &actLadderUp )
+		{
+			interactText = "Inspect trapdoor";
+		}
+		else if ( parent->behavior == &actLadder )
+		{
+			if ( secretlevel && parent->skill[3] == 1 ) // secret ladder
+			{
+				interactText += "Exit secret level";
+			}
+			else if ( !secretlevel && parent->skill[3] == 1 ) // secret ladder
+			{
+				interactText += "Enter secret level";
+			}
+			else
+			{
+				interactText += "Exit dungeon floor";
+			}
+		}
+		else if ( parent->behavior == &actPortal )
+		{
+			if ( parent->skill[3] == 0 ) // secret entrance portal
+			{
+				if ( secretlevel )
+				{
+					interactText += "Exit secret level";
+				}
+				else
+				{
+					interactText += "Enter secret level";
+				}
+			}
+			else
+			{
+				if ( !strcmp(map.name, "Hell") )
+				{
+					interactText += "Exit dungeon floor"; // hell uses portals instead
+				}
+				else if ( !strcmp(map.name, "Mages Guild") )
+				{
+					interactText += "Exit Hamlet"; // mages guild exit to castle
+				}
+				else
+				{
+					interactText += "Exit dungeon floor";
+				}
+			}
+		}
+		else if ( parent->behavior == &::actMidGamePortal )
+		{
+			interactText += "Step through portal";
+		}
+		else if ( parent->behavior == &actCustomPortal )
+		{
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				if ( !strcmp(map.name, "Tutorial Hub") )
+				{
+					interactText += "Enter trial";
+				}
+				else
+				{
+					interactText += "Exit trial";
+				}
+			}
+			else
+			{
+				if ( parent->portalCustomSpriteAnimationFrames > 0 )
+				{
+					interactText += "Enter portal";
+				}
+				else
+				{
+					interactText += "Enter trapdoor";
+				}
+			}
+		}
+		else if ( parent->behavior == &::actExpansionEndGamePortal
+			|| parent->behavior == &actWinningPortal )
+		{
+			interactText += "Step through portal";
+		}
+		else if ( parent->behavior == &actTeleporter )
+		{
+			if ( parent->teleporterType == 2 ) // portal
+			{
+				interactText += "Enter portal";
+			}
+			else if ( parent->teleporterType == 1 ) // down ladder
+			{
+				interactText += "Descend ladder";
+			}
+			else if ( parent->teleporterType == 0 ) // up ladder
+			{
+				interactText += "Climb ladder";
+			}
+		}
+		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
+		{
+			char* itemName = items[parent->skill[21]].name_identified;
+			interactText = "Disarm ";
+			interactText += itemName;
+		}
+		else
+		{
+			interactText = "Interact";
+		}
 	}
 	bTooltipInView = true;
+	uidForActiveTooltip = tooltip.parent;
 }
 void Player::WorldUI_t::setTooltipDisabled(Entity& tooltip)
 {
 	tooltip.setUID(UID_TOOLTIP_DISABLED);
 	tooltip.worldTooltipActive = 0;
-	if ( uidToEntity(tooltip.parent) )
+	if ( tooltip.parent == uidForActiveTooltip )
 	{
-		uidToEntity(tooltip.parent)->highlightForUI = 0;
+		uidForActiveTooltip = 0;
 	}
 }
 bool Player::WorldUI_t::bTooltipActiveForPlayer(Entity& tooltip)
@@ -1539,7 +2009,7 @@ void Player::WorldUI_t::cycleToPreviousTooltip()
 	}
 }
 
-bool entityBlocksTooltipInteraction(Entity& entity)
+bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 {
 	if ( entity.behavior == &actGate )
 	{
@@ -1565,11 +2035,23 @@ bool entityBlocksTooltipInteraction(Entity& entity)
 	{
 		return false;
 	}
+	else if ( entity.behavior == &actPistonBase || entity.behavior == &actPistonCam )
+	{
+		return false;
+	}
 	else if ( entity.behavior == &actColumn )
 	{
 		return false;
 	}
 	else if ( entity.behavior == &actDoorFrame )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actDoor || entity.behavior == &actFountain || entity.behavior == &actSink
+		|| entity.behavior == &actHeadstone || entity.behavior == &actChest || entity.behavior == &actChestLid
+		|| entity.behavior == &actBoulder || (entity.behavior == &actMonster && !entity.checkEnemy(players[player]->entity) )
+		|| entity.behavior == &actPlayer || entity.behavior == &actPedestalOrb || entity.behavior == &actPowerCrystalBase
+		|| entity.behavior == &actPowerCrystal )
 	{
 		return false;
 	}
@@ -1579,7 +2061,7 @@ bool entityBlocksTooltipInteraction(Entity& entity)
 
 void Player::WorldUI_t::handleTooltips()
 {
-	for ( int player = 0; player < MAXPLAYERS && !gamePaused && !hide_playertags; ++player )
+	for ( int player = 0; player < MAXPLAYERS && !gamePaused; ++player )
 	{
 		if ( !players[player]->isLocalPlayerAlive() )
 		{
@@ -1612,12 +2094,16 @@ void Player::WorldUI_t::handleTooltips()
 		}
 
 		bool bDoingActionHideTooltips = false;
-		if ( players[player]->hud.arm && players[player]->hud.weapon->skill[0] != 0 )
+		if ( players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0 )
 		{
 			// hudweapon chop
 			bDoingActionHideTooltips = true;
 		}
-		else if ( cast_animation[player].active )
+		else if ( players[player]->hud.bowFire || players[player]->hud.bowIsBeingDrawn )
+		{
+			bDoingActionHideTooltips = true;
+		}
+		else if ( cast_animation[player].active || cast_animation[player].active_spellbook )
 		{
 			// spells
 			bDoingActionHideTooltips = true;
@@ -1632,7 +2118,7 @@ void Player::WorldUI_t::handleTooltips()
 			Entity* ohitentity = hit.entity;
 			lineTrace(players[player]->entity, players[player]->entity->x, players[player]->entity->y,
 				players[player]->entity->yaw, STRIKERANGE, 0, true);
-			if ( hit.entity && entityBlocksTooltipInteraction (*hit.entity) )
+			if ( hit.entity && entityBlocksTooltipInteraction(player, *hit.entity) )
 			{
 				bDoingActionHideTooltips = true;
 			}
@@ -1677,8 +2163,13 @@ void Player::WorldUI_t::handleTooltips()
 			}
 
 			players[player]->worldUI.gimpDisplayTimer = std::max(0, players[player]->worldUI.gimpDisplayTimer - 1);
+			if ( players[player]->worldUI.gimpDisplayTimer > 0 )
+			{
+				continue;
+			}
 
 			Entity* closestTooltip = nullptr;
+			Entity* parent = nullptr;
 			real_t dist = 10000.0;
 			for ( node_t* node = map.worldUI->first; node; node = node->next )
 			{
@@ -1688,6 +2179,15 @@ void Player::WorldUI_t::handleTooltips()
 					continue;
 				}
 				if ( tooltip->worldTooltipPlayer != player )
+				{
+					continue;
+				}
+				parent = uidToEntity(tooltip->parent);
+				if ( parent && parent->flags[INVISIBLE] )
+				{
+					continue;
+				}
+				if ( parent && parent->flags[PASSABLE] && parent->behavior == &actBoulder )
 				{
 					continue;
 				}
@@ -1766,6 +2266,701 @@ void Player::WorldUI_t::handleTooltips()
 					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
 					return;
 				}
+			}
+		}
+	}
+}
+
+void Player::Hotbar_t::initFaceButtonHotbar()
+{
+	if ( faceMenuAlternateLayout )
+	{
+		for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
+		{
+			faceButtonPositions[num].w = getSlotSize();
+			faceButtonPositions[num].h = getSlotSize();
+			faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6;
+			faceButtonPositions[num].y = hotbarBox.y - getSlotSize() / 2;
+
+			/*if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE && num == current_hotbar)
+			{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+			}*/
+			if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_LEFT )
+			{
+				//faceButtonPositions[num].y -= getSlotSize() / 4;
+			}
+			else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_MIDDLE )
+			{
+				//faceButtonPositions[num].y -= getSlotSize() / 4;
+			}
+			else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_RIGHT )
+			{
+				//faceButtonPositions[num].y -= getSlotSize() / 4;
+			}
+
+			if ( getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_LEFT )
+			{
+				faceButtonPositions[num].x += getSlotSize() / 1;
+				faceButtonPositions[num].y += getSlotSize() / 8;
+			}
+			else if ( getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_MIDDLE )
+			{
+				faceButtonPositions[num].y -= getSlotSize();
+			}
+			else if ( getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_RIGHT )
+			{
+				faceButtonPositions[num].x -= getSlotSize() / 1;
+				faceButtonPositions[num].y += getSlotSize() / 8;
+			}
+
+			switch ( num )
+			{
+				case 0:
+					faceButtonPositions[num].x += 0 * getSlotSize();
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 1:
+					{
+						faceButtonPositions[num].x += 1 * getSlotSize();
+					}
+					break;
+				case 2:
+					faceButtonPositions[num].x += 2 * getSlotSize();
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					else
+					{
+
+					}
+					break;
+				case 3:
+					faceButtonPositions[num].x += 3 * getSlotSize() + getSlotSize() / 3;
+					faceButtonPositions[num].y -= getSlotSize() / 4;
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 4:
+					faceButtonPositions[num].x += 4 * getSlotSize() + getSlotSize() / 3;
+					faceButtonPositions[num].y -= getSlotSize() / 4;
+					break;
+				case 5:
+					faceButtonPositions[num].x += 5 * getSlotSize() + getSlotSize() / 3;
+					faceButtonPositions[num].y -= getSlotSize() / 4;
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 6:
+					faceButtonPositions[num].x += 6 * getSlotSize() + 2 * getSlotSize() / 3;
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 7:
+					{
+						faceButtonPositions[num].x += 7 * getSlotSize() + 2 * getSlotSize() / 3;
+					}
+					break;
+				case 8:
+					faceButtonPositions[num].x += 8 * getSlotSize() + 2 * getSlotSize() / 3;
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT )
+					{
+						faceButtonPositions[num].y += getSlotSize() / 8;
+					}
+					break;
+				case 9:
+					faceButtonPositions[num].x += 14 * getSlotSize();
+					break;
+				default:
+					break;
+			}
+		}
+		return;
+	}
+
+	for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
+	{
+		faceButtonPositions[num].w = getSlotSize();
+		faceButtonPositions[num].h = getSlotSize();
+		faceButtonPositions[num].x = hotbarBox.x + getSlotSize() / 6;
+		faceButtonPositions[num].y = hotbarBox.y - getSlotSize() / 2;
+
+		/*if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE && num == current_hotbar)
+		{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+		}*/
+		if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_LEFT )
+		{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+		}
+		else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_MIDDLE )
+		{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+		}
+		else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT && getFaceMenuGroupForSlot(num) == FaceMenuGroup::GROUP_RIGHT )
+		{
+			faceButtonPositions[num].y -= getSlotSize() / 4;
+		}
+
+		switch ( num )
+		{
+			case 0:
+				faceButtonPositions[num].x += 0 * getSlotSize();
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
+				break;
+			case 1:
+				faceButtonPositions[num].x += 1 * getSlotSize();
+				break;
+			case 2:
+				faceButtonPositions[num].x += 2 * getSlotSize();
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
+				break;
+			case 3:
+				faceButtonPositions[num].x += 3 * getSlotSize() + getSlotSize() / 3;
+				faceButtonPositions[num].y -= getSlotSize() / 4;
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
+				break;
+			case 4:
+				faceButtonPositions[num].x += 4 * getSlotSize() + getSlotSize() / 3;
+				faceButtonPositions[num].y -= getSlotSize() / 4;
+				break;
+			case 5:
+				faceButtonPositions[num].x += 5 * getSlotSize() + getSlotSize() / 3;
+				faceButtonPositions[num].y -= getSlotSize() / 4;
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
+				break;
+			case 6:
+				faceButtonPositions[num].x += 6 * getSlotSize() + 2 * getSlotSize() / 3;
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
+				break;
+			case 7:
+				faceButtonPositions[num].x += 7 * getSlotSize() + 2 * getSlotSize() / 3;
+				break;
+			case 8:
+				faceButtonPositions[num].x += 8 * getSlotSize() + 2 * getSlotSize() / 3;
+				if ( faceMenuButtonHeld != getFaceMenuGroupForSlot(num) )
+				{
+					faceButtonPositions[num].y += getSlotSize() / 8;
+				}
+				break;
+			case 9:
+				faceButtonPositions[num].x += 12 * getSlotSize();
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+Player::Hotbar_t::FaceMenuGroup Player::Hotbar_t::getFaceMenuGroupForSlot(int hotbarSlot)
+{
+	if ( hotbarSlot < 3 )
+	{
+		return FaceMenuGroup::GROUP_LEFT;
+	}
+	else if ( hotbarSlot < 6 )
+	{
+		return FaceMenuGroup::GROUP_MIDDLE;
+	}
+	else if ( hotbarSlot < 9 )
+	{
+		return FaceMenuGroup::GROUP_RIGHT;
+	}
+	return FaceMenuGroup::GROUP_NONE;
+}
+
+void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
+{
+	Uint32 height = 2.25 * uiscale_hotbar;
+	Uint32 width = 2.25 * uiscale_hotbar;
+	Uint32 x = slotPos.x + slotPos.w / 2;
+	Uint32 y = slotPos.y;
+	SDL_Rect glyphsrc;
+	bool draw = true;
+
+	switch ( slot )
+	{
+		case 0:
+			if ( faceMenuButtonHeld == GROUP_LEFT )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 1:
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, faceMenuButtonHeld == GROUP_LEFT, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X);
+			break;
+		case 2:
+			if ( faceMenuButtonHeld == GROUP_LEFT )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 3:
+			if ( faceMenuButtonHeld == GROUP_MIDDLE )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 4:
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, faceMenuButtonHeld == GROUP_MIDDLE, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y);
+			break;
+		case 5:
+			if ( faceMenuButtonHeld == GROUP_MIDDLE )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 6:
+			if ( faceMenuButtonHeld == GROUP_RIGHT )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 7:
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, faceMenuButtonHeld == GROUP_RIGHT, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B);
+			break;
+		case 8:
+			if ( faceMenuButtonHeld == GROUP_RIGHT )
+			{
+				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			}
+			else
+			{
+				draw = false;
+			}
+			break;
+		case 9:
+			return;
+		default:
+			return;
+	}
+
+	if ( draw )
+	{
+		height *= glyphsrc.h;
+		width *= glyphsrc.w;
+		x -= width / 2;
+		y -= height;
+		SDL_Rect glyphpos{ x, y, width, height };
+		drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
+	}
+}
+
+const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt) const
+{
+	if ( prompt == ACTION_PROMPT_MAGIC ) { return PRO_SPELLCASTING; }
+
+	bool shapeshifted = false;
+	Monster playerRace = HUMAN;
+	
+	if ( players[player.playernum]->entity )
+	{
+		playerRace = players[player.playernum]->entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
+		if ( players[player.playernum]->entity->effectShapeshift != NOTHING )
+		{
+			playerRace = static_cast<Monster>(players[player.playernum]->entity->effectShapeshift);
+			shapeshifted = true;
+		}
+	}
+
+	if ( prompt == ACTION_PROMPT_OFFHAND )
+	{
+		int skill = PRO_SHIELD;
+		if ( stats[player.playernum] )
+		{
+			if ( stats[player.playernum]->shield )
+			{
+				bool hasSpellBook = itemCategory(stats[player.playernum]->shield) == SPELLBOOK;
+				bool allowCasting = true;
+				bool allowDefending = true;
+				if ( shapeshifted && playerRace == CREATURE_IMP )
+				{
+					// imp allowed to cast via spellbook.
+					allowCasting = false;
+				}
+				if ( hasSpellBook && allowCasting )
+				{
+					return PRO_MAGIC;
+				}
+
+				if ( shapeshifted || itemTypeIsQuiver(stats[player.playernum]->shield->type) )
+				{
+					allowDefending = false;
+				}
+
+				if ( allowDefending )
+				{ 
+					return PRO_SHIELD; 
+				}
+				return PRO_STEALTH;
+			}
+			else
+			{
+				skill = PRO_STEALTH;
+			}
+		}
+		return skill;
+	}
+	else // prompt == ACTION_PROMPT_MAINHAND
+	{
+		int skill = PRO_UNARMED;
+		if ( stats[player.playernum] )
+		{
+			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
+			{
+				if ( !shapeshifted && stats[player.playernum]->defending )
+				{
+					return PRO_LOCKPICKING;
+				}
+			}
+			if ( stats[player.playernum]->weapon )
+			{
+				if ( itemCategory(stats[player.playernum]->weapon) == MAGICSTAFF )
+				{
+					if ( !shapeshifted || (shapeshifted && playerRace == CREATURE_IMP) )
+					{
+						skill = PRO_SPELLCASTING;
+					}
+				}
+				else if ( !shapeshifted )
+				{
+					if ( itemCategory(stats[player.playernum]->weapon) == POTION )
+					{
+						skill = PRO_ALCHEMY;
+					}
+					else if ( itemCategory(stats[player.playernum]->weapon) == TOOL )
+					{
+						skill = PRO_LOCKPICKING;
+					}
+					else
+					{
+						skill = getWeaponSkill(stats[player.playernum]->weapon);
+						if ( skill == -1 )
+						{
+							skill =  PRO_UNARMED;
+						}
+					}
+				}
+			}
+		}
+		return skill;
+	}
+}
+
+void Player::HUD_t::drawActionIcon(SDL_Rect& pos, int skill) const
+{
+	SDL_Rect skillIconSrc = getRectForSkillIcon(skill);
+	SDL_Rect skillIconPos{ pos.x, pos.y, pos.w, pos.h };
+
+	drawImageScaled(skillIcons_bmp, &skillIconSrc, &skillIconPos);
+}
+
+void Player::HUD_t::drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const
+{
+	if ( !bShowActionPrompts )
+	{
+		return;
+	}
+
+	real_t scale = 2.25;
+	Uint32 height = scale;
+	Uint32 width = scale;
+	Uint32 x = pos.x + pos.w / 2;
+	Uint32 y = pos.y + pos.h;
+	SDL_Rect glyphsrc;
+
+	switch ( prompt )
+	{
+		case ACTION_PROMPT_MAINHAND:
+			// replace these dirty hax
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				INJOY_GAME_ATTACK);
+			break;
+		case ACTION_PROMPT_OFFHAND:
+			// replace these dirty hax
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				INJOY_GAME_DEFEND);
+			break;
+		case ACTION_PROMPT_MAGIC:
+			// replace these dirty hax
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				std::min(joyimpulses[INJOY_GAME_CAST_SPELL] - 301U, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX - 1U));
+			break;
+		default:
+			return;
+	}
+
+	height *= glyphsrc.h;
+	width *= glyphsrc.w;
+	x -= width / 2;
+	y -= 8;
+	SDL_Rect glyphpos{ x, y, width, height };
+	drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
+}
+
+const int Player::Inventory_t::getPlayerItemInventoryY() const
+{
+	int y = DEFAULT_INVENTORY_SIZEY;
+	if ( !stats[player.playernum] || !player.isLocalPlayer() )
+	{
+		return y;
+	}
+	if ( stats[player.playernum]->cloak
+		&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK
+		&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
+	{
+		y = DEFAULT_INVENTORY_SIZEY + 1;
+	}
+	return y;
+}
+
+const int Player::Inventory_t::getStartX() const 
+{
+	if ( bNewInventoryLayout )
+	{
+		return (player.characterSheet.characterSheetBox.x) + 8;
+	}
+	else
+	{
+		return (player.camera_midx() - (sizex) * (getSlotSize()) / 2 - inventory_mode_item_img->w / 2);
+	}
+}
+const int Player::Inventory_t::getStartY() const
+{
+	if ( bNewInventoryLayout )
+	{
+		return player.characterSheet.characterSheetBox.y + player.characterSheet.characterSheetBox.h + 2;
+	}
+	else
+	{
+		return player.camera_y1() + starty;
+	}
+}
+
+const int Player::Inventory_t::getSelectedSlotPositionX(Item* snapToItem) const
+{
+	int x = getSelectedSlotX();
+	int y = getSelectedSlotY();
+	if ( snapToItem )
+	{
+		x = snapToItem->x;
+		y = snapToItem->y;
+	}
+	if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
+	{
+		auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+		if ( snapToItem )
+		{
+			slot = player.paperDoll.getSlotForItem(*snapToItem);
+		}
+		else
+		{
+			slot = player.paperDoll.paperDollSlotFromCoordinates(x, y);
+		}
+		if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
+		{
+			return player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.x
+				+ player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.w / 2;
+		}
+		return player.paperDoll.dollSlots[slot].pos.x + player.paperDoll.dollSlots[slot].pos.w / 2;
+	}
+	else
+	{
+		return getStartX()
+			+ (x * getSlotSize())
+			+ (getSlotSize() / 2);
+	}
+}
+
+const int Player::Inventory_t::getSelectedSlotPositionY(Item* snapToItem) const
+{
+	int x = getSelectedSlotX();
+	int y = getSelectedSlotY();
+	if ( snapToItem )
+	{
+		x = snapToItem->x;
+		y = snapToItem->y;
+	}
+	if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
+	{
+		auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+		if ( snapToItem )
+		{
+			slot = player.paperDoll.getSlotForItem(*snapToItem);
+		}
+		else
+		{
+			slot = player.paperDoll.paperDollSlotFromCoordinates(x, y);
+		}
+		if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
+		{
+			return player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.y
+				+ player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.h / 2;
+		}
+		return player.paperDoll.dollSlots[slot].pos.y + player.paperDoll.dollSlots[slot].pos.h / 2;
+	}
+	else
+	{
+		return getStartY()
+			+ (y * getSlotSize())
+			+ (getSlotSize() / 2);
+	}
+}
+
+const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const
+{
+	int numSlots = freeVisibleInventorySlots();
+	int itemCount = 0;
+	if ( !stats[player.playernum] || !player.isLocalPlayer() )
+	{
+		return false;
+	}
+	for ( node_t* node = stats[player.playernum]->inventory.first; node; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( !item )
+		{
+			continue;
+		}
+		if ( itemCategory(item) == SPELL_CAT
+			|| (item->x < 0 || item->x >= getPlayerItemInventoryX())
+			|| (item->y < 0 || item->y >= getPlayerItemInventoryY())
+			)
+		{
+			continue; // ignore spells, or items not present in the grid.
+		}
+		if ( player.paperDoll.enabled
+			&& player.paperDoll.isItemOnDoll(*item) )
+		{
+			continue;
+		}
+		++itemCount;
+	}
+	return itemCount < numSlots;
+}
+
+const int Player::PaperDoll_t::getSlotSize() const
+{
+	return 32;
+}
+
+Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::getSlotForItem(const Item& item) const
+{
+	for ( auto& slot : dollSlots )
+	{
+		if ( slot.item == item.uid )
+		{
+			return slot.slotType;
+		}
+	}
+	return SLOT_MAX;
+}
+
+void Player::PaperDoll_t::drawSlots()
+{
+	updateSlots();
+	if ( player.shootmode || !enabled || !player.isLocalPlayer() )
+	{
+		return;
+	}
+	auto& charSheetBox = player.characterSheet.characterSheetBox;
+
+	int startx = charSheetBox.x + 2 + 8;
+	int starty = charSheetBox.y + 2 + 8;
+
+	SDL_Rect pos{ startx, starty, getSlotSize(), getSlotSize() };
+
+	for ( auto& slot : dollSlots )
+	{
+		slot.bMouseInSlot = false;
+		if ( slot.slotType != PaperDollSlotType::SLOT_MAX )
+		{
+			slot.pos = pos;
+
+			// grey outline
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+			if ( mouseInBounds(player.playernum, pos.x, pos.x + pos.w, pos.y, pos.y + pos.h) )
+			{
+				slot.bMouseInSlot = true;
+				// yellow highlight
+
+				selectPaperDollCoordinatesFromSlotType(slot.slotType);
+				if ( !player.hotbar.hotbarHasFocus )
+				{
+					drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 0), 127);
+				}
+			}
+
+			SDL_Rect slotBackground = pos;
+			slotBackground.x += 1;
+			slotBackground.y += 1;
+			slotBackground.w -= 2;
+			slotBackground.h -= 2;
+			// black background
+			drawRect(&slotBackground, 0, 255);
+
+			if ( slot.slotType == SLOT_OFFHAND )
+			{
+				pos.x = charSheetBox.x + charSheetBox.w - 2 - 8 - getSlotSize();
+				pos.y = starty;
+			}
+			else
+			{
+				pos.y += 4 + getSlotSize();
 			}
 		}
 	}
@@ -2032,6 +3227,10 @@ GameController* Inputs::getController(int player) const
 
 const bool Inputs::bControllerRawInputPressed(int player, const unsigned button) const
 {
+	if ( button < 299 || button >= (301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX) )
+	{
+		return false;
+	}
 	const GameController* controller = getController(player);
 	if ( !controller )
 	{
@@ -2045,6 +3244,29 @@ const bool Inputs::bControllerRawInputPressed(int player, const unsigned button)
 	else
 	{
 		return controller->binaryToggle(static_cast<SDL_GameControllerButton>(button - 301));
+	}
+}
+
+const bool Inputs::bControllerRawInputReleased(int player, const unsigned button) const
+{
+	if ( button < 299 || button >= (301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX) )
+	{
+		return false;
+	}
+	const GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return false;
+	}
+
+	if ( button == 299 || button == 300 ) // triggers
+	{
+		return false;
+		//return controller->binaryReleaseToggle(static_cast<SDL_GameControllerAxis>(button - 299 + SDL_CONTROLLER_AXIS_TRIGGERLEFT));
+	}
+	else
+	{
+		return controller->binaryReleaseToggle(static_cast<SDL_GameControllerButton>(button - 301));
 	}
 }
 
@@ -2070,7 +3292,41 @@ const bool Inputs::bControllerInputPressed(int player, const unsigned controller
 	}
 	else
 	{
+		if ( players[player]->hotbar.faceMenuButtonHeld )
+		{
+			if ( GameController::getSDLButtonFromImpulse(controllerImpulse) == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER
+				|| GameController::getSDLButtonFromImpulse(controllerImpulse) == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER )
+			{
+				return false;
+			}
+		}
 		return controller->binaryToggle(GameController::getSDLButtonFromImpulse(controllerImpulse));
+	}
+}
+
+const bool Inputs::bControllerInputHeld(int player, const unsigned controllerImpulse) const
+{
+	if ( controllerImpulse >= NUM_JOY_IMPULSES )
+	{
+		return false;
+	}
+	if ( !bPlayerIsControllable(player) )
+	{
+		return false;
+	}
+	const GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return false;
+	}
+
+	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 ) // triggers
+	{
+		return controller->buttonHeldToggle(GameController::getSDLTriggerFromImpulse(controllerImpulse));
+	}
+	else
+	{
+		return controller->buttonHeldToggle(GameController::getSDLButtonFromImpulse(controllerImpulse));
 	}
 }
 
@@ -2109,6 +3365,24 @@ const bool Inputs::bMouseRight(int player) const
 	return false;
 }
 
+const bool Inputs::bMouseHeldLeft(int player) const
+{
+	if ( bMouseLeft(player) )
+	{
+		return vmouse[player].mouseLeftHeld;
+	}
+	return false;
+}
+
+const bool Inputs::bMouseHeldRight(int player) const
+{
+	if ( bMouseRight(player) )
+	{
+		return vmouse[player].mouseRightHeld;
+	}
+	return false;
+}
+
 const void Inputs::mouseClearLeft(int player)
 {
 	if ( !bPlayerIsControllable(player) )
@@ -2119,7 +3393,8 @@ const void Inputs::mouseClearLeft(int player)
 	{
 		mousestatus[SDL_BUTTON_LEFT] = 0;
 	}
-
+	getVirtualMouse(player)->mouseLeftHeld = false;
+	getVirtualMouse(player)->mouseLeftHeldTicks = 0;
 	controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
 	//bool hackFromPreviousCode = bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK);
 	//if ( hackFromPreviousCode )
@@ -2137,10 +3412,16 @@ const void Inputs::mouseClearRight(int player)
 	{
 		mousestatus[SDL_BUTTON_RIGHT] = 0;
 	}
+	getVirtualMouse(player)->mouseRightHeld = false;
+	getVirtualMouse(player)->mouseRightHeldTicks = 0;
 }
 
 void Inputs::controllerClearRawInput(int player, const unsigned button)
 {
+	if ( button < 299 || button >= (301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX) )
+	{
+		return;
+	}
 	if ( !bPlayerIsControllable(player) )
 	{
 		return;
@@ -2158,6 +3439,32 @@ void Inputs::controllerClearRawInput(int player, const unsigned button)
 	else
 	{
 		controller->consumeBinaryToggle(static_cast<SDL_GameControllerButton>(button - 301));
+	}
+}
+
+void Inputs::controllerClearRawInputRelease(int player, const unsigned button)
+{
+	if ( button < 299 || button >= (301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX) )
+	{
+		return;
+	}
+	if ( !bPlayerIsControllable(player) )
+	{
+		return;
+	}
+	GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return;
+	}
+
+	if ( button == 299 || button == 300 ) // triggers
+	{
+		//controller->consumeBinaryReleaseToggle(static_cast<SDL_GameControllerAxis>(button - 299 + SDL_CONTROLLER_AXIS_TRIGGERLEFT));
+	}
+	else
+	{
+		controller->consumeBinaryReleaseToggle(static_cast<SDL_GameControllerButton>(button - 301));
 	}
 }
 
@@ -2226,6 +3533,128 @@ void Inputs::controllerHandleMouse(int player)
 	controller->handleAnalog(player);
 }
 
+SDL_Rect Inputs::getGlyphRectForInput(const int player, bool pressed, const unsigned keyboardImpulse, const unsigned controllerImpulse)
+{
+	SDL_Rect defaultRect{ 0, 0, 0, 0 };
+
+	if ( bPlayerUsingKeyboardControl(player) )
+	{
+		if ( !vmouse[player].lastMovementFromController )
+		{
+			// TODO - keyboard glyphs.
+			// impulses[keyboardImpulse]
+			return defaultRect;
+		}
+	}
+
+	GameController* controller = getController(player);
+	if ( !controller )
+	{
+		return defaultRect;
+	}
+
+	int glyphHeight = 16;
+	int glyphWidth = 16;
+	const int glyphSpacing = 16;
+
+	if ( joyimpulses[controllerImpulse] == 299 || joyimpulses[controllerImpulse] == 300 ) // triggers
+	{
+		SDL_GameControllerAxis axis = GameController::getSDLTriggerFromImpulse(controllerImpulse);
+		if ( axis == SDL_CONTROLLER_AXIS_INVALID && controllerImpulse >= 301 )
+		{
+			axis = static_cast<SDL_GameControllerAxis>(controllerImpulse - 299 + SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+		}
+
+		switch ( axis )
+		{
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+				glyphWidth = 13;
+				glyphHeight = 11;
+				return SDL_Rect{ 2 * glyphSpacing, 4 * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+				glyphWidth = 13;
+				glyphHeight = 11;
+				return SDL_Rect{ 3 * glyphSpacing, 4 * glyphSpacing, glyphWidth, glyphHeight };
+			default:
+				return defaultRect;
+		}
+	}
+	else
+	{
+		SDL_GameControllerButton but = static_cast<SDL_GameControllerButton>(controllerImpulse);
+		/*if ( but == SDL_CONTROLLER_BUTTON_INVALID && controllerImpulse >= 299 )
+		{
+			but = static_cast<SDL_GameControllerButton>(controllerImpulse - 301);
+		}*/
+
+		switch ( but )
+		{
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A:
+				glyphWidth = 11;
+				glyphHeight = 12;
+				return SDL_Rect{ 6 * glyphSpacing, (pressed ? 1 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
+				glyphWidth = 11;
+				glyphHeight = 12;
+				return SDL_Rect{ 7 * glyphSpacing, (pressed ? 1 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
+				glyphWidth = 11;
+				glyphHeight = 12;
+				return SDL_Rect{ 5 * glyphSpacing, (pressed ? 1 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
+				glyphWidth = 11;
+				glyphHeight = 12;
+				return SDL_Rect{ 4 * glyphSpacing, (pressed ? 1 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+				glyphWidth = 15;
+				glyphHeight = 7;
+				return SDL_Rect{ 0 * glyphSpacing, (pressed ? 4 : 4) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+				glyphWidth = 15;
+				glyphHeight = 7;
+				return SDL_Rect{ 1 * glyphSpacing, (pressed ? 4 : 4) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
+				glyphWidth = 15;
+				glyphHeight = 7;
+				return SDL_Rect{ 2 * glyphSpacing, (pressed ? 1 : 1) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
+				glyphWidth = 15;
+				glyphHeight = 7;
+				return SDL_Rect{ 3 * glyphSpacing, (pressed ? 1 : 1) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_GUIDE:
+				return defaultRect;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
+				glyphWidth = 19;
+				glyphHeight = 19;
+				return SDL_Rect{ 0 * glyphSpacing, (pressed ? 8 : 8) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
+				glyphWidth = 19;
+				glyphHeight = 19;
+				return SDL_Rect{ 0 * glyphSpacing, (pressed ? 8 : 8) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+				glyphWidth = 10;
+				glyphHeight = 10;
+				return SDL_Rect{ 0 * glyphSpacing, (pressed ? 0 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
+				glyphWidth = 10;
+				glyphHeight = 10;
+				return SDL_Rect{ 1 * glyphSpacing, (pressed ? 0 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+				glyphWidth = 10;
+				glyphHeight = 10;
+				return SDL_Rect{ 2 * glyphSpacing, (pressed ? 0 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+				glyphWidth = 10;
+				glyphHeight = 10;
+				return SDL_Rect{ 3 * glyphSpacing, (pressed ? 0 : 0) * glyphSpacing, glyphWidth, glyphHeight };
+			default:
+				return defaultRect;
+		}
+	}
+
+	return defaultRect;
+}
+
 bool GameController::binaryOf(Binding_t& binding) 
 {
 	if ( binding.type == Binding_t::CONTROLLER_AXIS || binding.type == Binding_t::CONTROLLER_BUTTON || binding.type == Binding_t::VIRTUAL_DPAD )
@@ -2282,7 +3711,7 @@ float GameController::analogOf(Binding_t& binding)
 	return 0.f;
 }
 
-void GameController::updateButtons()
+void GameController::updateButtonsReleased()
 {
 	if ( !isActive() )
 	{
@@ -2291,14 +3720,67 @@ void GameController::updateButtons()
 
 	for ( int i = 0; i < NUM_JOY_STATUS; ++i )
 	{
+		buttons[i].binaryReleaseConsumed = true;
+	}
+}
+
+void GameController::updateButtons()
+{
+	if ( !isActive() )
+	{
+		return;
+	}
+
+	bool pressed = false;
+
+	for ( int i = 0; i < NUM_JOY_STATUS; ++i )
+	{
 		buttons[i].analog = analogOf(buttons[i]);
 
 		bool oldBinary = buttons[i].binary;
 		buttons[i].binary = binaryOf(buttons[i]);
-		if ( oldBinary != buttons[i].binary ) {
+
+		if ( buttons[i].binary )
+		{
+			pressed = true;
+		}
+
+		if ( oldBinary != buttons[i].binary ) 
+		{
 			// unconsume the input whenever it's released or pressed again.
 			//messagePlayer(0, "%d: %d", i, buttons[i].binary ? 1 : 0);
 			buttons[i].consumed = false;
+			buttons[i].binaryReleaseConsumed = false;
+
+			if ( oldBinary && !buttons[i].binary )
+			{
+				buttons[i].binaryRelease = true;
+			}
+			else
+			{
+				buttons[i].binaryRelease = false;
+			}
+
+			if ( buttons[i].binary && buttons[i].buttonHeldTicks == 0 )
+			{
+				buttons[i].buttonHeldTicks = ticks;
+			}
+			else if ( !buttons[i].binary )
+			{
+				buttons[i].buttonHeldTicks = 0;
+			}
+		}
+	}
+
+	if ( pressed )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.getController(i) == this )
+			{
+				inputs.getVirtualMouse(i)->lastMovementFromController = true;
+				break;
+			}
 		}
 	}
 }
@@ -2310,23 +3792,43 @@ void GameController::updateAxis()
 		return;
 	}
 
+	bool pressed = false;
+
 	for ( int i = 0; i < NUM_JOY_AXIS_STATUS; ++i )
 	{
 		axis[i].analog = analogOf(axis[i]);
 
 		bool oldBinary = axis[i].binary;
 		axis[i].binary = binaryOf(axis[i]);
+
+		if ( axis[i].binary )
+		{
+			pressed = true;
+		}
+
 		if ( oldBinary != axis[i].binary ) {
 			// unconsume the input whenever it's released or pressed again.
 			//messagePlayer(0, "%d: %d", i, axis[i].binary ? 1 : 0);
 			axis[i].consumed = false;
 		}
 	}
+
+	if ( pressed )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.getController(i) == this )
+			{
+				inputs.getVirtualMouse(i)->lastMovementFromController = true;
+				break;
+			}
+		}
+	}
 }
 
 float GameController::analog(SDL_GameControllerButton binding) const
 {
-	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
 	{
 		return 0.f;
 	}
@@ -2335,25 +3837,55 @@ float GameController::analog(SDL_GameControllerButton binding) const
 
 bool GameController::binaryToggle(SDL_GameControllerButton binding) const
 {
-	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
 	{
 		return false;
 	}
 	return (buttons[binding].binary && !buttons[binding].consumed);
 }
 
+bool GameController::binaryReleaseToggle(SDL_GameControllerButton binding) const
+{
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return false;
+	}
+	return (buttons[binding].binaryRelease && !buttons[binding].binaryReleaseConsumed);
+}
+
+bool GameController::buttonHeldToggle(SDL_GameControllerButton binding) const
+{
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return false;
+	}
+	return (buttons[binding].binary && !buttons[binding].consumed && (ticks - buttons[binding].buttonHeldTicks) > GameController::BUTTON_HELD_TICKS);
+}
+
 bool GameController::binary(SDL_GameControllerButton binding) const
 {
-	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
 	{
 		return false;
 	}
 	return buttons[binding].binary;
 }
 
+void GameController::consumeBinaryReleaseToggle(SDL_GameControllerButton binding)
+{
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	{
+		return;
+	}
+	if ( buttons[binding].binaryRelease )
+	{
+		buttons[binding].binaryReleaseConsumed = true;
+	}
+}
+
 void GameController::consumeBinaryToggle(SDL_GameControllerButton binding)
 {
-	if ( binding == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
+	if ( binding <= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID || binding >= SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX )
 	{
 		return;
 	}
@@ -2365,7 +3897,7 @@ void GameController::consumeBinaryToggle(SDL_GameControllerButton binding)
 
 float GameController::analog(SDL_GameControllerAxis binding) const
 {
-	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
 	{
 		return 0.f;
 	}
@@ -2374,7 +3906,7 @@ float GameController::analog(SDL_GameControllerAxis binding) const
 
 bool GameController::binaryToggle(SDL_GameControllerAxis binding) const
 {
-	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
 	{
 		return false;
 	}
@@ -2383,16 +3915,25 @@ bool GameController::binaryToggle(SDL_GameControllerAxis binding) const
 
 bool GameController::binary(SDL_GameControllerAxis binding) const
 {
-	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
 	{
 		return false;
 	}
 	return axis[binding].binary;
 }
 
+bool GameController::buttonHeldToggle(SDL_GameControllerAxis binding) const
+{
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	{
+		return false;
+	}
+	return (buttons[binding].binary && !buttons[binding].consumed && (ticks - buttons[binding].buttonHeldTicks) > GameController::BUTTON_HELD_TICKS);
+}
+
 void GameController::consumeBinaryToggle(SDL_GameControllerAxis binding)
 {
-	if ( binding == SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
+	if ( binding <= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID || binding >= SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_MAX )
 	{
 		return;
 	}

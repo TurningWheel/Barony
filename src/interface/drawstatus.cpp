@@ -363,6 +363,12 @@ void warpMouseToSelectedHotbarSlot(const int player)
 	pos.x = players[player]->hotbar.getStartX() + (players[player]->hotbar.current_hotbar * hotbarSlotSize) + (hotbarSlotSize / 2);
 	pos.y = players[player]->statusBarUI.getStartY() - (hotbarSlotSize / 2);
 
+	if ( players[player]->hotbar.useHotbarFaceMenu )
+	{
+		pos.x = players[player]->hotbar.faceButtonPositions[players[player]->hotbar.current_hotbar].x + (hotbarSlotSize / 2);
+		pos.y = players[player]->hotbar.faceButtonPositions[players[player]->hotbar.current_hotbar].y + (hotbarSlotSize / 2);
+	}
+
 	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 	inputs.warpMouse(player, pos.x, pos.y, flags);
 }
@@ -746,7 +752,7 @@ void drawStatus(int player)
 	if ( stats[player] && stats[player]->type != AUTOMATON
 		&& (svFlags & SV_FLAG_HUNGER) && stats[player]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = x1 + xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 		pos.y = y2 - 160;
 		pos.w = 64;
 		pos.h = 64;
@@ -764,7 +770,7 @@ void drawStatus(int player)
 	{
 		if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
 		{
-			pos.x = x1 + xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+			pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 			pos.y = y2 - 160;
 			pos.w = 64;
 			pos.h = 64;
@@ -791,7 +797,7 @@ void drawStatus(int player)
 	// minotaur icon
 	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = x1 + xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 		pos.y = y2 - 160 + 64 + 2;
 		pos.w = 64;
 		pos.h = 64;
@@ -901,6 +907,26 @@ void drawStatus(int player)
 	}
 	printTextFormatted(font12x12_bmp, x1 + 32 * uiscale_playerbars - strlen(tempstr) * 6, y2 - (playerStatusBarHeight / 2 + 8), tempstr);
 
+	// draw action prompts.
+	if ( players[player]->hud.bShowActionPrompts )
+	{
+		int skill = (ticks / 100) % 16;
+		int iconSize = 48;
+		SDL_Rect skillPos{0, 0, iconSize, iconSize };
+		skillPos.x = hotbar_t.hotbarBox.x - 3.5 * iconSize;
+		skillPos.y = hotbar_t.hotbarBox.y;
+		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_OFFHAND));
+		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_OFFHAND);
+
+		skillPos.x = hotbar_t.hotbarBox.x - 2.5 * iconSize;
+		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAINHAND));
+		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAINHAND);
+
+		skillPos.x = hotbar_t.hotbarBox.x + hotbar_t.hotbarBox.w + 0.5 * iconSize;
+		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAGIC));
+		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAGIC);
+	}
+
 	Item* item = nullptr;
 	//Now the hotbar.
 	int num = 0;
@@ -914,7 +940,12 @@ void drawStatus(int player)
 	hotbar_t.hotbarBox.w = NUM_HOTBAR_SLOTS * hotbar_t.getSlotSize();
 	hotbar_t.hotbarBox.h = hotbar_t.getSlotSize();
 
-	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_t.getSlotSize() )
+	if ( players[player]->hotbar.useHotbarFaceMenu )
+	{
+		players[player]->hotbar.initFaceButtonHotbar();
+	}
+
+	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 	{
 		Uint32 color;
 		if ( players[player]->hotbar.current_hotbar == num && !openedChest[player] )
@@ -927,6 +958,13 @@ void drawStatus(int player)
 		}
 		pos.w = hotbar_t.getSlotSize();
 		pos.h = hotbar_t.getSlotSize();
+
+		if ( players[player]->hotbar.useHotbarFaceMenu )
+		{
+			pos.x = players[player]->hotbar.faceButtonPositions[num].x;
+			pos.y = players[player]->hotbar.faceButtonPositions[num].y;
+		}
+
 		drawImageScaledColor(hotbar_img, NULL, &pos, color);
 		item = uidToItem(hotbar[num].item);
 		if ( item )
@@ -972,7 +1010,20 @@ void drawStatus(int player)
 				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 125);
 			}
 
-			drawImageScaled(itemSprite(item), NULL, &pos);
+			Uint32 itemColor = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+			if ( hotbar_t.useHotbarFaceMenu && hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_NONE )
+			{
+				bool dimColor = false;
+				if ( hotbar_t.faceMenuButtonHeld != hotbar_t.getFaceMenuGroupForSlot(num) )
+				{
+					dimColor = true;
+				}
+				if ( dimColor )
+				{
+					itemColor = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
+				}
+			}
+			drawImageScaledColor(itemSprite(item), NULL, &pos, itemColor);
 
 			bool disableItemUsage = false;
 
@@ -1145,7 +1196,7 @@ void drawStatus(int player)
 							{
 								if ( !disableItemUsage )
 								{
-									playerTryEquipItemAndUpdateServer(player, item);
+									playerTryEquipItemAndUpdateServer(player, item, false);
 								}
 								else
 								{
@@ -1216,7 +1267,53 @@ void drawStatus(int player)
 				}
 			}
 		}
-		if ( uiscale_hotbar >= 1.5 )
+
+		// draw hotbar slot 'numbers' or glyphs
+		if ( players[player]->hotbar.useHotbarFaceMenu )
+		{
+			if ( players[player]->hotbar.faceMenuAlternateLayout )
+			{
+				SDL_Rect tmp{ pos.x, pos.y, pos.w, pos.h };
+				if ( num == 1 )
+				{
+					tmp.y = pos.y + .75 * pos.h - 4;
+					tmp.x = pos.x + pos.w / 2 + 16;
+					tmp.x += pos.w;
+					if ( !(hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_NONE && hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_LEFT) )
+					{
+						players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
+					}
+				}
+				else if ( num == 4 )
+				{
+					tmp.y = pos.y + pos.h + 24;
+					if ( !(hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_NONE && hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_MIDDLE) )
+					{
+						players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
+					}
+				}
+				else if ( num == 7 )
+				{
+					tmp.y = pos.y + .75 * pos.h - 4;
+					tmp.x = pos.x - (pos.w / 2 + 16);
+					tmp.x -= pos.w;
+
+					if ( !(hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_NONE && hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_RIGHT) )
+					{
+						players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
+					}
+				}
+				else
+				{
+					players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
+				}
+			}
+			else
+			{
+				players[player]->hotbar.drawFaceButtonGlyph(num, pos);
+			}
+		}
+		else if ( uiscale_hotbar >= 1.5 )
 		{
 			printTextFormatted(font16x16_bmp, pos.x + 2, pos.y + 2, "%d", (num + 1) % 10); // slot number
 		}
@@ -1224,20 +1321,34 @@ void drawStatus(int player)
 		{
 			printTextFormatted(font12x12_bmp, pos.x + 2, pos.y + 2, "%d", (num + 1) % 10); // slot number
 		}
+		pos.x += hotbar_t.getSlotSize();
 	}
 
 	bool drawHotBarTooltipOnCycle = false;
-	if ( !intro && hotbar_t.hotbarTooltipLastGameTick != 0 && (ticks - hotbar_t.hotbarTooltipLastGameTick) < TICKS_PER_SECOND * 2 )
+	if ( !intro )
 	{
-		drawHotBarTooltipOnCycle = true;
+		if ( hotbar_t.hotbarTooltipLastGameTick != 0 && (ticks - hotbar_t.hotbarTooltipLastGameTick) < TICKS_PER_SECOND * 2 )
+		{
+			drawHotBarTooltipOnCycle = true;
+		}
+		else if ( players[player]->hotbar.useHotbarFaceMenu && players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE )
+		{
+			drawHotBarTooltipOnCycle = true;
+		}
 	}
 
 	if ( !shootmode || drawHotBarTooltipOnCycle )
 	{
 		pos.x = initial_position.x;
+
 		//Go back through all of the hotbar slots and draw the tooltips.
-		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_t.getSlotSize() )
+		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 		{
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				pos.x = players[player]->hotbar.faceButtonPositions[num].x;
+				pos.y = players[player]->hotbar.faceButtonPositions[num].y;
+			}
 			item = uidToItem(hotbar[num].item);
 			if ( item )
 			{
@@ -1275,9 +1386,17 @@ void drawStatus(int player)
 
 					if ( drawHotBarTooltipOnCycle )
 					{
-						src.x = pos.x + hotbar_t.getSlotSize();
-						src.y = pos.y + hotbar_t.getSlotSize();
-						src.y -= 16;
+						if ( players[player]->hotbar.useHotbarFaceMenu )
+						{
+							src.x = pos.x + hotbar_t.getSlotSize() / 2;
+							src.y = pos.y - 32;
+						}
+						else
+						{
+							src.x = pos.x + hotbar_t.getSlotSize();
+							src.y = pos.y + hotbar_t.getSlotSize();
+							src.y -= 16;
+						}
 					}
 
 					if ( itemCategory(item) == SPELL_CAT )
@@ -1363,6 +1482,14 @@ void drawStatus(int player)
 								furthestX = players[player]->camera_x2() - players[player]->characterSheet.partySheetBox.w;
 							}
 						}
+
+						if ( drawHotBarTooltipOnCycle && players[player]->hotbar.useHotbarFaceMenu )
+						{
+							// draw centred.
+							src.x -= src.w / 2;
+							src.y -= src.h;
+						}
+						
 						if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
 						{
 							src.x -= (src.w + 32);
@@ -1586,6 +1713,7 @@ void drawStatus(int player)
 					}
 				}
 			}
+			pos.x += hotbar_t.getSlotSize();
 		}
 
 		// minimap pinging.
@@ -1656,51 +1784,136 @@ void drawStatus(int player)
 				{
 					keystatus[SDL_SCANCODE_1] = 0;
 					item = uidToItem(hotbar[0].item);
+					hotbar_t.current_hotbar = 0;
 				}
 				if ( keystatus[SDL_SCANCODE_2] )
 				{
 					keystatus[SDL_SCANCODE_2] = 0;
 					item = uidToItem(hotbar[1].item);
+					hotbar_t.current_hotbar = 1;
 				}
 				if ( keystatus[SDL_SCANCODE_3] )
 				{
 					keystatus[SDL_SCANCODE_3] = 0;
 					item = uidToItem(hotbar[2].item);
+					hotbar_t.current_hotbar = 2;
 				}
 				if ( keystatus[SDL_SCANCODE_4] )
 				{
 					keystatus[SDL_SCANCODE_4] = 0;
 					item = uidToItem(hotbar[3].item);
+					hotbar_t.current_hotbar = 3;
 				}
 				if ( keystatus[SDL_SCANCODE_5] )
 				{
 					keystatus[SDL_SCANCODE_5] = 0;
 					item = uidToItem(hotbar[4].item);
+					hotbar_t.current_hotbar = 4;
 				}
 				if ( keystatus[SDL_SCANCODE_6] )
 				{
 					keystatus[SDL_SCANCODE_6] = 0;
 					item = uidToItem(hotbar[5].item);
+					hotbar_t.current_hotbar = 5;
 				}
 				if ( keystatus[SDL_SCANCODE_7] )
 				{
 					keystatus[SDL_SCANCODE_7] = 0;
 					item = uidToItem(hotbar[6].item);
+					hotbar_t.current_hotbar = 6;
 				}
 				if ( keystatus[SDL_SCANCODE_8] )
 				{
 					keystatus[SDL_SCANCODE_8] = 0;
 					item = uidToItem(hotbar[7].item);
+					hotbar_t.current_hotbar = 7;
 				}
 				if ( keystatus[SDL_SCANCODE_9] )
 				{
 					keystatus[SDL_SCANCODE_9] = 0;
 					item = uidToItem(hotbar[8].item);
+					hotbar_t.current_hotbar = 8;
 				}
 				if ( keystatus[SDL_SCANCODE_0] )
 				{
 					keystatus[SDL_SCANCODE_0] = 0;
 					item = uidToItem(hotbar[9].item);
+					hotbar_t.current_hotbar = 9;
+				}
+			}
+			if ( players[player]->hotbar.useHotbarFaceMenu
+				&& !openedChest[player]
+				&& gui_mode != (GUI_MODE_SHOP)
+				&& !GenericGUI[player].isGUIOpen()
+				&& !inputs.getUIInteraction(player)->selectedItem
+				&& shootmode )
+			{
+				Player::Hotbar_t::FaceMenuGroup pressed = Player::Hotbar_t::GROUP_NONE;
+
+				for ( int i = 0; i < 3; ++i )
+				{
+					int button = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B + i;
+					if ( inputs.bControllerRawInputPressed(player, 301 + button) )
+					{
+						switch ( button )
+						{
+							case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
+								pressed = Player::Hotbar_t::GROUP_RIGHT;
+								break;
+							case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
+								pressed = Player::Hotbar_t::GROUP_MIDDLE;
+								break;
+							case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
+								pressed = Player::Hotbar_t::GROUP_LEFT;
+								break;
+							default:
+								break;
+						}
+
+						int centerSlot = 1;
+						if ( button == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B )
+						{
+							centerSlot = 7;
+						}
+						else if ( button == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y )
+						{
+							centerSlot = 4;
+						}
+
+						if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+						{
+							hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
+							inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+						}
+						else if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
+						{
+							hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
+							inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						}
+						else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
+						{
+							hotbar_t.selectHotbarSlot(centerSlot);
+						}
+						break;
+					}
+					else if ( inputs.bControllerRawInputReleased(player, 301 + button) )
+					{
+						item = uidToItem(players[player]->hotbar.slots()[hotbar_t.current_hotbar].item);
+						inputs.controllerClearRawInputRelease(player, 301 + button);
+						break;
+					}
+				}
+
+				players[player]->hotbar.faceMenuButtonHeld = pressed;
+
+				if ( pressed != Player::Hotbar_t::GROUP_NONE 
+					&& players[player]->hotbar.faceMenuQuickCastEnabled && item && itemCategory(item) == SPELL_CAT )
+				{
+					spell_t* spell = getSpellFromItem(player, item);
+					if ( spell && players[player]->magic.selectedSpell() == spell )
+					{
+						players[player]->hotbar.faceMenuQuickCast = true;
+					}
 				}
 			}
 		}
@@ -1712,6 +1925,11 @@ void drawStatus(int player)
 			pos.y = initial_position.y - hotbar_t.getSlotSize();
 			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_t.getSlotSize() )
 			{
+				if ( players[player]->hotbar.useHotbarFaceMenu )
+				{
+					pos.x = players[player]->hotbar.faceButtonPositions[c].x;
+					pos.y = players[player]->hotbar.faceButtonPositions[c].y;
+				}
 				if ( mouseInBoundsRealtimeCoords(player, pos.x, pos.x + hotbar_t.getSlotSize(), pos.y, pos.y + hotbar_t.getSlotSize()) )
 				{
 					players[player]->hotbar.selectHotbarSlot(c);
@@ -1836,14 +2054,11 @@ void drawStatus(int player)
 		{
 			bool badpotion = false;
 			bool learnedSpell = false;
-			if ( itemCategory(item) == POTION && item->identified )
+			if ( itemCategory(item) == POTION )
 			{
 				badpotion = isPotionBad(*item);
 			}
-			if ( item->type == POTION_EMPTY )
-			{
-				badpotion = true; //So that you wield empty potions be default.
-			}
+
 			if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, player)) )
 			{
 				// equipped spellbook will unequip on use.
@@ -1949,7 +2164,7 @@ void drawStatus(int player)
 				}
 				else
 				{
-					playerTryEquipItemAndUpdateServer(player, item);
+					playerTryEquipItemAndUpdateServer(player, item, false);
 				}
 			}
 			else
@@ -2203,6 +2418,11 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 			pos.w = std::max(longestline(spellNameString), longestline(tempstr)) * TTF12_WIDTH + 8;
 		}
 
+		if ( src )
+		{
+			pos.x -= pos.w / 2;
+		}
+
 		int furthestX = players[player]->camera_x2();
 		if ( players[player]->characterSheet.proficienciesPage == 0 )
 		{
@@ -2232,6 +2452,12 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 		{
 			pos.h += 2;
 		}
+
+		if ( src )
+		{
+			pos.y -= pos.h;
+		}
+
 		if ( pos.y + pos.h + 16 > players[player]->camera_y2() ) // overflow bottom of screen
 		{
 			pos.y -= (pos.y + pos.h + 16 - players[player]->camera_y2());
