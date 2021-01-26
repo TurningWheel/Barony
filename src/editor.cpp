@@ -2138,7 +2138,7 @@ int main(int argc, char** argv)
 									prev_x = entity->x / 16;
 									prev_y = entity->y / 16;
 									mousestatus[SDL_BUTTON_LEFT] = 0;
-									if ( newwindow == 0 && selectedEntity != NULL )
+									if ( newwindow == 0 && selectedEntity[0] != NULL )
 									{
 										makeUndo();
 									}

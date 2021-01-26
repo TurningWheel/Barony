@@ -651,8 +651,8 @@ public:
 
 	class Inventory_t
 	{
-		int sizex = DEFAULT_INVENTORY_SIZEX;
-		int sizey = DEFAULT_INVENTORY_SIZEY;
+		int sizex = 0;
+		int sizey = 0;
 		const int starty = 10;
 		Player& player;
 
@@ -665,7 +665,9 @@ public:
 			player(p), 
 			appraisal(p), 
 			DEFAULT_INVENTORY_SIZEX(12),
-			DEFAULT_INVENTORY_SIZEY(3)
+			DEFAULT_INVENTORY_SIZEY(3),
+			sizex(DEFAULT_INVENTORY_SIZEX),
+			sizey(DEFAULT_INVENTORY_SIZEY)
 		{};
 		~Inventory_t() {};
 		const int getTotalSize() const { return sizex * sizey; }
