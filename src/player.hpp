@@ -651,8 +651,8 @@ public:
 
 	class Inventory_t
 	{
-		int sizex = DEFAULT_INVENTORY_SIZEX;
-		int sizey = DEFAULT_INVENTORY_SIZEY;
+		int sizex = 0;
+		int sizey = 0;
 		const int starty = 10;
 		Player& player;
 
