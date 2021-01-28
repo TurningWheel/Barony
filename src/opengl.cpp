@@ -534,6 +534,7 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 		pos.w = 0;
 
 		SDL_BlitSurface(textSurf, NULL, image, &pos);
+		SDL_FreeSurface(textSurf);
 		// load the text outline surface as a GL texture
 		allsurfaces[imgref] = image;
 		allsurfaces[imgref]->refcount = imgref;
@@ -1086,6 +1087,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		pos.w = 0;
 
 		SDL_BlitSurface(textSurf, NULL, image, &pos);
+		SDL_FreeSurface(textSurf);
 		// load the text outline surface as a GL texture
 		allsurfaces[imgref] = image;
 		allsurfaces[imgref]->refcount = imgref;

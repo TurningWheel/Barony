@@ -2420,6 +2420,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 			pos.y = 2;
 		}
 		SDL_BlitSurface(textSurf, NULL, surf, &pos);
+		SDL_FreeSurface(textSurf);
 		// load the text outline surface as a GL texture
 		allsurfaces[imgref] = surf;
 		allsurfaces[imgref]->refcount = imgref;
