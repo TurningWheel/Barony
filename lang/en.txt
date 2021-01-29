@@ -5985,5 +5985,7 @@ Changing this gameflag is disabled in current game mode.#
 4038 Climb ladder#
 4039 Disarm #
 4040 Interact#
+4041 Interact with...#
+4042 Attack...#
 
 4049 end#
