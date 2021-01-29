@@ -865,16 +865,22 @@ void loadAllScores(const std::string& scoresfilename)
 	fp->read(&c, sizeof(Uint32), 1);
 	for ( i = 0; i < c; i++ )
 	{
+		// to investigate
 		Uint32 booknamelen = 0;
 		fp->read(&booknamelen, sizeof(Uint32), 1);
-		fp->gets(tempstr, booknamelen + 1);
 
-		char* book = (char*) malloc(sizeof(char) * (strlen(tempstr) + 1));
-		strcpy(book, tempstr);
+		// old unsafe code using tempstr
+		//fp->gets(tempstr, booknamelen + 1);
+		//
+		//char* book = (char*) malloc(sizeof(char) * (strlen(tempstr) + 1));
+		//strcpy(book, tempstr);
+		char *book = (char *)malloc(sizeof(char) * (booknamelen + 1));
+		fp->gets(book, booknamelen + 1);
 
 		node_t* node = list_AddNodeLast(&booksRead);
 		node->element = book;
-		node->size = sizeof(char) * (strlen(tempstr) + 1);
+		//node->size = sizeof(char) * (strlen(tempstr) + 1);
+		node->size = sizeof(char) * (booknamelen + 1);
 		node->deconstructor = &defaultDeconstructor;
 	}
 	for ( c = 0; c < NUMCLASSES; c++ )
