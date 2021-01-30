@@ -82,6 +82,7 @@ static const int GUI_MODE_NONE = -1; //GUI closed, ingame & playing.
 static const int GUI_MODE_INVENTORY = 0;
 static const int GUI_MODE_MAGIC = 1;
 static const int GUI_MODE_SHOP = 2;
+static const int GUI_MODE_FOLLOWERMENU = 3;
 
 extern SDL_Surface* font12x12_small_bmp;
 extern SDL_Surface* backdrop_minotaur_bmp;
@@ -711,7 +712,7 @@ public:
 	void selectNextFollower();
 	int numMonstersToDrawInParty();
 	void updateScrollPartySheet();
-	bool allowedInteractEntity(Entity& selectedEntity);
+	bool allowedInteractEntity(Entity& selectedEntity, bool updateInteractText = true);
 	int optionDisabledForCreature(int playerSkillLVL, int monsterType, int option);
 	bool allowedClassToggle(int monsterType);
 	bool allowedItemPickupToggle(int monsterType);

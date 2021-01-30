@@ -1700,7 +1700,8 @@ void FollowerRadialMenu::initfollowerMenuGUICursor(bool openInventory)
 {
 	if ( openInventory )
 	{
-		players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+		//players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+		players[gui_player]->openStatusScreen(GUI_MODE_FOLLOWERMENU, INVENTORY_MODE_ITEM);
 	}
 
 	//const Sint32 mousex = inputs.getMouse(player, Inputs::X);
@@ -2805,7 +2806,7 @@ bool FollowerRadialMenu::isTinkeringFollower(int type)
 	return false;
 }
 
-bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
+bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updateInteractText)
 {
 	if ( optionSelected != ALLY_CMD_ATTACK_SELECT )
 	{
@@ -2849,59 +2850,83 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	
 	if ( !interactItems && !interactWorld && enableAttack )
 	{
-		strcpy(interactText, "Attack ");
+		if ( updateInteractText )
+		{
+			strcpy(interactText, language[4043]); // "Attack "
+		}
 	}
 	else
 	{
-		strcpy(interactText, "Interact with ");
+		if ( updateInteractText )
+		{
+			strcpy(interactText, language[4014]); // "Interact with "
+		}
 	}
 	if ( selectedEntity.behavior == &actTorch && interactWorld )
 	{
-		strcat(interactText, items[TOOL_TORCH].name_identified);
+		if ( updateInteractText )
+		{
+			strcat(interactText, items[TOOL_TORCH].name_identified);
+		}
 	}
 	else if ( (selectedEntity.behavior == &actSwitch || selectedEntity.sprite == 184) && interactWorld )
 	{
-		strcat(interactText, "switch");
+		if ( updateInteractText )
+		{
+			strcat(interactText, language[4044]); // "switch"
+		}
 	}
 	else if ( selectedEntity.behavior == &actBomb && interactWorld && followerStats->type == GYROBOT )
 	{
-		strcpy(interactText, language[3093]);
-		strcat(interactText, "trap");
+		if ( updateInteractText )
+		{
+			strcpy(interactText, language[3093]);
+			strcat(interactText, language[4045]); // "trap"
+		}
 	}
 	else if ( selectedEntity.behavior == &actItem && interactItems )
 	{
-		if ( multiplayer != CLIENT )
+		if ( updateInteractText )
 		{
-			if ( selectedEntity.skill[15] == 0 )
+			if ( multiplayer != CLIENT )
 			{
-				strcat(interactText, items[selectedEntity.skill[10]].name_unidentified);
+				if ( selectedEntity.skill[15] == 0 )
+				{
+					strcat(interactText, items[selectedEntity.skill[10]].name_unidentified);
+				}
+				else
+				{
+					strcat(interactText, items[selectedEntity.skill[10]].name_identified);
+				}
 			}
 			else
 			{
-				strcat(interactText, items[selectedEntity.skill[10]].name_identified);
+				strcat(interactText, language[4046]); // "item"
 			}
-		}
-		else
-		{
-			strcat(interactText, "item");
 		}
 	}
 	else if ( selectedEntity.behavior == &actMonster && enableAttack )
 	{
-		strcpy(interactText, "Attack ");
-		int monsterType = selectedEntity.getMonsterTypeFromSprite();
-		if ( monsterType < KOBOLD ) //Original monster count
+		if ( updateInteractText )
 		{
-			strcat(interactText, language[90 + monsterType]);
-		}
-		else if ( monsterType >= KOBOLD ) //New monsters
-		{
-			strcat(interactText, language[2000 + monsterType - KOBOLD]);
+			strcpy(interactText, language[4043]); // "Attack "
+			int monsterType = selectedEntity.getMonsterTypeFromSprite();
+			if ( monsterType < KOBOLD ) //Original monster count
+			{
+				strcat(interactText, language[90 + monsterType]);
+			}
+			else if ( monsterType >= KOBOLD ) //New monsters
+			{
+				strcat(interactText, language[2000 + monsterType - KOBOLD]);
+			}
 		}
 	}
 	else
 	{
-		strcpy(interactText, "No interactions available");
+		if ( updateInteractText )
+		{
+			strcpy(interactText, language[4047]); // "No interactions available"
+		}
 		return false;
 	}
 	return true;
