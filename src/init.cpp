@@ -106,6 +106,7 @@ int initApp(char const * const title, int fullscreen)
 	}
 	map.entities = NULL;
 	map.creatures = nullptr;
+	map.worldUI = nullptr;
 	map.tiles = NULL;
 
 	// init PHYSFS
