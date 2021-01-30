@@ -3717,7 +3717,7 @@ void ingameHud()
 				|| (inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE)) )
 			)
 		{
-			if ( !worldUIBlocksFollowerCycle )
+			if ( !worldUIBlocksFollowerCycle && players[player]->shootmode )
 			{
 				//(players[player]->shootmode && !worldUIBlocksFollowerCycle) || FollowerMenu[player].followerMenuIsOpen())) ) -- todo needed?
 
@@ -3759,7 +3759,7 @@ void ingameHud()
 		{
 			if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) )
 			{
-				FollowerMenu[i].closeFollowerMenuGUI(true);
+				FollowerMenu[i].closeFollowerMenuGUI();
 			}
 		}
 	}
@@ -4274,6 +4274,15 @@ void ingameHud()
 						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
 					}
 					pos.x += pos.w + 4;
+
+					SDL_Rect skillsrc = getRectForSkillIcon(PRO_LEADERSHIP);
+					SDL_Rect skillpos = pos;
+					skillpos.x += 4;
+					skillpos.w = 32;
+					skillpos.h = 32;
+					skillpos.y -= (skillpos.h - pos.h) / 2; // to adjust for different glyph heights
+					drawImageScaled(skillIcons_bmp, &skillsrc, &skillpos);
+					pos.x += skillpos.w + 8; // move text past the skill box
 					pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
 				}
 
@@ -4363,6 +4372,17 @@ void ingameHud()
 						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
 					}
 					pos.x += pos.w + 4;
+					if ( foundTinkeringKit )
+					{
+						SDL_Rect skillsrc = getRectForSkillIcon(PRO_LOCKPICKING);
+						SDL_Rect skillpos = pos;
+						skillpos.x += 4;
+						skillpos.w = 32;
+						skillpos.h = 32;
+						skillpos.y -= (skillpos.h - pos.h) / 2; // to adjust for different glyph heights
+						drawImageScaled(skillIcons_bmp, &skillsrc, &skillpos);
+						pos.x += skillpos.w + 8; // move text past the skill box
+					}
 					pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
 
 					if ( foundTinkeringKit )
@@ -4416,6 +4436,16 @@ void ingameHud()
 								drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
 							}
 							pos.x += pos.w + 4;
+
+							SDL_Rect skillsrc = getRectForSkillIcon(PRO_LOCKPICKING);
+							SDL_Rect skillpos = pos;
+							skillpos.x += 4;
+							skillpos.w = 32;
+							skillpos.h = 32;
+							skillpos.y -= (skillpos.h - pos.h) / 2; // to adjust for different glyph heights
+							drawImageScaled(skillIcons_bmp, &skillsrc, &skillpos);
+							pos.x += skillpos.w + 8; // move text past the skill box
+
 							pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
 							ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[3663]);
 						}

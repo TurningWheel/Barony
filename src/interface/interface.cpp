@@ -1566,6 +1566,11 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 
 	shootmode = false;
 
+	if ( whichGUIMode != GUI_MODE_NONE && whichGUIMode != GUI_MODE_FOLLOWERMENU )
+	{
+		FollowerMenu[playernum].closeFollowerMenuGUI();
+	}
+
 	bool warpMouseToInventorySlot = false;
 	if ( inputs.hasController(playernum) 
 		&& gui_mode == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE
