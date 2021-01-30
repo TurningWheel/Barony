@@ -1700,7 +1700,7 @@ void consoleCommand(char const * const command_str)
 	}
 	else if ( !strncmp(command_str, "/locksidebar", 12) )
 	{
-		if ( players[clientnum] )
+		if ( players[clientnum] ) // warning - this doesn't exist when loadConfig() is called on init.
 		{
 			players[clientnum]->characterSheet.lock_right_sidebar = (players[clientnum]->characterSheet.lock_right_sidebar == false);
 			if ( players[clientnum]->characterSheet.lock_right_sidebar )
@@ -3143,34 +3143,70 @@ void consoleCommand(char const * const command_str)
 		}
 		else if ( !strncmp(command_str, "/facehotbar", 11) )
 		{
-			players[clientnum]->hotbar.useHotbarFaceMenu = !players[clientnum]->hotbar.useHotbarFaceMenu;
-			messagePlayer(clientnum, "Face button hotbar: %d", players[clientnum]->hotbar.useHotbarFaceMenu ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->hotbar.useHotbarFaceMenu = !players[i]->hotbar.useHotbarFaceMenu;
+					messagePlayer(i, "Face button hotbar: %d", players[i]->hotbar.useHotbarFaceMenu ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/facebarinvert", 14) )
 		{
-			players[clientnum]->hotbar.faceMenuInvertLayout = !players[clientnum]->hotbar.faceMenuInvertLayout;
-			messagePlayer(clientnum, "Face button invert position: %d", players[clientnum]->hotbar.faceMenuInvertLayout ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->hotbar.faceMenuInvertLayout = !players[i]->hotbar.faceMenuInvertLayout;
+					messagePlayer(i, "Face button invert position: %d", players[i]->hotbar.faceMenuInvertLayout ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/facebarquickcast", 17) )
 		{
-			players[clientnum]->hotbar.faceMenuQuickCastEnabled = !players[clientnum]->hotbar.faceMenuQuickCastEnabled;
-			messagePlayer(clientnum, "Face button quickcast: %d", players[clientnum]->hotbar.faceMenuQuickCastEnabled ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->hotbar.faceMenuQuickCastEnabled = !players[i]->hotbar.faceMenuQuickCastEnabled;
+					messagePlayer(i, "Face button quickcast: %d", players[i]->hotbar.faceMenuQuickCastEnabled ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/paperdoll", 10) )
 		{
-			players[clientnum]->paperDoll.enabled = !players[clientnum]->paperDoll.enabled;
-			messagePlayer(clientnum, "Paper doll: %d", players[clientnum]->paperDoll.enabled ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->paperDoll.enabled = !players[i]->paperDoll.enabled;
+					messagePlayer(i, "Paper doll: %d", players[i]->paperDoll.enabled ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/facebaralternate", 17) )
 		{
-			players[clientnum]->hotbar.faceMenuAlternateLayout = !players[clientnum]->hotbar.faceMenuAlternateLayout;
-			messagePlayer(clientnum, "Face button alternate: %d", players[clientnum]->hotbar.faceMenuAlternateLayout ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->hotbar.faceMenuAlternateLayout = !players[i]->hotbar.faceMenuAlternateLayout;
+					messagePlayer(i, "Face button alternate: %d", players[i]->hotbar.faceMenuAlternateLayout ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/inventorynew", 13) )
 		{
-			players[clientnum]->inventoryUI.bNewInventoryLayout = !players[clientnum]->inventoryUI.bNewInventoryLayout;
-			players[clientnum]->inventoryUI.resetInventory();
-			messagePlayer(clientnum, "New Inventory layout: %d", players[clientnum]->inventoryUI.bNewInventoryLayout ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->inventoryUI.bNewInventoryLayout = !players[i]->inventoryUI.bNewInventoryLayout;
+					players[i]->inventoryUI.resetInventory();
+					messagePlayer(i, "New Inventory layout: %d", players[i]->inventoryUI.bNewInventoryLayout ? 1 : 0);
+				}
+			}
 		}
 		else
 		{
