@@ -2823,10 +2823,13 @@ bool changeVideoMode()
 		generateVBOs(0, nummodels);
 	}
 
+#ifndef EDITOR
 	// dump ui resources, these are all no good too!
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
+#endif // !EDITOR
+
 #endif
 	// success
 	return true;

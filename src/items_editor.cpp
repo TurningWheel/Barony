@@ -302,3 +302,8 @@ int loadItems()
 	FileIO::close(fp);
 	return 1;
 }
+
+int Item::sellValue(const int player) const
+{
+	return 0;
+}
