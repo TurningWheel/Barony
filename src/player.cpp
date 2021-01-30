@@ -2495,6 +2495,8 @@ void Player::WorldUI_t::handleTooltips()
 
 void Player::Hotbar_t::initFaceButtonHotbar()
 {
+	faceButtonTopYPosition = yres;
+
 	if ( faceMenuAlternateLayout )
 	{
 		for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
@@ -2582,6 +2584,8 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 					break;
 			}
 		}
+
+		faceButtonTopYPosition = std::min(faceButtonPositions[4].y, faceButtonTopYPosition);
 		return;
 	}
 
@@ -2672,6 +2676,7 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 				break;
 		}
 	}
+	faceButtonTopYPosition = std::min(faceButtonPositions[4].y, faceButtonTopYPosition);
 }
 
 Player::Hotbar_t::FaceMenuGroup Player::Hotbar_t::getFaceMenuGroupForSlot(int hotbarSlot)
@@ -2697,7 +2702,7 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 	int width = 2.25 * uiscale_hotbar;
 	int x = slotPos.x + slotPos.w / 2;
 	int y = slotPos.y;
-	SDL_Rect glyphsrc;
+	SDL_Rect glyphsrc {0, 0, 0, 0};
 	bool draw = true;
 
 	switch ( slot )
@@ -2729,10 +2734,12 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 			}
 			break;
 		case 3:
+			// always grab this to determine the highest button height.
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
 			if ( faceMenuButtonHeld == GROUP_MIDDLE )
 			{
-				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				draw = true;
 			}
 			else
 			{
@@ -2744,10 +2751,12 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y);
 			break;
 		case 5:
+			// always grab this to determine the highest button height.
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
 			if ( faceMenuButtonHeld == GROUP_MIDDLE )
 			{
-				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				draw = true;
 			}
 			else
 			{
@@ -2799,13 +2808,32 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 		}
 	}
 
+	height *= glyphsrc.h;
+	width *= glyphsrc.w;
+	x -= width / 2;
+	y -= height;
+
+	if ( (faceMenuAlternateLayout && (slot == 3 || slot == 5) ) // highest slots
+		|| (!faceMenuAlternateLayout && slot == 4) )
+	{
+		int offsetY = 0;
+		int posY = y;
+		// check if button not pressed and raised.
+		if ( !faceMenuAlternateLayout && !(faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE) )
+		{
+			offsetY = getSlotSize() / 4;
+		}
+		else if ( faceMenuAlternateLayout )
+		{
+			posY = faceButtonPositions[4].y;
+			posY -= height;
+		}
+
+		faceButtonTopYPosition = std::min(posY - offsetY, faceButtonTopYPosition);
+	}
+
 	if ( draw )
 	{
-		height *= glyphsrc.h;
-		width *= glyphsrc.w;
-		x -= width / 2;
-		y -= height;
-
 		SDL_Rect glyphpos{ x, y, width, height };
 		drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
 	}

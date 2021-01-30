@@ -8306,8 +8306,17 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 		SDL_Rect pos;
 		pos.w = barWidth;
 		pos.h = 38;
-		pos.y = players[player]->camera_y2() - 224;
-		if ( splitscreen && players[player]->isLocalPlayer() && players[player]->camera_width() < yres )
+		//pos.y = players[player]->camera_y2() - 224;
+		if ( players[player]->hotbar.useHotbarFaceMenu )
+		{
+			// anchor to the topmost position, including button glyphs
+			pos.y = players[player]->hotbar.faceButtonTopYPosition - pos.h - 8;
+		}
+		else
+		{
+			pos.y = players[player]->hotbar.hotbarBox.y - pos.h - 8;
+		}
+		if ( players[player]->isLocalPlayer() && players[player]->camera_width() < yres )
 		{
 			if ( yres < 900 )
 			{
@@ -8317,7 +8326,6 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 			{
 				pos.w *= 0.8;
 			}
-			pos.y = players[player]->hotbar.hotbarBox.y - pos.h - 8;
 		}
 		pos.x = players[player]->camera_midx() - (pos.w / 2);
 

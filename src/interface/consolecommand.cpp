@@ -1748,15 +1748,23 @@ void consoleCommand(char const * const command_str)
 		//startfloor = std::min(startfloor, numlevels);
 		printlog("Start floor is %d.", startfloor);
 	}
-	else if ( !strncmp(command_str, "/splitscreen ", 13) || !strncmp(command_str, "/splitscreen", 12) )
+	else if ( !strncmp(command_str, "/splitscreen ", 13) 
+		|| !strncmp(command_str, "/splitscreen", 12)
+		|| !strncmp(command_str, "/splitscreen2vertical", 21) )
 	{
-		splitscreen = !splitscreen;
-
 		int numPlayers = 4;
-		if ( !strncmp(command_str, "/splitscreen ", 13) )
+		bool verticalSplitscreen = !strncmp(command_str, "/splitscreen2vertical", 21);
+
+		if ( verticalSplitscreen )
+		{
+			numPlayers = 2;
+		}
+		else if ( !strncmp(command_str, "/splitscreen ", 13) )
 		{
 			numPlayers = std::min(4, std::max(atoi(&command_str[13]), 2));
 		}
+
+		splitscreen = !splitscreen;
 
 		if ( splitscreen )
 		{
@@ -1781,6 +1789,7 @@ void consoleCommand(char const * const command_str)
 			if ( client_disconnected[i] )
 			{
 				players[i]->bSplitscreen = false;
+				players[i]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
 			}
 			else
 			{
@@ -1796,6 +1805,15 @@ void consoleCommand(char const * const command_str)
 
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
+			if ( verticalSplitscreen )
+			{
+				players[i]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
+			}
+			else
+			{
+				players[i]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+			}
+
 			if ( !splitscreen )
 			{
 				players[i]->camera().winx = 0;
@@ -1814,11 +1832,22 @@ void consoleCommand(char const * const command_str)
 				}
 				else if ( playercount == 2 )
 				{
-					// divide screen horizontally
-					players[i]->camera().winx = 0;
-					players[i]->camera().winy = i * yres / 2;
-					players[i]->camera().winw = xres;
-					players[i]->camera().winh = yres / 2;
+					if ( players[i]->splitScreenType == Player::SPLITSCREEN_VERTICAL )
+					{
+						// divide screen vertically
+						players[i]->camera().winx = i * xres / 2;
+						players[i]->camera().winy = 0;
+						players[i]->camera().winw = xres / 2;
+						players[i]->camera().winh = yres;
+					}
+					else
+					{
+						// divide screen horizontally
+						players[i]->camera().winx = 0;
+						players[i]->camera().winy = i * yres / 2;
+						players[i]->camera().winw = xres;
+						players[i]->camera().winh = yres / 2;
+					}
 				}
 				else if ( playercount >= 3 )
 				{

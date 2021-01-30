@@ -5312,11 +5312,22 @@ int main(int argc, char** argv)
 								} 
 								else if (playercount == 2)
 								{
-									// divide screen horizontally
-									camera.winx = 0;
-									camera.winy = c * yres / 2;
-									camera.winw = xres;
-									camera.winh = yres / 2;
+									if ( players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL )
+									{
+										// divide screen vertically
+										camera.winx = c * xres / 2;
+										camera.winy = 0;
+										camera.winw = xres / 2;
+										camera.winh = yres;
+									}
+									else
+									{
+										// divide screen horizontally
+										camera.winx = 0;
+										camera.winy = c * yres / 2;
+										camera.winw = xres;
+										camera.winh = yres / 2;
+									}
 								} 
 								else if (playercount >= 3) 
 								{
