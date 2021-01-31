@@ -3237,6 +3237,23 @@ void consoleCommand(char const * const command_str)
 				}
 			}
 		}
+		else if ( !strncmp(command_str, "/worldui", 8) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					if ( players[i]->worldUI.isEnabled() )
+					{
+						players[i]->worldUI.disable();
+					}
+					else
+					{
+						players[i]->worldUI.enable();
+					}
+				}
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
