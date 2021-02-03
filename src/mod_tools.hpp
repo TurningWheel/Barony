@@ -2578,3 +2578,36 @@ public:
 	} Tutorial;
 };
 extern GameModeManager_t gameModeManager;
+
+class IRCHandler_t
+{
+	IPaddress ip;
+	TCPsocket net_ircsocket = nullptr;
+	TCPsocket net_ircsocket_from_server = nullptr;
+	SDLNet_SocketSet net_ircsocketset = nullptr;
+	bool bSocketConnected = false;
+	const unsigned int MAX_BUFFER_LEN = 1024;
+	std::vector<char> recvBuffer;
+	struct Auth_t
+	{
+		std::string oauth = "";
+		std::string chatroom = "";
+		std::string username = "";
+	} auth;
+public:
+	IRCHandler_t()
+	{
+		ip.host = 0;
+		ip.port = 0;
+		recvBuffer.resize(MAX_BUFFER_LEN);
+		std::fill(recvBuffer.begin(), recvBuffer.end(), '\0');
+	}
+	int packetSend(std::string data);
+	int packetReceive();
+	void handleMessage(std::string& msg);
+	void run();
+	bool connect();
+	void disconnect();
+	bool readFromFile();
+};
+extern IRCHandler_t IRCHandler;

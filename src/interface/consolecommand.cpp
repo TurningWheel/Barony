@@ -3254,6 +3254,30 @@ void consoleCommand(char const * const command_str)
 				}
 			}
 		}
+		else if ( !strncmp(command_str, "/ircconnect", 11) )
+		{
+			if ( IRCHandler.connect() )
+			{
+				messagePlayer(clientnum, "[IRC]: Connected.");
+			}
+			else
+			{
+				IRCHandler.disconnect();
+				messagePlayer(clientnum, "[IRC]: Error connecting.");
+			}
+		}
+		else if ( !strncmp(command_str, "/ircdisconnect", 14) )
+		{
+			IRCHandler.disconnect();
+			messagePlayer(clientnum, "[IRC]: Disconnected.");
+		}
+		else if ( !strncmp(command_str, "/irc ", 5) )
+		{
+			std::string message = command_str + 5;
+			message.append("\r\n");
+			IRCHandler.packetSend(message);
+			messagePlayer(clientnum, "[IRC]: Sent message.");
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
