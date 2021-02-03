@@ -72,7 +72,7 @@ void actHudAdditional(Entity* my) {} // dummy for draw.cpp
 void actHudArrowModel(Entity* my) {} // dummy for draw.cpp
 void actLeftHandMagic(Entity* my) {} // dummy for draw.cpp
 void actRightHandMagic(Entity* my) {} // dummy for draw.cpp
-
+void messagePlayer(int player, char const * const message, ...) {} // dummy
 map_t copymap;
 
 int errorMessage = 0;
