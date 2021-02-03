@@ -1581,13 +1581,13 @@ void consumeItem(Item*& item, const int player)
 		return;
 	}
 
-	if ( player >= 0 && players[player]->inventoryUI.appraisal.current_item == item->uid && item->count == 1 )
+	if ( player >= 0 && players[player]->isLocalPlayer() && players[player]->inventoryUI.appraisal.current_item == item->uid && item->count == 1 )
 	{
 		players[player]->inventoryUI.appraisal.current_item = 0;
 		players[player]->inventoryUI.appraisal.timer = 0;
 	}
 
-	if ( !players[player]->isLocalPlayer() && multiplayer == SERVER )
+	if ( player >= 0 && !players[player]->isLocalPlayer() && multiplayer == SERVER )
 	{
 		Item** slot = nullptr;
 		if ( (slot = itemSlot(stats[player], item)) != nullptr )
@@ -1621,7 +1621,10 @@ void consumeItem(Item*& item, const int player)
 		item = nullptr;
 	}
 
-	players[player]->paperDoll.updateSlots();
+	if ( player >= 0 )
+	{
+		players[player]->paperDoll.updateSlots();
+	}
 }
 
 /*-------------------------------------------------------------------------------
