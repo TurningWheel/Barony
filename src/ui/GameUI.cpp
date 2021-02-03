@@ -9,10 +9,12 @@
 #include "../game.hpp"
 #include "../menu.hpp"
 #include "../interface/interface.hpp"
+#include "../player.hpp"
 
 #include <assert.h>
 
 static Frame* playerHud[MAXPLAYERS] = { nullptr };
+static Frame* playerInventory[MAXPLAYERS] = { nullptr };
 bool newui = false;
 
 void createIngameHud(int player) {
@@ -356,4 +358,27 @@ void newIngameHud() {
             drawMinimap(0);
         }
     }
+}
+
+void createPlayerInventory(const int player)
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player inventory %d", player);
+	Frame* frame = gui->addFrame(name);
+	playerInventory[player] = frame;
+	frame->setSize(SDL_Rect{ players[player]->camera_x1(),
+		players[player]->camera_y1(),
+		players[player]->camera_width(),
+		players[player]->camera_height() });
+	frame->setActualSize(frame->getSize());
+	frame->setHollow(true);
+	frame->setBorder(0);
+}
+
+void newPlayerInventory(const int player)
+{
+	if ( !playerInventory[player] )
+	{
+		createPlayerInventory(player);
+	}
 }

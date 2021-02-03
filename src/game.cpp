@@ -3985,6 +3985,7 @@ void ingameHud()
 			{
 				updateCharacterSheet(player);
 				updatePlayerInventory(player);
+				newPlayerInventory(player);
 				updateChestInventory(player);
 				GenericGUI[player].updateGUI();
 				players[player]->bookGUI.updateBookGUI();

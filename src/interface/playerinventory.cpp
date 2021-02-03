@@ -21,6 +21,9 @@
 #include "../menu.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
+#include "../ui/GameUI.hpp"
+#include "../ui/Frame.hpp"
+#include "../ui/Image.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "../steam.hpp"
@@ -1035,7 +1038,36 @@ void updatePlayerInventory(const int player)
 	pos.y = y;
 	pos.w = players[player]->inventoryUI.getSizeX() * inventorySlotSize;
 	pos.h = players[player]->inventoryUI.getSizeY() * inventorySlotSize;
-	drawRect(&pos, 0, 224);
+
+	char framename[32];
+	snprintf(framename, sizeof(framename), "player inventory %d", player);
+	Frame* frame = gui->findFrame(framename);
+	if ( frame )
+	{
+		// hunger icon
+		if ( !frame->findImage("hunger") )
+		{
+			auto hunger = frame->addImage(
+				SDL_Rect{ 16, frame->getSize().h - 160, 64, 64 },
+				0xffffffff,
+				"images/system/Hunger.png",
+				"hunger"
+			);
+		}
+		if ( !frame->findFrame("inv background") )
+		{
+			auto bgFrame = frame->addFrame("inv background");
+			bgFrame->setSize(pos);
+			bgFrame->setActualSize(pos);
+			Uint32 bgColor = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 224);
+			Image* img = Image::get("images/system/white.png");
+			bgFrame->addImage(bgFrame->getSize(), bgColor, "images/system/white.png", "black");
+		}
+	}
+	else
+	{
+		drawRect(&pos, 0, 224);
+	}
 
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
