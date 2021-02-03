@@ -619,7 +619,7 @@ extern int minotaurlevel;
 #define SERVERCROSSPLAY 5
 
 // language stuff
-#define NUMLANGENTRIES 4000
+#define NUMLANGENTRIES 4050
 extern char languageCode[32];
 extern char** language;
 

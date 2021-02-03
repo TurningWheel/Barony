@@ -1855,6 +1855,14 @@ void drawStatus(int player)
 					int button = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B + i;
 					if ( inputs.bControllerRawInputPressed(player, 301 + button) )
 					{
+						if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN) )
+						{
+							inputs.controllerClearRawInput(player, 301 + button);
+							inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+							inputs.controllerClearRawInputRelease(player, 301 + button);
+							break;
+						}
+						
 						switch ( button )
 						{
 							case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
@@ -1896,7 +1904,7 @@ void drawStatus(int player)
 
 						if ( hotbar_t.faceMenuAlternateLayout )
 						{
-							if ( false )
+							if ( true )
 							{
 								// temp test
 								if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
@@ -1907,7 +1915,7 @@ void drawStatus(int player)
 								{
 									hotbar_t.selectHotbarSlot(slotOrder[2]);
 								}
-								else
+								else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
 								{
 									hotbar_t.selectHotbarSlot(slotOrder[1]);
 								}

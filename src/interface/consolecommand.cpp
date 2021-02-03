@@ -1700,7 +1700,7 @@ void consoleCommand(char const * const command_str)
 	}
 	else if ( !strncmp(command_str, "/locksidebar", 12) )
 	{
-		if ( players[clientnum] )
+		if ( players[clientnum] ) // warning - this doesn't exist when loadConfig() is called on init.
 		{
 			players[clientnum]->characterSheet.lock_right_sidebar = (players[clientnum]->characterSheet.lock_right_sidebar == false);
 			if ( players[clientnum]->characterSheet.lock_right_sidebar )
@@ -1748,15 +1748,23 @@ void consoleCommand(char const * const command_str)
 		//startfloor = std::min(startfloor, numlevels);
 		printlog("Start floor is %d.", startfloor);
 	}
-	else if ( !strncmp(command_str, "/splitscreen ", 13) || !strncmp(command_str, "/splitscreen", 12) )
+	else if ( !strncmp(command_str, "/splitscreen ", 13) 
+		|| !strncmp(command_str, "/splitscreen", 12)
+		|| !strncmp(command_str, "/splitscreen2vertical", 21) )
 	{
-		splitscreen = !splitscreen;
-
 		int numPlayers = 4;
-		if ( !strncmp(command_str, "/splitscreen ", 13) )
+		bool verticalSplitscreen = !strncmp(command_str, "/splitscreen2vertical", 21);
+
+		if ( verticalSplitscreen )
+		{
+			numPlayers = 2;
+		}
+		else if ( !strncmp(command_str, "/splitscreen ", 13) )
 		{
 			numPlayers = std::min(4, std::max(atoi(&command_str[13]), 2));
 		}
+
+		splitscreen = !splitscreen;
 
 		if ( splitscreen )
 		{
@@ -1781,6 +1789,7 @@ void consoleCommand(char const * const command_str)
 			if ( client_disconnected[i] )
 			{
 				players[i]->bSplitscreen = false;
+				players[i]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
 			}
 			else
 			{
@@ -1796,6 +1805,15 @@ void consoleCommand(char const * const command_str)
 
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
+			if ( verticalSplitscreen )
+			{
+				players[i]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
+			}
+			else
+			{
+				players[i]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+			}
+
 			if ( !splitscreen )
 			{
 				players[i]->camera().winx = 0;
@@ -1814,11 +1832,22 @@ void consoleCommand(char const * const command_str)
 				}
 				else if ( playercount == 2 )
 				{
-					// divide screen horizontally
-					players[i]->camera().winx = 0;
-					players[i]->camera().winy = i * yres / 2;
-					players[i]->camera().winw = xres;
-					players[i]->camera().winh = yres / 2;
+					if ( players[i]->splitScreenType == Player::SPLITSCREEN_VERTICAL )
+					{
+						// divide screen vertically
+						players[i]->camera().winx = i * xres / 2;
+						players[i]->camera().winy = 0;
+						players[i]->camera().winw = xres / 2;
+						players[i]->camera().winh = yres;
+					}
+					else
+					{
+						// divide screen horizontally
+						players[i]->camera().winx = 0;
+						players[i]->camera().winy = i * yres / 2;
+						players[i]->camera().winw = xres;
+						players[i]->camera().winh = yres / 2;
+					}
 				}
 				else if ( playercount >= 3 )
 				{
@@ -3143,34 +3172,111 @@ void consoleCommand(char const * const command_str)
 		}
 		else if ( !strncmp(command_str, "/facehotbar", 11) )
 		{
-			players[clientnum]->hotbar.useHotbarFaceMenu = !players[clientnum]->hotbar.useHotbarFaceMenu;
-			messagePlayer(clientnum, "Face button hotbar: %d", players[clientnum]->hotbar.useHotbarFaceMenu ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->hotbar.useHotbarFaceMenu = !players[i]->hotbar.useHotbarFaceMenu;
+					messagePlayer(i, "Face button hotbar: %d", players[i]->hotbar.useHotbarFaceMenu ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/facebarinvert", 14) )
 		{
-			players[clientnum]->hotbar.faceMenuInvertLayout = !players[clientnum]->hotbar.faceMenuInvertLayout;
-			messagePlayer(clientnum, "Face button invert position: %d", players[clientnum]->hotbar.faceMenuInvertLayout ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->hotbar.faceMenuInvertLayout = !players[i]->hotbar.faceMenuInvertLayout;
+					messagePlayer(i, "Face button invert position: %d", players[i]->hotbar.faceMenuInvertLayout ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/facebarquickcast", 17) )
 		{
-			players[clientnum]->hotbar.faceMenuQuickCastEnabled = !players[clientnum]->hotbar.faceMenuQuickCastEnabled;
-			messagePlayer(clientnum, "Face button quickcast: %d", players[clientnum]->hotbar.faceMenuQuickCastEnabled ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->hotbar.faceMenuQuickCastEnabled = !players[i]->hotbar.faceMenuQuickCastEnabled;
+					messagePlayer(i, "Face button quickcast: %d", players[i]->hotbar.faceMenuQuickCastEnabled ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/paperdoll", 10) )
 		{
-			players[clientnum]->paperDoll.enabled = !players[clientnum]->paperDoll.enabled;
-			messagePlayer(clientnum, "Paper doll: %d", players[clientnum]->paperDoll.enabled ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->paperDoll.enabled = !players[i]->paperDoll.enabled;
+					messagePlayer(i, "Paper doll: %d", players[i]->paperDoll.enabled ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/facebaralternate", 17) )
 		{
-			players[clientnum]->hotbar.faceMenuAlternateLayout = !players[clientnum]->hotbar.faceMenuAlternateLayout;
-			messagePlayer(clientnum, "Face button alternate: %d", players[clientnum]->hotbar.faceMenuAlternateLayout ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->hotbar.faceMenuAlternateLayout = !players[i]->hotbar.faceMenuAlternateLayout;
+					messagePlayer(i, "Face button alternate: %d", players[i]->hotbar.faceMenuAlternateLayout ? 1 : 0);
+				}
+			}
 		}
 		else if ( !strncmp(command_str, "/inventorynew", 13) )
 		{
-			players[clientnum]->inventoryUI.bNewInventoryLayout = !players[clientnum]->inventoryUI.bNewInventoryLayout;
-			players[clientnum]->inventoryUI.resetInventory();
-			messagePlayer(clientnum, "New Inventory layout: %d", players[clientnum]->inventoryUI.bNewInventoryLayout ? 1 : 0);
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					players[i]->inventoryUI.bNewInventoryLayout = !players[i]->inventoryUI.bNewInventoryLayout;
+					players[i]->inventoryUI.resetInventory();
+					messagePlayer(i, "New Inventory layout: %d", players[i]->inventoryUI.bNewInventoryLayout ? 1 : 0);
+				}
+			}
+		}
+		else if ( !strncmp(command_str, "/worldui", 8) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					if ( players[i]->worldUI.isEnabled() )
+					{
+						players[i]->worldUI.disable();
+					}
+					else
+					{
+						players[i]->worldUI.enable();
+					}
+				}
+			}
+		}
+		else if ( !strncmp(command_str, "/ircconnect", 11) )
+		{
+			if ( IRCHandler.connect() )
+			{
+				messagePlayer(clientnum, "[IRC]: Connected.");
+			}
+			else
+			{
+				IRCHandler.disconnect();
+				messagePlayer(clientnum, "[IRC]: Error connecting.");
+			}
+		}
+		else if ( !strncmp(command_str, "/ircdisconnect", 14) )
+		{
+			IRCHandler.disconnect();
+			messagePlayer(clientnum, "[IRC]: Disconnected.");
+		}
+		else if ( !strncmp(command_str, "/irc ", 5) )
+		{
+			std::string message = command_str + 5;
+			message.append("\r\n");
+			IRCHandler.packetSend(message);
+			messagePlayer(clientnum, "[IRC]: Sent message.");
 		}
 		else
 		{

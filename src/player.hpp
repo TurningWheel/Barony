@@ -623,7 +623,16 @@ class Player
 
 public:
 	Entity* entity;
+
+	enum SplitScreenTypes : int
+	{
+		SPLITSCREEN_DEFAULT,
+		SPLITSCREEN_VERTICAL
+	};
+
 	bool bSplitscreen = false;
+	SplitScreenTypes splitScreenType = SPLITSCREEN_DEFAULT;
+
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 
@@ -665,10 +674,11 @@ public:
 			player(p), 
 			appraisal(p), 
 			DEFAULT_INVENTORY_SIZEX(12),
-			DEFAULT_INVENTORY_SIZEY(3),
-			sizex(DEFAULT_INVENTORY_SIZEX),
-			sizey(DEFAULT_INVENTORY_SIZEY)
-		{};
+			DEFAULT_INVENTORY_SIZEY(3)
+		{
+			sizex = DEFAULT_INVENTORY_SIZEX;
+			sizey = DEFAULT_INVENTORY_SIZEY;
+		};
 		~Inventory_t() {};
 		const int getTotalSize() const { return sizex * sizey; }
 		const int getSizeX() const { return sizex; }
@@ -1118,6 +1128,7 @@ public:
 			GROUP_RIGHT
 		};
 		FaceMenuGroup faceMenuButtonHeld = GROUP_NONE;
+		int faceButtonTopYPosition = yres;
 		int radialHotbarSlots = NUM_HOTBAR_SLOTS;
 		int radialHotbarProgress = 0;
 		// end temp stuff
@@ -1146,6 +1157,7 @@ public:
 
 		void clear()
 		{
+			faceButtonTopYPosition = yres;
 			swapHotbarOnShapeshift = 0;
 			current_hotbar = 0;
 			hotbarHasFocus = false;

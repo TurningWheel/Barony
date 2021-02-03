@@ -3912,7 +3912,7 @@ for this option. (Required: %s, Current: %s)#
 3074 %s I have no use for this.#
 3075 %s That hit the spot!#
 3076 %s Oof. I'm really full now.#
-3077 %s I cant reach that.#
+3077 %s I cannot reach that.#
 3078 %s There's something in the way.#
 3079 %s Advancing to point!#
 3080 %s Cover my retreat, %s!#
@@ -5941,4 +5941,57 @@ Changing this gameflag is disabled in current game mode.#
 3996 You have no items able to be identified!#
 3997 You have no room left in your pack to unequip a 
  %s!#
-3999 end#
+# World UI Tooltips
+3998 (Hold) #
+3999 Salvage item#
+4000 Pick up item#
+4001 Take gold#
+4002 Drink from fountain#
+4003 Drink from sink#
+4004 Close chest#
+4005 Open chest#
+4006 Salvage torch#
+4007 Take torch#
+4008 Salvage shard#
+4009 Take shard#
+4010 Inspect gravestone#
+4011 follower#
+4012 Command #
+4013 Trade with #
+4014 Interact with #
+4015 Close door#
+4016 Open door#
+4017 Inspect gate#
+4018 Deactivate switch#
+4019 Activate switch#
+4020 Turn crystal#
+4021 Push boulder#
+4022 Take orb#
+4023 Inspect#
+4024 Pull torch#
+4025 Read sign#
+4026 Disarm beartrap#
+4027 Inspect trapdoor#
+4028 Exit secret level#
+4029 Enter secret level#
+4030 Exit dungeon floor#
+4031 Exit Hamlet#
+4032 Step through portal#
+4033 Enter trial#
+4034 Exit trial#
+4035 Enter portal#
+4036 Enter trapdoor#
+4037 Descend ladder#
+4038 Climb ladder#
+4039 Disarm #
+4040 Interact#
+# Follower interact text
+4041 Interact with...#
+4042 Attack...#
+4043 Attack #
+4044 switch#
+4045 trap#
+4046 item#
+4047 No interactions available#
+
+4049 end#

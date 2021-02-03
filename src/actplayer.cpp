@@ -3470,39 +3470,48 @@ void actPlayer(Entity* my)
 				Entity* underMouse = nullptr;
 				if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT && ticks % 10 == 0 )
 				{
-					if ( !shootmode )
+					if ( !players[PLAYER_NUM]->worldUI.isEnabled() )
 					{
-						Uint32 uidnum = GO_GetPixelU32(mouseX, yres - mouseY, cameras[PLAYER_NUM]);
-						if ( uidnum > 0 )
+						if ( !shootmode )
 						{
-							underMouse = uidToEntity(uidnum);
-						}
-					}
-					else
-					{
-						Uint32 uidnum = GO_GetPixelU32(cameras[PLAYER_NUM].winw / 2, yres - cameras[PLAYER_NUM].winh / 2, cameras[PLAYER_NUM]);
-						if ( uidnum > 0 )
-						{
-							underMouse = uidToEntity(uidnum);
-						}
-					}
-
-					if ( underMouse && followerMenu.followerToCommand )
-					{
-						Entity* parent = uidToEntity(underMouse->skill[2]);
-						if ( underMouse->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
-						{
-							// see if we selected a limb
-							if ( parent )
+							Uint32 uidnum = GO_GetPixelU32(mouseX, yres - mouseY, cameras[PLAYER_NUM]);
+							if ( uidnum > 0 )
 							{
-								underMouse = parent;
+								underMouse = uidToEntity(uidnum);
 							}
 						}
-						followerMenu.allowedInteractEntity(*underMouse);
+						else
+						{
+							Uint32 uidnum = GO_GetPixelU32(cameras[PLAYER_NUM].winw / 2, yres - cameras[PLAYER_NUM].winh / 2, cameras[PLAYER_NUM]);
+							if ( uidnum > 0 )
+							{
+								underMouse = uidToEntity(uidnum);
+							}
+						}
+						if ( underMouse && followerMenu.followerToCommand )
+						{
+							Entity* parent = uidToEntity(underMouse->skill[2]);
+							if ( underMouse->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+							{
+								// see if we selected a limb
+								if ( parent )
+								{
+									underMouse = parent;
+								}
+							}
+							followerMenu.allowedInteractEntity(*underMouse);
+						}
+						else
+						{
+							strcpy(followerMenu.interactText, "");
+						}
 					}
 					else
 					{
-						strcpy(followerMenu.interactText, "");
+						if ( !players[PLAYER_NUM]->worldUI.bTooltipInView )
+						{
+							strcpy(followerMenu.interactText, "");
+						}
 					}
 				}
 			}
@@ -3657,6 +3666,12 @@ void actPlayer(Entity* my)
 								followerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
 								followerMenu.followerToCommand->monsterAllyInteractTarget = 0;
 							}
+
+							if ( players[PLAYER_NUM]->worldUI.isEnabled() )
+							{
+								players[PLAYER_NUM]->worldUI.reset();
+							}
+
 							followerMenu.selectMoveTo = false;
 							strcpy(followerMenu.interactText, "");
 						}
@@ -3668,7 +3683,7 @@ void actPlayer(Entity* my)
 			{
 				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU]) 
 					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) 
-						&& players[PLAYER_NUM]->shootmode && !players[PLAYER_NUM]->worldUI.bTooltipInView) )
+						&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
@@ -3687,7 +3702,7 @@ void actPlayer(Entity* my)
 				}
 				else if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) 
 					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD) 
-						&& players[PLAYER_NUM]->shootmode && !players[PLAYER_NUM]->worldUI.bTooltipInView) )
+						&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )

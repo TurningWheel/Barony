@@ -503,3 +503,8 @@ Entity* uidToEntity(Sint32 uidnum)
 {
 	return nullptr;
 }
+
+bool Entity::bEntityHighlightedForPlayer(const int player) const
+{
+	return false;
+}

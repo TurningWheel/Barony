@@ -317,53 +317,36 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 	}
 
 	Entity* entity = uidToEntity(uidnum);
-	if (
-		players[player]->worldUI.isEnabled() && clicktype != ENTITY_CLICK_FOLLOWER_INTERACT
-		//&&
-		//(!entity 
-		//	|| (entity && entity->behavior == &actSpriteWorldTooltip)
-		//	|| (entity && entity->behavior == &actDoorFrame) // door frames eat up clicks
-		//	|| (players[player]->entity && (entityDist(entity, players[player]->entity) > TOUCHRANGE) ))
-		)
+	if ( players[player]->worldUI.isEnabled() )
 	{
-		/*if ( entity && entity->behavior == &actSpriteWorldTooltip )
+		for ( node_t* node = map.worldUI->first; node; node = node->next )
 		{
-			if ( players[player]->worldUI.bTooltipActiveForPlayer(*entity) )
+			Entity* tooltip = (Entity*)node->element;
+			if ( !tooltip || tooltip->behavior != &actSpriteWorldTooltip )
 			{
-				entity = uidToEntity(entity->parent);
+				continue;
 			}
-		}
-		else*/
-		{
-			for ( node_t* node = map.worldUI->first; node; node = node->next )
+			if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
 			{
-				Entity* tooltip = (Entity*)node->element;
-				if ( !tooltip || tooltip->behavior != &actSpriteWorldTooltip )
+				if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
 				{
-					continue;
-				}
-				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
-				{
-					if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
-					{
-						if ( inputs.bControllerInputHeld(player, INJOY_GAME_USE) || *inputPressedForPlayer(player, impulses[IN_USE]) )
-						{
-							entity = uidToEntity(tooltip->parent);
-						}
-					}
-					else
+					if ( inputs.bControllerInputHeld(player, INJOY_GAME_USE) || *inputPressedForPlayer(player, impulses[IN_USE]) )
 					{
 						entity = uidToEntity(tooltip->parent);
 					}
-					break;
 				}
+				else
+				{
+					entity = uidToEntity(tooltip->parent);
+				}
+				break;
 			}
-			if ( !entity )
-			{
-				// clear the button input if we missed a tooltip, otherwise it'll keep retrying (or pre-fire a button held)
-				inputs.controllerClearInput(player, INJOY_GAME_USE);
-				*inputPressedForPlayer(player, impulses[IN_USE]) = 0;
-			}
+		}
+		if ( !entity )
+		{
+			// clear the button input if we missed a tooltip, otherwise it'll keep retrying (or pre-fire a button held)
+			inputs.controllerClearInput(player, INJOY_GAME_USE);
+			*inputPressedForPlayer(player, impulses[IN_USE]) = 0;
 		}
 	}
 

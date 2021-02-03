@@ -3708,20 +3708,30 @@ void ingameHud()
 			playSound(139, 64);
 		}
 
+		bool worldUIBlocksFollowerCycle = (
+				players[player]->worldUI.isEnabled()
+				&& players[player]->worldUI.bTooltipInView
+				&& players[player]->worldUI.tooltipsInRange.size() > 1);
+
 		if ( !command && (*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT])
-			|| (inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE)
-				&& ((players[player]->shootmode && !players[player]->worldUI.bTooltipInView)
-					|| FollowerMenu[player].followerMenuIsOpen()))) )
+				|| (inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE)) )
+			)
 		{
-			// can select next follower in inventory or shootmode
-			FollowerMenu[player].selectNextFollower();
-			players[player]->characterSheet.proficienciesPage = 1;
-			if ( players[player]->shootmode && !players[player]->characterSheet.lock_right_sidebar )
+			if ( !worldUIBlocksFollowerCycle && players[player]->shootmode )
 			{
-				players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+				//(players[player]->shootmode && !worldUIBlocksFollowerCycle) || FollowerMenu[player].followerMenuIsOpen())) ) -- todo needed?
+
+				// can select next follower in inventory or shootmode
+				FollowerMenu[player].selectNextFollower();
+				players[player]->characterSheet.proficienciesPage = 1;
+				if ( players[player]->shootmode && !players[player]->characterSheet.lock_right_sidebar )
+				{
+					// from now on, allies should be displayed all times
+					//players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+				}
+				*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT]) = 0;
+				inputs.controllerClearInput(player, INJOY_GAME_FOLLOWERMENU_CYCLE);
 			}
-			*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT]) = 0;
-			inputs.controllerClearInput(player, INJOY_GAME_FOLLOWERMENU_CYCLE);
 		}
 	}
 
@@ -3749,7 +3759,7 @@ void ingameHud()
 		{
 			if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) )
 			{
-				FollowerMenu[i].closeFollowerMenuGUI(true);
+				FollowerMenu[i].closeFollowerMenuGUI();
 			}
 		}
 	}
@@ -3992,14 +4002,21 @@ void ingameHud()
 				updatePlayerInventory(player);
 				updateShopWindow(player);
 			}
-
-			if ( players[player]->characterSheet.proficienciesPage == 1 )
+			
+			if ( players[player]->gui_mode == GUI_MODE_FOLLOWERMENU )
 			{
 				drawPartySheet(player);
 			}
 			else
 			{
-				drawSkillsSheet(player);
+				if ( players[player]->characterSheet.proficienciesPage == 1 )
+				{
+					drawPartySheet(player);
+				}
+				else
+				{
+					drawSkillsSheet(player);
+				}
 			}
 		}
 		else
@@ -4151,16 +4168,16 @@ void ingameHud()
 								|| followerMenu.allowedInteractWorld(type)
 								)
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[4041]); // "Interact with..."
 							}
 							else
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[4042]); // "Attack..."
 							}
 						}
 						else
 						{
-							ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+							ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[4041]); // "Interact with..."
 						}
 					}
 					else
@@ -4180,21 +4197,95 @@ void ingameHud()
 		}
 		else if ( !nohud )
 		{
-			pos.x = cameras[player].winx + (cameras[player].winw / 2) - cross_bmp->w / 2;
-			pos.y = cameras[player].winy + (cameras[player].winh / 2) - cross_bmp->h / 2;
-			if ( players[player]->worldUI.bTooltipInView )
-			{
-				pos.x = cameras[player].winx + (cameras[player].winw / 2) - selected_cursor_bmp->w / 2;
-				pos.y = cameras[player].winy + (cameras[player].winh / 2) - selected_cursor_bmp->h / 2;
-			}
+			pos.x = players[player]->camera_midx();
+			pos.y = players[player]->camera_midy();
 			pos.w = 0;
 			pos.h = 0;
 			if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 				|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 			{
-				pos.x = players[player]->camera_midx() - cursor_bmp->w / 2;
-				pos.y = players[player]->camera_midy() - cursor_bmp->h / 2;
-				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				bool forceBlankInteractText = false;
+				if ( !players[player]->worldUI.isEnabled() )
+				{
+					pos.x -= cursor_bmp->w / 2;
+					pos.y -= cursor_bmp->h / 2;
+					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+					pos.x += 24;
+					pos.y += 24;
+				}
+				else
+				{
+					if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+					{
+						pos.x -= cursor_bmp->w / 2;
+						pos.y -= cursor_bmp->h / 2;
+						drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+
+						pos.x = players[player]->camera_midx();
+						pos.y = players[player]->camera_midy();
+						pos.x -= selected_cursor_bmp->w / 2;
+						pos.y -= selected_cursor_bmp->h / 2;
+					}
+					else
+					{
+						if ( (players[player]->worldUI.isEnabled() && !players[player]->worldUI.bTooltipInView) )
+						{
+							forceBlankInteractText = true;
+
+							pos.x -= cross_bmp->w / 2;
+							pos.y -= cross_bmp->h / 2;
+							drawImageAlpha(cross_bmp, NULL, &pos, 128);
+							pos.x = players[player]->camera_midx();
+							pos.y = players[player]->camera_midy();
+							pos.x -= selected_cursor_bmp->w / 2;
+							pos.y -= selected_cursor_bmp->h / 2;
+							//drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
+						}
+						else
+						{
+							pos.x -= selected_cursor_bmp->w / 2;
+							pos.y -= selected_cursor_bmp->h / 2;
+							drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
+						}
+					}
+					pos.x += 40;
+					pos.y += 20;
+					pos.h = selected_cursor_bmp->h;
+					pos.w = pos.h;
+
+					SDL_Rect glyphsrc{ 0, 0, 0, 0 };
+
+					if ( ticks % 50 < 25 )
+					{
+						int button = joyimpulses[INJOY_GAME_USE] - 301;
+						glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
+						pos.w = glyphsrc.w * 3;
+						pos.h = glyphsrc.h * 3;
+						pos.y -= 4;
+						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
+						pos.y += 4;
+					}
+					else
+					{
+						int button = joyimpulses[INJOY_GAME_USE] - 301;
+						glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
+						pos.w = glyphsrc.w * 3;
+						pos.h = glyphsrc.h * 3;
+						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
+					}
+					pos.x += pos.w + 4;
+
+					SDL_Rect skillsrc = getRectForSkillIcon(PRO_LEADERSHIP);
+					SDL_Rect skillpos = pos;
+					skillpos.x += 4;
+					skillpos.w = 32;
+					skillpos.h = 32;
+					skillpos.y -= (skillpos.h - pos.h) / 2; // to adjust for different glyph heights
+					drawImageScaled(skillIcons_bmp, &skillsrc, &skillpos);
+					pos.x += skillpos.w + 8; // move text past the skill box
+					pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
+				}
+
 				if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 				{
 					if ( followerMenu.followerToCommand
@@ -4202,16 +4293,16 @@ void ingameHud()
 							|| followerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
 						)
 					{
-						ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
+						ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[3650]);
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
+						ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[3039]);
 					}
 				}
 				else
 				{
-					if ( !strcmp(followerMenu.interactText, "") )
+					if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
 					{
 						if ( followerMenu.followerToCommand )
 						{
@@ -4221,37 +4312,39 @@ void ingameHud()
 								|| followerMenu.allowedInteractWorld(type)
 								)
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+								ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[4041]); // "Interact with..."
 							}
 							else
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+								ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[4042]); // "Attack..."
 							}
 						}
 						else
 						{
-							ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+							ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[4041]); // "Interact with..."
 						}
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", followerMenu.interactText);
+						ttfPrintTextFormatted(ttf12, pos.x, pos.y, "%s", followerMenu.interactText);
 					}
 				}
 			}
 			else
 			{
+				bool foundTinkeringKit = false;
 				if ( players[player] && players[player]->entity && stats[player]
 					&& stats[player]->defending )
 				{
-					bool foundTinkeringKit = false;
 					if ( stats[player]->shield && stats[player]->shield->type == TOOL_TINKERING_KIT )
 					{
-						ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
+						foundTinkeringKit = true;
 					}
 				}
 				if ( players[player]->worldUI.bTooltipInView )
 				{
+					pos.x -= selected_cursor_bmp->w / 2;
+					pos.y -= selected_cursor_bmp->h / 2;
 					drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
 					pos.x += 40;
 					pos.y += 20;
@@ -4268,6 +4361,7 @@ void ingameHud()
 						pos.h = glyphsrc.h * 3;
 						pos.y -= 4;
 						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
+						pos.y += 4;
 					}
 					else
 					{
@@ -4278,16 +4372,88 @@ void ingameHud()
 						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
 					}
 					pos.x += pos.w + 4;
-					pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
-					if ( ticks % 50 < 25 )
+					if ( foundTinkeringKit )
 					{
-						pos.y += 4;
+						SDL_Rect skillsrc = getRectForSkillIcon(PRO_LOCKPICKING);
+						SDL_Rect skillpos = pos;
+						skillpos.x += 4;
+						skillpos.w = 32;
+						skillpos.h = 32;
+						skillpos.y -= (skillpos.h - pos.h) / 2; // to adjust for different glyph heights
+						drawImageScaled(skillIcons_bmp, &skillsrc, &skillpos);
+						pos.x += skillpos.w + 8; // move text past the skill box
 					}
-					ttfPrintText(ttf12, pos.x, pos.y, players[player]->worldUI.interactText.c_str());
+					pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
+
+					if ( foundTinkeringKit )
+					{
+						ttfPrintText(ttf12, pos.x, pos.y, players[player]->worldUI.interactText.c_str());
+					}
+					else
+					{
+						ttfPrintText(ttf12, pos.x, pos.y, players[player]->worldUI.interactText.c_str());
+					}
 				}
 				else
 				{
+					pos.x -= cross_bmp->w / 2;
+					pos.y -= cross_bmp->h / 2;
 					drawImageAlpha(cross_bmp, NULL, &pos, 128);
+
+					if ( foundTinkeringKit )
+					{
+						if ( players[player]->worldUI.isEnabled() )
+						{
+							pos.x = players[player]->camera_midx();
+							pos.y = players[player]->camera_midy();
+							pos.x -= selected_cursor_bmp->w / 2;
+							pos.y -= selected_cursor_bmp->h / 2;
+							// skip cursor here, no tooltip in view
+							//drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
+							pos.x += 40;
+							pos.y += 20;
+							pos.h = selected_cursor_bmp->h;
+							pos.w = pos.h;
+
+							SDL_Rect glyphsrc{ 0, 0, 0, 0 };
+
+							if ( ticks % 50 < 25 )
+							{
+								int button = joyimpulses[INJOY_GAME_USE] - 301;
+								glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
+								pos.w = glyphsrc.w * 3;
+								pos.h = glyphsrc.h * 3;
+								pos.y -= 4;
+								drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
+								pos.y += 4;
+							}
+							else
+							{
+								int button = joyimpulses[INJOY_GAME_USE] - 301;
+								glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
+								pos.w = glyphsrc.w * 3;
+								pos.h = glyphsrc.h * 3;
+								drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
+							}
+							pos.x += pos.w + 4;
+
+							SDL_Rect skillsrc = getRectForSkillIcon(PRO_LOCKPICKING);
+							SDL_Rect skillpos = pos;
+							skillpos.x += 4;
+							skillpos.w = 32;
+							skillpos.h = 32;
+							skillpos.y -= (skillpos.h - pos.h) / 2; // to adjust for different glyph heights
+							drawImageScaled(skillIcons_bmp, &skillsrc, &skillpos);
+							pos.x += skillpos.w + 8; // move text past the skill box
+
+							pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
+							ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[3663]);
+						}
+						else
+						{
+							ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
+						}
+					}
 				}
 
 				// prints out current pressed glyph
@@ -5146,11 +5312,22 @@ int main(int argc, char** argv)
 								} 
 								else if (playercount == 2)
 								{
-									// divide screen horizontally
-									camera.winx = 0;
-									camera.winy = c * yres / 2;
-									camera.winw = xres;
-									camera.winh = yres / 2;
+									if ( players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL )
+									{
+										// divide screen vertically
+										camera.winx = c * xres / 2;
+										camera.winy = 0;
+										camera.winw = xres / 2;
+										camera.winh = yres;
+									}
+									else
+									{
+										// divide screen horizontally
+										camera.winx = 0;
+										camera.winy = c * yres / 2;
+										camera.winw = xres;
+										camera.winh = yres / 2;
+									}
 								} 
 								else if (playercount >= 3) 
 								{

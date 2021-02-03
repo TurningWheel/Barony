@@ -1080,6 +1080,8 @@ void deinitGame()
 		delete game_controller;
 	}*/
 
+	IRCHandler.disconnect();
+
 	if ( shoparea )
 	{
 		free(shoparea);

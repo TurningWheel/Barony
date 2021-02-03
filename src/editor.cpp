@@ -1032,6 +1032,7 @@ void makeUndo()
 	undomap->entities->first = nullptr;
 	undomap->entities->last = nullptr;
 	undomap->creatures = nullptr;
+	undomap->worldUI = nullptr;
 	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, undomap->entities, nullptr);
@@ -1515,6 +1516,7 @@ int main(int argc, char** argv)
 	copymap.tiles = nullptr;
 	copymap.entities = nullptr;
 	copymap.creatures = nullptr;
+	copymap.worldUI = nullptr;
 	undolist.first = nullptr;
 	undolist.last = nullptr;
 
@@ -1535,6 +1537,7 @@ int main(int argc, char** argv)
 	map.height = 24;
 	map.entities = (list_t*) malloc(sizeof(list_t));
 	map.creatures = nullptr;
+	map.worldUI = nullptr;
 	map.entities->first = nullptr;
 	map.entities->last = nullptr;
 	map.tiles = (int*) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);

@@ -106,6 +106,7 @@ int initApp(char const * const title, int fullscreen)
 	}
 	map.entities = NULL;
 	map.creatures = nullptr;
+	map.worldUI = nullptr;
 	map.tiles = NULL;
 
 	// init PHYSFS
@@ -2823,10 +2824,13 @@ bool changeVideoMode()
 		generateVBOs(0, nummodels);
 	}
 
+#ifndef EDITOR
 	// dump ui resources, these are all no good too!
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
+#endif // !EDITOR
+
 #endif
 	// success
 	return true;

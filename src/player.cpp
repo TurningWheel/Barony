@@ -1581,7 +1581,18 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 
 	real_t dist = entityDist(&tooltip, players[player.playernum]->entity);
 	Entity* parent = uidToEntity(tooltip.parent);
-	if ( dist < 24 && dist > 4 )
+
+	real_t maxDist = 24;
+	real_t minDist = 4;
+
+	bool followerSelectInteract = false;
+	if ( FollowerMenu[player.playernum].followerMenuIsOpen() && FollowerMenu[player.playernum].selectMoveTo )
+	{
+		followerSelectInteract = (FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT);
+		maxDist = 256;
+	}
+
+	if ( dist < maxDist && dist > minDist )
 	{
 		real_t tangent = atan2(tooltip.y - players[player.playernum]->entity->y, tooltip.x - players[player.playernum]->entity->x);
 		while ( tangent >= 2 * PI )
@@ -1605,6 +1616,38 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		real_t interactAngle = (PI / 8);
 		if ( parent )
 		{
+			if ( followerSelectInteract )
+			{
+				if ( !FollowerMenu[player.playernum].allowedInteractEntity(*parent, false) )
+				{
+					return 0.0;
+				}
+
+				Entity* ohitentity = hit.entity;
+				real_t tangent2 = atan2(players[player.playernum]->entity->y - parent->y, players[player.playernum]->entity->x - parent->x);
+				lineTraceTarget(parent, parent->x, parent->y, tangent2, maxDist, 0, false, players[player.playernum]->entity);
+				if ( hit.entity != players[player.playernum]->entity )
+				{
+					// no line of sight through walls
+					hit.entity = ohitentity;
+					return 0.0;
+				}
+				hit.entity = ohitentity;
+			}
+
+			if ( stats[player.playernum] && stats[player.playernum]->defending )
+			{
+				if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
+				{
+					if ( !(parent->behavior == &actItem
+						|| parent->behavior == &actTorch
+						|| parent->behavior == &actCrystalShard) )
+					{
+						return 0.0; // we can't salvage the entity if not one of the above
+					}
+				}
+			}
+
 			if ( parent->behavior == &actGate && parent->flags[PASSABLE] )
 			{
 				return 0.0;
@@ -1639,11 +1682,83 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					dist += 2; // distance penalty
 				}
 			}
+
+			if ( followerSelectInteract )
+			{
+				if ( parent->behavior == &actMonster && parent->checkEnemy(player.entity) )
+				{
+					// monsters have wider interact angle for aim assist
+					interactAngle = (PI / 6);
+					if ( dist > STRIKERANGE )
+					{
+						// for every x units, shrink the selection angle
+						int units = static_cast<int>(dist / 16);
+						interactAngle -= (units * PI / 64);
+						interactAngle = std::max(interactAngle, PI / 32);
+					}
+				}
+				else
+				{
+					if ( dist > STRIKERANGE )
+					{
+						// for every x units, shrink the selection angle
+						int units = static_cast<int>(dist / 8);
+						interactAngle -= (units * PI / 64);
+						interactAngle = std::max(interactAngle, PI / 64);
+					}
+				}
+			}
 		}
 
 		if ( (abs(tangent - playerYaw) < (interactAngle)) || (abs(tangent - playerYaw) > (2 * PI - interactAngle)) )
 		{
 			//messagePlayer(0, "%.2f", tangent - playerYaw);
+			if ( !followerSelectInteract )
+			{
+				return dist;
+			}
+
+			if ( followerSelectInteract )
+			{
+				// perform head pitch check
+				real_t startx = players[player.playernum]->entity->x;
+				real_t starty = players[player.playernum]->entity->y;
+				real_t startz = -4;
+				real_t pitch = players[player.playernum]->entity->pitch;
+				if ( pitch < 0 )
+				{
+					//pitch = 0; - unneeded - negative pitch looks in a cone upwards as well - good check
+				}
+
+				// draw line from the players height and direction until we hit the ground.
+				real_t previousx = startx;
+				real_t previousy = starty;
+				int index = 0;
+				for ( ; startz < 0.f; startz += abs(0.25 * tan(pitch)) )
+				{
+					startx += 0.5 * cos(players[player.playernum]->entity->yaw);
+					starty += 0.5 * sin(players[player.playernum]->entity->yaw);
+					index = (static_cast<int>(starty + 16 * sin(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
+					if ( !map.tiles[OBSTACLELAYER + index] )
+					{
+						// store the last known good coordinate
+						previousx = startx;
+						previousy = starty;
+					}
+					if ( map.tiles[OBSTACLELAYER + index] )
+					{
+						break;
+					}
+				}
+				real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
+				if ( lookDist < dist )
+				{
+					if ( abs(dist - lookDist) > 24.0 )
+					{
+						return 0.0; // looking at a tile on the ground more than x units away from the tooltip
+					}
+				}
+			}
 			return dist;
 		}
 	}
@@ -1657,60 +1772,101 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 	if ( uidToEntity(tooltip.parent) )
 	{
 		Entity* parent = uidToEntity(tooltip.parent);
+		if ( !parent )
+		{
+			setTooltipDisabled(tooltip);
+			return;
+		}
 		parent->highlightForUI = 1.0;
 
 		if ( tooltip.worldTooltipRequiresButtonHeld == 1 )
 		{
-			interactText = "(Hold) ";
+			interactText = language[3998]; // "(Hold) ";
 		}
 		else
 		{
 			interactText = "";
 		}
 
-		if ( parent->behavior == &actItem )
+		bool foundTinkeringKit = false;
+		if ( stats[player.playernum] && stats[player.playernum]->defending )
 		{
-			interactText = "Pick up item";
+			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
+			{
+				foundTinkeringKit = true;
+			}
+		}
+
+		if ( FollowerMenu[player.playernum].followerMenuIsOpen()
+			&& FollowerMenu[player.playernum].selectMoveTo
+			&& FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT )
+		{
+			FollowerMenu[player.playernum].allowedInteractEntity(*parent, true);
+		}
+		else if ( parent->behavior == &actItem )
+		{
+			if ( foundTinkeringKit )
+			{
+				interactText = language[3999]; // "Salvage item";
+			}
+			else
+			{
+				interactText = language[4000]; // "Pick up item";
+			}
 		}
 		else if ( parent->behavior == &actGoldBag )
 		{
-			interactText = "Take gold";
+			interactText = language[4001]; // "Take gold";
 		}
 		else if ( parent->behavior == &actFountain )
 		{
-			interactText = "Drink from fountain";
+			interactText = language[4002]; // "Drink from fountain" 
 		}
 		else if ( parent->behavior == &actSink )
 		{
-			interactText = "Drink from sink";
+			interactText = language[4003]; // "Drink from sink" 
 		}
 		else if ( parent->behavior == &actChestLid || parent->behavior == &actChest )
 		{
 			if ( parent->skill[1] == 1 )
 			{
-				interactText = "Close chest";
+				interactText = language[4004]; // "Close chest" 
 			}
 			else if ( parent->skill[1] == 0 )
 			{
-				interactText = "Open chest";
+				interactText = language[4005]; // "Open chest" 
 			}
 		}
 		else if ( parent->behavior == &actTorch )
 		{
-			interactText = "Take torch";
+			if ( foundTinkeringKit )
+			{
+				interactText = language[4006]; // "Salvage torch" 
+			}
+			else
+			{
+				interactText = language[4007]; // "Take torch" 
+			}
 		}
 		else if ( parent->behavior == &actCrystalShard )
 		{
-			interactText = "Take shard";
+			if ( foundTinkeringKit )
+			{
+				interactText = language[4008]; // "Salvage shard" 
+			}
+			else
+			{
+				interactText = language[4009]; // "Take shard" 
+			}
 		}
 		else if ( parent->behavior == &actHeadstone )
 		{
-			interactText = "Inspect gravestone";
+			interactText = language[4010]; // "Inspect gravestone" 
 		}
 		else if ( parent->behavior == &actMonster )
 		{
 			int monsterType = parent->getMonsterTypeFromSprite();
-			std::string name = "follower";
+			std::string name = language[4011]; // "follower" 
 			if ( parent->getStats() && strcmp(parent->getStats()->name, "") )
 			{
 				name = parent->getStats()->name;
@@ -1732,107 +1888,107 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			{
 				if ( parent->monsterIsTinkeringCreation() )
 				{
-					interactText = "Command " + name;
+					interactText = language[4012] + name; // "Command "
 				}
 				else
 				{
-					interactText = "Command " + name;
+					interactText = language[4012] + name; // "Command "
 				}
 			}
 			else if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
 			{
-				interactText = "Trade with " + name;
+				interactText = language[4013] + name; // "Trade with "
 			}
 			else
 			{
-				interactText = "Interact with " + name;
+				interactText = language[4014] + name; // "Interact with "
 			}
 		}
 		else if ( parent->behavior == &actDoor )
 		{
 			if ( parent->flags[PASSABLE] )
 			{
-				interactText = "Close door";
+				interactText = language[4015]; // "Close door" 
 			}
 			else
 			{
-				interactText = "Open door";
+				interactText = language[4016]; // "Open door" 
 			}
 		}
 		else if ( parent->behavior == &actGate )
 		{
-			interactText = "Inspect gate";
+			interactText = language[4017]; // "Inspect gate" 
 		}
 		else if ( parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
 		{
 			if ( parent->skill[0] == 1 )
 			{
-				interactText = "Deactivate switch";
+				interactText = language[4018]; // "Deactivate switch" 
 			}
 			else
 			{
-				interactText = "Activate switch";
+				interactText = language[4019]; // "Activate switch" 
 			}
 		}
 		else if ( parent->behavior == &actPowerCrystal )
 		{
-			interactText = "Turn crystal";
+			interactText = language[4020]; // "Turn crystal" 
 		}
 		else if ( parent->behavior == &actBoulder )
 		{
-			interactText = "Push boulder";
+			interactText = language[4021]; // "Push boulder" 
 		}
 		else if ( parent->behavior == &actPedestalBase )
 		{
 			if ( parent->pedestalHasOrb > 0 )
 			{
-				interactText = "Take orb";
+				interactText = language[4022]; // "Take orb" 
 			}
 			else
 			{
-				interactText = "Inspect";
+				interactText = language[4023]; // "Inspect" 
 			}
 		}
 		else if ( parent->behavior == &actCampfire )
 		{
-			interactText = "Pull torch";
+			interactText = language[4024]; // "Pull torch" 
 		}
 		else if ( parent->behavior == &actFurniture || parent->behavior == &actMCaxe )
 		{
-			interactText = "Inspect";
+			interactText = language[4023]; // "Inspect" 
 		}
 		else if ( parent->behavior == &actFloorDecoration )
 		{
 			if ( parent->sprite == 991 ) // sign
 			{
-				interactText = "Read sign";
+				interactText = language[4025]; // "Read sign" 
 			}
 			else
 			{
-				interactText = "Inspect";
+				interactText = language[4023]; // "Inspect" 
 			}
 		}
 		else if ( parent->behavior == &actBeartrap )
 		{
-			interactText = "Disarm beartrap";
+			interactText = language[4026]; // "Disarm beartrap" 
 		}
 		else if ( parent->behavior == &actLadderUp )
 		{
-			interactText = "Inspect trapdoor";
+			interactText = language[4027]; // "Inspect trapdoor" 
 		}
 		else if ( parent->behavior == &actLadder )
 		{
 			if ( secretlevel && parent->skill[3] == 1 ) // secret ladder
 			{
-				interactText += "Exit secret level";
+				interactText += language[4028]; // "Exit secret level" 
 			}
 			else if ( !secretlevel && parent->skill[3] == 1 ) // secret ladder
 			{
-				interactText += "Enter secret level";
+				interactText += language[4029]; // "Enter secret level" 
 			}
 			else
 			{
-				interactText += "Exit dungeon floor";
+				interactText += language[4030]; // "Exit dungeon floor" 
 			}
 		}
 		else if ( parent->behavior == &actPortal )
@@ -1841,32 +1997,32 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			{
 				if ( secretlevel )
 				{
-					interactText += "Exit secret level";
+					interactText += language[4028]; // "Exit secret level" 
 				}
 				else
 				{
-					interactText += "Enter secret level";
+					interactText += language[4029]; // "Enter secret level" 
 				}
 			}
 			else
 			{
 				if ( !strcmp(map.name, "Hell") )
 				{
-					interactText += "Exit dungeon floor"; // hell uses portals instead
+					interactText += language[4030]; // hell uses portals instead "Exit dungeon floor"
 				}
 				else if ( !strcmp(map.name, "Mages Guild") )
 				{
-					interactText += "Exit Hamlet"; // mages guild exit to castle
+					interactText += language[4031]; // mages guild exit to castle "Exit Hamlet"
 				}
 				else
 				{
-					interactText += "Exit dungeon floor";
+					interactText += language[4030]; // "Exit dungeon floor";
 				}
 			}
 		}
 		else if ( parent->behavior == &::actMidGamePortal )
 		{
-			interactText += "Step through portal";
+			interactText += language[4032]; // "Step through portal";
 		}
 		else if ( parent->behavior == &actCustomPortal )
 		{
@@ -1874,54 +2030,54 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			{
 				if ( !strcmp(map.name, "Tutorial Hub") )
 				{
-					interactText += "Enter trial";
+					interactText += language[4033]; // "Enter trial";
 				}
 				else
 				{
-					interactText += "Exit trial";
+					interactText += language[4034]; // "Exit trial";
 				}
 			}
 			else
 			{
 				if ( parent->portalCustomSpriteAnimationFrames > 0 )
 				{
-					interactText += "Enter portal";
+					interactText += language[4035]; // "Enter portal";
 				}
 				else
 				{
-					interactText += "Enter trapdoor";
+					interactText += language[4036]; // "Enter trapdoor";
 				}
 			}
 		}
 		else if ( parent->behavior == &::actExpansionEndGamePortal
 			|| parent->behavior == &actWinningPortal )
 		{
-			interactText += "Step through portal";
+			interactText += language[4032]; // "Step through portal";
 		}
 		else if ( parent->behavior == &actTeleporter )
 		{
 			if ( parent->teleporterType == 2 ) // portal
 			{
-				interactText += "Enter portal";
+				interactText += language[4035]; // "Enter portal";
 			}
 			else if ( parent->teleporterType == 1 ) // down ladder
 			{
-				interactText += "Descend ladder";
+				interactText += language[4037]; // "Descend ladder";
 			}
 			else if ( parent->teleporterType == 0 ) // up ladder
 			{
-				interactText += "Climb ladder";
+				interactText += language[4038]; // "Climb ladder";
 			}
 		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
 			char* itemName = items[parent->skill[21]].name_identified;
-			interactText = "Disarm ";
+			interactText = language[4039]; // "Disarm ";
 			interactText += itemName;
 		}
 		else
 		{
-			interactText = "Interact";
+			interactText = language[4040]; // "Interact";
 		}
 	}
 	bTooltipInView = true;
@@ -2093,14 +2249,25 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
+		bool foundTinkeringKit = false;
 		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
+		bool followerSelectInteract = false;
 		if ( radialMenuOpen )
 		{
-			continue;
+			// follower menu can be "open" but selectMoveTo == true means the GUI is closed and selecting move or interact.
+			if ( FollowerMenu[player].selectMoveTo == false )
+			{
+				continue;
+			}
+			followerSelectInteract = (FollowerMenu[player].optionSelected == ALLY_CMD_ATTACK_SELECT);
 		}
 
 		bool bDoingActionHideTooltips = false;
-		if ( players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0 )
+		if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
+		{
+			bDoingActionHideTooltips = true;
+		}
+		else if ( players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0 )
 		{
 			// hudweapon chop
 			bDoingActionHideTooltips = true;
@@ -2116,7 +2283,15 @@ void Player::WorldUI_t::handleTooltips()
 		}
 		else if ( stats[player] && stats[player]->defending )
 		{
-			bDoingActionHideTooltips = true;
+			if ( stats[player]->shield && stats[player]->shield->type == TOOL_TINKERING_KIT )
+			{
+				// don't ignore
+				foundTinkeringKit = true;
+			}
+			else
+			{
+				bDoingActionHideTooltips = true;
+			}
 		}
 		
 		if ( !bDoingActionHideTooltips )
@@ -2126,22 +2301,32 @@ void Player::WorldUI_t::handleTooltips()
 				players[player]->entity->yaw, STRIKERANGE, 0, true);
 			if ( hit.entity && entityBlocksTooltipInteraction(player, *hit.entity) )
 			{
-				bDoingActionHideTooltips = true;
+				if ( hit.entity->behavior == &actMonster && followerSelectInteract )
+				{
+					// don't let hostile monsters get in the way of selection
+				}
+				else
+				{
+					bDoingActionHideTooltips = true;
+				}
 			}
 			hit.entity = ohitentity;
 		}
 
-		if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT) )
+		if ( players[player]->worldUI.tooltipsInRange.size() > 1 )
 		{
-			players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
-			inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT);
-			players[player]->worldUI.cycleToPreviousTooltip();
-		}
-		if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT) )
-		{
-			players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
-			inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
-			players[player]->worldUI.cycleToNextTooltip();
+			if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT) )
+			{
+				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
+				inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT);
+				players[player]->worldUI.cycleToPreviousTooltip();
+			}
+			if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT) )
+			{
+				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
+				inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
+				players[player]->worldUI.cycleToNextTooltip();
+			}
 		}
 
 		if ( players[player]->worldUI.tooltipView == TOOLTIP_VIEW_FREE
@@ -2201,6 +2386,15 @@ void Player::WorldUI_t::handleTooltips()
 				if ( newDist > 0.01 )
 				{
 					players[player]->worldUI.tooltipsInRange.push_back(std::make_pair(tooltip, newDist));
+					if ( followerSelectInteract && parent && closestTooltip && parent->behavior != &actMonster )
+					{
+						// follower interaction - monsters have higher priority than interactibles.
+						Entity* closestParent = uidToEntity(closestTooltip->parent);
+						if ( closestParent && closestParent->behavior == &actMonster )
+						{
+							continue;
+						}
+					}
 					if ( newDist < dist )
 					{
 						dist = newDist;
@@ -2265,6 +2459,28 @@ void Player::WorldUI_t::handleTooltips()
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
 				return;
 			}
+			if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
+			{
+				// rescan constantly
+				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+				return;
+			}
+
+			std::array<char*, 3> salvageStrings = { language[3999], language[4006], language[4008] };
+			bool foundSalvageString = false;
+			for ( auto s : salvageStrings )
+			{
+				if ( players[player]->worldUI.interactText.find(s) != std::string::npos )
+				{
+					foundSalvageString = true;
+					if ( !foundTinkeringKit )
+					{
+						// rescan, out of date string.
+						players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+						return;
+					}
+				}
+			}
 			for ( auto& tooltip : players[player]->worldUI.tooltipsInRange )
 			{
 				if ( players[player]->worldUI.tooltipInRange(*tooltip.first) < 0.01 )
@@ -2279,6 +2495,8 @@ void Player::WorldUI_t::handleTooltips()
 
 void Player::Hotbar_t::initFaceButtonHotbar()
 {
+	faceButtonTopYPosition = yres;
+
 	if ( faceMenuAlternateLayout )
 	{
 		for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
@@ -2366,6 +2584,8 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 					break;
 			}
 		}
+
+		faceButtonTopYPosition = std::min(faceButtonPositions[4].y, faceButtonTopYPosition);
 		return;
 	}
 
@@ -2456,6 +2676,7 @@ void Player::Hotbar_t::initFaceButtonHotbar()
 				break;
 		}
 	}
+	faceButtonTopYPosition = std::min(faceButtonPositions[4].y, faceButtonTopYPosition);
 }
 
 Player::Hotbar_t::FaceMenuGroup Player::Hotbar_t::getFaceMenuGroupForSlot(int hotbarSlot)
@@ -2481,7 +2702,7 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 	int width = 2.25 * uiscale_hotbar;
 	int x = slotPos.x + slotPos.w / 2;
 	int y = slotPos.y;
-	SDL_Rect glyphsrc;
+	SDL_Rect glyphsrc {0, 0, 0, 0};
 	bool draw = true;
 
 	switch ( slot )
@@ -2513,10 +2734,12 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 			}
 			break;
 		case 3:
+			// always grab this to determine the highest button height.
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
 			if ( faceMenuButtonHeld == GROUP_MIDDLE )
 			{
-				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				draw = true;
 			}
 			else
 			{
@@ -2528,10 +2751,12 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y);
 			break;
 		case 5:
+			// always grab this to determine the highest button height.
+			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
+				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
 			if ( faceMenuButtonHeld == GROUP_MIDDLE )
 			{
-				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				draw = true;
 			}
 			else
 			{
@@ -2571,7 +2796,7 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 	}
 
 	// temporary
-	/*if ( faceMenuAlternateLayout )
+	if ( faceMenuAlternateLayout )
 	{
 		if ( slot == 2 )
 		{
@@ -2581,15 +2806,34 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 		{
 			x += slotPos.w;
 		}
-	}*/
+	}
+
+	height *= glyphsrc.h;
+	width *= glyphsrc.w;
+	x -= width / 2;
+	y -= height;
+
+	if ( (faceMenuAlternateLayout && (slot == 3 || slot == 5) ) // highest slots
+		|| (!faceMenuAlternateLayout && slot == 4) )
+	{
+		int offsetY = 0;
+		int posY = y;
+		// check if button not pressed and raised.
+		if ( !faceMenuAlternateLayout && !(faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE) )
+		{
+			offsetY = getSlotSize() / 4;
+		}
+		else if ( faceMenuAlternateLayout )
+		{
+			posY = faceButtonPositions[4].y;
+			posY -= height;
+		}
+
+		faceButtonTopYPosition = std::min(posY - offsetY, faceButtonTopYPosition);
+	}
 
 	if ( draw )
 	{
-		height *= glyphsrc.h;
-		width *= glyphsrc.w;
-		x -= width / 2;
-		y -= height;
-
 		SDL_Rect glyphpos{ x, y, width, height };
 		drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
 	}
@@ -3754,10 +3998,9 @@ void GameController::updateButtons()
 		{
 			// unconsume the input whenever it's released or pressed again.
 			//messagePlayer(0, "%d: %d", i, buttons[i].binary ? 1 : 0);
-			buttons[i].consumed = false;
 			buttons[i].binaryReleaseConsumed = false;
 
-			if ( oldBinary && !buttons[i].binary )
+			if ( oldBinary && !buttons[i].binary && !buttons[i].consumed )
 			{
 				buttons[i].binaryRelease = true;
 			}
@@ -3766,6 +4009,7 @@ void GameController::updateButtons()
 				buttons[i].binaryRelease = false;
 			}
 
+			buttons[i].consumed = false;
 			if ( buttons[i].binary && buttons[i].buttonHeldTicks == 0 )
 			{
 				buttons[i].buttonHeldTicks = ticks;

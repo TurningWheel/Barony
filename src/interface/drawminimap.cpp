@@ -711,7 +711,9 @@ void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPi
 	}
 	if ( !minimapPingMute && !newPing.radiusPing )
 	{
-		if ( newPing.player == destPlayer || !players[newPing.player]->isLocalPlayer() )
+		if ( static_cast<Sint8>(newPing.player) == -1 
+			|| (newPing.player == destPlayer) 
+			|| (newPing.player >= 0 && newPing.player < MAXPLAYERS && !players[newPing.player]->isLocalPlayer()) )
 		{
 			// play once? splitscreen host will satisfy newPing.player == destPlayer
 			// remote client sending a ping will satisfy !players[newPing.player]->isLocalPlayer()
