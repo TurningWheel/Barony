@@ -4529,7 +4529,7 @@ void serverHandlePacket()
 		{
 			return;
 		}
-		if ( client_disconnected[j] )
+		if ( client_disconnected[j] || players[j]->isLocalPlayer() )
 		{
 			return;
 		}
@@ -4564,6 +4564,10 @@ void serverHandlePacket()
 	{
 		int x = net_packet->data[4];
 		if ( x <= 0 )
+		{
+			return;
+		}
+		if ( players[x]->isLocalPlayer() )
 		{
 			return;
 		}
@@ -4841,7 +4845,7 @@ void serverHandlePacket()
 		// relay message to all clients
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( c == pnum || client_disconnected[c] == true )
+			if ( c == pnum || client_disconnected[c] == true || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}

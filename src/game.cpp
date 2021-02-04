@@ -409,7 +409,7 @@ void gameLogic(void)
 			// machinegun this message to clients to make sure they get it!
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] )
+				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 				{
 					continue;
 				}
@@ -590,6 +590,10 @@ void gameLogic(void)
 				// continue informing clients of entities they need to delete
 				for ( i = 1; i < MAXPLAYERS; i++ )
 				{
+					if ( players[i]->isLocalPlayer() )
+					{
+						continue;
+					}
 					j = 0;
 					for ( node = entitiesToDelete[i].first; node != NULL; node = nextnode )
 					{
@@ -1291,7 +1295,7 @@ void gameLogic(void)
 					{
 						for ( c = 1; c < MAXPLAYERS; ++c )
 						{
-							if ( client_disconnected[c] == true )
+							if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 							{
 								continue;
 							}
@@ -1554,7 +1558,7 @@ void gameLogic(void)
 										steamAchievementClient(c, "BARONY_ACH_ESCORT");
 									}
 
-									if ( c > 0 && multiplayer == SERVER )
+									if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -1642,7 +1646,7 @@ void gameLogic(void)
 				{
 					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
-						if ( client_disconnected[c] == true )
+						if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 						{
 							continue;
 						}
@@ -1711,7 +1715,7 @@ void gameLogic(void)
 				// handle keep alives
 				for ( c = 1; c < MAXPLAYERS; c++ )
 				{
-					if ( client_disconnected[c] )
+					if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 					{
 						continue;
 					}
@@ -1755,7 +1759,7 @@ void gameLogic(void)
 			if (multiplayer != SINGLE) {
 				for ( c = 1; c < MAXPLAYERS; c++ )
 				{
-					if ( !client_disconnected[c] )
+					if ( !client_disconnected[c] && !players[c]->isLocalPlayer() )
 					{
 						if ( oassailant[c] != assailant[c] )
 						{
@@ -3818,7 +3822,7 @@ void ingameHud()
 							// send message to all clients
 							for ( int c = 1; c < MAXPLAYERS; c++ )
 							{
-								if ( client_disconnected[c] )
+								if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 								{
 									continue;
 								}

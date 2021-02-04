@@ -1197,7 +1197,7 @@ void actThrown(Entity* my)
 							cameravars[hit.entity->skill[2]].shakex += .1;
 							cameravars[hit.entity->skill[2]].shakey += 10;
 						}
-						else if ( hit.entity->skill[2] > 0 )
+						else if ( hit.entity->skill[2] > 0 && !players[hit.entity->skill[2]]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 10; // turns into .1
@@ -1226,7 +1226,7 @@ void actThrown(Entity* my)
 							cameravars[hit.entity->skill[2]].shakex += .05;
 							cameravars[hit.entity->skill[2]].shakey += 5;
 						}
-						else if ( hit.entity->skill[2] > 0 )
+						else if ( hit.entity->skill[2] > 0 && !players[hit.entity->skill[2]]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 5; // turns into .05

@@ -174,7 +174,7 @@ void actBeartrap(Entity* my)
 							cameravars[entity->skill[2]].shakex += .1;
 							cameravars[entity->skill[2]].shakey += 10;
 						}
-						else if ( player > 0 && multiplayer == SERVER )
+						else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 10; // turns into .1
@@ -551,7 +551,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			cameravars[triggered->skill[2]].shakex += .1;
 			cameravars[triggered->skill[2]].shakey += 10;
 		}
-		else if ( player > 0 && multiplayer == SERVER )
+		else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 		{
 			strcpy((char*)net_packet->data, "SHAK");
 			net_packet->data[4] = 10; // turns into .1

@@ -2405,7 +2405,7 @@ void item_ScrollLight(Item* item, int player)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
-			if (client_disconnected[c] == true)
+			if (client_disconnected[c] == true || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -3658,7 +3658,7 @@ void item_ScrollSummon(Item* item, int player)
 				*myuid = monster->getUID();
 
 				// update client followers
-				if ( player > 0 && multiplayer == SERVER )
+				if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "LEAD");
 					SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);

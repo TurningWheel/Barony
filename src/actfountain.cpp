@@ -326,12 +326,12 @@ void actFountain(Entity* my)
 
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								messagePlayerColor(i, color, language[3183]);
-								if ( i == 0 || (splitscreen && i > 0) )
+								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
 									cameravars[i].shakex += .1;
 									cameravars[i].shakey += 10;
 								}
-								else if ( multiplayer == SERVER && i > 0 )
+								else if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 								{
 									strcpy((char*)net_packet->data, "SHAK");
 									net_packet->data[4] = 10; // turns into .1
@@ -447,7 +447,7 @@ void actFountain(Entity* my)
 								}
 								stats[i]->mask->beatitude++;
 							}
-							if ( multiplayer == SERVER && i > 0 )
+							if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 							{
 								strcpy((char*)net_packet->data, "BLES");
 								net_packet->address.host = net_clients[i - 1].host;
@@ -532,7 +532,7 @@ void actFountain(Entity* my)
 								}
 								chosen.first->beatitude++;
 
-								if ( multiplayer == SERVER && i > 0 )
+								if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 								{
 									strcpy((char*)net_packet->data, "BLE1");
 									SDLNet_Write32(chosen.second, &net_packet->data[4]);

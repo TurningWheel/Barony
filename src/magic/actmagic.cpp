@@ -899,7 +899,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
-							if ( player > 0 && multiplayer == SERVER )
+							if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 							{
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = armornum;
@@ -2887,7 +2887,7 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -5527,19 +5527,22 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
 
 				// send wall destroy info to clients
-				for ( int c = 1; c < MAXPLAYERS; c++ )
+				if ( multiplayer == SERVER )
 				{
-					if ( client_disconnected[c] == true )
+					for ( int c = 1; c < MAXPLAYERS; c++ )
 					{
-						continue;
+						if ( players[c]->isLocalPlayer() || client_disconnected[c] == true )
+						{
+							continue;
+						}
+						strcpy((char*)net_packet->data, "WALD");
+						SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+						SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+						net_packet->address.host = net_clients[c - 1].host;
+						net_packet->address.port = net_clients[c - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
-					strcpy((char*)net_packet->data, "WALD");
-					SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
-					SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
-					net_packet->address.host = net_clients[c - 1].host;
-					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 8;
-					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 				}
 
 				generatePathMaps();

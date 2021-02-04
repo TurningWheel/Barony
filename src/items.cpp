@@ -2833,7 +2833,7 @@ Item* itemPickup(const int player, Item* const item)
 
 	//messagePlayer(0, "id: %d", item->ownerUid);
 
-	if ( player != 0 && multiplayer == SERVER )
+	if ( player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		// send the client info on the item it just picked up
 		strcpy((char*)net_packet->data, "ITEM");
@@ -3827,7 +3827,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 						{
 							messagePlayer(player, language[1103]);
 						}
-						if ( player > 0 && multiplayer == SERVER )
+						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;

@@ -217,12 +217,12 @@ void actSink(Entity* my)
 
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								messagePlayerColor(i, color, language[3183]);
-								if ( i == 0 || (splitscreen && i > 0) )
+								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
 									cameravars[i].shakex += .1;
 									cameravars[i].shakey += 10;
 								}
-								else if ( multiplayer == SERVER && i > 0 )
+								else if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 								{
 									strcpy((char*)net_packet->data, "SHAK");
 									net_packet->data[4] = 10; // turns into .1
@@ -268,12 +268,12 @@ void actSink(Entity* my)
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								messagePlayerColor(i, color, language[584]);
 
-								if ( i == 0 || (splitscreen && i > 0) )
+								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
 									cameravars[i].shakex += .1;
 									cameravars[i].shakey += 10;
 								}
-								else if ( multiplayer == SERVER && i > 0 )
+								else if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 								{
 									strcpy((char*)net_packet->data, "SHAK");
 									net_packet->data[4] = 10; // turns into .1

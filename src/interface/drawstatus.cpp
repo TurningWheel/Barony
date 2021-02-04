@@ -238,7 +238,7 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 			{
 				newDamageIndicator(playertarget, source->x, source->y);
 			}
-			else if ( playertarget > 0 && multiplayer == SERVER )
+			else if ( playertarget > 0 && multiplayer == SERVER && !players[playertarget]->isLocalPlayer() )
 			{
 				strcpy((char*)net_packet->data, "DAMI");
 				SDLNet_Write32(source->x, &net_packet->data[4]);
@@ -315,7 +315,7 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
 		}
 	}
-	else if ( player > 0 && multiplayer == SERVER )
+	else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "ENHP");
 		SDLNet_Write32(hp, &net_packet->data[4]);

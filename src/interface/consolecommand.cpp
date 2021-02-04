@@ -113,7 +113,7 @@ void consoleCommand(char const * const command_str)
 
 				for ( int c = 1; c < MAXPLAYERS; c++ )
 				{
-					if ( client_disconnected[c] )
+					if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 					{
 						continue;
 					}
@@ -229,7 +229,7 @@ void consoleCommand(char const * const command_str)
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) )
+				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) && !players[c]->isLocalPlayer() )
 				{
 					client_disconnected[c] = true;
 					strcpy((char*)net_packet->data, "KICK");

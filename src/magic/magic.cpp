@@ -86,7 +86,7 @@ void spell_magicMap(int player)
 		return;
 	}
 
-	if ( multiplayer == SERVER && player > 0 )
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 	{
 		//Tell the client to map the magic.
 		strcpy((char*)net_packet->data, "MMAP");
@@ -108,7 +108,7 @@ void spell_detectFoodEffectOnMap(int player)
 		return;
 	}
 
-	if ( multiplayer == SERVER && player > 0 )
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 	{
 		//Tell the client to map the food.
 		strcpy((char*)net_packet->data, "MFOD");
@@ -973,7 +973,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 						{
 							free(weapon);
 						}
-						if ( player > 0 && multiplayer == SERVER )
+						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "STLA");
 							net_packet->data[4] = 5; // steal weapon index in STLA netcode.

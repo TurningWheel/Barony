@@ -520,7 +520,7 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 
 			for ( int c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] )
+				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 				{
 					continue;
 				}
@@ -5896,7 +5896,7 @@ timeToGoAgain:
 					{
 						players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 					}
-					else if ( player > 0 )
+					else if ( player > 0 && !players[player]->isLocalPlayer() )
 					{
 						// inform client of abandonment
 						strcpy((char*)net_packet->data, "SHPC");
@@ -7168,7 +7168,7 @@ timeToGoAgain:
 				{
 					players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 				}
-				else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER )
+				else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER && !players[i]->isLocalPlayer() )
 				{
 					// inform client of abandonment
 					strcpy((char*)net_packet->data, "SHPC");

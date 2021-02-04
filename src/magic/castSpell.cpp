@@ -328,7 +328,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( magiccost > stat->MP )
 				{
 					// damage sound/effect due to overdraw.
-					if ( player > 0 && multiplayer == SERVER )
+					if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 					{
 						strcpy((char*)net_packet->data, "SHAK");
 						net_packet->data[4] = 10; // turns into .1
@@ -339,7 +339,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						playSoundPlayer(player, 28, 92);
 					}
-					else if ( player == 0 || (splitscreen && player > 0) )
+					else if ( player >= 0 && players[player]->isLocalPlayer() )
 					{
 						cameravars[player].shakex += 0.1;
 						cameravars[player].shakey += 10;
@@ -1130,7 +1130,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					playSoundEntity(caster, 180, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
 					caster->setEffect(EFF_DASH, true, 60, true);
-					if ( i > 0 && multiplayer == SERVER )
+					if ( i > 0 && multiplayer == SERVER && !players[i]->isLocalPlayer() )
 					{
 						strcpy((char*)net_packet->data, "DASH");
 						net_packet->address.host = net_clients[i - 1].host;
