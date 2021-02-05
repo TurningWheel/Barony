@@ -107,7 +107,14 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-set(CMAKE_OSX_ARCHITECTURES x86_64)
+# taking precaution with some older versions of cmake
+# if we assign directly CMAKE_SYSTEM_PROCESSOR it might be i386
+# on Mac Intel even on 64bits
+if (NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^arm*")
+  set(CMAKE_OSX_ARCHITECTURES x86_64)
+else()
+  set(CMAKE_OSX_ARCHITECTURES arm64)
+endif()
 
 if (EDITOR_ENABLED)
 	set(EDITOR_EXE_NAME "editor" CACHE STRING "Editor executable name")
