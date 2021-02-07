@@ -70,6 +70,7 @@ void Text::render() {
 		surf = nullptr;
 	}
 
+	int outlineSize = font->getOutline();
 	if (outlineSize > 0) {
 		TTF_SetFontOutline(ttf, outlineSize);
 		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorBlack, xres);

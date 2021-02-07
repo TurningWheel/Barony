@@ -10,8 +10,14 @@ Font::Font(const char* _name) {
 	Uint32 index = name.find('#');
 	std::string path;
 	if (index != std::string::npos) {
+		Uint32 nindex = name.find('#', index + 1);
 		path = name.substr(0, index);
-		pointSize = std::stoi(name.substr(index + 1, name.length()));
+		if (nindex != std::string::npos) {
+			pointSize = std::stoi(name.substr(index + 1, nindex));
+			outlineSize = std::stoi(name.substr(nindex + 1, name.length()));
+		} else {
+			pointSize = std::stoi(name.substr(index + 1, name.length()));
+		}
 	} else {
 		path = name;
 	}
@@ -37,7 +43,14 @@ int Font::sizeText(const char* str, int* out_w, int* out_h) const {
 		*out_h = 0;
 	}
 	if (font && str) {
-		return TTF_SizeUTF8(font, str, out_w, out_h);
+		int result = TTF_SizeUTF8(font, str, out_w, out_h);
+		if (out_w) {
+			*out_w += outlineSize * 2;
+		}
+		if (out_h) {
+			*out_h += outlineSize * 2;
+		}
+		return result;
 	} else {
 		return -1;
 	}
@@ -45,7 +58,7 @@ int Font::sizeText(const char* str, int* out_w, int* out_h) const {
 
 int Font::height() const {
 	if (font) {
-		return TTF_FontHeight(font);
+		return TTF_FontHeight(font) + outlineSize * 2;
 	} else {
 		return 0;
 	}

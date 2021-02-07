@@ -2629,14 +2629,6 @@ void gameLogic(void)
 
 void handleButtons(void)
 {
-	if ( gui ) 
-	{
-		Frame::result_t gui_result = gui->process();
-		gui->draw();
-		if ( !gui_result.usable ) {
-			return;
-		}
-	}
 	node_t* node;
 	node_t* nextnode;
 	button_t* button;
@@ -5464,6 +5456,8 @@ int main(int argc, char** argv)
 				}
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
+
+				doFrames();
 
 				if ( !gamePaused )
 				{

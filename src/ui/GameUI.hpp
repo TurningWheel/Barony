@@ -2,6 +2,7 @@
 
 #pragma once
 
+void doFrames();
 void newIngameHud();
 void doNewCharacterSheet(int player);
 
