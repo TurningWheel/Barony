@@ -4003,35 +4003,8 @@ void ingameHud()
 				updateShopWindow(player);
 			}
 			
-			if ( players[player]->gui_mode == GUI_MODE_FOLLOWERMENU )
-			{
-				drawPartySheet(player);
-			}
-			else
-			{
-				if ( players[player]->characterSheet.proficienciesPage == 1 )
-				{
-					drawPartySheet(player);
-				}
-				else
-				{
-					drawSkillsSheet(player);
-				}
-			}
-		}
-		else
-		{
-			if ( players[player]->characterSheet.lock_right_sidebar )
-			{
-				if ( players[player]->characterSheet.proficienciesPage == 1 )
-				{
-					drawPartySheet(player);
-				}
-				else
-				{
-					drawSkillsSheet(player);
-				}
-			}
+			// new right side pane by sheridan
+			doNewCharacterSheet(player);
 		}
 
 

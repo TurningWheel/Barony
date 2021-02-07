@@ -43,6 +43,7 @@ public:
 		Uint32 color;
 		SDL_Rect pos;
 		bool tiled = false;
+		bool disabled = false;
 	};
 
 	struct entry_t;
@@ -236,6 +237,10 @@ public:
 	//! @param index the index to set the list selection to
 	void setSelection(int index);
 
+	//! whether to enable/disable scrolling on this frame
+	//! @param enabled whether to enable or disable scrolling
+	void enableScroll(bool enabled);
+
 	virtual type_t					getType() const override { return WIDGET_FRAME; }
 	const char*						getFont() const { return font.c_str(); }
 	const int						getBorder() const { return border; }
@@ -255,7 +260,7 @@ public:
 	void	setBorder(const int _border) { border = _border; }
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
 	void	setSize(SDL_Rect _size) { size = _size; }
-	void	setActualSize(SDL_Rect _actualSize) { actualSize = _actualSize; }
+	void	setActualSize(SDL_Rect _actualSize) { actualSize = _actualSize; allowScrolling = true; }
 	void	setBorderStyle(int _borderStyle) { borderStyle = static_cast<border_style_t>(_borderStyle); }
 	void	setHigh(bool b) { borderStyle = b ? BORDER_BEVEL_HIGH : BORDER_BEVEL_LOW; }
 	void	setColor(const Uint32& _color) { color = _color; }
@@ -282,6 +287,7 @@ private:
 	bool dropDown = false;								//!< if true, the frame is destroyed when specific inputs register
 	Uint32 dropDownClicked = 0;							//!< key states stored for removing drop downs
 	int selection = -1;									//!< entry selection
+	bool allowScrolling = false;						//!< must be enabled for scrolling/actualSize to work
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;

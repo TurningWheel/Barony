@@ -9,6 +9,9 @@
 #include "../game.hpp"
 #include "../menu.hpp"
 #include "../interface/interface.hpp"
+#include "../stat.hpp"
+#include "../player.hpp"
+#include "../draw.hpp"
 
 #include <assert.h>
 
@@ -355,5 +358,20 @@ void newIngameHud() {
         } else {
             drawMinimap(0);
         }
+    }
+}
+
+void doNewCharacterSheet(int player)
+{
+    Frame* frame = gui->findFrame("Character sheet");
+    if (!frame) {
+        const int w = 200;
+        frame = gui->addFrame("Character sheet");
+        frame->setSize(SDL_Rect{
+            players[player]->camera_x2() - w,
+            players[player]->camera_y1(),
+            w, players[player]->camera_height()});
+        frame->setColor(makeColor(154, 154, 154, 255));
+    } else {
     }
 }

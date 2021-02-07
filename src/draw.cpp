@@ -5,7 +5,7 @@
 	Desc: contains all drawing code
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
-	See LICENSE for details.
+	See LICENSE for details.o
 
 -------------------------------------------------------------------------------*/
 
@@ -2789,4 +2789,8 @@ void drawTooltip(SDL_Rect* src, Uint32 optionalColor)
 	drawLine(src->x, src->y + src->h, src->x + src->w, src->y + src->h, color, 255);
 	drawLine(src->x, src->y, src->x, src->y + src->h, color, 255);
 	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, color, 255);
+}
+
+Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+	return SDL_MapRGBA(mainsurface->format, r, g, b, a);
 }
