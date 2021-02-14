@@ -53,7 +53,7 @@ std::list<std::string> getListOfBooks()
 {
 	std::list<std::string> books;
 #ifdef NINTENDO
-	File* fp = FileIO::open(NINTENDO_LIST_OF_BOOKS_FILEPATH, "r");
+	File* fp = FileIO::open(NINTENDO_LIST_OF_BOOKS_FILEPATH, "r"); //TODO: Use the new Directory.h feature that we're also using for the achivements!
 	for (char buf[64]; fp->gets2(buf, 64);)
 	{
 		books.push_back(std::string(buf));
@@ -118,6 +118,7 @@ void createBooks()
 		printlog("compiling books...\n");
 
 		int numSkipBooks = 0;
+#ifndef NINTENDO
 		if ( foundIgnoreBookFile )
 		{
 			for ( auto& filename : discoveredbooks )
@@ -134,6 +135,7 @@ void createBooks()
 				}
 			}
 		}
+#endif
 
 		// Allocate memory for books
 		numbooks = discoveredbooks.size() - numSkipBooks;
@@ -145,10 +147,12 @@ void createBooks()
 		// create books
 		for ( const auto& filename : discoveredbooks )
 		{
+#ifndef NINTENDO
 			if ( ignoredBooks.find(filename) != ignoredBooks.end() )
 			{
 				continue;
 			}
+#endif
 			books[i] = static_cast<book_t*>(malloc(sizeof(book_t)));
 			books[i]->text = nullptr;
 			books[i]->name = strdup(filename.c_str());

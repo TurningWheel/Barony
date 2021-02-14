@@ -3691,6 +3691,11 @@ void ingameHud()
 			}
 		}
 
+#ifdef NINTENDO
+		printlog("Data path is \"%s\"", datadir);
+		printlog("Output path is \"%s\"", outputdir);
+#endif // NINTENDO
+
 		if ( !command && *inputPressedForPlayer(player, impulses[IN_TOGGLECHATLOG])
 			|| (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_TOGGLECHATLOG)) )
 		{
