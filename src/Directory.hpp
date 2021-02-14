@@ -8,6 +8,7 @@ public:
 	Directory(const char* name) :
 		path(name)
 	{
+		//TODO: Use datadir. rom:/ needs to get prepended...
 		DIR* dir;
 		struct dirent* ent;
 		if ((dir = opendir(name)) == NULL)

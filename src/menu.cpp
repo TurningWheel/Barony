@@ -13775,7 +13775,9 @@ void buttonJoinLobby(button_t* my)
 		if ( *portnumbererr != '\0' || portnumber < 1024 )
 		{
 			printlog("warning: invalid port number %d.\n", portnumber);
+#ifndef NINTENDO
 			SDLNet_SetError("Invalid address %s.\nExample: 192.168.0.100:12345", connectaddress);
+#endif
 			openFailedConnectionWindow(CLIENT);
 			return;
 		}

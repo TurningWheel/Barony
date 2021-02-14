@@ -90,7 +90,11 @@ int initGame()
 	initGameControllers();
 
 	// load achievement images
+#ifdef NINTENDO
+	Directory achievementsDir("rom:/images/achievements");
+#else
 	Directory achievementsDir("images/achievements");
+#endif
 	for (auto& item : achievementsDir.list)
 	{
 		std::string fullPath = achievementsDir.path + std::string("/") + item;
@@ -331,7 +335,7 @@ int initGame()
 #if defined(USE_EOS) || defined(STEAMWORKS)
 #else
  #ifdef NINTENDO
-	#error "No DLC support on SWITCH yet :(" //TODO: Resolve this.
+	//#error "No DLC support on SWITCH yet :(" //TODO: Resolve this.
  #else // NINTENDO
 	if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
 	{

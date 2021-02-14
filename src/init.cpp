@@ -133,7 +133,7 @@ int initApp(char const * const title, int fullscreen)
 
 	if ( PHYSFS_mount(outputdir, NULL, 1) )
 	{
-		printlog("[PhysFS]: successfully mounted output %s folder", outputdir);
+		printlog("[PhysFS]: successfully mounted output \"%s\" folder", outputdir);
 		if ( PHYSFS_setWriteDir(outputdir) )
 		{
 			PHYSFS_mkdir("savegames");
@@ -146,7 +146,7 @@ int initApp(char const * const title, int fullscreen)
 			PHYSFS_mkdir("mods");
 			std::string path = outputdir;
 			path.append(PHYSFS_getDirSeparator()).append("mods");
-			PHYSFS_setWriteDir(path.c_str());
+			PHYSFS_setWriteDir(path.c_str()); //Umm...should it really be doing that? First off, it didn't actually create this directory. Second off, what about the rest of the directories it created?
 			printlog("[PhysFS]: successfully set write folder %s", path.c_str());
 #else // NINTENDO
 			if ( PHYSFS_mkdir("mods") )
@@ -433,7 +433,7 @@ int initApp(char const * const title, int fullscreen)
 
 	// cache language entries
 	bool cacheText = false;
-	if (cacheText) {
+	if (cacheText) { //This will never run. Why is this here?
 		for (int c = 0; c < NUMLANGENTRIES; ++c) {
 			bool foundSpecialChar = false;
 			for (int i = 0; language[c][i] != '\0'; ++i) {
@@ -916,7 +916,6 @@ int loadLanguage(char const * const lang)
 			printlog( "warning: syntax error in '%s':%d\n invalid language entry!\n", langFilepath.c_str(), line);
 			continue;
 		}
-		//printlog( "loading entry %d...\n", entry);
 		char entryText[16] = { 0 };
 		snprintf(entryText, 15, "%d", entry);
 		if ( language[entry][0] )
@@ -926,6 +925,7 @@ int loadLanguage(char const * const lang)
 		}
 		language[entry] = (char*) calloc(strlen((char*)(data + strlen(entryText) + 1)) + 1, sizeof(char));
 		strcpy(language[entry], (char*)(data + strlen(entryText) + 1));
+		//printlog("loading entry %d...text: \"%s\"\n", entry, language[entry]);
 	}
 
 	// close file
@@ -2415,6 +2415,7 @@ int deinitApp()
 #endif
 
 
+#ifndef NINTENDO
 	int numLogFilesToKeepInArchive = 30;
 	// archive logfiles.
 	char lognamewithTimestamp[128];
@@ -2514,6 +2515,7 @@ int deinitApp()
 	ss << "cp " << logToArchive << " " << logarchiveFilePath.c_str();
 	system(ss.str().c_str());
 #endif // WINDOWS
+#endif //ndef NINTENDO
 	return 0;
 }
 
