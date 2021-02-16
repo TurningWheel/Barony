@@ -114,7 +114,7 @@ void Text::render() {
 	dest.x = 0;
 	dest.y = 0;
 	SDL_BlitSurface(surf, &src, newSurf, &dest); // blit onto a purely RGBA Surface
-	SDL_FreeSurface(surf);
+	SDL_FreeSurface(surf); //TODO: Why does this give a heap exception in NX?
 	surf = newSurf;
 
 	// load the new surface as a GL texture

@@ -18971,7 +18971,7 @@ void Entity::createWorldUITooltip()
 			exit(1);
 		}
 #else
-		entity = new Entity(-1, 1, map.worldUI, nullptr);
+		worldTooltip = new Entity(-1, 1, map.worldUI, nullptr);
 #endif
 
 		worldTooltip->x = this->x;

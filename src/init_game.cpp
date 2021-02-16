@@ -1084,7 +1084,9 @@ void deinitGame()
 		delete game_controller;
 	}*/
 
+#ifndef NINTENDO
 	IRCHandler.disconnect();
+#endif // !NINTENDO
 
 	if ( shoparea )
 	{
