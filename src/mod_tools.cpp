@@ -19,7 +19,10 @@ MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
 GameplayCustomManager gameplayCustomManager;
 GameModeManager_t gameModeManager;
+#ifndef NINTENDO
 IRCHandler_t IRCHandler;
+#endif // !NINTENDO
+
 const std::vector<std::string> MonsterStatCustomManager::itemStatusStrings =
 {
 	"broken",
@@ -447,6 +450,7 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::buttonPromptEnterTutorial
 	gameModeManager.Tutorial.writeToDocument();
 }
 
+#ifndef NINTENDO
 bool IRCHandler_t::readFromFile()
 {
 	if ( PHYSFS_getRealDir("/data/twitchchat.json") )
@@ -631,3 +635,4 @@ void IRCHandler_t::handleMessage(std::string& msg)
 		return;
 	}
 }
+#endif // !NINTENDO

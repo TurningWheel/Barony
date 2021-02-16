@@ -3,14 +3,18 @@
 #include "../main.hpp"
 #include "Font.hpp"
 
+#ifdef NINTENDO
+const char* Font::defaultFont = "rom://lang/en.ttf#24";
+#else // NINTENDO
 const char* Font::defaultFont = "lang/en.ttf#24";
+#endif // NINTENDO
 
 Font::Font(const char* _name) {
 	name = _name;
-	Uint32 index = name.find('#');
+	size_t index = name.find('#');
 	std::string path;
 	if (index != std::string::npos) {
-		Uint32 nindex = name.find('#', index + 1);
+		size_t nindex = name.find('#', index + 1);
 		path = name.substr(0, index);
 		if (nindex != std::string::npos) {
 			pointSize = std::stoi(name.substr(index + 1, nindex));
