@@ -2438,14 +2438,14 @@ void actMonster(Entity* my)
 			for ( c = item->count; c > 0; c-- )
 			{
 				bool wasQuiver = itemTypeIsQuiver(item->type);
-				entity = dropItemMonster(item, my, myStats);
+				entity = dropItemMonster(item, my, myStats); // returns nullptr on "undroppables"
 				if ( entity )
 				{
 					entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
-					if ( wasQuiver )
-					{
-						break; // always drop the whole stack.
-					}
+				}
+				if ( wasQuiver )
+				{
+					break; // always drop the whole stack.
 				}
 			}
 		}
