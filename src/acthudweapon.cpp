@@ -348,7 +348,7 @@ void actHudWeapon(Entity* my)
 	Uint32& bowStartDrawingTick = playerHud.bowStartDrawingTick;
 	const Uint32& bowDrawBaseTicks = playerHud.bowDrawBaseTicks;
 #ifdef SOUND
-#ifdef USE_FMOD
+#ifdef USE_FMOD //TODO: Update to use new FMOD.
 	FMOD_CHANNEL*& bowDrawingSoundChannel = playerHud.bowDrawingSoundChannel;
 	FMOD_BOOL& bowDrawingSoundPlaying = playerHud.bowDrawingSoundPlaying;
 #elif defined USE_OPENAL

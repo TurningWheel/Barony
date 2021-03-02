@@ -21,7 +21,7 @@
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "init.hpp"
 #include "shops.hpp"
@@ -1990,7 +1990,7 @@ void handleMainMenu(bool mode)
 						if ( reloadIntroMusic )
 						{
 #ifdef SOUND
-							playmusic(intromusic[rand() % (NUMINTROMUSIC - 1)], false, true, true);
+							playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 						}
 						gamemods_musicRequireReloadUnmodded = false;
@@ -9535,7 +9535,7 @@ void handleMainMenu(bool mode)
 #ifdef USE_FMOD
 				if ( sound_group )
 				{
-					FMOD_ChannelGroup_Stop(sound_group);
+					sound_group->stop();
 				}
 				if ( soundAmbient_group )
 				{
@@ -9840,7 +9840,7 @@ void handleMainMenu(bool mode)
 #ifdef USE_FMOD
 				if ( sound_group )
 				{
-					FMOD_ChannelGroup_Stop(sound_group);
+					sound_group->stop();
 				}
 				if ( soundAmbient_group )
 				{
@@ -10009,7 +10009,7 @@ void handleMainMenu(bool mode)
 			if ( creditstage == 0 && victory == 3 )
 			{
 #ifdef MUSIC
-			playmusic(citadelmusic[0], true, false, false);
+			playMusic(citadelmusic[0], true, false, false);
 #endif
 			}
 			creditstage++;
@@ -10018,11 +10018,11 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 				if ( victory == 3 )
 				{
-					playmusic(intromusic[2], true, false, false);
+					playMusic(intromusic[2], true, false, false);
 				}
 				else
 				{
-					playmusic(intromusic[rand() % 2], true, false, false);
+					playMusic(intromusic[rand() % 2], true, false, false);
 				}
 #endif
 				introstage = 1;
@@ -10150,7 +10150,7 @@ void handleMainMenu(bool mode)
 #ifdef USE_FMOD
 			if ( sound_group )
 			{
-				FMOD_ChannelGroup_Stop(sound_group);
+				sound_group->stop();
 			}
 			if ( soundAmbient_group )
 			{
@@ -10496,11 +10496,11 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 				if ( menuMapType )
 				{
-					playmusic(intromusic[2], true, false, false);
+					playMusic(intromusic[2], true, false, false);
 				}
 				else
 				{
-					playmusic(intromusic[rand() % 2], true, false, false);
+					playMusic(intromusic[rand() % 2], true, false, false);
 				}
 #endif
 			}
@@ -10550,7 +10550,7 @@ void handleMainMenu(bool mode)
 			if ( intromoviestage >= 9 )
 			{
 #ifdef MUSIC
-				playmusic(intromusic[1], true, false, false);
+				playMusic(intromusic[1], true, false, false);
 #endif
 				introstage = 1;
 				intromovietime = 0;
@@ -10573,7 +10573,7 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 			if ( firstendmoviestage == 0 )
 			{
-				playmusic(endgamemusic, true, true, false);
+				playMusic(endgamemusic, true, true, false);
 			}
 #endif
 			firstendmoviestage++;
@@ -10602,7 +10602,7 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 			if ( secondendmoviestage == 0 )
 			{
-				playmusic(endgamemusic, true, true, false);
+				playMusic(endgamemusic, true, true, false);
 			}
 #endif
 			secondendmoviestage++;
@@ -10631,7 +10631,7 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 			if ( thirdendmoviestage == 0 )
 			{
-				playmusic(endgamemusic, true, true, false);
+				playMusic(endgamemusic, true, true, false);
 			}
 #endif
 			thirdendmoviestage++;
@@ -10668,7 +10668,7 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 			if ( fourthendmoviestage == 0 )
 			{
-				playmusic(endgamemusic, true, true, false);
+				playMusic(endgamemusic, true, true, false);
 			}
 #endif
 			fourthendmoviestage++;
@@ -10707,7 +10707,7 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
 			{
-				playmusic(endgamemusic, true, true, false);
+				playMusic(endgamemusic, true, true, false);
 			}
 #endif
 			DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
@@ -10788,7 +10788,7 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
 			{
-				playmusic(endgamemusic, true, true, false);
+				playMusic(endgamemusic, true, true, false);
 			}
 #endif
 			DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
@@ -14176,10 +14176,10 @@ void applySettings()
 	mute_player_monster_sounds = settings_mute_player_monster_sounds;
 
 #ifdef USE_FMOD
-	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+	music_group->setVolume(musvolume / 128.f);
+	sound_group->setVolume(sfxvolume / 128.f);
+	soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
+	soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
 #elif defined USE_OPENAL
 	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
@@ -16996,7 +16996,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		if ( reloadIntroMusic )
 		{
 #ifdef SOUND
-			playmusic(intromusic[rand() % (NUMINTROMUSIC - 1)], false, true, true);
+			playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
 		gamemods_musicRequireReloadUnmodded = true;

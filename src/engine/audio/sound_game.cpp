@@ -11,13 +11,13 @@
 
 -------------------------------------------------------------------------------*/
 
-#include "main.hpp"
-#include "game.hpp"
-#include "stat.hpp"
+#include "../../main.hpp"
+#include "../../game.hpp"
+#include "../../stat.hpp"
 #include "sound.hpp"
-#include "entity.hpp"
-#include "net.hpp"
-#include "player.hpp"
+#include "../../entity.hpp"
+#include "../../net.hpp"
+#include "../../player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -29,7 +29,7 @@
 -------------------------------------------------------------------------------*/
 #ifdef USE_FMOD
 
-FMOD_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd)
+FMOD_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd) //TODO: Update for FMOD Studio.
 {
 	if ( snd == 155 || snd == 135 ) // water/lava
 	{
@@ -42,17 +42,17 @@ FMOD_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd)
 	return sound_group;
 }
 
-FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol)
+FMOD::Channel* playSoundPlayer(int player, Uint32 snd, int vol)
 {
 	if (no_sound)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 
 	if ( player < 0 || player >= MAXPLAYERS )   //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
 	{
-		return NULL;
+		return nullptr;
 	}
 	if ( player == clientnum )
 	{
@@ -62,7 +62,7 @@ FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol)
 	{
 		if ( client_disconnected[player] || player <= 0 )
 		{
-			return NULL;
+			return nullptr;
 		}
 		strcpy((char*)net_packet->data, "SNDG");
 		SDLNet_Write32(snd, &net_packet->data[4]);
@@ -71,10 +71,10 @@ FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol)
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 12;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
-		return NULL;
+		return nullptr;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -86,31 +86,31 @@ FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol)
 
 -------------------------------------------------------------------------------*/
 
-FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
+FMOD::Channel* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 {
 	if (no_sound)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 #ifndef SOUND
-	return NULL;
+	return nullptr;
 #endif
 
-	FMOD_CHANNEL* channel;
+	FMOD::Channel* channel;
 	int c;
 
 	if (intro)
 	{
-		return NULL;
+		return nullptr;
 	}
 	if (snd < 0 || snd >= numsounds) //TODO: snd < 0 is impossible with a Uint32.
 	{
-		return NULL;
+		return nullptr;
 	}
-	if (sounds[snd] == NULL || vol == 0)
+	if (sounds[snd] == nullptr || vol == 0)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	if (multiplayer == SERVER)
@@ -135,7 +135,7 @@ FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 
 	if (!fmod_system)   //For the client.
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	FMOD_VECTOR position;
@@ -171,48 +171,48 @@ FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 		}
 	}
 
-	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel);
+	fmod_result = fmod_system->playSound(sounds[snd], sound_group, true, &channel); //TODO: Link to sound_group instead of master channel?
 	if (FMODErrorCheck())
 	{
-		return NULL;
+		return nullptr;
 	}
-	FMOD_Channel_SetVolume(channel, vol / 128.f);
-	FMOD_Channel_Set3DAttributes(channel, &position, NULL);
-	FMOD_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd));
-	FMOD_Channel_SetPaused(channel, false);
+
+	channel->set3DAttributes(&position, nullptr);
+	//FMOD_Channel_SetChannelGroup(channel, sound_group); //TODO: Already done in fmod_system->playSound()?
+	channel->setPaused(false);
 
 	return channel;
 }
 
-FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
+FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 {
 	if (no_sound)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 #ifndef SOUND
-	return NULL;
+	return nullptr;
 #endif
 
-	FMOD_CHANNEL* channel;
+	FMOD::Channel* channel;
 
 	if (intro)
 	{
-		return NULL;
+		return nullptr;
 	}
 	if (snd < 0 || snd >= numsounds)
 	{
-		return NULL;
+		return nullptr;
 	}
-	if (sounds[snd] == NULL || vol == 0)
+	if (sounds[snd] == nullptr || vol == 0)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	if (!fmod_system)   //For the client.
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	FMOD_VECTOR position;
@@ -249,14 +249,16 @@ FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 	}
 
 	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel);
+	fmod_result = fmod_system->playSound(sounds[snd], sound_group, true, &channel);
 	if (FMODErrorCheck())
 	{
-		return NULL;
+		return nullptr;
 	}
-	FMOD_Channel_SetVolume(channel, vol / 128.f);
-	FMOD_Channel_Set3DAttributes(channel, &position, NULL);
-	FMOD_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd));
-	FMOD_Channel_SetPaused(channel, false);
+
+	channel->setVolume(vol / 128.f);
+	channel->set3DAttributes(&position, nullptr);
+	//FMOD_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd)); //No complement/not needed in FMOD Studio?
+	channel->setPaused(false);
 
 	return channel;
 }
@@ -270,25 +272,25 @@ FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 
 -------------------------------------------------------------------------------*/
 
-FMOD_CHANNEL* playSoundEntity(Entity* entity, Uint32 snd, int vol)
+FMOD::Channel* playSoundEntity(Entity* entity, Uint32 snd, int vol)
 {
 	if (no_sound)
 	{
-		return NULL;
+		return nullptr;
 	}
 
-	if ( entity == NULL )
+	if ( entity == nullptr )
 	{
-		return NULL;
+		return nullptr;
 	}
 	return playSoundPos(entity->x, entity->y, snd, vol);
 }
 
-FMOD_CHANNEL* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol)
+FMOD::Channel* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol)
 {
-	if ( entity == NULL )
+	if ( entity == nullptr )
 	{
-		return NULL;
+		return nullptr;
 	}
 	return playSoundPosLocal(entity->x, entity->y, snd, vol);
 }
@@ -302,510 +304,42 @@ FMOD_CHANNEL* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol)
 
 -------------------------------------------------------------------------------*/
 
-FMOD_CHANNEL* playSound(Uint32 snd, int vol)
+FMOD::Channel* playSound(Uint32 snd, int vol)
 {
 	if (no_sound)
 	{
-		return NULL;
+		return nullptr;
 	}
 #ifndef SOUND
-	return NULL;
+	return nullptr;
 #endif
 	if (!fmod_system || snd < 0 || snd >= numsounds || !getChannelGroupForSoundIndex(snd) )
 	{
-		return NULL;
+		return nullptr;
 	}
-	if (sounds[snd] == NULL || vol == 0)
+	if (sounds[snd] == nullptr || vol == 0)
 	{
-		return NULL;
+		return nullptr;
 	}
-	FMOD_CHANNEL* channel;
-	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel);
+	FMOD::Channel* channel;
+	fmod_result = fmod_system->playSound(sounds[snd], sound_group, true, &channel);
 	//Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
 	FMOD_VECTOR position;
 	position.x = 0;
 	position.y = 0;
 	position.z = 0;
-	FMOD_Channel_Set3DAttributes(channel, &position, NULL);
-	FMOD_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd));
-	FMOD_Channel_SetVolume(channel, vol / 128.f);
-	FMOD_Channel_SetMode(channel, FMOD_3D_HEADRELATIVE);
+
+	channel->set3DAttributes(&position, nullptr);
+	//FMOD_Channel_SetChannelGroup(channel, sound_group);
+	channel->setVolume(vol / 128.f);
+	channel->setMode(FMOD_3D_HEADRELATIVE);
+
 	if (FMODErrorCheck())
 	{
-		return NULL;
+		return nullptr;
 	}
-	FMOD_Channel_SetPaused(channel, false);
+	channel->setPaused(false);
 	return channel;
-}
-
-void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume)
-{
-	if (no_sound)
-	{
-		return;
-	}
-#ifndef SOUND
-	return;
-#endif
-#ifndef MUSIC
-	return;
-#endif
-	fadein_increment = default_fadein_increment;
-	fadeout_increment = default_fadeout_increment;
-	if (!fmod_system || !sound)
-	{
-		printlog("Can't play music.\n");
-		return;
-	}
-	if ( resume && music_channel2 )
-	{
-		FMOD_SOUND* lastmusic = NULL;
-		FMOD_Channel_GetCurrentSound(music_channel2, &lastmusic);
-		if ( lastmusic == sound )
-		{
-			FMOD_CHANNEL* tempmusic = music_channel;
-			music_channel = music_channel2;
-			music_channel2 = tempmusic;
-		}
-		else
-		{
-			FMOD_Channel_Stop(music_channel2);
-			music_channel2 = music_channel;
-			music_channel = NULL;
-			fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sound, true, &music_channel);
-		}
-	}
-	else
-	{
-		FMOD_Channel_Stop(music_channel2);
-		music_channel2 = music_channel;
-		music_channel = NULL;
-		fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sound, true, &music_channel);
-	}
-	FMOD_Channel_SetChannelGroup(music_channel, music_group);
-	if (crossfade == true)
-	{
-		//Start at volume 0 to get louder.
-		FMOD_Channel_SetVolume(music_channel, 0.0f); //Start at 0 then pop up.
-	}
-	else
-	{
-		FMOD_Channel_Stop(music_channel2);
-	}
-	if (loop == true)
-	{
-		//Loop the channel.
-		FMOD_MODE mode;
-		FMOD_Channel_GetMode(music_channel, &mode);
-		//fmod_result = FMOD_Channel_SetMode(music_channel, (FMOD_MODE)(mode | FMOD_LOOP_NORMAL));
-		fmod_result = FMOD_Channel_SetMode(music_channel, FMOD_LOOP_NORMAL);
-		FMODErrorCheck();
-	}
-	FMOD_Channel_SetPaused(music_channel, false);
-	if (FMODErrorCheck())
-	{
-		return;
-	}
-}
-
-bool shopmusicplaying = false;
-bool combatmusicplaying = false;
-bool minotaurmusicplaying = false;
-bool herxmusicplaying = false;
-bool devilmusicplaying = false;
-bool olddarkmap = false;
-bool sanctummusicplaying = false;
-
-int currenttrack = -1;
-
-void handleLevelMusic()
-{
-	if (no_sound)
-	{
-		return;
-	}
-#ifndef SOUND
-	return;
-#endif
-#ifndef MUSIC
-	return;
-#endif
-	bool inshop = false;
-	if (players[clientnum] && players[clientnum]->entity)
-	{
-		int x = (int)players[clientnum]->entity->x / 16;
-		int y = (int)players[clientnum]->entity->y / 16;
-		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
-			if ( shoparea[y + x * map.height] )
-			{
-				inshop = true;
-			}
-	}
-
-	if ( !strcmp(map.name, "Mages Guild") )
-	{
-		inshop = false; // everywhere is shop!
-	}
-
-	bool devilaround = false;
-	bool activeminotaur = false;
-	bool herxaround = false;
-	bool magisteraround = false;
-	node_t* node;
-	for ( node = map.creatures->first; node != nullptr; node = node->next )
-	{
-		Entity* entity = (Entity*)node->element;
-		if ( entity->sprite == 274 )   // herx head
-		{
-			herxaround = true;
-			break;
-		}
-		else if ( entity->sprite == 304 )     // devil body
-		{
-			devilaround = true;
-			break;
-		}
-		else if ( entity->sprite == 239 )     // minotaur head
-		{
-			activeminotaur = true;
-			break;
-		}
-		else if ( entity->sprite == 646 || entity->sprite == 650 )     // magister body
-		{
-			magisteraround = true;
-			break;
-		}
-	}
-
-	FMOD_BOOL playing = true;
-	FMOD_Channel_IsPlaying(music_channel, &playing);
-
-	if ( currenttrack == -1 )
-	{
-		currenttrack = rand();
-	}
-
-	if ( (!levelmusicplaying || !playing || olddarkmap != darkmap) && (!combat || !strcmp(map.name, "Hell Boss")) 
-		&& !inshop 
-		&& (!activeminotaur || !strcmp(map.name, "Hell Boss")) && !herxaround && !devilaround && !magisteraround )
-	{
-		if ( !strncmp(map.name, "The Mines", 9) )     // the mines
-		{
-			if ( !playing )
-			{
-				currenttrack = 1 + rand() % (NUMMINESMUSIC - 1);
-			}
-			currenttrack = currenttrack % NUMMINESMUSIC;
-			if ( currenttrack == 0 )
-			{
-				currenttrack = 1;
-			}
-			playmusic(minesmusic[currenttrack], false, true, true);
-		}
-		else if ( !strncmp(map.name, "The Swamp", 9) )     // the swamp
-		{
-			if ( !playing )
-			{
-				currenttrack = 1 + rand() % (NUMSWAMPMUSIC - 1);
-			}
-			currenttrack = currenttrack % NUMSWAMPMUSIC;
-			if ( currenttrack == 0 )
-			{
-				currenttrack = 1;
-			}
-			playmusic(swampmusic[currenttrack], false, true, true);
-		}
-		else if ( !strncmp(map.name, "The Labyrinth", 13) )     // the labyrinth
-		{
-			if ( !playing )
-			{
-				currenttrack = 1 + rand() % (NUMLABYRINTHMUSIC - 1);
-			}
-			currenttrack = currenttrack % NUMLABYRINTHMUSIC;
-			if ( currenttrack == 0 )
-			{
-				currenttrack = 1;
-			}
-			playmusic(labyrinthmusic[currenttrack], false, true, true);
-		}
-		else if ( !strncmp(map.name, "The Ruins", 9) )     // the ruins
-		{
-			if ( !playing )
-			{
-				currenttrack = 1 + rand() % (NUMRUINSMUSIC - 1);
-			}
-			currenttrack = currenttrack % NUMRUINSMUSIC;
-			if ( currenttrack == 0 )
-			{
-				currenttrack = 1;
-			}
-			playmusic(ruinsmusic[currenttrack], false, true, true);
-		}
-		else if ( !strncmp(map.name, "Underworld", 10) )     // the underworld
-		{
-			if ( !playing )
-			{
-				currenttrack = 1 + rand() % (NUMUNDERWORLDMUSIC - 1);
-			}
-			currenttrack = currenttrack % NUMUNDERWORLDMUSIC;
-			if ( currenttrack == 0 )
-			{
-				currenttrack = 1;
-			}
-			playmusic(underworldmusic[currenttrack], false, true, true);
-		}
-		else if ( !strcmp(map.name, "Minetown") )     // minetown
-		{
-			playmusic(minetownmusic, true, true, true);
-		}
-		else if ( !strcmp(map.name, "The Gnomish Mines") )
-		{
-			if ( gnomishminesmusic )
-			{
-				playmusic(gnomishminesmusic, true, true, true);
-			}
-			else
-			{
-				playmusic(minetownmusic, true, true, true);
-			}
-		}
-		else if ( !strcmp(map.name, "The Haunted Castle") )
-		{
-			if ( greatcastlemusic )
-			{
-				playmusic(greatcastlemusic, true, true, true);
-			}
-			else
-			{
-				playmusic(intermissionmusic, true, true, true);
-			}
-		}
-		else if ( !strcmp(map.name, "Sokoban") )
-		{
-			if ( sokobanmusic )
-			{
-				playmusic(sokobanmusic, true, true, true);
-			}
-			else
-			{
-				playmusic(intermissionmusic, true, true, true);
-			}
-		}
-		else if ( !strcmp(map.name, "Cockatrice Lair") )
-		{
-			if ( caveslairmusic )
-			{
-				playmusic(caveslairmusic, true, true, true);
-			}
-			else
-			{
-				playmusic(cavesmusic[2], true, true, true);
-			}
-		}
-		else if ( !strcmp(map.name, "Bram's Castle") )
-		{
-			if ( bramscastlemusic )
-			{
-				playmusic(bramscastlemusic, true, true, true);
-			}
-			else
-			{
-				playmusic(citadelmusic[2], true, true, true);
-			}
-		}
-		else if ( !strcmp(map.name, "The Mystic Library") )     // mystic library
-		{
-			playmusic(librarymusic, true, true, true);
-		}
-		else if ( !strcmp(map.name, "The Minotaur Maze") )     // minotaur maze
-		{
-			playmusic(minotaurmusic[1], true, true, true);
-		}
-		else if ( !strcmp(map.name, "The Temple") )     // the temple
-		{
-			playmusic(templemusic, true, true, true);
-		}
-		else if ( !strcmp(map.name, "Hell Boss") )     // escape theme
-		{
-			playmusic(escapemusic, true, true, true);
-		}
-		else if ( !strncmp(map.name, "Hell", 4) )     // hell
-		{
-			if ( !playing )
-			{
-				currenttrack = 1 + rand() % (NUMHELLMUSIC - 1);
-			}
-			currenttrack = currenttrack % NUMHELLMUSIC;
-			if ( currenttrack == 0 )
-			{
-				currenttrack = 1;
-			}
-			playmusic(hellmusic[currenttrack], false, true, true);
-		}
-		else if ( !strncmp(map.name, "Caves", 5) )
-		{
-			if ( !playing )
-			{
-				currenttrack = 1 + rand() % (NUMCAVESMUSIC - 1);
-			}
-			currenttrack = currenttrack % NUMCAVESMUSIC;
-			if ( currenttrack == 0 )
-			{
-				currenttrack = 1;
-			}
-			playmusic(cavesmusic[currenttrack], false, true, true);
-		}
-		else if ( !strncmp(map.name, "Citadel", 7) || !strncmp(map.name, "Sanctum", 7) )
-		{
-			if ( !playing )
-			{
-				currenttrack = 1 + rand() % (NUMCITADELMUSIC - 1);
-			}
-			currenttrack = currenttrack % NUMCITADELMUSIC;
-			if ( currenttrack == 0 )
-			{
-				currenttrack = 1;
-			}
-			playmusic(citadelmusic[currenttrack], false, true, true);
-		}
-		else if ( !strcmp(map.name, "Mages Guild") )
-		{
-			if ( hamletmusic )
-			{
-				playmusic(hamletmusic, true, true, true);
-			}
-			else
-			{
-				playmusic(minesmusic[4], true, true, true);
-			}
-		}
-		else if ( !strncmp(map.name, "Tutorial ", 9) )
-		{
-			playmusic(tutorialmusic, true, true, true);
-		}
-		else
-		{
-			playmusic(intermissionmusic, true, true, true);
-		}
-		olddarkmap = darkmap;
-		levelmusicplaying = true;
-		devilmusicplaying = false;
-		herxmusicplaying = false;
-		minotaurmusicplaying = false;
-		combatmusicplaying = false;
-		shopmusicplaying = false;
-		fadein_increment = default_fadein_increment;
-		fadeout_increment = default_fadeout_increment;
-	}
-	else if ( (!devilmusicplaying || !playing) && devilaround )
-	{
-		playmusic(devilmusic, true, true, true);
-		levelmusicplaying = false;
-		devilmusicplaying = true;
-		herxmusicplaying = false;
-		minotaurmusicplaying = false;
-		combatmusicplaying = false;
-		shopmusicplaying = false;
-		fadein_increment = default_fadein_increment * 2;
-		fadeout_increment = default_fadeout_increment * 2;
-	}
-	else if ( (!herxmusicplaying || !playing) && !devilaround && herxaround )
-	{
-		playmusic(herxmusic, true, true, true);
-		levelmusicplaying = false;
-		devilmusicplaying = false;
-		herxmusicplaying = true;
-		minotaurmusicplaying = false;
-		combatmusicplaying = false;
-		shopmusicplaying = false;
-		fadein_increment = default_fadein_increment * 2;
-		fadeout_increment = default_fadeout_increment * 2;
-	}
-	else if ( (!minotaurmusicplaying || !playing) && !herxaround && activeminotaur && strcmp(map.name, "Hell Boss") )
-	{
-		playmusic(minotaurmusic[0], true, true, true);
-		levelmusicplaying = false;
-		devilmusicplaying = false;
-		herxmusicplaying = false;
-		minotaurmusicplaying = true;
-		combatmusicplaying = false;
-		shopmusicplaying = false;
-		fadein_increment = default_fadein_increment * 5;
-		fadeout_increment = default_fadeout_increment * 5;
-	}
-	else if ( (!sanctummusicplaying || !playing) && magisteraround )
-	{
-		playmusic(sanctummusic, true, true, true);
-		levelmusicplaying = false;
-		devilmusicplaying = false;
-		herxmusicplaying = false;
-		minotaurmusicplaying = false;
-		combatmusicplaying = false;
-		sanctummusicplaying = true;
-		shopmusicplaying = false;
-		fadein_increment = default_fadein_increment * 2;
-		fadeout_increment = default_fadeout_increment * 2;
-	}
-	else if ( (!combatmusicplaying || !playing) 
-		&& !herxaround 
-		&& !activeminotaur 
-		&& combat 
-		&& strcmp(map.name, "Hell Boss")
-		&& strcmp(map.name, "Sanctum") )
-	{
-		if ( !strncmp(map.name, "The Swamp", 9) || !strncmp(map.name, "The Temple", 10) )   // the swamp
-		{
-			playmusic(swampmusic[0], true, true, true);
-		}
-		else if ( !strncmp(map.name, "The Labyrinth", 13) || strstr(map.name, "Minotaur") )     // the labyrinth
-		{
-			playmusic(labyrinthmusic[0], true, true, true);
-		}
-		else if ( !strncmp(map.name, "The Ruins", 9) )     // the ruins
-		{
-			playmusic(ruinsmusic[0], true, true, true);
-		}
-		else if ( !strncmp(map.name, "Underworld", 10) )     // the underworld
-		{
-			playmusic(underworldmusic[0], true, true, true);
-		}
-		else if ( !strncmp(map.name, "Hell", 4) )     // hell
-		{
-			playmusic(hellmusic[0], true, true, true);
-		}
-		else if ( !strncmp(map.name, "Caves", 5) || !strcmp(map.name, "Cockatrice Lair") )
-		{
-			playmusic(cavesmusic[0], true, true, true);
-		}
-		else if ( !strncmp(map.name, "Citadel", 7) || !strcmp(map.name, "Bram's Castle") )
-		{
-			playmusic(citadelmusic[0], true, true, true);
-		}
-		else
-		{
-			playmusic(minesmusic[0], true, true, true);
-		}
-		levelmusicplaying = false;
-		devilmusicplaying = false;
-		herxmusicplaying = false;
-		combatmusicplaying = true;
-		shopmusicplaying = false;
-		minotaurmusicplaying = false;
-		fadein_increment = default_fadein_increment * 4;
-		fadeout_increment = default_fadeout_increment;
-	}
-	else if ( (!shopmusicplaying || !playing) && !herxaround && !activeminotaur && !combat && inshop )
-	{
-		playmusic(shopmusic, true, true, true);
-		levelmusicplaying = false;
-		devilmusicplaying = false;
-		herxmusicplaying = false;
-		minotaurmusicplaying = false;
-		combatmusicplaying = false;
-		shopmusicplaying = true;
-		fadein_increment = default_fadein_increment * 4;
-		fadeout_increment = default_fadeout_increment;
-	}
 }
 
 #elif defined USE_OPENAL
@@ -1035,7 +569,7 @@ OPENAL_SOUND* playSound(Uint32 snd, int vol)
 	return channel;
 }
 
-void playmusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume)
+void playMusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume)
 {
 	if (no_sound)
 	{
@@ -1184,7 +718,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(minesmusic[currenttrack], false, true, true);
+			playMusic(minesmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "The Swamp", 9) )     // the swamp
 		{
@@ -1197,7 +731,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(swampmusic[currenttrack], false, true, true);
+			playMusic(swampmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "The Labyrinth", 13) )     // the labyrinth
 		{
@@ -1210,7 +744,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(labyrinthmusic[currenttrack], false, true, true);
+			playMusic(labyrinthmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "The Ruins", 9) )     // the ruins
 		{
@@ -1223,7 +757,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(ruinsmusic[currenttrack], false, true, true);
+			playMusic(ruinsmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "Underworld", 10) )     // the underworld
 		{
@@ -1236,82 +770,82 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(underworldmusic[currenttrack], false, true, true);
+			playMusic(underworldmusic[currenttrack], false, true, true);
 		}
 		else if ( !strcmp(map.name, "Minetown") )     // minetown
 		{
-			playmusic(minetownmusic, true, true, true);
+			playMusic(minetownmusic, true, true, true);
 		}
 		else if ( !strcmp(map.name, "The Gnomish Mines") )
 		{
 			if ( gnomishminesmusic )
 			{
-				playmusic(gnomishminesmusic, true, true, true);
+				playMusic(gnomishminesmusic, true, true, true);
 			}
 			else
 			{
-				playmusic(minetownmusic, true, true, true);
+				playMusic(minetownmusic, true, true, true);
 			}
 		}
 		else if ( !strcmp(map.name, "The Haunted Castle") )
 		{
 			if ( greatcastlemusic )
 			{
-				playmusic(greatcastlemusic, true, true, true);
+				playMusic(greatcastlemusic, true, true, true);
 			}
 			else
 			{
-				playmusic(intermissionmusic, true, true, true);
+				playMusic(intermissionmusic, true, true, true);
 			}
 		}
 		else if ( !strcmp(map.name, "Sokoban") )
 		{
 			if ( sokobanmusic )
 			{
-				playmusic(sokobanmusic, true, true, true);
+				playMusic(sokobanmusic, true, true, true);
 			}
 			else
 			{
-				playmusic(intermissionmusic, true, true, true);
+				playMusic(intermissionmusic, true, true, true);
 			}
 		}
 		else if ( !strcmp(map.name, "Cockatrice Lair") )
 		{
 			if ( caveslairmusic )
 			{
-				playmusic(caveslairmusic, true, true, true);
+				playMusic(caveslairmusic, true, true, true);
 			}
 			else
 			{
-				playmusic(cavesmusic[2], true, true, true);
+				playMusic(cavesmusic[2], true, true, true);
 			}
 		}
 		else if ( !strcmp(map.name, "Bram's Castle") )
 		{
 			if ( bramscastlemusic )
 			{
-				playmusic(bramscastlemusic, true, true, true);
+				playMusic(bramscastlemusic, true, true, true);
 			}
 			else
 			{
-				playmusic(citadelmusic[2], true, true, true);
+				playMusic(citadelmusic[2], true, true, true);
 			}
 		}
 		else if ( !strcmp(map.name, "The Mystic Library") )     // mystic library
 		{
-			playmusic(librarymusic, true, true, true);
+			playMusic(librarymusic, true, true, true);
 		}
 		else if ( !strcmp(map.name, "The Minotaur Maze") )     // minotaur maze
 		{
-			playmusic(minotaurmusic[1], true, true, true);
+			playMusic(minotaurmusic[1], true, true, true);
 		}
 		else if ( !strcmp(map.name, "The Temple") )     // the temple
 		{
-			playmusic(templemusic, true, true, true);
+			playMusic(templemusic, true, true, true);
 		}
 		else if ( !strcmp(map.name, "Hell Boss") )     // escape theme
 		{
-			playmusic(escapemusic, true, true, true);
+			playMusic(escapemusic, true, true, true);
 		}
 		else if ( !strncmp(map.name, "Hell", 4) )     // hell
 		{
@@ -1324,7 +858,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(hellmusic[currenttrack], false, true, true);
+			playMusic(hellmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "Caves", 5) )
 		{
@@ -1337,7 +871,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(cavesmusic[currenttrack], false, true, true);
+			playMusic(cavesmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "Citadel", 7) || !strncmp(map.name, "Sanctum", 7) )
 		{
@@ -1350,22 +884,22 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(citadelmusic[currenttrack], false, true, true);
+			playMusic(citadelmusic[currenttrack], false, true, true);
 		}
 		else if ( !strcmp(map.name, "Mages Guild") )
 		{
 			if ( hamletmusic )
 			{
-				playmusic(hamletmusic, true, true, true);
+				playMusic(hamletmusic, true, true, true);
 			}
 			else
 			{
-				playmusic(minesmusic[4], true, true, true);
+				playMusic(minesmusic[4], true, true, true);
 			}
 		}
 		else
 		{
-			playmusic(intermissionmusic, true, true, true);
+			playMusic(intermissionmusic, true, true, true);
 		}
 		olddarkmap = darkmap;
 		levelmusicplaying = true;
@@ -1379,7 +913,7 @@ void handleLevelMusic()
 	}
 	else if ( (!devilmusicplaying || !playing) && devilaround )
 	{
-		playmusic(devilmusic, true, true, true);
+		playMusic(devilmusic, true, true, true);
 		levelmusicplaying = false;
 		devilmusicplaying = true;
 		herxmusicplaying = false;
@@ -1391,7 +925,7 @@ void handleLevelMusic()
 	}
 	else if ( (!herxmusicplaying || !playing) && !devilaround && herxaround )
 	{
-		playmusic(herxmusic, true, true, true);
+		playMusic(herxmusic, true, true, true);
 		levelmusicplaying = false;
 		devilmusicplaying = false;
 		herxmusicplaying = true;
@@ -1403,7 +937,7 @@ void handleLevelMusic()
 	}
 	else if ( (!minotaurmusicplaying || !playing) && !herxaround && activeminotaur && strcmp(map.name, "Hell Boss") )
 	{
-		playmusic(minotaurmusic[0], true, true, true);
+		playMusic(minotaurmusic[0], true, true, true);
 		levelmusicplaying = false;
 		devilmusicplaying = false;
 		herxmusicplaying = false;
@@ -1415,7 +949,7 @@ void handleLevelMusic()
 	}
 	else if ( (!sanctummusicplaying || !playing) && magisteraround )
 	{
-		playmusic(sanctummusic, true, true, true);
+		playMusic(sanctummusic, true, true, true);
 		levelmusicplaying = false;
 		devilmusicplaying = false;
 		herxmusicplaying = false;
@@ -1435,35 +969,35 @@ void handleLevelMusic()
 	{
 		if ( !strncmp(map.name, "The Swamp", 9) || !strncmp(map.name, "The Temple", 10) )   // the swamp
 		{
-			playmusic(swampmusic[0], true, true, true);
+			playMusic(swampmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "The Labyrinth", 13) || strstr(map.name, "Minotaur") )     // the labyrinth
 		{
-			playmusic(labyrinthmusic[0], true, true, true);
+			playMusic(labyrinthmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "The Ruins", 9) )     // the ruins
 		{
-			playmusic(ruinsmusic[0], true, true, true);
+			playMusic(ruinsmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "Underworld", 10) )     // the underworld
 		{
-			playmusic(underworldmusic[0], true, true, true);
+			playMusic(underworldmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "Hell", 4) )     // hell
 		{
-			playmusic(hellmusic[0], true, true, true);
+			playMusic(hellmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "Caves", 5) || !strcmp(map.name, "Cockatrice Lair") )
 		{
-			playmusic(cavesmusic[0], true, true, true);
+			playMusic(cavesmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "Citadel", 7) || !strcmp(map.name, "Bram's Castle") )
 		{
-			playmusic(citadelmusic[0], true, true, true);
+			playMusic(citadelmusic[0], true, true, true);
 		}
 		else
 		{
-			playmusic(minesmusic[0], true, true, true);
+			playMusic(minesmusic[0], true, true, true);
 		}
 		levelmusicplaying = false;
 		devilmusicplaying = false;
@@ -1476,7 +1010,7 @@ void handleLevelMusic()
 	}
 	else if ( (!shopmusicplaying || !playing) && !herxaround && !activeminotaur && !combat && inshop )
 	{
-		playmusic(shopmusic, true, true, true);
+		playMusic(shopmusic, true, true, true);
 		levelmusicplaying = false;
 		devilmusicplaying = false;
 		herxmusicplaying = false;

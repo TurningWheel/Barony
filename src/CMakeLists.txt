@@ -1,8 +1,6 @@
 list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/init.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/sound_game.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/collision.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/light.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/maps.cpp"
@@ -118,7 +116,6 @@ list(APPEND EDITOR_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/hash.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/files.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/entity_shared.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_editor.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_shared.cpp"
@@ -132,6 +129,7 @@ list(APPEND EDITOR_SOURCES
 add_subdirectory(magic)
 add_subdirectory(interface)
 add_subdirectory(ui)
+add_subdirectory(engine)
 
 set(GAME_SOURCES ${GAME_SOURCES} PARENT_SCOPE)
 set(EDITOR_SOURCES ${EDITOR_SOURCES} PARENT_SCOPE)

@@ -14,7 +14,7 @@
 #include "stat.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
