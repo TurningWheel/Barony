@@ -2116,7 +2116,7 @@ void handleMainMenu(bool mode)
 					introstage = 6; // goes to intro movie
 					fadeout = true;
 #ifdef MUSIC
-					playmusic(introductionmusic, true, true, false);
+					playMusic(introductionmusic, true, true, false);
 #endif
 				}
 			}
@@ -9539,11 +9539,11 @@ void handleMainMenu(bool mode)
 				}
 				if ( soundAmbient_group )
 				{
-					FMOD_ChannelGroup_Stop(soundAmbient_group);
+					soundAmbient_group->stop();
 				}
 				if ( soundEnvironment_group )
 				{
-					FMOD_ChannelGroup_Stop(soundEnvironment_group);
+					soundEnvironment_group->stop();
 				}
 #elif defined USE_OPENAL
 				if ( sound_group )
@@ -9844,11 +9844,11 @@ void handleMainMenu(bool mode)
 				}
 				if ( soundAmbient_group )
 				{
-					FMOD_ChannelGroup_Stop(soundAmbient_group);
+					soundAmbient_group->stop();
 				}
 				if ( soundEnvironment_group )
 				{
-					FMOD_ChannelGroup_Stop(soundEnvironment_group);
+					soundEnvironment_group->stop();
 				}
 #elif defined USE_OPENAL
 				if ( sound_group )
@@ -10154,11 +10154,11 @@ void handleMainMenu(bool mode)
 			}
 			if ( soundAmbient_group )
 			{
-				FMOD_ChannelGroup_Stop(soundAmbient_group);
+				soundAmbient_group->stop();
 			}
 			if ( soundEnvironment_group )
 			{
-				FMOD_ChannelGroup_Stop(soundEnvironment_group);
+				soundEnvironment_group->stop();
 			}
 #elif defined USE_OPENAL
 			if ( sound_group )

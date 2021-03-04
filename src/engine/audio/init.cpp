@@ -43,13 +43,13 @@ bool initSoundEngine()
 			no_sound = true;
 			return false;
 		}
-		fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundAmbient_group); //TODO: Update these for FMOD Studio.
+		fmod_result = fmod_system->createChannelGroup(nullptr, &soundAmbient_group);
 		if ( FMODErrorCheck() )
 		{
 			printlog("Failed to create sound ambient channel group.\n");
 			no_sound = true;
 		}
-		fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundEnvironment_group);
+		fmod_result = fmod_system->createChannelGroup(nullptr, &soundEnvironment_group);
 		if ( FMODErrorCheck() )
 		{
 			printlog("Failed to create sound environment channel group.\n");
@@ -76,7 +76,7 @@ bool initSoundEngine()
 
 int loadSoundResources()
 {
-	FILE* fp;
+	File* fp;
 	Uint32 c;
 	char name[128];
 
@@ -115,8 +115,8 @@ int loadSoundResources()
 	}
 	FileIO::close(fp);
 	sound_group->setVolume(sfxvolume / 128.f);
-	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f); //TODO: Update these two for FMOD Studio too.
-	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+	soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
+	soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
 	fmod_system->set3DSettings(1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
 	printlog("loading sounds...\n");

@@ -29,7 +29,7 @@
 -------------------------------------------------------------------------------*/
 #ifdef USE_FMOD
 
-FMOD_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd) //TODO: Update for FMOD Studio.
+FMOD::ChannelGroup* getChannelGroupForSoundIndex(Uint32 snd) //TODO: Update for FMOD Studio.
 {
 	if ( snd == 155 || snd == 135 ) // water/lava
 	{
@@ -146,18 +146,18 @@ FMOD::Channel* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	if ( soundAmbient_group && getChannelGroupForSoundIndex(snd) == soundAmbient_group )
 	{
 		int numChannels = 0;
-		FMOD_ChannelGroup_GetNumChannels(soundAmbient_group, &numChannels);
+		soundAmbient_group->getNumChannels(&numChannels);
 		for ( int i = 0; i < numChannels; ++i )
 		{
-			FMOD_CHANNEL* c;
-			if ( FMOD_ChannelGroup_GetChannel(soundAmbient_group, i, &c) == FMOD_RESULT::FMOD_OK )
+			FMOD::Channel* c;
+			if ( soundAmbient_group->getChannel(i, &c) == FMOD_RESULT::FMOD_OK )
 			{
 				//float audibility = 0.f;
 				//FMOD_Channel_GetAudibility(c, &audibility);
 				float volume = 0.f;
-				FMOD_Channel_GetVolume(c, &volume);
+				c->getVolume(&volume);
 				FMOD_VECTOR playingPosition;
-				FMOD_Channel_Get3DAttributes(c, &playingPosition, nullptr);
+				c->get3DAttributes(&playingPosition, nullptr);
 				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
 				if ( abs(volume - (vol / 128.f)) < 0.05 )
 				{
@@ -223,18 +223,18 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 	if ( soundAmbient_group && getChannelGroupForSoundIndex(snd) == soundAmbient_group )
 	{
 		int numChannels = 0;
-		FMOD_ChannelGroup_GetNumChannels(soundAmbient_group, &numChannels);
+		soundAmbient_group->getNumChannels(&numChannels);
 		for ( int i = 0; i < numChannels; ++i )
 		{
-			FMOD_CHANNEL* c;
-			if ( FMOD_ChannelGroup_GetChannel(soundAmbient_group, i, &c) == FMOD_RESULT::FMOD_OK )
+			FMOD::Channel* c;
+			if ( soundAmbient_group->getChannel(i, &c) == FMOD_RESULT::FMOD_OK )
 			{
 				//float audibility = 0.f;
 				//FMOD_Channel_GetAudibility(c, &audibility);
 				float volume = 0.f;
-				FMOD_Channel_GetVolume(c, &volume);
+				c->getVolume(&volume);
 				FMOD_VECTOR playingPosition;
-				FMOD_Channel_Get3DAttributes(c, &playingPosition, nullptr);
+				c->get3DAttributes(&playingPosition, nullptr);
 				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
 				if ( abs(volume - (vol / 128.f)) < 0.05 )
 				{
@@ -248,7 +248,7 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 		}
 	}
 
-	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel);
+	//fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel); //TODO: Why this line appears twice?
 	fmod_result = fmod_system->playSound(sounds[snd], sound_group, true, &channel);
 	if (FMODErrorCheck())
 	{

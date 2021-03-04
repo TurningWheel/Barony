@@ -3549,11 +3549,11 @@ void clientHandlePacket()
 		}
 		if ( soundAmbient_group )
 		{
-			FMOD_ChannelGroup_Stop(soundAmbient_group);
+			soundAmbient_group->stop();
 		}
 		if ( soundEnvironment_group )
 		{
-			FMOD_ChannelGroup_Stop(soundEnvironment_group);
+			soundEnvironment_group->stop();
 		}
 #elif defined USE_OPENAL
 		if ( sound_group )

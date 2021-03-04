@@ -45,7 +45,7 @@ int fmod_result;
 	fmod_result = fmod_system->createStream("music/escape.ogg", FMOD_DEFAULT, nullptr, &escapemusic);
 	fmod_result = fmod_system->createStream("music/devil.ogg", FMOD_DEFAULT, nullptr, &devilmusic);
 	fmod_result = fmod_system->createStream("music/sanctum.ogg", FMOD_DEFAULT, nullptr, &sanctummusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/tutorial.ogg", FMOD_SOFTWARE, NULL, &tutorialmusic); //TODO: Update for FMod Studio too.
+	fmod_result = fmod_system->createStream("music/tutorial.ogg", FMOD_DEFAULT, NULL, &tutorialmusic);
 	if ( PHYSFS_getRealDir("music/gnomishmines.ogg") != nullptr )
 	{
 		fmod_result = fmod_system->createStream("music/gnomishmines.ogg", FMOD_DEFAULT, nullptr, &gnomishminesmusic);

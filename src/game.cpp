@@ -20,7 +20,7 @@
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "init.hpp"
 #include "shops.hpp"
@@ -1123,15 +1123,15 @@ void gameLogic(void)
 #ifdef USE_FMOD
 					if ( sound_group )
 					{
-						FMOD_ChannelGroup_Stop(sound_group);
+						sound_group->stop();
 					}
 					if ( soundAmbient_group )
 					{
-						FMOD_ChannelGroup_Stop(soundAmbient_group);
+						soundAmbient_group->stop();
 					}
 					if ( soundEnvironment_group )
 					{
-						FMOD_ChannelGroup_Stop(soundEnvironment_group);
+						soundEnvironment_group->stop();
 					}
 #elif defined USE_OPENAL
 					if ( sound_group )
@@ -3175,19 +3175,19 @@ void handleEvents(void)
 #ifdef USE_FMOD
 					if ( music_group )
 					{
-						FMOD_ChannelGroup_SetVolume(music_group, 0.f);
+						music_group->setVolume(0.f);
 					}
 					if ( sound_group )
 					{
-						FMOD_ChannelGroup_SetVolume(sound_group, 0.f);
+						sound_group->setVolume(0.f);
 					}
 					if ( soundAmbient_group )
 					{
-						FMOD_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
+						soundAmbient_group->setVolume(0.f);
 					}
 					if ( soundEnvironment_group )
 					{
-						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
+						soundEnvironment_group->setVolume(0.f);
 					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
@@ -3214,19 +3214,19 @@ void handleEvents(void)
 #ifdef USE_FMOD
 					if ( music_group )
 					{
-						FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+						music_group->setVolume(musvolume / 128.f);
 					}
 					if ( sound_group )
 					{
-						FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+						sound_group->setVolume(sfxvolume / 128.f);
 					}
 					if ( soundAmbient_group )
 					{
-						FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+						soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
 					}
 					if ( soundEnvironment_group )
 					{
-						FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+						soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
 					}
 #endif // USE_FMOD
 #ifdef USE_OPENAL
@@ -4742,7 +4742,7 @@ int main(int argc, char** argv)
 
 		// play splash sound
 #ifdef MUSIC
-		playmusic(splashmusic, false, false, false);
+		playMusic(splashmusic, false, false, false);
 #endif
 
 		int old_sdl_ticks = 0;
@@ -4861,7 +4861,7 @@ int main(int argc, char** argv)
 						{
 							introstage = 6;
 #if defined(USE_FMOD) || defined(USE_OPENAL)
-							playmusic(introductionmusic, true, false, false);
+							playMusic(introductionmusic, true, false, false);
 #endif
 						}
 						else
@@ -4872,11 +4872,11 @@ int main(int argc, char** argv)
 #if defined(USE_FMOD) || defined(USE_OPENAL)
 							if ( menuMapType == 1 )
 							{
-								playmusic(intromusic[2], true, false, false);
+								playMusic(intromusic[2], true, false, false);
 							}
 							else
 							{
-								playmusic(intromusic[1], true, false, false);
+								playMusic(intromusic[1], true, false, false);
 							}
 #endif
 						}
@@ -4944,7 +4944,7 @@ int main(int argc, char** argv)
 						{
 							introstage = 6;
 #ifdef MUSIC
-							playmusic(introductionmusic, true, false, false);
+							playMusic(introductionmusic, true, false, false);
 #endif
 						}
 						else
@@ -4955,11 +4955,11 @@ int main(int argc, char** argv)
 #ifdef MUSIC
 							if ( menuMapType == 1 )
 							{
-								playmusic(intromusic[2], true, false, false);
+								playMusic(intromusic[2], true, false, false);
 							}
 							else
 							{
-								playmusic(intromusic[1], true, false, false);
+								playMusic(intromusic[1], true, false, false);
 							}
 #endif
 						}

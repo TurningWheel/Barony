@@ -11,7 +11,6 @@
 
 #pragma once
 
-
 #include <stdio.h>
 #ifdef USE_FMOD
 #include <fmod.hpp>
@@ -110,7 +109,7 @@ void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume); //Au
 
 void handleLevelMusic(); //Manages and updates the level music.
 
-extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
+extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment, dynamicAmbientVolume, dynamicEnvironmentVolume;
 extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 
 #elif defined USE_OPENAL
