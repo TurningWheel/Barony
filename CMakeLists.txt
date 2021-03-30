@@ -91,6 +91,10 @@ if (NOT "${BARONY_WIN32_LIBRARIES}" STREQUAL "")
 	list(APPEND CMAKE_PREFIX_PATH $ENV{BARONY_WIN32_LIBRARIES})
 endif(NOT "${BARONY_WIN32_LIBRARIES}" STREQUAL "")
 
+if (DEFINED ENV{BARONY_DATADIR}) # Used by visual studio to set the current working directory when debugging the barony executables.
+	set (BARONY_DATADIR $ENV{BARONY_DATADIR})
+endif()
+
 #FMOD can be disabled in one of two ways:
 # * Not having FMOD installed will automatically disable FMOD (and, consequently, the game's sound engine as a whole).
 # * Running cmake with -DFMOD_ENABLED=OFF
@@ -410,6 +414,10 @@ if (GAME_ENABLED)
 	# if(EOS_ENABLED)
 	#   target_link_libraries(barony -lsteam_api) #TODO: Fix for Windows.
 	# endif()
+	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT barony) # Otherwise, hitting "debug" will default to "ALL_BUILD" :|
+	if (DEFINED BARONY_DATADIR)
+		set_target_properties(barony PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "\$(BARONY_DATADIR)/")
+	endif()
 	target_link_libraries(barony ${SDL2_LIBRARIES} ${SDL2_LIBRARY} ${SDL2IMAGE_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_NET_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2TTF_LIBRARY})
 	if (STEAMWORKS_ENABLED)
 		target_link_libraries(barony ${STEAMWORKS_LIBRARY})
@@ -510,9 +518,15 @@ if (EDITOR_ENABLED)
 	#SET_SOURCE_FILES_PROPERTIES(${MACOSX_BUNDLE_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 	set_source_files_properties(${EDITOR_SOURCES} PROPERTIES COMPILE_FLAGS "-x objective-c++")
   else()
-	add_executable(${EDITOR_EXE_NAME} ${EDITOR_SOURCES} ${EDITOR_RESOURCE_FILE})
+	if (WIN32)
+		# add_executable(${EDITOR_EXE_NAME} EXCLUDE_FROM_ALL ${EDITOR_SOURCES} ${EDITOR_RESOURCE_FILE})
+		add_executable(${EDITOR_EXE_NAME} ${EDITOR_SOURCES} ${EDITOR_RESOURCE_FILE})
+		set_target_properties(${EDITOR_EXE_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "\$(BARONY_DATADIR)/")
+	else()
+		add_executable(${EDITOR_EXE_NAME} ${EDITOR_SOURCES} ${EDITOR_RESOURCE_FILE})
+	endif()
   endif()
-  target_compile_definitions(${EDITOR_EXE_NAME} PUBLIC EDITOR) # So that shared source files know this is the editor they're dealing with.
+  target_compile_definitions(${EDITOR_EXE_NAME} PUBLIC EDITOR) # So that shared source files know this is the editor they're dealing with. # TODO: Try using this to disable some things we don't want in the editor?
 
   target_link_libraries(${EDITOR_EXE_NAME} ${SDL2_LIBRARIES} ${SDL2_LIBRARY} ${SDL2IMAGE_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_NET_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2TTF_LIBRARY})
   if(STEAMWORKS_ENABLED)
@@ -569,6 +583,8 @@ if (EDITOR_ENABLED)
   endif()
 endif(EDITOR_ENABLED)
 
+# Various install targets
+# 1) <TODO: insert proper description here...I think they're being used by the BSD maintainer(s)?>.
 if (NOT APPLE AND UNIX)
   if (EDITOR_ENABLED)
 	install(TARGETS ${EDITOR_EXE_NAME}
@@ -585,6 +601,23 @@ if (NOT APPLE AND UNIX)
 		${CMAKE_CURRENT_BINARY_DIR}/sound DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony
 	)
   endif()
+endif()
+# 2) Windows install targets
+if (WIN32)
+	if (DEFINED BARONY_DATADIR)
+		# THIS IS AN UTTER BODGE TO STOP VISUAL STUDIO/CMAKE FROM TRYING TO CREATE BARONY/BIN IN C:/PROGRAM FILES
+		# ...there's probably a better way to do this
+		set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR})
+		# TODO: How to force Visual Studio to run the INSTALL target before you hit the "play" button to run the debugger?
+		# Maybe...custom commands or targets?
+
+		# 2.a) Copy over lang/en.txt over to the data directory, if it exists.
+		install(FILES lang/en.txt DESTINATION ${BARONY_DATADIR}/lang/ CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
+
+		# 2.b) Do the same for the executables, why not?
+		install(TARGETS barony DESTINATION ${BARONY_DATADIR}/ CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES}) # TODO: To escape or to not escape these?
+		install(TARGETS ${EDITOR_EXE_NAME} DESTINATION ${BARONY_DATADIR}/ CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
+	endif()
 endif()
 
 if (APPLE)
