@@ -30,7 +30,7 @@ FIND_PATH(FMOD_INCLUDE_DIR
 )
 
 FIND_LIBRARY(FMOD_LIBRARY
-  NAMES fmod libfmod
+  NAMES fmod libfmod fmod_vc
   PATHS
   IF (APPLE)
     $ENV{FMOD_DIR}/api/core/lib/
