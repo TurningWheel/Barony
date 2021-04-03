@@ -54,12 +54,12 @@ Download everything else. You may need to build things. More explicit instructio
 Visual Studio Instructions:
 * Rather than individually setting up environment variables for every dependency, you can simply create an environment variable named `BARONY_WIN32_LIBRARIES` and point it to a combined dependencies folder. Said folder should have a subdirectory named `include` with all libraries' header files in there, and a `lib` subdirectory for the library archives themselves.
 * After that, create a directory named `build` (or somesuch) in the root Barony directory, and either run `cmake ..` inside it from a command prompt, or use cmake-gui.
-** There are some additional options you can specify, such as -DFMOD_ENABLED, -DSTEAMWORKS_ENABLED, -DEOS_ENABLED, -DOPENAL_ENABLED.
-** If you do not specify one of FMOD or OpenAL enabled, the game will build without sound support.
+  * There are some additional options you can specify, such as -DFMOD_ENABLED, -DSTEAMWORKS_ENABLED, -DEOS_ENABLED, -DOPENAL_ENABLED.
+  * If you do not specify one of FMOD or OpenAL enabled, the game will build without sound support.
 * Open barony.sln and the standard Visual Studio experience is now all yours.
-** Build the whole solution to generate the .exe files. (Make sure that the appropriate Platform Toolset is installed)
-** If the environment variable `BARONY_DATADIR` is defined, it will be used as the current working directory. Set this to wherever you have all of the game's assets and just mash the "play" button in Visual Studio :)
-*** If that variable doesn't exist, no worries, CMake will not modify the current working directory property. You'll either have to copy the executables to whever you have the assets yourself, or you can copy the assets over to the debugger's directory.
+  * Build the whole solution to generate the .exe files. (Make sure that the appropriate Platform Toolset is installed)
+  * If the environment variable `BARONY_DATADIR` is defined, it will be used as the current working directory. Set this to wherever you have all of the game's assets and just mash the "play" button in Visual Studio :)
+    * If that variable doesn't exist, no worries, CMake will not modify the current working directory property. You'll either have to copy the executables to whever you have the assets yourself, or you can copy the assets over to the debugger's directory.
 * MinGW probably not supported right now in the CMakeList.txt...PRs welcome :)
 TODO: MinGW support, one master SLN with Steam, EOS, FMOD, OpenAL, etc variants all in one place.
 
