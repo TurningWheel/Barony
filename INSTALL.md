@@ -16,7 +16,7 @@ You will need the following libraries to build Barony:
 OPTIONAL dependencies:
  * One of FMOD Core API 2.00.08 or OpenAL for audio support.
 
-FMOD Studio API can be downloadable at https://www.fmod.com/download (you do need an account to download it).
+FMOD Studio API can be downloaded at https://www.fmod.com/download (you do need an account to download it).
 You can disable FMOD by running cmake with -DFMOD_ENABLED=OFF (it's also disabled if not found).
 
 OpenAL can be used with -DOPENAL_ENABLED
@@ -52,15 +52,15 @@ Download everything else. You may need to build things. More explicit instructio
 ## Building Barony
 
 Visual Studio Instructions:
-  * Rather than individually setting up environment variables for every dependency, you can simply create an environment variable named `BARONY_WIN32_LIBRARIES` and point it to a combined dependencies folder. Said folder should have a subdirectory named `include` with all libraries' header files in there, and a `lib` subdirectory for the library archives themselves.
-  * After that, create a directory named `build` (or somesuch) in the root Barony directory, and either run `cmake ..` inside it from a command prompt, or use cmake-gui.
-  * * There are some additional options you can specify, such as -DFMOD_ENABLED, -DSTEAMWORKS_ENABLED, -DEOS_ENABLED, -DOPENAL_ENABLED.
-  * * If you do not specify one of FMOD or OpenAL enabled, the game will build without sound support.
-  * Open barony.sln and the standard Visual Studio experience is now all yours.
-  * * Build the whole solution to generate the .exe files. (Make sure that the appropriate Platform Toolset is installed)
-  * * If the environment variable `BARONY_DATADIR` is defined, it will use it as the current working directory. Set this to wherever you have all of the game's assets and just mash the "play" button in Visual Studio :)
-  * * * If that variable doesn't exist, no worries, CMake will not modify the current working directory property. You'll either have to copy the executables to whever you have the assets yourself, or you can copy the assets over to the debugger's directory.
-  * MinGW probably not supported right now in the CMakeList.txt...PRs welcome :)
+* Rather than individually setting up environment variables for every dependency, you can simply create an environment variable named `BARONY_WIN32_LIBRARIES` and point it to a combined dependencies folder. Said folder should have a subdirectory named `include` with all libraries' header files in there, and a `lib` subdirectory for the library archives themselves.
+* After that, create a directory named `build` (or somesuch) in the root Barony directory, and either run `cmake ..` inside it from a command prompt, or use cmake-gui.
+** There are some additional options you can specify, such as -DFMOD_ENABLED, -DSTEAMWORKS_ENABLED, -DEOS_ENABLED, -DOPENAL_ENABLED.
+** If you do not specify one of FMOD or OpenAL enabled, the game will build without sound support.
+* Open barony.sln and the standard Visual Studio experience is now all yours.
+** Build the whole solution to generate the .exe files. (Make sure that the appropriate Platform Toolset is installed)
+** If the environment variable `BARONY_DATADIR` is defined, it will be used as the current working directory. Set this to wherever you have all of the game's assets and just mash the "play" button in Visual Studio :)
+*** If that variable doesn't exist, no worries, CMake will not modify the current working directory property. You'll either have to copy the executables to whever you have the assets yourself, or you can copy the assets over to the debugger's directory.
+* MinGW probably not supported right now in the CMakeList.txt...PRs welcome :)
 TODO: MinGW support, one master SLN with Steam, EOS, FMOD, OpenAL, etc variants all in one place.
 
 If you're using MinGW or GCC, you'll need to run CMake first, then make: cmake . && make *(NOTE: Not supported, CMakeLists.txt is probably broken for MinGW support)*
@@ -69,15 +69,15 @@ If you are missing GL header files like glext.h they are available from https://
 
 ### Running Barony in Visual Studio.
 
-By default, the "barony" project is set as the startup project. The startup project is the project Visual Studio will launch when you hit the green "play" (debug) button.
+By default, the "barony" project is set as the startup project. (The startup project is the project Visual Studio will launch when you hit the green "play" (debug) button)
 
-If you've defined the `BARONY_DATADIR` to point to wherever you have the game's assets, this will...mostly work. The missing piece is it won't copy over the lang/en.txt included in the source repo.
+If you've defined the `BARONY_DATADIR` environment variable to point to wherever you have the game's assets, this will...mostly work. The missing piece is it won't copy over the lang/en.txt included in the source repo.
 
 To do that, you must right click on the "INSTALL" project and hit "Build". This will build the source code and then copy over lang/en.txt, barony.exe, and editor.exe to BARONY_DATADIR/
 
 After that, all you have to do is hit the big green play button, and the game should run.
 
-If you'd rather debug the editor, instead of hitting the green play button up top, right click on the "editor" project and mouse over "debug" and then "start new instance"
+If you'd rather debug the editor, instead of hitting the green play button up top, right click on the "editor" project, mouse over "debug", and then click "start new instance"
 
 # Linux Instructions
 
