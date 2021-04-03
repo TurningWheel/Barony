@@ -1002,7 +1002,7 @@ void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
 
 #endif
 
-bool physfsSearchMusicToUpdate_helper_findModifiedMusic(uint32 numMusic, const char* filenameTemplate)
+bool physfsSearchMusicToUpdate_helper_findModifiedMusic(uint32_t numMusic, const char* filenameTemplate)
 {
 	for ( int c = 0; c < numMusic; c++ )
 	{
@@ -1102,7 +1102,7 @@ bool physfsSearchMusicToUpdate()
 	return false;
 }
 
-FMOD_RESULT physfsReloadMusic_helper_reloadMusicArray(uint32 numMusic, const char* filenameTemplate, FMOD::Sound** musicArray, bool reloadAll)
+FMOD_RESULT physfsReloadMusic_helper_reloadMusicArray(uint32_t numMusic, const char* filenameTemplate, FMOD::Sound** musicArray, bool reloadAll)
 {
 	for ( int c = 0; c < numMusic; c++ )
 	{

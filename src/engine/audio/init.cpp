@@ -104,13 +104,15 @@ int loadSoundResources()
 	}
 	sounds = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*numsounds);
 	fp = openDataFile(soundsDirectory.c_str(), "r");
+	char full_path[PATH_MAX];
 	for ( c = 0; !fp->eof(); ++c )
 	{
 		fp->gets2(name, 128);
-		fmod_result = fmod_system->createSound(name, (FMOD_DEFAULT | FMOD_3D), nullptr, &sounds[c]);
+		completePath(full_path, name);
+		fmod_result = fmod_system->createSound(full_path, (FMOD_DEFAULT | FMOD_3D), nullptr, &sounds[c]);
 		if (FMODErrorCheck())
 		{
-			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
+			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", full_path, c + 1);
 		}
 	}
 	FileIO::close(fp);
@@ -153,7 +155,7 @@ int loadSoundResources()
 
 void freeSoundResources()
 {
-	uint32 c;
+	uint32_t c;
 	// free sounds
 #ifdef USE_FMOD
 	printlog("freeing sounds...\n");
