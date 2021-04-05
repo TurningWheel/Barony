@@ -123,7 +123,6 @@ void sound_update()
 		}
 	}
 
-	//TODO: The following were added upstream...may need a re-update.
 	if ( soundAmbient_group )
 	{
 		if ( !sfxUseDynamicAmbientVolume )

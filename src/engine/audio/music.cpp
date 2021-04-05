@@ -1,10 +1,8 @@
 /*-------------------------------------------------------------------------------
 
 	BARONY
-	File: sound_game.cpp
-	Desc: Contains all the code that will cause the editor to crash and burn.
-	Quick workaround because I don't want to separate the editor and game
-	into two separate projects just because of sound.
+	File: music.cpp
+	Desc: Contains any music-specific code that would have gone into sound_game.cpp
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
@@ -38,7 +36,7 @@ int fmod_result;
 #endif
 
 	music_group->setVolume(musvolume / 128.f);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTODUCTION, FMOD_DEFAULT, nullptr, &introductionmusic); //TODO: FMOD_SOFTWARE -> FMOD_DEFAULT?
+	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTRODUCTION, FMOD_DEFAULT, nullptr, &introductionmusic); //TODO: FMOD_SOFTWARE -> FMOD_DEFAULT?
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTERMISSION, FMOD_DEFAULT, nullptr, &intermissionmusic);
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_MINETOWN, FMOD_DEFAULT, nullptr, &minetownmusic);
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SPLASH, FMOD_DEFAULT, nullptr, &splashmusic);

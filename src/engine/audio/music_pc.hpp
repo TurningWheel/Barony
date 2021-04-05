@@ -1,5 +1,5 @@
 
-const char* MUSIC_FILEPATH_INTODUCTION = "music/introduction.ogg";
+const char* MUSIC_FILEPATH_INTRODUCTION = "music/introduction.ogg";
 const char* MUSIC_FILEPATH_INTERMISSION = "music/intermission.ogg";
 const char* MUSIC_FILEPATH_MINETOWN = "music/minetown.ogg";
 const char* MUSIC_FILEPATH_SPLASH = "music/splash.ogg";

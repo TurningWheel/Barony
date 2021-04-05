@@ -29,7 +29,7 @@
 -------------------------------------------------------------------------------*/
 #ifdef USE_FMOD
 
-FMOD::ChannelGroup* getChannelGroupForSoundIndex(Uint32 snd) //TODO: Update for FMOD Studio.
+FMOD::ChannelGroup* getChannelGroupForSoundIndex(Uint32 snd)
 {
 	if ( snd == 155 || snd == 135 ) // water/lava
 	{
@@ -248,7 +248,6 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 		}
 	}
 
-	//fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel); //TODO: Why this line appears twice?
 	fmod_result = fmod_system->playSound(sounds[snd], sound_group, true, &channel);
 	if (FMODErrorCheck())
 	{
