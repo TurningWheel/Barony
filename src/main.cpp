@@ -195,9 +195,7 @@ std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 bool receivedclientnum = false;
 char const * window_title = nullptr;
 bool softwaremode = false;
-#ifdef NINTENDO
- std::chrono::time_point<std::chrono::steady_clock> lastTick;
-#else
+#ifndef NINTENDO
  SDL_TimerID timer;
 #endif // NINTENDO
 SDL_Window* screen = nullptr;
@@ -226,7 +224,6 @@ list_t entitiesdeleted;
 bool showfps = false;
 real_t t, ot = 0.0, frameval[AVERAGEFRAMES];
 Uint32 cycles = 0, pingtime = 0;
-Uint32 timesync = 0;
 real_t fps = 0.0;
 
 // world sim data

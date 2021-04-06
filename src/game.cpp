@@ -2797,29 +2797,30 @@ void handleButtons(void)
 
 -------------------------------------------------------------------------------*/
 
+#ifdef NINTENDO
+static real_t time_diff = (real_t)0;
+#endif
+
 void handleEvents(void)
 {
 	double d;
 	int j;
 	int runtimes = 0;
 
-#ifdef NINTENDO
-	// do timer
-	std::chrono::duration<double> msInterval(1.0 / TICKS_PER_SECOND);
-	auto now = std::chrono::steady_clock::now();
-	int framesToDo = (now - lastTick) / msInterval;
-	if (framesToDo) {
-		lastTick = now;
-		for (int c = 0; c < framesToDo; ++c) {
-			timerCallback(0, NULL);
-		}
-	}
-#endif // NINTENDO
-
 	// calculate app rate
 	t = SDL_GetTicks();
-	timesync = t - ot;
+	real_t timesync = t - ot;
 	ot = t;
+
+#ifdef NINTENDO
+	// do timer
+	time_diff += timesync;
+	constexpr real_t frame = (real_t)1000 / (real_t)TICKS_PER_SECOND;
+	while (time_diff >= frame) {
+		time_diff -= frame;
+		timerCallback(0, NULL);
+	}
+#endif // NINTENDO
 
 	// calculate fps
 	if ( timesync != 0 )
@@ -4732,9 +4733,7 @@ int main(int argc, char** argv)
 		setDefaultPlayerConducts();
 
 		// instantiate a timer
-#ifdef NINTENDO
-		lastTick = std::chrono::steady_clock::now();
-#else
+#ifndef NINTENDO
 		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
 #endif // NINTENDO
 		srand(time(NULL));

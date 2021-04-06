@@ -594,9 +594,7 @@ extern int minimapScale;
 extern int minimapObjectZoom;
 extern int minimapScaleQuickToggle;
 extern bool softwaremode;
-#ifdef NINTENDO
- extern std::chrono::time_point<std::chrono::steady_clock> lastTick;
-#else
+#ifndef NINTENDO
  extern SDL_TimerID timer;
 #endif // NINTENDO
 extern real_t* zbuffer;
