@@ -116,7 +116,6 @@ extern bool autoLimbReload;
  #ifndef NINTENDO
   #define GL_GLEXT_PROTOTYPES
   #include <GL/gl.h>
-  #include <GL/glu.h>
  #endif
  #include <GL/glext.h>
  #include "SDL_opengl.h"

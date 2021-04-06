@@ -234,7 +234,17 @@ IF (APPLE)
   find_package(SDL2_ttf REQUIRED)
   find_package(IOKit REQUIRED)
 ELSE (APPLE)
-	find_package(OpenGL REQUIRED)
+
+        find_package(OpenGL QUIET)
+	IF(OpenGL_FOUND)
+		message(STATUS "Using OpenGL GLX for OpenGL")
+	ELSE(OpenGL_FOUND)
+		# If we couldn't find old GLX package, try to use modern libglvnd libOpenGL.so instead.
+		message(STATUS "Using GLVND for OpenGL")
+		FIND_LIBRARY(OpenGL_LIBRARY OpenGL)
+		SET(EXTRA_LIBS ${OpenGL_LIBRARY})
+        ENDIF(OpenGL_FOUND)
+
 	IF(NOT WIN32)
 		INCLUDE(FindPkgConfig)
 		PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
