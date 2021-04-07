@@ -957,13 +957,12 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 	for ( c = start; c < end; ++c )
 	{
-		char loadText[128];
-		snprintf(loadText, 127, language[745], c, nummodels);
-
 #ifndef NINTENDO
 		// print a loading message
 		if ( start == 0 && end == nummodels )
 		{
+			char loadText[128];
+			snprintf(loadText, 127, language[745], c, nummodels);
 			if ( c % 50 == 0 )
 			{
 				drawClearBuffers();

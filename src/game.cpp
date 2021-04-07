@@ -496,7 +496,7 @@ void gameLogic(void)
 		{
 			gearrot -= 360;
 		}
-		gearsize -= std::max<double>(2, gearsize / 35.0);
+		gearsize -= std::max<double>(2, gearsize / 20);
 		if ( gearsize < 70 )
 		{
 			gearsize = 70;
@@ -4814,7 +4814,7 @@ int main(int argc, char** argv)
 					// team splash
 					drawRect(NULL, 0, 255);
 					drawGear(xres / 2, yres / 2, gearsize, gearrot);
-					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, SDL_MapRGB(mainsurface->format, 127, 0, 0), std::min<Uint16>(logoalpha, 255));
+					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, SDL_MapRGB(mainsurface->format, 255, 32, 0), std::min<Uint16>(logoalpha, 255));
 					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
 					if ( (logoalpha >= 255 
 						|| keystatus[SDL_SCANCODE_ESCAPE] 
@@ -4831,7 +4831,7 @@ int main(int argc, char** argv)
 						inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 						inputs.controllerClearInput(clientnum, INJOY_MENU_CANCEL);
 						fadealpha = 255;
-#if (!defined STEAMWORKS && !defined USE_EOS)
+#if (!defined STEAMWORKS && !defined USE_EOS && !defined NINTENDO)
 						introstage = 0;
 						fadeout = false;
 						fadefinished = false;
