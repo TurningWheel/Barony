@@ -4,6 +4,8 @@
 
 #include "../main.hpp"
 
+class sdl_stb_font_cache;
+
 class Font {
 private:
 	Font() = default;
@@ -15,12 +17,32 @@ private:
 	Font& operator=(const Font&) = delete;
 	Font& operator=(Font&&) = delete;
 
+	struct FontFile
+	{
+		size_t buffer_size;
+		uint8_t* buffer;
+
+		FontFile(size_t buffer_size, uint8_t* buffer)
+			: buffer_size(buffer_size),
+			buffer(buffer)
+		{
+		}
+
+		~FontFile()
+		{
+			delete[] buffer;
+		}
+	};
+
+	FontFile* loadFontFile(string filepath);
+
 public:
 	//! built-in font
 	static const char* defaultFont;
 
 	const char*		getName() const { return name.c_str(); }
-	TTF_Font*		getTTF() { return font; }
+	//TTF_Font*		getTTF() { return font; }
+	sdl_stb_font_cache* getTTF() { return fontcache; }
 	int				getOutline() { return outlineSize; }
 
 	//! get the size of the given text string in pixels
@@ -44,7 +66,9 @@ public:
 
 private:
 	std::string name;
-	TTF_Font* font = nullptr;
+	//TTF_Font* font = nullptr;
+	sdl_stb_font_cache* fontcache = nullptr;
+	FontFile* fontFile = nullptr;
 	int pointSize = 16;
 	int outlineSize = 0;
 };

@@ -7,6 +7,8 @@
 #include "Text.hpp"
 #include "Font.hpp"
 
+#include "../external/sdl_stb/sdlStbFont.h"
+
 GLuint Text::vao = 0;
 GLuint Text::vbo[BUFFER_TYPE_LENGTH] = { 0 };
 
@@ -34,17 +36,27 @@ Text::Text(const char* _name) {
 }
 
 Text::~Text() {
-	if (surf) {
-		SDL_FreeSurface(surf);
-		surf = nullptr;
+	// if (surf) {
+	// 	SDL_FreeSurface(surf);
+	// 	surf = nullptr;
+	// }
+	if (texture) {
+		SDL_DestroyTexture(texture);
+		texture = nullptr;
 	}
-	if (texid) {
-		glDeleteTextures(1, &texid);
-		texid = 0;
-	}
+	// if (texid) {
+	// 	glDeleteTextures(1, &texid);
+	// 	texid = 0;
+	// }
 }
 
+#include <iostream>
+using std::cout;
+
 void Text::render() {
+	//return;
+	//cout << "Render called...\n";
+
 	// load font
 	std::string strToRender;
 	std::string fontName;
@@ -58,74 +70,88 @@ void Text::render() {
 	}
 	Font* font = Font::get(fontName.c_str());
 	if (!font) {
+		//cout << "Couldn't load font!!\n";
 		return;
 	}
-	TTF_Font* ttf = font->getTTF();
+	//TTF_Font* ttf = font->getTTF();
+	sdl_stb_font_cache* fontcache = font->getTTF();
+	if (!fontcache)
+	{
+		return;
+	}
 
 	SDL_Color colorBlack = { 0, 0, 0, 255 };
 	SDL_Color colorWhite = { 255, 255, 255, 255 };
 
-	if (surf) {
-		SDL_FreeSurface(surf);
-		surf = nullptr;
+	// if (surf) {
+	// 	SDL_FreeSurface(surf);
+	// 	surf = nullptr;
+	// }
+	if (texture) {
+		SDL_DestroyTexture(texture);
+		texture = nullptr;
 	}
 
 	int outlineSize = font->getOutline();
-	if (outlineSize > 0) {
-		TTF_SetFontOutline(ttf, outlineSize);
-		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorBlack, xres);
-		TTF_SetFontOutline(ttf, 0);
-		SDL_Surface* text = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
-		SDL_Rect rect;
-		rect.x = 1; rect.y = 1;
-		SDL_BlitSurface(text, NULL, surf, &rect);
-		SDL_FreeSurface(text);
-	} else {
-		TTF_SetFontOutline(ttf, 0);
-		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
-	}
-	assert(surf);
-	if (texid == 0) {
-		glGenTextures(1, &texid);
-	}
+	// if (outlineSize > 0) { //TODO: More STB replacing here.
+	// 	TTF_SetFontOutline(ttf, outlineSize); //TODO: Make this one work...
+	// 	surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorBlack, xres);
+	// 	TTF_SetFontOutline(ttf, 0);
+	// 	SDL_Surface* text = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
+	// 	SDL_Rect rect;
+	// 	rect.x = 1; rect.y = 1;
+	// 	SDL_BlitSurface(text, NULL, surf, &rect);
+	// 	SDL_FreeSurface(text);
+	// } else {
+	// 	TTF_SetFontOutline(ttf, 0);
+	// 	surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
+	// }
+	//int renderedWidth, renderedHeight;
+	//texture = fontcache.renderTextToTexture(strToRender, &renderedWidth, &renderedHeight);
+	texture = fontcache->renderTextToTexture(strToRender, &width, &height);
+	//assert(surf);
+	assert(texture);
+	// if (texid == 0) {
+	// 	glGenTextures(1, &texid);
+	// }
 
-	width = 0;
-	height = 0;
-	int scan = surf->pitch / surf->format->BytesPerPixel;
-	for (int y = 0; y < surf->h; ++y) {
-		for (int x = 0; x < surf->w; ++x) {
-			if (((Uint32 *)surf->pixels)[x + y * scan] != 0) {
-				width = std::max(width, x);
-				height = std::max(height, y);
-			}
-		}
-	}
-	width += 4;
-	height += 4;
+	// width = 0;
+	// height = 0;
+	// int scan = surf->pitch / surf->format->BytesPerPixel;
+	// for (int y = 0; y < surf->h; ++y) {
+	// 	for (int x = 0; x < surf->w; ++x) {
+	// 		if (((Uint32 *)surf->pixels)[x + y * scan] != 0) {
+	// 			width = std::max(width, x);
+	// 			height = std::max(height, y);
+	// 		}
+	// 	}
+	// }
+	// width += 4;
+	// height += 4;
 
 	// translate the original surface to an RGBA surface
-	SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width, height, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	SDL_Rect dest;
-	SDL_Rect src;
-	src.x = 0;
-	src.y = 0;
-	src.w = width;
-	src.h = height;
-	dest.x = 0;
-	dest.y = 0;
-	SDL_BlitSurface(surf, &src, newSurf, &dest); // blit onto a purely RGBA Surface
-	SDL_FreeSurface(surf); //TODO: Why does this give a heap exception in NX?
-	surf = newSurf;
+	// SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width, height, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	// SDL_Rect dest;
+	// SDL_Rect src;
+	// src.x = 0;
+	// src.y = 0;
+	// src.w = width;
+	// src.h = height;
+	// dest.x = 0;
+	// dest.y = 0;
+	// SDL_BlitSurface(surf, &src, newSurf, &dest); // blit onto a purely RGBA Surface
+	// SDL_FreeSurface(surf); //TODO: Why does this give a heap exception in NX?
+	// surf = newSurf;
 
-	// load the new surface as a GL texture
-	SDL_LockSurface(surf);
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-	SDL_UnlockSurface(surf);
+	// // load the new surface as a GL texture
+	// SDL_LockSurface(surf);
+	// glBindTexture(GL_TEXTURE_2D, texid);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+	// SDL_UnlockSurface(surf);
 
 	rendered = true;
 }
@@ -135,10 +161,15 @@ void Text::draw(SDL_Rect src, SDL_Rect dest) {
 }
 
 void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
+	//return;
+
+	//cout << "Draw color called...\n";
 	if (!rendered) {
+		//cout << "Rendering text...\n";
 		render();
 	}
 	if (!rendered) {
+		//cout << "Text not rendered!...\n";
 		return;
 	}
 
@@ -150,13 +181,24 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 
-	src.w = src.w <= 0 ? surf->w : src.w;
-	src.h = src.h <= 0 ? surf->h : src.h;
-	dest.w = dest.w <= 0 ? surf->w : dest.w;
-	dest.h = dest.h <= 0 ? surf->h : dest.h;
+	int textureWidth, textureHeight;
+	if (0 != SDL_QueryTexture(texture, nullptr, nullptr, &textureWidth, &textureHeight))
+	{
+		printlog("Error: Failed to query texture for Text '%s'", name);
+		return;
+	}
+	// src.w = src.w <= 0 ? surf->w : src.w;
+	// src.h = src.h <= 0 ? surf->h : src.h;
+	// dest.w = dest.w <= 0 ? surf->w : dest.w;
+	// dest.h = dest.h <= 0 ? surf->h : dest.h;
+	src.w = src.w <= 0 ? textureWidth : src.w;
+	src.h = src.h <= 0 ? textureHeight : src.h;
+	dest.w = dest.w <= 0 ? textureWidth : dest.w;
+	dest.h = dest.h <= 0 ? textureHeight : dest.h;
 
 	// bind texture
-	glBindTexture(GL_TEXTURE_2D, texid);
+	//glBindTexture(GL_TEXTURE_2D, texid);
+	SDL_GL_BindTexture(texture, nullptr, nullptr);
 
 	// consume color
 	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
@@ -167,18 +209,21 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 
 	// draw quad
 	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * ((real_t)src.y / surf->h));
+	glTexCoord2f(1.0 * ((real_t)src.x / textureWidth), 1.0 * ((real_t)src.y / textureHeight));
 	glVertex2f(dest.x, yres - dest.y);
-	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
+	glTexCoord2f(1.0 * ((real_t)src.x / textureWidth), 1.0 * (((real_t)src.y + src.h) / textureHeight));
 	glVertex2f(dest.x, yres - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
+	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / textureWidth), 1.0 * (((real_t)src.y + src.h) / textureHeight));
 	glVertex2f(dest.x + dest.w, yres - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * ((real_t)src.y / surf->h));
+	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / textureWidth), 1.0 * ((real_t)src.y / textureHeight));
 	glVertex2f(dest.x + dest.w, yres - dest.y);
 	glEnd();
 
 	// unbind texture
 	glBindTexture(GL_TEXTURE_2D, 0);
+
+	//SDL_RenderCopy(renderer, texture, src, dest);
+
 	glColor4f(1.f, 1.f, 1.f, 1.f);
 }
 

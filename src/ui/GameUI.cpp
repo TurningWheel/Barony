@@ -424,6 +424,8 @@ void doNewCharacterSheet(int player)
     }
 }
 
+#include "Text.hpp"
+
 void doFrames() {
     if ( gui ) 
     {
@@ -433,4 +435,21 @@ void doFrames() {
             return;
         }
     }
+
+			// Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+	// 		// ttfPrintTextColor(ttf16, 500, yres - 400, colorYellow, true, "TTF version of FOR BARONY (ingame)!");
+
+	// Text* text = Text::get("This. Is. For. BARONY!!", Font::defaultFont);
+	// if (!text) {
+	// 	return;
+	// }
+	// SDL_Rect dest;
+	// dest.x = 100;
+	// dest.y = yres - 100;
+	// dest.w = 300;
+	// dest.h = 32;
+	// SDL_Rect src_text_rect;
+	// src_text_rect.w = 0;
+	// src_text_rect.h = 0;
+	// text->drawColor(src_text_rect, dest, 0xFFFFFFFF);
 }

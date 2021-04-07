@@ -41,6 +41,11 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define STEAM_APPID 371970
 #endif
 
+//Define this for STB TTF so it knows to use SDL_GLContext in place of SDL_Renderer.
+#ifndef APPLE
+#define USING_SDL_OPENGL_RENDERER
+#endif
+
 enum ESteamStatTypes
 {
 	STEAM_STAT_INT = 0,

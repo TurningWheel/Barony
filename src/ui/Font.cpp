@@ -1,6 +1,10 @@
 // Font.cpp
 
+#include <fstream>
+using std::ifstream;
+
 #include "../main.hpp"
+#include "../external/sdl_stb/sdlStbFont.h"
 #include "Font.hpp"
 
 #ifdef NINTENDO
@@ -8,6 +12,40 @@ const char* Font::defaultFont = "rom://lang/en.ttf#24";
 #else // NINTENDO
 const char* Font::defaultFont = "lang/en.ttf#24";
 #endif // NINTENDO
+
+static size_t getFileSize(string filepath, ifstream& file)
+{
+	file.seekg(0, std::ios::end);
+	size_t filesize = file.tellg();
+	file.seekg(0, std::ios::beg);
+	return filesize;
+}
+
+Font::FontFile* Font::loadFontFile(string filepath)
+{
+	ifstream file(filepath, std::ios::binary);
+	if (!file)
+	{
+		printf("ERROR: Failed to load font file \"%s\"\n", filepath.c_str());
+		return nullptr;
+	}
+
+	size_t filesize = getFileSize(filepath, file);
+	if (filesize == 0)
+	{
+		printf("ERROR: Skipping loading empty font file \"%s\"!\n");
+		return nullptr;
+	}
+
+	uint8_t* buffer = new uint8_t[filesize];
+	if (!file.read(reinterpret_cast<char*>(buffer), filesize))
+	{
+		printf("ERROR: Failed to read file \"%s\" into buffer!\n");
+		return nullptr;
+	}
+
+	return new FontFile(filesize, buffer);
+}
 
 Font::Font(const char* _name) {
 	name = _name;
@@ -25,17 +63,37 @@ Font::Font(const char* _name) {
 	} else {
 		path = name;
 	}
-	if ((font = TTF_OpenFont(path.c_str(), pointSize)) == NULL) {
-		printlog("failed to load '%s': %s", path.c_str(), TTF_GetError());
+
+	fontFile = loadFontFile(path);
+	if (!fontFile)
+	{
+		printlog("failed to load font file '%s'", path.c_str());
 		return;
 	}
-	TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
-	TTF_SetFontKerning(font, 0);
+	// if ((font = TTF_OpenFont(path.c_str(), pointSize)) == NULL) { //TODO: STB TTF init hookup here.
+	// 	printlog("failed to load '%s': %s", path.c_str(), TTF_GetError());
+	// 	return;
+	// }
+	// TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
+	// TTF_SetFontKerning(font, 0);
+	fontcache = new sdl_stb_font_cache();
+	fontcache->faceSize = pointSize;
+	fontcache->tabWidthInSpaces = 4;
+	fontcache->loadFont(reinterpret_cast<char*>(fontFile->buffer));
+	fontcache->bindRenderer(renderer);
 }
 
 Font::~Font() {
-	if (font) {
-		TTF_CloseFont(font);
+	// if (font) {
+	// 	TTF_CloseFont(font);
+	// }
+	if (fontcache)
+	{
+		delete fontcache;
+	}
+	if (fontFile)
+	{
+		delete fontFile;
 	}
 }
 
@@ -46,23 +104,26 @@ int Font::sizeText(const char* str, int* out_w, int* out_h) const {
 	if (out_h) {
 		*out_h = 0;
 	}
-	if (font && str) {
-		int result = TTF_SizeUTF8(font, str, out_w, out_h);
+	if (fontcache && str) {
+		//int result = TTF_SizeUTF8(font, str, out_w, out_h);
+		int w, h;
+		fontcache->getTextSize(w, h, str); //TODO: If only height is requested, faster to use h = fontcache->getTextHeight(str)...
 		if (out_w) {
-			*out_w += outlineSize * 2;
+			*out_w = w + outlineSize * 2;
 		}
 		if (out_h) {
-			*out_h += outlineSize * 2;
+			*out_h = h + outlineSize * 2;
 		}
-		return result;
+		return 0;
 	} else {
 		return -1;
 	}
 }
 
 int Font::height() const {
-	if (font) {
-		return TTF_FontHeight(font) + outlineSize * 2;
+	if (fontcache) {
+		//return TTF_FontHeight(font) + outlineSize * 2;
+		return fontcache->getTextHeight(string("A")) + outlineSize * 2; //TODO: DIRTY HACK!! Add a function to let us do this without passing in any strings...
 	} else {
 		return 0;
 	}

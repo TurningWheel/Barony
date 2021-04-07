@@ -48,6 +48,9 @@
 #include "lobbies.hpp"
 #include <sstream>
 
+#include "ui/Text.hpp"
+#include "ui/Font.hpp"
+
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
 void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
@@ -1614,11 +1617,39 @@ void handleMainMenu(bool mode)
 		{
 			drawImageScaled(title_bmp, nullptr, &src);
 		}
+
+		Text* text = Text::get("This. Is. For. BARONY!!", Font::defaultFont);
+		if (!text) {
+			return;
+		}
+		SDL_Rect dest;
+		dest.x = 100;
+		dest.y = yres - 100;
+		dest.w = 0;
+		dest.h = 0;
+		SDL_Rect src_text_rect;
+		src_text_rect.w = 0;
+		src_text_rect.h = 0;
+		text->drawColor(src_text_rect, dest, 0xFF00FFFF);
+		// Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		// ttfPrintTextColor(ttf16, 500, yres - 100, colorYellow, true, "TTF version of FOR BARONY (menu)!");
+		
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
 			Uint32 len = strlen(language[1910 + subtitleCurrent]);
-			ttfPrintTextColor(ttf16, src.x + src.w / 2 - (len * TTF16_WIDTH) / 2, src.y + src.h - 32, colorYellow, true, language[1910 + subtitleCurrent]);
+			//ttfPrintTextColor(ttf16, src.x + src.w / 2 - (len * TTF16_WIDTH) / 2, src.y + src.h - 32, colorYellow, true, language[1910 + subtitleCurrent]);
+
+			// Text* text = Text::get(language[1910 + subtitleCurrent], Font::defaultFont);
+			// if (!text) {
+			// 	return;
+			// }
+			// SDL_Rect dest;
+			// dest.x = src.x + src.w / 2 - (len * TTF16_WIDTH) / 2;
+			// dest.y = src.y + src.h - 32;
+			// dest.w = 300;
+			// dest.h = 32;
+			// text->drawColor(src, dest, 0xFFFFFFFF);
 		}
 #ifdef STEAMWORKS
 		if ( mode )
