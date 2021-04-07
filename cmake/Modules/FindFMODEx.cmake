@@ -11,45 +11,40 @@ IF(FMOD_LIBRARY AND FMOD_INCLUDE_DIR)
   SET(FMOD_FIND_QUIETLY TRUE)
 ENDIF(FMOD_LIBRARY AND FMOD_INCLUDE_DIR)
 
+
 FIND_PATH(FMOD_INCLUDE_DIR
-  fmod.hpp
+  fmod.h
   PATHS
-  $ENV{FMOD_DIR}/api/core/inc/
-  /usr/local/include/
-  /usr/local/include/fmodstudio/
-  /usr/include/
-  /usr/include/fmodstudio/
-  /opt/local/include/
-  /opt/local/include/fmodstudio/
-  /opt/include/
-  /opt/include/fmodstudio/
+  $ENV{FMOD_DIR}/include
+  /usr/local/include
+  /usr/local/include/fmodex/
+  /usr/include
+  /usr/include/fmodex/
+  /sw/include
+  /sw/include/fmodex/
+  /opt/local/include
+  /opt/local/include/fmodex/
+  /opt/csw/include
+  /opt/csw/include/fmodex/
+  /opt/include
+  /opt/include/fmodex/
+  PATH_SUFFIXES fmod fmod3
 )
 
 FIND_LIBRARY(FMOD_LIBRARY
-  NAMES fmod libfmod fmod_vc
+  NAMES fmodex64 fmodex64_vc
   PATHS
-  IF (APPLE)
-    $ENV{FMOD_DIR}/api/core/lib/
-  ELSE (APPLE)
-    $ENV{FMOD_DIR}/api/core/lib/x86_64/
-  ENDIF (APPLE)
-  /usr/local/lib64
+  $ENV{FMOD_DIR}/lib
   /usr/local/lib
-  /usr/lib64
   /usr/lib
-  /opt/local/lib64
+  /usr/local/X11R6/lib
+  /usr/X11R6/lib
+  /sw/lib
   /opt/local/lib
-  /opt/lib64
+  /opt/csw/lib
   /opt/lib
   /usr/freeware/lib64
 )
-
-if (FMOD_LIBRARY)
-  MESSAGE(STATUS "Found FMOD_LIBRARY: ${FMOD_LIBRARY}")
-endif(FMOD_LIBRARY)
-if (FMOD_INCLUDE_DIR)
-  MESSAGE(STATUS "Found FMOD_INCLUDE_DIR: ${FMOD_INCLUDE_DIR}")
-endif(FMOD_INCLUDE_DIR)
 
 IF(FMOD_LIBRARY AND FMOD_INCLUDE_DIR)
   SET(FMOD_FOUND "YES")
@@ -59,10 +54,6 @@ IF(FMOD_LIBRARY AND FMOD_INCLUDE_DIR)
   ENDIF(NOT FMOD_FIND_QUIETLY)
 ELSE(FMOD_LIBRARY AND FMOD_INCLUDE_DIR)
   IF(NOT FMOD_FIND_QUIETLY)
-    IF (FMOD_FIND_REQUIRED)
-      MESSAGE(FATAL_ERROR "ERROR: Cannot find FMOD!")
-    ELSE (FMOD_FIND_REQUIRED)
-      MESSAGE(STATUS "Warning: Unable to find FMOD!")
-    ENDIF (FMOD_FIND_REQUIRED)
+    MESSAGE(STATUS "Warning: Unable to find FMOD!")
   ENDIF(NOT FMOD_FIND_QUIETLY)
 ENDIF(FMOD_LIBRARY AND FMOD_INCLUDE_DIR)

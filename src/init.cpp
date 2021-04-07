@@ -20,7 +20,7 @@
 #endif // NINTENDO
 #include "draw.hpp"
 #include "files.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "prng.hpp"
 #include "hash.hpp"
 #include "init.hpp"
@@ -42,10 +42,6 @@
 #include "ui/Frame.hpp"
 #include "ui/Button.hpp"
 
-#ifdef USE_FMOD
- #include "fmod.h"
- //#include <fmod_errors.h>
-#endif // USE_FMOD
 
 /*-------------------------------------------------------------------------------
 
@@ -228,60 +224,8 @@ int initApp(char const * const title, int fullscreen)
 		return 2;
 	}*/
 
-#ifdef USE_FMOD
-	printlog("initializing FMOD...\n");
-	fmod_result = FMOD_System_Create(&fmod_system);
-	if (FMODErrorCheck())
-	{
-		printlog("Failed to create FMOD.\n");
-		no_sound = true;
-	}
-	if (!no_sound)
-	{
-		//FMOD_System_SetOutput(fmod_system, FMOD_OUTPUTTYPE_DSOUND);
-		fmod_result = FMOD_System_Init(fmod_system, fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED, 0);
-		if (FMODErrorCheck())
-		{
-			printlog("Failed to initialize FMOD.\n");
-			no_sound = true;
-		}
-		if (!no_sound)
-		{
-			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &sound_group);
-			if (FMODErrorCheck())
-			{
-				printlog("Failed to create sound channel group.\n");
-				no_sound = true;
-			}
-			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundAmbient_group);
-			if ( FMODErrorCheck() )
-			{
-				printlog("Failed to create sound ambient channel group.\n");
-				no_sound = true;
-			}
-			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundEnvironment_group);
-			if ( FMODErrorCheck() )
-			{
-				printlog("Failed to create sound environment channel group.\n");
-				no_sound = true;
-			}
-			if (!no_sound)
-			{
-				fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &music_group);
-				if (FMODErrorCheck())
-				{
-					printlog("Failed to create music channel group.\n");
-					no_sound = true;
-				}
-			}
-		}
-	}
-#elif defined USE_OPENAL
-	if (!no_sound)
-	{
-		initOPENAL();
-	}
-#endif
+	initSoundEngine(); //Yes, this silently ignores the return value...(which is not good, but not important either)
+
 	printlog("initializing SDL_net...\n");
 	if ( SDLNet_Init() < 0 )
 	{
@@ -619,75 +563,11 @@ int initApp(char const * const title, int fullscreen)
 
 	GO_SwapBuffers(screen);
 
-	// load sound effects
-	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
-	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
-#ifdef USE_FMOD
-	printlog("loading sounds...\n");
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( numsounds = 0; !fp->eof(); ++numsounds )
+	int soundStatus = loadSoundResources();
+	if ( 0 != soundStatus )
 	{
-		while ( fp->getc() != '\n' )
-		{
-			if ( fp->eof() )
-			{
-				break;
-			}
-		}
+		return soundStatus;
 	}
-	FileIO::close(fp);
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		return 10;
-	}
-	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( c = 0; !fp->eof(); ++c )
-	{
-		fp->gets2(name, 128);
-		//TODO: Might need to malloc the sounds[c]->sound
-		fmod_result = FMOD_System_CreateSound(fmod_system, name, (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
-		if (FMODErrorCheck())
-		{
-			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
-		}
-		//TODO: set sound volume? Or otherwise handle sound volume.
-	}
-	FileIO::close(fp);
-	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
-	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-#elif defined USE_OPENAL // USE_FMOD
-	printlog("loading sounds...\n");
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( numsounds = 0; !fp->eof(); numsounds++ )
-	{
-		while ( fp->getc() != '\n' ) if ( fp->eof() )
-			{
-				break;
-			}
-	}
-	FileIO::close(fp);
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		return 10;
-	}
-	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	for (c = 0, fp = openDataFile(soundsDirectory.c_str(), "r"); fp->gets2(name, 128); ++c)
-	{
-		//TODO: Might need to malloc the sounds[c]->sound
-		OPENAL_CreateSound(name, true, &sounds[c]);
-		//TODO: set sound volume? Or otherwise handle sound volume.
-	}
-	FileIO::close(fp);
-	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
-	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
-#endif // defined USE_OPENAL
 
 	// init new ui engine
 #ifndef EDITOR
@@ -702,7 +582,7 @@ int initApp(char const * const title, int fullscreen)
 	gui->setHollow(true);
 
 	//createTestUI();
-#endif
+#endif // ifndef EDITOR
 
 	return 0;
 }
@@ -2302,25 +2182,7 @@ int deinitApp()
 		free(polymodels);
 	}
 
-	// free sounds
-#ifdef USE_FMOD
-	printlog("freeing sounds...\n");
-	if ( sounds != NULL )
-	{
-		for ( c = 0; c < numsounds && !no_sound; c++ )
-		{
-			if (sounds[c] != NULL)
-			{
-				if (sounds[c] != NULL)
-				{
-					FMOD_Sound_Release(sounds[c]);    //Free the sound's FMOD sound.
-				}
-				//free(sounds[c]); //Then free the sound itself.
-			}
-		}
-		free(sounds); //Then free the sound array.
-	}
-#endif
+	freeSoundResources();
 
 	// delete opengl buffers
 	if ( allsurfaces != NULL )
@@ -2352,14 +2214,7 @@ int deinitApp()
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
-#ifdef USE_FMOD
-	if ( fmod_system )
-	{
-		FMOD_System_Close(fmod_system);
-		FMOD_System_Release(fmod_system);
-		fmod_system = NULL;
-	}
-#endif
+	exitSoundEngine();
 	if ( screen )
 	{
 		SDL_DestroyWindow(screen);

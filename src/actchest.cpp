@@ -15,7 +15,7 @@
 #include "entity.hpp"
 #include "interface/interface.hpp"
 #include "items.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "player.hpp"
 

@@ -630,7 +630,7 @@ Stat* Stat::copyStats()
 	}
 
 #if defined(USE_FMOD) || defined(USE_OPENAL)
-	newStat->monster_sound = NULL;
+	newStat->monster_sound = nullptr;
 #endif
 	newStat->monster_idlevar = this->monster_idlevar;
 	newStat->magic_effects.first = NULL;

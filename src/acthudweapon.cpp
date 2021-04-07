@@ -13,7 +13,7 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "items.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "magic/magic.hpp"
 #include "interface/interface.hpp"
 #include "net.hpp"
@@ -349,8 +349,8 @@ void actHudWeapon(Entity* my)
 	const Uint32& bowDrawBaseTicks = playerHud.bowDrawBaseTicks;
 #ifdef SOUND
 #ifdef USE_FMOD
-	FMOD_CHANNEL*& bowDrawingSoundChannel = playerHud.bowDrawingSoundChannel;
-	FMOD_BOOL& bowDrawingSoundPlaying = playerHud.bowDrawingSoundPlaying;
+	FMOD::Channel*& bowDrawingSoundChannel = playerHud.bowDrawingSoundChannel;
+	bool& bowDrawingSoundPlaying = playerHud.bowDrawingSoundPlaying;
 #elif defined USE_OPENAL
 	OPENAL_SOUND*& bowDrawingSoundChannel = playerHud.bowDrawingSoundChannel;
 	ALboolean& bowDrawingSoundPlaying = playerHud.bowDrawingSoundPlaying;
@@ -909,7 +909,7 @@ void actHudWeapon(Entity* my)
 #else
 		if ( bowDrawingSoundChannel )
 		{
-			FMOD_Channel_IsPlaying(bowDrawingSoundChannel, &bowDrawingSoundPlaying);
+			bowDrawingSoundChannel->isPlaying(&bowDrawingSoundPlaying);
 		}
 #endif
 #endif // SOUND
@@ -931,7 +931,7 @@ void actHudWeapon(Entity* my)
 #else
 			if ( bowDrawingSoundChannel )
 			{
-				FMOD_Channel_IsPlaying(bowDrawingSoundChannel, &bowDrawingSoundPlaying);
+				bowDrawingSoundChannel->isPlaying(&bowDrawingSoundPlaying);
 			}
 #endif
 #endif // SOUND
@@ -951,10 +951,10 @@ void actHudWeapon(Entity* my)
 #ifdef USE_OPENAL
 				OPENAL_Channel_Stop(bowDrawingSoundChannel);
 #else
-				FMOD_Channel_Stop(bowDrawingSoundChannel);
+				bowDrawingSoundChannel->stop();
 #endif
 				bowDrawingSoundPlaying = 0;
-				bowDrawingSoundChannel = NULL;
+				bowDrawingSoundChannel = nullptr;
 			}
 #endif
 		}
@@ -1493,10 +1493,10 @@ void actHudWeapon(Entity* my)
 #ifdef USE_OPENAL
 							OPENAL_Channel_Stop(bowDrawingSoundChannel);
 #else
-							FMOD_Channel_Stop(bowDrawingSoundChannel);
+							bowDrawingSoundChannel->stop();
 #endif
 							bowDrawingSoundPlaying = 0;
-							bowDrawingSoundChannel = NULL;
+							bowDrawingSoundChannel = nullptr;
 						}
 #endif
 

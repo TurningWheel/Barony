@@ -15,7 +15,7 @@
 #include "messages.hpp"
 #include "entity.hpp"
 #include "interface/interface.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "magic/magic.hpp"
 #include "menu.hpp"
@@ -4294,9 +4294,9 @@ void actPlayer(Entity* my)
 							fadeout_increment = default_fadeout_increment * 4;
 							if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 							{
-								playmusic(tutorialmusic, true, true, true);
+								playMusic(tutorialmusic, true, true, true);
 							}
-							playmusic(sounds[209], false, true, false);
+							playMusic(sounds[209], false, true, false);
 #endif
 							combat = false;
 
