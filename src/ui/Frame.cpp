@@ -164,10 +164,10 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		}
 	}
 
-	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 
 	// horizontal slider
 	if (actualSize.w > size.w) {
@@ -491,10 +491,10 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
-	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 
 	if (selected) {
 		// unselect list
@@ -1156,8 +1156,9 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 			if (_size.w <= 0 || _size.h <= 0) {
 				return false;
 			} else {
-				Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
-				Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+
+				Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+				Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 				if (rectContainsPoint(_size, omousex, omousey)) {
 					return true;
 				} else {
