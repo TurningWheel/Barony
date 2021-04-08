@@ -10,6 +10,7 @@
 #include "../menu.hpp"
 #include "../interface/interface.hpp"
 #include "../player.hpp"
+#include "../items.hpp"
 
 #include <assert.h>
 
@@ -360,6 +361,248 @@ void newIngameHud() {
     }
 }
 
+void createPlayerInventorySlotFrameElements(Frame* slotFrame)
+{
+	const SDL_Rect slotSize = SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h };
+	SDL_Rect coloredBackgroundPos = SDL_Rect{ slotSize.x + 2, slotSize.y + 2, slotSize.w - 2, slotSize.h - 2 };
+
+	auto beatitudeFrame = slotFrame->addFrame("beatitude status frame"); // covers unidentified status as well
+	beatitudeFrame->setSize(slotSize);
+	beatitudeFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	beatitudeFrame->setHollow(true);
+	beatitudeFrame->setInvisible(true);
+	beatitudeFrame->setDisabled(true);
+	beatitudeFrame->addImage(coloredBackgroundPos, 0xFFFFFFFF, "images/system/white.png", "beatitude status bg");
+
+	auto brokenStatusFrame = slotFrame->addFrame("broken status frame");
+	brokenStatusFrame->setSize(slotSize);
+	brokenStatusFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	brokenStatusFrame->setHollow(true);
+	brokenStatusFrame->setInvisible(true);
+	brokenStatusFrame->setDisabled(true);
+	brokenStatusFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 160, 160, 160, 64), "images/system/white.png", "broken status bg");
+
+	auto itemSpriteFrame = slotFrame->addFrame("item sprite frame");
+	itemSpriteFrame->setSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
+	itemSpriteFrame->setActualSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
+	itemSpriteFrame->setHollow(true);
+	itemSpriteFrame->setInvisible(true);
+	itemSpriteFrame->setDisabled(true);
+	itemSpriteFrame->addImage(slotSize, 0xFFFFFFFF, "images/system/white.png", "item sprite img");
+
+	auto unusableFrame = slotFrame->addFrame("unusable item frame");
+	unusableFrame->setSize(slotSize);
+	unusableFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	unusableFrame->setHollow(true);
+	unusableFrame->setInvisible(true);
+	unusableFrame->setDisabled(true);
+	unusableFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
+
+	static const char* smallfont = "fonts/pixel_maz.ttf#32";
+
+	auto quantityFrame = slotFrame->addFrame("quantity frame");
+	quantityFrame->setSize(slotSize);
+	quantityFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	quantityFrame->setHollow(true);
+	quantityFrame->setInvisible(true);
+	Field* qtyText = quantityFrame->addField("quantity text", 32);
+	qtyText->setFont(smallfont);
+	qtyText->setColor(0xffffffff);
+	qtyText->setHJustify(Field::justify_t::RIGHT);
+	qtyText->setVJustify(Field::justify_t::BOTTOM);
+	qtyText->setText("10");
+	qtyText->setSize(SDL_Rect{ 4, 8, quantityFrame->getSize().w, quantityFrame->getSize().h });
+
+	auto equippedIconFrame = slotFrame->addFrame("equipped icon frame");
+	equippedIconFrame->setSize(slotSize);
+	equippedIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	equippedIconFrame->setHollow(true);
+	equippedIconFrame->setInvisible(true);
+	SDL_Rect equippedImgPos = { 3, slotSize.h - 17, 16, 16 };
+	equippedIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Equipped.png", "equipped icon img");
+
+	auto brokenIconFrame = slotFrame->addFrame("broken icon frame");
+	brokenIconFrame->setSize(slotSize);
+	brokenIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	brokenIconFrame->setHollow(true);
+	brokenIconFrame->setInvisible(true);
+	brokenIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Broken.png", "broken icon img");
+}
+
+void resetInventorySlotFrames(const int player)
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player inventory %d", player);
+	if ( Frame* inventoryFrame = gui->findFrame(name) )
+	{
+		if ( Frame* inventorySlotsFrame = inventoryFrame->findFrame("inventory slots") )
+		{
+			for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+			{
+				for ( int y = 0; y < players[player]->inventoryUI.getSizeY(); ++y )
+				{
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+					auto slotFrame = inventorySlotsFrame->findFrame(slotname);
+					if ( slotFrame )
+					{
+						slotFrame->setDisabled(true);
+					}
+				}
+			}
+		}
+		if ( Frame* paperDollSlotsFrame = inventoryFrame->findFrame("paperdoll slots") )
+		{
+			for ( int x = Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_LEFT; x <= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT; ++x )
+			{
+				for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5; ++y )
+				{
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+					auto slotFrame = paperDollSlotsFrame->findFrame(slotname);
+					if ( slotFrame )
+					{
+						slotFrame->setDisabled(true);
+					}
+				}
+			}
+		}
+	}
+}
+
+void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
+{
+	if ( !itemPtr || !slotFrame )
+	{
+		return;
+	}
+
+	Item* item = (Item*)itemPtr;
+
+	int player = slotFrame->getOwner();
+
+	slotFrame->setDisabled(false);
+
+	auto spriteImageFrame = slotFrame->findFrame("item sprite frame");
+	auto spriteImage = spriteImageFrame->findImage("item sprite img");
+	node_t* imagePathsNode = list_Node(&items[item->type].images, item->appearance % items[item->type].variations);
+	if ( imagePathsNode )
+	{
+		string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);
+		spriteImage->path = imagePath->data;
+		spriteImageFrame->setDisabled(false);
+	}
+
+	if ( auto qtyFrame = slotFrame->findFrame("quantity frame") )
+	{
+		qtyFrame->setDisabled(true);
+		if ( item->count > 1 )
+		{
+			qtyFrame->setDisabled(false);
+			if ( auto qtyText = qtyFrame->findField("quantity text") )
+			{
+				char qtybuf[32] = "";
+				snprintf(qtybuf, sizeof(qtybuf), "%d", item->count);
+				qtyText->setText(qtybuf);
+			}
+		}
+	}
+
+	if ( auto beatitudeFrame = slotFrame->findFrame("beatitude status frame") )
+	{
+		beatitudeFrame->setDisabled(true);
+		if ( auto beatitudeImg = beatitudeFrame->findImage("beatitude status bg") )
+		{
+			if ( !item->identified )
+			{
+				beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 128, 0, 125);
+				beatitudeFrame->setDisabled(false);
+			}
+			else if ( item->beatitude < 0 )
+			{
+				beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 0, 0, 125);
+				beatitudeFrame->setDisabled(false);
+			}
+			else if ( item->beatitude > 0 )
+			{
+				if ( colorblind )
+				{
+					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 100, 245, 255, 65);
+				}
+				else
+				{
+					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 65);
+				}
+				beatitudeFrame->setDisabled(false);
+			}
+		}
+	}
+
+	if ( auto brokenStatusFrame = slotFrame->findFrame("broken status frame") )
+	{
+		brokenStatusFrame->setDisabled(true);
+		if ( item->status == BROKEN )
+		{
+			brokenStatusFrame->setDisabled(false);
+		}
+	}
+
+	if ( auto unusableFrame = slotFrame->findFrame("unusable item frame") )
+	{
+		bool greyedOut = false;
+		unusableFrame->setDisabled(true);
+		if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+		{
+			// shape shifted, disable some items
+			if ( !item->usableWhileShapeshifted(stats[player]) )
+			{
+				greyedOut = true;
+			}
+		}
+		if ( !greyedOut && client_classes[player] == CLASS_SHAMAN
+			&& item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
+		{
+			greyedOut = true;
+		}
+
+		if ( greyedOut )
+		{
+			unusableFrame->setDisabled(false);
+		}
+	}
+
+	bool equipped = false;
+	bool broken = false;
+	if ( itemCategory(item) != SPELL_CAT )
+	{
+		if ( itemIsEquipped(item, player) )
+		{
+			equipped = true;
+		}
+		else if ( item->status == BROKEN )
+		{
+			broken = true;
+		}
+	}
+
+	if ( auto equippedIconFrame = slotFrame->findFrame("equipped icon frame") )
+	{
+		equippedIconFrame->setDisabled(true);
+		if ( equipped )
+		{
+			equippedIconFrame->setDisabled(false);
+		}
+	}
+	if ( auto brokenIconFrame = slotFrame->findFrame("broken icon frame") )
+	{
+		brokenIconFrame->setDisabled(true);
+		if ( broken )
+		{
+			brokenIconFrame->setDisabled(false);
+		}
+	}
+}
+
 void createPlayerInventory(const int player)
 {
 	char name[32];
@@ -373,6 +616,109 @@ void createPlayerInventory(const int player)
 	frame->setActualSize(frame->getSize());
 	frame->setHollow(true);
 	frame->setBorder(0);
+	frame->setOwner(player);
+
+	SDL_Rect basePos{ 0, 0, 105 * 2, 224 * 2 };
+	{
+		auto bgFrame = frame->addFrame("inventory base");
+		bgFrame->setSize(basePos);
+		const auto bgSize = bgFrame->getSize();
+		bgFrame->setActualSize(SDL_Rect{ 0, 0, bgSize.w, bgSize.h });
+		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, bgSize.h },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/system/inventory/HUD_Inventory_Base_00a.png", "inventory base img");
+	}
+
+	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+	const int baseSlotOffsetX = 4;
+	const int baseSlotOffsetY = 0;
+	SDL_Rect invSlotsPos{ 0, 202, basePos.w, 242 };
+	{
+		const auto invSlotsFrame = frame->addFrame("inventory slots");
+		invSlotsFrame->setSize(invSlotsPos);
+		invSlotsFrame->setActualSize(SDL_Rect{ 0, 0, invSlotsFrame->getSize().w, invSlotsFrame->getSize().h });
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+
+		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize);
+			for ( int y = 0; y < players[player]->inventoryUI.getSizeY(); ++y )
+			{
+				currentSlotPos.y = baseSlotOffsetY + (y * inventorySlotSize);
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+
+				auto slotFrame = invSlotsFrame->addFrame(slotname);
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });
+				//slotFrame->setDisabled(true);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+		}
+
+		auto selectedFrame = invSlotsFrame->addFrame("inventory selected item");
+		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
+		selectedFrame->setDisabled(true);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "inventory selected highlight");
+	}
+
+	{
+		SDL_Rect dollSlotsPos{ 0, 0, basePos.w, invSlotsPos.y };
+		const auto dollSlotsFrame = frame->addFrame("paperdoll slots");
+		dollSlotsFrame->setSize(dollSlotsPos);
+		dollSlotsFrame->setActualSize(SDL_Rect{ 0, 0, dollSlotsFrame->getSize().w, dollSlotsFrame->getSize().h });
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+
+		for ( int x = Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_LEFT; x <= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT; ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX;
+			if ( x == Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT )
+			{
+				currentSlotPos.x = baseSlotOffsetX + (4 * inventorySlotSize); // 4 slots over
+			}
+
+			for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5; ++y )
+			{
+				currentSlotPos.y = baseSlotOffsetY + ((y - Player::Inventory_t::PaperDollRows::DOLL_ROW_1) * inventorySlotSize);
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+
+				auto slotFrame = dollSlotsFrame->addFrame(slotname);
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });
+				//slotFrame->setDisabled(true);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+		}
+
+		auto selectedFrame = dollSlotsFrame->addFrame("paperdoll selected item");
+		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
+		selectedFrame->setDisabled(true);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "paperdoll selected highlight");
+	}
+
+	{
+		auto draggingInventoryItem = frame->addFrame("dragging inventory item");
+		draggingInventoryItem->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		draggingInventoryItem->setDisabled(true);
+	}
 }
 
 void newPlayerInventory(const int player)

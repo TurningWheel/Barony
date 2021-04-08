@@ -1094,6 +1094,7 @@ public:
 		PaperDollSlotType getSlotForItem(const Item& item) const;
 		bool isItemOnDoll(const Item& item) const { return getSlotForItem(item) != SLOT_MAX; }
 		PaperDollSlotType paperDollSlotFromCoordinates(int x, int y) const;
+		void getCoordinatesFromSlotType(PaperDollSlotType slot, int& outx, int& outy) const;
 		void selectPaperDollCoordinatesFromSlotType(PaperDollSlotType slot) const;
 		void warpMouseToPaperDollSlot(PaperDollSlotType slot);
 		std::vector<Uint32> returningItemsToInventory;

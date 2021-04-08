@@ -20,6 +20,8 @@
 #include "mod_tools.hpp"
 #include "draw.hpp"
 #include "colors.hpp"
+#include "ui/GameUI.hpp"
+#include "ui/Frame.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -3166,6 +3168,53 @@ void Player::PaperDoll_t::drawSlots()
 	{
 		return;
 	}
+
+	char framename[32];
+	snprintf(framename, sizeof(framename), "player inventory %d", player.playernum);
+	Frame* guiFrame = gui->findFrame(framename);
+	if ( guiFrame )
+	{
+		if ( !guiFrame->findFrame("paperdoll slots") )
+		{
+			return;
+		}
+
+		auto selectedSlotFrame = guiFrame->findFrame("paperdoll slots")->findFrame("paperdoll selected item");
+		if ( !selectedSlotFrame )
+		{
+			return;
+		}
+		selectedSlotFrame->setDisabled(true);
+
+		for (auto& slot : dollSlots)
+		{
+			slot.bMouseInSlot = false;
+			if ( slot.slotType != PaperDollSlotType::SLOT_MAX )
+			{
+				int x = 0;
+				int y = 0;
+				getCoordinatesFromSlotType(slot.slotType, x, y);
+				
+				if ( y > Player::Inventory_t::DOLL_ROW_5 ) { continue; } // did not find valid coordinate.
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+				auto slotFrame = guiFrame->findFrame("paperdoll slots")->findFrame(slotname);
+				if ( slotFrame && slotFrame->capturesMouse() )
+				{
+					selectPaperDollCoordinatesFromSlotType(slot.slotType);
+					if ( !player.hotbar.hotbarHasFocus )
+					{
+						// enable the selectedSlotFrame
+						selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
+						selectedSlotFrame->setDisabled(false);
+					}
+				}
+			}
+		}
+		return;
+	}
+
 	auto& charSheetBox = player.characterSheet.characterSheetBox;
 
 	int startx = charSheetBox.x + 2 + 8;

@@ -24,6 +24,7 @@
 #include "../ui/GameUI.hpp"
 #include "../ui/Frame.hpp"
 #include "../ui/Image.hpp"
+#include "../ui/Field.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "../steam.hpp"
@@ -461,6 +462,29 @@ Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::paperDollSlotFromCoo
 
 	// in inventory
 	return SLOT_MAX;
+}
+
+void Player::PaperDoll_t::getCoordinatesFromSlotType(Player::PaperDoll_t::PaperDollSlotType slot, int& outx, int& outy) const
+{
+	if ( slot == SLOT_MAX )
+	{
+		return;
+	}
+	int x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+	int y = Player::Inventory_t::DOLL_ROW_1;
+	if ( slot >= SLOT_HELM )
+	{
+		x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
+		y += (static_cast<int>(slot - SLOT_HELM));
+		outx = x;
+		outy = y;
+	}
+	else if ( slot >= SLOT_GLASSES )
+	{
+		y += (static_cast<int>(slot));
+		outx = x;
+		outy = y;
+	}
 }
 
 void Player::PaperDoll_t::selectPaperDollCoordinatesFromSlotType(Player::PaperDoll_t::PaperDollSlotType slot) const
@@ -1013,6 +1037,120 @@ void drawBlueInventoryBorder(const int player, const Item& item, int x, int y)
 	drawBox(&pos, color, 127);
 }
 
+int tmpx = 0;
+Uint32 tmpTicks = 0;
+
+void updateFrameTooltip(const int player, Item* item, const int x, const int y)
+{
+	char framename[32];
+	snprintf(framename, sizeof(framename), "player inventory %d", player);
+	Frame* guiFrame = gui->findFrame(framename);
+
+	if ( !item || !guiFrame )
+	{
+		return;
+	}
+
+	const int tooltipPosX = players[player]->inventoryUI.getStartX()
+		+ players[player]->inventoryUI.getSizeX() * players[player]->inventoryUI.getSlotSize() + 8;
+
+	static const char* bigfont = "fonts/pixelmix.ttf#18";
+	auto frameMain = guiFrame->findFrame("inventory mouse tooltip");
+	auto frameAttr = frameMain->findFrame("inventory mouse tooltip attributes frame");
+	auto frameDesc = frameMain->findFrame("inventory mouse tooltip description frame");
+
+	auto imgBackground = frameMain->findImage("inventory mouse tooltip background");
+	auto imgBorder = frameMain->findImage("inventory mouse tooltip border");
+	auto imgPrimaryIcon = frameAttr->findImage("inventory mouse tooltip primary image");
+	auto imgSecondaryIcon = frameAttr->findImage("inventory mouse tooltip secondary image");
+
+	auto txtHeader = frameMain->findField("inventory mouse tooltip header");
+	auto txtPrimaryValue = frameAttr->findField("inventory mouse tooltip primary value");
+	auto txtSecondaryValue = frameAttr->findField("inventory mouse tooltip secondary value");
+	auto txtDescription = frameDesc->findField("inventory mouse tooltip description");
+
+
+	char buf[1024] = "";
+
+	int totalHeight = 0;
+	const int padx = 4;
+	const int pady = 4;
+
+	const char* itemStatus[4] =
+	{
+		"Decrepit",
+		"Worn",
+		"Servicable",
+		"Excellent"
+	};
+
+	if ( item->beatitude >= 0 )
+	{
+		snprintf(buf, sizeof(buf), "%s %s (+%d)", itemStatus[item->status], item->getName(), item->beatitude);
+	}
+	else
+	{
+		snprintf(buf, sizeof(buf), "%s %s (-%d)", itemStatus[item->status], item->getName(), item->beatitude);
+	}
+	txtHeader->setText(buf);
+	auto font = Font::get(txtHeader->getFont());
+	int textx = 0;
+	int texty = 0;
+	font->sizeText(txtHeader->getText(), &textx, &texty);
+	txtHeader->setSize(SDL_Rect{ padx, padx, textx + 2 * padx, texty + pady});
+
+	totalHeight += txtHeader->getSize().h;
+
+	txtPrimaryValue->setText("Primary Value");
+	txtSecondaryValue->setText("Secondary Value");
+	font->sizeText(txtPrimaryValue->getText(), &textx, &texty);
+	SDL_Rect frameAttrPos{ 0, totalHeight, txtHeader->getSize().w, imgPrimaryIcon->pos.h * 2 + pady * 3};
+
+	imgPrimaryIcon->pos.x = padx;
+	imgPrimaryIcon->pos.y = pady;
+	imgSecondaryIcon->pos.x = padx;
+	imgSecondaryIcon->pos.y = pady + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
+
+	int imgToTextOffset = (imgPrimaryIcon->pos.h / 2) - texty / 2;
+	txtPrimaryValue->setSize(SDL_Rect{ imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx, 
+		imgPrimaryIcon->pos.y + imgToTextOffset, frameAttrPos.w, imgPrimaryIcon->pos.h});
+	txtSecondaryValue->setSize(SDL_Rect{ imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx,
+		imgSecondaryIcon->pos.y + imgToTextOffset, frameAttrPos.w, imgSecondaryIcon->pos.h });
+
+	frameAttr->setSize(frameAttrPos);
+	totalHeight += frameAttrPos.h;
+
+	SDL_Rect frameDescPos = frameAttrPos;
+	frameDescPos.x = frameAttrPos.x + 16;
+	frameDescPos.w = frameAttrPos.w - 32;
+	frameDescPos.y = totalHeight;
+	frameDescPos.h = 30;
+
+	if ( ticks != tmpTicks )
+	{
+		tmpTicks = ticks;
+		tmpx -= 1;
+		if ( tmpx < -100 )
+		{
+			tmpx = 0;
+		}
+	}
+
+	txtDescription->setText("An amulet is an item that a character \ncan put on around his or her neck.\nIt usually confers \nmagical powers on the \nwearer");
+	font->sizeText(txtPrimaryValue->getText(), &textx, &texty);
+	txtDescription->setSize(SDL_Rect{ padx, pady + tmpx, frameDescPos.w - padx, frameDescPos.h - pady });
+	txtDescription->setScroll(true);
+
+	frameDesc->setSize(frameDescPos);
+	totalHeight += frameDescPos.h;
+
+	frameMain->setSize(SDL_Rect{ tooltipPosX, y, std::min(400, txtHeader->getSize().w), totalHeight });
+	imgBackground->pos.w = frameMain->getSize().w;
+	imgBackground->pos.h = frameMain->getSize().h;
+	imgBorder->pos.w = frameMain->getSize().w;
+	imgBorder->pos.h = frameMain->getSize().h;
+}
+
 void updatePlayerInventory(const int player)
 {
 	bool disableMouseDisablingHotbarFocus = false;
@@ -1044,24 +1182,16 @@ void updatePlayerInventory(const int player)
 	Frame* frame = gui->findFrame(framename);
 	if ( frame )
 	{
-		// hunger icon
-		if ( !frame->findImage("hunger") )
+		if ( auto bgFrame = frame->findFrame("inventory background") )
 		{
-			auto hunger = frame->addImage(
-				SDL_Rect{ 16, frame->getSize().h - 160, 64, 64 },
-				0xffffffff,
-				"images/system/Hunger.png",
-				"hunger"
-			);
-		}
-		if ( !frame->findFrame("inv background") )
-		{
-			auto bgFrame = frame->addFrame("inv background");
-			bgFrame->setSize(pos);
-			bgFrame->setActualSize(pos);
-			Uint32 bgColor = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 224);
-			Image* img = Image::get("images/system/white.png");
-			bgFrame->addImage(bgFrame->getSize(), bgColor, "images/system/white.png", "black");
+			/*if ( bgFrame->capturesMouse() )
+			{
+				frame->setDisabled(true);
+			}
+			else
+			{
+				frame->setDisabled(false);
+			}*/
 		}
 	}
 	else
@@ -1174,15 +1304,73 @@ void updatePlayerInventory(const int player)
 	pos.y = y;
 	pos.w = players[player]->inventoryUI.getSizeX() * inventorySlotSize;
 	pos.h = players[player]->inventoryUI.getSizeY() * inventorySlotSize;
-	drawLine(pos.x, pos.y, pos.x, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
-	drawLine(pos.x, pos.y, pos.x + pos.w, pos.y, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
-	for ( x = 0; x <= players[player]->inventoryUI.getSizeX(); x++ )
+
+	if ( !frame )
 	{
-		drawLine(pos.x + x * inventorySlotSize, pos.y, pos.x + x * inventorySlotSize, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+		drawLine(pos.x, pos.y, pos.x, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+		drawLine(pos.x, pos.y, pos.x + pos.w, pos.y, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+		for ( x = 0; x <= players[player]->inventoryUI.getSizeX(); x++ )
+		{
+			drawLine(pos.x + x * inventorySlotSize, pos.y, pos.x + x * inventorySlotSize, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+		}
+		for ( y = 0; y <= players[player]->inventoryUI.getSizeY(); y++ )
+		{
+			drawLine(pos.x, pos.y + y * inventorySlotSize, pos.x + pos.w, pos.y + y * inventorySlotSize, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+		}
 	}
-	for ( y = 0; y <= players[player]->inventoryUI.getSizeY(); y++ )
+
+	if ( frame )
 	{
-		drawLine(pos.x, pos.y + y * inventorySlotSize, pos.x + pos.w, pos.y + y * inventorySlotSize, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+		resetInventorySlotFrames(player);
+
+		if ( !frame->findFrame("inventory mouse tooltip") )
+		{
+			auto tooltipFrame = frame->addFrame("inventory mouse tooltip");
+			tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipFrame->setActualSize(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, tooltipFrame->getSize().h });
+			tooltipFrame->setDisabled(true);
+
+			Uint32 color = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, tooltipFrame->getSize().h },
+				color, "images/system/white.png", "inventory mouse tooltip background");
+
+			color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, tooltipFrame->getSize().h },
+				color, "images/system/hotbar_slot.png", "inventory mouse tooltip border");
+
+			auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#14");
+
+			if ( auto attrFrame = tooltipFrame->addFrame("inventory mouse tooltip attributes frame") )
+			{
+				attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+				attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+					0xFFFFFFFF, "images/system/str32.png", "inventory mouse tooltip primary image");
+				tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value", 256);
+				tooltipTextField->setText("Nothing");
+				tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+				tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+
+				attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+					0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip secondary image");
+				tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value", 256);
+				tooltipTextField->setText("Nothing");
+				tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+				tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			}
+			if ( auto descFrame = tooltipFrame->addFrame("inventory mouse tooltip description frame") )
+			{
+				descFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+				tooltipTextField = descFrame->addField("inventory mouse tooltip description", 1024);
+				tooltipTextField->setText("Nothing");
+				tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+				tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			}
+		}
 	}
 
 	if ( !itemMenuOpen 
@@ -1191,31 +1379,73 @@ void updatePlayerInventory(const int player)
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
 		//Only if item menu is not open, no chest slot is selected, no shop slot is selected.
-		pos.w = inventorySlotSize;
-		pos.h = inventorySlotSize;
-		for (x = 0; x < players[player]->inventoryUI.getSizeX(); ++x)
-		{
-			for (y = 0; y < players[player]->inventoryUI.getSizeY(); ++y)
-			{
-				pos.x = players[player]->inventoryUI.getStartX() + x * inventorySlotSize;
-				pos.y = players[player]->inventoryUI.getStartY() + y * inventorySlotSize;
 
-				//Cursor moved over this slot, highlight it.
-				if (mouseInBoundsRealtimeCoords(player, pos.x, pos.x + pos.w, pos.y, pos.y + pos.h))
+		if ( frame )
+		{
+			auto invSlotsFrame = frame->findFrame("inventory slots");
+			if ( invSlotsFrame && invSlotsFrame->findFrame("inventory selected item") )
+			{
+				auto selectedSlotFrame = invSlotsFrame->findFrame("inventory selected item");
+				selectedSlotFrame->setDisabled(true);
+
+				for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
 				{
-					players[player]->inventoryUI.selectSlot(x, y);
-					if ( hotbar_t.hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+					for ( int y = 0; y < players[player]->inventoryUI.getSizeY(); ++y )
 					{
-						hotbar_t.hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+						char slotname[32] = "";
+						snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+						auto slotFrame = frame->findFrame(slotname);
+						if ( slotFrame )
+						{
+							if ( slotFrame->capturesMouse() )
+							{
+								players[player]->inventoryUI.selectSlot(x, y);
+								if ( hotbar_t.hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+								{
+									hotbar_t.hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+								}
+							}
+							
+							if ( x == players[player]->inventoryUI.getSelectedSlotX()
+								&& y == players[player]->inventoryUI.getSelectedSlotY()
+								&& !hotbar_t.hotbarHasFocus )
+							{
+								selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
+								selectedSlotFrame->setDisabled(false);
+							}
+						}
 					}
 				}
-
-				if ( x == players[player]->inventoryUI.getSelectedSlotX() 
-					&& y == players[player]->inventoryUI.getSelectedSlotY()
-					&& !hotbar_t.hotbarHasFocus )
+			}
+		}
+		else
+		{
+			pos.w = inventorySlotSize;
+			pos.h = inventorySlotSize;
+			for (x = 0; x < players[player]->inventoryUI.getSizeX(); ++x)
+			{
+				for (y = 0; y < players[player]->inventoryUI.getSizeY(); ++y)
 				{
-					Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
-					drawBox(&pos, color, 127);
+					pos.x = players[player]->inventoryUI.getStartX() + x * inventorySlotSize;
+					pos.y = players[player]->inventoryUI.getStartY() + y * inventorySlotSize;
+
+					//Cursor moved over this slot, highlight it.
+					if (mouseInBoundsRealtimeCoords(player, pos.x, pos.x + pos.w, pos.y, pos.y + pos.h))
+					{
+						players[player]->inventoryUI.selectSlot(x, y);
+						if ( hotbar_t.hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+						{
+							hotbar_t.hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+						}
+					}
+
+					if ( x == players[player]->inventoryUI.getSelectedSlotX() 
+						&& y == players[player]->inventoryUI.getSelectedSlotY()
+						&& !hotbar_t.hotbarHasFocus )
+					{
+						Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
+						drawBox(&pos, color, 127);
+					}
 				}
 			}
 		}
@@ -1328,9 +1558,32 @@ void updatePlayerInventory(const int player)
 			pos.w = (itemDrawnSlotSize * 0.8) * itemUIScale;
 			pos.h = (itemDrawnSlotSize * 0.8) * itemUIScale;
 		}
-		if ( itemSprite(item) )
+
+		if ( frame )
 		{
-			drawImageScaled(itemSprite(item), NULL, &pos);
+			int itemx = item->x;
+			int itemy = item->y;
+			if ( itemOnPaperDoll )
+			{
+				players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
+			}
+			
+			if ( itemx >= 0 && itemx < players[player]->inventoryUI.getSizeX()
+				&& itemy >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1 && itemy < players[player]->inventoryUI.getSizeY() )
+			{
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", itemx, itemy);
+				auto slotFrame = frame->findFrame(slotname);
+
+				updateSlotFrameFromItem(slotFrame, item);
+			}
+		}
+		else
+		{
+			if ( itemSprite(item) )
+			{
+				drawImageScaled(itemSprite(item), NULL, &pos);
+			}
 		}
 
 		bool greyedOut = false;
@@ -1577,6 +1830,15 @@ void updatePlayerInventory(const int player)
 						}
 						else
 						{
+							Field* tooltipField = nullptr;
+							std::string tooltipString = "";
+							char tooltipBuffer[1024];
+							if ( frame )
+							{
+								memset(tooltipBuffer, 0, sizeof(tooltipBuffer));
+								tooltipField = static_cast<Field*>(frame->findWidget("inventory mouse tooltip text", true));
+							}
+
 							src.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
 							src.h = TTF12_HEIGHT * 4 + 8;
 							char spellEffectText[256] = "";
@@ -1650,13 +1912,36 @@ void updatePlayerInventory(const int player)
 								src.x -= (src.w + 32);
 							}
 
-							drawTooltip(&src);
+							if ( frame )
+							{
+								updateFrameTooltip(player, item, itemCoordX, itemCoordY);
+								auto mouseTooltipFrame = frame->findFrame("inventory mouse tooltip");
+								//mouseTooltipFrame->setSize(src);
+								mouseTooltipFrame->setDisabled(false);
+								/*auto& imagePosBg = mouseTooltipFrame->findImage("inventory mouse tooltip background")->pos;
+								imagePosBg.w = mouseTooltipFrame->getSize().w;
+								imagePosBg.h = mouseTooltipFrame->getSize().h;
+								auto& imagePosBorder = mouseTooltipFrame->findImage("inventory mouse tooltip border")->pos;
+								imagePosBorder.w = mouseTooltipFrame->getSize().w;
+								imagePosBorder.h = mouseTooltipFrame->getSize().h;
+
+								if ( tooltipField )
+								{
+									tooltipField->setSize(SDL_Rect{ 4, 4, mouseTooltipFrame->getSize().w, mouseTooltipFrame->getSize().h });
+								}*/
+							}
+							else
+							{
+								drawTooltip(&src);
+							}
 
 							Uint32 color = 0xFFFFFFFF;
 							if ( !item->identified )
 							{
 								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309] );
+								tooltipString += language[309];
+								tooltipString += "\r\n";
 							}
 							else
 							{
@@ -1665,12 +1950,16 @@ void updatePlayerInventory(const int player)
 									//Red if cursed
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
+									tooltipString += language[310];
+									tooltipString += "\r\n";
 								}
 								else if (item->beatitude == 0)
 								{
 									//White if normal item.
 									color = 0xFFFFFFFF;
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
+									tooltipString += language[311];
+									tooltipString += "\r\n";
 								}
 								else
 								{
@@ -1685,6 +1974,8 @@ void updatePlayerInventory(const int player)
 									}
 
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
+									tooltipString += language[312];
+									tooltipString += "\r\n";
 								}
 							}
 							if ( item->beatitude == 0 || !item->identified )
@@ -1705,14 +1996,25 @@ void updatePlayerInventory(const int player)
 									}
 								}
 								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), health);
+
+								snprintf(tooltipBuffer, sizeof(tooltipBuffer), "%s (%d%%)", item->description(), health);
+								tooltipString += tooltipBuffer;
+								tooltipString += "\r\n";
 							}
 							else if ( item->type == ENCHANTED_FEATHER && item->identified )
 							{
 								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
+								
+								snprintf(tooltipBuffer, sizeof(tooltipBuffer), "%s (%d%%)", item->description(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
+								tooltipString += tooltipBuffer;
+								tooltipString += "\r\n";
 							}
 							else
 							{
 								ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
+								
+								tooltipString += item->description();
+								tooltipString += "\r\n";
 							}
 							int itemWeight = items[item->type].weight * item->count;
 							if ( itemTypeIsQuiver(item->type) )
@@ -1720,10 +2022,20 @@ void updatePlayerInventory(const int player)
 								itemWeight = std::max(1, itemWeight / 5);
 							}
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
+							snprintf(tooltipBuffer, sizeof(tooltipBuffer), language[313], itemWeight);
+							tooltipString += tooltipBuffer;
+							tooltipString += "\r\n";
+							
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(player));
+							snprintf(tooltipBuffer, sizeof(tooltipBuffer), language[314], item->sellValue(player));
+							tooltipString += tooltipBuffer;
+							tooltipString += "\r\n";
+							
 							if ( strcmp(spellEffectText, "") )
 							{
 								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, SDL_MapRGB(mainsurface->format, 0, 255, 255), spellEffectText);
+								tooltipString += spellEffectText;
+								tooltipString += "\r\n";
 							}
 
 							if ( item->identified )
@@ -1755,6 +2067,11 @@ void updatePlayerInventory(const int player)
 									}
 
 									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[player]));
+
+									snprintf(tooltipBuffer, sizeof(tooltipBuffer), language[315], item->weaponGetAttack(stats[player]));
+									tooltipString += tooltipBuffer;
+									tooltipString += "\r\n";
+
 									stats[player]->type = tmpRace;
 								}
 								else if ( itemCategory(item) == ARMOR )
@@ -1783,13 +2100,25 @@ void updatePlayerInventory(const int player)
 									}
 
 									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[player]));
+									snprintf(tooltipBuffer, sizeof(tooltipBuffer), language[316], item->armorGetAC(stats[player]));
+									tooltipString += tooltipBuffer;
+									tooltipString += "\r\n";
+
 									stats[player]->type = tmpRace;
 								}
 								else if ( itemCategory(item) == SCROLL )
 								{
 									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, "%s%s", language[3862], item->getScrollLabel());
+									snprintf(tooltipBuffer, sizeof(tooltipBuffer), "%s%s", language[3862], item->getScrollLabel());
+									tooltipString += tooltipBuffer;
+									tooltipString += "\r\n";
 								}
+							}
+
+							if ( tooltipField )
+							{
+								tooltipField->setText(tooltipString.c_str());
 							}
 						}
 					}
