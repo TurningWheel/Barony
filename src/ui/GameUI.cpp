@@ -736,8 +736,6 @@ void newPlayerInventory(const int player)
 		createPlayerInventory(player);
 	}
 }
-    }
-}
 
 void doNewCharacterSheet(int player)
 {
