@@ -201,7 +201,7 @@ public:
 		FileBase::FileMode fileMode = FileBase::FileMode::INVALID;
 
 #ifdef NINTENDO
-		return FileIO_NintendoOpen(path, mode, fileMode);
+		return FileNX::FileIO_NintendoOpen(path, mode, fileMode);
 #else
 		FILE* fp = fopen(path, mode);
 		switch (mode[0])

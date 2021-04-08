@@ -1087,7 +1087,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		pos.w = 0;
 
 		SDL_BlitSurface(textSurf, NULL, image, &pos);
-		SDL_FreeSurface(textSurf);
+		SDL_FreeSurface(textSurf); //TODO: Why is this throwing a heap exception on NX?
 		// load the text outline surface as a GL texture
 		allsurfaces[imgref] = image;
 		allsurfaces[imgref]->refcount = imgref;

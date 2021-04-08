@@ -16,7 +16,7 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "shops.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
@@ -1797,7 +1797,7 @@ void actMonster(Entity* my)
 #ifdef USE_FMOD
 				if ( MONSTER_SOUND )
 				{
-					FMOD_Channel_Stop(MONSTER_SOUND);
+					MONSTER_SOUND->stop();
 				}
 #elif defined USE_OPENAL
 				if ( MONSTER_SOUND )
@@ -2538,7 +2538,7 @@ void actMonster(Entity* my)
 #ifdef USE_FMOD
 		if ( MONSTER_SOUND )
 		{
-			FMOD_Channel_Stop(MONSTER_SOUND);
+			MONSTER_SOUND->stop();
 		}
 #elif defined USE_OPENAL
 		if ( MONSTER_SOUND )
@@ -2714,25 +2714,21 @@ void actMonster(Entity* my)
 	if ( MONSTER_SOUND != NULL )
 	{
 #ifdef USE_FMOD
-		FMOD_BOOL playing;
-		FMOD_Channel_IsPlaying(MONSTER_SOUND, &playing);
+		bool playing;
+		MONSTER_SOUND->isPlaying(&playing);
 		if (!playing)
 		{
-			MONSTER_SOUND = NULL;
+			MONSTER_SOUND = nullptr;
 		}
 		else
 		{
 			for ( c = 0; c < numsounds; c++ )
 			{
-				/*if( sounds[c] == Mix_GetChunk(MONSTER_SOUND) && ( c<MONSTER_SPOTSND || c>=MONSTER_SPOTSND+MONSTER_SPOTVAR ) ) { //TODO: Is this necessary? If so, port it to FMOD or find a workaround.
-					MONSTER_SOUND = -1;
-					break;
-				}*/
-				FMOD_BOOL playing = true;
-				FMOD_Channel_IsPlaying(MONSTER_SOUND, &playing);
+				bool playing = true;
+				MONSTER_SOUND->isPlaying(&playing);
 				if (!playing)
 				{
-					MONSTER_SOUND = NULL;
+					MONSTER_SOUND = nullptr;
 					break;
 				}
 			}

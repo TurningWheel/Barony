@@ -102,12 +102,15 @@ Frame::~Frame() {
 }
 
 void Frame::draw() {
-	Frame::draw(size, actualSize);
+	Frame::draw(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h});
 }
 
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	if (disabled)
 		return;
+
+	// warning: overloading member variable!
+	SDL_Rect actualSize = allowScrolling ? this->actualSize : SDL_Rect{0, 0, size.w, size.h};
 
 	_size.x += std::max(0, size.x - _actualSize.x);
 	_size.y += std::max(0, size.y - _actualSize.y);
@@ -269,6 +272,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 	// render images
 	for (auto image : images) {
+		if (image->disabled) {
+			continue;
+		}
 		const Image* actualImage = Image::get(image->path.c_str());
 		if (actualImage) {
 			SDL_Rect pos;
@@ -435,7 +441,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 }
 
 Frame::result_t Frame::process() {
-	result_t result = process(size, actualSize, true);
+	result_t result = process(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h}, true);
 
 	tooltip = nullptr;
 	if (result.tooltip && result.tooltip[0] != '\0') {
@@ -464,6 +470,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		return result;
 	}
 #endif
+
+	// warning: overloading member variable!
+	SDL_Rect actualSize = allowScrolling ? this->actualSize : SDL_Rect{0, 0, size.w, size.h};
 
 	_size.x += std::max(0, size.x - _actualSize.x);
 	_size.y += std::max(0, size.y - _actualSize.y);
@@ -1143,12 +1152,12 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 		if (pframe->capturesMouse(&_size, &_actualSize)) {
 			_size.x += std::max(0, size.x - _actualSize.x);
 			_size.y += std::max(0, size.y - _actualSize.y);
-			if (size.h < actualSize.h) {
+			if (size.h < actualSize.h && allowScrolling) {
 				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 			} else {
 				_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 			}
-			if (size.w < actualSize.w) {
+			if (size.w < actualSize.w && allowScrolling) {
 				_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 			} else {
 				_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
@@ -1207,6 +1216,10 @@ void Frame::deselect() {
 
 void Frame::setSelection(int index) {
 	selection = index;
+}
+
+void Frame::enableScroll(bool enabled) {
+	allowScrolling = enabled;
 }
 
 void Frame::scrollToSelection() {

@@ -70,6 +70,7 @@ void Text::render() {
 		surf = nullptr;
 	}
 
+	int outlineSize = font->getOutline();
 	if (outlineSize > 0) {
 		TTF_SetFontOutline(ttf, outlineSize);
 		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorBlack, xres);
@@ -113,7 +114,7 @@ void Text::render() {
 	dest.x = 0;
 	dest.y = 0;
 	SDL_BlitSurface(surf, &src, newSurf, &dest); // blit onto a purely RGBA Surface
-	SDL_FreeSurface(surf);
+	SDL_FreeSurface(surf); //TODO: Why does this give a heap exception in NX?
 	surf = newSurf;
 
 	// load the new surface as a GL texture

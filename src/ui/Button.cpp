@@ -56,14 +56,22 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	}
 
 	{
-		int x = (_size.x) * (float)xres / (float)Frame::virtualScreenX;
-		int y = (_size.y) * (float)yres / (float)Frame::virtualScreenY;
-		int w = (_size.x + _size.w) * (float)xres / (float)Frame::virtualScreenX;
-		int h = (_size.y + _size.h) * (float)yres / (float)Frame::virtualScreenY;
+		SDL_Rect scaledSize;
+		scaledSize.x = _size.x * (float)xres / (float)Frame::virtualScreenX;
+		scaledSize.y = _size.y * (float)yres / (float)Frame::virtualScreenY;
+		scaledSize.w = _size.w * (float)xres / (float)Frame::virtualScreenX;
+		scaledSize.h = _size.h * (float)yres / (float)Frame::virtualScreenY;
+		SDL_Rect inner;
+		inner.x = (_size.x + border) * (float)xres / (float)Frame::virtualScreenX;
+		inner.y = (_size.y + border) * (float)yres / (float)Frame::virtualScreenY;
+		inner.w = (_size.w - border*2) * (float)xres / (float)Frame::virtualScreenX;
+		inner.h = (_size.h - border*2) * (float)yres / (float)Frame::virtualScreenY;
 		if (pressed) {
-			drawDepressed(x, y, w, h);
+			drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
+			drawRect(&inner, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
 		} else {
-			drawWindow(x, y, w, h);
+			drawRect(&scaledSize, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
+			drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
 		}
 	}
 

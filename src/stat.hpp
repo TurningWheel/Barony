@@ -12,7 +12,7 @@
 #pragma once
 
 #ifdef USE_FMOD
-#include "fmod.h"
+#include <fmod.hpp>
 #endif
 
 class Item;
@@ -252,7 +252,7 @@ public:
 
 	// misc
 #ifdef USE_FMOD
-	FMOD_CHANNEL* monster_sound; //TODO: Do?
+	FMOD::Channel* monster_sound;
 #else
 	void* monster_sound;
 #endif

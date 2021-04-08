@@ -4,12 +4,15 @@
 #include "Frame.hpp"
 #include "Image.hpp"
 #include "Field.hpp"
+#include "Button.hpp"
 
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../menu.hpp"
 #include "../interface/interface.hpp"
+#include "../stat.hpp"
 #include "../player.hpp"
+#include "../draw.hpp"
 #include "../items.hpp"
 
 #include <assert.h>
@@ -35,8 +38,13 @@ void createIngameHud(int player) {
         playercount = 1;
     }
 
+#ifdef NINTENDO
+    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
+    static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
+#else
     static const char* bigfont = "fonts/pixelmix.ttf#18";
     static const char* smallfont = "fonts/pixel_maz.ttf#32";
+#endif // NINTENDO
 
     // big empty frame to serve as the root
     if (playercount == 1) {
@@ -727,4 +735,74 @@ void newPlayerInventory(const int player)
 	{
 		createPlayerInventory(player);
 	}
+}
+    }
+}
+
+void doNewCharacterSheet(int player)
+{
+#ifdef NINTENDO
+    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
+    static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
+#else // NINTENDO
+    static const char* bigfont = "fonts/pixelmix.ttf#18";
+    static const char* smallfont = "fonts/pixel_maz.ttf#32";
+#endif // NINTENDO
+
+    Frame* frame = gui->findFrame("Character sheet");
+    if (!frame) {
+        const int w = 200;
+        frame = gui->addFrame("Character sheet");
+        frame->setSize(SDL_Rect{
+            players[player]->camera_x2() - w,
+            players[player]->camera_y1(),
+            w, players[player]->camera_height()});
+        frame->setColor(makeColor(154, 154, 154, 255));
+
+        // map button
+        {
+            Button* b = frame->addButton("minimap button");
+            b->setFont(smallfont);
+            b->setText("Open Map");
+            b->setSize(SDL_Rect{0, 8, frame->getSize().w, 40});
+            b->setBorder(2);
+            b->setBorderColor(makeColor(128, 128, 128, 255));
+            b->setColor(makeColor(192, 192, 192, 255));
+            b->setTextColor(makeColor(255, 255, 255, 255));
+        }
+
+        // log button
+        {
+            Button* b = frame->addButton("log button");
+            b->setFont(smallfont);
+            b->setText("Open Log");
+            b->setSize(SDL_Rect{0, 56, frame->getSize().w, 40});
+            b->setBorder(2);
+            b->setBorderColor(makeColor(128, 128, 128, 255));
+            b->setColor(makeColor(192, 192, 192, 255));
+            b->setTextColor(makeColor(255, 255, 255, 255));
+        }
+
+        // game timer
+        {
+
+        }
+
+        // 
+        {
+        }
+    } else {
+        frame->setDisabled(players[player]->shootmode);
+    }
+}
+
+void doFrames() {
+    if ( gui ) 
+    {
+        Frame::result_t gui_result = gui->process();
+        gui->draw();
+        if ( !gui_result.usable ) {
+            return;
+        }
+    }
 }

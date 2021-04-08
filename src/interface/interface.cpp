@@ -20,7 +20,7 @@
 #include "../monster.hpp"
 #include "../items.hpp"
 #include "../book.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 #include "../shops.hpp"
 #include "../menu.hpp"
 #include "../player.hpp"

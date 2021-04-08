@@ -11,7 +11,7 @@
 
 #include "main.hpp"
 #include "game.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "entity.hpp"

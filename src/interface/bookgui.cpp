@@ -15,7 +15,7 @@
 #include "../stat.hpp"
 #include "../items.hpp"
 #include "../book.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 #include "../scores.hpp"
 #include "../player.hpp"
 #include "interface.hpp"

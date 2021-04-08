@@ -692,7 +692,7 @@ extern Uint32 numtiles;
 extern Uint32 nummodels;
 extern Sint32 audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
-extern int sfxvolume;
+extern int sfxvolume; //Max size is 128.
 extern int sfxAmbientVolume;
 extern int sfxEnvironmentVolume;
 extern bool *animatedtiles, *swimmingtiles, *lavatiles;

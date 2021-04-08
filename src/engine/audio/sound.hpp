@@ -11,10 +11,9 @@
 
 #pragma once
 
-
 #include <stdio.h>
 #ifdef USE_FMOD
-#include "fmod.h"
+#include <fmod.hpp>
 #endif
 #ifdef USE_OPENAL
 #ifdef APPLE
@@ -26,20 +25,19 @@
 #endif
 #endif
 
-
 //Pointer to the FMOD system.
 #ifdef USE_FMOD
 
 #define SOUND
 #define MUSIC
 
-extern FMOD_SYSTEM* fmod_system;
+extern FMOD::System* fmod_system;
 
 extern FMOD_RESULT fmod_result;
 
 extern int fmod_maxchannels;
 extern int fmod_flags;
-extern void* fmod_extdriverdata;
+extern void* fmod_extraDriverData;
 extern bool levelmusicplaying;
 
 extern bool shopmusicplaying;
@@ -49,42 +47,42 @@ extern bool herxmusicplaying;
 extern bool devilmusicplaying;
 extern bool olddarkmap;
 
-extern FMOD_SOUND** sounds;
+extern FMOD::Sound** sounds;
 extern Uint32 numsounds;
-extern FMOD_SOUND** minesmusic;
+extern FMOD::Sound** minesmusic;
 #define NUMMINESMUSIC 5
-extern FMOD_SOUND** swampmusic;
+extern FMOD::Sound** swampmusic;
 #define NUMSWAMPMUSIC 4
-extern FMOD_SOUND** labyrinthmusic;
+extern FMOD::Sound** labyrinthmusic;
 #define NUMLABYRINTHMUSIC 3
-extern FMOD_SOUND** ruinsmusic;
+extern FMOD::Sound** ruinsmusic;
 #define NUMRUINSMUSIC 3
-extern FMOD_SOUND** underworldmusic;
+extern FMOD::Sound** underworldmusic;
 #define NUMUNDERWORLDMUSIC 3
-extern FMOD_SOUND** hellmusic;
+extern FMOD::Sound** hellmusic;
 #define NUMHELLMUSIC 3
-extern FMOD_SOUND** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
-extern FMOD_SOUND** minotaurmusic, *herxmusic, *templemusic;
-extern FMOD_SOUND* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
-extern FMOD_SOUND* introductionmusic;
+extern FMOD::Sound** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
+extern FMOD::Sound** minotaurmusic, *herxmusic, *templemusic;
+extern FMOD::Sound* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
+extern FMOD::Sound* introductionmusic;
 #define NUMMINOTAURMUSIC 2
-extern FMOD_SOUND** cavesmusic;
-extern FMOD_SOUND** citadelmusic;
-extern FMOD_SOUND* gnomishminesmusic;
-extern FMOD_SOUND* greatcastlemusic;
-extern FMOD_SOUND* sokobanmusic;
-extern FMOD_SOUND* caveslairmusic;
-extern FMOD_SOUND* bramscastlemusic;
-extern FMOD_SOUND* hamletmusic;
+extern FMOD::Sound** cavesmusic;
+extern FMOD::Sound** citadelmusic;
+extern FMOD::Sound* gnomishminesmusic;
+extern FMOD::Sound* greatcastlemusic;
+extern FMOD::Sound* sokobanmusic;
+extern FMOD::Sound* caveslairmusic;
+extern FMOD::Sound* bramscastlemusic;
+extern FMOD::Sound* hamletmusic;
 #define NUMCAVESMUSIC 3
 #define NUMCITADELMUSIC 3
 #define NUMINTROMUSIC 3
 //TODO: Automatically scan the music folder for a mines subdirectory and use all the music for the mines or something like that. I'd prefer something neat like for that loading music for a level, anyway. And I can just reuse the code I had for ORR.
 
-extern FMOD_CHANNEL* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
+extern FMOD::Channel* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 
-extern FMOD_CHANNELGROUP* sound_group, *music_group;
-extern FMOD_CHANNELGROUP* soundAmbient_group, *soundEnvironment_group;
+extern FMOD::ChannelGroup* sound_group, *music_group;
+extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group;
 
 /*
  * Checks for FMOD errors. Store return value of all FMOD functions in fmod_result so that this funtion can access it and check for errors.
@@ -92,22 +90,26 @@ extern FMOD_CHANNELGROUP* soundAmbient_group, *soundEnvironment_group;
  */
 bool FMODErrorCheck();
 
-//Updates FMOD and whatnot.
 void sound_update();
+bool initSoundEngine(); //If it fails to initialize the sound engine, it'll just disable audio.
+void exitSoundEngine();
+int loadSoundResources();
+void freeSoundResources();
 
-FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol);
-FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol);
-FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol);
-FMOD_CHANNEL* playSoundEntity(Entity* entity, Uint32 snd, int vol);
-FMOD_CHANNEL* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol);
-FMOD_CHANNEL* playSound(Uint32 snd, int vol);
-FMOD_CHANNEL* playSoundVelocity(); //TODO: Write.
+FMOD::Channel* playSoundPlayer(int player, Uint32 snd, int vol);
+FMOD::Channel* playSoundPos(real_t x, real_t y, Uint32 snd, int vol);
+FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol);
+FMOD::Channel* playSoundEntity(Entity* entity, Uint32 snd, int vol);
+FMOD::Channel* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol);
+FMOD::Channel* playSound(Uint32 snd, int vol);
+FMOD::Channel* playSoundVelocity();
 
-void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defualts every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
+bool loadMusic();
+void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defualts every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
 
 void handleLevelMusic(); //Manages and updates the level music.
 
-extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
+extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment, dynamicAmbientVolume, dynamicEnvironmentVolume;
 extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 
 #elif defined USE_OPENAL

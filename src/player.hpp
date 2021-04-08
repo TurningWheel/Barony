@@ -14,11 +14,7 @@
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
 #include "messages.hpp"
-#ifdef USE_FMOD
- #include "fmod.h"
-#else
- #include "sound.hpp"
-#endif
+#include "engine/audio/sound.hpp"
 
 
 //Splitscreen support stuff.
@@ -853,8 +849,8 @@ public:
 		Uint32 bowStartDrawingTick = 0;
 		Uint32 bowDrawBaseTicks = 50;
 #ifdef USE_FMOD
-		FMOD_CHANNEL* bowDrawingSoundChannel = NULL;
-		FMOD_BOOL bowDrawingSoundPlaying = 0;
+		FMOD::Channel* bowDrawingSoundChannel = NULL;
+		bool bowDrawingSoundPlaying = 0;
 #elif defined USE_OPENAL
 		OPENAL_SOUND* bowDrawingSoundChannel = NULL;
 		ALboolean bowDrawingSoundPlaying = 0;

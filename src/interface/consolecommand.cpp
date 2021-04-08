@@ -16,7 +16,7 @@
 #include "../items.hpp"
 #include "../init.hpp"
 #include "../book.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 #include "../menu.hpp"
 #include "../monster.hpp"
 #include "../net.hpp"
@@ -3254,6 +3254,7 @@ void consoleCommand(char const * const command_str)
 				}
 			}
 		}
+#ifndef NINTENDO
 		else if ( !strncmp(command_str, "/ircconnect", 11) )
 		{
 			if ( IRCHandler.connect() )
@@ -3278,6 +3279,7 @@ void consoleCommand(char const * const command_str)
 			IRCHandler.packetSend(message);
 			messagePlayer(clientnum, "[IRC]: Sent message.");
 		}
+#endif // !NINTENDO
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

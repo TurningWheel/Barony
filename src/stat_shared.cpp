@@ -139,7 +139,7 @@ Stat::Stat(Sint32 sprite) :
 	this->ring = NULL;
 	this->mask = NULL;
 #if defined(USE_FMOD) || defined(USE_OPENAL)
-	this->monster_sound = NULL;
+	this->monster_sound = nullptr;
 #endif
 	this->monster_idlevar = 1;
 	this->magic_effects.first = NULL;
