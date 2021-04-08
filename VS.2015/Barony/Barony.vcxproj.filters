@@ -34,6 +34,15 @@
     <Filter Include="Header Files\engine">
       <UniqueIdentifier>{3295600d-eb9c-4224-9ba9-69535dea2994}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\engine\audio">
+      <UniqueIdentifier>{f384f564-40c1-43d0-b50c-38489f82c07c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\engine">
+      <UniqueIdentifier>{96438556-c008-4539-aaf1-6fbb73e34b5c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\engine\audio">
+      <UniqueIdentifier>{c52b06e4-fd42-4bf6-9f24-3a747e841cab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\actarrow.cpp">
@@ -240,12 +249,6 @@
     <ClCompile Include="..\..\src\shops.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\sound.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\sound_game.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\stat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -432,6 +435,21 @@
     <ClCompile Include="..\..\src\ui\GameUI.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\engine\audio\music.cpp">
+      <Filter>Source Files\engine\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\engine\audio\sound.cpp">
+      <Filter>Source Files\engine\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\engine\audio\sound_game.cpp">
+      <Filter>Source Files\engine\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\engine\audio\defines.cpp">
+      <Filter>Source Files\engine\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\engine\audio\init.cpp">
+      <Filter>Source Files\engine\audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\book.hpp">
@@ -480,9 +498,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\shops.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\sound.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\stat.hpp">
@@ -556,6 +571,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\ui\GameUI.hpp">
       <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\engine\audio\music_pc.hpp">
+      <Filter>Header Files\engine\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\engine\audio\sound.hpp">
+      <Filter>Header Files\engine\audio</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
