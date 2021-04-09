@@ -5562,11 +5562,7 @@ int main(int argc, char** argv)
 			// fade in/out effect
 			if ( fadealpha > 0 )
 			{
-				src.x = 0;
-				src.y = 0;
-				src.w = mainsurface->w;
-				src.h = mainsurface->h;
-				drawRect(&src, SDL_MapRGB(mainsurface->format, 0, 0, 0), fadealpha);
+				drawRect(NULL, makeColor(0, 0, 0, 255), fadealpha);
 			}
 
 			// fps counter

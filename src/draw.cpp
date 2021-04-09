@@ -22,6 +22,8 @@
 #endif
 #include "items.hpp"
 
+#include "ui/Image.hpp"
+
 /*-------------------------------------------------------------------------------
 
 	getPixel
@@ -372,18 +374,6 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
 int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha )
 {
 	SDL_Rect secondsrc;
-
-	// update projection
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
-	glMatrixMode(GL_PROJECTION);
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glEnable(GL_BLEND);
-
-	// for the use of the whole screen
 	if ( src == NULL )
 	{
 		secondsrc.x = 0;
@@ -392,16 +382,10 @@ int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha )
 		secondsrc.h = yres;
 		src = &secondsrc;
 	}
-
-	// draw quad
-	glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, alpha / 255.f);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
-	glVertex2f(src->x, yres - src->y);
-	glVertex2f(src->x, yres - src->y - src->h);
-	glVertex2f(src->x + src->w, yres - src->y - src->h);
-	glVertex2f(src->x + src->w, yres - src->y);
-	glEnd();
+	auto format = mainsurface->format;
+	Uint32 c = (color & (format->Rmask | format->Gmask | format->Bmask)) | (alpha << format->Ashift);
+	auto image = Image::get("images/system/white.png");
+	image->drawColor(nullptr, *src, c);
 	return 0;
 }
 
