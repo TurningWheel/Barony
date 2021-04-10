@@ -26,7 +26,7 @@ public:
 
 	const char*				getName() const { return name.c_str(); }
 	const GLuint			getTexID() const { return texid; }
-	const SDL_Surface*		getSurf() const { return surf; }
+	//const SDL_Surface*		getSurf() const { return surf; }
 	const unsigned int		getWidth() const { return width; }
 	const unsigned int		getHeight()	const { return height; }
 
@@ -52,7 +52,7 @@ public:
 private:
 	std::string name;
 	GLuint texid = 0;
-	SDL_Surface* surf = nullptr;
+	//SDL_Surface* surf = nullptr;
 
 	//! static geometry data for rendering the image to a quad
 	static const GLuint indices[6];

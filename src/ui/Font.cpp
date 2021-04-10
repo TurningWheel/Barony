@@ -9,6 +9,10 @@ const char* Font::defaultFont = "rom://lang/en.ttf#24";
 const char* Font::defaultFont = "lang/en.ttf#24";
 #endif // NINTENDO
 
+#include "../external/stb/stb_truetype.h"
+#include "../external/fontstash/fontstash.h"
+#include "../external/fontstash/glfontstash.h"
+
 Font::Font(const char* _name) {
 	name = _name;
 	size_t index = name.find('#');
@@ -25,17 +29,23 @@ Font::Font(const char* _name) {
 	} else {
 		path = name;
 	}
-	if ((font = TTF_OpenFont(path.c_str(), pointSize)) == NULL) {
-		printlog("failed to load '%s': %s", path.c_str(), TTF_GetError());
-		return;
+	// if ((font = TTF_OpenFont(path.c_str(), pointSize)) == NULL) {
+	// 	printlog("failed to load '%s': %s", path.c_str(), TTF_GetError());
+	// 	return;
+	// }
+	// TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
+	// TTF_SetFontKerning(font, 0);
+	fontstash = glfonsCreate(512, 512, FONS_ZERO_TOPLEFT);
+	font_style_normal = fonsAddFont(fontstash, "sans", path.c_str());
+	if (font_style_normal == FONS_INVALID)
+	{
+		printlog("failed to load font '%s'", path.c_str());
 	}
-	TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
-	TTF_SetFontKerning(font, 0);
 }
 
 Font::~Font() {
-	if (font) {
-		TTF_CloseFont(font);
+	if (fontstash) {
+		glfonsDelete(fontstash);
 	}
 }
 
@@ -46,23 +56,32 @@ int Font::sizeText(const char* str, int* out_w, int* out_h) const {
 	if (out_h) {
 		*out_h = 0;
 	}
-	if (font && str) {
-		int result = TTF_SizeUTF8(font, str, out_w, out_h);
+	if (fontstash && str) {
+		//int result = TTF_SizeUTF8(font, str, out_w, out_h);
+		float textBounds[4];
+		float width = fonsTextBounds(fontstash, 0, 0, str, nullptr, textBounds);
+		//TODO: Make this work!
 		if (out_w) {
-			*out_w += outlineSize * 2;
+			//*out_w += outlineSize * 2;
+			*out_w = static_cast<int>(width) + outlineSize * 2; //TODO: This, or text bounds 2 - 0?
 		}
 		if (out_h) {
-			*out_h += outlineSize * 2;
+			//*out_h += outlineSize * 2;
+			*out_h = static_cast<int>(textBounds[3]) - static_cast<int>(textBounds[1]) + outlineSize * 2;
 		}
-		return result;
+		return 0;
 	} else {
 		return -1;
 	}
 }
 
 int Font::height() const {
-	if (font) {
-		return TTF_FontHeight(font) + outlineSize * 2;
+	if (fontstash) {
+		//return TTF_FontHeight(font) + outlineSize * 2;
+		//TODO: Make this work!
+		float height;
+		fonsVertMetrics(fontstash, nullptr, nullptr, &height);
+		return static_cast<int>(height);
 	} else {
 		return 0;
 	}

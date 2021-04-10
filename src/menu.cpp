@@ -47,6 +47,8 @@
 #include "interface/ui.hpp"
 #include "lobbies.hpp"
 #include <sstream>
+#include "ui/Text.hpp"
+#include "ui/Font.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -1610,10 +1612,32 @@ void handleMainMenu(bool mode)
 		src.y = 20;
 		src.w = title_bmp->w * (230.0 / 240.0); // new banner scaled to old size.
 		src.h = title_bmp->h * (230.0 / 240.0);
+
+		// Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		// Uint32 len = strlen("This is Barony!");
+		// ttfPrintTextColor(ttf16, 500, 500, colorYellow, true, "This is Barony!");
+
 		if ( mode || introstage != 5 )
 		{
 			drawImageScaled(title_bmp, nullptr, &src);
 		}
+
+		Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		ttfPrintTextColor(ttf16, 500, 100, colorYellow, true, "This is TTF render!");
+		Text* text = Text::get("This. Is. For. BARONY!!", Font::defaultFont);
+		if (!text) {
+			return;
+		}
+		SDL_Rect dest;
+		dest.x = 100;
+		dest.y = yres - 100;
+		dest.w = 0;
+		dest.h = 0;
+		SDL_Rect src_text_rect;
+		src_text_rect.w = 0;
+		src_text_rect.h = 0;
+		text->drawColor(src_text_rect, dest, 0xFF00FFFF);
+
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);

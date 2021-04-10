@@ -4,6 +4,8 @@
 
 #include "../main.hpp"
 
+struct FONScontext;
+
 class Font {
 private:
 	Font() = default;
@@ -20,7 +22,9 @@ public:
 	static const char* defaultFont;
 
 	const char*		getName() const { return name.c_str(); }
-	TTF_Font*		getTTF() { return font; }
+	FONScontext*	getFontstash() { return fontstash; }
+	int				getFontId() { return font_style_normal; } //TODO: Support other styles and stuff? Maybe like "get font ID for regular. Get font ID for italics." Etc.
+	int				getPointSize() { return pointSize; } //TODO: All of these extra things we're exposing tells me that maybe Font should render to a buffer which we cache in Text.hpp...
 	int				getOutline() { return outlineSize; }
 
 	//! get the size of the given text string in pixels
@@ -44,7 +48,8 @@ public:
 
 private:
 	std::string name;
-	TTF_Font* font = nullptr;
-	int pointSize = 16;
+	FONScontext* fontstash = nullptr;
+	int font_style_normal = 0;
+	int pointSize = 16; //TODO: Split pointsize from the filename and let us set this on the fly?
 	int outlineSize = 0;
 };
