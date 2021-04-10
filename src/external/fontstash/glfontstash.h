@@ -70,7 +70,7 @@ static void glfons__renderUpdate(void* userPtr, int* rect, const unsigned char* 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, gl->width);
 	glPixelStorei(GL_UNPACK_SKIP_PIXELS, rect[0]);
 	glPixelStorei(GL_UNPACK_SKIP_ROWS, rect[1]);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, rect[0], rect[1], w, h, GL_RED,GL_UNSIGNED_BYTE, data);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, rect[0], rect[1], w, h, GL_ALPHA,GL_UNSIGNED_BYTE, data);
 	glPopClientAttrib();
 }
 

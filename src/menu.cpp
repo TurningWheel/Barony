@@ -50,6 +50,11 @@
 #include "ui/Text.hpp"
 #include "ui/Font.hpp"
 
+#include "external/stb/stb_truetype.h"
+#include "external/fontstash/fontstash.h"
+#include "external/fontstash/glfontstash.h"
+
+
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
 void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
@@ -1624,19 +1629,113 @@ void handleMainMenu(bool mode)
 
 		Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
 		ttfPrintTextColor(ttf16, 500, 100, colorYellow, true, "This is TTF render!");
-		Text* text = Text::get("This. Is. For. BARONY!!", Font::defaultFont);
-		if (!text) {
-			return;
+		// Text* text = Text::get("This. Is. For. BARONY!!", Font::defaultFont);
+		// if (!text) {
+		// 	return;
+		// }
+		// SDL_Rect dest;
+		// dest.x = 100;
+		// dest.y = yres - 100;
+		// dest.w = 0;
+		// dest.h = 0;
+		// SDL_Rect src_text_rect;
+		// src_text_rect.w = 0;
+		// src_text_rect.h = 0;
+		// text->drawColor(src_text_rect, dest, 0xFF00FFFF);
+
+		static SDL_GLContext tempcontext = nullptr;
+		if (!tempcontext)
+		{
+			std::cout << "Initializing temporary OpenGL context.\n";
+			if ((tempcontext = SDL_GL_CreateContext(screen)) == nullptr)
+			{
+				printlog("failed to create temp SDL renderer. Reason: \"%s\"\n", SDL_GetError());
+				printlog("You may need to update your video drivers.\n");
+				exit(-1);
+			}
+			SDL_GL_MakeCurrent(screen, tempcontext);
+
+			glMatrixMode(GL_PROJECTION);
+			glLoadIdentity();
+
+			GLenum error = GL_NO_ERROR;
+			if ((error = glGetError()) != GL_NO_ERROR)
+			{
+				std::cerr << "Error initializing OpenGL! " << std::endl << std::endl;
+				exit(-1);
+			}
+
+			// Initialize Modelview matrix
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
+
+			if ((error = glGetError()) != GL_NO_ERROR)
+			{
+				std::cerr << "Error initializing OpenGL! " << std::endl << std::endl;
+				exit(-1);
+			}
+			glClearColor(0.f, 0.f, 0.f, 0.f);
+			glShadeModel(GL_SMOOTH);
+			glClearDepth(1.0f);
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LEQUAL);
+			glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+			if ((error = glGetError()) != GL_NO_ERROR)
+			{
+				std::cout << "Error initializing OpenGL! " << std::endl << std::endl;
+				exit(-1);
+			}
 		}
-		SDL_Rect dest;
-		dest.x = 100;
-		dest.y = yres - 100;
-		dest.w = 0;
-		dest.h = 0;
-		SDL_Rect src_text_rect;
-		src_text_rect.w = 0;
-		src_text_rect.h = 0;
-		text->drawColor(src_text_rect, dest, 0xFF00FFFF);
+		else
+		{
+			SDL_GL_MakeCurrent(screen, tempcontext);
+		}
+
+		static FONScontext* fontstash = nullptr;
+		static uint32_t fs_white;
+		static uint32_t fs_brown;
+		static int font_normal;
+		if (!fontstash)
+		{
+			std::cout << "Recreating fontstash!\n";
+			fontstash = glfonsCreate(512, 512, FONS_ZERO_TOPLEFT);
+
+			font_normal = fonsAddFont(fontstash, "sans", "data/SatellaRegular-ZVVaz.ttf");
+			if (font_normal == FONS_INVALID)
+			{
+				std::cerr << "Failed to load font_normal!\n";
+				exit(-1);
+			}
+
+			fs_white = glfonsRGBA(255, 255, 255, 255);
+			fs_brown = glfonsRGBA(192, 128, 0, 128);
+		}
+		else
+		{
+			//glClear(GL_COLOR_BUFFER_BIT);
+
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_LIGHTING);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glMatrixMode(GL_PROJECTION);
+			glViewport(0, 0, xres, yres);
+			glLoadIdentity();
+			//glOrtho(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT, -1, 1);
+			glOrtho(0, xres, yres, 0, -1, 1);
+			glMatrixMode(GL_MODELVIEW);
+
+			fonsClearState(fontstash);
+			fonsSetFont(fontstash, font_normal);
+			fonsSetSize(fontstash, 64.0f);
+			fonsSetColor(fontstash, fs_brown);
+			fonsDrawText(fontstash, 100, 400, "The BARON always wins!", nullptr);
+
+			//glEnable(GL_TEXTURE_2D); //Needed for the rest of the game...
+			//SDL_GL_SwapWindow(screen);
+		}
+		SDL_GL_MakeCurrent(screen, renderer);
 
 		if ( mode && subtitleVisible )
 		{

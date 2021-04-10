@@ -2441,9 +2441,10 @@ bool initVideo()
 #else
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1/*3*/ ); //Why GL 3.0? using only fixed pipeline stuff here
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
-	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
-	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
+	//SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
+	//SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	//SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
 	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4 );
@@ -2492,7 +2493,7 @@ bool initVideo()
 #ifdef PANDORA
 		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, 480, flags )) == NULL)
 #else
-		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags )) == NULL)
+		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags | SDL_WINDOW_SHOWN )) == NULL)
 #endif
 		{
 			printlog("failed to set video mode.\n");
@@ -2572,7 +2573,7 @@ bool initVideo()
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
+		glCullFace(GL_BACK); //TODO: Try disabling.
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		//glEnableClientState(GL_VERTEX_ARRAY);
@@ -2581,6 +2582,7 @@ bool initVideo()
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
 		glClearColor( 0, 0, 0, 0 );
+		glEnable(GL_DEBUG_OUTPUT);
 	}
 
 	if ( verticalSync )

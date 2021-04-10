@@ -91,7 +91,7 @@ Text::~Text() {
 	// 	SDL_FreeSurface(surf);
 	// 	surf = nullptr;
 	// }
-	// if (texid) {
+	// if (texid) { //TODO: Free fontstash stuff? Or, only do this on the Font's end? I think we may only need to do this on the Font's end...
 	// 	glDeleteTextures(1, &texid);
 	// 	texid = 0;
 	// }
@@ -114,7 +114,7 @@ void Text::render() {
 		return;
 	}
 	//TTF_Font* ttf = font->getTTF();
-	FONScontext* fontstash = font->getFontstash();
+	//FONScontext* fontstash = font->getFontstash();
 
 	//TODO: It looks like the below caches a text string. Should probably overload Fontstash to let us do that...maybe?
 
@@ -217,6 +217,8 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 		return;
 	}
 
+	// glEnable(GL_DEBUG_OUTPUT);
+
 	FONScontext* fontstash = font->getFontstash();
 	if (!fontstash)
 	{
@@ -268,52 +270,52 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 	//TODO: Check the OpenGL return codes for errors...
 	//TODO: Print to terminal any OpenGL errors or debugging info?
 
-	{ //TODO:  REMOVE DEBUG WHEN DONE!
-		if (!debug_image)
-		{
-			debug_image = SDL_LoadBMP("data/test.bmp");
-			if (debug_image == nullptr)
-			{
-				std::cerr << "Boo! Failed to load debug_image data/test.bmp!\n";
-				exit(-1);
-			}
+	// { //TODO:  REMOVE DEBUG WHEN DONE!
+	// 	if (!debug_image)
+	// 	{
+	// 		debug_image = SDL_LoadBMP("data/test.bmp");
+	// 		if (debug_image == nullptr)
+	// 		{
+	// 			std::cerr << "Boo! Failed to load debug_image data/test.bmp!\n";
+	// 			exit(-1);
+	// 		}
 
-			GLenum data_format = GL_BGR;
-			glGenTextures(1, &debug_texture_id);
-			glBindTexture(GL_TEXTURE_2D, debug_texture_id);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, debug_image->w, debug_image->h, 0, data_format, GL_UNSIGNED_BYTE, debug_image->pixels);
-			SDL_FreeSurface(debug_image);
-		}
+	// 		GLenum data_format = GL_BGR;
+	// 		glGenTextures(1, &debug_texture_id);
+	// 		glBindTexture(GL_TEXTURE_2D, debug_texture_id);
+	// 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	// 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	// 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, debug_image->w, debug_image->h, 0, data_format, GL_UNSIGNED_BYTE, debug_image->pixels);
+	// 		SDL_FreeSurface(debug_image);
+	// 	}
 
-		glBindTexture(GL_TEXTURE_2D, debug_texture_id);
-		glEnable(GL_TEXTURE_2D);
+	// 	glBindTexture(GL_TEXTURE_2D, debug_texture_id);
+	// 	glEnable(GL_TEXTURE_2D);
 
-		glBegin(GL_QUADS);
+	// 	glBegin(GL_QUADS);
 
-		// glTexCoord2f(0, 0);
-		// glVertex2f(50, SCREEN_HEIGHT - 50);
-		// glTexCoord2f(0, 1);
-		// glVertex2f(50, 50);
-		// glTexCoord2f(1, 1);
-		// glVertex2f(SCREEN_WIDTH - 50, 50);
-		// glTexCoord2f(1, 0);
-		// glVertex2f(SCREEN_WIDTH - 50, SCREEN_HEIGHT - 50);
+	// 	// glTexCoord2f(0, 0);
+	// 	// glVertex2f(50, SCREEN_HEIGHT - 50);
+	// 	// glTexCoord2f(0, 1);
+	// 	// glVertex2f(50, 50);
+	// 	// glTexCoord2f(1, 1);
+	// 	// glVertex2f(SCREEN_WIDTH - 50, 50);
+	// 	// glTexCoord2f(1, 0);
+	// 	// glVertex2f(SCREEN_WIDTH - 50, SCREEN_HEIGHT - 50);
 
-		glTexCoord2f(0, 0);
-		glVertex2f(50, 50);
-		glTexCoord2f(0, 1);
-		glVertex2f(50, yres - 50);
-		glTexCoord2f(1, 1);
-		glVertex2f(xres - 50, yres - 50);
-		glTexCoord2f(1, 0);
-		glVertex2f(xres - 50, 50);
+	// 	glTexCoord2f(0, 0);
+	// 	glVertex2f(50, 50);
+	// 	glTexCoord2f(0, 1);
+	// 	glVertex2f(50, yres - 50);
+	// 	glTexCoord2f(1, 1);
+	// 	glVertex2f(xres - 50, yres - 50);
+	// 	glTexCoord2f(1, 0);
+	// 	glVertex2f(xres - 50, 50);
 
-		glEnd();
-	}
+	// 	glEnd();
+	// }
 
 	int text_width;
 	int text_height;
@@ -365,6 +367,7 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 	glColor4f(1.f, 1.f, 1.f, 1.f);
 	glEnable(GL_TEXTURE_2D); //Because it disables this but that breaks things...
 	glEnable(GL_LINE_SMOOTH);
+	// glDisable(GL_DEBUG_OUTPUT);
 }
 
 static std::unordered_map<std::string, Text*> hashed_text;
