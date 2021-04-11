@@ -66,7 +66,7 @@ real_t getLightForEntity(real_t x, real_t y)
 -------------------------------------------------------------------------------*/
 
 bool wholevoxels = false;
-void glDrawVoxel(view_t* camera, Entity* entity, int mode)
+void glDrawVoxel(view_t* camera, Entity* entity, int mode, bool unbind_buffers)
 {
 	real_t dx, dy, dz;
 	int voxX, voxY, voxZ;
@@ -478,8 +478,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				glColor4f(uidcolors[0], uidcolors[1], uidcolors[2], uidcolors[3]);
 			}
 			glDrawArrays(GL_TRIANGLES, 0, 3 * polymodels[modelindex].numfaces);
-			SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
+			if (unbind_buffers)
+			{
+				// std::cout << "Unbinding buffers!\n";
+				// SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
+				// glBindVertexArray(0);
+			}
 			if ( mode == REALCOLORS )
 			{
 				glDisable(GL_COLOR_MATERIAL);
@@ -489,6 +493,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					glDisable(GL_LIGHT1);
 				}
 				glDisableClientState(GL_COLOR_ARRAY); // disable the color array on the client side
+				SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
+				glBindVertexArray(0);
+			}
+			else
+			{
+				// SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
+				// glBindVertexArray(0);
 			}
 			glDisableClientState(GL_VERTEX_ARRAY); // disable the vertex array on the client side
 		}
@@ -1891,11 +1902,35 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 		// generate object buffer
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glDrawWorld(&camera, ENTITYUIDS);
-		drawEntities3D(&camera, ENTITYUIDS);
+		drawEntities3D(&camera, ENTITYUIDS, false); //TODO: We might always need to call this, depending on who rules dirty? i.e. if we go to the regular draw function and it isn't entity UIDs mode but real colors mode, then we'd get the disabled buffer...
 	}
 
+	// SDL_glBindVertexArray(polymodels[nummodels-1].va);
+	// SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[nummodels-1].vbo);
+
 	GLubyte pixel[4];
+	GLenum error = GL_NO_ERROR;
+	while((error = glGetError()) != GL_NO_ERROR)
+	{
+		//std::cout << "Error with glReadPixels!\n";
+		//std::cout << "Popped off Error: " << error << "\n";
+	}
+	// SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
+	// SDL_glBindVertexArray(0);
 	glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
+	// SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
+	// SDL_glBindVertexArray(0);
+	if ((error = glGetError()) != GL_NO_ERROR)
+	{
+		std::cout << "Error with glReadPixels!\n";
+		std::cout << "Error: " << error << "\n";
+		// exit(1);
+	}
+	else
+	{
+		std::cout << "No error with glReadPixels()!\n";
+	}
+
 	oldpix = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
 #ifdef PANDORA
 	if((dirty) && (xres==800) && (yres==480)) {
@@ -1903,6 +1938,7 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 	}
 #endif
 	dirty = 0;
+	std::cout << "Returning " << oldpix << "\n";
 	return oldpix;
 }
 

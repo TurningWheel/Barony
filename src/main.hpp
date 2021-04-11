@@ -761,7 +761,7 @@ pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Si
 #define REALCOLORS 0
 #define ENTITYUIDS 1
 real_t getLightForEntity(real_t x, real_t y);
-void glDrawVoxel(view_t* camera, Entity* entity, int mode);
+void glDrawVoxel(view_t* camera, Entity* entity, int mode, bool unbind_buffers = true);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);

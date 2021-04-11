@@ -1370,7 +1370,7 @@ void raycast(view_t* camera, int mode, bool updateVismap)
 
 -------------------------------------------------------------------------------*/
 
-void drawEntities3D(view_t* camera, int mode)
+void drawEntities3D(view_t* camera, int mode, bool unbind_buffers)
 {
 	node_t* node;
 	Entity* entity;
@@ -1460,7 +1460,7 @@ void drawEntities3D(view_t* camera, int mode)
 			{
 				if ( entity->flags[SPRITE] == false )
 				{
-					glDrawVoxel(camera, entity, mode);
+					glDrawVoxel(camera, entity, mode, unbind_buffers);
 				}
 				else
 				{

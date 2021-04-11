@@ -1977,8 +1977,8 @@ void generateVBOs(int start, int end)
 		// shifted color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
+		// SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
+		// glBindVertexArray(0);
 	}
 }
 
@@ -2432,6 +2432,22 @@ void GO_InitFBO()
 
 -------------------------------------------------------------------------------*/
 
+static void GLAPIENTRY onGlDebugMessageCallback(
+	GLenum source,		// GL_DEBUG_SOURCE_*
+	GLenum type,		// GL_DEBUG_TYPE_*
+	GLuint id,
+	GLenum severity,	// GL_DEBUG_SEVERITY_*
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam)
+{
+	if (id == 131185 || id == 1283)
+	{
+		return;
+	}
+	std::cout << "[GL] Received debug callback: source=" << source << ", type = " << type << ", id=" << id << ", severity=" << severity << ", length=" << length << ", message=\"" << message << "\"\n";
+}
+
 bool initVideo()
 {
 #ifdef NINTENDO
@@ -2446,6 +2462,7 @@ bool initVideo()
 	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
 	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4 );
@@ -2571,6 +2588,8 @@ bool initVideo()
 #ifdef NINTENDO
 		initNxGL();
 #endif // NINTENDO
+		glEnable(GL_DEBUG_OUTPUT);
+		glDebugMessageCallback(onGlDebugMessageCallback, 0);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_CULL_FACE);
