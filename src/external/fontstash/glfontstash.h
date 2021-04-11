@@ -84,6 +84,7 @@ static void glfons__renderDraw(void* userPtr, const float* verts, const float* t
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 
+	//TODO: Do we need to bind a VBO or VBA?
 	glVertexPointer(2, GL_FLOAT, sizeof(float)*2, verts);
 	glTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, tcoords);
 	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(unsigned int), colors);

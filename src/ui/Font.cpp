@@ -37,12 +37,12 @@ Font::Font(const char* _name) {
 	// TTF_SetFontKerning(font, 0);
 
 	// glEnable(GL_DEBUG_OUTPUT);
-	fontstash = glfonsCreate(512, 512, FONS_ZERO_TOPLEFT);
-	font_style_normal = fonsAddFont(fontstash, "sans", path.c_str());
-	if (font_style_normal == FONS_INVALID)
-	{
-		printlog("failed to load font '%s'", path.c_str());
-	}
+	// fontstash = glfonsCreate(512, 512, FONS_ZERO_TOPLEFT);
+	// font_style_normal = fonsAddFont(fontstash, "sans", path.c_str());
+	// if (font_style_normal == FONS_INVALID)
+	// {
+	// 	printlog("failed to load font '%s'", path.c_str());
+	// }
 	// glDisable(GL_DEBUG_OUTPUT);
 }
 

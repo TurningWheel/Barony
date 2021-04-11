@@ -477,7 +477,9 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
 				glColor4f(uidcolors[0], uidcolors[1], uidcolors[2], uidcolors[3]);
 			}
-			glDrawArrays(GL_TRIANGLES, 0, 3 * polymodels[modelindex].numfaces);
+			// glDrawArrays(GL_TRIANGLES, 0, 3 * polymodels[modelindex].numfaces);
+			// SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindVertexArray(0);
 			if ( mode == REALCOLORS )
 			{
 				glDisable(GL_COLOR_MATERIAL);

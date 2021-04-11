@@ -1977,6 +1977,8 @@ void generateVBOs(int start, int end)
 		// shifted color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+		// SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
+		// glBindVertexArray(0);
 	}
 }
 
@@ -2441,9 +2443,9 @@ bool initVideo()
 #else
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1/*3*/ ); //Why GL 3.0? using only fixed pipeline stuff here
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
-	//SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
-	//SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-	//SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
+	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
+	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
 	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
@@ -2493,7 +2495,7 @@ bool initVideo()
 #ifdef PANDORA
 		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, 480, flags )) == NULL)
 #else
-		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags | SDL_WINDOW_SHOWN )) == NULL)
+		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags )) == NULL)
 #endif
 		{
 			printlog("failed to set video mode.\n");
@@ -2582,7 +2584,6 @@ bool initVideo()
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
 		glClearColor( 0, 0, 0, 0 );
-		glEnable(GL_DEBUG_OUTPUT);
 	}
 
 	if ( verticalSync )

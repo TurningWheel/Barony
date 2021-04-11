@@ -196,6 +196,7 @@ SDL_Surface* debug_image = nullptr;
 GLuint debug_texture_id;
 
 void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
+	return;
 	if (!rendered) {
 		render();
 	}
