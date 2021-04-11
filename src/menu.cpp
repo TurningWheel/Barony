@@ -48,6 +48,10 @@
 #include "lobbies.hpp"
 #include <sstream>
 
+#include "external/stb/stb_truetype.h"
+#include "external/fontstash/fontstash.h"
+#include "external/fontstash/glfontstash.h"
+
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
 void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
@@ -1600,6 +1604,50 @@ void handleMainMenu(bool mode)
 	if ( menuOptions.empty() )
 	{
 		initMenuOptions();
+	}
+
+	static FONScontext* fontstash = nullptr;
+	static uint32_t fs_white;
+	static uint32_t fs_brown;
+	static int font_normal;
+	if (!fontstash)
+	{
+		std::cout << "Recreating fontstash!\n";
+		fontstash = glfonsCreate(512, 512, FONS_ZERO_TOPLEFT);
+
+		font_normal = fonsAddFont(fontstash, "sans", "data/SatellaRegular-ZVVaz.ttf");
+		if (font_normal == FONS_INVALID)
+		{
+			std::cerr << "Failed to load font_normal!\n";
+			exit(-1);
+		}
+
+		fs_white = glfonsRGBA(255, 255, 255, 255);
+		fs_brown = glfonsRGBA(192, 128, 0, 128);
+	}
+	else
+	{
+		//glClear(GL_COLOR_BUFFER_BIT);
+
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_LIGHTING);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glMatrixMode(GL_PROJECTION);
+		glViewport(0, 0, xres, yres);
+		glLoadIdentity();
+		//glOrtho(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT, -1, 1);
+		glOrtho(0, xres, yres, 0, -1, 1);
+		glMatrixMode(GL_MODELVIEW);
+
+		fonsClearState(fontstash);
+		fonsSetFont(fontstash, font_normal);
+		fonsSetSize(fontstash, 64.0f);
+		fonsSetColor(fontstash, fs_brown);
+		fonsDrawText(fontstash, 100, 400, "The BARON always wins!", nullptr);
+
+		glEnable(GL_TEXTURE_2D); //Needed for the rest of the game...
+		//SDL_GL_SwapWindow(screen);
 	}
 
 	if ( !movie )

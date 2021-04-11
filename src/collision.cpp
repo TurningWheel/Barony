@@ -287,7 +287,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			}
 			else
 			{
-				uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
+				uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]); //TODO: Is this the function?
 			}
 			//messagePlayer(0, "first: %d %d", uidnum, selectedEntityGimpTimer[player]);
 		}

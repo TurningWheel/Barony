@@ -1977,6 +1977,8 @@ void generateVBOs(int start, int end)
 		// shifted color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
 	}
 }
 
