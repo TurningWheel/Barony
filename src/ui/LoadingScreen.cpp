@@ -41,8 +41,8 @@ void createLoadingScreen(real_t progress) {
 	loading_frame->addImage(
 		SDL_Rect{10, 10, 100, 100},
 		makeColor(255, 255, 255, 255),
-		"images/ui/gear0.png",
-		"gear"
+		"images/ui/boulder/boulder0.png",
+		"spinning_widget"
 	);
 }
 
@@ -68,10 +68,10 @@ void doLoadingScreen() {
 		std::lock_guard<std::mutex> lock(loading_mutex);
 		auto loading_frame = gui->findFrame("loading_frame");
 		assert(loading_frame);
-		auto gear = loading_frame->findImage("gear");
-		int i = atoi(gear->path.substr(14, 15).c_str());
-		i = (i + 1) % 6;
-		gear->path = std::string("images/ui/gear") + std::to_string(i) + ".png";
+		auto spinning_widget = loading_frame->findImage("spinning_widget");
+		int i = (int)strtol(spinning_widget->path.substr(25).c_str(), nullptr, 10);
+		i = (i + 1) % 30;
+		spinning_widget->path = std::string("images/ui/boulder/boulder") + std::to_string(i) + ".png";
 		drawClearBuffers();
 		gui->draw();
 		GO_SwapBuffers(screen);
