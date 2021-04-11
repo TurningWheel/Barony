@@ -1615,7 +1615,7 @@ void handleMainMenu(bool mode)
 		std::cout << "Recreating fontstash!\n";
 		fontstash = glfonsCreate(512, 512, FONS_ZERO_TOPLEFT);
 
-		font_normal = fonsAddFont(fontstash, "sans", "data/SatellaRegular-ZVVaz.ttf");
+		font_normal = fonsAddFont(fontstash, "sans", "lang/en.ttf");
 		if (font_normal == FONS_INVALID)
 		{
 			std::cerr << "Failed to load font_normal!\n";
