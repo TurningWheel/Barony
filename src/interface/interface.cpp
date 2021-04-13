@@ -180,7 +180,7 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&font16x16_bmp, "images/system/font16x16.png"),
 
 	std::make_pair(&font12x12_small_bmp, "images/system/font12x12_small.png"),
-	std::make_pair(&backdrop_minotaur_bmp, "images/system/backdrop.png"),
+	std::make_pair(&backdrop_minotaur_bmp, "images/system/backdrop_cursed.png"),
 	std::make_pair(&backdrop_blessed_bmp, "images/system/backdrop_blessed.png"),
 	std::make_pair(&backdrop_cursed_bmp, "images/system/backdrop_cursed.png"),
 	std::make_pair(&button_bmp, "images/system/ButtonHighlighted.png"),
@@ -265,7 +265,7 @@ bool loadInterfaceResources()
 {
 	//General GUI images.
 	font12x12_small_bmp = loadImage("images/system/font12x12_small.png");
-	backdrop_minotaur_bmp = loadImage("images/system/backdrop.png");
+	backdrop_minotaur_bmp = loadImage("images/system/backdrop_cursed.png");
 	backdrop_blessed_bmp = loadImage("images/system/backdrop_blessed.png");
 	backdrop_cursed_bmp = loadImage("images/system/backdrop_cursed.png");
 	button_bmp = loadImage("images/system/ButtonHighlighted.png");

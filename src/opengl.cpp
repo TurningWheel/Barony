@@ -494,7 +494,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode, bool unbind_buffers)
 				}
 				glDisableClientState(GL_COLOR_ARRAY); // disable the color array on the client side
 				SDL_glBindBuffer(GL_ARRAY_BUFFER, 0);
-				glBindVertexArray(0);
+				SDL_glBindVertexArray(0);
 			}
 			else
 			{

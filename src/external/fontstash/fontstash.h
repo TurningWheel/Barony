@@ -18,6 +18,13 @@
 // As per 2., this is an altered version of the source.
 //
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <limits.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #ifndef FONS_H
 #define FONS_H
 

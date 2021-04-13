@@ -2432,7 +2432,7 @@ void GO_InitFBO()
 
 -------------------------------------------------------------------------------*/
 
-static void GLAPIENTRY onGlDebugMessageCallback(
+static void onGlDebugMessageCallback(
 	GLenum source,		// GL_DEBUG_SOURCE_*
 	GLenum type,		// GL_DEBUG_TYPE_*
 	GLuint id,
@@ -2588,8 +2588,10 @@ bool initVideo()
 #ifdef NINTENDO
 		initNxGL();
 #endif // NINTENDO
+#ifndef _WIN32
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageCallback(onGlDebugMessageCallback, 0);
+#endif
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_CULL_FACE);
