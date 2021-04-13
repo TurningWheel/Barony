@@ -2432,6 +2432,7 @@ void GO_InitFBO()
 
 -------------------------------------------------------------------------------*/
 
+#ifndef APPLE
 static void onGlDebugMessageCallback(
 	GLenum source,		// GL_DEBUG_SOURCE_*
 	GLenum type,		// GL_DEBUG_TYPE_*
@@ -2447,6 +2448,7 @@ static void onGlDebugMessageCallback(
 	}
 	std::cout << "[GL] Received debug callback: source=" << source << ", type = " << type << ", id=" << id << ", severity=" << severity << ", length=" << length << ", message=\"" << message << "\"\n";
 }
+#endif
 
 bool initVideo()
 {
@@ -2589,8 +2591,10 @@ bool initVideo()
 		initNxGL();
 #endif // NINTENDO
 #ifndef _WIN32
+#ifndef APPLE
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageCallback(onGlDebugMessageCallback, 0);
+		#endif
 #endif
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_TEXTURE_2D);
