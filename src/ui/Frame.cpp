@@ -328,14 +328,15 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			}
 
 			// get rendered text
-			Text* text = Text::get(entry.text.c_str(), font.c_str());
-			if (text == nullptr) {
+			Font* actualFont = Font::get(font.c_str());
+			if (actualFont == nullptr) {
 				continue;
 			}
 
 			// get the size of the rendered text
-			int textSizeW = text->getWidth();
-			int textSizeH = entrySize;
+			int textSizeW;
+			int textSizeH;// = entrySize;
+			actualFont->sizeText(entry.text.c_str(), &textSizeW, &textSizeH);
 
 			SDL_Rect pos;
 			pos.x = _size.x + border - scroll.x;
@@ -382,7 +383,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			if (scaledDest.h <= 0 || scaledDest.w <= 0) {
 				continue;
 			}
-			text->drawColor(src, scaledDest, entry.color);
+			actualFont->drawTextColor(entry.text, scaledDest.x, scaledDest.y, entry.color);
 		}
 	}
 
@@ -413,12 +414,12 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			if (font) {
 				int border = tooltip_border_width;
 
-				Text* text = Text::get(tooltip, font->getName());
 				SDL_Rect src;
 				src.x = mousex + 20 * ((float)Frame::virtualScreenX / xres);
 				src.y = mousey;
-				src.w = text->getWidth() + border * 2;
-				src.h = text->getHeight() + border * 2;
+				font->sizeText(tooltip, &src.w, &src.h);
+				src.w += border * 2;
+				src.h += border * 2;
 
 				SDL_Rect _src = src;
 				_src.x = _src.x * (float)xres / (float)Frame::virtualScreenX;
@@ -434,7 +435,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				src2.h = src2.h * (float)yres / (float)Frame::virtualScreenY;
 				drawRect(&src2, tooltip_background, (Uint8)(tooltip_background>>mainsurface->format->Ashift));
 
-				text->drawColor(SDL_Rect{0,0,0,0}, src2, tooltip_text_color);
+				font->drawTextColor(tooltip, src2.x, src2.y, tooltip_text_color);
 			}
 		}
 	}

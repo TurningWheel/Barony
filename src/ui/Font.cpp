@@ -31,6 +31,7 @@ Font::Font(const char* _name) {
 	}
 	printf("Creating new font: %s\n", name.c_str());
 	fontstash = glfonsCreate(512, 512, FONS_ZERO_TOPLEFT);
+	//fontstash = glfonsCreate(512, 512, FONS_ZERO_BOTTOMLEFT);
 	font_style_normal = fonsAddFont(fontstash, "sans", path.c_str());
 	if (font_style_normal == FONS_INVALID)
 	{
@@ -44,7 +45,7 @@ Font::~Font() {
 	}
 }
 
-int Font::sizeText(const char* str, int* out_w, int* out_h) const {
+int Font::sizeText(const char* str, int* out_w, int* out_h, int override_pointsize) const {
 	if (out_w) {
 		*out_w = 0;
 	}
@@ -52,15 +53,23 @@ int Font::sizeText(const char* str, int* out_w, int* out_h) const {
 		*out_h = 0;
 	}
 	if (fontstash && str) {
+		if (override_pointsize == 0)
+		{
+			fonsSetSize(fontstash, pointSize);
+		}
+		else
+		{
+			fonsSetSize(fontstash, override_pointsize);
+		}
+		fonsSetAlign(fontstash, FONS_ALIGN_LEFT | FONS_ALIGN_TOP);
 		float textBounds[4];
 		float width = fonsTextBounds(fontstash, 0, 0, str, nullptr, textBounds);
-		//TODO: Make this work!
 		if (out_w) {
-			*out_w = static_cast<int>(textBounds[2]) - static_cast<int>(textBounds[0]) + outlineSize * 2;
+			*out_w = static_cast<int>(textBounds[2]) - static_cast<int>(textBounds[0]) + (outlineSize * 2);
 			//*out_w = static_cast<int>(width) + outlineSize * 2; //TODO: This, or text bounds [2] - [0]?
 		}
 		if (out_h) {
-			*out_h = static_cast<int>(textBounds[3]) - static_cast<int>(textBounds[1]) + outlineSize * 2;
+			*out_h = static_cast<int>(textBounds[3]) - static_cast<int>(textBounds[1]) + (outlineSize * 2);
 			//printf("[%s] [3] = %f, [1] %f, out_h = %d\n", str, textBounds[3], textBounds[1], *out_h);
 		}
 		return 0;
@@ -69,15 +78,61 @@ int Font::sizeText(const char* str, int* out_w, int* out_h) const {
 	}
 }
 
-int Font::height() const {
+int Font::height(int override_pointsize) const {
 	if (fontstash) {
-		//TODO: Make this work!
+		if (override_pointsize == 0)
+		{
+			fonsSetSize(fontstash, pointSize);
+		}
+		else
+		{
+			fonsSetSize(fontstash, override_pointsize);
+		}
+		fonsSetAlign(fontstash, FONS_ALIGN_LEFT | FONS_ALIGN_TOP);
 		float height;
 		fonsVertMetrics(fontstash, nullptr, nullptr, &height);
 		return static_cast<int>(height);
 	} else {
 		return 0;
 	}
+}
+void Font::drawText(std::string str, int x, int y, int override_pointsize) {
+	drawTextColor(str, x, y, 0xffffffff, override_pointsize);
+}
+
+void Font::drawTextColor(std::string str, int x, int y, const Uint32& color, int override_pointsize) {
+	fonsClearState(fontstash);
+	fonsSetFont(fontstash, font_style_normal);
+	if (override_pointsize == 0)
+	{
+		fonsSetSize(fontstash, pointSize);
+	}
+	else
+	{
+		fonsSetSize(fontstash, override_pointsize);
+	}
+	//fonsSetSize(fontstash, 124.0f);
+	fonsSetColor(fontstash, color);
+	fonsSetAlign(fontstash, FONS_ALIGN_LEFT | FONS_ALIGN_TOP);
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(0, 0, xres, yres);
+	glLoadIdentity();
+	//glOrtho(0, xres, 0, yres, -1, 1);
+	glOrtho(0, xres, yres, 0, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+
+	fonsDrawText(fontstash, x, y, str.c_str(), nullptr);
+
+	// unbind texture
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glColor4f(1.f, 1.f, 1.f, 1.f);
+
+	glEnable(GL_TEXTURE_2D); //Needed for the rest of the game...
 }
 
 static std::unordered_map<std::string, Font*> hashed_fonts;

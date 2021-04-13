@@ -1617,48 +1617,28 @@ void handleMainMenu(bool mode)
 			drawImageScaled(title_bmp, nullptr, &src);
 		}
 
-		Text* text = Text::get("This. Is. For. BARONY!!", Font::defaultFont);
-		if (!text) {
+		Font* font = Font::get(Font::defaultFont);
+		if (!font) {
 			return;
 		}
-		SDL_Rect dest;
-		dest.x = 100;
-		dest.y = yres - 100;
-		dest.w = 0;
-		dest.h = 0;
-		SDL_Rect src_text_rect;
-		src_text_rect.w = 0;
-		src_text_rect.h = 0;
-		text->drawColor(src_text_rect, dest, 0xFF00FFFF);
+		font->drawTextColor("This. Is. For. BARONY!!", 100, yres - 100, 0xFF00FFFF);
 
-		text = Text::get("What does the BARON say??", Font::defaultFont);
-		if (!text) {
-			std::cerr << "Failed to get text 2!\n";
-			return;
-		}
-		text->drawColor(300, 32, 0xFFFF00FF, 32.0f);
+		font->drawTextColor("What does the BARON say??", 300, 32, 0xFFFF00FF, 32.0f);
 
 		int text_y = 300;
-		text = Text::get("STB TTF SPONSORED BY", Font::defaultFont);
-		if (!text) {
-			std::cerr << "Failed to get text 3!\n";
-			return;
-		}
-		text->drawColor(32, text_y, 0xFFFF00FF, 92.0f);
-		text_y += text->getHeight() + 4;
-		text = Text::get("POTATO KING", Font::defaultFont);
-		if (!text) {
-			std::cerr << "Failed to get text 4!\n";
-			return;
-		}
-		text->drawColor(32, text_y, 0xFFEF23FF, 92.0f);
-		text_y += text->getHeight();
-		text = Text::get("run the gauntlet f00lz!!1!", Font::defaultFont);
-		if (!text) {
-			std::cerr << "Failed to get text 5!\n";
-			return;
-		}
-		text->drawColor(100, text_y, 0xFFEF23FF, 22.39f);
+		font->drawTextColor("STB TTF SPONSORED BY", 32, text_y, 0xFFFF00FF, 92.0f);
+		text_y += font->height(92.0f);
+		// font->drawTextColor("      POTATO KING", 32, text_y, 0xFFEF23F3, 92.0f);
+		font->drawTextColor("      POTATO KING", 32, text_y, 0xFF012345, 92.0f);
+		int text_x;
+		int test_height;
+		font->sizeText("      POTATO KING", &text_x, &test_height, 92.0f);
+		font->drawTextColor("πατάτα", 32 + text_x + 8, text_y, 0xFF54FF45, 32.99f);
+		//text_y += font->height(92.0f) + 4;
+		text_y += test_height;
+		font->drawTextColor("run the gauntlet f00lz!!1!", 100, text_y, 0xFFEF23FF, 22.39f);
+
+		font->drawTextColor("Pootis pootis blarg blarg!", 0, 0, 0xFFFFFFFF);
 
 		if ( mode && subtitleVisible )
 		{

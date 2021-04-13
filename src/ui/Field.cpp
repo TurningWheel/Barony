@@ -99,23 +99,14 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		str.assign(text);
 	}
 
-	Text* text = nullptr;
-	if (!str.empty()) {
-		text = Text::get(str.c_str(), font.c_str());
-		if (!text) {
-			return;
-		}
-	} else {
-		return;
-	}
 	Font* actualFont = Font::get(font.c_str());
 	if (!actualFont) {
 		return;
 	}
 
 	// get the size of the rendered text
-	int textSizeW = text->getWidth();
-	int textSizeH = text->getHeight();
+	int textSizeW, textSizeH;
+	actualFont->sizeText(str.c_str(), &textSizeW, &textSizeH);
 
 	if (selected) {
 		textSizeH += 2;
@@ -179,7 +170,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
 	scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
 	scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
-	text->drawColor(src, scaledDest, color);
+	actualFont->drawTextColor(str, scaledDest.x, scaledDest.y, color);
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

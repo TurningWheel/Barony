@@ -85,10 +85,10 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 	if (style != STYLE_CHECKBOX || pressed) {
 		if (!text.empty()) {
-			Text* _text = Text::get(text.c_str(), font.c_str());
-			if (_text) {
-				int w = _text->getWidth(); //TODO: This won't work because text hasn't been drawn yet, so this value hasn't been cached yet...
-				int h = _text->getHeight();
+			Font* _font = Font::get(font.c_str());
+			if (_font) {
+				int w, h;
+				_font->sizeText(text.c_str(), &w, &h);
 				int x = (style != STYLE_DROPDOWN) ?
 					(size.w - w) / 2 :
 					5 + border;
@@ -117,7 +117,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
 				scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
 				scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
-				_text->drawColor(section, scaledPos, textColor);
+				_font->drawTextColor(text, scaledPos.x, scaledPos.y, textColor);
 			}
 		} else if (icon.c_str()) {
 			Image* iconImg = Image::get(icon.c_str());

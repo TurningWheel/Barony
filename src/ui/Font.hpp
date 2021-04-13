@@ -31,11 +31,11 @@ public:
 	//! @param out_w the integer to hold the width
 	//! @param out_h the integer to hold the height
 	//! @return 0 on success, non-zero on error
-	int sizeText(const char* str, int* out_w, int* out_h) const;
+	int sizeText(const char* str, int* out_w, int* out_h, int override_pointsize = 0) const;
 
 	//! get the height of the font
 	//! @return the font height in pixels
-	int height() const;
+	int height(int override_pointsize = 0) const;
 
 	//! get a Font object from the engine
 	//! @param name The Font name
@@ -44,6 +44,13 @@ public:
 
 	//! dump engine's font cache
 	static void dumpCache();
+
+	//! draws the text
+	void drawText(std::string str, int x, int y, int override_pointsize = 0);
+
+	//! draws the text with the given color
+	//TODO: Maybe we can hack Fontstash to support scaling, if we need it?
+	void drawTextColor(std::string str, int x, int y, const Uint32& color, int override_pointsize = 0); //TODO.
 
 private:
 	std::string name;
