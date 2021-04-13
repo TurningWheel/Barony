@@ -2430,6 +2430,28 @@ void GO_InitFBO()
 
 -------------------------------------------------------------------------------*/
 
+#ifdef ENABLE_OPENGL_DEBUG
+ #ifdef WINDOWS
+static void onGlDebugMessageCallback(
+ #else
+static void GLAPIENTRY onGlDebugMessageCallback(
+ #endif
+	GLenum source,		// GL_DEBUG_SOURCE_*
+	GLenum type,		// GL_DEBUG_TYPE_*
+	GLuint id,
+	GLenum severity,	// GL_DEBUG_SEVERITY_*
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam)
+{
+	if (id == 131185 || id == 1283)
+	{
+		return;
+	}
+	std::cout << "[GL] Received debug callback: source=" << source << ", type = " << type << ", id=" << id << ", severity=" << severity << ", length=" << length << ", message=\"" << message << "\"\n";
+}
+#endif
+
 bool initVideo()
 {
 #ifdef NINTENDO
@@ -2569,6 +2591,10 @@ bool initVideo()
 #ifdef NINTENDO
 		initNxGL();
 #endif // NINTENDO
+#ifdef ENABLE_OPENGL_DEBUG
+		glEnable(GL_DEBUG_OUTPUT);
+		glDebugMessageCallback(onGlDebugMessageCallback, 0);
+#endif
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_CULL_FACE);

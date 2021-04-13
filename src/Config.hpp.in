@@ -60,3 +60,7 @@
 	 */
 	typedef unsigned long DWORD;
 #endif
+
+#if @ENABLE_OPENGL_DEBUG@
+	#define ENABLE_OPENGL_DEBUG
+#endif

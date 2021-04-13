@@ -16,29 +16,25 @@ private:
 	Text& operator=(const Text&) = delete;
 	Text& operator=(Text&&) = delete;
 
-	//! renders the text using its pre-specified parameters.
-	//! this should usually not be called by the user.
-	void render();
-
 public:
 	//! special char marks font to be used
 	static const char fontBreak = 8;
 
 	const char*				getName() const { return name.c_str(); }
-	const GLuint			getTexID() const { return texid; }
-	const SDL_Surface*		getSurf() const { return surf; }
 	const unsigned int		getWidth() const { return width; }
 	const unsigned int		getHeight()	const { return height; }
 
 	//! draws the text
 	//! @param src defines a subsection of the text image to actually draw (width 0 and height 0 uses whole image)
 	//! @param dest the position and size of the image on-screen (width 0 and height 0 defaults to 1:1 scale)
-	void draw(SDL_Rect src, SDL_Rect dest);
+	void draw(SDL_Rect src, SDL_Rect dest, int override_pointsize = 0);
+	void draw(int x, int y, int override_pointsize = 0); //Wrapper to draw converting x and y coords to default rects.
 
 	//! draws the text with the given color
 	//! @param src defines a subsection of the text image to actually draw (width 0 and height 0 uses whole image)
 	//! @param dest the position and size of the image on-screen (width 0 and height 0 defaults to 1:1 scale)
-	void drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color);
+	void drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color, int override_pointsize = 0);
+	void drawColor(int x, int y, const Uint32& color, int override_pointsize = 0); //Wrapper to drawColor converting x and y coords to default rects.
 
 	//! get a Text object from the engine
 	//! @param str The Text's string
@@ -51,23 +47,7 @@ public:
 
 private:
 	std::string name;
-	GLuint texid = 0;
-	SDL_Surface* surf = nullptr;
-
-	//! static geometry data for rendering the image to a quad
-	static const GLuint indices[6];
-	static const GLfloat positions[8];
-	static const GLfloat texcoords[8];
-	enum buffer_t {
-		VERTEX_BUFFER,
-		TEXCOORD_BUFFER,
-		INDEX_BUFFER,
-		BUFFER_TYPE_LENGTH
-	};
-	static GLuint vbo[BUFFER_TYPE_LENGTH];
-	static GLuint vao;
 
 	int width = 0;
 	int height = 0;
-	bool rendered = false;
 };

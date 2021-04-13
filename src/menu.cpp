@@ -47,6 +47,8 @@
 #include "interface/ui.hpp"
 #include "lobbies.hpp"
 #include <sstream>
+#include "ui/Text.hpp"
+#include "ui/Font.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -1614,6 +1616,50 @@ void handleMainMenu(bool mode)
 		{
 			drawImageScaled(title_bmp, nullptr, &src);
 		}
+
+		Text* text = Text::get("This. Is. For. BARONY!!", Font::defaultFont);
+		if (!text) {
+			return;
+		}
+		SDL_Rect dest;
+		dest.x = 100;
+		dest.y = yres - 100;
+		dest.w = 0;
+		dest.h = 0;
+		SDL_Rect src_text_rect;
+		src_text_rect.w = 0;
+		src_text_rect.h = 0;
+		text->drawColor(src_text_rect, dest, 0xFF00FFFF);
+
+		text = Text::get("What does the BARON say??", Font::defaultFont);
+		if (!text) {
+			std::cerr << "Failed to get text 2!\n";
+			return;
+		}
+		text->drawColor(300, 32, 0xFFFF00FF, 32.0f);
+
+		int text_y = 300;
+		text = Text::get("STB TTF SPONSORED BY", Font::defaultFont);
+		if (!text) {
+			std::cerr << "Failed to get text 3!\n";
+			return;
+		}
+		text->drawColor(32, text_y, 0xFFFF00FF, 92.0f);
+		text_y += text->getHeight() + 4;
+		text = Text::get("POTATO KING", Font::defaultFont);
+		if (!text) {
+			std::cerr << "Failed to get text 4!\n";
+			return;
+		}
+		text->drawColor(32, text_y, 0xFFEF23FF, 92.0f);
+		text_y += text->getHeight();
+		text = Text::get("run the gauntlet f00lz!!1!", Font::defaultFont);
+		if (!text) {
+			std::cerr << "Failed to get text 5!\n";
+			return;
+		}
+		text->drawColor(100, text_y, 0xFFEF23FF, 22.39f);
+
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);

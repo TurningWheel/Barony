@@ -87,7 +87,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		if (!text.empty()) {
 			Text* _text = Text::get(text.c_str(), font.c_str());
 			if (_text) {
-				int w = _text->getWidth();
+				int w = _text->getWidth(); //TODO: This won't work because text hasn't been drawn yet, so this value hasn't been cached yet...
 				int h = _text->getHeight();
 				int x = (style != STYLE_DROPDOWN) ?
 					(size.w - w) / 2 :

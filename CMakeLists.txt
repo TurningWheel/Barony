@@ -27,6 +27,10 @@ if (NOT DEFINED EOS_ENABLED)
 	set (EOS_ENABLED 0)
 endif()
 
+if (NOT DEFINED ENABLE_OPENGL_DEBUG)
+	set (ENABLE_OPENGL_DEBUG 0)
+endif()
+
 # EOS Tokens
 
 if (DEFINED ENV{BUILD_ENV_PR} AND NOT DEFINED BUILD_ENV_PR) # TODO: We should make all environment variable checks in this file not overwrite whatever was explicitly passed in on the command line...
