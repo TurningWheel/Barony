@@ -123,7 +123,7 @@ void Font::drawTextColor(std::string str, int x, int y, const Uint32& color, int
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	//glOrtho(0, xres, 0, yres, -1, 1);
-	glOrtho(0, xres, yres, 0, -1, 1);
+	glOrtho(0, xres / UI_SCALE_EXPERIMENT, yres / UI_SCALE_EXPERIMENT, 0, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 
 	fonsDrawText(fontstash, x, y, str.c_str(), nullptr);

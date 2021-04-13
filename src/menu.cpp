@@ -1639,6 +1639,9 @@ void handleMainMenu(bool mode)
 		font->drawTextColor("run the gauntlet f00lz!!1!", 100, text_y, 0xFFEF23FF, 22.39f);
 
 		font->drawTextColor("Pootis pootis blarg blarg!", 0, 0, 0xFFFFFFFF);
+		UI_SCALE_EXPERIMENT = 2.0f;
+		font->drawTextColor("Pootis pootis blarg blarg!", 0, 0, 0xFFFFFFFF);
+		UI_SCALE_EXPERIMENT = 1.0f;
 
 		if ( mode && subtitleVisible )
 		{

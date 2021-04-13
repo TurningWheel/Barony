@@ -26,6 +26,7 @@
 #include "steam.hpp"
 #endif // STEAMWORKS
 
+float UI_SCALE_EXPERIMENT = 1.0f;
 
 //#include "player.hpp"
 

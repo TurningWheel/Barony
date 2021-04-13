@@ -16,6 +16,8 @@
 
 #include <assert.h>
 
+float UI_SCALE_EXPERIMENT = 1.0f;
+
 static Frame* playerHud[MAXPLAYERS] = { nullptr };
 bool newui = false;
 

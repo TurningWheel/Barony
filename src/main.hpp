@@ -816,3 +816,5 @@ extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
  #define getSizeOfText(A, B, C, D) TTF_SizeUTF8(A, B, C, D)
  #define getHeightOfFont(A) TTF_FontHeight(A)
 #endif // NINTENDO
+
+extern float UI_SCALE_EXPERIMENT;
