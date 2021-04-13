@@ -4262,7 +4262,7 @@ void handleMainMenu(bool mode)
 
 			// fps slider
 			ttfPrintText(ttf12, subx1 + 24, suby2 - 80, language[2411]);
-			doSlider(subx1 + 24, suby2 - 56, 14, 60, 144, 1, (int*)(&settings_fps));
+			doSlider(subx1 + 24, suby2 - 56, 14, 60, 300, 1, (int*)(&settings_fps));
 		}
 
 		// audio tab
