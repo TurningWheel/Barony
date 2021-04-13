@@ -26,6 +26,9 @@
 #ifdef WINDOWS
  #include <windows.h>
 #endif
+#ifdef NINTENDO
+ #include <stdlib.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
