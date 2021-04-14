@@ -70,7 +70,7 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color, int overr
 	//fonsSetSize(fontstash, 124.0f);
 	fonsSetColor(fontstash, color);
 
-	if (0 != font->sizeText(strToRender.c_str(), &width, &height))
+	if (0 != font->sizeText(strToRender, &width, &height))
 	{
 		std::cerr << "Failed to get size of text!\n"; //TODO: Delete debug!
 		return;

@@ -1617,7 +1617,9 @@ void handleMainMenu(bool mode)
 			drawImageScaled(title_bmp, nullptr, &src);
 		}
 
-		Font* font = Font::get(Font::defaultFont);
+		Font* font = Font::get("lang/en.ttf");
+		//Font* font = Font::get("fonts/pixel_maz.ttf");
+		//Font* font = Font::get("fonts/pixelmix.ttf");
 		if (!font) {
 			return;
 		}
@@ -1642,6 +1644,20 @@ void handleMainMenu(bool mode)
 		UI_SCALE_EXPERIMENT = 2.0f;
 		font->drawTextColor("Pootis pootis blarg blarg!", 0, 0, 0xFFFFFFFF);
 		UI_SCALE_EXPERIMENT = 1.0f;
+
+
+		//OK! Now, test the newline and tab stuff code!
+		text_x = 700;
+		text_y = 400;
+		font->drawTextColor("For all decent\n\npuppies\neat\npotato!", text_x, text_y, 0xFF10FFFF, 34.0f);
+		text_x += font->textWidth("For all decent\n\npuppies\neat\npotato!", 34.0f);
+		font->drawTextColor("||except for Buddy,\tof course!", text_x, text_y, 0xFF10FFFF, 34.0f);
+		
+		text_x = 500;
+		text_y = 600;
+		font->drawTextColor("a horse is a horse,\t", text_x, text_y, 0xFF10FFFF, 54.0f);
+		text_x += font->textWidth("a horse is a horse,\t", 54.0f);
+		font->drawTextColor("of course!", text_x, text_y, 0xFF10FFFF, 54.0f);
 
 		if ( mode && subtitleVisible )
 		{

@@ -88,7 +88,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			Font* _font = Font::get(font.c_str());
 			if (_font) {
 				int w, h;
-				_font->sizeText(text.c_str(), &w, &h);
+				_font->sizeText(text, &w, &h);
 				int x = (style != STYLE_DROPDOWN) ?
 					(size.w - w) / 2 :
 					5 + border;
@@ -117,6 +117,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
 				scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
 				scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
+				//TODO: If we want to go with this method, we have to recalculate the point size here...
 				_font->drawTextColor(text, scaledPos.x, scaledPos.y, textColor);
 			}
 		} else if (icon.c_str()) {

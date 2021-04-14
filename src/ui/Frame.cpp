@@ -336,7 +336,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			// get the size of the rendered text
 			int textSizeW;
 			int textSizeH;// = entrySize;
-			actualFont->sizeText(entry.text.c_str(), &textSizeW, &textSizeH);
+			actualFont->sizeText(entry.text, &textSizeW, &textSizeH);
 
 			SDL_Rect pos;
 			pos.x = _size.x + border - scroll.x;

@@ -106,7 +106,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 	// get the size of the rendered text
 	int textSizeW, textSizeH;
-	actualFont->sizeText(str.c_str(), &textSizeW, &textSizeH);
+	actualFont->sizeText(str, &textSizeW, &textSizeH);
 
 	if (selected) {
 		textSizeH += 2;
