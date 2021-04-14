@@ -1617,9 +1617,15 @@ void handleMainMenu(bool mode)
 			drawImageScaled(title_bmp, nullptr, &src);
 		}
 
-		Font* font = Font::get("lang/en.ttf");
-		//Font* font = Font::get("fonts/pixel_maz.ttf");
+#ifdef NINTENDO
+		//Font* font = Font::get("rom://lang/en.ttf");
+		Font* font = Font::get("rom://fonts/pixel_maz.ttf");
+		//Font* font = Font::get("rom://fonts/pixelmix.ttf");
+#else
+		//Font* font = Font::get("lang/en.ttf");
+		Font* font = Font::get("fonts/pixel_maz.ttf");
 		//Font* font = Font::get("fonts/pixelmix.ttf");
+#endif
 		if (!font) {
 			return;
 		}
