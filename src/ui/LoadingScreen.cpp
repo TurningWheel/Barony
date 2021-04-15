@@ -80,7 +80,5 @@ void doLoadingScreen() {
 
 void destroyLoadingScreen() {
 	std::lock_guard<std::mutex> lock(loading_mutex);
-	auto loading_frame = gui->findFrame("loading_frame");
-	assert(loading_frame);
-	loading_frame->removeSelf();
+	gui->remove("loading_frame");
 }
