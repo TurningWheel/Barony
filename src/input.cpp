@@ -14,6 +14,23 @@ bool Input::keys[SDL_NUM_SCANCODES] = { false };
 bool Input::mouseButtons[8] = { false };
 std::string Input::lastInputOfAnyKind;
 
+void Input::defaultBindings() {
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+		inputs[c].bind("MenuUp", (std::string("Pad") + std::to_string(c) + std::string("DpadY-")).c_str());
+		inputs[c].bind("MenuLeft", (std::string("Pad") + std::to_string(c) + std::string("DpadX-")).c_str());
+		inputs[c].bind("MenuRight", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str());
+		inputs[c].bind("MenuDown", (std::string("Pad") + std::to_string(c) + std::string("DpadY+")).c_str());
+		inputs[c].bind("MenuConfirm", (std::string("Pad") + std::to_string(c) + std::string("ButtonA")).c_str());
+		inputs[c].bind("MenuCancel", (std::string("Pad") + std::to_string(c) + std::string("ButtonB")).c_str());
+		inputs[c].bind("MenuPageLeft", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str());
+		inputs[c].bind("MenuPageRight", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str());
+		inputs[c].bind("AltMenuUp", (std::string("Pad") + std::to_string(c) + std::string("DpadY-")).c_str());
+		inputs[c].bind("AltMenuLeft", (std::string("Pad") + std::to_string(c) + std::string("DpadX-")).c_str());
+		inputs[c].bind("AltMenuRight", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str());
+		inputs[c].bind("AltMenuDown", (std::string("Pad") + std::to_string(c) + std::string("DpadY+")).c_str());
+	}
+}
+
 void Input::addGameController(int id, GameController& controller) {
 	gameControllers.emplace(id, controller.sdl_device);
 	for (auto& input : inputs) {

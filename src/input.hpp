@@ -25,6 +25,9 @@ public:
 	//! one input for each player
 	static Input inputs[MAXPLAYERS];
 
+	//! set default bindings for all players
+	static void defaultBindings();
+
 	//! input mapping
 	struct binding_t {
 		std::string input = "";

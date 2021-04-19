@@ -4793,6 +4793,8 @@ int main(int argc, char** argv)
 			exit(1);
 		}
 
+		Input::defaultBindings();
+
 		// load config file
 		if ( loadingconfig )
 		{
