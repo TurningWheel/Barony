@@ -8,14 +8,14 @@
 #include "Text.hpp"
 
 Field::Field(const int _textLen) {
-	textlen = std::max(_textLen, 1);
+	textlen = std::max(_textLen, 0);
 	text = new char[textlen + 1];
 	memset(text, 0, textlen + 1);
 }
 
 Field::Field(const char* _text) {
-	textlen = strlen(_text) + 1;
-	text = new char[textlen];
+	textlen = strlen(_text);
+	text = new char[textlen + 1];
 	setText(_text);
 }
 
@@ -48,16 +48,31 @@ Field::~Field() {
 	}
 }
 
-void Field::select() {
-	selected = true;
+void Field::activate() {
+	Widget::select();
+#ifdef NINTENDO
+	auto result = nxKeyboard(guide.c_str());
+	if (result.success) {
+		setText(result.str.c_str());
+	}
+#else
+	activated = true;
 	inputstr = text;
 	inputlen = textlen;
 	SDL_StartTextInput();
+#endif
 }
 
 void Field::deselect() {
+	if (editable) {
+		deactivate();
+	}
+	Widget::deselect();
+}
+
+void Field::deactivate() {
+	activated = false;
 	selectAll = false;
-	selected = false;
 	if (inputstr == text) {
 		inputstr = nullptr;
 		inputlen = 0;
@@ -80,18 +95,18 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	scaledRect.w = rect.w * (float)xres / (float)Frame::virtualScreenX;
 	scaledRect.h = rect.h * (float)yres / (float)Frame::virtualScreenY;
 
-	if (selected) {
+	if (activated) {
 		drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
 	}
 
 	bool showCursor = (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
 
 	std::string str;
-	if (selected && showCursor) {
+	if (activated && showCursor) {
 		str.reserve((Uint32)strlen(text) + 2);
 		str.assign(text);
 		str.append("_");
-	} else if (selected) {
+	} else if (activated) {
 		str.reserve((Uint32)strlen(text) + 2);
 		str.assign(text);
 		str.append(" ");
@@ -117,7 +132,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	int textSizeW = text->getWidth();
 	int textSizeH = text->getHeight();
 
-	if (selected) {
+	if (activated) {
 		textSizeH += 2;
 		if (hjustify == RIGHT || hjustify == BOTTOM) {
 			textSizeH -= 4;
@@ -187,9 +202,9 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	result.highlighted = false;
 	result.entered = false;
 	if (!editable) {
-		if (selected) {
+		if (activated) {
 			result.entered = true;
-			deselect();
+			deactivate();
 		}
 		return result;
 	}
@@ -205,21 +220,21 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
-	if (selected) {
+	if (activated) {
 		if (inputstr != text) {
 			result.entered = true;
-			deselect();
+			deactivate();
 			if (inputstr == nullptr) {
 				SDL_StopTextInput();
 			}
 		}
 		if (keystatus[SDL_SCANCODE_RETURN] || keystatus[SDL_SCANCODE_KP_ENTER]) {
 			result.entered = true;
-			deselect();
+			deactivate();
 		}
 		if (keystatus[SDL_SCANCODE_ESCAPE] || mousestatus[SDL_BUTTON_RIGHT]) {
 			result.entered = true;
-			deselect();
+			deactivate();
 		}
 
 		/*if (selectAll) {
@@ -239,12 +254,12 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	}
 
 	if (!result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
-		if (selected) {
+		if (activated) {
 			result.entered = true;
-			deselect();
+			deactivate();
 		}
 	} else if (result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
-		select();
+		activate();
 		/*if (doubleclick_mousestatus[SDL_BUTTON_LEFT]) {
 			selectAll = true;
 		}*/
@@ -254,14 +269,12 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 }
 
 void Field::setText(const char* _text) {
-	if (_text == nullptr || textlen <= 1) {
+	if (_text == nullptr) {
 		return;
 	}
-	int size = std::min(std::max(0, (int)strlen(_text)), (int)textlen - 1);
+	int size = std::min(std::max(0, (int)strlen(_text)), (int)textlen);
 	if (size > 0) {
 		memcpy(text, _text, size);
-		text[size] = '\0';
-	} else {
-		text[0] = '\0';
 	}
+	text[size] = '\0';
 }

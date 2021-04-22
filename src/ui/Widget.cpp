@@ -3,6 +3,7 @@
 #include "../main.hpp"
 #include "Widget.hpp"
 #include "Frame.hpp"
+#include "../input.hpp"
 
 Widget::~Widget() {
 	if (parent) {
@@ -56,12 +57,14 @@ Frame* Widget::findSearchRoot() {
 Widget* Widget::handleInput() {
 	Widget* result = nullptr;
 	while (selected) {
+		Input& input = Input::inputs[owner];
 
 		// find search root
 		Frame* root = nullptr;
 
 		// tab to next element
 		if (keystatus[SDL_SCANCODE_TAB]) {
+			keystatus[SDL_SCANCODE_TAB] = 0;
 			if (!widgetTab.empty()) {
 				root = root ? root : findSearchRoot();
 				result = root->findWidget(widgetTab.c_str(), true);
@@ -72,23 +75,18 @@ Widget* Widget::handleInput() {
 		}
 
 		// directional move to next element
-		struct move {
-			int scancode;
-			const char* widget;
-		};
-		move moves[4] = {
-			{ SDL_SCANCODE_RIGHT, widgetRight.c_str() },
-			{ SDL_SCANCODE_DOWN, widgetDown.c_str() },
-			{ SDL_SCANCODE_LEFT, widgetLeft.c_str() },
-			{ SDL_SCANCODE_UP, widgetUp.c_str() }
+		const char* moves[4][2] = {
+			{ "MenuRight", widgetRight.c_str() },
+			{ "MenuDown", widgetDown.c_str() },
+			{ "MenuLeft", widgetLeft.c_str() },
+			{ "MenuUp", widgetUp.c_str() }
 		};
 		for (int c = 0; c < sizeof(moves) / sizeof(moves[0]); ++c) {
-			if (keystatus[moves[c].scancode]) {
-				if (moves[c].widget && moves[c].widget[0] != '\0') {
+			if (input.consumeBinaryToggle(moves[c][0])) {
+				if (moves[c][1] && moves[c][1][0] != '\0') {
 					root = root ? root : findSearchRoot();
-					result = root->findWidget(moves[c].widget, true);
+					result = root->findWidget(moves[c][1], true);
 					if (result) {
-						keystatus[moves[c].scancode] = 0;
 						break;
 					}
 				}
@@ -96,12 +94,11 @@ Widget* Widget::handleInput() {
 		}
 
 		// next tab
-		if (keystatus[SDL_SCANCODE_RIGHTBRACKET]) {
+		if (input.consumeBinaryToggle("MenuPageRight")) {
 			if (!widgetPageRight.empty()) {
 				root = root ? root : findSearchRoot();
 				result = root->findWidget(widgetPageRight.c_str(), true);
 				if (result) {
-					keystatus[SDL_SCANCODE_RIGHTBRACKET] = 0;
 					result->activate();
 					break;
 				}
@@ -109,12 +106,11 @@ Widget* Widget::handleInput() {
 		}
 
 		// previous tab
-		if (keystatus[SDL_SCANCODE_LEFTBRACKET]) {
+		if (input.consumeBinaryToggle("MenuPageLeft")) {
 			if (!widgetPageLeft.empty()) {
 				root = root ? root : findSearchRoot();
 				result = root->findWidget(widgetPageLeft.c_str(), true);
 				if (result) {
-					keystatus[SDL_SCANCODE_LEFTBRACKET] = 0;
 					result->activate();
 					break;
 				}
@@ -122,19 +118,17 @@ Widget* Widget::handleInput() {
 		}
 
 		// confirm selection
-		if (keystatus[SDL_SCANCODE_RETURN]) {
-			keystatus[SDL_SCANCODE_RETURN] = 0;
+		if (input.consumeBinaryToggle("MenuConfirm")) {
 			activate();
 			break;
 		}
 
 		// cancel selection
-		if (keystatus[SDL_SCANCODE_ESCAPE]) {
+		if (input.consumeBinaryToggle("MenuCancel")) {
 			if (!widgetBack.empty()) {
 				root = root ? root : findSearchRoot();
 				result = root->findWidget(widgetBack.c_str(), true);
 				if (result) {
-					keystatus[SDL_SCANCODE_ESCAPE] = 0;
 					result->activate();
 					break;
 				}

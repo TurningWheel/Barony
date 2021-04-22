@@ -143,18 +143,17 @@ void Slider::control() {
 		moveStartTime = ticks;
 		return;
 	}
-	if (keystatus[SDL_SCANCODE_RETURN]) {
-		keystatus[SDL_SCANCODE_RETURN] = 0;
-		activated = false;
-	} else if (keystatus[SDL_SCANCODE_ESCAPE]) {
-		keystatus[SDL_SCANCODE_ESCAPE] = 0;
+	Input& input = Input::inputs[owner];
+	if (input.consumeBinaryToggle("MenuCancel") ||
+		input.consumeBinaryToggle("MenuConfirm")) {
 		activated = false;
 	} else {
-		if (keystatus[SDL_SCANCODE_RIGHT] || keystatus[SDL_SCANCODE_LEFT]) {
+		if (input.binary("MenuRight") ||
+			input.binary("MenuLeft")) {
 			Uint32 timeMoved = ticks - moveStartTime;
 			Uint32 lastMove = ticks - lastMoveTime;
 			Uint32 sec = TICKS_PER_SECOND;
-			float inc = keystatus[SDL_SCANCODE_RIGHT] ? 1.f : -1.f;
+			float inc = input.binary("MenuRight") ? 1.f : -1.f;
 			float ovalue = value;
 			if (timeMoved < sec) {
 				if (lastMove > sec / 5) {

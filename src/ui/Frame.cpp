@@ -506,9 +506,10 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	if (selected) {
+		Input& input = Input::inputs[owner];
+
 		// unselect list
-		if (keystatus[SDL_SCANCODE_ESCAPE]) {
-			keystatus[SDL_SCANCODE_ESCAPE] = 0;
+		if (input.consumeBinaryToggle("MenuCancel")) {
 			deselect();
 			if (!widgetBack.empty()) {
 				Frame* root = findSearchRoot(); assert(root);
@@ -523,8 +524,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		}
 
 		// activate selection
-		if (keystatus[SDL_SCANCODE_RETURN]) {
-			keystatus[SDL_SCANCODE_RETURN] = 0;
+		if (input.consumeBinaryToggle("MenuConfirm")) {
 			if (selection != -1) {
 				activateEntry(*list[selection]);
 			}
@@ -543,21 +543,17 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		// choose a selection
 		if (list.size()) {
 			if (selection == -1) {
-				if (keystatus[SDL_SCANCODE_UP] || 
-					keystatus[SDL_SCANCODE_DOWN]) {
-					keystatus[SDL_SCANCODE_UP] = 0;
-					keystatus[SDL_SCANCODE_DOWN] = 0;
+				if (input.consumeBinaryToggle("MenuUp") || 
+					input.consumeBinaryToggle("MenuDown")) {
 					selection = 0;
 					scrollToSelection();
 				}
 			} else {
-				if (keystatus[SDL_SCANCODE_UP]) {
-					keystatus[SDL_SCANCODE_UP] = 0;
+				if (input.consumeBinaryToggle("MenuUp")) {
 					--selection;
 					scrollToSelection();
 				}
-				if (keystatus[SDL_SCANCODE_DOWN]) {
-					keystatus[SDL_SCANCODE_DOWN] = 0;
+				if (input.consumeBinaryToggle("MenuDown")) {
 					selection = selection == list.size() - 1 ? -1 : selection + 1;
 					scrollToSelection();
 				}

@@ -37,8 +37,11 @@ public:
 		bool entered;
 	};
 
-	//! selects the field for text editing
-	virtual void select() override;
+	//! activates the field for text editing
+	virtual void activate() override;
+
+	//! deactivate text editing
+	void deactivate();
 
 	//! deselects the field
 	virtual void deselect() override;
@@ -66,6 +69,7 @@ public:
 	const bool					isNumbersOnly() const { return numbersOnly; }
 	Widget::Args&				getParams() { return params; }
 	const Widget::Callback*		getCallback() const { return callback; }
+	const char*					getGuide() const { return guide.c_str(); }
 
 	void	setText(const char* _text);
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
@@ -79,10 +83,12 @@ public:
 	void	setScroll(const bool _scroll) { scroll = _scroll; }
 	void	setCallback(const Widget::Callback* fn) { callback = fn; }
 	void	setFont(const char* _font) { font = _font; }
+	void	setGuide(const char* _guide) { guide = _guide; }
 
 private:
 	Widget::Args params;								//!< script arguments to use when calling script
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field
+	std::string guide;									//!< string to use as a descriptive guide for the field (eg "Enter character's name");
 	char* text = nullptr;								//!< internal text buffer
 	size_t textlen = 0;									//!< length of internal text buffer
 	Uint32 color = 0xFFFFFFFF;							//!< text color
@@ -93,5 +99,6 @@ private:
 	bool numbersOnly = false;							//!< whether the field can only contain numeric chars
 	bool scroll = true;									//!< whether the field should scroll if the text is longer than its container
 	bool selectAll = false;								//!< whether all the text is selected for editing
+	bool activated = false;								//!< whether field is active for text editing
 	const Widget::Callback* callback = nullptr;			//!< the callback to use after text is entered
 };
