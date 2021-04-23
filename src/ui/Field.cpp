@@ -248,6 +248,7 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		}*/
 	}
 
+#ifndef NINTENDO
 	if (omousex >= _size.x && omousex < _size.x + _size.w &&
 		omousey >= _size.y && omousey < _size.y + _size.h) {
 		result.highlighted = true;
@@ -264,6 +265,7 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 			selectAll = true;
 		}*/
 	}
+#endif
 
 	return result;
 }

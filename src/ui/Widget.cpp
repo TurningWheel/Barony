@@ -55,89 +55,62 @@ Frame* Widget::findSearchRoot() {
 }
 
 Widget* Widget::handleInput() {
-	Widget* result = nullptr;
-	while (selected) {
+	if (selected) {
 		Input& input = Input::inputs[owner];
 
 		// find search root
 		Frame* root = nullptr;
 
-		// tab to next element
-		if (keystatus[SDL_SCANCODE_TAB]) {
-			keystatus[SDL_SCANCODE_TAB] = 0;
-			if (!widgetTab.empty()) {
-				root = root ? root : findSearchRoot();
-				result = root->findWidget(widgetTab.c_str(), true);
-				if (result) {
-					break;
-				}
-			}
-		}
-
-		// directional move to next element
-		const char* moves[4][2] = {
+		// move to another widget
+		const char* moves[][2] = {
+			{ "MenuTab", widgetTab.c_str() },
 			{ "MenuRight", widgetRight.c_str() },
 			{ "MenuDown", widgetDown.c_str() },
 			{ "MenuLeft", widgetLeft.c_str() },
-			{ "MenuUp", widgetUp.c_str() }
+			{ "MenuUp", widgetUp.c_str() },
+			{ "AltMenuRight", widgetRight.c_str() },
+			{ "AltMenuDown", widgetDown.c_str() },
+			{ "AltMenuLeft", widgetLeft.c_str() },
+			{ "AltMenuUp", widgetUp.c_str() }
 		};
 		for (int c = 0; c < sizeof(moves) / sizeof(moves[0]); ++c) {
 			if (input.consumeBinaryToggle(moves[c][0])) {
 				if (moves[c][1] && moves[c][1][0] != '\0') {
 					root = root ? root : findSearchRoot();
-					result = root->findWidget(moves[c][1], true);
+					Widget* result = root->findWidget(moves[c][1], true);
 					if (result) {
-						break;
+						return result;
 					}
 				}
 			}
 		}
 
-		// next tab
-		if (input.consumeBinaryToggle("MenuPageRight")) {
-			if (!widgetPageRight.empty()) {
-				root = root ? root : findSearchRoot();
-				result = root->findWidget(widgetPageRight.c_str(), true);
-				if (result) {
-					result->activate();
-					break;
+		// move to another widget and activate it
+		const char* actions[][2] = {
+			{ "MenuPageRight", widgetPageRight.c_str() },
+			{ "MenuPageLeft", widgetPageLeft.c_str() },
+			{ "MenuCancel", widgetBack.c_str() },
+		};
+		for (int c = 0; c < sizeof(actions) / sizeof(actions[0]); ++c) {
+			if (input.consumeBinaryToggle(actions[c][0])) {
+				if (actions[c][1] && actions[c][1][0] != '\0') {
+					root = root ? root : findSearchRoot();
+					Widget* result = root->findWidget(actions[c][1], true);
+					if (result) {
+						result->activate();
+						return result;
+					}
 				}
 			}
 		}
 
-		// previous tab
-		if (input.consumeBinaryToggle("MenuPageLeft")) {
-			if (!widgetPageLeft.empty()) {
-				root = root ? root : findSearchRoot();
-				result = root->findWidget(widgetPageLeft.c_str(), true);
-				if (result) {
-					result->activate();
-					break;
-				}
-			}
-		}
-
-		// confirm selection
+		// activate current selection
 		if (input.consumeBinaryToggle("MenuConfirm")) {
 			activate();
-			break;
+			return nullptr;
 		}
-
-		// cancel selection
-		if (input.consumeBinaryToggle("MenuCancel")) {
-			if (!widgetBack.empty()) {
-				root = root ? root : findSearchRoot();
-				result = root->findWidget(widgetBack.c_str(), true);
-				if (result) {
-					result->activate();
-					break;
-				}
-			}
-		}
-
-		break;
 	}
-	return result;
+	return nullptr;
 }
 
 Widget* Widget::findHead() {

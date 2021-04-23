@@ -407,6 +407,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	}
 
 	// root frame draws tooltip
+	// TODO on Nintendo, display this next to the currently selected widget
 	if (!parent) {
 		if (tooltip && tooltip[0] != '\0') {
 			Font* font = Font::get(tooltip_text_font);
@@ -1138,6 +1139,9 @@ void Frame::resizeForEntries() {
 }
 
 bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
+#ifdef NINTENDO
+	return false;
+#else
 	SDL_Rect newSize = SDL_Rect{0, 0, xres, yres};
 	SDL_Rect newActualSize = SDL_Rect{0, 0, xres, yres};
 	SDL_Rect& _size = curSize ? *curSize : newSize;
@@ -1175,6 +1179,7 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 	} else {
 		return true;
 	}
+#endif
 }
 
 Frame* Frame::getParent() {

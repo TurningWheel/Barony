@@ -95,6 +95,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
+#ifndef NINTENDO
 	if (rectContainsPoint(_size, omousex, omousey)) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
@@ -104,6 +105,11 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		result.highlightTime = highlightTime = SDL_GetTicks();
 		result.tooltip = nullptr;
 	}
+#else
+	result.highlighted = highlighted = false;
+	result.highlightTime = highlightTime = SDL_GetTicks();
+	result.tooltip = nullptr;
+#endif
 
 	result.clicked = false;
 	if (highlighted) {
