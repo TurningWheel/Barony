@@ -55,7 +55,7 @@ bool Input::binaryToggle(const char* binding) const {
 
 bool Input::consumeBinaryToggle(const char* binding) {
 	auto b = bindings.find(binding);
-	if (b != bindings.end() && (*b).second.binary) {
+	if (b != bindings.end() && (*b).second.binary && !(*b).second.consumed) {
 		(*b).second.consumed = true;
 		return true;
 	} else {
