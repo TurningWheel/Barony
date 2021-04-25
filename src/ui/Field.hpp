@@ -67,8 +67,7 @@ public:
 	const int					getVJustify() const { return static_cast<int>(vjustify); }
 	const bool					isEditable() const { return editable; }
 	const bool					isNumbersOnly() const { return numbersOnly; }
-	Widget::Args&				getParams() { return params; }
-	const Widget::Callback*		getCallback() const { return callback; }
+	void						(*getCallback() const)(Field&) { return callback; }
 	const char*					getGuide() const { return guide.c_str(); }
 
 	void	setText(const char* _text);
@@ -81,12 +80,11 @@ public:
 	void	setHJustify(const int _justify) { hjustify = static_cast<justify_t>(_justify); }
 	void	setVJustify(const int _justify) { vjustify = static_cast<justify_t>(_justify); }
 	void	setScroll(const bool _scroll) { scroll = _scroll; }
-	void	setCallback(const Widget::Callback* fn) { callback = fn; }
+	void	setCallback(void (*const fn)(Field&)) { callback = fn; }
 	void	setFont(const char* _font) { font = _font; }
 	void	setGuide(const char* _guide) { guide = _guide; }
 
 private:
-	Widget::Args params;								//!< script arguments to use when calling script
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field
 	std::string guide;									//!< string to use as a descriptive guide for the field (eg "Enter character's name");
 	char* text = nullptr;								//!< internal text buffer
@@ -100,5 +98,5 @@ private:
 	bool scroll = true;									//!< whether the field should scroll if the text is longer than its container
 	bool selectAll = false;								//!< whether all the text is selected for editing
 	bool activated = false;								//!< whether field is active for text editing
-	const Widget::Callback* callback = nullptr;			//!< the callback to use after text is entered
+	void (*callback)(Field&) = nullptr;					//!< the callback to use after text is entered
 };

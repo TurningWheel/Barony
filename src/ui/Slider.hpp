@@ -60,7 +60,7 @@ public:
     const SDL_Rect&             getRailSize() const { return railSize; }
     const char*                 getTooltip() const { return tooltip.c_str(); }
     const Uint32&               getColor() const { return color; }
-    const Widget::Callback*     getCallback() const { return callback; }
+    void						(*getCallback() const)(Slider&) { return callback; }
     bool                        isActivated() const { return activated; }
 
     void    setValue(float _value) { value = _value; }
@@ -71,10 +71,10 @@ public:
     void    setRailSize(const SDL_Rect rect) { railSize = rect; }
     void    setTooltip(const char* _tooltip) { tooltip = _tooltip; }
     void    setColor(const Uint32& _color) { color = _color; }
-    void	setCallback(const Widget::Callback* fn) { callback = fn; }
+    void	setCallback(void (*const fn)(Slider&)) { callback = fn; }
 
 private:
-    const Widget::Callback* callback = nullptr;		//!< native callback for clicking
+    void (*callback)(Slider&) = nullptr;		    //!< native callback for clicking
     float value = 0.f;                              //!< value
     float maxValue = 0.f;                           //!< maximum value
     float minValue = 0.f;                           //!< minimum value

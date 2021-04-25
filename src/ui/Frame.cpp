@@ -53,28 +53,6 @@ void Frame::listener_t::onChangeName(const char* name) {
 	entryCast->text = name;
 }
 
-Frame::entry_t::~entry_t() {
-	if (listener) {
-		listener->entry = nullptr;
-	}
-	if (click) {
-		delete click;
-		click = nullptr;
-	}
-	if (ctrlClick) {
-		delete ctrlClick;
-		ctrlClick = nullptr;
-	}
-	if (highlighting) {
-		delete highlighting;
-		highlighting = nullptr;
-	}
-	if (highlight) {
-		delete highlight;
-		highlight = nullptr;
-	}
-}
-
 Frame::Frame(const char* _name) {
 	size.x = 0;
 	size.y = 0;
@@ -808,14 +786,13 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 					}
 				} else {
 					entry->pressed = false;
-					Widget::Args args(entry->params);
 					if (entry->highlighting) {
-						(*entry->highlighting)(args);
+						(*entry->highlighting)(*entry);
 					}
 					if (!entry->highlighted) {
 						entry->highlighted = true;
 						if (entry->highlight) {
-							(*entry->highlight)(args);
+							(*entry->highlight)(*entry);
 						}
 					}
 				}
@@ -846,10 +823,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 			}
 
 			if (fieldResult.entered || (destWidget && field->isSelected())) {
-				Widget::Args args(field->getParams());
-				args.addString(field->getText());
 				if (field->getCallback()) {
-					(*field->getCallback())(args);
+					(*field->getCallback())(*field);
 				} else {
 					printlog("modified field with no callback");
 				}
@@ -1248,14 +1223,13 @@ void Frame::scrollToSelection() {
 }
 
 void Frame::activateEntry(entry_t& entry) {
-	Widget::Args args(entry.params);
 	if (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) {
 		if (entry.ctrlClick) {
-			(*entry.ctrlClick)(args);
+			(*entry.ctrlClick)(entry);
 		}
 	} else {
 		if (entry.click) {
-			(*entry.click)(args);
+			(*entry.click)(entry);
 		}
 	}
 }
@@ -1272,19 +1246,11 @@ void createTestUI() {
 		bt->setSize(SDL_Rect{10, 10, 50, 50});
 		bt->setText("x");
 		bt->setTooltip("Close window");
-		class Callback : public Widget::Callback {
-		public:
-			Callback(Frame& f) :
-				window(f) {}
-			virtual ~Callback() = default;
-			virtual int operator()(Widget::Args& args) const override {
-				window.removeSelf();
-				return 0;
-			}
-		private:
-			Frame& window;
-		};
-		bt->setCallback(new Callback(*window));
+		bt->setCallback([](Button& bt){
+			Widget* w = bt.getParent();
+			Frame* frame = static_cast<Frame*>(w);
+			frame->removeSelf();
+		});
 	}
 
 	int y = 500;

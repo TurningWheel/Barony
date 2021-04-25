@@ -33,10 +33,6 @@ Field::Field(Frame& _parent, const char* _text) : Field(_text) {
 
 Field::~Field() {
 	deselect();
-	if (callback) {
-		delete callback;
-		callback = nullptr;
-	}
 	if (text) {
 		if (inputstr == text) {
 			inputstr = nullptr;

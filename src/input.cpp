@@ -100,19 +100,35 @@ void Input::bind(const char* binding, const char* input) {
 			(*b).second.pad = pad;
 			if (strncmp(type, "Button", 6) == 0) {
 				if (strcmp((const char*)(type + 6), "A") == 0) {
+#ifdef NINTENDO
+					(*b).second.padButton = SDL_CONTROLLER_BUTTON_B;
+#else
 					(*b).second.padButton = SDL_CONTROLLER_BUTTON_A;
+#endif
 					(*b).second.type = binding_t::CONTROLLER_BUTTON;
 					return;
 				} else if (strcmp((const char*)(type + 6), "B") == 0) {
+#ifdef NINTENDO
+					(*b).second.padButton = SDL_CONTROLLER_BUTTON_A;
+#else
 					(*b).second.padButton = SDL_CONTROLLER_BUTTON_B;
+#endif
 					(*b).second.type = binding_t::CONTROLLER_BUTTON;
 					return;
 				} else if (strcmp((const char*)(type + 6), "X") == 0) {
+#ifdef NINTENDO
+					(*b).second.padButton = SDL_CONTROLLER_BUTTON_Y;
+#else
 					(*b).second.padButton = SDL_CONTROLLER_BUTTON_X;
+#endif
 					(*b).second.type = binding_t::CONTROLLER_BUTTON;
 					return;
 				} else if (strcmp((const char*)(type + 6), "Y") == 0) {
+#ifdef NINTENDO
+					(*b).second.padButton = SDL_CONTROLLER_BUTTON_X;
+#else
 					(*b).second.padButton = SDL_CONTROLLER_BUTTON_Y;
+#endif
 					(*b).second.type = binding_t::CONTROLLER_BUTTON;
 					return;
 				} else if (strcmp((const char*)(type + 6), "Back") == 0) {

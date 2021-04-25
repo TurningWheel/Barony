@@ -137,10 +137,8 @@ void Slider::activate() {
 }
 
 void Slider::fireCallback() {
-	Widget::Args args;
-	args.addFloat(value);
 	if (callback) {
-		(*callback)(args);
+		(*callback)(*this);
 	}
 }
 

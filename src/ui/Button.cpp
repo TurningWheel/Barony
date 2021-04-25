@@ -13,6 +13,7 @@ Button::Button() {
 	size.y = 0; size.h = 32;
 	color = makeColor(127, 127, 127, 255);
 	textColor = makeColor(255, 255, 255, 255);
+	textHighlightColor = textColor;
 	borderColor = makeColor(63, 63, 63, 255);
 	highlightColor = makeColor(255, 255, 255, 255);
 }
@@ -21,13 +22,6 @@ Button::Button(Frame& _parent) : Button() {
 	parent = &_parent;
 	_parent.getButtons().push_back(this);
 	_parent.adoptWidget(*this);
-}
-
-Button::~Button() {
-	if (callback) {
-		delete callback;
-		callback = nullptr;
-	}
 }
 
 void Button::setIcon(const char* _icon) {
@@ -40,9 +34,8 @@ void Button::activate() {
 	} else {
 		setPressed(isPressed()==false);
 	}
-	Widget::Args args(params);
 	if (callback) {
-		(*callback)(args);
+		(*callback)(*this);
 	} else {
 		printlog("button clicked with no callback");
 	}
@@ -71,6 +64,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			inner.y = (_size.y + border) * (float)yres / (float)Frame::virtualScreenY;
 			inner.w = (_size.w - border*2) * (float)xres / (float)Frame::virtualScreenX;
 			inner.h = (_size.h - border*2) * (float)yres / (float)Frame::virtualScreenY;
+			Uint32 color = focused ? highlightColor : this->color;
 			if (pressed) {
 				drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
 				drawRect(&inner, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
@@ -79,14 +73,8 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
 			}
 		} else {
-			if (backgroundHighlighted.empty()) {
-				Image* background_img = Image::get(background.c_str());
-				background_img->drawColor(nullptr, scaledSize, color);
-			} else {
-				const char* img = focused ? backgroundHighlighted.c_str() : background.c_str();
-				Image* background_img = Image::get(img);
-				background_img->drawColor(nullptr, scaledSize, color);
-			}
+			Image* background_img = Image::get(background.c_str());
+			background_img->drawColor(nullptr, scaledSize, focused ? highlightColor : color);
 		} 
 	}
 
@@ -102,12 +90,23 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		if (!text.empty()) {
 			Text* _text = Text::get(text.c_str(), font.c_str());
 			if (_text) {
-				int w = _text->getWidth();
-				int h = _text->getHeight();
-				int x = (style != STYLE_DROPDOWN) ?
-					(size.w - w) / 2 :
-					5 + border;
-				int y = (size.h - h) / 2;
+				int x, y, w, h;
+				w = _text->getWidth();
+				h = _text->getHeight();
+				if (hjustify == LEFT || hjustify == TOP) {
+					x = style == STYLE_DROPDOWN ? 5 + border : border;
+				} else if (hjustify == CENTER) {
+					x = (size.w - w) / 2;
+				} else if (hjustify == RIGHT || hjustify == BOTTOM) {
+					x = size.w - w - border;
+				}
+				if (vjustify == LEFT || vjustify == TOP) {
+					y = border;
+				} else if (vjustify == CENTER) {
+					y = (size.h - h) / 2;
+				} else if (vjustify == RIGHT || vjustify == BOTTOM) {
+					y = size.h - h - border;
+				}
 
 				SDL_Rect pos = _size;
 				pos.x += std::max(0, x - scroll.x);
@@ -121,8 +120,8 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				SDL_Rect section;
 				section.x = x - scroll.x < 0 ? -(x - scroll.x) : 0;
 				section.y = y - scroll.y < 0 ? -(y - scroll.y) : 0;
-				section.w = ((float)pos.w / (size.w - x * 2)) * w;
-				section.h = ((float)pos.h / (size.h - y * 2)) * h;
+				section.w = pos.w;
+				section.h = pos.h;
 				if (section.w == 0 || section.h == 0) {
 					return;
 				}
@@ -133,7 +132,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
 				scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
 				if (focused) {
-					_text->drawColor(section, scaledPos, highlightColor);
+					_text->drawColor(section, scaledPos, textHighlightColor);
 				} else {
 					_text->drawColor(section, scaledPos, textColor);
 				}
@@ -160,8 +159,8 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				SDL_Rect section;
 				section.x = x - scroll.x < 0 ? -(x - scroll.x) : 0;
 				section.y = y - scroll.y < 0 ? -(y - scroll.y) : 0;
-				section.w = ((float)pos.w / (size.w - x * 2)) * w;
-				section.h = ((float)pos.h / (size.h - y * 2)) * h;
+				section.w = pos.w;
+				section.h = pos.h;
 				if (section.w == 0 || section.h == 0) {
 					return;
 				}
