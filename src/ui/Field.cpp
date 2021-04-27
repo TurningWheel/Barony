@@ -92,105 +92,118 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	scaledRect.h = rect.h * (float)yres / (float)Frame::virtualScreenY;
 
 	if (activated) {
-		drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
+		if (selectAll) {
+			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 127, 127, 0), 255);
+		} else {
+			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
+		}
+	}
+
+	if (!text || text[0] == '\0') {
+		return;
 	}
 
 	bool showCursor = (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
 
-	std::string str;
-	if (activated && showCursor) {
-		str.reserve((Uint32)strlen(text) + 2);
-		str.assign(text);
-		str.append("_");
-	} else if (activated) {
-		str.reserve((Uint32)strlen(text) + 2);
-		str.assign(text);
-		str.append(" ");
-	} else {
-		str.assign(text);
-	}
-
-	Text* text = nullptr;
-	if (!str.empty()) {
-		text = Text::get(str.c_str(), font.c_str());
-		if (!text) {
-			return;
-		}
-	} else {
-		return;
-	}
 	Font* actualFont = Font::get(font.c_str());
 	if (!actualFont) {
 		return;
 	}
 
-	// get the size of the rendered text
-	int textSizeW = text->getWidth();
-	int textSizeH = text->getHeight();
+	char* buf = (char*)malloc(textlen + 1);
+	memcpy(buf, text, textlen + 1);
 
-	if (activated) {
-		textSizeH += 2;
-		if (hjustify == RIGHT || hjustify == BOTTOM) {
-			textSizeH -= 4;
-		} else if (hjustify == CENTER) {
-			textSizeH -= 2;
+	int yoff = 0;
+	char* nexttoken;
+	char* token = strtok(buf, "\n");
+	do {
+		nexttoken = strtok(NULL, "\n");
+
+		std::string str;
+		if (!nexttoken && activated && showCursor) {
+			str.reserve((Uint32)strlen(token) + 2);
+			str.assign(token);
+			str.append("_");
+		} else if (!nexttoken && activated) {
+			str.reserve((Uint32)strlen(token) + 2);
+			str.assign(token);
+			str.append(" ");
+		} else {
+			str.assign(token);
 		}
-		if (!showCursor) {
-			int w;
-			actualFont->sizeText("_", &w, nullptr);
-			textSizeW += w;
+
+		Text* text = Text::get(str.c_str(), font.c_str());
+		assert(text);
+
+		// get the size of the rendered text
+		int textSizeW = text->getWidth();
+		int textSizeH = text->getHeight();
+
+		if (activated) {
 			textSizeH += 2;
+			if (hjustify == RIGHT || hjustify == BOTTOM) {
+				textSizeH -= 4;
+			} else if (hjustify == CENTER) {
+				textSizeH -= 2;
+			}
+			if (!showCursor) {
+				int w;
+				actualFont->sizeText("_", &w, nullptr);
+				textSizeW += w;
+				textSizeH += 2;
+			}
 		}
-	}
 
-	SDL_Rect pos;
-	if (hjustify == LEFT || hjustify == TOP) {
-		pos.x = _size.x + size.x - _actualSize.x;
-	} else if (hjustify == CENTER) {
-		pos.x = _size.x + size.x + size.w / 2 - textSizeW / 2 - _actualSize.x;
-	} else if (hjustify == RIGHT || hjustify == BOTTOM) {
-		pos.x = _size.x + size.x + size.w - textSizeW - _actualSize.x;
-	}
-	if (vjustify == LEFT || vjustify == TOP) {
-		pos.y = _size.y + size.y - _actualSize.y;
-	} else if (vjustify == CENTER) {
-		pos.y = _size.y + size.y + size.h / 2 - textSizeH / 2 - _actualSize.y;
-	} else if (vjustify == RIGHT || vjustify == BOTTOM) {
-		pos.y = _size.y + size.y + size.h - textSizeH - _actualSize.y;
-	}
-	pos.w = textSizeW;
-	pos.h = textSizeH;
+		SDL_Rect pos;
+		if (hjustify == LEFT || hjustify == TOP) {
+			pos.x = _size.x + size.x - _actualSize.x;
+		} else if (hjustify == CENTER) {
+			pos.x = _size.x + size.x + size.w / 2 - textSizeW / 2 - _actualSize.x;
+		} else if (hjustify == RIGHT || hjustify == BOTTOM) {
+			pos.x = _size.x + size.x + size.w - textSizeW - _actualSize.x;
+		}
+		if (vjustify == LEFT || vjustify == TOP) {
+			pos.y = _size.y + size.y + yoff - _actualSize.y;
+		} else if (vjustify == CENTER) {
+			pos.y = _size.y + size.y + yoff + size.h / 2 - textSizeH / 2 - _actualSize.y;
+		} else if (vjustify == RIGHT || vjustify == BOTTOM) {
+			pos.y = _size.y + size.y + yoff + size.h - textSizeH - _actualSize.y;
+		}
+		pos.w = textSizeW;
+		pos.h = textSizeH;
 
-	SDL_Rect dest;
-	dest.x = std::max(rect.x, pos.x);
-	dest.y = std::max(rect.y, pos.y);
-	dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (rect.x + rect.w));
-	dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
+		yoff += actualFont->height();
 
-	SDL_Rect src;
-	src.x = std::max(0, rect.x - pos.x);
-	src.y = std::max(0, rect.y - pos.y);
-	src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (rect.x + rect.w));
-	src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
+		SDL_Rect dest;
+		dest.x = std::max(rect.x, pos.x);
+		dest.y = std::max(rect.y, pos.y);
+		dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (rect.x + rect.w));
+		dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
 
-	// fit text to window
-	if ((hjustify == LEFT || hjustify == TOP) && scroll && selected) {
-		src.x = std::max(src.x, textSizeW - rect.w);
-	}
+		SDL_Rect src;
+		src.x = std::max(0, rect.x - pos.x);
+		src.y = std::max(0, rect.y - pos.y);
+		src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (rect.x + rect.w));
+		src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
 
-	if (src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0)
-		return;
+		// fit text to window
+		if ((hjustify == LEFT || hjustify == TOP) && scroll && selected) {
+			src.x = std::max(src.x, textSizeW - rect.w);
+		}
 
-	if (selectAll && selected) {
-		drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 127, 127, 0), 255);
-	}
+		if (src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0) {
+			continue;
+		}
 
-	SDL_Rect scaledDest;
-	scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
-	scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
-	scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
-	scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
-	text->drawColor(src, scaledDest, color);
+		SDL_Rect scaledDest;
+		scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
+		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
+		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
+		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+		text->drawColor(src, scaledDest, color);
+	} while ((token = nexttoken) != NULL);
+
+	free(buf); 
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

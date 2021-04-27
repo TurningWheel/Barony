@@ -6,6 +6,7 @@ void recordsAdventureArchives(Button&);
 void recordsLeaderboards(Button&);
 void recordsDungeonCompendium(Button&);
 void recordsStoryIntroduction(Button&);
+void recordsCredits(Button&);
 void recordsBackToMainMenu(Button&);
 
 void mainPlayGame(Button&);

@@ -1044,6 +1044,9 @@ bool Frame::removeEntry(const char* name, bool resizeFrame) {
 
 Frame* Frame::findFrame(const char* name) {
 	for (auto frame : frames) {
+		if (frame->toBeDeleted) {
+			continue;
+		}
 		if (strcmp(frame->getName(), name) == 0) {
 			return frame;
 		} else {

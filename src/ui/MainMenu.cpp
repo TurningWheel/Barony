@@ -37,6 +37,146 @@ void recordsStoryIntroduction(Button& button) {
 	playSound(139, 64); // click sound
 }
 
+void recordsCredits(Button& button) {
+	playSound(139, 64); // click sound
+
+	destroyMainMenu();
+	main_menu_frame = gui->addFrame("main_menu");
+	main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
+	main_menu_frame->setHollow(true);
+	main_menu_frame->setBorder(0);
+
+	auto back_button = main_menu_frame->addButton("back");
+	back_button->setText("Return to Main Menu  ");
+	back_button->setColor(makeColor(0, 0, 0, 0));
+	back_button->setHighlightColor(makeColor(0, 0, 0, 0));
+	back_button->setBorderColor(makeColor(0, 0, 0, 0));
+	back_button->setTextColor(0xffffffff);
+	back_button->setTextHighlightColor(0xffffffff);
+	back_button->setFont(smallfont_outline);
+	back_button->setJustify(Button::justify_t::RIGHT);
+	back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 50, 400, 50});
+	back_button->setCallback([](Button& b){
+		destroyMainMenu();
+		createMainMenu();
+		mainHallOfRecords(b);
+		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+		auto credits = buttons->findButton("CREDITS"); assert(credits);
+		credits->select();
+	});
+	back_button->setWidgetBack("back");
+	back_button->select();
+
+	auto font = Font::get(bigfont_outline); assert(font);
+		
+	auto credits = main_menu_frame->addFrame("credits");
+	credits->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+	credits->setActualSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY + font->height() * 80});
+	credits->setHollow(true);
+	credits->setBorder(0);
+
+	// titles
+	auto text1 = credits->addField("text1", 1024);
+	text1->setFont(bigfont_outline);
+	text1->setColor(makeColor(255, 191, 32, 255));
+	text1->setHJustify(Field::justify_t::CENTER);
+	text1->setVJustify(Field::justify_t::TOP);
+	text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 80});
+	text1->setText(
+		u8"Project lead, programming, and design\n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"Music and sound design\n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"Programming\n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"Art and design\n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"Programming and design\n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"Additional art\n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"Additional writing\n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"Special thanks\n"
+		u8" \n"
+		u8" \n"
+		u8" \n"
+		u8" \n"
+		u8" \n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"A big shout-out to our open-source community!\n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"Barony is a product of Turning Wheel LLC\n"
+		u8" \n"
+		u8" \n"
+		u8" \n \n \n \n \n"
+		u8"This game is dedicated to all of our friends, family, and fans\n"
+		u8"who encouraged and supported us on our journey to finish it.\n"
+		u8" \n"
+		u8" \n"
+	);
+
+	// entries
+	auto text2 = credits->addField("text2", 1024);
+	text2->setFont(bigfont_outline);
+	text2->setColor(0xffffffff);
+	text2->setHJustify(Field::justify_t::CENTER);
+	text2->setVJustify(Field::justify_t::TOP);
+	text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 80});
+	text2->setText(
+		u8" \n"
+		u8"Sheridan Rathbun\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8"Chris Kukla\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8"Ciprian Elies\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8"Josiah Colborn\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8"Benjamin Potter\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8"Matthew Griebner\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8"Frasier Panton\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8"Our Kickstarter Backers\n"
+		u8"Sterling Rathbun\n"
+		u8"Kevin White\n"
+		u8"Jesse Riddle\n"
+		u8"Julian Seeger\n"
+		u8"Mathias Golinelli\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8"Learn more at http://www.github.com/TurningWheel/Barony\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8"Copyright \u00A9 2021, all rights reserved\n"
+		u8"http://www.baronygame.com/\n"
+		u8" \n \n \n \n \n"
+		u8" \n"
+		u8" \n"
+		u8" \n"
+		u8"Thank you!\n"
+	);
+}
+
 void recordsBackToMainMenu(Button& button) {
 	playSound(139, 64); // click sound
 
@@ -185,6 +325,7 @@ void mainHallOfRecords(Button& button) {
 		{"ADVENTURE ARCHIVES", recordsAdventureArchives},
 		{"DUNGEON COMPENDIUM", recordsDungeonCompendium},
 		{"STORY INTRODUCTION", recordsStoryIntroduction},
+		{"CREDITS", recordsCredits},
 		{"BACK TO MAIN MENU", recordsBackToMainMenu}
 	};
 	const int num_options = sizeof(options) / sizeof(options[0]);
@@ -254,12 +395,13 @@ void doMainMenu() {
 		++menu_ticks;
 
 		// move cursor to current menu selection
-		auto cursor = main_menu_frame->findImage("cursor"); assert(cursor);
-		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-		for (auto button : buttons->getButtons()) {
-			if (button->isSelected()) {
-				main_menu_cursor_x = button->getSize().x - 80;
-				main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
+		auto buttons = main_menu_frame->findFrame("buttons");
+		if (buttons) {
+			for (auto button : buttons->getButtons()) {
+				if (button->isSelected()) {
+					main_menu_cursor_x = button->getSize().x - 80;
+					main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
+				}
 			}
 		}
 		
@@ -271,18 +413,32 @@ void doMainMenu() {
 		}
 
 		// update cursor position
-		int diff = main_menu_cursor_y - cursor->pos.y;
-		if (diff > 0) {
-			diff = std::max(1, diff / 4);
-		} else if (diff < 0) {
-			diff = std::min(-1, diff / 4);
+		auto cursor = main_menu_frame->findImage("cursor");
+		if (cursor) {
+			int diff = main_menu_cursor_y - cursor->pos.y;
+			if (diff > 0) {
+				diff = std::max(1, diff / 4);
+			} else if (diff < 0) {
+				diff = std::min(-1, diff / 4);
+			}
+			cursor->pos = SDL_Rect{
+				main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
+				diff + cursor->pos.y,
+				37 * 2,
+				23 * 2
+			};
 		}
-		cursor->pos = SDL_Rect{
-			main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
-			diff + cursor->pos.y,
-			37 * 2,
-			23 * 2
-		};
+
+		// ascend credits
+		auto credits = main_menu_frame->findFrame("credits");
+		if (credits) {
+			auto size = credits->getActualSize();
+			size.y += 1;
+			if (size.y >= size.h) {
+				size.y = 0;
+			}
+			credits->setActualSize(size);
+		}
 	}
 }
 
@@ -387,7 +543,12 @@ void createMainMenu() {
 	}
 
 	frame->addImage(
-		SDL_Rect{0, 0, 0, 0},
+		SDL_Rect{
+			main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
+			main_menu_cursor_y,
+			37 * 2,
+			23 * 2
+		},
 		0xffffffff,
 		"images/ui/Main Menus/UI_Pointer_Spear00.png",
 		"cursor"
@@ -451,6 +612,6 @@ void createMainMenu() {
 }
 
 void destroyMainMenu() {
-	gui->remove("main_menu");
+	main_menu_frame->removeSelf();
 	main_menu_frame = nullptr;
 }
