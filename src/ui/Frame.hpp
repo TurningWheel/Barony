@@ -247,6 +247,7 @@ public:
 	const bool						isDisabled() const { return disabled; }
 	const bool						isHollow() const { return hollow; }
 	const bool						isDropDown() const { return dropDown; }
+	const bool						isScrollBarsEnabled() const { return scrollbars; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -260,6 +261,7 @@ public:
 	void	setDisabled(const bool _disabled) { disabled = _disabled; }
 	void	setHollow(const bool _hollow) { hollow = _hollow; }
 	void	setDropDown(const bool _dropDown) { dropDown = _dropDown; }
+	void	setScrollBarsEnabled(const bool _scrollbars) { scrollbars = _scrollbars; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -279,7 +281,8 @@ private:
 	bool dropDown = false;								//!< if true, the frame is destroyed when specific inputs register
 	Uint32 dropDownClicked = 0;							//!< key states stored for removing drop downs
 	int selection = -1;									//!< entry selection
-	bool allowScrolling = false;						//!< must be enabled for scrolling/actualSize to work
+	bool allowScrolling = false;						//!< must be enabled for any kind of scrolling/actualSize to work
+	bool scrollbars = true;								//!< must be true for sliders to be drawn/usable
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;

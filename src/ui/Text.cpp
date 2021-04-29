@@ -48,7 +48,7 @@ void Text::render() {
 	// load font
 	std::string strToRender;
 	std::string fontName;
-	Uint32 fontIndex = 0u;
+	size_t fontIndex = 0u;
 	if ((fontIndex = name.find(fontBreak)) != std::string::npos) {
 		fontName = name.substr(fontIndex + 1, UINT32_MAX);
 		strToRender = name.substr(0, fontIndex).c_str();
@@ -56,6 +56,12 @@ void Text::render() {
 		fontName = Font::defaultFont;
 		strToRender = name.c_str();
 	}
+#ifdef NINTENDO
+	// fixes weird crash in SDL_ttf when string length < 2
+	while (strToRender.size() < 2) {
+		strToRender.append(" ");
+	}
+#endif
 	Font* font = Font::get(fontName.c_str());
 	if (!font) {
 		return;

@@ -401,7 +401,7 @@ void gameLogic(void)
 	// fading in/out
 	if ( fadeout == true )
 	{
-		fadealpha = std::min(fadealpha + 5, 255);
+		fadealpha = std::min(fadealpha + 10, 255);
 		if ( fadealpha == 255 )
 		{
 			fadefinished = true;
@@ -435,7 +435,7 @@ void gameLogic(void)
 	}
 	else
 	{
-		fadealpha = std::max(0, fadealpha - 5);
+		fadealpha = std::max(0, fadealpha - 10);
 	}
 
 	// handle safe packets

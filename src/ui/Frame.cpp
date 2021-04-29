@@ -151,7 +151,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	// horizontal slider
-	if (actualSize.w > size.w) {
+	if (actualSize.w > size.w && scrollbars) {
 
 		// slider rail
 		SDL_Rect barRect;
@@ -185,7 +185,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	}
 
 	// vertical slider
-	if (actualSize.h > size.h && _size.y) {
+	if (actualSize.h > size.h && _size.y && scrollbars) {
 		SDL_Rect barRect;
 		barRect.x = scaledSize.x + scaledSize.w;
 		barRect.y = scaledSize.y;
@@ -217,7 +217,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	}
 
 	// slider filler (at the corner between sliders)
-	if (actualSize.w > size.w && actualSize.h > size.h) {
+	if (actualSize.w > size.w && actualSize.h > size.h && scrollbars) {
 		SDL_Rect barRect;
 		barRect.x = scaledSize.x + scaledSize.w;
 		barRect.y = scaledSize.y + scaledSize.h;
@@ -596,7 +596,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	}
 
 	// process (frame view) sliders
-	if (parent != nullptr && !hollow && usable) {
+	if (parent != nullptr && !hollow && usable && scrollbars) {
 		// filler in between sliders
 		if (actualSize.w > size.w && actualSize.h > size.h) {
 			SDL_Rect sliderRect;
