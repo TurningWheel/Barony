@@ -16,6 +16,7 @@ static int main_menu_cursor_y = 0;
 static int story_text_pause = 0;
 static int story_text_scroll = 0;
 static int story_text_section = 0;
+static bool story_text_end = false;
 static int main_menu_fade_destination = 0;
 
 static const char* bigfont_outline = "fonts/pixelmix.ttf#18#2";
@@ -30,6 +31,7 @@ static const char* intro_text =
 	u8"Straining under the yoke of their master, the people planned his demise.\nThey tricked him with a promise of gold and sealed him within the mines.#"
 	u8"Free of their cruel master, the people returned to their old way of life.\nBut disasters shortly began to befall the village.#"
 	u8"Monsters and other evils erupted from the ground, transforming the village\ninto a ghost town.#"
+	u8"Many adventurers have descended into the mines to break the Baron's curse,\nbut none have returned.#"
 	u8"The town of Hamlet cries for redemption, and only a hero can save it\nfrom its curse...";
 
 static void storyScreen() {
@@ -43,6 +45,7 @@ static void storyScreen() {
 	story_text_pause = 0;
 	story_text_scroll = 0;
 	story_text_section = 0;
+	story_text_end = false;
 
 	auto back_button = main_menu_frame->addButton("back");
 	back_button->setText("Skip story  ");
@@ -55,24 +58,30 @@ static void storyScreen() {
 	back_button->setJustify(Button::justify_t::RIGHT);
 	back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 50, 400, 50});
 	back_button->setCallback([](Button& b){
-		destroyMainMenu();
-		createMainMenu();
+		fadeout = true;
+		main_menu_fade_destination = 1;
 		});
 	back_button->setWidgetBack("back");
 	back_button->select();
 
 	auto font = Font::get(bigfont_outline); assert(font);
 
-	auto textbox = main_menu_frame->addFrame("story_text_box");
-	textbox->setScrollBarsEnabled(false);
-	textbox->setSize(SDL_Rect{100, Frame::virtualScreenY - font->height() * 3, Frame::virtualScreenX - 200, font->height() * 2});
-	textbox->setActualSize(SDL_Rect{0, 0, textbox->getSize().w, font->height() * 14});
-	textbox->setColor(makeColor(0, 0, 0, 127));
-	textbox->setBorder(0);
+	auto textbox1 = main_menu_frame->addFrame("story_text_box");
+	textbox1->setSize(SDL_Rect{100, Frame::virtualScreenY - font->height() * 4, Frame::virtualScreenX - 200, font->height() * 3});
+	textbox1->setActualSize(SDL_Rect{0, 0, textbox1->getSize().w, textbox1->getSize().h});
+	textbox1->setColor(makeColor(0, 0, 0, 127));
+	textbox1->setBorder(0);
 
-	auto field = textbox->addField("text", 1024);
+	auto textbox2 = textbox1->addFrame("story_text_box");
+	textbox2->setScrollBarsEnabled(false);
+	textbox2->setSize(SDL_Rect{0, font->height() / 2, Frame::virtualScreenX - 200, font->height() * 2});
+	textbox2->setActualSize(SDL_Rect{0, 0, textbox2->getSize().w, font->height() * 16});
+	textbox2->setHollow(true);
+	textbox2->setBorder(0);
+
+	auto field = textbox2->addField("text", 1024);
 	field->setFont(bigfont_outline);
-	field->setSize(textbox->getActualSize());
+	field->setSize(textbox2->getActualSize());
 	field->setHJustify(Field::justify_t::CENTER);
 	field->setVJustify(Field::justify_t::TOP);
 	field->setColor(makeColor(255, 255, 255, 255));
@@ -103,7 +112,7 @@ void recordsStoryIntroduction(Button& button) {
 	main_menu_frame->setBorder(0);
 
 	fadeout = true;
-	main_menu_fade_destination = 1;
+	main_menu_fade_destination = 2;
 }
 
 void recordsCredits(Button& button) {
@@ -465,6 +474,10 @@ void doMainMenu() {
 	if (main_menu_fade_destination) {
 		if (fadeout && fadealpha >= 255) {
 			if (main_menu_fade_destination == 1) {
+				destroyMainMenu();
+				createMainMenu();
+			}
+			if (main_menu_fade_destination == 2) {
 				storyScreen();
 			}
 			fadeout = false;
@@ -524,11 +537,13 @@ void doMainMenu() {
 		// write intro text
 		auto story_font = Font::get(bigfont_outline); assert(story_font);
 		if (story_text_scroll > 0) {
-			auto textbox = main_menu_frame->findFrame("story_text_box");
-			if (textbox) {
-				auto size = textbox->getActualSize();
+			auto textbox1 = main_menu_frame->findFrame("story_text_box");
+			if (textbox1) {
+				auto textbox2 = textbox1->findFrame("story_text_box");
+				assert(textbox2);
+				auto size = textbox2->getActualSize();
 				++size.y;
-				textbox->setActualSize(size);
+				textbox2->setActualSize(size);
 				--story_text_scroll;
 			}
 			if (story_text_section % 2 == 0) {
@@ -546,13 +561,20 @@ void doMainMenu() {
 			if (story_text_pause > 0) {
 				--story_text_pause;
 				if (story_text_pause == 0) {
-					story_text_scroll = story_font->height() * 2;
+					if (story_text_end == true) {
+						fadeout = true;
+						main_menu_fade_destination = 1;
+					} else {
+						story_text_scroll = story_font->height() * 2;
+					}
 				}
 			} else {
 				if (menu_ticks % 2 == 0) {
-					auto textbox = main_menu_frame->findFrame("story_text_box");
-					if (textbox) {
-						auto text = textbox->findField("text");
+					auto textbox1 = main_menu_frame->findFrame("story_text_box");
+					if (textbox1) {
+						auto textbox2 = textbox1->findFrame("story_text_box");
+						assert(textbox2);
+						auto text = textbox2->findField("text");
 						assert(text);
 						size_t len = strlen(text->getText());
 						if (len < strlen(intro_text)) {
@@ -567,6 +589,9 @@ void doMainMenu() {
 							buf[len] = c;
 							buf[len + 1] = '\0';
 							text->setText(buf);
+						} else {
+							story_text_pause = TICKS_PER_SECOND * 5;
+							story_text_end = true;
 						}
 					}
 				}
@@ -673,6 +698,10 @@ void createMainMenu() {
 	auto play = buttons->findButton("PLAY GAME");
 	if (play) {
 		play->select();
+		if (main_menu_cursor_x == 0 && main_menu_cursor_y == 0) {
+			main_menu_cursor_x = play->getSize().x - 80;
+			main_menu_cursor_y = play->getSize().y - 9 + buttons->getSize().y;
+		}
 	}
 
 	frame->addImage(
