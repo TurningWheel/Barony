@@ -776,4 +776,9 @@ void createMainMenu() {
 void destroyMainMenu() {
 	main_menu_frame->removeSelf();
 	main_menu_frame = nullptr;
+
+	story_text_pause = 0;
+	story_text_scroll = 0;
+	story_text_section = 0;
+	story_text_end = false;
 }
