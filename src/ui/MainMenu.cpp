@@ -5,7 +5,7 @@
 #include "Button.hpp"
 
 #include "../draw.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 
 static Frame* main_menu_frame = nullptr;
 static int buttons_height = 0;
@@ -569,7 +569,7 @@ void mainSettings(Button& button) {
 			button->setWidgetDown("confirm_and_exit");
 		}
 	}
-	auto first_tab = settings->findButton(tabs[0].name);
+	auto first_tab = settings->findButton(tabs[0]);
 	if (first_tab) {
 		first_tab->select();
 		first_tab->activate();
@@ -803,7 +803,14 @@ void doMainMenu() {
 				"Game"
 			};
 			for (auto name : tabs) {
-				auto button = settings
+				auto button = settings->findButton(name);
+				if (button) {
+					if (name == settings_tab) {
+						button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
+					} else {
+						button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
+					}
+				}
 			}
 		}
 	}
