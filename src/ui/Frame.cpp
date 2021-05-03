@@ -409,6 +409,8 @@ Frame::result_t Frame::process() {
 }
 
 Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable) {
+	Widget::process();
+
 	result_t result;
 	result.removed = false;
 	result.usable = usable;

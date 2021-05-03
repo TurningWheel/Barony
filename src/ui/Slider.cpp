@@ -46,6 +46,8 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 }
 
 Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
+	Widget::process();
+
 	result_t result;
 	result.tooltip = nullptr;
 	result.highlightTime = SDL_GetTicks();

@@ -215,6 +215,8 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 }
 
 Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
+	Widget::process();
+
 	result_t result;
 	if (style == STYLE_CHECKBOX || style == STYLE_TOGGLE) {
 		result.tooltip = nullptr;

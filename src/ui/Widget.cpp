@@ -36,6 +36,14 @@ void Widget::activate() {
 	// no-op
 }
 
+void Widget::process() {
+	if (!disabled) {
+		if (callback) {
+			(*callback)(*this);
+		}
+	}
+}
+
 Frame* Widget::findSearchRoot() {
 	Widget* gui = findHead();
 	if (gui && gui->getType() == WIDGET_FRAME) {

@@ -28,12 +28,13 @@ public:
     Widget*         getParent() { return parent; }
     const char*		getName() const { return name.c_str(); }
     bool			isPressed() const { return reallyPressed; }
-    bool			isHighlighted() const { return selected | highlighted; }
+    bool			isHighlighted() const { return selected || highlighted; }
     bool			isSelected() const { return selected; }
     bool			isDisabled() const { return disabled; }
     bool            isInvisible() const { return invisible; }
     Uint32          getHighlightTime() const { return highlightTime; }
     Sint32          getOwner() const { return owner; }
+    void			(*getCallback() const)(Widget&) { return callback; }
     const char*     getWidgetRight() const { return widgetRight.c_str(); }
     const char*     getWidgetDown() const { return widgetDown.c_str(); }
     const char*     getWidgetLeft() const { return widgetLeft.c_str(); }
@@ -50,6 +51,7 @@ public:
     void	setDisabled(bool _disabled) { disabled = _disabled; }
     void    setInvisible(bool _invisible) { invisible = _invisible; }
     void    setOwner(Sint32 _owner) { owner = _owner; }
+    void	setCallback(void (*const fn)(Widget&)) { callback = fn; }
     void    setWidgetRight(const char* s) { widgetRight = s; }
     void    setWidgetDown(const char* s) { widgetDown = s; }
     void    setWidgetLeft(const char* s) { widgetLeft = s; }
@@ -72,6 +74,9 @@ public:
 
     //! deselect this widget
     virtual void deselect();
+
+    //! update this widget for one tick
+    void process();
 
     //! handle inputs on the widget
     //! @return the next widget to select, or nullptr if no widget was selected
@@ -100,6 +105,7 @@ protected:
 	bool toBeDeleted = false;						//!< if true, the widget will be removed at the end of its process
     Uint32 highlightTime = 0u;						//!< records the time since the widget was highlighted
     Sint32 owner = 0;                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
+    void (*callback)(Widget&) = nullptr;			//!< the callback to use each frame for this widget
 
     std::string widgetSearchParent;                 //!< parent of widget to select (use to narrow search)
     std::string widgetRight;             			//!< next widget to select right
