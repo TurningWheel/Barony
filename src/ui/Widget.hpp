@@ -34,7 +34,7 @@ public:
     bool            isInvisible() const { return invisible; }
     Uint32          getHighlightTime() const { return highlightTime; }
     Sint32          getOwner() const { return owner; }
-    void			(*getCallback() const)(Widget&) { return callback; }
+    void			(*getTickCallback() const)(Widget&) { return callback; }
     const char*     getWidgetRight() const { return widgetRight.c_str(); }
     const char*     getWidgetDown() const { return widgetDown.c_str(); }
     const char*     getWidgetLeft() const { return widgetLeft.c_str(); }
@@ -51,7 +51,7 @@ public:
     void	setDisabled(bool _disabled) { disabled = _disabled; }
     void    setInvisible(bool _invisible) { invisible = _invisible; }
     void    setOwner(Sint32 _owner) { owner = _owner; }
-    void	setCallback(void (*const fn)(Widget&)) { callback = fn; }
+    void	setTickCallback(void (*const fn)(Widget&)) { callback = fn; }
     void    setWidgetRight(const char* s) { widgetRight = s; }
     void    setWidgetDown(const char* s) { widgetDown = s; }
     void    setWidgetLeft(const char* s) { widgetLeft = s; }
