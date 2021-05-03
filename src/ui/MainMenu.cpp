@@ -13,16 +13,20 @@ static Uint32 menu_ticks = 0u;
 static float main_menu_cursor_bob = 0.f;
 static int main_menu_cursor_x = 0;
 static int main_menu_cursor_y = 0;
+static int main_menu_fade_destination = 0;
+
 static int story_text_pause = 0;
 static int story_text_scroll = 0;
 static int story_text_section = 0;
 static bool story_text_end = false;
-static int main_menu_fade_destination = 0;
+
+static const char* settings_tab = nullptr;
 
 static const char* bigfont_outline = "fonts/pixelmix.ttf#18#2";
 static const char* bigfont_no_outline = "fonts/pixelmix.ttf#18#0";
 static const char* smallfont_outline = "fonts/pixel_maz.ttf#32#2";
-static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#48#2";
+static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#32#2";
+static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
 
 static const char* intro_text =
 	u8"Long ago, the bustling town of Hamlet was the envy of all its neighbors,\nfor it was the most thriving city in all the land.#"
@@ -321,7 +325,7 @@ void recordsBackToMainMenu(Button& button) {
 		button->setHJustify(Button::justify_t::LEFT);
 		button->setVJustify(Button::justify_t::CENTER);
 		button->setText(options[c].name);
-		button->setFont(smallfont_no_outline);
+		button->setFont(menu_option_font);
 		button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 		button->setColor(makeColor(255, 255, 255, 127));
 		button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -380,7 +384,7 @@ void mainHallOfRecords(Button& button) {
 	auto banner_text = notification->addField("text", 64);
 	banner_text->setJustify(Field::justify_t::CENTER);
 	banner_text->setText("HALL OF RECORDS");
-	banner_text->setFont(smallfont_no_outline);
+	banner_text->setFont(menu_option_font);
 	banner_text->setColor(makeColor(180, 135, 27, 255));
 	banner_text->setSize(SDL_Rect{19 * 2, 15 * 2, 166 * 2, 12 * 2});
 
@@ -422,7 +426,7 @@ void mainHallOfRecords(Button& button) {
 		button->setHJustify(Button::justify_t::LEFT);
 		button->setVJustify(Button::justify_t::CENTER);
 		button->setText(options[c].name);
-		button->setFont(smallfont_no_outline);
+		button->setFont(menu_option_font);
 		button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 		button->setColor(makeColor(255, 255, 255, 127));
 		button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -456,6 +460,196 @@ void mainHallOfRecords(Button& button) {
 
 void mainSettings(Button& button) {
 	playSound(139, 64); // click sound
+
+	auto settings = main_menu_frame->addFrame("settings");
+	settings->setSize(SDL_Rect{(Frame::virtualScreenX - 1126) / 2, (Frame::virtualScreenY - 718) / 2, 1126, 718});
+	settings->setActualSize(SDL_Rect{0, 0, settings->getSize().w, settings->getSize().h});
+	settings->setHollow(true);
+	settings->setBorder(0);
+	settings->addImage(
+		SDL_Rect{
+			(settings->getActualSize().w - 553 * 2) / 2,
+			0,
+			553 * 2,
+			357 * 2
+		},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/Settings_Window01.png",
+		"background"
+	);
+	auto timber = settings->addImage(
+		SDL_Rect{0, 66 * 2, 1126, 586},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/Settings_TimberEdge00.png",
+		"timber"
+	);
+	timber->ontop = true;
+
+	auto settings_subwindow = settings->addFrame("settings_subwindow");
+	settings_subwindow->setSize(SDL_Rect{8 * 2, 71 * 2, 547 * 2, 224 * 2});
+	settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, 224 * 2});
+	settings_subwindow->setHollow(true);
+	settings_subwindow->setBorder(0);
+	auto rock_background = settings_subwindow->addImage(
+		settings_subwindow->getActualSize(),
+		0xffffffff,
+		"images/ui/Main Menus/Settings/Settings_BGTile00.png",
+		"background"
+	);
+	rock_background->tiled = true;
+
+	static const char* pixel_maz_outline = "fonts/pixel_maz.ttf#46#2";
+
+	auto window_title = settings->addField("window_title", 64);
+	window_title->setFont(pixel_maz_outline);
+	window_title->setSize(SDL_Rect{394, 26, 338, 24});
+	window_title->setJustify(Field::justify_t::CENTER);
+	window_title->setText("SETTINGS");
+
+	auto tab_left = settings->addButton("tab_left");
+	tab_left->setBackground("images/ui/Main Menus/Settings/Settings_Button_L00.png");
+	tab_left->setSize(SDL_Rect{32, 68, 38, 58});
+	tab_left->setColor(makeColor(255, 255, 255, 191));
+	tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
+	tab_left->setWidgetBack("discard_and_exit");
+	tab_left->setWidgetPageLeft("tab_left");
+	tab_left->setWidgetPageRight("tab_right");
+	tab_left->setWidgetRight("UI");
+	tab_left->setWidgetDown("restore_defaults");
+
+	auto tab_right = settings->addButton("tab_right");
+	tab_right->setBackground("images/ui/Main Menus/Settings/Settings_Button_R00.png");
+	tab_right->setSize(SDL_Rect{1056, 68, 38, 58});
+	tab_right->setColor(makeColor(255, 255, 255, 191));
+	tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
+	tab_right->setWidgetBack("discard_and_exit");
+	tab_right->setWidgetPageLeft("tab_left");
+	tab_right->setWidgetPageRight("tab_right");
+	tab_right->setWidgetLeft("Game");
+	tab_right->setWidgetDown("confirm_and_exit");
+
+	const char* tabs[] = {
+		"UI",
+		"Display",
+		"Audio",
+		"Controls",
+		"Game"
+	};
+	int num_options = sizeof(tabs) / sizeof(tabs[0]);
+	for (int c = 0; c < num_options; ++c) {
+		auto button = settings->addButton(tabs[c]);
+		button->setCallback([](Button& bt){
+			settings_tab = bt.getName();
+		});
+		button->setText(tabs[c]);
+		button->setFont(pixel_maz_outline);
+		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
+		button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
+		button->setSize(SDL_Rect{76 + (272 - 76) * c, 64, 184, 64});
+		button->setColor(makeColor(255, 255, 255, 191));
+		button->setHighlightColor(makeColor(255, 255, 255, 255));
+		button->setWidgetPageLeft("tab_left");
+		button->setWidgetPageRight("tab_right");
+		if (c > 0) {
+			button->setWidgetLeft(tabs[c - 1]);
+		} else {
+			button->setWidgetLeft("tab_left");
+		}
+		if (c < num_options - 1) {
+			button->setWidgetRight(tabs[c + 1]);
+		} else {
+			button->setWidgetRight("tab_right");
+		}
+		button->setWidgetBack("discard_and_exit");
+		if (c <= num_options / 2) {
+			button->setWidgetDown("restore_defaults");
+		} else if (c == num_options - 2) {
+			button->setWidgetDown("discard_and_exit");
+		} else if (c == num_options - 1) {
+			button->setWidgetDown("confirm_and_exit");
+		}
+	}
+	auto first_tab = settings->findButton(tabs[0].name);
+	if (first_tab) {
+		first_tab->select();
+		first_tab->activate();
+	}
+
+	auto tooltip = settings->addField("tooltip", 256);
+	tooltip->setSize(SDL_Rect{92, 590, 948, 32});
+	tooltip->setFont(smallfont_no_outline);
+	tooltip->setText("Blah blah blah this is what the option does. Fe fi fo fum.");
+
+	auto restore_defaults = settings->addButton("restore_defaults");
+	restore_defaults->setBackground("images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
+	restore_defaults->setSize(SDL_Rect{84, 630, 164, 62});
+	restore_defaults->setText("Restore\nDefaults");
+	restore_defaults->setJustify(Button::justify_t::CENTER);
+	restore_defaults->setFont(smallfont_outline);
+	restore_defaults->setColor(makeColor(255, 255, 255, 191));
+	restore_defaults->setHighlightColor(makeColor(255, 255, 255, 255));
+	restore_defaults->setWidgetBack("discard_and_exit");
+	restore_defaults->setWidgetPageLeft("tab_left");
+	restore_defaults->setWidgetPageRight("tab_right");
+	restore_defaults->setWidgetUp("UI");
+	restore_defaults->setWidgetRight("discard_and_exit");
+
+	auto discard_and_exit = settings->addButton("discard_and_exit");
+	discard_and_exit->setBackground("images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
+	discard_and_exit->setSize(SDL_Rect{700, 630, 164, 62});
+	discard_and_exit->setText("Discard\n& Exit");
+	discard_and_exit->setJustify(Button::justify_t::CENTER);
+	discard_and_exit->setFont(smallfont_outline);
+	discard_and_exit->setColor(makeColor(255, 255, 255, 191));
+	discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
+	discard_and_exit->setCallback([](Button&){
+		assert(main_menu_frame);
+		auto settings = main_menu_frame->findFrame("settings");
+		if (settings) {
+			settings->removeSelf();
+		}
+		auto buttons = main_menu_frame->findFrame("buttons");
+		if (buttons) {
+			auto settings_button = buttons->findButton("SETTINGS");
+			if (settings_button) {
+				settings_button->select();
+			}
+		}
+		});
+	discard_and_exit->setWidgetBack("discard_and_exit");
+	discard_and_exit->setWidgetPageLeft("tab_left");
+	discard_and_exit->setWidgetPageRight("tab_right");
+	discard_and_exit->setWidgetUp("Controls");
+	discard_and_exit->setWidgetLeft("restore_defaults");
+	discard_and_exit->setWidgetRight("confirm_and_exit");
+
+	auto confirm_and_exit = settings->addButton("confirm_and_exit");
+	confirm_and_exit->setBackground("images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
+	confirm_and_exit->setSize(SDL_Rect{880, 630, 164, 62});
+	confirm_and_exit->setText("Confirm\n& Exit");
+	confirm_and_exit->setJustify(Button::justify_t::CENTER);
+	confirm_and_exit->setFont(smallfont_outline);
+	confirm_and_exit->setColor(makeColor(255, 255, 255, 191));
+	confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
+	confirm_and_exit->setCallback([](Button&){
+		assert(main_menu_frame);
+		auto settings = main_menu_frame->findFrame("settings");
+		if (settings) {
+			settings->removeSelf();
+		}
+		auto buttons = main_menu_frame->findFrame("buttons");
+		if (buttons) {
+			auto settings_button = buttons->findButton("SETTINGS");
+			if (settings_button) {
+				settings_button->select();
+			}
+		}
+		});
+	confirm_and_exit->setWidgetBack("discard_and_exit");
+	confirm_and_exit->setWidgetPageLeft("tab_left");
+	confirm_and_exit->setWidgetPageRight("tab_right");
+	confirm_and_exit->setWidgetUp("Game");
+	confirm_and_exit->setWidgetLeft("discard_and_exit");
 }
 
 void mainQuit(Button& button) {
@@ -597,6 +791,21 @@ void doMainMenu() {
 				}
 			}
 		}
+
+		// do settings
+		auto settings = main_menu_frame->findFrame("settings");
+		if (settings) {
+			const char* tabs[] = {
+				"UI",
+				"Display",
+				"Audio",
+				"Controls",
+				"Game"
+			};
+			for (auto name : tabs) {
+				auto button = settings
+			}
+		}
 	}
 }
 
@@ -674,7 +883,7 @@ void createMainMenu() {
 		button->setHJustify(Button::justify_t::LEFT);
 		button->setVJustify(Button::justify_t::CENTER);
 		button->setText(options[c].name);
-		button->setFont(smallfont_no_outline);
+		button->setFont(menu_option_font);
 		button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 		button->setColor(makeColor(255, 255, 255, 127));
 		button->setHighlightColor(makeColor(255, 255, 255, 255));

@@ -93,6 +93,7 @@ public:
 	void	setStyle(int _style) { style = static_cast<style_t>(_style); }
 	void	setCallback(void (*const fn)(Button&)) { callback = fn; }
 	void	setBackground(const char* image) { background = image; }
+	void	setBackgroundActivated(const char* image) { backgroundActivated = image; }
 	void	setJustify(const int _justify) { hjustify = vjustify = static_cast<justify_t>(_justify); }
 	void	setHJustify(const int _justify) { hjustify = static_cast<justify_t>(_justify); }
 	void	setVJustify(const int _justify) { vjustify = static_cast<justify_t>(_justify); }
@@ -100,6 +101,7 @@ public:
 private:
 	void (*callback)(Button&) = nullptr;			//!< native callback for clicking
 	std::string background;							//!< background image
+	std::string backgroundActivated;				//!< background image when activated
 	std::string text;								//!< button text, if any
 	std::string font = Font::defaultFont;			//!< button font
 	std::string icon;								//!< icon, if any (supersedes text content)

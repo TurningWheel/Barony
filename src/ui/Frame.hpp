@@ -44,6 +44,7 @@ public:
 		SDL_Rect pos;
 		bool tiled = false;
 		bool disabled = false;
+		bool ontop = false;
 	};
 
 	struct entry_t;
@@ -293,6 +294,7 @@ private:
 
 	void scrollToSelection();
 	void activateEntry(entry_t& entry);
+	void drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll);
 };
 
 // root frame object

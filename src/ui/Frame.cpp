@@ -248,51 +248,15 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		scroll.y -= size.y - _actualSize.y;
 	}
 
-	// render images
+	// draw images
 	for (auto image : images) {
 		if (image->disabled) {
 			continue;
 		}
-		const Image* actualImage = Image::get(image->path.c_str());
-		if (actualImage) {
-			SDL_Rect pos;
-			pos.x = _size.x + image->pos.x - scroll.x;
-			pos.y = _size.y + image->pos.y - scroll.y;
-			pos.w = image->pos.w > 0 ? image->pos.w : actualImage->getWidth();
-			pos.h = image->pos.h > 0 ? image->pos.h : actualImage->getHeight();
-
-			SDL_Rect dest;
-			dest.x = std::max(_size.x, pos.x);
-			dest.y = std::max(_size.y, pos.y);
-			dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
-			dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
-			SDL_Rect scaledDest;
-			scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
-			scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
-			scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
-			scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
-			if (scaledDest.w <= 0 || scaledDest.h <= 0) {
-				continue;
-			}
-
-			SDL_Rect src;
-			if (image->tiled) {
-				src.x = std::max(0, _size.x - pos.x);
-				src.y = std::max(0, _size.y - pos.y);
-				src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
-				src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
-			} else {
-				src.x = std::max(0.f, (_size.x - pos.x) * ((float)actualImage->getWidth() / image->pos.w));
-				src.y = std::max(0.f, (_size.y - pos.y) * ((float)actualImage->getHeight() / image->pos.h));
-				src.w = ((float)dest.w / pos.w) * actualImage->getWidth();
-				src.h = ((float)dest.h / pos.h) * actualImage->getHeight();
-			}
-			if (src.w <= 0 || src.h <= 0) {
-				continue;
-			}
-
-			actualImage->drawColor(&src, scaledDest, image->color);
+		if (image->ontop) {
+			continue;
 		}
+		drawImage(image, _size, scroll);
 	}
 
 	// render list entries
@@ -382,6 +346,17 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	// draw subframes
 	for (auto frame : frames) {
 		frame->draw(_size, scroll);
+	}
+
+	// draw "on top" images
+	for (auto image : images) {
+		if (image->disabled) {
+			continue;
+		}
+		if (!image->ontop) {
+			continue;
+		}
+		drawImage(image, _size, scroll);
 	}
 
 	// root frame draws tooltip
@@ -1343,5 +1318,49 @@ void createTestUI() {
 		);
 
 		y += 210;
+	}
+}
+
+void Frame::drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll) {
+	assert(image);
+	const Image* actualImage = Image::get(image->path.c_str());
+	if (actualImage) {
+		SDL_Rect pos;
+		pos.x = _size.x + image->pos.x - scroll.x;
+		pos.y = _size.y + image->pos.y - scroll.y;
+		pos.w = image->pos.w > 0 ? image->pos.w : actualImage->getWidth();
+		pos.h = image->pos.h > 0 ? image->pos.h : actualImage->getHeight();
+
+		SDL_Rect dest;
+		dest.x = std::max(_size.x, pos.x);
+		dest.y = std::max(_size.y, pos.y);
+		dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+		dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+		SDL_Rect scaledDest;
+		scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
+		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
+		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
+		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+		if (scaledDest.w <= 0 || scaledDest.h <= 0) {
+			return;
+		}
+
+		SDL_Rect src;
+		if (image->tiled) {
+			src.x = std::max(0, _size.x - pos.x);
+			src.y = std::max(0, _size.y - pos.y);
+			src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+			src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+		} else {
+			src.x = std::max(0.f, (_size.x - pos.x) * ((float)actualImage->getWidth() / image->pos.w));
+			src.y = std::max(0.f, (_size.y - pos.y) * ((float)actualImage->getHeight() / image->pos.h));
+			src.w = ((float)dest.w / pos.w) * actualImage->getWidth();
+			src.h = ((float)dest.h / pos.h) * actualImage->getHeight();
+		}
+		if (src.w <= 0 || src.h <= 0) {
+			return;
+		}
+
+		actualImage->drawColor(&src, scaledDest, image->color);
 	}
 }

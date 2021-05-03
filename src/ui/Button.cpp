@@ -73,7 +73,12 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
 			}
 		} else {
-			Image* background_img = Image::get(background.c_str());
+			const char* path = pressed ?
+				(backgroundActivated.empty() ?
+					background.c_str() :
+					backgroundActivated.c_str()) :
+				background.c_str();
+			Image* background_img = Image::get(path);
 			background_img->drawColor(nullptr, scaledSize, focused ? highlightColor : color);
 		} 
 	}
