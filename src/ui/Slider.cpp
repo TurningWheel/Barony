@@ -6,6 +6,7 @@
 #include "Slider.hpp"
 #include "Frame.hpp"
 #include "Button.hpp"
+#include "Image.hpp"
 
 Slider::Slider(Frame& _parent) {
 	parent = &_parent;
@@ -28,7 +29,15 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		int y = (_railSize.y) * (float)yres / (float)Frame::virtualScreenY;
 		int w = (_railSize.x + _railSize.w) * (float)xres / (float)Frame::virtualScreenX;
 		int h = (_railSize.y + _railSize.h) * (float)yres / (float)Frame::virtualScreenY;
-		drawDepressed(x, y, w, h);
+		if (railImage.empty()) {
+			drawDepressed(x, y, w, h);
+		} else {
+			auto img = Image::get(railImage.c_str());
+			if (img) {
+				// TODO section this image!
+				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, color);
+			}
+		}
 	}
 	
 	// draw handle
@@ -41,7 +50,15 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		int y = (_handleSize.y) * (float)yres / (float)Frame::virtualScreenY;
 		int w = (_handleSize.x + _handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
 		int h = (_handleSize.y + _handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
-		drawWindow(x, y, w, h);
+		if (handleImage.empty()) {
+			drawWindow(x, y, w, h);
+		} else {
+			auto img = Image::get(handleImage.c_str());
+			if (img) {
+				// TODO section this image!
+				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, color);
+			}
+		}
 	}
 }
 

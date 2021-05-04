@@ -3,7 +3,7 @@
 class Button;
 
 void settingsUI(Button&);
-void settingsDisplay(Button&);
+void settingsVideo(Button&);
 void settingsAudio(Button&);
 void settingsControls(Button&);
 void settingsGame(Button&);

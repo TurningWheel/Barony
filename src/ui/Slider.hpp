@@ -62,6 +62,8 @@ public:
     const Uint32&               getColor() const { return color; }
     void						(*getCallback() const)(Slider&) { return callback; }
     bool                        isActivated() const { return activated; }
+    const char*                 getHandleImage() const { return handleImage.c_str(); }
+    const char*                 getRailImage() const { return railImage.c_str(); }
 
     void    setValue(float _value) { value = _value; }
     void    setMaxValue(float _value) { maxValue = _value; }
@@ -72,6 +74,8 @@ public:
     void    setTooltip(const char* _tooltip) { tooltip = _tooltip; }
     void    setColor(const Uint32& _color) { color = _color; }
     void	setCallback(void (*const fn)(Slider&)) { callback = fn; }
+    void    setHandleImage(const char* _image) { handleImage = _image; }
+    void    setRailImage(const char* _image) { railImage = _image; }
 
 private:
     void (*callback)(Slider&) = nullptr;		    //!< native callback for clicking
@@ -86,4 +90,6 @@ private:
     Uint32 color;					    			//!< the slider's color
     Uint32 moveStartTime = 0u;                      //!< when the player started holding a direction to move the slider
     Uint32 lastMoveTime = 0u;                       //!< last time the slider was moved
+    std::string handleImage;                        //!< image to use for the handle
+    std::string railImage;                          //!< image to use for the rail
 };
