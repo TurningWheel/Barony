@@ -15,19 +15,12 @@ enum FadeDestination {
 };
 
 static Frame* main_menu_frame = nullptr;
-static int buttons_height = 0;
-static Uint32 menu_ticks = 0u;
+static int main_menu_buttons_height = 0;
+static Uint32 main_menu_ticks = 0u;
 static float main_menu_cursor_bob = 0.f;
 static int main_menu_cursor_x = 0;
 static int main_menu_cursor_y = 0;
 static FadeDestination main_menu_fade_destination = FadeDestination::None;
-
-static int story_text_pause = 0;
-static int story_text_scroll = 0;
-static int story_text_section = 0;
-static bool story_text_end = false;
-
-static std::string settings_tab;
 
 static const char* bigfont_outline = "fonts/pixelmix.ttf#18#2";
 static const char* bigfont_no_outline = "fonts/pixelmix.ttf#18#0";
@@ -35,17 +28,58 @@ static const char* smallfont_outline = "fonts/pixel_maz.ttf#32#2";
 static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#32#2";
 static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
 
-static const char* intro_text =
-	u8"Long ago, the bustling town of Hamlet was the envy of all its neighbors,\nfor it was the most thriving city in all the land.#"
-	u8"Its prosperity was unmatched for generations until the evil Baron Herx came\nto power.#"
-	u8"The Baron, in his endless greed, forced the people to dig the hills for gold,\nthough the ground had never given such treasure before.#"
-	u8"Straining under the yoke of their master, the people planned his demise.\nThey tricked him with a promise of gold and sealed him within the mines.#"
-	u8"Free of their cruel master, the people returned to their old way of life.\nBut disasters shortly began to befall the village.#"
-	u8"Monsters and other evils erupted from the ground, transforming the village\ninto a ghost town.#"
-	u8"Many adventurers have descended into the mines to break the Baron's curse,\nbut none have returned.#"
-	u8"The town of Hamlet cries for redemption, and only a hero can save it\nfrom its curse...";
+static void updateMenuCursor(Widget& widget) {
+	Frame* buttons = static_cast<Frame*>(&widget);
+	for (auto button : buttons->getButtons()) {
+		if (button->isSelected()) {
+			main_menu_cursor_x = button->getSize().x - 80;
+			main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
+		}
+	}
 
-static void storyScreen() {
+	// bob cursor
+	const float bobrate = (float)PI * 2.f / (float)TICKS_PER_SECOND;
+	main_menu_cursor_bob += bobrate;
+	if (main_menu_cursor_bob >= (float)PI * 2.f) {
+		main_menu_cursor_bob -= (float)PI * 2.f;
+	}
+
+	// update cursor position
+	auto cursor = main_menu_frame->findImage("cursor");
+	if (cursor) {
+		int diff = main_menu_cursor_y - cursor->pos.y;
+		if (diff > 0) {
+			diff = std::max(1, diff / 4);
+		} else if (diff < 0) {
+			diff = std::min(-1, diff / 4);
+		}
+		cursor->pos = SDL_Rect{
+			main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
+			diff + cursor->pos.y,
+			37 * 2,
+			23 * 2
+		};
+	}
+}
+
+/******************************************************************************/
+
+static int story_text_pause = 0;
+static int story_text_scroll = 0;
+static int story_text_section = 0;
+static bool story_text_end = false;
+
+static const char* intro_text =
+u8"Long ago, the bustling town of Hamlet was the envy of all its neighbors,\nfor it was the most thriving city in all the land.#"
+u8"Its prosperity was unmatched for generations until the evil Baron Herx came\nto power.#"
+u8"The Baron, in his endless greed, forced the people to dig the hills for gold,\nthough the ground had never given such treasure before.#"
+u8"Straining under the yoke of their master, the people planned his demise.\nThey tricked him with a promise of gold and sealed him within the mines.#"
+u8"Free of their cruel master, the people returned to their old way of life.\nBut disasters shortly began to befall the village.#"
+u8"Monsters and other evils erupted from the ground, transforming the village\ninto a ghost town.#"
+u8"Many adventurers have descended into the mines to break the Baron's curse,\nbut none have returned.#"
+u8"The town of Hamlet cries for redemption, and only a hero can save it\nfrom its curse...";
+
+static void createStoryScreen() {
 	main_menu_frame->addImage(
 		main_menu_frame->getSize(),
 		0xffffffff,
@@ -130,7 +164,7 @@ static void storyScreen() {
 					}
 				}
 			} else {
-				if (menu_ticks % 2 == 0) {
+				if (main_menu_ticks % 2 == 0) {
 					auto textbox2 = textbox1->findFrame("story_text_box");
 					assert(textbox2);
 					auto text = textbox2->findField("text");
@@ -155,44 +189,12 @@ static void storyScreen() {
 				}
 			}
 		}
-	});
-}
-
-static void updateMenuCursor(Widget& widget) {
-	Frame* buttons = static_cast<Frame*>(&widget);
-	for (auto button : buttons->getButtons()) {
-		if (button->isSelected()) {
-			main_menu_cursor_x = button->getSize().x - 80;
-			main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
-		}
-	}
-
-	// bob cursor
-	const float bobrate = (float)PI * 2.f / (float)TICKS_PER_SECOND;
-	main_menu_cursor_bob += bobrate;
-	if (main_menu_cursor_bob >= (float)PI * 2.f) {
-		main_menu_cursor_bob -= (float)PI * 2.f;
-	}
-
-	// update cursor position
-	auto cursor = main_menu_frame->findImage("cursor");
-	if (cursor) {
-		int diff = main_menu_cursor_y - cursor->pos.y;
-		if (diff > 0) {
-			diff = std::max(1, diff / 4);
-		} else if (diff < 0) {
-			diff = std::min(-1, diff / 4);
-		}
-		cursor->pos = SDL_Rect{
-			main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
-			diff + cursor->pos.y,
-			37 * 2,
-			23 * 2
-		};
-	}
+		});
 }
 
 /******************************************************************************/
+
+static std::string settings_tab;
 
 static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
 	std::string fullname = std::string("subheader_") + name;
@@ -572,7 +574,7 @@ void recordsStoryIntroduction(Button& button) {
 	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 	main_menu_frame->setHollow(true);
 	main_menu_frame->setBorder(0);
-	main_menu_frame->setTickCallback([](Widget&){++menu_ticks;});
+	main_menu_frame->setTickCallback([](Widget&){++main_menu_ticks;});
 
 	fadeout = true;
 	main_menu_fade_destination = FadeDestination::IntroStoryScreen;
@@ -587,7 +589,7 @@ void recordsCredits(Button& button) {
 	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 	main_menu_frame->setHollow(true);
 	main_menu_frame->setBorder(0);
-	main_menu_frame->setTickCallback([](Widget&){++menu_ticks;});
+	main_menu_frame->setTickCallback([](Widget&){++main_menu_ticks;});
 
 	auto back_button = main_menu_frame->addButton("back");
 	back_button->setText("Return to Main Menu  ");
@@ -780,7 +782,7 @@ void recordsBackToMainMenu(Button& button) {
 #endif
 	const int num_options = sizeof(options) / sizeof(options[0]);
 
-	int y = buttons_height;
+	int y = main_menu_buttons_height;
 
 	auto buttons = main_menu_frame->addFrame("buttons");
 	buttons->setTickCallback(updateMenuCursor);
@@ -882,7 +884,7 @@ void mainHallOfRecords(Button& button) {
 	};
 	const int num_options = sizeof(options) / sizeof(options[0]);
 
-	int y = buttons_height;
+	int y = main_menu_buttons_height;
 
 	auto buttons = main_menu_frame->addFrame("buttons");
 	buttons->setTickCallback(updateMenuCursor);
@@ -1153,7 +1155,7 @@ void doMainMenu() {
 				createMainMenu();
 			}
 			if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
-				storyScreen();
+				createStoryScreen();
 			}
 			fadeout = false;
 			main_menu_fade_destination = FadeDestination::None;
@@ -1169,7 +1171,7 @@ void createMainMenu() {
 	frame->setActualSize(SDL_Rect{0, 0, frame->getSize().w, frame->getSize().h});
 	frame->setHollow(true);
 	frame->setBorder(0);
-	frame->setTickCallback([](Widget&){++menu_ticks;});
+	frame->setTickCallback([](Widget&){++main_menu_ticks;});
 
 	int y = 16;
 
@@ -1222,7 +1224,7 @@ void createMainMenu() {
 
 	const int num_options = sizeof(options) / sizeof(options[0]);
 	
-	buttons_height = y;
+	main_menu_buttons_height = y;
 
 	auto buttons = frame->addFrame("buttons");
 	buttons->setTickCallback(updateMenuCursor);
