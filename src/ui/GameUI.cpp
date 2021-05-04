@@ -414,13 +414,15 @@ void doNewCharacterSheet(int player)
     }
 }
 
+static Uint32 gui_ticks = 0u;
 void doFrames() {
     if ( gui ) 
     {
-        Frame::result_t gui_result = gui->process();
-        gui->draw();
-        if ( !gui_result.usable ) {
-            return;
+        if (gui_ticks < ticks)
+        {
+            (void)gui->process();
+            ++gui_ticks;
         }
+        gui->draw();
     }
 }

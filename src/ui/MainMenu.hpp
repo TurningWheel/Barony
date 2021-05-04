@@ -2,6 +2,12 @@
 
 class Button;
 
+void settingsUI(Button&);
+void settingsDisplay(Button&);
+void settingsAudio(Button&);
+void settingsControls(Button&);
+void settingsGame(Button&);
+
 void recordsAdventureArchives(Button&);
 void recordsLeaderboards(Button&);
 void recordsDungeonCompendium(Button&);

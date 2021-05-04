@@ -7,20 +7,26 @@
 #include "../draw.hpp"
 #include "../engine/audio/sound.hpp"
 
+enum FadeDestination {
+	None = 0,
+	RootMainMenu = 1,
+	IntroStoryScreen = 2,
+};
+
 static Frame* main_menu_frame = nullptr;
 static int buttons_height = 0;
 static Uint32 menu_ticks = 0u;
 static float main_menu_cursor_bob = 0.f;
 static int main_menu_cursor_x = 0;
 static int main_menu_cursor_y = 0;
-static int main_menu_fade_destination = 0;
+static FadeDestination main_menu_fade_destination = FadeDestination::None;
 
 static int story_text_pause = 0;
 static int story_text_scroll = 0;
 static int story_text_section = 0;
 static bool story_text_end = false;
 
-static const char* settings_tab = nullptr;
+static std::string settings_tab;
 
 static const char* bigfont_outline = "fonts/pixelmix.ttf#18#2";
 static const char* bigfont_no_outline = "fonts/pixelmix.ttf#18#0";
@@ -63,7 +69,7 @@ static void storyScreen() {
 	back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 50, 400, 50});
 	back_button->setCallback([](Button& b){
 		fadeout = true;
-		main_menu_fade_destination = 1;
+		main_menu_fade_destination = FadeDestination::RootMainMenu;
 		});
 	back_button->setWidgetBack("back");
 	back_button->select();
@@ -89,6 +95,312 @@ static void storyScreen() {
 	field->setHJustify(Field::justify_t::CENTER);
 	field->setVJustify(Field::justify_t::TOP);
 	field->setColor(makeColor(255, 255, 255, 255));
+
+	textbox1->setTickCallback([](Widget& widget){
+		auto textbox1 = static_cast<Frame*>(&widget);
+		auto story_font = Font::get(bigfont_outline); assert(story_font);
+		if (story_text_scroll > 0) {
+			auto textbox2 = textbox1->findFrame("story_text_box");
+			assert(textbox2);
+			auto size = textbox2->getActualSize();
+			++size.y;
+			textbox2->setActualSize(size);
+			--story_text_scroll;
+			if (story_text_section % 2 == 0) {
+				auto backdrop = main_menu_frame->findImage("backdrop");
+				if (backdrop) {
+					Uint8 c = 255 * (fabs(story_text_scroll - story_font->height()) / story_font->height());
+					backdrop->color = makeColor(c, c, c, 255);
+					if (c == 0) {
+						char c = backdrop->path[backdrop->path.size() - 5];
+						backdrop->path[backdrop->path.size() - 5] = c + 1;
+					}
+				}
+			}
+		} else {
+			if (story_text_pause > 0) {
+				--story_text_pause;
+				if (story_text_pause == 0) {
+					if (story_text_end == true) {
+						fadeout = true;
+						main_menu_fade_destination = FadeDestination::RootMainMenu;
+					} else {
+						story_text_scroll = story_font->height() * 2;
+					}
+				}
+			} else {
+				if (menu_ticks % 2 == 0) {
+					auto textbox2 = textbox1->findFrame("story_text_box");
+					assert(textbox2);
+					auto text = textbox2->findField("text");
+					assert(text);
+					size_t len = strlen(text->getText());
+					if (len < strlen(intro_text)) {
+						char buf[1024] = { '\0' };
+						strcpy(buf, text->getText());
+						char c = intro_text[len];
+						if (c == '#') {
+							++story_text_section;
+							story_text_pause = TICKS_PER_SECOND * 5;
+							c = '\n';
+						}
+						buf[len] = c;
+						buf[len + 1] = '\0';
+						text->setText(buf);
+					} else {
+						story_text_pause = TICKS_PER_SECOND * 5;
+						story_text_end = true;
+					}
+				}
+			}
+		}
+	});
+}
+
+static void updateMenuCursor(Widget& widget) {
+	Frame* buttons = static_cast<Frame*>(&widget);
+	for (auto button : buttons->getButtons()) {
+		if (button->isSelected()) {
+			main_menu_cursor_x = button->getSize().x - 80;
+			main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
+		}
+	}
+
+	// bob cursor
+	const float bobrate = (float)PI * 2.f / (float)TICKS_PER_SECOND;
+	main_menu_cursor_bob += bobrate;
+	if (main_menu_cursor_bob >= (float)PI * 2.f) {
+		main_menu_cursor_bob -= (float)PI * 2.f;
+	}
+
+	// update cursor position
+	auto cursor = main_menu_frame->findImage("cursor");
+	if (cursor) {
+		int diff = main_menu_cursor_y - cursor->pos.y;
+		if (diff > 0) {
+			diff = std::max(1, diff / 4);
+		} else if (diff < 0) {
+			diff = std::min(-1, diff / 4);
+		}
+		cursor->pos = SDL_Rect{
+			main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
+			diff + cursor->pos.y,
+			37 * 2,
+			23 * 2
+		};
+	}
+}
+
+/******************************************************************************/
+
+static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
+	std::string fullname = std::string("subheader_") + name;
+	auto image = frame.addImage(
+		SDL_Rect{0, y, 1080, 42},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/Settings_SubHeading_Backing00.png",
+		(fullname + "_image").c_str()
+	);
+	auto field = frame.addField((fullname + "_field").c_str(), 128);
+	field->setSize(image->pos);
+	field->setFont(bigfont_outline);
+	field->setText(text);
+	field->setJustify(Field::justify_t::CENTER);
+	return image->pos.h + 6;
+}
+
+static int settingsAddOption(Frame& frame, int y, const char* name, const char* text) {
+	std::string fullname = std::string("setting_") + name;
+	auto image = frame.addImage(
+		SDL_Rect{0, y, 382, 52},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/Settings_Left_Backing00.png",
+		(fullname + "_image").c_str()
+	);
+	auto field = frame.addField((fullname + "_field").c_str(), 128);
+	auto size = image->pos; size.x += 12; size.w -= 12;
+	field->setSize(size);
+	field->setFont(bigfont_outline);
+	field->setText(text);
+	field->setHJustify(Field::justify_t::LEFT);
+	field->setVJustify(Field::justify_t::CENTER);
+	return size.h + 10;
+}
+
+static int settingsAddBooleanOption(
+	Frame& frame,
+	int y,
+	const char* name,
+	const char* text,
+	bool on,
+	void (*callback)(Button&))
+{
+	std::string fullname = std::string("setting_") + name;
+	int result = settingsAddOption(frame, y, name, text);
+	auto button = frame.addButton((fullname + "_button").c_str());
+	button->setSize(SDL_Rect{
+		390,
+		y + 2,
+		158,
+		48});
+	button->setFont(smallfont_outline);
+	button->setText("Off      On");
+	button->setJustify(Button::justify_t::CENTER);
+	button->setCallback(callback);
+	button->setPressed(on);
+	button->setBackground("images/ui/Main Menus/Settings/Settings_SwitchOff00.png");
+	button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_SwitchOn00.png");
+	button->setStyle(Button::style_t::STYLE_TOGGLE);
+	button->setHighlightColor(makeColor(255,255,255,255));
+	button->setColor(makeColor(127,127,127,255));
+	return result;
+}
+
+static int settingsAddBooleanWithCustomizeOption(
+	Frame& frame,
+	int y,
+	const char* name,
+	const char* text,
+	bool on,
+	void (*callback)(Button&),
+	void (*customize_callback)(Button&))
+{
+	std::string fullname = std::string("setting_") + name;
+	int result = settingsAddBooleanOption(frame, y, name, text, on, callback);
+	auto button = frame.addButton((fullname + "_customize_button").c_str());
+	button->setSize(SDL_Rect{
+		574,
+		y + 4,
+		158,
+		44});
+	button->setFont(smallfont_outline);
+	button->setText("Customize");
+	button->setJustify(Button::justify_t::CENTER);
+	button->setCallback(customize_callback);
+	button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
+	button->setHighlightColor(makeColor(255,255,255,255));
+	button->setColor(makeColor(127,127,127,255));
+	return result;
+}
+
+static int settingsAddCustomize(
+	Frame& frame,
+	int y,
+	const char* name,
+	const char* text,
+	void (*callback)(Button&))
+{
+	std::string fullname = std::string("setting_") + name;
+	int result = settingsAddOption(frame, y, name, text);
+	auto button = frame.addButton((fullname + "_customize_button").c_str());
+	button->setSize(SDL_Rect{
+		390,
+		y + 4,
+		158,
+		44});
+	button->setFont(smallfont_outline);
+	button->setText("Customize");
+	button->setJustify(Button::justify_t::CENTER);
+	button->setCallback(callback);
+	button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
+	button->setHighlightColor(makeColor(255,255,255,255));
+	button->setColor(makeColor(127,127,127,255));
+	return result;
+}
+
+static int settingsAddSlider(
+	Frame& frame,
+	int y,
+	const char* name,
+	const char* text,
+	float value,
+	void (*callback)(Slider&))
+{
+	int result = settingsAddOption(frame, y, name, text);
+	return result;
+}
+
+static Frame* settingsSubwindowSetup(Button& button) {
+	if (settings_tab == button.getName()) {
+		return nullptr;
+	}
+	playSound(139, 64); // click sound
+	settings_tab = button.getName();
+
+	assert(main_menu_frame);
+	auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+	auto settings_subwindow = settings->findFrame("settings_subwindow");
+	if (settings_subwindow) {
+		settings_subwindow->removeSelf();
+	}
+	settings_subwindow = settings->addFrame("settings_subwindow");
+	settings_subwindow->setSize(SDL_Rect{8 * 2, 71 * 2, 547 * 2, 224 * 2});
+	settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, 224 * 2});
+	settings_subwindow->setHollow(true);
+	settings_subwindow->setBorder(0);
+	auto rock_background = settings_subwindow->addImage(
+		settings_subwindow->getActualSize(),
+		0xffffffff,
+		"images/ui/Main Menus/Settings/Settings_BGTile00.png",
+		"background"
+	);
+	rock_background->tiled = true;
+	return settings_subwindow;
+}
+
+void settingsUI(Button& button) {
+	Frame* settings_subwindow;
+	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		return;
+	}
+
+	int y = 0;
+	
+	y += settingsAddSubHeader(*settings_subwindow, y, "inventory", "Inventory Options");
+	y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "add_items_to_hotbar", "Add Items to Hotbar", false, nullptr, nullptr);
+	y += settingsAddCustomize(*settings_subwindow, y, "inventory_sorting", "Inventory Sorting", nullptr);
+
+	y += settingsAddSubHeader(*settings_subwindow, y, "hud", "HUD Options");
+	y += settingsAddCustomize(*settings_subwindow, y, "minimap_settings", "Minimap Settings", nullptr);
+	y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "show_messages", "Show Messages", true, nullptr, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "show_player_nametags", "Show Player Nametags", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD", true, nullptr);
+#ifndef NINTENDO
+	y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Show IP Address", true, nullptr);
+#endif
+
+	// resize subwindow
+	settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, std::max(224 * 2, y)});
+	auto rock_background = settings_subwindow->findImage("background"); assert(rock_background);
+	rock_background->pos = settings_subwindow->getActualSize();
+}
+
+void settingsDisplay(Button& button) {
+	Frame* settings_subwindow;
+	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		return;
+	}
+}
+
+void settingsAudio(Button& button) {
+	Frame* settings_subwindow;
+	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		return;
+	}
+}
+
+void settingsControls(Button& button) {
+	Frame* settings_subwindow;
+	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		return;
+	}
+}
+
+void settingsGame(Button& button) {
+	Frame* settings_subwindow;
+	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		return;
+	}
 }
 
 /******************************************************************************/
@@ -114,9 +426,10 @@ void recordsStoryIntroduction(Button& button) {
 	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 	main_menu_frame->setHollow(true);
 	main_menu_frame->setBorder(0);
+	main_menu_frame->setTickCallback([](Widget&){++menu_ticks;});
 
 	fadeout = true;
-	main_menu_fade_destination = 2;
+	main_menu_fade_destination = FadeDestination::IntroStoryScreen;
 }
 
 void recordsCredits(Button& button) {
@@ -128,6 +441,7 @@ void recordsCredits(Button& button) {
 	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 	main_menu_frame->setHollow(true);
 	main_menu_frame->setBorder(0);
+	main_menu_frame->setTickCallback([](Widget&){++menu_ticks;});
 
 	auto back_button = main_menu_frame->addButton("back");
 	back_button->setText("Return to Main Menu  ");
@@ -157,6 +471,15 @@ void recordsCredits(Button& button) {
 	credits->setActualSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY + font->height() * 80});
 	credits->setHollow(true);
 	credits->setBorder(0);
+	credits->setTickCallback([](Widget& widget){
+		auto credits = static_cast<Frame*>(&widget);
+		auto size = credits->getActualSize();
+		size.y += 1;
+		if (size.y >= size.h) {
+			size.y = 0;
+		}
+		credits->setActualSize(size);
+		});
 
 	// titles
 	auto text1 = credits->addField("text1", 1024);
@@ -314,6 +637,7 @@ void recordsBackToMainMenu(Button& button) {
 	int y = buttons_height;
 
 	auto buttons = main_menu_frame->addFrame("buttons");
+	buttons->setTickCallback(updateMenuCursor);
 	buttons->setSize(SDL_Rect{0, y, Frame::virtualScreenX, 36 * num_options});
 	buttons->setActualSize(SDL_Rect{0, 0, buttons->getSize().w, buttons->getSize().h});
 	buttons->setHollow(true);
@@ -415,6 +739,7 @@ void mainHallOfRecords(Button& button) {
 	int y = buttons_height;
 
 	auto buttons = main_menu_frame->addFrame("buttons");
+	buttons->setTickCallback(updateMenuCursor);
 	buttons->setSize(SDL_Rect{0, y, Frame::virtualScreenX, 36 * (num_options + 1)});
 	buttons->setActualSize(SDL_Rect{0, 0, buttons->getSize().w, buttons->getSize().h});
 	buttons->setHollow(true);
@@ -461,6 +786,8 @@ void mainHallOfRecords(Button& button) {
 void mainSettings(Button& button) {
 	playSound(139, 64); // click sound
 
+	settings_tab = "";
+
 	auto settings = main_menu_frame->addFrame("settings");
 	settings->setSize(SDL_Rect{(Frame::virtualScreenX - 1126) / 2, (Frame::virtualScreenY - 718) / 2, 1126, 718});
 	settings->setActualSize(SDL_Rect{0, 0, settings->getSize().w, settings->getSize().h});
@@ -485,18 +812,25 @@ void mainSettings(Button& button) {
 	);
 	timber->ontop = true;
 
-	auto settings_subwindow = settings->addFrame("settings_subwindow");
-	settings_subwindow->setSize(SDL_Rect{8 * 2, 71 * 2, 547 * 2, 224 * 2});
-	settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, 224 * 2});
-	settings_subwindow->setHollow(true);
-	settings_subwindow->setBorder(0);
-	auto rock_background = settings_subwindow->addImage(
-		settings_subwindow->getActualSize(),
-		0xffffffff,
-		"images/ui/Main Menus/Settings/Settings_BGTile00.png",
-		"background"
-	);
-	rock_background->tiled = true;
+	settings->setTickCallback([](Widget& widget){
+		auto settings = static_cast<Frame*>(&widget);
+		const char* tabs[] = {
+			"UI",
+			"Display",
+			"Audio",
+			"Controls"
+		};
+		for (auto name : tabs) {
+			auto button = settings->findButton(name);
+			if (button) {
+				if (name == settings_tab) {
+					button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
+				} else {
+					button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
+				}
+			}
+		}
+		});
 
 	static const char* pixel_maz_outline = "fonts/pixel_maz.ttf#46#2";
 
@@ -525,23 +859,24 @@ void mainSettings(Button& button) {
 	tab_right->setWidgetBack("discard_and_exit");
 	tab_right->setWidgetPageLeft("tab_left");
 	tab_right->setWidgetPageRight("tab_right");
-	tab_right->setWidgetLeft("Game");
+	tab_right->setWidgetLeft("Controls");
 	tab_right->setWidgetDown("confirm_and_exit");
 
-	const char* tabs[] = {
-		"UI",
-		"Display",
-		"Audio",
-		"Controls",
-		"Game"
+	struct Option {
+		const char* name;
+		void (*callback)(Button&);
+	};
+	Option tabs[] = {
+		{"UI", settingsUI},
+		{"Display", settingsDisplay},
+		{"Audio", settingsAudio},
+		{"Controls", settingsControls}
 	};
 	int num_options = sizeof(tabs) / sizeof(tabs[0]);
 	for (int c = 0; c < num_options; ++c) {
-		auto button = settings->addButton(tabs[c]);
-		button->setCallback([](Button& bt){
-			settings_tab = bt.getName();
-		});
-		button->setText(tabs[c]);
+		auto button = settings->addButton(tabs[c].name);
+		button->setCallback(tabs[c].callback);
+		button->setText(tabs[c].name);
 		button->setFont(pixel_maz_outline);
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
 		button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
@@ -551,12 +886,12 @@ void mainSettings(Button& button) {
 		button->setWidgetPageLeft("tab_left");
 		button->setWidgetPageRight("tab_right");
 		if (c > 0) {
-			button->setWidgetLeft(tabs[c - 1]);
+			button->setWidgetLeft(tabs[c - 1].name);
 		} else {
 			button->setWidgetLeft("tab_left");
 		}
 		if (c < num_options - 1) {
-			button->setWidgetRight(tabs[c + 1]);
+			button->setWidgetRight(tabs[c + 1].name);
 		} else {
 			button->setWidgetRight("tab_right");
 		}
@@ -569,7 +904,7 @@ void mainSettings(Button& button) {
 			button->setWidgetDown("confirm_and_exit");
 		}
 	}
-	auto first_tab = settings->findButton(tabs[0]);
+	auto first_tab = settings->findButton(tabs[0].name);
 	if (first_tab) {
 		first_tab->select();
 		first_tab->activate();
@@ -615,7 +950,7 @@ void mainSettings(Button& button) {
 				settings_button->select();
 			}
 		}
-		});
+	});
 	discard_and_exit->setWidgetBack("discard_and_exit");
 	discard_and_exit->setWidgetPageLeft("tab_left");
 	discard_and_exit->setWidgetPageRight("tab_right");
@@ -644,11 +979,11 @@ void mainSettings(Button& button) {
 				settings_button->select();
 			}
 		}
-		});
+	});
 	confirm_and_exit->setWidgetBack("discard_and_exit");
 	confirm_and_exit->setWidgetPageLeft("tab_left");
 	confirm_and_exit->setWidgetPageRight("tab_right");
-	confirm_and_exit->setWidgetUp("Game");
+	confirm_and_exit->setWidgetUp("tab_right");
 	confirm_and_exit->setWidgetLeft("discard_and_exit");
 }
 
@@ -667,151 +1002,15 @@ void doMainMenu() {
 
 	if (main_menu_fade_destination) {
 		if (fadeout && fadealpha >= 255) {
-			if (main_menu_fade_destination == 1) {
+			if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
 				createMainMenu();
 			}
-			if (main_menu_fade_destination == 2) {
+			if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
 				storyScreen();
 			}
 			fadeout = false;
-			main_menu_fade_destination = 0;
-		}
-	}
-
-	if (menu_ticks < ticks) {
-		++menu_ticks;
-
-		// move cursor to current menu selection
-		auto buttons = main_menu_frame->findFrame("buttons");
-		if (buttons) {
-			for (auto button : buttons->getButtons()) {
-				if (button->isSelected()) {
-					main_menu_cursor_x = button->getSize().x - 80;
-					main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
-				}
-			}
-		}
-		
-		// bob cursor
-		const float bobrate = (float)PI * 2.f / (float)TICKS_PER_SECOND;
-		main_menu_cursor_bob += bobrate;
-		if (main_menu_cursor_bob >= (float)PI * 2.f) {
-			main_menu_cursor_bob -= (float)PI * 2.f;
-		}
-
-		// update cursor position
-		auto cursor = main_menu_frame->findImage("cursor");
-		if (cursor) {
-			int diff = main_menu_cursor_y - cursor->pos.y;
-			if (diff > 0) {
-				diff = std::max(1, diff / 4);
-			} else if (diff < 0) {
-				diff = std::min(-1, diff / 4);
-			}
-			cursor->pos = SDL_Rect{
-				main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
-				diff + cursor->pos.y,
-				37 * 2,
-				23 * 2
-			};
-		}
-
-		// ascend credits
-		auto credits = main_menu_frame->findFrame("credits");
-		if (credits) {
-			auto size = credits->getActualSize();
-			size.y += 1;
-			if (size.y >= size.h) {
-				size.y = 0;
-			}
-			credits->setActualSize(size);
-		}
-
-		// write intro text
-		auto story_font = Font::get(bigfont_outline); assert(story_font);
-		if (story_text_scroll > 0) {
-			auto textbox1 = main_menu_frame->findFrame("story_text_box");
-			if (textbox1) {
-				auto textbox2 = textbox1->findFrame("story_text_box");
-				assert(textbox2);
-				auto size = textbox2->getActualSize();
-				++size.y;
-				textbox2->setActualSize(size);
-				--story_text_scroll;
-			}
-			if (story_text_section % 2 == 0) {
-				auto backdrop = main_menu_frame->findImage("backdrop");
-				if (backdrop) {
-					Uint8 c = 255 * (fabs(story_text_scroll - story_font->height()) / story_font->height());
-					backdrop->color = makeColor(c, c, c, 255);
-					if (c == 0) {
-						char c = backdrop->path[backdrop->path.size() - 5];
-						backdrop->path[backdrop->path.size() - 5] = c + 1;
-					}
-				}
-			}
-		} else {
-			if (story_text_pause > 0) {
-				--story_text_pause;
-				if (story_text_pause == 0) {
-					if (story_text_end == true) {
-						fadeout = true;
-						main_menu_fade_destination = 1;
-					} else {
-						story_text_scroll = story_font->height() * 2;
-					}
-				}
-			} else {
-				if (menu_ticks % 2 == 0) {
-					auto textbox1 = main_menu_frame->findFrame("story_text_box");
-					if (textbox1) {
-						auto textbox2 = textbox1->findFrame("story_text_box");
-						assert(textbox2);
-						auto text = textbox2->findField("text");
-						assert(text);
-						size_t len = strlen(text->getText());
-						if (len < strlen(intro_text)) {
-							char buf[1024] = { '\0' };
-							strcpy(buf, text->getText());
-							char c = intro_text[len];
-							if (c == '#') {
-								++story_text_section;
-								story_text_pause = TICKS_PER_SECOND * 5;
-								c = '\n';
-							}
-							buf[len] = c;
-							buf[len + 1] = '\0';
-							text->setText(buf);
-						} else {
-							story_text_pause = TICKS_PER_SECOND * 5;
-							story_text_end = true;
-						}
-					}
-				}
-			}
-		}
-
-		// do settings
-		auto settings = main_menu_frame->findFrame("settings");
-		if (settings) {
-			const char* tabs[] = {
-				"UI",
-				"Display",
-				"Audio",
-				"Controls",
-				"Game"
-			};
-			for (auto name : tabs) {
-				auto button = settings->findButton(name);
-				if (button) {
-					if (name == settings_tab) {
-						button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
-					} else {
-						button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
-					}
-				}
-			}
+			main_menu_fade_destination = FadeDestination::None;
 		}
 	}
 }
@@ -824,6 +1023,7 @@ void createMainMenu() {
 	frame->setActualSize(SDL_Rect{0, 0, frame->getSize().w, frame->getSize().h});
 	frame->setHollow(true);
 	frame->setBorder(0);
+	frame->setTickCallback([](Widget&){++menu_ticks;});
 
 	int y = 16;
 
@@ -879,6 +1079,7 @@ void createMainMenu() {
 	buttons_height = y;
 
 	auto buttons = frame->addFrame("buttons");
+	buttons->setTickCallback(updateMenuCursor);
 	buttons->setSize(SDL_Rect{0, y, Frame::virtualScreenX, 36 * num_options});
 	buttons->setActualSize(SDL_Rect{0, 0, buttons->getSize().w, buttons->getSize().h});
 	buttons->setHollow(true);
@@ -992,9 +1193,4 @@ void createMainMenu() {
 void destroyMainMenu() {
 	main_menu_frame->removeSelf();
 	main_menu_frame = nullptr;
-
-	story_text_pause = 0;
-	story_text_scroll = 0;
-	story_text_section = 0;
-	story_text_end = false;
 }
