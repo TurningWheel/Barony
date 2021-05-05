@@ -406,8 +406,8 @@ static int settingsAddSlider(
 	slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, 450, 24});
 	slider->setHandleSize(SDL_Rect{0, 0, 52, 42});
 	slider->setCallback(callback);
-	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Slide00.png");
-	slider->setRailImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Backing00.png");
+	//slider->setHandleImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Slide00.png");
+	//slider->setRailImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Backing00.png");
 	slider->setWidgetBack(parent);
 	slider->setWidgetPageLeft("tab_left");
 	slider->setWidgetPageRight("tab_right");
@@ -431,13 +431,14 @@ static Frame* settingsSubwindowSetup(Button& button) {
 		settings_subwindow->removeSelf();
 	}
 	settings_subwindow = settings->addFrame("settings_subwindow");
+	settings_subwindow->setScrollBarsEnabled(false);
 	settings_subwindow->setSize(SDL_Rect{8 * 2, 71 * 2, 547 * 2, 224 * 2});
 	settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, 224 * 2});
 	settings_subwindow->setHollow(true);
 	settings_subwindow->setBorder(0);
 	auto rock_background = settings_subwindow->addImage(
 		settings_subwindow->getActualSize(),
-		0xffffffff,
+		makeColor(127, 127, 127, 221),
 		"images/ui/Main Menus/Settings/Settings_BGTile00.png",
 		"background"
 	);
@@ -1159,7 +1160,7 @@ void mainSettings(Button& button) {
 			357 * 2
 		},
 		0xffffffff,
-		"images/ui/Main Menus/Settings/Settings_Window01.png",
+		"images/ui/Main Menus/Settings/Settings_Window02.png",
 		"background"
 	);
 	auto timber = settings->addImage(

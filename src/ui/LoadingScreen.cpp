@@ -41,7 +41,7 @@ void createLoadingScreen(real_t progress) {
 	loading_frame->addImage(
 		SDL_Rect{10, 10, 100, 100},
 		makeColor(255, 255, 255, 255),
-		"images/ui/boulder/boulder0.png",
+		"images/ui/LoadingScreen/boulder0.png",
 		"spinning_widget"
 	);
 }
@@ -71,7 +71,7 @@ void doLoadingScreen() {
 		auto spinning_widget = loading_frame->findImage("spinning_widget");
 		int i = (int)strtol(spinning_widget->path.substr(25).c_str(), nullptr, 10);
 		i = (i + 1) % 30;
-		spinning_widget->path = std::string("images/ui/boulder/boulder") + std::to_string(i) + ".png";
+		spinning_widget->path = std::string("images/ui/LoadingScreen/boulder") + std::to_string(i) + ".png";
 		drawClearBuffers();
 		gui->draw();
 		GO_SwapBuffers(screen);
