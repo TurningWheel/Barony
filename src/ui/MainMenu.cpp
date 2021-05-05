@@ -504,9 +504,9 @@ static void hookSettingToSetting(Frame& frame, const Setting& setting1, const Se
 }
 
 static void hookSettings(Frame& frame, const std::vector<Setting>& settings) {
-	for (auto it = settings.begin(); (it + 1) != settings.end(); ++it) {
+	for (auto it = settings.begin(); std::next(it) != settings.end(); ++it) {
 		auto& setting1 = (*it);
-		auto& setting2 = (*(++it));
+		auto& setting2 = (*std::next(it));
 		hookSettingToSetting(frame, setting1, setting2);
 	}
 }
