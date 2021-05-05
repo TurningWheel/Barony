@@ -274,7 +274,7 @@ private:
 	Uint32 color;										//!< the frame's color
 	Uint32 borderColor;									//!< the frame's border color (only used for flat border)
 	const char* tooltip = nullptr;						//!< points to the tooltip that should be displayed by the (master) frame, or nullptr if none should be displayed
-	bool hollow = false;								//!< if true, the frame is hollow; otherwise it is not
+	bool hollow = false;								//!< if true, the frame doesn't have a solid background
 	bool draggingHSlider = false;						//!< if true, we are dragging the horizontal slider
 	bool draggingVSlider = false;						//!< if true, we are dragging the vertical slider
 	int oldSliderX = 0;									//!< when you start dragging a slider, this is set

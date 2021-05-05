@@ -8,7 +8,7 @@
 #include "../draw.hpp"
 #include "../engine/audio/sound.hpp"
 
-enum FadeDestination {
+enum class FadeDestination : Uint8 {
 	None = 0,
 	RootMainMenu = 1,
 	IntroStoryScreen = 2,
@@ -196,6 +196,18 @@ static void createStoryScreen() {
 
 static std::string settings_tab;
 
+struct Setting {
+	enum class Type : Uint8 {
+		Boolean = 0,
+		Slider = 1,
+		Customize = 2,
+		BooleanWithCustomize = 3,
+		Dropdown = 4,
+	};
+	Type type;
+	const char* name;
+};
+
 static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
 	std::string fullname = std::string("subheader_") + name;
 	auto image = frame.addImage(
@@ -233,6 +245,7 @@ static int settingsAddOption(Frame& frame, int y, const char* name, const char* 
 static int settingsAddBooleanOption(
 	Frame& frame,
 	int y,
+	const char* parent,
 	const char* name,
 	const char* text,
 	bool on,
@@ -258,12 +271,16 @@ static int settingsAddBooleanOption(
 	button->setColor(makeColor(127,127,127,255));
 	button->setTextHighlightColor(makeColor(255,255,255,255));
 	button->setTextColor(makeColor(127,127,127,255));
+	button->setWidgetBack(parent);
+	button->setWidgetPageLeft("tab_left");
+	button->setWidgetPageRight("tab_right");
 	return result;
 }
 
 static int settingsAddBooleanWithCustomizeOption(
 	Frame& frame,
 	int y,
+	const char* parent,
 	const char* name,
 	const char* text,
 	bool on,
@@ -271,7 +288,7 @@ static int settingsAddBooleanWithCustomizeOption(
 	void (*customize_callback)(Button&))
 {
 	std::string fullname = std::string("setting_") + name;
-	int result = settingsAddBooleanOption(frame, y, name, text, on, callback);
+	int result = settingsAddBooleanOption(frame, y, parent, name, text, on, callback);
 	auto button = frame.addButton((fullname + "_customize_button").c_str());
 	button->setSize(SDL_Rect{
 		574,
@@ -287,12 +304,19 @@ static int settingsAddBooleanWithCustomizeOption(
 	button->setColor(makeColor(127,127,127,255));
 	button->setTextHighlightColor(makeColor(255,255,255,255));
 	button->setTextColor(makeColor(127,127,127,255));
+	button->setWidgetBack(parent);
+	button->setWidgetPageLeft("tab_left");
+	button->setWidgetPageRight("tab_right");
+	button->setWidgetLeft((fullname + "_button").c_str());
+	auto boolean = frame.findButton((fullname + "_button").c_str()); assert(boolean);
+	boolean->setWidgetRight((fullname + "_customize_button").c_str());
 	return result;
 }
 
 static int settingsAddCustomize(
 	Frame& frame,
 	int y,
+	const char* parent,
 	const char* name,
 	const char* text,
 	void (*callback)(Button&))
@@ -314,12 +338,16 @@ static int settingsAddCustomize(
 	button->setColor(makeColor(127,127,127,255));
 	button->setTextHighlightColor(makeColor(255,255,255,255));
 	button->setTextColor(makeColor(127,127,127,255));
+	button->setWidgetBack(parent);
+	button->setWidgetPageLeft("tab_left");
+	button->setWidgetPageRight("tab_right");
 	return result;
 }
 
 static int settingsAddDropdown(
 	Frame& frame,
 	int y,
+	const char* parent,
 	const char* name,
 	const char* text,
 	const std::vector<const char*>& items,
@@ -342,12 +370,16 @@ static int settingsAddDropdown(
 	button->setColor(makeColor(127,127,127,255));
 	button->setTextHighlightColor(makeColor(255,255,255,255));
 	button->setTextColor(makeColor(127,127,127,255));
+	button->setWidgetBack(parent);
+	button->setWidgetPageLeft("tab_left");
+	button->setWidgetPageRight("tab_right");
 	return result;
 }
 
 static int settingsAddSlider(
 	Frame& frame,
 	int y,
+	const char* parent,
 	const char* name,
 	const char* text,
 	float value,
@@ -376,6 +408,9 @@ static int settingsAddSlider(
 	slider->setCallback(callback);
 	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Slide00.png");
 	slider->setRailImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Backing00.png");
+	slider->setWidgetBack(parent);
+	slider->setWidgetPageLeft("tab_left");
+	slider->setWidgetPageRight("tab_right");
 	if (callback) {
 		(*callback)(*slider);
 	}
@@ -410,10 +445,70 @@ static Frame* settingsSubwindowSetup(Button& button) {
 	return settings_subwindow;
 }
 
-static void settingsSubwindowFinalize(Frame& frame, int y) {
+static std::pair<std::string, std::string> getFullSettingNames(const Setting& setting) {
+	switch (setting.type) {
+	case Setting::Type::Boolean:
+		return std::make_pair(
+			std::string("setting_") + std::string(setting.name) + std::string("_button"),
+			std::string(""));
+	case Setting::Type::Slider:
+		return std::make_pair(
+			std::string("setting_") + std::string(setting.name) + std::string("_slider"),
+			std::string(""));
+	case Setting::Type::Customize:
+		return std::make_pair(
+			std::string("setting_") + std::string(setting.name) + std::string("_customize_button"),
+			std::string(""));
+	case Setting::Type::BooleanWithCustomize:
+		return std::make_pair(
+			std::string("setting_") + std::string(setting.name) + std::string("_button"),
+			std::string("setting_") + std::string(setting.name) + std::string("_customize_button"));
+	default:
+		assert(0 && "Unknown setting type!");
+		return std::make_pair(
+			std::string(""),
+			std::string(""));
+	}
+}
+
+static void settingsSubwindowFinalize(Frame& frame, int y, const Setting& settingToSelect) {
 	frame.setActualSize(SDL_Rect{0, 0, 547 * 2, std::max(224 * 2, y)});
 	auto rock_background = frame.findImage("background"); assert(rock_background);
 	rock_background->pos = frame.getActualSize();
+	auto names = getFullSettingNames(settingToSelect);
+	auto widget = frame.findWidget(names.first.c_str(), false); assert(widget);
+	widget->select();
+}
+
+static void hookSettingToSetting(Frame& frame, const Setting& setting1, const Setting& setting2) {
+	auto names1 = getFullSettingNames(setting1);
+	auto names2 = getFullSettingNames(setting2);
+	auto widget11 = frame.findWidget(names1.first.c_str(), false); assert(widget11);
+	auto widget12 = names1.second.empty() ? nullptr : frame.findWidget(names1.second.c_str(), false);
+	auto widget21 = frame.findWidget(names2.first.c_str(), false); assert(widget21);
+	auto widget22 = names2.second.empty() ? nullptr : frame.findWidget(names2.second.c_str(), false);
+	widget11->setWidgetDown(names2.first.c_str());
+	widget21->setWidgetUp(names1.first.c_str());
+	if (widget12) {
+		if (widget22) {
+			widget12->setWidgetDown(names2.second.c_str());
+			widget22->setWidgetUp(names1.second.c_str());
+		} else {
+			widget12->setWidgetDown(names2.first.c_str());
+		}
+	} else {
+		if (widget22) {
+			widget22->setWidgetUp(names1.first.c_str());
+		}
+	}
+}
+
+static void hookSettings(Frame& frame, const std::vector<Setting>& settings) {
+	for (auto it = settings.begin(); (it + 1) != settings.end(); ++it) {
+		auto& setting1 = (*it);
+		auto& setting2 = (*(++it));
+		hookSettingToSetting(frame, setting1, setting2);
+	}
 }
 
 void settingsUI(Button& button) {
@@ -425,22 +520,42 @@ void settingsUI(Button& button) {
 	int y = 0;
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "inventory", "Inventory Options");
-	y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "add_items_to_hotbar", "Add Items to Hotbar", false, nullptr, nullptr);
-	y += settingsAddCustomize(*settings_subwindow, y, "inventory_sorting", "Inventory Sorting", nullptr);
+	y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "UI", "add_items_to_hotbar", "Add Items to Hotbar", false, nullptr, nullptr);
+	y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "UI", "inventory_sorting", "Inventory Sorting", false, nullptr, nullptr);
 #ifndef NINTENDO
 	y += settingsAddBooleanOption(*settings_subwindow, y, "use_on_release", "Use on Release", true, nullptr);
 #endif
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "hud", "HUD Options");
-	y += settingsAddCustomize(*settings_subwindow, y, "minimap_settings", "Minimap Settings", nullptr);
-	y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "show_messages", "Show Messages", true, nullptr, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "show_player_nametags", "Show Player Nametags", true, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD", true, nullptr);
+	y += settingsAddCustomize(*settings_subwindow, y, "UI", "minimap_settings", "Minimap Settings", nullptr);
+	y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "UI", "show_messages", "Show Messages", true, nullptr, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "UI", "show_player_nametags", "Show Player Nametags", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "UI", "show_hud", "Show HUD", true, nullptr);
 #ifndef NINTENDO
-	y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Show IP Address", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "UI", "show_ip_address", "Show IP Address", true, nullptr);
 #endif
 
-	settingsSubwindowFinalize(*settings_subwindow, y);
+#ifndef NINTENDO
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::BooleanWithCustomize, "add_items_to_hotbar"},
+		{Setting::Type::BooleanWithCustomize, "inventory_sorting"},
+		{Setting::Type::Boolean, "use_on_release"},
+		{Setting::Type::Customize, "minimap_settings"},
+		{Setting::Type::BooleanWithCustomize, "show_messages"},
+		{Setting::Type::Boolean, "show_player_nametags"},
+		{Setting::Type::Boolean, "show_hud"},
+		{Setting::Type::Boolean, "show_ip_address"}});
+#else
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::BooleanWithCustomize, "add_items_to_hotbar"},
+		{Setting::Type::BooleanWithCustomize, "inventory_sorting"},
+		{Setting::Type::Customize, "minimap_settings"},
+		{Setting::Type::BooleanWithCustomize, "show_messages"},
+		{Setting::Type::Boolean, "show_player_nametags"},
+		{Setting::Type::Boolean, "show_hud"}});
+#endif
+
+	settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::BooleanWithCustomize, "add_items_to_hotbar"});
 }
 
 void settingsVideo(Button& button) {
@@ -452,29 +567,57 @@ void settingsVideo(Button& button) {
 	int y = 0;
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "accessibility", "Accessibility");
-	y += settingsAddBooleanOption(*settings_subwindow, y, "content_control", "Content Control", true, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", "Colorblind Mode", true, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Video", "content_control", "Content Control", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Video", "colorblind_mode", "Colorblind Mode", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Video", "arachnophobia_filter", "Arachnophobia Filter", true, nullptr);
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
-	y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking", true, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "bobbing", "Bobbing", true, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "light_flicker", "Light Flicker", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Video", "shaking", "Shaking", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Video", "bobbing", "Bobbing", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Video", "light_flicker", "Light Flicker", true, nullptr);
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 #ifndef NINTENDO
-	y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", {"1280 x 720", "1920 x 1080"}, nullptr);
-	y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", {"Fullscreen", "Borderless", "Windowed"}, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync", true, nullptr);
+	y += settingsAddDropdown(*settings_subwindow, y, "Video", "resolution", "Resolution", {"1280 x 720", "1920 x 1080"}, nullptr);
+	y += settingsAddDropdown(*settings_subwindow, y, "Video", "window_mode", "Window Mode", {"Fullscreen", "Borderless", "Windowed"}, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Video", "vsync", "Vertical Sync", true, nullptr);
 #endif
-	y += settingsAddBooleanOption(*settings_subwindow, y, "splitmode", "Vertical Splitscreen", false, nullptr);
-	y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma", 100, 50, 200, nullptr);
-	y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View", 65, 40, 100, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Video", "vertical_split", "Vertical Splitscreen", false, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Video", "gamma", "Gamma", 100, 50, 200, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Video", "fov", "Field of View", 65, 40, 100, nullptr);
 #ifndef NINTENDO
-	y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit", 30, 60, 300, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Video", "fps", "FPS limit", 30, 60, 300, nullptr);
 #endif
 
-	settingsSubwindowFinalize(*settings_subwindow, y);
+#ifndef NINTENDO
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::Boolean, "content_control"},
+		{Setting::Type::Boolean, "colorblind_mode"},
+		{Setting::Type::Boolean, "arachnophobia_filter"},
+		{Setting::Type::Boolean, "shaking"},
+		{Setting::Type::Boolean, "bobbing"},
+		{Setting::Type::Boolean, "light_flicker"},
+		{Setting::Type::Dropdown, "resolution"},
+		{Setting::Type::Dropdown, "window_mode"},
+		{Setting::Type::Boolean, "vsync"},
+		{Setting::Type::Boolean, "vertical_split"},
+		{Setting::Type::Slider, "gamma"},
+		{Setting::Type::Slider, "fov"},
+		{Setting::Type::Slider, "fps"}});
+#else
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::Boolean, "content_control"},
+		{Setting::Type::Boolean, "colorblind_mode"},
+		{Setting::Type::Boolean, "arachnophobia_filter"},
+		{Setting::Type::Boolean, "shaking"},
+		{Setting::Type::Boolean, "bobbing"},
+		{Setting::Type::Boolean, "light_flicker"},
+		{Setting::Type::Boolean, "vertical_split"},
+		{Setting::Type::Slider, "gamma"},
+		{Setting::Type::Slider, "fov"}});
+#endif
+
+	settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "content_control"});
 }
 
 void settingsAudio(Button& button) {
@@ -485,20 +628,41 @@ void settingsAudio(Button& button) {
 	int y = 0;
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
-	y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume", 50, 0, 100, nullptr);
-	y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume", 50, 0, 100, nullptr);
-	y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume", 50, 0, 100, nullptr);
-	y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume", 50, 0, 100, nullptr);
-	y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume", 50, 0, 100, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Audio", "master_volume", "Master Volume", 50, 0, 100, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Audio", "gameplay_volume", "Gameplay Volume", 50, 0, 100, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Audio", "ambient_volume", "Ambient Volume", 50, 0, 100, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Audio", "environment_volume", "Environment Volume", 50, 0, 100, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Audio", "music_volume", "Music Volume", 50, 0, 100, nullptr);
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
-	y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", "Minimap Pings", true, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "player_monster_sounds", "Player Monster Sounds", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Audio", "minimap_pings", "Minimap Pings", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Audio", "player_monster_sounds", "Player Monster Sounds", true, nullptr);
 #ifndef NINTENDO
-	y += settingsAddBooleanOption(*settings_subwindow, y, "out_of_focus_audio", "Out-of-Focus Audio", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Audio", "out_of_focus_audio", "Out-of-Focus Audio", true, nullptr);
 #endif
 
-	settingsSubwindowFinalize(*settings_subwindow, y);
+#ifndef NINTENDO
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::Slider, "master_volume"},
+		{Setting::Type::Slider, "gameplay_volume"},
+		{Setting::Type::Slider, "ambient_volume"},
+		{Setting::Type::Slider, "environment_volume"},
+		{Setting::Type::Slider, "music_volume"},
+		{Setting::Type::Boolean, "minimap_pings"},
+		{Setting::Type::Boolean, "player_monster_sounds"},
+		{Setting::Type::Boolean, "out_of_focus_audio"}});
+#else
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::Slider, "master_volume"},
+		{Setting::Type::Slider, "gameplay_volume"},
+		{Setting::Type::Slider, "ambient_volume"},
+		{Setting::Type::Slider, "environment_volume"},
+		{Setting::Type::Slider, "music_volume"},
+		{Setting::Type::Boolean, "minimap_pings"},
+		{Setting::Type::Boolean, "player_monster_sounds"}});
+#endif
+
+	settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Slider, "master_volume"});
 }
 
 void settingsControls(Button& button) {
@@ -510,21 +674,44 @@ void settingsControls(Button& button) {
 	int y = 0;
 
 #ifndef NINTENDO
+	y += settingsAddSubHeader(*settings_subwindow, y, "general", "General Settings");
+	y += settingsAddCustomize(*settings_subwindow, y, "Controls", "bindings", "Bindings", nullptr);
+
 	y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
-	y += settingsAddCustomize(*settings_subwindow, y, "mouse_and_key_bindings", "Bindings", nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory", true, nullptr);
-	y += settingsAddSlider(*settings_subwindow, y, "mousespeed", "Mouse Sensitivity", 20, 0, 100, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse", false, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", "Smooth Mouse", false, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit", true, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Controls", "numkeys_in_inventory", "Number Keys in Inventory", true, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Controls", "mouse_sensitivity", "Mouse Sensitivity", 20, 0, 100, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Controls", "reverse_mouse", "Reverse Mouse", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Controls", "smooth_mouse", "Smooth Mouse", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Controls", "rotation_speed_limit", "Rotation Speed Limit", true, nullptr);
 #endif
 
+#ifdef NINTENDO
 	y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
-	y += settingsAddCustomize(*settings_subwindow, y, "controller_bindings", "Bindings", nullptr);
-	y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X", 20, 0, 100, nullptr);
-	y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y", 20, 0, 100, nullptr);
+	y += settingsAddCustomize(*settings_subwindow, y, "Controls", "bindings", "Bindings", nullptr);
+#else
+	y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Gamepad Settings");
+#endif
+	y += settingsAddSlider(*settings_subwindow, y, "Controls", "turn_sensitivity_x", "Turn Sensitivity X", 20, 0, 100, nullptr);
+	y += settingsAddSlider(*settings_subwindow, y, "Controls", "turn_sensitivity_y", "Turn Sensitivity Y", 20, 0, 100, nullptr);
 
-	settingsSubwindowFinalize(*settings_subwindow, y);
+#ifndef NINTENDO
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::Customize, "bindings"},
+		{Setting::Type::Boolean, "numkeys_in_inventory"},
+		{Setting::Type::Slider, "mouse_sensitivity"},
+		{Setting::Type::Boolean, "reverse_mouse"},
+		{Setting::Type::Boolean, "smooth_mouse"},
+		{Setting::Type::Boolean, "rotation_speed_limit"},
+		{Setting::Type::Slider, "turn_sensitivity_x"},
+		{Setting::Type::Slider, "turn_sensitivity_y"}});
+#else
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::Customize, "bindings"},
+		{Setting::Type::Slider, "turn_sensitivity_x"},
+		{Setting::Type::Slider, "turn_sensitivity_y"}});
+#endif
+
+	settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Customize, "bindings"});
 }
 
 void settingsGame(Button& button) {
@@ -536,19 +723,42 @@ void settingsGame(Button& button) {
 	int y = 0;
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "game", "Game Settings");
-	y += settingsAddBooleanOption(*settings_subwindow, y, "classic_mode", "Classic Mode", false, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "hardcore_mode", "Hardcore Mode", false, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "friendly_fire", "Friendly Fire", false, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "keep_inventory", "Keep Inventory on Death", false, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "hunger", "Hunger", false, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "minotaur", "Minotaur", false, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "random_traps", "Random Traps", false, nullptr);
-	y += settingsAddBooleanOption(*settings_subwindow, y, "extra_life", "Extra Life", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Game", "classic_mode", "Classic Mode", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Game", "hardcore_mode", "Hardcore Mode", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Game", "friendly_fire", "Friendly Fire", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Game", "keep_inventory", "Keep Inventory on Death", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Game", "hunger", "Hunger", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Game", "minotaur", "Minotaur", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Game", "random_traps", "Random Traps", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Game", "extra_life", "Extra Life", false, nullptr);
 #ifndef NINTENDO
-	y += settingsAddBooleanOption(*settings_subwindow, y, "cheats", "Cheats", false, nullptr);
+	y += settingsAddBooleanOption(*settings_subwindow, y, "Game", "cheats", "Cheats", false, nullptr);
 #endif
 
-	settingsSubwindowFinalize(*settings_subwindow, y);
+#ifndef NINTENDO
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::Boolean, "classic_mode"},
+		{Setting::Type::Boolean, "hardcore_mode"},
+		{Setting::Type::Boolean, "friendly_fire"},
+		{Setting::Type::Boolean, "keep_inventory"},
+		{Setting::Type::Boolean, "hunger"},
+		{Setting::Type::Boolean, "minotaur"},
+		{Setting::Type::Boolean, "random_traps"},
+		{Setting::Type::Boolean, "extra_life"},
+		{Setting::Type::Boolean, "cheats"}});
+#else
+	hookSettings(*settings_subwindow,
+		{{Setting::Type::Boolean, "classic_mode"},
+		{Setting::Type::Boolean, "hardcore_mode"},
+		{Setting::Type::Boolean, "friendly_fire"},
+		{Setting::Type::Boolean, "keep_inventory"},
+		{Setting::Type::Boolean, "hunger"},
+		{Setting::Type::Boolean, "minotaur"},
+		{Setting::Type::Boolean, "random_traps"},
+		{Setting::Type::Boolean, "extra_life"}});
+#endif
+
+	settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "classic_mode"});
 }
 
 /******************************************************************************/
@@ -608,12 +818,12 @@ void recordsCredits(Button& button) {
 		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 		auto credits = buttons->findButton("CREDITS"); assert(credits);
 		credits->select();
-	});
+		});
 	back_button->setWidgetBack("back");
 	back_button->select();
 
 	auto font = Font::get(bigfont_outline); assert(font);
-		
+
 	auto credits = main_menu_frame->addFrame("credits");
 	credits->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 	credits->setActualSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY + font->height() * 80});
@@ -1098,7 +1308,7 @@ void mainSettings(Button& button) {
 				settings_button->select();
 			}
 		}
-	});
+		});
 	discard_and_exit->setWidgetBack("discard_and_exit");
 	discard_and_exit->setWidgetPageLeft("tab_left");
 	discard_and_exit->setWidgetPageRight("tab_right");
@@ -1127,7 +1337,7 @@ void mainSettings(Button& button) {
 				settings_button->select();
 			}
 		}
-	});
+		});
 	confirm_and_exit->setWidgetBack("discard_and_exit");
 	confirm_and_exit->setWidgetPageLeft("tab_left");
 	confirm_and_exit->setWidgetPageRight("tab_right");
@@ -1148,7 +1358,7 @@ void doMainMenu() {
 
 	assert(main_menu_frame);
 
-	if (main_menu_fade_destination) {
+	if (main_menu_fade_destination != FadeDestination::None) {
 		if (fadeout && fadealpha >= 255) {
 			if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
@@ -1195,7 +1405,7 @@ void createMainMenu() {
 		y,
 		236 * 2,
 		49 * 2
-	});
+		});
 	notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
 	notification->addImage(notification->getActualSize(), 0xffffffff,
 		"images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png", "background");
@@ -1223,7 +1433,7 @@ void createMainMenu() {
 #endif
 
 	const int num_options = sizeof(options) / sizeof(options[0]);
-	
+
 	main_menu_buttons_height = y;
 
 	auto buttons = frame->addFrame("buttons");
@@ -1250,7 +1460,7 @@ void createMainMenu() {
 			y - buttons->getSize().y,
 			164 * 2,
 			16 * 2
-		});
+			});
 		int back = c - 1 < 0 ? num_options - 1 : c - 1;
 		int forward = c + 1 >= num_options ? 0 : c + 1;
 		button->setWidgetDown(options[forward].name);
@@ -1289,7 +1499,7 @@ void createMainMenu() {
 			y,
 			472,
 			76
-		});
+			});
 		banner->setActualSize(SDL_Rect{0, 0, banner->getSize().w, banner->getSize().h});
 		std::string background = std::string("images/ui/Main Menus/Main/UI_MainMenu_EXBanner") + std::to_string(c + 1) + std::string(".png");
 		banner->addImage(banner->getActualSize(), 0xffffffff, background.c_str());
@@ -1306,7 +1516,7 @@ void createMainMenu() {
 		Frame::virtualScreenY - 50,
 		512,
 		50
-	});
+		});
 	copyright->setColor(0xffffffff);
 
 	auto version = frame->addField("version", 32);
@@ -1319,10 +1529,11 @@ void createMainMenu() {
 		Frame::virtualScreenY - 54,
 		200,
 		50
-	});
+		});
 	version->setColor(0xffffffff);
 
-	int num_online_players = 1337;
+#ifndef NINTENDO
+	int num_online_players = 1337; // TODO change me!
 	std::string online_players_text = std::string("Players online: ") + std::to_string(num_online_players);
 	auto online_players = frame->addField("online_players", 32);
 	online_players->setFont(smallfont_outline);
@@ -1334,8 +1545,9 @@ void createMainMenu() {
 		4,
 		200,
 		50
-	});
+		});
 	online_players->setColor(0xffffffff);
+#endif
 }
 
 void destroyMainMenu() {
