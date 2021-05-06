@@ -478,6 +478,40 @@ void resetInventorySlotFrames(const int player)
 	}
 }
 
+bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy)
+{
+	if ( !gui )
+	{
+		return false;
+	}
+	char name[32];
+	snprintf(name, sizeof(name), "player inventory %d", player);
+	if ( Frame* inventoryFrame = gui->findFrame(name) )
+	{
+		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+		{
+			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < players[player]->inventoryUI.getSizeY(); ++y )
+			{
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+				auto slotFrame = inventoryFrame->findFrame(slotname);
+				if ( !slotFrame )
+				{
+					continue;
+				}
+
+				if ( slotFrame->capturesMouseInRealtimeCoords() )
+				{
+					outx = x;
+					outy = y;
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 {
 	if ( !itemPtr || !slotFrame )
@@ -516,32 +550,41 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 		}
 	}
 
+	bool disableBackgrounds = false;
+	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
+	{
+		disableBackgrounds = true;
+	}
+	
 	if ( auto beatitudeFrame = slotFrame->findFrame("beatitude status frame") )
 	{
 		beatitudeFrame->setDisabled(true);
-		if ( auto beatitudeImg = beatitudeFrame->findImage("beatitude status bg") )
+		if ( !disableBackgrounds )
 		{
-			if ( !item->identified )
+			if ( auto beatitudeImg = beatitudeFrame->findImage("beatitude status bg") )
 			{
-				beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 128, 0, 125);
-				beatitudeFrame->setDisabled(false);
-			}
-			else if ( item->beatitude < 0 )
-			{
-				beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 0, 0, 125);
-				beatitudeFrame->setDisabled(false);
-			}
-			else if ( item->beatitude > 0 )
-			{
-				if ( colorblind )
+				if ( !item->identified )
 				{
-					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 100, 245, 255, 65);
+					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 128, 0, 125);
+					beatitudeFrame->setDisabled(false);
 				}
-				else
+				else if ( item->beatitude < 0 )
 				{
-					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 65);
+					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 0, 0, 125);
+					beatitudeFrame->setDisabled(false);
 				}
-				beatitudeFrame->setDisabled(false);
+				else if ( item->beatitude > 0 )
+				{
+					if ( colorblind )
+					{
+						beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 100, 245, 255, 65);
+					}
+					else
+					{
+						beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 65);
+					}
+					beatitudeFrame->setDisabled(false);
+				}
 			}
 		}
 	}
@@ -559,23 +602,27 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 	{
 		bool greyedOut = false;
 		unusableFrame->setDisabled(true);
-		if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+
+		if ( !disableBackgrounds )
 		{
-			// shape shifted, disable some items
-			if ( !item->usableWhileShapeshifted(stats[player]) )
+			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+			{
+				// shape shifted, disable some items
+				if ( !item->usableWhileShapeshifted(stats[player]) )
+				{
+					greyedOut = true;
+				}
+			}
+			if ( !greyedOut && client_classes[player] == CLASS_SHAMAN
+				&& item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
 			{
 				greyedOut = true;
 			}
-		}
-		if ( !greyedOut && client_classes[player] == CLASS_SHAMAN
-			&& item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
-		{
-			greyedOut = true;
-		}
 
-		if ( greyedOut )
-		{
-			unusableFrame->setDisabled(false);
+			if ( greyedOut )
+			{
+				unusableFrame->setDisabled(false);
+			}
 		}
 	}
 
@@ -590,6 +637,15 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 		else if ( item->status == BROKEN )
 		{
 			broken = true;
+		}
+	}
+	else
+	{
+		spell_t* spell = getSpellFromItem(player, item);
+		if ( players[player]->magic.selectedSpell() == spell
+			&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1) )
+		{
+			equipped = true;
 		}
 	}
 
@@ -611,6 +667,96 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 	}
 }
 
+void createInventoryTooltipFrame(const int player)
+{
+	if ( !gui )
+	{
+		return;
+	}
+
+	char name[32];
+	snprintf(name, sizeof(name), "player inventory %d", player);
+	if ( Frame* inventoryFrame = gui->findFrame(name) )
+	{
+		if ( inventoryFrame->findFrame("inventory mouse tooltip") )
+		{
+			return;
+		}
+
+		auto tooltipFrame = inventoryFrame->addFrame("inventory mouse tooltip");
+		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipFrame->setActualSize(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, tooltipFrame->getSize().h });
+		tooltipFrame->setDisabled(true);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			color, "images/system/white.png", "tooltip temp background");
+
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
+			color, "images/system/inventory/tooltips/Hover_T00.png", "tooltip top background");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+			color, "images/system/inventory/tooltips/Hover_TL00.png", "tooltip top left");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+			color, "images/system/inventory/tooltips/Hover_TR00.png", "tooltip top right");
+
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 52 },
+			color, "images/system/inventory/tooltips/Hover_C00.png", "tooltip middle background");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
+			color, "images/system/inventory/tooltips/Hover_L00.png", "tooltip middle left");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
+			color, "images/system/inventory/tooltips/Hover_R00.png", "tooltip middle right");
+
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 26 },
+			color, "images/system/inventory/tooltips/Hover_B00.png", "tooltip bottom background");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
+			color, "images/system/inventory/tooltips/Hover_BL00.png", "tooltip bottom left");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
+			color, "images/system/inventory/tooltips/Hover_BR00.png", "tooltip bottom right");
+
+		auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont("fonts/pixelmix.ttf#14");
+
+		if ( auto attrFrame = tooltipFrame->addFrame("inventory mouse tooltip attributes frame") )
+		{
+			attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+				0xFFFFFFFF, "images/system/str32.png", "inventory mouse tooltip primary image");
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+
+			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+				0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip secondary image");
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		}
+		if ( auto descFrame = tooltipFrame->addFrame("inventory mouse tooltip description frame") )
+		{
+			descFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			tooltipTextField = descFrame->addField("inventory mouse tooltip description", 1024);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		}
+		if ( auto promptFrame = tooltipFrame->addFrame("inventory mouse tooltip prompt frame") )
+		{
+			promptFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			tooltipTextField = promptFrame->addField("inventory mouse tooltip prompt", 1024);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		}
+	}
+}
+
 void createPlayerInventory(const int player)
 {
 	char name[32];
@@ -625,6 +771,8 @@ void createPlayerInventory(const int player)
 	frame->setHollow(true);
 	frame->setBorder(0);
 	frame->setOwner(player);
+
+	createInventoryTooltipFrame(player);
 
 	SDL_Rect basePos{ 0, 0, 105 * 2, 224 * 2 };
 	{
@@ -668,15 +816,6 @@ void createPlayerInventory(const int player)
 				createPlayerInventorySlotFrameElements(slotFrame);
 			}
 		}
-
-		auto selectedFrame = invSlotsFrame->addFrame("inventory selected item");
-		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
-		selectedFrame->setDisabled(true);
-
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
-		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
-			color, "images/system/hotbar_slot.png", "inventory selected highlight");
 	}
 
 	{
@@ -712,20 +851,55 @@ void createPlayerInventory(const int player)
 			}
 		}
 
-		auto selectedFrame = dollSlotsFrame->addFrame("paperdoll selected item");
+		{
+			auto charFrame = frame->addFrame("inventory character preview");
+			auto charSize = dollSlotsPos;
+			charSize.x += inventorySlotSize + baseSlotOffsetX + 4;
+			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
+
+			charFrame->setSize(charSize);
+			charFrame->setActualSize(SDL_Rect{ 0, 0, charSize.w, charSize.h });
+			//charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
+			//	SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			//	"images/system/white.png", "inventory character preview bg");
+		}
+
+		/*auto selectedFrame = dollSlotsFrame->addFrame("paperdoll selected item");
 		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
 		selectedFrame->setDisabled(true);
 
 		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
-			color, "images/system/hotbar_slot.png", "paperdoll selected highlight");
+			color, "images/system/hotbar_slot.png", "paperdoll selected highlight");*/
+	}
+
+	{
+		auto selectedFrame = frame->addFrame("inventory selected item");
+		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
+		selectedFrame->setDisabled(true);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "inventory selected highlight");
+
+		auto oldSelectedFrame = frame->addFrame("inventory old selected item");
+		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		oldSelectedFrame->setActualSize(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h });
+		oldSelectedFrame->setDisabled(true);
+
+		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "inventory old selected highlight");
 	}
 
 	{
 		auto draggingInventoryItem = frame->addFrame("dragging inventory item");
 		draggingInventoryItem->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		draggingInventoryItem->setActualSize(SDL_Rect{ 0, 0, draggingInventoryItem->getSize().w, draggingInventoryItem->getSize().h });
 		draggingInventoryItem->setDisabled(true);
+		createPlayerInventorySlotFrameElements(draggingInventoryItem);
 	}
 }
 

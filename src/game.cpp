@@ -4065,6 +4065,17 @@ void ingameHud()
 
 		FollowerRadialMenu& followerMenu = FollowerMenu[player];
 
+		char framename[32];
+		snprintf(framename, sizeof(framename), "player inventory %d", player);
+		Frame* frame = gui->findFrame(framename);
+		if ( frame )
+		{
+			if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
+			{
+				draggingItemFrame->setDisabled(true);
+			}
+		}
+
 		if ( players[player]->shootmode == false )
 		{
 			// dragging items, player not needed to be alive
@@ -4075,33 +4086,45 @@ void ingameHud()
 				pos.y = inputs.getMouse(player, Inputs::Y) - 15;
 				pos.w = 32 * uiscale_inventory;
 				pos.h = 32 * uiscale_inventory;
-				drawImageScaled(itemSprite(selectedItem), NULL, &pos);
-				if ( selectedItem->count > 1 )
+
+				if ( frame )
 				{
-					ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
-				}
-				if ( itemCategory(selectedItem) != SPELL_CAT )
-				{
-					if ( itemIsEquipped(selectedItem, player) )
+					if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
 					{
-						pos.y += 16;
-						drawImage(equipped_bmp, NULL, &pos);
-					}
-					else if ( selectedItem->status == BROKEN )
-					{
-						pos.y += 16;
-						drawImage(itembroken_bmp, NULL, &pos);
+						updateSlotFrameFromItem(draggingItemFrame, selectedItem);
+						draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
 					}
 				}
 				else
 				{
-					spell_t* spell = getSpellFromItem(player, selectedItem);
-					if ( players[player]->magic.selectedSpell() == spell &&
-						(players[player]->magic.selected_spell_last_appearance == selectedItem->appearance
-							|| players[player]->magic.selected_spell_last_appearance == -1) )
+					drawImageScaled(itemSprite(selectedItem), NULL, &pos);
+					if ( selectedItem->count > 1 )
 					{
-						pos.y += 16;
-						drawImage(equipped_bmp, NULL, &pos);
+						ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
+					}
+					if ( itemCategory(selectedItem) != SPELL_CAT )
+					{
+						if ( itemIsEquipped(selectedItem, player) )
+						{
+							pos.y += 16;
+							drawImage(equipped_bmp, NULL, &pos);
+						}
+						else if ( selectedItem->status == BROKEN )
+						{
+							pos.y += 16;
+							drawImage(itembroken_bmp, NULL, &pos);
+						}
+					}
+					else
+					{
+						spell_t* spell = getSpellFromItem(player, selectedItem);
+						if ( players[player]->magic.selectedSpell() == spell &&
+							(players[player]->magic.selected_spell_last_appearance == selectedItem->appearance
+								|| players[player]->magic.selected_spell_last_appearance == -1) )
+						{
+							pos.y += 16;
+							drawImage(equipped_bmp, NULL, &pos);
+						}
 					}
 				}
 			}
