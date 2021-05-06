@@ -1182,6 +1182,53 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 	}
 }
 
+bool Frame::capturesMouseInRealtimeCoords(SDL_Rect* curSize, SDL_Rect* curActualSize) {
+	SDL_Rect newSize = SDL_Rect{ 0, 0, xres, yres };
+	SDL_Rect newActualSize = SDL_Rect{ 0, 0, xres, yres };
+	SDL_Rect& _size = curSize ? *curSize : newSize;
+	SDL_Rect& _actualSize = curActualSize ? *curActualSize : newActualSize;
+
+	if ( parent ) {
+		auto pframe = static_cast<Frame*>(parent);
+		if ( pframe->capturesMouseInRealtimeCoords(&_size, &_actualSize) ) {
+			_size.x += std::max(0, size.x - _actualSize.x);
+			_size.y += std::max(0, size.y - _actualSize.y);
+			if ( size.h < actualSize.h && allowScrolling ) {
+				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+			}
+			else {
+				_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+			}
+			if ( size.w < actualSize.w && allowScrolling ) {
+				_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+			}
+			else {
+				_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+			}
+			if ( _size.w <= 0 || _size.h <= 0 ) {
+				return false;
+			}
+			else {
+
+				Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+				Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+				if ( rectContainsPoint(_size, mousex, mousey) ) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	else {
+		return true;
+	}
+}
+
 Frame* Frame::getParent() {
 	if (parent && parent->getType() == WIDGET_FRAME) {
 		return static_cast<Frame*>(parent);

@@ -233,6 +233,12 @@ public:
 	//! @return true if it is, false otherwise
 	bool capturesMouse(SDL_Rect* curSize = nullptr, SDL_Rect* curActualSize = nullptr);
 
+	//! determines if the mouse is currently within the frame or not - but uses X/Y not OX/OY (OX/OY remain constant when dragging)
+	//! @param curSize used by the recursion algorithm, ignore or always pass nullptr
+	//! @param curActualSize used by the recursion algorithm, ignore or always pass nullptr
+	//! @return true if it is, false otherwise
+	bool capturesMouseInRealtimeCoords(SDL_Rect* curSize = nullptr, SDL_Rect* curActualSize = nullptr);
+
 	//! set the list selection to the given index
 	//! @param index the index to set the list selection to
 	void setSelection(int index);
