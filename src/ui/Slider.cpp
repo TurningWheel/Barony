@@ -27,14 +27,16 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	if (_railSize.w > 0 && _railSize.h > 0) {
 		int x = (_railSize.x) * (float)xres / (float)Frame::virtualScreenX;
 		int y = (_railSize.y) * (float)yres / (float)Frame::virtualScreenY;
-		int w = (_railSize.x + _railSize.w) * (float)xres / (float)Frame::virtualScreenX;
-		int h = (_railSize.y + _railSize.h) * (float)yres / (float)Frame::virtualScreenY;
 		if (railImage.empty()) {
+			int w = (_railSize.x + _railSize.w) * (float)xres / (float)Frame::virtualScreenX;
+			int h = (_railSize.y + _railSize.h) * (float)yres / (float)Frame::virtualScreenY;
 			drawDepressed(x, y, w, h);
 		} else {
 			auto img = Image::get(railImage.c_str());
 			if (img) {
 				// TODO section this image!
+				int w = (_railSize.w) * (float)xres / (float)Frame::virtualScreenX;
+				int h = (_railSize.h) * (float)yres / (float)Frame::virtualScreenY;
 				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, color);
 			}
 		}
@@ -48,14 +50,16 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	if (_handleSize.w > 0 && _handleSize.h > 0) {
 		int x = (_handleSize.x) * (float)xres / (float)Frame::virtualScreenX;
 		int y = (_handleSize.y) * (float)yres / (float)Frame::virtualScreenY;
-		int w = (_handleSize.x + _handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
-		int h = (_handleSize.y + _handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
 		if (handleImage.empty()) {
+			int w = (_handleSize.x + _handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
+			int h = (_handleSize.y + _handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
 			drawWindow(x, y, w, h);
 		} else {
 			auto img = Image::get(handleImage.c_str());
 			if (img) {
 				// TODO section this image!
+				int w = (_handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
+				int h = (_handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
 				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, color);
 			}
 		}
