@@ -5068,12 +5068,30 @@ void serverHandlePacket()
 				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), false, &entitystats->inventory);
 		}
 		printlog("client %d sold item to shop (uid=%d)\n", client, uidnum);
-		stats[client]->GOLD += item->sellValue(client);
-		if (rand() % 2 && item->type != GEM_GLASS )
+		
+		if ( !item )
 		{
-			if ( players[client] && players[client]->entity )
+			printlog("SHPS: client %d sold item to shop (uid=%d) but could not create item!\n");
+			return;
+		}
+
+		stats[client]->GOLD += item->sellValue(client);
+		if ( players[client] && players[client]->entity )
+		{
+			if ( rand() % 2 )
 			{
-				players[client]->entity->increaseSkill(PRO_TRADING);
+				if ( item->sellValue(client) <= 1 )
+				{
+					// selling cheap items does not increase trading past basic
+					if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+					{
+						players[client]->entity->increaseSkill(PRO_TRADING);
+					}
+				}
+				else
+				{
+					players[client]->entity->increaseSkill(PRO_TRADING);
+				}
 			}
 		}
 		return;
