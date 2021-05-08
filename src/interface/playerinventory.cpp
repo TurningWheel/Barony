@@ -1362,14 +1362,12 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		return;
 	}
 
-	const int tooltipPosX = players[player]->inventoryUI.getStartX()
-		+ players[player]->inventoryUI.getSizeX() * players[player]->inventoryUI.getSlotSize() + 8;
-
 	static const char* bigfont = "fonts/pixelmix.ttf#18";
 	auto frameMain = guiFrame->findFrame("inventory mouse tooltip");
 	auto frameAttr = frameMain->findFrame("inventory mouse tooltip attributes frame");
 	auto frameDesc = frameMain->findFrame("inventory mouse tooltip description frame");
 	auto framePrompt = frameMain->findFrame("inventory mouse tooltip prompt frame");
+	auto frameValues = frameMain->findFrame("inventory mouse tooltip value frame");
 
 	auto imgTopBackground = frameMain->findImage("tooltip top background");
 	auto imgTopBackgroundLeft = frameMain->findImage("tooltip top left");
@@ -1385,17 +1383,20 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 	auto imgPrimaryIcon = frameAttr->findImage("inventory mouse tooltip primary image");
 	auto imgSecondaryIcon = frameAttr->findImage("inventory mouse tooltip secondary image");
+	auto imgGoldIcon = frameValues->findImage("inventory mouse tooltip gold image");
+	auto imgWeightIcon = frameValues->findImage("inventory mouse tooltip weight image");
+	auto imgValueBackground = frameValues->findImage("inventory mouse tooltip value background");
 
 	auto txtHeader = frameMain->findField("inventory mouse tooltip header");
 	auto txtPrimaryValue = frameAttr->findField("inventory mouse tooltip primary value");
 	auto txtSecondaryValue = frameAttr->findField("inventory mouse tooltip secondary value");
 	auto txtDescription = frameDesc->findField("inventory mouse tooltip description");
-	auto txtPrompt = frameDesc->findField("inventory mouse tooltip prompt");
-
+	auto txtPrompt = framePrompt->findField("inventory mouse tooltip prompt");
+	auto txtGoldValue = frameValues->findField("inventory mouse tooltip gold value");
+	auto txtWeightValue = frameValues->findField("inventory mouse tooltip weight value");
 
 	char buf[1024] = "";
 
-	int totalHeight = 0;
 	const int padx = 4;
 	const int pady = 4;
 
@@ -1420,60 +1421,215 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	int textx = 0;
 	int texty = 0;
 	font->sizeText(txtHeader->getText(), &textx, &texty);
-	txtHeader->setSize(SDL_Rect{ padx, padx, textx + 2 * padx, texty + pady});
+	txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, pady, textx + 3 * padx, imgTopBackground->pos.h - pady});
 
-	totalHeight += txtHeader->getSize().h;
+	int totalHeight = txtHeader->getSize().h;
+
+	// get total width of tooltip
+	const int tooltipWidth = txtHeader->getSize().w + imgTopBackgroundLeft->pos.w + imgTopBackgroundRight->pos.w;
 
 	txtPrimaryValue->setText("Primary Value");
 	txtSecondaryValue->setText("Secondary Value");
 	font->sizeText(txtPrimaryValue->getText(), &textx, &texty);
-	SDL_Rect frameAttrPos{ 0, totalHeight, txtHeader->getSize().w, imgPrimaryIcon->pos.h * 2 + pady * 3};
 
-	imgPrimaryIcon->pos.x = padx;
-	imgPrimaryIcon->pos.y = pady;
-	imgSecondaryIcon->pos.x = padx;
-	imgSecondaryIcon->pos.y = pady + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
+	// attribute frame size - padded by (imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx) on either side
+	SDL_Rect frameAttrPos{ imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx, totalHeight, 0, 0 };
+	frameAttrPos.w = tooltipWidth - frameAttrPos.x * 2;
 
-	int imgToTextOffset = (imgPrimaryIcon->pos.h / 2) - texty / 2;
-	txtPrimaryValue->setSize(SDL_Rect{ imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx, 
-		imgPrimaryIcon->pos.y + imgToTextOffset, frameAttrPos.w, imgPrimaryIcon->pos.h});
-	txtSecondaryValue->setSize(SDL_Rect{ imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx,
-		imgSecondaryIcon->pos.y + imgToTextOffset, frameAttrPos.w, imgSecondaryIcon->pos.h });
+	imgPrimaryIcon->pos.y = 0;
+	imgSecondaryIcon->pos.y = 0;
+
+	if ( ticks % 400 < 100 )
+	{
+		imgPrimaryIcon->disabled = false;
+		imgSecondaryIcon->disabled = false;
+	}
+	else if ( ticks % 400 >= 100 && ticks % 400 < 200 )
+	{
+		imgPrimaryIcon->disabled = true;
+		imgSecondaryIcon->disabled = false;
+	}
+	else if ( ticks % 400 >= 200 && ticks % 400 < 300 )
+	{
+		imgPrimaryIcon->disabled = false;
+		imgSecondaryIcon->disabled = true;
+	}
+	else
+	{
+		imgPrimaryIcon->disabled = true;
+		imgSecondaryIcon->disabled = true;
+	}
+	if ( ticks % 100 < 50 )
+	{
+		frameDesc->setDisabled(true);
+	}
+	else
+	{
+		frameDesc->setDisabled(false);
+	}
+
+	const int imgToTextOffset = 2;
+	txtPrimaryValue->setDisabled(imgPrimaryIcon->disabled);
+	if ( !imgPrimaryIcon->disabled )
+	{
+		imgPrimaryIcon->pos.x = 0;
+		imgPrimaryIcon->pos.y = pady * 2;
+		txtPrimaryValue->setSize(SDL_Rect{ imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx, 
+			imgPrimaryIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgPrimaryIcon->pos.h});
+	}
+	
+	txtSecondaryValue->setDisabled(imgSecondaryIcon->disabled);
+	if ( !imgSecondaryIcon->disabled )
+	{
+		imgSecondaryIcon->pos.x = 0;
+		if ( imgPrimaryIcon->disabled )
+		{
+			imgSecondaryIcon->pos.y = pady * 2;
+		}
+		else
+		{
+			imgSecondaryIcon->pos.y = pady + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
+		}
+		txtSecondaryValue->setSize(SDL_Rect{ imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx,
+			imgSecondaryIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgSecondaryIcon->pos.h });
+	}
+
+	bool imagesDisabled = true;
+	for ( auto image : frameAttr->getImages() )
+	{
+		if ( !image->disabled )
+		{
+			imagesDisabled = false;
+		}
+	}
+	// attribute frame size - add height after the icons
+	if ( imagesDisabled )
+	{
+		frameAttrPos.h += 2 * pady; // no icons, just text.
+	}
+	else
+	{
+		frameAttrPos.h += std::max(
+			imgPrimaryIcon->disabled ? 0 : (imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h), 
+			imgSecondaryIcon->disabled ? 0 : (imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h));
+		frameAttrPos.h += pady;
+	}
 
 	frameAttr->setSize(frameAttrPos);
+	frameAttr->setActualSize(SDL_Rect{ 0, 0, frameAttr->getSize().w, frameAttr->getSize().h });
 	totalHeight += frameAttrPos.h;
 
 	SDL_Rect frameDescPos = frameAttrPos;
-	frameDescPos.x = frameAttrPos.x + 16;
-	frameDescPos.w = frameAttrPos.w - 32;
-	frameDescPos.y = totalHeight;
-	frameDescPos.h = 30;
-
-	if ( ticks != tmpTicks )
+	if ( !frameDesc->isDisabled() )
 	{
-		tmpTicks = ticks;
-		tmpx -= 1;
-		if ( tmpx < -100 )
+		frameDescPos.y = frameAttrPos.y + frameAttrPos.h;
+		frameDescPos.h = pady;
+
+		if ( ticks != tmpTicks )
 		{
-			tmpx = 0;
+			tmpTicks = ticks;
+			tmpx -= 1;
+			if ( tmpx < -100 )
+			{
+				tmpx = 0;
+			}
 		}
+
+		int charWidth = 0;
+		int charHeight = 0;
+		Font::get(txtDescription->getFont())->sizeText("_", &charWidth, &charHeight);
+		txtDescription->setText("An amulet is an item that a character can put on around his or her neck. It usually confers magical powers on the wearer");
+		
+		txtPrimaryValue->setText("9-14 Mace damage");
+		txtDescription->setText(" +5 Weapon ATK\n +10% Armor Break\n +20% bonus from Mace Skill");
+		
+		txtDescription->setSize(SDL_Rect{ 0, 0 /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
+		txtDescription->reflowTextToFit();
+
+		frameDescPos.h += txtDescription->getNumTextLines() * charHeight + pady;
+
+		txtDescription->setSize(SDL_Rect{ 0, 0 /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
+		txtDescription->setScroll(true);
+
+		frameDesc->setSize(frameDescPos);
+		frameDesc->setActualSize(SDL_Rect{ 0, 0, frameDesc->getSize().w, frameDesc->getSize().h });
+		totalHeight += frameDescPos.h;
 	}
 
-	txtDescription->setText("An amulet is an item that a character \ncan put on around his or her neck.\nIt usually confers \nmagical powers on the \nwearer");
-	font->sizeText(txtPrimaryValue->getText(), &textx, &texty);
-	txtDescription->setSize(SDL_Rect{ padx, pady + tmpx, frameDescPos.w - padx, frameDescPos.h - pady });
-	txtDescription->setScroll(true);
+	SDL_Rect frameValuesPos = frameDescPos;
+	if ( !frameValues->isDisabled() )
+	{
+		frameValuesPos.y = frameDescPos.y + frameDescPos.h;
+		frameValuesPos.h = 0;
 
-	frameDesc->setSize(frameDescPos);
-	totalHeight += frameDescPos.h;
+		char valueBuf[64];
+		snprintf(valueBuf, sizeof(valueBuf), "%dG", item->sellValue(player));
+		txtGoldValue->setText(valueBuf);
+		txtGoldValue->setDisabled(false);
 
-	frameMain->setSize(SDL_Rect{ tooltipPosX, y, std::min(400, txtHeader->getSize().w), totalHeight });
+		int charWidth = 0;
+		int charHeight = 0;
+		Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);
 
-	auto tempBackground = frameMain->findImage("tooltip temp background");
-	tempBackground->pos.w = frameMain->getSize().w;
-	tempBackground->pos.h = frameMain->getSize().h;
+		imgGoldIcon->pos.x = frameValuesPos.w - (charWidth * (strlen(txtGoldValue->getText()) + 1)) - (imgGoldIcon->pos.w + padx);
+		imgGoldIcon->pos.y = pady;
+		txtGoldValue->setSize(SDL_Rect{ imgGoldIcon->pos.x + imgGoldIcon->pos.w + padx,
+			imgGoldIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
 
-	// position the elements.
+		snprintf(valueBuf, sizeof(valueBuf), "%d", items[item->type].weight); // will need to use item->getWeight() function for quivers
+		txtWeightValue->setText(valueBuf);
+		txtWeightValue->setDisabled(false);
+
+		Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
+		imgWeightIcon->pos.x = imgGoldIcon->pos.x - padx - (charWidth * (strlen(txtWeightValue->getText()) + 1)) - (imgWeightIcon->pos.w + padx);
+		imgWeightIcon->pos.y = pady;
+		txtWeightValue->setSize(SDL_Rect{ imgWeightIcon->pos.x + imgWeightIcon->pos.w + padx,
+			imgWeightIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgWeightIcon->pos.h });
+
+		frameValuesPos.h += imgGoldIcon->disabled ? 0 : (imgGoldIcon->pos.y + imgGoldIcon->pos.h);
+		frameValuesPos.h += pady;
+
+		frameValues->setSize(frameValuesPos);
+		frameValues->setActualSize(SDL_Rect{ 0, 0, frameValues->getSize().w, frameValues->getSize().h });
+		totalHeight += frameValuesPos.h;
+
+		imgValueBackground->pos = SDL_Rect{0, 0, frameValuesPos.w, frameValuesPos.h };
+		imgValueBackground->disabled = true;
+	}
+	else
+	{
+		txtGoldValue->setDisabled(true);
+		txtWeightValue->setDisabled(true);
+	}
+
+	// button prompts
+	{
+		SDL_Rect framePromptPos = frameValuesPos;
+		framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
+		framePromptPos.h = imgBottomBackground->pos.h;
+		totalHeight += framePromptPos.h;
+
+		txtPrompt->setText("View item details");
+		txtPrompt->setSize(SDL_Rect{ 0, 0, framePromptPos.w, framePromptPos.h });
+
+		framePrompt->setSize(framePromptPos);
+		framePrompt->setActualSize(SDL_Rect{ 0, 0, framePrompt->getSize().w, framePrompt->getSize().h });
+
+	}
+
+	/*auto tempBackground = framePrompt->findImage("tooltip temp background");
+	tempBackground->pos = framePrompt->getSize();
+	tempBackground->pos.x = 0;
+	tempBackground->pos.y = 0;*/
+
+	// get left anchor for tooltip
+	auto inventoryBgFrame = guiFrame->findFrame("inventory base");
+	const int tooltipPosX = inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
+
+	frameMain->setSize(SDL_Rect{ tooltipPosX, y, tooltipWidth, totalHeight });
+	frameMain->setActualSize(SDL_Rect{ 0, 0, frameMain->getSize().w, frameMain->getSize().h });
+
+	// position the background elements.
 	{
 		imgTopBackgroundLeft->pos.x = 0;
 		imgTopBackgroundLeft->pos.y = 0;
@@ -1483,7 +1639,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		imgTopBackground->pos.x = imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w;
 		imgTopBackground->pos.y = 0;
 		imgTopBackground->pos.w = imgTopBackgroundRight->pos.x - (imgTopBackground->pos.x);
-
 
 		imgMiddleBackgroundLeft->pos.x = 0;
 		imgMiddleBackgroundLeft->pos.y = imgTopBackgroundLeft->pos.h;
@@ -1503,7 +1658,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		imgBottomBackground->pos.y = imgBottomBackgroundLeft->pos.y;
 		imgBottomBackground->pos.w = imgBottomBackgroundRight->pos.x - (imgBottomBackground->pos.x);
 
-		// resize the middle section
+		// resize the middle section height
 		imgMiddleBackgroundLeft->pos.h = imgBottomBackground->pos.y - (imgTopBackground->pos.y + imgTopBackground->pos.h);
 		imgMiddleBackgroundRight->pos.h = imgMiddleBackgroundLeft->pos.h;
 		imgMiddleBackground->pos.h = imgMiddleBackgroundLeft->pos.h;
