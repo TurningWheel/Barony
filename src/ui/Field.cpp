@@ -66,6 +66,11 @@ void Field::deselect() {
 }
 
 void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
+	if ( isDisabled() )
+	{
+		return;
+	}
+
 	SDL_Rect rect;
 	rect.x = _size.x + std::max(0, size.x - _actualSize.x);
 	rect.y = _size.y + std::max(0, size.y - _actualSize.y);
@@ -264,4 +269,77 @@ void Field::setText(const char* _text) {
 	} else {
 		text[0] = '\0';
 	}
+}
+
+void Field::reflowTextToFit() {
+	if ( text == nullptr || textlen <= 1 ) {
+		return;
+	}
+	Font* actualFont = Font::get(font.c_str());
+	if ( !actualFont )
+	{
+		return;
+	}
+
+	std::string reflowText = "";
+
+	int charWidth = 0;
+	actualFont->sizeText("_", &charWidth, nullptr);
+	if ( charWidth == 0 )
+	{
+		return;
+	}
+	++charWidth;
+	const int charactersPerLine = (getSize().w - getSize().x) / charWidth;
+
+	int currentCharacters = 0;
+	for ( int i = 0; text[i] != '\0'; ++i )
+	{
+		if ( currentCharacters > charactersPerLine )
+		{
+			int findSpace = reflowText.rfind(' ', reflowText.size());
+			if ( findSpace != std::string::npos )
+			{
+				int lastWordEnd = reflowText.size();
+				reflowText.at(findSpace) = '\n';
+				currentCharacters = lastWordEnd - findSpace;
+			}
+			else
+			{
+				reflowText += '\n';
+				currentCharacters = 0;
+			}
+
+			reflowText += text[i];
+		}
+		else
+		{
+			if ( text[i] == '\n' )
+			{
+				currentCharacters = 0;
+			}
+			++currentCharacters;
+			reflowText += text[i];
+		}
+	}
+
+	setText(reflowText.c_str());
+}
+
+const int Field::getNumTextLines() const
+{
+	if ( text == nullptr || textlen <= 1 ) {
+		return 0;
+	}
+
+	int numLines = 1;
+
+	for ( int i = 0; text[i] != '\0' && i < textlen - 1; ++i )
+	{
+		if ( text[i] == '\n' )
+		{
+			++numLines;
+		}
+	}
+	return numLines;
 }

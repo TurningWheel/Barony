@@ -62,6 +62,7 @@ public:
 	const SDL_Rect				getSize() const { return size; }
 	const int					getHJustify() const { return static_cast<int>(hjustify); }
 	const int					getVJustify() const { return static_cast<int>(vjustify); }
+	const int                   getNumTextLines() const;
 	const bool					isEditable() const { return editable; }
 	const bool					isNumbersOnly() const { return numbersOnly; }
 	Widget::Args&				getParams() { return params; }
@@ -79,6 +80,7 @@ public:
 	void	setScroll(const bool _scroll) { scroll = _scroll; }
 	void	setCallback(const Widget::Callback* fn) { callback = fn; }
 	void	setFont(const char* _font) { font = _font; }
+	void    reflowTextToFit();
 
 private:
 	Widget::Args params;								//!< script arguments to use when calling script

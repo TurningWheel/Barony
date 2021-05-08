@@ -258,6 +258,7 @@ public:
 	std::vector<Button*>&			getButtons() { return buttons; }
 	std::vector<Slider*>&			getSliders() { return sliders; }
 	std::vector<entry_t*>&			getEntries() { return list; }
+	std::vector<image_t*>&			getImages() { return images; }
 	const bool						isDisabled() const { return disabled; }
 	const bool						isHollow() const { return hollow; }
 	const bool						isDropDown() const { return dropDown; }
