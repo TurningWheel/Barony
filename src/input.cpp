@@ -15,6 +15,7 @@ bool Input::mouseButtons[8] = { false };
 std::string Input::lastInputOfAnyKind;
 
 void Input::defaultBindings() {
+	// these bindings should probably not be accessible to the player to change.
 	inputs[0].bind("MenuTab", "Tab");
 	for (int c = 0; c < MAXPLAYERS; ++c) {
 		inputs[c].bind("MenuUp", (std::string("Pad") + std::to_string(c) + std::string("DpadY-")).c_str());
@@ -23,12 +24,25 @@ void Input::defaultBindings() {
 		inputs[c].bind("MenuDown", (std::string("Pad") + std::to_string(c) + std::string("DpadY+")).c_str());
 		inputs[c].bind("MenuConfirm", (std::string("Pad") + std::to_string(c) + std::string("ButtonA")).c_str());
 		inputs[c].bind("MenuCancel", (std::string("Pad") + std::to_string(c) + std::string("ButtonB")).c_str());
+#ifdef NINTENDO
+		inputs[c].bind("MenuAlt1", (std::string("Pad") + std::to_string(c) + std::string("ButtonY")).c_str());
+		inputs[c].bind("MenuAlt2", (std::string("Pad") + std::to_string(c) + std::string("ButtonX")).c_str());
+#else
+		inputs[c].bind("MenuAlt1", (std::string("Pad") + std::to_string(c) + std::string("ButtonX")).c_str());
+		inputs[c].bind("MenuAlt2", (std::string("Pad") + std::to_string(c) + std::string("ButtonY")).c_str());
+#endif
+		inputs[c].bind("MenuStart", (std::string("Pad") + std::to_string(c) + std::string("ButtonStart")).c_str());
+		inputs[c].bind("MenuSelect", (std::string("Pad") + std::to_string(c) + std::string("ButtonBack")).c_str());
 		inputs[c].bind("MenuPageLeft", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str());
 		inputs[c].bind("MenuPageRight", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str());
 		inputs[c].bind("AltMenuUp", (std::string("Pad") + std::to_string(c) + std::string("StickLeftY-")).c_str());
 		inputs[c].bind("AltMenuLeft", (std::string("Pad") + std::to_string(c) + std::string("StickLeftX-")).c_str());
 		inputs[c].bind("AltMenuRight", (std::string("Pad") + std::to_string(c) + std::string("StickLeftX+")).c_str());
 		inputs[c].bind("AltMenuDown", (std::string("Pad") + std::to_string(c) + std::string("StickLeftY+")).c_str());
+		inputs[c].bind("MenuScrollUp", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str());
+		inputs[c].bind("MenuScrollLeft", (std::string("Pad") + std::to_string(c) + std::string("StickRightX-")).c_str());
+		inputs[c].bind("MenuScrollRight", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str());
+		inputs[c].bind("MenuScrollDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str());
 	}
 }
 

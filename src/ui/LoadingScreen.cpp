@@ -69,9 +69,10 @@ void doLoadingScreen() {
 		auto loading_frame = gui->findFrame("loading_frame");
 		assert(loading_frame);
 		auto spinning_widget = loading_frame->findImage("spinning_widget");
-		int i = (int)strtol(spinning_widget->path.substr(25).c_str(), nullptr, 10);
+		const char path[] = "images/ui/LoadingScreen/boulder";
+		int i = (int)strtol(spinning_widget->path.substr(sizeof(path) - 1).c_str(), nullptr, 10);
 		i = (i + 1) % 30;
-		spinning_widget->path = std::string("images/ui/LoadingScreen/boulder") + std::to_string(i) + ".png";
+		spinning_widget->path = std::string(path) + std::to_string(i) + ".png";
 		drawClearBuffers();
 		gui->draw();
 		GO_SwapBuffers(screen);

@@ -80,10 +80,11 @@ Frame::~Frame() {
 }
 
 void Frame::draw() {
-	Frame::draw(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h});
+	auto _actualSize = allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h};
+	Frame::draw(size, _actualSize, findSelectedWidget());
 }
 
-void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
+void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	if (disabled)
 		return;
 
@@ -328,24 +329,24 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		}
 	}
 
-	// render fields
+	// draw fields
 	for (auto field : fields) {
-		field->draw(_size, scroll);
+		field->draw(_size, scroll, selectedWidget);
 	}
 
 	// draw buttons
 	for (auto button : buttons) {
-		button->draw(_size, scroll);
+		button->draw(_size, scroll, selectedWidget);
 	}
 
 	// draw sliders
 	for (auto slider : sliders) {
-		slider->draw(_size, scroll);
+		slider->draw(_size, scroll, selectedWidget);
 	}
 
 	// draw subframes
 	for (auto frame : frames) {
-		frame->draw(_size, scroll);
+		frame->draw(_size, scroll, selectedWidget);
 	}
 
 	// draw "on top" images
@@ -467,6 +468,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		// unselect list
 		if (input.consumeBinaryToggle("MenuCancel")) {
 			deselect();
+			std::string widgetBack;
+			auto find = widgetMovements.find("MenuCancel");
+			if (find != widgetMovements.end()) {
+				widgetBack = find->second;
+			}
 			if (!widgetBack.empty()) {
 				Frame* root = findSearchRoot(); assert(root);
 				Widget* search = root->findWidget(widgetBack.c_str(), true);
@@ -485,6 +491,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 				activateEntry(*list[selection]);
 			}
 			if (dropDown) {
+				std::string widgetBack;
+				auto find = widgetMovements.find("MenuCancel");
+				if (find != widgetMovements.end()) {
+					widgetBack = find->second;
+				}
 				if (!widgetBack.empty()) {
 					Frame* root = findSearchRoot(); assert(root);
 					Widget* search = root->findWidget(widgetBack.c_str(), true);
@@ -517,18 +528,43 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		}
 	}
 
+	// scroll with right stick
+	if (allowScrolling && scrollbars) {
+		Input& input = Input::inputs[owner];
+
+		// x scroll
+		if (actualSize.w > size.w) {
+			if (input.binary("MenuScrollRight")) {
+				this->actualSize.x += std::min(1, size.w);
+			}
+			else if (input.binary("MenuScrollLeft")) {
+				this->actualSize.x -= std::min(1, size.w);
+			}
+		}
+
+		// y scroll
+		if (actualSize.h > size.h) {
+			if (input.binary("MenuScrollDown")) {
+				this->actualSize.y += std::min(1, size.h);
+			}
+			else if (input.binary("MenuScrollUp")) {
+				this->actualSize.y -= std::min(1, size.h);
+			}
+		}
+	}
+
 	// scroll with mouse wheel
-	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable) {
+	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable && allowScrolling && scrollbars) {
 		// x scroll with mouse wheel
 		if (actualSize.w > size.w) {
 			if (actualSize.h <= size.h) {
 				if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					actualSize.x += std::min(entrySize * 4, size.w);
+					this->actualSize.x += std::min(entrySize * 4, size.w);
 					usable = result.usable = false;
 				} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
 					mousestatus[SDL_BUTTON_WHEELUP] = 0;
-					actualSize.x -= std::min(entrySize * 4, size.w);
+					this->actualSize.x -= std::min(entrySize * 4, size.w);
 					usable = result.usable = false;
 				}
 			}
@@ -538,18 +574,18 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		if (actualSize.h > size.h) {
 			if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
 				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-				actualSize.y += std::min(entrySize * 4, size.h);
+				this->actualSize.y += std::min(entrySize * 4, size.h);
 				usable = result.usable = false;
 			} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
 				mousestatus[SDL_BUTTON_WHEELUP] = 0;
-				actualSize.y -= std::min(entrySize * 4, size.h);
+				this->actualSize.y -= std::min(entrySize * 4, size.h);
 				usable = result.usable = false;
 			}
 		}
 
 		// bound
-		actualSize.x = std::min(std::max(0, actualSize.x), std::max(0, actualSize.w - size.w));
-		actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
+		this->actualSize.x = std::min(std::max(0, actualSize.x), std::max(0, actualSize.w - size.w));
+		this->actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 	}
 
 	// widget to move to after processing inputs
@@ -609,8 +645,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 					draggingHSlider = false;
 				} else {
 					float winFactor = ((float)_size.w / (float)actualSize.w);
-					actualSize.x = (mousex - omousex) / winFactor + oldSliderX;
-					actualSize.x = std::min(std::max(0, actualSize.x), std::max(0, actualSize.w - size.w));
+					this->actualSize.x = (mousex - omousex) / winFactor + oldSliderX;
+					this->actualSize.x = std::min(std::max(0, actualSize.x), std::max(0, actualSize.w - size.w));
 				}
 				usable = result.usable = false;
 				ticks = -1; // hack to fix sliders in drop downs
@@ -624,8 +660,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if (rectContainsPoint(sliderRect, omousex, omousey)) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
-						actualSize.x += omousex < handleRect.x ? -std::min(entrySize * 4, size.w) : std::min(entrySize * 4, size.w);
-						actualSize.x = std::min(std::max(0, actualSize.x), std::max(0, actualSize.w - size.w));
+						this->actualSize.x += omousex < handleRect.x ? -std::min(entrySize * 4, size.w) : std::min(entrySize * 4, size.w);
+						this->actualSize.x = std::min(std::max(0, actualSize.x), std::max(0, actualSize.w - size.w));
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
 					usable = result.usable = false;
@@ -659,8 +695,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 					draggingVSlider = false;
 				} else {
 					float winFactor = ((float)_size.h / (float)actualSize.h);
-					actualSize.y = (mousey - omousey) / winFactor + oldSliderY;
-					actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
+					this->actualSize.y = (mousey - omousey) / winFactor + oldSliderY;
+					this->actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 				}
 				usable = result.usable = false;
 				ticks = -1; // hack to fix sliders in drop downs
@@ -674,8 +710,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if (rectContainsPoint(sliderRect, omousex, omousey)) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
-						actualSize.y += omousey < handleRect.y ? -std::min(entrySize * 4, size.h) : std::min(entrySize * 4, size.h);
-						actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
+						this->actualSize.y += omousey < handleRect.y ? -std::min(entrySize * 4, size.h) : std::min(entrySize * 4, size.h);
+						this->actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
 					usable = result.usable = false;

@@ -106,21 +106,9 @@ public:
 	//! draws the frame and all of its subelements
 	void draw();
 
-	//! draws the frame and all of its subelements
-	//! @param _size real position of the frame onscreen
-	//! @param _actualSize offset into the frame space (scroll)
-	void draw(SDL_Rect _size, SDL_Rect _actualSize);
-
 	//! handle clicks and other events
 	//! @return compiled results of frame processing
 	result_t process();
-
-	//! handle clicks and other events
-	//! @param _size real position of the frame onscreen
-	//! @param _actualSize offset into the frame space (scroll)
-	//! @param usable true if another object doesn't have the mouse's attention, false otherwise
-	//! @return compiled results of frame processing
-	result_t process(SDL_Rect _size, SDL_Rect actualSize, const bool usable);
 
 	//! to be performed recursively on every frame after process()
 	void postprocess();
@@ -295,6 +283,19 @@ private:
 	void scrollToSelection();
 	void activateEntry(entry_t& entry);
 	void drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll);
+
+	//! draws the frame and all of its subelements
+	//! @param _size real position of the frame onscreen
+	//! @param _actualSize offset into the frame space (scroll)
+	//! @param selectedWidget the currently selected widget, if any
+	void draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget);
+
+	//! handle clicks and other events
+	//! @param _size real position of the frame onscreen
+	//! @param _actualSize offset into the frame space (scroll)
+	//! @param usable true if another object doesn't have the mouse's attention, false otherwise
+	//! @return compiled results of frame processing
+	result_t process(SDL_Rect _size, SDL_Rect actualSize, const bool usable);
 };
 
 // root frame object

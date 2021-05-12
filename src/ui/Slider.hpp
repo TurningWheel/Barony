@@ -30,7 +30,8 @@ public:
     //! draws the slider
     //! @param _size size and position of slider's parent frame
     //! @param _actualSize offset into the parent frame space (scroll)
-    void draw(SDL_Rect _size, SDL_Rect _actualSize);
+	//! @param selectedWidget the currently selected widget, if any
+    void draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget);
 
     //! handles slider clicks, etc.
     //! @param _size size and position of slider's parent frame
@@ -60,6 +61,7 @@ public:
     const SDL_Rect&             getRailSize() const { return railSize; }
     const char*                 getTooltip() const { return tooltip.c_str(); }
     const Uint32&               getColor() const { return color; }
+    const Uint32&               getHighlightColor() const { return highlightColor; }
     void						(*getCallback() const)(Slider&) { return callback; }
     bool                        isActivated() const { return activated; }
     const char*                 getHandleImage() const { return handleImage.c_str(); }
@@ -73,6 +75,7 @@ public:
     void    setRailSize(const SDL_Rect rect) { railSize = rect; }
     void    setTooltip(const char* _tooltip) { tooltip = _tooltip; }
     void    setColor(const Uint32& _color) { color = _color; }
+    void    setHighlightColor(const Uint32& _color) { highlightColor = _color; }
     void	setCallback(void (*const fn)(Slider&)) { callback = fn; }
     void    setHandleImage(const char* _image) { handleImage = _image; }
     void    setRailImage(const char* _image) { railImage = _image; }
@@ -87,7 +90,8 @@ private:
     SDL_Rect handleSize;                            //!< size of the handle in pixels
     SDL_Rect railSize;                              //!< size of the rail in pixels
     std::string tooltip;						    //!< if empty, button has no tooltip; otherwise, it does
-    Uint32 color;					    			//!< the slider's color
+    Uint32 color = 0xffffffff;					    //!< the slider's color
+    Uint32 highlightColor = 0xffffffff;             //!< slider's color when highlighted
     Uint32 moveStartTime = 0u;                      //!< when the player started holding a direction to move the slider
     Uint32 lastMoveTime = 0u;                       //!< last time the slider was moved
     std::string handleImage;                        //!< image to use for the handle

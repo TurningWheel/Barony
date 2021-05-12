@@ -56,7 +56,8 @@ public:
 	//! @param renderer the renderer object used to draw the button
 	//! @param _size size and position of button's parent frame
 	//! @param _actualSize offset into the parent frame space (scroll)
-	virtual void draw(SDL_Rect _size, SDL_Rect _actualSize);
+	//! @param selectedWidget the currently selected widget, if any
+	void draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget);
 
 	//! handles button clicks, etc.
 	//! @param _size size and position of button's parent frame
@@ -77,6 +78,8 @@ public:
 	void						(*getCallback() const)(Button&) { return callback; }
 	const int					getHJustify() const { return static_cast<int>(hjustify); }
 	const int					getVJustify() const { return static_cast<int>(vjustify); }
+	const char*					getBackground() const { return background.c_str(); }
+	const char*					getBackgroundActivated() const { return backgroundActivated.c_str(); }
 
 	void	setBorder(int _border) { border = _border; }
 	void	setPos(int x, int y) { size.x = x; size.y = y; }

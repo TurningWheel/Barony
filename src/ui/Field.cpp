@@ -76,7 +76,7 @@ void Field::deactivate() {
 	}
 }
 
-void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
+void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	SDL_Rect rect;
 	rect.x = _size.x + std::max(0, size.x - _actualSize.x);
 	rect.y = _size.y + std::max(0, size.y - _actualSize.y);
@@ -203,7 +203,9 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		text->drawColor(src, scaledDest, color);
 	} while ((token = nexttoken) != NULL);
 
-	free(buf); 
+	free(buf);
+
+	drawGlyphs(scaledRect, selectedWidget);
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

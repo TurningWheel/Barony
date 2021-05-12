@@ -35,15 +35,10 @@ public:
     Uint32          getHighlightTime() const { return highlightTime; }
     Sint32          getOwner() const { return owner; }
     void			(*getTickCallback() const)(Widget&) { return callback; }
-    const char*     getWidgetRight() const { return widgetRight.c_str(); }
-    const char*     getWidgetDown() const { return widgetDown.c_str(); }
-    const char*     getWidgetLeft() const { return widgetLeft.c_str(); }
-    const char*     getWidgetUp() const { return widgetUp.c_str(); }
-    const char*     getWidgetPageLeft() const { return widgetPageLeft.c_str(); }
-    const char*     getWidgetPageRight() const { return widgetPageRight.c_str(); }
-    const char*     getWidgetBack() const { return widgetBack.c_str(); }
     const char*     getWidgetSearchParent() const { return widgetSearchParent.c_str(); }
-    const char*     getWidgetTab() const { return widgetTab.c_str(); }
+    auto&           getWidgetActions() const { return widgetActions; }
+    auto&           getWidgetMovements() const { return widgetMovements; }
+    auto&           getWidgets() const { return widgets; }
 
     void	setName(const char* _name) { name = _name; }
     void	setPressed(bool _pressed) { reallyPressed = pressed = _pressed; }
@@ -52,15 +47,17 @@ public:
     void    setInvisible(bool _invisible) { invisible = _invisible; }
     void    setOwner(Sint32 _owner) { owner = _owner; }
     void	setTickCallback(void (*const fn)(Widget&)) { callback = fn; }
-    void    setWidgetRight(const char* s) { widgetRight = s; }
-    void    setWidgetDown(const char* s) { widgetDown = s; }
-    void    setWidgetLeft(const char* s) { widgetLeft = s; }
-    void    setWidgetUp(const char* s) { widgetUp = s; }
-    void    setWidgetPageLeft(const char* s) { widgetPageLeft = s; }
-    void    setWidgetPageRight(const char* s) { widgetPageRight = s; }
-    void    setWidgetBack(const char* s) { widgetBack = s; }
+    void    setWidgetTab(const char* s) { widgetMovements.emplace("MenuTab", s); }
+    void    setWidgetRight(const char* s) { widgetMovements.emplace("MenuRight", s); widgetMovements.emplace("AltMenuRight", s); }
+    void    setWidgetDown(const char* s) { widgetMovements.emplace("MenuDown", s); widgetMovements.emplace("AltMenuDown", s); }
+    void    setWidgetLeft(const char* s) { widgetMovements.emplace("MenuLeft", s); widgetMovements.emplace("AltMenuLeft", s); }
+    void    setWidgetUp(const char* s) { widgetMovements.emplace("MenuUp", s); widgetMovements.emplace("AltMenuUp", s); }
+    void    setWidgetPageLeft(const char* s) { widgetActions.emplace("MenuPageLeft", s); }
+    void    setWidgetPageRight(const char* s) { widgetActions.emplace("MenuPageRight", s); }
+    void    setWidgetBack(const char* s) { widgetActions.emplace("MenuCancel", s); }
     void    setWidgetSearchParent(const char* s) { widgetSearchParent = s; }
-    void    setWidgetTab(const char* s) { widgetTab = s; }
+    void    addWidgetAction(const char* binding, const char* action) { widgetActions.emplace(binding, action); }
+    void    addWidgetMovement(const char* binding, const char* action) { widgetMovements.emplace(binding, action); }
 
     //! recursively locates the head widget for this widget
     //! @return the head widget, which may be this widget
@@ -92,6 +89,10 @@ public:
     //! @return the widget found, or nullptr if it was not found
     Widget* findWidget(const char* name, bool recursive);
 
+    //! find the selected widget amongst our children
+    //! @return the selected widget, or nullptr if it was not found
+    Widget* findSelectedWidget();
+
 protected:
     Widget* parent = nullptr;                       //!< parent widget
     std::list<Widget*> widgets;                     //!< widget children
@@ -107,15 +108,13 @@ protected:
     Sint32 owner = 0;                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
     void (*callback)(Widget&) = nullptr;			//!< the callback to use each frame for this widget
 
-    std::string widgetSearchParent;                 //!< parent of widget to select (use to narrow search)
-    std::string widgetRight;             			//!< next widget to select right
-    std::string widgetDown;                         //!< next widget to select down
-    std::string widgetLeft;                         //!< next widget to select left
-    std::string widgetUp;                           //!< next widget to select up
-    std::string widgetPageLeft;                     //!< widget to activate when you press MenuPageLeft
-    std::string widgetPageRight;                    //!< widget to activate when you press MenuPageRight
-    std::string widgetBack;                         //!< widget to activate when you press MenuCancel
-    std::string widgetTab;                          //!< widget to select when you press tab
+    std::unordered_map<std::string, std::string>
+        widgetActions;                              //!< widgets to select and activate when input is pressed
+    std::unordered_map<std::string, std::string>
+        widgetMovements;                            //!< widgets to select when input is pressed
+    std::string widgetSearchParent;                 //!< widget to search from for actions and movements
 
     Frame* findSearchRoot();
+
+    void drawGlyphs(const SDL_Rect size, const Widget* selectedWidget);
 };

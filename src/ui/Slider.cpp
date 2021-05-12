@@ -13,11 +13,13 @@ Slider::Slider(Frame& _parent) {
 	_parent.adoptWidget(*this);
 }
 
-void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
+void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	SDL_Rect _handleSize, _railSize;
 
 	handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
 	handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
+
+	bool focused = highlighted || selected;
 
 	// draw rail
 	_railSize.x = _size.x + std::max(0, railSize.x - _actualSize.x);
@@ -37,7 +39,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				// TODO section this image!
 				int w = (_railSize.w) * (float)xres / (float)Frame::virtualScreenX;
 				int h = (_railSize.h) * (float)yres / (float)Frame::virtualScreenY;
-				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, color);
+				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, focused ? highlightColor : color);
 			}
 		}
 	}
@@ -60,10 +62,12 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				// TODO section this image!
 				int w = (_handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
 				int h = (_handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
-				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, color);
+				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, focused ? highlightColor : color);
 			}
 		}
 	}
+
+	drawGlyphs(_handleSize, selectedWidget);
 }
 
 Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

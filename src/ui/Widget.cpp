@@ -3,6 +3,7 @@
 #include "../main.hpp"
 #include "Widget.hpp"
 #include "Frame.hpp"
+#include "Image.hpp"
 #include "../input.hpp"
 
 Widget::~Widget() {
@@ -70,22 +71,11 @@ Widget* Widget::handleInput() {
 		Frame* root = nullptr;
 
 		// move to another widget
-		const char* moves[][2] = {
-			{ "MenuTab", widgetTab.c_str() },
-			{ "MenuRight", widgetRight.c_str() },
-			{ "MenuDown", widgetDown.c_str() },
-			{ "MenuLeft", widgetLeft.c_str() },
-			{ "MenuUp", widgetUp.c_str() },
-			{ "AltMenuRight", widgetRight.c_str() },
-			{ "AltMenuDown", widgetDown.c_str() },
-			{ "AltMenuLeft", widgetLeft.c_str() },
-			{ "AltMenuUp", widgetUp.c_str() }
-		};
-		for (int c = 0; c < sizeof(moves) / sizeof(moves[0]); ++c) {
-			if (input.consumeBinaryToggle(moves[c][0])) {
-				if (moves[c][1] && moves[c][1][0] != '\0') {
+		for (auto& move : widgetMovements) {
+			if (input.consumeBinaryToggle(move.first.c_str())) {
+				if (!move.second.empty()) {
 					root = root ? root : findSearchRoot();
-					Widget* result = root->findWidget(moves[c][1], true);
+					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result) {
 						return result;
 					}
@@ -94,16 +84,11 @@ Widget* Widget::handleInput() {
 		}
 
 		// move to another widget and activate it
-		const char* actions[][2] = {
-			{ "MenuPageRight", widgetPageRight.c_str() },
-			{ "MenuPageLeft", widgetPageLeft.c_str() },
-			{ "MenuCancel", widgetBack.c_str() },
-		};
-		for (int c = 0; c < sizeof(actions) / sizeof(actions[0]); ++c) {
-			if (input.consumeBinaryToggle(actions[c][0])) {
-				if (actions[c][1] && actions[c][1][0] != '\0') {
+		for (auto& action : widgetActions) {
+			if (input.consumeBinaryToggle(action.first.c_str())) {
+				if (!action.second.empty()) {
 					root = root ? root : findSearchRoot();
-					Widget* result = root->findWidget(actions[c][1], true);
+					Widget* result = root->findWidget(action.second.c_str(), true);
 					if (result) {
 						result->activate();
 						return result;
@@ -146,6 +131,23 @@ Widget* Widget::findWidget(const char* name, bool recursive) {
 	return nullptr;
 }
 
+Widget* Widget::findSelectedWidget() {
+	for (auto widget : widgets) {
+		if (widget->owner != owner) {
+			continue;
+		}
+		if (widget->isSelected()) {
+			return widget;
+		} else {
+			auto result = widget->findSelectedWidget();
+			if (result) {
+				return result;
+			}
+		}
+	}
+	return nullptr;
+}
+
 void Widget::adoptWidget(Widget& widget) {
 	if (widget.parent) {
 		for (auto node = widget.parent->widgets.begin(); node != widget.parent->widgets.end(); ++node) {
@@ -157,4 +159,88 @@ void Widget::adoptWidget(Widget& widget) {
 	}
 	widget.parent = this;
 	widgets.push_back(&widget);
+}
+
+void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
+#ifndef NINTENDO
+	return;
+#else
+	if (!selectedWidget) {
+		return;
+	}
+	int x = size.x + size.w;
+	int y = size.y + size.h;
+	auto& actions = selectedWidget->getWidgetActions();
+	auto action = actions.begin();
+	if (selectedWidget == this) {
+		auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
+		int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+		int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+		image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+		x -= w;
+	}
+	if ((action = actions.find("MenuCancel")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_B00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuAlt1")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_Y00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuAlt2")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_X00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuStart")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_+00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuSelect")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_-00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuPageLeft")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_L00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuPageRight")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_R00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+#endif
 }

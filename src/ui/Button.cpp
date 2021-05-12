@@ -41,7 +41,7 @@ void Button::activate() {
 	}
 }
 
-void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
+void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	_size.x += std::max(0, size.x - _actualSize.x);
 	_size.y += std::max(0, size.y - _actualSize.y);
 	_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
@@ -52,35 +52,34 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 
 	bool focused = highlighted || selected;
 
-	{
-		SDL_Rect scaledSize;
-		scaledSize.x = _size.x * (float)xres / (float)Frame::virtualScreenX;
-		scaledSize.y = _size.y * (float)yres / (float)Frame::virtualScreenY;
-		scaledSize.w = _size.w * (float)xres / (float)Frame::virtualScreenX;
-		scaledSize.h = _size.h * (float)yres / (float)Frame::virtualScreenY;
-		if (background.empty()) {
-			SDL_Rect inner;
-			inner.x = (_size.x + border) * (float)xres / (float)Frame::virtualScreenX;
-			inner.y = (_size.y + border) * (float)yres / (float)Frame::virtualScreenY;
-			inner.w = (_size.w - border*2) * (float)xres / (float)Frame::virtualScreenX;
-			inner.h = (_size.h - border*2) * (float)yres / (float)Frame::virtualScreenY;
-			Uint32 color = focused ? highlightColor : this->color;
-			if (pressed) {
-				drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
-				drawRect(&inner, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
-			} else {
-				drawRect(&scaledSize, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
-				drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
-			}
+	SDL_Rect scaledSize;
+	scaledSize.x = _size.x * (float)xres / (float)Frame::virtualScreenX;
+	scaledSize.y = _size.y * (float)yres / (float)Frame::virtualScreenY;
+	scaledSize.w = _size.w * (float)xres / (float)Frame::virtualScreenX;
+	scaledSize.h = _size.h * (float)yres / (float)Frame::virtualScreenY;
+
+	if (background.empty()) {
+		SDL_Rect inner;
+		inner.x = (_size.x + border) * (float)xres / (float)Frame::virtualScreenX;
+		inner.y = (_size.y + border) * (float)yres / (float)Frame::virtualScreenY;
+		inner.w = (_size.w - border*2) * (float)xres / (float)Frame::virtualScreenX;
+		inner.h = (_size.h - border*2) * (float)yres / (float)Frame::virtualScreenY;
+		Uint32 color = focused ? highlightColor : this->color;
+		if (pressed) {
+			drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
+			drawRect(&inner, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
 		} else {
-			const char* path = pressed ?
-				(backgroundActivated.empty() ?
-					background.c_str() :
-					backgroundActivated.c_str()) :
-				background.c_str();
-			Image* background_img = Image::get(path);
-			background_img->drawColor(nullptr, scaledSize, focused ? highlightColor : color);
-		} 
+			drawRect(&scaledSize, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
+			drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
+		}
+	} else {
+		const char* path = pressed ?
+			(backgroundActivated.empty() ?
+				background.c_str() :
+				backgroundActivated.c_str()) :
+			background.c_str();
+		Image* background_img = Image::get(path);
+		background_img->drawColor(nullptr, scaledSize, focused ? highlightColor : color);
 	}
 
 	SDL_Rect scroll{0, 0, 0, 0};
@@ -212,6 +211,8 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 			iconImg->draw(&section, scaledPos);
 		}
 	}
+
+	drawGlyphs(scaledSize, selectedWidget);
 }
 
 Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
