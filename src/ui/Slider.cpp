@@ -242,4 +242,5 @@ void Slider::scrollParent() {
 	else if (railSize.x + railSize.w >= fActualSize.x + fSize.w) {
 		fActualSize.x = (railSize.x + railSize.w) - fSize.w;
 	}
+	fparent->setActualSize(fActualSize);
 }

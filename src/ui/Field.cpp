@@ -310,4 +310,5 @@ void Field::scrollParent() {
 	else if (size.x + size.w >= fActualSize.x + fSize.w) {
 		fActualSize.x = (size.x + size.w) - fSize.w;
 	}
+	fparent->setActualSize(fActualSize);
 }

@@ -226,7 +226,7 @@ static void settingsSave() {
 	hide_playertags = !allSettings.show_player_nametags_enabled;
 	nohud = !allSettings.show_hud_enabled;
 	broadcast = !allSettings.show_ip_address_enabled;
-	spawn_blood = allSettings.content_control_enabled;
+	spawn_blood = !allSettings.content_control_enabled;
 	colorblind = allSettings.colorblind_mode_enabled;
 	arachnophobia_filter = allSettings.arachnophobia_filter_enabled;
 	shaking = allSettings.shaking_enabled;
@@ -236,7 +236,7 @@ static void settingsSave() {
 	yres = allSettings.resolution_y;
 	verticalSync = allSettings.vsync_enabled;
 	vertical_splitscreen = allSettings.vertical_split_enabled;
-	vidgamma = allSettings.gamma;
+	vidgamma = allSettings.gamma / 100.f;
 	fov = allSettings.fov;
 	fpsLimit = allSettings.fps;
 	master_volume = allSettings.master_volume;
@@ -252,8 +252,8 @@ static void settingsSave() {
 	reversemouse = allSettings.reverse_mouse_enabled;
 	smoothmouse = allSettings.smooth_mouse_enabled;
 	disablemouserotationlimit = !allSettings.rotation_speed_limit_enabled;
-	gamepad_rightx_sensitivity = allSettings.turn_sensitivity_x;
-	gamepad_righty_sensitivity = allSettings.turn_sensitivity_y;
+	gamepad_rightx_sensitivity = allSettings.turn_sensitivity_x * 10.f;
+	gamepad_righty_sensitivity = allSettings.turn_sensitivity_y * 10.f;
 	svFlags = allSettings.classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
 	svFlags = allSettings.hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
 	svFlags = allSettings.friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
@@ -451,6 +451,7 @@ static int settingsAddSlider(
 	float value,
 	float minValue,
 	float maxValue,
+	bool percent,
 	void (*callback)(Slider&))
 {
 	std::string fullname = std::string("setting_") + name;
@@ -465,6 +466,27 @@ static int settingsAddSlider(
 	field->setSize(box->pos);
 	field->setJustify(Field::justify_t::CENTER);
 	field->setFont(smallfont_outline);
+	if (percent) {
+		field->setTickCallback([](Widget& widget){
+			auto field = static_cast<Field*>(&widget); assert(field);
+			auto frame = static_cast<Frame*>(widget.getParent());
+			auto name = std::string(widget.getName());
+			auto setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_text") - 1) - (sizeof("setting_") - 1));
+			auto slider = frame->findSlider((std::string("setting_") + setting + std::string("_slider")).c_str()); assert(slider);
+			char buf[8]; snprintf(buf, sizeof(buf), "%d%%", (int)slider->getValue());
+			field->setText(buf);
+			});
+	} else {
+		field->setTickCallback([](Widget& widget){
+			auto field = static_cast<Field*>(&widget); assert(field);
+			auto frame = static_cast<Frame*>(widget.getParent());
+			auto name = std::string(widget.getName());
+			auto setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_text") - 1) - (sizeof("setting_") - 1));
+			auto slider = frame->findSlider((std::string("setting_") + setting + std::string("_slider")).c_str()); assert(slider);
+			char buf[8]; snprintf(buf, sizeof(buf), "%d", (int)slider->getValue());
+			field->setText(buf);
+			});
+	}
 	auto slider = frame.addSlider((fullname + "_slider").c_str());
 	slider->setMinValue(minValue);
 	slider->setMaxValue(maxValue);
@@ -674,12 +696,12 @@ void settingsVideo(Button& button) {
 #endif
 	y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen", allSettings.vertical_split_enabled,
 		[](Button& button){allSettings.vertical_split_enabled = button.isPressed();});
-	y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma", allSettings.gamma, 50, 200,
+	y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma", allSettings.gamma, 50, 200, true,
 		[](Slider& slider){allSettings.gamma = slider.getValue();});
-	y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View", allSettings.fov, 40, 100,
+	y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View", allSettings.fov, 40, 100, false,
 		[](Slider& slider){allSettings.fov = slider.getValue();});
 #ifndef NINTENDO
-	y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit", allSettings.fps, 30, 300,
+	y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit", allSettings.fps, 30, 300, false,
 		[](Slider& slider){allSettings.fps = slider.getValue();});
 #endif
 
@@ -724,15 +746,15 @@ void settingsAudio(Button& button) {
 	int y = 0;
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
-	y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume", allSettings.master_volume, 0, 100,
+	y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume", allSettings.master_volume, 0, 100, true,
 		[](Slider& slider){allSettings.master_volume = slider.getValue();});
-	y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume", allSettings.gameplay_volume, 0, 100,
+	y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume", allSettings.gameplay_volume, 0, 100, true,
 		[](Slider& slider){allSettings.gameplay_volume = slider.getValue();});
-	y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume", allSettings.ambient_volume, 0, 100,
+	y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume", allSettings.ambient_volume, 0, 100, true,
 		[](Slider& slider){allSettings.ambient_volume = slider.getValue();});
-	y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume", allSettings.environment_volume, 0, 100,
+	y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume", allSettings.environment_volume, 0, 100, true,
 		[](Slider& slider){allSettings.environment_volume = slider.getValue();});
-	y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume", allSettings.music_volume, 0, 100,
+	y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume", allSettings.music_volume, 0, 100, true,
 		[](Slider& slider){allSettings.music_volume = slider.getValue();});
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
@@ -785,7 +807,7 @@ void settingsControls(Button& button) {
 	y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
 	y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory", allSettings.numkeys_in_inventory_enabled,
 		[](Button& button){allSettings.numkeys_in_inventory_enabled = button.isPressed();});
-	y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity", allSettings.mouse_sensitivity, 0, 100,
+	y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity", allSettings.mouse_sensitivity, 0, 100, false,
 		[](Slider& slider){allSettings.mouse_sensitivity = slider.getValue();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse", allSettings.reverse_mouse_enabled,
 		[](Button& button){allSettings.reverse_mouse_enabled = button.isPressed();});
@@ -801,9 +823,9 @@ void settingsControls(Button& button) {
 #else
 	y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Gamepad Settings");
 #endif
-	y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X", allSettings.turn_sensitivity_x, 0, 100,
+	y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X", allSettings.turn_sensitivity_x, 0, 100, true,
 		[](Slider& slider){allSettings.turn_sensitivity_x = slider.getValue();});
-	y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y", allSettings.turn_sensitivity_y, 0, 100,
+	y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y", allSettings.turn_sensitivity_y, 0, 100, true,
 		[](Slider& slider){allSettings.turn_sensitivity_y = slider.getValue();});
 
 #ifndef NINTENDO
@@ -1276,7 +1298,7 @@ void mainSettings(Button& button) {
 	allSettings.show_player_nametags_enabled = !hide_playertags;
 	allSettings.show_hud_enabled = !nohud;
 	allSettings.show_ip_address_enabled = !broadcast;
-	allSettings.content_control_enabled = spawn_blood;
+	allSettings.content_control_enabled = !spawn_blood;
 	allSettings.colorblind_mode_enabled = colorblind;
 	allSettings.arachnophobia_filter_enabled = arachnophobia_filter;
 	allSettings.shaking_enabled = shaking;
@@ -1286,7 +1308,7 @@ void mainSettings(Button& button) {
 	allSettings.resolution_y = yres;
 	allSettings.vsync_enabled = verticalSync;
 	allSettings.vertical_split_enabled = vertical_splitscreen;
-	allSettings.gamma = vidgamma;
+	allSettings.gamma = vidgamma * 100.f;
 	allSettings.fov = fov;
 	allSettings.fps = fpsLimit;
 	allSettings.master_volume = master_volume;
@@ -1302,8 +1324,8 @@ void mainSettings(Button& button) {
 	allSettings.reverse_mouse_enabled = reversemouse;
 	allSettings.smooth_mouse_enabled = smoothmouse;
 	allSettings.rotation_speed_limit_enabled = !disablemouserotationlimit;
-	allSettings.turn_sensitivity_x = gamepad_rightx_sensitivity;
-	allSettings.turn_sensitivity_y = gamepad_righty_sensitivity;
+	allSettings.turn_sensitivity_x = gamepad_rightx_sensitivity / 10;
+	allSettings.turn_sensitivity_y = gamepad_righty_sensitivity / 10;
 	allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 	allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
 	allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
