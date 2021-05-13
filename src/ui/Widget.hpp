@@ -63,6 +63,9 @@ public:
     //! @return the head widget, which may be this widget
     Widget* findHead();
 
+    //! scroll the parent frame (if any) to be within our bounds
+    virtual void scrollParent();
+
     //! activate this widget
     virtual void activate();
 

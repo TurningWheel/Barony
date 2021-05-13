@@ -225,3 +225,21 @@ void Slider::deselect() {
 	activated = false;
 	Widget::deselect();
 }
+
+void Slider::scrollParent() {
+	Frame* fparent = static_cast<Frame*>(parent);
+	auto fActualSize = fparent->getActualSize();
+	auto fSize = fparent->getSize();
+	if (handleSize.y < fActualSize.y) {
+		fActualSize.y = handleSize.y;
+	}
+	else if (handleSize.y + handleSize.h >= fActualSize.y + fSize.h) {
+		fActualSize.y = (handleSize.y + handleSize.h) - fSize.h;
+	}
+	if (railSize.x < fActualSize.x) {
+		fActualSize.x = railSize.x;
+	}
+	else if (railSize.x + railSize.w >= fActualSize.x + fSize.w) {
+		fActualSize.x = (railSize.x + railSize.w) - fSize.w;
+	}
+}

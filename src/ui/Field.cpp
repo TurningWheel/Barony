@@ -293,3 +293,21 @@ void Field::setText(const char* _text) {
 	}
 	text[size] = '\0';
 }
+
+void Field::scrollParent() {
+	Frame* fparent = static_cast<Frame*>(parent);
+	auto fActualSize = fparent->getActualSize();
+	auto fSize = fparent->getSize();
+	if (size.y < fActualSize.y) {
+		fActualSize.y = size.y;
+	}
+	else if (size.y + size.h >= fActualSize.y + fSize.h) {
+		fActualSize.y = (size.y + size.h) - fSize.h;
+	}
+	if (size.x < fActualSize.x) {
+		fActualSize.x = size.x;
+	}
+	else if (size.x + size.w >= fActualSize.x + fSize.w) {
+		fActualSize.x = (size.x + size.w) - fSize.w;
+	}
+}

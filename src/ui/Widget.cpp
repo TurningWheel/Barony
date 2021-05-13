@@ -77,6 +77,7 @@ Widget* Widget::handleInput() {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result) {
+						result->scrollParent();
 						return result;
 					}
 				}
@@ -91,7 +92,7 @@ Widget* Widget::handleInput() {
 					Widget* result = root->findWidget(action.second.c_str(), true);
 					if (result) {
 						result->activate();
-						return result;
+						return nullptr;
 					}
 				}
 			}
@@ -243,4 +244,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 		}
 	}
 #endif
+}
+
+void Widget::scrollParent() {
+	// no-op
 }

@@ -37,6 +37,9 @@ public:
 		bool entered;
 	};
 
+	//! scroll the parent frame (if any) to be within our bounds
+	virtual void scrollParent();
+
 	//! activates the field for text editing
 	virtual void activate() override;
 

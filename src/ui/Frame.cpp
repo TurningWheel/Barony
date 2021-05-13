@@ -535,20 +535,20 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		// x scroll
 		if (actualSize.w > size.w) {
 			if (input.binary("MenuScrollRight")) {
-				this->actualSize.x += std::min(1, size.w);
+				this->actualSize.x += std::min(this->actualSize.x + 5, this->actualSize.w - _size.w);
 			}
 			else if (input.binary("MenuScrollLeft")) {
-				this->actualSize.x -= std::min(1, size.w);
+				this->actualSize.x -= std::max(this->actualSize.x - 5, 0);
 			}
 		}
 
 		// y scroll
 		if (actualSize.h > size.h) {
 			if (input.binary("MenuScrollDown")) {
-				this->actualSize.y += std::min(1, size.h);
+				this->actualSize.y = std::min(this->actualSize.y + 5, this->actualSize.h - _size.h);
 			}
 			else if (input.binary("MenuScrollUp")) {
-				this->actualSize.y -= std::min(1, size.h);
+				this->actualSize.y = std::max(this->actualSize.y - 5, 0);
 			}
 		}
 	}

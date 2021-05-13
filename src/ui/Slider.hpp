@@ -27,6 +27,9 @@ public:
         const char* tooltip = nullptr;	//!< slider tooltip to be displayed
     };
 
+    //! scroll the parent frame (if any) to be within our bounds
+    virtual void scrollParent();
+
     //! draws the slider
     //! @param _size size and position of slider's parent frame
     //! @param _actualSize offset into the parent frame space (scroll)

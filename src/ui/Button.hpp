@@ -52,6 +52,9 @@ public:
 		JUSTIFY_TYPE_LENGTH
 	};
 
+	//! scroll the parent frame (if any) to be within our bounds
+	virtual void scrollParent();
+
 	//! draws the button
 	//! @param renderer the renderer object used to draw the button
 	//! @param _size size and position of button's parent frame

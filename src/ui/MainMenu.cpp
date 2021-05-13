@@ -472,6 +472,8 @@ static int settingsAddSlider(
 	slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, 450, 24});
 	slider->setHandleSize(SDL_Rect{0, 0, 52, 42});
 	slider->setCallback(callback);
+	slider->setColor(makeColor(127,127,127,255));
+	slider->setHighlightColor(makeColor(255,255,255,255));
 	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Slide00.png");
 	slider->setRailImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Backing00.png");
 	slider->setWidgetBack("discard_and_exit");
@@ -586,7 +588,7 @@ static void hookSettings(Frame& frame, const std::vector<Setting>& settings) {
 void settingsUI(Button& button) {
 	Frame* settings_subwindow;
 	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
-		settings_tab_name = "";
+		settingsSelect(*settings_subwindow, {Setting::Type::BooleanWithCustomize, "add_items_to_hotbar"});
 		return;
 	}
 	int y = 0;
@@ -642,7 +644,7 @@ void settingsUI(Button& button) {
 void settingsVideo(Button& button) {
 	Frame* settings_subwindow;
 	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
-		settings_tab_name = "";
+		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "content_control"});
 		return;
 	}
 	int y = 0;
@@ -716,7 +718,7 @@ void settingsVideo(Button& button) {
 void settingsAudio(Button& button) {
 	Frame* settings_subwindow;
 	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
-		settings_tab_name = "";
+		settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
 		return;
 	}
 	int y = 0;
@@ -771,7 +773,7 @@ void settingsAudio(Button& button) {
 void settingsControls(Button& button) {
 	Frame* settings_subwindow;
 	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
-		settings_tab_name = "";
+		settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
 		return;
 	}
 	int y = 0;
@@ -828,7 +830,7 @@ void settingsControls(Button& button) {
 void settingsGame(Button& button) {
 	Frame* settings_subwindow;
 	if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
-		settings_tab_name = "";
+		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "classic_mode"});
 		return;
 	}
 	int y = 0;
@@ -1374,6 +1376,8 @@ void mainSettings(Button& button) {
 	tab_left->setWidgetPageRight("tab_right");
 	tab_left->setWidgetRight("UI");
 	tab_left->setWidgetDown("restore_defaults");
+	tab_left->addWidgetAction("MenuAlt1", "restore_defaults");
+	tab_left->addWidgetAction("MenuStart", "confirm_and_exit");
 	tab_left->setCallback([](Button&){
 		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 		const char* tabs[] = {
@@ -1408,6 +1412,8 @@ void mainSettings(Button& button) {
 	tab_right->setWidgetPageRight("tab_right");
 	tab_right->setWidgetLeft("Controls");
 	tab_right->setWidgetDown("confirm_and_exit");
+	tab_right->addWidgetAction("MenuAlt1", "restore_defaults");
+	tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
 	tab_right->setCallback([](Button&){
 		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 		const char* tabs[] = {
@@ -1455,6 +1461,8 @@ void mainSettings(Button& button) {
 		button->setHighlightColor(makeColor(255, 255, 255, 255));
 		button->setWidgetPageLeft("tab_left");
 		button->setWidgetPageRight("tab_right");
+		button->addWidgetAction("MenuAlt1", "restore_defaults");
+		button->addWidgetAction("MenuStart", "confirm_and_exit");
 		if (c > 0) {
 			button->setWidgetLeft(tabs[c - 1].name);
 		} else {
@@ -1498,6 +1506,8 @@ void mainSettings(Button& button) {
 	restore_defaults->setWidgetPageRight("tab_right");
 	restore_defaults->setWidgetUp("UI");
 	restore_defaults->setWidgetRight("discard_and_exit");
+	restore_defaults->addWidgetAction("MenuAlt1", "restore_defaults");
+	restore_defaults->addWidgetAction("MenuStart", "confirm_and_exit");
 
 	auto discard_and_exit = settings->addButton("discard_and_exit");
 	discard_and_exit->setBackground("images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
@@ -1509,13 +1519,13 @@ void mainSettings(Button& button) {
 	discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 	discard_and_exit->setCallback([](Button&){
 		assert(main_menu_frame);
+		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+		auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
+		settings_button->select();
 		auto settings = main_menu_frame->findFrame("settings");
 		if (settings) {
 			settings->removeSelf();
 		}
-		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-		auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
-		settings_button->select();
 		});
 	discard_and_exit->setWidgetBack("discard_and_exit");
 	discard_and_exit->setWidgetPageLeft("tab_left");
@@ -1523,6 +1533,8 @@ void mainSettings(Button& button) {
 	discard_and_exit->setWidgetUp("Controls");
 	discard_and_exit->setWidgetLeft("restore_defaults");
 	discard_and_exit->setWidgetRight("confirm_and_exit");
+	discard_and_exit->addWidgetAction("MenuAlt1", "restore_defaults");
+	discard_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
 
 	auto confirm_and_exit = settings->addButton("confirm_and_exit");
 	confirm_and_exit->setBackground("images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
@@ -1535,19 +1547,21 @@ void mainSettings(Button& button) {
 	confirm_and_exit->setCallback([](Button&){
 		assert(main_menu_frame);
 		settingsSave();
+		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+		auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
+		settings_button->select();
 		auto settings = main_menu_frame->findFrame("settings");
 		if (settings) {
 			settings->removeSelf();
 		}
-		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-		auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
-		settings_button->select();
 		});
 	confirm_and_exit->setWidgetBack("discard_and_exit");
 	confirm_and_exit->setWidgetPageLeft("tab_left");
 	confirm_and_exit->setWidgetPageRight("tab_right");
 	confirm_and_exit->setWidgetUp("tab_right");
 	confirm_and_exit->setWidgetLeft("discard_and_exit");
+	confirm_and_exit->addWidgetAction("MenuAlt1", "restore_defaults");
+	confirm_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
 }
 
 void mainQuit(Button& button) {
