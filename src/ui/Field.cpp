@@ -295,7 +295,7 @@ void Field::reflowTextToFit() {
 	int currentCharacters = 0;
 	for ( int i = 0; text[i] != '\0'; ++i )
 	{
-		if ( currentCharacters > charactersPerLine )
+		if ( (currentCharacters - 1) > charactersPerLine )
 		{
 			int findSpace = reflowText.rfind(' ', reflowText.size());
 			if ( findSpace != std::string::npos )
