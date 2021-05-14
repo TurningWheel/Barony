@@ -4,6 +4,7 @@
 #include "Field.hpp"
 #include "Button.hpp"
 #include "Slider.hpp"
+#include "Text.hpp"
 
 #include "../net.hpp"
 #include "../player.hpp"
@@ -279,6 +280,20 @@ static int settingsAddSubHeader(Frame& frame, int y, const char* name, const cha
 	field->setFont(bigfont_outline);
 	field->setText(text);
 	field->setJustify(Field::justify_t::CENTER);
+	Text* text_image = Text::get(text, field->getFont());
+	int w = text_image->getWidth();
+	auto fleur_left = frame.addImage(
+		SDL_Rect{ (1080 - w) / 2 - 26 - 8, y + 6, 26, 30 },
+		0xffffffff,
+		"images/ui/Main Menus/Settings/Settings_SubHeading_Fleur00.png",
+		(fullname + "_fleur_left").c_str()
+	);
+	auto fleur_right = frame.addImage(
+		SDL_Rect{ (1080 + w) / 2 + 8, y + 6, 26, 30 },
+		0xffffffff,
+		"images/ui/Main Menus/Settings/Settings_SubHeading_Fleur00.png",
+		(fullname + "_fleur_right").c_str()
+	);
 	return image->pos.h + 6;
 }
 
@@ -528,6 +543,37 @@ static Frame* settingsSubwindowSetup(Button& button) {
 	settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, 224 * 2});
 	settings_subwindow->setHollow(true);
 	settings_subwindow->setBorder(0);
+	settings_subwindow->setTickCallback([](Widget& widget){
+		auto frame = static_cast<Frame*>(&widget);
+		auto& images = frame->getImages();
+		for (auto image : images) {
+			if (image->path == "images/ui/Main Menus/Settings/Settings_Left_BackingSelect00.png") {
+				image->path = "images/ui/Main Menus/Settings/Settings_Left_Backing00.png";
+			}
+		}
+		auto selectedWidget = widget.findSelectedWidget();
+		if (selectedWidget) {
+			std::string setting;
+			auto name = std::string(selectedWidget->getName());
+			if (selectedWidget->getType() == Widget::WIDGET_SLIDER) {
+				setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_slider") - 1) - (sizeof("setting_") - 1));
+			} else if (selectedWidget->getType() == Widget::WIDGET_BUTTON) {
+				auto button = static_cast<Button*>(selectedWidget);
+				auto customize = "images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
+				if (strcmp(button->getBackground(), customize) == 0) {
+					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
+				} else {
+					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_button") - 1) - (sizeof("setting_") - 1));
+				}
+			}
+			if (!setting.empty()) {
+				auto image = frame->findImage((std::string("setting_") + setting + std::string("_image")).c_str());
+				if (image) {
+					image->path = "images/ui/Main Menus/Settings/Settings_Left_BackingSelect00.png";
+				}
+			}
+		}
+		});
 	auto rock_background = settings_subwindow->addImage(
 		settings_subwindow->getActualSize(),
 		makeColor(127, 127, 127, 251),
@@ -535,6 +581,30 @@ static Frame* settingsSubwindowSetup(Button& button) {
 		"background"
 	);
 	rock_background->tiled = true;
+	auto slider = settings_subwindow->addSlider("scroll_slider");
+	slider->setOrientation(Slider::SLIDER_VERTICAL);
+	slider->setRailSize(SDL_Rect{1038, 16, 30, 440});
+	slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+	slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
+	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
+	slider->setCallback([](Slider& slider){
+		Frame* frame = static_cast<Frame*>(slider.getParent());
+		auto actualSize = frame->getActualSize();
+		actualSize.y = slider.getValue();
+		frame->setActualSize(actualSize);
+		auto railSize = slider.getRailSize();
+		railSize.y = 16 + actualSize.y;
+		slider.setRailSize(railSize);
+		});
+	slider->setTickCallback([](Widget& widget){
+		Slider* slider = static_cast<Slider*>(&widget);
+		Frame* frame = static_cast<Frame*>(slider->getParent());
+		auto actualSize = frame->getActualSize();
+		slider->setValue(actualSize.y);
+		auto railSize = slider->getRailSize();
+		railSize.y = 16 + actualSize.y;
+		slider->setRailSize(railSize);
+		});
 	return settings_subwindow;
 }
 
@@ -571,9 +641,14 @@ static void settingsSelect(Frame& frame, const Setting& setting) {
 }
 
 static void settingsSubwindowFinalize(Frame& frame, int y) {
-	frame.setActualSize(SDL_Rect{0, 0, 547 * 2, std::max(224 * 2, y)});
+	const int height = std::max(224 * 2, y);
+	frame.setActualSize(SDL_Rect{0, 0, 547 * 2, height});
 	auto rock_background = frame.findImage("background"); assert(rock_background);
 	rock_background->pos = frame.getActualSize();
+	auto slider = frame.findSlider("scroll_slider"); assert(slider);
+	slider->setValue(0.f);
+	slider->setMinValue(0.f);
+	slider->setMaxValue(height - 224 * 2);
 }
 
 static void hookSettingToSetting(Frame& frame, const Setting& setting1, const Setting& setting2) {

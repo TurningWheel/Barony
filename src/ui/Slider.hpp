@@ -27,6 +27,11 @@ public:
         const char* tooltip = nullptr;	//!< slider tooltip to be displayed
     };
 
+    enum orientation_t {
+        SLIDER_HORIZONTAL,
+        SLIDER_VERTICAL
+    };
+
     //! scroll the parent frame (if any) to be within our bounds
     virtual void scrollParent();
 
@@ -56,9 +61,11 @@ public:
     virtual void deselect() override;
 
     virtual type_t              getType() const override { return WIDGET_SLIDER; }
+    orientation_t               getOrientation() const { return orientation; }
     float                       getValue() const { return value; }
     float                       getMaxValue() const { return maxValue; }
     float                       getMinValue() const { return minValue; }
+    float                       getValueSpeed() const { return valueSpeed; }
     int                         getBorder() const { return border; }
     const SDL_Rect&             getHandleSize() const { return handleSize; }
     const SDL_Rect&             getRailSize() const { return railSize; }
@@ -70,9 +77,11 @@ public:
     const char*                 getHandleImage() const { return handleImage.c_str(); }
     const char*                 getRailImage() const { return railImage.c_str(); }
 
+    void    setOrientation(orientation_t o) { orientation = o; }
     void    setValue(float _value) { value = _value; }
     void    setMaxValue(float _value) { maxValue = _value; }
     void    setMinValue(float _value) { minValue = _value; }
+    void    setValueSpeed(float _value) { valueSpeed = _value; }
     void    setBorder(int _border) { border = _border; }
     void    setHandleSize(const SDL_Rect rect) { handleSize = rect; }
     void    setRailSize(const SDL_Rect rect) { railSize = rect; }
@@ -85,9 +94,11 @@ public:
 
 private:
     void (*callback)(Slider&) = nullptr;		    //!< native callback for clicking
+    orientation_t orientation = SLIDER_HORIZONTAL;  //!< horizontal or vertical slider?
     float value = 0.f;                              //!< value
     float maxValue = 0.f;                           //!< maximum value
     float minValue = 0.f;                           //!< minimum value
+    float valueSpeed = 1.f;                         //!< how fast the slider moves when we press a button
     int border = 2;                                 //!< border size in pixels
     bool activated = false;                         //!< if true, the slider captures all input
     SDL_Rect handleSize;                            //!< size of the handle in pixels

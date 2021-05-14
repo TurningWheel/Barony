@@ -410,8 +410,6 @@ Frame::result_t Frame::process() {
 }
 
 Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable) {
-	Widget::process();
-
 	result_t result;
 	result.removed = false;
 	result.usable = usable;
@@ -443,8 +441,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	} else {
 		_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 	}
-	if (_size.w <= 0 || _size.h <= 0)
+	if (_size.w <= 0 || _size.h <= 0) {
 		return result;
+	}
 
 	int entrySize = 20;
 	Font* _font = Font::get(font.c_str());
@@ -866,6 +865,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 }
 
 void Frame::postprocess() {
+	Widget::process();
+
 	// TODO: which player owns the mouse
 	if (dropDown && owner == 0) {
 		if (!dropDownClicked) {
