@@ -2613,3 +2613,78 @@ public:
 };
 extern IRCHandler_t IRCHandler;
 #endif // !NINTENDO
+
+class ItemTooltips_t
+{
+	struct tmpItem_t
+	{
+		std::string itemName = "nothing";
+		Sint32 itemId = -1;
+		Sint32 fpIndex = -1;
+		Sint32 tpIndex = -1;
+		Sint32 gold = 0;
+		Sint32 weight = 0;
+		Sint32 itemLevel = -1;
+		std::string category = "nothing";
+		std::string equipSlot = "nothing";
+		std::vector<std::string> imagePaths;
+		std::map<std::string, Sint32> attributes;
+		std::string tooltip = "tooltip_default";
+	};
+
+	struct ItemTooltipIcons_t
+	{
+		std::string iconPath = "";
+		std::string text = "";
+		Uint32 textColor = 0xFFFFFFFF;
+		ItemTooltipIcons_t(std::string _path, std::string _text)
+		{
+			iconPath = _path;
+			text = _text;
+		}
+		void setColor(Uint32 color) { textColor = color; }
+	};
+
+	Uint32 defaultHeadingTextColor = 0xFFFFFFFF;
+	Uint32 defaultIconTextColor = 0xFFFFFFFF;
+	Uint32 defaultDescriptionTextColor = 0xFFFFFFFF;
+	Uint32 defaultDetailsTextColor = 0xFFFFFFFF;
+	Uint32 defaultPositiveTextColor = 0xFFFFFFFF;
+	Uint32 defaultNegativeTextColor = 0xFFFFFFFF;
+
+	struct ItemTooltip_t
+	{
+		Uint32 headingTextColor = 0;
+		Uint32 descriptionTextColor = 0;
+		Uint32 detailsTextColor = 0;
+		Uint32 positiveTextColor = 0;
+		Uint32 negativeTextColor = 0;
+		std::vector<ItemTooltipIcons_t> icons;
+		std::vector<std::string> descriptionText;
+		std::map<std::string, std::vector<std::string>> detailsText;
+		int minWidth = 0;
+		void setColorHeading(Uint32 color) { headingTextColor = color; };
+		void setColorDescription(Uint32 color) { descriptionTextColor = color; };
+		void setColorDetails(Uint32 color) { detailsTextColor = color; };
+		void setColorPositive(Uint32 color) { positiveTextColor = color; };
+		void setColorNegative(Uint32 color) { negativeTextColor = color; };
+	};
+public:
+	void readItemsFromFile();
+	void readTooltipsFromFile();
+	std::vector<tmpItem_t> tmpItems;
+	std::map<std::string, ItemTooltip_t> tooltips;
+	std::map<std::string, std::map<std::string, std::string>> adjectives;
+	std::map<std::string, std::vector<std::string>> templates;
+	std::string defaultString = "";
+	char buf[2048];
+	std::string& getItemStatusAdjective(Uint32 itemType, Status status);
+	std::string& getItemBeatitudeAdjective(Sint16 beatitude);
+	std::string& getItemPotionAlchemyAdjective(const int player, Uint32 itemType);
+	std::string& getItemPotionHarmAllyAdjective(Item& item);
+
+	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str);
+	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
+	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);
+};
+extern ItemTooltips_t ItemTooltips;

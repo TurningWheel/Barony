@@ -3335,6 +3335,44 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	return attack;
 }
 
+bool Item::doesItemProvideBeatitudeAC() const
+{
+	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool Item::doesItemProvidePassiveShieldBonus() const
+{
+	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool Item::doesPotionHarmAlliesOnThrown() const
+{
+	switch ( type )
+	{
+		case POTION_HEALING:
+		case POTION_EXTRAHEALING:
+		case POTION_RESTOREMAGIC:
+		case POTION_CUREAILMENT:
+		case POTION_WATER:
+		case POTION_BOOZE:
+		case POTION_JUICE:
+		case POTION_STRENGTH:
+		case POTION_SPEED:
+			return false;
+		default:
+			break;
+	}
+	return true;
+}
+
 /*-------------------------------------------------------------------------------
 
 	Item::armorGetAC
@@ -3354,7 +3392,7 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 		}
 	}
 
-	if ( itemTypeIsQuiver(type) )
+	if ( !doesItemProvideBeatitudeAC() )
 	{
 		armor = 0;
 	}

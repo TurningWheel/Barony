@@ -3280,6 +3280,16 @@ void consoleCommand(char const * const command_str)
 			messagePlayer(clientnum, "[IRC]: Sent message.");
 		}
 #endif // !NINTENDO
+		else if ( !strncmp(command_str, "/loadtooltips", 13) )
+		{
+			ItemTooltips.readTooltipsFromFile();
+			messagePlayer(clientnum, "Reloaded item_tooltips.json");
+		}
+		else if ( !strncmp(command_str, "/loaditems", 10) )
+		{
+			ItemTooltips.readItemsFromFile();
+			messagePlayer(clientnum, "Reloaded items.json");
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

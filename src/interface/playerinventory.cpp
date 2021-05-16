@@ -25,6 +25,8 @@
 #include "../ui/Frame.hpp"
 #include "../ui/Image.hpp"
 #include "../ui/Field.hpp"
+#include "../ui/Text.hpp"
+#include "../mod_tools.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "../steam.hpp"
@@ -1390,37 +1392,42 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	auto txtHeader = frameMain->findField("inventory mouse tooltip header");
 	auto txtPrimaryValue = frameAttr->findField("inventory mouse tooltip primary value");
 	auto txtSecondaryValue = frameAttr->findField("inventory mouse tooltip secondary value");
+	auto txtAttributes = frameAttr->findField("inventory mouse tooltip attributes text");
 	auto txtDescription = frameDesc->findField("inventory mouse tooltip description");
+	auto txtDescriptionPositive = frameDesc->findField("inventory mouse tooltip description positive text");
+	auto txtDescriptionNegative = frameDesc->findField("inventory mouse tooltip description negative text");
+
 	auto txtPrompt = framePrompt->findField("inventory mouse tooltip prompt");
 	auto txtGoldValue = frameValues->findField("inventory mouse tooltip gold value");
 	auto txtWeightValue = frameValues->findField("inventory mouse tooltip weight value");
+	auto txtIdentifiedValue = frameValues->findField("inventory mouse tooltip identified value");
 
 	char buf[1024] = "";
 
 	const int padx = 4;
 	const int pady = 4;
 
-	const char* itemStatus[4] =
+	std::string tooltipType = ItemTooltips.tmpItems[item->type].tooltip;
+	if ( ItemTooltips.tooltips.find(tooltipType) == ItemTooltips.tooltips.end() )
 	{
-		"Decrepit",
-		"Worn",
-		"Servicable",
-		"Excellent"
-	};
+		return;
+	}
+	auto itemTooltip = ItemTooltips.tooltips[tooltipType];
 
-	if ( item->beatitude >= 0 )
-	{
-		snprintf(buf, sizeof(buf), "%s %s (+%d)", itemStatus[item->status], item->getName(), item->beatitude);
-	}
-	else
-	{
-		snprintf(buf, sizeof(buf), "%s %s (-%d)", itemStatus[item->status], item->getName(), item->beatitude);
-	}
+	snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+	
 	txtHeader->setText(buf);
-	auto font = Font::get(txtHeader->getFont());
 	int textx = 0;
 	int texty = 0;
-	font->sizeText(txtHeader->getText(), &textx, &texty);
+	auto textGet = Text::get(txtHeader->getText(), txtHeader->getFont());
+	if ( textGet )
+	{
+		textx = textGet->getWidth();
+		if ( itemTooltip.minWidth > 0 )
+		{
+			textx = std::max(itemTooltip.minWidth, textx);
+		}
+	}
 	txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, pady, textx + 3 * padx, imgTopBackground->pos.h - pady});
 
 	int totalHeight = txtHeader->getSize().h;
@@ -1430,7 +1437,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 	txtPrimaryValue->setText("Primary Value");
 	txtSecondaryValue->setText("Secondary Value");
-	font->sizeText(txtPrimaryValue->getText(), &textx, &texty);
 
 	// attribute frame size - padded by (imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx) on either side
 	SDL_Rect frameAttrPos{ imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx, totalHeight, 0, 0 };
@@ -1439,7 +1445,176 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	imgPrimaryIcon->pos.y = 0;
 	imgSecondaryIcon->pos.y = 0;
 
-	if ( ticks % 400 < 100 )
+	imgPrimaryIcon->disabled = true;
+	imgPrimaryIcon->path = "";
+	imgSecondaryIcon->disabled = true;
+	imgSecondaryIcon->path = "";
+	if ( itemTooltip.icons.size() > 0 )
+	{
+		int index = 0;
+		for ( auto& icon : itemTooltip.icons )
+		{
+			if ( index == 0 )
+			{
+				imgPrimaryIcon->disabled = false;
+				imgPrimaryIcon->path = icon.iconPath;
+
+				std::string iconText = icon.text;
+				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText);
+				txtPrimaryValue->setText(iconText.c_str());
+				txtPrimaryValue->setColor(icon.textColor);
+			}
+			else if ( index == 1 )
+			{
+				imgSecondaryIcon->disabled = false;
+				imgSecondaryIcon->path = icon.iconPath;
+
+				std::string iconText = icon.text;
+				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText);
+				txtSecondaryValue->setText(iconText.c_str());
+				txtSecondaryValue->setColor(icon.textColor);
+			}
+			else
+			{
+				break;
+			}
+			++index;
+		}
+	}
+
+	txtAttributes->setDisabled(true);
+	if ( itemTooltip.descriptionText.size() > 0 )
+	{
+		txtAttributes->setDisabled(false);
+		txtAttributes->setColor(itemTooltip.descriptionTextColor);
+		std::string text;
+		int index = 0;
+		for ( auto& it = itemTooltip.descriptionText.begin(); it != itemTooltip.descriptionText.end(); ++it )
+		{
+			text += (*it);
+			if ( std::next(it) != itemTooltip.descriptionText.end() )
+			{
+				text += '\n';
+			}
+		}
+		txtAttributes->setText(text.c_str());
+	}
+
+	frameDesc->setDisabled(true);
+
+	std::string detailsTextString = "";
+	if ( itemTooltip.detailsText.size() > 0 )
+	{
+		frameDesc->setDisabled(false);
+		txtDescription->setColor(itemTooltip.detailsTextColor);
+		int index = 0;
+		if ( itemTooltip.detailsText.find("default") != itemTooltip.detailsText.end() )
+		{
+			for ( auto& it = itemTooltip.detailsText["default"].begin(); it != itemTooltip.detailsText["default"].end(); ++it )
+			{
+				detailsTextString += (*it);
+				if ( std::next(it) != itemTooltip.detailsText["default"].end() )
+				{
+					detailsTextString += '\n';
+				}
+			}
+		}
+		ItemTooltips.formatItemDetails(player, tooltipType, *item, detailsTextString, "default");
+
+		std::vector<std::string> detailTags1 = { "alchemy_details", "potion_damage" };
+		for ( auto tag : detailTags1 )
+		{
+			if ( itemTooltip.detailsText.find(tag.c_str()) != itemTooltip.detailsText.end() )
+			{
+				std::string tagText = "";
+				for ( auto& it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
+				{
+					tagText += (*it);
+					if ( std::next(it) != itemTooltip.detailsText[tag.c_str()].end() )
+					{
+						tagText += '\n';
+					}
+				}
+				ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag.c_str());
+				detailsTextString += '\n';
+				detailsTextString += tagText;
+			}
+		}
+
+		if ( itemTooltip.detailsText.find("on_bless_or_curse") != itemTooltip.detailsText.end() )
+		{
+			if ( item->beatitude != 0 )
+			{
+				std::string beatitudeText = "";
+				for ( auto& it = itemTooltip.detailsText["on_bless_or_curse"].begin(); it != itemTooltip.detailsText["on_bless_or_curse"].end(); ++it )
+				{
+					beatitudeText += (*it);
+					if ( std::next(it) != itemTooltip.detailsText["on_bless_or_curse"].end() )
+					{
+						beatitudeText += '\n';
+					}
+				}
+				ItemTooltips.formatItemDetails(player, tooltipType, *item, beatitudeText, "on_bless_or_curse");
+				detailsTextString += '\n';
+				detailsTextString += beatitudeText;
+			}
+		}
+
+		std::vector<std::string> detailTags2 = { "potion_multiplier", "on_degraded", "last_details" };
+		for ( auto tag : detailTags2 )
+		{
+			if ( itemTooltip.detailsText.find(tag.c_str()) != itemTooltip.detailsText.end() )
+			{
+				std::string tagText = "";
+				for ( auto& it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
+				{
+					tagText += (*it);
+					if ( std::next(it) != itemTooltip.detailsText[tag.c_str()].end() )
+					{
+						tagText += '\n';
+					}
+				}
+				ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag.c_str());
+				detailsTextString += '\n';
+				detailsTextString += tagText;
+			}
+		}
+
+		/*if ( itemTooltip.detailsText.find("on_degraded") != itemTooltip.detailsText.end() )
+		{
+			std::string statusText = "";
+			for ( auto& it = itemTooltip.detailsText["on_degraded"].begin(); it != itemTooltip.detailsText["on_degraded"].end(); ++it )
+			{
+				statusText += (*it);
+				if ( std::next(it) != itemTooltip.detailsText["on_degraded"].end() )
+				{
+					statusText += '\n';
+				}
+			}
+			ItemTooltips.formatItemDetails(player, tooltipType, *item, statusText, "on_degraded");
+			text += '\n';
+			text += statusText;
+		}*/
+		/*if ( itemTooltip.detailsText.find("last_details") != itemTooltip.detailsText.end() )
+		{
+			std::string lastDetailText = "";
+			for ( auto& it = itemTooltip.detailsText["last_details"].begin(); it != itemTooltip.detailsText["last_details"].end(); ++it )
+			{
+				lastDetailText += (*it);
+				if ( std::next(it) != itemTooltip.detailsText["last_details"].end() )
+				{
+					lastDetailText += '\n';
+				}
+			}
+			ItemTooltips.formatItemDetails(player, tooltipType, *item, lastDetailText, "last_details");
+			text += '\n';
+			text += lastDetailText;
+		}*/
+
+		txtDescription->setText(detailsTextString.c_str());
+	}
+
+	/*if ( ticks % 400 < 100 )
 	{
 		imgPrimaryIcon->disabled = false;
 		imgSecondaryIcon->disabled = false;
@@ -1466,7 +1641,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	else
 	{
 		frameDesc->setDisabled(false);
-	}
+	}*/
 
 	const int imgToTextOffset = 2;
 	txtPrimaryValue->setDisabled(imgPrimaryIcon->disabled);
@@ -1515,6 +1690,21 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		frameAttrPos.h += pady;
 	}
 
+	if ( !txtAttributes->isDisabled() )
+	{
+		int charWidth = 0;
+		int charHeight = 0;
+		Font::get(txtAttributes->getFont())->sizeText("_", &charWidth, &charHeight);
+
+		//txtAttributes->setText("Restores a medium amount of a hunger\nCan be thrown");
+
+		txtAttributes->setSize(SDL_Rect{ padx * 2, frameAttrPos.h + pady, frameAttrPos.w - padx * 2, frameAttrPos.h - pady });
+		txtAttributes->reflowTextToFit();
+		int currentHeight = frameAttrPos.h;
+		frameAttrPos.h += txtAttributes->getNumTextLines() * charHeight + pady * 3;
+		txtAttributes->setSize(SDL_Rect{ padx * 2, currentHeight + pady, frameAttrPos.w - padx * 2, frameAttrPos.h - pady });
+	}
+
 	frameAttr->setSize(frameAttrPos);
 	frameAttr->setActualSize(SDL_Rect{ 0, 0, frameAttr->getSize().w, frameAttr->getSize().h });
 	totalHeight += frameAttrPos.h;
@@ -1535,21 +1725,44 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 			}
 		}
 
-		int charWidth = 0;
-		int charHeight = 0;
-		Font::get(txtDescription->getFont())->sizeText("_", &charWidth, &charHeight);
-		txtDescription->setText("An amulet is an item that a character can put on around his or her neck. It usually confers magical powers on the wearer");
+		int _pady = pady;
+		if ( !imagesDisabled || !txtAttributes->isDisabled() )
+		{
+			_pady = 2 * pady;
+		}
+
+		const int charHeight = 13;
+		//Font::get(txtDescription->getFont())->sizeText("_", nullptr, &charHeight); -- this produces 13px @ 12 point font, used above
+
+		/*auto textGet = Text::get(txtDescription->getText(), txtDescription->getFont());
+		if ( textGet )
+		{
+			auto tmp = textGet->getWidth();
+			auto tmp2 = textGet->getHeight();
+		}*/
 		
-		txtPrimaryValue->setText("9-14 Mace damage");
-		txtDescription->setText(" +5 Weapon ATK\n +10% Armor Break\n +20% bonus from Mace Skill");
-		
-		txtDescription->setSize(SDL_Rect{ 0, 0 /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
+		txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
 		txtDescription->reflowTextToFit();
 
-		frameDescPos.h += txtDescription->getNumTextLines() * charHeight + pady;
+		std::string detailsPositiveText = "";
+		std::string detailsNegativeText = "";
 
-		txtDescription->setSize(SDL_Rect{ 0, 0 /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
+		detailsTextString = txtDescription->getText();
+		ItemTooltips.stripOutPositiveNegativeItemDetails(detailsTextString, detailsPositiveText, detailsNegativeText);
+		txtDescription->setText(detailsTextString.c_str());
+
+		txtDescriptionPositive->setText(detailsPositiveText.c_str());
+		txtDescriptionPositive->setColor(itemTooltip.positiveTextColor);
+		txtDescriptionNegative->setText(detailsNegativeText.c_str());
+		txtDescriptionNegative->setColor(itemTooltip.negativeTextColor);
+
+		frameDescPos.h += txtDescription->getNumTextLines() * charHeight + pady * 3;
+
+		txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
 		txtDescription->setScroll(true);
+
+		txtDescriptionPositive->setSize(txtDescription->getSize());
+		txtDescriptionNegative->setSize(txtDescription->getSize());
 
 		frameDesc->setSize(frameDescPos);
 		frameDesc->setActualSize(SDL_Rect{ 0, 0, frameDesc->getSize().w, frameDesc->getSize().h });
@@ -1563,13 +1776,13 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		frameValuesPos.h = 0;
 
 		char valueBuf[64];
-		snprintf(valueBuf, sizeof(valueBuf), "%dG", item->sellValue(player));
+		snprintf(valueBuf, sizeof(valueBuf), "%d", item->sellValue(player));
 		txtGoldValue->setText(valueBuf);
 		txtGoldValue->setDisabled(false);
 
-		int charWidth = 0;
-		int charHeight = 0;
-		Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);
+		const int charWidth = 8;
+		const int charHeight = 13;
+		//Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);  -- this produces 8px/13px @ 12 point font, used above
 
 		imgGoldIcon->pos.x = frameValuesPos.w - (charWidth * (strlen(txtGoldValue->getText()) + 1)) - (imgGoldIcon->pos.w + padx);
 		imgGoldIcon->pos.y = pady;
@@ -1580,7 +1793,8 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		txtWeightValue->setText(valueBuf);
 		txtWeightValue->setDisabled(false);
 
-		Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
+		//Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
+
 		imgWeightIcon->pos.x = imgGoldIcon->pos.x - padx - (charWidth * (strlen(txtWeightValue->getText()) + 1)) - (imgWeightIcon->pos.w + padx);
 		imgWeightIcon->pos.y = pady;
 		txtWeightValue->setSize(SDL_Rect{ imgWeightIcon->pos.x + imgWeightIcon->pos.w + padx,
@@ -1593,6 +1807,24 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		frameValues->setActualSize(SDL_Rect{ 0, 0, frameValues->getSize().w, frameValues->getSize().h });
 		totalHeight += frameValuesPos.h;
 
+		txtIdentifiedValue->setSize(SDL_Rect{ padx * 2, txtWeightValue->getSize().y, frameValuesPos.w - padx, txtWeightValue->getSize().h });
+		if ( !item->identified )
+		{
+			txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["unidentified"].c_str());
+		}
+		else if ( item->beatitude > 0 )
+		{
+			txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["blessed"].c_str());
+		}
+		else if ( item->beatitude < 0 )
+		{
+			txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["cursed"].c_str());
+		}
+		else
+		{
+			txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["uncursed"].c_str());
+		}
+
 		imgValueBackground->pos = SDL_Rect{0, 0, frameValuesPos.w, frameValuesPos.h };
 		imgValueBackground->disabled = true;
 	}
@@ -1600,6 +1832,24 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	{
 		txtGoldValue->setDisabled(true);
 		txtWeightValue->setDisabled(true);
+	}
+
+	// add dividers
+	auto divDesc = frameDesc->findImage("inventory mouse tooltip description divider");
+	auto divValue = frameValues->findImage("inventory mouse tooltip value divider");
+	divDesc->disabled = true;
+	divValue->disabled = true;
+	if ( (!imagesDisabled || !txtAttributes->isDisabled()) && !frameAttr->isDisabled() && !frameDesc->isDisabled() )
+	{
+		divDesc->disabled = false;
+		divDesc->pos.x = padx;
+		divDesc->pos.w = frameDescPos.w - 2 * padx;
+	}
+	if ( !frameValues->isDisabled() && (!imagesDisabled || !frameDesc->isDisabled() || !txtAttributes->isDisabled()) )
+	{
+		divValue->disabled = false;
+		divValue->pos.x = padx;
+		divValue->pos.w = frameValuesPos.w - 2 * padx;
 	}
 
 	// button prompts

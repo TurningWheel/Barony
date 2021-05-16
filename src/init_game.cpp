@@ -316,6 +316,7 @@ int initGame()
 		}
 	}
 	FileIO::close(fp);
+
 	createBooks();
 	setupSpells();
 
@@ -331,6 +332,9 @@ int initGame()
 #endif // !NINTENDO
 
 	loadItemLists();
+
+	ItemTooltips.readItemsFromFile();
+	ItemTooltips.readTooltipsFromFile();
 
 #if defined(USE_EOS) || defined(STEAMWORKS)
 #else

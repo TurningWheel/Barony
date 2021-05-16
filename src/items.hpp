@@ -375,6 +375,21 @@ private:
 
 };
 
+enum ItemEquippableSlot : int
+{
+	EQUIPPABLE_IN_SLOT_WEAPON,
+	EQUIPPABLE_IN_SLOT_SHIELD,
+	EQUIPPABLE_IN_SLOT_MASK,
+	EQUIPPABLE_IN_SLOT_HELM,
+	EQUIPPABLE_IN_SLOT_GLOVES,
+	EQUIPPABLE_IN_SLOT_BOOTS,
+	EQUIPPABLE_IN_SLOT_BREASTPLATE,
+	EQUIPPABLE_IN_SLOT_CLOAK,
+	EQUIPPABLE_IN_SLOT_AMULET,
+	EQUIPPABLE_IN_SLOT_RING,
+	NO_EQUIP
+};
+
 // inventory item structure
 class Item
 {
@@ -434,6 +449,9 @@ public:
 	bool shouldItemStack(int player) const;
 
 	bool isShield() const;
+	bool doesItemProvideBeatitudeAC() const;
+	bool doesItemProvidePassiveShieldBonus() const;
+	bool doesPotionHarmAlliesOnThrown() const;
 
 	enum ItemBombPlacement : int
 	{
@@ -479,6 +497,26 @@ public:
 	list_t surfaces;            // item image surfaces (inventory)
 	Category category;          // item category
 	int level;					// item level for random generation
+								// equip slot that item can go in
+	ItemEquippableSlot item_slot = ItemEquippableSlot::NO_EQUIP;
+	std::map<std::string, Sint32> attributes;
+	std::string tooltip = "tooltip_default";
+
+	bool hasAttribute(std::string attribute)
+	{
+		if ( attributes.size() > 0 )
+		{
+			if ( attributes.find(attribute) != attributes.end() )
+			{
+				return true;
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
 };
 extern ItemGeneric items[NUMITEMS];
 
