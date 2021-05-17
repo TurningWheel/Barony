@@ -73,15 +73,20 @@ public:
 	void	setColor(const Uint32& _color) { color = _color; }
 	void	setTextColor(const Uint32& _color) { textColor = _color; }
 	void	setBorderColor(const Uint32& _color) { borderColor = _color; }
+	void	setHighlightColor(const Uint32& _color) { highlightColor = _color; }
 	void	setText(const char* _text) { text = _text; }
 	void	setFont(const char* _font) { font = _font; }
 	void	setIcon(const char* _icon);
 	void	setTooltip(const char* _tooltip) { tooltip = _tooltip; }
 	void	setStyle(int _style) { style = static_cast<style_t>(_style); }
 	void	setCallback(const Widget::Callback* fn) { callback = fn; }
+	void	setBackground(const char* image) { background = image; }
+	void	setBackgroundHighlighted(const char* image) { backgroundHighlighted = image; }
 
 private:
 	const Widget::Callback* callback = nullptr;		//!< native callback for clicking
+	std::string background;							//!< background image
+	std::string backgroundHighlighted;				//!< background image for when the button is selected/highlighted
 	std::string text;								//!< button text, if any
 	std::string font = Font::defaultFont;			//!< button font
 	std::string icon;								//!< icon, if any (supersedes text content)
@@ -91,6 +96,7 @@ private:
 	SDL_Rect size;									//!< size and position of the button within its parent frame
 	Uint32 color;									//!< the button's color
 	Uint32 textColor;								//!< text color
+	Uint32 highlightColor;							//!< color used when the button is selected/highlighted
 	Uint32 borderColor;								//!< (optional) border color
 	style_t style = STYLE_NORMAL;					//!< button style
 };

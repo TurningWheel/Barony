@@ -40,9 +40,11 @@
 #include "lobbies.hpp"
 #include "interface/ui.hpp"
 #include "ui/GameUI.hpp"
+#include "ui/MainMenu.hpp"
 #include <limits>
 #include "ui/Frame.hpp"
 #include "ui/Field.hpp"
+#include "input.hpp"
 
 #include "UnicodeDecoder.h"
 
@@ -2807,37 +2809,41 @@ void handleEvents(void)
 	int j;
 	int runtimes = 0;
 
-		// calculate app rate
-		t = SDL_GetTicks();
-		real_t timesync = t - ot;
-		ot = t;
+	// calculate app rate
+	t = SDL_GetTicks();
+	real_t timesync = t - ot;
+	ot = t;
 
-		// do timer
-		time_diff += timesync;
-		constexpr real_t frame = (real_t)1000 / (real_t)TICKS_PER_SECOND;
-		while (time_diff >= frame) {
-			time_diff -= frame;
-			timerCallback(0, NULL);
-		}
+	// do timer
+	time_diff += timesync;
+	constexpr real_t frame = (real_t)1000 / (real_t)TICKS_PER_SECOND;
+	while (time_diff >= frame) {
+		time_diff -= frame;
+		timerCallback(0, NULL);
+	}
 
-		// calculate fps
-		if ( timesync != 0 )
-		{
-			frameval[cycles % AVERAGEFRAMES] = 1.0 / timesync;
-		}
-		else
-		{
-			frameval[cycles % AVERAGEFRAMES] = 1.0;
-		}
-		d = frameval[0];
-		for (j = 1; j < AVERAGEFRAMES; j++)
-		{
-			d += frameval[j];
-		}
-		fps = (d / AVERAGEFRAMES) * 1000;
+	// calculate fps
+	if ( timesync != 0 )
+	{
+		frameval[cycles % AVERAGEFRAMES] = 1.0 / timesync;
+	}
+	else
+	{
+		frameval[cycles % AVERAGEFRAMES] = 1.0;
+	}
+	d = frameval[0];
+	for (j = 1; j < AVERAGEFRAMES; j++)
+	{
+		d += frameval[j];
+	}
+	fps = (d / AVERAGEFRAMES) * 1000;
 
 	if (initialized) {
 		inputs.updateAllMouse();
+	}
+
+	for (auto& input : Input::inputs) {
+		input.update();
 	}
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events
@@ -2957,6 +2963,8 @@ void handleEvents(void)
 				{
 					lastkeypressed = event.key.keysym.scancode;
 					keystatus[event.key.keysym.scancode] = 1; // set this key's index to 1
+					Input::keys[event.key.keysym.scancode] = 1;
+					Input::lastInputOfAnyKind = SDL_GetKeyName(SDL_GetKeyFromScancode(event.key.keysym.scancode));
 				}
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
@@ -2973,6 +2981,7 @@ void handleEvents(void)
 #endif
 				{
 					keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
+					Input::keys[event.key.keysym.scancode] = 0;
 				}
 				break;
 			case SDL_TEXTINPUT:
@@ -2987,10 +2996,13 @@ void handleEvents(void)
 				break;
 			case SDL_MOUSEBUTTONDOWN: // if a mouse button is pressed...
 				mousestatus[event.button.button] = 1; // set this mouse button to 1
+				Input::mouseButtons[event.button.button] = 1;
+				Input::lastInputOfAnyKind = std::string("Mouse") + std::to_string(event.button.button);
 				lastkeypressed = 282 + event.button.button;
 				break;
 			case SDL_MOUSEBUTTONUP: // if a mouse button is released...
 				mousestatus[event.button.button] = 0; // set this mouse button to 0
+				Input::mouseButtons[event.button.button] = 0;
 				buttonclick = 0; // release any buttons that were being held down
 				if (initialized)
 				{
@@ -3055,8 +3067,27 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
+			{
 				//joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
+				char buf[32];
+				switch (event.cbutton.button) {
+				case SDL_CONTROLLER_BUTTON_A: snprintf(buf, sizeof(buf), "Pad%dButtonA", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_B: snprintf(buf, sizeof(buf), "Pad%dButtonB", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_X: snprintf(buf, sizeof(buf), "Pad%dButtonX", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_Y: snprintf(buf, sizeof(buf), "Pad%dButtonY", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_BACK: snprintf(buf, sizeof(buf), "Pad%dButtonBack", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_START: snprintf(buf, sizeof(buf), "Pad%dButtonStart", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_LEFTSTICK: snprintf(buf, sizeof(buf), "Pad%dButtonLeftStick", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_RIGHTSTICK: snprintf(buf, sizeof(buf), "Pad%dButtonRightStick", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: snprintf(buf, sizeof(buf), "Pad%dButtonLeftBumper", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: snprintf(buf, sizeof(buf), "Pad%dButtonRightBumper", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_LEFT: snprintf(buf, sizeof(buf), "Pad%dDpadX-", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: snprintf(buf, sizeof(buf), "Pad%dDpadX+", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_UP: snprintf(buf, sizeof(buf), "Pad%dDpadY-", event.cbutton.which); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_DOWN: snprintf(buf, sizeof(buf), "Pad%dDpadY+", event.cbutton.which); break;
+				}
+				Input::lastInputOfAnyKind = buf;
 				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ((!players[clientnum]->shootmode && players[clientnum]->gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
 				{
 					//Generate a mouse click.
@@ -3068,6 +3099,33 @@ void handleEvents(void)
 					//SDL_PushEvent(&e);
 				}
 				break;
+			}
+			case SDL_CONTROLLERAXISMOTION:
+			{
+				char buf[32];
+				switch (event.caxis.axis) {
+				case SDL_CONTROLLER_AXIS_LEFTX: event.caxis.value < 0 ?
+					snprintf(buf, sizeof(buf), "Pad%dStickLeftX-", event.caxis.which):
+					snprintf(buf, sizeof(buf), "Pad%dStickLeftX+", event.caxis.which);
+					break;
+				case SDL_CONTROLLER_AXIS_LEFTY: event.caxis.value < 0 ?
+					snprintf(buf, sizeof(buf), "Pad%dStickLeftY-", event.caxis.which):
+					snprintf(buf, sizeof(buf), "Pad%dStickLeftY+", event.caxis.which);
+					break;
+				case SDL_CONTROLLER_AXIS_RIGHTX: event.caxis.value < 0 ?
+					snprintf(buf, sizeof(buf), "Pad%dStickRightX-", event.caxis.which):
+					snprintf(buf, sizeof(buf), "Pad%dStickRightX+", event.caxis.which);
+					break;
+				case SDL_CONTROLLER_AXIS_RIGHTY: event.caxis.value < 0 ?
+					snprintf(buf, sizeof(buf), "Pad%dStickRightY-", event.caxis.which):
+					snprintf(buf, sizeof(buf), "Pad%dStickRightY+", event.caxis.which);
+					break;
+				case SDL_CONTROLLER_AXIS_TRIGGERLEFT: snprintf(buf, sizeof(buf), "Pad%dLeftTrigger"); break;
+				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: snprintf(buf, sizeof(buf), "Pad%dRightTrigger"); break;
+				}
+				Input::lastInputOfAnyKind = buf;
+				break;
+			}
 			case SDL_CONTROLLERBUTTONUP: // if joystick button is released
 				//joystatus[event.cbutton.button] = 0; // set this button's index to 0
 				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] )
@@ -3117,6 +3175,7 @@ void handleEvents(void)
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", id);
 						inputs.addControllerIDToNextAvailableInput(id);
+						Input::addGameController(id, controller);
 					}
 					else
 					{
@@ -3139,6 +3198,7 @@ void handleEvents(void)
 				{
 					if ( controller.isActive() && controller.getControllerDevice() == pad )
 					{
+						Input::gameControllers.erase(instanceID);
 						inputs.removeControllerWithDeviceID(controller.getID());
 						printlog("(Device %d removed as game controller, instance id: %d.)\n", controller.getID(), instanceID);
 						controller.close();
@@ -3146,8 +3206,80 @@ void handleEvents(void)
 				}
 				break;
 			}
-			case SDL_JOYHATMOTION:
+			case SDL_JOYDEVICEADDED:
+			{
+				SDL_Joystick* joystick = SDL_JoystickOpen(event.jdevice.which);
+				if (!joystick) {
+					printlog("A joystick was plugged in, but no handle is available!");
+				} else {
+					Input::joysticks.emplace(event.jdevice.which, joystick);
+					printlog("Added joystick '%s' with device index (%d)", SDL_JoystickName(joystick), event.jdevice.which);
+					printlog(" NumAxes: %d", SDL_JoystickNumAxes(joystick));
+					printlog(" NumButtons: %d", SDL_JoystickNumButtons(joystick));
+					printlog(" NumHats: %d", SDL_JoystickNumHats(joystick));
+					for (int c = 0; c < 4; ++c) {
+						Input::inputs[c].refresh();
+					}
+				}
 				break;
+			}
+			case SDL_JOYBUTTONDOWN:
+			{
+				char buf[32];
+				snprintf(buf, sizeof(buf), "Joy%dButton%d", event.jbutton.which, event.jbutton.button);
+				Input::lastInputOfAnyKind = buf;
+				break;
+			}
+			case SDL_JOYAXISMOTION:
+			{
+				char buf[32];
+				if (event.jaxis.value < 0) {
+					snprintf(buf, sizeof(buf), "Joy%dAxis-%d", event.jaxis.which, event.jaxis.axis);
+				} else {
+					snprintf(buf, sizeof(buf), "Joy%dAxis+%d", event.jaxis.which, event.jaxis.axis);
+				}
+				Input::lastInputOfAnyKind = buf;
+				break;
+			}
+			case SDL_JOYHATMOTION:
+			{
+				char buf[32];
+				switch (event.jhat.value) {
+				case SDL_HAT_LEFTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftUp", event.jhat.which, event.jhat.hat); break;
+				case SDL_HAT_UP: snprintf(buf, sizeof(buf), "Joy%dHat%dUp", event.jhat.which, event.jhat.hat); break;
+				case SDL_HAT_RIGHTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dRightUp", event.jhat.which, event.jhat.hat); break;
+				case SDL_HAT_RIGHT: snprintf(buf, sizeof(buf), "Joy%dHat%dRight", event.jhat.which, event.jhat.hat); break;
+				case SDL_HAT_RIGHTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dRightDown", event.jhat.which, event.jhat.hat); break;
+				case SDL_HAT_DOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dDown", event.jhat.which, event.jhat.hat); break;
+				case SDL_HAT_LEFTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftDown", event.jhat.which, event.jhat.hat); break;
+				case SDL_HAT_LEFT: snprintf(buf, sizeof(buf), "Joy%dHat%dLeft", event.jhat.which, event.jhat.hat); break;
+				case SDL_HAT_CENTERED: snprintf(buf, sizeof(buf), "Joy%dHat%dCentered", event.jhat.which, event.jhat.hat); break;
+				}
+				Input::lastInputOfAnyKind = buf;
+				break;
+			}
+			case SDL_JOYDEVICEREMOVED:
+			{
+				SDL_Joystick* joystick = SDL_JoystickFromInstanceID(event.jdevice.which);
+				if (joystick == nullptr) {
+					printlog("A joystick was removed, but I don't know which one!");
+				} else {
+					int index = -1;
+					for (auto& pair : Input::joysticks) {
+						SDL_Joystick* curr = pair.second;
+						if (joystick == curr) {
+							SDL_JoystickClose(curr);
+							index = pair.first;
+							printlog("Removed joystick with device index (%d), instance id (%d)", index, event.jdevice.which);
+							break;
+						}
+					}
+					if (index >= 0) {
+						Input::joysticks.erase(index);
+					}
+				}
+				break;
+			}
 			case SDL_USEREVENT: // if the game timer has elapsed
 				if ( runtimes < 5 )
 				{
@@ -5100,7 +5232,6 @@ int main(int argc, char** argv)
 					}
 					else
 					{
-
 						// draws the menu level "backdrop"
 						drawClearBuffers();
 						if ( movie == false )
@@ -5117,10 +5248,19 @@ int main(int argc, char** argv)
 							list_RemoveNode(light->node);
 						}
 
-						handleMainMenu(intro);
+						if (newui)
+						{
+							doMainMenu();
+						}
+						else
+						{
+							handleMainMenu(intro);
+							UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+						}
 
-						UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+						doFrames();
 
+#ifndef NINTENDO
 						// draw mouse
 						if ( !movie )
 						{
@@ -5136,6 +5276,7 @@ int main(int argc, char** argv)
 								}
 							}
 						}
+#endif
 					}
 				}
 			}
@@ -5493,7 +5634,14 @@ int main(int argc, char** argv)
 				if ( gamePaused )
 				{
 					// handle menu
-					handleMainMenu(intro);
+					if (newui)
+					{
+						doMainMenu();
+					}
+					else
+					{
+						handleMainMenu(intro);
+					}
 				}
 				else
 				{

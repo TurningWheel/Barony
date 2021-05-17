@@ -11,8 +11,10 @@
 Button::Button() {
 	size.x = 0; size.w = 32;
 	size.y = 0; size.h = 32;
-	color = SDL_MapRGBA(mainsurface->format, 127, 127, 127, 255);
-	textColor = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+	color = makeColor(127, 127, 127, 255);
+	textColor = makeColor(255, 255, 255, 255);
+	borderColor = makeColor(63, 63, 63, 255);
+	highlightColor = makeColor(255, 255, 255, 255);
 }
 
 Button::Button(Frame& _parent) : Button() {
@@ -55,24 +57,37 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 		return;
 	}
 
+	bool focused = highlighted || selected;
+
 	{
 		SDL_Rect scaledSize;
 		scaledSize.x = _size.x * (float)xres / (float)Frame::virtualScreenX;
 		scaledSize.y = _size.y * (float)yres / (float)Frame::virtualScreenY;
 		scaledSize.w = _size.w * (float)xres / (float)Frame::virtualScreenX;
 		scaledSize.h = _size.h * (float)yres / (float)Frame::virtualScreenY;
-		SDL_Rect inner;
-		inner.x = (_size.x + border) * (float)xres / (float)Frame::virtualScreenX;
-		inner.y = (_size.y + border) * (float)yres / (float)Frame::virtualScreenY;
-		inner.w = (_size.w - border*2) * (float)xres / (float)Frame::virtualScreenX;
-		inner.h = (_size.h - border*2) * (float)yres / (float)Frame::virtualScreenY;
-		if (pressed) {
-			drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
-			drawRect(&inner, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
+		if (background.empty()) {
+			SDL_Rect inner;
+			inner.x = (_size.x + border) * (float)xres / (float)Frame::virtualScreenX;
+			inner.y = (_size.y + border) * (float)yres / (float)Frame::virtualScreenY;
+			inner.w = (_size.w - border*2) * (float)xres / (float)Frame::virtualScreenX;
+			inner.h = (_size.h - border*2) * (float)yres / (float)Frame::virtualScreenY;
+			if (pressed) {
+				drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
+				drawRect(&inner, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
+			} else {
+				drawRect(&scaledSize, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
+				drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
+			}
 		} else {
-			drawRect(&scaledSize, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
-			drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
-		}
+			if (backgroundHighlighted.empty()) {
+				Image* background_img = Image::get(background.c_str());
+				background_img->drawColor(nullptr, scaledSize, color);
+			} else {
+				const char* img = focused ? backgroundHighlighted.c_str() : background.c_str();
+				Image* background_img = Image::get(img);
+				background_img->drawColor(nullptr, scaledSize, color);
+			}
+		} 
 	}
 
 	SDL_Rect scroll{0, 0, 0, 0};
@@ -117,7 +132,11 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 				scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
 				scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
 				scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
-				_text->drawColor(section, scaledPos, textColor);
+				if (focused) {
+					_text->drawColor(section, scaledPos, highlightColor);
+				} else {
+					_text->drawColor(section, scaledPos, textColor);
+				}
 			}
 		} else if (icon.c_str()) {
 			Image* iconImg = Image::get(icon.c_str());

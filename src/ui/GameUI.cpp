@@ -17,7 +17,7 @@
 #include <assert.h>
 
 static Frame* playerHud[MAXPLAYERS] = { nullptr };
-bool newui = false;
+bool newui = true;
 
 void createIngameHud(int player) {
     char name[32];
