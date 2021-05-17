@@ -13,6 +13,7 @@
 #include "../draw.hpp"
 #include "../engine/audio/sound.hpp"
 
+#include <cassert>
 
 // ALL NEW menu options:
 bool arachnophobia_filter = false;
@@ -838,11 +839,11 @@ void settingsVideo(Button& button) {
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 #ifndef NINTENDO
-	y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", {"1280 x 720", "1920 x 1080"},
-		"Change the current window resolution.",
+	y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
+		{"1280 x 720", "1920 x 1080"},
 		nullptr);
-	y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", {"Fullscreen", "Borderless", "Windowed"},
-		"Change the current display mode.",
+	y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
+		{"Fullscreen", "Borderless", "Windowed"},
 		nullptr);
 	y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 		"Prevent screen-tearing by locking the game's refresh rate to the current display.",

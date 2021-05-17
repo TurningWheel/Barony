@@ -10,6 +10,7 @@
 
 #include <mutex>
 #include <thread>
+#include <cassert>
 
 static std::mutex loading_mutex;
 
