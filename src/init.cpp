@@ -51,11 +51,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#define LOADSTR1 language[741]
-#define LOADSTR2 language[742]
-#define LOADSTR3 language[743]
-#define LOADSTR4 language[744]
-
 #ifdef PANDORA
 // Pandora FBO
 GLuint fbo_fbo = 0;
@@ -100,10 +95,6 @@ int initApp(char const * const title, int fullscreen)
 		ttfTextHash[c].first = NULL;
 		ttfTextHash[c].last = NULL;
 	}
-	map.entities = NULL;
-	map.creatures = nullptr;
-	map.worldUI = nullptr;
-	map.tiles = NULL;
 
 	// init PHYSFS
 #ifndef NINTENDO
@@ -349,9 +340,6 @@ int initApp(char const * const title, int fullscreen)
 #endif
 #endif
 
-	drawClearBuffers();
-	GO_SwapBuffers(screen);
-
 	// load resources
 	printlog("loading engine resources...\n");
 	if ((fancyWindow_bmp = loadImage("images/system/fancyWindow.png")) == NULL)
@@ -374,6 +362,21 @@ int initApp(char const * const title, int fullscreen)
 		printlog("failed to load font16x16.png\n");
 		return 5;
 	}
+	if ((backdrop_loading_bmp = loadImage("images/system/backdrop_loading.png")) == NULL)
+	{
+		return 5;
+	}
+
+	// init new ui engine
+	gui = new Frame("root");
+	SDL_Rect guiRect;
+	guiRect.x = 0;
+	guiRect.y = 0;
+	guiRect.w = Frame::virtualScreenX;
+	guiRect.h = Frame::virtualScreenY;
+	gui->setSize(guiRect);
+	gui->setActualSize(guiRect);
+	gui->setHollow(true);
 
 	// cache language entries
 	bool cacheText = false;
@@ -394,13 +397,7 @@ int initApp(char const * const title, int fullscreen)
 		}
 	}
 
-	// print a loading message
-	drawClearBuffers();
-	int w, h;
-	getSizeOfText(ttf16, LOADSTR1, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR1);
-
-	GO_SwapBuffers(screen);
+	drawLoadingScreen(10);
 
 	// load sprites
 	printlog("loading sprites...\n");
@@ -437,12 +434,7 @@ int initApp(char const * const title, int fullscreen)
 	}
 	FileIO::close(fp);
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, LOADSTR2, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR2);
-
-	GO_SwapBuffers(screen);
+	drawLoadingScreen(20);
 
 	// load models
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
@@ -485,12 +477,8 @@ int initApp(char const * const title, int fullscreen)
 		generatePolyModels(0, nummodels, false);
 	}
 	FileIO::close(fp);
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, LOADSTR3, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR3);
 
-	GO_SwapBuffers(screen);
+	drawLoadingScreen(40);
 
 	// load tiles
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
@@ -556,12 +544,7 @@ int initApp(char const * const title, int fullscreen)
 	}
 	FileIO::close(fp);
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, LOADSTR4, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR4);
-
-	GO_SwapBuffers(screen);
+	drawLoadingScreen(50);
 
 	int soundStatus = loadSoundResources();
 	if ( 0 != soundStatus )
@@ -569,20 +552,7 @@ int initApp(char const * const title, int fullscreen)
 		return soundStatus;
 	}
 
-	// init new ui engine
-#ifndef EDITOR
-	gui = new Frame("root");
-	SDL_Rect guiRect;
-	guiRect.x = 0;
-	guiRect.y = 0;
-	guiRect.w = Frame::virtualScreenX;
-	guiRect.h = Frame::virtualScreenY;
-	gui->setSize(guiRect);
-	gui->setActualSize(guiRect);
-	gui->setHollow(true);
-
 	//createTestUI();
-#endif // ifndef EDITOR
 
 	return 0;
 }
@@ -957,24 +927,6 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 	for ( c = start; c < end; ++c )
 	{
-#ifndef NINTENDO
-		// print a loading message
-		if ( start == 0 && end == nummodels )
-		{
-			char loadText[128];
-			snprintf(loadText, 127, language[745], c, nummodels);
-			if ( c % 50 == 0 )
-			{
-				drawClearBuffers();
-				int w, h;
-				getSizeOfText(ttf16, loadText, &w, &h);
-				ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
-
-				GO_SwapBuffers(screen);
-			}
-		}
-#endif
-
 		numquads = 0;
 		polymodels[c].numfaces = 0;
 		voxel_t* model = models[c];
@@ -1931,8 +1883,15 @@ void generateVBOs(int start, int end)
 	std::unique_ptr<GLuint[]> color_shifted_buffers(new GLuint[count]);
 	SDL_glGenBuffers(count, color_shifted_buffers.get());
 
-	for ( int c = start; c < end; ++c )
+	int lastamount = -1;
+	for ( int numdone = 0, c = start; c < end; ++c, ++numdone )
 	{
+		int amount = ((float)numdone / (float)count) * 10;
+		if (amount != lastamount) {
+			drawLoadingScreen(30 + amount);
+			lastamount = amount;
+		}
+
 		polymodel_t *model = &polymodels[c];
 		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
 		std::unique_ptr<GLfloat[]> colors(new GLfloat[9 * model->numfaces]);
@@ -2021,6 +1980,10 @@ int deinitApp()
 	{
 		SDL_FreeSurface(font16x16_bmp);
 	}
+	if ( backdrop_loading_bmp )
+	{
+		SDL_FreeSurface(backdrop_loading_bmp);
+	}
 	if ( ttf8 )
 	{
 		TTF_CloseFont(ttf8);
@@ -2034,7 +1997,6 @@ int deinitApp()
 		TTF_CloseFont(ttf16);
 	}
 
-#ifndef EDITOR
 	printlog("freeing ui resources...\n");
 	Text::dumpCache();
 	Image::dumpCache();
@@ -2043,7 +2005,6 @@ int deinitApp()
 		delete gui;
 		gui = nullptr;
 	}
-#endif
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )
@@ -2656,8 +2617,8 @@ bool changeVideoMode()
 	int result = initVideo();
 	if ( !result )
 	{
-		xres = 960;
-		yres = 600;
+		xres = 1280;
+		yres = 720;
 		fullscreen = 0;
 		borderless = false;
 		printlog("defaulting to safe video mode...\n");

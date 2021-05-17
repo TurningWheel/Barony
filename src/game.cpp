@@ -2807,38 +2807,39 @@ void handleEvents(void)
 	int j;
 	int runtimes = 0;
 
-	// calculate app rate
-	t = SDL_GetTicks();
-	real_t timesync = t - ot;
-	ot = t;
-
-#ifdef NINTENDO
-	// do timer
-	time_diff += timesync;
-	constexpr real_t frame = (real_t)1000 / (real_t)TICKS_PER_SECOND;
-	while (time_diff >= frame) {
-		time_diff -= frame;
-		timerCallback(0, NULL);
-	}
-#endif // NINTENDO
-
-	// calculate fps
-	if ( timesync != 0 )
+	if (initialized)
 	{
-		frameval[cycles % AVERAGEFRAMES] = 1.0 / timesync;
-	}
-	else
-	{
-		frameval[cycles % AVERAGEFRAMES] = 1.0;
-	}
-	d = frameval[0];
-	for (j = 1; j < AVERAGEFRAMES; j++)
-	{
-		d += frameval[j];
-	}
-	fps = (d / AVERAGEFRAMES) * 1000;
+		// calculate app rate
+		t = SDL_GetTicks();
+		real_t timesync = t - ot;
+		ot = t;
 
-	inputs.updateAllMouse();
+		// do timer
+		time_diff += timesync;
+		constexpr real_t frame = (real_t)1000 / (real_t)TICKS_PER_SECOND;
+		while (time_diff >= frame) {
+			time_diff -= frame;
+			timerCallback(0, NULL);
+		}
+
+		// calculate fps
+		if ( timesync != 0 )
+		{
+			frameval[cycles % AVERAGEFRAMES] = 1.0 / timesync;
+		}
+		else
+		{
+			frameval[cycles % AVERAGEFRAMES] = 1.0;
+		}
+		d = frameval[0];
+		for (j = 1; j < AVERAGEFRAMES; j++)
+		{
+			d += frameval[j];
+		}
+		fps = (d / AVERAGEFRAMES) * 1000;
+
+		inputs.updateAllMouse();
+	}
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events
 	{
@@ -2992,11 +2993,14 @@ void handleEvents(void)
 			case SDL_MOUSEBUTTONUP: // if a mouse button is released...
 				mousestatus[event.button.button] = 0; // set this mouse button to 0
 				buttonclick = 0; // release any buttons that were being held down
-				for ( int i = 0; i < MAXPLAYERS; ++i )
+				if (initialized)
 				{
-					if ( inputs.bPlayerUsingKeyboardControl(i) )
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						gui_clickdrag[i] = false;
+						if ( inputs.bPlayerUsingKeyboardControl(i) )
+						{
+							gui_clickdrag[i] = false;
+						}
 					}
 				}
 				break;
@@ -3030,21 +3034,24 @@ void handleEvents(void)
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 
-				for ( int i = 0; i < MAXPLAYERS; ++i )
+				if (initialized)
 				{
-					if ( inputs.bPlayerUsingKeyboardControl(i) )
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						if ( !inputs.getVirtualMouse(i)->draw_cursor && !inputs.getVirtualMouse(i)->lastMovementFromController )
+						if ( inputs.bPlayerUsingKeyboardControl(i) )
 						{
-							inputs.getVirtualMouse(i)->draw_cursor = true;
+							if ( !inputs.getVirtualMouse(i)->draw_cursor && !inputs.getVirtualMouse(i)->lastMovementFromController )
+							{
+								inputs.getVirtualMouse(i)->draw_cursor = true;
+							}
+							if ( event.user.code == 0 ) 
+							{
+								// we use SDL_pushEvent() to push a event.user.code == 1 on a gamepad manipulating a mouse event
+								// default 0 for normal mouse events
+								inputs.getVirtualMouse(i)->lastMovementFromController = false;
+							}
+							break;
 						}
-						if ( event.user.code == 0 ) 
-						{
-							// we use SDL_pushEvent() to push a event.user.code == 1 on a gamepad manipulating a mouse event
-							// default 0 for normal mouse events
-							inputs.getVirtualMouse(i)->lastMovementFromController = false;
-						}
-						break;
 					}
 				}
 				break;
@@ -3154,13 +3161,16 @@ void handleEvents(void)
 					gameLogic();
 					mousexrel = 0;
 					mouseyrel = 0;
-					inputs.updateAllRelMouse();
-					for ( int i = 0; i < MAXPLAYERS; ++i )
+					if (initialized)
 					{
-						if ( inputs.hasController(i) )
+						inputs.updateAllRelMouse();
+						for ( int i = 0; i < MAXPLAYERS; ++i )
 						{
-							inputs.getController(i)->handleRumble();
-							inputs.getController(i)->updateButtonsReleased();
+							if ( inputs.hasController(i) )
+							{
+								inputs.getController(i)->handleRumble();
+								inputs.getController(i)->updateButtonsReleased();
+							}
 						}
 					}
 				}
@@ -3325,7 +3335,9 @@ void handleEvents(void)
 		omousex = mousex;
 		omousey = mousey;
 	}
-
+	if (!initialized) {
+		return;
+	}
 	inputs.updateAllOMouse();
 	for ( auto& controller : game_controllers )
 	{
@@ -4657,6 +4669,18 @@ int main(int argc, char** argv)
 			loadDefaultConfig();
 		}
 
+		// initialize map
+		map.tiles = nullptr;
+		map.entities = (list_t*) malloc(sizeof(list_t));
+		map.entities->first = nullptr;
+		map.entities->last = nullptr;
+		map.creatures = new list_t;
+		map.creatures->first = nullptr;
+		map.creatures->last = nullptr;
+		map.worldUI = new list_t;
+		map.worldUI->first = nullptr;
+		map.worldUI->last = nullptr;
+
 		// initialize engine
 		if ( (c = initApp("Barony", fullscreen)) )
 		{
@@ -4717,25 +4741,10 @@ int main(int argc, char** argv)
 		}
 		initialized = true;
 
-		// initialize map
-		map.tiles = nullptr;
-		map.entities = (list_t*) malloc(sizeof(list_t));
-		map.entities->first = nullptr;
-		map.entities->last = nullptr;
-		map.creatures = new list_t;
-		map.creatures->first = nullptr;
-		map.creatures->last = nullptr;
-		map.worldUI = new list_t;
-		map.worldUI->first = nullptr;
-		map.worldUI->last = nullptr;
-
 		// initialize player conducts
 		setDefaultPlayerConducts();
 
-		// instantiate a timer
-#ifndef NINTENDO
-		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
-#endif // NINTENDO
+		// seed random generators
 		srand(time(NULL));
 		fountainSeed.seed(rand());
 

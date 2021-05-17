@@ -594,9 +594,6 @@ extern int minimapScale;
 extern int minimapObjectZoom;
 extern int minimapScaleQuickToggle;
 extern bool softwaremode;
-#ifndef NINTENDO
- extern SDL_TimerID timer;
-#endif // NINTENDO
 extern real_t* zbuffer;
 extern Sint32* lightmap;
 extern Sint32* lightmapSmoothed;
@@ -663,6 +660,7 @@ extern SDL_Surface* font8x8_bmp;
 extern SDL_Surface* font12x12_bmp;
 extern SDL_Surface* font16x16_bmp;
 extern SDL_Surface* fancyWindow_bmp;
+extern SDL_Surface* backdrop_loading_bmp;
 extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
 extern std::unordered_map<std::string, SDL_Surface*> achievementImages;

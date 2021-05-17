@@ -15,8 +15,8 @@
 #include "prng.hpp"
 
 // main definitions
-Sint32 xres = 960;
-Sint32 yres = 600;
+Sint32 xres = 1280;
+Sint32 yres = 720;
 int mainloop = 1;
 bool initialized = false;
 Uint32 ticks = 0;
@@ -195,9 +195,6 @@ std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 bool receivedclientnum = false;
 char const * window_title = nullptr;
 bool softwaremode = false;
-#ifndef NINTENDO
- SDL_TimerID timer;
-#endif // NINTENDO
 SDL_Window* screen = nullptr;
 #ifdef APPLE
 SDL_Renderer* renderer = nullptr;
@@ -328,6 +325,7 @@ SDL_Surface* font8x8_bmp = nullptr;
 SDL_Surface* font12x12_bmp = nullptr;
 SDL_Surface* font16x16_bmp = nullptr;
 SDL_Surface* fancyWindow_bmp = nullptr;
+SDL_Surface* backdrop_loading_bmp = nullptr;
 SDL_Surface** sprites = nullptr;
 SDL_Surface** tiles = nullptr;
 std::unordered_map<std::string, SDL_Surface*> achievementImages;

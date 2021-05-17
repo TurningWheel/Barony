@@ -1077,8 +1077,10 @@ int saveConfig(char const * const _filename)
 
 	// write contents of config
 	fp->printf("/lang %s\n", languageCode);
+#ifndef NINTENDO
 	fp->printf("/res %dx%d\n", xres, yres);
 	fp->printf("/gamma %3.3f\n", vidgamma);
+#endif
 	fp->printf("/fov %d\n", fov);
 	fp->printf("/fps %d\n", fpsLimit);
 	fp->printf("/svflags %d\n", svFlags);
@@ -1090,6 +1092,7 @@ int saveConfig(char const * const _filename)
 	{
 		fp->printf("/smoothlighting\n");
 	}
+#ifndef NINTENDO
 	if ( fullscreen )
 	{
 		fp->printf("/fullscreen\n");
@@ -1098,6 +1101,7 @@ int saveConfig(char const * const _filename)
 	{
 		fp->printf("/borderless\n");
 	}
+#endif
 	if ( shaking )
 	{
 		fp->printf("/shaking\n");
@@ -1147,10 +1151,12 @@ int saveConfig(char const * const _filename)
 	{
 		fp->printf("/nolightflicker\n");
 	}
+#ifndef NINTENDO
 	if ( verticalSync )
 	{
 		fp->printf("/vsync\n");
 	}
+#endif
 	if ( !showStatusEffectIcons )
 	{
 		fp->printf("/hidestatusicons\n");

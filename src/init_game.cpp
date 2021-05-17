@@ -43,11 +43,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#define _LOADSTR1 language[746]
-#define _LOADSTR2 language[747]
-#define _LOADSTR3 language[748]
-#define _LOADSTR4 language[749]
-
 int initGame()
 {
 	int c, x;
@@ -79,13 +74,7 @@ int initGame()
  #endif //USE_EOS
 #endif
 
-	// print a loading message
-	drawClearBuffers();
-	int w, h;
-	getSizeOfText(ttf16, _LOADSTR1, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR1);
-
-	GO_SwapBuffers(screen);
+	drawLoadingScreen(60);
 
 	initGameControllers();
 
@@ -158,12 +147,7 @@ int initGame()
 		FileIO::close(fp);
 	}
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, _LOADSTR2, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR2);
-
-	GO_SwapBuffers(screen);
+	drawLoadingScreen(70);
 
 	int newItems = 0;
 
@@ -392,12 +376,7 @@ int initGame()
  #endif // !NINTENDO
 #endif
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, _LOADSTR3, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR3);
-
-	GO_SwapBuffers(screen);
+	drawLoadingScreen(80);
 
 #ifdef USE_FMOD
 	music_group->setVolume(musvolume / 128.f);
@@ -478,12 +457,7 @@ int initGame()
 		printlog("WARN: loadMusic() from initGame() failed!");
 	}
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, _LOADSTR4, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR4);
-
-	GO_SwapBuffers(screen);
+	drawLoadingScreen(90);
 
 	// load extraneous game resources
 	title_bmp = loadImage("images/system/title.png");
