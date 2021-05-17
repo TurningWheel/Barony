@@ -316,7 +316,11 @@ int* palette;
 
 // video definitions
 polymodel_t* polymodels = nullptr;
+#ifndef NINTENDO
 bool useModelCache = false;
+#else
+bool useModelCache = true;
+#endif
 list_t ttfTextHash[HASH_SIZE];
 TTF_Font* ttf8 = nullptr;
 TTF_Font* ttf12 = nullptr;

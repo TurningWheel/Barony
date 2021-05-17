@@ -1941,6 +1941,7 @@ void handleMainMenu(bool mode)
 
 						physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 						generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+						generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 						gamemods_modelsListLastStartedUnmodded = true;
 					}
 					if ( reloadSounds )
@@ -16932,6 +16933,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 			GO_SwapBuffers(screen);
 			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+			generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 		}
 		gamemods_modelsListRequiresReload = false;
 	}

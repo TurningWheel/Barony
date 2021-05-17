@@ -2807,8 +2807,6 @@ void handleEvents(void)
 	int j;
 	int runtimes = 0;
 
-	if (initialized)
-	{
 		// calculate app rate
 		t = SDL_GetTicks();
 		real_t timesync = t - ot;
@@ -2838,6 +2836,7 @@ void handleEvents(void)
 		}
 		fps = (d / AVERAGEFRAMES) * 1000;
 
+	if (initialized) {
 		inputs.updateAllMouse();
 	}
 
@@ -3158,7 +3157,10 @@ void handleEvents(void)
 						sound_update(); //Update FMOD and whatnot.
 #endif
 					}
-					gameLogic();
+					if (initialized)
+					{
+						gameLogic();
+					}
 					mousexrel = 0;
 					mouseyrel = 0;
 					if (initialized)
@@ -3176,7 +3178,7 @@ void handleEvents(void)
 				}
 				else
 				{
-					printlog("overloaded timer! %d", runtimes);
+					//printlog("overloaded timer! %d", runtimes);
 				}
 				++runtimes;
 				break;

@@ -15,7 +15,6 @@
 #define FLIP_VERTICAL 1
 #define FLIP_HORIZONTAL 2
 SDL_Surface* flipSurface(SDL_Surface* surface, int flags);
-void drawLoadingScreen(real_t progress);
 void drawCircle(int x, int y, real_t radius, Uint32 color, Uint8 alpha);
 void drawArc(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha);
 void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha);

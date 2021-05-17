@@ -2856,36 +2856,3 @@ void drawTooltip(SDL_Rect* src, Uint32 optionalColor)
 Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 	return SDL_MapRGBA(mainsurface->format, r, g, b, a);
 }
-
-void drawLoadingScreen(real_t progress) {
-	handleEvents();
-	auto loading_frame = gui->addFrame("loading_screen");
-	loading_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-	loading_frame->setActualSize(SDL_Rect{0, 0, loading_frame->getSize().w, loading_frame->getSize().h});
-	loading_frame->setHollow(true);
-	loading_frame->setBorder(0);
-	auto backdrop = loading_frame->addImage(
-		SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY},
-		0xffffffff,
-		"images/system/backdrop_loading.png",
-		"backdrop"
-	);
-	auto progress_background = loading_frame->addImage(
-		SDL_Rect{10, Frame::virtualScreenY - 60, Frame::virtualScreenX - 20, 50},
-		0x880000ff,
-		"images/system/white.png",
-		"progress_background"
-	);
-	if (progress) {
-		auto progress_filled = loading_frame->addImage(
-			SDL_Rect{10, Frame::virtualScreenY - 60, (int)((Frame::virtualScreenX - 20) * progress / 100.0), 50},
-			0xff0000ff,
-			"images/system/white.png",
-			"progress_filled"
-		);
-	}
-	drawClearBuffers();
-	gui->draw();
-	GO_SwapBuffers(screen);
-	loading_frame->removeSelf();
-}
