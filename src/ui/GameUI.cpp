@@ -17,7 +17,7 @@
 #include <assert.h>
 
 static Frame* playerHud[MAXPLAYERS] = { nullptr };
-bool newui = false;
+bool newui = true;
 
 void createIngameHud(int player) {
     char name[32];
@@ -36,13 +36,8 @@ void createIngameHud(int player) {
         playercount = 1;
     }
 
-#ifdef NINTENDO
-    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
-    static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
-#else
     static const char* bigfont = "fonts/pixelmix.ttf#18";
     static const char* smallfont = "fonts/pixel_maz.ttf#32";
-#endif // NINTENDO
 
     // big empty frame to serve as the root
     if (playercount == 1) {
@@ -369,13 +364,8 @@ void newIngameHud() {
 
 void doNewCharacterSheet(int player)
 {
-#ifdef NINTENDO
-    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
-    static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
-#else // NINTENDO
     static const char* bigfont = "fonts/pixelmix.ttf#18";
     static const char* smallfont = "fonts/pixel_maz.ttf#32";
-#endif // NINTENDO
 
     Frame* frame = gui->findFrame("Character sheet");
     if (!frame) {
@@ -424,13 +414,15 @@ void doNewCharacterSheet(int player)
     }
 }
 
+static Uint32 gui_ticks = 0u;
 void doFrames() {
     if ( gui ) 
     {
-        Frame::result_t gui_result = gui->process();
-        gui->draw();
-        if ( !gui_result.usable ) {
-            return;
+        if (gui_ticks < ticks)
+        {
+            (void)gui->process();
+            ++gui_ticks;
         }
+        gui->draw();
     }
 }

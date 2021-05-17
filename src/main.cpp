@@ -15,8 +15,8 @@
 #include "prng.hpp"
 
 // main definitions
-Sint32 xres = 960;
-Sint32 yres = 600;
+Sint32 xres = 1280;
+Sint32 yres = 720;
 int mainloop = 1;
 bool initialized = false;
 Uint32 ticks = 0;
@@ -195,11 +195,6 @@ std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 bool receivedclientnum = false;
 char const * window_title = nullptr;
 bool softwaremode = false;
-#ifdef NINTENDO
- std::chrono::time_point<std::chrono::steady_clock> lastTick;
-#else
- SDL_TimerID timer;
-#endif // NINTENDO
 SDL_Window* screen = nullptr;
 #ifdef APPLE
 SDL_Renderer* renderer = nullptr;
@@ -224,9 +219,9 @@ list_t entitiesdeleted;
 
 // fps
 bool showfps = false;
+real_t time_diff = 0.0;
 real_t t, ot = 0.0, frameval[AVERAGEFRAMES];
 Uint32 cycles = 0, pingtime = 0;
-Uint32 timesync = 0;
 real_t fps = 0.0;
 
 // world sim data
@@ -322,7 +317,11 @@ int* palette;
 
 // video definitions
 polymodel_t* polymodels = nullptr;
+#ifndef NINTENDO
 bool useModelCache = false;
+#else
+bool useModelCache = true;
+#endif
 list_t ttfTextHash[HASH_SIZE];
 TTF_Font* ttf8 = nullptr;
 TTF_Font* ttf12 = nullptr;
@@ -331,6 +330,7 @@ SDL_Surface* font8x8_bmp = nullptr;
 SDL_Surface* font12x12_bmp = nullptr;
 SDL_Surface* font16x16_bmp = nullptr;
 SDL_Surface* fancyWindow_bmp = nullptr;
+SDL_Surface* backdrop_loading_bmp = nullptr;
 SDL_Surface** sprites = nullptr;
 SDL_Surface** tiles = nullptr;
 std::unordered_map<std::string, SDL_Surface*> achievementImages;

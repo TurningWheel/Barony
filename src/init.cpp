@@ -41,6 +41,10 @@
 #include "ui/Image.hpp"
 #include "ui/Frame.hpp"
 #include "ui/Button.hpp"
+#include "ui/LoadingScreen.hpp"
+
+#include <future>
+#include <chrono>
 
 
 /*-------------------------------------------------------------------------------
@@ -50,11 +54,6 @@
 	initializes all the application variables and starts the engine
 
 -------------------------------------------------------------------------------*/
-
-#define LOADSTR1 language[741]
-#define LOADSTR2 language[742]
-#define LOADSTR3 language[743]
-#define LOADSTR4 language[744]
 
 #ifdef PANDORA
 // Pandora FBO
@@ -100,10 +99,6 @@ int initApp(char const * const title, int fullscreen)
 		ttfTextHash[c].first = NULL;
 		ttfTextHash[c].last = NULL;
 	}
-	map.entities = NULL;
-	map.creatures = nullptr;
-	map.worldUI = nullptr;
-	map.tiles = NULL;
 
 	// init PHYSFS
 #ifndef NINTENDO
@@ -349,9 +344,6 @@ int initApp(char const * const title, int fullscreen)
 #endif
 #endif
 
-	drawClearBuffers();
-	GO_SwapBuffers(screen);
-
 	// load resources
 	printlog("loading engine resources...\n");
 	if ((fancyWindow_bmp = loadImage("images/system/fancyWindow.png")) == NULL)
@@ -374,6 +366,21 @@ int initApp(char const * const title, int fullscreen)
 		printlog("failed to load font16x16.png\n");
 		return 5;
 	}
+	if ((backdrop_loading_bmp = loadImage("images/system/backdrop_loading.png")) == NULL)
+	{
+		return 5;
+	}
+
+	// init new ui engine
+	gui = new Frame("root");
+	SDL_Rect guiRect;
+	guiRect.x = 0;
+	guiRect.y = 0;
+	guiRect.w = Frame::virtualScreenX;
+	guiRect.h = Frame::virtualScreenY;
+	gui->setSize(guiRect);
+	gui->setActualSize(guiRect);
+	gui->setHollow(true);
 
 	// cache language entries
 	bool cacheText = false;
@@ -394,13 +401,8 @@ int initApp(char const * const title, int fullscreen)
 		}
 	}
 
-	// print a loading message
-	drawClearBuffers();
-	int w, h;
-	getSizeOfText(ttf16, LOADSTR1, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR1);
-
-	GO_SwapBuffers(screen);
+	createLoadingScreen(10);
+	doLoadingScreen();
 
 	// load sprites
 	printlog("loading sprites...\n");
@@ -408,9 +410,9 @@ int initApp(char const * const title, int fullscreen)
 	for ( numsprites = 0; !fp->eof(); numsprites++ )
 	{
 		while ( fp->getc() != '\n' ) if ( fp->eof() )
-			{
-				break;
-			}
+		{
+			break;
+		}
 	}
 	FileIO::close(fp);
 	if ( numsprites == 0 )
@@ -420,8 +422,9 @@ int initApp(char const * const title, int fullscreen)
 	}
 	sprites = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numsprites);
 	fp = openDataFile("images/sprites.txt", "r");
-	for ( c = 0; !fp->eof(); c++ )
+	for ( int c = 0; !fp->eof(); c++ )
 	{
+		char name[128];
 		fp->gets2(name, 128);
 		sprites[c] = loadImage(name);
 		if ( sprites[c] == NULL )
@@ -437,73 +440,23 @@ int initApp(char const * const title, int fullscreen)
 	}
 	FileIO::close(fp);
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, LOADSTR2, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR2);
-
-	GO_SwapBuffers(screen);
-
-	// load models
-	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-	printlog("loading models from directory %s...\n", modelsDirectory.c_str());
-
-	fp = openDataFile(modelsDirectory.c_str(), "r");
-	for ( nummodels = 0; !fp->eof(); nummodels++ )
-	{
-		while ( fp->getc() != '\n' ) if ( fp->eof() )
-			{
-				break;
-			}
-	}
-	FileIO::close(fp);
-	if ( nummodels == 0 )
-	{
-		printlog("failed to identify any models in models.txt\n");
-		return 11;
-	}
-	models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
-	fp = openDataFile(modelsDirectory.c_str(), "r");
-	for ( c = 0; !fp->eof(); c++ )
-	{
-		fp->gets2(name, 128);
-		models[c] = loadVoxel(name);
-		if ( models[c] == NULL )
-		{
-			printlog("warning: failed to load '%s' listed at line %d in models.txt\n", name, c + 1);
-			if ( c == 0 )
-			{
-				printlog("model 0 cannot be NULL!\n");
-				FileIO::close(fp);
-				return 12;
-			}
-		}
-	}
-	if ( !softwaremode )
-	{
-		generatePolyModels(0, nummodels, false);
-	}
-	FileIO::close(fp);
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, LOADSTR3, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR3);
-
-	GO_SwapBuffers(screen);
+	updateLoadingScreen(15);
+	doLoadingScreen();
 
 	// load tiles
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	printlog("loading tiles from directory %s...\n", tilesDirectory.c_str());
-
 	fp = openDataFile(tilesDirectory.c_str(), "r");
 	for ( numtiles = 0; !fp->eof(); numtiles++ )
 	{
-		while ( fp->getc() != '\n' ) if ( fp->eof() )
+		while ( fp->getc() != '\n' )
+		{
+			if ( fp->eof() )
 			{
 				break;
 			}
+		}
 	}
 	FileIO::close(fp);
 	if ( numtiles == 0 )
@@ -516,8 +469,9 @@ int initApp(char const * const title, int fullscreen)
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
 	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
 	fp = openDataFile(tilesDirectory.c_str(), "r");
-	for ( c = 0; !fp->eof(); c++ )
+	for ( int c = 0; !fp->eof(); c++ )
 	{
+		char name[128];
 		fp->gets2(name, 128);
 		tiles[c] = loadImage(name);
 		animatedtiles[c] = false;
@@ -525,7 +479,7 @@ int initApp(char const * const title, int fullscreen)
 		swimmingtiles[c] = false;
 		if ( tiles[c] != NULL )
 		{
-			for (x = 0; x < strlen(name); x++)
+			for (int x = 0; x < strlen(name); x++)
 			{
 				if ( name[x] >= '0' && name[x] <= '9' )
 				{
@@ -556,35 +510,87 @@ int initApp(char const * const title, int fullscreen)
 	}
 	FileIO::close(fp);
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, LOADSTR4, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR4);
+	// asynchronous loading tasks
+	std::atomic_bool loading_done {false};
+	auto loading_task = std::async(std::launch::async, [&loading_done](){
+		File* fp;
 
-	GO_SwapBuffers(screen);
+		updateLoadingScreen(20);
 
-	int soundStatus = loadSoundResources();
-	if ( 0 != soundStatus )
+		// load models
+		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+		printlog("loading models from directory %s...\n", modelsDirectory.c_str());
+
+		fp = openDataFile(modelsDirectory.c_str(), "r");
+		for ( nummodels = 0; !fp->eof(); nummodels++ )
+		{
+			while ( fp->getc() != '\n' ) if ( fp->eof() )
+				{
+					break;
+				}
+		}
+		FileIO::close(fp);
+		if ( nummodels == 0 )
+		{
+			printlog("failed to identify any models in models.txt\n");
+			loading_done = true;
+			return 11;
+		}
+		models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
+		fp = openDataFile(modelsDirectory.c_str(), "r");
+		for ( int c = 0; !fp->eof(); c++ )
+		{
+			char name[128];
+			fp->gets2(name, 128);
+			models[c] = loadVoxel(name);
+			if ( models[c] == NULL )
+			{
+				printlog("warning: failed to load '%s' listed at line %d in models.txt\n", name, c + 1);
+				if ( c == 0 )
+				{
+					printlog("model 0 cannot be NULL!\n");
+					FileIO::close(fp);
+					loading_done = true;
+					return 12;
+				}
+			}
+		}
+		updateLoadingScreen(30);
+		if ( !softwaremode )
+		{
+			generatePolyModels(0, nummodels, false);
+		}
+		FileIO::close(fp);
+		updateLoadingScreen(60);
+
+		// TODO this function now needs to call updateLoadingScreen() as well.
+		int soundStatus = loadSoundResources();
+		if ( 0 != soundStatus )
+		{
+			return soundStatus;
+		}
+
+		updateLoadingScreen(90);
+		loading_done = true;
+		return 0;
+	});
+	while (!loading_done)
 	{
-		return soundStatus;
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+	destroyLoadingScreen();
+
+	int result = loading_task.get();
+	if (result == 0)
+	{
+		generateVBOs(0, nummodels);
 	}
 
-	// init new ui engine
-#ifndef EDITOR
-	gui = new Frame("root");
-	SDL_Rect guiRect;
-	guiRect.x = 0;
-	guiRect.y = 0;
-	guiRect.w = Frame::virtualScreenX;
-	guiRect.h = Frame::virtualScreenY;
-	gui->setSize(guiRect);
-	gui->setActualSize(guiRect);
-	gui->setHollow(true);
-
 	//createTestUI();
-#endif // ifndef EDITOR
 
-	return 0;
+	return result;
 }
 
 /*-------------------------------------------------------------------------------
@@ -912,7 +918,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		if ( useModelCache )
 		{
 			model_cache = openDataFile("models.cache", "rb");
-			if ( model_cache ) //TODO: Needs updating to the new File I/O stuff.
+			if ( model_cache )
 			{
 				char polymodelsVersionStr[7] = "v0.0.0";
 				char modelsCacheHeader[7] = "000000";
@@ -939,43 +945,26 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 				if ( !forceCacheRebuild )
 				{
 					for (size_t model_index = 0; model_index < nummodels; model_index++) {
+						updateLoadingScreen(30 + ((real_t)model_index / nummodels) * 30.0);
 						polymodel_t *cur = &polymodels[model_index];
 						model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
 						cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
 						model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
 					}
 					FileIO::close(model_cache);
-					return generateVBOs(start, end);
 				}
 				else
 				{
 					FileIO::close(model_cache);
 				}
 			}
+			return;
 		}
 	}
 
 	for ( c = start; c < end; ++c )
 	{
-		char loadText[128];
-		snprintf(loadText, 127, language[745], c, nummodels);
-
-#ifndef NINTENDO
-		// print a loading message
-		if ( start == 0 && end == nummodels )
-		{
-			if ( c % 50 == 0 )
-			{
-				drawClearBuffers();
-				int w, h;
-				getSizeOfText(ttf16, loadText, &w, &h);
-				ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
-
-				GO_SwapBuffers(screen);
-			}
-		}
-#endif
-
+		updateLoadingScreen(30 + ((real_t)(c - start) / (end - start)) * 30.0);
 		numquads = 0;
 		polymodels[c].numfaces = 0;
 		voxel_t* model = models[c];
@@ -1887,6 +1876,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		// free up quads for the next model
 		list_FreeAll(&quads);
 	}
+#ifndef NINTENDO
 	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) 
 	{
 		char modelCacheHeader[32] = "BARONY";
@@ -1900,12 +1890,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		}
 		FileIO::close(model_cache);
 	}
-
-	// now store models into VBOs
-	if ( !disablevbos )
-	{
-		generateVBOs(start, end);
-	}
+#endif
 }
 
 /*-------------------------------------------------------------------------------
@@ -1995,13 +1980,6 @@ int deinitApp()
 #endif
 	// close engine
 	printlog("closing engine...\n");
-	printlog("removing engine timer...\n");
-#ifndef NINTENDO
-	if ( timer )
-	{
-		SDL_RemoveTimer(timer);
-	}
-#endif // !NINTENDO
 
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);
@@ -2022,6 +2000,10 @@ int deinitApp()
 	{
 		SDL_FreeSurface(font16x16_bmp);
 	}
+	if ( backdrop_loading_bmp )
+	{
+		SDL_FreeSurface(backdrop_loading_bmp);
+	}
 	if ( ttf8 )
 	{
 		TTF_CloseFont(ttf8);
@@ -2035,7 +2017,6 @@ int deinitApp()
 		TTF_CloseFont(ttf16);
 	}
 
-#ifndef EDITOR
 	printlog("freeing ui resources...\n");
 	Text::dumpCache();
 	Image::dumpCache();
@@ -2044,7 +2025,6 @@ int deinitApp()
 		delete gui;
 		gui = nullptr;
 	}
-#endif
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )
@@ -2568,7 +2548,7 @@ bool initVideo()
 #endif
 #ifdef NINTENDO
 		initNxGL();
-#endif // NINTENDO
+#endif
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_CULL_FACE);
@@ -2657,8 +2637,8 @@ bool changeVideoMode()
 	int result = initVideo();
 	if ( !result )
 	{
-		xres = 960;
-		yres = 600;
+		xres = 1280;
+		yres = 720;
 		fullscreen = 0;
 		borderless = false;
 		printlog("defaulting to safe video mode...\n");

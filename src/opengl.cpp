@@ -14,6 +14,7 @@
 #include "entity.hpp"
 #include "files.hpp"
 #include "items.hpp"
+#include "ui/Text.hpp"
 
 #ifdef WINDOWS
 PFNGLGENBUFFERSPROC SDL_glGenBuffers;
@@ -1045,61 +1046,14 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
 {
-	//int x, y;
-	real_t s = 1;
-	SDL_Surface* image = sprites[0];
-	GLuint textureId = texid[sprites[0]->refcount];
-	char textToRetrieve[128];
-
-	if ( text.compare("") == 0 )
+	if ( text.empty() == true )
 	{
 		return;
 	}
 
-	// strncpy() does not copy N bytes if a terminating null is encountered first
-	// see http://www.cplusplus.com/reference/cstring/strncpy/
-	// see https://en.cppreference.com/w/c/string/byte/strncpy
-	// GCC throws a warning (intended) when the length argument to strncpy()
-	// in any way depends on strlen(src) to discourage this (and related) construct(s).
-	strncpy(textToRetrieve, text.c_str(), 22);
-	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 22)] = '\0';
-	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
-	{
-		textureId = texid[image->refcount];
-	}
-	else
-	{
-		// create the text outline surface
-		TTF_SetFontOutline(ttf12, 2);
-		SDL_Color sdlColorBlack = { 0, 0, 0, 255 };
-		image = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorBlack);
+	auto rendered_text = Text::get(text.c_str(), "fonts/pixelmix.ttf#30#2");
+	auto textureId = rendered_text->getTexID();
 
-		// create the text surface
-		TTF_SetFontOutline(ttf12, 0);
-		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
-		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorWhite);
-
-		// combine the surfaces
-		SDL_Rect pos;
-		pos.x = 2;
-		pos.y = 2;
-		pos.h = 0;
-		pos.w = 0;
-
-		SDL_BlitSurface(textSurf, NULL, image, &pos);
-		SDL_FreeSurface(textSurf); //TODO: Why is this throwing a heap exception on NX?
-		// load the text outline surface as a GL texture
-		allsurfaces[imgref] = image;
-		allsurfaces[imgref]->refcount = imgref;
-		glLoadTexture(allsurfaces[imgref], imgref);
-		imgref++;
-		// store the surface in the text surface cache
-		if ( !ttfTextHashStore(ttfTextHash, textToRetrieve, ttf12, true, image) )
-		{
-			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
-		}
-		textureId = texid[image->refcount];
-	}
 	// setup projection
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -1120,7 +1074,6 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	{
 		glRotatef(90, 0, 1, 0);
 	}
-
 
 	// setup model matrix
 	glMatrixMode(GL_MODELVIEW);
@@ -1166,6 +1119,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	}
 
 	// get shade factor
+	real_t s;
 	if ( mode == REALCOLORS )
 	{
 		if ( !entity->flags[BRIGHT] )
@@ -1192,15 +1146,17 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	}
 
 	// draw quad
+	auto w = rendered_text->getWidth();
+	auto h = rendered_text->getHeight();
 	glBegin(GL_QUADS);
 	glTexCoord2f(0, 0);
-	glVertex3f(0, image->h / 2, image->w / 2);
+	glVertex3f(0, h / 2, w / 2);
 	glTexCoord2f(0, 1);
-	glVertex3f(0, -image->h / 2, image->w / 2);
+	glVertex3f(0, -h / 2, w / 2);
 	glTexCoord2f(1, 1);
-	glVertex3f(0, -image->h / 2, -image->w / 2);
+	glVertex3f(0, -h / 2, -w / 2);
 	glTexCoord2f(1, 0);
-	glVertex3f(0, image->h / 2, -image->w / 2);
+	glVertex3f(0, h / 2, -w / 2);
 	glEnd();
 	glDepthRange(0, 1);
 	glPopMatrix();

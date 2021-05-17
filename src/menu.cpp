@@ -48,6 +48,9 @@
 #include "lobbies.hpp"
 #include <sstream>
 
+#include "ui/Text.hpp"
+#include "ui/Font.hpp"
+
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
 void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
@@ -253,7 +256,7 @@ int rebindkey = -1;
 int rebindaction = -1;
 
 Sint32 gearrot = 0;
-Sint32 gearsize = 5000;
+Sint32 gearsize = 20000;
 Uint16 logoalpha = 0;
 int credittime = 0;
 int creditstage = 0;
@@ -1614,6 +1617,33 @@ void handleMainMenu(bool mode)
 		{
 			drawImageScaled(title_bmp, nullptr, &src);
 		}
+
+		const bool i_want_to_test_sdl_ttf = false;
+		if (i_want_to_test_sdl_ttf) {
+			const char* font = Font::defaultFont;
+			Text* text = Text::get("This. Is. For. BARONY!!", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{100, yres - 100, 0, 0}, 0xFF00FFFF);
+
+			font = "lang/en.ttf#32";
+			text = Text::get("Will the real Baron Herx PLEASE stand up!", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{300, 32, 0, 0}, 0xFFFF00FF);
+
+			int text_y = 300;
+			font = "lang/en.ttf#92";
+			text = Text::get("SDL_TTF SPONSORED BY me.", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{32, text_y, 0, 0}, 0xFFFF00FF);
+
+			text_y += text->getHeight() + 4;
+			font = "lang/en.ttf#92";
+			text = Text::get("ALL HAIL POTATO KING", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{32, text_y, 0, 0}, 0xFFEF23FF);
+
+			text_y += text->getHeight();
+			font = "lang/en.ttf#22";
+			text = Text::get("run the gauntlet f00lz!!1!", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{100, text_y, 0, 0}, 0xFFEF23FF);
+		}
+
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
@@ -1941,6 +1971,7 @@ void handleMainMenu(bool mode)
 
 						physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 						generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+						generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 						gamemods_modelsListLastStartedUnmodded = true;
 					}
 					if ( reloadSounds )
@@ -11040,8 +11071,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
-		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( firstendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (firstendmovietime >= 120 && firstendmoviestage == 1) )
@@ -11118,8 +11149,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
-		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( secondendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (secondendmovietime >= 120 && secondendmoviestage == 1) )
@@ -11210,9 +11241,9 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
 		drawRect(&pos, 0, 255);
-		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( thirdendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (thirdendmovietime >= 120 && thirdendmoviestage == 1) )
@@ -11508,9 +11539,9 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
 		drawRect(&pos, 0, 255);
-		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 120 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 1) )
@@ -16932,6 +16963,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 			GO_SwapBuffers(screen);
 			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+			generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 		}
 		gamemods_modelsListRequiresReload = false;
 	}

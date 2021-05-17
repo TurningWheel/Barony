@@ -16,10 +16,13 @@
 #include "entity.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "ui/Frame.hpp"
 #ifndef NINTENDO
 #include "editor.hpp"
 #endif
 #include "items.hpp"
+
+#include "ui/Image.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -175,9 +178,9 @@ SDL_Surface* flipSurface( SDL_Surface* surface, int flags )
 
 /*-------------------------------------------------------------------------------
 
-	drawCircle
+drawCircle
 
-	draws a circle in either an opengl or SDL context
+draws a circle in either an opengl or SDL context
 
 -------------------------------------------------------------------------------*/
 
@@ -196,8 +199,6 @@ void drawCircle( int x, int y, real_t radius, Uint32 color, Uint8 alpha )
 
 void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha )
 {
-	int c;
-
 	// update projection
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
@@ -208,26 +209,75 @@ void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_BLEND);
 
-	// set line width
+	// set color
+	glColor4f(
+		((Uint8)(color >> mainsurface->format->Rshift)) / 255.f,
+		((Uint8)(color >> mainsurface->format->Gshift)) / 255.f,
+		((Uint8)(color >> mainsurface->format->Bshift)) / 255.f,
+		alpha / 255.f
+	);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// draw arc
 	GLint lineWidth;
 	glGetIntegerv(GL_LINE_WIDTH, &lineWidth);
 	glLineWidth(2);
-
-	// draw line
-	glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, alpha / 255.f);
-	glBindTexture(GL_TEXTURE_2D, 0);
 	glEnable(GL_LINE_SMOOTH);
 	glBegin(GL_LINE_STRIP);
-	for ( c = angle1; c <= angle2; c++)
+	for (real_t c = angle1; c <= angle2; c += (real_t)1)
 	{
-		float degInRad = c * PI / 180.f;
+		real_t degInRad = c * (real_t)PI / (real_t)180;
 		glVertex2f(x + ceil(cos(degInRad)*radius) + 1, yres - (y + ceil(sin(degInRad)*radius)));
 	}
 	glEnd();
 	glDisable(GL_LINE_SMOOTH);
-
-	// reset line width
 	glLineWidth(lineWidth);
+}
+
+/*-------------------------------------------------------------------------------
+
+drawScalingFilledArc
+
+draws an arc with a changing radius
+
+-------------------------------------------------------------------------------*/
+
+static void drawScalingFilledArc( int x, int y, real_t radius1, real_t radius2, real_t angle1, real_t angle2, Uint32 outer_color, Uint32 inner_color )
+{
+	// set state
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(0, 0, xres, yres);
+	glLoadIdentity();
+	glOrtho(0, xres, 0, yres, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_BLEND);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// draw arc
+	glBegin(GL_TRIANGLE_FAN);
+	glColor4f(
+		((Uint8)(inner_color >> mainsurface->format->Rshift)) / 255.f,
+		((Uint8)(inner_color >> mainsurface->format->Gshift)) / 255.f,
+		((Uint8)(inner_color >> mainsurface->format->Bshift)) / 255.f,
+		((Uint8)(inner_color >> mainsurface->format->Ashift)) / 255.f
+	);
+	glVertex2f(x, yres - y);
+	glColor4f(
+		((Uint8)(outer_color >> mainsurface->format->Rshift)) / 255.f,
+		((Uint8)(outer_color >> mainsurface->format->Gshift)) / 255.f,
+		((Uint8)(outer_color >> mainsurface->format->Bshift)) / 255.f,
+		((Uint8)(outer_color >> mainsurface->format->Ashift)) / 255.f
+	);
+	for (real_t c = angle2; c >= angle1; c -= (real_t)1)
+	{
+		real_t degInRad = c * (real_t)PI / (real_t)180;
+		real_t factor = (c - angle1) / (angle2 - angle1);
+		real_t radius = radius2 * factor + radius1 * (1 - factor);
+		glVertex2f(x + cos(degInRad) * radius, yres - (y + sin(degInRad) * radius));
+	}
+	glEnd();
 }
 
 /*-------------------------------------------------------------------------------
@@ -324,18 +374,6 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
 int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha )
 {
 	SDL_Rect secondsrc;
-
-	// update projection
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
-	glMatrixMode(GL_PROJECTION);
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glEnable(GL_BLEND);
-
-	// for the use of the whole screen
 	if ( src == NULL )
 	{
 		secondsrc.x = 0;
@@ -344,16 +382,10 @@ int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha )
 		secondsrc.h = yres;
 		src = &secondsrc;
 	}
-
-	// draw quad
-	glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, alpha / 255.f);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
-	glVertex2f(src->x, yres - src->y);
-	glVertex2f(src->x, yres - src->y - src->h);
-	glVertex2f(src->x + src->w, yres - src->y - src->h);
-	glVertex2f(src->x + src->w, yres - src->y);
-	glEnd();
+	auto format = mainsurface->format;
+	Uint32 c = (color & (format->Rmask | format->Gmask | format->Bmask)) | (alpha << format->Ashift);
+	auto image = Image::get("images/system/white.png");
+	image->drawColor(nullptr, *src, c);
 	return 0;
 }
 
@@ -384,30 +416,44 @@ int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha)
 
 void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation)
 {
-	Uint32 color;
-	int c;
-	Sint16 x1, y1, x2, y2;
-
-	color = SDL_MapRGB(mainsurface->format, 255, 127, 0);
-	for ( c = 0; c < 6; c++ )
+	const Uint32 black = makeColor(0, 0, 0, 255);
+	const Uint32 color_dark = makeColor(255, 32, 0, 255);
+	const Uint32 color = makeColor(255, 76, 49, 255);
+	const Uint32 color_bright = makeColor(255, 109, 83, 255);
+	const real_t teeth_size = size + size / 3;
+	const int num_teeth = 6;
+	for ( int c = 0; c < num_teeth; c++ )
 	{
-		drawArc(x, y, size, 0 + c * 60 + rotation, 30 + c * 60 + rotation, color, 255);
-		drawArc(x, y, (int)ceil(size * 1.33), 30 + c * 60 + 4 + rotation, 60 + c * 60 - 4 + rotation, color, 255);
-		x1 = ceil(size * cos((30 + c * 60 + rotation) * (PI / 180))) + x;
-		y1 = ceil(size * sin((30 + c * 60 + rotation) * (PI / 180))) + y;
-		x2 = ceil(size * cos((30 + c * 60 + 4 + rotation) * (PI / 180)) * 1.33) + x;
-		y2 = ceil(size * sin((30 + c * 60 + 4 + rotation) * (PI / 180)) * 1.33) + y;
-		drawLine(x1, y1, x2, y2, color, 255);
-		x1 = ceil(size * cos((60 + c * 60 + rotation) * (PI / 180))) + x;
-		y1 = ceil(size * sin((60 + c * 60 + rotation) * (PI / 180))) + y;
-		x2 = ceil(size * cos((60 + c * 60 - 4 + rotation) * (PI / 180)) * 1.33) + x;
-		y2 = ceil(size * sin((60 + c * 60 - 4 + rotation) * (PI / 180)) * 1.33) + y;
-		drawLine(x1, y1, x2, y2, color, 255);
+		real_t p = 180.0 / (real_t)num_teeth;
+		real_t r = (real_t)c * (p * 2.0) + (real_t)rotation;
+		real_t t = 4.0;
+		drawScalingFilledArc(x, y, size, size,
+			r,
+			r + p,
+			color, color_bright);
+		drawScalingFilledArc(x, y, size, teeth_size,
+			r + p,
+			r + p + t,
+			color, color_bright);
+		drawScalingFilledArc(x, y, teeth_size, teeth_size,
+			r + p + t,
+			r + p * 2 - t,
+			color, color_bright);
+		drawScalingFilledArc(x, y, teeth_size, size,
+			r + p * 2 - t,
+			r + p * 2,
+			color, color_bright);
 	}
-	color = SDL_MapRGBA(mainsurface->format, 191, 63, 0, 255);
-	drawCircle(x, y, size * .66, color, 255);
-	color = SDL_MapRGBA(mainsurface->format, 127, 0, 0, 255);
-	drawCircle(x, y, size * .25, color, 255);
+	drawScalingFilledArc(x, y,
+		size * 1 / 3,
+		size * 1 / 3,
+		0, 360,
+		color, color_dark);
+	drawScalingFilledArc(x, y,
+		size * 1 / 6,
+		size * 1 / 6,
+		0, 360,
+		black, black);
 }
 
 /*-------------------------------------------------------------------------------
