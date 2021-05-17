@@ -219,6 +219,7 @@ list_t entitiesdeleted;
 
 // fps
 bool showfps = false;
+real_t timediff = 0.0;
 real_t t, ot = 0.0, frameval[AVERAGEFRAMES];
 Uint32 cycles = 0, pingtime = 0;
 real_t fps = 0.0;

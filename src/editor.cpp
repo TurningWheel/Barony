@@ -673,10 +673,19 @@ void handleEvents(void)
 	real_t d;
 	int j;
 
+
 	// calculate app rate
-	t = clock();
-	timesync = t - ot;
+	t = SDL_GetTicks();
+	real_t timesync = t - ot;
 	ot = t;
+
+	// do timer
+	time_diff += timesync;
+	constexpr real_t frame = (real_t)1000 / (real_t)TICKS_PER_SECOND;
+	while (time_diff >= frame) {
+		time_diff -= frame;
+		timerCallback(0, NULL);
+	}
 
 	// calculate fps
 	if ( timesync != 0 )
@@ -1528,8 +1537,7 @@ int main(int argc, char** argv)
 	cursorSelect = cursorArrow;
 	cursorFill = newCursor(cursor_fill);
 
-	// instatiate a timer
-	timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
+	// seed rng
 	srand(time(nullptr));
 
 	// create an empty map

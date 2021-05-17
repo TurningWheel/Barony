@@ -7,6 +7,8 @@
 #include "Field.hpp"
 #include "Text.hpp"
 
+#include <cassert>
+
 Field::Field(const int _textLen) {
 	textlen = std::max(_textLen, 0);
 	text = new char[textlen + 1];

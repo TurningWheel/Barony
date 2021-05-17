@@ -1980,13 +1980,6 @@ int deinitApp()
 #endif
 	// close engine
 	printlog("closing engine...\n");
-	printlog("removing engine timer...\n");
-#ifndef NINTENDO
-	if ( timer )
-	{
-		SDL_RemoveTimer(timer);
-	}
-#endif // !NINTENDO
 
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);
