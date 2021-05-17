@@ -1391,7 +1391,15 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 	auto txtHeader = frameMain->findField("inventory mouse tooltip header");
 	auto txtPrimaryValue = frameAttr->findField("inventory mouse tooltip primary value");
+	auto txtPrimaryValueHighlight = frameAttr->findField("inventory mouse tooltip primary value highlight");
+	auto txtPrimaryValuePositive = frameAttr->findField("inventory mouse tooltip primary value positive text");
+	auto txtPrimaryValueNegative = frameAttr->findField("inventory mouse tooltip primary value negative text");
+
 	auto txtSecondaryValue = frameAttr->findField("inventory mouse tooltip secondary value");
+	auto txtSecondaryValueHighlight = frameAttr->findField("inventory mouse tooltip secondary value highlight");
+	auto txtSecondaryValuePositive = frameAttr->findField("inventory mouse tooltip secondary value positive text");
+	auto txtSecondaryValueNegative = frameAttr->findField("inventory mouse tooltip secondary value negative text");
+
 	auto txtAttributes = frameAttr->findField("inventory mouse tooltip attributes text");
 	auto txtDescription = frameDesc->findField("inventory mouse tooltip description");
 	auto txtDescriptionPositive = frameDesc->findField("inventory mouse tooltip description positive text");
@@ -1435,8 +1443,8 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	// get total width of tooltip
 	const int tooltipWidth = txtHeader->getSize().w + imgTopBackgroundLeft->pos.w + imgTopBackgroundRight->pos.w;
 
-	txtPrimaryValue->setText("Primary Value");
-	txtSecondaryValue->setText("Secondary Value");
+	//txtPrimaryValue->setText("Primary Value");
+	//txtSecondaryValue->setText("Secondary Value");
 
 	// attribute frame size - padded by (imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx) on either side
 	SDL_Rect frameAttrPos{ imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx, totalHeight, 0, 0 };
@@ -1461,8 +1469,23 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 				std::string iconText = icon.text;
 				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText);
+
+				std::string bracketText = "";
+				ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
+				std::string positiveText = "";
+				std::string negativeText = "";
+				ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
+
 				txtPrimaryValue->setText(iconText.c_str());
 				txtPrimaryValue->setColor(icon.textColor);
+				txtPrimaryValueHighlight->setText(bracketText.c_str());
+				txtPrimaryValueHighlight->setColor(itemTooltip.statusEffectTextColor);
+
+				txtPrimaryValuePositive->setText(positiveText.c_str());
+				txtPrimaryValuePositive->setColor(itemTooltip.positiveTextColor);
+
+				txtPrimaryValueNegative->setText(negativeText.c_str());
+				txtPrimaryValueNegative->setColor(itemTooltip.negativeTextColor);
 			}
 			else if ( index == 1 )
 			{
@@ -1471,8 +1494,23 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 				std::string iconText = icon.text;
 				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText);
+
+				std::string bracketText = "";
+				ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
+				std::string positiveText = "";
+				std::string negativeText = "";
+				ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
+
 				txtSecondaryValue->setText(iconText.c_str());
 				txtSecondaryValue->setColor(icon.textColor);
+				txtSecondaryValueHighlight->setText(bracketText.c_str());
+				txtSecondaryValueHighlight->setColor(itemTooltip.statusEffectTextColor);
+
+				txtSecondaryValuePositive->setText(positiveText.c_str());
+				txtSecondaryValuePositive->setColor(itemTooltip.positiveTextColor);
+
+				txtSecondaryValueNegative->setText(negativeText.c_str());
+				txtSecondaryValueNegative->setColor(itemTooltip.negativeTextColor);
 			}
 			else
 			{
@@ -1508,6 +1546,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		frameDesc->setDisabled(false);
 		txtDescription->setColor(itemTooltip.detailsTextColor);
 		int index = 0;
+
 		if ( itemTooltip.detailsText.find("default") != itemTooltip.detailsText.end() )
 		{
 			for ( auto& it = itemTooltip.detailsText["default"].begin(); it != itemTooltip.detailsText["default"].end(); ++it )
@@ -1521,11 +1560,43 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		}
 		ItemTooltips.formatItemDetails(player, tooltipType, *item, detailsTextString, "default");
 
-		std::vector<std::string> detailTags1 = { "alchemy_details", "potion_damage" };
+		std::vector<std::string> detailTags1;
+
+		if ( itemCategory(item) == POTION )
+		{
+			detailTags1 = {
+				"potion_on_cursed",
+				"potion_additional_effects",
+				"potion_restoremagic_bonus",
+				"potion_polymorph_duration",
+				"potion_healing_bonus",
+				"potion_extrahealing_bonus",
+				"potion_on_blessed",
+				"alchemy_details",
+				"potion_damage" };
+		}
+
 		for ( auto tag : detailTags1 )
 		{
 			if ( itemTooltip.detailsText.find(tag.c_str()) != itemTooltip.detailsText.end() )
 			{
+				if ( tag.compare("potion_on_cursed") == 0 &&
+					(!items[item->type].hasAttribute("POTION_CURSED_SIDE_EFFECT") || item->beatitude >= 0))
+				{
+					continue;
+				}
+				else if ( tag.compare("potion_on_blessed") == 0 && item->beatitude <= 0 )
+				{
+					continue;
+				}
+				else if ( tag.compare("alchemy_details") == 0 )
+				{
+					if ( detailsTextString.compare("") != 0 ) // non-empty
+					{
+						detailsTextString += '\n'; // add a padding newline
+					}
+				}
+
 				std::string tagText = "";
 				for ( auto& it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
 				{
@@ -1536,7 +1607,10 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 					}
 				}
 				ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag.c_str());
-				detailsTextString += '\n';
+				if ( detailsTextString.compare("") != 0 )
+				{
+					detailsTextString += '\n';
+				}
 				detailsTextString += tagText;
 			}
 		}
@@ -1555,7 +1629,10 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 					}
 				}
 				ItemTooltips.formatItemDetails(player, tooltipType, *item, beatitudeText, "on_bless_or_curse");
-				detailsTextString += '\n';
+				if ( detailsTextString.compare("") != 0 )
+				{
+					detailsTextString += '\n';
+				}
 				detailsTextString += beatitudeText;
 			}
 		}
@@ -1575,7 +1652,10 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 					}
 				}
 				ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag.c_str());
-				detailsTextString += '\n';
+				if ( detailsTextString.compare("") != 0 )
+				{
+					detailsTextString += '\n';
+				}
 				detailsTextString += tagText;
 			}
 		}
@@ -1645,15 +1725,24 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 	const int imgToTextOffset = 2;
 	txtPrimaryValue->setDisabled(imgPrimaryIcon->disabled);
+	txtPrimaryValueHighlight->setDisabled(txtPrimaryValue->isDisabled());
+	txtPrimaryValuePositive->setDisabled(txtPrimaryValue->isDisabled());
+	txtPrimaryValueNegative->setDisabled(txtPrimaryValue->isDisabled());
 	if ( !imgPrimaryIcon->disabled )
 	{
 		imgPrimaryIcon->pos.x = 0;
 		imgPrimaryIcon->pos.y = pady * 2;
 		txtPrimaryValue->setSize(SDL_Rect{ imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx, 
 			imgPrimaryIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgPrimaryIcon->pos.h});
+		txtPrimaryValueHighlight->setSize(txtPrimaryValue->getSize());
+		txtPrimaryValuePositive->setSize(txtPrimaryValue->getSize());
+		txtPrimaryValueNegative->setSize(txtPrimaryValue->getSize());
 	}
 	
 	txtSecondaryValue->setDisabled(imgSecondaryIcon->disabled);
+	txtSecondaryValueHighlight->setDisabled(txtSecondaryValue->isDisabled());
+	txtSecondaryValuePositive->setDisabled(txtSecondaryValue->isDisabled());
+	txtSecondaryValueNegative->setDisabled(txtSecondaryValue->isDisabled());
 	if ( !imgSecondaryIcon->disabled )
 	{
 		imgSecondaryIcon->pos.x = 0;
@@ -1667,6 +1756,9 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		}
 		txtSecondaryValue->setSize(SDL_Rect{ imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx,
 			imgSecondaryIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgSecondaryIcon->pos.h });
+		txtSecondaryValueHighlight->setSize(txtSecondaryValue->getSize());
+		txtSecondaryValuePositive->setSize(txtSecondaryValue->getSize());
+		txtSecondaryValueNegative->setSize(txtSecondaryValue->getSize());
 	}
 
 	bool imagesDisabled = true;

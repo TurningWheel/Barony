@@ -2651,6 +2651,7 @@ class ItemTooltips_t
 	Uint32 defaultDetailsTextColor = 0xFFFFFFFF;
 	Uint32 defaultPositiveTextColor = 0xFFFFFFFF;
 	Uint32 defaultNegativeTextColor = 0xFFFFFFFF;
+	Uint32 defaultStatusEffectTextColor = 0xFFFFFFFF;
 
 	struct ItemTooltip_t
 	{
@@ -2659,6 +2660,7 @@ class ItemTooltips_t
 		Uint32 detailsTextColor = 0;
 		Uint32 positiveTextColor = 0;
 		Uint32 negativeTextColor = 0;
+		Uint32 statusEffectTextColor = 0;
 		std::vector<ItemTooltipIcons_t> icons;
 		std::vector<std::string> descriptionText;
 		std::map<std::string, std::vector<std::string>> detailsText;
@@ -2668,6 +2670,7 @@ class ItemTooltips_t
 		void setColorDetails(Uint32 color) { detailsTextColor = color; };
 		void setColorPositive(Uint32 color) { positiveTextColor = color; };
 		void setColorNegative(Uint32 color) { negativeTextColor = color; };
+		void setColorStatus(Uint32 color) { statusEffectTextColor = color; }
 	};
 public:
 	void readItemsFromFile();
@@ -2686,5 +2689,6 @@ public:
 	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str);
 	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
 	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);
+	void stripOutHighlightBracketText(std::string& str, std::string& bracketText);
 };
 extern ItemTooltips_t ItemTooltips;

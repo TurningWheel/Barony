@@ -937,6 +937,11 @@ void ItemTooltips_t::readTooltipsFromFile()
 			d["default_text_colors"]["negative_color"]["g"].GetInt(),
 			d["default_text_colors"]["negative_color"]["b"].GetInt(),
 			d["default_text_colors"]["negative_color"]["a"].GetInt());
+		defaultStatusEffectTextColor = SDL_MapRGBA(mainsurface->format,
+			d["default_text_colors"]["status_effect"]["r"].GetInt(),
+			d["default_text_colors"]["status_effect"]["g"].GetInt(),
+			d["default_text_colors"]["status_effect"]["b"].GetInt(),
+			d["default_text_colors"]["status_effect"]["a"].GetInt());
 	}
 
 	templates.clear();
@@ -971,6 +976,7 @@ void ItemTooltips_t::readTooltipsFromFile()
 		tooltip.setColorDetails(this->defaultDetailsTextColor);
 		tooltip.setColorPositive(this->defaultPositiveTextColor);
 		tooltip.setColorNegative(this->defaultNegativeTextColor);
+		tooltip.setColorStatus(this->defaultStatusEffectTextColor);
 
 		if ( tooltipType_itr->value.HasMember("icons") )
 		{
@@ -1277,13 +1283,14 @@ std::string& ItemTooltips_t::getItemPotionHarmAllyAdjective(Item& item)
 		return defaultString;
 	}
 
-	if ( item.doesPotionHarmAlliesOnThrown() )
+	if ( items[item.type].hasAttribute("POTION_TYPE_GOOD_EFFECT") 
+		|| items[item.type].hasAttribute("POTION_TYPE_HEALING") /*item.doesPotionHarmAlliesOnThrown()*/ )
 	{
-		return adjectives["potion_ally_damage"]["harm_ally"];
+		return adjectives["potion_ally_damage"]["no_harm_ally"];
 	}
 	else
 	{
-		return adjectives["potion_ally_damage"]["no_harm_ally"];
+		return adjectives["potion_ally_damage"]["harm_ally"];
 	}
 }
 
@@ -1321,6 +1328,44 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		atk += 1;
 		snprintf(buf, sizeof(buf), str.c_str(), atk);
 	}
+	else if ( tooltipType.compare(0, strlen("tooltip_potion"), "tooltip_potion") == 0 )
+	{
+		if ( items[item.type].hasAttribute("POTION_TYPE_HEALING") )
+		{
+			if ( item.type == POTION_HEALING || item.type == POTION_EXTRAHEALING || item.type == POTION_RESTOREMAGIC )
+			{
+				auto oldStatus = item.status;
+				item.status = DECREPIT;
+				int lowVal = item.potionGetEffectHealth();
+				item.status = EXCELLENT;
+				int highVal = item.potionGetEffectHealth();
+				item.status = oldStatus;
+				snprintf(buf, sizeof(buf), str.c_str(), lowVal, highVal);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth());
+			}
+		}
+		else if ( items[item.type].hasAttribute("POTION_TYPE_DMG") )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDamage());
+		}
+		else if ( items[item.type].hasAttribute("POTION_TYPE_GOOD_EFFECT") )
+		{
+			auto oldBeatitude = item.beatitude;
+			item.beatitude = std::max((Sint16)0, item.beatitude);
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / TICKS_PER_SECOND, item.potionGetEffectDurationMaximum() / TICKS_PER_SECOND);
+			item.beatitude = oldBeatitude;
+		}
+		else if ( items[item.type].hasAttribute("POTION_TYPE_BAD_EFFECT") )
+		{
+			auto oldBeatitude = item.beatitude;
+			item.beatitude = std::max((Sint16)0, item.beatitude);
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / TICKS_PER_SECOND, item.potionGetEffectDurationMaximum() / TICKS_PER_SECOND);
+			item.beatitude = oldBeatitude;
+		}
+	}
 	else
 	{
 		return;
@@ -1332,10 +1377,12 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 {
 	if ( !stats[player] )
 	{
+		str = "";
 		return;
 	}
 	if ( players[player] && !players[player]->isLocalPlayer() )
 	{
+		str = "";
 		return;
 	}
 
@@ -1403,9 +1450,67 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	}
 	else if ( tooltipType.compare(0, strlen("tooltip_potion"), "tooltip_potion") == 0 )
 	{
-		if ( detailTag.compare("default") == 0 )
+		if ( detailTag.compare("default") == 0 || detailTag.compare("potion_additional_effects") == 0 )
 		{
 			return;
+		}
+		else if ( detailTag.compare("potion_polymorph_duration") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / (60 * TICKS_PER_SECOND),
+				item.potionGetEffectDurationMaximum() / (60 * TICKS_PER_SECOND) );
+		}
+		else if ( detailTag.compare("potion_restoremagic_bonus") == 0 )
+		{
+			if ( stats[player] && stats[player]->INT > 0 )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), std::min(30, 2 * stats[player]->INT));
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 0);
+			}
+		}
+		else if ( detailTag.compare("potion_healing_bonus") == 0 )
+		{
+			if ( stats[player] && stats[player]->CON > 0 )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 2 * stats[player]->CON);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 0);
+			}
+		}
+		else if ( detailTag.compare("potion_extrahealing_bonus") == 0 )
+		{
+			if ( stats[player] && stats[player]->CON > 0 )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 4 * stats[player]->CON);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 0);
+			}
+		}
+		else if ( detailTag.compare("potion_on_blessed") == 0 )
+		{
+			if ( item.type == POTION_CUREAILMENT )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 
+					item.potionGetEffectDurationRandom() / TICKS_PER_SECOND, getItemBeatitudeAdjective(item.beatitude).c_str());
+			}
+			else if ( item.type == POTION_WATER )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 20 * item.beatitude, getItemBeatitudeAdjective(item.beatitude).c_str());
+			}
+			else
+			{
+				return;
+			}
+		}
+		else if ( detailTag.compare("potion_on_cursed") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
 		else if ( detailTag.compare("alchemy_details") == 0 )
 		{
@@ -1422,7 +1527,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( detailTag.compare("potion_multiplier") == 0 )
 		{
 			int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
-			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)]), 
+			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)] - 100), 
 				getItemPotionHarmAllyAdjective(item).c_str());
 		}
 	}
@@ -1433,9 +1538,56 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	str = buf;
 }
 
-void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues)
+void ItemTooltips_t::stripOutHighlightBracketText(std::string& str, std::string& bracketText)
 {
 	for ( auto it = str.begin(); it != str.end(); ++it )
+	{
+		bool foundBracket = false;
+		if ( *it == '[' )
+		{
+			foundBracket = true;
+		}
+		else if ( *it == '+' )
+		{
+			auto next_it = std::next(it);
+			if ( next_it != str.end() && *next_it == '[' )
+			{
+				foundBracket = true;
+				bracketText += *it;
+				*it = ' ';
+				it = next_it;
+			}
+		}
+
+		if ( foundBracket )
+		{
+			while ( *it != '\0' && *it != '\n' )
+			{
+				bracketText += *it;
+				if ( *it == ']' )
+				{
+					*it = ' ';
+					break;
+				}
+				*it = ' ';
+				it = std::next(it);
+			}
+		}
+		else
+		{
+			bracketText += ' ';
+		}
+		if ( *it == '\n' )
+		{
+			bracketText += '\n';
+		}
+	}
+}
+
+void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues)
+{
+	size_t index = 0;
+	for ( auto it = str.begin(); it != str.end(); )
 	{
 		int sign = 0;
 		if ( *it == '+' )
@@ -1447,35 +1599,130 @@ void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::
 			sign = -1;
 		}
 
-		if ( std::next(it) != str.end() )
+		if ( sign != 0 )
 		{
-			char peekCharacter = *(std::next(it));
-			if ( !(peekCharacter >= '0' && peekCharacter <= '9') )
+			if ( std::next(it) != str.end() )
 			{
-				sign = 0; // don't highlight +text, only +0 numbers
+				char peekCharacter = *(std::next(it));
+				if ( !(peekCharacter >= '0' && peekCharacter <= '9') )
+				{
+					sign = 0; // don't highlight +text, only +0 numbers
+				}
 			}
 		}
 
 		if ( sign != 0 )
 		{
+			bool addSpace = false;
 			while ( *it != '\0' && *it != ' ' && *it != '\n' )
 			{
 				if ( sign > 0 )
 				{
 					positiveValues += *it;
+					negativeValues += ' ';
 				}
 				else
 				{
 					negativeValues += *it;
+					positiveValues += ' ';
 				}
 				*it = ' ';
 				it = std::next(it);
+				addSpace = true;
+
+				if ( it == str.end() )
+				{
+					break;
+				}
+			}
+
+			if ( addSpace )
+			{
+				positiveValues += ' ';
+				negativeValues += ' ';
 			}
 		}
-		if ( *it == '\n' )
+		else
 		{
-			positiveValues += '\n';
-			negativeValues += '\n';
+			bool addSpace = true;
+			if ( *it == '(' )
+			{
+				if ( str.find("(?)", std::distance(str.begin(), it)) == std::distance(str.begin(), it) )
+				{
+					addSpace = false;
+					positiveValues += ' ';
+					negativeValues += "(?)";
+					*it = ' ';
+					for ( int i = 0; i < strlen("(?)") - 1; ++i )
+					{
+						positiveValues += ' ';
+						it = std::next(it);
+						*it = ' ';
+					}
+				}
+			}
+			else if ( *it == '[' )
+			{
+				// look for matching brace.
+				while ( it != str.end() && *it != ']' && *it != ' ' && *it != '\0' && *it != ' ' && *it != '\n' )
+				{
+					positiveValues += ' ';
+					negativeValues += ' ';
+					it = std::next(it);
+				}
+			}
+			else if ( *it == '^' )
+			{
+				// cursed line
+				it = str.erase(it); // skip the '^'
+				//it = std::next(it); 
+				while ( it != str.end() && *it != '\0' && *it != '\n' )
+				{
+					positiveValues += ' ';
+					negativeValues += *it;
+					*it = ' ';
+					it = std::next(it);
+				}
+			}
+			/*else if ( *it == adjectives["beatitude_status"]["cursed"][0] )
+			{
+				if ( str.find(adjectives["beatitude_status"]["cursed"], 
+					std::distance(str.begin(), it)) == std::distance(str.begin(), it) )
+				{
+					addSpace = false;
+					positiveValues += ' ';
+					negativeValues += adjectives["beatitude_status"]["cursed"];
+					*it = ' ';
+					for ( int i = 0; i < adjectives["beatitude_status"]["cursed"].size() - 1; ++i )
+					{
+						positiveValues += ' ';
+						it = std::next(it);
+						*it = ' ';
+					}
+				}
+			}*/
+
+			if ( addSpace )
+			{
+				positiveValues += ' ';
+				negativeValues += ' ';
+			}
 		}
+
+		if ( it != str.end() )
+		{
+			if ( *it == '\n' )
+			{
+				positiveValues += '\n';
+				negativeValues += '\n';
+			}
+		}
+		else
+		{
+			break;
+		}
+
+		++it;
+		index = std::distance(str.begin(), it);
 	}
 }

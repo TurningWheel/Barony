@@ -453,6 +453,15 @@ public:
 	bool doesItemProvidePassiveShieldBonus() const;
 	bool doesPotionHarmAlliesOnThrown() const;
 
+	Sint32 potionGetEffectHealth() const;
+	Sint32 potionGetEffectDamage() const;
+	Sint32 potionGetEffectDurationMinimum() const;
+	Sint32 potionGetEffectDurationMaximum() const;
+	Sint32 potionGetEffectDurationRandom() const;
+	Sint32 potionGetCursedEffectDurationMinimum() const;
+	Sint32 potionGetCursedEffectDurationMaximum() const;
+	Sint32 potionGetCursedEffectDurationRandom() const;
+
 	enum ItemBombPlacement : int
 	{
 		BOMB_FLOOR,

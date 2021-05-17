@@ -3366,11 +3366,363 @@ bool Item::doesPotionHarmAlliesOnThrown() const
 		case POTION_JUICE:
 		case POTION_STRENGTH:
 		case POTION_SPEED:
+		case POTION_INVISIBILITY:
+		case POTION_LEVITATION:
 			return false;
 		default:
 			break;
 	}
 	return true;
+}
+
+Sint32 Item::potionGetEffectHealth() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 0;
+	}
+
+	int heal = 0;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			heal += (beatitude <= 0 ? 1 : (5 * beatitude));
+			break;
+		case POTION_BOOZE:
+			heal += (5 * (1 + beatitude));
+			break;
+		case POTION_JUICE:
+			heal += (5 * (1 + std::max((Sint16)0, beatitude))); // always 5 at cursed.
+			break;
+		case POTION_HEALING:
+		{
+			int amount = std::max(7 + status, 0);
+			int multiplier = std::max(5, beatitude + 5);
+			amount *= multiplier / 5.f;
+			heal += amount;
+			break;
+		}
+		case POTION_EXTRAHEALING:
+		{
+			int amount = std::max(15 + status, 0);
+			int multiplier = std::max(5, beatitude + 5);
+			amount *= multiplier;
+			heal += amount;
+			break;
+		}
+		case POTION_RESTOREMAGIC:
+		{
+			int amount = std::max(7 + status, 0);
+			int multiplier = std::max(5, beatitude + 5);
+			amount *= multiplier;
+			heal += amount;
+			break;
+		}
+		default:
+			break;
+	}
+
+	return heal;
+}
+Sint32 Item::potionGetEffectDamage() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 0;
+	}
+
+	int damage = 0;
+	switch ( type )
+	{
+		case POTION_SICKNESS:
+			damage += (5 + 5 * abs(beatitude));
+			break;
+		case POTION_ACID:
+			damage += (10 + 5 * abs(beatitude));
+			break;
+		case POTION_THUNDERSTORM:
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+			damage += (10 + 5 * abs(beatitude));
+			break;
+		default:
+			break;
+	}
+
+	return damage;
+}
+
+Sint32 Item::potionGetEffectDurationMinimum() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			duration = 2000;
+			break;
+		case POTION_JUICE:
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			duration = 750;
+			break;
+		case POTION_EXTRAHEALING:
+			break;
+		case POTION_HEALING:
+			break;
+		case POTION_CUREAILMENT:
+			duration = 4 * beatitude * TICKS_PER_SECOND;
+			break;
+		case POTION_BLINDNESS:
+			duration = 500;
+			break;
+		case POTION_RESTOREMAGIC:
+			break;
+		case POTION_INVISIBILITY:
+			duration = 1500 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_LEVITATION:
+			duration = 1500 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_SPEED:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			duration = 350;
+			break;
+		case POTION_POLYMORPH:
+			duration = 60 * TICKS_PER_SECOND * 4; // 4 mins
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetEffectDurationMaximum() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			duration = 3000;
+			break;
+		case POTION_JUICE:
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			duration = 1500;
+			break;
+		case POTION_EXTRAHEALING:
+			break;
+		case POTION_HEALING:
+			break;
+		case POTION_CUREAILMENT:
+			duration = 4 * beatitude * TICKS_PER_SECOND;
+			break;
+		case POTION_BLINDNESS:
+			duration = 750;
+			break;
+		case POTION_RESTOREMAGIC:
+			break;
+		case POTION_INVISIBILITY:
+			duration = 3000 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_LEVITATION:
+			duration = 3000 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_SPEED:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			duration = 500;
+			break;
+		case POTION_POLYMORPH:
+			duration = 60 * TICKS_PER_SECOND * 6; // 6 mins
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetEffectDurationRandom() const
+{
+	Sint32 range = std::max(1, potionGetEffectDurationMaximum() - potionGetEffectDurationMinimum());
+	return potionGetEffectDurationMinimum() + (rand() % (range));
+}
+
+Sint32 Item::potionGetCursedEffectDurationMinimum() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			break;
+		case POTION_JUICE:
+			duration = 1000;
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			break;
+		case POTION_EXTRAHEALING:
+			duration = 750;
+			break;
+		case POTION_HEALING:
+			duration = 750;
+			break;
+		case POTION_CUREAILMENT:
+			duration = 750;
+			break;
+		case POTION_BLINDNESS:
+			break;
+		case POTION_RESTOREMAGIC:
+			duration = 1000;
+			break;
+		case POTION_INVISIBILITY:
+			break;
+		case POTION_LEVITATION:
+			duration = 1000;
+			break;
+		case POTION_SPEED:
+			duration = 2000;
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			break;
+		case POTION_POLYMORPH:
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 1000;
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetCursedEffectDurationMaximum() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			break;
+		case POTION_JUICE:
+			duration = 1500;
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			break;
+		case POTION_EXTRAHEALING:
+			duration = 750;
+			break;
+		case POTION_HEALING:
+			duration = 750;
+			break;
+		case POTION_CUREAILMENT:
+			duration = 750;
+			break;
+		case POTION_BLINDNESS:
+			break;
+		case POTION_RESTOREMAGIC:
+			duration = 1500;
+			break;
+		case POTION_INVISIBILITY:
+			break;
+		case POTION_LEVITATION:
+			duration = 1500;
+			break;
+		case POTION_SPEED:
+			duration = 3000;
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			break;
+		case POTION_POLYMORPH:
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 1500;
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetCursedEffectDurationRandom() const
+{
+	Sint32 range = std::max(1, potionGetCursedEffectDurationMaximum() - potionGetCursedEffectDurationMinimum());
+	return potionGetCursedEffectDurationMinimum() + (rand() % (range));
 }
 
 /*-------------------------------------------------------------------------------

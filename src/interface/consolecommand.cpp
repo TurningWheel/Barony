@@ -3290,6 +3290,72 @@ void consoleCommand(char const * const command_str)
 			ItemTooltips.readItemsFromFile();
 			messagePlayer(clientnum, "Reloaded items.json");
 		}
+		else if ( !strncmp(command_str, "/gimmeallpotions", 16) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+			for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(i);
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					0, 1, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+				//free(potion);
+			}
+		}
+		else if ( !strncmp(command_str, "/gimmeblessedpotions", 20) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+			for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(i);
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					1 + rand() % 2, 1, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+				//free(potion);
+			}
+		}
+		else if ( !strncmp(command_str, "/gimmecursedpotions", 19) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+			for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(i);
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					-2 + rand() % 2, 1, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+				//free(potion);
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
