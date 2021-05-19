@@ -79,7 +79,22 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 				backgroundActivated.c_str()) :
 			background.c_str();
 		Image* background_img = Image::get(path);
-		background_img->drawColor(nullptr, scaledSize, focused ? highlightColor : color);
+		Frame::image_t image;
+		image.path = path;
+		image.color = focused ? highlightColor : color;
+		image.disabled = false;
+		image.name = "temp";
+		image.ontop = false;
+		image.pos = {0, 0, size.w, size.h};
+		image.tiled = false;
+		auto frame = static_cast<Frame*>(parent);
+		frame->drawImage(&image, _size,
+			SDL_Rect{
+				std::max(0, _actualSize.x - size.x),
+				std::max(0, _actualSize.y - size.y),
+				0, 0
+			}
+		);
 	}
 
 	SDL_Rect scroll{0, 0, 0, 0};

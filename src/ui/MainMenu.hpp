@@ -7,10 +7,39 @@ extern bool vertical_splitscreen; // if true, 2-player splitscreen has a vertica
 
 class Button;
 
+struct InventorySorting {
+	bool hotbarWeapons = true;
+	bool hotbarArmor = true;
+	bool hotbarAmulets = true;
+	bool hotbarBooks = true;
+	bool hotbarTools = true;
+	bool hotbarThrown = true;
+	bool hotbarGems = false;
+	bool hotbarPotions = true;
+	bool hotbarScrolls = true;
+	bool hotbarStaves = true;
+	bool hotbarFood = true;
+	bool hotbarSpells = true;
+	int sortWeapons = 0;
+	int sortArmor = 0;
+	int sortAmulets = 0;
+	int sortBooks = 0;
+	int sortTools = 0;
+	int sortThrown = 0;
+	int sortGems = 0;
+	int sortPotions = 0;
+	int sortScrolls = 0;
+	int sortStaves = 0;
+	int sortFood = 0;
+	int sortEquipped = 0;
+	inline void save();
+	static inline InventorySorting load();
+	static inline InventorySorting reset();
+};
+
 struct AllSettings {
 	bool add_items_to_hotbar_enabled;
-	//Whatever add_items_to_hotbar;
-	//Whatever inventory_sorting;
+	InventorySorting inventory_sorting;
 	bool use_on_release_enabled;
 	//Whatever minimap;
 	bool show_messages_enabled;

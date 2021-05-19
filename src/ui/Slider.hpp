@@ -74,6 +74,7 @@ public:
     const Uint32&               getHighlightColor() const { return highlightColor; }
     void						(*getCallback() const)(Slider&) { return callback; }
     bool                        isActivated() const { return activated; }
+    const char*                 getHandleImageActivated() const { return handleImageActivated.c_str(); }
     const char*                 getHandleImage() const { return handleImage.c_str(); }
     const char*                 getRailImage() const { return railImage.c_str(); }
 
@@ -89,6 +90,7 @@ public:
     void    setColor(const Uint32& _color) { color = _color; }
     void    setHighlightColor(const Uint32& _color) { highlightColor = _color; }
     void	setCallback(void (*const fn)(Slider&)) { callback = fn; }
+    void    setHandleImageActivated(const char* _image) { handleImageActivated = _image; }
     void    setHandleImage(const char* _image) { handleImage = _image; }
     void    setRailImage(const char* _image) { railImage = _image; }
 
@@ -108,6 +110,7 @@ private:
     Uint32 highlightColor = 0xffffffff;             //!< slider's color when highlighted
     Uint32 moveStartTime = 0u;                      //!< when the player started holding a direction to move the slider
     Uint32 lastMoveTime = 0u;                       //!< last time the slider was moved
+    std::string handleImageActivated;               //!< image to use for the handle (when activated)
     std::string handleImage;                        //!< image to use for the handle
     std::string railImage;                          //!< image to use for the rail
 };

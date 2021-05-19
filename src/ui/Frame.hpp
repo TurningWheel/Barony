@@ -222,6 +222,12 @@ public:
 	//! @param enabled whether to enable or disable scrolling
 	void enableScroll(bool enabled);
 
+	//! draw an image in the frame, clipping it within the given rectangles
+	//! @param image the image to draw
+	//! @param _size the size of the rectangle to clip against
+	//! @param scroll the amount by which to offset the image in x/y
+	void drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll);
+
 	virtual type_t					getType() const override { return WIDGET_FRAME; }
 	const char*						getFont() const { return font.c_str(); }
 	const int						getBorder() const { return border; }
@@ -281,9 +287,12 @@ private:
 	std::vector<Slider*> sliders;
 	std::vector<entry_t*> list;
 
+	//! scroll to the current list entry selection in the frame
 	void scrollToSelection();
+
+	//! activate the given list entry
+	//! @param entry the entry to activate
 	void activateEntry(entry_t& entry);
-	void drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll);
 
 	//! draws the frame and all of its subelements
 	//! @param _size real position of the frame onscreen

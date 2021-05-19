@@ -76,6 +76,68 @@ static void updateMenuCursor(Widget& widget) {
 
 /******************************************************************************/
 
+inline void InventorySorting::save() {
+	auto_hotbar_categories[0] = hotbarWeapons;
+	auto_hotbar_categories[1] = hotbarArmor;
+	auto_hotbar_categories[2] = hotbarAmulets;
+	auto_hotbar_categories[3] = hotbarBooks;
+	auto_hotbar_categories[4] = hotbarTools;
+	auto_hotbar_categories[5] = hotbarThrown;
+	auto_hotbar_categories[6] = hotbarGems;
+	auto_hotbar_categories[7] = hotbarPotions;
+	auto_hotbar_categories[8] = hotbarScrolls;
+	auto_hotbar_categories[9] = hotbarStaves;
+	auto_hotbar_categories[10] = hotbarFood;
+	auto_hotbar_categories[11] = hotbarSpells;
+	autosort_inventory_categories[0] = sortWeapons;
+	autosort_inventory_categories[1] = sortArmor;
+	autosort_inventory_categories[2] = sortAmulets;
+	autosort_inventory_categories[3] = sortBooks;
+	autosort_inventory_categories[4] = sortTools;
+	autosort_inventory_categories[5] = sortThrown;
+	autosort_inventory_categories[6] = sortGems;
+	autosort_inventory_categories[7] = sortPotions;
+	autosort_inventory_categories[8] = sortScrolls;
+	autosort_inventory_categories[9] = sortStaves;
+	autosort_inventory_categories[10] = sortFood;
+	autosort_inventory_categories[11] = sortEquipped;
+}
+
+inline InventorySorting InventorySorting::load() {
+	InventorySorting inventory_sorting;
+	inventory_sorting.hotbarWeapons = auto_hotbar_categories[0];
+	inventory_sorting.hotbarArmor = auto_hotbar_categories[1];
+	inventory_sorting.hotbarAmulets = auto_hotbar_categories[2];
+	inventory_sorting.hotbarBooks = auto_hotbar_categories[3];
+	inventory_sorting.hotbarTools = auto_hotbar_categories[4];
+	inventory_sorting.hotbarThrown = auto_hotbar_categories[5];
+	inventory_sorting.hotbarGems = auto_hotbar_categories[6];
+	inventory_sorting.hotbarPotions = auto_hotbar_categories[7];
+	inventory_sorting.hotbarScrolls = auto_hotbar_categories[8];
+	inventory_sorting.hotbarStaves = auto_hotbar_categories[9];
+	inventory_sorting.hotbarFood = auto_hotbar_categories[10];
+	inventory_sorting.hotbarSpells = auto_hotbar_categories[11];
+	inventory_sorting.sortWeapons = autosort_inventory_categories[0];
+	inventory_sorting.sortArmor = autosort_inventory_categories[1];
+	inventory_sorting.sortAmulets = autosort_inventory_categories[2];
+	inventory_sorting.sortBooks = autosort_inventory_categories[3];
+	inventory_sorting.sortTools = autosort_inventory_categories[4];
+	inventory_sorting.sortThrown = autosort_inventory_categories[5];
+	inventory_sorting.sortGems = autosort_inventory_categories[6];
+	inventory_sorting.sortPotions = autosort_inventory_categories[7];
+	inventory_sorting.sortScrolls = autosort_inventory_categories[8];
+	inventory_sorting.sortStaves = autosort_inventory_categories[9];
+	inventory_sorting.sortFood = autosort_inventory_categories[10];
+	inventory_sorting.sortEquipped = autosort_inventory_categories[11];
+	return inventory_sorting;
+}
+
+inline InventorySorting InventorySorting::reset() {
+	return InventorySorting();
+}
+
+/******************************************************************************/
+
 static int story_text_pause = 0;
 static int story_text_scroll = 0;
 static int story_text_section = 0;
@@ -206,6 +268,19 @@ static void createStoryScreen() {
 
 /******************************************************************************/
 
+static void inventorySortingDefaults(Button& button) {
+}
+
+static void inventorySortingDiscard(Button& button) {
+	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
+	window->removeSelf();
+}
+
+static void inventorySortingConfirm(Button& button) {
+}
+
+/******************************************************************************/
+
 static std::string settings_tab_name;
 static AllSettings allSettings;
 
@@ -223,6 +298,7 @@ struct Setting {
 
 static void settingsSave() {
 	auto_hotbar_new_items = allSettings.add_items_to_hotbar_enabled;
+	allSettings.inventory_sorting.save();
 	right_click_protect = !allSettings.use_on_release_enabled;
 	disable_messages = !allSettings.show_messages_enabled;
 	hide_playertags = !allSettings.show_player_nametags_enabled;
@@ -265,11 +341,44 @@ static void settingsSave() {
 	svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
 	svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
 	svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
+
+	// transmit server flags
+	if ( !intro && multiplayer == SERVER ) {
+		strcpy((char*)net_packet->data, "SVFL");
+		SDLNet_Write32(svFlags, &net_packet->data[4]);
+		net_packet->len = 8;
+		for ( int c = 1; c < MAXPLAYERS; ++c ) {
+			if ( client_disconnected[c] ) {
+				continue;
+			}
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			messagePlayer(c, language[276]);
+		}
+		messagePlayer(clientnum, language[276]);
+	}
+
+	// update volume for sound groups
+#ifdef USE_FMOD
+	music_group->setVolume(musvolume / 128.f);
+	sound_group->setVolume(sfxvolume / 128.f);
+	soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
+	soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
+#elif defined USE_OPENAL
+	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+#endif
+
+	// write config file
 	saveConfig("default.cfg");
 }
 
 static void settingsReset() {
 	allSettings.add_items_to_hotbar_enabled = true;
+	allSettings.inventory_sorting = InventorySorting::reset();
 	allSettings.use_on_release_enabled = true;
 	allSettings.show_messages_enabled = true;
 	allSettings.show_player_nametags_enabled = true;
@@ -312,6 +421,82 @@ static void settingsReset() {
 	allSettings.random_traps_enabled = true;
 	allSettings.extra_life_enabled = false;
 	allSettings.cheats_enabled = false;
+}
+
+static void settingsCustomizeInventorySorting(Button& button) {
+	auto window = main_menu_frame->addFrame("inventory_sorting_window");
+	window->setSize(SDL_Rect{
+		(Frame::virtualScreenX - 978) / 2,
+		(Frame::virtualScreenY - 718) / 2,
+		978,
+		718
+	});
+	window->setActualSize(SDL_Rect{0, 0, window->getSize().w, window->getSize().h});
+	window->setColor(0);
+	window->setBorder(0);
+
+	// banner
+	window->addImage(
+		SDL_Rect{14, 4, 950, 50},
+		0xffffffff,
+		"images/system/white.png",
+		"banner_area"
+	);
+	auto banner_text = window->addField("banner", 64);
+	banner_text->setText("AUTOMATIC INVENTORY BEHAVIOR");
+	banner_text->setFont(bigfont_no_outline);
+	banner_text->setJustify(Field::justify_t::CENTER);
+
+	// background
+	window->addImage(
+		SDL_Rect{18, 54, 942, 658},
+		0xffffffff,
+		"images/system/white.png",
+		"rock_background_dimmer"
+	);
+	window->addImage(
+		SDL_Rect{18, 54, 942, 658},
+		makeColor(127, 127, 127, 251),
+		"images/ui/Main Menus/Settings/Settings_BGTile00.png",
+		"rock_background"
+	);
+	auto window_frame = window->addImage(
+		window->getActualSize(),
+		0xffffffff,
+		"images/ui/Main Menus/Settings/AutoSort/AutoSort_Window00.png",
+		"window_frame"
+	);
+	window_frame->ontop = true;
+
+	// bottom buttons
+	struct Option {
+		const char* name;
+		void (*callback)(Button&);
+	};
+	Option options[] = {
+		{"Defaults", inventorySortingDefaults},
+		{"Discard", inventorySortingDiscard},
+		{"Confirm", inventorySortingConfirm},
+	};
+	const int num_options = sizeof(options) / sizeof(options[0]);
+	for (int c = 0; c < num_options; ++c) {
+		auto button = window->addButton(options[c].name);
+		button->setSize(SDL_Rect{412 + (582 - 412) * c, 638, 164, 62});
+		button->setBackground("images/ui/Main Menus/Settings/AutoSort/Button_Basic00.png");
+		button->setText(options[c].name);
+		button->setFont(bigfont_outline);
+		button->setColor(makeColor(127, 127, 127, 255));
+		button->setHighlightColor(makeColor(255, 255, 255, 255));
+		if (c > 0) {
+			button->setWidgetLeft(options[c - 1].name);
+		}
+		if (c < num_options - 1) {
+			button->setWidgetRight(options[c + 1].name);
+		}
+		button->setCallback(options[c].callback);
+	}
+	auto first_button = window->findButton(options[0].name); assert(first_button);
+	first_button->select();
 }
 
 static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
@@ -594,7 +779,7 @@ static Frame* settingsSubwindowSetup(Button& button) {
 	settings_subwindow->setScrollBarsEnabled(true);
 	settings_subwindow->setSize(SDL_Rect{17, 71 * 2, 547 * 2, 224 * 2});
 	settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, 224 * 2});
-	settings_subwindow->setHollow(true);
+	settings_subwindow->setColor(0);
 	settings_subwindow->setBorder(0);
 	settings_subwindow->setTickCallback([](Widget& widget){
 		auto frame = static_cast<Frame*>(&widget);
@@ -756,7 +941,7 @@ void settingsUI(Button& button) {
 		nullptr);
 	y += settingsAddCustomize(*settings_subwindow, y, "inventory_sorting", "Inventory Sorting",
 		"Customize the way items are automatically sorted in your inventory.",
-		nullptr);
+		settingsCustomizeInventorySorting);
 #ifndef NINTENDO
 	y += settingsAddBooleanOption(*settings_subwindow, y, "use_on_release", "Use on Release",
 		"Activate an item as soon as the Use key is released in the inventory window.",
@@ -1480,6 +1665,7 @@ void mainSettings(Button& button) {
 	settings_tab_name = "";
 
 	allSettings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
+	allSettings.inventory_sorting = InventorySorting::load();
 	allSettings.use_on_release_enabled = !right_click_protect;
 	allSettings.show_messages_enabled = !disable_messages;
 	allSettings.show_player_nametags_enabled = !hide_playertags;
@@ -1526,7 +1712,7 @@ void mainSettings(Button& button) {
 	auto settings = main_menu_frame->addFrame("settings");
 	settings->setSize(SDL_Rect{(Frame::virtualScreenX - 1126) / 2, (Frame::virtualScreenY - 718) / 2, 1126, 718});
 	settings->setActualSize(SDL_Rect{0, 0, settings->getSize().w, settings->getSize().h});
-	settings->setHollow(true);
+	settings->setColor(0);
 	settings->setBorder(0);
 	settings->addImage(
 		SDL_Rect{
