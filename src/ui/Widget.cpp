@@ -5,6 +5,7 @@
 #include "Frame.hpp"
 #include "Image.hpp"
 #include "../input.hpp"
+#include "../engine/audio/sound.hpp"
 
 Widget::~Widget() {
 	if (parent) {
@@ -77,6 +78,7 @@ Widget* Widget::handleInput() {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result) {
+						playSound(495, 64);
 						result->scrollParent();
 						return result;
 					}

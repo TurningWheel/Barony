@@ -40,6 +40,46 @@ static const char* smallfont_outline = "fonts/pixel_maz.ttf#32#2";
 static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#32#2";
 static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
 
+static inline void soundToggleMenu() {
+	playSound(500, 64);
+}
+
+static inline void soundMove() {
+	playSound(495, 64);
+}
+
+static inline void soundActivate() {
+	playSound(493, 64);
+}
+
+static inline void soundCancel() {
+	playSound(499, 64);
+}
+
+static inline void soundToggle() {
+	playSound(492, 64);
+}
+
+static inline void soundCheckmark() {
+	playSound(494, 64);
+}
+
+static inline void soundSlider() {
+#ifdef NINTENDO
+	playSound(497, 64);
+#endif
+}
+
+static inline void soundWarning() {
+	playSound(496, 64);
+}
+
+static inline void soundError() {
+	playSound(498, 64);
+}
+
+/******************************************************************************/
+
 static void updateMenuCursor(Widget& widget) {
 	Frame* buttons = static_cast<Frame*>(&widget);
 	for (auto button : buttons->getButtons()) {
@@ -89,13 +129,18 @@ static void updateSliderArrows(Frame& frame) {
 			if (left) {
 				left->pos.x = slider->getHandleSize().x - 32;
 				left->pos.y = slider->getRailSize().y + slider->getRailSize().h / 2 - 22;
-				left->disabled = false;
+				if (left->disabled) {
+					left->disabled = false;
+					soundActivate();
+				}
 			}
 			auto right = frame.findImage("slider_right");
 			if (right) {
 				right->pos.x = slider->getHandleSize().x + slider->getHandleSize().w + 2;
 				right->pos.y = slider->getRailSize().y + slider->getRailSize().h / 2 - 22;
-				right->disabled = false;
+				if (right->disabled) {
+					right->disabled = false;
+				}
 			}
 		}
 	}
@@ -448,6 +493,7 @@ static void settingsReset() {
 }
 
 static void inventorySortingDefaults(Button& button) {
+	soundActivate();
 	allSettings.inventory_sorting = InventorySorting::reset();
 	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
 	window->removeSelf();
@@ -456,6 +502,7 @@ static void inventorySortingDefaults(Button& button) {
 }
 
 static void inventorySortingDiscard(Button& button) {
+	soundCancel();
 	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
 	window->removeSelf();
 	auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -466,6 +513,7 @@ static void inventorySortingDiscard(Button& button) {
 }
 
 static void inventorySortingConfirm(Button& button) {
+	soundActivate();
 	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
 	window->removeSelf();
 	auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -476,6 +524,8 @@ static void inventorySortingConfirm(Button& button) {
 }
 
 void settingsCustomizeInventorySorting(Button& button) {
+	soundActivate();
+
 	auto window = main_menu_frame->addFrame("inventory_sorting_window");
 	window->setSize(SDL_Rect{
 		(Frame::virtualScreenX - 978) / 2,
@@ -595,18 +645,18 @@ void settingsCustomizeInventorySorting(Button& button) {
 
 	// hotbar toggle buttons
 	void (*hotbar_callbacks[12])(Button&) = {
-		[](Button& button){ allSettings.inventory_sorting.hotbarWeapons = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarArmor = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarAmulets = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarBooks = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarTools = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarThrown = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarGems = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarPotions = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarScrolls = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarStaves = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarFood = button.isPressed(); },
-		[](Button& button){ allSettings.inventory_sorting.hotbarSpells = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarWeapons = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarArmor = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarAmulets = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarBooks = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarTools = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarThrown = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarGems = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarPotions = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarScrolls = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarStaves = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarFood = button.isPressed(); },
+		[](Button& button){ soundCheckmark(); allSettings.inventory_sorting.hotbarSpells = button.isPressed(); },
 	};
 	const int num_hotbar_buttons = sizeof(hotbar_callbacks) / sizeof(hotbar_callbacks[0]);
 	for (int c = num_hotbar_buttons - 1; c >= 0; --c) {
@@ -658,17 +708,17 @@ void settingsCustomizeInventorySorting(Button& button) {
 
 	// inventory sort sliders
 	void (*sort_slider_callbacks[11])(Slider&) = {
-		[](Slider& slider){ allSettings.inventory_sorting.sortWeapons = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortArmor = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortAmulets = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortBooks = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortTools = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortThrown = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortGems = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortPotions = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortScrolls = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortStaves = slider.getValue(); },
-		[](Slider& slider){ allSettings.inventory_sorting.sortFood = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortWeapons = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortArmor = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortAmulets = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortBooks = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortTools = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortThrown = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortGems = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortPotions = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortScrolls = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortStaves = slider.getValue(); },
+		[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortFood = slider.getValue(); },
 		//[](Slider& slider){ allSettings.inventory_sorting.sortEquipped = slider.getValue(); }, // Hey, we don't have enough room for this
 	};
 	const int num_sliders = sizeof(sort_slider_callbacks) / sizeof(sort_slider_callbacks[0]);
@@ -1035,9 +1085,6 @@ static int settingsAddSlider(
 	slider->setWidgetPageRight("tab_right");
 	slider->addWidgetAction("MenuAlt1", "restore_defaults");
 	slider->addWidgetAction("MenuStart", "confirm_and_exit");
-	if (callback) {
-		(*callback)(*slider);
-	}
 	return result;
 }
 
@@ -1045,7 +1092,7 @@ static Frame* settingsSubwindowSetup(Button& button) {
 	if (settings_tab_name == button.getName()) {
 		return nullptr;
 	}
-	playSound(139, 64); // click sound
+	soundActivate();
 	settings_tab_name = button.getName();
 
 	assert(main_menu_frame);
@@ -1233,15 +1280,15 @@ void settingsUI(Button& button) {
 	y += settingsAddSubHeader(*settings_subwindow, y, "inventory", "Inventory Options");
 	y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "add_items_to_hotbar", "Add Items to Hotbar",
 		"Automatically fill the hotbar with recently collected items.",
-		allSettings.add_items_to_hotbar_enabled, [](Button& button){allSettings.add_items_to_hotbar_enabled = button.isPressed();},
-		nullptr);
+		allSettings.add_items_to_hotbar_enabled, [](Button& button){soundToggle(); allSettings.add_items_to_hotbar_enabled = button.isPressed();},
+		settingsCustomizeInventorySorting);
 	y += settingsAddCustomize(*settings_subwindow, y, "inventory_sorting", "Inventory Sorting",
 		"Customize the way items are automatically sorted in your inventory.",
 		settingsCustomizeInventorySorting);
 #ifndef NINTENDO
 	y += settingsAddBooleanOption(*settings_subwindow, y, "use_on_release", "Use on Release",
 		"Activate an item as soon as the Use key is released in the inventory window.",
-		allSettings.use_on_release_enabled, [](Button& button){allSettings.use_on_release_enabled = button.isPressed();});
+		allSettings.use_on_release_enabled, [](Button& button){soundToggle(); allSettings.use_on_release_enabled = button.isPressed();});
 #endif
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "hud", "HUD Options");
@@ -1250,18 +1297,18 @@ void settingsUI(Button& button) {
 		nullptr);
 	y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "show_messages", "Show Messages",
 		"Customize which messages will be logged to the player, if any.",
-		allSettings.show_messages_enabled, [](Button& button){allSettings.show_messages_enabled = button.isPressed();},
+		allSettings.show_messages_enabled, [](Button& button){soundToggle(); allSettings.show_messages_enabled = button.isPressed();},
 		nullptr);
 	y += settingsAddBooleanOption(*settings_subwindow, y, "show_player_nametags", "Show Player Nametags",
 		"Display the name of each player character above their avatar.",
-		allSettings.show_player_nametags_enabled, [](Button& button){allSettings.show_player_nametags_enabled = button.isPressed();});
+		allSettings.show_player_nametags_enabled, [](Button& button){soundToggle(); allSettings.show_player_nametags_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD",
 		"Toggle the display of health and other status bars in game when the inventory is closed.",
-		allSettings.show_hud_enabled, [](Button& button){allSettings.show_hud_enabled = button.isPressed();});
+		allSettings.show_hud_enabled, [](Button& button){soundToggle(); allSettings.show_hud_enabled = button.isPressed();});
 #ifndef NINTENDO
 	y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Show IP Address",
 		"Hide the display of IP addresses and other location data for privacy purposes.",
-		allSettings.show_ip_address_enabled, [](Button& button){allSettings.show_ip_address_enabled = button.isPressed();});
+		allSettings.show_ip_address_enabled, [](Button& button){soundToggle(); allSettings.show_ip_address_enabled = button.isPressed();});
 #endif
 
 #ifndef NINTENDO
@@ -1299,24 +1346,24 @@ void settingsVideo(Button& button) {
 	y += settingsAddSubHeader(*settings_subwindow, y, "accessibility", "Accessibility");
 	y += settingsAddBooleanOption(*settings_subwindow, y, "content_control", "Content Control",
 		"Disable the appearance of blood and other explicit kinds of content in the game",
-		allSettings.content_control_enabled, [](Button& button){allSettings.content_control_enabled = button.isPressed();});
+		allSettings.content_control_enabled, [](Button& button){soundToggle(); allSettings.content_control_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", "Colorblind Mode",
 		"Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.",
-		allSettings.colorblind_mode_enabled, [](Button& button){allSettings.colorblind_mode_enabled = button.isPressed();});
+		allSettings.colorblind_mode_enabled, [](Button& button){soundToggle(); allSettings.colorblind_mode_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter",
 		"Replace all giant spiders in the game with hostile crustaceans.",
-		allSettings.arachnophobia_filter_enabled, [](Button& button){allSettings.arachnophobia_filter_enabled = button.isPressed();});
+		allSettings.arachnophobia_filter_enabled, [](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
 	y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
 		"Toggle the camera's ability to twist and roll when the player stumbles or receives damage.",
-		allSettings.shaking_enabled, [](Button& button){allSettings.shaking_enabled = button.isPressed();});
+		allSettings.shaking_enabled, [](Button& button){soundToggle(); allSettings.shaking_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "bobbing", "Bobbing",
 		"Toggle the camera's ability to bob steadily as the player moves.",
-		allSettings.bobbing_enabled, [](Button& button){allSettings.bobbing_enabled = button.isPressed();});
+		allSettings.bobbing_enabled, [](Button& button){soundToggle(); allSettings.bobbing_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "light_flicker", "Light Flicker",
 		"Toggle the flickering appearance of torches and other light fixtures in the game world.",
-		allSettings.light_flicker_enabled, [](Button& button){allSettings.light_flicker_enabled = button.isPressed();});
+		allSettings.light_flicker_enabled, [](Button& button){soundToggle(); allSettings.light_flicker_enabled = button.isPressed();});
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 #ifndef NINTENDO
@@ -1328,21 +1375,21 @@ void settingsVideo(Button& button) {
 		nullptr);
 	y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 		"Prevent screen-tearing by locking the game's refresh rate to the current display.",
-		allSettings.vsync_enabled, [](Button& button){allSettings.vsync_enabled = button.isPressed();});
+		allSettings.vsync_enabled, [](Button& button){soundToggle(); allSettings.vsync_enabled = button.isPressed();});
 #endif
 	y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
 		"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
-		allSettings.vertical_split_enabled, [](Button& button){allSettings.vertical_split_enabled = button.isPressed();});
+		allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
 	y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 		"Adjust the brightness of the visuals in-game.",
-		allSettings.gamma, 50, 200, true, [](Slider& slider){allSettings.gamma = slider.getValue();});
+		allSettings.gamma, 50, 200, true, [](Slider& slider){soundSlider(); allSettings.gamma = slider.getValue();});
 	y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
 		"Adjust the vertical field-of-view of the in-game camera.",
-		allSettings.fov, 40, 100, false, [](Slider& slider){allSettings.fov = slider.getValue();});
+		allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(); allSettings.fov = slider.getValue();});
 #ifndef NINTENDO
 	y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit",
 		"Control the frame-rate limit of the game window.",
-		allSettings.fps, 30, 300, false, [](Slider& slider){allSettings.fps = slider.getValue();});
+		allSettings.fps, 30, 300, false, [](Slider& slider){soundSlider(); allSettings.fps = slider.getValue();});
 #endif
 
 #ifndef NINTENDO
@@ -1388,31 +1435,31 @@ void settingsAudio(Button& button) {
 	y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
 	y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume",
 		"Adjust the volume of all sound sources equally.",
-		allSettings.master_volume, 0, 100, true, [](Slider& slider){allSettings.master_volume = slider.getValue();});
+		allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.master_volume = slider.getValue();});
 	y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
 		"Adjust the volume of most game sound effects.",
-		allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){allSettings.gameplay_volume = slider.getValue();});
+		allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.gameplay_volume = slider.getValue();});
 	y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
 		"Adjust the volume of ambient subterranean wind.",
-		allSettings.ambient_volume, 0, 100, true, [](Slider& slider){allSettings.ambient_volume = slider.getValue();});
+		allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.ambient_volume = slider.getValue();});
 	y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 		"Adjust the volume of flowing water and lava.",
-		allSettings.environment_volume, 0, 100, true, [](Slider& slider){allSettings.environment_volume = slider.getValue();});
+		allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.environment_volume = slider.getValue();});
 	y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
 		"Adjust the volume of the game's soundtrack.",
-		allSettings.music_volume, 0, 100, true, [](Slider& slider){allSettings.music_volume = slider.getValue();});
+		allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.music_volume = slider.getValue();});
 
 	y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
 	y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", "Minimap Pings",
 		"Toggle the ability to hear pings on the minimap",
-		allSettings.minimap_pings_enabled, [](Button& button){allSettings.minimap_pings_enabled = button.isPressed();});
+		allSettings.minimap_pings_enabled, [](Button& button){soundToggle(); allSettings.minimap_pings_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "player_monster_sounds", "Player Monster Sounds",
 		"Toggle the chance to emit monstrous mumbles when playing a non-human character.",
-		allSettings.player_monster_sounds_enabled, [](Button& button){allSettings.player_monster_sounds_enabled = button.isPressed();});
+		allSettings.player_monster_sounds_enabled, [](Button& button){soundToggle(); allSettings.player_monster_sounds_enabled = button.isPressed();});
 #ifndef NINTENDO
 	y += settingsAddBooleanOption(*settings_subwindow, y, "out_of_focus_audio", "Out-of-Focus Audio",
 		"Enable audio sources even when the game window is out-of-focus.",
-		allSettings.out_of_focus_audio_enabled, [](Button& button){allSettings.out_of_focus_audio_enabled = button.isPressed();});
+		allSettings.out_of_focus_audio_enabled, [](Button& button){soundToggle(); allSettings.out_of_focus_audio_enabled = button.isPressed();});
 #endif
 
 #ifndef NINTENDO
@@ -1457,19 +1504,19 @@ void settingsControls(Button& button) {
 	y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
 	y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
 		"Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
-		allSettings.numkeys_in_inventory_enabled, [](Button& button){allSettings.numkeys_in_inventory_enabled = button.isPressed();});
+		allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
 	y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
 		"Control the speed by which mouse movement affects camera movement.",
-		allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){allSettings.mouse_sensitivity = slider.getValue();});
+		allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){soundSlider(); allSettings.mouse_sensitivity = slider.getValue();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse",
 		"Reverse mouse up and down movement for controlling the orientation of the player.",
-		allSettings.reverse_mouse_enabled, [](Button& button){allSettings.reverse_mouse_enabled = button.isPressed();});
+		allSettings.reverse_mouse_enabled, [](Button& button){soundToggle(); allSettings.reverse_mouse_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", "Smooth Mouse",
 		"Smooth the movement of the mouse over a few frames of input.",
-		allSettings.smooth_mouse_enabled, [](Button& button){allSettings.smooth_mouse_enabled = button.isPressed();});
+		allSettings.smooth_mouse_enabled, [](Button& button){soundToggle(); allSettings.smooth_mouse_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit",
 		"Limit how fast the player can rotate by moving the mouse.",
-		allSettings.rotation_speed_limit_enabled, [](Button& button){allSettings.rotation_speed_limit_enabled = button.isPressed();});
+		allSettings.rotation_speed_limit_enabled, [](Button& button){soundToggle(); allSettings.rotation_speed_limit_enabled = button.isPressed();});
 #endif
 
 #ifdef NINTENDO
@@ -1482,10 +1529,10 @@ void settingsControls(Button& button) {
 #endif
 	y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
 		"Affect the horizontal sensitivity of the control stick used for turning.",
-		allSettings.turn_sensitivity_x, 0, 100, true, [](Slider& slider){allSettings.turn_sensitivity_x = slider.getValue();});
+		allSettings.turn_sensitivity_x, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.turn_sensitivity_x = slider.getValue();});
 	y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
 		"Affect the vertical sensitivity of the control stick used for turning.",
-		allSettings.turn_sensitivity_y, 0, 100, true, [](Slider& slider){allSettings.turn_sensitivity_y = slider.getValue();});
+		allSettings.turn_sensitivity_y, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.turn_sensitivity_y = slider.getValue();});
 
 #ifndef NINTENDO
 	hookSettings(*settings_subwindow,
@@ -1519,32 +1566,32 @@ void settingsGame(Button& button) {
 	y += settingsAddSubHeader(*settings_subwindow, y, "game", "Game Settings");
 	y += settingsAddBooleanOption(*settings_subwindow, y, "classic_mode", "Classic Mode",
 		"Toggle this option to make the game end after the battle with Baron Herx.",
-		allSettings.classic_mode_enabled, [](Button& button){allSettings.classic_mode_enabled = button.isPressed();});
+		allSettings.classic_mode_enabled, [](Button& button){soundToggle(); allSettings.classic_mode_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "hardcore_mode", "Hardcore Mode",
 		"Greatly increases the difficulty of all combat encounters.",
-		allSettings.hardcore_mode_enabled, [](Button& button){allSettings.hardcore_mode_enabled = button.isPressed();});
+		allSettings.hardcore_mode_enabled, [](Button& button){soundToggle(); allSettings.hardcore_mode_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "friendly_fire", "Friendly Fire",
 		"Enable players to harm eachother and their allies.",
-		allSettings.friendly_fire_enabled, [](Button& button){allSettings.friendly_fire_enabled = button.isPressed();});
+		allSettings.friendly_fire_enabled, [](Button& button){soundToggle(); allSettings.friendly_fire_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "keep_inventory", "Keep Inventory after Death",
 		"When a player dies, they retain their inventory when revived on the next level.",
-		allSettings.keep_inventory_enabled, [](Button& button){allSettings.keep_inventory_enabled = button.isPressed();});
+		allSettings.keep_inventory_enabled, [](Button& button){soundToggle(); allSettings.keep_inventory_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "hunger", "Hunger",
 		"Toggle player hunger. When hunger is off, eating food heals the player directly.",
-		allSettings.hunger_enabled, [](Button& button){allSettings.hunger_enabled = button.isPressed();});
+		allSettings.hunger_enabled, [](Button& button){soundToggle(); allSettings.hunger_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "minotaur", "Minotaur",
 		"Toggle the minotaur's ability to spawn on many levels after a certain amount of time.",
-		allSettings.minotaur_enabled, [](Button& button){allSettings.minotaur_enabled = button.isPressed();});
+		allSettings.minotaur_enabled, [](Button& button){soundToggle(); allSettings.minotaur_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "random_traps", "Random Traps",
 		"Toggle the random placement of traps throughout each level.",
-		allSettings.random_traps_enabled, [](Button& button){allSettings.random_traps_enabled = button.isPressed();});
+		allSettings.random_traps_enabled, [](Button& button){soundToggle(); allSettings.random_traps_enabled = button.isPressed();});
 	y += settingsAddBooleanOption(*settings_subwindow, y, "extra_life", "Extra Life",
 		"Start the game with an Amulet of Life-saving, to prevent one death.",
-		allSettings.extra_life_enabled, [](Button& button){allSettings.extra_life_enabled = button.isPressed();});
+		allSettings.extra_life_enabled, [](Button& button){soundToggle(); allSettings.extra_life_enabled = button.isPressed();});
 #ifndef NINTENDO
 	y += settingsAddBooleanOption(*settings_subwindow, y, "cheats", "Cheats",
 		"Toggle the ability to activate cheatcodes during gameplay.",
-		allSettings.cheats_enabled, [](Button& button){allSettings.cheats_enabled = button.isPressed();});
+		allSettings.cheats_enabled, [](Button& button){soundToggle(); allSettings.cheats_enabled = button.isPressed();});
 #endif
 
 #ifndef NINTENDO
@@ -1577,19 +1624,19 @@ void settingsGame(Button& button) {
 /******************************************************************************/
 
 void recordsAdventureArchives(Button& button) {
-	playSound(139, 64); // click sound
+	soundActivate();
 }
 
 void recordsLeaderboards(Button& button) {
-	playSound(139, 64); // click sound
+	soundActivate();
 }
 
 void recordsDungeonCompendium(Button& button) {
-	playSound(139, 64); // click sound
+	soundActivate();
 }
 
 void recordsStoryIntroduction(Button& button) {
-	playSound(139, 64); // click sound
+	soundActivate();
 
 	destroyMainMenu();
 	main_menu_frame = gui->addFrame("main_menu");
@@ -1604,7 +1651,7 @@ void recordsStoryIntroduction(Button& button) {
 }
 
 void recordsCredits(Button& button) {
-	playSound(139, 64); // click sound
+	soundActivate();
 
 	destroyMainMenu();
 	main_menu_frame = gui->addFrame("main_menu");
@@ -1755,7 +1802,7 @@ void recordsCredits(Button& button) {
 }
 
 void recordsBackToMainMenu(Button& button) {
-	playSound(139, 64); // click sound
+	soundCancel();
 
 	assert(main_menu_frame);
 
@@ -1851,15 +1898,15 @@ void recordsBackToMainMenu(Button& button) {
 /******************************************************************************/
 
 void mainPlayGame(Button& button) {
-	playSound(139, 64); // click sound
+	soundActivate();
 }
 
 void mainPlayModdedGame(Button& button) {
-	playSound(139, 64); // click sound
+	soundActivate();
 }
 
 void mainHallOfRecords(Button& button) {
-	playSound(139, 64); // click sound
+	soundActivate();
 
 	assert(main_menu_frame);
 
@@ -1956,7 +2003,7 @@ void mainHallOfRecords(Button& button) {
 }
 
 void mainSettings(Button& button) {
-	playSound(139, 64); // click sound
+	//soundActivate(); // not needed, activated tab will do this
 
 	settings_tab_name = "";
 
@@ -2200,6 +2247,7 @@ void mainSettings(Button& button) {
 	restore_defaults->addWidgetAction("MenuAlt1", "restore_defaults");
 	restore_defaults->addWidgetAction("MenuStart", "confirm_and_exit");
 	restore_defaults->setCallback([](Button& button){
+		soundActivate();
 		settingsReset();
 		});
 
@@ -2212,6 +2260,7 @@ void mainSettings(Button& button) {
 	discard_and_exit->setColor(makeColor(255, 255, 255, 191));
 	discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 	discard_and_exit->setCallback([](Button&){
+		soundCancel();
 		assert(main_menu_frame);
 		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 		auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
@@ -2239,6 +2288,7 @@ void mainSettings(Button& button) {
 	confirm_and_exit->setColor(makeColor(255, 255, 255, 191));
 	confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 	confirm_and_exit->setCallback([](Button&){
+		soundActivate();
 		assert(main_menu_frame);
 		settingsSave();
 		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -2259,7 +2309,7 @@ void mainSettings(Button& button) {
 }
 
 void mainQuit(Button& button) {
-	playSound(139, 64); // click sound
+	soundActivate();
 }
 
 /******************************************************************************/
@@ -2276,9 +2326,11 @@ void doMainMenu() {
 			if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
 				createMainMenu();
+				playMusic(intromusic[1], true, true, false);
 			}
 			if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
 				createStoryScreen();
+				playMusic(sounds[501], false, true, false);
 			}
 			fadeout = false;
 			main_menu_fade_destination = FadeDestination::None;
