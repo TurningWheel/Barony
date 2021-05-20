@@ -396,7 +396,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 }
 
 Frame::result_t Frame::process() {
-	result_t result = process(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h}, true);
+	result_t result = process(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h}, findSelectedWidget(), true);
 
 	tooltip = nullptr;
 	if (result.tooltip && result.tooltip[0] != '\0') {
@@ -409,7 +409,7 @@ Frame::result_t Frame::process() {
 	return result;
 }
 
-Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable) {
+Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget, bool usable) {
 	result_t result;
 	result.removed = false;
 	result.usable = usable;
@@ -528,11 +528,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	}
 
 	// scroll with right stick
-	if (allowScrolling && scrollbars) {
+	if (selectedWidget && (selectedWidget == this || selectedWidget->isChildOf(*this)) && allowScrolling && scrollbars) {
 		Input& input = Input::inputs[owner];
 
 		// x scroll
-		if (actualSize.w > size.w) {
+		if (this->actualSize.w > size.w) {
 			if (input.binary("MenuScrollRight")) {
 				this->actualSize.x += std::min(this->actualSize.x + 5, this->actualSize.w - _size.w);
 			}
@@ -542,7 +542,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 		}
 
 		// y scroll
-		if (actualSize.h > size.h) {
+		if (this->actualSize.h > size.h) {
 			if (input.binary("MenuScrollDown")) {
 				this->actualSize.y = std::min(this->actualSize.y + 5, this->actualSize.h - _size.h);
 			}
@@ -594,7 +594,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	{
 		for (int i = frames.size() - 1; i >= 0; --i) {
 			Frame* frame = frames[i];
-			result_t frameResult = frame->process(_size, actualSize, usable);
+			result_t frameResult = frame->process(_size, actualSize, selectedWidget, usable);
 			usable = result.usable = frameResult.usable;
 			if (!frameResult.removed) {
 				if (frameResult.tooltip != nullptr) {

@@ -149,6 +149,18 @@ Widget* Widget::findSelectedWidget() {
 	return nullptr;
 }
 
+bool Widget::isChildOf(Widget& widget) {
+	if (!parent) {
+		return false;
+	}
+	else if (parent == &widget) {
+		return true;
+	}
+	else {
+		return parent->isChildOf(widget);
+	}
+}
+
 void Widget::adoptWidget(Widget& widget) {
 	if (widget.parent) {
 		for (auto node = widget.parent->widgets.begin(); node != widget.parent->widgets.end(); ++node) {

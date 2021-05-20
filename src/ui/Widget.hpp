@@ -82,6 +82,11 @@ public:
     //! @return the next widget to select, or nullptr if no widget was selected
     Widget* handleInput();
 
+    //! return true if this widget is the descendant of another widget
+    //! @param widget the widget who is supposedly our ancestor
+    //! @return true if it is, otherwise false
+    bool isChildOf(Widget& widget);
+
     //! adopt a new widget as one of our children
     //! @param widget the widget to adopt
     void adoptWidget(Widget& widget);

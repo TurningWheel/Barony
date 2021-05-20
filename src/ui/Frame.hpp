@@ -305,7 +305,7 @@ private:
 	//! @param _actualSize offset into the frame space (scroll)
 	//! @param usable true if another object doesn't have the mouse's attention, false otherwise
 	//! @return compiled results of frame processing
-	result_t process(SDL_Rect _size, SDL_Rect actualSize, const bool usable);
+	result_t process(SDL_Rect _size, SDL_Rect actualSize, Widget* selectedWidget, const bool usable);
 };
 
 // root frame object

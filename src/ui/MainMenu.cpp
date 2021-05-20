@@ -74,6 +74,43 @@ static void updateMenuCursor(Widget& widget) {
 	}
 }
 
+static void tickMainMenu(Widget& widget) {
+	++main_menu_ticks;
+}
+
+static void updateSliderArrows(Frame& frame) {
+	bool drawSliders = false;
+	auto selectedWidget = frame.findSelectedWidget();
+	if (selectedWidget && selectedWidget->getType() == Widget::WIDGET_SLIDER) {
+		auto slider = static_cast<Slider*>(selectedWidget);
+		if (slider->isActivated() && slider->getOrientation() == Slider::SLIDER_HORIZONTAL) {
+			drawSliders = true;
+			auto left = frame.findImage("slider_left");
+			if (left) {
+				left->pos.x = slider->getHandleSize().x - 32;
+				left->pos.y = slider->getRailSize().y + slider->getRailSize().h / 2 - 22;
+				left->disabled = false;
+			}
+			auto right = frame.findImage("slider_right");
+			if (right) {
+				right->pos.x = slider->getHandleSize().x + slider->getHandleSize().w + 2;
+				right->pos.y = slider->getRailSize().y + slider->getRailSize().h / 2 - 22;
+				right->disabled = false;
+			}
+		}
+	}
+	if (drawSliders == false) {
+		auto left = frame.findImage("slider_left");
+		if (left) {
+			left->disabled = true;
+		}
+		auto right = frame.findImage("slider_right");
+		if (right) {
+			right->disabled = true;
+		}
+	}
+}
+
 /******************************************************************************/
 
 inline void InventorySorting::save() {
@@ -268,19 +305,6 @@ static void createStoryScreen() {
 
 /******************************************************************************/
 
-static void inventorySortingDefaults(Button& button) {
-}
-
-static void inventorySortingDiscard(Button& button) {
-	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
-	window->removeSelf();
-}
-
-static void inventorySortingConfirm(Button& button) {
-}
-
-/******************************************************************************/
-
 static std::string settings_tab_name;
 static AllSettings allSettings;
 
@@ -423,7 +447,35 @@ static void settingsReset() {
 	allSettings.cheats_enabled = false;
 }
 
-static void settingsCustomizeInventorySorting(Button& button) {
+static void inventorySortingDefaults(Button& button) {
+	allSettings.inventory_sorting = InventorySorting::reset();
+	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
+	window->removeSelf();
+	void settingsCustomizeInventorySorting(Button& button);
+	settingsCustomizeInventorySorting(button);
+}
+
+static void inventorySortingDiscard(Button& button) {
+	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
+	window->removeSelf();
+	auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+	auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+	auto inventory_sorting_customize = settings_subwindow->findButton("setting_inventory_sorting_customize_button"); assert(inventory_sorting_customize);
+	inventory_sorting_customize->select();
+	allSettings.inventory_sorting = InventorySorting::load();
+}
+
+static void inventorySortingConfirm(Button& button) {
+	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
+	window->removeSelf();
+	auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+	auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+	auto inventory_sorting_customize = settings_subwindow->findButton("setting_inventory_sorting_customize_button"); assert(inventory_sorting_customize);
+	inventory_sorting_customize->select();
+	allSettings.inventory_sorting.save();
+}
+
+void settingsCustomizeInventorySorting(Button& button) {
 	auto window = main_menu_frame->addFrame("inventory_sorting_window");
 	window->setSize(SDL_Rect{
 		(Frame::virtualScreenX - 978) / 2,
@@ -434,18 +486,55 @@ static void settingsCustomizeInventorySorting(Button& button) {
 	window->setActualSize(SDL_Rect{0, 0, window->getSize().w, window->getSize().h});
 	window->setColor(0);
 	window->setBorder(0);
+	window->setTickCallback([](Widget& widget){
+		auto frame = static_cast<Frame*>(&widget);
+		updateSliderArrows(*frame);
+		});
+
+	// slider arrows
+	auto sliderLeft = window->addImage(
+		SDL_Rect{0, 0, 30, 44},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Left00.png",
+		"slider_left"
+	);
+	sliderLeft->disabled = true;
+	sliderLeft->ontop = true;
+	auto sliderRight = window->addImage(
+		SDL_Rect{0, 0, 30, 44},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Right00.png",
+		"slider_right"
+	);
+	sliderRight->disabled = true;
+	sliderRight->ontop = true;
 
 	// banner
-	window->addImage(
+	auto banner = window->addImage(
 		SDL_Rect{14, 4, 950, 50},
-		0xffffffff,
+		makeColor(50, 56, 67, 255),
 		"images/system/white.png",
 		"banner_area"
 	);
-	auto banner_text = window->addField("banner", 64);
+	auto banner_text = window->addField("banner_text", 64);
+	banner_text->setSize(banner->pos);
 	banner_text->setText("AUTOMATIC INVENTORY BEHAVIOR");
-	banner_text->setFont(bigfont_no_outline);
+	banner_text->setFont(bigfont_outline);
 	banner_text->setJustify(Field::justify_t::CENTER);
+
+	auto populate_text = window->addField("populate_text", 64);
+	populate_text->setSize(SDL_Rect{20, 64, 512, 64});
+	populate_text->setText("Populate Hotbar");
+	populate_text->setFont(bigfont_outline);
+	populate_text->setVJustify(Field::justify_t::TOP);
+	populate_text->setHJustify(Field::justify_t::LEFT);
+
+	auto sort_text = window->addField("sort_text", 64);
+	sort_text->setSize(SDL_Rect{16, 64, 942, 64});
+	sort_text->setText("Auto-Sort Order");
+	sort_text->setFont(bigfont_outline);
+	sort_text->setVJustify(Field::justify_t::TOP);
+	sort_text->setHJustify(Field::justify_t::CENTER);
 
 	// background
 	window->addImage(
@@ -454,12 +543,13 @@ static void settingsCustomizeInventorySorting(Button& button) {
 		"images/system/white.png",
 		"rock_background_dimmer"
 	);
-	window->addImage(
+	auto rock_background = window->addImage(
 		SDL_Rect{18, 54, 942, 658},
 		makeColor(127, 127, 127, 251),
 		"images/ui/Main Menus/Settings/Settings_BGTile00.png",
 		"rock_background"
 	);
+	rock_background->tiled = true;
 	auto window_frame = window->addImage(
 		window->getActualSize(),
 		0xffffffff,
@@ -493,10 +583,199 @@ static void settingsCustomizeInventorySorting(Button& button) {
 		if (c < num_options - 1) {
 			button->setWidgetRight(options[c + 1].name);
 		}
+		button->setWidgetUp("sort_slider10");
 		button->setCallback(options[c].callback);
+		button->setWidgetBack("Discard");
+		button->addWidgetAction("MenuAlt1", "Defaults");
+		button->addWidgetAction("MenuStart", "Confirm");
 	}
 	auto first_button = window->findButton(options[0].name); assert(first_button);
 	first_button->select();
+	first_button->setWidgetLeft("hotbar_button11");
+
+	// hotbar toggle buttons
+	void (*hotbar_callbacks[12])(Button&) = {
+		[](Button& button){ allSettings.inventory_sorting.hotbarWeapons = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarArmor = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarAmulets = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarBooks = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarTools = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarThrown = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarGems = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarPotions = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarScrolls = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarStaves = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarFood = button.isPressed(); },
+		[](Button& button){ allSettings.inventory_sorting.hotbarSpells = button.isPressed(); },
+	};
+	const int num_hotbar_buttons = sizeof(hotbar_callbacks) / sizeof(hotbar_callbacks[0]);
+	for (int c = num_hotbar_buttons - 1; c >= 0; --c) {
+		auto button = window->addButton((std::string("hotbar_button") + std::to_string(c)).c_str());
+		button->setSize(SDL_Rect{62, 88 + c * 50, 48, 48});
+		button->setBackground("images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Backing00.png");
+		button->setIcon("images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_X00.png");
+		button->setStyle(Button::style_t::STYLE_CHECKBOX);
+		button->setCallback(hotbar_callbacks[c]);
+		button->setBorder(0);
+		button->setTickCallback([](Widget& widget){
+			auto button = static_cast<Button*>(&widget);
+			if (button->isSelected()) {
+				button->setBackground("images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Selected00.png");
+			} else {
+				button->setBackground("images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Backing00.png");
+			}
+			});
+		if (c > 0) {
+			button->setWidgetUp((std::string("hotbar_button") + std::to_string(c - 1)).c_str());
+		}
+		if (c < num_hotbar_buttons - 1) {
+			button->setWidgetDown((std::string("hotbar_button") + std::to_string(c + 1)).c_str());
+		}
+		if (c == num_hotbar_buttons - 1) {
+			button->setWidgetRight("Defaults");
+		} else {
+			button->setWidgetRight((std::string("sort_slider") + std::to_string(c)).c_str());
+		}
+		switch (c) {
+		case 0: button->setPressed(allSettings.inventory_sorting.hotbarWeapons); break;
+		case 1: button->setPressed(allSettings.inventory_sorting.hotbarArmor); break;
+		case 2: button->setPressed(allSettings.inventory_sorting.hotbarAmulets); break;
+		case 3: button->setPressed(allSettings.inventory_sorting.hotbarBooks); break;
+		case 4: button->setPressed(allSettings.inventory_sorting.hotbarTools); break;
+		case 5: button->setPressed(allSettings.inventory_sorting.hotbarThrown); break;
+		case 6: button->setPressed(allSettings.inventory_sorting.hotbarGems); break;
+		case 7: button->setPressed(allSettings.inventory_sorting.hotbarPotions); break;
+		case 8: button->setPressed(allSettings.inventory_sorting.hotbarScrolls); break;
+		case 9: button->setPressed(allSettings.inventory_sorting.hotbarStaves); break;
+		case 10: button->setPressed(allSettings.inventory_sorting.hotbarFood); break;
+		case 11: button->setPressed(allSettings.inventory_sorting.hotbarSpells); break;
+		default: break;
+		}
+		button->setWidgetBack("Discard");
+		button->addWidgetAction("MenuAlt1", "Defaults");
+		button->addWidgetAction("MenuStart", "Confirm");
+	}
+
+	// inventory sort sliders
+	void (*sort_slider_callbacks[11])(Slider&) = {
+		[](Slider& slider){ allSettings.inventory_sorting.sortWeapons = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortArmor = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortAmulets = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortBooks = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortTools = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortThrown = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortGems = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortPotions = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortScrolls = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortStaves = slider.getValue(); },
+		[](Slider& slider){ allSettings.inventory_sorting.sortFood = slider.getValue(); },
+		//[](Slider& slider){ allSettings.inventory_sorting.sortEquipped = slider.getValue(); }, // Hey, we don't have enough room for this
+	};
+	const int num_sliders = sizeof(sort_slider_callbacks) / sizeof(sort_slider_callbacks[0]);
+	for (int c = num_sliders - 1; c >= 0; --c) {
+		auto slider = window->addSlider((std::string("sort_slider") + std::to_string(c)).c_str());
+		slider->setMaxValue(6.f);
+		slider->setMinValue(-6.f);
+		slider->setRailSize(SDL_Rect{158, 100 + 50 *c, 724, 24});
+		slider->setHandleSize(SDL_Rect{0, 0, 52, 54});
+		slider->setRailImage("images/ui/Main Menus/Settings/AutoSort/transparent.png");
+		slider->setHandleImage("images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_BackBlack00.png");
+		slider->setCallback(sort_slider_callbacks[c]);
+		switch (c) {
+		case 0: slider->setValue(allSettings.inventory_sorting.sortWeapons); break;
+		case 1: slider->setValue(allSettings.inventory_sorting.sortArmor); break;
+		case 2: slider->setValue(allSettings.inventory_sorting.sortAmulets); break;
+		case 3: slider->setValue(allSettings.inventory_sorting.sortBooks); break;
+		case 4: slider->setValue(allSettings.inventory_sorting.sortTools); break;
+		case 5: slider->setValue(allSettings.inventory_sorting.sortThrown); break;
+		case 6: slider->setValue(allSettings.inventory_sorting.sortGems); break;
+		case 7: slider->setValue(allSettings.inventory_sorting.sortPotions); break;
+		case 8: slider->setValue(allSettings.inventory_sorting.sortScrolls); break;
+		case 9: slider->setValue(allSettings.inventory_sorting.sortStaves); break;
+		case 10: slider->setValue(allSettings.inventory_sorting.sortFood); break;
+		default: break;
+		}
+		if (c > 0) {
+			slider->setWidgetUp((std::string("sort_slider") + std::to_string(c - 1)).c_str());
+		}
+		if (c < num_sliders - 1) {
+			slider->setWidgetDown((std::string("sort_slider") + std::to_string(c + 1)).c_str());
+		}
+		else {
+			slider->setWidgetDown("Defaults");
+		}
+		slider->setWidgetLeft((std::string("hotbar_button") + std::to_string(c)).c_str());
+		const char* icon_img_path = nullptr;
+		switch (c) {
+		case 0: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Sword00.png"; break;
+		case 1: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Helmet00.png"; break;
+		case 2: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Necklace00.png"; break;
+		case 3: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Book00.png"; break;
+		case 4: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Torch00.png"; break;
+		case 5: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Chakram00.png"; break;
+		case 6: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Gem00.png"; break;
+		case 7: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Potion00.png"; break;
+		case 8: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Scroll00.png"; break;
+		case 9: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Staff00.png"; break;
+		case 10: icon_img_path = "images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Bread00.png"; break;
+		default: break;
+		}
+		auto icon = window->addImage(
+			SDL_Rect{0, 0, 52, 54},
+			0xffffffff,
+			icon_img_path ? icon_img_path : "",
+			(std::string("sort_slider_img") + std::to_string(c)).c_str()
+		);
+		icon->ontop = true;
+		icon->disabled = true;
+		slider->setTickCallback([](Widget& widget){
+			Slider* slider = static_cast<Slider*>(&widget);
+			slider->setValue((int)slider->getValue());
+			auto window = main_menu_frame->findFrame("inventory_sorting_window");
+			if (window) {
+				auto number = std::string(slider->getName()).substr(sizeof("sort_slider") - 1);
+				int c = atoi(number.c_str());
+				auto icon = window->findImage((std::string("sort_slider_img") + std::to_string(c)).c_str()); assert(icon);
+				icon->disabled = false;
+				icon->pos.x = slider->getHandleSize().x;
+				icon->pos.y = slider->getHandleSize().y;
+				if (slider->isSelected()) {
+					slider->setHandleImage("images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_BackBrown00.png");
+				} else {
+					slider->setHandleImage("images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_BackBlack00.png");
+				}
+			}
+			});
+		slider->setWidgetBack("Discard");
+		slider->addWidgetAction("MenuAlt1", "Defaults");
+		slider->addWidgetAction("MenuStart", "Confirm");
+	}
+	window->addImage(
+		SDL_Rect{126, 100, 788, 524},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/AutoSort/AutoSort_Sliders_BackingALL00.png",
+		"slider_backing"
+	);
+	window->addImage(
+		SDL_Rect{188, 98, 664, 526},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/AutoSort/AutoSort_Sliders_Spacers01.png",
+		"slider_spacers"
+	);
+
+	// spell box
+	window->addImage(
+		SDL_Rect{134, 638, 52, 54},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_BackBlack00.png",
+		"spellbox"
+	);
+	window->addImage(
+		SDL_Rect{134, 638, 52, 54},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Magic00.png",
+		"spellbox_icon"
+	);
 }
 
 static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
@@ -817,6 +1096,7 @@ static Frame* settingsSubwindowSetup(Button& button) {
 				}
 			}
 		}
+		updateSliderArrows(*frame);
 		});
 	auto rock_background = settings_subwindow->addImage(
 		settings_subwindow->getActualSize(),
@@ -849,6 +1129,22 @@ static Frame* settingsSubwindowSetup(Button& button) {
 		railSize.y = 16 + actualSize.y;
 		slider->setRailSize(railSize);
 		});
+	auto sliderLeft = settings_subwindow->addImage(
+		SDL_Rect{0, 0, 30, 44},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Left00.png",
+		"slider_left"
+	);
+	sliderLeft->disabled = true;
+	sliderLeft->ontop = true;
+	auto sliderRight = settings_subwindow->addImage(
+		SDL_Rect{0, 0, 30, 44},
+		0xffffffff,
+		"images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Right00.png",
+		"slider_right"
+	);
+	sliderRight->disabled = true;
+	sliderRight->ontop = true;
 	return settings_subwindow;
 }
 
@@ -1301,7 +1597,7 @@ void recordsStoryIntroduction(Button& button) {
 	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 	main_menu_frame->setHollow(true);
 	main_menu_frame->setBorder(0);
-	main_menu_frame->setTickCallback([](Widget&){++main_menu_ticks;});
+	main_menu_frame->setTickCallback(tickMainMenu);
 
 	fadeout = true;
 	main_menu_fade_destination = FadeDestination::IntroStoryScreen;
@@ -1316,7 +1612,7 @@ void recordsCredits(Button& button) {
 	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 	main_menu_frame->setHollow(true);
 	main_menu_frame->setBorder(0);
-	main_menu_frame->setTickCallback([](Widget&){++main_menu_ticks;});
+	main_menu_frame->setTickCallback(tickMainMenu);
 
 	auto back_button = main_menu_frame->addButton("back");
 	back_button->setText("Return to Main Menu  ");
@@ -1998,7 +2294,7 @@ void createMainMenu() {
 	frame->setActualSize(SDL_Rect{0, 0, frame->getSize().w, frame->getSize().h});
 	frame->setHollow(true);
 	frame->setBorder(0);
-	frame->setTickCallback([](Widget&){++main_menu_ticks;});
+	frame->setTickCallback(tickMainMenu);
 
 	int y = 16;
 
