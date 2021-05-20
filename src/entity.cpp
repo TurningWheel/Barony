@@ -4794,6 +4794,11 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 {
 	Sint32 STR;
 
+	if ( !entitystats )
+	{
+		return 0;
+	}
+
 	STR = entitystats->STR;
 
 	bool cursedItemIsBuff = false;
@@ -4925,6 +4930,11 @@ Sint32 Entity::getDEX()
 Sint32 statGetDEX(Stat* entitystats, Entity* my)
 {
 	Sint32 DEX;
+
+	if ( !entitystats )
+	{
+		return 0;
+	}
 
 	// paralyzed
 	if ( entitystats->EFFECTS[EFF_PARALYZED] )
@@ -5156,6 +5166,11 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 {
 	Sint32 CON;
 
+	if ( !entitystats )
+	{
+		return 0;
+	}
+
 	CON = entitystats->CON;
 
 	bool cursedItemIsBuff = false;
@@ -5238,6 +5253,11 @@ Sint32 Entity::getINT()
 Sint32 statGetINT(Stat* entitystats, Entity* my)
 {
 	Sint32 INT;
+
+	if ( !entitystats )
+	{
+		return 0;
+	}
 
 	INT = entitystats->INT;
 
@@ -5329,6 +5349,11 @@ Sint32 Entity::getPER()
 Sint32 statGetPER(Stat* entitystats, Entity* my)
 {
 	Sint32 PER;
+
+	if ( !entitystats )
+	{
+		return 0;
+	}
 
 	PER = entitystats->PER;
 
@@ -5469,6 +5494,11 @@ Sint32 Entity::getCHR()
 Sint32 statGetCHR(Stat* entitystats, Entity* my)
 {
 	Sint32 CHR;
+
+	if ( !entitystats )
+	{
+		return 0;
+	}
 
 	CHR = entitystats->CHR;
 
