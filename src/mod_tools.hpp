@@ -2637,12 +2637,14 @@ class ItemTooltips_t
 		std::string iconPath = "";
 		std::string text = "";
 		Uint32 textColor = 0xFFFFFFFF;
+		std::string conditionalAttribute = "";
 		ItemTooltipIcons_t(std::string _path, std::string _text)
 		{
 			iconPath = _path;
 			text = _text;
 		}
 		void setColor(Uint32 color) { textColor = color; }
+		void setConditionalAttribute(std::string str) { conditionalAttribute = str; }
 	};
 
 	Uint32 defaultHeadingTextColor = 0xFFFFFFFF;
@@ -2652,6 +2654,7 @@ class ItemTooltips_t
 	Uint32 defaultPositiveTextColor = 0xFFFFFFFF;
 	Uint32 defaultNegativeTextColor = 0xFFFFFFFF;
 	Uint32 defaultStatusEffectTextColor = 0xFFFFFFFF;
+	Uint32 defaultFaintTextColor = 0xFFFFFFFF;
 
 	struct ItemTooltip_t
 	{
@@ -2661,16 +2664,19 @@ class ItemTooltips_t
 		Uint32 positiveTextColor = 0;
 		Uint32 negativeTextColor = 0;
 		Uint32 statusEffectTextColor = 0;
+		Uint32 faintTextColor = 0;
 		std::vector<ItemTooltipIcons_t> icons;
 		std::vector<std::string> descriptionText;
 		std::map<std::string, std::vector<std::string>> detailsText;
+		std::vector<std::string> detailsTextInsertOrder;
 		int minWidth = 0;
-		void setColorHeading(Uint32 color) { headingTextColor = color; };
-		void setColorDescription(Uint32 color) { descriptionTextColor = color; };
-		void setColorDetails(Uint32 color) { detailsTextColor = color; };
-		void setColorPositive(Uint32 color) { positiveTextColor = color; };
-		void setColorNegative(Uint32 color) { negativeTextColor = color; };
+		void setColorHeading(Uint32 color) { headingTextColor = color; }
+		void setColorDescription(Uint32 color) { descriptionTextColor = color; }
+		void setColorDetails(Uint32 color) { detailsTextColor = color; }
+		void setColorPositive(Uint32 color) { positiveTextColor = color; }
+		void setColorNegative(Uint32 color) { negativeTextColor = color; }
 		void setColorStatus(Uint32 color) { statusEffectTextColor = color; }
+		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
 public:
 	void readItemsFromFile();
@@ -2685,8 +2691,11 @@ public:
 	std::string& getItemBeatitudeAdjective(Sint16 beatitude);
 	std::string& getItemPotionAlchemyAdjective(const int player, Uint32 itemType);
 	std::string& getItemPotionHarmAllyAdjective(Item& item);
+	std::string& getItemProficiencyName(int proficiency);
+	std::string& getItemSlotName(ItemEquippableSlot slotname);
 
-	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str);
+	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex);
+	void formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str);
 	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
 	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);
 	void stripOutHighlightBracketText(std::string& str, std::string& bracketText);

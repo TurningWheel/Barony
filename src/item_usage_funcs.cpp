@@ -1822,9 +1822,9 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	}
 
 	//Bonus from CON, to scale up healing potions as the game progresses.
-	if ( stats->CON > 0 )
+	if ( statGetCON(stats, entity) > 0 )
 	{
-		amount += 2 * stats->CON;
+		amount += 2 * statGetCON(stats, entity);
 	}
 
 	if ( item->beatitude < 0 )
@@ -1966,9 +1966,9 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	}
 
 	//Bonus from CON, to scale up healing potions as the game progresses.
-	if ( stats->CON > 0 )
+	if ( statGetCON(stats, entity) > 0 )
 	{
-		amount += 4 * stats->CON;
+		amount += 4 * statGetCON(stats, entity);
 	}
 
 	if ( item->beatitude < 0 )
@@ -2094,9 +2094,9 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 
 	int amount = item->potionGetEffectHealth();
 
-	if ( stats->INT > 0 )
+	if ( statGetINT(stats, entity) > 0 )
 	{
-		amount += std::min(30, 2 * stats->INT); // extra mana scaling from 1 to 15 INT, capped at +30 MP
+		amount += std::min(30, 2 * statGetINT(stats, entity)); // extra mana scaling from 1 to 15 INT, capped at +30 MP
 	}
 
 	if ( item->beatitude < 0 )

@@ -942,6 +942,11 @@ void ItemTooltips_t::readTooltipsFromFile()
 			d["default_text_colors"]["status_effect"]["g"].GetInt(),
 			d["default_text_colors"]["status_effect"]["b"].GetInt(),
 			d["default_text_colors"]["status_effect"]["a"].GetInt());
+		defaultFaintTextColor = SDL_MapRGBA(mainsurface->format,
+			d["default_text_colors"]["faint_text"]["r"].GetInt(),
+			d["default_text_colors"]["faint_text"]["g"].GetInt(),
+			d["default_text_colors"]["faint_text"]["b"].GetInt(),
+			d["default_text_colors"]["faint_text"]["a"].GetInt());
 	}
 
 	templates.clear();
@@ -967,6 +972,8 @@ void ItemTooltips_t::readTooltipsFromFile()
 
 	tooltips.clear();
 
+	std::unordered_set<std::string> tagsRead;
+
 	for ( rapidjson::Value::ConstMemberIterator tooltipType_itr = d["tooltips"].MemberBegin();
 		tooltipType_itr != d["tooltips"].MemberEnd(); ++tooltipType_itr )
 	{
@@ -977,6 +984,7 @@ void ItemTooltips_t::readTooltipsFromFile()
 		tooltip.setColorPositive(this->defaultPositiveTextColor);
 		tooltip.setColorNegative(this->defaultNegativeTextColor);
 		tooltip.setColorStatus(this->defaultStatusEffectTextColor);
+		tooltip.setColorFaintText(this->defaultFaintTextColor);
 
 		if ( tooltipType_itr->value.HasMember("icons") )
 		{
@@ -1011,15 +1019,27 @@ void ItemTooltips_t::readTooltipsFromFile()
 							icons->FindMember("color")->value["a"].GetInt());
 					}
 					tooltip.icons[tooltip.icons.size() - 1].setColor(color);
+					if ( icons->HasMember("conditional_attribute") )
+					{
+						tooltip.icons[tooltip.icons.size() - 1].setConditionalAttribute(icons->FindMember("conditional_attribute")->value.GetString());
+					}
 				}
 			}
 		}
 
 		if ( tooltipType_itr->value.HasMember("description") )
 		{
-			if ( !tooltipType_itr->value["description"].IsArray() )
+			if ( tooltipType_itr->value["description"].IsString() )
 			{
-				printlog("[JSON]: Error: 'description' entry for tooltip '%s' did not have [] format!", tooltipType_itr->name.GetString());
+				//printlog("[JSON]: Found template string '%s' for tooltip '%s'", tooltipType_itr->value["description"].GetString(), tooltipType_itr->name.GetString());
+				if ( templates.find(tooltipType_itr->value["description"].GetString()) != templates.end() )
+				{
+					tooltip.descriptionText = templates[tooltipType_itr->value["description"].GetString()];
+				}
+				else
+				{
+					printlog("[JSON]: Error: Could not find template tag '%s'", tooltipType_itr->value["description"].GetString());
+				}
 			}
 			else
 			{
@@ -1033,37 +1053,43 @@ void ItemTooltips_t::readTooltipsFromFile()
 
 		if ( tooltipType_itr->value.HasMember("details") )
 		{
-			if ( !tooltipType_itr->value["details"].IsObject() )
+			if ( !tooltipType_itr->value["details"].IsArray() )
 			{
-				printlog("[JSON]: Error: 'details' entry for tooltip '%s' did not have {} format!", tooltipType_itr->name.GetString());
+				printlog("[JSON]: Error: 'details' entry for tooltip '%s' did not have [] format!", tooltipType_itr->name.GetString());
 			}
 			else
 			{
-				for ( auto details_itr = tooltipType_itr->value["details"].MemberBegin();
-					details_itr != tooltipType_itr->value["details"].MemberEnd(); ++details_itr )
+				for ( auto details_itr = tooltipType_itr->value["details"].Begin();
+					details_itr != tooltipType_itr->value["details"].End(); ++details_itr )
 				{
-					std::vector<std::string> detailEntry;
-					if ( details_itr->value.IsString() )
+					for ( auto keyValue_itr = details_itr->MemberBegin();
+						keyValue_itr != details_itr->MemberEnd(); ++keyValue_itr )
 					{
-						printlog("[JSON]: Found template string '%s' for tooltip '%s'", details_itr->value.GetString(), tooltipType_itr->name.GetString());
-						if ( templates.find(details_itr->value.GetString()) != templates.end() )
+						tagsRead.insert(keyValue_itr->name.GetString());
+						std::vector<std::string> detailEntry;
+						if ( keyValue_itr->value.IsString() )
 						{
-							detailEntry = templates[details_itr->value.GetString()];
+							//printlog("[JSON]: Found template string '%s' for tooltip '%s'", keyValue_itr->value.GetString(), tooltipType_itr->name.GetString());
+							if ( templates.find(keyValue_itr->value.GetString()) != templates.end() )
+							{
+								detailEntry = templates[keyValue_itr->value.GetString()];
+							}
+							else
+							{
+								printlog("[JSON]: Error: Could not find template tag '%s'", keyValue_itr->value.GetString());
+							}
 						}
 						else
 						{
-							printlog("[JSON]: Error: Could not find template tag '%s'", details_itr->value.GetString());
+							for ( auto detailTag = keyValue_itr->value.Begin();
+								detailTag != keyValue_itr->value.End(); ++detailTag )
+							{
+								detailEntry.push_back(detailTag->GetString());
+							}
 						}
+						tooltip.detailsText[keyValue_itr->name.GetString()] = detailEntry;
+						tooltip.detailsTextInsertOrder.push_back(keyValue_itr->name.GetString());
 					}
-					else
-					{
-						for ( auto detailTag = details_itr->value.Begin();
-							detailTag != details_itr->value.End(); ++detailTag )
-						{
-							detailEntry.push_back(detailTag->GetString());
-						}
-					}
-					tooltip.detailsText[details_itr->name.GetString()] = detailEntry;
 				}
 			}
 		}
@@ -1080,6 +1106,10 @@ void ItemTooltips_t::readTooltipsFromFile()
 	}
 
 	printlog("[JSON]: Successfully read %d item tooltips from '%s'", tooltips.size(), inputPath.c_str());
+	/*for ( auto tmp : tagsRead )
+	{
+		printlog("%s", tmp.c_str());
+	}*/
 }
 
 std::string& ItemTooltips_t::getItemStatusAdjective(Uint32 itemType, Status status)
@@ -1294,19 +1324,77 @@ std::string& ItemTooltips_t::getItemPotionHarmAllyAdjective(Item& item)
 	}
 }
 
-void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str)
+std::string& ItemTooltips_t::getItemProficiencyName(int proficiency)
+{
+	if ( adjectives.find("proficiency_types") == adjectives.end() )
+	{
+		return defaultString;
+	}
+
+	switch ( proficiency )
+	{
+		case PRO_SWORD:
+			return adjectives["proficiency_types"]["sword"];
+		case PRO_AXE:
+			return adjectives["proficiency_types"]["axe"];
+		case PRO_MACE:
+			return adjectives["proficiency_types"]["mace"];
+		case PRO_POLEARM:
+			return adjectives["proficiency_types"]["polearm"];
+		case PRO_UNARMED:
+			return adjectives["proficiency_types"]["unarmed"];
+		case PRO_SHIELD:
+			return adjectives["proficiency_types"]["shield"];
+		case PRO_RANGED:
+			return adjectives["proficiency_types"]["ranged"];
+		default:
+			return defaultString;
+	}
+}
+
+std::string& ItemTooltips_t::getItemSlotName(ItemEquippableSlot slotname)
+{
+	switch ( slotname )
+	{
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_AMULET:
+			return adjectives["equipment_slot_types"]["amulet"];
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_RING:
+			return adjectives["equipment_slot_types"]["ring"];
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE:
+			return adjectives["equipment_slot_types"]["breastpiece"];
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM:
+			return adjectives["equipment_slot_types"]["helm"];
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS:
+			return adjectives["equipment_slot_types"]["boots"];
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES:
+			return adjectives["equipment_slot_types"]["gloves"];
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_CLOAK:
+			return adjectives["equipment_slot_types"]["cloak"];
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK:
+			return adjectives["equipment_slot_types"]["mask"];
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON:
+			return adjectives["equipment_slot_types"]["mainhand"];
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD:
+			return adjectives["equipment_slot_types"]["offhand"];
+		default:
+			break;
+	}
+	return adjectives["equipment_slot_types"]["unknown"];
+}
+
+void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex)
 {
 	auto itemTooltip = ItemTooltips.tooltips[tooltipType];
 
 	char buf[128];
 	memset(buf, 0, sizeof(buf));
 
-	if ( tooltipType.compare("tooltip_shield") == 0 )
+	if ( tooltipType.find("tooltip_armor") != std::string::npos )
 	{
 		Sint32 AC = item.armorGetAC(stats[player]);
 		if ( stats[player] )
 		{
-			AC += stats[player]->getPassiveShieldBonus(false);
+			//AC += stats[player]->getPassiveShieldBonus(false);
 			/*if ( stats[player]->shield == &item )
 			{
 				if ( stats[player]->defending )
@@ -1317,7 +1405,10 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		}
 		snprintf(buf, sizeof(buf), str.c_str(), AC);
 	}
-	else if ( tooltipType.compare("tooltip_mace") == 0 )
+	else if ( tooltipType.compare("tooltip_mace") == 0
+		|| tooltipType.compare("tooltip_sword") == 0 
+		|| tooltipType.compare("tooltip_polearm") == 0
+		|| tooltipType.find("tooltip_thrown") != std::string::npos )
 	{
 		Sint32 atk = item.weaponGetAttack(stats[player]);
 		snprintf(buf, sizeof(buf), str.c_str(), atk);
@@ -1328,7 +1419,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		atk += 1;
 		snprintf(buf, sizeof(buf), str.c_str(), atk);
 	}
-	else if ( tooltipType.compare(0, strlen("tooltip_potion"), "tooltip_potion") == 0 )
+	else if ( tooltipType.find("tooltip_potion") != std::string::npos )
 	{
 		if ( items[item.type].hasAttribute("POTION_TYPE_HEALING") )
 		{
@@ -1373,6 +1464,28 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	str = buf;
 }
 
+void ItemTooltips_t::formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str)
+{
+	return;
+	if ( !stats[player] )
+	{
+		str = "";
+		return;
+	}
+	if ( players[player] && !players[player]->isLocalPlayer() )
+	{
+		str = "";
+		return;
+	}
+
+	//memset(buf, 0, sizeof(buf));
+	//if ( tooltipType.find("tooltip_armor") != std::string::npos && str.find("%s") != std::string::npos )
+	//{
+		//snprintf(buf, sizeof(buf), str.c_str(), adjective.c_str());
+		//str = buf;
+	//}
+}
+
 void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag)
 {
 	if ( !stats[player] )
@@ -1390,65 +1503,183 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 
 	memset(buf, 0, sizeof(buf));
 
-	if ( tooltipType.compare("tooltip_shield") == 0 )
+	if ( tooltipType.find("tooltip_armor") != std::string::npos )
 	{
-		if ( detailTag.compare("default") == 0 )
+		if ( detailTag.compare("armor_base_ac") == 0 )
 		{
 			snprintf(buf, sizeof(buf), str.c_str(),
-				items[item.type].hasAttribute("AC") ? items[item.type].attributes["AC"] : 0,
+				items[item.type].hasAttribute("AC") ? items[item.type].attributes["AC"] : 0	);
+		}
+		else if ( detailTag.compare("armor_shield_bonus") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), 
 				stats[player]->getPassiveShieldBonus(false),
-				stats[player]->getActiveShieldBonus(false)
-			);
+				getItemProficiencyName(PRO_SHIELD).c_str(),
+				stats[player]->getActiveShieldBonus(false),
+				getItemProficiencyName(PRO_SHIELD).c_str());
 		}
 		else if ( detailTag.compare("on_bless_or_curse") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), item.beatitude, getItemBeatitudeAdjective(item.beatitude).c_str());
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				shouldInvertEquipmentBeatitude(stats[player]) ? abs(item.beatitude) : item.beatitude, 
+				getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag.compare("shield_durability") == 0 )
+		{
+			int skillLVL = stats[player]->PROFICIENCIES[PRO_SHIELD] / 10;
+			int durabilityBonus = skillLVL * 10;
+			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(PRO_SHIELD).c_str());
+		}
+		else if ( detailTag.compare("shield_legendary_durability") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemProficiencyName(PRO_SHIELD).c_str());
+		}
+		else if ( detailTag.compare("knuckle_skill_modifier") == 0 )
+		{
+			int atk = (stats[player]->PROFICIENCIES[PRO_UNARMED] / 20); // 0 - 5
+			snprintf(buf, sizeof(buf), str.c_str(), atk, getItemProficiencyName(PRO_UNARMED).c_str());
+		}
+		else if ( detailTag.compare("knuckle_knockback_modifier") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				items[item.type].hasAttribute("KNOCKBACK") ? items[item.type].attributes["KNOCKBACK"] : 0);
+		}
+		else if ( detailTag.compare("weapon_atk_from_player_stat") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+		}
+		else if ( detailTag.compare("weapon_durability") == 0 )
+		{
+			int skillLVL = stats[player]->PROFICIENCIES[PRO_UNARMED] / 20;
+			int durabilityBonus = skillLVL * 20;
+			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(PRO_UNARMED).c_str());
+		}
+		else if ( detailTag.compare("weapon_legendary_durability") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemProficiencyName(PRO_UNARMED).c_str());
+		}
+		else if ( detailTag.compare("equipment_fragile_durability") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(),
+				items[item.type].hasAttribute("FRAGILE") ? -items[item.type].attributes["FRAGILE"] : 0);
+		}
+		else
+		{
+			return;
 		}
 	}
-	else if ( tooltipType.compare("tooltip_mace") == 0 )
+	else if ( tooltipType.find("tooltip_thrown") != std::string::npos )
 	{
-		if ( detailTag.compare("default") == 0 )
+		int proficiency = PRO_RANGED;
+		if ( detailTag.compare("weapon_base_atk") == 0 )
 		{
 			snprintf(buf, sizeof(buf), str.c_str(),
 				items[item.type].hasAttribute("ATK") ? items[item.type].attributes["ATK"] : 0);
 		}
 		else if ( detailTag.compare("on_bless_or_curse") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), item.beatitude, getItemBeatitudeAdjective(item.beatitude).c_str());
+			snprintf(buf, sizeof(buf), str.c_str(),
+				shouldInvertEquipmentBeatitude(stats[player]) ? abs(item.beatitude) : item.beatitude,
+				getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
-		else if ( detailTag.compare("on_degraded") == 0 )
+		else if ( detailTag.compare("thrown_atk_from_player_stat") == 0 )
 		{
-			int statusModifier = item.status - 3;
-			snprintf(buf, sizeof(buf), str.c_str(), statusModifier, getItemStatusAdjective(item.type, item.status).c_str());
+			snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
 		}
-		else if ( detailTag.compare("last_details") == 0 )
+		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
-			int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[PRO_MACE] / 2); // -25% to +25%
-			snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness);
+			int skillLVL = stats[player]->PROFICIENCIES[proficiency] / 20;
+			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)] - 100),
+				getItemProficiencyName(proficiency).c_str());
+		}
+		else
+		{
+			return;
 		}
 	}
-	else if ( tooltipType.compare("tooltip_axe") == 0 )
+	else if ( tooltipType.compare("tooltip_mace") == 0 
+		|| tooltipType.compare("tooltip_axe") == 0
+		|| tooltipType.compare("tooltip_sword") == 0
+		|| tooltipType.compare("tooltip_polearm") == 0 )
 	{
-		if ( detailTag.compare("default") == 0 )
+		int proficiency = PRO_SWORD;
+		if ( tooltipType.compare("tooltip_mace") == 0 )
 		{
-			int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[PRO_AXE] / 2); // -25% to +25%
+			proficiency = PRO_MACE;
+		}
+		else if ( tooltipType.compare("tooltip_axe") == 0 )
+		{
+			proficiency = PRO_AXE;
+		}
+		else if ( tooltipType.compare("tooltip_sword") == 0 )
+		{
+			proficiency = PRO_SWORD;
+		}
+		else if ( tooltipType.compare("tooltip_polearm") == 0 )
+		{
+			proficiency = PRO_POLEARM;
+		}
 
-			snprintf(buf, sizeof(buf), str.c_str(),
-				items[item.type].hasAttribute("ATK") ? items[item.type].attributes["ATK"] + 1 : 0,
-				weaponEffectiveness
-			);
+		if ( detailTag.compare("weapon_base_atk") == 0 )
+		{
+			if ( proficiency == PRO_AXE )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(),
+					items[item.type].hasAttribute("ATK") ? items[item.type].attributes["ATK"] + 1 : 0);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(),
+					items[item.type].hasAttribute("ATK") ? items[item.type].attributes["ATK"] : 0);
+			}
 		}
 		else if ( detailTag.compare("on_bless_or_curse") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), item.beatitude, getItemBeatitudeAdjective(item.beatitude).c_str());
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				shouldInvertEquipmentBeatitude(stats[player]) ? abs(item.beatitude) : item.beatitude, 
+				getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
 		else if ( detailTag.compare("on_degraded") == 0 )
 		{
 			int statusModifier = item.status - 3;
 			snprintf(buf, sizeof(buf), str.c_str(), statusModifier, getItemStatusAdjective(item.type, item.status).c_str());
 		}
+		else if ( detailTag.compare("weapon_skill_modifier") == 0 )
+		{
+			int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
+		}
+		else if ( detailTag.compare("weapon_atk_from_player_stat") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+		}
+		else if ( detailTag.compare("weapon_durability") == 0 )
+		{
+			int skillLVL = stats[player]->PROFICIENCIES[proficiency] / 20;
+			int durabilityBonus = skillLVL * 20;
+			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(proficiency).c_str());
+		}
+		else if ( detailTag.compare("weapon_legendary_durability") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemProficiencyName(proficiency).c_str());
+		}
+		else if ( detailTag.compare("weapon_bonus_exp") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				items[item.type].hasAttribute("BONUS_SKILL_EXP") ? items[item.type].attributes["BONUS_SKILL_EXP"] : 0,
+				getItemProficiencyName(proficiency).c_str());
+		}
+		else if ( detailTag.compare("equipment_fragile_durability") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(),
+				items[item.type].hasAttribute("FRAGILE") ? -items[item.type].attributes["FRAGILE"] : 0);
+		}
+		else
+		{
+			return;
+		}
 	}
-	else if ( tooltipType.compare(0, strlen("tooltip_potion"), "tooltip_potion") == 0 )
+	else if ( tooltipType.find("tooltip_potion") != std::string::npos )
 	{
 		if ( detailTag.compare("default") == 0 || detailTag.compare("potion_additional_effects") == 0 )
 		{
@@ -1461,9 +1692,9 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_restoremagic_bonus") == 0 )
 		{
-			if ( stats[player] && stats[player]->INT > 0 )
+			if ( stats[player] && statGetINT(stats[player], players[player]->entity) > 0 )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), std::min(30, 2 * stats[player]->INT));
+				snprintf(buf, sizeof(buf), str.c_str(), std::min(30, 2 * statGetINT(stats[player], players[player]->entity)));
 			}
 			else
 			{
@@ -1472,9 +1703,9 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_healing_bonus") == 0 )
 		{
-			if ( stats[player] && stats[player]->CON > 0 )
+			if ( stats[player] && statGetCON(stats[player], players[player]->entity) > 0 )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), 2 * stats[player]->CON);
+				snprintf(buf, sizeof(buf), str.c_str(), 2 * statGetCON(stats[player], players[player]->entity));
 			}
 			else
 			{
@@ -1483,9 +1714,9 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_extrahealing_bonus") == 0 )
 		{
-			if ( stats[player] && stats[player]->CON > 0 )
+			if ( stats[player] && statGetCON(stats[player], players[player]->entity) > 0 )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), 4 * stats[player]->CON);
+				snprintf(buf, sizeof(buf), str.c_str(), 4 * statGetCON(stats[player], players[player]->entity));
 			}
 			else
 			{
@@ -1653,7 +1884,7 @@ void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::
 					positiveValues += ' ';
 					negativeValues += "(?)";
 					*it = ' ';
-					for ( int i = 0; i < strlen("(?)") - 1; ++i )
+					for ( size_t i = 0; i < strlen("(?)") - 1; ++i )
 					{
 						positiveValues += ' ';
 						it = std::next(it);

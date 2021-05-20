@@ -1352,6 +1352,7 @@ void drawBlueInventoryBorder(const int player, const Item& item, int x, int y)
 
 int tmpx = 0;
 Uint32 tmpTicks = 0;
+int tmpAnimateTicks = 0;
 
 void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 {
@@ -1462,13 +1463,21 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		int index = 0;
 		for ( auto& icon : itemTooltip.icons )
 		{
+			if ( icon.conditionalAttribute.compare("") != 0 )
+			{
+				if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
+				{
+					continue;
+				}
+			}
+
 			if ( index == 0 )
 			{
 				imgPrimaryIcon->disabled = false;
 				imgPrimaryIcon->path = icon.iconPath;
 
 				std::string iconText = icon.text;
-				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText);
+				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index);
 
 				std::string bracketText = "";
 				ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
@@ -1493,7 +1502,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				imgSecondaryIcon->path = icon.iconPath;
 
 				std::string iconText = icon.text;
-				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText);
+				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index);
 
 				std::string bracketText = "";
 				ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
@@ -1521,21 +1530,45 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	}
 
 	txtAttributes->setDisabled(true);
-	if ( itemTooltip.descriptionText.size() > 0 )
+
+	std::string descriptionTextString = "";
+	/*if ( items[item->type].hasAttribute("FRAGILE") )
+	{
+		if ( itemCategory(item) == WEAPON )
+		{
+			for ( auto& it = ItemTooltips.templates["template_fragile_weapon_description"].begin();
+				it != ItemTooltips.templates["template_fragile_weapon_description"].end(); ++it )
+			{
+				descriptionTextString += (*it);
+				descriptionTextString += '\n';
+			}
+		}
+		else
+		{
+			for ( auto& it = ItemTooltips.templates["template_fragile_equipment_description"].begin();
+				it != ItemTooltips.templates["template_fragile_equipment_description"].end(); ++it )
+			{
+				descriptionTextString += (*it);
+				descriptionTextString += '\n';
+			}
+		}
+	}*/
+
+	if ( itemTooltip.descriptionText.size() > 0 || descriptionTextString.size() > 0 )
 	{
 		txtAttributes->setDisabled(false);
 		txtAttributes->setColor(itemTooltip.descriptionTextColor);
-		std::string text;
 		int index = 0;
 		for ( auto& it = itemTooltip.descriptionText.begin(); it != itemTooltip.descriptionText.end(); ++it )
 		{
-			text += (*it);
+			descriptionTextString += (*it);
 			if ( std::next(it) != itemTooltip.descriptionText.end() )
 			{
-				text += '\n';
+				descriptionTextString += '\n';
 			}
 		}
-		txtAttributes->setText(text.c_str());
+		ItemTooltips.formatItemDescription(player, tooltipType, *item, descriptionTextString);
+		txtAttributes->setText(descriptionTextString.c_str());
 	}
 
 	frameDesc->setDisabled(true);
@@ -1547,22 +1580,9 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		txtDescription->setColor(itemTooltip.detailsTextColor);
 		int index = 0;
 
-		if ( itemTooltip.detailsText.find("default") != itemTooltip.detailsText.end() )
-		{
-			for ( auto& it = itemTooltip.detailsText["default"].begin(); it != itemTooltip.detailsText["default"].end(); ++it )
-			{
-				detailsTextString += (*it);
-				if ( std::next(it) != itemTooltip.detailsText["default"].end() )
-				{
-					detailsTextString += '\n';
-				}
-			}
-		}
-		ItemTooltips.formatItemDetails(player, tooltipType, *item, detailsTextString, "default");
-
 		std::vector<std::string> detailTags1;
 
-		if ( itemCategory(item) == POTION )
+		/*if ( itemCategory(item) == POTION )
 		{
 			detailTags1 = {
 				"potion_on_cursed",
@@ -1574,14 +1594,14 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				"potion_on_blessed",
 				"alchemy_details",
 				"potion_damage" };
-		}
+		}*/
 
-		for ( auto tag : detailTags1 )
+		for ( auto& tag : itemTooltip.detailsTextInsertOrder )
 		{
-			if ( itemTooltip.detailsText.find(tag.c_str()) != itemTooltip.detailsText.end() )
+			if ( itemCategory(item) == POTION )
 			{
 				if ( tag.compare("potion_on_cursed") == 0 &&
-					(!items[item->type].hasAttribute("POTION_CURSED_SIDE_EFFECT") || item->beatitude >= 0))
+					(!items[item->type].hasAttribute("POTION_CURSED_SIDE_EFFECT") || item->beatitude >= 0) )
 				{
 					continue;
 				}
@@ -1596,26 +1616,98 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 						detailsTextString += '\n'; // add a padding newline
 					}
 				}
-
-				std::string tagText = "";
-				for ( auto& it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
+			}
+			else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR )
+			{
+				if ( tag.compare("weapon_durability") == 0 )
 				{
-					tagText += (*it);
-					if ( std::next(it) != itemTooltip.detailsText[tag.c_str()].end() )
+					int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED : getWeaponSkill(item);
+					if ( stats[player]->PROFICIENCIES[proficiency] == SKILL_LEVEL_LEGENDARY )
 					{
-						tagText += '\n';
+						continue;
 					}
 				}
-				ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag.c_str());
-				if ( detailsTextString.compare("") != 0 )
+				else if ( tag.compare("weapon_legendary_durability") == 0 )
 				{
-					detailsTextString += '\n';
+					int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED: getWeaponSkill(item);
+					if ( stats[player]->PROFICIENCIES[proficiency] != SKILL_LEVEL_LEGENDARY )
+					{
+						continue;
+					}
 				}
-				detailsTextString += tagText;
+				else if ( tag.compare("weapon_bonus_exp") == 0 )
+				{
+					if ( !items[item->type].hasAttribute("BONUS_SKILL_EXP") )
+					{
+						continue;
+					}
+				}
+				else if ( tag.compare("equipment_fragile_durability") == 0 )
+				{
+					if ( !items[item->type].hasAttribute("FRAGILE") )
+					{
+						continue;
+					}
+				}
 			}
+				
+			if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD )
+			{
+				if ( tag.compare("shield_durability") == 0 )
+				{
+					if ( stats[player]->PROFICIENCIES[PRO_SHIELD] == SKILL_LEVEL_LEGENDARY )
+					{
+						continue;
+					}
+				}
+				else if ( tag.compare("shield_legendary_durability") == 0 )
+				{
+					if ( stats[player]->PROFICIENCIES[PRO_SHIELD] != SKILL_LEVEL_LEGENDARY )
+					{
+						continue;
+					}
+				}
+			}
+
+			/*if ( tag.compare("on_bless_or_curse") == 0 )
+			{
+				if ( item->beatitude == 0 )
+				{
+					continue;
+				}
+			}*/
+
+			/*if ( tag.compare("default") == 0 )
+			{
+				for ( auto& it = itemTooltip.detailsText[tag].begin(); it != itemTooltip.detailsText[tag].end(); ++it )
+				{
+					detailsTextString += (*it);
+					if ( std::next(it) != itemTooltip.detailsText[tag].end() )
+					{
+						detailsTextString += '\n';
+					}
+				}
+				ItemTooltips.formatItemDetails(player, tooltipType, *item, detailsTextString, tag);
+			}*/
+
+			std::string tagText = "";
+			for ( auto& it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
+			{
+				tagText += (*it);
+				if ( std::next(it) != itemTooltip.detailsText[tag.c_str()].end() )
+				{
+					tagText += '\n';
+				}
+			}
+			ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag.c_str());
+			if ( detailsTextString.compare("") != 0 )
+			{
+				detailsTextString += '\n';
+			}
+			detailsTextString += tagText;
 		}
 
-		if ( itemTooltip.detailsText.find("on_bless_or_curse") != itemTooltip.detailsText.end() )
+		/*if ( itemTooltip.detailsText.find("on_bless_or_curse") != itemTooltip.detailsText.end() )
 		{
 			if ( item->beatitude != 0 )
 			{
@@ -1658,7 +1750,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				}
 				detailsTextString += tagText;
 			}
-		}
+		}*/
 
 		/*if ( itemTooltip.detailsText.find("on_degraded") != itemTooltip.detailsText.end() )
 		{
@@ -1728,6 +1820,17 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	txtPrimaryValueHighlight->setDisabled(txtPrimaryValue->isDisabled());
 	txtPrimaryValuePositive->setDisabled(txtPrimaryValue->isDisabled());
 	txtPrimaryValueNegative->setDisabled(txtPrimaryValue->isDisabled());
+
+	auto txtSlotName = frameAttr->findField("inventory mouse tooltip primary value slot name");
+	txtSlotName->setDisabled(true);
+	if ( items[item->type].item_slot != ItemEquippableSlot::NO_EQUIP )
+	{
+		txtSlotName->setDisabled(false);
+		txtSlotName->setColor(itemTooltip.faintTextColor);
+		txtSlotName->setSize(SDL_Rect{padx, pady * 2 + imgToTextOffset, txtHeader->getSize().w, imgPrimaryIcon->pos.h});
+		txtSlotName->setText(ItemTooltips.getItemSlotName(items[item->type].item_slot).c_str());
+	}
+
 	if ( !imgPrimaryIcon->disabled )
 	{
 		imgPrimaryIcon->pos.x = 0;
@@ -1801,21 +1904,48 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	frameAttr->setActualSize(SDL_Rect{ 0, 0, frameAttr->getSize().w, frameAttr->getSize().h });
 	totalHeight += frameAttrPos.h;
 
+	// animate?
+	double animateResult = 1.0;
+	if ( keystatus[SDL_SCANCODE_KP_1] )
+	{
+		keystatus[SDL_SCANCODE_KP_1] = 0;
+		tmpTicks = 0;
+	}
+	else if ( keystatus[SDL_SCANCODE_KP_2] )
+	{
+		keystatus[SDL_SCANCODE_KP_2] = 0;
+		tmpTicks = 1;
+	}
+	else if ( keystatus[SDL_SCANCODE_KP_3] )
+	{
+		keystatus[SDL_SCANCODE_KP_3] = 0;
+		tmpTicks = 2;
+	}
+	if ( tmpTicks > 0 )
+	{
+		int duration = 12;
+		// scale duration to FPS - tested @ 144hz
+		double scaledDuration = (duration / (144.f / std::max(1U, fpsLimit)));
+
+		double t = tmpAnimateTicks / static_cast<double>(scaledDuration);
+		animateResult = t * t * (3.0f - 2.0f * t); // bezier from 0 to width as t (0-1)
+		//messagePlayer(0, "%d | %.3f", tmpAnimateTicks, result);
+
+		if ( tmpTicks == 1 )
+		{
+			tmpAnimateTicks = std::min(tmpAnimateTicks + 1, static_cast<int>(scaledDuration));
+		}
+		else
+		{
+			tmpAnimateTicks = std::max(tmpAnimateTicks - 1, 0);
+		}
+	}
+
 	SDL_Rect frameDescPos = frameAttrPos;
 	if ( !frameDesc->isDisabled() )
 	{
 		frameDescPos.y = frameAttrPos.y + frameAttrPos.h;
 		frameDescPos.h = pady;
-
-		if ( ticks != tmpTicks )
-		{
-			tmpTicks = ticks;
-			tmpx -= 1;
-			if ( tmpx < -100 )
-			{
-				tmpx = 0;
-			}
-		}
 
 		int _pady = pady;
 		if ( !imagesDisabled || !txtAttributes->isDisabled() )
@@ -1850,11 +1980,16 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 		frameDescPos.h += txtDescription->getNumTextLines() * charHeight + pady * 3;
 
-		txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
+		txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady});
 		txtDescription->setScroll(true);
 
 		txtDescriptionPositive->setSize(txtDescription->getSize());
 		txtDescriptionNegative->setSize(txtDescription->getSize());
+
+		if ( tmpTicks > 0 )
+		{
+			frameDescPos.h *= (animateResult);
+		}
 
 		frameDesc->setSize(frameDescPos);
 		frameDesc->setActualSize(SDL_Rect{ 0, 0, frameDesc->getSize().w, frameDesc->getSize().h });
