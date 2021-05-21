@@ -2811,6 +2811,9 @@ void handleEvents(void)
 
 	// calculate app rate
 	t = SDL_GetTicks();
+	if (ot == 0.0) {
+		ot = t;
+	}
 	real_t timesync = t - ot;
 	ot = t;
 

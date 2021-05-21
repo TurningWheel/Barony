@@ -41,41 +41,41 @@ static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#32#2";
 static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
 
 static inline void soundToggleMenu() {
-	playSound(500, 64);
+	playSound(500, 48);
 }
 
 static inline void soundMove() {
-	playSound(495, 64);
+	playSound(495, 48);
 }
 
 static inline void soundActivate() {
-	playSound(493, 64);
+	playSound(493, 48);
 }
 
 static inline void soundCancel() {
-	playSound(499, 64);
+	playSound(499, 48);
 }
 
 static inline void soundToggle() {
-	playSound(492, 64);
+	playSound(492, 48);
 }
 
 static inline void soundCheckmark() {
-	playSound(494, 64);
+	playSound(494, 48);
 }
 
 static inline void soundSlider() {
 #ifdef NINTENDO
-	playSound(497, 64);
+	playSound(497, 48);
 #endif
 }
 
 static inline void soundWarning() {
-	playSound(496, 64);
+	playSound(496, 48);
 }
 
 static inline void soundError() {
-	playSound(498, 64);
+	playSound(498, 48);
 }
 
 /******************************************************************************/
@@ -320,7 +320,7 @@ static void createStoryScreen() {
 					}
 				}
 			} else {
-				if (main_menu_ticks % 2 == 0) {
+				if (main_menu_ticks % 3 == 0) {
 					auto textbox2 = textbox1->findFrame("story_text_box");
 					assert(textbox2);
 					auto text = textbox2->findField("text");
@@ -1440,7 +1440,7 @@ void settingsAudio(Button& button) {
 		"Adjust the volume of most game sound effects.",
 		allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.gameplay_volume = slider.getValue();});
 	y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
-		"Adjust the volume of ambient subterranean wind.",
+		"Adjust the volume of ominous subterranean sound-cues.",
 		allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.ambient_volume = slider.getValue();});
 	y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 		"Adjust the volume of flowing water and lava.",
