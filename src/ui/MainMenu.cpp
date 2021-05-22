@@ -9,6 +9,8 @@
 #include "../net.hpp"
 #include "../player.hpp"
 #include "../menu.hpp"
+#include "../scores.hpp"
+#include "../mod_tools.hpp"
 #include "../interface/interface.hpp"
 #include "../draw.hpp"
 #include "../engine/audio/sound.hpp"
@@ -320,7 +322,7 @@ static void createStoryScreen() {
 					}
 				}
 			} else {
-				if (main_menu_ticks % 3 == 0) {
+				if (main_menu_ticks % 2 == 0) {
 					auto textbox2 = textbox1->findFrame("story_text_box");
 					assert(textbox2);
 					auto text = textbox2->findField("text");
@@ -505,10 +507,16 @@ static void inventorySortingDiscard(Button& button) {
 	soundCancel();
 	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
 	window->removeSelf();
-	auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-	auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-	auto inventory_sorting_customize = settings_subwindow->findButton("setting_inventory_sorting_customize_button"); assert(inventory_sorting_customize);
-	inventory_sorting_customize->select();
+	auto settings = main_menu_frame->findFrame("settings");
+	if (settings) {
+		auto settings_subwindow = settings->findFrame("settings_subwindow");
+		if (settings_subwindow) {
+			auto inventory_sorting_customize = settings_subwindow->findButton("setting_inventory_sorting_customize_button");
+			if (inventory_sorting_customize) {
+				inventory_sorting_customize->select();
+			}
+		}
+	}
 	allSettings.inventory_sorting = InventorySorting::load();
 }
 
@@ -516,10 +524,16 @@ static void inventorySortingConfirm(Button& button) {
 	soundActivate();
 	auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
 	window->removeSelf();
-	auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-	auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-	auto inventory_sorting_customize = settings_subwindow->findButton("setting_inventory_sorting_customize_button"); assert(inventory_sorting_customize);
-	inventory_sorting_customize->select();
+	auto settings = main_menu_frame->findFrame("settings");
+	if (settings) {
+		auto settings_subwindow = settings->findFrame("settings_subwindow");
+		if (settings_subwindow) {
+			auto inventory_sorting_customize = settings_subwindow->findButton("setting_inventory_sorting_customize_button");
+			if (inventory_sorting_customize) {
+				inventory_sorting_customize->select();
+			}
+		}
+	}
 	allSettings.inventory_sorting.save();
 }
 
@@ -1899,6 +1913,129 @@ void recordsBackToMainMenu(Button& button) {
 
 void mainPlayGame(Button& button) {
 	soundActivate();
+
+	auto window = main_menu_frame->addFrame("play_game_window");
+	window->setSize(SDL_Rect{
+		(Frame::virtualScreenX - 218 * 2) / 2,
+		(Frame::virtualScreenY - 130 * 2) / 2,
+		218 * 2,
+		130 * 2});
+	window->setActualSize(SDL_Rect{0, 0, 218 * 2, 130 * 2});
+	window->setColor(0);
+	window->setBorder(0);
+
+	auto background = window->addImage(
+		window->getActualSize(),
+		0xffffffff,
+		"images/ui/Main Menus/Play/UI_PlayMenu_Window00.png",
+		"background"
+	);
+
+	auto banner_title = window->addField("banner", 32);
+	banner_title->setSize(SDL_Rect{86 * 2, 10 * 2, 47 * 2, 9 * 2});
+	banner_title->setText("PLAY GAME");
+	banner_title->setFont(smallfont_no_outline);
+	banner_title->setHJustify(Field::justify_t::CENTER);
+
+	bool continueAvailable = saveGameExists(true) || saveGameExists(false);
+
+	auto close_button = window->addButton("close");
+	close_button->setSize(SDL_Rect{206, 118, 12, 12});
+	close_button->setColor(0);
+	close_button->setHighlightColor(0);
+	close_button->setBorder(0);
+	close_button->setCallback([](Button& button){
+		soundCancel();
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame->removeSelf();
+		assert(main_menu_frame);
+		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+		auto play_button = buttons->findButton("PLAY GAME"); assert(play_button);
+		play_button->select();
+		});
+
+	auto hall_of_trials_button = window->addButton("hall_of_trials");
+	hall_of_trials_button->setSize(SDL_Rect{67 * 2, 88 * 2, 84 * 2, 26 * 2});
+	hall_of_trials_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
+	hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	hall_of_trials_button->setColor(makeColor(127, 127, 127, 255));
+	hall_of_trials_button->setText("HALL OF TRIALS");
+	hall_of_trials_button->setFont(smallfont_outline);
+	if (continueAvailable) {
+		hall_of_trials_button->setWidgetUp("continue");
+	} else {
+		hall_of_trials_button->setWidgetUp("new");
+	}
+	hall_of_trials_button->setWidgetLeft("continue");
+	hall_of_trials_button->setWidgetRight("new");
+	hall_of_trials_button->setWidgetBack("close");
+	hall_of_trials_button->setCallback([](Button&){
+		destroyMainMenu();
+		soundActivate();
+		buttonStartSingleplayer(nullptr);
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
+		if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
+		{
+			gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
+			gameModeManager.Tutorial.writeToDocument();
+		}
+		gameModeManager.Tutorial.startTutorial("");
+		steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
+		});
+
+	auto continue_button = window->addButton("continue");
+	continue_button->setSize(SDL_Rect{39 * 2, 36 * 2, 66 * 2, 50 * 2});
+	continue_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueB00.png");
+	continue_button->setTextColor(makeColor(180, 180, 180, 255));
+	continue_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
+	continue_button->setText("\n\nCONTINUE");
+	continue_button->setFont(smallfont_outline);
+	if (continueAvailable) {
+		continue_button->setTickCallback([](Widget& widget){
+			Button* button = static_cast<Button*>(&widget);
+			if (button->isSelected()) {
+				button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
+			} else {
+				button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueB00.png");
+			}
+			});
+		continue_button->setCallback([](Button&){ soundActivate(); });
+	} else {
+		continue_button->setCallback([](Button&){ soundError(); });
+	}
+	continue_button->setWidgetRight("new");
+	continue_button->setWidgetDown("hall_of_trials");
+	continue_button->setWidgetBack("close");
+
+	auto new_button = window->addButton("new");
+	new_button->setSize(SDL_Rect{114 * 2, 36 * 2, 68 * 2, 56 * 2});
+	new_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_NewB00.png");
+	new_button->setTextColor(makeColor(180, 180, 180, 255));
+	new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
+	new_button->setText("\n\nNEW");
+	new_button->setFont(smallfont_outline);
+	new_button->setTickCallback([](Widget& widget){
+		Button* button = static_cast<Button*>(&widget);
+		if (button->isSelected()) {
+			button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_NewA00.png");
+		} else {
+			button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_NewB00.png");
+		}
+		});
+	new_button->setCallback([](Button&){ soundActivate(); });
+	new_button->setWidgetLeft("continue");
+	new_button->setWidgetDown("hall_of_trials");
+	new_button->setWidgetBack("close");
+
+	if (skipintro) {
+		if (continueAvailable) {
+			continue_button->select();
+		} else {
+			new_button->select();
+		}
+	} else {
+		hall_of_trials_button->select();
+	}
 }
 
 void mainPlayModdedGame(Button& button) {
