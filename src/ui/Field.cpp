@@ -285,6 +285,11 @@ void Field::reflowTextToFit() {
 
 	int charWidth = 0;
 	actualFont->sizeText("_", &charWidth, nullptr);
+	//if ( auto textGet = Text::get("_", font.c_str()) )
+	//{
+	//	charWidth = textGet->getWidth();
+	//}
+
 	if ( charWidth == 0 )
 	{
 		return;
