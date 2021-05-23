@@ -1587,16 +1587,24 @@ void consumeItem(Item*& item, const int player)
 		players[player]->inventoryUI.appraisal.timer = 0;
 	}
 
+	bool clientConsumedEquippedItem = false;
 	if ( player >= 0 && !players[player]->isLocalPlayer() && multiplayer == SERVER )
 	{
 		Item** slot = nullptr;
 		if ( (slot = itemSlot(stats[player], item)) != nullptr )
 		{
 			(*slot)->count--; // if client had consumed item equipped, this'll update the count.
+			if ( item == (*slot) )
+			{
+				clientConsumedEquippedItem = true;
+			}
 		}
 	}
 
-	item->count--;
+	if ( !clientConsumedEquippedItem )
+	{
+		item->count--;
+	}
 	if ( item->count <= 0 )
 	{
 		if ( item->node != nullptr )
