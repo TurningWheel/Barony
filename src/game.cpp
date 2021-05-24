@@ -4466,6 +4466,14 @@ void ingameHud()
 			}
 		}
 	}
+
+	if ( ItemTooltips.autoReload )
+	{
+		if ( ticks % TICKS_PER_SECOND == 0 )
+		{
+			ItemTooltips.readTooltipsFromFile();
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------

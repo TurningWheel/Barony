@@ -2670,6 +2670,8 @@ class ItemTooltips_t
 		std::map<std::string, std::vector<std::string>> detailsText;
 		std::vector<std::string> detailsTextInsertOrder;
 		int minWidth = 0;
+		int maxWidth = 0;
+		int headerMaxWidth = 0;
 		void setColorHeading(Uint32 color) { headingTextColor = color; }
 		void setColorDescription(Uint32 color) { descriptionTextColor = color; }
 		void setColorDetails(Uint32 color) { detailsTextColor = color; }
@@ -2687,14 +2689,19 @@ public:
 	std::map<std::string, std::vector<std::string>> templates;
 	std::string defaultString = "";
 	char buf[2048];
+	bool autoReload = false;
 	std::string& getItemStatusAdjective(Uint32 itemType, Status status);
 	std::string& getItemBeatitudeAdjective(Sint16 beatitude);
 	std::string& getItemPotionAlchemyAdjective(const int player, Uint32 itemType);
 	std::string& getItemPotionHarmAllyAdjective(Item& item);
 	std::string& getItemProficiencyName(int proficiency);
 	std::string& getItemSlotName(ItemEquippableSlot slotname);
+	std::string& getItemStatShortName(std::string& attribute);
+	std::string& getItemStatFullName(std::string& attribute);
+	std::string& getItemEquipmentEffectsForIconText(std::string& attribute);
+	std::string& getItemEquipmentEffectsForAttributesText(std::string& attribute);
 
-	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex);
+	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute);
 	void formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str);
 	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
 	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);

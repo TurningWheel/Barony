@@ -541,11 +541,7 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 		tooltipString += item->description();
 		tooltipString += "\r\n";
 	}
-	int itemWeight = items[item->type].weight * item->count;
-	if ( itemTypeIsQuiver(item->type) )
-	{
-		itemWeight = std::max(1, itemWeight / 5);
-	}
+	int itemWeight = item->getWeight();
 	ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
 	snprintf(tooltipBuffer, sizeof(tooltipBuffer), language[313], itemWeight);
 	tooltipString += tooltipBuffer;
@@ -1415,6 +1411,8 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 	const int padx = 4;
 	const int pady = 4;
+	const int imgTopBackgroundDefaultHeight = 28;
+	const int imgTopBackground2XHeight = 42;
 
 	std::string tooltipType = ItemTooltips.tmpItems[item->type].tooltip;
 	if ( ItemTooltips.tooltips.find(tooltipType) == ItemTooltips.tooltips.end() )
@@ -1423,20 +1421,48 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	}
 	auto itemTooltip = ItemTooltips.tooltips[tooltipType];
 
-	snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
-	
-	txtHeader->setText(buf);
 	int textx = 0;
 	int texty = 0;
+
+	snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+	txtHeader->setText(buf);
 	auto textGet = Text::get(txtHeader->getText(), txtHeader->getFont());
 	if ( textGet )
 	{
 		textx = textGet->getWidth();
+		texty = textGet->getHeight();
 		if ( itemTooltip.minWidth > 0 )
 		{
 			textx = std::max(itemTooltip.minWidth, textx);
 		}
+		if ( itemTooltip.maxWidth > 0 )
+		{
+			textx = std::min(itemTooltip.maxWidth, textx);
+		}
 	}
+
+	if ( itemTooltip.headerMaxWidth > 0 && textx > itemTooltip.headerMaxWidth )
+	{
+		txtHeader->setSize(SDL_Rect{ 0, 0, itemTooltip.headerMaxWidth, 0 });
+		txtHeader->reflowTextToFit();
+
+		imgTopBackground->pos.h = imgTopBackground2XHeight;
+		imgTopBackground->path = "images/system/inventory/tooltips/Hover_T00_2x.png";
+		imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
+		imgTopBackgroundLeft->path = "images/system/inventory/tooltips/Hover_TL00_2x.png";
+		imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
+		imgTopBackgroundRight->path = "images/system/inventory/tooltips/Hover_TR00_2x.png";
+	}
+	else
+	{
+		imgTopBackground->pos.h = imgTopBackgroundDefaultHeight;
+		imgTopBackground->path = "images/system/inventory/tooltips/Hover_T00.png";
+		imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
+		imgTopBackgroundLeft->path = "images/system/inventory/tooltips/Hover_TL00.png";
+		imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
+		imgTopBackgroundRight->path = "images/system/inventory/tooltips/Hover_TR00.png";
+	}
+	
 	txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, pady, textx + 3 * padx, imgTopBackground->pos.h - pady});
 
 	int totalHeight = txtHeader->getSize().h;
@@ -1477,7 +1503,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				imgPrimaryIcon->path = icon.iconPath;
 
 				std::string iconText = icon.text;
-				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index);
+				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
 
 				std::string bracketText = "";
 				ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
@@ -1502,7 +1528,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				imgSecondaryIcon->path = icon.iconPath;
 
 				std::string iconText = icon.text;
-				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index);
+				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
 
 				std::string bracketText = "";
 				ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
@@ -1532,28 +1558,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	txtAttributes->setDisabled(true);
 
 	std::string descriptionTextString = "";
-	/*if ( items[item->type].hasAttribute("FRAGILE") )
-	{
-		if ( itemCategory(item) == WEAPON )
-		{
-			for ( auto& it = ItemTooltips.templates["template_fragile_weapon_description"].begin();
-				it != ItemTooltips.templates["template_fragile_weapon_description"].end(); ++it )
-			{
-				descriptionTextString += (*it);
-				descriptionTextString += '\n';
-			}
-		}
-		else
-		{
-			for ( auto& it = ItemTooltips.templates["template_fragile_equipment_description"].begin();
-				it != ItemTooltips.templates["template_fragile_equipment_description"].end(); ++it )
-			{
-				descriptionTextString += (*it);
-				descriptionTextString += '\n';
-			}
-		}
-	}*/
-
 	if ( itemTooltip.descriptionText.size() > 0 || descriptionTextString.size() > 0 )
 	{
 		txtAttributes->setDisabled(false);
@@ -1569,6 +1573,11 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		}
 		ItemTooltips.formatItemDescription(player, tooltipType, *item, descriptionTextString);
 		txtAttributes->setText(descriptionTextString.c_str());
+
+		if ( descriptionTextString == "" )
+		{
+			txtAttributes->setDisabled(true);
+		}
 	}
 
 	frameDesc->setDisabled(true);
@@ -1579,22 +1588,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		frameDesc->setDisabled(false);
 		txtDescription->setColor(itemTooltip.detailsTextColor);
 		int index = 0;
-
-		std::vector<std::string> detailTags1;
-
-		/*if ( itemCategory(item) == POTION )
-		{
-			detailTags1 = {
-				"potion_on_cursed",
-				"potion_additional_effects",
-				"potion_restoremagic_bonus",
-				"potion_polymorph_duration",
-				"potion_healing_bonus",
-				"potion_extrahealing_bonus",
-				"potion_on_blessed",
-				"alchemy_details",
-				"potion_damage" };
-		}*/
 
 		for ( auto& tag : itemTooltip.detailsTextInsertOrder )
 		{
@@ -1617,7 +1610,8 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 					}
 				}
 			}
-			else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR )
+			else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR
+				|| itemCategory(item) == AMULET )
 			{
 				if ( tag.compare("weapon_durability") == 0 )
 				{
@@ -1648,6 +1642,51 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 					{
 						continue;
 					}
+				}
+				else if ( tag.compare("equipment_fragile_durability") == 0 )
+				{
+					if ( !items[item->type].hasAttribute("FRAGILE") )
+					{
+						continue;
+					}
+				}
+				else if ( tag.find("EFF_") != std::string::npos )
+				{
+					if ( !items[item->type].hasAttribute(tag) )
+					{
+						continue;
+					}
+				}
+				else if ( tag.compare("equipment_stat_bonus") == 0 )
+				{
+					if ( !items[item->type].hasAttribute("STR")
+						&& !items[item->type].hasAttribute("DEX")
+						&& !items[item->type].hasAttribute("CON")
+						&& !items[item->type].hasAttribute("INT")
+						&& !items[item->type].hasAttribute("PER")
+						&& !items[item->type].hasAttribute("CHR") )
+					{
+						continue;
+					}
+				}
+				else if ( tag.compare("attributes_text_if_armor_has_stats") == 0
+					|| tag.compare("blank_text_if_armor_has_stats") == 0 )
+				{
+					bool skip = true;
+					for ( auto it = ItemTooltips.templates["template_attributes_text_armor_conditional_tags"].begin();
+						it != ItemTooltips.templates["template_attributes_text_armor_conditional_tags"].end(); ++it )
+					{
+						if ( items[item->type].hasAttribute(*it) )
+						{
+							skip = false;
+							break;
+						}
+					}
+					if ( skip ) { continue; } // no attributes found, don't put this block of text in
+				}
+				else if ( tag.compare("equipment_on_cursed_sideeffect") == 0 && item->beatitude >= 0 )
+				{
+					continue;
 				}
 			}
 				
@@ -1699,7 +1738,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 					tagText += '\n';
 				}
 			}
-			ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag.c_str());
+			ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag);
 			if ( detailsTextString.compare("") != 0 )
 			{
 				detailsTextString += '\n';
@@ -2016,7 +2055,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		txtGoldValue->setSize(SDL_Rect{ imgGoldIcon->pos.x + imgGoldIcon->pos.w + padx,
 			imgGoldIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
 
-		snprintf(valueBuf, sizeof(valueBuf), "%d", items[item->type].weight); // will need to use item->getWeight() function for quivers
+		snprintf(valueBuf, sizeof(valueBuf), "%d", item->getWeight());
 		txtWeightValue->setText(valueBuf);
 		txtWeightValue->setDisabled(false);
 

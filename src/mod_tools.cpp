@@ -1100,6 +1100,22 @@ void ItemTooltips_t::readTooltipsFromFile()
 			{
 				tooltip.minWidth = tooltipType_itr->value["size"]["min_width"].GetInt();
 			}
+			if ( tooltipType_itr->value["size"].HasMember("max_width") )
+			{
+				tooltip.maxWidth = tooltipType_itr->value["size"]["max_width"].GetInt();
+			}
+			else
+			{
+				tooltip.maxWidth = 0;
+			}
+			if ( tooltipType_itr->value["size"].HasMember("max_header_width") )
+			{
+				tooltip.headerMaxWidth = tooltipType_itr->value["size"]["max_header_width"].GetInt();
+			}
+			else
+			{
+				tooltip.headerMaxWidth = 0;
+			}
 		}
 
 		tooltips[tooltipType_itr->name.GetString()] = tooltip;
@@ -1382,28 +1398,157 @@ std::string& ItemTooltips_t::getItemSlotName(ItemEquippableSlot slotname)
 	return adjectives["equipment_slot_types"]["unknown"];
 }
 
-void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex)
+std::string& ItemTooltips_t::getItemStatShortName(std::string& attribute)
+{
+	if ( attribute == "STR" )
+	{
+		return adjectives["stat_short_name"][attribute];
+	}
+	else if ( attribute == "DEX" )
+	{
+		return adjectives["stat_short_name"][attribute];
+	}
+	else if ( attribute == "CON" )
+	{
+		return adjectives["stat_short_name"][attribute];
+	}
+	else if ( attribute == "INT" )
+	{
+		return adjectives["stat_short_name"][attribute];
+	}
+	else if ( attribute == "PER" )
+	{
+		return adjectives["stat_short_name"][attribute];
+	}
+	else if ( attribute == "CHR" )
+	{
+		return adjectives["stat_short_name"][attribute];
+	}
+	else if ( attribute == "AC" )
+	{
+		return adjectives["stat_short_name"][attribute];
+	}
+	return defaultString;
+}
+
+std::string& ItemTooltips_t::getItemStatFullName(std::string& attribute)
+{
+	if ( attribute == "STR" )
+	{
+		return adjectives["stat_long_name"][attribute];
+	}
+	else if ( attribute == "DEX" )
+	{
+		return adjectives["stat_long_name"][attribute];
+	}
+	else if ( attribute == "CON" )
+	{
+		return adjectives["stat_long_name"][attribute];
+	}
+	else if ( attribute == "INT" )
+	{
+		return adjectives["stat_long_name"][attribute];
+	}
+	else if ( attribute == "PER" )
+	{
+		return adjectives["stat_long_name"][attribute];
+	}
+	else if ( attribute == "CHR" )
+	{
+		return adjectives["stat_long_name"][attribute];
+	}
+	else if ( attribute == "AC" )
+	{
+		return adjectives["stat_long_name"][attribute];
+	}
+	return defaultString;
+}
+
+std::string& ItemTooltips_t::getItemEquipmentEffectsForIconText(std::string& attribute)
+{
+	if ( adjectives["equipment_effects_icon_text"].find(attribute) != adjectives["equipment_effects_icon_text"].end() )
+	{
+		return adjectives["equipment_effects_icon_text"][attribute];
+	}
+	return defaultString;
+}
+
+std::string& ItemTooltips_t::getItemEquipmentEffectsForAttributesText(std::string& attribute)
+{
+	if ( adjectives["equipment_effects_attributes_text"].find(attribute) != adjectives["equipment_effects_attributes_text"].end() )
+	{
+		return adjectives["equipment_effects_attributes_text"][attribute];
+	}
+	return defaultString;
+}
+
+Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& attribute)
+{
+	Sint32 stat = 0;
+	bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
+	if ( item.beatitude >= 0 || cursedItemIsBuff )
+	{
+		stat += items[item.type].attributes[attribute];
+	}
+	stat += (cursedItemIsBuff ? abs(item.beatitude) : item.beatitude);
+	return stat;
+}
+
+void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute)
 {
 	auto itemTooltip = ItemTooltips.tooltips[tooltipType];
 
 	char buf[128];
 	memset(buf, 0, sizeof(buf));
 
+	if ( conditionalAttribute.compare("") != 0 && items[item.type].hasAttribute(conditionalAttribute) )
+	{
+		if ( conditionalAttribute == "STR" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getStatAttributeBonusFromItem(player, item, conditionalAttribute),
+				getItemStatFullName(conditionalAttribute).c_str());
+		}
+		else if ( conditionalAttribute == "DEX" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getStatAttributeBonusFromItem(player, item, conditionalAttribute),
+				getItemStatFullName(conditionalAttribute).c_str());
+		}
+		else if ( conditionalAttribute == "CON" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getStatAttributeBonusFromItem(player, item, conditionalAttribute),
+				getItemStatFullName(conditionalAttribute).c_str());
+		}
+		else if ( conditionalAttribute == "INT" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getStatAttributeBonusFromItem(player, item, conditionalAttribute),
+				getItemStatFullName(conditionalAttribute).c_str());
+		}
+		else if ( conditionalAttribute == "PER" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getStatAttributeBonusFromItem(player, item, conditionalAttribute),
+				getItemStatFullName(conditionalAttribute).c_str());
+		}
+		else if ( conditionalAttribute == "CHR" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getStatAttributeBonusFromItem(player, item, conditionalAttribute),
+				getItemStatFullName(conditionalAttribute).c_str());
+		}
+		else if ( conditionalAttribute.find("EFF_") != std::string::npos )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+		}
+		else
+		{
+			return;
+		}
+		str = buf;
+		return;
+	}
+
 	if ( tooltipType.find("tooltip_armor") != std::string::npos )
 	{
 		Sint32 AC = item.armorGetAC(stats[player]);
-		if ( stats[player] )
-		{
-			//AC += stats[player]->getPassiveShieldBonus(false);
-			/*if ( stats[player]->shield == &item )
-			{
-				if ( stats[player]->defending )
-				{
-					AC += stats[player]->getActiveShieldBonus(false);
-				}
-			}*/
-		}
-		snprintf(buf, sizeof(buf), str.c_str(), AC);
+		snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(std::string("AC")).c_str());
 	}
 	else if ( tooltipType.compare("tooltip_mace") == 0
 		|| tooltipType.compare("tooltip_sword") == 0 
@@ -1503,7 +1648,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 
 	memset(buf, 0, sizeof(buf));
 
-	if ( tooltipType.find("tooltip_armor") != std::string::npos )
+	if ( tooltipType.find("tooltip_armor") != std::string::npos || tooltipType.find("tooltip_amulet") != std::string::npos )
 	{
 		if ( detailTag.compare("armor_base_ac") == 0 )
 		{
@@ -1562,6 +1707,53 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			snprintf(buf, sizeof(buf), str.c_str(),
 				items[item.type].hasAttribute("FRAGILE") ? -items[item.type].attributes["FRAGILE"] : 0);
+		}
+		else if ( detailTag.compare("equipment_stat_bonus") == 0 )
+		{
+			std::vector<std::string> statNames = { "STR", "DEX", "CON", "INT", "PER", "CHR" };
+			int baseStatBonus = 0;
+			int beatitudeStatBonus = 0;
+			bool found = false;
+			for ( auto& stat : statNames )
+			{
+				if ( items[item.type].hasAttribute(stat) )
+				{
+					found = true;
+					baseStatBonus = items[item.type].attributes[stat];
+					beatitudeStatBonus = getStatAttributeBonusFromItem(player, item, stat) - baseStatBonus;
+
+					snprintf(buf, sizeof(buf), str.c_str(), baseStatBonus, stat.c_str(),
+						beatitudeStatBonus, stat.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
+					break;
+				}
+			}
+			if ( !found )
+			{
+				return;
+			}
+		}
+		else if ( detailTag.find("EFF_") != std::string::npos )
+		{
+			if ( adjectives["equipment_effects_attributes_text"].find(detailTag)
+				== adjectives["equipment_effects_attributes_text"].end() )
+			{
+				return;
+			}
+
+			if ( detailTag == "EFF_FEATHER" )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 
+					items[item.type].hasAttribute(detailTag) ? items[item.type].attributes["EFF_FEATHER"] : 0,
+					getItemEquipmentEffectsForAttributesText(detailTag).c_str());
+			}
+			else
+			{
+				return;
+			}
+		}
+		else if ( detailTag.compare("equipment_on_cursed_sideeffect") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
 		else
 		{

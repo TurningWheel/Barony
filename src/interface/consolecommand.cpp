@@ -3285,6 +3285,11 @@ void consoleCommand(char const * const command_str)
 			ItemTooltips.readTooltipsFromFile();
 			messagePlayer(clientnum, "Reloaded item_tooltips.json");
 		}
+		else if ( !strncmp(command_str, "/autoloadtooltips", 17) )
+		{
+			ItemTooltips.autoReload = !ItemTooltips.autoReload;
+			messagePlayer(clientnum, "Set auto-reload to %d for item_tooltips.json", ItemTooltips.autoReload);
+		}
 		else if ( !strncmp(command_str, "/loaditems", 10) )
 		{
 			ItemTooltips.readItemsFromFile();
