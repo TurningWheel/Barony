@@ -181,5 +181,6 @@ void Widget::adoptWidget(Widget& widget) {
 		}
 	}
 	widget.parent = this;
+	widget.setOwner(this->getOwner());
 	widgets.push_back(&widget);
 }
