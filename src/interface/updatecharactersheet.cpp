@@ -301,16 +301,14 @@ void updateCharacterSheet(const int player)
 
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, text_x, text_y, language[370], stats[player]->GOLD);
-	Uint32 weight = 0;
+	Sint32 weight = 0;
 	for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		item = (Item*)node->element;
-		int itemWeight = items[item->type].weight * item->count;
-		if ( itemTypeIsQuiver(item->type) )
+		if ( item )
 		{
-			itemWeight = std::max(1, itemWeight / 5);
+			weight += item->getWeight();
 		}
-		weight += itemWeight;
 	}
 	weight += stats[player]->GOLD / 100;
 	text_y += pad_y;

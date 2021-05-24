@@ -826,14 +826,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		{
 			if ( item->type >= 0 && item->type < NUMITEMS )
 			{
-				if ( itemTypeIsQuiver(item->type) )
-				{
-					weight += std::max(1, items[item->type].weight * item->count / 5);
-				}
-				else
-				{
-					weight += items[item->type].weight * item->count;
-				}
+				weight += item->getWeight();
 			}
 		}
 	}

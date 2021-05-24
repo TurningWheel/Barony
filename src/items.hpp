@@ -462,6 +462,8 @@ public:
 	Sint32 potionGetCursedEffectDurationMaximum() const;
 	Sint32 potionGetCursedEffectDurationRandom() const;
 
+	Sint32 getWeight() const;
+
 	enum ItemBombPlacement : int
 	{
 		BOMB_FLOOR,

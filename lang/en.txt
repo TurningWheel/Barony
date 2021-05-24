@@ -5993,5 +5993,6 @@ Changing this gameflag is disabled in current game mode.#
 4045 trap#
 4046 item#
 4047 No interactions available#
+4048 You don't feel like yourself.#
 
-4049 end#
+4099 end#

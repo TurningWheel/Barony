@@ -2050,29 +2050,31 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		}
 	}
 
+	EquipItemResult equipItemResult = EquipItemResult::EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+
 	switch ( item->type )
 	{
 		case WOODEN_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case QUARTERSTAFF:
 		case BRONZE_SWORD:
 		case BRONZE_MACE:
 		case BRONZE_AXE:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case BRONZE_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case SLING:
 		case IRON_SPEAR:
 		case IRON_SWORD:
 		case IRON_MACE:
 		case IRON_AXE:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case IRON_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case SHORTBOW:
 		case STEEL_HALBERD:
@@ -2088,19 +2090,19 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case STEEL_CHAKRAM:
 		case CRYSTAL_SHURIKEN:
 		case BOOMERANG:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case STEEL_SHIELD:
 		case STEEL_SHIELD_RESISTANCE:
 		case MIRROR_SHIELD:
 		case CRYSTAL_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case CROSSBOW:
 		case LONGBOW:
 		case COMPOUND_BOW:
 		case HEAVY_CROSSBOW:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case GLOVES:
 		case GLOVES_DEXTERITY:
@@ -2114,7 +2116,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case IRON_KNUCKLES:
 		case SPIKED_GAUNTLETS:
 		case SUEDE_GLOVES:
-			equipItem(item, &stats[player]->gloves, player);
+			equipItemResult = equipItem(item, &stats[player]->gloves, player);
 			break;
 		case CLOAK:
 		case CLOAK_BLACK:
@@ -2124,7 +2126,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_CLOAK:
 		case CLOAK_BACKPACK:
 		case CLOAK_SILVER:
-			equipItem(item, &stats[player]->cloak, player);
+			equipItemResult = equipItem(item, &stats[player]->cloak, player);
 			break;
 		case LEATHER_BOOTS:
 		case LEATHER_BOOTS_SPEED:
@@ -2136,7 +2138,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_BOOTS:
 		case CRYSTAL_BOOTS:
 		case SUEDE_BOOTS:
-			equipItem(item, &stats[player]->shoes, player);
+			equipItemResult = equipItem(item, &stats[player]->shoes, player);
 			break;
 		case LEATHER_BREASTPIECE:
 		case IRON_BREASTPIECE:
@@ -2149,7 +2151,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_BREASTPIECE:
 		case TUNIC:
 		case MACHINIST_APRON:
-			equipItem(item, &stats[player]->breastplate, player);
+			equipItemResult = equipItem(item, &stats[player]->breastplate, player);
 			break;
 		case HAT_PHRYGIAN:
 		case HAT_HOOD:
@@ -2164,20 +2166,18 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case HAT_HOOD_RED:
 		case HAT_HOOD_SILVER:
 		case PUNISHER_HOOD:
-			equipItem(item, &stats[player]->helmet, player);
+			equipItemResult = equipItem(item, &stats[player]->helmet, player);
 			break;
 		case AMULET_SEXCHANGE:
-			messagePlayer(player, language[1094]);
 			item_AmuletSexChange(item, player);
-			consumeItem(item, player);
 			break;
 		case AMULET_LIFESAVING:
 		case AMULET_WATERBREATHING:
 		case AMULET_MAGICREFLECTION:
-			equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player);
 			break;
 		case AMULET_STRANGULATION:
-			equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player);
 			if ( stats[player]->amulet )
 			{
 				messagePlayer(player, language[1095]);
@@ -2188,7 +2188,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			break;
 		case AMULET_POISONRESISTANCE:
-			equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player);
 			break;
 		case POTION_WATER:
 			drankPotion = item_PotionWater(item, players[player]->entity, usedBy);
@@ -2384,7 +2384,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case MAGICSTAFF_SUMMON:
 		case MAGICSTAFF_CHARM:
 		case MAGICSTAFF_POISON:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case RING_ADORNMENT:
 		case RING_SLOWDIGESTION:
@@ -2398,7 +2398,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case RING_LEVITATION:
 		case RING_REGENERATION:
 		case RING_TELEPORTATION:
-			equipItem(item, &stats[player]->ring, player);
+			equipItemResult = equipItem(item, &stats[player]->ring, player);
 			break;
 		case SPELLBOOK_FORCEBOLT:
 		case SPELLBOOK_MAGICMISSILE:
@@ -2471,11 +2471,11 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
 		case GEM_GLASS:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_PICKAXE:
 		case TOOL_WHIP:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_TINOPENER:
 			item_ToolTinOpener(item, player);
@@ -2494,7 +2494,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case TOOL_GYROBOT:
 		case TOOL_SENTRYBOT:
 		case TOOL_SPELLBOT:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
@@ -2507,12 +2507,12 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case QUIVER_KNOCKBACK:
 		case QUIVER_CRYSTAL:
 		case QUIVER_HUNTING:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case TOOL_BLINDFOLD:
 		case TOOL_BLINDFOLD_FOCUS:
 		case TOOL_BLINDFOLD_TELEPATHY:
-			equipItem(item, &stats[player]->mask, player);
+			equipItemResult = equipItem(item, &stats[player]->mask, player);
 			break;
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
@@ -2524,7 +2524,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		case TOOL_GLASSES:
 		case MASK_SHAMAN:
-			equipItem(item, &stats[player]->mask, player);
+			equipItemResult = equipItem(item, &stats[player]->mask, player);
 			break;
 		case TOOL_BEARTRAP:
 			item_ToolBeartrap(item, player);
@@ -2603,25 +2603,25 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		}
 		case ARTIFACT_SWORD:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case ARTIFACT_MACE:
 			if ( players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[1096]);
 			}
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case ARTIFACT_SPEAR:
 		case ARTIFACT_AXE:
 		case ARTIFACT_BOW:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case ARTIFACT_ORB_BLUE:
 		case ARTIFACT_ORB_RED:
 		case ARTIFACT_ORB_PURPLE:
 		case ARTIFACT_ORB_GREEN:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n", static_cast<int>(item->type));
@@ -2655,7 +2655,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 	}
 
 	// on-equip messages.
-	if ( multiplayer != CLIENT && itemIsEquipped(item, player) )
+	if ( multiplayer != CLIENT && equipItemResult == EquipItemResult::EQUIP_ITEM_SUCCESS_NEWITEM && itemIsEquipped(item, player) )
 	{
 		switch ( item->type )
 		{
@@ -3345,7 +3345,7 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 
 bool Item::doesItemProvideBeatitudeAC() const
 {
-	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK )
+	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK || itemCategory(this) == AMULET )
 	{
 		return false;
 	}
@@ -3731,6 +3731,22 @@ Sint32 Item::potionGetCursedEffectDurationRandom() const
 {
 	Sint32 range = std::max(1, potionGetCursedEffectDurationMaximum() - potionGetCursedEffectDurationMinimum());
 	return potionGetCursedEffectDurationMinimum() + (rand() % (range));
+}
+
+Sint32 Item::getWeight() const
+{
+	if ( type >= 0 && type < NUMITEMS )
+	{
+		if ( itemTypeIsQuiver(type) )
+		{
+			return std::max(1, items[type].weight * count / 5);
+		}
+		else
+		{
+			return items[type].weight * count;
+		}
+	}
+	return 0;
 }
 
 /*-------------------------------------------------------------------------------

@@ -2842,50 +2842,43 @@ void actMonster(Entity* my)
 	Sint32 weight = 0;
 	if ( myStats->helmet != NULL )
 	{
-		weight += items[myStats->helmet->type].weight * myStats->helmet->count;
+		weight += myStats->helmet->getWeight();
 	}
 	if ( myStats->breastplate != NULL )
 	{
-		weight += items[myStats->breastplate->type].weight * myStats->breastplate->count;
+		weight += myStats->breastplate->getWeight();
 	}
 	if ( myStats->gloves != NULL )
 	{
-		weight += items[myStats->gloves->type].weight * myStats->gloves->count;
+		weight += myStats->gloves->getWeight();
 	}
 	if ( myStats->shoes != NULL )
 	{
-		weight += items[myStats->shoes->type].weight * myStats->shoes->count;
+		weight += myStats->shoes->getWeight();
 	}
 	if ( myStats->shield != NULL )
 	{
-		if ( itemTypeIsQuiver(myStats->shield->type) )
-		{
-			weight += std::max(1, items[myStats->shield->type].weight * myStats->shield->count / 5);
-		}
-		else
-		{
-			weight += items[myStats->shield->type].weight * myStats->shield->count;
-		}
+		weight += myStats->shield->getWeight();
 	}
 	if ( myStats->weapon != NULL )
 	{
-		weight += items[myStats->weapon->type].weight * myStats->weapon->count;
+		weight += myStats->weapon->getWeight();
 	}
 	if ( myStats->cloak != NULL )
 	{
-		weight += items[myStats->cloak->type].weight * myStats->cloak->count;
+		weight += myStats->cloak->getWeight();
 	}
 	if ( myStats->amulet != NULL )
 	{
-		weight += items[myStats->amulet->type].weight * myStats->amulet->count;
+		weight += myStats->amulet->getWeight();
 	}
 	if ( myStats->ring != NULL )
 	{
-		weight += items[myStats->ring->type].weight * myStats->ring->count;
+		weight += myStats->ring->getWeight();
 	}
 	if ( myStats->mask != NULL )
 	{
-		weight += items[myStats->mask->type].weight * myStats->mask->count;
+		weight += myStats->mask->getWeight();
 	}
 	weight += myStats->GOLD / 100;
 	weight /= 2; // on monsters weight shouldn't matter so much

@@ -1559,11 +1559,7 @@ void drawStatus(int player)
 						{
 							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
 						}
-						int itemWeight = items[item->type].weight * item->count;
-						if ( itemTypeIsQuiver(item->type) )
-						{
-							itemWeight = std::max(1, itemWeight / 5);
-						}
+						int itemWeight = item->getWeight();
 						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
 						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(player));
 						if ( strcmp(spellEffectText, "") )

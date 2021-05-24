@@ -4553,6 +4553,11 @@ void item_FoodTin(Item*& item, int player)
 
 void item_AmuletSexChange(Item* item, int player)
 {
+	if ( !players[player]->isLocalPlayer() )
+	{
+		consumeItem(item, player);
+	}
+
 	if ( stats[player]->amulet != NULL )
 	{
 		if ( !stats[player]->amulet->canUnequip(stats[player]) )
@@ -4561,30 +4566,58 @@ void item_AmuletSexChange(Item* item, int player)
 			{
 				if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
 				{
-					messagePlayer(player, language[3218]);
+					messagePlayer(player, language[3217], stats[player]->amulet->getName());
 				}
 				else
 				{
-					messagePlayer(player, language[1087]);
+					messagePlayer(player, language[1089], stats[player]->amulet->getName());
 				}
 			}
 			return;
 		}
 	}
+
+	if ( players[player] && players[player]->isLocalPlayer() )
+	{
+		messagePlayer(player, language[1094]);
+	}
+
 	stats[player]->amulet = NULL;
 	stats[player]->sex = static_cast<sex_t>((stats[player]->sex == 0));
+
+	serverUpdateSexChange(player);
+
 
 	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
-	if ( stats[player]->sex == MALE )
+
+	consumeItem(item, player);
+
+	// find out what creature we are...
+	if ( stats[player]->sex == FEMALE 
+		&& stats[player]->playerRace == RACE_INCUBUS 
+		&& stats[player]->appearance == 0 )
 	{
-		messagePlayer(player, language[967]);
+		messagePlayer(player, language[4048]); // don't feel like yourself
+	}
+	else if ( stats[player]->sex == MALE 
+		&& stats[player]->playerRace == RACE_SUCCUBUS 
+		&& stats[player]->appearance == 0 )
+	{
+		messagePlayer(player, language[4048]); // don't feel like yourself
 	}
 	else
 	{
-		messagePlayer(player, language[968]);
+		if ( stats[player]->sex == MALE )
+		{
+			messagePlayer(player, language[967]);
+		}
+		else
+		{
+			messagePlayer(player, language[968]);
+		}
 	}
 	messagePlayer(player, language[969]);
 }
@@ -4594,12 +4627,12 @@ void item_Spellbook(Item*& item, int player)
 	node_t* node, *nextnode;
 
 	item->identified = true;
-	if ( !players[player]->isLocalPlayer() )
+	if ( players[player] && !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
 
-	if (players[player]->entity->isBlind())
+	if ( players[player] && players[player]->entity && players[player]->entity->isBlind())
 	{
 		messagePlayer(player, language[970]);
 		return;

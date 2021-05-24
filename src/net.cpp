@@ -1024,6 +1024,37 @@ void serverUpdateHunger(int player)
 
 /*-------------------------------------------------------------------------------
 
+serverUpdateSexChange
+
+Updates all clients on specified player's sex
+
+-------------------------------------------------------------------------------*/
+
+void serverUpdateSexChange(int player)
+{
+	if ( multiplayer != SERVER || !stats[player] )
+	{
+		return;
+	}
+
+	for ( int c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+		{
+			continue;
+		}
+		strcpy((char*)net_packet->data, "SEXU");
+		net_packet->data[4] = static_cast<Uint8>(player);
+		net_packet->data[5] = static_cast<Uint8>(stats[player]->sex);
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 6;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 serverUpdatePlayerStats
 
 Updates all player current HP/MP for clients
@@ -3403,6 +3434,19 @@ void clientHandlePacket()
 			stats[i]->MAXMP = buffer & 0xFFFF;
 			stats[i]->MP = (buffer >> 16) & 0xFFFF;
 		}
+	}
+
+	// update sex
+	else if ( !strncmp((char*)net_packet->data, "SEXU", 4) )
+	{
+		int player = static_cast<int>(net_packet->data[4]);
+		if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+		{
+			return;
+		}
+		stats[player]->sex = (sex_t)(net_packet->data[5]);
+		//messagePlayer(clientnum, "Received player: %d sex: %d", player, stats[player]->sex);
+		return;
 	}
 
 	else if ( !strncmp((char*)net_packet->data, "COND", 4) )
