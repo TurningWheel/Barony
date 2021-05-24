@@ -109,3 +109,4 @@ void mainQuit(Button&);
 void doMainMenu();
 void createMainMenu();
 void destroyMainMenu();
+void createDummyMainMenu();

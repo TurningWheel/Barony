@@ -291,3 +291,16 @@ void revertResolution();
 
 extern std::vector<std::pair<std::string, int>> menuOptions;
 void initMenuOptions();
+
+// handle intro stage stuff
+void doQuitGame();
+void doNewGame(bool makeHighscore);
+void doCredits();
+void doEndgame();
+void doIntro();
+void doEndgameHerx();
+void doEndgameDevil();
+void doMidgame();
+void doEndgameCitadel();
+void doEndgameClassicAndExtraMidGame();
+void doEndgameExpansion();

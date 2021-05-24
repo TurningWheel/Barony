@@ -26,6 +26,7 @@ enum class FadeDestination : Uint8 {
 	None = 0,
 	RootMainMenu = 1,
 	IntroStoryScreen = 2,
+	HallOfTrials = 3,
 };
 
 static Frame* main_menu_frame = nullptr;
@@ -1653,12 +1654,7 @@ void recordsStoryIntroduction(Button& button) {
 	soundActivate();
 
 	destroyMainMenu();
-	main_menu_frame = gui->addFrame("main_menu");
-	main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
-	main_menu_frame->setHollow(true);
-	main_menu_frame->setBorder(0);
-	main_menu_frame->setTickCallback(tickMainMenu);
+	createDummyMainMenu();
 
 	fadeout = true;
 	main_menu_fade_destination = FadeDestination::IntroStoryScreen;
@@ -1668,12 +1664,7 @@ void recordsCredits(Button& button) {
 	soundActivate();
 
 	destroyMainMenu();
-	main_menu_frame = gui->addFrame("main_menu");
-	main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
-	main_menu_frame->setHollow(true);
-	main_menu_frame->setBorder(0);
-	main_menu_frame->setTickCallback(tickMainMenu);
+	createDummyMainMenu();
 
 	auto back_button = main_menu_frame->addButton("back");
 	back_button->setText("Return to Main Menu  ");
@@ -1970,17 +1961,11 @@ void mainPlayGame(Button& button) {
 	hall_of_trials_button->setWidgetRight("new");
 	hall_of_trials_button->setWidgetBack("close");
 	hall_of_trials_button->setCallback([](Button&){
-		destroyMainMenu();
 		soundActivate();
-		buttonStartSingleplayer(nullptr);
-		gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
-		if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
-		{
-			gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
-			gameModeManager.Tutorial.writeToDocument();
-		}
-		gameModeManager.Tutorial.startTutorial("");
-		steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
+		destroyMainMenu();
+		createDummyMainMenu();
+		main_menu_fade_destination = FadeDestination::HallOfTrials;
+		fadeout = true;
 		});
 
 	auto continue_button = window->addButton("continue");
@@ -2469,6 +2454,19 @@ void doMainMenu() {
 				createStoryScreen();
 				playMusic(sounds[501], false, true, false);
 			}
+			if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
+				multiplayer = SINGLE;
+				numplayers = 0;
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
+				if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
+				{
+					gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
+					gameModeManager.Tutorial.writeToDocument();
+				}
+				gameModeManager.Tutorial.startTutorial("");
+				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
+				doNewGame(false);
+			}
 			fadeout = false;
 			main_menu_fade_destination = FadeDestination::None;
 		}
@@ -2478,17 +2476,16 @@ void doMainMenu() {
 void createMainMenu() {
 	main_menu_frame = gui->addFrame("main_menu");
 
-	auto frame = main_menu_frame;
-	frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-	frame->setActualSize(SDL_Rect{0, 0, frame->getSize().w, frame->getSize().h});
-	frame->setHollow(true);
-	frame->setBorder(0);
-	frame->setTickCallback(tickMainMenu);
+	main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
+	main_menu_frame->setHollow(true);
+	main_menu_frame->setBorder(0);
+	main_menu_frame->setTickCallback(tickMainMenu);
 
 	int y = 16;
 
 	auto title_img = Image::get("images/system/title.png");
-	auto title = frame->addImage(
+	auto title = main_menu_frame->addImage(
 		SDL_Rect{
 			(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 2.0 / 3.0) / 2,
 			y,
@@ -2501,7 +2498,7 @@ void createMainMenu() {
 	);
 	y += title->pos.h;
 
-	auto notification = frame->addFrame("notification");
+	auto notification = main_menu_frame->addFrame("notification");
 	notification->setSize(SDL_Rect{
 		(Frame::virtualScreenX - 236 * 2) / 2,
 		y,
@@ -2538,7 +2535,7 @@ void createMainMenu() {
 
 	main_menu_buttons_height = y;
 
-	auto buttons = frame->addFrame("buttons");
+	auto buttons = main_menu_frame->addFrame("buttons");
 	buttons->setTickCallback(updateMenuCursor);
 	buttons->setSize(SDL_Rect{0, y, Frame::virtualScreenX, 36 * num_options});
 	buttons->setActualSize(SDL_Rect{0, 0, buttons->getSize().w, buttons->getSize().h});
@@ -2581,7 +2578,7 @@ void createMainMenu() {
 		}
 	}
 
-	frame->addImage(
+	main_menu_frame->addImage(
 		SDL_Rect{
 			main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
 			main_menu_cursor_y,
@@ -2595,7 +2592,7 @@ void createMainMenu() {
 
 	for (int c = 0; c < 2; ++c) {
 		std::string name = std::string("banner") + std::to_string(c + 1);
-		auto banner = frame->addFrame(name.c_str());
+		auto banner = main_menu_frame->addFrame(name.c_str());
 		banner->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 472) / 2,
 			y,
@@ -2609,7 +2606,7 @@ void createMainMenu() {
 		y += 16;
 	}
 
-	auto copyright = frame->addField("copyright", 64);
+	auto copyright = main_menu_frame->addField("copyright", 64);
 	copyright->setFont(bigfont_outline);
 	copyright->setText(u8"Copyright \u00A9 2021, Turning Wheel LLC");
 	copyright->setJustify(Field::justify_t::CENTER);
@@ -2621,7 +2618,7 @@ void createMainMenu() {
 		});
 	copyright->setColor(0xffffffff);
 
-	auto version = frame->addField("version", 32);
+	auto version = main_menu_frame->addField("version", 32);
 	version->setFont(smallfont_outline);
 	version->setText(VERSION);
 	version->setHJustify(Field::justify_t::RIGHT);
@@ -2637,7 +2634,7 @@ void createMainMenu() {
 #ifndef NINTENDO
 	int num_online_players = 1337; // TODO change me!
 	std::string online_players_text = std::string("Players online: ") + std::to_string(num_online_players);
-	auto online_players = frame->addField("online_players", 32);
+	auto online_players = main_menu_frame->addField("online_players", 32);
 	online_players->setFont(smallfont_outline);
 	online_players->setText(online_players_text.c_str());
 	online_players->setHJustify(Field::justify_t::RIGHT);
@@ -2655,4 +2652,13 @@ void createMainMenu() {
 void destroyMainMenu() {
 	main_menu_frame->removeSelf();
 	main_menu_frame = nullptr;
+}
+
+void createDummyMainMenu() {
+	main_menu_frame = gui->addFrame("main_menu");
+	main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+	main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
+	main_menu_frame->setHollow(true);
+	main_menu_frame->setBorder(0);
+	main_menu_frame->setTickCallback(tickMainMenu);
 }
