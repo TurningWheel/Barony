@@ -1432,21 +1432,14 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 	snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
 	txtHeader->setText(buf);
-	auto textGet = Text::get(txtHeader->getText(), txtHeader->getFont());
+	Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont());
 	if ( textGet )
 	{
 		textx = textGet->getWidth();
 		texty = textGet->getHeight();
-		if ( itemTooltip.minWidth > 0 )
-		{
-			textx = std::max(itemTooltip.minWidth, textx);
-		}
-		if ( itemTooltip.maxWidth > 0 )
-		{
-			textx = std::min(itemTooltip.maxWidth, textx);
-		}
 	}
 
+	bool useDefaultHeaderHeight = true;
 	if ( itemTooltip.headerMaxWidth > 0 && textx > itemTooltip.headerMaxWidth )
 	{
 		txtHeader->setSize(SDL_Rect{ 0, 0, itemTooltip.headerMaxWidth, 0 });
@@ -1458,8 +1451,10 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		imgTopBackgroundLeft->path = "images/system/inventory/tooltips/Hover_TL00_2x.png";
 		imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
 		imgTopBackgroundRight->path = "images/system/inventory/tooltips/Hover_TR00_2x.png";
+		useDefaultHeaderHeight = false;
 	}
-	else
+	
+	if ( useDefaultHeaderHeight )
 	{
 		imgTopBackground->pos.h = imgTopBackgroundDefaultHeight;
 		imgTopBackground->path = "images/system/inventory/tooltips/Hover_T00.png";
@@ -1467,6 +1462,15 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		imgTopBackgroundLeft->path = "images/system/inventory/tooltips/Hover_TL00.png";
 		imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
 		imgTopBackgroundRight->path = "images/system/inventory/tooltips/Hover_TR00.png";
+	}
+
+	if ( itemTooltip.minWidth > 0 )
+	{
+		textx = std::max(itemTooltip.minWidth, textx);
+	}
+	if ( itemTooltip.maxWidth > 0 )
+	{
+		textx = std::min(itemTooltip.maxWidth, textx);
 	}
 	
 	txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, pady, textx + 3 * padx, imgTopBackground->pos.h - pady});
@@ -2012,11 +2016,8 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 	if ( !txtAttributes->isDisabled() )
 	{
-		int charWidth = 0;
-		int charHeight = 0;
-		Font::get(txtAttributes->getFont())->sizeText("_", &charWidth, &charHeight);
-
-		//txtAttributes->setText("Restores a medium amount of a hunger\nCan be thrown");
+		const int charHeight = 13;
+		//Font::get(txtAttributes->getFont())->sizeText("_", nullptr, &charHeight); -- this produces 13px @ 12 point font, used above
 
 		txtAttributes->setSize(SDL_Rect{ padx * 2, frameAttrPos.h + pady, frameAttrPos.w - padx * 2, frameAttrPos.h - pady });
 		txtAttributes->reflowTextToFit();
