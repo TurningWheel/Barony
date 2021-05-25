@@ -156,7 +156,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 					_text->drawColor(section, scaledPos, textColor);
 				}
 			}
-		} else if (icon.c_str()) {
+		} else if (!icon.empty()) {
 			Image* iconImg = Image::get(icon.c_str());
 			if (iconImg) {
 				int w = iconImg->getWidth();

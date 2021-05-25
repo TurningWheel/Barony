@@ -547,7 +547,7 @@ void settingsCustomizeInventorySorting(Button& button) {
 		(Frame::virtualScreenY - 718) / 2,
 		978,
 		718
-	});
+		});
 	window->setActualSize(SDL_Rect{0, 0, window->getSize().w, window->getSize().h});
 	window->setColor(0);
 	window->setBorder(0);
@@ -910,7 +910,7 @@ static int settingsAddBooleanOption(
 		158,
 		48});
 	button->setFont(smallfont_outline);
-	button->setText("Off      On");
+	button->setText("Off        On");
 	button->setJustify(Button::justify_t::CENTER);
 	button->setCallback(callback);
 	button->setPressed(on);
@@ -2226,6 +2226,56 @@ void mainSettings(Button& button) {
 	window_title->setJustify(Field::justify_t::CENTER);
 	window_title->setText("SETTINGS");
 
+	struct Option {
+		const char* name;
+		void (*callback)(Button&);
+	};
+	Option tabs[] = {
+		{"UI", settingsUI},
+		{"Video", settingsVideo},
+		{"Audio", settingsAudio},
+		{"Controls", settingsControls}
+	};
+	int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
+	for (int c = 0; c < num_tabs; ++c) {
+		auto button = settings->addButton(tabs[c].name);
+		button->setCallback(tabs[c].callback);
+		button->setText(tabs[c].name);
+		button->setFont(pixel_maz_outline);
+		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
+		button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
+		button->setSize(SDL_Rect{76 + (272 - 76) * c, 64, 184, 64});
+		button->setColor(makeColor(255, 255, 255, 191));
+		button->setHighlightColor(makeColor(255, 255, 255, 255));
+		button->setWidgetPageLeft("tab_left");
+		button->setWidgetPageRight("tab_right");
+		button->addWidgetAction("MenuAlt1", "restore_defaults");
+		button->addWidgetAction("MenuStart", "confirm_and_exit");
+		if (c > 0) {
+			button->setWidgetLeft(tabs[c - 1].name);
+		} else {
+			button->setWidgetLeft("tab_left");
+		}
+		if (c < num_tabs - 1) {
+			button->setWidgetRight(tabs[c + 1].name);
+		} else {
+			button->setWidgetRight("tab_right");
+		}
+		button->setWidgetBack("discard_and_exit");
+		if (c <= num_tabs / 2) {
+			button->setWidgetDown("restore_defaults");
+		} else if (c == num_tabs - 2) {
+			button->setWidgetDown("discard_and_exit");
+		} else if (c == num_tabs - 1) {
+			button->setWidgetDown("confirm_and_exit");
+		}
+	}
+	auto first_tab = settings->findButton(tabs[0].name);
+	if (first_tab) {
+		first_tab->select();
+		first_tab->activate();
+	}
+
 	auto tab_left = settings->addButton("tab_left");
 	tab_left->setBackground("images/ui/Main Menus/Settings/Settings_Button_L00.png");
 	tab_left->setSize(SDL_Rect{32, 68, 38, 58});
@@ -2297,56 +2347,6 @@ void mainSettings(Button& button) {
 			nexttab = tab;
 		}
 		});
-
-	struct Option {
-		const char* name;
-		void (*callback)(Button&);
-	};
-	Option tabs[] = {
-		{"UI", settingsUI},
-		{"Video", settingsVideo},
-		{"Audio", settingsAudio},
-		{"Controls", settingsControls}
-	};
-	int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
-	for (int c = 0; c < num_tabs; ++c) {
-		auto button = settings->addButton(tabs[c].name);
-		button->setCallback(tabs[c].callback);
-		button->setText(tabs[c].name);
-		button->setFont(pixel_maz_outline);
-		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
-		button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
-		button->setSize(SDL_Rect{76 + (272 - 76) * c, 64, 184, 64});
-		button->setColor(makeColor(255, 255, 255, 191));
-		button->setHighlightColor(makeColor(255, 255, 255, 255));
-		button->setWidgetPageLeft("tab_left");
-		button->setWidgetPageRight("tab_right");
-		button->addWidgetAction("MenuAlt1", "restore_defaults");
-		button->addWidgetAction("MenuStart", "confirm_and_exit");
-		if (c > 0) {
-			button->setWidgetLeft(tabs[c - 1].name);
-		} else {
-			button->setWidgetLeft("tab_left");
-		}
-		if (c < num_tabs - 1) {
-			button->setWidgetRight(tabs[c + 1].name);
-		} else {
-			button->setWidgetRight("tab_right");
-		}
-		button->setWidgetBack("discard_and_exit");
-		if (c <= num_tabs / 2) {
-			button->setWidgetDown("restore_defaults");
-		} else if (c == num_tabs - 2) {
-			button->setWidgetDown("discard_and_exit");
-		} else if (c == num_tabs - 1) {
-			button->setWidgetDown("confirm_and_exit");
-		}
-	}
-	auto first_tab = settings->findButton(tabs[0].name);
-	if (first_tab) {
-		first_tab->select();
-		first_tab->activate();
-	}
 
 	auto tooltip = settings->addField("tooltip", 256);
 	tooltip->setSize(SDL_Rect{92, 590, 948, 32});
