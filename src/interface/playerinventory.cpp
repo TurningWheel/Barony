@@ -1382,6 +1382,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 	auto imgPrimaryIcon = frameAttr->findImage("inventory mouse tooltip primary image");
 	auto imgSecondaryIcon = frameAttr->findImage("inventory mouse tooltip secondary image");
+	auto imgThirdIcon = frameAttr->findImage("inventory mouse tooltip third image");
 	auto imgGoldIcon = frameValues->findImage("inventory mouse tooltip gold image");
 	auto imgWeightIcon = frameValues->findImage("inventory mouse tooltip weight image");
 	auto imgValueBackground = frameValues->findImage("inventory mouse tooltip value background");
@@ -1396,6 +1397,11 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	auto txtSecondaryValueHighlight = frameAttr->findField("inventory mouse tooltip secondary value highlight");
 	auto txtSecondaryValuePositive = frameAttr->findField("inventory mouse tooltip secondary value positive text");
 	auto txtSecondaryValueNegative = frameAttr->findField("inventory mouse tooltip secondary value negative text");
+
+	auto txtThirdValue = frameAttr->findField("inventory mouse tooltip third value");
+	auto txtThirdValueHighlight = frameAttr->findField("inventory mouse tooltip third value highlight");
+	auto txtThirdValuePositive = frameAttr->findField("inventory mouse tooltip third value positive text");
+	auto txtThirdValueNegative = frameAttr->findField("inventory mouse tooltip third value negative text");
 
 	auto txtAttributes = frameAttr->findField("inventory mouse tooltip attributes text");
 	auto txtDescription = frameDesc->findField("inventory mouse tooltip description");
@@ -1470,20 +1476,20 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	// get total width of tooltip
 	const int tooltipWidth = txtHeader->getSize().w + imgTopBackgroundLeft->pos.w + imgTopBackgroundRight->pos.w;
 
-	//txtPrimaryValue->setText("Primary Value");
-	//txtSecondaryValue->setText("Secondary Value");
-
 	// attribute frame size - padded by (imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx) on either side
 	SDL_Rect frameAttrPos{ imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx, totalHeight, 0, 0 };
 	frameAttrPos.w = tooltipWidth - frameAttrPos.x * 2;
 
 	imgPrimaryIcon->pos.y = 0;
 	imgSecondaryIcon->pos.y = 0;
+	imgThirdIcon->pos.y = 0;
 
 	imgPrimaryIcon->disabled = true;
 	imgPrimaryIcon->path = "";
 	imgSecondaryIcon->disabled = true;
 	imgSecondaryIcon->path = "";
+	imgThirdIcon->disabled = true;
+	imgThirdIcon->path = "";
 	if ( itemTooltip.icons.size() > 0 )
 	{
 		int index = 0;
@@ -1546,6 +1552,31 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 				txtSecondaryValueNegative->setText(negativeText.c_str());
 				txtSecondaryValueNegative->setColor(itemTooltip.negativeTextColor);
+			}
+			else if ( index == 2 )
+			{
+				imgThirdIcon->disabled = false;
+				imgThirdIcon->path = icon.iconPath;
+
+				std::string iconText = icon.text;
+				ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
+
+				std::string bracketText = "";
+				ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
+				std::string positiveText = "";
+				std::string negativeText = "";
+				ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
+
+				txtThirdValue->setText(iconText.c_str());
+				txtThirdValue->setColor(icon.textColor);
+				txtThirdValueHighlight->setText(bracketText.c_str());
+				txtThirdValueHighlight->setColor(itemTooltip.statusEffectTextColor);
+
+				txtThirdValuePositive->setText(positiveText.c_str());
+				txtThirdValuePositive->setColor(itemTooltip.positiveTextColor);
+
+				txtThirdValueNegative->setText(negativeText.c_str());
+				txtThirdValueNegative->setColor(itemTooltip.negativeTextColor);
 			}
 			else
 			{
@@ -1611,7 +1642,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				}
 			}
 			else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR
-				|| itemCategory(item) == AMULET )
+				|| itemCategory(item) == AMULET || itemTypeIsQuiver(item->type) )
 			{
 				if ( tag.compare("weapon_durability") == 0 )
 				{
@@ -1646,6 +1677,34 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				else if ( tag.compare("equipment_fragile_durability") == 0 )
 				{
 					if ( !items[item->type].hasAttribute("FRAGILE") )
+					{
+						continue;
+					}
+				}
+				else if ( tag.compare("weapon_ranged_quiver_augment") == 0 )
+				{
+					if ( items[item->type].hasAttribute("RANGED_NO_QUIVER") )
+					{
+						continue;
+					}
+				}
+				else if ( tag.compare("weapon_ranged_rate_of_fire") == 0 )
+				{
+					// skip on 0, 100 or non-existing
+					if ( !items[item->type].hasAttribute("RATE_OF_FIRE") )
+					{
+						continue; 
+					}
+					else if ( items[item->type].hasAttribute("RATE_OF_FIRE")
+						&& (items[item->type].attributes["RATE_OF_FIRE"] == 100
+						|| items[item->type].attributes["RATE_OF_FIRE"] == 0) )
+					{
+						continue;
+					}
+				}
+				else if ( tag.compare("weapon_ranged_armor_pierce") == 0 )
+				{
+					if ( !items[item->type].hasAttribute("ARMOR_PIERCE") )
 					{
 						continue;
 					}
@@ -1885,6 +1944,10 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	txtSecondaryValueHighlight->setDisabled(txtSecondaryValue->isDisabled());
 	txtSecondaryValuePositive->setDisabled(txtSecondaryValue->isDisabled());
 	txtSecondaryValueNegative->setDisabled(txtSecondaryValue->isDisabled());
+	txtThirdValue->setDisabled(imgThirdIcon->disabled);
+	txtThirdValueHighlight->setDisabled(txtThirdValue->isDisabled());
+	txtThirdValuePositive->setDisabled(txtThirdValue->isDisabled());
+	txtThirdValueNegative->setDisabled(txtThirdValue->isDisabled());
 	if ( !imgSecondaryIcon->disabled )
 	{
 		imgSecondaryIcon->pos.x = 0;
@@ -1901,6 +1964,27 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		txtSecondaryValueHighlight->setSize(txtSecondaryValue->getSize());
 		txtSecondaryValuePositive->setSize(txtSecondaryValue->getSize());
 		txtSecondaryValueNegative->setSize(txtSecondaryValue->getSize());
+	}
+	if ( !imgThirdIcon->disabled )
+	{
+		imgThirdIcon->pos.x = 0;
+		if ( imgPrimaryIcon->disabled )
+		{
+			imgThirdIcon->pos.y = pady * 2;
+		}
+		else if ( imgSecondaryIcon->disabled )
+		{
+			imgThirdIcon->pos.y = pady + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
+		}
+		else
+		{
+			imgThirdIcon->pos.y = pady + imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h;
+		}
+		txtThirdValue->setSize(SDL_Rect{ imgThirdIcon->pos.x + imgThirdIcon->pos.w + padx,
+		imgThirdIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgThirdIcon->pos.h });
+		txtThirdValueHighlight->setSize(txtThirdValue->getSize());
+		txtThirdValuePositive->setSize(txtThirdValue->getSize());
+		txtThirdValueNegative->setSize(txtThirdValue->getSize());
 	}
 
 	bool imagesDisabled = true;
@@ -1919,8 +2003,10 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	else
 	{
 		frameAttrPos.h += std::max(
-			imgPrimaryIcon->disabled ? 0 : (imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h), 
-			imgSecondaryIcon->disabled ? 0 : (imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h));
+			std::max(imgPrimaryIcon->disabled ? 0 : (imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h), 
+				imgSecondaryIcon->disabled ? 0 : (imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h)),
+			imgThirdIcon->disabled ? 0 : (imgThirdIcon->pos.y + imgThirdIcon->pos.h)
+		);
 		frameAttrPos.h += pady;
 	}
 

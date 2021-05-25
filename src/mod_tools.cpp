@@ -1553,7 +1553,9 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	else if ( tooltipType.compare("tooltip_mace") == 0
 		|| tooltipType.compare("tooltip_sword") == 0 
 		|| tooltipType.compare("tooltip_polearm") == 0
-		|| tooltipType.find("tooltip_thrown") != std::string::npos )
+		|| tooltipType.find("tooltip_thrown") != std::string::npos
+		|| tooltipType.find("tooltip_ranged") != std::string::npos
+		|| tooltipType.find("tooltip_quiver") != std::string::npos )
 	{
 		Sint32 atk = item.weaponGetAttack(stats[player]);
 		snprintf(buf, sizeof(buf), str.c_str(), atk);
@@ -1612,23 +1614,6 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 void ItemTooltips_t::formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str)
 {
 	return;
-	if ( !stats[player] )
-	{
-		str = "";
-		return;
-	}
-	if ( players[player] && !players[player]->isLocalPlayer() )
-	{
-		str = "";
-		return;
-	}
-
-	//memset(buf, 0, sizeof(buf));
-	//if ( tooltipType.find("tooltip_armor") != std::string::npos && str.find("%s") != std::string::npos )
-	//{
-		//snprintf(buf, sizeof(buf), str.c_str(), adjective.c_str());
-		//str = buf;
-	//}
 }
 
 void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag)
@@ -1792,7 +1777,9 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	else if ( tooltipType.compare("tooltip_mace") == 0 
 		|| tooltipType.compare("tooltip_axe") == 0
 		|| tooltipType.compare("tooltip_sword") == 0
-		|| tooltipType.compare("tooltip_polearm") == 0 )
+		|| tooltipType.compare("tooltip_polearm") == 0
+		|| tooltipType.find("tooltip_ranged") != std::string::npos
+		|| tooltipType.find("tooltip_quiver") != std::string::npos )
 	{
 		int proficiency = PRO_SWORD;
 		if ( tooltipType.compare("tooltip_mace") == 0 )
@@ -1810,6 +1797,10 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( tooltipType.compare("tooltip_polearm") == 0 )
 		{
 			proficiency = PRO_POLEARM;
+		}
+		else if ( tooltipType.find("tooltip_ranged") != std::string::npos )
+		{
+			proficiency = PRO_RANGED;
 		}
 
 		if ( detailTag.compare("weapon_base_atk") == 0 )
@@ -1843,7 +1834,14 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+			if ( proficiency == PRO_RANGED )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetDEX(stats[player], players[player]->entity) : 0);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+			}
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
 		{
@@ -1865,6 +1863,26 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			snprintf(buf, sizeof(buf), str.c_str(),
 				items[item.type].hasAttribute("FRAGILE") ? -items[item.type].attributes["FRAGILE"] : 0);
+		}
+		else if ( detailTag.compare("weapon_ranged_armor_pierce") == 0 )
+		{
+			int statChance = std::min(std::max((stats[player] ? statGetPER(stats[player], players[player]->entity) : 0) / 2, 0), 50); // 0 to 50 value.
+			statChance += (items[item.type].hasAttribute("ARMOR_PIERCE") ? items[item.type].attributes["ARMOR_PIERCE"] : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), statChance);
+		}
+		else if ( detailTag.compare("weapon_ranged_quiver_augment") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemSlotName(ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD).c_str());
+		}
+		else if ( detailTag.compare("weapon_ranged_rate_of_fire") == 0 )
+		{
+			int rof = (items[item.type].hasAttribute("RATE_OF_FIRE") ? items[item.type].attributes["RATE_OF_FIRE"] : 0);
+			if ( rof > 0 )
+			{
+				rof -= 100;
+				rof *= -1;
+				snprintf(buf, sizeof(buf), str.c_str(), rof);
+			}
 		}
 		else
 		{

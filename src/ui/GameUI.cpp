@@ -798,6 +798,40 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
+			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+				0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip third image");
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value highlight", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value positive text", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value negative text", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip attributes text", 1024);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
