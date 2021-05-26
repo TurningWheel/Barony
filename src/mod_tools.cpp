@@ -1535,7 +1535,21 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		}
 		else if ( conditionalAttribute.find("EFF_") != std::string::npos )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			if ( conditionalAttribute == "EFF_REGENERATION" )
+			{
+				int healring = std::min(3, std::max(item.beatitude + 1, 1));
+				snprintf(buf, sizeof(buf), str.c_str(), healring,
+					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+		}
+		else if ( conditionalAttribute == "AC" )
+		{
+			Sint32 AC = item.armorGetAC(stats[player]);
+			snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(std::string("AC")).c_str());
 		}
 		else
 		{
@@ -1545,7 +1559,8 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		return;
 	}
 
-	if ( tooltipType.find("tooltip_armor") != std::string::npos )
+	if ( tooltipType.find("tooltip_armor") != std::string::npos
+		|| tooltipType.find("tooltip_ring") != std::string::npos )
 	{
 		Sint32 AC = item.armorGetAC(stats[player]);
 		snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(std::string("AC")).c_str());
@@ -1579,6 +1594,20 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				int highVal = item.potionGetEffectHealth();
 				item.status = oldStatus;
 				snprintf(buf, sizeof(buf), str.c_str(), lowVal, highVal);
+			}
+			else if ( item.type == POTION_BOOZE )
+			{
+				if ( iconIndex == 1 )
+				{
+					auto oldBeatitude = item.beatitude;
+					item.beatitude = std::max((Sint16)0, item.beatitude);
+					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / TICKS_PER_SECOND, item.potionGetEffectDurationMaximum() / TICKS_PER_SECOND);
+					item.beatitude = oldBeatitude;
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth());
+				}
 			}
 			else
 			{
@@ -1633,7 +1662,9 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 
 	memset(buf, 0, sizeof(buf));
 
-	if ( tooltipType.find("tooltip_armor") != std::string::npos || tooltipType.find("tooltip_amulet") != std::string::npos )
+	if ( tooltipType.find("tooltip_armor") != std::string::npos 
+		|| tooltipType.find("tooltip_amulet") != std::string::npos
+		|| tooltipType.find("tooltip_ring") != std::string::npos )
 	{
 		if ( detailTag.compare("armor_base_ac") == 0 )
 		{
@@ -1677,6 +1708,11 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( detailTag.compare("weapon_atk_from_player_stat") == 0 )
 		{
 			snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+		}
+		else if ( detailTag.compare("ring_unarmed_atk") == 0 )
+		{
+			int atk = 1 + (shouldInvertEquipmentBeatitude(stats[player]) ? abs(item.beatitude) : item.beatitude);
+			snprintf(buf, sizeof(buf), str.c_str(), atk, getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
 		{
@@ -1731,12 +1767,18 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 					items[item.type].hasAttribute(detailTag) ? items[item.type].attributes["EFF_FEATHER"] : 0,
 					getItemEquipmentEffectsForAttributesText(detailTag).c_str());
 			}
+			else if ( detailTag == "EFF_WARNING" )
+			{
+				int radius = std::max(3, 11 + 5 * item.beatitude);
+				snprintf(buf, sizeof(buf), str.c_str(), radius, getItemBeatitudeAdjective(item.beatitude).c_str());
+			}
 			else
 			{
 				return;
 			}
 		}
-		else if ( detailTag.compare("equipment_on_cursed_sideeffect") == 0 )
+		else if ( detailTag.compare("equipment_on_cursed_sideeffect") == 0
+			|| detailTag.compare("ring_on_cursed_sideeffect") == 0 )
 		{
 			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
 		}

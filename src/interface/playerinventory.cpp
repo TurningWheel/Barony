@@ -1420,10 +1420,59 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	const int imgTopBackgroundDefaultHeight = 28;
 	const int imgTopBackground2XHeight = 42;
 
+	if ( ItemTooltips.itemDebug )
+	{
+		if ( keystatus[SDL_SCANCODE_KP_PLUS] )
+		{
+			keystatus[SDL_SCANCODE_KP_PLUS] = 0;
+			item->beatitude += 1;
+		}
+		if ( keystatus[SDL_SCANCODE_KP_MINUS] )
+		{
+			keystatus[SDL_SCANCODE_KP_MINUS] = 0;
+			item->beatitude -= 1;
+		}
+		if ( keystatus[SDL_SCANCODE_KP_6] )
+		{
+			keystatus[SDL_SCANCODE_KP_6] = 0;
+			item->status = std::min(EXCELLENT, static_cast<Status>(item->status + 1));
+		}
+		if ( keystatus[SDL_SCANCODE_KP_4] )
+		{
+			keystatus[SDL_SCANCODE_KP_4] = 0;
+			item->status = std::max(BROKEN, static_cast<Status>(item->status - 1));
+		}
+		if ( keystatus[SDL_SCANCODE_KP_5] )
+		{
+			keystatus[SDL_SCANCODE_KP_5] = 0;
+			if ( item->type == WOODEN_SHIELD )
+			{
+				item->type = static_cast<ItemType>(NUMITEMS - 1);
+			}
+			else
+			{
+				item->type = static_cast<ItemType>(item->type - 1);
+			}
+		}
+		if ( keystatus[SDL_SCANCODE_KP_8] )
+		{
+			keystatus[SDL_SCANCODE_KP_8] = 0;
+			if ( item->type == NUMITEMS - 1 )
+			{
+				item->type = WOODEN_SHIELD;
+			}
+			else
+			{
+				item->type = static_cast<ItemType>(item->type + 1);
+			}
+		}
+	}
+
 	std::string tooltipType = ItemTooltips.tmpItems[item->type].tooltip;
+
 	if ( ItemTooltips.tooltips.find(tooltipType) == ItemTooltips.tooltips.end() )
 	{
-		return;
+		tooltipType = "tooltip_default";
 	}
 	auto itemTooltip = ItemTooltips.tooltips[tooltipType];
 
@@ -1504,6 +1553,13 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
 				{
 					continue;
+				}
+				if ( itemCategory(item) == RING && index > 0 && icon.conditionalAttribute == "AC" )
+				{
+					if ( item->armorGetAC(stats[player]) == 0 )
+					{
+						continue;
+					}
 				}
 			}
 
@@ -1646,7 +1702,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				}
 			}
 			else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR
-				|| itemCategory(item) == AMULET || itemTypeIsQuiver(item->type) )
+				|| itemCategory(item) == AMULET || itemCategory(item) == RING || itemTypeIsQuiver(item->type) )
 			{
 				if ( tag.compare("weapon_durability") == 0 )
 				{
@@ -1748,6 +1804,11 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 					if ( skip ) { continue; } // no attributes found, don't put this block of text in
 				}
 				else if ( tag.compare("equipment_on_cursed_sideeffect") == 0 && item->beatitude >= 0 )
+				{
+					continue;
+				}
+				else if ( tag.compare("ring_on_cursed_sideeffect") == 0 
+					&& (item->beatitude >= 0 || !items[item->type].hasAttribute("RING_CURSED_SIDEEFFECT")) )
 				{
 					continue;
 				}
@@ -1937,8 +1998,24 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	{
 		imgPrimaryIcon->pos.x = 0;
 		imgPrimaryIcon->pos.y = pady * 2;
-		txtPrimaryValue->setSize(SDL_Rect{ imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx, 
-			imgPrimaryIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgPrimaryIcon->pos.h});
+
+		int iconMultipleLinePadding = 0;
+		if ( txtPrimaryValue->getNumTextLines() > 1 )
+		{
+			auto textGet = Text::get(txtPrimaryValue->getText(), txtPrimaryValue->getFont());
+			if ( textGet )
+			{
+				imgPrimaryIcon->pos.y += pady;
+				iconMultipleLinePadding = textGet->getHeight() - imgPrimaryIcon->pos.h;
+			}
+		}
+
+		txtPrimaryValue->setSize(SDL_Rect{ 
+			imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx, 
+			imgPrimaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2,
+			txtHeader->getSize().w, 
+			imgPrimaryIcon->pos.h + iconMultipleLinePadding
+		});
 		txtPrimaryValueHighlight->setSize(txtPrimaryValue->getSize());
 		txtPrimaryValuePositive->setSize(txtPrimaryValue->getSize());
 		txtPrimaryValueNegative->setSize(txtPrimaryValue->getSize());
@@ -1963,8 +2040,24 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		{
 			imgSecondaryIcon->pos.y = pady + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
 		}
-		txtSecondaryValue->setSize(SDL_Rect{ imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx,
-			imgSecondaryIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgSecondaryIcon->pos.h });
+
+		int iconMultipleLinePadding = 0;
+		if ( txtSecondaryValue->getNumTextLines() > 1 )
+		{
+			auto textGet = Text::get(txtSecondaryValue->getText(), txtSecondaryValue->getFont());
+			if ( textGet )
+			{
+				imgSecondaryIcon->pos.y += pady;
+				iconMultipleLinePadding = textGet->getHeight() - imgSecondaryIcon->pos.h;
+			}
+		}
+
+		txtSecondaryValue->setSize(SDL_Rect{ 
+			imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx,
+			imgSecondaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2, 
+			txtHeader->getSize().w, 
+			imgSecondaryIcon->pos.h + iconMultipleLinePadding 
+		});
 		txtSecondaryValueHighlight->setSize(txtSecondaryValue->getSize());
 		txtSecondaryValuePositive->setSize(txtSecondaryValue->getSize());
 		txtSecondaryValueNegative->setSize(txtSecondaryValue->getSize());
@@ -2006,11 +2099,11 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	}
 	else
 	{
-		frameAttrPos.h += std::max(
-			std::max(imgPrimaryIcon->disabled ? 0 : (imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h), 
-				imgSecondaryIcon->disabled ? 0 : (imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h)),
-			imgThirdIcon->disabled ? 0 : (imgThirdIcon->pos.y + imgThirdIcon->pos.h)
-		);
+		int iconHeight1 = imgPrimaryIcon->disabled ? 0 : (imgPrimaryIcon->pos.y + std::max(txtPrimaryValue->getSize().h, imgPrimaryIcon->pos.h));
+		int iconHeight2 = imgSecondaryIcon->disabled ? 0 : (imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h);
+		int iconHeight3 = imgThirdIcon->disabled ? 0 : (imgThirdIcon->pos.y + imgThirdIcon->pos.h);
+
+		frameAttrPos.h += std::max(std::max(iconHeight1, iconHeight2), iconHeight3);
 		frameAttrPos.h += pady;
 	}
 

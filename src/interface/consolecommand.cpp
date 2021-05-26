@@ -3290,6 +3290,22 @@ void consoleCommand(char const * const command_str)
 			ItemTooltips.autoReload = !ItemTooltips.autoReload;
 			messagePlayer(clientnum, "Set auto-reload to %d for item_tooltips.json", ItemTooltips.autoReload);
 		}
+		else if ( !strncmp(command_str, "/debugtooltips", 14) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+			ItemTooltips.itemDebug = !ItemTooltips.itemDebug;
+			messagePlayer(clientnum, "Set item-debug to %d for item_tooltips.json", ItemTooltips.itemDebug);
+		}
 		else if ( !strncmp(command_str, "/loaditems", 10) )
 		{
 			ItemTooltips.readItemsFromFile();

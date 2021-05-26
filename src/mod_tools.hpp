@@ -2690,6 +2690,7 @@ public:
 	std::string defaultString = "";
 	char buf[2048];
 	bool autoReload = false;
+	bool itemDebug = false;
 	std::string& getItemStatusAdjective(Uint32 itemType, Status status);
 	std::string& getItemBeatitudeAdjective(Sint16 beatitude);
 	std::string& getItemPotionAlchemyAdjective(const int player, Uint32 itemType);
