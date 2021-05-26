@@ -85,10 +85,13 @@ static inline void soundError() {
 
 static void updateMenuCursor(Widget& widget) {
 	Frame* buttons = static_cast<Frame*>(&widget);
+	bool buttonSelected = false;
 	for (auto button : buttons->getButtons()) {
 		if (button->isSelected()) {
 			main_menu_cursor_x = button->getSize().x - 80;
 			main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
+			buttonSelected = true;
+			break;
 		}
 	}
 
@@ -102,6 +105,7 @@ static void updateMenuCursor(Widget& widget) {
 	// update cursor position
 	auto cursor = main_menu_frame->findImage("cursor");
 	if (cursor) {
+		cursor->disabled = !buttonSelected;
 		int diff = main_menu_cursor_y - cursor->pos.y;
 		if (diff > 0) {
 			diff = std::max(1, diff / 2);
@@ -252,15 +256,16 @@ static void createStoryScreen() {
 	story_text_end = false;
 
 	auto back_button = main_menu_frame->addButton("back");
-	back_button->setText("Skip story  ");
+	back_button->setText("Skip story\n \n ");
 	back_button->setColor(makeColor(0, 0, 0, 0));
 	back_button->setHighlightColor(makeColor(0, 0, 0, 0));
 	back_button->setBorderColor(makeColor(0, 0, 0, 0));
 	back_button->setTextColor(0xffffffff);
 	back_button->setTextHighlightColor(0xffffffff);
 	back_button->setFont(smallfont_outline);
-	back_button->setJustify(Button::justify_t::RIGHT);
-	back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 50, 400, 50});
+	back_button->setHJustify(Button::justify_t::RIGHT);
+	back_button->setVJustify(Button::justify_t::CENTER);
+	back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
 	back_button->setCallback([](Button& b){
 		fadeout = true;
 		main_menu_fade_destination = FadeDestination::RootMainMenu;
@@ -271,14 +276,14 @@ static void createStoryScreen() {
 	auto font = Font::get(bigfont_outline); assert(font);
 
 	auto textbox1 = main_menu_frame->addFrame("story_text_box");
-	textbox1->setSize(SDL_Rect{100, Frame::virtualScreenY - font->height() * 4, Frame::virtualScreenX - 200, font->height() * 3});
+	textbox1->setSize(SDL_Rect{120, Frame::virtualScreenY - font->height() * 4, Frame::virtualScreenX - 240, font->height() * 3});
 	textbox1->setActualSize(SDL_Rect{0, 0, textbox1->getSize().w, textbox1->getSize().h});
 	textbox1->setColor(makeColor(0, 0, 0, 127));
 	textbox1->setBorder(0);
 
 	auto textbox2 = textbox1->addFrame("story_text_box");
 	textbox2->setScrollBarsEnabled(false);
-	textbox2->setSize(SDL_Rect{0, font->height() / 2, Frame::virtualScreenX - 200, font->height() * 2});
+	textbox2->setSize(SDL_Rect{0, font->height() / 2, Frame::virtualScreenX - 240, font->height() * 2});
 	textbox2->setActualSize(SDL_Rect{0, 0, textbox2->getSize().w, font->height() * 16});
 	textbox2->setHollow(true);
 	textbox2->setBorder(0);
@@ -1667,15 +1672,16 @@ void recordsCredits(Button& button) {
 	createDummyMainMenu();
 
 	auto back_button = main_menu_frame->addButton("back");
-	back_button->setText("Return to Main Menu  ");
+	back_button->setText("Return to Main Menu\n \n ");
 	back_button->setColor(makeColor(0, 0, 0, 0));
 	back_button->setHighlightColor(makeColor(0, 0, 0, 0));
 	back_button->setBorderColor(makeColor(0, 0, 0, 0));
 	back_button->setTextColor(0xffffffff);
 	back_button->setTextHighlightColor(0xffffffff);
 	back_button->setFont(smallfont_outline);
-	back_button->setJustify(Button::justify_t::RIGHT);
-	back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 50, 400, 50});
+	back_button->setHJustify(Button::justify_t::RIGHT);
+	back_button->setVJustify(Button::justify_t::CENTER);
+	back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
 	back_button->setCallback([](Button& b){
 		destroyMainMenu();
 		createMainMenu();
@@ -1902,6 +1908,99 @@ void recordsBackToMainMenu(Button& button) {
 
 /******************************************************************************/
 
+void playNew(Button& button) {
+	soundActivate();
+
+	// remove "Play Game" window
+	auto frame = static_cast<Frame*>(button.getParent());
+	frame->removeSelf();
+
+	// create "Local or Network" window
+	auto window = main_menu_frame->addFrame("local_or_network_window");
+	window->setSize(SDL_Rect{
+		(Frame::virtualScreenX - 436) / 2,
+		(Frame::virtualScreenY - 240) / 2,
+		436,
+		240});
+	window->setActualSize(SDL_Rect{0, 0, 436, 240});
+	window->setColor(0);
+	window->setBorder(0);
+
+	auto background = window->addImage(
+		window->getActualSize(),
+		0xffffffff,
+		"images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Window_00.png",
+		"background"
+	);
+
+	auto banner_title = window->addField("banner", 32);
+	banner_title->setSize(SDL_Rect{142, 24, 152, 18});
+	banner_title->setText("NEW ADVENTURER");
+	banner_title->setFont(smallfont_outline);
+	banner_title->setHJustify(Field::justify_t::CENTER);
+
+	auto local_button = window->addButton("local");
+	local_button->setSize(SDL_Rect{52, 134, 164, 62});
+	local_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
+	local_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	local_button->setColor(makeColor(127, 127, 127, 255));
+	local_button->setText("Local Adventure");
+	local_button->setFont(smallfont_outline);
+	local_button->setWidgetUp("host");
+	local_button->setWidgetRight("back");
+	local_button->setWidgetBack("back");
+
+	local_button->select();
+
+	auto back_button = window->addButton("back");
+	back_button->setSize(SDL_Rect{220, 134, 164, 62});
+	back_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
+	back_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	back_button->setColor(makeColor(127, 127, 127, 255));
+	back_button->setText("Back");
+	back_button->setFont(smallfont_outline);
+	back_button->setWidgetUp("join");
+	back_button->setWidgetLeft("local");
+	back_button->setWidgetBack("back");
+	back_button->setCallback([](Button& button){
+		soundCancel();
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame->removeSelf();
+		assert(main_menu_frame);
+		mainPlayGame(button);
+		});
+
+	auto host_button = window->addButton("host");
+	host_button->setSize(SDL_Rect{52, 68, 164, 62});
+	host_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
+	host_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	host_button->setColor(makeColor(127, 127, 127, 255));
+	host_button->setText("Host Network\nParty");
+	host_button->setFont(smallfont_outline);
+	host_button->setWidgetDown("local");
+	host_button->setWidgetRight("join");
+	host_button->setWidgetBack("back");
+
+	auto join_button = window->addButton("join");
+	join_button->setSize(SDL_Rect{220, 68, 164, 62});
+	join_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
+	join_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	join_button->setColor(makeColor(127, 127, 127, 255));
+	join_button->setText("Join Network\nParty");
+	join_button->setFont(smallfont_outline);
+	join_button->setWidgetDown("back");
+	join_button->setWidgetLeft("host");
+	join_button->setWidgetBack("back");
+}
+
+void playContinue(Button& button) {
+	soundActivate();
+
+	// TODO continue menu
+}
+
+/******************************************************************************/
+
 void mainPlayGame(Button& button) {
 	soundActivate();
 
@@ -1918,24 +2017,47 @@ void mainPlayGame(Button& button) {
 	auto background = window->addImage(
 		window->getActualSize(),
 		0xffffffff,
-		"images/ui/Main Menus/Play/UI_PlayMenu_Window00.png",
+		"images/ui/Main Menus/Play/UI_PlayMenu_Window01.png",
 		"background"
 	);
 
 	auto banner_title = window->addField("banner", 32);
 	banner_title->setSize(SDL_Rect{86 * 2, 10 * 2, 47 * 2, 9 * 2});
 	banner_title->setText("PLAY GAME");
-	banner_title->setFont(smallfont_no_outline);
+	banner_title->setFont(smallfont_outline);
 	banner_title->setHJustify(Field::justify_t::CENTER);
 
 	bool continueAvailable = saveGameExists(true) || saveGameExists(false);
 
-	auto close_button = window->addButton("close");
-	close_button->setSize(SDL_Rect{206, 118, 12, 12});
-	close_button->setColor(0);
-	close_button->setHighlightColor(0);
-	close_button->setBorder(0);
-	close_button->setCallback([](Button& button){
+	auto hall_of_trials_button = window->addButton("hall_of_trials");
+	hall_of_trials_button->setSize(SDL_Rect{39 * 2, 88 * 2, 84 * 2, 26 * 2});
+	hall_of_trials_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
+	hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	hall_of_trials_button->setColor(makeColor(127, 127, 127, 255));
+	hall_of_trials_button->setText("HALL OF TRIALS");
+	hall_of_trials_button->setFont(smallfont_outline);
+	hall_of_trials_button->setWidgetUp("continue");
+	hall_of_trials_button->setWidgetRight("back");
+	hall_of_trials_button->setWidgetBack("back");
+	hall_of_trials_button->setCallback([](Button&){
+		soundActivate();
+		destroyMainMenu();
+		createDummyMainMenu();
+		main_menu_fade_destination = FadeDestination::HallOfTrials;
+		fadeout = true;
+		});
+
+	auto back_button = window->addButton("back");
+	back_button->setSize(SDL_Rect{252, 178, 108, 52});
+	back_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_Back00.png");
+	back_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	back_button->setColor(makeColor(127, 127, 127, 255));
+	back_button->setText("BACK");
+	back_button->setFont(smallfont_outline);
+	back_button->setWidgetUp("new");
+	back_button->setWidgetLeft("hall_of_trials");
+	back_button->setWidgetBack("back");
+	back_button->setCallback([](Button& button){
 		soundCancel();
 		auto frame = static_cast<Frame*>(button.getParent());
 		frame->removeSelf();
@@ -1945,72 +2067,35 @@ void mainPlayGame(Button& button) {
 		play_button->select();
 		});
 
-	auto hall_of_trials_button = window->addButton("hall_of_trials");
-	hall_of_trials_button->setSize(SDL_Rect{67 * 2, 88 * 2, 84 * 2, 26 * 2});
-	hall_of_trials_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
-	hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
-	hall_of_trials_button->setColor(makeColor(127, 127, 127, 255));
-	hall_of_trials_button->setText("HALL OF TRIALS");
-	hall_of_trials_button->setFont(smallfont_outline);
-	if (continueAvailable) {
-		hall_of_trials_button->setWidgetUp("continue");
-	} else {
-		hall_of_trials_button->setWidgetUp("new");
-	}
-	hall_of_trials_button->setWidgetLeft("continue");
-	hall_of_trials_button->setWidgetRight("new");
-	hall_of_trials_button->setWidgetBack("close");
-	hall_of_trials_button->setCallback([](Button&){
-		soundActivate();
-		destroyMainMenu();
-		createDummyMainMenu();
-		main_menu_fade_destination = FadeDestination::HallOfTrials;
-		fadeout = true;
-		});
-
 	auto continue_button = window->addButton("continue");
 	continue_button->setSize(SDL_Rect{39 * 2, 36 * 2, 66 * 2, 50 * 2});
 	continue_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueB00.png");
 	continue_button->setTextColor(makeColor(180, 180, 180, 255));
 	continue_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-	continue_button->setText("\n\nCONTINUE");
+	continue_button->setText(" \n \nCONTINUE");
 	continue_button->setFont(smallfont_outline);
 	if (continueAvailable) {
-		continue_button->setTickCallback([](Widget& widget){
-			Button* button = static_cast<Button*>(&widget);
-			if (button->isSelected()) {
-				button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
-			} else {
-				button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueB00.png");
-			}
-			});
-		continue_button->setCallback([](Button&){ soundActivate(); });
+		continue_button->setBackgroundHighlighted("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
+		continue_button->setCallback(playContinue);
 	} else {
 		continue_button->setCallback([](Button&){ soundError(); });
 	}
 	continue_button->setWidgetRight("new");
 	continue_button->setWidgetDown("hall_of_trials");
-	continue_button->setWidgetBack("close");
+	continue_button->setWidgetBack("back");
 
 	auto new_button = window->addButton("new");
 	new_button->setSize(SDL_Rect{114 * 2, 36 * 2, 68 * 2, 56 * 2});
 	new_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_NewB00.png");
+	new_button->setBackgroundHighlighted("images/ui/Main Menus/Play/UI_PlayMenu_NewA00.png");
 	new_button->setTextColor(makeColor(180, 180, 180, 255));
 	new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-	new_button->setText("\n\nNEW");
+	new_button->setText(" \n \nNEW");
 	new_button->setFont(smallfont_outline);
-	new_button->setTickCallback([](Widget& widget){
-		Button* button = static_cast<Button*>(&widget);
-		if (button->isSelected()) {
-			button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_NewA00.png");
-		} else {
-			button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_NewB00.png");
-		}
-		});
-	new_button->setCallback([](Button&){ soundActivate(); });
+	new_button->setCallback(playNew);
 	new_button->setWidgetLeft("continue");
-	new_button->setWidgetDown("hall_of_trials");
-	new_button->setWidgetBack("close");
+	new_button->setWidgetDown("back");
+	new_button->setWidgetBack("back");
 
 	if (skipintro) {
 		if (continueAvailable) {

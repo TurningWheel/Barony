@@ -418,7 +418,7 @@ static Uint32 gui_ticks = 0u;
 void doFrames() {
     if ( gui ) 
     {
-        if (gui_ticks < ticks)
+        while (gui_ticks < ticks)
         {
             (void)gui->process();
             ++gui_ticks;

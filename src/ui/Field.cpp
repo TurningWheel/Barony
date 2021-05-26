@@ -48,6 +48,9 @@ Field::~Field() {
 
 void Field::activate() {
 	Widget::select();
+	if (!editable) {
+		return;
+	}
 #ifdef NINTENDO
 	auto result = nxKeyboard(guide.c_str());
 	if (result.success) {

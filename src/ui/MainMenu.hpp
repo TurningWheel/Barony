@@ -100,6 +100,9 @@ void recordsStoryIntroduction(Button&);
 void recordsCredits(Button&);
 void recordsBackToMainMenu(Button&);
 
+void playNew(Button&);
+void playContinue(Button&);
+
 void mainPlayGame(Button&);
 void mainPlayModdedGame(Button&);
 void mainHallOfRecords(Button&);
