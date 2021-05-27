@@ -1911,12 +1911,90 @@ namespace MainMenu {
 /******************************************************************************/
 
 	static void createCharacterCard(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 346, 324, 346});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			//"images/ui/Main Menus/Play/PlayCreation/Finalize_Window_01.png",
+			"images/ui/Main Menus/Play/PlayerCreation/Finalize_EXAMPLE_00.png",
+			"backdrop"
+		);
 	}
 
 	static void createStartButton(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png",
+			"backdrop"
+		);
+
+		static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
+
+		auto banner = card->addField("invite_banner", 64);
+		banner->setText((std::string("PLAYER ") + std::to_string(index + 1)).c_str());
+		banner->setFont(banner_font);
+		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
+		banner->setVJustify(Field::justify_t::TOP);
+		banner->setHJustify(Field::justify_t::CENTER);
+
+		auto subtext = card->addField("invite_subtext", 64);
+		subtext->setText("Press Start");
+		subtext->setFont(smallfont_outline);
+		subtext->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		subtext->setVJustify(Field::justify_t::TOP);
+		subtext->setHJustify(Field::justify_t::CENTER);
 	}
 
 	static void createInviteButton(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png",
+			"backdrop"
+		);
+
+		static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
+
+		auto banner = card->addField("invite_banner", 64);
+		banner->setText("INVITE");
+		banner->setFont(banner_font);
+		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
+		banner->setVJustify(Field::justify_t::TOP);
+		banner->setHJustify(Field::justify_t::CENTER);
+
+		auto subtext = card->addField("invite_subtext", 64);
+		subtext->setText("Press to Invite");
+		subtext->setFont(smallfont_outline);
+		subtext->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		subtext->setVJustify(Field::justify_t::TOP);
+		subtext->setHJustify(Field::justify_t::CENTER);
 	}
 
 	void createLobby(LobbyType type) {
