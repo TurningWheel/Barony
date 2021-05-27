@@ -1910,7 +1910,35 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	void createLobby(LobbyType) {
+	static void createCharacterCard(int index) {
+	}
+
+	static void createStartButton(int index) {
+	}
+
+	static void createInviteButton(int index) {
+	}
+
+	void createLobby(LobbyType type) {
+		destroyMainMenu();
+		createDummyMainMenu();
+
+		auto lobby = main_menu_frame->addFrame("lobby");
+		lobby->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		lobby->setActualSize(SDL_Rect{0, 0, lobby->getSize().w, lobby->getSize().h});
+		lobby->setHollow(true);
+		lobby->setBorder(0);
+
+		createCharacterCard(0);
+		if (type == LobbyType::LobbyLocal) {
+			createStartButton(1);
+			createStartButton(2);
+			createStartButton(3);
+		} else if (type == LobbyType::LobbyHosted) {
+			createInviteButton(1);
+			createInviteButton(2);
+			createInviteButton(3);
+		}
 	}
 
 	void createLobbyBrowser() {
@@ -1918,102 +1946,7 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	void playNew(Button& button) {
-		soundActivate();
-
-		// remove "Play Game" window
-		auto frame = static_cast<Frame*>(button.getParent());
-		frame->removeSelf();
-
-		// create "Local or Network" window
-		auto window = main_menu_frame->addFrame("local_or_network_window");
-		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 436) / 2,
-			(Frame::virtualScreenY - 240) / 2,
-			436,
-			240});
-		window->setActualSize(SDL_Rect{0, 0, 436, 240});
-		window->setColor(0);
-		window->setBorder(0);
-
-		auto background = window->addImage(
-			window->getActualSize(),
-			0xffffffff,
-			"images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Window_00.png",
-			"background"
-		);
-
-		auto banner_title = window->addField("banner", 32);
-		banner_title->setSize(SDL_Rect{142, 24, 152, 18});
-		banner_title->setText("NEW ADVENTURER");
-		banner_title->setFont(smallfont_outline);
-		banner_title->setHJustify(Field::justify_t::CENTER);
-
-		auto local_button = window->addButton("local");
-		local_button->setSize(SDL_Rect{52, 134, 164, 62});
-		local_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		local_button->setColor(makeColor(127, 127, 127, 255));
-		local_button->setText("Local Adventure");
-		local_button->setFont(smallfont_outline);
-		local_button->setWidgetUp("host");
-		local_button->setWidgetRight("back");
-		local_button->setWidgetBack("back");
-
-		local_button->select();
-
-		auto back_button = window->addButton("back");
-		back_button->setSize(SDL_Rect{220, 134, 164, 62});
-		back_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		back_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		back_button->setColor(makeColor(127, 127, 127, 255));
-		back_button->setText("Back");
-		back_button->setFont(smallfont_outline);
-		back_button->setWidgetUp("join");
-		back_button->setWidgetLeft("local");
-		back_button->setWidgetBack("back");
-		back_button->setCallback([](Button& button){
-			soundCancel();
-			auto frame = static_cast<Frame*>(button.getParent());
-			frame->removeSelf();
-			assert(main_menu_frame);
-			mainPlayGame(button);
-			});
-
-		auto host_button = window->addButton("host");
-		host_button->setSize(SDL_Rect{52, 68, 164, 62});
-		host_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		host_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		host_button->setColor(makeColor(127, 127, 127, 255));
-		host_button->setText("Host Network\nParty");
-		host_button->setFont(smallfont_outline);
-		host_button->setWidgetDown("local");
-		host_button->setWidgetRight("join");
-		host_button->setWidgetBack("back");
-
-		auto join_button = window->addButton("join");
-		join_button->setSize(SDL_Rect{220, 68, 164, 62});
-		join_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		join_button->setColor(makeColor(127, 127, 127, 255));
-		join_button->setText("Join Network\nParty");
-		join_button->setFont(smallfont_outline);
-		join_button->setWidgetDown("back");
-		join_button->setWidgetLeft("host");
-		join_button->setWidgetBack("back");
-	}
-
-	void playContinue(Button& button) {
-		soundActivate();
-
-		// TODO continue menu
-	}
-
-/******************************************************************************/
-
-	void mainPlayGame(Button& button) {
-		soundActivate();
-
+	static void createPlayWindow() {
 		auto window = main_menu_frame->addFrame("play_game_window");
 		window->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 218 * 2) / 2,
@@ -2118,8 +2051,109 @@ namespace MainMenu {
 		}
 	}
 
-	void mainPlayModdedGame(Button& button) {
+	void playNew(Button& button) {
 		soundActivate();
+
+		// remove "Play Game" window
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame->removeSelf();
+
+		// create "Local or Network" window
+		auto window = main_menu_frame->addFrame("local_or_network_window");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 436) / 2,
+			(Frame::virtualScreenY - 240) / 2,
+			436,
+			240});
+		window->setActualSize(SDL_Rect{0, 0, 436, 240});
+		window->setColor(0);
+		window->setBorder(0);
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Window_00.png",
+			"background"
+		);
+
+		auto banner_title = window->addField("banner", 32);
+		banner_title->setSize(SDL_Rect{142, 24, 152, 18});
+		banner_title->setText("NEW ADVENTURER");
+		banner_title->setFont(smallfont_outline);
+		banner_title->setHJustify(Field::justify_t::CENTER);
+
+		auto local_button = window->addButton("local");
+		local_button->setSize(SDL_Rect{52, 134, 164, 62});
+		local_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
+		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		local_button->setColor(makeColor(127, 127, 127, 255));
+		local_button->setText("Local Adventure");
+		local_button->setFont(smallfont_outline);
+		local_button->setWidgetUp("host");
+		local_button->setWidgetRight("back");
+		local_button->setWidgetBack("back");
+		local_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLocal);});
+
+		local_button->select();
+
+		auto back_button = window->addButton("back");
+		back_button->setSize(SDL_Rect{220, 134, 164, 62});
+		back_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
+		back_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		back_button->setColor(makeColor(127, 127, 127, 255));
+		back_button->setText("Back");
+		back_button->setFont(smallfont_outline);
+		back_button->setWidgetUp("join");
+		back_button->setWidgetLeft("local");
+		back_button->setWidgetBack("back");
+		back_button->setCallback([](Button& button){
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame->removeSelf();
+			createPlayWindow();
+			});
+
+		auto host_button = window->addButton("host");
+		host_button->setSize(SDL_Rect{52, 68, 164, 62});
+		host_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
+		host_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		host_button->setColor(makeColor(127, 127, 127, 255));
+		host_button->setText("Host Network\nParty");
+		host_button->setFont(smallfont_outline);
+		host_button->setWidgetDown("local");
+		host_button->setWidgetRight("join");
+		host_button->setWidgetBack("back");
+		host_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyHosted);});
+
+		auto join_button = window->addButton("join");
+		join_button->setSize(SDL_Rect{220, 68, 164, 62});
+		join_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
+		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		join_button->setColor(makeColor(127, 127, 127, 255));
+		join_button->setText("Join Network\nParty");
+		join_button->setFont(smallfont_outline);
+		join_button->setWidgetDown("back");
+		join_button->setWidgetLeft("host");
+		join_button->setWidgetBack("back");
+	}
+
+	void playContinue(Button& button) {
+		soundActivate();
+
+		// TODO continue menu
+	}
+
+/******************************************************************************/
+
+	void mainPlayGame(Button& button) {
+		soundActivate();
+		createPlayWindow();
+	}
+
+	void mainPlayModdedGame(Button& button) {
+		// TODO add a mod selection menu or something here
+		soundActivate();
+		createPlayWindow();
 	}
 
 	void mainHallOfRecords(Button& button) {
@@ -2527,6 +2561,7 @@ namespace MainMenu {
 
 	void mainQuit(Button& button) {
 		soundActivate();
+		// TODO
 	}
 
 /******************************************************************************/

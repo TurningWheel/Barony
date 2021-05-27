@@ -172,6 +172,7 @@ void Widget::adoptWidget(Widget& widget) {
 			}
 		}
 	}
+	widget.owner = owner;
 	widget.parent = this;
 	widgets.push_back(&widget);
 }
