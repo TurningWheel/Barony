@@ -79,16 +79,16 @@ void Text::render() {
 	int outlineSize = font->getOutline();
 	if (outlineSize > 0) {
 		TTF_SetFontOutline(ttf, outlineSize);
-		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorBlack, xres);
+		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorBlack);
 		TTF_SetFontOutline(ttf, 0);
-		SDL_Surface* text = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
+		SDL_Surface* text = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorWhite);
 		SDL_Rect rect;
 		rect.x = outlineSize; rect.y = outlineSize;
 		SDL_BlitSurface(text, NULL, surf, &rect);
 		SDL_FreeSurface(text);
 	} else {
 		TTF_SetFontOutline(ttf, 0);
-		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
+		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorWhite);
 	}
 	assert(surf);
 	if (texid == 0) {
@@ -105,8 +105,8 @@ void Text::render() {
 			}
 		}
 	}
-	width += outlineSize;
-	height += outlineSize;
+	++width;
+	++height;
 
 	// translate the original surface to an RGBA surface
 	SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width, height, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);

@@ -120,8 +120,14 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 	if (style != STYLE_CHECKBOX || pressed) {
 		if (!text.empty()) {
 			Font* _font = Font::get(font.c_str());
-			Text* fullText = Text::get(text.c_str(), font.c_str());
-			int fullH = fullText->getHeight();
+
+			int lines = 1;
+			for (auto c : text) {
+				if (c == '\n') {
+					++lines;
+				}
+			}
+			int fullH = lines * _font->height(false) + _font->getOutline();
 
 			char* buf = (char*)malloc(text.size() + 1);
 			memcpy(buf, text.c_str(), text.size() + 1);
@@ -147,14 +153,14 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 					x = size.w - w - border;
 				}
 				if (vjustify == LEFT || vjustify == TOP) {
-					y = border + yoff;
+					y = yoff + border + std::min(size.h - fullH, 0);
 				} else if (vjustify == CENTER) {
-					y = (size.h - fullH) / 2 + yoff;
+					y = yoff + (size.h - fullH) / 2;
 				} else if (vjustify == RIGHT || vjustify == BOTTOM) {
-					y = size.h - fullH - border + yoff;
+					y = yoff - border + std::max(size.h - fullH, 0);
 				}
 
-				yoff += _font->height();
+				yoff += _font->height(false);
 
 				SDL_Rect pos = _size;
 				pos.x += std::max(0, x - scroll.x);

@@ -114,6 +114,13 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	if (!actualFont) {
 		return;
 	}
+	int lines = 1;
+	for (int c = 0; c <= textlen; ++c) {
+		if (text[c] == '\n') {
+			++lines;
+		}
+	}
+	int fullH = lines * actualFont->height(false) + actualFont->getOutline() * 2;
 
 	char* buf = (char*)malloc(textlen + 1);
 	memcpy(buf, text, textlen + 1);
@@ -168,11 +175,11 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 			pos.x = _size.x + size.x + size.w - textSizeW - _actualSize.x;
 		}
 		if (vjustify == LEFT || vjustify == TOP) {
-			pos.y = _size.y + size.y + yoff - _actualSize.y;
+			pos.y = _size.y + size.y + yoff - _actualSize.y + std::min(size.h - fullH, 0);
 		} else if (vjustify == CENTER) {
-			pos.y = _size.y + size.y + yoff + size.h / 2 - textSizeH / 2 - _actualSize.y;
+			pos.y = _size.y + size.y + yoff - _actualSize.y + (size.h - fullH) / 2;
 		} else if (vjustify == RIGHT || vjustify == BOTTOM) {
-			pos.y = _size.y + size.y + yoff + size.h - textSizeH - _actualSize.y;
+			pos.y = _size.y + size.y + yoff - _actualSize.y + std::max(size.h - fullH, 0);
 		}
 		pos.w = textSizeW;
 		pos.h = textSizeH;

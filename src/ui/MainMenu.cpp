@@ -258,7 +258,7 @@ namespace MainMenu {
 		story_text_end = false;
 
 		auto back_button = main_menu_frame->addButton("back");
-		back_button->setText("Skip story\n \n ");
+		back_button->setText("Skip story");
 		back_button->setColor(makeColor(0, 0, 0, 0));
 		back_button->setHighlightColor(makeColor(0, 0, 0, 0));
 		back_button->setBorderColor(makeColor(0, 0, 0, 0));
@@ -917,7 +917,7 @@ namespace MainMenu {
 			158,
 			48});
 		button->setFont(smallfont_outline);
-		button->setText("Off        On");
+		button->setText("Off          On");
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
 		button->setPressed(on);
@@ -1674,7 +1674,7 @@ namespace MainMenu {
 		createDummyMainMenu();
 
 		auto back_button = main_menu_frame->addButton("back");
-		back_button->setText("Return to Main Menu\n \n ");
+		back_button->setText("Return to Main Menu");
 		back_button->setColor(makeColor(0, 0, 0, 0));
 		back_button->setHighlightColor(makeColor(0, 0, 0, 0));
 		back_button->setBorderColor(makeColor(0, 0, 0, 0));
@@ -1719,7 +1719,7 @@ namespace MainMenu {
 		text1->setColor(makeColor(255, 191, 32, 255));
 		text1->setHJustify(Field::justify_t::CENTER);
 		text1->setVJustify(Field::justify_t::TOP);
-		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 80});
+		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 81});
 		text1->setText(
 			u8"Project lead, programming, and design\n"
 			u8" \n"
@@ -1749,6 +1749,7 @@ namespace MainMenu {
 			u8" \n"
 			u8" \n"
 			u8" \n"
+			u8" \n"
 			u8" \n \n \n \n \n"
 			u8"A big shout-out to our open-source community!\n"
 			u8" \n"
@@ -1769,7 +1770,7 @@ namespace MainMenu {
 		text2->setColor(0xffffffff);
 		text2->setHJustify(Field::justify_t::CENTER);
 		text2->setVJustify(Field::justify_t::TOP);
-		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 80});
+		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 81});
 		text2->setText(
 			u8" \n"
 			u8"Sheridan Rathbun\n"
@@ -1795,10 +1796,11 @@ namespace MainMenu {
 			u8" \n"
 			u8"Our Kickstarter Backers\n"
 			u8"Sterling Rathbun\n"
-			u8"Kevin White\n"
-			u8"Jesse Riddle\n"
 			u8"Julian Seeger\n"
 			u8"Mathias Golinelli\n"
+			u8"Jesse Riddle\n"
+			u8"Kevin White\n"
+			u8"Desiree Colborn\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Learn more at http://www.github.com/TurningWheel/Barony\n"
@@ -2043,10 +2045,11 @@ namespace MainMenu {
 		);
 
 		auto banner_title = window->addField("banner", 32);
-		banner_title->setSize(SDL_Rect{86 * 2, 10 * 2, 47 * 2, 9 * 2});
+		banner_title->setSize(SDL_Rect{170, 24, 98, 18});
 		banner_title->setText("PLAY GAME");
 		banner_title->setFont(smallfont_outline);
 		banner_title->setHJustify(Field::justify_t::CENTER);
+		banner_title->setVJustify(Field::justify_t::BOTTOM);
 
 		bool continueAvailable = saveGameExists(true) || saveGameExists(false);
 
@@ -2093,7 +2096,7 @@ namespace MainMenu {
 		continue_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueB00.png");
 		continue_button->setTextColor(makeColor(180, 180, 180, 255));
 		continue_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-		continue_button->setText(" \n \nCONTINUE");
+		continue_button->setText(" \nCONTINUE");
 		continue_button->setFont(smallfont_outline);
 		if (continueAvailable) {
 			continue_button->setBackgroundHighlighted("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
@@ -2111,7 +2114,7 @@ namespace MainMenu {
 		new_button->setBackgroundHighlighted("images/ui/Main Menus/Play/UI_PlayMenu_NewA00.png");
 		new_button->setTextColor(makeColor(180, 180, 180, 255));
 		new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-		new_button->setText(" \n \nNEW");
+		new_button->setText(" \nNEW");
 		new_button->setFont(smallfont_outline);
 		new_button->setCallback(playNew);
 		new_button->setWidgetLeft("continue");
@@ -2159,6 +2162,7 @@ namespace MainMenu {
 		banner_title->setText("NEW ADVENTURER");
 		banner_title->setFont(smallfont_outline);
 		banner_title->setHJustify(Field::justify_t::CENTER);
+		banner_title->setVJustify(Field::justify_t::TOP);
 
 		auto local_button = window->addButton("local");
 		local_button->setSize(SDL_Rect{52, 134, 164, 62});
@@ -2425,7 +2429,7 @@ namespace MainMenu {
 			}
 			});
 
-		static const char* pixel_maz_outline = "fonts/pixel_maz.ttf#46#2";
+		static const char* pixel_maz_outline = "fonts/pixel_maz.ttf#64#2";
 
 		auto window_title = settings->addField("window_title", 64);
 		window_title->setFont(pixel_maz_outline);
