@@ -85,7 +85,7 @@ void Frame::draw() {
 }
 
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
-	if (disabled)
+	if (disabled || invisible)
 		return;
 
 	// warning: overloading member variable!

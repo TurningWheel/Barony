@@ -169,8 +169,8 @@ namespace MainMenu {
 		auto back = parent->addFrame("back");
 		back->setSize(SDL_Rect{5, 5, 66, 36});
 		back->setActualSize(SDL_Rect{0, 0, 66, 36});
-		back->setBorderColor(0);
 		back->setColor(0);
+		back->setBorderColor(0);
 		back->setBorder(0);
 		auto backdrop = back->addImage(
 			back->getActualSize(),
@@ -182,6 +182,7 @@ namespace MainMenu {
 		auto back_button = back->addButton("back_button");
 		back_button->setSize(SDL_Rect{10, 12, 48, 20});
 		back_button->setColor(0);
+		back_button->setBorderColor(0);
 		back_button->setBorder(0);
 		back_button->setText("Back");
 		back_button->setFont(smallfont_outline);

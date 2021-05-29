@@ -42,6 +42,9 @@ void Button::activate() {
 }
 
 void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
+	if (invisible) {
+		return;
+	}
 	_size.x += std::max(0, size.x - _actualSize.x);
 	_size.y += std::max(0, size.y - _actualSize.y);
 	_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
