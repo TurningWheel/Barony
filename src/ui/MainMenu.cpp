@@ -165,6 +165,43 @@ namespace MainMenu {
 		}
 	}
 
+	static Button* createBackWidget(Frame* parent, void (*callback)(Button&)) {
+		auto back = parent->addFrame("back");
+		back->setSize(SDL_Rect{5, 5, 66, 36});
+		back->setActualSize(SDL_Rect{0, 0, 66, 36});
+		back->setBorderColor(0);
+		back->setColor(0);
+		back->setBorder(0);
+		auto backdrop = back->addImage(
+			back->getActualSize(),
+			0xffffffff,
+			"images/ui/BackButton/UI_ButtonBack_00.png",
+			"backdrop"
+		);
+
+		auto back_button = back->addButton("back_button");
+		back_button->setSize(SDL_Rect{10, 12, 48, 20});
+		back_button->setColor(0);
+		back_button->setBorder(0);
+		back_button->setText("Back");
+		back_button->setFont(smallfont_outline);
+		back_button->setHJustify(Button::justify_t::LEFT);
+		back_button->setVJustify(Button::justify_t::CENTER);
+		back_button->setCallback(callback);
+		/*back_button->setTickCallback([](Widget& widget) {
+			auto button = static_cast<Button*>(&widget);
+			auto frame = static_cast<Frame*>(button->getParent());
+			auto backdrop = frame->findImage("backdrop");
+			if (button->isSelected()) {
+				backdrop->color = makeColor(255, 255, 255, 255);
+			} else {
+				backdrop->color = makeColor(127, 127, 127, 255);
+			}
+			});*/
+
+		return back_button;
+	}
+
 /******************************************************************************/
 
 	inline void InventorySorting::save() {
@@ -1921,14 +1958,142 @@ namespace MainMenu {
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
+		card->setOwner(index);
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
 			0xffffffff,
-			//"images/ui/Main Menus/Play/PlayCreation/Finalize_Window_01.png",
-			"images/ui/Main Menus/Play/PlayerCreation/Finalize_EXAMPLE_00.png",
+			"images/ui/Main Menus/Play/PlayerCreation/Finalize_Window_01.png",
 			"backdrop"
 		);
+
+		auto name_text = card->addField("name_text", 32);
+		name_text->setSize(SDL_Rect{30, 30, 56, 36});
+		name_text->setFont(smallfont_outline);
+		name_text->setColor(makeColor(166, 123, 81, 255));
+		name_text->setText("NAME:");
+		name_text->setHJustify(Field::justify_t::RIGHT);
+		name_text->setVJustify(Field::justify_t::CENTER);
+
+		auto name_box = card->addImage(
+			SDL_Rect{88, 30, 150, 36},
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/Finalize__NameField_00.png",
+			"name_box"
+		);
+
+		auto name_field = card->addField("name", 64);
+		name_field->setFont(smallfont_outline);
+		name_field->setText((std::string("Player ") + std::to_string(index + 1)).c_str());
+		name_field->setSize(SDL_Rect{90, 34, 146, 28});
+		name_field->setColor(makeColor(166, 123, 81, 255));
+		name_field->setHJustify(Field::justify_t::LEFT);
+		name_field->setVJustify(Field::justify_t::CENTER);
+		name_field->setEditable(true);
+		name_field->addWidgetAction("MenuStart", "ready");
+		name_field->setWidgetBack("back_button");
+		name_field->setWidgetRight("randomize_name");
+		name_field->setWidgetDown("game_settings");
+		name_field->select();
+
+		auto randomize_name = card->addButton("randomize_name");
+		randomize_name->setColor(makeColor(127, 127, 127, 255));
+		randomize_name->setHighlightColor(makeColor(255, 255, 255, 255));
+		randomize_name->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
+		randomize_name->setSize(SDL_Rect{244, 26, 40, 44});
+		randomize_name->addWidgetAction("MenuStart", "ready");
+		randomize_name->setWidgetBack("back_button");
+		randomize_name->setWidgetLeft("name");
+		randomize_name->setWidgetDown("game_settings");
+		
+		auto game_settings = card->addButton("game_settings");
+		game_settings->setSize(SDL_Rect{62, 76, 202, 52});
+		game_settings->setColor(makeColor(127, 127, 127, 255));
+		game_settings->setHighlightColor(makeColor(255, 255, 255, 255));
+		game_settings->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
+		game_settings->setText("View Game Settings");
+		game_settings->setFont(smallfont_outline);
+		game_settings->addWidgetAction("MenuStart", "ready");
+		game_settings->setWidgetBack("back_button");
+		game_settings->setWidgetUp("name");
+		game_settings->setWidgetDown("male");
+
+		auto male_button = card->addButton("male");
+		male_button->setColor(makeColor(127, 127, 127, 255));
+		male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		male_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Male_00.png");
+		male_button->setSize(SDL_Rect{42, 166, 58, 52});
+		male_button->addWidgetAction("MenuStart", "ready");
+		male_button->setWidgetBack("back_button");
+		male_button->setWidgetRight("female");
+		male_button->setWidgetUp("game_settings");
+		male_button->setWidgetDown("class");
+
+		auto female_button = card->addButton("female");
+		female_button->setColor(makeColor(127, 127, 127, 255));
+		female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		female_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Female_00.png");
+		female_button->setSize(SDL_Rect{104, 166, 58, 52});
+		female_button->addWidgetAction("MenuStart", "ready");
+		female_button->setWidgetBack("back_button");
+		female_button->setWidgetLeft("male");
+		female_button->setWidgetRight("race");
+		female_button->setWidgetUp("game_settings");
+		female_button->setWidgetDown("class");
+
+		auto race_button = card->addButton("race");
+		race_button->setColor(makeColor(127, 127, 127, 255));
+		race_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		race_button->setSize(SDL_Rect{166, 166, 108, 52});
+		race_button->setText("Automaton");
+		race_button->setTextColor(makeColor(223, 44, 149, 255));
+		race_button->setFont(smallfont_outline);
+		race_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
+		race_button->addWidgetAction("MenuStart", "ready");
+		race_button->setWidgetBack("back_button");
+		race_button->setWidgetLeft("female");
+		race_button->setWidgetUp("game_settings");
+		race_button->setWidgetDown("class");
+
+		auto randomize_class = card->addButton("randomize_class");
+		randomize_class->setColor(makeColor(127, 127, 127, 255));
+		randomize_class->setHighlightColor(makeColor(255, 255, 255, 255));
+		randomize_class->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
+		randomize_class->setSize(SDL_Rect{244, 230, 40, 44});
+		randomize_class->addWidgetAction("MenuStart", "ready");
+		randomize_class->setWidgetBack("back_button");
+		randomize_class->setWidgetLeft("class");
+		randomize_class->setWidgetDown("ready");
+		randomize_class->setWidgetUp("race");
+
+		auto class_text = card->addField("class_text", 64);
+		class_text->setSize(SDL_Rect{96, 236, 138, 32});
+		class_text->setText("Barbarian");
+		class_text->setFont(smallfont_outline);
+		class_text->setJustify(Field::justify_t::CENTER);
+
+		auto class_button = card->addButton("class");
+		class_button->setColor(makeColor(127, 127, 127, 255));
+		class_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		class_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGBase_00.png");
+		class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Barbarian_00.png");
+		class_button->setSize(SDL_Rect{44, 226, 52, 52});
+		class_button->addWidgetAction("MenuStart", "ready");
+		class_button->setWidgetBack("back_button");
+		class_button->setWidgetRight("randomize_class");
+		class_button->setWidgetUp("male");
+		class_button->setWidgetDown("ready");
+
+		auto ready_button = card->addButton("ready");
+		ready_button->setSize(SDL_Rect{62, 288, 202, 52});
+		ready_button->setColor(makeColor(127, 127, 127, 255));
+		ready_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		ready_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
+		ready_button->setFont(bigfont_outline);
+		ready_button->setText("Ready");
+		ready_button->addWidgetAction("MenuStart", "ready");
+		ready_button->setWidgetBack("back_button");
+		ready_button->setWidgetUp("class");
 	}
 
 	static void createStartButton(int index) {
@@ -2009,6 +2174,12 @@ namespace MainMenu {
 		lobby->setHollow(true);
 		lobby->setBorder(0);
 
+		(void)createBackWidget(lobby, [](Button&){
+			soundCancel();
+			destroyMainMenu();
+			createMainMenu();
+			});
+
 		createCharacterCard(0);
 		if (type == LobbyType::LobbyLocal) {
 			createStartButton(1);
@@ -2048,8 +2219,7 @@ namespace MainMenu {
 		banner_title->setSize(SDL_Rect{170, 24, 98, 18});
 		banner_title->setText("PLAY GAME");
 		banner_title->setFont(smallfont_outline);
-		banner_title->setHJustify(Field::justify_t::CENTER);
-		banner_title->setVJustify(Field::justify_t::BOTTOM);
+		banner_title->setJustify(Field::justify_t::CENTER);
 
 		bool continueAvailable = saveGameExists(true) || saveGameExists(false);
 
@@ -2161,8 +2331,7 @@ namespace MainMenu {
 		banner_title->setSize(SDL_Rect{142, 24, 152, 18});
 		banner_title->setText("NEW ADVENTURER");
 		banner_title->setFont(smallfont_outline);
-		banner_title->setHJustify(Field::justify_t::CENTER);
-		banner_title->setVJustify(Field::justify_t::TOP);
+		banner_title->setJustify(Field::justify_t::CENTER);
 
 		auto local_button = window->addButton("local");
 		local_button->setSize(SDL_Rect{52, 134, 164, 62});

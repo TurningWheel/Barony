@@ -127,7 +127,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 					++lines;
 				}
 			}
-			int fullH = lines * _font->height(false) + _font->getOutline();
+			int fullH = lines * _font->height(false) + _font->getOutline() * 2;
 
 			char* buf = (char*)malloc(text.size() + 1);
 			memcpy(buf, text.c_str(), text.size() + 1);
