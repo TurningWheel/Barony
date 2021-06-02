@@ -93,12 +93,12 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 
 	_size.x += std::max(0, size.x - _actualSize.x);
 	_size.y += std::max(0, size.y - _actualSize.y);
-	if (size.h < actualSize.h) {
+	if (scrollbars && size.h < actualSize.h) {
 		_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	} else {
 		_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	}
-	if (size.w < actualSize.w) {
+	if (scrollbars && size.w < actualSize.w) {
 		_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 	} else {
 		_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
@@ -431,12 +431,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 
 	_size.x += std::max(0, size.x - _actualSize.x);
 	_size.y += std::max(0, size.y - _actualSize.y);
-	if (size.h < actualSize.h) {
+	if (scrollbars && size.h < actualSize.h) {
 		_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	} else {
 		_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	}
-	if (size.w < actualSize.w) {
+	if (scrollbars && size.w < actualSize.w) {
 		_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 	} else {
 		_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
@@ -528,7 +528,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 	}
 
 	// scroll with right stick
-	if (selectedWidget && (selectedWidget == this || selectedWidget->isChildOf(*this)) && allowScrolling && scrollbars) {
+	if (selectedWidget && (selectedWidget == this || selectedWidget->isChildOf(*this)) && allowScrolling && allowScrollBinds) {
 		Input& input = Input::inputs[owner];
 
 		// x scroll
@@ -553,7 +553,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 	}
 
 	// scroll with mouse wheel
-	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable && allowScrolling && scrollbars) {
+	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable && allowScrolling && allowScrollBinds) {
 		// x scroll with mouse wheel
 		if (this->actualSize.w > size.w) {
 			if (this->actualSize.h <= size.h) {
