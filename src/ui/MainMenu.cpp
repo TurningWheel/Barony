@@ -1950,11 +1950,210 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	static void createCharacterCard(int index) {
+	void characterCardRaceMenu(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
-		auto card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		assert(card);
+		card->removeSelf();
+	}
+
+	void characterCardClassMenu(int index) {
+		enum class DLC {
+			Base,
+			MythsAndOutcasts,
+			LegendsAndPariahs
+		};
+
+		struct Class {
+			const char* name;
+			DLC dlc;
+			const char* image;
+		};
+
+		static const std::unordered_map<std::string, Class> classes = {
+			{"random", {"Random", DLC::Base, "ClassSelect_Icon_Randomize_00.png"}},
+			{"barbarian", {"Barbarian", DLC::Base, "ClassSelect_Icon_Barbarian_00.png"}},
+			{"warrior", {"Warrior", DLC::Base, "ClassSelect_Icon_Warrior_00.png"}},
+			{"healer", {"Healer", DLC::Base, "ClassSelect_Icon_Healer_00.png"}},
+			{"rogue", {"Rogue", DLC::Base, "ClassSelect_Icon_Rogue_00.png"}},
+			{"wanderer", {"Wanderer", DLC::Base, "ClassSelect_Icon_Wanderer_00.png"}},
+			{"cleric", {"Cleric", DLC::Base, "ClassSelect_Icon_Cleric_00.png"}},
+			{"merchant", {"Merchant", DLC::Base, "ClassSelect_Icon_Merchant_00.png"}},
+			{"wizard", {"Wizard", DLC::Base, "ClassSelect_Icon_Wizard_00.png"}},
+			{"arcanist", {"Arcanist", DLC::Base, "ClassSelect_Icon_Arcanist_00.png"}},
+			{"joker", {"Joker", DLC::Base, "ClassSelect_Icon_Joker_00.png"}},
+			{"sexton", {"Sexton", DLC::Base, "ClassSelect_Icon_Sexton_00.png"}},
+			{"ninja", {"Ninja", DLC::Base, "ClassSelect_Icon_Ninja_00.png"}},
+			{"monk", {"Monk", DLC::Base, "ClassSelect_Icon_Monk_00.png"}},
+			{"conjurer", {"Conjurer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Conjurer_00.png"}},
+			{"accursed", {"Accursed", DLC::MythsAndOutcasts, "ClassSelect_Icon_Accursed_00.png"}},
+			{"mesmer", {"Mesmer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Mesmer_00.png"}},
+			{"brewer", {"Brewer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Brewer_00.png"}},
+			{"mechanist", {"Mechanist", DLC::LegendsAndPariahs, "ClassSelect_Icon_Mechanist_00.png"}},
+			{"punisher", {"Punisher", DLC::LegendsAndPariahs, "ClassSelect_Icon_Punisher_00.png"}},
+			{"shaman", {"Shaman", DLC::LegendsAndPariahs, "ClassSelect_Icon_Shaman_00.png"}},
+			{"hunter", {"Hunter", DLC::LegendsAndPariahs, "ClassSelect_Icon_Hunter_00.png"}},
+		};
+
+		static const char* class_list_order[] = {
+			"random", "barbarian", "warrior", "healer",
+			"rogue", "wanderer", "cleric", "merchant",
+			"wizard", "arcanist", "joker", "sexton",
+			"ninja", "monk", "conjurer", "accursed",
+			"mesmer", "brewer", "mechanist", "punisher",
+			"shaman", "hunter"
+		};
+
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 346, 324, 488});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+		card->setOwner(index);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Window_01.png",
+			"backdrop"
+		);
+
+		auto header = card->addField("header", 64);
+		header->setSize(SDL_Rect{32, 14, 260, 38});
+		header->setFont(smallfont_outline);
+		header->setText("CLASS SELECTION");
+		header->setJustify(Field::justify_t::CENTER);
+
+		auto class_name_header = card->addField("class_name_header", 64);
+		class_name_header->setSize(SDL_Rect{98, 70, 128, 26});
+		class_name_header->setFont(smallfont_outline);
+		class_name_header->setText("Merchant");
+		class_name_header->setHJustify(Field::justify_t::CENTER);
+		class_name_header->setVJustify(Field::justify_t::BOTTOM);
+
+		auto textbox = card->addImage(
+			SDL_Rect{46, 116, 186, 36},
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_SearchBar_00.png"
+			"textbox"
+		);
+
+		auto class_name = card->addField("class_name", 64);
+		class_name->setSize(textbox->pos);
+		class_name->setHJustify(Field::justify_t::LEFT);
+		class_name->setVJustify(Field::justify_t::CENTER);
+		class_name->setFont(smallfont_outline);
+		class_name->setText("Merchant");
+
+		auto class_info = card->addButton("class_info");
+		class_info->setColor(makeColor(127, 127, 127, 255));
+		class_info->setHighlightColor(makeColor(255, 255, 255, 255));
+		class_info->setSize(SDL_Rect{236, 110, 48, 48});
+		class_info->setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_MagnifyingGlass_00.png");
+
+		auto confirm = card->addButton("confirm");
+		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
+		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
+		confirm->setSize(SDL_Rect{62, 430, 202, 52});
+		confirm->setText("Confirm");
+		confirm->setFont(bigfont_outline);
+		confirm->addWidgetAction("MenuStart", "confirm");
+		switch (index) {
+		case 0: confirm->setCallback([](Button&){createCharacterCard(0);}); break;
+		case 1: confirm->setCallback([](Button&){createCharacterCard(1);}); break;
+		case 2: confirm->setCallback([](Button&){createCharacterCard(2);}); break;
+		case 3: confirm->setCallback([](Button&){createCharacterCard(3);}); break;
+		}
+
+		auto subframe = card->addFrame("subframe");
+		subframe->setSize(SDL_Rect{34, 160, 224, 258});
+		subframe->setActualSize(SDL_Rect{0, 0, 224, std::max(258, 6 + 54 * (int)classes.size() / 4)});
+		subframe->setHollow(true);
+		subframe->setBorder(0);
+
+		if (subframe->getActualSize().h > 258) {
+			auto slider = card->addSlider((std::string("card") + std::to_string(index)).c_str());
+			slider->setRailSize(SDL_Rect{260, 160, 30, 266});
+			slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
+			slider->setRailImage("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
+			slider->setHandleImage("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_SliderB_00.png");
+			slider->setOrientation(Slider::orientation_t::SLIDER_VERTICAL);
+			slider->setMinValue(0.f);
+			slider->setMaxValue(subframe->getActualSize().h - 258);
+			slider->setCallback([](Slider& slider){
+				Frame* frame = static_cast<Frame*>(slider.getParent());
+				Frame* subframe = frame->findFrame(slider.getName());
+				auto actualSize = subframe->getActualSize();
+				actualSize.y = slider.getValue();
+				subframe->setActualSize(actualSize);
+				});
+			slider->setTickCallback([](Widget& widget){
+				Slider* slider = static_cast<Slider*>(&widget);
+				Frame* frame = static_cast<Frame*>(slider->getParent());
+				Frame* subframe = frame->findFrame(slider->getName());
+				auto actualSize = subframe->getActualSize();
+				slider->setValue(actualSize.y);
+				});
+		}
+
+		const std::string prefix = "images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
+		int num_buttons = sizeof(class_list_order) / sizeof(class_list_order[0]);
+		for (int c = 0; c < num_buttons; ++c) {
+			auto name = class_list_order[c];
+			auto find = classes.find(name);
+			assert(find != classes.end());
+			auto& full_class = find->second;
+			auto button = subframe->addButton(name);
+			switch (full_class.dlc) {
+			case DLC::Base: button->setBackground((prefix + "ClassSelect_Icon_BGBase_00.png").c_str()); break;
+			case DLC::MythsAndOutcasts: button->setBackground((prefix + "ClassSelect_Icon_BGMyths_00.png").c_str()); break;
+			case DLC::LegendsAndPariahs: button->setBackground((prefix + "ClassSelect_Icon_BGLegends_00.png").c_str()); break;
+			}
+			button->setIcon((prefix + full_class.image).c_str());
+			button->setSize(SDL_Rect{8 + (c % 4) * 56, 6 + (c / 4) * 56, 54, 54});
+			button->setColor(makeColor(127, 127, 127, 255));
+			button->setHighlightColor(makeColor(255, 255, 255, 255));
+			if (c > 0) {
+				button->setWidgetLeft(class_list_order[c - 1]);
+			}
+			if (c < num_buttons - 1) {
+				button->setWidgetRight(class_list_order[c + 1]);
+			}
+			if (c > 3) {
+				button->setWidgetUp(class_list_order[c - 4]);
+			}
+			if (c < num_buttons - 4) {
+				button->setWidgetDown(class_list_order[c + 4]);
+			}
+			button->addWidgetAction("MenuStart", "confirm");
+			button->addWidgetAction("MenuY", "class_info");
+		}
+
+		auto first_button = subframe->findButton(class_list_order[0]); assert(first_button);
+		first_button->select();
+	}
+
+	void createCharacterCard(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
 		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 346, 324, 346});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
@@ -1984,6 +2183,7 @@ namespace MainMenu {
 		);
 
 		auto name_field = card->addField("name", 64);
+		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
 		name_field->setFont(smallfont_outline);
 		name_field->setText((std::string("Player ") + std::to_string(index + 1)).c_str());
 		name_field->setSize(SDL_Rect{90, 34, 146, 28});
@@ -2048,6 +2248,7 @@ namespace MainMenu {
 		race_button->setSize(SDL_Rect{166, 166, 108, 52});
 		race_button->setText("Automaton");
 		race_button->setTextColor(makeColor(223, 44, 149, 255));
+		race_button->setTextHighlightColor(makeColor(223, 44, 149, 255));
 		race_button->setFont(smallfont_outline);
 		race_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
 		race_button->addWidgetAction("MenuStart", "ready");
@@ -2055,6 +2256,12 @@ namespace MainMenu {
 		race_button->setWidgetLeft("female");
 		race_button->setWidgetUp("game_settings");
 		race_button->setWidgetDown("class");
+		switch (index) {
+		case 0: race_button->setCallback([](Button&){characterCardRaceMenu(0);}); break;
+		case 1: race_button->setCallback([](Button&){characterCardRaceMenu(1);}); break;
+		case 2: race_button->setCallback([](Button&){characterCardRaceMenu(2);}); break;
+		case 3: race_button->setCallback([](Button&){characterCardRaceMenu(3);}); break;
+		}
 
 		auto randomize_class = card->addButton("randomize_class");
 		randomize_class->setColor(makeColor(127, 127, 127, 255));
@@ -2078,12 +2285,19 @@ namespace MainMenu {
 		class_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		class_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGBase_00.png");
 		class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Barbarian_00.png");
-		class_button->setSize(SDL_Rect{44, 226, 52, 52});
+		class_button->setSize(SDL_Rect{46, 226, 52, 52});
+		class_button->setBorder(0);
 		class_button->addWidgetAction("MenuStart", "ready");
 		class_button->setWidgetBack("back_button");
 		class_button->setWidgetRight("randomize_class");
 		class_button->setWidgetUp("male");
 		class_button->setWidgetDown("ready");
+		switch (index) {
+		case 0: race_button->setCallback([](Button&){characterCardClassMenu(0);}); break;
+		case 1: race_button->setCallback([](Button&){characterCardClassMenu(1);}); break;
+		case 2: race_button->setCallback([](Button&){characterCardClassMenu(2);}); break;
+		case 3: race_button->setCallback([](Button&){characterCardClassMenu(3);}); break;
+		}
 
 		auto ready_button = card->addButton("ready");
 		ready_button->setSize(SDL_Rect{62, 288, 202, 52});
@@ -2097,11 +2311,16 @@ namespace MainMenu {
 		ready_button->setWidgetUp("class");
 	}
 
-	static void createStartButton(int index) {
+	void createStartButton(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
-		auto card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
 		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
@@ -2131,11 +2350,16 @@ namespace MainMenu {
 		subtext->setHJustify(Field::justify_t::CENTER);
 	}
 
-	static void createInviteButton(int index) {
+	void createInviteButton(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
-		auto card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
 		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
