@@ -525,6 +525,10 @@ spellElement_t* copySpellElement(spellElement_t* spellElement)
 int getCostOfSpell(spell_t* spell, Entity* caster)
 {
 	int cost = 0;
+	if ( !spell )
+	{
+		return 0;
+	}
 
 	node_t* node;
 	for ( node = spell->elements.first; node != NULL; node = node->next )
