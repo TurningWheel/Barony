@@ -4105,24 +4105,7 @@ void item_Food(Item*& item, int player)
 	}
 
 	// chance of rottenness
-	switch ( item->status )
-	{
-		case EXCELLENT:
-			pukeChance = 100;
-			break;
-		case SERVICABLE:
-			pukeChance = 25;
-			break;
-		case WORN:
-			pukeChance = 10;
-			break;
-		case DECREPIT:
-			pukeChance = 4;
-			break;
-		default:
-			pukeChance = 100;
-			break;
-	}
+	pukeChance = item->foodGetPukeChance(stats[player]);
 
 	if ( players[player] 
 		&& players[player]->entity && players[player]->entity->playerRequiresBloodToSustain() )
@@ -4438,33 +4421,7 @@ void item_FoodTin(Item*& item, int player)
 	serverUpdatePlayerGameplayStats(player, STATISTICS_YES_WE_CAN, 1);
 
 	// chance of rottenness
-	switch ( item->status )
-	{
-		case EXCELLENT:
-			pukeChance = 100;
-			break;
-		case SERVICABLE:
-			pukeChance = 25;
-			break;
-		case WORN:
-			pukeChance = 10;
-			break;
-		case DECREPIT:
-			pukeChance = 3;
-			break;
-		default:
-			pukeChance = 100;
-			break;
-	}
-
-	if ( stats[player]->type == VAMPIRE )
-	{
-		pukeChance = 1;
-	}
-	else if ( stats[player]->type == INSECTOID )
-	{
-		pukeChance = 100; // insectoids can eat anything.
-	}
+	pukeChance = item->foodGetPukeChance(stats[player]);
 
 	if ((item->beatitude < 0 || rand() % pukeChance == 0) && pukeChance < 100)
 	{

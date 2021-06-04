@@ -954,7 +954,7 @@ void drawSkillsSheet(const int player)
 					if ( players[player] && players[player]->entity )
 					{
 						skillDetails[0] = players[player]->entity->getManaRegenInterval(*(stats[player])) / (TICKS_PER_SECOND * 1.f);
-						if ( players[player]->entity->isSpellcasterBeginner() )
+						if ( isSpellcasterBeginner(players[player]->entity) )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 								uint32ColorWhite(*mainsurface), language[3255 + i],

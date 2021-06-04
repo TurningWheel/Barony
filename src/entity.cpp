@@ -15178,7 +15178,7 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 				}
 
 				//Not holding a weapon. Make sure don't already have a weapon in the inventory. If doesn't have a weapon at all, then add it into the inventory since something is better than nothing.
-				node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+				node_t* weaponNode = itemNodeInInventory(myStats, -1, WEAPON);
 				if ( !weaponNode )
 				{
 					//If no weapons found in inventory, then yes, the goatman wants it, and it should be added to the inventory.
@@ -15770,24 +15770,6 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 		}
 	}
 
-	return false;
-}
-
-bool Entity::isSpellcasterBeginner()
-{
-	Stat* myStats = getStats();
-	if ( !myStats )
-	{
-		return false;
-	}
-	else if ( behavior == &actMonster )
-	{
-		return false;
-	}
-	else if ( myStats->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER )
-	{
-		return true; //The caster has lower spellcasting skill. Cue happy fun times.
-	}
 	return false;
 }
 

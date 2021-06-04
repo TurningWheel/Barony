@@ -563,8 +563,7 @@ public:
 	Sint32 getRangedAttack();
 	Sint32 getThrownAttack();
 	bool isBlind();
-	bool isSpellcasterBeginner();
-
+	
 	bool isInvisible() const;
 
 	bool isMobile();

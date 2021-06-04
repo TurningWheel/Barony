@@ -491,6 +491,10 @@ void equipSpell(spell_t* spell, int playernum, Item* spellItem);
 Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook = false);
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 int spellGetCastSound(spell_t* spell);
+int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Stat* casterStats);
+bool isSpellcasterBeginner(Entity* caster);
+bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, spell_t* spell, Item* spellbookItem);
+int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem);
 void actMagicTrap(Entity* my);
 void actMagicStatusEffect(Entity* my);
 void actMagicMissile(Entity* my);

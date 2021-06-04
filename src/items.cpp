@@ -3749,6 +3749,69 @@ Sint32 Item::getWeight() const
 	return 0;
 }
 
+void Item::foodTinGetDescriptionIndices(int* a, int* b, int* c) const
+{
+	Uint32 scaledAppearance = appearance % 4096;
+	if ( a )
+	{
+		*a = ((scaledAppearance >> 8) & 0xF); // 0-15
+	}
+	if ( b )
+	{
+		*b = ((scaledAppearance >> 4) & 0xF); // 0-15
+	}
+	if ( c )
+	{
+		*c = (scaledAppearance & 0xF); // 0-15
+	}
+}
+
+void Item::foodTinGetDescription(std::string& cookingMethod, std::string& protein, std::string& sides) const
+{
+	int a, b, c;
+	foodTinGetDescriptionIndices(&a, &b, &c);
+	cookingMethod = language[918 + a];
+	protein = language[934 + b];
+	sides = language[950 + c];
+}
+
+int Item::foodGetPukeChance(Stat* eater) const
+{
+	int pukeChance = 100;
+	switch ( status )
+	{
+		case EXCELLENT:
+			pukeChance = 100; // 0%
+			break;
+		case SERVICABLE:
+			pukeChance = 25; // 1 in 25, 4%
+			break;
+		case WORN:
+			pukeChance = 10; // 1 in 10, 10%
+			break;
+		case DECREPIT:
+			pukeChance = 4; // 1 in 4, 25%
+			break;
+		default:
+			pukeChance = 100;
+			break;
+	}
+
+	if ( eater )
+	{
+		if ( eater->type == VAMPIRE )
+		{
+			pukeChance = 1;
+		}
+		else if ( eater->type == INSECTOID )
+		{
+			pukeChance = 100; // insectoids can eat anything.
+		}
+	}
+
+	return pukeChance;
+}
+
 /*-------------------------------------------------------------------------------
 
 	Item::armorGetAC
@@ -4310,7 +4373,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 {
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;
-	ItemType itemId { static_cast<ItemType>(-1) };
+	Sint32 itemId = -1;
 	int itemAppearance = rand();
 	int category = 0;
 	bool itemIdentified;
@@ -4414,7 +4477,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				chance = stats->EDITOR_ITEMS[itemSlots[i] + 5];
 				if ( rand() % 100 < chance )
 				{
-					newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
+					newItem(static_cast<ItemType>(itemId), itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
 				}
 				itemsGenerated++;
 			}
@@ -4422,7 +4485,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 	}
 }
 
-node_t* itemNodeInInventory(const Stat* const myStats, const ItemType itemToFind, const Category cat)
+node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const Category cat)
 {
 	if ( myStats == nullptr )
 	{
@@ -4442,7 +4505,7 @@ node_t* itemNodeInInventory(const Stat* const myStats, const ItemType itemToFind
 			{
 				return node;
 			}
-			else if ( itemToFind != -1 && item->type == itemToFind )
+			else if ( itemToFind >= 0 && item->type == static_cast<ItemType>(itemToFind) )
 			{
 				return node;
 			}

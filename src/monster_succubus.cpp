@@ -967,7 +967,7 @@ void Entity::succubusChooseWeapon(const Entity* target, double dist)
 		if ( specialRoll < requiredRoll )
 		{
 			node_t* node = nullptr;
-			node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+			node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 			if ( node != nullptr )
 			{
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);

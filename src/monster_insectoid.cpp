@@ -1642,7 +1642,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 		}
 		if ( specialRoll < (1 + bonusFromHP) ) // +5% base
 		{
-			node_t* node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+			node_t* node = itemNodeInInventory(myStats, -1, THROWN);
 			if ( node != nullptr )
 			{
 				bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);

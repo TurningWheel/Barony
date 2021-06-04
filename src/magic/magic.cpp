@@ -1178,7 +1178,7 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 		return nullptr;
 	}
 
-	bool newbie = caster->isSpellcasterBeginner();
+	bool newbie = isSpellcasterBeginner(caster);
 
 	int duration = element->duration; // duration in ticks.
 	duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;

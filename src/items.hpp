@@ -464,6 +464,10 @@ public:
 
 	Sint32 getWeight() const;
 
+	void foodTinGetDescriptionIndices(int* a, int* b, int* c) const;
+	void foodTinGetDescription(std::string& cookingMethod, std::string& protein, std::string& sides) const;
+	int foodGetPukeChance(Stat* eater) const;
+
 	enum ItemBombPlacement : int
 	{
 		BOMB_FLOOR,
@@ -678,7 +682,7 @@ void copyItem(Item* itemToSet, const Item* itemToCopy);
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed);
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
-node_t* itemNodeInInventory(const Stat* myStats, ItemType itemToFind, Category cat);
+node_t* itemNodeInInventory(const Stat* myStats, Sint32 itemToFind, Category cat);
 node_t* spellbookNodeInInventory(const Stat* myStats, int spellIDToFind);
 node_t* getRangedWeaponItemNodeInInventory(const Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(const Stat* myStats);

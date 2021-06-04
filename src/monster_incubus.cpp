@@ -1527,7 +1527,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		if ( specialRoll < (2 + bonusFromHP) ) // +5% base
 		{
 			node_t* node = nullptr;
-			node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), POTION);
+			node = itemNodeInInventory(myStats, -1, POTION);
 			if ( node != nullptr )
 			{
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
