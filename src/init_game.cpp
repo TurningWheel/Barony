@@ -36,6 +36,7 @@
 #include "mod_tools.hpp"
 #include "ui/LoadingScreen.hpp"
 
+#include <thread>
 #include <future>
 #include <chrono>
 
