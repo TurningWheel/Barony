@@ -121,6 +121,8 @@ namespace MainMenu {
 		LobbyJoined
 	};
 
+	void characterCardGameSettingsMenu(int index);
+	void characterCardLobbySettingsMenu(int index);
 	void characterCardRaceMenu(int index);
 	void characterCardClassMenu(int index);
 	void createCharacterCard(int index);

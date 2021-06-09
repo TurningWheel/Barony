@@ -1965,6 +1965,237 @@ namespace MainMenu {
 
 /******************************************************************************/
 
+	void characterCardLobbySettingsMenu(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		assert(card);
+		card->removeSelf();
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 580, 324, 580});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+		card->setOwner(index);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings_Window_01.png",
+			"backdrop"
+		);
+
+		auto header = card->addField("header", 64);
+		header->setSize(SDL_Rect{30, 8, 264, 50});
+		header->setFont(smallfont_outline);
+		header->setText("GAME SETTINGS");
+		header->setJustify(Field::justify_t::CENTER);
+
+		auto difficulty_header = card->addField("difficulty_header", 64);
+		difficulty_header->setSize(SDL_Rect{78, 62, 166, 26});
+		difficulty_header->setFont(smallfont_outline);
+		difficulty_header->setText("DIFFICULTY SETTINGS");
+		difficulty_header->setJustify(Field::justify_t::CENTER);
+
+		auto easy_label = card->addField("easy_label", 64);
+		easy_label->setSize(SDL_Rect{78, 102, 134, 26});
+		easy_label->setFont(smallfont_outline);
+		easy_label->setText("Practice");
+		easy_label->setJustify(Field::justify_t::CENTER);
+		easy_label->setColor(makeColor(83, 166, 98, 255));
+
+		auto easy = card->addButton("easy");
+		easy->setSize(SDL_Rect{210, 100, 30, 30});
+		easy->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+		easy->setStyle(Button::style_t::STYLE_RADIO);
+		easy->setBorder(0);
+		easy->setColor(0);
+		easy->setBorderColor(0);
+		easy->setHighlightColor(0);
+		easy->addWidgetAction("MenuStart", "confirm");
+		easy->setWidgetBack("back_button");
+		easy->setWidgetDown("normal");
+
+		easy->select();
+
+		auto normal_label = card->addField("normal_label", 64);
+		normal_label->setSize(SDL_Rect{68, 140, 144, 26});
+		normal_label->setFont(smallfont_outline);
+		normal_label->setText("Normal");
+		normal_label->setVJustify(Field::justify_t::TOP);
+		normal_label->setHJustify(Field::justify_t::CENTER);
+		normal_label->setColor(makeColor(206, 165, 40, 255));
+
+		auto normal = card->addButton("normal");
+		normal->setSize(SDL_Rect{210, 138, 30, 30});
+		normal->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+		normal->setStyle(Button::style_t::STYLE_RADIO);
+		normal->setBorder(0);
+		normal->setColor(0);
+		normal->setBorderColor(0);
+		normal->setHighlightColor(0);
+		normal->addWidgetAction("MenuStart", "confirm");
+		normal->setWidgetBack("back_button");
+		normal->setWidgetUp("easy");
+		normal->setWidgetDown("hard");
+
+		// TODO on non-english languages, normal text must be used
+
+		/*auto hard_label = card->addField("hard_label", 64);
+		hard_label->setSize(SDL_Rect{68, 178, 144, 26});
+		hard_label->setFont(smallfont_outline);
+		hard_label->setText("Nightmare");
+		hard_label->setVJustify(Field::justify_t::TOP);
+		hard_label->setHJustify(Field::justify_t::CENTER);
+		hard_label->setColor(makeColor(124, 15, 10, 255));*/
+
+		auto hard_label = card->addImage(
+			SDL_Rect{84, 158, 120, 50},
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings_Text_Nightmare_00.png",
+			"hard_label"
+		);
+
+		auto hard = card->addButton("hard");
+		hard->setSize(SDL_Rect{210, 176, 30, 30});
+		hard->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+		hard->setStyle(Button::style_t::STYLE_RADIO);
+		hard->setBorder(0);
+		hard->setColor(0);
+		hard->setBorderColor(0);
+		hard->setHighlightColor(0);
+		hard->addWidgetAction("MenuStart", "confirm");
+		hard->setWidgetBack("back_button");
+		hard->setWidgetUp("normal");
+		hard->setWidgetDown("custom");
+
+		auto custom_difficulty = card->addButton("custom_difficulty");
+		custom_difficulty->setColor(makeColor(127, 127, 127, 255));
+		custom_difficulty->setHighlightColor(makeColor(255, 255, 255, 255));
+		custom_difficulty->setSize(SDL_Rect{84, 210, 114, 40});
+		custom_difficulty->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings_ButtonConfirm_00.png");
+		custom_difficulty->setFont(smallfont_outline);
+		custom_difficulty->setText("Custom");
+		custom_difficulty->addWidgetAction("MenuStart", "confirm");
+		custom_difficulty->setWidgetBack("back_button");
+		custom_difficulty->setWidgetUp("hard");
+		custom_difficulty->setWidgetDown("invite");
+		custom_difficulty->setWidgetRight("custom");
+
+		auto custom = card->addButton("custom");
+		custom->setSize(SDL_Rect{210, 216, 30, 30});
+		custom->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+		custom->setStyle(Button::style_t::STYLE_RADIO);
+		custom->setBorder(0);
+		custom->setColor(0);
+		custom->setBorderColor(0);
+		custom->setHighlightColor(0);
+		custom->addWidgetAction("MenuStart", "confirm");
+		custom->setWidgetBack("back_button");
+		custom->setWidgetUp("hard");
+		custom->setWidgetDown("invite");
+		custom->setWidgetLeft("custom_difficulty");
+
+		auto achievements = card->addField("achievements", 64);
+		achievements->setSize(SDL_Rect{54, 260, 214, 50});
+		achievements->setFont(smallfont_outline);
+		achievements->setJustify(Field::justify_t::CENTER);
+		achievements->setTickCallback([](Widget& widget){
+			Field* achievements = static_cast<Field*>(&widget);
+			if ((svFlags & SV_FLAG_CHEATS) ||
+				(svFlags & SV_FLAG_LIFESAVING) ||
+				gamemods_disableSteamAchievements) {
+				achievements->setColor(makeColor(40, 180, 37, 255));
+				achievements->setText("ACHIEVEMENTS\nENABLED");
+			} else {
+				achievements->setColor(makeColor(180, 37, 37, 255));
+				achievements->setText("ACHIEVEMENTS DISABLED\nDUE TO HOST DIFFICULTY\nSETTINGS");
+			}
+			});
+
+		auto multiplayer_header = card->addField("difficulty_header", 64);
+		multiplayer_header->setSize(SDL_Rect{70, 328, 182, 34});
+		multiplayer_header->setFont(smallfont_outline);
+		multiplayer_header->setText("DIFFICULTY SETTINGS");
+		multiplayer_header->setJustify(Field::justify_t::CENTER);
+
+		auto invite_label = card->addField("invite_label", 64);
+		invite_label->setSize(SDL_Rect{68, 390, 146, 26});
+		invite_label->setFont(smallfont_outline);
+		invite_label->setText("Invite Only");
+		invite_label->setJustify(Field::justify_t::CENTER);
+
+		auto invite = card->addButton("invite");
+		invite->setSize(SDL_Rect{212, 388, 30, 30});
+		invite->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+		invite->setStyle(Button::style_t::STYLE_RADIO);
+		invite->setBorder(0);
+		invite->setColor(0);
+		invite->setBorderColor(0);
+		invite->setHighlightColor(0);
+		invite->addWidgetAction("MenuStart", "confirm");
+		invite->setWidgetBack("back_button");
+		invite->setWidgetUp("custom");
+		invite->setWidgetDown("friends");
+
+		auto friends_label = card->addField("friends_label", 64);
+		friends_label->setSize(SDL_Rect{68, 428, 146, 26});
+		friends_label->setFont(smallfont_outline);
+		friends_label->setText("Friends Only");
+		friends_label->setJustify(Field::justify_t::CENTER);
+
+		auto friends = card->addButton("friends");
+		friends->setSize(SDL_Rect{212, 426, 30, 30});
+		friends->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+		friends->setStyle(Button::style_t::STYLE_RADIO);
+		friends->setBorder(0);
+		friends->setColor(0);
+		friends->setBorderColor(0);
+		friends->setHighlightColor(0);
+		friends->addWidgetAction("MenuStart", "confirm");
+		friends->setWidgetBack("back_button");
+		friends->setWidgetUp("invite");
+		friends->setWidgetDown("open");
+
+		auto open_label = card->addField("open_label", 64);
+		open_label->setSize(SDL_Rect{68, 466, 146, 26});
+		open_label->setFont(smallfont_outline);
+		open_label->setText("Friends Only");
+		open_label->setJustify(Field::justify_t::CENTER);
+
+		auto open = card->addButton("open");
+		open->setSize(SDL_Rect{212, 464, 30, 30});
+		open->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+		open->setStyle(Button::style_t::STYLE_RADIO);
+		open->setBorder(0);
+		open->setColor(0);
+		open->setBorderColor(0);
+		open->setHighlightColor(0);
+		open->addWidgetAction("MenuStart", "confirm");
+		open->setWidgetBack("back_button");
+		open->setWidgetUp("friends");
+		open->setWidgetDown("confirm");
+
+		auto confirm = card->addButton("confirm");
+		confirm->setFont(bigfont_outline);
+		confirm->setText("Confirm");
+		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
+		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings_ButtonConfirm_00.png");
+		confirm->setSize(SDL_Rect{62, 522, 202, 52});
+		confirm->addWidgetAction("MenuStart", "confirm");
+		confirm->setWidgetBack("back_button");
+		confirm->setWidgetUp("open");
+		switch (index) {
+		case 0: confirm->setCallback([](Button&){createCharacterCard(0);}); break;
+		case 1: confirm->setCallback([](Button&){createCharacterCard(1);}); break;
+		case 2: confirm->setCallback([](Button&){createCharacterCard(2);}); break;
+		case 3: confirm->setCallback([](Button&){createCharacterCard(3);}); break;
+		}
+	}
+
 	void characterCardRaceMenu(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
@@ -2007,7 +2238,20 @@ namespace MainMenu {
 			"Insectoid"
 		};
 
-		auto human = card->addButton("human");
+		void (*set_race_fn)(Button&) = [](Button& button){
+			Frame* frame = static_cast<Frame*>(button.getParent());
+			std::vector<const char*> allRaces = { "Human" };
+			allRaces.insert(allRaces.end(), std::begin(dlcRaces1), std::end(dlcRaces1));
+			allRaces.insert(allRaces.end(), std::begin(dlcRaces2), std::end(dlcRaces2));
+			for (auto race : allRaces) {
+				if (strcmp(button.getName(), race) == 0) {
+					continue;
+				}
+				auto other_button = frame->findButton(race);
+				other_button->setPressed(false);
+			}};
+
+		auto human = card->addButton("Human");
 		human->setSize(SDL_Rect{54, 80, 30, 30});
 		human->setIcon("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Round_00.png");
 		human->setStyle(Button::style_t::STYLE_RADIO);
@@ -2027,6 +2271,7 @@ namespace MainMenu {
 		else {
 			human->setWidgetDown("disable_abilities");
 		}
+		human->setCallback(set_race_fn);
 		human->select();
 
 		auto human_label = card->addField("human_label", 32);
@@ -2045,10 +2290,11 @@ namespace MainMenu {
 		appearances->setListOffset(SDL_Rect{12, 8, 0, 0});
 		appearances->setScrollBarsEnabled(false);
 		appearances->setAllowScrollBinds(false);
-		appearances->addWidgetMovement("DeselectList", "appearances");
+		appearances->addWidgetMovement("MenuListCancel", "appearances");
+		appearances->addWidgetMovement("MenuListConfirm", "appearances");
 		appearances->addWidgetAction("MenuStart", "confirm");
 		appearances->setWidgetBack("back_button");
-		appearances->setWidgetLeft("human");
+		appearances->setWidgetLeft("Human");
 		if (enabledDLCPack2) {
 			appearances->setWidgetDown(dlcRaces2[0]);
 		}
@@ -2138,13 +2384,14 @@ namespace MainMenu {
 				if (c > 0) {
 					race->setWidgetUp(dlcRaces1[c - 1]);
 				} else {
-					race->setWidgetUp("human");
+					race->setWidgetUp("Human");
 				}
 				if (c < 3) {
 					race->setWidgetDown(dlcRaces1[c + 1]);
 				} else {
 					race->setWidgetDown("disable_abilities");
 				}
+				race->setCallback(set_race_fn);
 
 				auto label = card->addField((std::string(dlcRaces1[c]) + "_label").c_str(), 64);
 				label->setSize(SDL_Rect{70, 132 + 38 * c, 104, 26});
@@ -2197,6 +2444,7 @@ namespace MainMenu {
 				} else {
 					race->setWidgetDown("disable_abilities");
 				}
+				race->setCallback(set_race_fn);
 
 				auto label = card->addField((std::string(dlcRaces2[c]) + "_label").c_str(), 64);
 				label->setSize(SDL_Rect{202, 132 + 38 * c, 104, 26});
@@ -2608,6 +2856,12 @@ namespace MainMenu {
 		game_settings->setWidgetBack("back_button");
 		game_settings->setWidgetUp("name");
 		game_settings->setWidgetDown("male");
+		switch (index) {
+		case 0: game_settings->setCallback([](Button&){characterCardLobbySettingsMenu(0);}); break;
+		case 1: game_settings->setCallback([](Button&){characterCardLobbySettingsMenu(1);}); break;
+		case 2: game_settings->setCallback([](Button&){characterCardLobbySettingsMenu(2);}); break;
+		case 3: game_settings->setCallback([](Button&){characterCardLobbySettingsMenu(3);}); break;
+		}
 
 		auto male_button = card->addButton("male");
 		male_button->setColor(makeColor(127, 127, 127, 255));
@@ -2844,7 +3098,7 @@ namespace MainMenu {
 		auto background = window->addImage(
 			window->getActualSize(),
 			0xffffffff,
-			"images/ui/Main Menus/Play/UI_PlayMenu_Window01.png",
+			"images/ui/Main Menus/Play/UI_PlayGame_Window_02.png",
 			"background"
 		);
 
@@ -2857,15 +3111,19 @@ namespace MainMenu {
 		bool continueAvailable = saveGameExists(true) || saveGameExists(false);
 
 		auto hall_of_trials_button = window->addButton("hall_of_trials");
-		hall_of_trials_button->setSize(SDL_Rect{39 * 2, 88 * 2, 84 * 2, 26 * 2});
+		hall_of_trials_button->setSize(SDL_Rect{134, 176, 168, 52});
 		hall_of_trials_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
 		hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		hall_of_trials_button->setColor(makeColor(127, 127, 127, 255));
 		hall_of_trials_button->setText("HALL OF TRIALS");
 		hall_of_trials_button->setFont(smallfont_outline);
-		hall_of_trials_button->setWidgetUp("continue");
-		hall_of_trials_button->setWidgetRight("back");
-		hall_of_trials_button->setWidgetBack("back");
+		hall_of_trials_button->setWidgetSearchParent(window->getName());
+		if (continueAvailable) {
+			hall_of_trials_button->setWidgetUp("continue");
+		} else {
+			hall_of_trials_button->setWidgetUp("new");
+		}
+		hall_of_trials_button->setWidgetBack("back_button");
 		hall_of_trials_button->setCallback([](Button&){
 			soundActivate();
 			destroyMainMenu();
@@ -2874,19 +3132,10 @@ namespace MainMenu {
 			fadeout = true;
 			});
 
-		auto back_button = window->addButton("back");
-		back_button->setSize(SDL_Rect{252, 178, 108, 52});
-		back_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_Back00.png");
-		back_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		back_button->setColor(makeColor(127, 127, 127, 255));
-		back_button->setText("BACK");
-		back_button->setFont(smallfont_outline);
-		back_button->setWidgetUp("new");
-		back_button->setWidgetLeft("hall_of_trials");
-		back_button->setWidgetBack("back");
-		back_button->setCallback([](Button& button){
+		(void)createBackWidget(window, [](Button& button){
 			soundCancel();
 			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
 			assert(main_menu_frame);
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -2907,9 +3156,10 @@ namespace MainMenu {
 		} else {
 			continue_button->setCallback([](Button&){ soundError(); });
 		}
+		continue_button->setWidgetSearchParent(window->getName());
 		continue_button->setWidgetRight("new");
 		continue_button->setWidgetDown("hall_of_trials");
-		continue_button->setWidgetBack("back");
+		continue_button->setWidgetBack("back_button");
 
 		auto new_button = window->addButton("new");
 		new_button->setSize(SDL_Rect{114 * 2, 36 * 2, 68 * 2, 56 * 2});
@@ -2920,9 +3170,10 @@ namespace MainMenu {
 		new_button->setText(" \nNEW");
 		new_button->setFont(smallfont_outline);
 		new_button->setCallback(playNew);
+		new_button->setWidgetSearchParent(window->getName());
 		new_button->setWidgetLeft("continue");
-		new_button->setWidgetDown("back");
-		new_button->setWidgetBack("back");
+		new_button->setWidgetDown("hall_of_trials");
+		new_button->setWidgetBack("back_button");
 
 		if (skipintro) {
 			if (continueAvailable) {
@@ -2966,59 +3217,53 @@ namespace MainMenu {
 		banner_title->setFont(smallfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
 
-		auto local_button = window->addButton("local");
-		local_button->setSize(SDL_Rect{52, 134, 164, 62});
-		local_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		local_button->setColor(makeColor(127, 127, 127, 255));
-		local_button->setText("Local Adventure");
-		local_button->setFont(smallfont_outline);
-		local_button->setWidgetUp("host");
-		local_button->setWidgetRight("back");
-		local_button->setWidgetBack("back");
-		local_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLocal);});
-
-		local_button->select();
-
-		auto back_button = window->addButton("back");
-		back_button->setSize(SDL_Rect{220, 134, 164, 62});
-		back_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		back_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		back_button->setColor(makeColor(127, 127, 127, 255));
-		back_button->setText("Back");
-		back_button->setFont(smallfont_outline);
-		back_button->setWidgetUp("join");
-		back_button->setWidgetLeft("local");
-		back_button->setWidgetBack("back");
-		back_button->setCallback([](Button& button){
+		(void)createBackWidget(window, [](Button& button){
 			soundCancel();
 			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
 			createPlayWindow();
 			});
 
-		auto host_button = window->addButton("host");
-		host_button->setSize(SDL_Rect{52, 68, 164, 62});
-		host_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		host_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		host_button->setColor(makeColor(127, 127, 127, 255));
-		host_button->setText("Host Network\nParty");
-		host_button->setFont(smallfont_outline);
-		host_button->setWidgetDown("local");
-		host_button->setWidgetRight("join");
-		host_button->setWidgetBack("back");
-		host_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyHosted);});
-
 		auto join_button = window->addButton("join");
-		join_button->setSize(SDL_Rect{220, 68, 164, 62});
+		join_button->setSize(SDL_Rect{220, 134, 164, 62});
 		join_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
 		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		join_button->setColor(makeColor(127, 127, 127, 255));
 		join_button->setText("Join Network\nParty");
 		join_button->setFont(smallfont_outline);
-		join_button->setWidgetDown("back");
+		join_button->setWidgetSearchParent(window->getName());
+		join_button->setWidgetBack("back_button");
+		join_button->setWidgetUp("local");
 		join_button->setWidgetLeft("host");
-		join_button->setWidgetBack("back");
+
+		auto host_button = window->addButton("host");
+		host_button->setSize(SDL_Rect{52, 134, 164, 62});
+		host_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
+		host_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		host_button->setColor(makeColor(127, 127, 127, 255));
+		host_button->setText("Host Network\nParty");
+		host_button->setFont(smallfont_outline);
+		host_button->setWidgetSearchParent(window->getName());
+		host_button->setWidgetBack("back_button");
+		host_button->setWidgetUp("local");
+		host_button->setWidgetRight("join");
+		host_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyHosted);});
+
+		auto local_button = window->addButton("local");
+		local_button->setSize(SDL_Rect{134, 68, 168, 62});
+		local_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_01.png");
+		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		local_button->setColor(makeColor(127, 127, 127, 255));
+		local_button->setText("Local Adventure");
+		local_button->setFont(smallfont_outline);
+		local_button->setWidgetSearchParent(window->getName());
+		local_button->setWidgetBack("back_button");
+		local_button->setWidgetDown("host");
+		local_button->setWidgetRight("back");
+		local_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLocal);});
+
+		local_button->select();
 	}
 
 	void playContinue(Button& button) {

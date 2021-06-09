@@ -498,6 +498,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 				deselectTarget = find->second;
 			}
 			if (!deselectTarget.empty()) {
+				deselect();
 				Frame* root = findSearchRoot(); assert(root);
 				Widget* search = root->findWidget(deselectTarget.c_str(), true);
 				if (search) {
