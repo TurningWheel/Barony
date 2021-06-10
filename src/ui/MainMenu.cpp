@@ -1965,7 +1965,124 @@ namespace MainMenu {
 
 /******************************************************************************/
 
+	static LobbyType currentLobbyType;
+
+	void characterCardGameSettingsMenu(int index) {
+		bool local = currentLobbyType == LobbyType::LobbyLocal;
+
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		assert(card);
+		card->removeSelf();
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 664, 324, 664});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+		card->setOwner(index);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings/CustomDifficulty_Window_01.png",
+			"backdrop"
+		);
+
+		auto header = card->addField("header", 64);
+		header->setSize(SDL_Rect{30, 8, 264, 50});
+		header->setFont(smallfont_outline);
+		header->setText("CUSTOM DIFFICULTY");
+		header->setJustify(Field::justify_t::CENTER);
+
+		const char* game_settings_text[] = {
+			"Disable Hunger",
+			"Disable Random\nMinotaurs",
+			"Enable Life Saving\nAmulet",
+			"Disable Drop Items\non Death",
+			"Disable Random Traps",
+			"Disable Friendly Fire",
+			"Enable Shorter\nCampaign",
+			"Enable Hardcore\nDifficulty",
+#ifndef NINTENDO
+			"Enable Cheats",
+#endif
+		};
+
+		int num_settings = sizeof(game_settings_text) / sizeof(game_settings_text[0]);
+
+		for (int c = 0; c < num_settings; ++c) {
+			auto label = card->addField((std::string("label") + std::to_string(c)).c_str(), 128);
+			label->setSize(SDL_Rect{48, 60 + 50 * c, 194, 64});
+			label->setFont(smallfont_outline);
+			label->setText(game_settings_text[c]);
+			label->setColor(makeColor(166, 123, 81, 255));
+			label->setHJustify(Field::justify_t::LEFT);
+			label->setVJustify(Field::justify_t::CENTER);
+
+			auto setting = card->addButton((std::string("setting") + std::to_string(c)).c_str());
+			setting->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings/Fill_Checked_00.png");
+			setting->setStyle(Button::style_t::STYLE_CHECKBOX);
+			setting->setSize(SDL_Rect{238, 66 + 50 * c, 44, 44});
+			setting->setHighlightColor(0);
+			setting->setBorderColor(0);
+			setting->setBorder(0);
+			setting->setColor(0);
+			setting->addWidgetAction("MenuStart", "confirm");
+			setting->setWidgetBack("back_button");
+			if (c > 0) {
+				setting->setWidgetUp((std::string("setting") + std::to_string(c - 1)).c_str());
+			}
+			if (c < num_settings - 1) {
+				setting->setWidgetDown((std::string("setting") + std::to_string(c + 1)).c_str());
+			} else {
+				setting->setWidgetDown("confirm");
+			}
+			if (c == 0) {
+				setting->select();
+			}
+		}
+
+		auto achievements = card->addField("achievements", 64);
+		achievements->setSize(SDL_Rect{54, 526, 214, 50});
+		achievements->setFont(smallfont_no_outline);
+		achievements->setJustify(Field::justify_t::CENTER);
+		achievements->setTickCallback([](Widget& widget){
+			Field* achievements = static_cast<Field*>(&widget);
+			if (allSettings.cheats_enabled ||
+				allSettings.extra_life_enabled ||
+				gamemods_disableSteamAchievements) {
+				achievements->setColor(makeColor(180, 37, 37, 255));
+				achievements->setText("ACHIEVEMENTS DISABLED\nDUE TO GAME DIFFICULTY\nSETTINGS");
+			} else {
+				achievements->setColor(makeColor(40, 180, 37, 255));
+				achievements->setText("ACHIEVEMENTS\nENABLED");
+			}
+			});
+
+		auto confirm = card->addButton("confirm");
+		confirm->setFont(bigfont_outline);
+		confirm->setText("Confirm");
+		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
+		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings/CustomDiff_ButtonConfirm_00.png");
+		confirm->setSize(SDL_Rect{62, 606, 202, 52});
+		confirm->addWidgetAction("MenuStart", "confirm");
+		confirm->setWidgetBack("back_button");
+		confirm->setWidgetUp((std::string("setting") + std::to_string(num_settings - 1)).c_str());
+		switch (index) {
+		case 0: confirm->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(0);}); break;
+		case 1: confirm->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(1);}); break;
+		case 2: confirm->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(2);}); break;
+		case 3: confirm->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(3);}); break;
+		}
+	}
+
 	void characterCardLobbySettingsMenu(int index) {
+		bool local = currentLobbyType == LobbyType::LobbyLocal;
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -2006,6 +2123,21 @@ namespace MainMenu {
 		easy_label->setJustify(Field::justify_t::CENTER);
 		easy_label->setColor(makeColor(83, 166, 98, 255));
 
+		static const char* modes[] = {
+			"easy", "normal", "hard", "custom"
+		};
+
+		static auto clear_difficulties = [](Button& button){
+			Frame* frame = static_cast<Frame*>(button.getParent());
+			for (auto mode : modes) {
+				if (strcmp(button.getName(), mode) == 0) {
+					continue;
+				}
+				auto other_button = frame->findButton(mode); assert(other_button);
+				other_button->setPressed(false);
+			}
+		};
+
 		auto easy = card->addButton("easy");
 		easy->setSize(SDL_Rect{210, 100, 30, 30});
 		easy->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
@@ -2017,7 +2149,10 @@ namespace MainMenu {
 		easy->addWidgetAction("MenuStart", "confirm");
 		easy->setWidgetBack("back_button");
 		easy->setWidgetDown("normal");
-
+		easy->setCallback([](Button& button){
+			clear_difficulties(button);
+			svFlags = SV_FLAG_CLASSIC | SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING;
+			});
 		easy->select();
 
 		auto normal_label = card->addField("normal_label", 64);
@@ -2040,6 +2175,10 @@ namespace MainMenu {
 		normal->setWidgetBack("back_button");
 		normal->setWidgetUp("easy");
 		normal->setWidgetDown("hard");
+		normal->setCallback([](Button& button){
+			clear_difficulties(button);
+			svFlags = SV_FLAG_FRIENDLYFIRE | SV_FLAG_KEEPINVENTORY | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS;
+			});
 
 		// TODO on non-english languages, normal text must be used
 
@@ -2070,12 +2209,16 @@ namespace MainMenu {
 		hard->setWidgetBack("back_button");
 		hard->setWidgetUp("normal");
 		hard->setWidgetDown("custom");
+		hard->setCallback([](Button& button){
+			clear_difficulties(button);
+			svFlags = SV_FLAG_HARDCORE | SV_FLAG_FRIENDLYFIRE | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS;
+			});
 
 		auto custom_difficulty = card->addButton("custom_difficulty");
 		custom_difficulty->setColor(makeColor(127, 127, 127, 255));
 		custom_difficulty->setHighlightColor(makeColor(255, 255, 255, 255));
 		custom_difficulty->setSize(SDL_Rect{84, 210, 114, 40});
-		custom_difficulty->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings_ButtonConfirm_00.png");
+		custom_difficulty->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_GameSettings_Button_Custom_01.png");
 		custom_difficulty->setFont(smallfont_outline);
 		custom_difficulty->setText("Custom");
 		custom_difficulty->addWidgetAction("MenuStart", "confirm");
@@ -2083,6 +2226,12 @@ namespace MainMenu {
 		custom_difficulty->setWidgetUp("hard");
 		custom_difficulty->setWidgetDown("invite");
 		custom_difficulty->setWidgetRight("custom");
+		switch (index) {
+		case 0: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameSettingsMenu(0);}); break;
+		case 1: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameSettingsMenu(1);}); break;
+		case 2: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameSettingsMenu(2);}); break;
+		case 3: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameSettingsMenu(3);}); break;
+		}
 
 		auto custom = card->addButton("custom");
 		custom->setSize(SDL_Rect{210, 216, 30, 30});
@@ -2095,23 +2244,39 @@ namespace MainMenu {
 		custom->addWidgetAction("MenuStart", "confirm");
 		custom->setWidgetBack("back_button");
 		custom->setWidgetUp("hard");
-		custom->setWidgetDown("invite");
+		if (local) {
+			custom->setWidgetDown("confirm");
+		} else {
+			custom->setWidgetDown("invite");
+		}
 		custom->setWidgetLeft("custom_difficulty");
+		custom->setCallback([](Button& button){
+			clear_difficulties(button);
+			svFlags = allSettings.classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
+			svFlags = allSettings.hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
+			svFlags = allSettings.friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
+			svFlags = allSettings.keep_inventory_enabled ? svFlags | SV_FLAG_KEEPINVENTORY : svFlags & ~(SV_FLAG_KEEPINVENTORY);
+			svFlags = allSettings.hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
+			svFlags = allSettings.minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
+			svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
+			svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
+			svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
+			});
 
 		auto achievements = card->addField("achievements", 64);
 		achievements->setSize(SDL_Rect{54, 260, 214, 50});
-		achievements->setFont(smallfont_outline);
+		achievements->setFont(smallfont_no_outline);
 		achievements->setJustify(Field::justify_t::CENTER);
 		achievements->setTickCallback([](Widget& widget){
 			Field* achievements = static_cast<Field*>(&widget);
 			if ((svFlags & SV_FLAG_CHEATS) ||
 				(svFlags & SV_FLAG_LIFESAVING) ||
 				gamemods_disableSteamAchievements) {
+				achievements->setColor(makeColor(180, 37, 37, 255));
+				achievements->setText("ACHIEVEMENTS DISABLED\nDUE TO GAME DIFFICULTY\nSETTINGS");
+			} else {
 				achievements->setColor(makeColor(40, 180, 37, 255));
 				achievements->setText("ACHIEVEMENTS\nENABLED");
-			} else {
-				achievements->setColor(makeColor(180, 37, 37, 255));
-				achievements->setText("ACHIEVEMENTS DISABLED\nDUE TO HOST DIFFICULTY\nSETTINGS");
 			}
 			});
 
@@ -2126,57 +2291,105 @@ namespace MainMenu {
 		invite_label->setFont(smallfont_outline);
 		invite_label->setText("Invite Only");
 		invite_label->setJustify(Field::justify_t::CENTER);
+		if (local) {
+			invite_label->setColor(makeColor(70, 62, 59, 255));
 
-		auto invite = card->addButton("invite");
-		invite->setSize(SDL_Rect{212, 388, 30, 30});
-		invite->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
-		invite->setStyle(Button::style_t::STYLE_RADIO);
-		invite->setBorder(0);
-		invite->setColor(0);
-		invite->setBorderColor(0);
-		invite->setHighlightColor(0);
-		invite->addWidgetAction("MenuStart", "confirm");
-		invite->setWidgetBack("back_button");
-		invite->setWidgetUp("custom");
-		invite->setWidgetDown("friends");
+			auto invite = card->addImage(
+				SDL_Rect{214, 390, 26, 26},
+				0xffffffff,
+				"images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Blocker_00.png",
+				"invite"
+			);
+		} else {
+			invite_label->setColor(makeColor(166, 123, 81, 255));
+
+			auto invite = card->addButton("invite");
+			invite->setSize(SDL_Rect{212, 388, 30, 30});
+			invite->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+			invite->setStyle(Button::style_t::STYLE_RADIO);
+			invite->setBorder(0);
+			invite->setColor(0);
+			invite->setBorderColor(0);
+			invite->setHighlightColor(0);
+			invite->addWidgetAction("MenuStart", "confirm");
+			invite->setWidgetBack("back_button");
+			invite->setWidgetUp("custom");
+			invite->setWidgetDown("friends");
+			if (index != 0) {
+				invite->setCallback([](Button&){soundError();});
+			} else {
+			}
+		}
 
 		auto friends_label = card->addField("friends_label", 64);
 		friends_label->setSize(SDL_Rect{68, 428, 146, 26});
 		friends_label->setFont(smallfont_outline);
 		friends_label->setText("Friends Only");
 		friends_label->setJustify(Field::justify_t::CENTER);
+		if (local) {
+			friends_label->setColor(makeColor(70, 62, 59, 255));
 
-		auto friends = card->addButton("friends");
-		friends->setSize(SDL_Rect{212, 426, 30, 30});
-		friends->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
-		friends->setStyle(Button::style_t::STYLE_RADIO);
-		friends->setBorder(0);
-		friends->setColor(0);
-		friends->setBorderColor(0);
-		friends->setHighlightColor(0);
-		friends->addWidgetAction("MenuStart", "confirm");
-		friends->setWidgetBack("back_button");
-		friends->setWidgetUp("invite");
-		friends->setWidgetDown("open");
+			auto friends = card->addImage(
+				SDL_Rect{214, 428, 26, 26},
+				0xffffffff,
+				"images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Blocker_00.png",
+				"friends"
+			);
+		} else {
+			friends_label->setColor(makeColor(166, 123, 81, 255));
+
+			auto friends = card->addButton("friends");
+			friends->setSize(SDL_Rect{212, 426, 30, 30});
+			friends->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+			friends->setStyle(Button::style_t::STYLE_RADIO);
+			friends->setBorder(0);
+			friends->setColor(0);
+			friends->setBorderColor(0);
+			friends->setHighlightColor(0);
+			friends->addWidgetAction("MenuStart", "confirm");
+			friends->setWidgetBack("back_button");
+			friends->setWidgetUp("invite");
+			friends->setWidgetDown("open");
+			if (index != 0) {
+				friends->setCallback([](Button&){soundError();});
+			} else {
+			}
+		}
 
 		auto open_label = card->addField("open_label", 64);
 		open_label->setSize(SDL_Rect{68, 466, 146, 26});
 		open_label->setFont(smallfont_outline);
 		open_label->setText("Friends Only");
 		open_label->setJustify(Field::justify_t::CENTER);
+		if (local) {
+			open_label->setColor(makeColor(70, 62, 59, 255));
 
-		auto open = card->addButton("open");
-		open->setSize(SDL_Rect{212, 464, 30, 30});
-		open->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
-		open->setStyle(Button::style_t::STYLE_RADIO);
-		open->setBorder(0);
-		open->setColor(0);
-		open->setBorderColor(0);
-		open->setHighlightColor(0);
-		open->addWidgetAction("MenuStart", "confirm");
-		open->setWidgetBack("back_button");
-		open->setWidgetUp("friends");
-		open->setWidgetDown("confirm");
+			auto open = card->addImage(
+				SDL_Rect{214, 466, 26, 26},
+				0xffffffff,
+				"images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Blocker_00.png",
+				"open"
+			);
+		} else {
+			open_label->setColor(makeColor(166, 123, 81, 255));
+
+			auto open = card->addButton("open");
+			open->setSize(SDL_Rect{212, 464, 30, 30});
+			open->setIcon("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Fill_Round_00.png");
+			open->setStyle(Button::style_t::STYLE_RADIO);
+			open->setBorder(0);
+			open->setColor(0);
+			open->setBorderColor(0);
+			open->setHighlightColor(0);
+			open->addWidgetAction("MenuStart", "confirm");
+			open->setWidgetBack("back_button");
+			open->setWidgetUp("friends");
+			open->setWidgetDown("confirm");
+			if (index != 0) {
+				open->setCallback([](Button&){soundError();});
+			} else {
+			}
+		}
 
 		auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
@@ -2187,12 +2400,16 @@ namespace MainMenu {
 		confirm->setSize(SDL_Rect{62, 522, 202, 52});
 		confirm->addWidgetAction("MenuStart", "confirm");
 		confirm->setWidgetBack("back_button");
-		confirm->setWidgetUp("open");
+		if (local) {
+			confirm->setWidgetUp("custom");
+		} else {
+			confirm->setWidgetUp("open");
+		}
 		switch (index) {
-		case 0: confirm->setCallback([](Button&){createCharacterCard(0);}); break;
-		case 1: confirm->setCallback([](Button&){createCharacterCard(1);}); break;
-		case 2: confirm->setCallback([](Button&){createCharacterCard(2);}); break;
-		case 3: confirm->setCallback([](Button&){createCharacterCard(3);}); break;
+		case 0: confirm->setCallback([](Button&){soundActivate(); createCharacterCard(0);}); break;
+		case 1: confirm->setCallback([](Button&){soundActivate(); createCharacterCard(1);}); break;
+		case 2: confirm->setCallback([](Button&){soundActivate(); createCharacterCard(2);}); break;
+		case 3: confirm->setCallback([](Button&){soundActivate(); createCharacterCard(3);}); break;
 		}
 	}
 
@@ -3055,6 +3272,8 @@ namespace MainMenu {
 		destroyMainMenu();
 		createDummyMainMenu();
 
+		currentLobbyType = type;
+
 		auto lobby = main_menu_frame->addFrame("lobby");
 		lobby->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		lobby->setActualSize(SDL_Rect{0, 0, lobby->getSize().w, lobby->getSize().h});
@@ -3188,6 +3407,16 @@ namespace MainMenu {
 
 	void playNew(Button& button) {
 		soundActivate();
+
+		allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
+		allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
+		allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
+		allSettings.keep_inventory_enabled = svFlags & SV_FLAG_KEEPINVENTORY;
+		allSettings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
+		allSettings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
+		allSettings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
+		allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
+		allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
 
 		// remove "Play Game" window
 		auto frame = static_cast<Frame*>(button.getParent());

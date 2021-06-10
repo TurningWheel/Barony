@@ -188,7 +188,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		pos.w = textSizeW;
 		pos.h = textSizeH;
 
-		yoff += actualFont->height(false);
+		yoff += actualFont->height(true);
 
 		SDL_Rect dest;
 		dest.x = std::max(rect.x, pos.x);
