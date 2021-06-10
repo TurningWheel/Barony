@@ -2001,10 +2001,10 @@ namespace MainMenu {
 			"Disable Hunger",
 			"Disable Random\nMinotaurs",
 			"Enable Life Saving\nAmulet",
-			"Disable Drop Items\non Death",
+			"Keep Items on Death",
 			"Disable Random Traps",
 			"Disable Friendly Fire",
-			"Enable Shorter\nCampaign",
+			"Enable Classic\nEndings",
 			"Enable Hardcore\nDifficulty",
 #ifndef NINTENDO
 			"Enable Cheats",
@@ -2043,9 +2043,48 @@ namespace MainMenu {
 			if (c == 0) {
 				setting->select();
 			}
+
+			switch (c) {
+			case 0:
+				setting->setPressed(!allSettings.hunger_enabled);
+				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hunger_enabled = !button.isPressed();});
+				break;
+			case 1:
+				setting->setPressed(!allSettings.minotaur_enabled);
+				setting->setCallback([](Button& button){soundCheckmark(); allSettings.minotaur_enabled = !button.isPressed();});
+				break;
+			case 2:
+				setting->setPressed(allSettings.extra_life_enabled);
+				setting->setCallback([](Button& button){soundCheckmark(); allSettings.extra_life_enabled = button.isPressed();});
+				break;
+			case 3:
+				setting->setPressed(allSettings.keep_inventory_enabled);
+				setting->setCallback([](Button& button){soundCheckmark(); allSettings.keep_inventory_enabled = button.isPressed();});
+				break;
+			case 4:
+				setting->setPressed(!allSettings.random_traps_enabled);
+				setting->setCallback([](Button& button){soundCheckmark(); allSettings.random_traps_enabled = !button.isPressed();});
+				break;
+			case 5:
+				setting->setPressed(!allSettings.friendly_fire_enabled);
+				setting->setCallback([](Button& button){soundCheckmark(); allSettings.friendly_fire_enabled = !button.isPressed();});
+				break;
+			case 6:
+				setting->setPressed(allSettings.classic_mode_enabled);
+				setting->setCallback([](Button& button){soundCheckmark(); allSettings.classic_mode_enabled = button.isPressed();});
+				break;
+			case 7:
+				setting->setPressed(allSettings.hardcore_mode_enabled);
+				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hardcore_mode_enabled = button.isPressed();});
+				break;
+			case 8:
+				setting->setPressed(allSettings.cheats_enabled);
+				setting->setCallback([](Button& button){soundCheckmark(); allSettings.cheats_enabled = button.isPressed();});
+				break;
+			}
 		}
 
-		auto achievements = card->addField("achievements", 64);
+		auto achievements = card->addField("achievements", 256);
 		achievements->setSize(SDL_Rect{54, 526, 214, 50});
 		achievements->setFont(smallfont_no_outline);
 		achievements->setJustify(Field::justify_t::CENTER);
@@ -2055,12 +2094,25 @@ namespace MainMenu {
 				allSettings.extra_life_enabled ||
 				gamemods_disableSteamAchievements) {
 				achievements->setColor(makeColor(180, 37, 37, 255));
-				achievements->setText("ACHIEVEMENTS DISABLED\nDUE TO GAME DIFFICULTY\nSETTINGS");
+				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
 				achievements->setColor(makeColor(40, 180, 37, 255));
-				achievements->setText("ACHIEVEMENTS\nENABLED");
+				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
+
+		static auto confirmFlags = [](){
+			soundActivate();
+			svFlags = allSettings.classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
+			svFlags = allSettings.hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
+			svFlags = allSettings.friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
+			svFlags = allSettings.keep_inventory_enabled ? svFlags | SV_FLAG_KEEPINVENTORY : svFlags & ~(SV_FLAG_KEEPINVENTORY);
+			svFlags = allSettings.hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
+			svFlags = allSettings.minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
+			svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
+			svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
+			svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
+		};
 
 		auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
@@ -2073,10 +2125,10 @@ namespace MainMenu {
 		confirm->setWidgetBack("back_button");
 		confirm->setWidgetUp((std::string("setting") + std::to_string(num_settings - 1)).c_str());
 		switch (index) {
-		case 0: confirm->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(0);}); break;
-		case 1: confirm->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(1);}); break;
-		case 2: confirm->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(2);}); break;
-		case 3: confirm->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(3);}); break;
+		case 0: confirm->setCallback([](Button&){confirmFlags(); characterCardLobbySettingsMenu(0);}); break;
+		case 1: confirm->setCallback([](Button&){confirmFlags(); characterCardLobbySettingsMenu(1);}); break;
+		case 2: confirm->setCallback([](Button&){confirmFlags(); characterCardLobbySettingsMenu(2);}); break;
+		case 3: confirm->setCallback([](Button&){confirmFlags(); characterCardLobbySettingsMenu(3);}); break;
 		}
 	}
 
@@ -2263,7 +2315,7 @@ namespace MainMenu {
 			svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 			});
 
-		auto achievements = card->addField("achievements", 64);
+		auto achievements = card->addField("achievements", 256);
 		achievements->setSize(SDL_Rect{54, 260, 214, 50});
 		achievements->setFont(smallfont_no_outline);
 		achievements->setJustify(Field::justify_t::CENTER);
@@ -2273,10 +2325,10 @@ namespace MainMenu {
 				(svFlags & SV_FLAG_LIFESAVING) ||
 				gamemods_disableSteamAchievements) {
 				achievements->setColor(makeColor(180, 37, 37, 255));
-				achievements->setText("ACHIEVEMENTS DISABLED\nDUE TO GAME DIFFICULTY\nSETTINGS");
+				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
 				achievements->setColor(makeColor(40, 180, 37, 255));
-				achievements->setText("ACHIEVEMENTS\nENABLED");
+				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
 
@@ -2359,7 +2411,7 @@ namespace MainMenu {
 		auto open_label = card->addField("open_label", 64);
 		open_label->setSize(SDL_Rect{68, 466, 146, 26});
 		open_label->setFont(smallfont_outline);
-		open_label->setText("Friends Only");
+		open_label->setText("Open Lobby");
 		open_label->setJustify(Field::justify_t::CENTER);
 		if (local) {
 			open_label->setColor(makeColor(70, 62, 59, 255));
