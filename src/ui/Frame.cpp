@@ -360,6 +360,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		drawImage(image, _size, scroll);
 	}
 
+	// draw glyphs
+	drawGlyphs(_size, selectedWidget);
+
 	// root frame draws tooltip
 	// TODO on Nintendo, display this next to the currently selected widget
 	if (!parent) {

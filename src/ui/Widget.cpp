@@ -181,6 +181,9 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 #ifndef NINTENDO
 	return;
 #else
+	if (hideGlyphs) {
+		return;
+	}
 	if (!selectedWidget) {
 		return;
 	}

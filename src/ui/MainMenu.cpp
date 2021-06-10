@@ -1967,22 +1967,45 @@ namespace MainMenu {
 
 	static LobbyType currentLobbyType;
 
-	void characterCardGameSettingsMenu(int index) {
-		bool local = currentLobbyType == LobbyType::LobbyLocal;
-
+	static Frame* initCharacterCard(int index, int height) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
-		assert(card);
-		card->removeSelf();
+		if (card) {
+			card->removeSelf();
+		}
 
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 664, 324, 664});
+		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - height, 324, height});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
 		card->setOwner(index);
+
+		return card;
+	}
+
+	void characterCardGameSettingsMenu(int index) {
+		bool local = currentLobbyType == LobbyType::LobbyLocal;
+
+		auto card = initCharacterCard(index, 664);
+
+		static void (*back_fn)(int) = [](int index){
+			soundCancel();
+			characterCardLobbySettingsMenu(index);
+			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
+			auto button = card->findButton("custom_difficulty"); assert(button);
+			button->select();
+		};
+
+		switch (index) {
+		case 0: (void)createBackWidget(card,[](Button&){back_fn(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button&){back_fn(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button&){back_fn(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button&){back_fn(3);}); break;
+		}
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -2030,6 +2053,7 @@ namespace MainMenu {
 			setting->setBorderColor(0);
 			setting->setBorder(0);
 			setting->setColor(0);
+			setting->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			setting->addWidgetAction("MenuStart", "confirm");
 			setting->setWidgetBack("back_button");
 			if (c > 0) {
@@ -2121,6 +2145,7 @@ namespace MainMenu {
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings/CustomDiff_ButtonConfirm_00.png");
 		confirm->setSize(SDL_Rect{62, 606, 202, 52});
+		confirm->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		confirm->addWidgetAction("MenuStart", "confirm");
 		confirm->setWidgetBack("back_button");
 		confirm->setWidgetUp((std::string("setting") + std::to_string(num_settings - 1)).c_str());
@@ -2135,19 +2160,23 @@ namespace MainMenu {
 	void characterCardLobbySettingsMenu(int index) {
 		bool local = currentLobbyType == LobbyType::LobbyLocal;
 
-		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+		auto card = initCharacterCard(index, 580);
 
-		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
-		assert(card);
-		card->removeSelf();
+		static void (*back_fn)(int) = [](int index){
+			soundCancel();
+			createCharacterCard(index);
+			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
+			auto button = card->findButton("game_settings"); assert(button);
+			button->select();
+		};
 
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 580, 324, 580});
-		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
-		card->setColor(0);
-		card->setBorder(0);
-		card->setOwner(index);
+		switch (index) {
+		case 0: (void)createBackWidget(card,[](Button&){back_fn(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button&){back_fn(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button&){back_fn(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button&){back_fn(3);}); break;
+		}
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -2198,6 +2227,7 @@ namespace MainMenu {
 		easy->setColor(0);
 		easy->setBorderColor(0);
 		easy->setHighlightColor(0);
+		easy->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		easy->addWidgetAction("MenuStart", "confirm");
 		easy->setWidgetBack("back_button");
 		easy->setWidgetDown("normal");
@@ -2223,6 +2253,7 @@ namespace MainMenu {
 		normal->setColor(0);
 		normal->setBorderColor(0);
 		normal->setHighlightColor(0);
+		normal->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		normal->addWidgetAction("MenuStart", "confirm");
 		normal->setWidgetBack("back_button");
 		normal->setWidgetUp("easy");
@@ -2257,6 +2288,7 @@ namespace MainMenu {
 		hard->setColor(0);
 		hard->setBorderColor(0);
 		hard->setHighlightColor(0);
+		hard->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		hard->addWidgetAction("MenuStart", "confirm");
 		hard->setWidgetBack("back_button");
 		hard->setWidgetUp("normal");
@@ -2273,6 +2305,7 @@ namespace MainMenu {
 		custom_difficulty->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_GameSettings_Button_Custom_01.png");
 		custom_difficulty->setFont(smallfont_outline);
 		custom_difficulty->setText("Custom");
+		custom_difficulty->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		custom_difficulty->addWidgetAction("MenuStart", "confirm");
 		custom_difficulty->setWidgetBack("back_button");
 		custom_difficulty->setWidgetUp("hard");
@@ -2293,6 +2326,7 @@ namespace MainMenu {
 		custom->setColor(0);
 		custom->setBorderColor(0);
 		custom->setHighlightColor(0);
+		custom->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		custom->addWidgetAction("MenuStart", "confirm");
 		custom->setWidgetBack("back_button");
 		custom->setWidgetUp("hard");
@@ -2363,6 +2397,7 @@ namespace MainMenu {
 			invite->setColor(0);
 			invite->setBorderColor(0);
 			invite->setHighlightColor(0);
+			invite->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			invite->addWidgetAction("MenuStart", "confirm");
 			invite->setWidgetBack("back_button");
 			invite->setWidgetUp("custom");
@@ -2398,6 +2433,7 @@ namespace MainMenu {
 			friends->setColor(0);
 			friends->setBorderColor(0);
 			friends->setHighlightColor(0);
+			friends->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			friends->addWidgetAction("MenuStart", "confirm");
 			friends->setWidgetBack("back_button");
 			friends->setWidgetUp("invite");
@@ -2433,6 +2469,7 @@ namespace MainMenu {
 			open->setColor(0);
 			open->setBorderColor(0);
 			open->setHighlightColor(0);
+			open->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			open->addWidgetAction("MenuStart", "confirm");
 			open->setWidgetBack("back_button");
 			open->setWidgetUp("friends");
@@ -2450,6 +2487,7 @@ namespace MainMenu {
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings_ButtonConfirm_00.png");
 		confirm->setSize(SDL_Rect{62, 522, 202, 52});
+		confirm->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		confirm->addWidgetAction("MenuStart", "confirm");
 		confirm->setWidgetBack("back_button");
 		if (local) {
@@ -2466,19 +2504,23 @@ namespace MainMenu {
 	}
 
 	void characterCardRaceMenu(int index) {
-		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+		auto card = initCharacterCard(index, 488);
 
-		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
-		assert(card);
-		card->removeSelf();
+		static void (*back_fn)(int) = [](int index){
+			soundCancel();
+			createCharacterCard(index);
+			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
+			auto button = card->findButton("race"); assert(button);
+			button->select();
+		};
 
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 488, 324, 488});
-		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
-		card->setColor(0);
-		card->setBorder(0);
-		card->setOwner(index);
+		switch (index) {
+		case 0: (void)createBackWidget(card,[](Button&){back_fn(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button&){back_fn(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button&){back_fn(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button&){back_fn(3);}); break;
+		}
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -2528,6 +2570,7 @@ namespace MainMenu {
 		human->setColor(0);
 		human->setBorderColor(0);
 		human->setHighlightColor(0);
+		human->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		human->addWidgetAction("MenuStart", "confirm");
 		human->setWidgetBack("back_button");
 		human->setWidgetRight("appearances");
@@ -2559,6 +2602,7 @@ namespace MainMenu {
 		appearances->setListOffset(SDL_Rect{12, 8, 0, 0});
 		appearances->setScrollBarsEnabled(false);
 		appearances->setAllowScrollBinds(false);
+		appearances->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		appearances->addWidgetMovement("MenuListCancel", "appearances");
 		appearances->addWidgetMovement("MenuListConfirm", "appearances");
 		appearances->addWidgetAction("MenuStart", "confirm");
@@ -2645,6 +2689,7 @@ namespace MainMenu {
 				race->setColor(0);
 				race->setBorderColor(0);
 				race->setHighlightColor(0);
+				race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 				race->addWidgetAction("MenuStart", "confirm");
 				race->setWidgetBack("back_button");
 				if (enabledDLCPack2) {
@@ -2698,6 +2743,7 @@ namespace MainMenu {
 				race->setColor(0);
 				race->setBorderColor(0);
 				race->setHighlightColor(0);
+				race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 				race->addWidgetAction("MenuStart", "confirm");
 				race->setWidgetBack("back_button");
 				if (enabledDLCPack1) {
@@ -2757,6 +2803,7 @@ namespace MainMenu {
 		disable_abilities->setBorder(0);
 		disable_abilities->setHighlightColor(0);
 		disable_abilities->setStyle(Button::style_t::STYLE_CHECKBOX);
+		disable_abilities->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		disable_abilities->addWidgetAction("MenuStart", "confirm");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
@@ -2775,6 +2822,7 @@ namespace MainMenu {
 		male_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		male_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 		male_button->setSize(SDL_Rect{44, 344, 58, 52});
+		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "confirm");
 		male_button->setWidgetBack("back_button");
 		male_button->setWidgetUp("disable_abilities");
@@ -2786,6 +2834,7 @@ namespace MainMenu {
 		female_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		female_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 		female_button->setSize(SDL_Rect{106, 344, 58, 52});
+		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "confirm");
 		female_button->setWidgetBack("back_button");
 		female_button->setWidgetUp("disable_abilities");
@@ -2800,6 +2849,7 @@ namespace MainMenu {
 		show_race_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		show_race_info->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetails_00.png");
 		show_race_info->setSize(SDL_Rect{168, 344, 110, 52});
+		show_race_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		show_race_info->addWidgetAction("MenuStart", "confirm");
 		show_race_info->setWidgetBack("back_button");
 		show_race_info->setWidgetUp("disable_abilities");
@@ -2813,6 +2863,7 @@ namespace MainMenu {
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonConfirm_00.png");
 		confirm->setSize(SDL_Rect{62, 430, 202, 52});
+		confirm->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		confirm->addWidgetAction("MenuStart", "confirm");
 		confirm->setWidgetBack("back_button");
 		confirm->setWidgetUp("female");
@@ -2882,20 +2933,23 @@ namespace MainMenu {
 			}
 		}
 
-		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+		auto card = initCharacterCard(index, 488);
 
-		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
-		if (card) {
-			card->removeSelf();
+		static void (*back_fn)(int) = [](int index){
+			soundCancel();
+			createCharacterCard(index);
+			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
+			auto button = card->findButton("class"); assert(button);
+			button->select();
+		};
+
+		switch (index) {
+		case 0: (void)createBackWidget(card,[](Button&){back_fn(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button&){back_fn(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button&){back_fn(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button&){back_fn(3);}); break;
 		}
-
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 488, 324, 488});
-		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
-		card->setColor(0);
-		card->setBorder(0);
-		card->setOwner(index);
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -2938,6 +2992,7 @@ namespace MainMenu {
 		confirm->setSize(SDL_Rect{62, 430, 202, 52});
 		confirm->setText("Confirm");
 		confirm->setFont(bigfont_outline);
+		confirm->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		confirm->addWidgetAction("MenuStart", "confirm");
 		confirm->addWidgetAction("MenuAlt1", "class_info");
 		confirm->setWidgetBack("back_button");
@@ -2985,6 +3040,7 @@ namespace MainMenu {
 		class_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		class_info->setSize(SDL_Rect{236, 110, 48, 48});
 		class_info->setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_MagnifyingGlass_00.png");
+		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_info->addWidgetAction("MenuStart", "confirm");
 		class_info->addWidgetAction("MenuAlt1", "class_info");
 		class_info->setWidgetBack("back_button");
@@ -3016,6 +3072,7 @@ namespace MainMenu {
 			button->setSize(SDL_Rect{8 + (c % 4) * 54, 6 + (c / 4) * 54, 54, 54});
 			button->setColor(makeColor(127, 127, 127, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
+			button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			if (c > 0) {
 				button->setWidgetLeft(reduced_class_list[c - 1]);
 			}
@@ -3055,17 +3112,23 @@ namespace MainMenu {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
-		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
-		if (card) {
-			card->removeSelf();
-		}
+		auto card = initCharacterCard(index, 346);
 
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - 346, 324, 346});
-		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
-		card->setColor(0);
-		card->setBorder(0);
-		card->setOwner(index);
+		if (currentLobbyType == LobbyType::LobbyLocal) {
+			switch (index) {
+			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0);}); break;
+			case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(1);}); break;
+			case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2);}); break;
+			case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3);}); break;
+			}
+		} else {
+			switch (index) {
+			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(0);}); break;
+			case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(1);}); break;
+			case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(2);}); break;
+			case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(3);}); break;
+			}
+		}
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -3098,6 +3161,7 @@ namespace MainMenu {
 		name_field->setHJustify(Field::justify_t::LEFT);
 		name_field->setVJustify(Field::justify_t::CENTER);
 		name_field->setEditable(true);
+		name_field->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		name_field->addWidgetAction("MenuStart", "ready");
 		name_field->setWidgetBack("back_button");
 		name_field->setWidgetRight("randomize_name");
@@ -3109,6 +3173,7 @@ namespace MainMenu {
 		randomize_name->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_name->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
 		randomize_name->setSize(SDL_Rect{244, 26, 40, 44});
+		randomize_name->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_name->addWidgetAction("MenuStart", "ready");
 		randomize_name->setWidgetBack("back_button");
 		randomize_name->setWidgetLeft("name");
@@ -3121,15 +3186,16 @@ namespace MainMenu {
 		game_settings->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
 		game_settings->setText("View Game Settings");
 		game_settings->setFont(smallfont_outline);
+		game_settings->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		game_settings->addWidgetAction("MenuStart", "ready");
 		game_settings->setWidgetBack("back_button");
 		game_settings->setWidgetUp("name");
 		game_settings->setWidgetDown("male");
 		switch (index) {
-		case 0: game_settings->setCallback([](Button&){characterCardLobbySettingsMenu(0);}); break;
-		case 1: game_settings->setCallback([](Button&){characterCardLobbySettingsMenu(1);}); break;
-		case 2: game_settings->setCallback([](Button&){characterCardLobbySettingsMenu(2);}); break;
-		case 3: game_settings->setCallback([](Button&){characterCardLobbySettingsMenu(3);}); break;
+		case 0: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(0);}); break;
+		case 1: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(1);}); break;
+		case 2: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(2);}); break;
+		case 3: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(3);}); break;
 		}
 
 		auto male_button = card->addButton("male");
@@ -3137,6 +3203,7 @@ namespace MainMenu {
 		male_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		male_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Male_00.png");
 		male_button->setSize(SDL_Rect{42, 166, 58, 52});
+		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "ready");
 		male_button->setWidgetBack("back_button");
 		male_button->setWidgetRight("female");
@@ -3148,6 +3215,7 @@ namespace MainMenu {
 		female_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		female_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Female_00.png");
 		female_button->setSize(SDL_Rect{104, 166, 58, 52});
+		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "ready");
 		female_button->setWidgetBack("back_button");
 		female_button->setWidgetLeft("male");
@@ -3164,16 +3232,17 @@ namespace MainMenu {
 		race_button->setTextHighlightColor(makeColor(223, 44, 149, 255));
 		race_button->setFont(smallfont_outline);
 		race_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
+		race_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		race_button->addWidgetAction("MenuStart", "ready");
 		race_button->setWidgetBack("back_button");
 		race_button->setWidgetLeft("female");
 		race_button->setWidgetUp("game_settings");
 		race_button->setWidgetDown("class");
 		switch (index) {
-		case 0: race_button->setCallback([](Button&){characterCardRaceMenu(0);}); break;
-		case 1: race_button->setCallback([](Button&){characterCardRaceMenu(1);}); break;
-		case 2: race_button->setCallback([](Button&){characterCardRaceMenu(2);}); break;
-		case 3: race_button->setCallback([](Button&){characterCardRaceMenu(3);}); break;
+		case 0: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0);}); break;
+		case 1: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1);}); break;
+		case 2: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2);}); break;
+		case 3: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3);}); break;
 		}
 
 		auto randomize_class = card->addButton("randomize_class");
@@ -3181,6 +3250,7 @@ namespace MainMenu {
 		randomize_class->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_class->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
 		randomize_class->setSize(SDL_Rect{244, 230, 40, 44});
+		randomize_class->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_class->addWidgetAction("MenuStart", "ready");
 		randomize_class->setWidgetBack("back_button");
 		randomize_class->setWidgetLeft("class");
@@ -3200,16 +3270,17 @@ namespace MainMenu {
 		class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Barbarian_00.png");
 		class_button->setSize(SDL_Rect{46, 226, 52, 52});
 		class_button->setBorder(0);
+		class_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_button->addWidgetAction("MenuStart", "ready");
 		class_button->setWidgetBack("back_button");
 		class_button->setWidgetRight("randomize_class");
 		class_button->setWidgetUp("male");
 		class_button->setWidgetDown("ready");
 		switch (index) {
-		case 0: class_button->setCallback([](Button&){characterCardClassMenu(0);}); break;
-		case 1: class_button->setCallback([](Button&){characterCardClassMenu(1);}); break;
-		case 2: class_button->setCallback([](Button&){characterCardClassMenu(2);}); break;
-		case 3: class_button->setCallback([](Button&){characterCardClassMenu(3);}); break;
+		case 0: class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0);}); break;
+		case 1: class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1);}); break;
+		case 2: class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2);}); break;
+		case 3: class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3);}); break;
 		}
 
 		auto ready_button = card->addButton("ready");
@@ -3219,6 +3290,7 @@ namespace MainMenu {
 		ready_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
 		ready_button->setFont(bigfont_outline);
 		ready_button->setText("Ready");
+		ready_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		ready_button->addWidgetAction("MenuStart", "ready");
 		ready_button->setWidgetBack("back_button");
 		ready_button->setWidgetUp("class");
@@ -3266,6 +3338,9 @@ namespace MainMenu {
 		invite->setColor(0);
 		invite->setBorderColor(0);
 		invite->setHighlightColor(0);
+		invite->setHideGlyphs(true);
+		invite->setWidgetBack("back_button");
+		invite->addWidgetAction("MenuStart", "invite_button");
 		switch (index) {
 		case 0: invite->setCallback([](Button&){createCharacterCard(0);}); break;
 		case 1: invite->setCallback([](Button&){createCharacterCard(1);}); break;
@@ -3332,10 +3407,28 @@ namespace MainMenu {
 		lobby->setHollow(true);
 		lobby->setBorder(0);
 
-		(void)createBackWidget(lobby, [](Button&){
+		auto back_button = createBackWidget(lobby, [](Button&){
 			soundCancel();
 			destroyMainMenu();
 			createMainMenu();
+			});
+
+		auto back_frame = back_button->getParent();
+		back_frame->setTickCallback([](Widget& widget){
+			auto frame = static_cast<Frame*>(&widget); assert(frame);
+			auto lobby = static_cast<Frame*>(frame->getParent()); assert(lobby);
+			bool allCardsClosed = true;
+			for (int c = 0; c < 4; ++c) {
+				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
+				auto backdrop = card->findImage("backdrop"); assert(backdrop);
+				if (backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+					allCardsClosed = false;
+					break;
+				}
+			}
+			frame->setInvisible(!allCardsClosed);
+			auto button = frame->findButton("back_button"); assert(button);
+			button->setDisabled(!allCardsClosed);
 			});
 
 		createCharacterCard(0);
@@ -3351,6 +3444,7 @@ namespace MainMenu {
 	}
 
 	void createLobbyBrowser() {
+		// TODO
 	}
 
 /******************************************************************************/
