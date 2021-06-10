@@ -367,10 +367,6 @@ int initApp(char const * const title, int fullscreen)
 		printlog("failed to load font16x16.png\n");
 		return 5;
 	}
-	if ((backdrop_loading_bmp = loadImage("images/system/backdrop_loading.png")) == NULL)
-	{
-		return 5;
-	}
 
 	// init new ui engine
 	gui = new Frame("root");
@@ -2000,10 +1996,6 @@ int deinitApp()
 	if ( font16x16_bmp )
 	{
 		SDL_FreeSurface(font16x16_bmp);
-	}
-	if ( backdrop_loading_bmp )
-	{
-		SDL_FreeSurface(backdrop_loading_bmp);
 	}
 	if ( ttf8 )
 	{
