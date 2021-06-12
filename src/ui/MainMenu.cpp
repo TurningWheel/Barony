@@ -2139,7 +2139,6 @@ namespace MainMenu {
 		auto card = initCharacterCard(index, 664);
 
 		static void (*back_fn)(int) = [](int index){
-			soundCancel();
 			characterCardLobbySettingsMenu(index);
 			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
@@ -2148,10 +2147,10 @@ namespace MainMenu {
 		};
 
 		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button&){back_fn(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button&){back_fn(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button&){back_fn(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button&){back_fn(3);}); break;
+		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
 		}
 
 		auto backdrop = card->addImage(
@@ -2271,6 +2270,7 @@ namespace MainMenu {
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
+		(*achievements->getTickCallback())(*achievements);
 
 		static auto confirmFlags = [](){
 			soundActivate();
@@ -2297,10 +2297,10 @@ namespace MainMenu {
 		confirm->setWidgetBack("back_button");
 		confirm->setWidgetUp((std::string("setting") + std::to_string(num_settings - 1)).c_str());
 		switch (index) {
-		case 0: confirm->setCallback([](Button&){confirmFlags(); characterCardLobbySettingsMenu(0);}); break;
-		case 1: confirm->setCallback([](Button&){confirmFlags(); characterCardLobbySettingsMenu(1);}); break;
-		case 2: confirm->setCallback([](Button&){confirmFlags(); characterCardLobbySettingsMenu(2);}); break;
-		case 3: confirm->setCallback([](Button&){confirmFlags(); characterCardLobbySettingsMenu(3);}); break;
+		case 0: confirm->setCallback([](Button&){confirmFlags(); back_fn(0);}); break;
+		case 1: confirm->setCallback([](Button&){confirmFlags(); back_fn(1);}); break;
+		case 2: confirm->setCallback([](Button&){confirmFlags(); back_fn(2);}); break;
+		case 3: confirm->setCallback([](Button&){confirmFlags(); back_fn(3);}); break;
 		}
 	}
 
@@ -2310,7 +2310,6 @@ namespace MainMenu {
 		auto card = initCharacterCard(index, 580);
 
 		static void (*back_fn)(int) = [](int index){
-			soundCancel();
 			createCharacterCard(index);
 			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
@@ -2319,10 +2318,10 @@ namespace MainMenu {
 		};
 
 		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button&){back_fn(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button&){back_fn(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button&){back_fn(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button&){back_fn(3);}); break;
+		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
 		}
 
 		auto backdrop = card->addImage(
@@ -2527,6 +2526,7 @@ namespace MainMenu {
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
+		(*achievements->getTickCallback())(*achievements);
 
 		auto multiplayer_header = card->addField("difficulty_header", 64);
 		multiplayer_header->setSize(SDL_Rect{70, 328, 182, 34});
@@ -2658,10 +2658,10 @@ namespace MainMenu {
 			confirm->setWidgetUp("open");
 		}
 		switch (index) {
-		case 0: confirm->setCallback([](Button&){soundActivate(); createCharacterCard(0);}); break;
-		case 1: confirm->setCallback([](Button&){soundActivate(); createCharacterCard(1);}); break;
-		case 2: confirm->setCallback([](Button&){soundActivate(); createCharacterCard(2);}); break;
-		case 3: confirm->setCallback([](Button&){soundActivate(); createCharacterCard(3);}); break;
+		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
+		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
+		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
+		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
 		}
 	}
 
@@ -2669,7 +2669,6 @@ namespace MainMenu {
 		auto card = initCharacterCard(index, 488);
 
 		static void (*back_fn)(int) = [](int index){
-			soundCancel();
 			createCharacterCard(index);
 			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
@@ -2678,10 +2677,10 @@ namespace MainMenu {
 		};
 
 		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button&){back_fn(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button&){back_fn(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button&){back_fn(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button&){back_fn(3);}); break;
+		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
 		}
 
 		auto backdrop = card->addImage(
@@ -3112,10 +3111,10 @@ namespace MainMenu {
 		confirm->setWidgetBack("back_button");
 		confirm->setWidgetUp("female");
 		switch (index) {
-		case 0: confirm->setCallback([](Button&){createCharacterCard(0);}); break;
-		case 1: confirm->setCallback([](Button&){createCharacterCard(1);}); break;
-		case 2: confirm->setCallback([](Button&){createCharacterCard(2);}); break;
-		case 3: confirm->setCallback([](Button&){createCharacterCard(3);}); break;
+		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
+		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
+		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
+		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
 		}
 	}
 
@@ -3124,7 +3123,6 @@ namespace MainMenu {
 		auto card = initCharacterCard(index, 488);
 
 		static void (*back_fn)(int) = [](int index){
-			soundCancel();
 			createCharacterCard(index);
 			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
@@ -3133,10 +3131,10 @@ namespace MainMenu {
 		};
 
 		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button&){back_fn(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button&){back_fn(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button&){back_fn(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button&){back_fn(3);}); break;
+		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
 		}
 
 		auto backdrop = card->addImage(
@@ -3186,24 +3184,6 @@ namespace MainMenu {
 		case 3: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 3);}); break;
 		}
 		(*class_name->getTickCallback())(*class_name);
-			
-		auto confirm = card->addButton("confirm");
-		confirm->setColor(makeColor(127, 127, 127, 255));
-		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
-		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
-		confirm->setSize(SDL_Rect{62, 430, 202, 52});
-		confirm->setText("Confirm");
-		confirm->setFont(bigfont_outline);
-		confirm->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-		confirm->addWidgetAction("MenuStart", "confirm");
-		confirm->addWidgetAction("MenuAlt1", "class_info");
-		confirm->setWidgetBack("back_button");
-		switch (index) {
-		case 0: confirm->setCallback([](Button&){createCharacterCard(0);}); break;
-		case 1: confirm->setCallback([](Button&){createCharacterCard(1);}); break;
-		case 2: confirm->setCallback([](Button&){createCharacterCard(2);}); break;
-		case 3: confirm->setCallback([](Button&){createCharacterCard(3);}); break;
-		}
 
 		auto subframe = card->addFrame("subframe");
 		subframe->setScrollBarsEnabled(false);
@@ -3319,6 +3299,24 @@ namespace MainMenu {
 
 		auto first_button = subframe->findButton(reduced_class_list[0]); assert(first_button);
 		first_button->select();
+
+		auto confirm = card->addButton("confirm");
+		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
+		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
+		confirm->setSize(SDL_Rect{62, 430, 202, 52});
+		confirm->setText("Confirm");
+		confirm->setFont(bigfont_outline);
+		confirm->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
+		confirm->addWidgetAction("MenuStart", "confirm");
+		confirm->addWidgetAction("MenuAlt1", "class_info");
+		confirm->setWidgetBack("back_button");
+		switch (index) {
+		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
+		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
+		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
+		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
+		}
 	}
 
 	void createCharacterCard(int index) {
