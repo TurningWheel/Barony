@@ -30,6 +30,7 @@ namespace MainMenu {
 		RootMainMenu = 1,
 		IntroStoryScreen = 2,
 		HallOfTrials = 3,
+		GameStart = 4,
 	};
 
 	static Frame* main_menu_frame = nullptr;
@@ -2381,7 +2382,7 @@ namespace MainMenu {
 			clear_difficulties(button);
 			svFlags = SV_FLAG_CLASSIC | SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING;
 			});
-		if (svFlags == SV_FLAG_CLASSIC | SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING) {
+		if (svFlags == (SV_FLAG_CLASSIC | SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING)) {
 			easy->setPressed(true);
 			easy->select();
 		}
@@ -2411,7 +2412,7 @@ namespace MainMenu {
 			clear_difficulties(button);
 			svFlags = SV_FLAG_FRIENDLYFIRE | SV_FLAG_KEEPINVENTORY | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS;
 			});
-		if (svFlags == SV_FLAG_FRIENDLYFIRE | SV_FLAG_KEEPINVENTORY | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS) {
+		if (svFlags == (SV_FLAG_FRIENDLYFIRE | SV_FLAG_KEEPINVENTORY | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS)) {
 			normal->setPressed(true);
 			normal->select();
 		}
@@ -2450,7 +2451,7 @@ namespace MainMenu {
 			clear_difficulties(button);
 			svFlags = SV_FLAG_HARDCORE | SV_FLAG_FRIENDLYFIRE | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS;
 			});
-		if (svFlags == SV_FLAG_HARDCORE | SV_FLAG_FRIENDLYFIRE | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS) {
+		if (svFlags == (SV_FLAG_HARDCORE | SV_FLAG_FRIENDLYFIRE | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS)) {
 			hard->setPressed(true);
 			hard->select();
 		}
@@ -2705,8 +2706,8 @@ namespace MainMenu {
 
 		static const char* dlcRaces2[] = {
 			"Automaton",
-			"Goblin",
 			"Incubus",
+			"Goblin",
 			"Insectoid"
 		};
 
@@ -3166,7 +3167,11 @@ namespace MainMenu {
 		);
 
 		static auto class_name_fn = [](Field& field, int index){
-			field.setText(classes_in_order[client_classes[index] + 1]);
+			int i = std::min(std::max(0, client_classes[index] + 1), num_classes);
+			auto find = classes.find(classes_in_order[i]);
+			if (find != classes.end()) {
+				field.setText(find->second.name);
+			}
 		};
 
 		auto class_name = card->addField("class_name", 64);
@@ -3180,7 +3185,8 @@ namespace MainMenu {
 		case 2: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 2);}); break;
 		case 3: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 3);}); break;
 		}
-
+		(*class_name->getTickCallback())(*class_name);
+			
 		auto confirm = card->addButton("confirm");
 		confirm->setColor(makeColor(127, 127, 127, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -3282,7 +3288,7 @@ namespace MainMenu {
 				soundActivate();
 				int c = 0;
 				for (; c < num_classes; ++c) {
-					if (button.getName() == classes_in_order[c]) {
+					if (strcmp(button.getName(), classes_in_order[c]) == 0) {
 						break;
 					}
 				}
@@ -3374,7 +3380,6 @@ namespace MainMenu {
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
 		static auto name_field_fn = [](const char* text, int index) {
-			soundActivate();
 			size_t len = strlen(text);
 			len = std::min(sizeof(Stat::name) - 1, len);
 			memcpy(stats[index]->name, text, len);
@@ -3552,9 +3557,9 @@ namespace MainMenu {
 		case 2: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 2);}); break;
 		case 3: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 3);}); break;
 		}
+		(*class_text->getTickCallback())(*class_text);
 
 		static auto class_button_fn = [](Button& button, int index) {
-			soundActivate();
 			auto find = classes.find(classes_in_order[client_classes[index] + 1]);
 			if (find != classes.end()) {
 				auto& class_info = find->second;
@@ -3569,7 +3574,7 @@ namespace MainMenu {
 					button.setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegends_00.png");
 					break;
 				}
-				button.setBackground(find->second.image);
+				button.setIcon((std::string("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/") + find->second.image).c_str());
 			}
 		};
 
@@ -3602,6 +3607,7 @@ namespace MainMenu {
 			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3);});
 			break;
 		}
+		(*class_button->getTickCallback())(*class_button);
 
 		auto ready_button = card->addButton("ready");
 		ready_button->setSize(SDL_Rect{62, 288, 202, 52});
@@ -3614,6 +3620,13 @@ namespace MainMenu {
 		ready_button->addWidgetAction("MenuStart", "ready");
 		ready_button->setWidgetBack("back_button");
 		ready_button->setWidgetUp("class");
+		ready_button->setCallback([](Button& button){
+			soundActivate();
+			destroyMainMenu();
+			createDummyMainMenu();
+			main_menu_fade_destination = FadeDestination::GameStart;
+			fadeout = true;
+			});
 	}
 
 	void createStartButton(int index) {
@@ -4419,6 +4432,12 @@ namespace MainMenu {
 					}
 					gameModeManager.Tutorial.startTutorial("");
 					steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
+					doNewGame(false);
+				}
+				if (main_menu_fade_destination == FadeDestination::GameStart) {
+					multiplayer = SINGLE;
+					numplayers = 0;
+					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 					doNewGame(false);
 				}
 				fadeout = false;
