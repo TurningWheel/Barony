@@ -2031,15 +2031,27 @@ namespace MainMenu {
 		auto card = static_cast<Frame*>(button.getParent());
 		stats[index]->sex = MALE;
 		if (stats[index]->playerRace == RACE_SUCCUBUS) {
+			auto succubus = card->findButton("Succubus");
+			if (succubus) {
+				succubus->setPressed(false);
+			}
 			if (enabledDLCPack2) {
 				stats[index]->playerRace = RACE_INCUBUS;
 				auto race = card->findButton("race");
-				race->setText("Incubus");
+				if (race) {
+					race->setText("Incubus");
+				}
+				auto incubus = card->findButton("Incubus");
+				if (incubus) {
+					incubus->setPressed(true);
+				}
 				if (client_classes[index] == CLASS_MESMER && stats[index]->appearance == 0) {
 					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
 						client_classes[index] = CLASS_PUNISHER;
 						auto class_button = card->findButton("class");
-						class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Punisher_00.png");
+						if (class_button) {
+							class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Punisher_00.png");
+						}
 					}
 					stats[index]->clearStats();
 					initClass(index);
@@ -2047,7 +2059,13 @@ namespace MainMenu {
 			} else {
 				stats[index]->playerRace = RACE_HUMAN;
 				auto race = card->findButton("race");
-				race->setText("Human");
+				if (race) {
+					race->setText("Human");
+				}
+				auto human = card->findButton("Human");
+				if (human) {
+					human->setPressed(true);
+				}
 			}
 		}
 	};
@@ -2056,15 +2074,27 @@ namespace MainMenu {
 		auto card = static_cast<Frame*>(button.getParent());
 		stats[index]->sex = FEMALE;
 		if (stats[index]->playerRace == RACE_INCUBUS) {
+			auto incubus = card->findButton("Incubus");
+			if (incubus) {
+				incubus->setPressed(false);
+			}
 			if (enabledDLCPack1) {
 				stats[index]->playerRace = RACE_SUCCUBUS;
 				auto race = card->findButton("race");
-				race->setText("Succubus");
+				if (race) {
+					race->setText("Succubus");
+				}
+				auto succubus = card->findButton("Succubus");
+				if (succubus) {
+					succubus->setPressed(true);
+				}
 				if (client_classes[index] == CLASS_PUNISHER && stats[index]->appearance == 0) {
 					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
 						client_classes[index] = CLASS_MESMER;
 						auto class_button = card->findButton("class");
-						class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Mesmer_00.png");
+						if (class_button) {
+							class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Mesmer_00.png");
+						}
 					}
 					stats[index]->clearStats();
 					initClass(index);
@@ -2072,7 +2102,13 @@ namespace MainMenu {
 			} else {
 				stats[index]->playerRace = RACE_HUMAN;
 				auto race = card->findButton("race");
-				race->setText("Human");
+				if (race) {
+					race->setText("Human");
+				}
+				auto human = card->findButton("Human");
+				if (human) {
+					human->setPressed(true);
+				}
 			}
 		}
 	};
@@ -2345,7 +2381,10 @@ namespace MainMenu {
 			clear_difficulties(button);
 			svFlags = SV_FLAG_CLASSIC | SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING;
 			});
-		easy->select();
+		if (svFlags == SV_FLAG_CLASSIC | SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING) {
+			easy->setPressed(true);
+			easy->select();
+		}
 
 		auto normal_label = card->addField("normal_label", 64);
 		normal_label->setSize(SDL_Rect{68, 140, 144, 26});
@@ -2372,6 +2411,10 @@ namespace MainMenu {
 			clear_difficulties(button);
 			svFlags = SV_FLAG_FRIENDLYFIRE | SV_FLAG_KEEPINVENTORY | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS;
 			});
+		if (svFlags == SV_FLAG_FRIENDLYFIRE | SV_FLAG_KEEPINVENTORY | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS) {
+			normal->setPressed(true);
+			normal->select();
+		}
 
 		// TODO on non-english languages, normal text must be used
 
@@ -2407,6 +2450,10 @@ namespace MainMenu {
 			clear_difficulties(button);
 			svFlags = SV_FLAG_HARDCORE | SV_FLAG_FRIENDLYFIRE | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS;
 			});
+		if (svFlags == SV_FLAG_HARDCORE | SV_FLAG_FRIENDLYFIRE | SV_FLAG_HUNGER | SV_FLAG_MINOTAURS | SV_FLAG_TRAPS) {
+			hard->setPressed(true);
+			hard->select();
+		}
 
 		auto custom_difficulty = card->addButton("custom_difficulty");
 		custom_difficulty->setColor(makeColor(127, 127, 127, 255));
@@ -2458,6 +2505,10 @@ namespace MainMenu {
 			svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
 			svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 			});
+		if (!easy->isSelected() && !normal->isSelected() && !hard->isSelected()) {
+			custom->setPressed(true);
+			custom->select();
+		}
 
 		auto achievements = card->addField("achievements", 256);
 		achievements->setSize(SDL_Rect{54, 260, 214, 50});
@@ -2659,18 +2710,27 @@ namespace MainMenu {
 			"Insectoid"
 		};
 
-		void (*set_race_fn)(Button&) = [](Button& button){
+		static auto race_fn = [](Button& button, int index){
 			Frame* frame = static_cast<Frame*>(button.getParent());
 			std::vector<const char*> allRaces = { "Human" };
 			allRaces.insert(allRaces.end(), std::begin(dlcRaces1), std::end(dlcRaces1));
 			allRaces.insert(allRaces.end(), std::begin(dlcRaces2), std::end(dlcRaces2));
-			for (auto race : allRaces) {
+			for (int c = 0; c < allRaces.size(); ++c) {
+				auto race = allRaces[c];
 				if (strcmp(button.getName(), race) == 0) {
-					continue;
+					stats[index]->playerRace = c;
+					if (stats[index]->playerRace == RACE_SUCCUBUS) {
+						stats[index]->sex = FEMALE;
+					}
+					else if (stats[index]->playerRace == RACE_INCUBUS) {
+						stats[index]->sex = MALE;
+					}
+				} else {
+					auto other_button = frame->findButton(race);
+					other_button->setPressed(false);
 				}
-				auto other_button = frame->findButton(race);
-				other_button->setPressed(false);
-			}};
+			}
+		};
 
 		auto human = card->addButton("Human");
 		human->setSize(SDL_Rect{54, 80, 30, 30});
@@ -2693,8 +2753,16 @@ namespace MainMenu {
 		else {
 			human->setWidgetDown("disable_abilities");
 		}
-		human->setCallback(set_race_fn);
-		human->select();
+		switch (index) {
+		case 0: human->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
+		case 1: human->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
+		case 2: human->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
+		case 3: human->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
+		}
+		if (stats[index]->playerRace == RACE_HUMAN) {
+			human->setPressed(true);
+			human->select();
+		}
 
 		auto human_label = card->addField("human_label", 32);
 		human_label->setColor(makeColor(166, 123, 81, 255));
@@ -2759,6 +2827,8 @@ namespace MainMenu {
 		appearance_selected->disabled = true;
 		appearance_selected->ontop = true;
 
+		// TODO give these callbacks so they can be clicked:
+
 		auto appearance_uparrow = card->addButton("appearance_uparrow");
 		appearance_uparrow->setSize(SDL_Rect{198, 58, 32, 20});
 		appearance_uparrow->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonUp_00.png");
@@ -2783,10 +2853,26 @@ namespace MainMenu {
 			"Baytower", "Whetsong"
 		};
 
-		for (auto name : appearance_names) {
-			auto entry = appearances->addEntry(name, true);
+		constexpr int num_appearances = sizeof(appearance_names) / sizeof(appearance_names[0]);
+
+		static auto appearance_fn = [](Frame::entry_t& entry, int index){
+			if (stats[index]->playerRace != RACE_HUMAN) {
+				return;
+			}
+			stats[index]->appearance = std::stoi(entry.name);
+		};
+
+		for (int c = 0; c < num_appearances; ++c) {
+			auto name = appearance_names[c];
+			auto entry = appearances->addEntry(std::to_string(c).c_str(), true);
 			entry->color = makeColor(166, 123, 81, 255);
 			entry->text = name;
+			switch (index) {
+			case 0: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 0);}; break;
+			case 1: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 1);}; break;
+			case 2: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 2);}; break;
+			case 3: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 3);}; break;
+			}
 		}
 
 		if (enabledDLCPack1) {
@@ -2815,7 +2901,17 @@ namespace MainMenu {
 				} else {
 					race->setWidgetDown("disable_abilities");
 				}
-				race->setCallback(set_race_fn);
+				switch (index) {
+				case 0: race->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
+				case 1: race->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
+				case 2: race->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
+				case 3: race->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
+				}
+
+				if (stats[index]->playerRace == RACE_SKELETON + c) {
+					race->setPressed(true);
+					race->select();
+				}
 
 				auto label = card->addField((std::string(dlcRaces1[c]) + "_label").c_str(), 64);
 				label->setSize(SDL_Rect{70, 132 + 38 * c, 104, 26});
@@ -2869,7 +2965,17 @@ namespace MainMenu {
 				} else {
 					race->setWidgetDown("disable_abilities");
 				}
-				race->setCallback(set_race_fn);
+				switch (index) {
+				case 0: race->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
+				case 1: race->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
+				case 2: race->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
+				case 3: race->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
+				}
+
+				if (stats[index]->playerRace == RACE_AUTOMATON + c) {
+					race->setPressed(true);
+					race->select();
+				}
 
 				auto label = card->addField((std::string(dlcRaces2[c]) + "_label").c_str(), 64);
 				label->setSize(SDL_Rect{202, 132 + 38 * c, 104, 26});
@@ -2925,6 +3031,21 @@ namespace MainMenu {
 		}
 		else {
 			disable_abilities->setWidgetUp("appearances");
+		}
+		if (stats[index]->playerRace != RACE_HUMAN) {
+			disable_abilities->setPressed(stats[index]->appearance != 0);
+		}
+		static auto disable_abilities_fn = [](Button& button, int index){
+			soundCheckmark();
+			if (stats[index]->playerRace != RACE_HUMAN) {
+				stats[index]->appearance = button.isPressed() ? 1 : 0;
+			}
+		};
+		switch (index) {
+		case 0: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 0);}); break;
+		case 1: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 1);}); break;
+		case 2: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 2);}); break;
+		case 3: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 3);}); break;
 		}
 
 		auto male_button = card->addButton("male");
@@ -3158,6 +3279,7 @@ namespace MainMenu {
 			button->setWidgetBack("back_button");
 
 			static auto button_fn = [](Button& button, int index){
+				soundActivate();
 				int c = 0;
 				for (; c < num_classes; ++c) {
 					if (button.getName() == classes_in_order[c]) {
@@ -3252,6 +3374,7 @@ namespace MainMenu {
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
 		static auto name_field_fn = [](const char* text, int index) {
+			soundActivate();
 			size_t len = strlen(text);
 			len = std::min(sizeof(Stat::name) - 1, len);
 			memcpy(stats[index]->name, text, len);
@@ -3382,6 +3505,7 @@ namespace MainMenu {
 		}
 
 		static auto randomize_class_fn = [](Button& button, int index){
+			soundActivate();
 			auto reduced_class_list = reducedClassList(index);
 			auto random_class = reduced_class_list[(rand() % (reduced_class_list.size() - 1)) + 1];
 			for (int c = 0; c < num_classes; ++c) {
@@ -3430,6 +3554,7 @@ namespace MainMenu {
 		}
 
 		static auto class_button_fn = [](Button& button, int index) {
+			soundActivate();
 			auto find = classes.find(classes_in_order[client_classes[index] + 1]);
 			if (find != classes.end()) {
 				auto& class_info = find->second;
