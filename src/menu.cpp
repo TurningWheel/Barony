@@ -594,15 +594,6 @@ void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebind
 	}
 }
 
-enum CharacterDLCValidation : int
-{
-	INVALID_CHARACTER,
-	VALID_OK_CHARACTER,
-	INVALID_REQUIREDLC1,
-	INVALID_REQUIREDLC2,
-	INVALID_REQUIRE_ACHIEVEMENT
-};
-
 bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
 {
 #ifdef STEAMWORKS

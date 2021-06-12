@@ -1967,6 +1967,116 @@ namespace MainMenu {
 
 	static LobbyType currentLobbyType;
 
+	enum class DLC {
+		Base,
+		MythsAndOutcasts,
+		LegendsAndPariahs
+	};
+
+	struct Class {
+		const char* name;
+		DLC dlc;
+		const char* image;
+	};
+
+	static const std::unordered_map<std::string, Class> classes = {
+		{"random", {"Random", DLC::Base, "ClassSelect_Icon_Randomize_00.png"}},
+		{"barbarian", {"Barbarian", DLC::Base, "ClassSelect_Icon_Barbarian_00.png"}},
+		{"warrior", {"Warrior", DLC::Base, "ClassSelect_Icon_Warrior_00.png"}},
+		{"healer", {"Healer", DLC::Base, "ClassSelect_Icon_Healer_00.png"}},
+		{"rogue", {"Rogue", DLC::Base, "ClassSelect_Icon_Rogue_00.png"}},
+		{"wanderer", {"Wanderer", DLC::Base, "ClassSelect_Icon_Wanderer_00.png"}},
+		{"cleric", {"Cleric", DLC::Base, "ClassSelect_Icon_Cleric_00.png"}},
+		{"merchant", {"Merchant", DLC::Base, "ClassSelect_Icon_Merchant_00.png"}},
+		{"wizard", {"Wizard", DLC::Base, "ClassSelect_Icon_Wizard_00.png"}},
+		{"arcanist", {"Arcanist", DLC::Base, "ClassSelect_Icon_Arcanist_00.png"}},
+		{"joker", {"Joker", DLC::Base, "ClassSelect_Icon_Jester_00.png"}},
+		{"sexton", {"Sexton", DLC::Base, "ClassSelect_Icon_Sexton_00.png"}},
+		{"ninja", {"Ninja", DLC::Base, "ClassSelect_Icon_Ninja_00.png"}},
+		{"monk", {"Monk", DLC::Base, "ClassSelect_Icon_Monk_00.png"}},
+		{"conjurer", {"Conjurer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Conjurer_00.png"}},
+		{"accursed", {"Accursed", DLC::MythsAndOutcasts, "ClassSelect_Icon_Accursed_00.png"}},
+		{"mesmer", {"Mesmer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Mesmer_00.png"}},
+		{"brewer", {"Brewer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Brewer_00.png"}},
+		{"mechanist", {"Mechanist", DLC::LegendsAndPariahs, "ClassSelect_Icon_Mechanist_00.png"}},
+		{"punisher", {"Punisher", DLC::LegendsAndPariahs, "ClassSelect_Icon_Punisher_00.png"}},
+		{"shaman", {"Shaman", DLC::LegendsAndPariahs, "ClassSelect_Icon_Shaman_00.png"}},
+		{"hunter", {"Hunter", DLC::LegendsAndPariahs, "ClassSelect_Icon_Hunter_00.png"}},
+	};
+
+	static const char* classes_in_order[] = {
+		"random", "barbarian", "warrior", "healer",
+		"rogue", "wanderer", "cleric", "merchant",
+		"wizard", "arcanist", "joker", "sexton",
+		"ninja", "monk", "conjurer", "accursed",
+		"mesmer", "brewer", "mechanist", "punisher",
+		"shaman", "hunter"
+	};
+
+	constexpr int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
+
+	std::vector<const char*> reducedClassList(int index) {
+		std::vector<const char*> result;
+		result.reserve(num_classes);
+		result.emplace_back("random");
+		for (int c = CLASS_BARBARIAN; c <= CLASS_HUNTER; ++c) {
+			if (isCharacterValidFromDLC(*stats[index], c)) {
+				result.emplace_back(classes_in_order[c + 1]);
+			}
+		}
+		return result;
+	}
+
+	static auto male_button_fn = [](Button& button, int index) {
+		auto card = static_cast<Frame*>(button.getParent());
+		stats[index]->sex = MALE;
+		if (stats[index]->playerRace == RACE_SUCCUBUS) {
+			if (enabledDLCPack2) {
+				stats[index]->playerRace = RACE_INCUBUS;
+				auto race = card->findButton("race");
+				race->setText("Incubus");
+				if (client_classes[index] == CLASS_MESMER && stats[index]->appearance == 0) {
+					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
+						client_classes[index] = CLASS_PUNISHER;
+						auto class_button = card->findButton("class");
+						class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Punisher_00.png");
+					}
+					stats[index]->clearStats();
+					initClass(index);
+				}
+			} else {
+				stats[index]->playerRace = RACE_HUMAN;
+				auto race = card->findButton("race");
+				race->setText("Human");
+			}
+		}
+	};
+
+	static auto female_button_fn = [](Button& button, int index) {
+		auto card = static_cast<Frame*>(button.getParent());
+		stats[index]->sex = FEMALE;
+		if (stats[index]->playerRace == RACE_INCUBUS) {
+			if (enabledDLCPack1) {
+				stats[index]->playerRace = RACE_SUCCUBUS;
+				auto race = card->findButton("race");
+				race->setText("Succubus");
+				if (client_classes[index] == CLASS_PUNISHER && stats[index]->appearance == 0) {
+					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
+						client_classes[index] = CLASS_MESMER;
+						auto class_button = card->findButton("class");
+						class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Mesmer_00.png");
+					}
+					stats[index]->clearStats();
+					initClass(index);
+				}
+			} else {
+				stats[index]->playerRace = RACE_HUMAN;
+				auto race = card->findButton("race");
+				race->setText("Human");
+			}
+		}
+	};
+
 	static Frame* initCharacterCard(int index, int height) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
@@ -2828,6 +2938,12 @@ namespace MainMenu {
 		male_button->setWidgetUp("disable_abilities");
 		male_button->setWidgetDown("confirm");
 		male_button->setWidgetRight("female");
+		switch (index) {
+		case 0: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 0);}); break;
+		case 1: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 1);}); break;
+		case 2: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 2);}); break;
+		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
+		}
 
 		auto female_button = card->addButton("female");
 		female_button->setColor(makeColor(127, 127, 127, 255));
@@ -2841,6 +2957,12 @@ namespace MainMenu {
 		female_button->setWidgetDown("confirm");
 		female_button->setWidgetLeft("male");
 		female_button->setWidgetRight("show_race_info");
+		switch (index) {
+		case 0: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 0);}); break;
+		case 1: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 1);}); break;
+		case 2: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 2);}); break;
+		case 3: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 3);}); break;
+		}
 
 		auto show_race_info = card->addButton("show_race_info");
 		show_race_info->setFont(smallfont_outline);
@@ -2876,63 +2998,7 @@ namespace MainMenu {
 	}
 
 	void characterCardClassMenu(int index) {
-		enum class DLC {
-			Base,
-			MythsAndOutcasts,
-			LegendsAndPariahs
-		};
-
-		struct Class {
-			const char* name;
-			DLC dlc;
-			const char* image;
-		};
-
-		static const std::unordered_map<std::string, Class> classes = {
-			{"random", {"Random", DLC::Base, "ClassSelect_Icon_Randomize_00.png"}},
-			{"barbarian", {"Barbarian", DLC::Base, "ClassSelect_Icon_Barbarian_00.png"}},
-			{"warrior", {"Warrior", DLC::Base, "ClassSelect_Icon_Warrior_00.png"}},
-			{"healer", {"Healer", DLC::Base, "ClassSelect_Icon_Healer_00.png"}},
-			{"rogue", {"Rogue", DLC::Base, "ClassSelect_Icon_Rogue_00.png"}},
-			{"wanderer", {"Wanderer", DLC::Base, "ClassSelect_Icon_Wanderer_00.png"}},
-			{"cleric", {"Cleric", DLC::Base, "ClassSelect_Icon_Cleric_00.png"}},
-			{"merchant", {"Merchant", DLC::Base, "ClassSelect_Icon_Merchant_00.png"}},
-			{"wizard", {"Wizard", DLC::Base, "ClassSelect_Icon_Wizard_00.png"}},
-			{"arcanist", {"Arcanist", DLC::Base, "ClassSelect_Icon_Arcanist_00.png"}},
-			{"joker", {"Joker", DLC::Base, "ClassSelect_Icon_Jester_00.png"}},
-			{"sexton", {"Sexton", DLC::Base, "ClassSelect_Icon_Sexton_00.png"}},
-			{"ninja", {"Ninja", DLC::Base, "ClassSelect_Icon_Ninja_00.png"}},
-			{"monk", {"Monk", DLC::Base, "ClassSelect_Icon_Monk_00.png"}},
-			{"conjurer", {"Conjurer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Conjurer_00.png"}},
-			{"accursed", {"Accursed", DLC::MythsAndOutcasts, "ClassSelect_Icon_Accursed_00.png"}},
-			{"mesmer", {"Mesmer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Mesmer_00.png"}},
-			{"brewer", {"Brewer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Brewer_00.png"}},
-			{"mechanist", {"Mechanist", DLC::LegendsAndPariahs, "ClassSelect_Icon_Mechanist_00.png"}},
-			{"punisher", {"Punisher", DLC::LegendsAndPariahs, "ClassSelect_Icon_Punisher_00.png"}},
-			{"shaman", {"Shaman", DLC::LegendsAndPariahs, "ClassSelect_Icon_Shaman_00.png"}},
-			{"hunter", {"Hunter", DLC::LegendsAndPariahs, "ClassSelect_Icon_Hunter_00.png"}},
-		};
-
-		static const char* classes_in_order[] = {
-			"random", "barbarian", "warrior", "healer",
-			"rogue", "wanderer", "cleric", "merchant",
-			"wizard", "arcanist", "joker", "sexton",
-			"ninja", "monk", "conjurer", "accursed",
-			"mesmer", "brewer", "mechanist", "punisher",
-			"shaman", "hunter"
-		};
-
-		constexpr int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
-
-		std::vector<const char*> reduced_class_list;
-		reduced_class_list.reserve(num_classes);
-		reduced_class_list.emplace_back("random");
-		for (int c = CLASS_BARBARIAN; c <= CLASS_HUNTER; ++c) {
-			if (isCharacterValidFromDLC(*stats[index], c)) {
-				reduced_class_list.emplace_back(classes_in_order[c + 1]);
-			}
-		}
-
+		auto reduced_class_list = reducedClassList(index);
 		auto card = initCharacterCard(index, 488);
 
 		static void (*back_fn)(int) = [](int index){
@@ -2967,7 +3033,7 @@ namespace MainMenu {
 		auto class_name_header = card->addField("class_name_header", 64);
 		class_name_header->setSize(SDL_Rect{98, 70, 128, 26});
 		class_name_header->setFont(smallfont_outline);
-		class_name_header->setText("Merchant");
+		class_name_header->setText("Fix this");
 		class_name_header->setHJustify(Field::justify_t::CENTER);
 		class_name_header->setVJustify(Field::justify_t::BOTTOM);
 
@@ -2978,12 +3044,21 @@ namespace MainMenu {
 			"textbox"
 		);
 
+		static auto class_name_fn = [](Field& field, int index){
+			field.setText(classes_in_order[client_classes[index] + 1]);
+		};
+
 		auto class_name = card->addField("class_name", 64);
 		class_name->setSize(SDL_Rect{48, 120, 182, 28});
 		class_name->setHJustify(Field::justify_t::LEFT);
 		class_name->setVJustify(Field::justify_t::CENTER);
 		class_name->setFont(smallfont_outline);
-		class_name->setText("Merchant");
+		switch (index) {
+		case 0: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 0);}); break;
+		case 1: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 1);}); break;
+		case 2: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 2);}); break;
+		case 3: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 3);}); break;
+		}
 
 		auto confirm = card->addButton("confirm");
 		confirm->setColor(makeColor(127, 127, 127, 255));
@@ -3045,17 +3120,6 @@ namespace MainMenu {
 		class_info->addWidgetAction("MenuAlt1", "class_info");
 		class_info->setWidgetBack("back_button");
 
-		/*std::function<void(Button&)> callback = [index](Button& button){
-			int c = 0;
-			for (; c < num_classes; ++c) {
-				if (button.getName() == classes_in_order[c]) {
-					break;
-				}
-			}
-			--c; // exclude the random "class"
-			stats[index]->
-		};*/
-
 		const std::string prefix = "images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
 		for (int c = reduced_class_list.size() - 1; c >= 0; --c) {
 			auto name = reduced_class_list[c];
@@ -3092,16 +3156,37 @@ namespace MainMenu {
 			button->addWidgetAction("MenuStart", "confirm");
 			button->addWidgetAction("MenuAlt1", "class_info");
 			button->setWidgetBack("back_button");
-			button->setCallback([](Button& button){
+
+			static auto button_fn = [](Button& button, int index){
 				int c = 0;
 				for (; c < num_classes; ++c) {
 					if (button.getName() == classes_in_order[c]) {
 						break;
 					}
 				}
-				--c; // exclude the random "class"
+				if (c >= 1) {
+					--c; // exclude the random "class"
+					client_classes[index] = c;
+				} else {
+					auto reduced_class_list = reducedClassList(index);
+					auto random_class = reduced_class_list[(rand() % (reduced_class_list.size() - 1)) + 1];
+					for (int c = 0; c < num_classes; ++c) {
+						if (strcmp(random_class, classes_in_order[c]) == 0) {
+							client_classes[index] = c;
+							break;
+						}
+					}
+				}
+				stats[index]->clearStats();
+				initClass(index);
+			};
 
-				});
+			switch (index) {
+			case 0: button->setCallback([](Button& button){button_fn(button, 0);}); break;
+			case 1: button->setCallback([](Button& button){button_fn(button, 0);}); break;
+			case 2: button->setCallback([](Button& button){button_fn(button, 0);}); break;
+			case 3: button->setCallback([](Button& button){button_fn(button, 0);}); break;
+			}
 		}
 
 		auto first_button = subframe->findButton(reduced_class_list[0]); assert(first_button);
@@ -3152,10 +3237,10 @@ namespace MainMenu {
 			"name_box"
 		);
 
-		auto name_field = card->addField("name", 64);
+		auto name_field = card->addField("name", 128);
 		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
 		name_field->setFont(smallfont_outline);
-		name_field->setText((std::string("Player ") + std::to_string(index + 1)).c_str());
+		name_field->setText(stats[0]->name);
 		name_field->setSize(SDL_Rect{90, 34, 146, 28});
 		name_field->setColor(makeColor(166, 123, 81, 255));
 		name_field->setHJustify(Field::justify_t::LEFT);
@@ -3166,6 +3251,18 @@ namespace MainMenu {
 		name_field->setWidgetBack("back_button");
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
+		static auto name_field_fn = [](const char* text, int index) {
+			size_t len = strlen(text);
+			len = std::min(sizeof(Stat::name) - 1, len);
+			memcpy(stats[index]->name, text, len);
+			stats[index]->name[len] = '\0';
+		};
+		switch (index) {
+		case 0: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 0);}); break;
+		case 1: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 1);}); break;
+		case 2: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 2);}); break;
+		case 3: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 3);}); break;
+		}
 		name_field->select();
 
 		auto randomize_name = card->addButton("randomize_name");
@@ -3178,6 +3275,21 @@ namespace MainMenu {
 		randomize_name->setWidgetBack("back_button");
 		randomize_name->setWidgetLeft("name");
 		randomize_name->setWidgetDown("game_settings");
+		static auto randomize_name_fn = [](Button& button, int index) {
+			auto& names = stats[index]->sex == sex_t::MALE ?
+				randomPlayerNamesMale : randomPlayerNamesFemale;
+			auto name = names[rand() % names.size()].c_str();
+			name_field_fn(name, index);
+			auto card = static_cast<Frame*>(button.getParent());
+			auto field = card->findField("name"); assert(field);
+			field->setText(name);
+		};
+		switch (index) {
+		case 0: randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, 0);}); break;
+		case 1: randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, 1);}); break;
+		case 2: randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, 2);}); break;
+		case 3: randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, 3);}); break;
+		}
 		
 		auto game_settings = card->addButton("game_settings");
 		game_settings->setSize(SDL_Rect{62, 76, 202, 52});
@@ -3209,6 +3321,12 @@ namespace MainMenu {
 		male_button->setWidgetRight("female");
 		male_button->setWidgetUp("game_settings");
 		male_button->setWidgetDown("class");
+		switch (index) {
+		case 0: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 0);}); break;
+		case 1: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 1);}); break;
+		case 2: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 2);}); break;
+		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
+		}
 
 		auto female_button = card->addButton("female");
 		female_button->setColor(makeColor(127, 127, 127, 255));
@@ -3222,14 +3340,32 @@ namespace MainMenu {
 		female_button->setWidgetRight("race");
 		female_button->setWidgetUp("game_settings");
 		female_button->setWidgetDown("class");
+		switch (index) {
+		case 0: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 0);}); break;
+		case 1: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 1);}); break;
+		case 2: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 2);}); break;
+		case 3: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 3);}); break;
+		}
 
 		auto race_button = card->addButton("race");
 		race_button->setColor(makeColor(127, 127, 127, 255));
 		race_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		race_button->setSize(SDL_Rect{166, 166, 108, 52});
-		race_button->setText("Automaton");
-		race_button->setTextColor(makeColor(223, 44, 149, 255));
-		race_button->setTextHighlightColor(makeColor(223, 44, 149, 255));
+		switch (stats[index]->playerRace) {
+		case RACE_HUMAN: race_button->setText("Human"); break;
+		case RACE_SKELETON: race_button->setText("Skeleton"); break;
+		case RACE_VAMPIRE: race_button->setText("Vampire"); break;
+		case RACE_SUCCUBUS: race_button->setText("Succubus"); break;
+		case RACE_GOATMAN: race_button->setText("Goatman"); break;
+		case RACE_AUTOMATON: race_button->setText("Automaton"); break;
+		case RACE_INCUBUS: race_button->setText("Incubus"); break;
+		case RACE_GOBLIN: race_button->setText("Goblin"); break;
+		case RACE_INSECTOID: race_button->setText("Insectoid"); break;
+		case RACE_RAT: race_button->setText("Rat"); break;
+		case RACE_TROLL: race_button->setText("Troll"); break;
+		case RACE_SPIDER: race_button->setText("Spider"); break;
+		case RACE_IMP: race_button->setText("Imp"); break;
+		}
 		race_button->setFont(smallfont_outline);
 		race_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
 		race_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -3245,6 +3381,19 @@ namespace MainMenu {
 		case 3: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3);}); break;
 		}
 
+		static auto randomize_class_fn = [](Button& button, int index){
+			auto reduced_class_list = reducedClassList(index);
+			auto random_class = reduced_class_list[(rand() % (reduced_class_list.size() - 1)) + 1];
+			for (int c = 0; c < num_classes; ++c) {
+				if (strcmp(random_class, classes_in_order[c]) == 0) {
+					client_classes[index] = c;
+					stats[index]->clearStats();
+					initClass(index);
+					return;
+				}
+			}
+		};
+
 		auto randomize_class = card->addButton("randomize_class");
 		randomize_class->setColor(makeColor(127, 127, 127, 255));
 		randomize_class->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -3256,18 +3405,52 @@ namespace MainMenu {
 		randomize_class->setWidgetLeft("class");
 		randomize_class->setWidgetDown("ready");
 		randomize_class->setWidgetUp("race");
+		switch (index) {
+		case 0: randomize_class->setCallback([](Button& button){randomize_class_fn(button, 0);}); break;
+		case 1: randomize_class->setCallback([](Button& button){randomize_class_fn(button, 1);}); break;
+		case 2: randomize_class->setCallback([](Button& button){randomize_class_fn(button, 2);}); break;
+		case 3: randomize_class->setCallback([](Button& button){randomize_class_fn(button, 3);}); break;
+		}
 
 		auto class_text = card->addField("class_text", 64);
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
-		class_text->setText("Barbarian");
+		static auto class_text_fn = [](Field& field, int index){
+			auto find = classes.find(classes_in_order[client_classes[index] + 1]);
+			if (find != classes.end()) {
+				field.setText(find->second.name);
+			}
+		};
 		class_text->setFont(smallfont_outline);
 		class_text->setJustify(Field::justify_t::CENTER);
+		switch (index) {
+		case 0: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 0);}); break;
+		case 1: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 1);}); break;
+		case 2: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 2);}); break;
+		case 3: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 3);}); break;
+		}
+
+		static auto class_button_fn = [](Button& button, int index) {
+			auto find = classes.find(classes_in_order[client_classes[index] + 1]);
+			if (find != classes.end()) {
+				auto& class_info = find->second;
+				switch (class_info.dlc) {
+				case DLC::Base:
+					button.setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGBase_00.png");
+					break;
+				case DLC::MythsAndOutcasts:
+					button.setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGMyths_00.png");
+					break;
+				case DLC::LegendsAndPariahs:
+					button.setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegends_00.png");
+					break;
+				}
+				button.setBackground(find->second.image);
+			}
+		};
 
 		auto class_button = card->addButton("class");
 		class_button->setColor(makeColor(127, 127, 127, 255));
 		class_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		class_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGBase_00.png");
-		class_button->setIcon("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Barbarian_00.png");
 		class_button->setSize(SDL_Rect{46, 226, 52, 52});
 		class_button->setBorder(0);
 		class_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -3277,10 +3460,22 @@ namespace MainMenu {
 		class_button->setWidgetUp("male");
 		class_button->setWidgetDown("ready");
 		switch (index) {
-		case 0: class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0);}); break;
-		case 1: class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1);}); break;
-		case 2: class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2);}); break;
-		case 3: class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3);}); break;
+		case 0:
+			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 0);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0);});
+			break;
+		case 1:
+			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 1);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1);});
+			break;
+		case 2:
+			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 2);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2);});
+			break;
+		case 3:
+			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 3);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3);});
+			break;
 		}
 
 		auto ready_button = card->addButton("ready");

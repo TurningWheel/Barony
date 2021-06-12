@@ -307,3 +307,12 @@ void doMidgame();
 void doEndgameCitadel();
 void doEndgameClassicAndExtraMidGame();
 void doEndgameExpansion();
+
+enum CharacterDLCValidation : int
+{
+	INVALID_CHARACTER,
+	VALID_OK_CHARACTER,
+	INVALID_REQUIREDLC1,
+	INVALID_REQUIREDLC2,
+	INVALID_REQUIRE_ACHIEVEMENT
+};
