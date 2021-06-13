@@ -791,14 +791,18 @@ void Entity::actMidGamePortal()
 				if ( !strncmp(map.name, "Hell Boss", 9) )
 				{
 					movieCrawlType = MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON;
-					if ( stats[0] && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
+					if ( stats[0] && stats[0]->playerRace > 0 
+						&& stats[0]->playerRace != RACE_AUTOMATON
+						&& stats[0]->appearance == 0 )
 					{
 						movieCrawlType = MOVIE_MIDGAME_BAPHOMET_MONSTERS;
 					}
 				}
 				else if ( !strncmp(map.name, "Boss", 4) )
 				{
-					if ( stats[0] && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
+					if ( stats[0] && stats[0]->playerRace > 0 
+						&& stats[0]->playerRace != RACE_AUTOMATON
+						&& stats[0]->appearance == 0 )
 					{
 						movieCrawlType = MOVIE_MIDGAME_HERX_MONSTERS;
 					}
