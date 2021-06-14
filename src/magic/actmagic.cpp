@@ -1126,7 +1126,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				real_t spellbookDamageBonus = (my->actmagicSpellbookBonus / 100.f);
 				if ( my->actmagicCastByMagicstaff == 0 && my->actmagicCastByTinkerTrap == 0 )
 				{
-					spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, element);
+					spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element);
 				}
 
 				if (!strcmp(element->name, spellElement_force.name))

@@ -954,7 +954,7 @@ void drawSkillsSheet(const int player)
 					if ( players[player] && players[player]->entity )
 					{
 						skillDetails[0] = players[player]->entity->getManaRegenInterval(*(stats[player])) / (TICKS_PER_SECOND * 1.f);
-						if ( isSpellcasterBeginner(players[player]->entity) )
+						if ( isSpellcasterBeginner(player, players[player]->entity) )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 								uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -1986,7 +1986,7 @@ void statsHoverText(const int player, Stat* tmpStat)
 							int bonusDamage = 100;
 							if ( players[player] && players[player]->entity )
 							{
-								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[player]->entity, nullptr));
+								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr));
 							}
 							snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], bonusDamage);
 						}

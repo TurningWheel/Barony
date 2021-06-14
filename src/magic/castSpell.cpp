@@ -234,13 +234,22 @@ int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Sta
 }
 
 
-bool isSpellcasterBeginner(Entity* caster)
+bool isSpellcasterBeginner(int player, Entity* caster)
 {
-	if ( !caster )
+	if ( !caster && player < 0 )
 	{
 		return false;
 	}
-	Stat* myStats = caster->getStats();
+	Stat* myStats = nullptr;
+	if ( !caster && player >= 0 )
+	{
+		myStats = stats[player];
+		caster = players[player]->entity;
+	}
+	else
+	{
+		myStats = caster->getStats();
+	}
 	if ( !myStats )
 	{
 		return false;
@@ -249,7 +258,7 @@ bool isSpellcasterBeginner(Entity* caster)
 	{
 		return false;
 	}
-	else if ( myStats->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER )
+	else if ( std::min(std::max(0, myStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(myStats, caster)), 100) < SPELLCASTING_BEGINNER )
 	{
 		return true; //The caster has lower spellcasting skill. Cue happy fun times.
 	}
@@ -366,7 +375,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	int spellBookBonusPercent = 0;
 	if ( !using_magicstaff && !trap)
 	{
-		newbie = isSpellcasterBeginner(caster);
+		newbie = isSpellcasterBeginner(player, caster);
 
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
@@ -1318,7 +1327,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 					// spellbook 100-150%, 50 INT = 200%.
-					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, element));
+					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element));
 
 					int totalHeal = 0;
 					int oldHP = players[i]->entity->getHP();

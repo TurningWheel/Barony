@@ -2383,8 +2383,8 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 						bonus = 0;
 					}
 				}
-				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, primaryElement)));
-				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, primaryElement)));
+				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
+				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
 			}
 			if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
 			{
@@ -2767,7 +2767,7 @@ void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellTyp
 			*spellInfoLines = 3;
 			break;
 		case SPELL_TROLLS_BLOOD:
-			snprintf(spellType, 31, language[3305]);
+			snprintf(spellType, 31, language[3301]);
 			snprintf(effectTextBuffer, 255, language[3840]);
 			*spellInfoLines = 2;
 			break;
