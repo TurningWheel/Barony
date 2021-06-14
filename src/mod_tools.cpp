@@ -834,6 +834,82 @@ void ItemTooltips_t::readItemsFromFile()
 		}
 	}
 
+	int spellsRead = 0;
+	for ( rapidjson::Value::ConstMemberIterator spell_itr = d["spells"].MemberBegin();
+		spell_itr != d["spells"].MemberEnd(); ++spell_itr )
+	{
+		spellItem_t t;
+		t.internalName = spell_itr->name.GetString();
+		t.name = spell_itr->value["spell_name"].GetString();
+		t.id = spell_itr->value["spell_id"].GetInt();
+		t.spellTypeStr = spell_itr->value["spell_type"].GetString();
+		t.spellType = SPELL_TYPE_DEFAULT;
+		if ( t.spellTypeStr == "PROJECTILE" )
+		{
+			t.spellType = SPELL_TYPE_PROJECTILE;
+		}
+		else if ( t.spellTypeStr == "AREA" )
+		{
+			t.spellType = SPELL_TYPE_AREA;
+		}
+		else if ( t.spellTypeStr == "SELF" )
+		{
+			t.spellType = SPELL_TYPE_SELF;
+		}
+		else if ( t.spellTypeStr == "SELF_SUSTAIN" )
+		{
+			t.spellType = SPELL_TYPE_SELF_SUSTAIN;
+		}
+		else if ( t.spellTypeStr == "PROJECTILE_SHORT_X3" )
+		{
+			t.spellType = SPELL_TYPE_PROJECTILE_SHORT_X3;
+		}
+
+		for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["effect_tags"].Begin();
+			arr_itr != spell_itr->value["effect_tags"].End(); ++arr_itr )
+		{
+			t.spellTagsStr.push_back(arr_itr->GetString());
+			if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "DAMAGE" )
+			{
+				t.spellTags.insert(SPELL_TAG_DAMAGE);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "STATUS" )
+			{
+				t.spellTags.insert(SPELL_TAG_STATUS_EFFECT);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "UTILITY" )
+			{
+				t.spellTags.insert(SPELL_TAG_UTILITY);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "HEALING" )
+			{
+				t.spellTags.insert(SPELL_TAG_HEALING);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "CURE" )
+			{
+				t.spellTags.insert(SPELL_TAG_CURE);
+			}
+		}
+
+		t.spellbookInternalName = spell_itr->value["spellbook_internal_name"].GetString();
+
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( items[i].category != SPELLBOOK )
+			{
+				continue;
+			}
+			if ( t.spellbookInternalName == tmpItems[i].itemName )
+			{
+				t.spellbookId = i;
+			}
+		}
+		assert(spellItems.find(t.id) == spellItems.end()); // check we haven't got duplicate key
+		spellItems.insert(std::make_pair(t.id, t));
+		++spellsRead;
+	}
+	printlog("[JSON]: Successfully read %d spells from '%s'", spellsRead, inputPath.c_str());
+
 	// validation against old items.txt
 	/*for ( int i = 0; i < NUMITEMS; ++i )
 	{
@@ -875,7 +951,7 @@ void ItemTooltips_t::readTooltipsFromFile()
 		return;
 	}
 
-	const int bufSize = 65535;
+	const int bufSize = 100000;
 	char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
 	buf[count] = '\0';
@@ -1098,7 +1174,11 @@ void ItemTooltips_t::readTooltipsFromFile()
 		{
 			if ( tooltipType_itr->value["size"].HasMember("min_width") )
 			{
-				tooltip.minWidth = tooltipType_itr->value["size"]["min_width"].GetInt();
+				tooltip.minWidths["default"] = tooltipType_itr->value["size"]["min_width"].GetInt();
+			}
+			else
+			{
+				tooltip.minWidths["default"] = 0;
 			}
 			if ( tooltipType_itr->value["size"].HasMember("max_width") )
 			{
@@ -1115,6 +1195,18 @@ void ItemTooltips_t::readTooltipsFromFile()
 			else
 			{
 				tooltip.headerMaxWidth = 0;
+			}
+
+			if ( tooltipType_itr->value["size"].HasMember("item_overrides") )
+			{
+				for ( auto itemOverride_itr = tooltipType_itr->value["size"]["item_overrides"].MemberBegin();
+					itemOverride_itr != tooltipType_itr->value["size"]["item_overrides"].MemberEnd(); ++itemOverride_itr )
+				{
+					if ( itemOverride_itr->value.HasMember("min_width") )
+					{
+						tooltip.minWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["min_width"].GetInt();
+					}
+				}
 			}
 		}
 
@@ -1296,6 +1388,359 @@ std::string& ItemTooltips_t::getItemBeatitudeAdjective(Sint16 beatitude)
 	{
 		return adjectives["beatitude_status"]["uncursed"];
 	}
+}
+
+std::string& ItemTooltips_t::getProficiencyLevelName(Sint32 proficiencyLevel)
+{
+	if ( adjectives.find("proficiency_levels") == adjectives.end() )
+	{
+		return defaultString;
+	}
+
+	if ( proficiencyLevel >= SKILL_LEVEL_LEGENDARY )
+	{
+		return adjectives["proficiency_levels"]["legend"];
+	}
+	else if ( proficiencyLevel >= SKILL_LEVEL_MASTER )
+	{
+		return adjectives["proficiency_levels"]["master"];
+	}
+	else if ( proficiencyLevel >= SKILL_LEVEL_EXPERT )
+	{
+		return adjectives["proficiency_levels"]["expert"];
+	}
+	else if ( proficiencyLevel >= SKILL_LEVEL_SKILLED )
+	{
+		return adjectives["proficiency_levels"]["skilled"];
+	}
+	else if ( proficiencyLevel >= SKILL_LEVEL_BASIC )
+	{
+		return adjectives["proficiency_levels"]["basic"];
+	}
+	else if ( proficiencyLevel >= SKILL_LEVEL_NOVICE )
+	{
+		return adjectives["proficiency_levels"]["novice"];
+	}
+	else
+	{
+		return adjectives["proficiency_levels"]["none"];
+	}
+}
+
+bool ItemTooltips_t::bIsSpellDamageOrHealingType(spell_t* spell)
+{
+	if ( !spell )
+	{
+		return false;
+	}
+	if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING) != spellItems[spell->ID].spellTags.end()
+		|| spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_DAMAGE) != spellItems[spell->ID].spellTags.end() )
+	{
+		return true;
+	}
+	return false;
+}
+
+int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook)
+{
+	if ( !spell )
+	{
+		return 0;
+	}
+	node_t* rootNode = spell->elements.first;
+	spellElement_t* elementRoot = nullptr;
+	if ( rootNode )
+	{
+		elementRoot = (spellElement_t*)(rootNode->element);
+	}
+	int damage = 0;
+	int mana = 0;
+	int heal = 0;
+	spellElement_t* primaryElement = nullptr;
+	if ( elementRoot )
+	{
+		node_t* primaryNode = elementRoot->elements.first;
+		mana = elementRoot->mana;
+		heal = mana;
+		if ( primaryNode )
+		{
+			primaryElement = (spellElement_t*)(primaryNode->element);
+			if ( primaryElement )
+			{
+				damage = primaryElement->damage;
+			}
+		}
+		if ( players[player] )
+		{
+			int bonus = 0;
+			if ( spellbook && itemCategory(spellbook) == SPELLBOOK )
+			{
+				bonus = getSpellbookBonusPercent(players[player]->entity, stats[player], spellbook);
+			}
+			damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
+			heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
+		}
+		if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
+		{
+			damage = heal;
+		}
+	}
+	return damage;
+}
+
+std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item)
+{
+	spell_t* spell = getSpellFromItem(player, &item);
+	if ( !spell || spellItems.find(spell->ID) == spellItems.end() )
+	{
+		return defaultString;
+	}
+	std::string templateName = "template_desc_";
+	templateName += spellItems[spell->ID].internalName;
+
+	if ( templates.find(templateName) == templates.end() )
+	{
+		return defaultString;
+	}
+
+	std::string str;
+	for ( auto it = templates[templateName].begin();
+		it != templates[templateName].end(); ++it )
+	{
+		str += *it;
+		if ( std::next(it) != ItemTooltips.templates[templateName].end() )
+		{
+			str += '\n';
+		}
+	}
+	return str;
+}
+
+std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
+{
+	spell_t* spell = getSpellFromItem(player, &item);
+	if ( !spell || spellItems.find(spell->ID) == spellItems.end() )
+	{
+		return defaultString;
+	}
+	std::string templateName = "template_icon_";
+	templateName += spellItems[spell->ID].internalName;
+
+	if ( templates.find(templateName) == templates.end() )
+	{
+		return defaultString;
+	}
+
+	std::string str;
+	for ( auto it = templates[templateName].begin();
+		it != templates[templateName].end(); ++it )
+	{
+		str += *it;
+		if ( std::next(it) != ItemTooltips.templates[templateName].end() )
+		{
+			str += '\n';
+		}
+	}
+
+	if ( spellItems[spell->ID].internalName == "spell_summon" )
+	{
+		int numSummons = 1;
+		if ( (statGetINT(stats[player], players[player]->entity)
+			+ stats[player]->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
+		{
+			numSummons = 2;
+		}
+		char buf[128];
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf), str.c_str(), numSummons);
+		str = buf;
+	}
+	else if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING) != spellItems[spell->ID].spellTags.end()
+		|| spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_DAMAGE) != spellItems[spell->ID].spellTags.end() )
+	{
+		char buf[128];
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf), str.c_str(), getSpellDamageOrHealAmount(player, spell, &item));
+		str = buf;
+	}
+
+	return str;
+}
+
+real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
+{
+	real_t cost = 0.0;
+	switch ( spellID )
+	{
+		case SPELL_REFLECT_MAGIC:
+			cost = 6.0;
+			break;
+		case SPELL_LEVITATION:
+			cost = 0.6;
+			break;
+		case SPELL_INVISIBILITY:
+			cost = 1.0;
+			break;
+		case SPELL_LIGHT:
+			cost = 15.0;
+			break;
+		case SPELL_VAMPIRIC_AURA:
+			cost = 0.33;
+			break;
+		case SPELL_AMPLIFY_MAGIC:
+			cost = 0.25;
+			break;
+		default:
+			break;
+	}
+	return cost;
+}
+
+std::string& ItemTooltips_t::getSpellTypeString(const int player, Item& item)
+{
+	spell_t* spell = getSpellFromItem(player, &item);
+	if ( !spell )
+	{
+		return defaultString;
+	}
+	switch ( spellItems[spell->ID].spellType )
+	{
+		case SPELL_TYPE_AREA:
+			return adjectives["spell_strings"]["spell_type_area"];
+			break;
+		case SPELL_TYPE_PROJECTILE:
+			return adjectives["spell_strings"]["spell_type_projectile"];
+			break;
+		case SPELL_TYPE_SELF:
+			return adjectives["spell_strings"]["spell_type_self"];
+			break;
+		case SPELL_TYPE_SELF_SUSTAIN:
+			return adjectives["spell_strings"]["spell_type_self_sustain"];
+			break;
+		case SPELL_TYPE_PROJECTILE_SHORT_X3:
+			return adjectives["spell_strings"]["spell_type_projectile_3x"];
+			break;
+		case SPELL_TYPE_DEFAULT:
+		default:
+			return defaultString;
+			break;
+	}
+}
+
+std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
+{
+	spell_t* spell = getSpellFromItem(player, &item);
+	if ( !spell )
+	{
+		return defaultString;
+	}
+	char buf[64];
+	memset(buf, 0, sizeof(buf));
+	if ( spell->ID == SPELL_DOMINATE )
+	{
+		std::string templateName = "template_spell_cost_dominate";
+		std::string str;
+		for ( auto it = templates[templateName].begin();
+			it != templates[templateName].end(); ++it )
+		{
+			str += *it;
+			if ( std::next(it) != ItemTooltips.templates[templateName].end() )
+			{
+				str += '\n';
+			}
+		}
+		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
+	}
+	else if ( spell->ID == SPELL_DEMON_ILLUSION )
+	{
+		std::string templateName = "template_spell_cost_demon_illusion";
+		std::string str;
+		for ( auto it = templates[templateName].begin();
+			it != templates[templateName].end(); ++it )
+		{
+			str += *it;
+			if ( std::next(it) != ItemTooltips.templates[templateName].end() )
+			{
+				str += '\n';
+			}
+		}
+		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
+	}
+	else
+	{
+		std::string templateName = "template_spell_cost";
+		real_t sustainCostPerSecond = getSpellSustainCostPerSecond(spell->ID);
+		if ( sustainCostPerSecond > 0.01 )
+		{
+			templateName = "template_spell_cost_sustained";
+		}
+
+		std::string str;
+		for ( auto it = templates[templateName].begin();
+			it != templates[templateName].end(); ++it )
+		{
+			str += *it;
+			if ( std::next(it) != ItemTooltips.templates[templateName].end() )
+			{
+				str += '\n';
+			}
+		}
+		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
+		if ( players[player] && players[player]->entity )
+		{
+			if ( sustainCostPerSecond > 0.01 )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 
+					getCostOfSpell(spell, players[player]->entity), sustainCostPerSecond);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell, players[player]->entity));
+			}
+		}
+		else
+		{
+			if ( sustainCostPerSecond > 0.01 )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell), sustainCostPerSecond);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
+			}
+		}
+	}
+	return buf;
+}
+
+std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
+{
+	node_t* spellImageNode = nullptr;
+	if ( itemCategory(&item) == SPELLBOOK )
+	{
+		spellImageNode = list_Node(&items[SPELL_ITEM].images, getSpellIDFromSpellbook(item.type));
+	}
+	else if ( item.type == SPELL_ITEM )
+	{
+		spell_t* spell = getSpellFromItem(player, &item);
+		if ( spell )
+		{
+			spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID);
+		}
+		else
+		{
+			spellImageNode = list_Node(&items[SPELL_ITEM].images, 0);
+		}
+	}
+	if ( spellImageNode )
+	{
+		string_t* string = (string_t*)spellImageNode->element;
+		if ( string )
+		{
+			return string->data;
+		}
+	}
+	return "items/images/null.png";
 }
 
 std::string& ItemTooltips_t::getItemPotionAlchemyAdjective(const int player, Uint32 itemType)
@@ -1496,12 +1941,115 @@ Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& 
 
 void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute)
 {
-	auto itemTooltip = ItemTooltips.tooltips[tooltipType];
+	auto itemTooltip = tooltips[tooltipType];
 
 	char buf[128];
 	memset(buf, 0, sizeof(buf));
 
-	if ( conditionalAttribute.compare("") != 0 && items[item.type].hasAttribute(conditionalAttribute) )
+	if ( conditionalAttribute.find("SPELL_") != std::string::npos )
+	{
+		if ( conditionalAttribute == "SPELL_ICON_MANACOST" )
+		{
+			str = getCostOfSpellString(player, item);
+		}
+		else if ( conditionalAttribute == "SPELL_ICON_EFFECT" )
+		{
+			str = getSpellIconText(player, item);
+		}
+		return;
+	}
+	else if ( conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
+	{
+		if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED"
+			|| conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
+		{
+			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			if ( spell )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), spell->name);
+			}
+		}
+		else if ( conditionalAttribute == "SPELLBOOK_CAST_BONUS"
+			&& items[item.type].hasAttribute(conditionalAttribute) )
+		{
+			int spellBookBonusPercent = 0;
+			spellBookBonusPercent += getSpellbookBonusPercent(players[player]->entity, stats[player], &item);
+			spellBookBonusPercent *= ((items[item.type].attributes["SPELLBOOK_CAST_BONUS"]) / 100.0);
+
+			int spellID = getSpellIDFromSpellbook(item.type);
+			if ( spellItems.find(spellID) == spellItems.end() )
+			{
+				return;
+			}
+			SpellItemTypes spellType = spellItems[spellID].spellType;
+
+			if ( spellItems[spellID].spellTags.find(SPELL_TAG_DAMAGE) != spellItems[spellID].spellTags.end() )
+			{
+				str = "";
+				for ( auto it = ItemTooltips.templates["template_spellbook_icon_damage_bonus"].begin();
+					it != ItemTooltips.templates["template_spellbook_icon_damage_bonus"].end(); ++it )
+				{
+					str += *it;
+					if ( std::next(it) != ItemTooltips.templates["template_spellbook_icon_damage_bonus"].end() )
+					{
+						str += '\n';
+					}
+				}
+			}
+			else if ( spellItems[spellID].spellTags.find(SPELL_TAG_HEALING) != spellItems[spellID].spellTags.end() )
+			{
+				str = "";
+				for ( auto it = ItemTooltips.templates["template_spellbook_icon_heal_bonus"].begin();
+					it != ItemTooltips.templates["template_spellbook_icon_heal_bonus"].end(); ++it )
+				{
+					str += *it;
+					if ( std::next(it) != ItemTooltips.templates["template_spellbook_icon_heal_bonus"].end() )
+					{
+						str += '\n';
+					}
+				}
+			}
+			else if ( spellItems[spellID].spellTags.find(SPELL_TAG_STATUS_EFFECT) != spellItems[spellID].spellTags.end() )
+			{
+				str = "";
+				for ( auto it = ItemTooltips.templates["template_spellbook_icon_duration_bonus"].begin();
+					it != ItemTooltips.templates["template_spellbook_icon_duration_bonus"].end(); ++it )
+				{
+					str += *it;
+					if ( std::next(it) != ItemTooltips.templates["template_spellbook_icon_duration_bonus"].end() )
+					{
+						str += '\n';
+					}
+				}
+			}
+			else if ( spellItems[spellID].spellTags.find(SPELL_TAG_CURE) != spellItems[spellID].spellTags.end() )
+			{
+				str = "";
+				for ( auto it = ItemTooltips.templates["template_spellbook_icon_cureailment_bonus"].begin();
+					it != ItemTooltips.templates["template_spellbook_icon_cureailment_bonus"].end(); ++it )
+				{
+					str += *it;
+					if ( std::next(it) != ItemTooltips.templates["template_spellbook_icon_cureailment_bonus"].end() )
+					{
+						str += '\n';
+					}
+				}
+				int bonusSeconds = 10 * ((spellBookBonusPercent * 4) / 100.0); // 25% = 10 seconds, 50% = 20 seconds.
+				snprintf(buf, sizeof(buf), str.c_str(), bonusSeconds);
+				str = buf;
+				return;
+			}
+
+			snprintf(buf, sizeof(buf), str.c_str(), spellBookBonusPercent);
+		}
+		else
+		{
+			return;
+		}
+		str = buf;
+		return;
+	}
+	else if ( conditionalAttribute.compare("") != 0 && items[item.type].hasAttribute(conditionalAttribute) )
 	{
 		if ( conditionalAttribute == "STR" )
 		{
@@ -1570,7 +2118,9 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		|| tooltipType.compare("tooltip_polearm") == 0
 		|| tooltipType.find("tooltip_thrown") != std::string::npos
 		|| tooltipType.find("tooltip_ranged") != std::string::npos
-		|| tooltipType.find("tooltip_quiver") != std::string::npos )
+		|| tooltipType.find("tooltip_quiver") != std::string::npos
+		|| tooltipType.compare("tooltip_tool_pickaxe") == 0 
+		)
 	{
 		Sint32 atk = item.weaponGetAttack(stats[player]);
 		snprintf(buf, sizeof(buf), str.c_str(), atk);
@@ -1580,6 +2130,12 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		Sint32 atk = item.weaponGetAttack(stats[player]);
 		atk += 1;
 		snprintf(buf, sizeof(buf), str.c_str(), atk);
+	}
+	else if ( tooltipType.compare("tooltip_food_tin") == 0 )
+	{
+		std::string cookingMethod, protein, sides;
+		item.foodTinGetDescription(cookingMethod, protein, sides);
+		snprintf(buf, sizeof(buf), str.c_str(), protein.c_str());
 	}
 	else if ( tooltipType.find("tooltip_potion") != std::string::npos )
 	{
@@ -1642,6 +2198,10 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 
 void ItemTooltips_t::formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str)
 {
+	if ( tooltipType.find("tooltip_spell_") != std::string::npos )
+	{
+		str = getSpellDescriptionText(player, item);
+	}
 	return;
 }
 
@@ -1820,6 +2380,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		|| tooltipType.compare("tooltip_axe") == 0
 		|| tooltipType.compare("tooltip_sword") == 0
 		|| tooltipType.compare("tooltip_polearm") == 0
+		|| tooltipType.compare("tooltip_tool_pickaxe") == 0
 		|| tooltipType.find("tooltip_ranged") != std::string::npos
 		|| tooltipType.find("tooltip_quiver") != std::string::npos )
 	{
@@ -2012,6 +2573,203 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
 			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)] - 100), 
 				getItemPotionHarmAllyAdjective(item).c_str());
+		}
+	}
+	else if ( tooltipType.compare("tooltip_tool_lockpick") == 0 )
+	{
+		Sint32 PER = statGetPER(stats[player], players[player]->entity);
+		if ( detailTag.compare("lockpick_chestsdoors_unlock_chance") == 0 )
+		{
+			int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 2; // lockpick chests/doors
+			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] == SKILL_LEVEL_LEGENDARY )
+			{
+				chance = 100;
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else if ( detailTag.compare("lockpick_chests_scrap_chance") == 0 )
+		{
+			int chance = std::min(100, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + 50);
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else if ( detailTag.compare("lockpick_arrow_disarm") == 0 )
+		{
+			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)))); // disarm arrow traps
+			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+			{
+				chance = 0;
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else if ( detailTag.compare("lockpick_automaton_disarm") == 0 )
+		{
+			int chance = 0;
+			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_EXPERT )
+			{
+				chance = 100; // lockpick automatons
+			}
+			else
+			{
+				chance = (100 - 100 / (static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1))); // lockpick automatons
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.find("tooltip_food") != std::string::npos )
+	{
+		if ( detailTag.compare("food_puke_chance") == 0 )
+		{
+			int pukeChance = item.foodGetPukeChance(nullptr);
+			real_t chance = 100;
+			if ( item.status == BROKEN )
+			{
+				chance = 100.0;
+			}
+			else if ( pukeChance == 100 )
+			{
+				chance = 0.0;
+			}
+			else
+			{
+				chance *= (1.0 / std::max(1, pukeChance));
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				static_cast<int>(chance), getItemStatusAdjective(item.type, item.status).c_str());
+		}
+		else if ( detailTag.compare("food_on_cursed_sideeffect") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.find("tooltip_spellbook") != std::string::npos )
+	{
+		if ( detailTag.compare("spellbook_cast_bonus") == 0 )
+		{
+			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			if ( !spell ) { return; }
+
+			int intBonus = (statGetINT(stats[player], players[player]->entity) * 0.5);
+			int beatitudeBonus = getSpellbookBonusPercent(players[player]->entity, stats[player], &item) - intBonus;
+
+			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
+			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING)
+				!= spellItems[spell->ID].spellTags.end() )
+			{
+				damageOrHealing = adjectives["spell_strings"]["healing"];
+			}
+
+			snprintf(buf, sizeof(buf), str.c_str(),
+				intBonus, damageOrHealing.c_str(), getItemStatShortName(std::string("INT")).c_str(),
+				beatitudeBonus, damageOrHealing.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag.compare("spellbook_cast_success") == 0 )
+		{
+			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			if ( !spell ) { return; }
+
+			int spellcastingAbility = getSpellcastingAbilityFromUsingSpellbook(spell, players[player]->entity, stats[player]);
+			int chance = ((10 - (spellcastingAbility / 10)) * 20 / 3.0); // 33% after rolling to fizzle, 66% success
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else if ( detailTag.compare("spellbook_extramana_chance") == 0 )
+		{
+			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			if ( !spell ) { return; }
+
+			int spellcastingAbility = getSpellcastingAbilityFromUsingSpellbook(spell, players[player]->entity, stats[player]);
+			int chance = (10 - (spellcastingAbility / 10)) * 10;
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else if ( detailTag.compare("spellbook_magic_requirement") == 0 )
+		{
+			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			if ( !spell ) { return; }
+
+			int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
+			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
+			{
+				str.insert((size_t)0, 1, '^'); // red line character
+			}
+
+			if ( spell )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), spell->difficulty, getProficiencyLevelName(spell->difficulty).c_str());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 0, getProficiencyLevelName(0).c_str());
+			}
+		}
+		else if ( detailTag.compare("spellbook_magic_current") == 0 )
+		{
+			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			if ( !spell ) { return; }
+
+			int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
+			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
+			{
+				str.insert((size_t)0, 1, '^'); // red line character
+			}
+			Sint32 INT = stats[player] ? statGetINT(stats[player], players[player]->entity) : 0;
+			Sint32 skill = stats[player] ? stats[player]->PROFICIENCIES[PRO_MAGIC] : 0;
+			Sint32 total = std::min(SKILL_LEVEL_LEGENDARY, INT + skill);
+			snprintf(buf, sizeof(buf), str.c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.compare("tooltip_spell_item") == 0 )
+	{
+		if ( detailTag.compare("spell_damage_bonus") == 0 )
+		{
+			spell_t* spell = getSpellFromItem(player, &item);
+			if ( !spell ) { return; }
+
+			int totalDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
+			Sint32 oldINT = stats[player]->INT;
+			stats[player]->INT = 0;
+
+			int baseDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
+			stats[player]->INT = oldINT;
+
+			real_t bonusPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player]);
+
+			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
+			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING)
+				!= spellItems[spell->ID].spellTags.end() )
+			{
+				damageOrHealing = adjectives["spell_strings"]["healing"];
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
+				bonusPercent, damageOrHealing.c_str(), getItemStatShortName(std::string("INT")).c_str());
+		}
+		else if ( detailTag.compare("spell_cast_success") == 0 )
+		{
+			int spellcastingAbility = std::min(std::max(0, stats[player]->PROFICIENCIES[PRO_SPELLCASTING]
+				+ statGetINT(stats[player], players[player]->entity)), 100);
+			int chance = ((10 - (spellcastingAbility / 10)) * 20 / 3.0); // 33% after rolling to fizzle, 66% success
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else if ( detailTag.compare("spell_extramana_chance") == 0 )
+		{
+			int spellcastingAbility = std::min(std::max(0, stats[player]->PROFICIENCIES[PRO_SPELLCASTING]
+				+ statGetINT(stats[player], players[player]->entity)), 100);
+			int chance = (10 - (spellcastingAbility / 10)) * 10;
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else
+		{
+			return;
 		}
 	}
 	else

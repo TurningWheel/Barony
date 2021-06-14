@@ -14,6 +14,7 @@
 #include "../player.hpp"
 #include "../draw.hpp"
 #include "../items.hpp"
+#include "../mod_tools.hpp"
 
 #include <assert.h>
 
@@ -527,12 +528,20 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 
 	auto spriteImageFrame = slotFrame->findFrame("item sprite frame");
 	auto spriteImage = spriteImageFrame->findImage("item sprite img");
-	node_t* imagePathsNode = list_Node(&items[item->type].images, item->appearance % items[item->type].variations);
-	if ( imagePathsNode )
+	if ( item->type == SPELL_ITEM )
 	{
-		string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);
-		spriteImage->path = imagePath->data;
+		spriteImage->path = ItemTooltips.getSpellIconPath(player, *item);
 		spriteImageFrame->setDisabled(false);
+	}
+	else
+	{
+		node_t* imagePathsNode = list_Node(&items[item->type].images, item->appearance % items[item->type].variations);
+		if ( imagePathsNode )
+		{
+			string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);
+			spriteImage->path = imagePath->data;
+			spriteImageFrame->setDisabled(false);
+		}
 	}
 
 	if ( auto qtyFrame = slotFrame->findFrame("quantity frame") )
@@ -718,9 +727,41 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
 
+		// temporary
+		{
+			Frame::image_t* tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip min");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 255, 0, 0, 255);
+			tmp->disabled = true;
+			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip max");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 255);
+			tmp->disabled = true;
+			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header max");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+			tmp->disabled = true;
+			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+			tmp->disabled = true;
+			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg new");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+			tmp->disabled = true;
+		}
+
 		if ( auto attrFrame = tooltipFrame->addFrame("inventory mouse tooltip attributes frame") )
 		{
 			attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
+				0xFFFFFFFF, "images/system/inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
+			spellImageBg->disabled = true;
+			//spellImageBg->color = SDL_MapRGBA(mainsurface->format, 125, 125, 125, 228);
+			auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 40, 40 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip spell image");
+			spellImage->disabled = true;
 
 			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
 				0xFFFFFFFF, "images/system/inventory/tooltips/HUD_Tooltip_Icon_Damage_00.png", "inventory mouse tooltip primary image");

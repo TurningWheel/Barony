@@ -2632,6 +2632,38 @@ class ItemTooltips_t
 		std::string tooltip = "tooltip_default";
 	};
 
+	enum SpellItemTypes : int
+	{
+		SPELL_TYPE_DEFAULT,
+		SPELL_TYPE_PROJECTILE,
+		SPELL_TYPE_PROJECTILE_SHORT_X3,
+		SPELL_TYPE_SELF,
+		SPELL_TYPE_AREA,
+		SPELL_TYPE_SELF_SUSTAIN
+	};
+
+	enum SpellTagTypes : int
+	{
+		SPELL_TAG_DAMAGE,
+		SPELL_TAG_UTILITY,
+		SPELL_TAG_STATUS_EFFECT,
+		SPELL_TAG_HEALING,
+		SPELL_TAG_CURE
+	};
+
+	struct spellItem_t
+	{
+		Sint32 id;
+		std::string internalName;
+		std::string name;
+		std::string spellTypeStr;
+		SpellItemTypes spellType;
+		std::string spellbookInternalName;
+		Sint32 spellbookId;
+		std::vector<std::string> spellTagsStr;
+		std::set<SpellTagTypes> spellTags;
+	};
+
 	struct ItemTooltipIcons_t
 	{
 		std::string iconPath = "";
@@ -2669,7 +2701,7 @@ class ItemTooltips_t
 		std::vector<std::string> descriptionText;
 		std::map<std::string, std::vector<std::string>> detailsText;
 		std::vector<std::string> detailsTextInsertOrder;
-		int minWidth = 0;
+		std::map<std::string, int> minWidths;
 		int maxWidth = 0;
 		int headerMaxWidth = 0;
 		void setColorHeading(Uint32 color) { headingTextColor = color; }
@@ -2684,6 +2716,7 @@ public:
 	void readItemsFromFile();
 	void readTooltipsFromFile();
 	std::vector<tmpItem_t> tmpItems;
+	std::map<Sint32, spellItem_t> spellItems;
 	std::map<std::string, ItemTooltip_t> tooltips;
 	std::map<std::string, std::map<std::string, std::string>> adjectives;
 	std::map<std::string, std::vector<std::string>> templates;
@@ -2701,6 +2734,15 @@ public:
 	std::string& getItemStatFullName(std::string& attribute);
 	std::string& getItemEquipmentEffectsForIconText(std::string& attribute);
 	std::string& getItemEquipmentEffectsForAttributesText(std::string& attribute);
+	std::string& getProficiencyLevelName(Sint32 proficiencyLevel);
+	std::string getSpellIconText(const int player, Item& item);
+	std::string getSpellDescriptionText(const int player, Item& item);
+	std::string getSpellIconPath(const int player, Item& item);
+	std::string getCostOfSpellString(const int player, Item& item);
+	std::string& getSpellTypeString(const int player, Item& item);
+	real_t getSpellSustainCostPerSecond(int spellID);
+	int getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook);
+	bool bIsSpellDamageOrHealingType(spell_t* spell);
 
 	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute);
 	void formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str);
