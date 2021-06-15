@@ -37,7 +37,7 @@ void createIngameHud(int player) {
     }
 
     static const char* bigfont = "fonts/pixelmix.ttf#18";
-    static const char* smallfont = "fonts/pixel_maz.ttf#32";
+    static const char* smallfont = "fonts/pixel_maz.ttf#14";
 
     // big empty frame to serve as the root
     if (playercount == 1) {
@@ -365,7 +365,7 @@ void newIngameHud() {
 void doNewCharacterSheet(int player)
 {
     static const char* bigfont = "fonts/pixelmix.ttf#18";
-    static const char* smallfont = "fonts/pixel_maz.ttf#32";
+    static const char* smallfont = "fonts/pixel_maz.ttf#14";
 
     Frame* frame = gui->findFrame("Character sheet");
     if (!frame) {

@@ -542,7 +542,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 	}
 
 	// scroll with right stick
-	if (selectedWidget && (selectedWidget == this || selectedWidget->isChildOf(*this)) && allowScrolling && allowScrollBinds) {
+	if (allowScrolling && allowScrollBinds) {
 		Input& input = Input::inputs[owner];
 
 		// x scroll
