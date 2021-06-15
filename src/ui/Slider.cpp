@@ -141,10 +141,17 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 
 	int offX = _size.x + railSize.x - _actualSize.x;
 	int offY = _size.y + railSize.y - _actualSize.y;
-	_size.x = std::max(_size.x, _railSize.x - _handleSize.w / 2);
-	_size.y = std::max(_size.y, _railSize.y + _railSize.h / 2 - _handleSize.h / 2);
-	_size.w = std::min(_size.w, _railSize.w + _handleSize.w);
-	_size.h = _handleSize.h;
+	if (orientation == SLIDER_HORIZONTAL) {
+		_size.x = std::max(_size.x, _railSize.x - _handleSize.w / 2);
+		_size.y = std::max(_size.y, _railSize.y + _railSize.h / 2 - _handleSize.h / 2);
+		_size.w = std::min(_size.w, _railSize.w + _handleSize.w);
+		_size.h = _handleSize.h;
+	} else if (orientation == SLIDER_VERTICAL) {
+		_size.x = std::max(_size.x, _railSize.x + _railSize.w / 2 - _handleSize.w / 2);
+		_size.y = std::max(_size.y, _railSize.y - _handleSize.h / 2);
+		_size.w = _handleSize.w;
+		_size.h = std::min(_size.h, _railSize.h + _handleSize.h);
+	}
 
 	if (_size.w <= 0 || _size.h <= 0) {
 		highlightTime = result.highlightTime;
