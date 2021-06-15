@@ -59,9 +59,13 @@ int Font::sizeText(const char* str, int* out_w, int* out_h) const {
 	}
 }
 
-int Font::height() const {
+int Font::height(bool withOutline) const {
 	if (font) {
-		return TTF_FontHeight(font) + outlineSize * 2;
+		if (withOutline) {
+			return TTF_FontHeight(font) + outlineSize * 2;
+		} else {
+			return TTF_FontHeight(font);
+		}
 	} else {
 		return 0;
 	}

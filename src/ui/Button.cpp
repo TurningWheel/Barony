@@ -8,6 +8,8 @@
 #include "Image.hpp"
 #include "Text.hpp"
 
+#include <cassert>
+
 Button::Button() {
 	size.x = 0; size.w = 32;
 	size.y = 0; size.h = 32;
@@ -29,7 +31,7 @@ void Button::setIcon(const char* _icon) {
 }
 
 void Button::activate() {
-	if (style == STYLE_NORMAL) {
+	if (style == STYLE_NORMAL || style == STYLE_RADIO) {
 		setPressed(true);
 	} else {
 		setPressed(isPressed()==false);
@@ -42,6 +44,9 @@ void Button::activate() {
 }
 
 void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
+	if (invisible) {
+		return;
+	}
 	_size.x += std::max(0, size.x - _actualSize.x);
 	_size.y += std::max(0, size.y - _actualSize.y);
 	_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
@@ -73,13 +78,40 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 			drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
 		}
 	} else {
-		const char* path = pressed ?
-			(backgroundActivated.empty() ?
-				background.c_str() :
-				backgroundActivated.c_str()) :
-			background.c_str();
-		Image* background_img = Image::get(path);
-		background_img->drawColor(nullptr, scaledSize, focused ? highlightColor : color);
+		const char* path = "";
+		if (pressed) {
+			if (!backgroundActivated.empty()) {
+				path = backgroundActivated.c_str();
+			} else if (!backgroundHighlighted.empty()) {
+				path = backgroundHighlighted.c_str();
+			} else {
+				path = background.c_str();
+			}
+		} else if (focused) {
+			if (!backgroundHighlighted.empty()) {
+				path = backgroundHighlighted.c_str();
+			} else {
+				path = background.c_str();
+			}
+		} else {
+			path = background.c_str();
+		}
+		Frame::image_t image;
+		image.path = path;
+		image.color = focused ? highlightColor : color;
+		image.disabled = false;
+		image.name = "temp";
+		image.ontop = false;
+		image.pos = {0, 0, size.w, size.h};
+		image.tiled = false;
+		auto frame = static_cast<Frame*>(parent);
+		frame->drawImage(&image, _size,
+			SDL_Rect{
+				std::max(0, _actualSize.x - size.x),
+				std::max(0, _actualSize.y - size.y),
+				0, 0
+			}
+		);
 	}
 
 	SDL_Rect scroll{0, 0, 0, 0};
@@ -90,10 +122,31 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 		scroll.y -= size.y - _actualSize.y;
 	}
 
-	if (style != STYLE_CHECKBOX || pressed) {
+	if ((style != STYLE_CHECKBOX && style != STYLE_RADIO) || pressed) {
 		if (!text.empty()) {
-			Text* _text = Text::get(text.c_str(), font.c_str());
-			if (_text) {
+			Font* _font = Font::get(font.c_str());
+
+			int lines = 1;
+			for (auto c : text) {
+				if (c == '\n') {
+					++lines;
+				}
+			}
+			int fullH = lines * _font->height(false) + _font->getOutline() * 2;
+
+			char* buf = (char*)malloc(text.size() + 1);
+			memcpy(buf, text.c_str(), text.size() + 1);
+			int yoff = 0;
+			char* nexttoken;
+			char* token = strtok(buf, "\n");
+			do {
+				nexttoken = strtok(NULL, "\n");
+
+				std::string str = token;
+
+				Text* _text = Text::get(str.c_str(), font.c_str());
+				assert(_text);
+
 				int x, y, w, h;
 				w = _text->getWidth();
 				h = _text->getHeight();
@@ -105,12 +158,14 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 					x = size.w - w - border;
 				}
 				if (vjustify == LEFT || vjustify == TOP) {
-					y = border;
+					y = yoff + border + std::min(size.h - fullH, 0);
 				} else if (vjustify == CENTER) {
-					y = (size.h - h) / 2;
+					y = yoff + (size.h - fullH) / 2;
 				} else if (vjustify == RIGHT || vjustify == BOTTOM) {
-					y = size.h - h - border;
+					y = yoff - border + std::max(size.h - fullH, 0);
 				}
+
+				yoff += _font->height(false);
 
 				SDL_Rect pos = _size;
 				pos.x += std::max(0, x - scroll.x);
@@ -118,7 +173,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 				pos.w = std::min(w, _size.w - x + scroll.x) + std::min(0, x - scroll.x);
 				pos.h = std::min(h, _size.h - y + scroll.y) + std::min(0, y - scroll.y);
 				if (pos.w <= 0 || pos.h <= 0) {
-					return;
+					goto next;
 				}
 
 				SDL_Rect section;
@@ -127,7 +182,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 				section.w = pos.w;
 				section.h = pos.h;
 				if (section.w == 0 || section.h == 0) {
-					return;
+					goto next;
 				}
 
 				SDL_Rect scaledPos;
@@ -140,8 +195,9 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 				} else {
 					_text->drawColor(section, scaledPos, textColor);
 				}
-			}
-		} else if (icon.c_str()) {
+			} while ((token = nexttoken) != NULL);
+			free(buf);
+		} else if (!icon.empty()) {
 			Image* iconImg = Image::get(icon.c_str());
 			if (iconImg) {
 				int w = iconImg->getWidth();
@@ -157,7 +213,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 				pos.w = std::min(w, _size.w - x + scroll.x) + std::min(0, x - scroll.x);
 				pos.h = std::min(h, _size.h - y + scroll.y) + std::min(0, y - scroll.y);
 				if (pos.w <= 0 || pos.h <= 0) {
-					return;
+					goto next;
 				}
 
 				SDL_Rect section;
@@ -166,7 +222,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 				section.w = pos.w;
 				section.h = pos.h;
 				if (section.w == 0 || section.h == 0) {
-					return;
+					goto next;
 				}
 
 				SDL_Rect scaledPos;
@@ -178,6 +234,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 			}
 		}
 	}
+next:
 
 	// drop down buttons have an image on the right side (presumably a down arrow)
 	if (style == STYLE_DROPDOWN) {
@@ -219,7 +276,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Widget::process();
 
 	result_t result;
-	if (style == STYLE_CHECKBOX || style == STYLE_TOGGLE) {
+	if (style == STYLE_CHECKBOX || style == STYLE_RADIO || style == STYLE_TOGGLE) {
 		result.tooltip = nullptr;
 		result.highlightTime = SDL_GetTicks();
 		result.highlighted = false;
@@ -235,7 +292,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	if (disabled) {
 		highlightTime = result.highlightTime;
 		highlighted = false;
-		if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+		if (style == STYLE_NORMAL || style == STYLE_DROPDOWN) {
 			reallyPressed = pressed = false;
 		}
 		return result;
@@ -243,7 +300,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	if (!usable) {
 		highlightTime = result.highlightTime;
 		highlighted = false;
-		if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+		if (style == STYLE_NORMAL || style == STYLE_DROPDOWN) {
 			reallyPressed = pressed = false;
 		}
 		return result;
@@ -284,7 +341,13 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		if (mousestatus[SDL_BUTTON_LEFT]) {
 			select();
 			if (rectContainsPoint(_size, mousex, mousey)) {
-				result.pressed = pressed = (reallyPressed == false);
+				if (style == STYLE_RADIO) {
+					if (!reallyPressed) {
+						result.pressed = pressed = reallyPressed = true;
+					}
+				} else {
+					result.pressed = pressed = (reallyPressed == false);
+				}
 			} else {
 				pressed = reallyPressed;
 			}
@@ -292,14 +355,14 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 			if (pressed != reallyPressed) {
 				result.clicked = true;
 			}
-			if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+			if (style == STYLE_NORMAL || style == STYLE_DROPDOWN) {
 				reallyPressed = pressed = false;
 			} else {
 				pressed = reallyPressed;
 			}
 		}
 	} else {
-		if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+		if (style == STYLE_NORMAL || style == STYLE_DROPDOWN) {
 			reallyPressed = pressed = false;
 		} else {
 			pressed = reallyPressed;

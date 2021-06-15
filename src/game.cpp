@@ -2811,6 +2811,9 @@ void handleEvents(void)
 
 	// calculate app rate
 	t = SDL_GetTicks();
+	if (ot == 0.0) {
+		ot = t;
+	}
 	real_t timesync = t - ot;
 	ot = t;
 
@@ -5252,7 +5255,7 @@ int main(int argc, char** argv)
 
 						if (newui)
 						{
-							doMainMenu();
+							MainMenu::doMainMenu();
 						}
 						else
 						{
@@ -5638,7 +5641,7 @@ int main(int argc, char** argv)
 					// handle menu
 					if (newui)
 					{
-						doMainMenu();
+						MainMenu::doMainMenu();
 					}
 					else
 					{

@@ -302,6 +302,8 @@ int initGame()
 #else
 #ifdef NINTENDO
 		//#error "No DLC support on SWITCH yet :(" //TODO: Resolve this.
+		enabledDLCPack1 = true;
+		enabledDLCPack2 = true;
 #else // NINTENDO
 		if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
 		{

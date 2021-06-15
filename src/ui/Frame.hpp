@@ -208,6 +208,12 @@ public:
 	//! deselect all frame elements recursively
 	virtual void deselect() override;
 
+	//! activates the frame so we can select and activate list entries
+	virtual void activate() override;
+
+	//! activates the current entry selection
+	void activateSelection();
+
 	//! determines if the mouse is currently within the frame or not
 	//! @param curSize used by the recursion algorithm, ignore or always pass nullptr
 	//! @param curActualSize used by the recursion algorithm, ignore or always pass nullptr
@@ -221,6 +227,12 @@ public:
 	//! whether to enable/disable scrolling on this frame
 	//! @param enabled whether to enable or disable scrolling
 	void enableScroll(bool enabled);
+
+	//! draw an image in the frame, clipping it within the given rectangles
+	//! @param image the image to draw
+	//! @param _size the size of the rectangle to clip against
+	//! @param scroll the amount by which to offset the image in x/y
+	void drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll);
 
 	virtual type_t					getType() const override { return WIDGET_FRAME; }
 	const char*						getFont() const { return font.c_str(); }
@@ -238,6 +250,10 @@ public:
 	const bool						isHollow() const { return hollow; }
 	const bool						isDropDown() const { return dropDown; }
 	const bool						isScrollBarsEnabled() const { return scrollbars; }
+	const bool						isAllowScrollBinds() const { return allowScrollBinds; }
+	const bool						isActivated() const { return activated; }
+	const SDL_Rect&					getListOffset() const { return listOffset; }
+	int								getSelection() const { return selection; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -252,6 +268,8 @@ public:
 	void	setHollow(const bool _hollow) { hollow = _hollow; }
 	void	setDropDown(const bool _dropDown) { dropDown = _dropDown; }
 	void	setScrollBarsEnabled(const bool _scrollbars) { scrollbars = _scrollbars; }
+	void	setAllowScrollBinds(const bool _allow) { allowScrollBinds = _allow; }
+	void	setListOffset(SDL_Rect _size) { listOffset = _size; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -271,8 +289,11 @@ private:
 	bool dropDown = false;								//!< if true, the frame is destroyed when specific inputs register
 	Uint32 dropDownClicked = 0;							//!< key states stored for removing drop downs
 	int selection = -1;									//!< entry selection
+	bool allowScrollBinds = true;						//!< if true, scroll wheel + right stick can scroll frame
 	bool allowScrolling = false;						//!< must be enabled for any kind of scrolling/actualSize to work
 	bool scrollbars = true;								//!< must be true for sliders to be drawn/usable
+	bool activated = false;								//!< true if this frame is consuming input (to navigate list entries)
+	SDL_Rect listOffset{0, 0, 0, 0};					//!< frame list offset in x, y
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;
@@ -281,9 +302,12 @@ private:
 	std::vector<Slider*> sliders;
 	std::vector<entry_t*> list;
 
+	//! scroll to the current list entry selection in the frame
 	void scrollToSelection();
+
+	//! activate the given list entry
+	//! @param entry the entry to activate
 	void activateEntry(entry_t& entry);
-	void drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll);
 
 	//! draws the frame and all of its subelements
 	//! @param _size real position of the frame onscreen
@@ -296,7 +320,7 @@ private:
 	//! @param _actualSize offset into the frame space (scroll)
 	//! @param usable true if another object doesn't have the mouse's attention, false otherwise
 	//! @return compiled results of frame processing
-	result_t process(SDL_Rect _size, SDL_Rect actualSize, const bool usable);
+	result_t process(SDL_Rect _size, SDL_Rect actualSize, Widget* selectedWidget, const bool usable);
 };
 
 // root frame object

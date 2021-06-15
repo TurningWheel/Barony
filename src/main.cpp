@@ -330,7 +330,6 @@ SDL_Surface* font8x8_bmp = nullptr;
 SDL_Surface* font12x12_bmp = nullptr;
 SDL_Surface* font16x16_bmp = nullptr;
 SDL_Surface* fancyWindow_bmp = nullptr;
-SDL_Surface* backdrop_loading_bmp = nullptr;
 SDL_Surface** sprites = nullptr;
 SDL_Surface** tiles = nullptr;
 std::unordered_map<std::string, SDL_Surface*> achievementImages;

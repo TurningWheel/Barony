@@ -291,3 +291,28 @@ void revertResolution();
 
 extern std::vector<std::pair<std::string, int>> menuOptions;
 void initMenuOptions();
+
+class Stat;
+int isCharacterValidFromDLC(Stat& myStats, int characterClass);
+
+// handle intro stage stuff
+void doQuitGame();
+void doNewGame(bool makeHighscore);
+void doCredits();
+void doEndgame();
+void doIntro();
+void doEndgameHerx();
+void doEndgameDevil();
+void doMidgame();
+void doEndgameCitadel();
+void doEndgameClassicAndExtraMidGame();
+void doEndgameExpansion();
+
+enum CharacterDLCValidation : int
+{
+	INVALID_CHARACTER,
+	VALID_OK_CHARACTER,
+	INVALID_REQUIREDLC1,
+	INVALID_REQUIREDLC2,
+	INVALID_REQUIRE_ACHIEVEMENT
+};

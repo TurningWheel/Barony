@@ -24,7 +24,7 @@ void createLoadingScreen(real_t progress) {
 	loading_frame->addImage(
 		SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY},
 		makeColor(255, 255, 255, 255),
-		"images/system/backdrop_loading.png",
+		"images/ui/LoadingScreen/backdrop_loading.png",
 		"backdrop"
 	);
 	loading_frame->addImage(

@@ -32,6 +32,7 @@ public:
     bool			isSelected() const { return selected; }
     bool			isDisabled() const { return disabled; }
     bool            isInvisible() const { return invisible; }
+    bool            isHideGlyphs() const { return hideGlyphs; }
     Uint32          getHighlightTime() const { return highlightTime; }
     Sint32          getOwner() const { return owner; }
     void			(*getTickCallback() const)(Widget&) { return callback; }
@@ -45,6 +46,7 @@ public:
     void    setSelected(bool _selected) { selected = _selected; }
     void	setDisabled(bool _disabled) { disabled = _disabled; }
     void    setInvisible(bool _invisible) { invisible = _invisible; }
+    void    setHideGlyphs(bool _hideGlyphs) { hideGlyphs = _hideGlyphs; }
     void    setOwner(Sint32 _owner) { owner = _owner; }
     void	setTickCallback(void (*const fn)(Widget&)) { callback = fn; }
     void    setWidgetTab(const char* s) { widgetMovements.emplace("MenuTab", s); }
@@ -82,6 +84,11 @@ public:
     //! @return the next widget to select, or nullptr if no widget was selected
     Widget* handleInput();
 
+    //! return true if this widget is the descendant of another widget
+    //! @param widget the widget who is supposedly our ancestor
+    //! @return true if it is, otherwise false
+    bool isChildOf(Widget& widget);
+
     //! adopt a new widget as one of our children
     //! @param widget the widget to adopt
     void adoptWidget(Widget& widget);
@@ -107,6 +114,7 @@ protected:
     bool disabled = false;							//!< if true, the widget is unusable and grayed out
     bool invisible = false;                         //!< if true, widget is both unusable and invisible
 	bool toBeDeleted = false;						//!< if true, the widget will be removed at the end of its process
+    bool hideGlyphs = false;                        //!< true if you don't want to see button prompts on the widget
     Uint32 highlightTime = 0u;						//!< records the time since the widget was highlighted
     Sint32 owner = 0;                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
     void (*callback)(Widget&) = nullptr;			//!< the callback to use each frame for this widget

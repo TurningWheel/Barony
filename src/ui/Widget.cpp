@@ -5,6 +5,7 @@
 #include "Frame.hpp"
 #include "Image.hpp"
 #include "../input.hpp"
+#include "../engine/audio/sound.hpp"
 
 Widget::~Widget() {
 	if (parent) {
@@ -77,6 +78,9 @@ Widget* Widget::handleInput() {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result) {
+#ifndef EDITOR
+						playSound(495, 64);
+#endif
 						result->scrollParent();
 						return result;
 					}
@@ -149,6 +153,18 @@ Widget* Widget::findSelectedWidget() {
 	return nullptr;
 }
 
+bool Widget::isChildOf(Widget& widget) {
+	if (!parent) {
+		return false;
+	}
+	else if (parent == &widget) {
+		return true;
+	}
+	else {
+		return parent->isChildOf(widget);
+	}
+}
+
 void Widget::adoptWidget(Widget& widget) {
 	if (widget.parent) {
 		for (auto node = widget.parent->widgets.begin(); node != widget.parent->widgets.end(); ++node) {
@@ -158,6 +174,7 @@ void Widget::adoptWidget(Widget& widget) {
 			}
 		}
 	}
+	widget.owner = owner;
 	widget.parent = this;
 	widgets.push_back(&widget);
 }
@@ -166,6 +183,9 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 #ifndef NINTENDO
 	return;
 #else
+	if (hideGlyphs) {
+		return;
+	}
 	if (!selectedWidget) {
 		return;
 	}

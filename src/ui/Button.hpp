@@ -38,6 +38,7 @@ public:
 		STYLE_NORMAL,
 		STYLE_TOGGLE,
 		STYLE_CHECKBOX,
+		STYLE_RADIO,
 		STYLE_DROPDOWN,
 		STYLE_MAX
 	};
@@ -82,6 +83,7 @@ public:
 	const int					getHJustify() const { return static_cast<int>(hjustify); }
 	const int					getVJustify() const { return static_cast<int>(vjustify); }
 	const char*					getBackground() const { return background.c_str(); }
+	const char*					getBackgroundHighlighted() const { return backgroundHighlighted.c_str(); }
 	const char*					getBackgroundActivated() const { return backgroundActivated.c_str(); }
 
 	void	setBorder(int _border) { border = _border; }
@@ -99,6 +101,7 @@ public:
 	void	setStyle(int _style) { style = static_cast<style_t>(_style); }
 	void	setCallback(void (*const fn)(Button&)) { callback = fn; }
 	void	setBackground(const char* image) { background = image; }
+	void	setBackgroundHighlighted(const char* image) { backgroundHighlighted = image; }
 	void	setBackgroundActivated(const char* image) { backgroundActivated = image; }
 	void	setJustify(const int _justify) { hjustify = vjustify = static_cast<justify_t>(_justify); }
 	void	setHJustify(const int _justify) { hjustify = static_cast<justify_t>(_justify); }
@@ -107,6 +110,7 @@ public:
 private:
 	void (*callback)(Button&) = nullptr;			//!< native callback for clicking
 	std::string background;							//!< background image
+	std::string backgroundHighlighted;				//!< background image when highlighted/selected
 	std::string backgroundActivated;				//!< background image when activated
 	std::string text;								//!< button text, if any
 	std::string font = Font::defaultFont;			//!< button font

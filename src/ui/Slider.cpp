@@ -39,20 +39,29 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 	_railSize.w = std::min(railSize.w, _size.w - railSize.x + _actualSize.x) + std::min(0, railSize.x - _actualSize.x);
 	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 	if (_railSize.w > 0 && _railSize.h > 0) {
-		int x = (_railSize.x) * (float)xres / (float)Frame::virtualScreenX;
-		int y = (_railSize.y) * (float)yres / (float)Frame::virtualScreenY;
 		if (railImage.empty()) {
+			int x = (_railSize.x) * (float)xres / (float)Frame::virtualScreenX;
+			int y = (_railSize.y) * (float)yres / (float)Frame::virtualScreenY;
 			int w = (_railSize.x + _railSize.w) * (float)xres / (float)Frame::virtualScreenX;
 			int h = (_railSize.y + _railSize.h) * (float)yres / (float)Frame::virtualScreenY;
 			drawDepressed(x, y, w, h);
 		} else {
-			auto img = Image::get(railImage.c_str());
-			if (img) {
-				// TODO section this image!
-				int w = (_railSize.w) * (float)xres / (float)Frame::virtualScreenX;
-				int h = (_railSize.h) * (float)yres / (float)Frame::virtualScreenY;
-				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, focused ? highlightColor : color);
-			}
+			Frame::image_t image;
+			image.path = railImage;
+			image.color = focused ? highlightColor : color;
+			image.disabled = false;
+			image.name = "temp";
+			image.ontop = false;
+			image.pos = {0, 0, railSize.w, railSize.h};
+			image.tiled = false;
+			auto frame = static_cast<Frame*>(parent);
+			frame->drawImage(&image, _railSize,
+				SDL_Rect{
+					std::max(0, _actualSize.x - railSize.x),
+					std::max(0, _actualSize.y - railSize.y),
+					0, 0
+				}
+			);
 		}
 	}
 	
@@ -62,20 +71,32 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
 	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
 	if (_handleSize.w > 0 && _handleSize.h > 0) {
-		int x = (_handleSize.x) * (float)xres / (float)Frame::virtualScreenX;
-		int y = (_handleSize.y) * (float)yres / (float)Frame::virtualScreenY;
-		if (handleImage.empty()) {
+		auto& imageToUse = activated ?
+			(handleImageActivated.empty() ? handleImage : handleImageActivated) :
+			handleImage;
+		if (imageToUse.empty()) {
+			int x = (_handleSize.x) * (float)xres / (float)Frame::virtualScreenX;
+			int y = (_handleSize.y) * (float)yres / (float)Frame::virtualScreenY;
 			int w = (_handleSize.x + _handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
 			int h = (_handleSize.y + _handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
 			drawWindow(x, y, w, h);
 		} else {
-			auto img = Image::get(handleImage.c_str());
-			if (img) {
-				// TODO section this image!
-				int w = (_handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
-				int h = (_handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
-				img->drawColor(nullptr, SDL_Rect{x, y, w, h}, focused ? highlightColor : color);
-			}
+			Frame::image_t image;
+			image.path = imageToUse;
+			image.color = focused ? highlightColor : color;
+			image.disabled = false;
+			image.name = "temp";
+			image.ontop = false;
+			image.pos = {0, 0, handleSize.w, handleSize.h};
+			image.tiled = false;
+			auto frame = static_cast<Frame*>(parent);
+			frame->drawImage(&image, _handleSize,
+				SDL_Rect{
+					std::max(0, _actualSize.x - handleSize.x),
+					std::max(0, _actualSize.y - handleSize.y),
+					0, 0
+				}
+			);
 		}
 	}
 
@@ -120,10 +141,17 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 
 	int offX = _size.x + railSize.x - _actualSize.x;
 	int offY = _size.y + railSize.y - _actualSize.y;
-	_size.x = std::max(_size.x, _railSize.x - _handleSize.w / 2);
-	_size.y = std::max(_size.y, _railSize.y + _railSize.h / 2 - _handleSize.h / 2);
-	_size.w = std::min(_size.w, _railSize.w + _handleSize.w);
-	_size.h = _handleSize.h;
+	if (orientation == SLIDER_HORIZONTAL) {
+		_size.x = std::max(_size.x, _railSize.x - _handleSize.w / 2);
+		_size.y = std::max(_size.y, _railSize.y + _railSize.h / 2 - _handleSize.h / 2);
+		_size.w = std::min(_size.w, _railSize.w + _handleSize.w);
+		_size.h = _handleSize.h;
+	} else if (orientation == SLIDER_VERTICAL) {
+		_size.x = std::max(_size.x, _railSize.x + _railSize.w / 2 - _handleSize.w / 2);
+		_size.y = std::max(_size.y, _railSize.y - _handleSize.h / 2);
+		_size.w = _handleSize.w;
+		_size.h = std::min(_size.h, _railSize.h + _handleSize.h);
+	}
 
 	if (_size.w <= 0 || _size.h <= 0) {
 		highlightTime = result.highlightTime;
