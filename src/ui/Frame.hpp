@@ -208,6 +208,12 @@ public:
 	//! deselect all frame elements recursively
 	virtual void deselect() override;
 
+	//! activates the frame so we can select and activate list entries
+	virtual void activate() override;
+
+	//! activates the current entry selection
+	void activateSelection();
+
 	//! determines if the mouse is currently within the frame or not
 	//! @param curSize used by the recursion algorithm, ignore or always pass nullptr
 	//! @param curActualSize used by the recursion algorithm, ignore or always pass nullptr
@@ -245,6 +251,9 @@ public:
 	const bool						isDropDown() const { return dropDown; }
 	const bool						isScrollBarsEnabled() const { return scrollbars; }
 	const bool						isAllowScrollBinds() const { return allowScrollBinds; }
+	const bool						isActivated() const { return activated; }
+	const SDL_Rect&					getListOffset() const { return listOffset; }
+	int								getSelection() const { return selection; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -260,6 +269,7 @@ public:
 	void	setDropDown(const bool _dropDown) { dropDown = _dropDown; }
 	void	setScrollBarsEnabled(const bool _scrollbars) { scrollbars = _scrollbars; }
 	void	setAllowScrollBinds(const bool _allow) { allowScrollBinds = _allow; }
+	void	setListOffset(SDL_Rect _size) { listOffset = _size; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -282,6 +292,8 @@ private:
 	bool allowScrollBinds = true;						//!< if true, scroll wheel + right stick can scroll frame
 	bool allowScrolling = false;						//!< must be enabled for any kind of scrolling/actualSize to work
 	bool scrollbars = true;								//!< must be true for sliders to be drawn/usable
+	bool activated = false;								//!< true if this frame is consuming input (to navigate list entries)
+	SDL_Rect listOffset{0, 0, 0, 0};					//!< frame list offset in x, y
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;

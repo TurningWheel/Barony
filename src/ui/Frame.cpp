@@ -278,11 +278,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 
 			// get the size of the rendered text
 			int textSizeW = text->getWidth();
-			int textSizeH = entrySize;
+			int textSizeH = text->getHeight();
 
 			SDL_Rect pos;
-			pos.x = _size.x + border - scroll.x;
-			pos.y = _size.y + border + i * entrySize - scroll.y;
+			pos.x = _size.x + border + listOffset.x - scroll.x;
+			pos.y = _size.y + border + listOffset.y + i * entrySize - scroll.y;
 			pos.w = textSizeW;
 			pos.h = textSizeH;
 
@@ -461,20 +461,23 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
-	if (selected) {
-		Input& input = Input::inputs[owner];
+	Input& input = Input::inputs[owner];
 
+	// widget to move to after processing inputs
+	Widget* destWidget = nullptr;
+
+	if (activated) {
 		// unselect list
 		if (input.consumeBinaryToggle("MenuCancel")) {
 			deselect();
-			std::string widgetBack;
-			auto find = widgetMovements.find("MenuCancel");
+			std::string deselectTarget;
+			auto find = widgetMovements.find("MenuListCancel");
 			if (find != widgetMovements.end()) {
-				widgetBack = find->second;
+				deselectTarget = find->second;
 			}
-			if (!widgetBack.empty()) {
+			if (!deselectTarget.empty()) {
 				Frame* root = findSearchRoot(); assert(root);
-				Widget* search = root->findWidget(widgetBack.c_str(), true);
+				Widget* search = root->findWidget(deselectTarget.c_str(), true);
 				if (search) {
 					search->select();
 				}
@@ -489,19 +492,19 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 			if (selection != -1) {
 				activateEntry(*list[selection]);
 			}
+			std::string deselectTarget;
+			auto find = widgetMovements.find("MenuListConfirm");
+			if (find != widgetMovements.end()) {
+				deselectTarget = find->second;
+			}
+			if (!deselectTarget.empty()) {
+				Frame* root = findSearchRoot(); assert(root);
+				Widget* search = root->findWidget(deselectTarget.c_str(), true);
+				if (search) {
+					search->select();
+				}
+			}
 			if (dropDown) {
-				std::string widgetBack;
-				auto find = widgetMovements.find("MenuCancel");
-				if (find != widgetMovements.end()) {
-					widgetBack = find->second;
-				}
-				if (!widgetBack.empty()) {
-					Frame* root = findSearchRoot(); assert(root);
-					Widget* search = root->findWidget(widgetBack.c_str(), true);
-					if (search) {
-						search->select();
-					}
-				}
 				toBeDeleted = true;
 			}
 		}
@@ -516,14 +519,21 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 				}
 			} else {
 				if (input.consumeBinaryToggle("MenuUp")) {
-					--selection;
+					selection = std::max(0, selection - 1);
 					scrollToSelection();
 				}
 				if (input.consumeBinaryToggle("MenuDown")) {
-					selection = selection == list.size() - 1 ? -1 : selection + 1;
+					selection = std::min((int)list.size() - 1, selection + 1);
 					scrollToSelection();
 				}
 			}
+		}
+	} else if (selected) {
+		if (!destWidget) {
+			destWidget = handleInput();
+		}
+		if (destWidget) {
+			deselect();
 		}
 	}
 
@@ -586,9 +596,6 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 		this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - size.w));
 		this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - size.h));
 	}
-
-	// widget to move to after processing inputs
-	Widget* destWidget = nullptr;
 
 	// process frames
 	{
@@ -1183,7 +1190,8 @@ Frame* Frame::getParent() {
 }
 
 void Frame::deselect() {
-	selected = false;
+	Widget::deselect();
+	activated = false;
 	for (auto frame : frames) {
 		if (frame->getOwner() == owner) {
 			frame->deselect();
@@ -1203,6 +1211,19 @@ void Frame::deselect() {
 		if (slider->getOwner() == owner) {
 			slider->deselect();
 		}
+	}
+}
+
+void Frame::activate() {
+	activated = true;
+	if (selection < 0 || selection >= list.size()) {
+		selection = 0;
+	}
+}
+
+void Frame::activateSelection() {
+	if (selection >= 0 && selection < list.size()) {
+		activateEntry(*list[selection]);
 	}
 }
 

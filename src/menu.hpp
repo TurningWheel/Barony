@@ -292,6 +292,9 @@ void revertResolution();
 extern std::vector<std::pair<std::string, int>> menuOptions;
 void initMenuOptions();
 
+class Stat;
+int isCharacterValidFromDLC(Stat& myStats, int characterClass);
+
 // handle intro stage stuff
 void doQuitGame();
 void doNewGame(bool makeHighscore);

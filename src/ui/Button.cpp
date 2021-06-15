@@ -29,7 +29,7 @@ void Button::setIcon(const char* _icon) {
 }
 
 void Button::activate() {
-	if (style == STYLE_NORMAL) {
+	if (style == STYLE_NORMAL || style == STYLE_RADIO) {
 		setPressed(true);
 	} else {
 		setPressed(isPressed()==false);
@@ -120,7 +120,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 		scroll.y -= size.y - _actualSize.y;
 	}
 
-	if (style != STYLE_CHECKBOX || pressed) {
+	if ((style != STYLE_CHECKBOX && style != STYLE_RADIO) || pressed) {
 		if (!text.empty()) {
 			Font* _font = Font::get(font.c_str());
 
@@ -274,7 +274,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Widget::process();
 
 	result_t result;
-	if (style == STYLE_CHECKBOX || style == STYLE_TOGGLE) {
+	if (style == STYLE_CHECKBOX || style == STYLE_RADIO || style == STYLE_TOGGLE) {
 		result.tooltip = nullptr;
 		result.highlightTime = SDL_GetTicks();
 		result.highlighted = false;
@@ -290,7 +290,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	if (disabled) {
 		highlightTime = result.highlightTime;
 		highlighted = false;
-		if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+		if (style == STYLE_NORMAL || style == STYLE_DROPDOWN) {
 			reallyPressed = pressed = false;
 		}
 		return result;
@@ -298,7 +298,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	if (!usable) {
 		highlightTime = result.highlightTime;
 		highlighted = false;
-		if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+		if (style == STYLE_NORMAL || style == STYLE_DROPDOWN) {
 			reallyPressed = pressed = false;
 		}
 		return result;
@@ -339,7 +339,13 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		if (mousestatus[SDL_BUTTON_LEFT]) {
 			select();
 			if (rectContainsPoint(_size, mousex, mousey)) {
-				result.pressed = pressed = (reallyPressed == false);
+				if (style == STYLE_RADIO) {
+					if (!reallyPressed) {
+						result.pressed = pressed = reallyPressed = true;
+					}
+				} else {
+					result.pressed = pressed = (reallyPressed == false);
+				}
 			} else {
 				pressed = reallyPressed;
 			}
@@ -347,14 +353,14 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 			if (pressed != reallyPressed) {
 				result.clicked = true;
 			}
-			if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+			if (style == STYLE_NORMAL || style == STYLE_DROPDOWN) {
 				reallyPressed = pressed = false;
 			} else {
 				pressed = reallyPressed;
 			}
 		}
 	} else {
-		if (style != STYLE_CHECKBOX && style != STYLE_TOGGLE) {
+		if (style == STYLE_NORMAL || style == STYLE_DROPDOWN) {
 			reallyPressed = pressed = false;
 		} else {
 			pressed = reallyPressed;
