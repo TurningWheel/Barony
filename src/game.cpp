@@ -5255,7 +5255,7 @@ int main(int argc, char** argv)
 
 						if (newui)
 						{
-							doMainMenu();
+							MainMenu::doMainMenu();
 						}
 						else
 						{
@@ -5641,7 +5641,7 @@ int main(int argc, char** argv)
 					// handle menu
 					if (newui)
 					{
-						doMainMenu();
+						MainMenu::doMainMenu();
 					}
 					else
 					{
