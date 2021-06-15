@@ -58,7 +58,6 @@ namespace MainMenu {
 	static inline void soundActivate() {
 		playSound(493, 48);
 	}
->>>>>>> e2dfac6e (put all the main menu stuff in its own namespace)
 
 	static inline void soundCancel() {
 		playSound(499, 48);
@@ -555,12 +554,13 @@ namespace MainMenu {
 		allSettings.cheats_enabled = false;
 	}
 
+	void settingsCustomizeInventorySorting(Button&);
+
 	static void inventorySortingDefaults(Button& button) {
 		soundActivate();
 		allSettings.inventory_sorting = InventorySorting::reset();
 		auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
 		window->removeSelf();
-		void settingsCustomizeInventorySorting(Button& button);
 		settingsCustomizeInventorySorting(button);
 	}
 

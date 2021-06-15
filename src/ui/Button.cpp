@@ -8,6 +8,8 @@
 #include "Image.hpp"
 #include "Text.hpp"
 
+#include <cassert>
+
 Button::Button() {
 	size.x = 0; size.w = 32;
 	size.y = 0; size.h = 32;

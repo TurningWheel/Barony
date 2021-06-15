@@ -78,7 +78,9 @@ Widget* Widget::handleInput() {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result) {
+#ifndef EDITOR
 						playSound(495, 64);
+#endif
 						result->scrollParent();
 						return result;
 					}
