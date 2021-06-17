@@ -91,15 +91,32 @@ void Text::render() {
 
 	width = 0;
 	height = 0;
+	
+	// this is the old check
+	//for (int y = 0; y < surf->h; ++y) {
+	//	for (int x = 0; x < surf->w; ++x) {
+	//		if (((Uint32 *)surf->pixels)[x + y * scan] != 0) { 
+	//			width = std::max(width, x);
+	//			height = std::max(height, y);
+	//		}
+	//	}
+	//}
+
+	height = surf->h - 1; // height can use the surf->h data immediately.
 	int scan = surf->pitch / surf->format->BytesPerPixel;
-	for (int y = 0; y < surf->h; ++y) {
-		for (int x = 0; x < surf->w; ++x) {
-			if (((Uint32 *)surf->pixels)[x + y * scan] != 0) {
+	for ( int y = 0; y < surf->h; ++y ) {
+		for ( int x = 0; x < surf->w; ++x ) {
+			// check upper byte (alpha) data. remaining 3 bytes are always 0x00FFFFFF
+			if ( (0xFF000000 & ((Uint32 *)surf->pixels)[x + y * scan]) != 0 ) {
 				width = std::max(width, x);
-				height = std::max(height, y);
 			}
+			/*printlog("%d %d | %u %u", x, y,
+				0x00FFFFFF & ((Uint32 *)surf->pixels)[x + y * scan],
+				(0xFF000000 & ((Uint32 *)surf->pixels)[x + y * scan]) >> 24);*/
 		}
 	}
+	width += 1; // usually there was a trailing empty column of pixels, so add this to meet parity with old width check
+
 	width += 4;
 	height += 4;
 
