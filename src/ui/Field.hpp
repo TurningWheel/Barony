@@ -80,7 +80,7 @@ public:
 	void	setScroll(const bool _scroll) { scroll = _scroll; }
 	void	setCallback(const Widget::Callback* fn) { callback = fn; }
 	void	setFont(const char* _font) { font = _font; }
-	void    reflowTextToFit();
+	void    reflowTextToFit(const int characterOffset);
 
 private:
 	Widget::Args params;								//!< script arguments to use when calling script

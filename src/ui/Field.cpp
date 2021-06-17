@@ -271,15 +271,26 @@ void Field::setText(const char* _text) {
 	}
 }
 
-void Field::reflowTextToFit() {
+void Field::reflowTextToFit(const int characterOffset) {
 	if ( text == nullptr || textlen <= 1 ) {
 		return;
 	}
+
+	if ( auto getText = Text::get(text, font.c_str()) )
+	{
+		if ( getText->getWidth() <= (getSize().w - getSize().x) )
+		{
+			// no work to do
+			return;
+		}
+	}
+
 	Font* actualFont = Font::get(font.c_str());
 	if ( !actualFont )
 	{
 		return;
 	}
+
 
 	std::string reflowText = "";
 
@@ -300,7 +311,7 @@ void Field::reflowTextToFit() {
 	int currentCharacters = 0;
 	for ( int i = 0; text[i] != '\0'; ++i )
 	{
-		if ( (currentCharacters - 1) > charactersPerLine )
+		if ( (currentCharacters - characterOffset) > charactersPerLine )
 		{
 			int findSpace = reflowText.rfind(' ', reflowText.size());
 			if ( findSpace != std::string::npos )
