@@ -3655,7 +3655,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN )
 		{
 			this->char_torchtime++;
-			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10260) )
+			if ( (this->char_torchtime >= 7500 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10500) )
 			{
 				this->char_torchtime = 0;
 				if ( player >= 0 && players[player]->isLocalPlayer() )
@@ -5316,6 +5316,17 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 			INT += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
 		}
 	}
+	if ( entitystats->breastplate != nullptr )
+	{
+		if ( entitystats->breastplate->type == HEALER_DOUBLET || entitystats->breastplate->type == WIZARD_DOUBLET )
+		{
+			if ( entitystats->breastplate->beatitude >= 0 || cursedItemIsBuff )
+			{
+				INT++;
+			}
+			INT += (cursedItemIsBuff ? abs(entitystats->breastplate->beatitude) : entitystats->breastplate->beatitude);
+		}
+	}
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
 		INT -= 8;
@@ -6789,6 +6800,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( pose == PLAYER_POSE_GOLEM_SMASH )
 						{
 							createParticleRock(hit.entity);
+							if ( multiplayer == SERVER )
+							{
+								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, 0);
+							}
 						}
 						else
 						{
