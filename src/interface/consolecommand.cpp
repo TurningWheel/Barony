@@ -167,10 +167,15 @@ void consoleCommand(char const * const command_str)
 			return;
 		}
 		strcpy(name, command_str + 11);
+
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
 			if ( strstr(items[c].name_identified, name) )
 			{
+				if ( c == TOOL_TINOPENER )
+				{
+					dropItem(newItem(FOOD_TIN, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+				}
 				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 				break;
 			}
@@ -192,6 +197,10 @@ void consoleCommand(char const * const command_str)
 		{
 			if ( strstr(items[c].name_identified, name) )
 			{
+				if ( c == TOOL_TINOPENER )
+				{
+					dropItem(newItem(FOOD_TIN, WORN, -2, 1, rand(), true, &stats[clientnum]->inventory), 0);
+				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
 			}
@@ -213,6 +222,10 @@ void consoleCommand(char const * const command_str)
 		{
 			if ( strstr(items[c].name_identified, name) )
 			{
+				if ( c == TOOL_TINOPENER )
+				{
+					dropItem(newItem(FOOD_TIN, WORN, 2, 1, rand(), true, &stats[clientnum]->inventory), 0);
+				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
 			}
@@ -2686,7 +2699,7 @@ void consoleCommand(char const * const command_str)
 		{
 			disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
 		}
-		else if ( !strncmp(command_str, "/allspells", 10) )
+		else if ( !strncmp(command_str, "/allspells1", 11) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
 			{
@@ -2694,7 +2707,7 @@ void consoleCommand(char const * const command_str)
 				return;
 			}
 
-			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+			for ( auto it = allGameSpells.begin(); it != allGameSpells.begin() + 29; ++it )
 			{
 				spell_t* spell = *it;
 				bool learned = addSpell(spell->ID, clientnum, true);
@@ -3376,6 +3389,21 @@ void consoleCommand(char const * const command_str)
 				itemPickup(clientnum, potion);
 				//free(potion);
 			}
+		}
+		else if ( !strncmp(command_str, "/allspells2", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			for ( auto it = allGameSpells.begin() + 29; it != allGameSpells.end(); ++it )
+			{
+				spell_t* spell = *it;
+				bool learned = addSpell(spell->ID, clientnum, true);
+			}
+			return;
 		}
 		else
 		{
