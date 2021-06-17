@@ -1524,32 +1524,45 @@ void actThrown(Entity* my)
 		}
 		else
 		{
-			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-			entity->flags[INVISIBLE] = true;
-			entity->flags[UPDATENEEDED] = true;
-			entity->flags[PASSABLE] = true;
-			entity->x = ox;
-			entity->y = oy;
-			entity->z = oz;
-			entity->sizex = my->sizex;
-			entity->sizey = my->sizey;
-			entity->yaw = my->yaw;
-			entity->pitch = my->pitch;
-			entity->roll = my->roll;
-			entity->vel_x = THROWN_VELX / 2;
-			entity->vel_y = THROWN_VELY / 2;
-			entity->vel_z = my->vel_z;
-			entity->behavior = &actItem;
-			entity->skill[10] = item->type;
-			entity->skill[11] = item->status;
-			entity->skill[12] = item->beatitude;
-			entity->skill[13] = item->count;
-			entity->skill[14] = item->appearance;
-			entity->skill[15] = item->identified;
-			if ( itemCategory(item) == THROWN )
+			bool dropItem = true;
+			if ( itemCategory(item) == GEM )
 			{
-				//Hack to make monsters stop catching your shurikens and chakrams.
-				entity->parent = my->parent;
+				if ( hit.entity && rand() % 2 == 0 )
+				{
+					dropItem = false;
+					createParticleShatteredGem(hit.entity, my->sprite);
+					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+				}
+			}
+			if ( dropItem )
+			{
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+				entity->flags[INVISIBLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+				entity->x = ox;
+				entity->y = oy;
+				entity->z = oz;
+				entity->sizex = my->sizex;
+				entity->sizey = my->sizey;
+				entity->yaw = my->yaw;
+				entity->pitch = my->pitch;
+				entity->roll = my->roll;
+				entity->vel_x = THROWN_VELX / 2;
+				entity->vel_y = THROWN_VELY / 2;
+				entity->vel_z = my->vel_z;
+				entity->behavior = &actItem;
+				entity->skill[10] = item->type;
+				entity->skill[11] = item->status;
+				entity->skill[12] = item->beatitude;
+				entity->skill[13] = item->count;
+				entity->skill[14] = item->appearance;
+				entity->skill[15] = item->identified;
+				if ( itemCategory(item) == THROWN )
+				{
+					//Hack to make monsters stop catching your shurikens and chakrams.
+					entity->parent = my->parent;
+				}
 			}
 			free(item);
 			list_RemoveNode(my->mynode);

@@ -3204,6 +3204,47 @@ void createParticleRock(Entity* parent)
 	}
 }
 
+void createParticleShatteredGem(Entity* parent, int sprite)
+{
+	if ( !parent )
+	{
+		return;
+	}
+	for ( int c = 0; c < 5; c++ )
+	{
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x + (-4 + rand() % 9);
+		entity->y = parent->y + (-4 + rand() % 9);
+		entity->z = 7.5;
+		entity->yaw = c * 2 * PI / 5;//(rand() % 360) * PI / 180.0;
+		entity->roll = (rand() % 360) * PI / 180.0;
+
+		entity->vel_x = 0.2 * cos(entity->yaw);
+		entity->vel_y = 0.2 * sin(entity->yaw);
+		entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
+
+		real_t scale = .4;
+		entity->scalex = scale;
+		entity->scaley = scale;
+		entity->scalez = scale;
+
+		entity->skill[0] = 50; // particle life
+		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
+
+		entity->behavior = &actParticleRock;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
+
 void actParticleRock(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 || my->z > 10 )

@@ -2299,6 +2299,9 @@ void clientHandlePacket()
 				case PARTICLE_EFFECT_ABILITY_ROCK:
 					createParticleRock(entity);
 					break;
+				case PARTICLE_EFFECT_SHATTERED_GEM:
+					createParticleShatteredGem(entity, sprite);
+					break;
 				case PARTICLE_EFFECT_SHADOW_INVIS:
 					createParticleDropRising(entity, sprite, 1.0);
 					break;

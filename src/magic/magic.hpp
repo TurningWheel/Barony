@@ -141,6 +141,7 @@ static const int PARTICLE_EFFECT_SHADOW_TAG = 21;
 static const int PARTICLE_EFFECT_SPELLBOT_ORBIT = 22;
 static const int PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH = 23;
 static const int PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER = 24;
+static const int PARTICLE_EFFECT_SHATTERED_GEM = 25;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -524,6 +525,7 @@ void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
 Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, int particleType);
 void createParticleRock(Entity* parent);
+void createParticleShatteredGem(Entity* parent, int sprite);
 void createParticleErupt(Entity* parent, int sprite);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
 Entity* createParticleTimer(Entity* parent, int duration, int sprite);
