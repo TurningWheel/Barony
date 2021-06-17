@@ -892,16 +892,21 @@ void ItemTooltips_t::readItemsFromFile()
 		}
 
 		t.spellbookInternalName = spell_itr->value["spellbook_internal_name"].GetString();
+		t.magicstaffInternalName = spell_itr->value["magicstaff_internal_name"].GetString();
 
 		for ( int i = 0; i < NUMITEMS; ++i )
 		{
-			if ( items[i].category != SPELLBOOK )
+			if ( items[i].category != SPELLBOOK && items[i].category != MAGICSTAFF )
 			{
 				continue;
 			}
 			if ( t.spellbookInternalName == tmpItems[i].itemName )
 			{
 				t.spellbookId = i;
+			}
+			if ( t.magicstaffInternalName == tmpItems[i].itemName )
+			{
+				t.magicstaffId = i;
 			}
 		}
 		assert(spellItems.find(t.id) == spellItems.end()); // check we haven't got duplicate key
@@ -951,7 +956,7 @@ void ItemTooltips_t::readTooltipsFromFile()
 		return;
 	}
 
-	const int bufSize = 100000;
+	const int bufSize = 120000;
 	char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
 	buf[count] = '\0';
@@ -1182,19 +1187,19 @@ void ItemTooltips_t::readTooltipsFromFile()
 			}
 			if ( tooltipType_itr->value["size"].HasMember("max_width") )
 			{
-				tooltip.maxWidth = tooltipType_itr->value["size"]["max_width"].GetInt();
+				tooltip.maxWidths["default"] = tooltipType_itr->value["size"]["max_width"].GetInt();
 			}
 			else
 			{
-				tooltip.maxWidth = 0;
+				tooltip.maxWidths["default"] = 0;
 			}
 			if ( tooltipType_itr->value["size"].HasMember("max_header_width") )
 			{
-				tooltip.headerMaxWidth = tooltipType_itr->value["size"]["max_header_width"].GetInt();
+				tooltip.headerMaxWidths["default"] = tooltipType_itr->value["size"]["max_header_width"].GetInt();
 			}
 			else
 			{
-				tooltip.headerMaxWidth = 0;
+				tooltip.headerMaxWidths["default"] = 0;
 			}
 
 			if ( tooltipType_itr->value["size"].HasMember("item_overrides") )
@@ -1205,6 +1210,14 @@ void ItemTooltips_t::readTooltipsFromFile()
 					if ( itemOverride_itr->value.HasMember("min_width") )
 					{
 						tooltip.minWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["min_width"].GetInt();
+					}
+					if ( itemOverride_itr->value.HasMember("max_width") )
+					{
+						tooltip.maxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_width"].GetInt();
+					}
+					if ( itemOverride_itr->value.HasMember("max_header_width") )
+					{
+						tooltip.headerMaxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_header_width"].GetInt();
 					}
 				}
 			}
@@ -1222,7 +1235,34 @@ void ItemTooltips_t::readTooltipsFromFile()
 
 std::string& ItemTooltips_t::getItemStatusAdjective(Uint32 itemType, Status status)
 {
-	if ( items[itemType].category == ARMOR 
+	if ( itemType >= ARTIFACT_ORB_BLUE && itemType <= ARTIFACT_ORB_GREEN )
+	{
+		if ( adjectives.find("jewelry_status") == adjectives.end() )
+		{
+			return defaultString;
+		}
+		switch ( status )
+		{
+			case BROKEN:
+				return adjectives["jewelry_status"]["broken"];
+				break;
+			case DECREPIT:
+				return adjectives["jewelry_status"]["decrepit"];
+				break;
+			case WORN:
+				return adjectives["jewelry_status"]["worn"];
+				break;
+			case SERVICABLE:
+				return adjectives["jewelry_status"]["serviceable"];
+				break;
+			case EXCELLENT:
+				return adjectives["jewelry_status"]["excellent"];
+				break;
+			default:
+				return defaultString;
+		}
+	}
+	else if ( items[itemType].category == ARMOR 
 		|| items[itemType].category == WEAPON
 		|| items[itemType].category == MAGICSTAFF
 		|| items[itemType].category == TOOL
@@ -1473,12 +1513,19 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 		if ( players[player] )
 		{
 			int bonus = 0;
-			if ( spellbook && itemCategory(spellbook) == SPELLBOOK )
+			if ( spellbook && itemCategory(spellbook) == MAGICSTAFF )
 			{
-				bonus = getSpellbookBonusPercent(players[player]->entity, stats[player], spellbook);
+				// no modifier.
 			}
-			damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
-			heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
+			else
+			{
+				if ( spellbook && itemCategory(spellbook) == SPELLBOOK )
+				{
+					bonus = getSpellbookBonusPercent(players[player]->entity, stats[player], spellbook);
+				}
+				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
+				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
+			}
 		}
 		if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
 		{
@@ -1518,7 +1565,27 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 
 std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 {
-	spell_t* spell = getSpellFromItem(player, &item);
+	spell_t* spell = nullptr;
+	
+	if ( itemCategory(&item) == SPELLBOOK )
+	{
+		spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+	}
+	else if ( itemCategory(&item) == MAGICSTAFF )
+	{
+		for ( auto& s : spellItems )
+		{
+			if ( s.second.magicstaffId == item.type )
+			{
+				spell = getSpellFromID(s.first);
+				break;
+			}
+		}
+	}
+	else
+	{
+		spell = getSpellFromItem(player, &item);
+	}
 	if ( !spell || spellItems.find(spell->ID) == spellItems.end() )
 	{
 		return defaultString;
@@ -1716,7 +1783,27 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 {
 	node_t* spellImageNode = nullptr;
-	if ( itemCategory(&item) == SPELLBOOK )
+	if ( itemCategory(&item) == MAGICSTAFF )
+	{
+		spell_t* spell = nullptr;
+		for ( auto& s : spellItems )
+		{
+			if ( s.second.magicstaffId == item.type )
+			{
+				spell = getSpellFromID(s.first);
+				break;
+			}
+		}
+		if ( spell )
+		{
+			spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID);
+		}
+		else
+		{
+			spellImageNode = list_Node(&items[SPELL_ITEM].images, 0);
+		}
+	}
+	else if ( itemCategory(&item) == SPELLBOOK )
 	{
 		spellImageNode = list_Node(&items[SPELL_ITEM].images, getSpellIDFromSpellbook(item.type));
 	}
@@ -1946,7 +2033,15 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	char buf[128];
 	memset(buf, 0, sizeof(buf));
 
-	if ( conditionalAttribute.find("SPELL_") != std::string::npos )
+	if ( conditionalAttribute.find("magicstaff_") != std::string::npos )
+	{
+		if ( str == "" )
+		{
+			str = getSpellIconText(player, item);
+		}
+		return;
+	}
+	else if ( conditionalAttribute.find("SPELL_") != std::string::npos )
 	{
 		if ( conditionalAttribute == "SPELL_ICON_MANACOST" )
 		{
@@ -1960,8 +2055,12 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	}
 	else if ( conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
 	{
-		if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED"
-			|| conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
+		if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
+		{
+			str = getSpellIconText(player, item);
+			return;
+		}
+		else if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
 		{
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( spell )
@@ -2085,9 +2184,54 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		{
 			if ( conditionalAttribute == "EFF_REGENERATION" )
 			{
-				int healring = std::min(3, std::max(item.beatitude + 1, 1));
-				snprintf(buf, sizeof(buf), str.c_str(), healring,
+				if ( item.type == RING_REGENERATION )
+				{
+					int healring = std::min(3, std::max(item.beatitude + 1, 1));
+					snprintf(buf, sizeof(buf), str.c_str(), healring,
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
+				else
+				{
+					int healring = 1;
+					snprintf(buf, sizeof(buf), str.c_str(), healring,
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
+			}
+			else if ( conditionalAttribute == "EFF_MP_REGENERATION" )
+			{
+				int manaring = 1;
+				snprintf(buf, sizeof(buf), str.c_str(), manaring,
 					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute.find("EFF_ARTIFACT_") != std::string::npos )
+			{
+				real_t amount = 0.0;
+				real_t percent = getArtifactWeaponEffectChance(item.type, *stats[player], &amount);
+				if ( conditionalAttribute == "EFF_ARTIFACT_SWORD" )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), percent, amount * 100);
+				}
+				else if ( conditionalAttribute == "EFF_ARTIFACT_AXE" )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), percent, (amount * 100) - 100);
+				}
+				else if ( conditionalAttribute == "EFF_ARTIFACT_MACE" )
+				{
+					amount = amount / MAGIC_REGEN_TIME;
+					snprintf(buf, sizeof(buf), str.c_str(), 100 * amount);
+				}
+				else if ( conditionalAttribute == "EFF_ARTIFACT_SPEAR" )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), percent, amount * 100);
+				}
+				else if ( conditionalAttribute == "EFF_ARTIFACT_BOW" )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), percent, amount * 100);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), percent, amount);
+				}
 			}
 			else
 			{
@@ -2108,15 +2252,18 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	}
 
 	if ( tooltipType.find("tooltip_armor") != std::string::npos
+		|| tooltipType.find("tooltip_offhand") != std::string::npos
 		|| tooltipType.find("tooltip_ring") != std::string::npos )
 	{
 		Sint32 AC = item.armorGetAC(stats[player]);
 		snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(std::string("AC")).c_str());
 	}
-	else if ( tooltipType.compare("tooltip_mace") == 0
-		|| tooltipType.compare("tooltip_sword") == 0 
-		|| tooltipType.compare("tooltip_polearm") == 0
+	else if ( tooltipType.find("tooltip_mace") != std::string::npos
+		|| tooltipType.find("tooltip_sword") != std::string::npos
+		|| tooltipType.find("tooltip_whip") != std::string::npos
+		|| tooltipType.find("tooltip_polearm") != std::string::npos
 		|| tooltipType.find("tooltip_thrown") != std::string::npos
+		|| tooltipType.find("tooltip_gem") != std::string::npos
 		|| tooltipType.find("tooltip_ranged") != std::string::npos
 		|| tooltipType.find("tooltip_quiver") != std::string::npos
 		|| tooltipType.compare("tooltip_tool_pickaxe") == 0 
@@ -2125,7 +2272,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		Sint32 atk = item.weaponGetAttack(stats[player]);
 		snprintf(buf, sizeof(buf), str.c_str(), atk);
 	}
-	else if ( tooltipType.compare("tooltip_axe") == 0 )
+	else if ( tooltipType.find("tooltip_axe") != std::string::npos )
 	{
 		Sint32 atk = item.weaponGetAttack(stats[player]);
 		atk += 1;
@@ -2189,6 +2336,17 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			item.beatitude = oldBeatitude;
 		}
 	}
+	else if ( tooltipType.find("tooltip_scroll") != std::string::npos )
+	{
+		if ( conditionalAttribute == "SCROLL_LABEL" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), item.getScrollLabel());
+		}
+		else
+		{
+			return;
+		}
+	}
 	else
 	{
 		return;
@@ -2223,6 +2381,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	memset(buf, 0, sizeof(buf));
 
 	if ( tooltipType.find("tooltip_armor") != std::string::npos 
+		|| tooltipType.find("tooltip_offhand") != std::string::npos
 		|| tooltipType.find("tooltip_amulet") != std::string::npos
 		|| tooltipType.find("tooltip_ring") != std::string::npos )
 	{
@@ -2338,9 +2497,50 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			}
 		}
 		else if ( detailTag.compare("equipment_on_cursed_sideeffect") == 0
-			|| detailTag.compare("ring_on_cursed_sideeffect") == 0 )
+			|| detailTag.compare("ring_on_cursed_sideeffect") == 0 
+			|| detailTag.compare("armor_on_cursed_sideeffect") == 0 )
 		{
 			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag.compare("artifact_armor_on_degraded") == 0 )
+		{
+			int statusModifier = std::max(DECREPIT, item.status) - 3;
+			snprintf(buf, sizeof(buf), str.c_str(), statusModifier, getItemStatusAdjective(item.type, item.status).c_str());
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.find("tooltip_gem") != std::string::npos )
+	{
+		int proficiency = PRO_RANGED;
+		if ( detailTag.compare("weapon_base_atk") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(),
+				items[item.type].hasAttribute("ATK") ? items[item.type].attributes["ATK"] : 0);
+		}
+		else if ( detailTag.compare("on_bless_or_curse") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(),
+				shouldInvertEquipmentBeatitude(stats[player]) ? abs(item.beatitude) : item.beatitude,
+				getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag.compare("thrown_atk_from_player_stat") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
+		}
+		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
+		{
+			int skillLVL = stats[player]->PROFICIENCIES[proficiency] / 10;
+			snprintf(buf, sizeof(buf), str.c_str(), skillLVL,
+				getItemProficiencyName(proficiency).c_str());
+		}
+		else if ( detailTag == "EFF_FEATHER" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(),
+				items[item.type].hasAttribute(detailTag) ? items[item.type].attributes["EFF_FEATHER"] : 0,
+				getItemEquipmentEffectsForAttributesText(detailTag).c_str());
 		}
 		else
 		{
@@ -2376,32 +2576,34 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
-	else if ( tooltipType.compare("tooltip_mace") == 0 
-		|| tooltipType.compare("tooltip_axe") == 0
-		|| tooltipType.compare("tooltip_sword") == 0
-		|| tooltipType.compare("tooltip_polearm") == 0
+	else if ( tooltipType.find("tooltip_mace") != std::string::npos
+		|| tooltipType.find("tooltip_axe") != std::string::npos
+		|| tooltipType.find("tooltip_sword") != std::string::npos
+		|| tooltipType.find("tooltip_polearm") != std::string::npos
+		|| tooltipType.find("tooltip_whip") != std::string::npos
 		|| tooltipType.compare("tooltip_tool_pickaxe") == 0
 		|| tooltipType.find("tooltip_ranged") != std::string::npos
 		|| tooltipType.find("tooltip_quiver") != std::string::npos )
 	{
 		int proficiency = PRO_SWORD;
-		if ( tooltipType.compare("tooltip_mace") == 0 )
+		if ( tooltipType.find("tooltip_mace") != std::string::npos )
 		{
 			proficiency = PRO_MACE;
 		}
-		else if ( tooltipType.compare("tooltip_axe") == 0 )
+		else if ( tooltipType.find("tooltip_axe") != std::string::npos )
 		{
 			proficiency = PRO_AXE;
 		}
-		else if ( tooltipType.compare("tooltip_sword") == 0 )
+		else if ( tooltipType.find("tooltip_sword") != std::string::npos )
 		{
 			proficiency = PRO_SWORD;
 		}
-		else if ( tooltipType.compare("tooltip_polearm") == 0 )
+		else if ( tooltipType.find("tooltip_polearm") != std::string::npos )
 		{
 			proficiency = PRO_POLEARM;
 		}
-		else if ( tooltipType.find("tooltip_ranged") != std::string::npos )
+		else if ( tooltipType.find("tooltip_ranged") != std::string::npos
+			|| tooltipType.compare("tooltip_whip") == 0 )
 		{
 			proficiency = PRO_RANGED;
 		}
@@ -2430,14 +2632,35 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			int statusModifier = item.status - 3;
 			snprintf(buf, sizeof(buf), str.c_str(), statusModifier, getItemStatusAdjective(item.type, item.status).c_str());
 		}
+		else if ( detailTag.compare("artifact_weapon_on_degraded") == 0 )
+		{
+			int statusModifier = (item.status - 3) * 2;
+			snprintf(buf, sizeof(buf), str.c_str(), statusModifier, getItemStatusAdjective(item.type, item.status).c_str());
+		}
 		else if ( detailTag.compare("weapon_skill_modifier") == 0 )
 		{
-			int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
-			snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
+			if ( proficiency == PRO_POLEARM )
+			{
+				//int weaponEffectiveness = -8 + (stats[player]->PROFICIENCIES[proficiency] / 3); // -8% to +25%
+				int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
+			}
+			else
+			{
+				int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
+			}
 		}
 		else if ( detailTag.compare("weapon_atk_from_player_stat") == 0 )
 		{
-			if ( proficiency == PRO_RANGED )
+			if ( item.type == TOOL_WHIP )
+			{
+				int atk = (stats[player] ? statGetDEX(stats[player], players[player]->entity) : 0);
+				atk += (stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+				atk = std::min(atk / 2, atk);
+				snprintf(buf, sizeof(buf), str.c_str(), atk);
+			}
+			else if ( proficiency == PRO_RANGED )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetDEX(stats[player], players[player]->entity) : 0);
 			}
@@ -2766,6 +2989,51 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				+ statGetINT(stats[player], players[player]->entity)), 100);
 			int chance = (10 - (spellcastingAbility / 10)) * 10;
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else if ( detailTag.compare("attribute_spell_charm") == 0 )
+		{
+			int leaderChance = ((statGetCHR(stats[player], players[player]->entity) + 
+				stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 5;
+			int intChance = (statGetINT(stats[player], players[player]->entity) * 2);
+			snprintf(buf, sizeof(buf), str.c_str(), intChance, leaderChance);
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.compare("tooltip_magicstaff") == 0 )
+	{
+		if ( detailTag.compare("magicstaff_charm_degrade_chance") == 0 )
+		{
+			int degradeChance = 100;
+			if ( item.status > WORN )
+			{
+				degradeChance = 33;
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), degradeChance, getItemStatusAdjective(item.type, item.status).c_str());
+		}
+		else if ( detailTag.compare("magicstaff_degrade_chance") == 0 )
+		{
+			int degradeChance = 33;
+			snprintf(buf, sizeof(buf), str.c_str(), degradeChance);
+		}
+		else if ( detailTag.compare("attribute_spell_charm") == 0 )
+		{
+			int leaderChance = ((statGetCHR(stats[player], players[player]->entity) +
+				stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+			snprintf(buf, sizeof(buf), str.c_str(), leaderChance);
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.compare("tooltip_scroll") == 0 )
+	{
+		if ( detailTag.compare("scroll_on_cursed_sideeffect") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
 		else
 		{

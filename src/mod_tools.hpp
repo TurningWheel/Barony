@@ -2659,7 +2659,9 @@ class ItemTooltips_t
 		std::string spellTypeStr;
 		SpellItemTypes spellType;
 		std::string spellbookInternalName;
+		std::string magicstaffInternalName;
 		Sint32 spellbookId;
+		Sint32 magicstaffId;
 		std::vector<std::string> spellTagsStr;
 		std::set<SpellTagTypes> spellTags;
 	};
@@ -2702,8 +2704,8 @@ class ItemTooltips_t
 		std::map<std::string, std::vector<std::string>> detailsText;
 		std::vector<std::string> detailsTextInsertOrder;
 		std::map<std::string, int> minWidths;
-		int maxWidth = 0;
-		int headerMaxWidth = 0;
+		std::map<std::string, int> maxWidths;
+		std::map<std::string, int> headerMaxWidths;
 		void setColorHeading(Uint32 color) { headingTextColor = color; }
 		void setColorDescription(Uint32 color) { descriptionTextColor = color; }
 		void setColorDetails(Uint32 color) { detailsTextColor = color; }
