@@ -296,6 +296,9 @@ int initGame()
 
 		loadItemLists();
 
+		ItemTooltips.readItemsFromFile();
+		ItemTooltips.readTooltipsFromFile();
+
 		updateLoadingScreen(94);
 
 #if defined(USE_EOS) || defined(STEAMWORKS)

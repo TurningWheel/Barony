@@ -44,7 +44,7 @@ void createIngameHud(int player) {
     static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
 #else
     static const char* bigfont = "fonts/pixelmix.ttf#18";
-    static const char* smallfont = "fonts/pixel_maz.ttf#32";
+    static const char* smallfont = "fonts/pixel_maz.ttf#14";
 #endif // NINTENDO
 
     // big empty frame to serve as the root
@@ -1135,7 +1135,7 @@ void doNewCharacterSheet(int player)
     static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
 #else // NINTENDO
     static const char* bigfont = "fonts/pixelmix.ttf#18";
-    static const char* smallfont = "fonts/pixel_maz.ttf#32";
+    static const char* smallfont = "fonts/pixel_maz.ttf#14";
 #endif // NINTENDO
 
     Frame* frame = gui->findFrame("Character sheet");
@@ -1185,13 +1185,15 @@ void doNewCharacterSheet(int player)
     }
 }
 
+static Uint32 gui_ticks = 0u;
 void doFrames() {
-    if ( gui ) 
-    {
-        Frame::result_t gui_result = gui->process();
-        gui->draw();
-        if ( !gui_result.usable ) {
-            return;
-        }
-    }
+	if ( gui )
+	{
+		while ( gui_ticks < ticks )
+		{
+			(void)gui->process();
+			++gui_ticks;
+		}
+		gui->draw();
+	}
 }

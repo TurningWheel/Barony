@@ -48,7 +48,7 @@ void Text::render() {
 	// load font
 	std::string strToRender;
 	std::string fontName;
-	Uint32 fontIndex = 0u;
+	size_t fontIndex = 0u;
 	if ((fontIndex = name.find(fontBreak)) != std::string::npos) {
 		fontName = name.substr(fontIndex + 1, UINT32_MAX);
 		strToRender = name.substr(0, fontIndex).c_str();
@@ -56,6 +56,12 @@ void Text::render() {
 		fontName = Font::defaultFont;
 		strToRender = name.c_str();
 	}
+#ifdef NINTENDO
+	// fixes weird crash in SDL_ttf when string length < 2
+	while ( strToRender.size() < 2 ) {
+		strToRender.append(" ");
+	}
+#endif
 	Font* font = Font::get(fontName.c_str());
 	if (!font) {
 		return;
@@ -71,21 +77,22 @@ void Text::render() {
 	}
 
 	int outlineSize = font->getOutline();
-	if (outlineSize > 0) {
+	if ( outlineSize > 0 ) {
 		TTF_SetFontOutline(ttf, outlineSize);
-		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorBlack, xres);
+		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorBlack);
 		TTF_SetFontOutline(ttf, 0);
-		SDL_Surface* text = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
+		SDL_Surface* text = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorWhite);
 		SDL_Rect rect;
-		rect.x = 1; rect.y = 1;
+		rect.x = outlineSize; rect.y = outlineSize;
 		SDL_BlitSurface(text, NULL, surf, &rect);
 		SDL_FreeSurface(text);
-	} else {
+	}
+	else {
 		TTF_SetFontOutline(ttf, 0);
-		surf = TTF_RenderUTF8_Blended_Wrapped(ttf, strToRender.c_str(), colorWhite, xres);
+		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorWhite);
 	}
 	assert(surf);
-	if (texid == 0) {
+	if ( texid == 0 ) {
 		glGenTextures(1, &texid);
 	}
 
@@ -115,21 +122,14 @@ void Text::render() {
 				(0xFF000000 & ((Uint32 *)surf->pixels)[x + y * scan]) >> 24);*/
 		}
 	}
-	width += 1; // usually there was a trailing empty column of pixels, so add this to meet parity with old width check
-
-	width += 4;
-	height += 4;
+	// usually there was a trailing empty column of pixels, so add this to meet parity with old width check
+	++width;
+	++height;
 
 	// translate the original surface to an RGBA surface
 	SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width, height, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	SDL_Rect dest;
-	SDL_Rect src;
-	src.x = 0;
-	src.y = 0;
-	src.w = width;
-	src.h = height;
-	dest.x = 0;
-	dest.y = 0;
+	SDL_Rect dest{ 0, 0, 0, 0 };
+	SDL_Rect src{ 0, 0, width, height };
 	SDL_BlitSurface(surf, &src, newSurf, &dest); // blit onto a purely RGBA Surface
 	SDL_FreeSurface(surf); //TODO: Why does this give a heap exception in NX?
 	surf = newSurf;
