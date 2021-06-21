@@ -10898,7 +10898,7 @@ void doNewGame(bool makeHighscore) {
 									newNode->element = myuid;
 									*myuid = monster->getUID();
 
-									if ( c > 0 && multiplayer == SERVER )
+									if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -14011,7 +14011,7 @@ void buttonStartServer(button_t* my)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 		{
 			continue;
 		}
@@ -14058,7 +14058,7 @@ void buttonDisconnect(button_t* my)
 		// send disconnect message to clients
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
