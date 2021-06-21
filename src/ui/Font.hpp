@@ -31,8 +31,9 @@ public:
 	int sizeText(const char* str, int* out_w, int* out_h) const;
 
 	//! get the height of the font
+	//! @param include the size of the outline
 	//! @return the font height in pixels
-	int height() const;
+	int height(bool withOutline = true) const;
 
 	//! get a Font object from the engine
 	//! @param name The Font name

@@ -52,16 +52,7 @@ int getBook(char const * const booktitle)
 std::list<std::string> getListOfBooks()
 {
 	std::list<std::string> books;
-#ifdef NINTENDO
-	File* fp = FileIO::open(NINTENDO_LIST_OF_BOOKS_FILEPATH, "r"); //TODO: Use the new Directory.h feature that we're also using for the achivements!
-	for (char buf[64]; fp->gets2(buf, 64);)
-	{
-		books.push_back(std::string(buf));
-	}
-	FileIO::close(fp);
-#else
 	books = physfsGetFileNamesInDirectory("books/");
-#endif
 	return books;
 }
 

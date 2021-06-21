@@ -34,6 +34,11 @@
 #include "cppfuncs.hpp"
 #include "Directory.hpp"
 #include "mod_tools.hpp"
+#include "ui/LoadingScreen.hpp"
+
+#include <thread>
+#include <future>
+#include <chrono>
 
 /*-------------------------------------------------------------------------------
 
@@ -43,17 +48,8 @@
 
 -------------------------------------------------------------------------------*/
 
-#define _LOADSTR1 language[746]
-#define _LOADSTR2 language[747]
-#define _LOADSTR3 language[748]
-#define _LOADSTR4 language[749]
-
 int initGame()
 {
-	int c, x;
-	char name[32];
-	File* fp;
-
 	// setup some lists
 	booksRead.first = NULL;
 	booksRead.last = NULL;
@@ -79,15 +75,11 @@ int initGame()
  #endif //USE_EOS
 #endif
 
-	// print a loading message
-	drawClearBuffers();
-	int w, h;
-	getSizeOfText(ttf16, _LOADSTR1, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR1);
-
-	GO_SwapBuffers(screen);
-
 	initGameControllers();
+
+	// another loading screen!
+	createLoadingScreen(90);
+	doLoadingScreen();
 
 	// load achievement images
 #ifdef NINTENDO
@@ -102,412 +94,418 @@ int initGame()
 		achievementImages.emplace(std::make_pair(item, loadImage(name)));
 	}
 
-	// load model offsets
-	printlog( "loading model offsets...\n");
-	for ( c = 1; c < NUMMONSTERS; c++ )
-	{
-		// initialize all offsets to zero
-		for ( x = 0; x < 20; x++ )
+	std::atomic_bool loading_done {false};
+	auto loading_task = std::async(std::launch::async, [&loading_done](){
+		int c, x;
+		char name[32];
+		File* fp;
+
+		// load model offsets
+		printlog( "loading model offsets...\n");
+		for ( c = 1; c < NUMMONSTERS; c++ )
 		{
-			limbs[c][x][0] = 0;
-			limbs[c][x][1] = 0;
-			limbs[c][x][2] = 0;
-		}
+			// initialize all offsets to zero
+			for ( x = 0; x < 20; x++ )
+			{
+				limbs[c][x][0] = 0;
+				limbs[c][x][1] = 0;
+				limbs[c][x][2] = 0;
+			}
 
-		// open file
-		char filename[256];
-		strcpy(filename, "models/creatures/");
-		strcat(filename, monstertypename[c]);
-		strcat(filename, "/limbs.txt");
-		if ( (fp = openDataFile(filename, "r")) == NULL )
-		{
-			continue;
-		}
-
-		// read file
-		int line;
-		for ( line = 1; !fp->eof(); line++ )
-		{
-			char data[256];
-			int limb = 20;
-			int dummy;
-
-			// read line from file
-			fp->gets( data, 256 );
-
-			// skip blank and comment lines
-			if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
+			// open file
+			char filename[256];
+			strcpy(filename, "models/creatures/");
+			strcat(filename, monstertypename[c]);
+			strcat(filename, "/limbs.txt");
+			if ( (fp = openDataFile(filename, "r")) == NULL )
 			{
 				continue;
 			}
 
-			// process line
-			if ( sscanf( data, "%d", &limb ) != 1 || limb >= 20 || limb < 0 )
+			// read file
+			int line;
+			for ( line = 1; !fp->eof(); line++ )
 			{
-				printlog( "warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
-				continue;
-			}
-			if ( sscanf( data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2] ) != 4 )
-			{
-				printlog( "warning: syntax error in '%s':%d\n invalid limb offsets!\n", filename, line);
-				continue;
-			}
-		}
+				char data[256];
+				int limb = 20;
+				int dummy;
 
-		// close file
-		FileIO::close(fp);
-	}
+				// read line from file
+				fp->gets( data, 256 );
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, _LOADSTR2, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR2);
-
-	GO_SwapBuffers(screen);
-
-	int newItems = 0;
-
-	// load item types
-	printlog( "loading items...\n");
-	std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
-	itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
-	fp = openDataFile(itemsDirectory.c_str(), "r");
-	for ( c = 0; !fp->eof(); ++c )
-	{
-		if ( c > SPELLBOOK_DETECT_FOOD )
-		{
-			newItems = c - SPELLBOOK_DETECT_FOOD - 1;
-			items[c].name_identified = language[3500 + newItems * 2];
-			items[c].name_unidentified = language[3501 + newItems * 2];
-		}
-		else if ( c > ARTIFACT_BOW )
-		{
-			newItems = c - ARTIFACT_BOW - 1;
-			items[c].name_identified = language[2200 + newItems * 2];
-			items[c].name_unidentified = language[2201 + newItems * 2];
-		}
-		else
-		{
-			items[c].name_identified = language[1545 + c * 2];
-			items[c].name_unidentified = language[1546 + c * 2];
-		}
-		items[c].index = fp->geti();
-		items[c].fpindex = fp->geti();
-		items[c].variations = fp->geti();
-		fp->gets2(name, 32);
-		if ( !strcmp(name, "WEAPON") )
-		{
-			items[c].category = WEAPON;
-		}
-		else if ( !strcmp(name, "ARMOR") )
-		{
-			items[c].category = ARMOR;
-		}
-		else if ( !strcmp(name, "AMULET") )
-		{
-			items[c].category = AMULET;
-		}
-		else if ( !strcmp(name, "POTION") )
-		{
-			items[c].category = POTION;
-		}
-		else if ( !strcmp(name, "SCROLL") )
-		{
-			items[c].category = SCROLL;
-		}
-		else if ( !strcmp(name, "MAGICSTAFF") )
-		{
-			items[c].category = MAGICSTAFF;
-		}
-		else if ( !strcmp(name, "RING") )
-		{
-			items[c].category = RING;
-		}
-		else if ( !strcmp(name, "SPELLBOOK") )
-		{
-			items[c].category = SPELLBOOK;
-		}
-		else if ( !strcmp(name, "TOOL") )
-		{
-			items[c].category = TOOL;
-		}
-		else if ( !strcmp(name, "FOOD") )
-		{
-			items[c].category = FOOD;
-		}
-		else if ( !strcmp(name, "BOOK") )
-		{
-			items[c].category = BOOK;
-		}
-		else if ( !strcmp(name, "THROWN") )
-		{
-			items[c].category = THROWN;
-		}
-		else if ( !strcmp(name, "SPELL_CAT") )
-		{
-			items[c].category = SPELL_CAT;
-		}
-		else
-		{
-			items[c].category = GEM;
-		}
-		items[c].weight = fp->geti();
-		items[c].value = fp->geti();
-		items[c].images.first = NULL;
-		items[c].images.last = NULL;
-		while ( 1 )
-		{
-			string_t* string = (string_t*) malloc(sizeof(string_t));
-			string->data = (char*) malloc(sizeof(char) * 64);
-			string->lines = 1;
-
-			node_t* node = list_AddNodeLast(&items[c].images);
-			node->element = string;
-			node->deconstructor = &stringDeconstructor;
-			node->size = sizeof(string_t);
-			string->node = node;
-
-			x = 0;
-			bool fileend = false;
-			while ( (string->data[x] = fp->getc()) != '\n' )
-			{
-				if ( fp->eof() )
+				// skip blank and comment lines
+				if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
 				{
-					fileend = true;
-					break;
+					continue;
 				}
-				x++;
-			}
-			if ( x == 0 || fileend )
-			{
-				list_RemoveNode(node);
-				break;
-			}
-			string->data[x] = 0;
-		}
-	}
-	for ( c = 0; c < NUMITEMS; c++ )
-	{
-		items[c].surfaces.first = NULL;
-		items[c].surfaces.last = NULL;
-		for ( x = 0; x < list_Size(&items[c].images); x++ )
-		{
-			SDL_Surface** surface = (SDL_Surface**) malloc(sizeof(SDL_Surface*));
-			node_t* node = list_AddNodeLast(&items[c].surfaces);
-			node->element = surface;
-			node->deconstructor = &defaultDeconstructor;
-			node->size = sizeof(SDL_Surface*);
 
-			node_t* node2 = list_Node(&items[c].images, x);
-			string_t* string = (string_t*)node2->element;
-			std::string itemImgDir;
-			if ( PHYSFS_getRealDir(string->data) != NULL )
+				// process line
+				if ( sscanf( data, "%d", &limb ) != 1 || limb >= 20 || limb < 0 )
+				{
+					printlog( "warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
+					continue;
+				}
+				if ( sscanf( data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2] ) != 4 )
+				{
+					printlog( "warning: syntax error in '%s':%d\n invalid limb offsets!\n", filename, line);
+					continue;
+				}
+			}
+
+			// close file
+			FileIO::close(fp);
+		}
+
+		updateLoadingScreen(92);
+
+		int newItems = 0;
+
+		// load item types
+		printlog( "loading items...\n");
+		std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
+		itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
+		fp = openDataFile(itemsDirectory.c_str(), "r");
+		for ( c = 0; !fp->eof(); ++c )
+		{
+			if ( c > SPELLBOOK_DETECT_FOOD )
 			{
-				itemImgDir = PHYSFS_getRealDir(string->data);
-				itemImgDir.append(PHYSFS_getDirSeparator()).append(string->data);
+				newItems = c - SPELLBOOK_DETECT_FOOD - 1;
+				items[c].name_identified = language[3500 + newItems * 2];
+				items[c].name_unidentified = language[3501 + newItems * 2];
+			}
+			else if ( c > ARTIFACT_BOW )
+			{
+				newItems = c - ARTIFACT_BOW - 1;
+				items[c].name_identified = language[2200 + newItems * 2];
+				items[c].name_unidentified = language[2201 + newItems * 2];
 			}
 			else
 			{
-				itemImgDir = string->data;
+				items[c].name_identified = language[1545 + c * 2];
+				items[c].name_unidentified = language[1546 + c * 2];
 			}
-			char imgFileChar[256];
-			strncpy(imgFileChar, itemImgDir.c_str(), 255);
-			*surface = loadImage(imgFileChar);
-		}
-	}
-	FileIO::close(fp);
+			items[c].index = fp->geti();
+			items[c].fpindex = fp->geti();
+			items[c].variations = fp->geti();
+			fp->gets2(name, 32);
+			if ( !strcmp(name, "WEAPON") )
+			{
+				items[c].category = WEAPON;
+			}
+			else if ( !strcmp(name, "ARMOR") )
+			{
+				items[c].category = ARMOR;
+			}
+			else if ( !strcmp(name, "AMULET") )
+			{
+				items[c].category = AMULET;
+			}
+			else if ( !strcmp(name, "POTION") )
+			{
+				items[c].category = POTION;
+			}
+			else if ( !strcmp(name, "SCROLL") )
+			{
+				items[c].category = SCROLL;
+			}
+			else if ( !strcmp(name, "MAGICSTAFF") )
+			{
+				items[c].category = MAGICSTAFF;
+			}
+			else if ( !strcmp(name, "RING") )
+			{
+				items[c].category = RING;
+			}
+			else if ( !strcmp(name, "SPELLBOOK") )
+			{
+				items[c].category = SPELLBOOK;
+			}
+			else if ( !strcmp(name, "TOOL") )
+			{
+				items[c].category = TOOL;
+			}
+			else if ( !strcmp(name, "FOOD") )
+			{
+				items[c].category = FOOD;
+			}
+			else if ( !strcmp(name, "BOOK") )
+			{
+				items[c].category = BOOK;
+			}
+			else if ( !strcmp(name, "THROWN") )
+			{
+				items[c].category = THROWN;
+			}
+			else if ( !strcmp(name, "SPELL_CAT") )
+			{
+				items[c].category = SPELL_CAT;
+			}
+			else
+			{
+				items[c].category = GEM;
+			}
+			items[c].weight = fp->geti();
+			items[c].value = fp->geti();
+			items[c].images.first = NULL;
+			items[c].images.last = NULL;
+			while ( 1 )
+			{
+				string_t* string = (string_t*) malloc(sizeof(string_t));
+				string->data = (char*) malloc(sizeof(char) * 64);
+				string->lines = 1;
 
-	createBooks();
-	setupSpells();
+				node_t* node = list_AddNodeLast(&items[c].images);
+				node->element = string;
+				node->deconstructor = &stringDeconstructor;
+				node->size = sizeof(string_t);
+				string->node = node;
+
+				x = 0;
+				bool fileend = false;
+				while ( (string->data[x] = fp->getc()) != '\n' )
+				{
+					if ( fp->eof() )
+					{
+						fileend = true;
+						break;
+					}
+					x++;
+				}
+				if ( x == 0 || fileend )
+				{
+					list_RemoveNode(node);
+					break;
+				}
+				string->data[x] = 0;
+			}
+		}
+		FileIO::close(fp);
+		createBooks();
+		setupSpells();
 
 #ifdef NINTENDO
-	std::string maleNames, femaleNames;
-	maleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_MALE_FILE;
-	femaleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_FEMALE_FILE;
-	randomPlayerNamesMale = getLinesFromDataFile(maleNames);
-	randomPlayerNamesFemale = getLinesFromDataFile(femaleNames);
+		std::string maleNames, femaleNames;
+		maleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_MALE_FILE;
+		femaleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_FEMALE_FILE;
+		randomPlayerNamesMale = getLinesFromDataFile(maleNames);
+		randomPlayerNamesFemale = getLinesFromDataFile(femaleNames);
 #else // NINTENDO
-	randomPlayerNamesMale = getLinesFromDataFile(PLAYERNAMES_MALE_FILE);
-	randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
+		randomPlayerNamesMale = getLinesFromDataFile(PLAYERNAMES_MALE_FILE);
+		randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
 #endif // !NINTENDO
 
-	loadItemLists();
+		loadItemLists();
 
-	ItemTooltips.readItemsFromFile();
-	ItemTooltips.readTooltipsFromFile();
+		updateLoadingScreen(94);
 
 #if defined(USE_EOS) || defined(STEAMWORKS)
 #else
- #ifdef NINTENDO
-	//#error "No DLC support on SWITCH yet :(" //TODO: Resolve this.
- #else // NINTENDO
-	if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
-	{
-		std::string serial = PHYSFS_getRealDir("mythsandoutcasts.key");
-		serial.append(PHYSFS_getDirSeparator()).append("mythsandoutcasts.key");
-		// open the serial file
-		File* fp = nullptr;
-		if ( (fp = FileIO::open(serial.c_str(), "rb")) != NULL )
+#ifdef NINTENDO
+		//#error "No DLC support on SWITCH yet :(" //TODO: Resolve this.
+		enabledDLCPack1 = true;
+		enabledDLCPack2 = true;
+#else // NINTENDO
+		if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
 		{
-			char buf[64];
-			size_t len = fp->read(&buf, sizeof(char), 32);
-			buf[len] = '\0';
-			serial = buf;
-			// compute hash
-			size_t DLCHash = serialHash(serial);
-			if ( DLCHash == 144425 )
+			std::string serial = PHYSFS_getRealDir("mythsandoutcasts.key");
+			serial.append(PHYSFS_getDirSeparator()).append("mythsandoutcasts.key");
+			// open the serial file
+			File* fp = nullptr;
+			if ( (fp = FileIO::open(serial.c_str(), "rb")) != NULL )
 			{
-				printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
-				enabledDLCPack1 = true;
+				char buf[64];
+				size_t len = fp->read(&buf, sizeof(char), 32);
+				buf[len] = '\0';
+				serial = buf;
+				// compute hash
+				size_t DLCHash = serialHash(serial);
+				if ( DLCHash == 144425 )
+				{
+					printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
+					enabledDLCPack1 = true;
+				}
+				else
+				{
+					printlog("[LICENSE]: DLC license key invalid.");
+				}
+				FileIO::close(fp);
 			}
-			else
-			{
-				printlog("[LICENSE]: DLC license key invalid.");
-			}
-			FileIO::close(fp);
 		}
-	}
-	if ( PHYSFS_getRealDir("legendsandpariahs.key") != NULL ) //TODO: NX PORT: Update for the Switch?
-	{
-		std::string serial = PHYSFS_getRealDir("legendsandpariahs.key");
-		serial.append(PHYSFS_getDirSeparator()).append("legendsandpariahs.key");
-		// open the serial file
-		File* fp = nullptr;
-		if ( (fp = FileIO::open(serial.c_str(), "rb")) != NULL )
+		if ( PHYSFS_getRealDir("legendsandpariahs.key") != NULL ) //TODO: NX PORT: Update for the Switch?
 		{
-			char buf[64];
-			size_t len = fp->read(&buf, sizeof(char), 32);
-			buf[len] = '\0';
-			serial = buf;
-			// compute hash
-			size_t DLCHash = serialHash(serial);
-			if ( DLCHash == 135398 )
+			std::string serial = PHYSFS_getRealDir("legendsandpariahs.key");
+			serial.append(PHYSFS_getDirSeparator()).append("legendsandpariahs.key");
+			// open the serial file
+			File* fp = nullptr;
+			if ( (fp = FileIO::open(serial.c_str(), "rb")) != NULL )
 			{
-				printlog("[LICENSE]: Legends and Pariahs DLC license key found.");
-				enabledDLCPack2 = true;
+				char buf[64];
+				size_t len = fp->read(&buf, sizeof(char), 32);
+				buf[len] = '\0';
+				serial = buf;
+				// compute hash
+				size_t DLCHash = serialHash(serial);
+				if ( DLCHash == 135398 )
+				{
+					printlog("[LICENSE]: Legends and Pariahs DLC license key found.");
+					enabledDLCPack2 = true;
+				}
+				else
+				{
+					printlog("[LICENSE]: DLC license key invalid.");
+				}
+				FileIO::close(fp);
 			}
-			else
-			{
-				printlog("[LICENSE]: DLC license key invalid.");
-			}
-			FileIO::close(fp);
 		}
-	}
- #endif // !NINTENDO
+#endif // !NINTENDO
 #endif
-
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, _LOADSTR3, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR3);
-
-	GO_SwapBuffers(screen);
 
 #ifdef USE_FMOD
-	music_group->setVolume(musvolume / 128.f);
+		music_group->setVolume(musvolume / 128.f);
 #elif defined USE_OPENAL
-	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+		OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 #endif
-	removedEntities.first = NULL;
-	removedEntities.last = NULL;
-	safePacketsSent.first = NULL;
-	safePacketsSent.last = NULL;
-	for ( c = 0; c < MAXPLAYERS; c++ )
-	{
-		safePacketsReceivedMap[c].clear();
-	}
-	topscores.first = NULL;
-	topscores.last = NULL;
-	topscoresMultiplayer.first = NULL;
-	topscoresMultiplayer.last = NULL;
-	messages.first = NULL;
-	messages.last = NULL;
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		chestInv[i].first = NULL;
-		chestInv[i].last = NULL;
-		for ( c = 0; c < kNumChestItemsToDisplay; c++ )
+		removedEntities.first = NULL;
+		removedEntities.last = NULL;
+		safePacketsSent.first = NULL;
+		safePacketsSent.last = NULL;
+		for ( c = 0; c < MAXPLAYERS; c++ )
 		{
-			invitemschest[i][c] = NULL;
+			safePacketsReceivedMap[c].clear();
+		}
+		topscores.first = NULL;
+		topscores.last = NULL;
+		topscoresMultiplayer.first = NULL;
+		topscoresMultiplayer.last = NULL;
+		messages.first = NULL;
+		messages.last = NULL;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			chestInv[i].first = NULL;
+			chestInv[i].last = NULL;
+			for ( c = 0; c < kNumChestItemsToDisplay; c++ )
+			{
+				invitemschest[i][c] = NULL;
+			}
+		}
+		command_history.first = NULL;
+		command_history.last = NULL;
+		for ( c = 0; c < MAXPLAYERS; c++ )
+		{
+			openedChest[c] = NULL;
+		}
+		mousex = xres / 2;
+		mousey = yres / 2;
+
+		// default player stats
+		for (c = 0; c < MAXPLAYERS; c++)
+		{
+			players[c] = new Player(c, true);
+			players[c]->init();
+			// Stat set to 0 as monster type not needed, values will be filled with default, then overwritten by savegame or the charclass.cpp file
+			stats[c] = new Stat(0);
+			if (c > 0)
+			{
+				client_disconnected[c] = true;
+			}
+			players[c]->entity = nullptr;
+			stats[c]->sex = static_cast<sex_t>(0);
+			stats[c]->appearance = 0;
+			strcpy(stats[c]->name, "");
+			stats[c]->type = HUMAN;
+			stats[c]->playerRace = RACE_HUMAN;
+			stats[c]->FOLLOWERS.first = nullptr;
+			stats[c]->FOLLOWERS.last = nullptr;
+			stats[c]->inventory.first = nullptr;
+			stats[c]->inventory.last = nullptr;
+			stats[c]->clearStats();
+			entitiesToDelete[c].first = nullptr;
+			entitiesToDelete[c].last = nullptr;
+			if (c == 0)
+			{
+				initClass(c);
+			}
+			GenericGUI[c].setPlayer(c);
+			FollowerMenu[c].setPlayer(c);
+			cameras[c].winx = 0;
+			cameras[c].winy = 0;
+			cameras[c].winw = xres;
+			cameras[c].winh = yres;
+			cast_animation[c].player = c;
+		}
+
+		updateLoadingScreen(96);
+		
+		if ( !loadMusic() )
+		{
+			printlog("WARN: loadMusic() from initGame() failed!");
+		}
+
+		loadAllScores(SCORESFILE);
+		loadAllScores(SCORESFILE_MULTIPLAYER);
+
+		updateLoadingScreen(98);
+		loading_done = true;
+		return 0;
+	});
+	while (!loading_done) {
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+	destroyLoadingScreen();
+
+	int result = loading_task.get();
+	if (result == 0)
+	{
+		gameModeManager.Tutorial.init();
+
+		for ( int c = 0; c < NUMITEMS; c++ )
+		{
+			items[c].surfaces.first = NULL;
+			items[c].surfaces.last = NULL;
+			for ( int x = 0; x < list_Size(&items[c].images); x++ )
+			{
+				SDL_Surface** surface = (SDL_Surface**) malloc(sizeof(SDL_Surface*));
+				node_t* node = list_AddNodeLast(&items[c].surfaces);
+				node->element = surface;
+				node->deconstructor = &defaultDeconstructor;
+				node->size = sizeof(SDL_Surface*);
+
+				node_t* node2 = list_Node(&items[c].images, x);
+				string_t* string = (string_t*)node2->element;
+				std::string itemImgDir;
+				if ( PHYSFS_getRealDir(string->data) != NULL )
+				{
+					itemImgDir = PHYSFS_getRealDir(string->data);
+					itemImgDir.append(PHYSFS_getDirSeparator()).append(string->data);
+				}
+				else
+				{
+					itemImgDir = string->data;
+				}
+				char imgFileChar[256];
+				strncpy(imgFileChar, itemImgDir.c_str(), 255);
+				*surface = loadImage(imgFileChar);
+			}
+		}
+
+		// load extraneous game resources
+		title_bmp = loadImage("images/system/title.png");
+		logo_bmp = loadImage("images/system/logo.png");
+		cursor_bmp = loadImage("images/system/cursor.png");
+		cross_bmp = loadImage("images/system/cross.png");
+		selected_cursor_bmp = loadImage("images/system/selectedcursor.png");
+		controllerglyphs1_bmp = loadImage("images/system/glyphsheet_ns.png");
+		skillIcons_bmp = loadImage("images/system/skillicons_sheet.png");
+		if (!loadInterfaceResources())
+		{
+			printlog("Failed to load interface resources.\n");
+			loading_done = true;
+			return -1;
 		}
 	}
-	command_history.first = NULL;
-	command_history.last = NULL;
-	for ( c = 0; c < MAXPLAYERS; c++ )
-	{
-		openedChest[c] = NULL;
-	}
-	mousex = xres / 2;
-	mousey = yres / 2;
 
-	// default player stats
-	for (c = 0; c < MAXPLAYERS; c++)
-	{
-		players[c] = new Player(c, true);
-		players[c]->init();
-		// Stat set to 0 as monster type not needed, values will be filled with default, then overwritten by savegame or the charclass.cpp file
-		stats[c] = new Stat(0);
-		if (c > 0)
-		{
-			client_disconnected[c] = true;
-		}
-		players[c]->entity = nullptr;
-		stats[c]->sex = static_cast<sex_t>(0);
-		stats[c]->appearance = 0;
-		strcpy(stats[c]->name, "");
-		stats[c]->type = HUMAN;
-		stats[c]->playerRace = RACE_HUMAN;
-		stats[c]->FOLLOWERS.first = nullptr;
-		stats[c]->FOLLOWERS.last = nullptr;
-		stats[c]->inventory.first = nullptr;
-		stats[c]->inventory.last = nullptr;
-		stats[c]->clearStats();
-		entitiesToDelete[c].first = nullptr;
-		entitiesToDelete[c].last = nullptr;
-		if (c == 0)
-		{
-			initClass(c);
-		}
-		GenericGUI[c].setPlayer(c);
-		FollowerMenu[c].setPlayer(c);
-		cameras[c].winx = 0;
-		cameras[c].winy = 0;
-		cameras[c].winw = xres;
-		cameras[c].winh = yres;
-		cast_animation[c].player = c;
-	}
-
-	if ( !loadMusic() )
-	{
-		printlog("WARN: loadMusic() from initGame() failed!");
-	}
-
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, _LOADSTR4, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR4);
-
-	GO_SwapBuffers(screen);
-
-	// load extraneous game resources
-	title_bmp = loadImage("images/system/title.png");
-	logo_bmp = loadImage("images/system/logo.png");
-	cursor_bmp = loadImage("images/system/cursor.png");
-	cross_bmp = loadImage("images/system/cross.png");
-	selected_cursor_bmp = loadImage("images/system/selectedcursor.png");
-	controllerglyphs1_bmp = loadImage("images/system/glyphsheet_ns.png");
-	skillIcons_bmp = loadImage("images/system/skillicons_sheet.png");
-
-	loadAllScores(SCORESFILE);
-	loadAllScores(SCORESFILE_MULTIPLAYER);
-	gameModeManager.Tutorial.init();
-	if (!loadInterfaceResources())
-	{
-		printlog("Failed to load interface resources.\n");
-		return -1;
-	}
-
-	return 0;
+	return result;
 }
 
 /*-------------------------------------------------------------------------------

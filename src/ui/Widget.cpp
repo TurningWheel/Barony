@@ -3,6 +3,9 @@
 #include "../main.hpp"
 #include "Widget.hpp"
 #include "Frame.hpp"
+#include "Image.hpp"
+#include "../input.hpp"
+#include "../engine/audio/sound.hpp"
 
 Widget::~Widget() {
 	if (parent) {
@@ -35,6 +38,14 @@ void Widget::activate() {
 	// no-op
 }
 
+void Widget::process() {
+	if (!disabled) {
+		if (callback) {
+			(*callback)(*this);
+		}
+	}
+}
+
 Frame* Widget::findSearchRoot() {
 	Widget* gui = findHead();
 	if (gui && gui->getType() == WIDGET_FRAME) {
@@ -54,96 +65,50 @@ Frame* Widget::findSearchRoot() {
 }
 
 Widget* Widget::handleInput() {
-	Widget* result = nullptr;
-	while (selected) {
+	if (selected) {
+		Input& input = Input::inputs[owner];
 
 		// find search root
 		Frame* root = nullptr;
 
-		// tab to next element
-		if (keystatus[SDL_SCANCODE_TAB]) {
-			if (!widgetTab.empty()) {
-				root = root ? root : findSearchRoot();
-				result = root->findWidget(widgetTab.c_str(), true);
-				if (result) {
-					break;
-				}
-			}
-		}
-
-		// directional move to next element
-		struct move {
-			int scancode;
-			const char* widget;
-		};
-		move moves[4] = {
-			{ SDL_SCANCODE_RIGHT, widgetRight.c_str() },
-			{ SDL_SCANCODE_DOWN, widgetDown.c_str() },
-			{ SDL_SCANCODE_LEFT, widgetLeft.c_str() },
-			{ SDL_SCANCODE_UP, widgetUp.c_str() }
-		};
-		for (int c = 0; c < sizeof(moves) / sizeof(moves[0]); ++c) {
-			if (keystatus[moves[c].scancode]) {
-				if (moves[c].widget && moves[c].widget[0] != '\0') {
+		// move to another widget
+		for (auto& move : widgetMovements) {
+			if (input.consumeBinaryToggle(move.first.c_str())) {
+				if (!move.second.empty()) {
 					root = root ? root : findSearchRoot();
-					result = root->findWidget(moves[c].widget, true);
+					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result) {
-						keystatus[moves[c].scancode] = 0;
-						break;
+#ifndef EDITOR
+						playSound(495, 64);
+#endif
+						result->scrollParent();
+						return result;
 					}
 				}
 			}
 		}
 
-		// next tab
-		if (keystatus[SDL_SCANCODE_RIGHTBRACKET]) {
-			if (!widgetPageRight.empty()) {
-				root = root ? root : findSearchRoot();
-				result = root->findWidget(widgetPageRight.c_str(), true);
-				if (result) {
-					keystatus[SDL_SCANCODE_RIGHTBRACKET] = 0;
-					result->activate();
-					break;
+		// move to another widget and activate it
+		for (auto& action : widgetActions) {
+			if (input.consumeBinaryToggle(action.first.c_str())) {
+				if (!action.second.empty()) {
+					root = root ? root : findSearchRoot();
+					Widget* result = root->findWidget(action.second.c_str(), true);
+					if (result) {
+						result->activate();
+						return nullptr;
+					}
 				}
 			}
 		}
 
-		// previous tab
-		if (keystatus[SDL_SCANCODE_LEFTBRACKET]) {
-			if (!widgetPageLeft.empty()) {
-				root = root ? root : findSearchRoot();
-				result = root->findWidget(widgetPageLeft.c_str(), true);
-				if (result) {
-					keystatus[SDL_SCANCODE_LEFTBRACKET] = 0;
-					result->activate();
-					break;
-				}
-			}
-		}
-
-		// confirm selection
-		if (keystatus[SDL_SCANCODE_RETURN]) {
-			keystatus[SDL_SCANCODE_RETURN] = 0;
+		// activate current selection
+		if (input.consumeBinaryToggle("MenuConfirm")) {
 			activate();
-			break;
+			return nullptr;
 		}
-
-		// cancel selection
-		if (keystatus[SDL_SCANCODE_ESCAPE]) {
-			if (!widgetBack.empty()) {
-				root = root ? root : findSearchRoot();
-				result = root->findWidget(widgetBack.c_str(), true);
-				if (result) {
-					keystatus[SDL_SCANCODE_ESCAPE] = 0;
-					result->activate();
-					break;
-				}
-			}
-		}
-
-		break;
 	}
-	return result;
+	return nullptr;
 }
 
 Widget* Widget::findHead() {
@@ -171,6 +136,35 @@ Widget* Widget::findWidget(const char* name, bool recursive) {
 	return nullptr;
 }
 
+Widget* Widget::findSelectedWidget() {
+	for (auto widget : widgets) {
+		if (widget->owner != owner) {
+			continue;
+		}
+		if (widget->isSelected()) {
+			return widget;
+		} else {
+			auto result = widget->findSelectedWidget();
+			if (result) {
+				return result;
+			}
+		}
+	}
+	return nullptr;
+}
+
+bool Widget::isChildOf(Widget& widget) {
+	if (!parent) {
+		return false;
+	}
+	else if (parent == &widget) {
+		return true;
+	}
+	else {
+		return parent->isChildOf(widget);
+	}
+}
+
 void Widget::adoptWidget(Widget& widget) {
 	if (widget.parent) {
 		for (auto node = widget.parent->widgets.begin(); node != widget.parent->widgets.end(); ++node) {
@@ -180,7 +174,99 @@ void Widget::adoptWidget(Widget& widget) {
 			}
 		}
 	}
+	widget.owner = owner;
 	widget.parent = this;
 	widget.setOwner(this->getOwner());
 	widgets.push_back(&widget);
+}
+
+void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
+#ifndef NINTENDO
+	return;
+#else
+	if (hideGlyphs) {
+		return;
+	}
+	if (!selectedWidget) {
+		return;
+	}
+	int x = size.x + size.w;
+	int y = size.y + size.h;
+	auto& actions = selectedWidget->getWidgetActions();
+	auto action = actions.begin();
+	if (selectedWidget == this) {
+		auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
+		int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+		int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+		image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+		x -= w;
+	}
+	if ((action = actions.find("MenuCancel")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_B00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuAlt1")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_Y00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuAlt2")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_X00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuStart")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_+00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuSelect")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_-00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuPageLeft")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_L00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+	if ((action = actions.find("MenuPageRight")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_R00.png");
+			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
+			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			x -= w;
+		}
+	}
+#endif
+}
+
+void Widget::scrollParent() {
+	// no-op
 }

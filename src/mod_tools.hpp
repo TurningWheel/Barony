@@ -15,6 +15,7 @@ See LICENSE for details.
 #include "json.hpp"
 #include "files.hpp"
 #include "prng.hpp"
+#include "items.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"

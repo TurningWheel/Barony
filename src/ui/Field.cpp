@@ -7,15 +7,17 @@
 #include "Field.hpp"
 #include "Text.hpp"
 
+#include <cassert>
+
 Field::Field(const int _textLen) {
-	textlen = std::max(_textLen, 1);
+	textlen = std::max(_textLen, 0);
 	text = new char[textlen + 1];
 	memset(text, 0, textlen + 1);
 }
 
 Field::Field(const char* _text) {
-	textlen = strlen(_text) + 1;
-	text = new char[textlen];
+	textlen = strlen(_text);
+	text = new char[textlen + 1];
 	setText(_text);
 }
 
@@ -33,10 +35,6 @@ Field::Field(Frame& _parent, const char* _text) : Field(_text) {
 
 Field::~Field() {
 	deselect();
-	if (callback) {
-		delete callback;
-		callback = nullptr;
-	}
 	if (text) {
 		if (inputstr == text) {
 			inputstr = nullptr;
@@ -48,16 +46,34 @@ Field::~Field() {
 	}
 }
 
-void Field::select() {
-	selected = true;
+void Field::activate() {
+	Widget::select();
+	if (!editable) {
+		return;
+	}
+#ifdef NINTENDO
+	auto result = nxKeyboard(guide.c_str());
+	if (result.success) {
+		setText(result.str.c_str());
+	}
+#else
+	activated = true;
 	inputstr = text;
 	inputlen = textlen;
 	SDL_StartTextInput();
+#endif
 }
 
 void Field::deselect() {
+	if (editable) {
+		deactivate();
+	}
+	Widget::deselect();
+}
+
+void Field::deactivate() {
+	activated = false;
 	selectAll = false;
-	selected = false;
 	if (inputstr == text) {
 		inputstr = nullptr;
 		inputlen = 0;
@@ -65,9 +81,8 @@ void Field::deselect() {
 	}
 }
 
-void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
-	if ( isDisabled() )
-	{
+void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
+	if (invisible) {
 		return;
 	}
 
@@ -85,116 +100,140 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize) {
 	scaledRect.w = rect.w * (float)xres / (float)Frame::virtualScreenX;
 	scaledRect.h = rect.h * (float)yres / (float)Frame::virtualScreenY;
 
-	if (selected) {
-		drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
+	if (activated) {
+		if (selectAll) {
+			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 127, 127, 0), 255);
+		} else {
+			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
+		}
+	}
+
+	if (!text || text[0] == '\0') {
+		return;
 	}
 
 	bool showCursor = (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
 
-	std::string str;
-	if (selected && showCursor) {
-		str.reserve((Uint32)strlen(text) + 2);
-		str.assign(text);
-		str.append("_");
-	} else if (selected) {
-		str.reserve((Uint32)strlen(text) + 2);
-		str.assign(text);
-		str.append(" ");
-	} else {
-		str.assign(text);
-	}
-
-	Text* text = nullptr;
-	if (!str.empty()) {
-		text = Text::get(str.c_str(), font.c_str());
-		if (!text) {
-			return;
-		}
-	} else {
-		return;
-	}
 	Font* actualFont = Font::get(font.c_str());
 	if (!actualFont) {
 		return;
 	}
-
-	// get the size of the rendered text
-	int textSizeW = text->getWidth();
-	int textSizeH = text->getHeight();
-
-	if (selected) {
-		textSizeH += 2;
-		if (hjustify == RIGHT || hjustify == BOTTOM) {
-			textSizeH -= 4;
-		} else if (hjustify == CENTER) {
-			textSizeH -= 2;
+	int lines = 1;
+	for (int c = 0; c <= textlen; ++c) {
+		if (text[c] == '\n') {
+			++lines;
 		}
-		if (!showCursor) {
-			int w;
-			actualFont->sizeText("_", &w, nullptr);
-			textSizeW += w;
+	}
+	int fullH = lines * actualFont->height(false) + actualFont->getOutline() * 2;
+
+	char* buf = (char*)malloc(textlen + 1);
+	memcpy(buf, text, textlen + 1);
+
+	int yoff = 0;
+	char* nexttoken;
+	char* token = strtok(buf, "\n");
+	do {
+		nexttoken = strtok(NULL, "\n");
+
+		std::string str;
+		if (!nexttoken && activated && showCursor) {
+			str.reserve((Uint32)strlen(token) + 2);
+			str.assign(token);
+			str.append("_");
+		} else if (!nexttoken && activated) {
+			str.reserve((Uint32)strlen(token) + 2);
+			str.assign(token);
+			str.append(" ");
+		} else {
+			str.assign(token);
+		}
+
+		Text* text = Text::get(str.c_str(), font.c_str());
+		assert(text);
+
+		// get the size of the rendered text
+		int textSizeW = text->getWidth();
+		int textSizeH = text->getHeight();
+
+		if (activated) {
 			textSizeH += 2;
+			if (hjustify == RIGHT || hjustify == BOTTOM) {
+				textSizeH -= 4;
+			} else if (hjustify == CENTER) {
+				textSizeH -= 2;
+			}
+			if (!showCursor) {
+				int w;
+				actualFont->sizeText("_", &w, nullptr);
+				textSizeW += w;
+				textSizeH += 2;
+			}
 		}
-	}
 
-	SDL_Rect pos;
-	if (hjustify == LEFT || hjustify == TOP) {
-		pos.x = _size.x + size.x - _actualSize.x;
-	} else if (hjustify == CENTER) {
-		pos.x = _size.x + size.x + size.w / 2 - textSizeW / 2 - _actualSize.x;
-	} else if (hjustify == RIGHT || hjustify == BOTTOM) {
-		pos.x = _size.x + size.x + size.w - textSizeW - _actualSize.x;
-	}
-	if (vjustify == LEFT || vjustify == TOP) {
-		pos.y = _size.y + size.y - _actualSize.y;
-	} else if (vjustify == CENTER) {
-		pos.y = _size.y + size.y + size.h / 2 - textSizeH / 2 - _actualSize.y;
-	} else if (vjustify == RIGHT || vjustify == BOTTOM) {
-		pos.y = _size.y + size.y + size.h - textSizeH - _actualSize.y;
-	}
-	pos.w = textSizeW;
-	pos.h = textSizeH;
+		SDL_Rect pos;
+		if (hjustify == LEFT || hjustify == TOP) {
+			pos.x = _size.x + size.x - _actualSize.x;
+		} else if (hjustify == CENTER) {
+			pos.x = _size.x + size.x + size.w / 2 - textSizeW / 2 - _actualSize.x;
+		} else if (hjustify == RIGHT || hjustify == BOTTOM) {
+			pos.x = _size.x + size.x + size.w - textSizeW - _actualSize.x;
+		}
+		if (vjustify == LEFT || vjustify == TOP) {
+			pos.y = _size.y + size.y + yoff - _actualSize.y + std::min(size.h - fullH, 0);
+		} else if (vjustify == CENTER) {
+			pos.y = _size.y + size.y + yoff - _actualSize.y + (size.h - fullH) / 2;
+		} else if (vjustify == RIGHT || vjustify == BOTTOM) {
+			pos.y = _size.y + size.y + yoff - _actualSize.y + std::max(size.h - fullH, 0);
+		}
+		pos.w = textSizeW;
+		pos.h = textSizeH;
 
-	SDL_Rect dest;
-	dest.x = std::max(rect.x, pos.x);
-	dest.y = std::max(rect.y, pos.y);
-	dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (rect.x + rect.w));
-	dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
+		yoff += actualFont->height(true);
 
-	SDL_Rect src;
-	src.x = std::max(0, rect.x - pos.x);
-	src.y = std::max(0, rect.y - pos.y);
-	src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (rect.x + rect.w));
-	src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
+		SDL_Rect dest;
+		dest.x = std::max(rect.x, pos.x);
+		dest.y = std::max(rect.y, pos.y);
+		dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (rect.x + rect.w));
+		dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
 
-	// fit text to window
-	if ((hjustify == LEFT || hjustify == TOP) && scroll && selected) {
-		src.x = std::max(src.x, textSizeW - rect.w);
-	}
+		SDL_Rect src;
+		src.x = std::max(0, rect.x - pos.x);
+		src.y = std::max(0, rect.y - pos.y);
+		src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (rect.x + rect.w));
+		src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
 
-	if (src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0)
-		return;
+		// fit text to window
+		if ((hjustify == LEFT || hjustify == TOP) && scroll && selected) {
+			src.x = std::max(src.x, textSizeW - rect.w);
+		}
 
-	if (selectAll && selected) {
-		drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 127, 127, 0), 255);
-	}
+		if (src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0) {
+			continue;
+		}
 
-	SDL_Rect scaledDest;
-	scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
-	scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
-	scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
-	scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
-	text->drawColor(src, scaledDest, color);
+		SDL_Rect scaledDest;
+		scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
+		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
+		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
+		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+		text->drawColor(src, scaledDest, color);
+	} while ((token = nexttoken) != NULL);
+
+	free(buf);
+
+	drawGlyphs(scaledRect, selectedWidget);
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
+	Widget::process();
+
 	result_t result;
 	result.highlighted = false;
 	result.entered = false;
 	if (!editable) {
-		if (selected) {
+		if (activated) {
 			result.entered = true;
-			deselect();
+			deactivate();
 		}
 		return result;
 	}
@@ -210,21 +249,21 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
-	if (selected) {
+	if (activated) {
 		if (inputstr != text) {
 			result.entered = true;
-			deselect();
+			deactivate();
 			if (inputstr == nullptr) {
 				SDL_StopTextInput();
 			}
 		}
 		if (keystatus[SDL_SCANCODE_RETURN] || keystatus[SDL_SCANCODE_KP_ENTER]) {
 			result.entered = true;
-			deselect();
+			deactivate();
 		}
 		if (keystatus[SDL_SCANCODE_ESCAPE] || mousestatus[SDL_BUTTON_RIGHT]) {
 			result.entered = true;
-			deselect();
+			deactivate();
 		}
 
 		/*if (selectAll) {
@@ -238,124 +277,54 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		}*/
 	}
 
+#ifndef NINTENDO
 	if (omousex >= _size.x && omousex < _size.x + _size.w &&
 		omousey >= _size.y && omousey < _size.y + _size.h) {
 		result.highlighted = true;
 	}
 
 	if (!result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
-		if (selected) {
+		if (activated) {
 			result.entered = true;
-			deselect();
+			deactivate();
 		}
 	} else if (result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
-		select();
+		activate();
 		/*if (doubleclick_mousestatus[SDL_BUTTON_LEFT]) {
 			selectAll = true;
 		}*/
 	}
+#endif
 
 	return result;
 }
 
 void Field::setText(const char* _text) {
-	if (_text == nullptr || textlen <= 1) {
+	if (_text == nullptr) {
 		return;
 	}
-	int size = std::min(std::max(0, (int)strlen(_text)), (int)textlen - 1);
+	int size = std::min(std::max(0, (int)strlen(_text)), (int)textlen);
 	if (size > 0) {
 		memcpy(text, _text, size);
-		text[size] = '\0';
-	} else {
-		text[0] = '\0';
 	}
+	text[size] = '\0';
 }
 
-void Field::reflowTextToFit(const int characterOffset) {
-	if ( text == nullptr || textlen <= 1 ) {
-		return;
+void Field::scrollParent() {
+	Frame* fparent = static_cast<Frame*>(parent);
+	auto fActualSize = fparent->getActualSize();
+	auto fSize = fparent->getSize();
+	if (size.y < fActualSize.y) {
+		fActualSize.y = size.y;
 	}
-
-	if ( auto getText = Text::get(text, font.c_str()) )
-	{
-		if ( getText->getWidth() <= (getSize().w - getSize().x) )
-		{
-			// no work to do
-			return;
-		}
+	else if (size.y + size.h >= fActualSize.y + fSize.h) {
+		fActualSize.y = (size.y + size.h) - fSize.h;
 	}
-
-	Font* actualFont = Font::get(font.c_str());
-	if ( !actualFont )
-	{
-		return;
+	if (size.x < fActualSize.x) {
+		fActualSize.x = size.x;
 	}
-
-
-	std::string reflowText = "";
-
-	int charWidth = 0;
-	actualFont->sizeText("_", &charWidth, nullptr);
-	//if ( auto textGet = Text::get("_", font.c_str()) )
-	//{
-	//	charWidth = textGet->getWidth();
-	//}
-
-	if ( charWidth == 0 )
-	{
-		return;
+	else if (size.x + size.w >= fActualSize.x + fSize.w) {
+		fActualSize.x = (size.x + size.w) - fSize.w;
 	}
-	++charWidth;
-	const int charactersPerLine = (getSize().w - getSize().x) / charWidth;
-
-	int currentCharacters = 0;
-	for ( int i = 0; text[i] != '\0'; ++i )
-	{
-		if ( (currentCharacters - characterOffset) > charactersPerLine )
-		{
-			int findSpace = reflowText.rfind(' ', reflowText.size());
-			if ( findSpace != std::string::npos )
-			{
-				int lastWordEnd = reflowText.size();
-				reflowText.at(findSpace) = '\n';
-				currentCharacters = lastWordEnd - findSpace;
-			}
-			else
-			{
-				reflowText += '\n';
-				currentCharacters = 0;
-			}
-
-			reflowText += text[i];
-		}
-		else
-		{
-			if ( text[i] == '\n' )
-			{
-				currentCharacters = 0;
-			}
-			++currentCharacters;
-			reflowText += text[i];
-		}
-	}
-
-	setText(reflowText.c_str());
-}
-
-const int Field::getNumTextLines() const
-{
-	if ( text == nullptr || textlen <= 1 ) {
-		return 0;
-	}
-
-	int numLines = 1;
-
-	for ( int i = 0; text[i] != '\0' && i < textlen - 1; ++i )
-	{
-		if ( text[i] == '\n' )
-		{
-			++numLines;
-		}
-	}
-	return numLines;
+	fparent->setActualSize(fActualSize);
 }

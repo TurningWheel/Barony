@@ -48,6 +48,9 @@
 #include "lobbies.hpp"
 #include <sstream>
 
+#include "ui/Text.hpp"
+#include "ui/Font.hpp"
+
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
 void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
@@ -253,7 +256,7 @@ int rebindkey = -1;
 int rebindaction = -1;
 
 Sint32 gearrot = 0;
-Sint32 gearsize = 5000;
+Sint32 gearsize = 20000;
 Uint16 logoalpha = 0;
 int credittime = 0;
 int creditstage = 0;
@@ -590,15 +593,6 @@ void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebind
 		ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorGreen(*mainsurface), true, "...");
 	}
 }
-
-enum CharacterDLCValidation : int
-{
-	INVALID_CHARACTER,
-	VALID_OK_CHARACTER,
-	INVALID_REQUIREDLC1,
-	INVALID_REQUIREDLC2,
-	INVALID_REQUIRE_ACHIEVEMENT
-};
 
 bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
 {
@@ -1614,6 +1608,33 @@ void handleMainMenu(bool mode)
 		{
 			drawImageScaled(title_bmp, nullptr, &src);
 		}
+
+		const bool i_want_to_test_sdl_ttf = false;
+		if (i_want_to_test_sdl_ttf) {
+			const char* font = Font::defaultFont;
+			Text* text = Text::get("This. Is. For. BARONY!!", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{100, yres - 100, 0, 0}, 0xFF00FFFF);
+
+			font = "lang/en.ttf#32";
+			text = Text::get("Will the real Baron Herx PLEASE stand up!", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{300, 32, 0, 0}, 0xFFFF00FF);
+
+			int text_y = 300;
+			font = "lang/en.ttf#92";
+			text = Text::get("SDL_TTF SPONSORED BY me.", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{32, text_y, 0, 0}, 0xFFFF00FF);
+
+			text_y += text->getHeight() + 4;
+			font = "lang/en.ttf#92";
+			text = Text::get("ALL HAIL POTATO KING", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{32, text_y, 0, 0}, 0xFFEF23FF);
+
+			text_y += text->getHeight();
+			font = "lang/en.ttf#22";
+			text = Text::get("run the gauntlet f00lz!!1!", font);
+			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{100, text_y, 0, 0}, 0xFFEF23FF);
+		}
+
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
@@ -1941,6 +1962,7 @@ void handleMainMenu(bool mode)
 
 						physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 						generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+						generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 						gamemods_modelsListLastStartedUnmodded = true;
 					}
 					if ( reloadSounds )
@@ -4262,7 +4284,7 @@ void handleMainMenu(bool mode)
 
 			// fps slider
 			ttfPrintText(ttf12, subx1 + 24, suby2 - 80, language[2411]);
-			doSlider(subx1 + 24, suby2 - 56, 14, 60, 144, 1, (int*)(&settings_fps));
+			doSlider(subx1 + 24, suby2 - 56, 14, 60, 300, 1, (int*)(&settings_fps));
 		}
 
 		// audio tab
@@ -9370,1447 +9392,47 @@ void handleMainMenu(bool mode)
 	{
 		if ( introstage == 2 )   // quit game
 		{
-			introstage = 0;
-			mainloop = 0;
+			doQuitGame();
 		}
 		else if ( introstage == 3 )     // new game
 		{
-			bool bWasOnMainMenu = intro;
-			introstage = 1;
-			fadefinished = false;
-			fadeout = false;
-			gamePaused = false;
-			multiplayerselect = SINGLE;
-			intro = true; //Fix items auto-adding to the hotbar on game restart.
-
-			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
-			{
-				if ( !mode )
-				{
-					// restarting game, make a highscore
-					saveScore();
-					deleteSaveGame(multiplayer);
-					loadingsavegame = 0;
-				}
-			}
-			camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
-
-			// undo shopkeeper grudge
-			swornenemies[SHOPKEEPER][HUMAN] = false;
-			monsterally[SHOPKEEPER][HUMAN] = true;
-			swornenemies[SHOPKEEPER][AUTOMATON] = false;
-			monsterally[SHOPKEEPER][AUTOMATON] = true;
-
-			// setup game //TODO: Move into a function startGameStuff() or something.
-			entity_uids = 1;
-			loading = true;
-			darkmap = false;
-
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				players[i]->init();
-				players[i]->hud.reset();
-				deinitShapeshiftHotbar(i);
-				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
-				{
-					players[i]->hotbar.hotbarShapeshiftInit[c] = false;
-				}
-				players[i]->shootmode = true;
-				players[i]->magic.clearSelectedSpells();
-				enemyHPDamageBarHandler[i].HPBars.clear();
-			}
-			currentlevel = startfloor;
-			secretlevel = false;
-			victory = 0;
-			completionTime = 0;
-
-			setDefaultPlayerConducts(); // penniless, foodless etc.
-			if ( startfloor != 0 )
-			{
-				conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
-			}
-
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				minimapPings[i].clear(); // clear minimap pings
-			}
-			globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
-			gameplayCustomManager.readFromFile();
-			textSourceScript.scriptVariables.clear();
-
-			if ( multiplayer == CLIENT )
-			{
-				gameModeManager.currentSession.saveServerFlags();
-				svFlags = lobbyWindowSvFlags;
-			}
-			else if ( !loadingsavegame && bWasOnMainMenu )
-			{
-				gameModeManager.currentSession.saveServerFlags();
-			}
-
-			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
-			{
-				svFlags &= ~(SV_FLAG_HARDCORE);
-				svFlags &= ~(SV_FLAG_CHEATS);
-				svFlags &= ~(SV_FLAG_LIFESAVING);
-				svFlags &= ~(SV_FLAG_CLASSIC);
-				svFlags &= ~(SV_FLAG_KEEPINVENTORY);
-				svFlags |= SV_FLAG_HUNGER;
-				svFlags |= SV_FLAG_FRIENDLYFIRE;
-				svFlags |= SV_FLAG_MINOTAURS;
-				svFlags |= SV_FLAG_TRAPS;
-
-				if ( gameModeManager.Tutorial.dungeonLevel >= 0 )
-				{
-					currentlevel = gameModeManager.Tutorial.dungeonLevel;
-					gameModeManager.Tutorial.dungeonLevel = -1;
-				}
-			}
-
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				// clear follower menu entities.
-				FollowerMenu[i].closeFollowerMenuGUI(true);
-				list_FreeAll(&damageIndicators[i]);
-			}
-			for ( c = 0; c < NUMMONSTERS; c++ )
-			{
-				kills[c] = 0;
-			}
-
-			// close chests
-			for ( c = 0; c < MAXPLAYERS; ++c )
-			{
-				if ( players[c]->isLocalPlayer() )
-				{
-					if ( openedChest[c] )
-					{
-						openedChest[c]->closeChest();
-					}
-				}
-				else if ( c > 0 && !client_disconnected[c] )
-				{
-					if ( openedChest[c] )
-					{
-						openedChest[c]->closeChestServer();
-					}
-				}
-			}
-
-			// disable cheats
-			noclip = false;
-			godmode = false;
-			buddhamode = false;
-			everybodyfriendly = false;
-			gameloopFreezeEntities = false;
-
-#ifdef STEAMWORKS
-			if ( !directConnect )
-			{
-				if ( currentLobby )
-				{
-					// once the game is started, the lobby is no longer needed.
-					// when all steam users have left the lobby,
-					// the lobby is destroyed automatically on the backend.
-
-					SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
-					cpp_Free_CSteamID(currentLobby); //TODO: Bugger this.
-					currentLobby = NULL;
-				}
-			}
-#elif defined USE_EOS
-			if ( !directConnect )
-			{
-				/*if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
-				{
-					EOS.leaveLobby();
-				}*/
-			}
-#endif
-
-			// load dungeon
-			if ( multiplayer != CLIENT )
-			{
-				// stop all sounds
-#ifdef USE_FMOD
-				if ( sound_group )
-				{
-					sound_group->stop();
-				}
-				if ( soundAmbient_group )
-				{
-					soundAmbient_group->stop();
-				}
-				if ( soundEnvironment_group )
-				{
-					soundEnvironment_group->stop();
-				}
-#elif defined USE_OPENAL
-				if ( sound_group )
-				{
-					OPENAL_ChannelGroup_Stop(sound_group);
-				}
-				if ( soundAmbient_group )
-				{
-					OPENAL_ChannelGroup_Stop(soundAmbient_group);
-				}
-				if ( soundEnvironment_group )
-				{
-					OPENAL_ChannelGroup_Stop(soundEnvironment_group);
-				}
-#endif
-
-				// generate a unique game key (used to identify compatible save games)
-				prng_seed_time();
-				if ( multiplayer == SINGLE )
-				{
-					uniqueGameKey = prng_get_uint();
-					if ( !uniqueGameKey )
-					{
-						uniqueGameKey++;
-					}
-				}
-
-				// reset class loadout
-				if ( !loadingsavegame )
-				{
-					stats[0]->clearStats();
-					initClass(0);
-					mapseed = 0;
-				}
-				else
-				{
-					loadGame(0);
-				}
-
-				// hack to fix these things from breaking everything...
-				for ( int i = 0; i < MAXPLAYERS; ++i )
-				{
-					players[i]->hud.arm = nullptr;
-					players[i]->hud.weapon = nullptr;
-					players[i]->hud.magicLeftHand = nullptr;
-					players[i]->hud.magicRightHand = nullptr;
-				}
-
-				for ( node = map.entities->first; node != nullptr; node = node->next )
-				{
-					entity = (Entity*)node->element;
-					entity->flags[NOUPDATE] = true;
-				}
-				lastEntityUIDs = entity_uids;
-				numplayers = 0;
-				int checkMapHash = -1;
-				if ( loadingmap == false )
-				{
-					physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
-					if ( checkMapHash == 0 )
-					{
-						conductGameChallenges[CONDUCT_MODDED] = 1;
-					}
-				}
-				else
-				{
-					if ( genmap == false )
-					{
-						std::string fullMapName = physfsFormatMapName(maptoload);
-						loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
-						if ( checkMapHash == 0 )
-						{
-							conductGameChallenges[CONDUCT_MODDED] = 1;
-						}
-					}
-					else
-					{
-						generateDungeon(maptoload, mapseed);
-					}
-				}
-				assignActions(&map);
-				generatePathMaps();
-
-				achievementObserver.updateData();
-
-				if ( loadingsavegame )
-				{
-					for ( c = 0; c < MAXPLAYERS; c++ )
-					{
-						if ( players[c] && players[c]->entity && !client_disconnected[c] )
-						{
-							if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
-							{
-								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
-								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
-								serverUpdateEffects(c);
-							}
-							if ( stats[c] && stats[c]->EFFECTS[EFF_SHAPESHIFT] && stats[c]->playerShapeshiftStorage != NOTHING )
-							{
-								players[c]->entity->effectShapeshift = stats[c]->playerShapeshiftStorage;
-								serverUpdateEntitySkill(players[c]->entity, 53); // update visual shapeshift effect for clients.
-								serverUpdateEffects(c);
-							}
-							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
-							{
-								players[c]->entity->playerVampireCurse = 1;
-								serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
-							}
-						}
-					}
-
-					list_t* followers = loadGameFollowers();
-					if ( followers )
-					{
-						int c;
-						for ( c = 0; c < MAXPLAYERS; c++ )
-						{
-							node_t* tempNode = list_Node(followers, c);
-							if ( tempNode )
-							{
-								list_t* tempFollowers = (list_t*)tempNode->element;
-								if (players[c] && players[c]->entity && !client_disconnected[c])
-								{
-									node_t* node;
-									node_t* gyrobotNode = nullptr;
-									Entity* gyrobotEntity = nullptr;
-									std::vector<node_t*> allyRobotNodes;
-									for ( node = tempFollowers->first; node != NULL; node = node->next )
-									{
-										Stat* tempStats = (Stat*)node->element;
-										if ( tempStats && tempStats->type == GYROBOT )
-										{
-											gyrobotNode = node;
-											break;
-										}
-									}
-									for ( node = tempFollowers->first; node != NULL; node = node->next )
-									{
-										Stat* tempStats = (Stat*)node->element;
-										if ( tempStats && (tempStats->type == DUMMYBOT
-											|| tempStats->type == SENTRYBOT
-											|| tempStats->type == SPELLBOT) )
-										{
-											// gyrobot will pick up these guys into it's inventory, otherwise leave them behind.
-											if ( gyrobotNode )
-											{
-												allyRobotNodes.push_back(node);
-											}
-											continue;
-										}
-										Entity* monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
-										if ( monster )
-										{
-											if ( node == gyrobotNode )
-											{
-												gyrobotEntity = monster;
-											}
-											monster->skill[3] = 1; // to mark this monster partially initialized
-											list_RemoveNode(monster->children.last);
-
-											node_t* newNode = list_AddNodeLast(&monster->children);
-											newNode->element = tempStats->copyStats();
-											newNode->deconstructor = &statDeconstructor;
-											newNode->size = sizeof(tempStats);
-
-											Stat* monsterStats = (Stat*)newNode->element;
-											monsterStats->leader_uid = players[c]->entity->getUID();
-											monster->flags[USERFLAG2] = true;
-											/*if ( !monsterally[HUMAN][monsterStats->type] )
-											{
-											}*/
-											monster->monsterAllyIndex = c;
-											if ( multiplayer == SERVER )
-											{
-												serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
-											}
-
-											if ( multiplayer != CLIENT )
-											{
-												monster->monsterAllyClass = monsterStats->allyClass;
-												monster->monsterAllyPickupItems = monsterStats->allyItemPickup;
-												if ( stats[c]->playerSummonPERCHR != 0 && !strcmp(monsterStats->name, "skeleton knight") )
-												{
-													monster->monsterAllySummonRank = (stats[c]->playerSummonPERCHR & 0x0000FF00) >> 8;
-												}
-												else if ( stats[c]->playerSummon2PERCHR != 0 && !strcmp(monsterStats->name, "skeleton sentinel") )
-												{
-													monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
-												}
-												serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
-												serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
-												serverUpdateEntitySkill(monster, 50); // update monsterAllySummonRank
-											}
-
-											newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
-											newNode->deconstructor = &defaultDeconstructor;
-											Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
-											newNode->element = myuid;
-											*myuid = monster->getUID();
-
-											if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() )
-											{
-												strcpy((char*)net_packet->data, "LEAD");
-												SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
-												strcpy((char*)(&net_packet->data[8]), monsterStats->name);
-												net_packet->data[8 + strlen(monsterStats->name)] = 0;
-												net_packet->address.host = net_clients[c - 1].host;
-												net_packet->address.port = net_clients[c - 1].port;
-												net_packet->len = 8 + strlen(monsterStats->name) + 1;
-												sendPacketSafe(net_sock, -1, net_packet, c - 1);
-
-												serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
-											}
-
-											if ( !FollowerMenu[c].recentEntity && players[c]->isLocalPlayer() )
-											{
-												FollowerMenu[c].recentEntity = monster;
-											}
-										}
-									}
-									if ( gyrobotEntity && !allyRobotNodes.empty() )
-									{
-										Stat* gyroStats = gyrobotEntity->getStats();
-										for ( auto it = allyRobotNodes.begin(); gyroStats && it != allyRobotNodes.end(); ++it )
-										{
-											node_t* botNode = *it;
-											if ( botNode )
-											{
-												Stat* tempStats = (Stat*)botNode->element;
-												if ( tempStats )
-												{
-													ItemType type = WOODEN_SHIELD;
-													if ( tempStats->type == SENTRYBOT )
-													{
-														type = TOOL_SENTRYBOT;
-													}
-													else if ( tempStats->type == SPELLBOT )
-													{
-														type = TOOL_SPELLBOT;
-													}
-													else if ( tempStats->type == DUMMYBOT )
-													{
-														type = TOOL_DUMMYBOT;
-													}
-													int appearance = monsterTinkeringConvertHPToAppearance(tempStats);
-													if ( type != WOODEN_SHIELD )
-													{
-														Item* item = newItem(type, static_cast<Status>(tempStats->monsterTinkeringStatus), 
-															0, 1, appearance, true, &gyroStats->inventory);
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-						list_FreeAll(followers);
-						free(followers);
-					}
-				}
-
-				if ( multiplayer == SINGLE )
-				{
-					saveGame();
-				}
-			}
-			else
-			{
-				// hack to fix these things from breaking everything...
-				for ( int i = 0; i < MAXPLAYERS; ++i )
-				{
-					players[i]->hud.arm = nullptr;
-					players[i]->hud.weapon = nullptr;
-					players[i]->hud.magicLeftHand = nullptr;
-					players[i]->hud.magicRightHand = nullptr;
-				}
-
-				client_disconnected[0] = false;
-
-				// initialize class
-				if ( !loadingsavegame )
-				{
-					stats[clientnum]->clearStats();
-					initClass(clientnum);
-					mapseed = 0;
-				}
-				else
-				{
-					loadGame(clientnum);
-				}
-
-				// stop all sounds
-#ifdef USE_FMOD
-				if ( sound_group )
-				{
-					sound_group->stop();
-				}
-				if ( soundAmbient_group )
-				{
-					soundAmbient_group->stop();
-				}
-				if ( soundEnvironment_group )
-				{
-					soundEnvironment_group->stop();
-				}
-#elif defined USE_OPENAL
-				if ( sound_group )
-				{
-					OPENAL_ChannelGroup_Stop(sound_group);
-				}
-				if ( soundAmbient_group )
-				{
-					OPENAL_ChannelGroup_Stop(soundAmbient_group);
-				}
-				if ( soundEnvironment_group )
-				{
-					OPENAL_ChannelGroup_Stop(soundEnvironment_group);
-				}
-#endif
-				// load next level
-				entity_uids = 1;
-				lastEntityUIDs = entity_uids;
-				numplayers = 0;
-
-				int checkMapHash = -1;
-				if ( loadingmap == false )
-				{
-					physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
-					if ( checkMapHash == 0 )
-					{
-						conductGameChallenges[CONDUCT_MODDED] = 1;
-					}
-				}
-				else
-				{
-					if ( genmap == false )
-					{
-						std::string fullMapName = physfsFormatMapName(maptoload);
-						loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
-						if ( checkMapHash == 0 )
-						{
-							conductGameChallenges[CONDUCT_MODDED] = 1;
-						}
-					}
-					else
-					{
-						generateDungeon(maptoload, rand());
-					}
-				}
-				assignActions(&map);
-				generatePathMaps();
-				for ( node = map.entities->first; node != nullptr; node = nextnode )
-				{
-					nextnode = node->next;
-					Entity* entity = (Entity*)node->element;
-					if ( entity->flags[NOUPDATE] )
-					{
-						list_RemoveNode(entity->mynode);    // we're anticipating this entity data from server
-					}
-				}
-
-				printlog("Done.\n");
-			}
-
-			// spice of life achievement
-			usedClass[client_classes[clientnum]] = true;
-			bool usedAllClasses = true;
-			for ( c = 0; c <= CLASS_MONK; c++ )
-			{
-				if ( !usedClass[c] )
-				{
-					usedAllClasses = false;
-				}
-			}
-			if ( usedAllClasses )
-			{
-				steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
-			}
-
-			if ( stats[clientnum]->playerRace >= 0 && stats[clientnum]->playerRace <= RACE_INSECTOID )
-			{
-				usedRace[stats[clientnum]->playerRace] = true;
-			}
-			// new achievement
-			usedAllClasses = true;
-			for ( c = 0; c <= CLASS_HUNTER; ++c )
-			{
-				if ( !usedClass[c] )
-				{
-					usedAllClasses = false;
-				}
-			}
-			bool usedAllRaces = true;
-			for ( c = RACE_HUMAN; c <= RACE_INSECTOID; ++c )
-			{
-				if ( !usedRace[c] )
-				{
-					usedAllRaces = false;
-				}
-			}
-			if ( usedAllClasses && usedAllRaces )
-			{
-				steamAchievement("BARONY_ACH_I_WANT_IT_ALL");
-			}
-
-			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT && !loadingsavegame )
-			{
-				steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
-				achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_STARTED);
-			}
-
-			// delete game data clutter
-			list_FreeAll(&messages);
-			list_FreeAll(&command_history);
-			list_FreeAll(&safePacketsSent);
-			for ( c = 0; c < MAXPLAYERS; c++ )
-			{
-				safePacketsReceivedMap[c].clear();
-				players[c]->messageZone.deleteAllNotificationMessages();
-			}
-			if ( !loadingsavegame ) // don't delete the followers we just created!
-			{
-				for (c = 0; c < MAXPLAYERS; c++)
-				{
-					list_FreeAll(&stats[c]->FOLLOWERS);
-				}
-			}
-
-			if ( loadingsavegame && multiplayer != CLIENT )
-			{
-				loadingsavegame = 0;
-			}
-
-			enchantedFeatherScrollSeed.seed(uniqueGameKey);
-			enchantedFeatherScrollsShuffled.clear();
-			enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
-			std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
-			for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
-			{
-				//printlog("Sequence: %d", *it);
-			}
-
-			list_FreeAll(&removedEntities);
-
-			for ( c = 0; c < MAXPLAYERS; c++ )
-			{
-				list_FreeAll(&chestInv[c]);
-			}
-
-			// make some messages
-			startMessages();
-
-			// kick off the main loop!
-			pauseGame(1, 0);
-			loading = false;
-			intro = false;
+			doNewGame(!mode);
 		}
 		else if ( introstage == 4 )     // credits
 		{
-			fadefinished = false;
-			fadeout = false;
-			if ( creditstage == 0 && victory == 3 )
-			{
-#ifdef MUSIC
-			playMusic(citadelmusic[0], true, false, false);
-#endif
-			}
-			creditstage++;
-			if ( creditstage >= 15 )
-			{
-#ifdef MUSIC
-				if ( victory == 3 )
-				{
-					playMusic(intromusic[2], true, false, false);
-				}
-				else
-				{
-					playMusic(intromusic[rand() % 2], true, false, false);
-				}
-#endif
-				introstage = 1;
-				credittime = 0;
-				creditstage = 0;
-				movie = false;
-			}
-			else
-			{
-				credittime = 0;
-				movie = true;
-			}
+			doCredits();
 		}
 		else if ( introstage == 5 )     // end game
 		{
-			bool endTutorial = false;
-			if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
-			{
-				victory = 0;
-				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
-				endTutorial = true;
-			}
-
-			// in greater numbers achievement
-			if ( victory )
-			{
-				int k = 0;
-				for ( c = 0; c < MAXPLAYERS; c++ )
-				{
-					if (players[c] && players[c]->entity)
-					{
-						k++;
-					}
-				}
-				if ( k >= 2 )
-				{
-					steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
-				}
-
-				if ( (victory == 1 && currentlevel >= 20)
-					|| (victory == 2 && currentlevel >= 24)
-					|| (victory == 3 && currentlevel >= 35) )
-				{
-					if ( client_classes[clientnum] == CLASS_ACCURSED )
-					{
-						if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
-						{
-							conductGameChallenges[CONDUCT_ACCURSED] = 1;
-						}
-					}
-					if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
-					{
-						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
-					}
-					achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
-				}
-			}
-
-			// figure out the victory crawl texts...
-			int movieCrawlType = -1;
-			if ( victory )
-			{
-				if ( stats[0] )
-				{
-					strcpy(epilogueHostName, stats[0]->name);
-					epilogueHostRace = RACE_HUMAN;
-					if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
-					{
-						epilogueHostRace = stats[0]->playerRace;
-					}
-					epilogueMultiplayerType = multiplayer;
-					if ( victory == 1 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
-					{
-						// herx defeat by monsters.
-						movieCrawlType = MOVIE_CLASSIC_WIN_MONSTERS;
-					}
-					else if ( victory == 2 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
-					{
-						// baphomet defeat by monsters.
-						movieCrawlType = MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS;
-					}
-					else if ( victory == 3 )
-					{
-						switch ( epilogueHostRace )
-						{
-							case RACE_AUTOMATON:
-								movieCrawlType = MOVIE_WIN_AUTOMATON;
-								break;
-							case RACE_SKELETON:
-							case RACE_VAMPIRE:
-							case RACE_SUCCUBUS:
-							case RACE_INCUBUS:
-								movieCrawlType = MOVIE_WIN_DEMONS_UNDEAD;
-								break;
-							case RACE_GOATMAN:
-							case RACE_GOBLIN:
-							case RACE_INSECTOID:
-								movieCrawlType = MOVIE_WIN_BEASTS;
-								break;
-							case RACE_HUMAN:
-								break;
-							default:
-								break;
-						}
-					}
-				}
-			}
-
-			// make a highscore!
-			if ( !endTutorial )
-			{
-				int saveScoreResult = saveScore();
-			}
-
-			// pick a new subtitle :)
-			subtitleCurrent = rand() % NUMSUBTITLES;
-			subtitleVisible = true;
-
-			for ( c = 0; c < NUMMONSTERS; c++ )
-			{
-				kills[c] = 0;
-			}
-
-			// stop all sounds
-#ifdef USE_FMOD
-			if ( sound_group )
-			{
-				sound_group->stop();
-			}
-			if ( soundAmbient_group )
-			{
-				soundAmbient_group->stop();
-			}
-			if ( soundEnvironment_group )
-			{
-				soundEnvironment_group->stop();
-			}
-#elif defined USE_OPENAL
-			if ( sound_group )
-			{
-				OPENAL_ChannelGroup_Stop(sound_group);
-			}
-			if ( soundAmbient_group )
-			{
-				OPENAL_ChannelGroup_Stop(soundAmbient_group);
-			}
-			if ( soundEnvironment_group )
-			{
-				OPENAL_ChannelGroup_Stop(soundEnvironment_group);
-			}
-#endif
-
-			// send disconnect messages
-			if (multiplayer == CLIENT)
-			{
-				strcpy((char*)net_packet->data, "DISCONNECT");
-				net_packet->data[10] = clientnum;
-				net_packet->address.host = net_server.host;
-				net_packet->address.port = net_server.port;
-				net_packet->len = 11;
-				sendPacketSafe(net_sock, -1, net_packet, 0);
-				printlog("disconnected from server.\n");
-			}
-			else if (multiplayer == SERVER)
-			{
-				for (x = 1; x < MAXPLAYERS; x++)
-				{
-					if ( client_disconnected[x] == true )
-					{
-						continue;
-					}
-					strcpy((char*)net_packet->data, "DISCONNECT");
-					net_packet->data[10] = clientnum;
-					net_packet->address.host = net_clients[x - 1].host;
-					net_packet->address.port = net_clients[x - 1].port;
-					net_packet->len = 11;
-					sendPacketSafe(net_sock, -1, net_packet, x - 1);
-					client_disconnected[x] = true;
-				}
-			}
-
-			// clean up shopInv
-			if ( multiplayer == CLIENT )
-			{
-				for ( x = 0; x < MAXPLAYERS; x++ )
-				{
-					if ( shopInv[x] )
-					{
-						list_FreeAll(shopInv[x]);
-						free(shopInv[x]);
-						shopInv[x] = nullptr;
-					}
-				}
-			}
-
-			// delete save game
-			if ( !savethisgame && !endTutorial )
-			{
-				deleteSaveGame(multiplayer);
-			}
-			else
-			{
-				savethisgame = false;
-			}
-
-			if ( victory )
-			{
-				// conduct achievements
-				if ( (victory == 1 && currentlevel >= 20)
-					|| (victory == 2 && currentlevel >= 24)
-					|| (victory == 3 && currentlevel >= 35) )
-				{
-					if ( conductPenniless )
-					{
-						steamAchievement("BARONY_ACH_PENNILESS_CONDUCT");
-					}
-					if ( conductFoodless )
-					{
-						steamAchievement("BARONY_ACH_FOODLESS_CONDUCT");
-					}
-					if ( conductVegetarian )
-					{
-						steamAchievement("BARONY_ACH_VEGETARIAN_CONDUCT");
-					}
-					if ( conductIlliterate )
-					{
-						steamAchievement("BARONY_ACH_ILLITERATE_CONDUCT");
-					}
-
-					if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
-					{
-						steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
-					}
-				}
-
-				if ( victory == 1 )
-				{
-					if ( currentlevel >= 20 )
-					{
-						if ( conductGameChallenges[CONDUCT_HARDCORE] )
-						{
-							steamAchievement("BARONY_ACH_HARDCORE");
-						}
-					}
-				}
-				else if ( victory == 2 )
-				{
-					if ( currentlevel >= 24 )
-					{
-						if ( conductGameChallenges[CONDUCT_HARDCORE] )
-						{
-							steamAchievement("BARONY_ACH_HARDCORE");
-						}
-					}
-				}
-				else if ( victory == 3 )
-				{
-					if ( currentlevel >= 35 )
-					{
-						if ( conductGameChallenges[CONDUCT_BRAWLER] )
-						{
-							steamAchievement("BARONY_ACH_BRAWLER");
-						}
-						if ( conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] )
-						{
-							steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
-						}
-						if ( conductGameChallenges[CONDUCT_HARDCORE] )
-						{
-							steamAchievement("BARONY_ACH_POST_HARDCORE");
-						}
-
-						if ( client_classes[clientnum] == CLASS_MESMER )
-						{
-							steamAchievement("BARONY_ACH_COMMANDER_CHIEF");
-						}
-						else if ( client_classes[clientnum] == CLASS_BREWER )
-						{
-							steamAchievement("BARONY_ACH_DRUNK_POWER");
-						}
-						else if ( client_classes[clientnum] == CLASS_ACCURSED )
-						{
-							steamAchievement("BARONY_ACH_POWER_HUNGRY");
-							if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
-							{
-								if ( stats[clientnum] && (svFlags & SV_FLAG_HUNGER) )
-								{
-									steamAchievement("BARONY_ACH_BLOOD_IS_THE_LIFE");
-								}
-							}
-						}
-						else if ( client_classes[clientnum] == CLASS_HUNTER )
-						{
-							steamAchievement("BARONY_ACH_RANGER_DANGER");
-							if ( conductGameChallenges[CONDUCT_RANGED_ONLY] )
-							{
-								steamAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
-							}
-						}
-						else if ( client_classes[clientnum] == CLASS_CONJURER )
-						{
-							steamAchievement("BARONY_ACH_TURN_UNDEAD");
-						}
-						else if ( client_classes[clientnum] == CLASS_SHAMAN )
-						{
-							steamAchievement("BARONY_ACH_MY_FINAL_FORM");
-						}
-						else if ( client_classes[clientnum] == CLASS_PUNISHER )
-						{
-							steamAchievement("BARONY_ACH_TIME_TO_SUFFER");
-						}
-						else if ( client_classes[clientnum] == CLASS_MACHINIST )
-						{
-							steamAchievement("BARONY_ACH_LIKE_CLOCKWORK");
-						}
-
-						if ( stats[clientnum] && stats[clientnum]->appearance == 0 )
-						{
-							switch ( stats[clientnum]->playerRace )
-							{
-								case RACE_SKELETON:
-									steamAchievement("BARONY_ACH_BONY_BARON");
-									break;
-								case RACE_SUCCUBUS:
-									steamAchievement("BARONY_ACH_BOMBSHELL_BARON");
-									break;
-								case RACE_GOATMAN:
-									steamAchievement("BARONY_ACH_BLEATING_BARON");
-									break;
-								case RACE_VAMPIRE:
-									steamAchievement("BARONY_ACH_BUCKTOOTH_BARON");
-									break;
-								case RACE_INCUBUS:
-									steamAchievement("BARONY_ACH_BAD_BOY_BARON");
-									break;
-								case RACE_INSECTOID:
-									steamAchievement("BARONY_ACH_BUGGAR_BARON");
-									break;
-								case RACE_AUTOMATON:
-									steamAchievement("BARONY_ACH_BOILERPLATE_BARON");
-									break;
-								case RACE_GOBLIN:
-									steamAchievement("BARONY_ACH_BAYOU_BARON");
-									break;
-								default:
-									break;
-							}
-						}
-					}
-				}
-			}
-
-			// reset game
-			darkmap = false;
-			multiplayer = 0;
-			currentlevel = 0;
-			secretlevel = false;
-			clientnum = 0;
-			introstage = 1;
-			intro = true;
-
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				players[i]->inventoryUI.appraisal.timer = 0;
-				players[i]->inventoryUI.appraisal.current_item = 0;
-				players[i]->hud.reset();
-				deinitShapeshiftHotbar(i);
-				for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
-				{
-					players[i]->hotbar.hotbarShapeshiftInit[c] = false;
-				}
-				players[i]->shootmode = true;
-				players[i]->magic.clearSelectedSpells();
-			}
-			gameModeManager.currentSession.restoreSavedServerFlags();
-			client_classes[0] = 0;
-			for ( c = 0; c < MAXPLAYERS; c++ )
-			{
-				spellcastingAnimationManager_deactivate(&cast_animation[c]);
-			}
-			SDL_StopTextInput();
-
-			// delete game data clutter
-			list_FreeAll(&messages);
-			list_FreeAll(&command_history);
-			list_FreeAll(&safePacketsSent);
-			for ( c = 0; c < MAXPLAYERS; c++ )
-			{
-				safePacketsReceivedMap[c].clear();
-				players[c]->messageZone.deleteAllNotificationMessages();
-			}
-			for (c = 0; c < MAXPLAYERS; c++)
-			{
-				stats[c]->freePlayerEquipment();
-				list_FreeAll(&stats[c]->inventory);
-				list_FreeAll(&stats[c]->FOLLOWERS);
-			}
-			list_FreeAll(&removedEntities);
-			for ( c = 0; c < MAXPLAYERS; c++ )
-			{
-				list_FreeAll(&chestInv[c]);
-			}
-
-			// default player stats
-			for ( c = 0; c < MAXPLAYERS; c++ )
-			{
-				if ( c > 0 )
-				{
-					client_disconnected[c] = true;
-				}
-				else
-				{
-					client_disconnected[c] = false;
-				}
-				players[c]->entity = nullptr; //TODO: PLAYERSWAP VERIFY. Need to do anything else?
-				players[c]->cleanUpOnEntityRemoval();
-				stats[c]->sex = static_cast<sex_t>(0);
-				stats[c]->appearance = 0;
-				strcpy(stats[c]->name, "");
-				stats[c]->type = HUMAN;
-				stats[c]->playerRace = RACE_HUMAN;
-				stats[c]->clearStats();
-				entitiesToDelete[c].first = NULL;
-				entitiesToDelete[c].last = NULL;
-				if ( c == 0 )
-				{
-					initClass(c);
-				}
-			}
-
-			// hack to fix these things from breaking everything...
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				players[i]->hud.arm = nullptr;
-				players[i]->hud.weapon = nullptr;
-				players[i]->hud.magicLeftHand = nullptr;
-				players[i]->hud.magicRightHand = nullptr;
-			}
-
-			// load menu level
-			int menuMapType = 0;
-			if ( victory == 3 )
-			{
-				menuMapType = loadMainMenuMap(true, true);
-			}
-			else
-			{
-				switch ( rand() % 2 )
-				{
-					case 0:
-						menuMapType = loadMainMenuMap(true, false);
-						break;
-					case 1:
-						menuMapType = loadMainMenuMap(false, false);
-						break;
-					default:
-						break;
-				}
-			}
-			for (int c = 0; c < MAXPLAYERS; ++c) {
-				cameras[c].vang = 0;
-			}
-			numplayers = 0;
-			assignActions(&map);
-			generatePathMaps();
-			gamePaused = false;
-			if ( !victory )
-			{
-				fadefinished = false;
-				fadeout = false;
-#ifdef MUSIC
-				if ( menuMapType )
-				{
-					playMusic(intromusic[2], true, false, false);
-				}
-				else
-				{
-					playMusic(intromusic[rand() % 2], true, false, false);
-				}
-#endif
-			}
-			else
-			{
-				if ( victory == 1 )
-				{
-					introstage = 7;
-				}
-				else if ( victory == 2 )
-				{
-					introstage = 8;
-				}
-				else if ( victory == 3 )
-				{
-					introstage = 10;
-				}
-
-				if ( movieCrawlType >= 0 ) // overrides the introstage 7,8,10 sequences for DLC monsters.
-				{
-					introstage = 11 + movieCrawlType;
-				}
-			}
-
-			// finish handling invite
-#ifdef STEAMWORKS
-			if ( stillConnectingToLobby )
-			{
-				processLobbyInvite();
-			}
-#endif
-#if defined USE_EOS
-			if ( !directConnect )
-			{
-				if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
-				{
-					EOS.leaveLobby();
-				}
-			}
-#endif
+			doEndgame();
 		}
 		else if ( introstage == 6 )     // introduction cutscene
 		{
-			fadefinished = false;
-			fadeout = false;
-			intromoviestage++;
-			if ( intromoviestage >= 9 )
-			{
-#ifdef MUSIC
-				playMusic(intromusic[1], true, false, false);
-#endif
-				introstage = 1;
-				intromovietime = 0;
-				intromoviestage = 0;
-				int c;
-				for ( c = 0; c < 30; c++ )
-				{
-					intromoviealpha[c] = 0;
-				}
-				movie = false;
-			}
-			else
-			{
-				intromovietime = 0;
-				movie = true;
-			}
+			doIntro();
 		}
 		else if ( introstage == 7 )     // win game sequence (herx)
 		{
-#ifdef MUSIC
-			if ( firstendmoviestage == 0 )
-			{
-				playMusic(endgamemusic, true, true, false);
-			}
-#endif
-			firstendmoviestage++;
-			if ( firstendmoviestage >= 5 )
-			{
-				introstage = 4;
-				firstendmovietime = 0;
-				firstendmoviestage = 0;
-				int c;
-				for ( c = 0; c < 30; c++ )
-				{
-					firstendmoviealpha[c] = 0;
-				}
-				fadeout = true;
-			}
-			else
-			{
-				fadefinished = false;
-				fadeout = false;
-				firstendmovietime = 0;
-				movie = true;
-			}
+			doEndgameHerx();
 		}
 		else if ( introstage == 8 )     // win game sequence (devil)
 		{
-#ifdef MUSIC
-			if ( secondendmoviestage == 0 )
-			{
-				playMusic(endgamemusic, true, true, false);
-			}
-#endif
-			secondendmoviestage++;
-			if ( secondendmoviestage >= 5 )
-			{
-				introstage = 4;
-				secondendmovietime = 0;
-				secondendmoviestage = 0;
-				int c;
-				for ( c = 0; c < 30; c++ )
-				{
-					secondendmoviealpha[c] = 0;
-				}
-				fadeout = true;
-			}
-			else
-			{
-				fadefinished = false;
-				fadeout = false;
-				secondendmovietime = 0;
-				movie = true;
-			}
+			doEndgameDevil();
 		}
 		else if ( introstage == 9 )     // mid game sequence
 		{
-#ifdef MUSIC
-			if ( thirdendmoviestage == 0 )
-			{
-				playMusic(endgamemusic, true, true, false);
-			}
-#endif
-			thirdendmoviestage++;
-			if ( thirdendmoviestage >= thirdEndNumLines )
-			{
-				int c;
-				for ( c = 0; c < 30; c++ )
-				{
-					thirdendmoviealpha[c] = 0;
-				}
-				fadefinished = false;
-				fadeout = false;
-				if ( multiplayer != CLIENT )
-				{
-					movie = false; // allow normal pause screen.
-					thirdendmoviestage = 0;
-					thirdendmovietime = 0;
-					introstage = 1; // return to normal game functionality
-					skipLevelsOnLoad = 5;
-					loadnextlevel = true; // load the next level.
-					pauseGame(1, false); // unpause game
-				}
-			}
-			else
-			{
-				fadefinished = false;
-				fadeout = false;
-				thirdendmovietime = 0;
-				movie = true;
-			}
+			doMidgame();
 		}
 		else if ( introstage == 10 )     // expansion end game sequence
 		{
-#ifdef MUSIC
-			if ( fourthendmoviestage == 0 )
-			{
-				playMusic(endgamemusic, true, true, false);
-			}
-#endif
-			fourthendmoviestage++;
-			if ( fourthendmoviestage >= fourthEndNumLines )
-			{
-				int c;
-				for ( c = 0; c < 30; c++ )
-				{
-					fourthendmoviealpha[c] = 0;
-				}
-				introstage = 4;
-				fourthendmovietime = 0;
-				fourthendmoviestage = 0;
-				fadeout = true;
-			}
-			else
-			{
-				fadefinished = false;
-				fadeout = false;
-				fourthendmovietime = 0;
-				movie = true;
-			}
+			doEndgameCitadel();
 		}
 		else if ( introstage >= 11 && introstage <= 15 )     // new mid and classic end sequences.
 		{
-			int movieType = introstage - 11;
-			for ( int i = 0; i < 8; ++i )
-			{
-				if ( i != movieType )
-				{
-					// clean the other end stage credits.
-					DLCendmovieStageAndTime[i][MOVIE_STAGE] = 0;
-					DLCendmovieStageAndTime[i][MOVIE_TIME] = 0;
-				}
-			}
-#ifdef MUSIC
-			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
-			{
-				playMusic(endgamemusic, true, true, false);
-			}
-#endif
-			DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
-			if ( movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS || movieType == MOVIE_CLASSIC_WIN_MONSTERS )
-			{
-				// win crawls.
-				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
-				{
-					introstage = 4;
-					DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-					DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
-					int c;
-					for ( c = 0; c < 30; c++ )
-					{
-						DLCendmoviealpha[movieType][c] = 0;
-					}
-					fadeout = true;
-				}
-				else
-				{
-					fadefinished = false;
-					fadeout = false;
-					DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-					movie = true;
-				}
-			}
-			else
-			{
-				// mid-game sequences
-				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
-				{
-					int c;
-					for ( c = 0; c < 30; c++ )
-					{
-						DLCendmoviealpha[movieType][c] = 0;
-					}
-					fadefinished = false;
-					fadeout = false;
-					if ( multiplayer != CLIENT )
-					{
-						movie = false; // allow normal pause screen.
-						DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
-						DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-						introstage = 1; // return to normal game functionality
-						if ( movieType == MOVIE_MIDGAME_HERX_MONSTERS )
-						{
-							skipLevelsOnLoad = 5;
-						}
-						else
-						{
-							skipLevelsOnLoad = 0;
-						}
-						loadnextlevel = true; // load the next level.
-						pauseGame(1, false); // unpause game
-					}
-				}
-				else
-				{
-					fadefinished = false;
-					fadeout = false;
-					DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-					movie = true;
-				}
-			}
+			doEndgameClassicAndExtraMidGame();
 		}
 		else if ( introstage >= 16 && introstage <= 18 )     // expansion end game sequence DLC
 		{
-			int movieType = introstage - 11;
-			for ( int i = 0; i < 8; ++i )
-			{
-				if ( i != movieType )
-				{
-					// clean the other end stage credits.
-					DLCendmovieStageAndTime[i][MOVIE_STAGE] = 0;
-					DLCendmovieStageAndTime[i][MOVIE_TIME] = 0;
-				}
-			}
-#ifdef MUSIC
-			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
-			{
-				playMusic(endgamemusic, true, true, false);
-			}
-#endif
-			DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
-			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
-			{
-				int c;
-				for ( c = 0; c < 30; c++ )
-				{
-					DLCendmoviealpha[movieType][c] = 0;
-				}
-				introstage = 4;
-				DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-				DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
-				fadeout = true;
-			}
-			else
-			{
-				fadefinished = false;
-				fadeout = false;
-				DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-				movie = true;
-			}
+			doEndgameExpansion();
 		}
 	}
 
@@ -11040,8 +9662,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
-		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( firstendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (firstendmovietime >= 120 && firstendmoviestage == 1) )
@@ -11118,8 +9740,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
-		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( secondendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (secondendmovietime >= 120 && secondendmoviestage == 1) )
@@ -11210,9 +9832,9 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
 		drawRect(&pos, 0, 255);
-		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( thirdendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (thirdendmovietime >= 120 && thirdendmoviestage == 1) )
@@ -11508,9 +10130,9 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
 		drawRect(&pos, 0, 255);
-		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
 			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 120 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 1) )
@@ -11898,6 +10520,1454 @@ void handleMainMenu(bool mode)
 		{
 			fadealpha = std::min(fadealpha + 2, 255);
 		}
+	}
+}
+
+void doQuitGame() {
+	introstage = 0;
+	mainloop = 0;
+}
+
+void doNewGame(bool makeHighscore) {
+	bool bWasOnMainMenu = intro;
+	introstage = 1;
+	fadefinished = false;
+	fadeout = false;
+	gamePaused = false;
+	multiplayerselect = SINGLE;
+	intro = true; //Fix items auto-adding to the hotbar on game restart.
+
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
+	{
+		if ( makeHighscore )
+		{
+			// restarting game, make a highscore
+			saveScore();
+			deleteSaveGame(multiplayer);
+			loadingsavegame = 0;
+		}
+	}
+	camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
+
+												   // undo shopkeeper grudge
+	swornenemies[SHOPKEEPER][HUMAN] = false;
+	monsterally[SHOPKEEPER][HUMAN] = true;
+	swornenemies[SHOPKEEPER][AUTOMATON] = false;
+	monsterally[SHOPKEEPER][AUTOMATON] = true;
+
+	// setup game //TODO: Move into a function startGameStuff() or something.
+	entity_uids = 1;
+	loading = true;
+	darkmap = false;
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->init();
+		players[i]->hud.reset();
+		deinitShapeshiftHotbar(i);
+		for ( int c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+		{
+			players[i]->hotbar.hotbarShapeshiftInit[c] = false;
+		}
+		players[i]->shootmode = true;
+		players[i]->magic.clearSelectedSpells();
+		enemyHPDamageBarHandler[i].HPBars.clear();
+	}
+	currentlevel = startfloor;
+	secretlevel = false;
+	victory = 0;
+	completionTime = 0;
+
+	setDefaultPlayerConducts(); // penniless, foodless etc.
+	if ( startfloor != 0 )
+	{
+		conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		minimapPings[i].clear(); // clear minimap pings
+	}
+	globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+	gameplayCustomManager.readFromFile();
+	textSourceScript.scriptVariables.clear();
+
+	if ( multiplayer == CLIENT )
+	{
+		gameModeManager.currentSession.saveServerFlags();
+		svFlags = lobbyWindowSvFlags;
+	}
+	else if ( !loadingsavegame && bWasOnMainMenu )
+	{
+		gameModeManager.currentSession.saveServerFlags();
+	}
+
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	{
+		svFlags &= ~(SV_FLAG_HARDCORE);
+		svFlags &= ~(SV_FLAG_CHEATS);
+		svFlags &= ~(SV_FLAG_LIFESAVING);
+		svFlags &= ~(SV_FLAG_CLASSIC);
+		svFlags &= ~(SV_FLAG_KEEPINVENTORY);
+		svFlags |= SV_FLAG_HUNGER;
+		svFlags |= SV_FLAG_FRIENDLYFIRE;
+		svFlags |= SV_FLAG_MINOTAURS;
+		svFlags |= SV_FLAG_TRAPS;
+
+		if ( gameModeManager.Tutorial.dungeonLevel >= 0 )
+		{
+			currentlevel = gameModeManager.Tutorial.dungeonLevel;
+			gameModeManager.Tutorial.dungeonLevel = -1;
+		}
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		// clear follower menu entities.
+		FollowerMenu[i].closeFollowerMenuGUI(true);
+		list_FreeAll(&damageIndicators[i]);
+	}
+	for ( int c = 0; c < NUMMONSTERS; c++ )
+	{
+		kills[c] = 0;
+	}
+
+	// close chests
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		if ( players[c]->isLocalPlayer() )
+		{
+			if ( openedChest[c] )
+			{
+				openedChest[c]->closeChest();
+			}
+		}
+		else if ( c > 0 && !client_disconnected[c] )
+		{
+			if ( openedChest[c] )
+			{
+				openedChest[c]->closeChestServer();
+			}
+		}
+	}
+
+	// disable cheats
+	noclip = false;
+	godmode = false;
+	buddhamode = false;
+	everybodyfriendly = false;
+	gameloopFreezeEntities = false;
+
+#ifdef STEAMWORKS
+	if ( !directConnect )
+	{
+		if ( currentLobby )
+		{
+			// once the game is started, the lobby is no longer needed.
+			// when all steam users have left the lobby,
+			// the lobby is destroyed automatically on the backend.
+
+			SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
+			cpp_Free_CSteamID(currentLobby); //TODO: Bugger this.
+			currentLobby = NULL;
+		}
+	}
+#elif defined USE_EOS
+	if ( !directConnect )
+	{
+		/*if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
+		{
+		EOS.leaveLobby();
+		}*/
+	}
+#endif
+
+	// load dungeon
+	if ( multiplayer != CLIENT )
+	{
+		// stop all sounds
+#ifdef USE_FMOD
+		if ( sound_group )
+		{
+			sound_group->stop();
+		}
+		if ( soundAmbient_group )
+		{
+			soundAmbient_group->stop();
+		}
+		if ( soundEnvironment_group )
+		{
+			soundEnvironment_group->stop();
+		}
+#elif defined USE_OPENAL
+		if ( sound_group )
+		{
+			OPENAL_ChannelGroup_Stop(sound_group);
+		}
+		if ( soundAmbient_group )
+		{
+			OPENAL_ChannelGroup_Stop(soundAmbient_group);
+		}
+		if ( soundEnvironment_group )
+		{
+			OPENAL_ChannelGroup_Stop(soundEnvironment_group);
+		}
+#endif
+
+		// generate a unique game key (used to identify compatible save games)
+		prng_seed_time();
+		if ( multiplayer == SINGLE )
+		{
+			uniqueGameKey = prng_get_uint();
+			if ( !uniqueGameKey )
+			{
+				uniqueGameKey++;
+			}
+		}
+
+		// reset class loadout
+		if ( !loadingsavegame )
+		{
+			stats[0]->clearStats();
+			initClass(0);
+			mapseed = 0;
+		}
+		else
+		{
+			loadGame(0);
+		}
+
+		// hack to fix these things from breaking everything...
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			players[i]->hud.arm = nullptr;
+			players[i]->hud.weapon = nullptr;
+			players[i]->hud.magicLeftHand = nullptr;
+			players[i]->hud.magicRightHand = nullptr;
+		}
+
+		for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			entity->flags[NOUPDATE] = true;
+		}
+		lastEntityUIDs = entity_uids;
+		numplayers = 0;
+		int checkMapHash = -1;
+		if ( loadingmap == false )
+		{
+			physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+			if ( checkMapHash == 0 )
+			{
+				conductGameChallenges[CONDUCT_MODDED] = 1;
+			}
+		}
+		else
+		{
+			if ( genmap == false )
+			{
+				std::string fullMapName = physfsFormatMapName(maptoload);
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
+				if ( checkMapHash == 0 )
+				{
+					conductGameChallenges[CONDUCT_MODDED] = 1;
+				}
+			}
+			else
+			{
+				generateDungeon(maptoload, mapseed);
+			}
+		}
+		assignActions(&map);
+		generatePathMaps();
+
+		achievementObserver.updateData();
+
+		if ( loadingsavegame )
+		{
+			for ( int c = 0; c < MAXPLAYERS; c++ )
+			{
+				if ( players[c] && players[c]->entity && !client_disconnected[c] )
+				{
+					if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+					{
+						players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
+						serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
+						serverUpdateEffects(c);
+					}
+					if ( stats[c] && stats[c]->EFFECTS[EFF_SHAPESHIFT] && stats[c]->playerShapeshiftStorage != NOTHING )
+					{
+						players[c]->entity->effectShapeshift = stats[c]->playerShapeshiftStorage;
+						serverUpdateEntitySkill(players[c]->entity, 53); // update visual shapeshift effect for clients.
+						serverUpdateEffects(c);
+					}
+					if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+					{
+						players[c]->entity->playerVampireCurse = 1;
+						serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
+					}
+				}
+			}
+
+			list_t* followers = loadGameFollowers();
+			if ( followers )
+			{
+				int c;
+				for ( c = 0; c < MAXPLAYERS; c++ )
+				{
+					node_t* tempNode = list_Node(followers, c);
+					if ( tempNode )
+					{
+						list_t* tempFollowers = (list_t*)tempNode->element;
+						if (players[c] && players[c]->entity && !client_disconnected[c])
+						{
+							node_t* node;
+							node_t* gyrobotNode = nullptr;
+							Entity* gyrobotEntity = nullptr;
+							std::vector<node_t*> allyRobotNodes;
+							for ( node = tempFollowers->first; node != NULL; node = node->next )
+							{
+								Stat* tempStats = (Stat*)node->element;
+								if ( tempStats && tempStats->type == GYROBOT )
+								{
+									gyrobotNode = node;
+									break;
+								}
+							}
+							for ( node = tempFollowers->first; node != NULL; node = node->next )
+							{
+								Stat* tempStats = (Stat*)node->element;
+								if ( tempStats && (tempStats->type == DUMMYBOT
+									|| tempStats->type == SENTRYBOT
+									|| tempStats->type == SPELLBOT) )
+								{
+									// gyrobot will pick up these guys into it's inventory, otherwise leave them behind.
+									if ( gyrobotNode )
+									{
+										allyRobotNodes.push_back(node);
+									}
+									continue;
+								}
+								Entity* monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
+								if ( monster )
+								{
+									if ( node == gyrobotNode )
+									{
+										gyrobotEntity = monster;
+									}
+									monster->skill[3] = 1; // to mark this monster partially initialized
+									list_RemoveNode(monster->children.last);
+
+									node_t* newNode = list_AddNodeLast(&monster->children);
+									newNode->element = tempStats->copyStats();
+									newNode->deconstructor = &statDeconstructor;
+									newNode->size = sizeof(tempStats);
+
+									Stat* monsterStats = (Stat*)newNode->element;
+									monsterStats->leader_uid = players[c]->entity->getUID();
+									monster->flags[USERFLAG2] = true;
+									/*if ( !monsterally[HUMAN][monsterStats->type] )
+									{
+									}*/
+									monster->monsterAllyIndex = c;
+									if ( multiplayer == SERVER )
+									{
+										serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+									}
+
+									if ( multiplayer != CLIENT )
+									{
+										monster->monsterAllyClass = monsterStats->allyClass;
+										monster->monsterAllyPickupItems = monsterStats->allyItemPickup;
+										if ( stats[c]->playerSummonPERCHR != 0 && !strcmp(monsterStats->name, "skeleton knight") )
+										{
+											monster->monsterAllySummonRank = (stats[c]->playerSummonPERCHR & 0x0000FF00) >> 8;
+										}
+										else if ( stats[c]->playerSummon2PERCHR != 0 && !strcmp(monsterStats->name, "skeleton sentinel") )
+										{
+											monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
+										}
+										serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
+										serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
+										serverUpdateEntitySkill(monster, 50); // update monsterAllySummonRank
+									}
+
+									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
+									newNode->deconstructor = &defaultDeconstructor;
+									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
+									newNode->element = myuid;
+									*myuid = monster->getUID();
+
+									if ( c > 0 && multiplayer == SERVER )
+									{
+										strcpy((char*)net_packet->data, "LEAD");
+										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
+										strcpy((char*)(&net_packet->data[8]), monsterStats->name);
+										net_packet->data[8 + strlen(monsterStats->name)] = 0;
+										net_packet->address.host = net_clients[c - 1].host;
+										net_packet->address.port = net_clients[c - 1].port;
+										net_packet->len = 8 + strlen(monsterStats->name) + 1;
+										sendPacketSafe(net_sock, -1, net_packet, c - 1);
+
+										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
+									}
+
+									if ( !FollowerMenu[c].recentEntity && players[c]->isLocalPlayer() )
+									{
+										FollowerMenu[c].recentEntity = monster;
+									}
+								}
+							}
+							if ( gyrobotEntity && !allyRobotNodes.empty() )
+							{
+								Stat* gyroStats = gyrobotEntity->getStats();
+								for ( auto it = allyRobotNodes.begin(); gyroStats && it != allyRobotNodes.end(); ++it )
+								{
+									node_t* botNode = *it;
+									if ( botNode )
+									{
+										Stat* tempStats = (Stat*)botNode->element;
+										if ( tempStats )
+										{
+											ItemType type = WOODEN_SHIELD;
+											if ( tempStats->type == SENTRYBOT )
+											{
+												type = TOOL_SENTRYBOT;
+											}
+											else if ( tempStats->type == SPELLBOT )
+											{
+												type = TOOL_SPELLBOT;
+											}
+											else if ( tempStats->type == DUMMYBOT )
+											{
+												type = TOOL_DUMMYBOT;
+											}
+											int appearance = monsterTinkeringConvertHPToAppearance(tempStats);
+											if ( type != WOODEN_SHIELD )
+											{
+												Item* item = newItem(type, static_cast<Status>(tempStats->monsterTinkeringStatus), 
+													0, 1, appearance, true, &gyroStats->inventory);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				list_FreeAll(followers);
+				free(followers);
+			}
+		}
+
+		if ( multiplayer == SINGLE )
+		{
+			saveGame();
+		}
+	}
+	else
+	{
+		// hack to fix these things from breaking everything...
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			players[i]->hud.arm = nullptr;
+			players[i]->hud.weapon = nullptr;
+			players[i]->hud.magicLeftHand = nullptr;
+			players[i]->hud.magicRightHand = nullptr;
+		}
+
+		client_disconnected[0] = false;
+
+		// initialize class
+		if ( !loadingsavegame )
+		{
+			stats[clientnum]->clearStats();
+			initClass(clientnum);
+			mapseed = 0;
+		}
+		else
+		{
+			loadGame(clientnum);
+		}
+
+		// stop all sounds
+#ifdef USE_FMOD
+		if ( sound_group )
+		{
+			sound_group->stop();
+		}
+		if ( soundAmbient_group )
+		{
+			soundAmbient_group->stop();
+		}
+		if ( soundEnvironment_group )
+		{
+			soundEnvironment_group->stop();
+		}
+#elif defined USE_OPENAL
+		if ( sound_group )
+		{
+			OPENAL_ChannelGroup_Stop(sound_group);
+		}
+		if ( soundAmbient_group )
+		{
+			OPENAL_ChannelGroup_Stop(soundAmbient_group);
+		}
+		if ( soundEnvironment_group )
+		{
+			OPENAL_ChannelGroup_Stop(soundEnvironment_group);
+		}
+#endif
+		// load next level
+		entity_uids = 1;
+		lastEntityUIDs = entity_uids;
+		numplayers = 0;
+
+		int checkMapHash = -1;
+		if ( loadingmap == false )
+		{
+			physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+			if ( checkMapHash == 0 )
+			{
+				conductGameChallenges[CONDUCT_MODDED] = 1;
+			}
+		}
+		else
+		{
+			if ( genmap == false )
+			{
+				std::string fullMapName = physfsFormatMapName(maptoload);
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
+				if ( checkMapHash == 0 )
+				{
+					conductGameChallenges[CONDUCT_MODDED] = 1;
+				}
+			}
+			else
+			{
+				generateDungeon(maptoload, rand());
+			}
+		}
+		assignActions(&map);
+		generatePathMaps();
+
+		node_t* nextnode;
+		for ( node_t* node = map.entities->first; node != nullptr; node = nextnode )
+		{
+			nextnode = node->next;
+			Entity* entity = (Entity*)node->element;
+			if ( entity->flags[NOUPDATE] )
+			{
+				list_RemoveNode(entity->mynode);    // we're anticipating this entity data from server
+			}
+		}
+
+		printlog("Done.\n");
+	}
+
+	// spice of life achievement
+	usedClass[client_classes[clientnum]] = true;
+	bool usedAllClasses = true;
+	for ( int c = 0; c <= CLASS_MONK; c++ )
+	{
+		if ( !usedClass[c] )
+		{
+			usedAllClasses = false;
+		}
+	}
+	if ( usedAllClasses )
+	{
+		steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
+	}
+
+	if ( stats[clientnum]->playerRace >= 0 && stats[clientnum]->playerRace <= RACE_INSECTOID )
+	{
+		usedRace[stats[clientnum]->playerRace] = true;
+	}
+	// new achievement
+	usedAllClasses = true;
+	for ( int c = 0; c <= CLASS_HUNTER; ++c )
+	{
+		if ( !usedClass[c] )
+		{
+			usedAllClasses = false;
+		}
+	}
+	bool usedAllRaces = true;
+	for ( int c = RACE_HUMAN; c <= RACE_INSECTOID; ++c )
+	{
+		if ( !usedRace[c] )
+		{
+			usedAllRaces = false;
+		}
+	}
+	if ( usedAllClasses && usedAllRaces )
+	{
+		steamAchievement("BARONY_ACH_I_WANT_IT_ALL");
+	}
+
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT && !loadingsavegame )
+	{
+		steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
+		achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_STARTED);
+	}
+
+	// delete game data clutter
+	list_FreeAll(&messages);
+	list_FreeAll(&command_history);
+	list_FreeAll(&safePacketsSent);
+	for ( int c = 0; c < MAXPLAYERS; c++ )
+	{
+		safePacketsReceivedMap[c].clear();
+		players[c]->messageZone.deleteAllNotificationMessages();
+	}
+	if ( !loadingsavegame ) // don't delete the followers we just created!
+	{
+		for (int c = 0; c < MAXPLAYERS; c++)
+		{
+			list_FreeAll(&stats[c]->FOLLOWERS);
+		}
+	}
+
+	if ( loadingsavegame && multiplayer != CLIENT )
+	{
+		loadingsavegame = 0;
+	}
+
+	enchantedFeatherScrollSeed.seed(uniqueGameKey);
+	enchantedFeatherScrollsShuffled.clear();
+	enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
+	std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
+	for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
+	{
+		//printlog("Sequence: %d", *it);
+	}
+
+	list_FreeAll(&removedEntities);
+
+	for ( int c = 0; c < MAXPLAYERS; c++ )
+	{
+		list_FreeAll(&chestInv[c]);
+	}
+
+	// make some messages
+	startMessages();
+
+	// kick off the main loop!
+	pauseGame(1, 0);
+	loading = false;
+	intro = false;
+}
+
+void doCredits() {
+	fadefinished = false;
+	fadeout = false;
+	if ( creditstage == 0 && victory == 3 )
+	{
+#ifdef MUSIC
+		playMusic(citadelmusic[0], true, false, false);
+#endif
+	}
+	creditstage++;
+	if ( creditstage >= 15 )
+	{
+#ifdef MUSIC
+		if ( victory == 3 )
+		{
+			playMusic(intromusic[2], true, false, false);
+		}
+		else
+		{
+			playMusic(intromusic[rand() % 2], true, false, false);
+		}
+#endif
+		introstage = 1;
+		credittime = 0;
+		creditstage = 0;
+		movie = false;
+	}
+	else
+	{
+		credittime = 0;
+		movie = true;
+	}
+}
+
+void doEndgame() {
+	int c, x;
+	bool endTutorial = false;
+	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+	{
+		victory = 0;
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+		endTutorial = true;
+	}
+
+	// in greater numbers achievement
+	if ( victory )
+	{
+		int k = 0;
+		for ( c = 0; c < MAXPLAYERS; c++ )
+		{
+			if (players[c] && players[c]->entity)
+			{
+				k++;
+			}
+		}
+		if ( k >= 2 )
+		{
+			steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
+		}
+
+		if ( (victory == 1 && currentlevel >= 20)
+			|| (victory == 2 && currentlevel >= 24)
+			|| (victory == 3 && currentlevel >= 35) )
+		{
+			if ( client_classes[clientnum] == CLASS_ACCURSED )
+			{
+				if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+				{
+					conductGameChallenges[CONDUCT_ACCURSED] = 1;
+				}
+			}
+			if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
+			{
+				conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
+			}
+			achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
+		}
+	}
+
+	// figure out the victory crawl texts...
+	int movieCrawlType = -1;
+	if ( victory )
+	{
+		if ( stats[0] )
+		{
+			strcpy(epilogueHostName, stats[0]->name);
+			epilogueHostRace = RACE_HUMAN;
+			if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
+			{
+				epilogueHostRace = stats[0]->playerRace;
+			}
+			epilogueMultiplayerType = multiplayer;
+			if ( victory == 1 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
+			{
+				// herx defeat by monsters.
+				movieCrawlType = MOVIE_CLASSIC_WIN_MONSTERS;
+			}
+			else if ( victory == 2 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
+			{
+				// baphomet defeat by monsters.
+				movieCrawlType = MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS;
+			}
+			else if ( victory == 3 )
+			{
+				switch ( epilogueHostRace )
+				{
+				case RACE_AUTOMATON:
+					movieCrawlType = MOVIE_WIN_AUTOMATON;
+					break;
+				case RACE_SKELETON:
+				case RACE_VAMPIRE:
+				case RACE_SUCCUBUS:
+				case RACE_INCUBUS:
+					movieCrawlType = MOVIE_WIN_DEMONS_UNDEAD;
+					break;
+				case RACE_GOATMAN:
+				case RACE_GOBLIN:
+				case RACE_INSECTOID:
+					movieCrawlType = MOVIE_WIN_BEASTS;
+					break;
+				case RACE_HUMAN:
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	}
+
+	// make a highscore!
+	if ( !endTutorial )
+	{
+		int saveScoreResult = saveScore();
+	}
+
+	// pick a new subtitle :)
+	subtitleCurrent = rand() % NUMSUBTITLES;
+	subtitleVisible = true;
+
+	for ( c = 0; c < NUMMONSTERS; c++ )
+	{
+		kills[c] = 0;
+	}
+
+	// stop all sounds
+#ifdef USE_FMOD
+	if ( sound_group )
+	{
+		sound_group->stop();
+	}
+	if ( soundAmbient_group )
+	{
+		soundAmbient_group->stop();
+	}
+	if ( soundEnvironment_group )
+	{
+		soundEnvironment_group->stop();
+	}
+#elif defined USE_OPENAL
+	if ( sound_group )
+	{
+		OPENAL_ChannelGroup_Stop(sound_group);
+	}
+	if ( soundAmbient_group )
+	{
+		OPENAL_ChannelGroup_Stop(soundAmbient_group);
+	}
+	if ( soundEnvironment_group )
+	{
+		OPENAL_ChannelGroup_Stop(soundEnvironment_group);
+	}
+#endif
+
+	// send disconnect messages
+	if (multiplayer == CLIENT)
+	{
+		strcpy((char*)net_packet->data, "DISCONNECT");
+		net_packet->data[10] = clientnum;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 11;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		printlog("disconnected from server.\n");
+	}
+	else if (multiplayer == SERVER)
+	{
+		for (x = 1; x < MAXPLAYERS; x++)
+		{
+			if ( client_disconnected[x] == true )
+			{
+				continue;
+			}
+			strcpy((char*)net_packet->data, "DISCONNECT");
+			net_packet->data[10] = clientnum;
+			net_packet->address.host = net_clients[x - 1].host;
+			net_packet->address.port = net_clients[x - 1].port;
+			net_packet->len = 11;
+			sendPacketSafe(net_sock, -1, net_packet, x - 1);
+			client_disconnected[x] = true;
+		}
+	}
+
+	// clean up shopInv
+	if ( multiplayer == CLIENT )
+	{
+		for ( x = 0; x < MAXPLAYERS; x++ )
+		{
+			if ( shopInv[x] )
+			{
+				list_FreeAll(shopInv[x]);
+				free(shopInv[x]);
+				shopInv[x] = nullptr;
+			}
+		}
+	}
+
+	// delete save game
+	if ( !savethisgame && !endTutorial )
+	{
+		deleteSaveGame(multiplayer);
+	}
+	else
+	{
+		savethisgame = false;
+	}
+
+	if ( victory )
+	{
+		// conduct achievements
+		if ( (victory == 1 && currentlevel >= 20)
+			|| (victory == 2 && currentlevel >= 24)
+			|| (victory == 3 && currentlevel >= 35) )
+		{
+			if ( conductPenniless )
+			{
+				steamAchievement("BARONY_ACH_PENNILESS_CONDUCT");
+			}
+			if ( conductFoodless )
+			{
+				steamAchievement("BARONY_ACH_FOODLESS_CONDUCT");
+			}
+			if ( conductVegetarian )
+			{
+				steamAchievement("BARONY_ACH_VEGETARIAN_CONDUCT");
+			}
+			if ( conductIlliterate )
+			{
+				steamAchievement("BARONY_ACH_ILLITERATE_CONDUCT");
+			}
+
+			if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
+			{
+				steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
+			}
+		}
+
+		if ( victory == 1 )
+		{
+			if ( currentlevel >= 20 )
+			{
+				if ( conductGameChallenges[CONDUCT_HARDCORE] )
+				{
+					steamAchievement("BARONY_ACH_HARDCORE");
+				}
+			}
+		}
+		else if ( victory == 2 )
+		{
+			if ( currentlevel >= 24 )
+			{
+				if ( conductGameChallenges[CONDUCT_HARDCORE] )
+				{
+					steamAchievement("BARONY_ACH_HARDCORE");
+				}
+			}
+		}
+		else if ( victory == 3 )
+		{
+			if ( currentlevel >= 35 )
+			{
+				if ( conductGameChallenges[CONDUCT_BRAWLER] )
+				{
+					steamAchievement("BARONY_ACH_BRAWLER");
+				}
+				if ( conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] )
+				{
+					steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
+				}
+				if ( conductGameChallenges[CONDUCT_HARDCORE] )
+				{
+					steamAchievement("BARONY_ACH_POST_HARDCORE");
+				}
+
+				if ( client_classes[clientnum] == CLASS_MESMER )
+				{
+					steamAchievement("BARONY_ACH_COMMANDER_CHIEF");
+				}
+				else if ( client_classes[clientnum] == CLASS_BREWER )
+				{
+					steamAchievement("BARONY_ACH_DRUNK_POWER");
+				}
+				else if ( client_classes[clientnum] == CLASS_ACCURSED )
+				{
+					steamAchievement("BARONY_ACH_POWER_HUNGRY");
+					if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+					{
+						if ( stats[clientnum] && (svFlags & SV_FLAG_HUNGER) )
+						{
+							steamAchievement("BARONY_ACH_BLOOD_IS_THE_LIFE");
+						}
+					}
+				}
+				else if ( client_classes[clientnum] == CLASS_HUNTER )
+				{
+					steamAchievement("BARONY_ACH_RANGER_DANGER");
+					if ( conductGameChallenges[CONDUCT_RANGED_ONLY] )
+					{
+						steamAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
+					}
+				}
+				else if ( client_classes[clientnum] == CLASS_CONJURER )
+				{
+					steamAchievement("BARONY_ACH_TURN_UNDEAD");
+				}
+				else if ( client_classes[clientnum] == CLASS_SHAMAN )
+				{
+					steamAchievement("BARONY_ACH_MY_FINAL_FORM");
+				}
+				else if ( client_classes[clientnum] == CLASS_PUNISHER )
+				{
+					steamAchievement("BARONY_ACH_TIME_TO_SUFFER");
+				}
+				else if ( client_classes[clientnum] == CLASS_MACHINIST )
+				{
+					steamAchievement("BARONY_ACH_LIKE_CLOCKWORK");
+				}
+
+				if ( stats[clientnum] && stats[clientnum]->appearance == 0 )
+				{
+					switch ( stats[clientnum]->playerRace )
+					{
+					case RACE_SKELETON:
+						steamAchievement("BARONY_ACH_BONY_BARON");
+						break;
+					case RACE_SUCCUBUS:
+						steamAchievement("BARONY_ACH_BOMBSHELL_BARON");
+						break;
+					case RACE_GOATMAN:
+						steamAchievement("BARONY_ACH_BLEATING_BARON");
+						break;
+					case RACE_VAMPIRE:
+						steamAchievement("BARONY_ACH_BUCKTOOTH_BARON");
+						break;
+					case RACE_INCUBUS:
+						steamAchievement("BARONY_ACH_BAD_BOY_BARON");
+						break;
+					case RACE_INSECTOID:
+						steamAchievement("BARONY_ACH_BUGGAR_BARON");
+						break;
+					case RACE_AUTOMATON:
+						steamAchievement("BARONY_ACH_BOILERPLATE_BARON");
+						break;
+					case RACE_GOBLIN:
+						steamAchievement("BARONY_ACH_BAYOU_BARON");
+						break;
+					default:
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// reset game
+	darkmap = false;
+	multiplayer = 0;
+	currentlevel = 0;
+	secretlevel = false;
+	clientnum = 0;
+	introstage = 1;
+	intro = true;
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->inventoryUI.appraisal.timer = 0;
+		players[i]->inventoryUI.appraisal.current_item = 0;
+		players[i]->hud.reset();
+		deinitShapeshiftHotbar(i);
+		for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
+		{
+			players[i]->hotbar.hotbarShapeshiftInit[c] = false;
+		}
+		players[i]->shootmode = true;
+		players[i]->magic.clearSelectedSpells();
+	}
+	gameModeManager.currentSession.restoreSavedServerFlags();
+	client_classes[0] = 0;
+	for ( c = 0; c < MAXPLAYERS; c++ )
+	{
+		spellcastingAnimationManager_deactivate(&cast_animation[c]);
+	}
+	SDL_StopTextInput();
+
+	// delete game data clutter
+	list_FreeAll(&messages);
+	list_FreeAll(&command_history);
+	list_FreeAll(&safePacketsSent);
+	for ( c = 0; c < MAXPLAYERS; c++ )
+	{
+		safePacketsReceivedMap[c].clear();
+		players[c]->messageZone.deleteAllNotificationMessages();
+	}
+	for (c = 0; c < MAXPLAYERS; c++)
+	{
+		stats[c]->freePlayerEquipment();
+		list_FreeAll(&stats[c]->inventory);
+		list_FreeAll(&stats[c]->FOLLOWERS);
+	}
+	list_FreeAll(&removedEntities);
+	for ( c = 0; c < MAXPLAYERS; c++ )
+	{
+		list_FreeAll(&chestInv[c]);
+	}
+
+	// default player stats
+	for ( c = 0; c < MAXPLAYERS; c++ )
+	{
+		if ( c > 0 )
+		{
+			client_disconnected[c] = true;
+		}
+		else
+		{
+			client_disconnected[c] = false;
+		}
+		players[c]->entity = nullptr; //TODO: PLAYERSWAP VERIFY. Need to do anything else?
+		players[c]->cleanUpOnEntityRemoval();
+		stats[c]->sex = static_cast<sex_t>(0);
+		stats[c]->appearance = 0;
+		strcpy(stats[c]->name, "");
+		stats[c]->type = HUMAN;
+		stats[c]->playerRace = RACE_HUMAN;
+		stats[c]->clearStats();
+		entitiesToDelete[c].first = NULL;
+		entitiesToDelete[c].last = NULL;
+		if ( c == 0 )
+		{
+			initClass(c);
+		}
+	}
+
+	// hack to fix these things from breaking everything...
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->hud.arm = nullptr;
+		players[i]->hud.weapon = nullptr;
+		players[i]->hud.magicLeftHand = nullptr;
+		players[i]->hud.magicRightHand = nullptr;
+	}
+
+	// load menu level
+	int menuMapType = 0;
+	if ( victory == 3 )
+	{
+		menuMapType = loadMainMenuMap(true, true);
+	}
+	else
+	{
+		switch ( rand() % 2 )
+		{
+		case 0:
+			menuMapType = loadMainMenuMap(true, false);
+			break;
+		case 1:
+			menuMapType = loadMainMenuMap(false, false);
+			break;
+		default:
+			break;
+		}
+	}
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+		cameras[c].vang = 0;
+	}
+	numplayers = 0;
+	assignActions(&map);
+	generatePathMaps();
+	gamePaused = false;
+	if ( !victory )
+	{
+		fadefinished = false;
+		fadeout = false;
+#ifdef MUSIC
+		if ( menuMapType )
+		{
+			playMusic(intromusic[2], true, false, false);
+		}
+		else
+		{
+			playMusic(intromusic[rand() % 2], true, false, false);
+		}
+#endif
+	}
+	else
+	{
+		if ( victory == 1 )
+		{
+			introstage = 7;
+		}
+		else if ( victory == 2 )
+		{
+			introstage = 8;
+		}
+		else if ( victory == 3 )
+		{
+			introstage = 10;
+		}
+
+		if ( movieCrawlType >= 0 ) // overrides the introstage 7,8,10 sequences for DLC monsters.
+		{
+			introstage = 11 + movieCrawlType;
+		}
+	}
+
+	// finish handling invite
+#ifdef STEAMWORKS
+	if ( stillConnectingToLobby )
+	{
+		processLobbyInvite();
+	}
+#endif
+#if defined USE_EOS
+	if ( !directConnect )
+	{
+		if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
+		{
+			EOS.leaveLobby();
+		}
+	}
+#endif
+}
+
+void doIntro() {
+	fadefinished = false;
+	fadeout = false;
+	intromoviestage++;
+	if ( intromoviestage >= 9 )
+	{
+#ifdef MUSIC
+		playMusic(intromusic[1], true, false, false);
+#endif
+		introstage = 1;
+		intromovietime = 0;
+		intromoviestage = 0;
+		int c;
+		for ( c = 0; c < 30; c++ )
+		{
+			intromoviealpha[c] = 0;
+		}
+		movie = false;
+	}
+	else
+	{
+		intromovietime = 0;
+		movie = true;
+	}
+
+}
+
+void doEndgameHerx() {
+#ifdef MUSIC
+	if ( firstendmoviestage == 0 )
+	{
+		playMusic(endgamemusic, true, true, false);
+	}
+#endif
+	firstendmoviestage++;
+	if ( firstendmoviestage >= 5 )
+	{
+		introstage = 4;
+		firstendmovietime = 0;
+		firstendmoviestage = 0;
+		int c;
+		for ( c = 0; c < 30; c++ )
+		{
+			firstendmoviealpha[c] = 0;
+		}
+		fadeout = true;
+	}
+	else
+	{
+		fadefinished = false;
+		fadeout = false;
+		firstendmovietime = 0;
+		movie = true;
+	}
+}
+
+void doEndgameDevil() {
+#ifdef MUSIC
+	if ( secondendmoviestage == 0 )
+	{
+		playMusic(endgamemusic, true, true, false);
+	}
+#endif
+	secondendmoviestage++;
+	if ( secondendmoviestage >= 5 )
+	{
+		introstage = 4;
+		secondendmovietime = 0;
+		secondendmoviestage = 0;
+		int c;
+		for ( c = 0; c < 30; c++ )
+		{
+			secondendmoviealpha[c] = 0;
+		}
+		fadeout = true;
+	}
+	else
+	{
+		fadefinished = false;
+		fadeout = false;
+		secondendmovietime = 0;
+		movie = true;
+	}
+}
+
+void doMidgame() {
+#ifdef MUSIC
+	if ( thirdendmoviestage == 0 )
+	{
+		playMusic(endgamemusic, true, true, false);
+	}
+#endif
+	thirdendmoviestage++;
+	if ( thirdendmoviestage >= thirdEndNumLines )
+	{
+		int c;
+		for ( c = 0; c < 30; c++ )
+		{
+			thirdendmoviealpha[c] = 0;
+		}
+		fadefinished = false;
+		fadeout = false;
+		if ( multiplayer != CLIENT )
+		{
+			movie = false; // allow normal pause screen.
+			thirdendmoviestage = 0;
+			thirdendmovietime = 0;
+			introstage = 1; // return to normal game functionality
+			skipLevelsOnLoad = 5;
+			loadnextlevel = true; // load the next level.
+			pauseGame(1, false); // unpause game
+		}
+	}
+	else
+	{
+		fadefinished = false;
+		fadeout = false;
+		thirdendmovietime = 0;
+		movie = true;
+	}
+}
+
+void doEndgameCitadel() {
+#ifdef MUSIC
+	if ( fourthendmoviestage == 0 )
+	{
+		playMusic(endgamemusic, true, true, false);
+	}
+#endif
+	fourthendmoviestage++;
+	if ( fourthendmoviestage >= fourthEndNumLines )
+	{
+		int c;
+		for ( c = 0; c < 30; c++ )
+		{
+			fourthendmoviealpha[c] = 0;
+		}
+		introstage = 4;
+		fourthendmovietime = 0;
+		fourthendmoviestage = 0;
+		fadeout = true;
+	}
+	else
+	{
+		fadefinished = false;
+		fadeout = false;
+		fourthendmovietime = 0;
+		movie = true;
+	}
+}
+
+void doEndgameClassicAndExtraMidGame() {
+	int movieType = introstage - 11;
+	for ( int i = 0; i < 8; ++i )
+	{
+		if ( i != movieType )
+		{
+			// clean the other end stage credits.
+			DLCendmovieStageAndTime[i][MOVIE_STAGE] = 0;
+			DLCendmovieStageAndTime[i][MOVIE_TIME] = 0;
+		}
+	}
+#ifdef MUSIC
+	if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
+	{
+		playMusic(endgamemusic, true, true, false);
+	}
+#endif
+	DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+	if ( movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS || movieType == MOVIE_CLASSIC_WIN_MONSTERS )
+	{
+		// win crawls.
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+		{
+			introstage = 4;
+			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+			DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
+			int c;
+			for ( c = 0; c < 30; c++ )
+			{
+				DLCendmoviealpha[movieType][c] = 0;
+			}
+			fadeout = true;
+		}
+		else
+		{
+			fadefinished = false;
+			fadeout = false;
+			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+			movie = true;
+		}
+	}
+	else
+	{
+		// mid-game sequences
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+		{
+			int c;
+			for ( c = 0; c < 30; c++ )
+			{
+				DLCendmoviealpha[movieType][c] = 0;
+			}
+			fadefinished = false;
+			fadeout = false;
+			if ( multiplayer != CLIENT )
+			{
+				movie = false; // allow normal pause screen.
+				DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
+				DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+				introstage = 1; // return to normal game functionality
+				if ( movieType == MOVIE_MIDGAME_HERX_MONSTERS )
+				{
+					skipLevelsOnLoad = 5;
+				}
+				else
+				{
+					skipLevelsOnLoad = 0;
+				}
+				loadnextlevel = true; // load the next level.
+				pauseGame(1, false); // unpause game
+			}
+		}
+		else
+		{
+			fadefinished = false;
+			fadeout = false;
+			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+			movie = true;
+		}
+	}
+}
+
+void doEndgameExpansion() {
+	int movieType = introstage - 11;
+	for ( int i = 0; i < 8; ++i )
+	{
+		if ( i != movieType )
+		{
+			// clean the other end stage credits.
+			DLCendmovieStageAndTime[i][MOVIE_STAGE] = 0;
+			DLCendmovieStageAndTime[i][MOVIE_TIME] = 0;
+		}
+	}
+#ifdef MUSIC
+	if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
+	{
+		playMusic(endgamemusic, true, true, false);
+	}
+#endif
+	DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+	if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+	{
+		int c;
+		for ( c = 0; c < 30; c++ )
+		{
+			DLCendmoviealpha[movieType][c] = 0;
+		}
+		introstage = 4;
+		DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+		DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
+		fadeout = true;
+	}
+	else
+	{
+		fadefinished = false;
+		fadeout = false;
+		DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+		movie = true;
 	}
 }
 
@@ -13941,7 +14011,7 @@ void buttonStartServer(button_t* my)
 	}
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+		if ( client_disconnected[c] )
 		{
 			continue;
 		}
@@ -13988,7 +14058,7 @@ void buttonDisconnect(button_t* my)
 		// send disconnect message to clients
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+			if ( client_disconnected[c] )
 			{
 				continue;
 			}
@@ -14125,7 +14195,7 @@ void applySettings()
 
 			for ( int c = 1; c < MAXPLAYERS; ++c )
 			{
-				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+				if ( client_disconnected[c] )
 				{
 					continue;
 				}
@@ -16932,6 +17002,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 			GO_SwapBuffers(screen);
 			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+			generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 		}
 		gamemods_modelsListRequiresReload = false;
 	}

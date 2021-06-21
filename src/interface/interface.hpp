@@ -85,7 +85,6 @@ static const int GUI_MODE_SHOP = 2;
 static const int GUI_MODE_FOLLOWERMENU = 3;
 
 extern SDL_Surface* font12x12_small_bmp;
-extern SDL_Surface* backdrop_minotaur_bmp;
 extern SDL_Surface* backdrop_blessed_bmp;
 extern SDL_Surface* backdrop_cursed_bmp;
 extern SDL_Surface* status_bmp;
