@@ -401,13 +401,16 @@ int initGame()
 		mousey = yres / 2;
 
 		// default player stats
-		for (c = 0; c < MAXPLAYERS; c++)
+		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
-			players[c] = new Player(c, true);
+			if ( !players[c] )
+			{
+				players[c] = new Player(c, true);
+			}
 			players[c]->init();
 			// Stat set to 0 as monster type not needed, values will be filled with default, then overwritten by savegame or the charclass.cpp file
 			stats[c] = new Stat(0);
-			if (c > 0)
+			if ( c > 0 )
 			{
 				client_disconnected[c] = true;
 			}
@@ -424,7 +427,7 @@ int initGame()
 			stats[c]->clearStats();
 			entitiesToDelete[c].first = nullptr;
 			entitiesToDelete[c].last = nullptr;
-			if (c == 0)
+			if ( c == 0 )
 			{
 				initClass(c);
 			}
@@ -436,7 +439,6 @@ int initGame()
 			cameras[c].winh = yres;
 			cast_animation[c].player = c;
 		}
-
 		updateLoadingScreen(96);
 		
 		if ( !loadMusic() )
