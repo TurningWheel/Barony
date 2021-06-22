@@ -379,7 +379,6 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	beatitudeFrame->setSize(slotSize);
 	beatitudeFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	beatitudeFrame->setHollow(true);
-	beatitudeFrame->setInvisible(true);
 	beatitudeFrame->setDisabled(true);
 	beatitudeFrame->addImage(coloredBackgroundPos, 0xFFFFFFFF, "images/system/white.png", "beatitude status bg");
 
@@ -387,7 +386,6 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	brokenStatusFrame->setSize(slotSize);
 	brokenStatusFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	brokenStatusFrame->setHollow(true);
-	brokenStatusFrame->setInvisible(true);
 	brokenStatusFrame->setDisabled(true);
 	brokenStatusFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 160, 160, 160, 64), "images/system/white.png", "broken status bg");
 
@@ -395,7 +393,6 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	itemSpriteFrame->setSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
 	itemSpriteFrame->setActualSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
 	itemSpriteFrame->setHollow(true);
-	itemSpriteFrame->setInvisible(true);
 	itemSpriteFrame->setDisabled(true);
 	itemSpriteFrame->addImage(slotSize, 0xFFFFFFFF, "images/system/white.png", "item sprite img");
 
@@ -403,7 +400,6 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	unusableFrame->setSize(slotSize);
 	unusableFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	unusableFrame->setHollow(true);
-	unusableFrame->setInvisible(true);
 	unusableFrame->setDisabled(true);
 	unusableFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
 
@@ -413,7 +409,6 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	quantityFrame->setSize(slotSize);
 	quantityFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	quantityFrame->setHollow(true);
-	quantityFrame->setInvisible(true);
 	Field* qtyText = quantityFrame->addField("quantity text", 32);
 	qtyText->setFont(font);
 	qtyText->setColor(0xffffffff);
@@ -426,7 +421,6 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	equippedIconFrame->setSize(slotSize);
 	equippedIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	equippedIconFrame->setHollow(true);
-	equippedIconFrame->setInvisible(true);
 	SDL_Rect equippedImgPos = { 3, slotSize.h - 17, 16, 16 };
 	equippedIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Equipped.png", "equipped icon img");
 
@@ -434,7 +428,6 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	brokenIconFrame->setSize(slotSize);
 	brokenIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	brokenIconFrame->setHollow(true);
-	brokenIconFrame->setInvisible(true);
 	brokenIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Broken.png", "broken icon img");
 }
 
