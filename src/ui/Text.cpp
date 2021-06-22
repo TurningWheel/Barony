@@ -44,6 +44,14 @@ Text::~Text() {
 	}
 }
 
+size_t getNumTextLines(std::string& str)
+{
+	int numLines = 1;
+	size_t newlines = std::count(str.begin(), str.end(), '\n');
+
+	return numLines + newlines;
+}
+
 void Text::render() {
 	// load font
 	std::string strToRender;
@@ -59,6 +67,11 @@ void Text::render() {
 #ifdef NINTENDO
 	// fixes weird crash in SDL_ttf when string length < 2
 	while ( strToRender.size() < 2 ) {
+		strToRender.append(" ");
+	}
+#else
+	// fixes nullptr SDL surface when string is empty.
+	if ( strToRender.size() < 1 ) {
 		strToRender.append(" ");
 	}
 #endif
@@ -109,7 +122,9 @@ void Text::render() {
 	//	}
 	//}
 
-	height = surf->h - 1; // height can use the surf->h data immediately.
+	int numLines = getNumTextLines(strToRender);
+	height = surf->h * numLines + std::max(0, numLines - 1) * (2 + 2 * outlineSize);
+
 	int scan = surf->pitch / surf->format->BytesPerPixel;
 	for ( int y = 0; y < surf->h; ++y ) {
 		for ( int x = 0; x < surf->w; ++x ) {
@@ -117,14 +132,9 @@ void Text::render() {
 			if ( (0xFF000000 & ((Uint32 *)surf->pixels)[x + y * scan]) != 0 ) {
 				width = std::max(width, x);
 			}
-			/*printlog("%d %d | %u %u", x, y,
-				0x00FFFFFF & ((Uint32 *)surf->pixels)[x + y * scan],
-				(0xFF000000 & ((Uint32 *)surf->pixels)[x + y * scan]) >> 24);*/
 		}
 	}
-	// usually there was a trailing empty column of pixels, so add this to meet parity with old width check
 	++width;
-	++height;
 
 	// translate the original surface to an RGBA surface
 	SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width, height, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
