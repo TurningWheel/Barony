@@ -3,11 +3,7 @@
 #include "../main.hpp"
 #include "Font.hpp"
 
-#ifdef NINTENDO
-const char* Font::defaultFont = "rom://lang/en.ttf#24";
-#else // NINTENDO
 const char* Font::defaultFont = "lang/en.ttf#24";
-#endif // NINTENDO
 
 Font::Font(const char* _name) {
 	name = _name;
@@ -25,6 +21,9 @@ Font::Font(const char* _name) {
 	} else {
 		path = name;
 	}
+#ifdef NINTENDO
+	path = "rom:/" + path;
+#endif
 	if ((font = TTF_OpenFont(path.c_str(), pointSize)) == NULL) {
 		printlog("failed to load '%s': %s", path.c_str(), TTF_GetError());
 		return;
@@ -60,9 +59,13 @@ int Font::sizeText(const char* str, int* out_w, int* out_h) const {
 	}
 }
 
-int Font::height() const {
+int Font::height(bool withOutline) const {
 	if (font) {
-		return TTF_FontHeight(font) + outlineSize * 2;
+		if (withOutline) {
+			return TTF_FontHeight(font) + outlineSize * 2;
+		} else {
+			return TTF_FontHeight(font);
+		}
 	} else {
 		return 0;
 	}

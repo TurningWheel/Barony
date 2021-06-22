@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include "stat.hpp"
+
 enum Monster : int
 {
 	NOTHING,

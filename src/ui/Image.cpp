@@ -28,7 +28,11 @@ const GLuint Image::indices[6]{
 Image::Image(const char* _name) {
 	name = _name;
 
+#ifdef NINTENDO
+	std::string path = std::string("rom:/") + _name;
+#else
 	std::string path = _name;
+#endif
 	printlog("loading image '%s'...", _name);
 	if ((surf = IMG_Load(path.c_str())) == NULL) {
 		printlog("failed to load image '%s'", _name);

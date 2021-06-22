@@ -2273,27 +2273,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				}
 			}
 
-			/*if ( tag.compare("on_bless_or_curse") == 0 )
-			{
-				if ( item->beatitude == 0 )
-				{
-					continue;
-				}
-			}*/
-
-			/*if ( tag.compare("default") == 0 )
-			{
-				for ( auto& it = itemTooltip.detailsText[tag].begin(); it != itemTooltip.detailsText[tag].end(); ++it )
-				{
-					detailsTextString += (*it);
-					if ( std::next(it) != itemTooltip.detailsText[tag].end() )
-					{
-						detailsTextString += '\n';
-					}
-				}
-				ItemTooltips.formatItemDetails(player, tooltipType, *item, detailsTextString, tag);
-			}*/
-
 			std::string tagText = "";
 			for ( auto& it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
 			{
@@ -2310,83 +2289,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 			}
 			detailsTextString += tagText;
 		}
-
-		/*if ( itemTooltip.detailsText.find("on_bless_or_curse") != itemTooltip.detailsText.end() )
-		{
-			if ( item->beatitude != 0 )
-			{
-				std::string beatitudeText = "";
-				for ( auto& it = itemTooltip.detailsText["on_bless_or_curse"].begin(); it != itemTooltip.detailsText["on_bless_or_curse"].end(); ++it )
-				{
-					beatitudeText += (*it);
-					if ( std::next(it) != itemTooltip.detailsText["on_bless_or_curse"].end() )
-					{
-						beatitudeText += '\n';
-					}
-				}
-				ItemTooltips.formatItemDetails(player, tooltipType, *item, beatitudeText, "on_bless_or_curse");
-				if ( detailsTextString.compare("") != 0 )
-				{
-					detailsTextString += '\n';
-				}
-				detailsTextString += beatitudeText;
-			}
-		}
-
-		std::vector<std::string> detailTags2 = { "potion_multiplier", "on_degraded", "last_details" };
-		for ( auto tag : detailTags2 )
-		{
-			if ( itemTooltip.detailsText.find(tag.c_str()) != itemTooltip.detailsText.end() )
-			{
-				std::string tagText = "";
-				for ( auto& it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
-				{
-					tagText += (*it);
-					if ( std::next(it) != itemTooltip.detailsText[tag.c_str()].end() )
-					{
-						tagText += '\n';
-					}
-				}
-				ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag.c_str());
-				if ( detailsTextString.compare("") != 0 )
-				{
-					detailsTextString += '\n';
-				}
-				detailsTextString += tagText;
-			}
-		}*/
-
-		/*if ( itemTooltip.detailsText.find("on_degraded") != itemTooltip.detailsText.end() )
-		{
-			std::string statusText = "";
-			for ( auto& it = itemTooltip.detailsText["on_degraded"].begin(); it != itemTooltip.detailsText["on_degraded"].end(); ++it )
-			{
-				statusText += (*it);
-				if ( std::next(it) != itemTooltip.detailsText["on_degraded"].end() )
-				{
-					statusText += '\n';
-				}
-			}
-			ItemTooltips.formatItemDetails(player, tooltipType, *item, statusText, "on_degraded");
-			text += '\n';
-			text += statusText;
-		}*/
-		/*if ( itemTooltip.detailsText.find("last_details") != itemTooltip.detailsText.end() )
-		{
-			std::string lastDetailText = "";
-			for ( auto& it = itemTooltip.detailsText["last_details"].begin(); it != itemTooltip.detailsText["last_details"].end(); ++it )
-			{
-				lastDetailText += (*it);
-				if ( std::next(it) != itemTooltip.detailsText["last_details"].end() )
-				{
-					lastDetailText += '\n';
-				}
-			}
-			ItemTooltips.formatItemDetails(player, tooltipType, *item, lastDetailText, "last_details");
-			text += '\n';
-			text += lastDetailText;
-		}*/
-
 		txtDescription->setText(detailsTextString.c_str());
 	}
 
@@ -2395,36 +2297,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		frameDesc->setDisabled(true);
 	}
 
-	/*if ( ticks % 400 < 100 )
-	{
-		imgPrimaryIcon->disabled = false;
-		imgSecondaryIcon->disabled = false;
-	}
-	else if ( ticks % 400 >= 100 && ticks % 400 < 200 )
-	{
-		imgPrimaryIcon->disabled = true;
-		imgSecondaryIcon->disabled = false;
-	}
-	else if ( ticks % 400 >= 200 && ticks % 400 < 300 )
-	{
-		imgPrimaryIcon->disabled = false;
-		imgSecondaryIcon->disabled = true;
-	}
-	else
-	{
-		imgPrimaryIcon->disabled = true;
-		imgSecondaryIcon->disabled = true;
-	}
-	if ( ticks % 100 < 50 )
-	{
-		frameDesc->setDisabled(true);
-	}
-	else
-	{
-		frameDesc->setDisabled(false);
-	}*/
-
-	const int imgToTextOffset = 2;
+	const int imgToTextOffset = 0;
 	txtPrimaryValue->setDisabled(imgPrimaryIcon->disabled);
 	txtPrimaryValueHighlight->setDisabled(txtPrimaryValue->isDisabled());
 	txtPrimaryValuePositive->setDisabled(txtPrimaryValue->isDisabled());
@@ -2589,7 +2462,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 		if ( txtAttributes->isDisabled() )
 		{
-			frameAttrPos.h += pady; // no description, add some padding
+			//frameAttrPos.h += pady; // no description, add some padding
 		}
 	}
 
@@ -2747,6 +2620,8 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 
 		const int charWidth = 8;
 		const int charHeight = 13;
+		const int lowerIconImgToTextOffset = 2;
+
 		//Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);  -- this produces 8px/13px @ 12 point font, used above
 		//Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
 		if ( tooltipType.find("tooltip_spell_") != std::string::npos )
@@ -2759,7 +2634,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 			imgMPCost->pos.x = frameValuesPos.w - (charWidth * (strlen(txtMPCost->getText()) + 1)) - (imgMPCost->pos.w + padx);
 			imgMPCost->pos.y = pady;
 			txtMPCost->setSize(SDL_Rect{ imgMPCost->pos.x + imgMPCost->pos.w + padx,
-				imgMPCost->pos.y + imgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
+				imgMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
 
 			frameValuesPos.h += imgMPCost->disabled ? 0 : (imgMPCost->pos.y + imgMPCost->pos.h);
 			frameValuesPos.h += pady;
@@ -2770,14 +2645,14 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 				imgSustainedMPCost->pos.x = frameValuesPos.w - (charWidth * (strlen(txtSustainedMPCost->getText()) + 1)) - (imgSustainedMPCost->pos.w + padx);
 				imgSustainedMPCost->pos.y = pady + imgMPCost->pos.h;
 				txtSustainedMPCost->setSize(SDL_Rect{ imgSustainedMPCost->pos.x + imgSustainedMPCost->pos.w + padx,
-					imgSustainedMPCost->pos.y + imgToTextOffset, txtHeader->getSize().w, imgSustainedMPCost->pos.h });
+					imgSustainedMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgSustainedMPCost->pos.h });
 				
 				frameValuesPos.h += imgSustainedMPCost->pos.h;
 
 				// align left MP cost x to leftmost of sustained cost
 				imgMPCost->pos.x = imgSustainedMPCost->pos.x;
 				txtMPCost->setSize(SDL_Rect{ imgMPCost->pos.x + imgMPCost->pos.w + padx,
-					imgMPCost->pos.y + imgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
+					imgMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
 
 				// move the MP cost image between the 2 lines, and a little left.
 				imgMPCost->pos.y += imgMPCost->pos.h / 2;
@@ -2789,7 +2664,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 			imgGoldIcon->pos.x = frameValuesPos.w - (charWidth * (strlen(txtGoldValue->getText()) + 1)) - (imgGoldIcon->pos.w + padx);
 			imgGoldIcon->pos.y = pady;
 			txtGoldValue->setSize(SDL_Rect{ imgGoldIcon->pos.x + imgGoldIcon->pos.w + padx,
-				imgGoldIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
+				imgGoldIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
 
 			snprintf(valueBuf, sizeof(valueBuf), "%d", item->getWeight());
 			txtWeightValue->setText(valueBuf);
@@ -2799,7 +2674,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 			imgWeightIcon->pos.x = imgGoldIcon->pos.x - padx - (charWidth * (strlen(txtWeightValue->getText()) + 1)) - (imgWeightIcon->pos.w + padx);
 			imgWeightIcon->pos.y = pady;
 			txtWeightValue->setSize(SDL_Rect{ imgWeightIcon->pos.x + imgWeightIcon->pos.w + padx,
-				imgWeightIcon->pos.y + imgToTextOffset, txtHeader->getSize().w, imgWeightIcon->pos.h });
+				imgWeightIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgWeightIcon->pos.h });
 			frameValuesPos.h += imgGoldIcon->disabled ? 0 : (imgGoldIcon->pos.y + imgGoldIcon->pos.h);
 			frameValuesPos.h += pady;
 		}
@@ -2808,7 +2683,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		frameValues->setActualSize(SDL_Rect{ 0, 0, frameValues->getSize().w, frameValues->getSize().h });
 		totalHeight += frameValuesPos.h;
 
-		txtIdentifiedValue->setSize(SDL_Rect{ padx * 2, imgGoldIcon->pos.y + imgToTextOffset,
+		txtIdentifiedValue->setSize(SDL_Rect{ padx * 2, imgGoldIcon->pos.y + lowerIconImgToTextOffset,
 			frameValuesPos.w - padx, txtGoldValue->getSize().h });
 
 		if ( tooltipType.find("tooltip_spell_") != std::string::npos )
@@ -2873,11 +2748,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		framePrompt->setActualSize(SDL_Rect{ 0, 0, framePrompt->getSize().w, framePrompt->getSize().h });
 
 	}
-
-	/*auto tempBackground = framePrompt->findImage("tooltip temp background");
-	tempBackground->pos = framePrompt->getSize();
-	tempBackground->pos.x = 0;
-	tempBackground->pos.y = 0;*/
 
 	// get left anchor for tooltip
 	auto inventoryBgFrame = guiFrame->findFrame("inventory base");

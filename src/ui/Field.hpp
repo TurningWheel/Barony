@@ -37,8 +37,14 @@ public:
 		bool entered;
 	};
 
-	//! selects the field for text editing
-	virtual void select() override;
+	//! scroll the parent frame (if any) to be within our bounds
+	virtual void scrollParent();
+
+	//! activates the field for text editing
+	virtual void activate() override;
+
+	//! deactivate text editing
+	void deactivate();
 
 	//! deselects the field
 	virtual void deselect() override;
@@ -46,7 +52,8 @@ public:
 	//! draws the field
 	//! @param _size size and position of field's parent frame
 	//! @param _actualSize offset into the parent frame space (scroll)
-	void draw(SDL_Rect _size, SDL_Rect _actualSize);
+	//! @param selectedWidget the currently selected widget, if any
+	void draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget);
 
 	//! handles clicks, etc.
 	//! @param _size size and position of field's parent frame
@@ -65,8 +72,8 @@ public:
 	const int                   getNumTextLines() const;
 	const bool					isEditable() const { return editable; }
 	const bool					isNumbersOnly() const { return numbersOnly; }
-	Widget::Args&				getParams() { return params; }
-	const Widget::Callback*		getCallback() const { return callback; }
+	void						(*getCallback() const)(Field&) { return callback; }
+	const char*					getGuide() const { return guide.c_str(); }
 
 	void	setText(const char* _text);
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
@@ -78,13 +85,14 @@ public:
 	void	setHJustify(const int _justify) { hjustify = static_cast<justify_t>(_justify); }
 	void	setVJustify(const int _justify) { vjustify = static_cast<justify_t>(_justify); }
 	void	setScroll(const bool _scroll) { scroll = _scroll; }
-	void	setCallback(const Widget::Callback* fn) { callback = fn; }
+	void	setCallback(void (*const fn)(Field&)) { callback = fn; }
 	void	setFont(const char* _font) { font = _font; }
+	void	setGuide(const char* _guide) { guide = _guide; }
 	void    reflowTextToFit(const int characterOffset);
 
 private:
-	Widget::Args params;								//!< script arguments to use when calling script
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field
+	std::string guide;									//!< string to use as a descriptive guide for the field (eg "Enter character's name");
 	char* text = nullptr;								//!< internal text buffer
 	size_t textlen = 0;									//!< length of internal text buffer
 	Uint32 color = 0xFFFFFFFF;							//!< text color
@@ -93,7 +101,8 @@ private:
 	justify_t vjustify = TOP;							//!< vertical text justification
 	bool editable = false;								//!< whether the field is read-only
 	bool numbersOnly = false;							//!< whether the field can only contain numeric chars
-	bool scroll = true;									//!< whether the field should scroll if the text is longer than its container
+	bool scroll = false;								//!< whether the field should scroll if the text is longer than its container
 	bool selectAll = false;								//!< whether all the text is selected for editing
-	const Widget::Callback* callback = nullptr;			//!< the callback to use after text is entered
+	bool activated = false;								//!< whether field is active for text editing
+	void (*callback)(Field&) = nullptr;					//!< the callback to use after text is entered
 };

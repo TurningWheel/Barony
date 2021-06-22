@@ -15,6 +15,7 @@
 #include "magic/magic.hpp"
 #include "messages.hpp"
 #include "engine/audio/sound.hpp"
+#include "input.hpp"
 
 
 //Splitscreen support stuff.
@@ -58,6 +59,7 @@ extern bool gamepad_menuy_invert;
 
 class GameController
 {
+	friend class Input;
 	SDL_GameController* sdl_device;
 	SDL_Haptic* sdl_haptic;
 	int id;
