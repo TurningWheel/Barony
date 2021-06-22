@@ -622,7 +622,11 @@ char* Item::description() const
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
+			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+			{
+				snprintf(tempstr, 1024, language[987 + status], beatitude);
+			}
+			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
@@ -688,7 +692,11 @@ char* Item::description() const
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
+			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+			{
+				snprintf(tempstr, 1024, language[1023 + status], count, beatitude);
+			}
+			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
@@ -757,7 +765,11 @@ char* Item::description() const
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
+			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+			{
+				strncpy(tempstr, language[1049 + status], 1024);
+			}
+			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
@@ -830,7 +842,11 @@ char* Item::description() const
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
+			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+			{
+				snprintf(tempstr, 1024, language[1065 + status], count);
+			}
+			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
@@ -1587,16 +1603,24 @@ void consumeItem(Item*& item, const int player)
 		players[player]->inventoryUI.appraisal.timer = 0;
 	}
 
+	bool clientConsumedEquippedItem = false;
 	if ( player >= 0 && !players[player]->isLocalPlayer() && multiplayer == SERVER )
 	{
 		Item** slot = nullptr;
 		if ( (slot = itemSlot(stats[player], item)) != nullptr )
 		{
 			(*slot)->count--; // if client had consumed item equipped, this'll update the count.
+			if ( item == (*slot) )
+			{
+				clientConsumedEquippedItem = true;
+			}
 		}
 	}
 
-	item->count--;
+	if ( !clientConsumedEquippedItem )
+	{
+		item->count--;
+	}
 	if ( item->count <= 0 )
 	{
 		if ( item->node != nullptr )
@@ -2042,29 +2066,31 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		}
 	}
 
+	EquipItemResult equipItemResult = EquipItemResult::EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+
 	switch ( item->type )
 	{
 		case WOODEN_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case QUARTERSTAFF:
 		case BRONZE_SWORD:
 		case BRONZE_MACE:
 		case BRONZE_AXE:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case BRONZE_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case SLING:
 		case IRON_SPEAR:
 		case IRON_SWORD:
 		case IRON_MACE:
 		case IRON_AXE:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case IRON_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case SHORTBOW:
 		case STEEL_HALBERD:
@@ -2080,19 +2106,19 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case STEEL_CHAKRAM:
 		case CRYSTAL_SHURIKEN:
 		case BOOMERANG:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case STEEL_SHIELD:
 		case STEEL_SHIELD_RESISTANCE:
 		case MIRROR_SHIELD:
 		case CRYSTAL_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case CROSSBOW:
 		case LONGBOW:
 		case COMPOUND_BOW:
 		case HEAVY_CROSSBOW:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case GLOVES:
 		case GLOVES_DEXTERITY:
@@ -2106,7 +2132,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case IRON_KNUCKLES:
 		case SPIKED_GAUNTLETS:
 		case SUEDE_GLOVES:
-			equipItem(item, &stats[player]->gloves, player);
+			equipItemResult = equipItem(item, &stats[player]->gloves, player);
 			break;
 		case CLOAK:
 		case CLOAK_BLACK:
@@ -2116,7 +2142,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_CLOAK:
 		case CLOAK_BACKPACK:
 		case CLOAK_SILVER:
-			equipItem(item, &stats[player]->cloak, player);
+			equipItemResult = equipItem(item, &stats[player]->cloak, player);
 			break;
 		case LEATHER_BOOTS:
 		case LEATHER_BOOTS_SPEED:
@@ -2128,7 +2154,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_BOOTS:
 		case CRYSTAL_BOOTS:
 		case SUEDE_BOOTS:
-			equipItem(item, &stats[player]->shoes, player);
+			equipItemResult = equipItem(item, &stats[player]->shoes, player);
 			break;
 		case LEATHER_BREASTPIECE:
 		case IRON_BREASTPIECE:
@@ -2141,7 +2167,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_BREASTPIECE:
 		case TUNIC:
 		case MACHINIST_APRON:
-			equipItem(item, &stats[player]->breastplate, player);
+			equipItemResult = equipItem(item, &stats[player]->breastplate, player);
 			break;
 		case HAT_PHRYGIAN:
 		case HAT_HOOD:
@@ -2156,20 +2182,18 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case HAT_HOOD_RED:
 		case HAT_HOOD_SILVER:
 		case PUNISHER_HOOD:
-			equipItem(item, &stats[player]->helmet, player);
+			equipItemResult = equipItem(item, &stats[player]->helmet, player);
 			break;
 		case AMULET_SEXCHANGE:
-			messagePlayer(player, language[1094]);
 			item_AmuletSexChange(item, player);
-			consumeItem(item, player);
 			break;
 		case AMULET_LIFESAVING:
 		case AMULET_WATERBREATHING:
 		case AMULET_MAGICREFLECTION:
-			equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player);
 			break;
 		case AMULET_STRANGULATION:
-			equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player);
 			if ( stats[player]->amulet )
 			{
 				messagePlayer(player, language[1095]);
@@ -2180,7 +2204,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			break;
 		case AMULET_POISONRESISTANCE:
-			equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player);
 			break;
 		case POTION_WATER:
 			drankPotion = item_PotionWater(item, players[player]->entity, usedBy);
@@ -2376,7 +2400,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case MAGICSTAFF_SUMMON:
 		case MAGICSTAFF_CHARM:
 		case MAGICSTAFF_POISON:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case RING_ADORNMENT:
 		case RING_SLOWDIGESTION:
@@ -2390,7 +2414,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case RING_LEVITATION:
 		case RING_REGENERATION:
 		case RING_TELEPORTATION:
-			equipItem(item, &stats[player]->ring, player);
+			equipItemResult = equipItem(item, &stats[player]->ring, player);
 			break;
 		case SPELLBOOK_FORCEBOLT:
 		case SPELLBOOK_MAGICMISSILE:
@@ -2463,11 +2487,11 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
 		case GEM_GLASS:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_PICKAXE:
 		case TOOL_WHIP:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_TINOPENER:
 			item_ToolTinOpener(item, player);
@@ -2486,7 +2510,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case TOOL_GYROBOT:
 		case TOOL_SENTRYBOT:
 		case TOOL_SPELLBOT:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
@@ -2499,12 +2523,12 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case QUIVER_KNOCKBACK:
 		case QUIVER_CRYSTAL:
 		case QUIVER_HUNTING:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player);
 			break;
 		case TOOL_BLINDFOLD:
 		case TOOL_BLINDFOLD_FOCUS:
 		case TOOL_BLINDFOLD_TELEPATHY:
-			equipItem(item, &stats[player]->mask, player);
+			equipItemResult = equipItem(item, &stats[player]->mask, player);
 			break;
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
@@ -2516,7 +2540,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		case TOOL_GLASSES:
 		case MASK_SHAMAN:
-			equipItem(item, &stats[player]->mask, player);
+			equipItemResult = equipItem(item, &stats[player]->mask, player);
 			break;
 		case TOOL_BEARTRAP:
 			item_ToolBeartrap(item, player);
@@ -2595,25 +2619,25 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		}
 		case ARTIFACT_SWORD:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case ARTIFACT_MACE:
 			if ( players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, language[1096]);
 			}
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case ARTIFACT_SPEAR:
 		case ARTIFACT_AXE:
 		case ARTIFACT_BOW:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		case ARTIFACT_ORB_BLUE:
 		case ARTIFACT_ORB_RED:
 		case ARTIFACT_ORB_PURPLE:
 		case ARTIFACT_ORB_GREEN:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player);
 			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n", static_cast<int>(item->type));
@@ -2647,7 +2671,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 	}
 
 	// on-equip messages.
-	if ( multiplayer != CLIENT && itemIsEquipped(item, player) )
+	if ( multiplayer != CLIENT && equipItemResult == EquipItemResult::EQUIP_ITEM_SUCCESS_NEWITEM && itemIsEquipped(item, player) )
 	{
 		switch ( item->type )
 		{
@@ -2833,7 +2857,7 @@ Item* itemPickup(const int player, Item* const item)
 
 	//messagePlayer(0, "id: %d", item->ownerUid);
 
-	if ( player != 0 && multiplayer == SERVER )
+	if ( player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		// send the client info on the item it just picked up
 		strcpy((char*)net_packet->data, "ITEM");
@@ -3335,6 +3359,475 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	return attack;
 }
 
+bool Item::doesItemProvideBeatitudeAC() const
+{
+	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK || itemCategory(this) == AMULET )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool Item::doesItemProvidePassiveShieldBonus() const
+{
+	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool Item::doesPotionHarmAlliesOnThrown() const
+{
+	switch ( type )
+	{
+		case POTION_HEALING:
+		case POTION_EXTRAHEALING:
+		case POTION_RESTOREMAGIC:
+		case POTION_CUREAILMENT:
+		case POTION_WATER:
+		case POTION_BOOZE:
+		case POTION_JUICE:
+		case POTION_STRENGTH:
+		case POTION_SPEED:
+		case POTION_INVISIBILITY:
+		case POTION_LEVITATION:
+			return false;
+		default:
+			break;
+	}
+	return true;
+}
+
+Sint32 Item::potionGetEffectHealth() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 0;
+	}
+
+	int heal = 0;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			heal += (beatitude <= 0 ? 1 : (5 * beatitude));
+			break;
+		case POTION_BOOZE:
+			heal += (5 * (1 + beatitude));
+			break;
+		case POTION_JUICE:
+			heal += (5 * (1 + std::max((Sint16)0, beatitude))); // always 5 at cursed.
+			break;
+		case POTION_HEALING:
+		{
+			int amount = std::max(7 + status, 0);
+			int multiplier = std::max(5, beatitude + 5);
+			amount *= multiplier / 5.f;
+			heal += amount;
+			break;
+		}
+		case POTION_EXTRAHEALING:
+		{
+			int amount = std::max(15 + status, 0);
+			int multiplier = std::max(5, beatitude + 5);
+			amount *= multiplier;
+			heal += amount;
+			break;
+		}
+		case POTION_RESTOREMAGIC:
+		{
+			int amount = std::max(7 + status, 0);
+			int multiplier = std::max(5, beatitude + 5);
+			amount *= multiplier;
+			heal += amount;
+			break;
+		}
+		default:
+			break;
+	}
+
+	return heal;
+}
+Sint32 Item::potionGetEffectDamage() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 0;
+	}
+
+	int damage = 0;
+	switch ( type )
+	{
+		case POTION_SICKNESS:
+			damage += (5 + 5 * abs(beatitude));
+			break;
+		case POTION_ACID:
+			damage += (10 + 5 * abs(beatitude));
+			break;
+		case POTION_THUNDERSTORM:
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+			damage += (10 + 5 * abs(beatitude));
+			break;
+		default:
+			break;
+	}
+
+	return damage;
+}
+
+Sint32 Item::potionGetEffectDurationMinimum() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			duration = 2000;
+			break;
+		case POTION_JUICE:
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			duration = 750;
+			break;
+		case POTION_EXTRAHEALING:
+			break;
+		case POTION_HEALING:
+			break;
+		case POTION_CUREAILMENT:
+			duration = 4 * beatitude * TICKS_PER_SECOND;
+			break;
+		case POTION_BLINDNESS:
+			duration = 500;
+			break;
+		case POTION_RESTOREMAGIC:
+			break;
+		case POTION_INVISIBILITY:
+			duration = 1500 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_LEVITATION:
+			duration = 1500 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_SPEED:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			duration = 350;
+			break;
+		case POTION_POLYMORPH:
+			duration = 60 * TICKS_PER_SECOND * 4; // 4 mins
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetEffectDurationMaximum() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			duration = 3000;
+			break;
+		case POTION_JUICE:
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			duration = 1500;
+			break;
+		case POTION_EXTRAHEALING:
+			break;
+		case POTION_HEALING:
+			break;
+		case POTION_CUREAILMENT:
+			duration = 4 * beatitude * TICKS_PER_SECOND;
+			break;
+		case POTION_BLINDNESS:
+			duration = 750;
+			break;
+		case POTION_RESTOREMAGIC:
+			break;
+		case POTION_INVISIBILITY:
+			duration = 3000 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_LEVITATION:
+			duration = 3000 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_SPEED:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			duration = 500;
+			break;
+		case POTION_POLYMORPH:
+			duration = 60 * TICKS_PER_SECOND * 6; // 6 mins
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetEffectDurationRandom() const
+{
+	Sint32 range = std::max(1, potionGetEffectDurationMaximum() - potionGetEffectDurationMinimum());
+	return potionGetEffectDurationMinimum() + (rand() % (range));
+}
+
+Sint32 Item::potionGetCursedEffectDurationMinimum() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			break;
+		case POTION_JUICE:
+			duration = 1000;
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			break;
+		case POTION_EXTRAHEALING:
+			duration = 750;
+			break;
+		case POTION_HEALING:
+			duration = 750;
+			break;
+		case POTION_CUREAILMENT:
+			duration = 750;
+			break;
+		case POTION_BLINDNESS:
+			break;
+		case POTION_RESTOREMAGIC:
+			duration = 1000;
+			break;
+		case POTION_INVISIBILITY:
+			break;
+		case POTION_LEVITATION:
+			duration = 1000;
+			break;
+		case POTION_SPEED:
+			duration = 2000;
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			break;
+		case POTION_POLYMORPH:
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 1000;
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetCursedEffectDurationMaximum() const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			break;
+		case POTION_JUICE:
+			duration = 1500;
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			break;
+		case POTION_EXTRAHEALING:
+			duration = 750;
+			break;
+		case POTION_HEALING:
+			duration = 750;
+			break;
+		case POTION_CUREAILMENT:
+			duration = 750;
+			break;
+		case POTION_BLINDNESS:
+			break;
+		case POTION_RESTOREMAGIC:
+			duration = 1500;
+			break;
+		case POTION_INVISIBILITY:
+			break;
+		case POTION_LEVITATION:
+			duration = 1500;
+			break;
+		case POTION_SPEED:
+			duration = 3000;
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			break;
+		case POTION_POLYMORPH:
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 1500;
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetCursedEffectDurationRandom() const
+{
+	Sint32 range = std::max(1, potionGetCursedEffectDurationMaximum() - potionGetCursedEffectDurationMinimum());
+	return potionGetCursedEffectDurationMinimum() + (rand() % (range));
+}
+
+Sint32 Item::getWeight() const
+{
+	if ( type >= 0 && type < NUMITEMS )
+	{
+		if ( itemTypeIsQuiver(type) )
+		{
+			return std::max(1, items[type].weight * count / 5);
+		}
+		else
+		{
+			return items[type].weight * count;
+		}
+	}
+	return 0;
+}
+
+void Item::foodTinGetDescriptionIndices(int* a, int* b, int* c) const
+{
+	Uint32 scaledAppearance = appearance % 4096;
+	if ( a )
+	{
+		*a = ((scaledAppearance >> 8) & 0xF); // 0-15
+	}
+	if ( b )
+	{
+		*b = ((scaledAppearance >> 4) & 0xF); // 0-15
+	}
+	if ( c )
+	{
+		*c = (scaledAppearance & 0xF); // 0-15
+	}
+}
+
+void Item::foodTinGetDescription(std::string& cookingMethod, std::string& protein, std::string& sides) const
+{
+	int a, b, c;
+	foodTinGetDescriptionIndices(&a, &b, &c);
+	cookingMethod = language[918 + a];
+	protein = language[934 + b];
+	sides = language[950 + c];
+}
+
+int Item::foodGetPukeChance(Stat* eater) const
+{
+	int pukeChance = 100;
+	switch ( status )
+	{
+		case EXCELLENT:
+			pukeChance = 100; // 0%
+			break;
+		case SERVICABLE:
+			pukeChance = 25; // 1 in 25, 4%
+			break;
+		case WORN:
+			pukeChance = 10; // 1 in 10, 10%
+			break;
+		case DECREPIT:
+			pukeChance = 4; // 1 in 4, 25%
+			break;
+		default:
+			pukeChance = 100;
+			break;
+	}
+
+	if ( eater )
+	{
+		if ( eater->type == VAMPIRE )
+		{
+			pukeChance = 1;
+		}
+		else if ( eater->type == INSECTOID )
+		{
+			pukeChance = 100; // insectoids can eat anything.
+		}
+	}
+
+	return pukeChance;
+}
+
 /*-------------------------------------------------------------------------------
 
 	Item::armorGetAC
@@ -3354,7 +3847,7 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 		}
 	}
 
-	if ( itemTypeIsQuiver(type) )
+	if ( !doesItemProvideBeatitudeAC() )
 	{
 		armor = 0;
 	}
@@ -3827,7 +4320,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 						{
 							messagePlayer(player, language[1103]);
 						}
-						if ( player > 0 && multiplayer == SERVER )
+						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
@@ -3896,7 +4389,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 {
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;
-	ItemType itemId { static_cast<ItemType>(-1) };
+	Sint32 itemId = -1;
 	int itemAppearance = rand();
 	int category = 0;
 	bool itemIdentified;
@@ -4000,7 +4493,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				chance = stats->EDITOR_ITEMS[itemSlots[i] + 5];
 				if ( rand() % 100 < chance )
 				{
-					newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
+					newItem(static_cast<ItemType>(itemId), itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
 				}
 				itemsGenerated++;
 			}
@@ -4008,7 +4501,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 	}
 }
 
-node_t* itemNodeInInventory(const Stat* const myStats, const ItemType itemToFind, const Category cat)
+node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const Category cat)
 {
 	if ( myStats == nullptr )
 	{
@@ -4028,7 +4521,7 @@ node_t* itemNodeInInventory(const Stat* const myStats, const ItemType itemToFind
 			{
 				return node;
 			}
-			else if ( itemToFind != -1 && item->type == itemToFind )
+			else if ( itemToFind >= 0 && item->type == static_cast<ItemType>(itemToFind) )
 			{
 				return node;
 			}
@@ -4662,6 +5155,10 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 	if ( myStats->weapon->type == LONGBOW )
 	{
 		bowModifier = 1.25;
+	}
+	else if ( myStats->weapon->type == ARTIFACT_BOW )
+	{
+		bowModifier = 0.9;
 	}
 	else if ( myStats->weapon->type == COMPOUND_BOW )
 	{

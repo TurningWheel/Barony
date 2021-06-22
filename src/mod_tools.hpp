@@ -2614,3 +2614,143 @@ public:
 };
 extern IRCHandler_t IRCHandler;
 #endif // !NINTENDO
+
+class ItemTooltips_t
+{
+	struct tmpItem_t
+	{
+		std::string itemName = "nothing";
+		Sint32 itemId = -1;
+		Sint32 fpIndex = -1;
+		Sint32 tpIndex = -1;
+		Sint32 gold = 0;
+		Sint32 weight = 0;
+		Sint32 itemLevel = -1;
+		std::string category = "nothing";
+		std::string equipSlot = "nothing";
+		std::vector<std::string> imagePaths;
+		std::map<std::string, Sint32> attributes;
+		std::string tooltip = "tooltip_default";
+	};
+
+	enum SpellItemTypes : int
+	{
+		SPELL_TYPE_DEFAULT,
+		SPELL_TYPE_PROJECTILE,
+		SPELL_TYPE_PROJECTILE_SHORT_X3,
+		SPELL_TYPE_SELF,
+		SPELL_TYPE_AREA,
+		SPELL_TYPE_SELF_SUSTAIN
+	};
+
+	enum SpellTagTypes : int
+	{
+		SPELL_TAG_DAMAGE,
+		SPELL_TAG_UTILITY,
+		SPELL_TAG_STATUS_EFFECT,
+		SPELL_TAG_HEALING,
+		SPELL_TAG_CURE
+	};
+
+	struct spellItem_t
+	{
+		Sint32 id;
+		std::string internalName;
+		std::string name;
+		std::string spellTypeStr;
+		SpellItemTypes spellType;
+		std::string spellbookInternalName;
+		std::string magicstaffInternalName;
+		Sint32 spellbookId;
+		Sint32 magicstaffId;
+		std::vector<std::string> spellTagsStr;
+		std::set<SpellTagTypes> spellTags;
+	};
+
+	struct ItemTooltipIcons_t
+	{
+		std::string iconPath = "";
+		std::string text = "";
+		Uint32 textColor = 0xFFFFFFFF;
+		std::string conditionalAttribute = "";
+		ItemTooltipIcons_t(std::string _path, std::string _text)
+		{
+			iconPath = _path;
+			text = _text;
+		}
+		void setColor(Uint32 color) { textColor = color; }
+		void setConditionalAttribute(std::string str) { conditionalAttribute = str; }
+	};
+
+	Uint32 defaultHeadingTextColor = 0xFFFFFFFF;
+	Uint32 defaultIconTextColor = 0xFFFFFFFF;
+	Uint32 defaultDescriptionTextColor = 0xFFFFFFFF;
+	Uint32 defaultDetailsTextColor = 0xFFFFFFFF;
+	Uint32 defaultPositiveTextColor = 0xFFFFFFFF;
+	Uint32 defaultNegativeTextColor = 0xFFFFFFFF;
+	Uint32 defaultStatusEffectTextColor = 0xFFFFFFFF;
+	Uint32 defaultFaintTextColor = 0xFFFFFFFF;
+
+	struct ItemTooltip_t
+	{
+		Uint32 headingTextColor = 0;
+		Uint32 descriptionTextColor = 0;
+		Uint32 detailsTextColor = 0;
+		Uint32 positiveTextColor = 0;
+		Uint32 negativeTextColor = 0;
+		Uint32 statusEffectTextColor = 0;
+		Uint32 faintTextColor = 0;
+		std::vector<ItemTooltipIcons_t> icons;
+		std::vector<std::string> descriptionText;
+		std::map<std::string, std::vector<std::string>> detailsText;
+		std::vector<std::string> detailsTextInsertOrder;
+		std::map<std::string, int> minWidths;
+		std::map<std::string, int> maxWidths;
+		std::map<std::string, int> headerMaxWidths;
+		void setColorHeading(Uint32 color) { headingTextColor = color; }
+		void setColorDescription(Uint32 color) { descriptionTextColor = color; }
+		void setColorDetails(Uint32 color) { detailsTextColor = color; }
+		void setColorPositive(Uint32 color) { positiveTextColor = color; }
+		void setColorNegative(Uint32 color) { negativeTextColor = color; }
+		void setColorStatus(Uint32 color) { statusEffectTextColor = color; }
+		void setColorFaintText(Uint32 color) { faintTextColor = color; }
+	};
+public:
+	void readItemsFromFile();
+	void readTooltipsFromFile();
+	std::vector<tmpItem_t> tmpItems;
+	std::map<Sint32, spellItem_t> spellItems;
+	std::map<std::string, ItemTooltip_t> tooltips;
+	std::map<std::string, std::map<std::string, std::string>> adjectives;
+	std::map<std::string, std::vector<std::string>> templates;
+	std::string defaultString = "";
+	char buf[2048];
+	bool autoReload = false;
+	bool itemDebug = false;
+	std::string& getItemStatusAdjective(Uint32 itemType, Status status);
+	std::string& getItemBeatitudeAdjective(Sint16 beatitude);
+	std::string& getItemPotionAlchemyAdjective(const int player, Uint32 itemType);
+	std::string& getItemPotionHarmAllyAdjective(Item& item);
+	std::string& getItemProficiencyName(int proficiency);
+	std::string& getItemSlotName(ItemEquippableSlot slotname);
+	std::string& getItemStatShortName(std::string& attribute);
+	std::string& getItemStatFullName(std::string& attribute);
+	std::string& getItemEquipmentEffectsForIconText(std::string& attribute);
+	std::string& getItemEquipmentEffectsForAttributesText(std::string& attribute);
+	std::string& getProficiencyLevelName(Sint32 proficiencyLevel);
+	std::string getSpellIconText(const int player, Item& item);
+	std::string getSpellDescriptionText(const int player, Item& item);
+	std::string getSpellIconPath(const int player, Item& item);
+	std::string getCostOfSpellString(const int player, Item& item);
+	std::string& getSpellTypeString(const int player, Item& item);
+	real_t getSpellSustainCostPerSecond(int spellID);
+	int getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook);
+	bool bIsSpellDamageOrHealingType(spell_t* spell);
+
+	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute);
+	void formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str);
+	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
+	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);
+	void stripOutHighlightBracketText(std::string& str, std::string& bracketText);
+};
+extern ItemTooltips_t ItemTooltips;

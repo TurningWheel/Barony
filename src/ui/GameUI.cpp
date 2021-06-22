@@ -13,11 +13,14 @@
 #include "../stat.hpp"
 #include "../player.hpp"
 #include "../draw.hpp"
+#include "../items.hpp"
+#include "../mod_tools.hpp"
 
 #include <assert.h>
 
 static Frame* playerHud[MAXPLAYERS] = { nullptr };
-bool newui = true;
+static Frame* playerInventory[MAXPLAYERS] = { nullptr };
+bool newui = false;
 
 void createIngameHud(int player) {
     char name[32];
@@ -36,8 +39,13 @@ void createIngameHud(int player) {
         playercount = 1;
     }
 
+#ifdef NINTENDO
+    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
+    static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
+#else
     static const char* bigfont = "fonts/pixelmix.ttf#18";
     static const char* smallfont = "fonts/pixel_maz.ttf#14";
+#endif // NINTENDO
 
     // big empty frame to serve as the root
     if (playercount == 1) {
@@ -362,10 +370,766 @@ void newIngameHud() {
     }
 }
 
+void createPlayerInventorySlotFrameElements(Frame* slotFrame)
+{
+	const SDL_Rect slotSize = SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h };
+	SDL_Rect coloredBackgroundPos = SDL_Rect{ slotSize.x + 2, slotSize.y + 2, slotSize.w - 2, slotSize.h - 2 };
+
+	auto beatitudeFrame = slotFrame->addFrame("beatitude status frame"); // covers unidentified status as well
+	beatitudeFrame->setSize(slotSize);
+	beatitudeFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	beatitudeFrame->setHollow(true);
+	beatitudeFrame->setDisabled(true);
+	beatitudeFrame->addImage(coloredBackgroundPos, 0xFFFFFFFF, "images/system/white.png", "beatitude status bg");
+
+	auto brokenStatusFrame = slotFrame->addFrame("broken status frame");
+	brokenStatusFrame->setSize(slotSize);
+	brokenStatusFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	brokenStatusFrame->setHollow(true);
+	brokenStatusFrame->setDisabled(true);
+	brokenStatusFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 160, 160, 160, 64), "images/system/white.png", "broken status bg");
+
+	auto itemSpriteFrame = slotFrame->addFrame("item sprite frame");
+	itemSpriteFrame->setSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
+	itemSpriteFrame->setActualSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
+	itemSpriteFrame->setHollow(true);
+	itemSpriteFrame->setDisabled(true);
+	itemSpriteFrame->addImage(slotSize, 0xFFFFFFFF, "images/system/white.png", "item sprite img");
+
+	auto unusableFrame = slotFrame->addFrame("unusable item frame");
+	unusableFrame->setSize(slotSize);
+	unusableFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	unusableFrame->setHollow(true);
+	unusableFrame->setDisabled(true);
+	unusableFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
+
+	static const char* font = "fonts/pixel_maz.ttf#32";
+
+	auto quantityFrame = slotFrame->addFrame("quantity frame");
+	quantityFrame->setSize(slotSize);
+	quantityFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	quantityFrame->setHollow(true);
+	Field* qtyText = quantityFrame->addField("quantity text", 32);
+	qtyText->setFont(font);
+	qtyText->setColor(0xffffffff);
+	qtyText->setHJustify(Field::justify_t::RIGHT);
+	qtyText->setVJustify(Field::justify_t::BOTTOM);
+	qtyText->setText("10");
+	qtyText->setSize(SDL_Rect{ 4, 8, quantityFrame->getSize().w, quantityFrame->getSize().h });
+
+	auto equippedIconFrame = slotFrame->addFrame("equipped icon frame");
+	equippedIconFrame->setSize(slotSize);
+	equippedIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	equippedIconFrame->setHollow(true);
+	SDL_Rect equippedImgPos = { 3, slotSize.h - 17, 16, 16 };
+	equippedIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Equipped.png", "equipped icon img");
+
+	auto brokenIconFrame = slotFrame->addFrame("broken icon frame");
+	brokenIconFrame->setSize(slotSize);
+	brokenIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
+	brokenIconFrame->setHollow(true);
+	brokenIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Broken.png", "broken icon img");
+}
+
+void resetInventorySlotFrames(const int player)
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player inventory %d", player);
+	if ( Frame* inventoryFrame = gui->findFrame(name) )
+	{
+		if ( Frame* inventorySlotsFrame = inventoryFrame->findFrame("inventory slots") )
+		{
+			for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+			{
+				for ( int y = 0; y < players[player]->inventoryUI.getSizeY(); ++y )
+				{
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+					auto slotFrame = inventorySlotsFrame->findFrame(slotname);
+					if ( slotFrame )
+					{
+						slotFrame->setDisabled(true);
+					}
+				}
+			}
+		}
+		if ( Frame* paperDollSlotsFrame = inventoryFrame->findFrame("paperdoll slots") )
+		{
+			for ( int x = Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_LEFT; x <= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT; ++x )
+			{
+				for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5; ++y )
+				{
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+					auto slotFrame = paperDollSlotsFrame->findFrame(slotname);
+					if ( slotFrame )
+					{
+						slotFrame->setDisabled(true);
+					}
+				}
+			}
+		}
+	}
+}
+
+bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy)
+{
+	if ( !gui )
+	{
+		return false;
+	}
+	char name[32];
+	snprintf(name, sizeof(name), "player inventory %d", player);
+	if ( Frame* inventoryFrame = gui->findFrame(name) )
+	{
+		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+		{
+			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < players[player]->inventoryUI.getSizeY(); ++y )
+			{
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+				auto slotFrame = inventoryFrame->findFrame(slotname);
+				if ( !slotFrame )
+				{
+					continue;
+				}
+
+				if ( slotFrame->capturesMouseInRealtimeCoords() )
+				{
+					outx = x;
+					outy = y;
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
+{
+	if ( !itemPtr || !slotFrame )
+	{
+		return;
+	}
+
+	Item* item = (Item*)itemPtr;
+
+	int player = slotFrame->getOwner();
+
+	slotFrame->setDisabled(false);
+
+	auto spriteImageFrame = slotFrame->findFrame("item sprite frame");
+	auto spriteImage = spriteImageFrame->findImage("item sprite img");
+	if ( item->type == SPELL_ITEM )
+	{
+		spriteImage->path = ItemTooltips.getSpellIconPath(player, *item);
+		spriteImageFrame->setDisabled(false);
+	}
+	else
+	{
+		node_t* imagePathsNode = list_Node(&items[item->type].images, item->appearance % items[item->type].variations);
+		if ( imagePathsNode )
+		{
+			string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);
+			spriteImage->path = imagePath->data;
+			spriteImageFrame->setDisabled(false);
+		}
+	}
+
+	if ( auto qtyFrame = slotFrame->findFrame("quantity frame") )
+	{
+		qtyFrame->setDisabled(true);
+		if ( item->count > 1 )
+		{
+			qtyFrame->setDisabled(false);
+			if ( auto qtyText = qtyFrame->findField("quantity text") )
+			{
+				char qtybuf[32] = "";
+				snprintf(qtybuf, sizeof(qtybuf), "%d", item->count);
+				qtyText->setText(qtybuf);
+			}
+		}
+	}
+
+	bool disableBackgrounds = false;
+	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
+	{
+		disableBackgrounds = true;
+	}
+	
+	if ( auto beatitudeFrame = slotFrame->findFrame("beatitude status frame") )
+	{
+		beatitudeFrame->setDisabled(true);
+		if ( !disableBackgrounds )
+		{
+			if ( auto beatitudeImg = beatitudeFrame->findImage("beatitude status bg") )
+			{
+				if ( !item->identified )
+				{
+					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 128, 0, 125);
+					beatitudeFrame->setDisabled(false);
+				}
+				else if ( item->beatitude < 0 )
+				{
+					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 0, 0, 125);
+					beatitudeFrame->setDisabled(false);
+				}
+				else if ( item->beatitude > 0 )
+				{
+					if ( colorblind )
+					{
+						beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 100, 245, 255, 65);
+					}
+					else
+					{
+						beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 65);
+					}
+					beatitudeFrame->setDisabled(false);
+				}
+			}
+		}
+	}
+
+	if ( auto brokenStatusFrame = slotFrame->findFrame("broken status frame") )
+	{
+		brokenStatusFrame->setDisabled(true);
+		if ( item->status == BROKEN )
+		{
+			brokenStatusFrame->setDisabled(false);
+		}
+	}
+
+	if ( auto unusableFrame = slotFrame->findFrame("unusable item frame") )
+	{
+		bool greyedOut = false;
+		unusableFrame->setDisabled(true);
+
+		if ( !disableBackgrounds )
+		{
+			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+			{
+				// shape shifted, disable some items
+				if ( !item->usableWhileShapeshifted(stats[player]) )
+				{
+					greyedOut = true;
+				}
+			}
+			if ( !greyedOut && client_classes[player] == CLASS_SHAMAN
+				&& item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
+			{
+				greyedOut = true;
+			}
+
+			if ( greyedOut )
+			{
+				unusableFrame->setDisabled(false);
+			}
+		}
+	}
+
+	bool equipped = false;
+	bool broken = false;
+	if ( itemCategory(item) != SPELL_CAT )
+	{
+		if ( itemIsEquipped(item, player) )
+		{
+			equipped = true;
+		}
+		else if ( item->status == BROKEN )
+		{
+			broken = true;
+		}
+	}
+	else
+	{
+		spell_t* spell = getSpellFromItem(player, item);
+		if ( players[player]->magic.selectedSpell() == spell
+			&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1) )
+		{
+			equipped = true;
+		}
+	}
+
+	if ( auto equippedIconFrame = slotFrame->findFrame("equipped icon frame") )
+	{
+		equippedIconFrame->setDisabled(true);
+		if ( equipped )
+		{
+			equippedIconFrame->setDisabled(false);
+		}
+	}
+	if ( auto brokenIconFrame = slotFrame->findFrame("broken icon frame") )
+	{
+		brokenIconFrame->setDisabled(true);
+		if ( broken )
+		{
+			brokenIconFrame->setDisabled(false);
+		}
+	}
+}
+
+void createInventoryTooltipFrame(const int player)
+{
+	if ( !gui )
+	{
+		return;
+	}
+
+	char name[32];
+	snprintf(name, sizeof(name), "player inventory %d", player);
+	if ( Frame* inventoryFrame = gui->findFrame(name) )
+	{
+		if ( inventoryFrame->findFrame("inventory mouse tooltip") )
+		{
+			return;
+		}
+
+		auto tooltipFrame = inventoryFrame->addFrame("inventory mouse tooltip");
+		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipFrame->setActualSize(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, tooltipFrame->getSize().h });
+		tooltipFrame->setDisabled(true);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
+			color, "images/system/inventory/tooltips/Hover_T00.png", "tooltip top background");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+			color, "images/system/inventory/tooltips/Hover_TL00.png", "tooltip top left");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+			color, "images/system/inventory/tooltips/Hover_TR00.png", "tooltip top right");
+
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 52 },
+			color, "images/system/inventory/tooltips/Hover_C00.png", "tooltip middle background");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
+			color, "images/system/inventory/tooltips/Hover_L00.png", "tooltip middle left");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
+			color, "images/system/inventory/tooltips/Hover_R00.png", "tooltip middle right");
+
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 26 },
+			color, "images/system/inventory/tooltips/Hover_B00.png", "tooltip bottom background");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
+			color, "images/system/inventory/tooltips/Hover_BL00.png", "tooltip bottom left");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
+			color, "images/system/inventory/tooltips/Hover_BR00.png", "tooltip bottom right");
+
+		auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont("fonts/pixelmix.ttf#14");
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
+
+		// temporary
+		{
+			Frame::image_t* tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip min");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 255, 0, 0, 255);
+			tmp->disabled = true;
+			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip max");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 255);
+			tmp->disabled = true;
+			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header max");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+			tmp->disabled = true;
+			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+			tmp->disabled = true;
+			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg new");
+			tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+			tmp->disabled = true;
+		}
+
+		if ( auto attrFrame = tooltipFrame->addFrame("inventory mouse tooltip attributes frame") )
+		{
+			attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
+				0xFFFFFFFF, "images/system/inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
+			spellImageBg->disabled = true;
+			//spellImageBg->color = SDL_MapRGBA(mainsurface->format, 125, 125, 125, 228);
+			auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 40, 40 },
+				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip spell image");
+			spellImage->disabled = true;
+
+			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+				0xFFFFFFFF, "images/system/inventory/tooltips/HUD_Tooltip_Icon_Damage_00.png", "inventory mouse tooltip primary image");
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value highlight", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value positive text", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value negative text", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value slot name", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::RIGHT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+				0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip secondary image");
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value highlight", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value positive text", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value negative text", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+				0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip third image");
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value highlight", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value positive text", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value negative text", 256);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = attrFrame->addField("inventory mouse tooltip attributes text", 1024);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::TOP);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		}
+		if ( auto descFrame = tooltipFrame->addFrame("inventory mouse tooltip description frame") )
+		{
+			descFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			descFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
+				SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+				"images/system/white.png", "inventory mouse tooltip description divider");
+
+			tooltipTextField = descFrame->addField("inventory mouse tooltip description", 1024);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::TOP);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
+
+			tooltipTextField = descFrame->addField("inventory mouse tooltip description positive text", 1024);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::TOP);
+			//tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 1, 151, 246, 255));
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			tooltipTextField = descFrame->addField("inventory mouse tooltip description negative text", 1024);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::TOP);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 215, 38, 61, 255));
+		}
+		if ( auto valueFrame = tooltipFrame->addFrame("inventory mouse tooltip value frame") )
+		{
+			valueFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			valueFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255), 
+				"images/system/white.png", "inventory mouse tooltip value background");
+
+			valueFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
+				SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+				"images/system/white.png", "inventory mouse tooltip value divider");
+
+			tooltipTextField = valueFrame->addField("inventory mouse tooltip identified value", 64);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
+				0xFFFFFFFF, "images/system/per32.png", "inventory mouse tooltip gold image");
+
+			tooltipTextField = valueFrame->addField("inventory mouse tooltip gold value", 64);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+			valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
+				0xFFFFFFFF, "images/system/int32.png", "inventory mouse tooltip weight image");
+
+			tooltipTextField = valueFrame->addField("inventory mouse tooltip weight value", 64);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::LEFT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		}
+		if ( auto promptFrame = tooltipFrame->addFrame("inventory mouse tooltip prompt frame") )
+		{
+			promptFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			/*promptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "images/system/white.png", "tooltip temp background");*/
+
+			tooltipTextField = promptFrame->addField("inventory mouse tooltip prompt", 1024);
+			tooltipTextField->setText("Nothing");
+			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setHJustify(Field::justify_t::RIGHT);
+			tooltipTextField->setVJustify(Field::justify_t::CENTER);
+			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+		}
+	}
+}
+
+void createPlayerInventory(const int player)
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player inventory %d", player);
+	Frame* frame = gui->addFrame(name);
+	playerInventory[player] = frame;
+	frame->setSize(SDL_Rect{ players[player]->camera_x1(),
+		players[player]->camera_y1(),
+		players[player]->camera_width(),
+		players[player]->camera_height() });
+	frame->setActualSize(frame->getSize());
+	frame->setHollow(true);
+	frame->setBorder(0);
+	frame->setOwner(player);
+
+	createInventoryTooltipFrame(player);
+
+	SDL_Rect basePos{ 0, 0, 105 * 2, 224 * 2 };
+	{
+		auto bgFrame = frame->addFrame("inventory base");
+		bgFrame->setSize(basePos);
+		const auto bgSize = bgFrame->getSize();
+		bgFrame->setActualSize(SDL_Rect{ 0, 0, bgSize.w, bgSize.h });
+		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, bgSize.h },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/system/inventory/HUD_Inventory_Base_00a.png", "inventory base img");
+	}
+
+	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+	const int baseSlotOffsetX = 4;
+	const int baseSlotOffsetY = 0;
+	SDL_Rect invSlotsPos{ 0, 202, basePos.w, 242 };
+	{
+		const auto invSlotsFrame = frame->addFrame("inventory slots");
+		invSlotsFrame->setSize(invSlotsPos);
+		invSlotsFrame->setActualSize(SDL_Rect{ 0, 0, invSlotsFrame->getSize().w, invSlotsFrame->getSize().h });
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+
+		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize);
+			for ( int y = 0; y < players[player]->inventoryUI.getSizeY(); ++y )
+			{
+				currentSlotPos.y = baseSlotOffsetY + (y * inventorySlotSize);
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+
+				auto slotFrame = invSlotsFrame->addFrame(slotname);
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });
+				//slotFrame->setDisabled(true);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+		}
+	}
+
+	{
+		SDL_Rect dollSlotsPos{ 0, 0, basePos.w, invSlotsPos.y };
+		const auto dollSlotsFrame = frame->addFrame("paperdoll slots");
+		dollSlotsFrame->setSize(dollSlotsPos);
+		dollSlotsFrame->setActualSize(SDL_Rect{ 0, 0, dollSlotsFrame->getSize().w, dollSlotsFrame->getSize().h });
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+
+		for ( int x = Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_LEFT; x <= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT; ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX;
+			if ( x == Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT )
+			{
+				currentSlotPos.x = baseSlotOffsetX + (4 * inventorySlotSize); // 4 slots over
+			}
+
+			for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5; ++y )
+			{
+				currentSlotPos.y = baseSlotOffsetY + ((y - Player::Inventory_t::PaperDollRows::DOLL_ROW_1) * inventorySlotSize);
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+
+				auto slotFrame = dollSlotsFrame->addFrame(slotname);
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });
+				//slotFrame->setDisabled(true);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+		}
+
+		{
+			auto charFrame = frame->addFrame("inventory character preview");
+			auto charSize = dollSlotsPos;
+			charSize.x += inventorySlotSize + baseSlotOffsetX + 4;
+			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
+
+			charFrame->setSize(charSize);
+			charFrame->setActualSize(SDL_Rect{ 0, 0, charSize.w, charSize.h });
+			//charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
+			//	SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			//	"images/system/white.png", "inventory character preview bg");
+		}
+
+		/*auto selectedFrame = dollSlotsFrame->addFrame("paperdoll selected item");
+		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
+		selectedFrame->setDisabled(true);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "paperdoll selected highlight");*/
+	}
+
+	{
+		auto selectedFrame = frame->addFrame("inventory selected item");
+		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
+		selectedFrame->setDisabled(true);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "inventory selected highlight");
+
+		auto oldSelectedFrame = frame->addFrame("inventory old selected item");
+		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		oldSelectedFrame->setActualSize(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h });
+		oldSelectedFrame->setDisabled(true);
+
+		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "inventory old selected highlight");
+	}
+
+	{
+		auto draggingInventoryItem = frame->addFrame("dragging inventory item");
+		draggingInventoryItem->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		draggingInventoryItem->setActualSize(SDL_Rect{ 0, 0, draggingInventoryItem->getSize().w, draggingInventoryItem->getSize().h });
+		draggingInventoryItem->setDisabled(true);
+		createPlayerInventorySlotFrameElements(draggingInventoryItem);
+	}
+}
+
+void newPlayerInventory(const int player)
+{
+	if ( !playerInventory[player] )
+	{
+		createPlayerInventory(player);
+	}
+}
+
 void doNewCharacterSheet(int player)
 {
+#ifdef NINTENDO
+    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
+    static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
+#else // NINTENDO
     static const char* bigfont = "fonts/pixelmix.ttf#18";
     static const char* smallfont = "fonts/pixel_maz.ttf#14";
+#endif // NINTENDO
 
     Frame* frame = gui->findFrame("Character sheet");
     if (!frame) {
@@ -416,13 +1180,13 @@ void doNewCharacterSheet(int player)
 
 static Uint32 gui_ticks = 0u;
 void doFrames() {
-    if ( gui ) 
-    {
-        while (gui_ticks < ticks)
-        {
-            (void)gui->process();
-            ++gui_ticks;
-        }
-        gui->draw();
-    }
+	if ( gui )
+	{
+		while ( gui_ticks < ticks )
+		{
+			(void)gui->process();
+			++gui_ticks;
+		}
+		gui->draw();
+	}
 }

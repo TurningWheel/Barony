@@ -69,6 +69,7 @@ public:
 	const SDL_Rect				getSize() const { return size; }
 	const int					getHJustify() const { return static_cast<int>(hjustify); }
 	const int					getVJustify() const { return static_cast<int>(vjustify); }
+	const int                   getNumTextLines() const;
 	const bool					isEditable() const { return editable; }
 	const bool					isNumbersOnly() const { return numbersOnly; }
 	void						(*getCallback() const)(Field&) { return callback; }
@@ -87,6 +88,7 @@ public:
 	void	setCallback(void (*const fn)(Field&)) { callback = fn; }
 	void	setFont(const char* _font) { font = _font; }
 	void	setGuide(const char* _guide) { guide = _guide; }
+	void    reflowTextToFit(const int characterOffset);
 
 private:
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field

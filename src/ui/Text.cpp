@@ -44,6 +44,14 @@ Text::~Text() {
 	}
 }
 
+size_t getNumTextLines(std::string& str)
+{
+	int numLines = 1;
+	size_t newlines = std::count(str.begin(), str.end(), '\n');
+
+	return numLines + newlines;
+}
+
 void Text::render() {
 	// load font
 	std::string strToRender;
@@ -58,7 +66,12 @@ void Text::render() {
 	}
 #ifdef NINTENDO
 	// fixes weird crash in SDL_ttf when string length < 2
-	while (strToRender.size() < 2) {
+	while ( strToRender.size() < 2 ) {
+		strToRender.append(" ");
+	}
+#else
+	// fixes nullptr SDL surface when string is empty.
+	if ( strToRender.size() < 1 ) {
 		strToRender.append(" ");
 	}
 #endif
@@ -77,7 +90,7 @@ void Text::render() {
 	}
 
 	int outlineSize = font->getOutline();
-	if (outlineSize > 0) {
+	if ( outlineSize > 0 ) {
 		TTF_SetFontOutline(ttf, outlineSize);
 		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorBlack);
 		TTF_SetFontOutline(ttf, 0);
@@ -86,32 +99,47 @@ void Text::render() {
 		rect.x = outlineSize; rect.y = outlineSize;
 		SDL_BlitSurface(text, NULL, surf, &rect);
 		SDL_FreeSurface(text);
-	} else {
+	}
+	else {
 		TTF_SetFontOutline(ttf, 0);
 		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorWhite);
 	}
 	assert(surf);
-	if (texid == 0) {
+	if ( texid == 0 ) {
 		glGenTextures(1, &texid);
 	}
 
-	width = 0; height = 0;
+	width = 0;
+	height = 0;
+	
+	// this is the old check
+	//for (int y = 0; y < surf->h; ++y) {
+	//	for (int x = 0; x < surf->w; ++x) {
+	//		if (((Uint32 *)surf->pixels)[x + y * scan] != 0) { 
+	//			width = std::max(width, x);
+	//			height = std::max(height, y);
+	//		}
+	//	}
+	//}
+
+	int numLines = getNumTextLines(strToRender);
+	height = surf->h * numLines + std::max(0, numLines - 1) * (2 + 2 * outlineSize);
+
 	int scan = surf->pitch / surf->format->BytesPerPixel;
-	for (int y = 0; y < surf->h; ++y) {
-		for (int x = 0; x < surf->w; ++x) {
-			if (((Uint32 *)surf->pixels)[x + y * scan] != 0) {
+	for ( int y = 0; y < surf->h; ++y ) {
+		for ( int x = 0; x < surf->w; ++x ) {
+			// check upper byte (alpha) data. remaining 3 bytes are always 0x00FFFFFF
+			if ( (0xFF000000 & ((Uint32 *)surf->pixels)[x + y * scan]) != 0 ) {
 				width = std::max(width, x);
-				height = std::max(height, y);
 			}
 		}
 	}
 	++width;
-	++height;
 
 	// translate the original surface to an RGBA surface
 	SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width, height, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	SDL_Rect dest{0, 0, 0, 0};
-	SDL_Rect src{0, 0, width, height};
+	SDL_Rect dest{ 0, 0, 0, 0 };
+	SDL_Rect src{ 0, 0, width, height };
 	SDL_BlitSurface(surf, &src, newSurf, &dest); // blit onto a purely RGBA Surface
 	SDL_FreeSurface(surf); //TODO: Why does this give a heap exception in NX?
 	surf = newSurf;

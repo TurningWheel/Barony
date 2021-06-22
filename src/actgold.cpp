@@ -86,18 +86,15 @@ void actGoldBag(Entity* my)
 						playSoundEntity(players[i]->entity, 242 + rand() % 4, 64 );
 					}
 					stats[i]->GOLD += my->goldAmount;
-					if ( i != 0 )
+					if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 					{
-						if ( multiplayer == SERVER )
-						{
-							// send the client info on the gold it picked up
-							strcpy((char*)net_packet->data, "GOLD");
-							SDLNet_Write32(stats[i]->GOLD, &net_packet->data[4]);
-							net_packet->address.host = net_clients[i - 1].host;
-							net_packet->address.port = net_clients[i - 1].port;
-							net_packet->len = 8;
-							sendPacketSafe(net_sock, -1, net_packet, i - 1);
-						}
+						// send the client info on the gold it picked up
+						strcpy((char*)net_packet->data, "GOLD");
+						SDLNet_Write32(stats[i]->GOLD, &net_packet->data[4]);
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
 
 					// message for item pickup

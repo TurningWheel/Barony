@@ -54,7 +54,7 @@ FMOD::Channel* playSoundPlayer(int player, Uint32 snd, int vol)
 	{
 		return nullptr;
 	}
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		return playSound(snd, vol);
 	}
@@ -117,7 +117,7 @@ FMOD::Channel* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
-			if ( client_disconnected[c] == true )
+			if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -367,7 +367,7 @@ OPENAL_SOUND* playSoundPlayer(int player, Uint32 snd, int vol)
 	{
 		return NULL;
 	}
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		return playSound(snd, vol);
 	}
@@ -430,7 +430,7 @@ OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
-			if ( client_disconnected[c] == true )
+			if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -1050,7 +1050,7 @@ void* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
-			if ( client_disconnected[c] == true )
+			if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -1100,7 +1100,7 @@ void* playSoundPlayer(int player, Uint32 snd, int vol)
 	{
 		return NULL;
 	}
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		return playSound(snd, vol);
 	}

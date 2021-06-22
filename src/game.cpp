@@ -411,7 +411,7 @@ void gameLogic(void)
 			// machinegun this message to clients to make sure they get it!
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] )
+				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 				{
 					continue;
 				}
@@ -592,6 +592,10 @@ void gameLogic(void)
 				// continue informing clients of entities they need to delete
 				for ( i = 1; i < MAXPLAYERS; i++ )
 				{
+					if ( players[i]->isLocalPlayer() )
+					{
+						continue;
+					}
 					j = 0;
 					for ( node = entitiesToDelete[i].first; node != NULL; node = nextnode )
 					{
@@ -1293,7 +1297,7 @@ void gameLogic(void)
 					{
 						for ( c = 1; c < MAXPLAYERS; ++c )
 						{
-							if ( client_disconnected[c] == true )
+							if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 							{
 								continue;
 							}
@@ -1556,7 +1560,7 @@ void gameLogic(void)
 										steamAchievementClient(c, "BARONY_ACH_ESCORT");
 									}
 
-									if ( c > 0 && multiplayer == SERVER )
+									if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -1644,7 +1648,7 @@ void gameLogic(void)
 				{
 					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
-						if ( client_disconnected[c] == true )
+						if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 						{
 							continue;
 						}
@@ -1713,7 +1717,7 @@ void gameLogic(void)
 				// handle keep alives
 				for ( c = 1; c < MAXPLAYERS; c++ )
 				{
-					if ( client_disconnected[c] )
+					if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 					{
 						continue;
 					}
@@ -1757,7 +1761,7 @@ void gameLogic(void)
 			if (multiplayer != SINGLE) {
 				for ( c = 1; c < MAXPLAYERS; c++ )
 				{
-					if ( !client_disconnected[c] )
+					if ( !client_disconnected[c] && !players[c]->isLocalPlayer() )
 					{
 						if ( oassailant[c] != assailant[c] )
 						{
@@ -3960,7 +3964,7 @@ void ingameHud()
 							// send message to all clients
 							for ( int c = 1; c < MAXPLAYERS; c++ )
 							{
-								if ( client_disconnected[c] )
+								if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 								{
 									continue;
 								}
@@ -4127,6 +4131,7 @@ void ingameHud()
 			{
 				updateCharacterSheet(player);
 				updatePlayerInventory(player);
+				newPlayerInventory(player);
 				updateChestInventory(player);
 				GenericGUI[player].updateGUI();
 				players[player]->bookGUI.updateBookGUI();
@@ -4210,6 +4215,17 @@ void ingameHud()
 
 		FollowerRadialMenu& followerMenu = FollowerMenu[player];
 
+		char framename[32];
+		snprintf(framename, sizeof(framename), "player inventory %d", player);
+		Frame* frame = gui->findFrame(framename);
+		if ( frame )
+		{
+			if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
+			{
+				draggingItemFrame->setDisabled(true);
+			}
+		}
+
 		if ( players[player]->shootmode == false )
 		{
 			// dragging items, player not needed to be alive
@@ -4220,33 +4236,45 @@ void ingameHud()
 				pos.y = inputs.getMouse(player, Inputs::Y) - 15;
 				pos.w = 32 * uiscale_inventory;
 				pos.h = 32 * uiscale_inventory;
-				drawImageScaled(itemSprite(selectedItem), NULL, &pos);
-				if ( selectedItem->count > 1 )
+
+				if ( frame )
 				{
-					ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
-				}
-				if ( itemCategory(selectedItem) != SPELL_CAT )
-				{
-					if ( itemIsEquipped(selectedItem, player) )
+					if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
 					{
-						pos.y += 16;
-						drawImage(equipped_bmp, NULL, &pos);
-					}
-					else if ( selectedItem->status == BROKEN )
-					{
-						pos.y += 16;
-						drawImage(itembroken_bmp, NULL, &pos);
+						updateSlotFrameFromItem(draggingItemFrame, selectedItem);
+						draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
 					}
 				}
 				else
 				{
-					spell_t* spell = getSpellFromItem(player, selectedItem);
-					if ( players[player]->magic.selectedSpell() == spell &&
-						(players[player]->magic.selected_spell_last_appearance == selectedItem->appearance
-							|| players[player]->magic.selected_spell_last_appearance == -1) )
+					drawImageScaled(itemSprite(selectedItem), NULL, &pos);
+					if ( selectedItem->count > 1 )
 					{
-						pos.y += 16;
-						drawImage(equipped_bmp, NULL, &pos);
+						ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
+					}
+					if ( itemCategory(selectedItem) != SPELL_CAT )
+					{
+						if ( itemIsEquipped(selectedItem, player) )
+						{
+							pos.y += 16;
+							drawImage(equipped_bmp, NULL, &pos);
+						}
+						else if ( selectedItem->status == BROKEN )
+						{
+							pos.y += 16;
+							drawImage(itembroken_bmp, NULL, &pos);
+						}
+					}
+					else
+					{
+						spell_t* spell = getSpellFromItem(player, selectedItem);
+						if ( players[player]->magic.selectedSpell() == spell &&
+							(players[player]->magic.selected_spell_last_appearance == selectedItem->appearance
+								|| players[player]->magic.selected_spell_last_appearance == -1) )
+						{
+							pos.y += 16;
+							drawImage(equipped_bmp, NULL, &pos);
+						}
 					}
 				}
 			}
@@ -4586,6 +4614,14 @@ void ingameHud()
 				}
 				}*/
 			}
+		}
+	}
+
+	if ( ItemTooltips.autoReload )
+	{
+		if ( ticks % TICKS_PER_SECOND == 0 )
+		{
+			ItemTooltips.readTooltipsFromFile();
 		}
 	}
 }

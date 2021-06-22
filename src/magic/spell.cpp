@@ -525,6 +525,10 @@ spellElement_t* copySpellElement(spellElement_t* spellElement)
 int getCostOfSpell(spell_t* spell, Entity* caster)
 {
 	int cost = 0;
+	if ( !spell )
+	{
+		return 0;
+	}
 
 	node_t* node;
 	for ( node = spell->elements.first; node != NULL; node = node->next )
@@ -587,19 +591,24 @@ bool spell_isChanneled(spell_t* spell)
 	return false;
 }
 
-real_t getBonusFromCasterOfSpellElement(Entity* caster, spellElement_t* spellElement)
+real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement)
 {
-	if ( !caster || caster->behavior != &actPlayer )
+	if ( caster && caster->behavior != &actPlayer )
 	{
-		return 0;
+		return 0.0;
 	}
 
-	int INT = caster->getINT();
+	if ( !casterStats && caster )
+	{
+		casterStats = caster->getStats();
+	}
+
+	int INT = statGetINT(casterStats, caster);
 	if ( INT > 0 )
 	{
 		return INT / 100.0;
 	}
-	return 0;
+	return 0.0;
 }
 
 bool spellElement_isChanneled(spellElement_t* spellElement)
@@ -1166,7 +1175,7 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 			}
 		}
 
-		if ( multiplayer == SERVER && player > 0 )
+		if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 		{
 			strcpy((char*)net_packet->data, "UPHP");
 			SDLNet_Write32((Uint32)stats[player]->HP, &net_packet->data[4]);

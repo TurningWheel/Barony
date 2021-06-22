@@ -238,7 +238,7 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 			{
 				newDamageIndicator(playertarget, source->x, source->y);
 			}
-			else if ( playertarget > 0 && multiplayer == SERVER )
+			else if ( playertarget > 0 && multiplayer == SERVER && !players[playertarget]->isLocalPlayer() )
 			{
 				strcpy((char*)net_packet->data, "DAMI");
 				SDLNet_Write32(source->x, &net_packet->data[4]);
@@ -315,7 +315,7 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
 		}
 	}
-	else if ( player > 0 && multiplayer == SERVER )
+	else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "ENHP");
 		SDLNet_Write32(hp, &net_packet->data[4]);
@@ -1559,11 +1559,7 @@ void drawStatus(int player)
 						{
 							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
 						}
-						int itemWeight = items[item->type].weight * item->count;
-						if ( itemTypeIsQuiver(item->type) )
-						{
-							itemWeight = std::max(1, itemWeight / 5);
-						}
+						int itemWeight = item->getWeight();
 						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
 						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(player));
 						if ( strcmp(spellEffectText, "") )
@@ -2387,8 +2383,8 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 						bonus = 0;
 					}
 				}
-				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, primaryElement)));
-				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, primaryElement)));
+				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
+				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
 			}
 			if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
 			{
@@ -2771,7 +2767,7 @@ void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellTyp
 			*spellInfoLines = 3;
 			break;
 		case SPELL_TROLLS_BLOOD:
-			snprintf(spellType, 31, language[3305]);
+			snprintf(spellType, 31, language[3301]);
 			snprintf(effectTextBuffer, 255, language[3840]);
 			*spellInfoLines = 2;
 			break;

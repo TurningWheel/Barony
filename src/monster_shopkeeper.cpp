@@ -978,7 +978,7 @@ void shopkeeperDie(Entity* my)
 		{
 			players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 		}
-		else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER )
+		else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER && !players[i]->isLocalPlayer() )
 		{
 			// inform client of abandonment
 			strcpy((char*)net_packet->data, "SHPC");

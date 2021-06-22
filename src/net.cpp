@@ -1024,6 +1024,37 @@ void serverUpdateHunger(int player)
 
 /*-------------------------------------------------------------------------------
 
+serverUpdateSexChange
+
+Updates all clients on specified player's sex
+
+-------------------------------------------------------------------------------*/
+
+void serverUpdateSexChange(int player)
+{
+	if ( multiplayer != SERVER || !stats[player] )
+	{
+		return;
+	}
+
+	for ( int c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+		{
+			continue;
+		}
+		strcpy((char*)net_packet->data, "SEXU");
+		net_packet->data[4] = static_cast<Uint8>(player);
+		net_packet->data[5] = static_cast<Uint8>(stats[player]->sex);
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 6;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 serverUpdatePlayerStats
 
 Updates all player current HP/MP for clients
@@ -2268,6 +2299,9 @@ void clientHandlePacket()
 				case PARTICLE_EFFECT_ABILITY_ROCK:
 					createParticleRock(entity);
 					break;
+				case PARTICLE_EFFECT_SHATTERED_GEM:
+					createParticleShatteredGem(entity, sprite);
+					break;
 				case PARTICLE_EFFECT_SHADOW_INVIS:
 					createParticleDropRising(entity, sprite, 1.0);
 					break;
@@ -3405,6 +3439,19 @@ void clientHandlePacket()
 		}
 	}
 
+	// update sex
+	else if ( !strncmp((char*)net_packet->data, "SEXU", 4) )
+	{
+		int player = static_cast<int>(net_packet->data[4]);
+		if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+		{
+			return;
+		}
+		stats[player]->sex = (sex_t)(net_packet->data[5]);
+		//messagePlayer(clientnum, "Received player: %d sex: %d", player, stats[player]->sex);
+		return;
+	}
+
 	else if ( !strncmp((char*)net_packet->data, "COND", 4) )
 	{
 		int conduct = SDLNet_Read16(&net_packet->data[4]);
@@ -4529,7 +4576,7 @@ void serverHandlePacket()
 		{
 			return;
 		}
-		if ( client_disconnected[j] )
+		if ( client_disconnected[j] || players[j]->isLocalPlayer() )
 		{
 			return;
 		}
@@ -4564,6 +4611,10 @@ void serverHandlePacket()
 	{
 		int x = net_packet->data[4];
 		if ( x <= 0 )
+		{
+			return;
+		}
+		if ( players[x]->isLocalPlayer() )
 		{
 			return;
 		}
@@ -4841,7 +4892,7 @@ void serverHandlePacket()
 		// relay message to all clients
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( c == pnum || client_disconnected[c] == true )
+			if ( c == pnum || client_disconnected[c] == true || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -5064,12 +5115,30 @@ void serverHandlePacket()
 				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), false, &entitystats->inventory);
 		}
 		printlog("client %d sold item to shop (uid=%d)\n", client, uidnum);
-		stats[client]->GOLD += item->sellValue(client);
-		if (rand() % 2 && item->type != GEM_GLASS )
+		
+		if ( !item )
 		{
-			if ( players[client] && players[client]->entity )
+			printlog("SHPS: client %d sold item to shop (uid=%d) but could not create item!\n");
+			return;
+		}
+
+		stats[client]->GOLD += item->sellValue(client);
+		if ( players[client] && players[client]->entity )
+		{
+			if ( rand() % 2 )
 			{
-				players[client]->entity->increaseSkill(PRO_TRADING);
+				if ( item->sellValue(client) <= 1 )
+				{
+					// selling cheap items does not increase trading past basic
+					if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+					{
+						players[client]->entity->increaseSkill(PRO_TRADING);
+					}
+				}
+				else
+				{
+					players[client]->entity->increaseSkill(PRO_TRADING);
+				}
 			}
 		}
 		return;

@@ -398,6 +398,12 @@ int initApp(char const * const title, int fullscreen)
 		}
 	}
 
+	// create player classes
+	for ( int c = 0; c < MAXPLAYERS; c++ )
+	{
+		players[c] = new Player(c, true);
+	}
+
 	createLoadingScreen(10);
 	doLoadingScreen();
 

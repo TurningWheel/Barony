@@ -826,14 +826,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		{
 			if ( item->type >= 0 && item->type < NUMITEMS )
 			{
-				if ( itemTypeIsQuiver(item->type) )
-				{
-					weight += std::max(1, items[item->type].weight * item->count / 5);
-				}
-				else
-				{
-					weight += items[item->type].weight * item->count;
-				}
+				weight += item->getWeight();
 			}
 		}
 	}
@@ -2113,37 +2106,37 @@ void actPlayer(Entity* my)
 	}
 	if ( inputs.hasController(PLAYER_NUM) )
 	{
-		if ( keystatus[SDL_SCANCODE_KP_1] )
-		{
-			keystatus[SDL_SCANCODE_KP_1] = 0;
-			inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_NORMAL, 1000, 1000, 1 * TICKS_PER_SECOND, 0);
-		}
-		if ( keystatus[SDL_SCANCODE_KP_2] )
-		{
-			keystatus[SDL_SCANCODE_KP_2] = 0;
-			inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_DEATH, 30000, 30000, 2 * TICKS_PER_SECOND, 0);
-			//SDL_HapticRumblePlay(inputs.getController(PLAYER_NUM)->getHaptic(), 0.5, 2000);
-		}
-		if ( keystatus[SDL_SCANCODE_KP_3] )
-		{
-			keystatus[SDL_SCANCODE_KP_3] = 0;
-			inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_BOULDER, 30000, 30000, 3 * TICKS_PER_SECOND, 0);
-		}
-		if ( keystatus[SDL_SCANCODE_KP_4] )
-		{
-			inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_TMP, 30000, 30000, 1 * TICKS_PER_SECOND, 0);
-			keystatus[SDL_SCANCODE_KP_4] = 0;
-		}
-		if ( keystatus[SDL_SCANCODE_KP_5] )
-		{
-			inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_TMP, 30000, 30000, 3 * TICKS_PER_SECOND, 0);
-			keystatus[SDL_SCANCODE_KP_5] = 0;
-		}
-		if ( keystatus[SDL_SCANCODE_KP_6] )
-		{
-			inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_TMP, 30000, 30000, 10 * TICKS_PER_SECOND, 0);
-			keystatus[SDL_SCANCODE_KP_6] = 0;
-		}
+		//if ( keystatus[SDL_SCANCODE_KP_1] )
+		//{
+		//	keystatus[SDL_SCANCODE_KP_1] = 0;
+		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_NORMAL, 1000, 1000, 1 * TICKS_PER_SECOND, 0);
+		//}
+		//if ( keystatus[SDL_SCANCODE_KP_2] )
+		//{
+		//	keystatus[SDL_SCANCODE_KP_2] = 0;
+		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_DEATH, 30000, 30000, 2 * TICKS_PER_SECOND, 0);
+		//	//SDL_HapticRumblePlay(inputs.getController(PLAYER_NUM)->getHaptic(), 0.5, 2000);
+		//}
+		//if ( keystatus[SDL_SCANCODE_KP_3] )
+		//{
+		//	keystatus[SDL_SCANCODE_KP_3] = 0;
+		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_BOULDER, 30000, 30000, 3 * TICKS_PER_SECOND, 0);
+		//}
+		//if ( keystatus[SDL_SCANCODE_KP_4] )
+		//{
+		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_TMP, 30000, 30000, 1 * TICKS_PER_SECOND, 0);
+		//	keystatus[SDL_SCANCODE_KP_4] = 0;
+		//}
+		//if ( keystatus[SDL_SCANCODE_KP_5] )
+		//{
+		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_TMP, 30000, 30000, 3 * TICKS_PER_SECOND, 0);
+		//	keystatus[SDL_SCANCODE_KP_5] = 0;
+		//}
+		//if ( keystatus[SDL_SCANCODE_KP_6] )
+		//{
+		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_TMP, 30000, 30000, 10 * TICKS_PER_SECOND, 0);
+		//	keystatus[SDL_SCANCODE_KP_6] = 0;
+		//}
 		/*if ( inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_ATTACK) )
 		{
 			inputs.controllerClearRawInput(PLAYER_NUM, INJOY_GAME_ATTACK);

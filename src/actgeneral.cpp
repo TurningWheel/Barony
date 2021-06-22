@@ -2321,7 +2321,7 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 	{
 		return;
 	}
-	if ( !stats[player] || client_disconnected[player] )
+	if ( !stats[player] || client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}

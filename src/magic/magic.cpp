@@ -86,7 +86,7 @@ void spell_magicMap(int player)
 		return;
 	}
 
-	if ( multiplayer == SERVER && player > 0 )
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 	{
 		//Tell the client to map the magic.
 		strcpy((char*)net_packet->data, "MMAP");
@@ -108,7 +108,7 @@ void spell_detectFoodEffectOnMap(int player)
 		return;
 	}
 
-	if ( multiplayer == SERVER && player > 0 )
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 	{
 		//Tell the client to map the food.
 		strcpy((char*)net_packet->data, "MFOD");
@@ -405,7 +405,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 	if ( hit.entity )
 	{
 		int damage = element.damage;
-		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, &element));
+		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
@@ -541,7 +541,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 	if ( hit.entity )
 	{
 		int damage = element.damage;
-		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, &element));
+		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
@@ -973,7 +973,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 						{
 							free(weapon);
 						}
-						if ( player > 0 && multiplayer == SERVER )
+						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "STLA");
 							net_packet->data[4] = 5; // steal weapon index in STLA netcode.
@@ -1037,7 +1037,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			}
 
 			int damage = element.damage;
-			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, &element));
+			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
 			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 			damage /= (1 + (int)resistance);
 			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
@@ -1161,6 +1161,10 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use)
 {
+	if ( !caster )
+	{
+		return nullptr;
+	}
 	//Also refactor the duration determining code.
 	node_t* node = spell->elements.first;
 	if ( !node )
@@ -1178,7 +1182,15 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 		return nullptr;
 	}
 
-	bool newbie = caster->isSpellcasterBeginner();
+	bool newbie = false;
+	if ( caster->behavior == &actPlayer )
+	{
+		newbie = isSpellcasterBeginner(caster->skill[2], caster);
+	}
+	else
+	{
+		newbie = isSpellcasterBeginner(-1, caster);
+	}
 
 	int duration = element->duration; // duration in ticks.
 	duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;

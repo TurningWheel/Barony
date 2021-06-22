@@ -275,6 +275,8 @@ public:
 		MONSTER_FORCE_PLAYER_ENEMY,
 		MONSTER_FORCE_PLAYER_RECRUITABLE
 	};
+	int getPassiveShieldBonus(bool checkShield) const;
+	int getActiveShieldBonus(bool checkShield) const;
 };
 extern Stat* stats[MAXPLAYERS];
 

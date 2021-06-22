@@ -1484,7 +1484,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			if ( tryChakram )
 			{
 				//Grab a chakram instead.
-				node_t* thrownNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+				node_t* thrownNode = itemNodeInInventory(myStats, -1, THROWN);
 				if ( thrownNode )
 				{
 					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode, false, false);
@@ -1554,7 +1554,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		node_t *weaponNode = nullptr;
 		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && rand() % 10 == 0 )
 		{
-			weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+			weaponNode = itemNodeInInventory(myStats, -1, THROWN);
 			if ( weaponNode )
 			{
 				if ( swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false) )

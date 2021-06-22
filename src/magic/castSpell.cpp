@@ -200,6 +200,112 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 	//castSpell(caster, spell); //For now, do this while the spell animations are worked on.
 }
 
+int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Stat* casterStats)
+{
+	if ( !casterStats || !spell ) 
+	{ 
+		return 0;
+	}
+
+	int spellcastingAbility = std::min(std::max(0, casterStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(casterStats, caster)), 100);
+
+
+	// penalty for not knowing spellbook. e.g 40 spellcasting, 80 difficulty = 40% more chance to fumble/use mana.
+	if ( spellcastingAbility >= SKILL_LEVEL_BASIC )
+	{
+		spellcastingAbility = std::max(10, spellcastingAbility - spell->difficulty);
+	}
+	else
+	{
+		spellcastingAbility = std::max(0, spellcastingAbility - spell->difficulty);
+	}
+	if ( casterStats->shield && (casterStats->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(casterStats)) )
+	{
+		if ( casterStats->shield->beatitude == -1 )
+		{
+			spellcastingAbility = std::min(30, spellcastingAbility); // 70% chance to use more mana at least
+		}
+		else
+		{
+			spellcastingAbility = std::min(10, spellcastingAbility); // 90% chance to use more mana at least
+		}
+	}
+	return spellcastingAbility;
+}
+
+
+bool isSpellcasterBeginner(int player, Entity* caster)
+{
+	if ( !caster && player < 0 )
+	{
+		return false;
+	}
+	Stat* myStats = nullptr;
+	if ( !caster && player >= 0 )
+	{
+		myStats = stats[player];
+		caster = players[player]->entity;
+	}
+	else
+	{
+		myStats = caster->getStats();
+	}
+	if ( !myStats )
+	{
+		return false;
+	}
+	else if ( caster->behavior == &actMonster )
+	{
+		return false;
+	}
+	else if ( std::min(std::max(0, myStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(myStats, caster)), 100) < SPELLCASTING_BEGINNER )
+	{
+		return true; //The caster has lower spellcasting skill. Cue happy fun times.
+	}
+	return false;
+}
+
+bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, spell_t* spell, Item* spellbookItem)
+{
+	if ( player < 0 || !spell || !stat || !spellbookItem )
+	{
+		return false;
+	}
+
+	int spellcastingLvl = std::min(std::max(0, stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat, caster)), 100);
+	bool newbie = false;
+
+	if ( spellcastingLvl >= spell->difficulty || playerLearnedSpellbook(player, spellbookItem) )
+	{
+		// bypass newbie penalty since we're good enough to cast the spell.
+		newbie = false;
+	}
+	else
+	{
+		newbie = true;
+	}
+	if ( spellbookItem->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat) )
+	{
+		newbie = true;
+	}
+	return newbie;
+}
+
+int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem)
+{
+	if ( !spellbookItem || itemCategory(spellbookItem) != SPELLBOOK )
+	{
+		return 0;
+	}
+	int spellBookBonusPercent = (statGetINT(stat, caster) * 0.5);
+	if ( spellbookItem->beatitude > 0
+		|| (shouldInvertEquipmentBeatitude(stat) && spellbookItem->beatitude < 0) )
+	{
+		spellBookBonusPercent += abs(spellbookItem->beatitude) * 25;
+	}
+	return spellBookBonusPercent;
+}
+
 Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook)
 {
 	Entity* caster = uidToEntity(caster_uid);
@@ -269,31 +375,23 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	int spellBookBonusPercent = 0;
 	if ( !using_magicstaff && !trap)
 	{
-		newbie = caster->isSpellcasterBeginner();
+		newbie = isSpellcasterBeginner(player, caster);
 
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
-			spellBookBonusPercent += (caster->getINT() * 0.5);
-			if ( stat->shield->beatitude > 0 
-				|| (shouldInvertEquipmentBeatitude(stat) && stat->shield->beatitude < 0) )
-			{
-				spellBookBonusPercent += abs(stat->shield->beatitude) * 25;
-			}
+			spellBookBonusPercent += getSpellbookBonusPercent(caster, stat, stat->shield);
 			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(player, stat->shield) )
 			{
 				// bypass newbie penalty since we're good enough to cast the spell.
-				newbie = false; 
 				playerCastingFromKnownSpellbook = true;
 			}
-			else
-			{
-				newbie = true;
-			}
+
 			if ( stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat) )
 			{
-				newbie = true;
 				playerCastingFromKnownSpellbook = false;
 			}
+
+			newbie = isSpellcasterBeginnerFromSpellbook(player, caster, stat, spell, stat->shield);
 		}
 
 		/*magiccost = getCostOfSpell(spell);
@@ -328,7 +426,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( magiccost > stat->MP )
 				{
 					// damage sound/effect due to overdraw.
-					if ( player > 0 && multiplayer == SERVER )
+					if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 					{
 						strcpy((char*)net_packet->data, "SHAK");
 						net_packet->data[4] = 10; // turns into .1
@@ -339,7 +437,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						playSoundPlayer(player, 28, 92);
 					}
-					else if ( player == 0 || (splitscreen && player > 0) )
+					else if ( player >= 0 && players[player]->isLocalPlayer() )
 					{
 						cameravars[player].shakex += 0.1;
 						cameravars[player].shakey += 10;
@@ -381,26 +479,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		int spellcastingAbility = spellcasting;
 		if ( usingSpellbook )
 		{
-			// penalty for not knowing spellbook. e.g 40 spellcasting, 80 difficulty = 40% more chance to fumble/use mana.
-			if ( spellcastingAbility >= 20 )
-			{
-				spellcastingAbility = std::max(10, spellcastingAbility - spell->difficulty);
-			}
-			else
-			{
-				spellcastingAbility = std::max(0, spellcastingAbility - spell->difficulty);
-			}
-			if ( stat->shield && (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat)) )
-			{
-				if ( stat->shield->beatitude == -1 )
-				{
-					spellcastingAbility = std::min(30, spellcastingAbility); // 70% chance to use more mana at least
-				}
-				else
-				{
-					spellcastingAbility = std::min(10, spellcastingAbility); // 90% chance to use more mana at least
-				}
-			}
+			spellcastingAbility = getSpellcastingAbilityFromUsingSpellbook(spell, caster, stat);
 		}
 		if (chance >= spellcastingAbility / 10)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
 		{
@@ -1130,7 +1209,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					playSoundEntity(caster, 180, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
 					caster->setEffect(EFF_DASH, true, 60, true);
-					if ( i > 0 && multiplayer == SERVER )
+					if ( i > 0 && multiplayer == SERVER && !players[i]->isLocalPlayer() )
 					{
 						strcpy((char*)net_packet->data, "DASH");
 						net_packet->address.host = net_clients[i - 1].host;
@@ -1248,7 +1327,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 					// spellbook 100-150%, 50 INT = 200%.
-					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, element));
+					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element));
 
 					int totalHeal = 0;
 					int oldHP = players[i]->entity->getHP();

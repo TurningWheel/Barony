@@ -82,7 +82,7 @@ void Field::deactivate() {
 }
 
 void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
-	if (invisible) {
+	if ( invisible || isDisabled() ) {
 		return;
 	}
 
@@ -327,4 +327,93 @@ void Field::scrollParent() {
 		fActualSize.x = (size.x + size.w) - fSize.w;
 	}
 	fparent->setActualSize(fActualSize);
+}
+
+void Field::reflowTextToFit(const int characterOffset) {
+	if ( text == nullptr || textlen <= 1 ) {
+		return;
+	}
+
+	if ( auto getText = Text::get(text, font.c_str()) )
+	{
+		if ( getText->getWidth() <= (getSize().w - getSize().x) )
+		{
+			// no work to do
+			return;
+		}
+	}
+
+	Font* actualFont = Font::get(font.c_str());
+	if ( !actualFont )
+	{
+		return;
+	}
+
+
+	std::string reflowText = "";
+
+	int charWidth = 0;
+	actualFont->sizeText("_", &charWidth, nullptr);
+	//if ( auto textGet = Text::get("_", font.c_str()) )
+	//{
+	//	charWidth = textGet->getWidth();
+	//}
+
+	if ( charWidth == 0 )
+	{
+		return;
+	}
+	++charWidth;
+	const int charactersPerLine = (getSize().w - getSize().x) / charWidth;
+
+	int currentCharacters = 0;
+	for ( int i = 0; text[i] != '\0'; ++i )
+	{
+		if ( (currentCharacters - characterOffset) > charactersPerLine )
+		{
+			int findSpace = reflowText.rfind(' ', reflowText.size());
+			if ( findSpace != std::string::npos )
+			{
+				int lastWordEnd = reflowText.size();
+				reflowText.at(findSpace) = '\n';
+				currentCharacters = lastWordEnd - findSpace;
+			}
+			else
+			{
+				reflowText += '\n';
+				currentCharacters = 0;
+			}
+
+			reflowText += text[i];
+		}
+		else
+		{
+			if ( text[i] == '\n' )
+			{
+				currentCharacters = 0;
+			}
+			++currentCharacters;
+			reflowText += text[i];
+		}
+	}
+
+	setText(reflowText.c_str());
+}
+
+const int Field::getNumTextLines() const
+{
+	if ( text == nullptr || textlen <= 1 ) {
+		return 0;
+	}
+
+	int numLines = 1;
+
+	for ( int i = 0; text[i] != '\0' && i < textlen - 1; ++i )
+	{
+		if ( text[i] == '\n' )
+		{
+			++numLines;
+		}
+	}
+	return numLines;
 }

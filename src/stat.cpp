@@ -1203,3 +1203,45 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	}
 	intro = oldIntro;
 }
+
+int Stat::getActiveShieldBonus(bool checkShield) const
+{
+	if ( !checkShield )
+	{
+		return (5 + (PROFICIENCIES[PRO_SHIELD] / 5));
+	}
+
+	if ( shield )
+	{
+		if ( itemCategory(shield) == SPELLBOOK || itemTypeIsQuiver(shield->type) )
+		{
+			return 0;
+		}
+		return (5 + (PROFICIENCIES[PRO_SHIELD] / 5));
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+int Stat::getPassiveShieldBonus(bool checkShield) const
+{
+	if ( !checkShield )
+	{
+		return (PROFICIENCIES[PRO_SHIELD] / 25);
+	}
+
+	if ( shield )
+	{
+		if ( itemCategory(shield) == SPELLBOOK || itemTypeIsQuiver(shield->type) )
+		{
+			return 0;
+		}
+		return (PROFICIENCIES[PRO_SHIELD] / 25);
+	}
+	else
+	{
+		return 0;
+	}
+}

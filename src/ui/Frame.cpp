@@ -146,10 +146,10 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		}
 	}
 
-	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 
 	// horizontal slider
 	if (actualSize.w > size.w && scrollbars) {
@@ -459,10 +459,10 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
-	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 
 	Input& input = Input::inputs[owner];
 
@@ -1168,8 +1168,9 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 			if (_size.w <= 0 || _size.h <= 0) {
 				return false;
 			} else {
-				Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
-				Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+
+				Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+				Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 				if (rectContainsPoint(_size, omousex, omousey)) {
 					return true;
 				} else {
@@ -1183,6 +1184,53 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 		return true;
 	}
 #endif
+}
+
+bool Frame::capturesMouseInRealtimeCoords(SDL_Rect* curSize, SDL_Rect* curActualSize) {
+	SDL_Rect newSize = SDL_Rect{ 0, 0, xres, yres };
+	SDL_Rect newActualSize = SDL_Rect{ 0, 0, xres, yres };
+	SDL_Rect& _size = curSize ? *curSize : newSize;
+	SDL_Rect& _actualSize = curActualSize ? *curActualSize : newActualSize;
+
+	if ( parent ) {
+		auto pframe = static_cast<Frame*>(parent);
+		if ( pframe->capturesMouseInRealtimeCoords(&_size, &_actualSize) ) {
+			_size.x += std::max(0, size.x - _actualSize.x);
+			_size.y += std::max(0, size.y - _actualSize.y);
+			if ( size.h < actualSize.h && allowScrolling ) {
+				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+			}
+			else {
+				_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+			}
+			if ( size.w < actualSize.w && allowScrolling ) {
+				_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+			}
+			else {
+				_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+			}
+			if ( _size.w <= 0 || _size.h <= 0 ) {
+				return false;
+			}
+			else {
+
+				Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+				Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+				if ( rectContainsPoint(_size, mousex, mousey) ) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	else {
+		return true;
+	}
 }
 
 Frame* Frame::getParent() {

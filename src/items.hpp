@@ -375,6 +375,21 @@ private:
 
 };
 
+enum ItemEquippableSlot : int
+{
+	EQUIPPABLE_IN_SLOT_WEAPON,
+	EQUIPPABLE_IN_SLOT_SHIELD,
+	EQUIPPABLE_IN_SLOT_MASK,
+	EQUIPPABLE_IN_SLOT_HELM,
+	EQUIPPABLE_IN_SLOT_GLOVES,
+	EQUIPPABLE_IN_SLOT_BOOTS,
+	EQUIPPABLE_IN_SLOT_BREASTPLATE,
+	EQUIPPABLE_IN_SLOT_CLOAK,
+	EQUIPPABLE_IN_SLOT_AMULET,
+	EQUIPPABLE_IN_SLOT_RING,
+	NO_EQUIP
+};
+
 // inventory item structure
 class Item
 {
@@ -434,6 +449,24 @@ public:
 	bool shouldItemStack(int player) const;
 
 	bool isShield() const;
+	bool doesItemProvideBeatitudeAC() const;
+	bool doesItemProvidePassiveShieldBonus() const;
+	bool doesPotionHarmAlliesOnThrown() const;
+
+	Sint32 potionGetEffectHealth() const;
+	Sint32 potionGetEffectDamage() const;
+	Sint32 potionGetEffectDurationMinimum() const;
+	Sint32 potionGetEffectDurationMaximum() const;
+	Sint32 potionGetEffectDurationRandom() const;
+	Sint32 potionGetCursedEffectDurationMinimum() const;
+	Sint32 potionGetCursedEffectDurationMaximum() const;
+	Sint32 potionGetCursedEffectDurationRandom() const;
+
+	Sint32 getWeight() const;
+
+	void foodTinGetDescriptionIndices(int* a, int* b, int* c) const;
+	void foodTinGetDescription(std::string& cookingMethod, std::string& protein, std::string& sides) const;
+	int foodGetPukeChance(Stat* eater) const;
 
 	enum ItemBombPlacement : int
 	{
@@ -479,6 +512,26 @@ public:
 	list_t surfaces;            // item image surfaces (inventory)
 	Category category;          // item category
 	int level;					// item level for random generation
+								// equip slot that item can go in
+	ItemEquippableSlot item_slot = ItemEquippableSlot::NO_EQUIP;
+	std::map<std::string, Sint32> attributes;
+	std::string tooltip = "tooltip_default";
+
+	bool hasAttribute(std::string attribute)
+	{
+		if ( attributes.size() > 0 )
+		{
+			if ( attributes.find(attribute) != attributes.end() )
+			{
+				return true;
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
 };
 extern ItemGeneric items[NUMITEMS];
 
@@ -629,7 +682,7 @@ void copyItem(Item* itemToSet, const Item* itemToCopy);
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed);
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
-node_t* itemNodeInInventory(const Stat* myStats, ItemType itemToFind, Category cat);
+node_t* itemNodeInInventory(const Stat* myStats, Sint32 itemToFind, Category cat);
 node_t* spellbookNodeInInventory(const Stat* myStats, int spellIDToFind);
 node_t* getRangedWeaponItemNodeInInventory(const Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(const Stat* myStats);

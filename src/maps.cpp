@@ -3098,7 +3098,9 @@ void assignActions(map_t* map)
 				}
 				else
 				{
-					if ( items[entity->skill[10]].category == SCROLL || items[entity->skill[10]].variations > 1 )
+					if ( items[entity->skill[10]].category == SCROLL 
+						|| items[entity->skill[10]].variations > 1
+						|| entity->skill[10] == FOOD_TIN )
 					{
 						entity->skill[14] = prng_get_uint();    // appearance
 					}

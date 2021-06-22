@@ -138,7 +138,7 @@ void actSpearTrap(Entity* my)
 									}
 									else
 									{
-										if ( entity->skill[2] > 0 )
+										if ( entity->skill[2] > 0 && !players[entity->skill[2]]->isLocalPlayer() )
 										{
 											strcpy((char*)net_packet->data, "SHAK");
 											net_packet->data[4] = 10; // turns into .1

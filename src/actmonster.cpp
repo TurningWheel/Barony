@@ -520,7 +520,7 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 
 			for ( int c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] )
+				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 				{
 					continue;
 				}
@@ -2438,14 +2438,14 @@ void actMonster(Entity* my)
 			for ( c = item->count; c > 0; c-- )
 			{
 				bool wasQuiver = itemTypeIsQuiver(item->type);
-				entity = dropItemMonster(item, my, myStats);
+				entity = dropItemMonster(item, my, myStats); // returns nullptr on "undroppables"
 				if ( entity )
 				{
 					entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
-					if ( wasQuiver )
-					{
-						break; // always drop the whole stack.
-					}
+				}
+				if ( wasQuiver )
+				{
+					break; // always drop the whole stack.
 				}
 			}
 		}
@@ -2842,50 +2842,43 @@ void actMonster(Entity* my)
 	Sint32 weight = 0;
 	if ( myStats->helmet != NULL )
 	{
-		weight += items[myStats->helmet->type].weight * myStats->helmet->count;
+		weight += myStats->helmet->getWeight();
 	}
 	if ( myStats->breastplate != NULL )
 	{
-		weight += items[myStats->breastplate->type].weight * myStats->breastplate->count;
+		weight += myStats->breastplate->getWeight();
 	}
 	if ( myStats->gloves != NULL )
 	{
-		weight += items[myStats->gloves->type].weight * myStats->gloves->count;
+		weight += myStats->gloves->getWeight();
 	}
 	if ( myStats->shoes != NULL )
 	{
-		weight += items[myStats->shoes->type].weight * myStats->shoes->count;
+		weight += myStats->shoes->getWeight();
 	}
 	if ( myStats->shield != NULL )
 	{
-		if ( itemTypeIsQuiver(myStats->shield->type) )
-		{
-			weight += std::max(1, items[myStats->shield->type].weight * myStats->shield->count / 5);
-		}
-		else
-		{
-			weight += items[myStats->shield->type].weight * myStats->shield->count;
-		}
+		weight += myStats->shield->getWeight();
 	}
 	if ( myStats->weapon != NULL )
 	{
-		weight += items[myStats->weapon->type].weight * myStats->weapon->count;
+		weight += myStats->weapon->getWeight();
 	}
 	if ( myStats->cloak != NULL )
 	{
-		weight += items[myStats->cloak->type].weight * myStats->cloak->count;
+		weight += myStats->cloak->getWeight();
 	}
 	if ( myStats->amulet != NULL )
 	{
-		weight += items[myStats->amulet->type].weight * myStats->amulet->count;
+		weight += myStats->amulet->getWeight();
 	}
 	if ( myStats->ring != NULL )
 	{
-		weight += items[myStats->ring->type].weight * myStats->ring->count;
+		weight += myStats->ring->getWeight();
 	}
 	if ( myStats->mask != NULL )
 	{
-		weight += items[myStats->mask->type].weight * myStats->mask->count;
+		weight += myStats->mask->getWeight();
 	}
 	weight += myStats->GOLD / 100;
 	weight /= 2; // on monsters weight shouldn't matter so much
@@ -4160,7 +4153,7 @@ void actMonster(Entity* my)
 							{
 								if ( rand() % 10 == 0 )
 								{
-									node_t* node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+									node_t* node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 									if ( node != nullptr )
 									{
 										bool swapped = swapMonsterWeaponWithInventoryItem(my, myStats, node, true, true);
@@ -5892,7 +5885,7 @@ timeToGoAgain:
 					{
 						players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 					}
-					else if ( player > 0 )
+					else if ( player > 0 && !players[player]->isLocalPlayer() )
 					{
 						// inform client of abandonment
 						strcpy((char*)net_packet->data, "SHPC");
@@ -7164,7 +7157,7 @@ timeToGoAgain:
 				{
 					players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 				}
-				else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER )
+				else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER && !players[i]->isLocalPlayer() )
 				{
 					// inform client of abandonment
 					strcpy((char*)net_packet->data, "SHPC");
@@ -7361,7 +7354,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			{
 				if ( rand() % 50 == 0 )
 				{
-					node_t* node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+					node_t* node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 					if ( node != nullptr )
 					{
 						bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
@@ -8100,13 +8093,13 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 				monsterSpecialState = 0;
 				if ( myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK )
 				{
-					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+					node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
 						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 						return true;
 					}
-					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), MAGICSTAFF); // find weapon to re-equip
+					node = itemNodeInInventory(myStats, -1, MAGICSTAFF); // find weapon to re-equip
 					if ( node != nullptr )
 					{
 						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8131,7 +8124,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						{
 							if ( (dist < 40 && specialRoll < 10) || (dist < 100 && specialRoll < 5) ) // 50%/25% chance
 							{
-								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+								node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 								if ( node != nullptr )
 								{
 									swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8143,7 +8136,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						{
 							if ( (dist < 40 && specialRoll < 5) || (dist < 100 && specialRoll < 2) ) // 25%/10% chance
 							{
-								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+								node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 								if ( node != nullptr )
 								{
 									swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8223,7 +8216,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
 					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+						node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8289,7 +8282,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
 						{
-							node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+							node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 							if ( node != nullptr )
 							{
 								monsterSpecialState = INSECTOID_ACID;
@@ -8388,13 +8381,13 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 				else if ( monsterSpecialState == MONSTER_SPELLCAST_GENERIC2 )
 				{
 					monsterSpecialState = 0;
-					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+					node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
 						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 						return true;
 					}
-					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), MAGICSTAFF); // find weapon to re-equip
+					node = itemNodeInInventory(myStats, -1, MAGICSTAFF); // find weapon to re-equip
 					if ( node != nullptr )
 					{
 						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8411,7 +8404,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 			switch ( myStats->type )
 			{
 				case KOBOLD:
-					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+					node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
 						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8424,7 +8417,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 				case SUCCUBUS:
 					if ( monsterSpecialState == SUCCUBUS_CHARM )
 					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8442,7 +8435,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						monsterSpecialState = 0;
 						serverUpdateEntitySkill(this, 33); // for clients to handle animation
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8456,7 +8449,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					else if ( monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
 					{
 						monsterSpecialState = 0;
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8474,7 +8467,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 				case INCUBUS:
 					if ( monsterSpecialState == INCUBUS_CONFUSION )
 					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8488,7 +8481,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					else if ( monsterSpecialState == INCUBUS_STEAL )
 					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8510,7 +8503,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					else if ( monsterSpecialState == INCUBUS_CHARM )
 					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8527,7 +8520,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 				case VAMPIRE:
 					if ( monsterSpecialState == VAMPIRE_CAST_AURA )
 					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8541,7 +8534,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					else if ( monsterSpecialState == VAMPIRE_CAST_DRAIN )
 					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8560,7 +8553,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						//TODO: Nope, this code isn't destroying spells. Something *before* this code is.
 						//messagePlayer(clientnum, "[DEBUG: handleMonsterSpecialAttack()] Resolving shadow's spellcast.");
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8581,7 +8574,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 				case GOATMAN:
 					if ( monsterSpecialState == GOATMAN_POTION )
 					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
@@ -8595,7 +8588,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					else if ( monsterSpecialState == GOATMAN_THROW )
 					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);

@@ -113,7 +113,7 @@ void consoleCommand(char const * const command_str)
 
 				for ( int c = 1; c < MAXPLAYERS; c++ )
 				{
-					if ( client_disconnected[c] )
+					if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 					{
 						continue;
 					}
@@ -167,10 +167,15 @@ void consoleCommand(char const * const command_str)
 			return;
 		}
 		strcpy(name, command_str + 11);
+
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
 			if ( strstr(items[c].name_identified, name) )
 			{
+				if ( c == TOOL_TINOPENER )
+				{
+					dropItem(newItem(FOOD_TIN, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+				}
 				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 				break;
 			}
@@ -192,6 +197,10 @@ void consoleCommand(char const * const command_str)
 		{
 			if ( strstr(items[c].name_identified, name) )
 			{
+				if ( c == TOOL_TINOPENER )
+				{
+					dropItem(newItem(FOOD_TIN, WORN, -2, 1, rand(), true, &stats[clientnum]->inventory), 0);
+				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
 			}
@@ -213,6 +222,10 @@ void consoleCommand(char const * const command_str)
 		{
 			if ( strstr(items[c].name_identified, name) )
 			{
+				if ( c == TOOL_TINOPENER )
+				{
+					dropItem(newItem(FOOD_TIN, WORN, 2, 1, rand(), true, &stats[clientnum]->inventory), 0);
+				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
 			}
@@ -229,7 +242,7 @@ void consoleCommand(char const * const command_str)
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) )
+				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) && !players[c]->isLocalPlayer() )
 				{
 					client_disconnected[c] = true;
 					strcpy((char*)net_packet->data, "KICK");
@@ -2686,7 +2699,7 @@ void consoleCommand(char const * const command_str)
 		{
 			disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
 		}
-		else if ( !strncmp(command_str, "/allspells", 10) )
+		else if ( !strncmp(command_str, "/allspells1", 11) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
 			{
@@ -2694,7 +2707,7 @@ void consoleCommand(char const * const command_str)
 				return;
 			}
 
-			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+			for ( auto it = allGameSpells.begin(); it != allGameSpells.begin() + 29; ++it )
 			{
 				spell_t* spell = *it;
 				bool learned = addSpell(spell->ID, clientnum, true);
@@ -3280,6 +3293,118 @@ void consoleCommand(char const * const command_str)
 			messagePlayer(clientnum, "[IRC]: Sent message.");
 		}
 #endif // !NINTENDO
+		else if ( !strncmp(command_str, "/loadtooltips", 13) )
+		{
+			ItemTooltips.readTooltipsFromFile();
+			messagePlayer(clientnum, "Reloaded item_tooltips.json");
+		}
+		else if ( !strncmp(command_str, "/autoloadtooltips", 17) )
+		{
+			ItemTooltips.autoReload = !ItemTooltips.autoReload;
+			messagePlayer(clientnum, "Set auto-reload to %d for item_tooltips.json", ItemTooltips.autoReload);
+		}
+		else if ( !strncmp(command_str, "/debugtooltips", 14) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+			ItemTooltips.itemDebug = !ItemTooltips.itemDebug;
+			messagePlayer(clientnum, "Set item-debug to %d for item_tooltips.json", ItemTooltips.itemDebug);
+		}
+		else if ( !strncmp(command_str, "/loaditems", 10) )
+		{
+			ItemTooltips.readItemsFromFile();
+			messagePlayer(clientnum, "Reloaded items.json");
+		}
+		else if ( !strncmp(command_str, "/gimmeallpotions", 16) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+			for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(i);
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					0, 1, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+				//free(potion);
+			}
+		}
+		else if ( !strncmp(command_str, "/gimmeblessedpotions", 20) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+			for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(i);
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					1 + rand() % 2, 1, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+				//free(potion);
+			}
+		}
+		else if ( !strncmp(command_str, "/gimmecursedpotions", 19) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+			for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(i);
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					-2 + rand() % 2, 1, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+				//free(potion);
+			}
+		}
+		else if ( !strncmp(command_str, "/allspells2", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			for ( auto it = allGameSpells.begin() + 29; it != allGameSpells.end(); ++it )
+			{
+				spell_t* spell = *it;
+				bool learned = addSpell(spell->ID, clientnum, true);
+			}
+			return;
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

@@ -100,7 +100,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				if ( stats->type != AUTOMATON )
 				{
-					entity->modHP(5 * item->beatitude);
+					entity->modHP(item->potionGetEffectHealth());
 					playSoundEntity(entity, 168, 128);
 					spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 				}
@@ -115,6 +115,12 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				playSoundEntity(entity, 28, 64);
 				playSoundEntity(entity, 249, 128);
 				entity->setObituary(language[1533]);
+			}
+			else if ( stats->type != AUTOMATON )
+			{
+				entity->modHP(item->potionGetEffectHealth());
+				playSoundEntity(entity, 168, 128);
+				spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 			}
 			else
 			{
@@ -450,7 +456,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	stats->EFFECTS[EFF_DRUNK] = true;
 	if ( player >= 0 )
 	{
-		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = item->potionGetEffectDurationRandom();
 		if ( stats->type != GOATMAN )
 		{
 			stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
@@ -482,7 +488,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	}
 	else
 	{
-		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = item->potionGetEffectDurationRandom();
 	}
 
 	if ( svFlags & SV_FLAG_HUNGER )
@@ -510,7 +516,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			entity->modMP(5 * (1 + item->beatitude));
 		}
 	}
-	entity->modHP(5 * (1 + item->beatitude));
+	entity->modHP(item->potionGetEffectHealth());
 	// results of eating
 	updateHungerMessages(entity, stats, item);
 	serverUpdateEffects(player);
@@ -591,7 +597,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		stats->EFFECTS[EFF_DRUNK] = true;
 		if ( player >= 0 )
 		{
-			stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = item->potionGetCursedEffectDurationRandom();
 			if ( stats->type != GOATMAN )
 			{
 				stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
@@ -623,9 +629,9 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		else
 		{
-			stats->EFFECTS_TIMERS[EFF_DRUNK] = 1000 + rand() % 300;
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = item->potionGetCursedEffectDurationRandom();
 		}
-		entity->modHP(5);
+		entity->modHP(item->potionGetEffectHealth());
 
 		if ( svFlags & SV_FLAG_HUNGER )
 		{
@@ -658,7 +664,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	else
 	{
 		messagePlayer(player, language[760]);
-		entity->modHP(5 * (1 + item->beatitude));
+		entity->modHP(item->potionGetEffectHealth());
 
 		if ( svFlags & SV_FLAG_HUNGER )
 		{
@@ -765,7 +771,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 
-	int damage = (5 + 5 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+	int damage = (item->potionGetEffectDamage()) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
 	int chance = damage / 8;
 	if ( player >= 0 && usedBy == entity )
 	{
@@ -854,11 +860,11 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 	stats->EFFECTS[EFF_CONFUSED] = true;
 	if ( player >= 0 )
 	{
-		stats->EFFECTS_TIMERS[EFF_CONFUSED] = std::max(300, 1800 - (entity->getPER() + entity->getCON()) * 20);
+		stats->EFFECTS_TIMERS[EFF_CONFUSED] = std::max(300, item->potionGetEffectDurationRandom() - (entity->getPER() + entity->getCON()) * 20);
 	}
 	else
 	{
-		stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
+		stats->EFFECTS_TIMERS[EFF_CONFUSED] = item->potionGetEffectDurationRandom();
 	}
 	if ( entity->behavior == &actMonster )
 	{
@@ -960,14 +966,14 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		messagePlayer(player, language[2903]);
 		stats->EFFECTS[EFF_POISONED] = true;
-		stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
+		stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom();
 	}
 	else if ( item->beatitude > 0 )
 	{
 		stats->EFFECTS[EFF_HP_REGEN] = true;
 		stats->EFFECTS[EFF_MP_REGEN] = true;
-		stats->EFFECTS_TIMERS[EFF_HP_REGEN] = 4 * item->beatitude * TICKS_PER_SECOND;
-		stats->EFFECTS_TIMERS[EFF_MP_REGEN] = 4 * item->beatitude * TICKS_PER_SECOND;
+		stats->EFFECTS_TIMERS[EFF_HP_REGEN] += item->potionGetEffectDurationRandom();
+		stats->EFFECTS_TIMERS[EFF_MP_REGEN] += stats->EFFECTS_TIMERS[EFF_HP_REGEN];
 	}
 
 	serverUpdateEffects(player);
@@ -1041,12 +1047,12 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 	stats->EFFECTS[EFF_BLIND] = true;
 	if ( player >= 0 )
 	{
-		stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+		stats->EFFECTS_TIMERS[EFF_BLIND] = item->potionGetEffectDurationRandom();
 		stats->EFFECTS_TIMERS[EFF_BLIND] = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
 	}
 	else
 	{
-		entity->setEffect(EFF_BLIND, true, 660 + rand() % 240, true);
+		entity->setEffect(EFF_BLIND, true, item->potionGetEffectDurationRandom(), true);
 	}
 	serverUpdateEffects(player);
 
@@ -1134,11 +1140,8 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 	stats->EFFECTS[EFF_INVISIBLE] = true;
-	stats->EFFECTS_TIMERS[EFF_INVISIBLE] = 1800 + rand() % 1800;
-	if ( item->beatitude > 0 )
-	{
-		stats->EFFECTS_TIMERS[EFF_INVISIBLE] += item->beatitude * 600;
-	}
+	stats->EFFECTS_TIMERS[EFF_INVISIBLE] = item->potionGetEffectDurationRandom();
+
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -1208,13 +1211,13 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 		messagePlayer(player, language[2900]);
 		messagePlayer(player, language[2901]);
 		stats->EFFECTS[EFF_SLOW] = true;
-		stats->EFFECTS_TIMERS[EFF_SLOW] = 1800;
+		stats->EFFECTS_TIMERS[EFF_SLOW] = item->potionGetCursedEffectDurationRandom();
 	}
 	else
 	{
 		messagePlayer(player, language[767]);
 		stats->EFFECTS[EFF_LEVITATING] = true;
-		stats->EFFECTS_TIMERS[EFF_LEVITATING] = 1800 + item->beatitude * 600;
+		stats->EFFECTS_TIMERS[EFF_LEVITATING] = item->potionGetEffectDurationRandom();
 	}
 	serverUpdateEffects(player);
 
@@ -1294,7 +1297,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[2902]);
 			stats->EFFECTS[EFF_SLOW] = true;
-			stats->EFFECTS_TIMERS[EFF_SLOW] = 1800;
+			stats->EFFECTS_TIMERS[EFF_SLOW] = item->potionGetCursedEffectDurationRandom();
 		}
 	}
 	else
@@ -1303,11 +1306,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[768]);
 			stats->EFFECTS[EFF_FAST] = true;
-			stats->EFFECTS_TIMERS[EFF_FAST] += 3000;
-			if ( item->beatitude > 0 )
-			{
-				stats->EFFECTS_TIMERS[EFF_FAST] += 3000 * item->beatitude;
-			}
+			stats->EFFECTS_TIMERS[EFF_FAST] += item->potionGetEffectDurationRandom();
 		}
 		else
 		{
@@ -1388,23 +1387,19 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 		stats->EFFECTS[EFF_BLIND] = true;
 		if ( player >= 0 )
 		{
-			stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+			stats->EFFECTS_TIMERS[EFF_BLIND] = item->potionGetCursedEffectDurationRandom();
 			stats->EFFECTS_TIMERS[EFF_BLIND] = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
 		}
 		else
 		{
-			entity->setEffect(EFF_BLIND, true, 660 + rand() % 240, true);
+			entity->setEffect(EFF_BLIND, true, item->potionGetCursedEffectDurationRandom(), true);
 		}
 	}
 	else
 	{
 		messagePlayer(player, language[3354]);
 		stats->EFFECTS[EFF_POTION_STR] = true;
-		stats->EFFECTS_TIMERS[EFF_POTION_STR] = 3000; // 60 seconds
-		if ( item->beatitude > 0 )
-		{
-			stats->EFFECTS_TIMERS[EFF_POTION_STR] += 3000 * item->beatitude; // 60 seconds each blessing
-		}
+		stats->EFFECTS_TIMERS[EFF_POTION_STR] = item->potionGetEffectDurationRandom();
 	}
 	serverUpdateEffects(player);
 
@@ -1481,7 +1476,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 
-	int damage = (10 + 5 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+	int damage = (item->potionGetEffectDamage()) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
 	int chance = damage / 8;
 	if ( player >= 0 && usedBy == entity )
 	{
@@ -1581,7 +1576,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 		playerAutomatonDrink = true;
 	}
 
-	int damage = (10 + 5 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+	int damage = (item->potionGetEffectDamage()) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
 	int chance = damage / 8;
 	if ( player >= 0 && usedBy == entity )
 	{
@@ -1798,6 +1793,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 			messagePlayer(player, language[2900]);
 			messagePlayer(player, language[2903]);
 			stats->EFFECTS[EFF_POISONED] = true;
+			stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom();
 		}
 		else
 		{
@@ -1816,10 +1812,8 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		return false;
 	}
 
-	int amount = std::max(7 + item->status, 0);
-	int multiplier = std::max(5, item->beatitude + 5);
-
-	amount *= multiplier / 5.f;
+	int amount = item->potionGetEffectHealth();
+	
 	if ( stats->type == GOATMAN && entity->behavior == &actMonster )
 	{
 		amount *= GOATMAN_HEALINGPOTION_MOD; //Goatman special.
@@ -1828,9 +1822,9 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	}
 
 	//Bonus from CON, to scale up healing potions as the game progresses.
-	if ( stats->CON > 0 )
+	if ( statGetCON(stats, entity) > 0 )
 	{
-		amount += 2 * stats->CON;
+		amount += 2 * statGetCON(stats, entity);
 	}
 
 	if ( item->beatitude < 0 )
@@ -1859,7 +1853,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		messagePlayer(player, language[2900]);
 		messagePlayer(player, language[2903]);
 		stats->EFFECTS[EFF_POISONED] = true;
-		stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
+		stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom();
 	}
 	else
 	{
@@ -1943,6 +1937,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 			messagePlayer(player, language[2900]);
 			messagePlayer(player, language[2903]);
 			stats->EFFECTS[EFF_POISONED] = true;
+			stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom();
 		}
 		else
 		{
@@ -1961,10 +1956,8 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		return false;
 	}
 
-	int amount = std::max(15 + item->status, 0);
-	int multiplier = std::max(5, item->beatitude + 5);
+	int amount = item->potionGetEffectHealth();
 
-	amount *= multiplier;
 	if ( stats->type == GOATMAN && entity->behavior == &actMonster )
 	{
 		amount *= GOATMAN_HEALINGPOTION_MOD; //Goatman special.
@@ -1973,9 +1966,9 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	}
 
 	//Bonus from CON, to scale up healing potions as the game progresses.
-	if ( stats->CON > 0 )
+	if ( statGetCON(stats, entity) > 0 )
 	{
-		amount += 4 * stats->CON;
+		amount += 4 * statGetCON(stats, entity);
 	}
 
 	if ( item->beatitude < 0 )
@@ -2003,7 +1996,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		messagePlayer(player, language[2900]);
 		messagePlayer(player, language[2903]);
 		stats->EFFECTS[EFF_POISONED] = true;
-		stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(300, 600 - entity->getCON() * 20);
+		stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom();
 	}
 	else
 	{
@@ -2089,7 +2082,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 			messagePlayer(player, language[774]);
 			messagePlayer(player, language[2902]);
 			stats->EFFECTS[EFF_SLOW] = true;
-			stats->EFFECTS_TIMERS[EFF_SLOW] = 600;
+			stats->EFFECTS_TIMERS[EFF_SLOW] = item->potionGetCursedEffectDurationRandom();
 		}
 		else
 		{
@@ -2099,14 +2092,11 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		return true;
 	}
 
-	int amount = std::max(7 + item->status, 0);
-	int multiplier = std::max(5, item->beatitude + 5);
+	int amount = item->potionGetEffectHealth();
 
-	amount *= multiplier;
-
-	if ( stats->INT > 0 )
+	if ( statGetINT(stats, entity) > 0 )
 	{
-		amount += std::min(30, 2 * stats->INT); // extra mana scaling from 1 to 15 INT, capped at +30 MP
+		amount += std::min(30, 2 * statGetINT(stats, entity)); // extra mana scaling from 1 to 15 INT, capped at +30 MP
 	}
 
 	if ( item->beatitude < 0 )
@@ -2115,7 +2105,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		messagePlayer(player, language[774]);
 		messagePlayer(player, language[2902]);
 		stats->EFFECTS[EFF_SLOW] = true;
-		stats->EFFECTS_TIMERS[EFF_SLOW] = 600;
+		stats->EFFECTS_TIMERS[EFF_SLOW] = item->potionGetCursedEffectDurationRandom();
 	}
 	else
 	{
@@ -2405,7 +2395,7 @@ void item_ScrollLight(Item* item, int player)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
-			if (client_disconnected[c] == true)
+			if (client_disconnected[c] == true || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -3658,7 +3648,7 @@ void item_ScrollSummon(Item* item, int player)
 				*myuid = monster->getUID();
 
 				// update client followers
-				if ( player > 0 && multiplayer == SERVER )
+				if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "LEAD");
 					SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -4115,24 +4105,7 @@ void item_Food(Item*& item, int player)
 	}
 
 	// chance of rottenness
-	switch ( item->status )
-	{
-		case EXCELLENT:
-			pukeChance = 100;
-			break;
-		case SERVICABLE:
-			pukeChance = 25;
-			break;
-		case WORN:
-			pukeChance = 10;
-			break;
-		case DECREPIT:
-			pukeChance = 4;
-			break;
-		default:
-			pukeChance = 100;
-			break;
-	}
+	pukeChance = item->foodGetPukeChance(stats[player]);
 
 	if ( players[player] 
 		&& players[player]->entity && players[player]->entity->playerRequiresBloodToSustain() )
@@ -4448,33 +4421,7 @@ void item_FoodTin(Item*& item, int player)
 	serverUpdatePlayerGameplayStats(player, STATISTICS_YES_WE_CAN, 1);
 
 	// chance of rottenness
-	switch ( item->status )
-	{
-		case EXCELLENT:
-			pukeChance = 100;
-			break;
-		case SERVICABLE:
-			pukeChance = 25;
-			break;
-		case WORN:
-			pukeChance = 10;
-			break;
-		case DECREPIT:
-			pukeChance = 3;
-			break;
-		default:
-			pukeChance = 100;
-			break;
-	}
-
-	if ( stats[player]->type == VAMPIRE )
-	{
-		pukeChance = 1;
-	}
-	else if ( stats[player]->type == INSECTOID )
-	{
-		pukeChance = 100; // insectoids can eat anything.
-	}
+	pukeChance = item->foodGetPukeChance(stats[player]);
 
 	if ((item->beatitude < 0 || rand() % pukeChance == 0) && pukeChance < 100)
 	{
@@ -4563,6 +4510,11 @@ void item_FoodTin(Item*& item, int player)
 
 void item_AmuletSexChange(Item* item, int player)
 {
+	if ( !players[player]->isLocalPlayer() )
+	{
+		consumeItem(item, player);
+	}
+
 	if ( stats[player]->amulet != NULL )
 	{
 		if ( !stats[player]->amulet->canUnequip(stats[player]) )
@@ -4571,30 +4523,58 @@ void item_AmuletSexChange(Item* item, int player)
 			{
 				if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
 				{
-					messagePlayer(player, language[3218]);
+					messagePlayer(player, language[3217], stats[player]->amulet->getName());
 				}
 				else
 				{
-					messagePlayer(player, language[1087]);
+					messagePlayer(player, language[1089], stats[player]->amulet->getName());
 				}
 			}
 			return;
 		}
 	}
+
+	if ( players[player] && players[player]->isLocalPlayer() )
+	{
+		messagePlayer(player, language[1094]);
+	}
+
 	stats[player]->amulet = NULL;
 	stats[player]->sex = static_cast<sex_t>((stats[player]->sex == 0));
+
+	serverUpdateSexChange(player);
+
 
 	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
-	if ( stats[player]->sex == MALE )
+
+	consumeItem(item, player);
+
+	// find out what creature we are...
+	if ( stats[player]->sex == FEMALE 
+		&& stats[player]->playerRace == RACE_INCUBUS 
+		&& stats[player]->appearance == 0 )
 	{
-		messagePlayer(player, language[967]);
+		messagePlayer(player, language[4048]); // don't feel like yourself
+	}
+	else if ( stats[player]->sex == MALE 
+		&& stats[player]->playerRace == RACE_SUCCUBUS 
+		&& stats[player]->appearance == 0 )
+	{
+		messagePlayer(player, language[4048]); // don't feel like yourself
 	}
 	else
 	{
-		messagePlayer(player, language[968]);
+		if ( stats[player]->sex == MALE )
+		{
+			messagePlayer(player, language[967]);
+		}
+		else
+		{
+			messagePlayer(player, language[968]);
+		}
 	}
 	messagePlayer(player, language[969]);
 }
@@ -4604,12 +4584,12 @@ void item_Spellbook(Item*& item, int player)
 	node_t* node, *nextnode;
 
 	item->identified = true;
-	if ( !players[player]->isLocalPlayer() )
+	if ( players[player] && !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
 
-	if (players[player]->entity->isBlind())
+	if ( players[player] && players[player]->entity && players[player]->entity->isBlind())
 	{
 		messagePlayer(player, language[970]);
 		return;

@@ -225,7 +225,7 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -270,7 +270,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -340,7 +340,7 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -445,7 +445,7 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -492,7 +492,7 @@ Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}

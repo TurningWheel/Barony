@@ -899,7 +899,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
-							if ( player > 0 && multiplayer == SERVER )
+							if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 							{
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = armornum;
@@ -1126,7 +1126,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				real_t spellbookDamageBonus = (my->actmagicSpellbookBonus / 100.f);
 				if ( my->actmagicCastByMagicstaff == 0 && my->actmagicCastByTinkerTrap == 0 )
 				{
-					spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, element);
+					spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element);
 				}
 
 				if (!strcmp(element->name, spellElement_force.name))
@@ -2887,7 +2887,7 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -3188,6 +3188,47 @@ void createParticleRock(Entity* parent)
 		entity->vel_x = 0.2 * cos(entity->yaw);
 		entity->vel_y = 0.2 * sin(entity->yaw);
 		entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
+
+		entity->skill[0] = 50; // particle life
+		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
+
+		entity->behavior = &actParticleRock;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
+
+void createParticleShatteredGem(Entity* parent, int sprite)
+{
+	if ( !parent )
+	{
+		return;
+	}
+	for ( int c = 0; c < 5; c++ )
+	{
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x + (-4 + rand() % 9);
+		entity->y = parent->y + (-4 + rand() % 9);
+		entity->z = 7.5;
+		entity->yaw = c * 2 * PI / 5;//(rand() % 360) * PI / 180.0;
+		entity->roll = (rand() % 360) * PI / 180.0;
+
+		entity->vel_x = 0.2 * cos(entity->yaw);
+		entity->vel_y = 0.2 * sin(entity->yaw);
+		entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
+
+		real_t scale = .4;
+		entity->scalex = scale;
+		entity->scaley = scale;
+		entity->scalez = scale;
 
 		entity->skill[0] = 50; // particle life
 		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
@@ -4242,7 +4283,7 @@ void actParticleSapCenter(Entity* my)
 						Stat *myStats = parent->getStats();
 						if ( myStats )
 						{
-							node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+							node_t* weaponNode = itemNodeInInventory(myStats, -1, WEAPON);
 							if ( weaponNode )
 							{
 								swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
@@ -4346,7 +4387,7 @@ void actParticleSapCenter(Entity* my)
 					Stat *myStats = parent->getStats();
 					if ( myStats )
 					{
-						node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+						node_t* weaponNode = itemNodeInInventory(myStats, -1, WEAPON);
 						if ( weaponNode )
 						{
 							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
@@ -5527,19 +5568,22 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
 
 				// send wall destroy info to clients
-				for ( int c = 1; c < MAXPLAYERS; c++ )
+				if ( multiplayer == SERVER )
 				{
-					if ( client_disconnected[c] == true )
+					for ( int c = 1; c < MAXPLAYERS; c++ )
 					{
-						continue;
+						if ( players[c]->isLocalPlayer() || client_disconnected[c] == true )
+						{
+							continue;
+						}
+						strcpy((char*)net_packet->data, "WALD");
+						SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+						SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+						net_packet->address.host = net_clients[c - 1].host;
+						net_packet->address.port = net_clients[c - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
-					strcpy((char*)net_packet->data, "WALD");
-					SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
-					SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
-					net_packet->address.host = net_clients[c - 1].host;
-					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 8;
-					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 				}
 
 				generatePathMaps();

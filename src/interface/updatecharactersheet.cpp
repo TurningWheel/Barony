@@ -22,6 +22,7 @@
 #include "../menu.hpp"
 #include "../net.hpp"
 #include "../scores.hpp"
+#include "../ui/GameUI.hpp"
 
 void statsHoverText(const int player, Stat* tmpStat);
 
@@ -63,10 +64,7 @@ void updateCharacterSheet(const int player)
 	pos.y = y1 + 8;
 	pos.w = 208;
 	pos.h = 180;
-	//drawImage(character_bmp, NULL, &pos);
-	//pos.x=0; pos.y=196;
-	//pos.w=222; pos.h=392-196;
-	//drawTooltip(&pos);
+
 	int statWindowY = y1 + 196;
 	int statWindowY2 = y1 + 404;
 	if ( uiscale_charactersheet )
@@ -77,7 +75,20 @@ void updateCharacterSheet(const int player)
 		statWindowY2 = y1 + 554;
 	}
 
-	drawWindowFancy(x1, y1, x1 + pos.w + 16, y1 + pos.h + 16);
+	char name[32];
+	snprintf(name, sizeof(name), "player inventory %d", player);
+	Frame* frame = gui->findFrame(name);
+	Frame* characterFrame = nullptr;
+	if ( frame )
+	{
+		characterFrame = frame->findFrame("inventory character preview");
+		if ( characterFrame )
+		{
+			pos = characterFrame->getSize();
+		}
+	}
+
+	//drawWindowFancy(x1, y1, x1 + pos.w + 16, y1 + pos.h + 16);
 
 	SDL_Rect bgBox{ 
 		players[player]->characterSheet.characterSheetBox.x + 8,
@@ -85,7 +96,7 @@ void updateCharacterSheet(const int player)
 		players[player]->characterSheet.characterSheetBox.w - 16,
 		players[player]->characterSheet.characterSheetBox.h - 16,
 	};
-	drawRect(&bgBox, 0, 255);
+	//drawRect(&bgBox, 0, 255);
 
 	SDL_Rect& statWindowBox = players[player]->characterSheet.statsSheetBox;
 	drawWindowFancy(statWindowBox.x, statWindowBox.y, statWindowBox.x + statWindowBox.w, statWindowBox.y + statWindowBox.h);
@@ -108,8 +119,12 @@ void updateCharacterSheet(const int player)
 		//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
 		camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
 		camera_charsheet.vang = PI / 20;
-		camera_charsheet.winx = x1 + 8;
-		camera_charsheet.winy = y1 + 8;
+		
+		camera_charsheet.winx = pos.x;
+		camera_charsheet.winy = pos.y;
+		//camera_charsheet.winx = x1 + 8;
+		//camera_charsheet.winy = y1 + 8;
+		
 		camera_charsheet.winw = pos.w;
 		camera_charsheet.winh = pos.h;
 		b = players[player]->entity->flags[BRIGHT];
@@ -286,16 +301,14 @@ void updateCharacterSheet(const int player)
 
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, text_x, text_y, language[370], stats[player]->GOLD);
-	Uint32 weight = 0;
+	Sint32 weight = 0;
 	for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		item = (Item*)node->element;
-		int itemWeight = items[item->type].weight * item->count;
-		if ( itemTypeIsQuiver(item->type) )
+		if ( item )
 		{
-			itemWeight = std::max(1, itemWeight / 5);
+			weight += item->getWeight();
 		}
-		weight += itemWeight;
 	}
 	weight += stats[player]->GOLD / 100;
 	text_y += pad_y;
@@ -941,7 +954,7 @@ void drawSkillsSheet(const int player)
 					if ( players[player] && players[player]->entity )
 					{
 						skillDetails[0] = players[player]->entity->getManaRegenInterval(*(stats[player])) / (TICKS_PER_SECOND * 1.f);
-						if ( players[player]->entity->isSpellcasterBeginner() )
+						if ( isSpellcasterBeginner(player, players[player]->entity) )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 								uint32ColorWhite(*mainsurface), language[3255 + i],
@@ -1973,7 +1986,7 @@ void statsHoverText(const int player, Stat* tmpStat)
 							int bonusDamage = 100;
 							if ( players[player] && players[player]->entity )
 							{
-								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[player]->entity, nullptr));
+								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr));
 							}
 							snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], bonusDamage);
 						}

@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "paths.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -48,7 +49,7 @@ void actWallBuster(Entity* my)
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] == true )
+				if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 				{
 					continue;
 				}
@@ -132,7 +133,7 @@ void actWallBuilder(Entity* my)
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] == true )
+				if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 				{
 					continue;
 				}
