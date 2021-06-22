@@ -996,6 +996,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\engine\audio\music.cpp" />
     <ClCompile Include="..\..\src\engine\audio\sound.cpp" />
     <ClCompile Include="..\..\src\engine\audio\sound_game.cpp" />
+    <ClCompile Include="..\..\src\input.cpp" />
     <ClCompile Include="..\..\src\interface\ui_general.cpp" />
     <ClCompile Include="..\..\src\lobbies.cpp" />
     <ClCompile Include="..\..\src\mod_tools.cpp" />
@@ -1090,6 +1091,8 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\ui\Frame.cpp" />
     <ClCompile Include="..\..\src\ui\GameUI.cpp" />
     <ClCompile Include="..\..\src\ui\Image.cpp" />
+    <ClCompile Include="..\..\src\ui\LoadingScreen.cpp" />
+    <ClCompile Include="..\..\src\ui\MainMenu.cpp" />
     <ClCompile Include="..\..\src\ui\Slider.cpp" />
     <ClCompile Include="..\..\src\ui\Text.cpp" />
     <ClCompile Include="..\..\src\ui\Widget.cpp" />
@@ -1103,6 +1106,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\engine\audio\music_pc.hpp" />
     <ClInclude Include="..\..\src\engine\audio\sound.hpp" />
     <ClInclude Include="..\..\src\engine\filepc.hpp" />
+    <ClInclude Include="..\..\src\input.hpp" />
     <ClInclude Include="..\..\src\interface\ui.hpp" />
     <ClInclude Include="..\..\src\lobbies.hpp" />
     <ClInclude Include="..\..\src\mod_tools.hpp" />
@@ -1132,6 +1136,8 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\ui\Frame.hpp" />
     <ClInclude Include="..\..\src\ui\GameUI.hpp" />
     <ClInclude Include="..\..\src\ui\Image.hpp" />
+    <ClInclude Include="..\..\src\ui\LoadingScreen.hpp" />
+    <ClInclude Include="..\..\src\ui\MainMenu.hpp" />
     <ClInclude Include="..\..\src\ui\Slider.hpp" />
     <ClInclude Include="..\..\src\ui\Text.hpp" />
     <ClInclude Include="..\..\src\ui\Widget.hpp" />

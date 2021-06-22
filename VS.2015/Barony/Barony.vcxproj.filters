@@ -450,6 +450,15 @@
     <ClCompile Include="..\..\src\engine\audio\init.cpp">
       <Filter>Source Files\engine\audio</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ui\LoadingScreen.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\MainMenu.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\input.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\book.hpp">
@@ -577,6 +586,15 @@
     </ClInclude>
     <ClInclude Include="..\..\src\engine\audio\sound.hpp">
       <Filter>Header Files\engine\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\LoadingScreen.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\MainMenu.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\input.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
