@@ -7,8 +7,6 @@
 #include "Field.hpp"
 #include "Text.hpp"
 
-#include <cassert>
-
 Field::Field(const int _textLen) {
 	textlen = std::max(_textLen, 0);
 	text = new char[textlen + 1];
@@ -81,8 +79,26 @@ void Field::deactivate() {
 	}
 }
 
-void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
-	if ( invisible || isDisabled() ) {
+static char* tokenize(char* str, const char* const delimiters) {
+	if (!str || !delimiters) {
+		return nullptr;
+	}
+	size_t del_len = strlen(delimiters);
+	for (char* token = str;; ++token) {
+		for (size_t c = 0; c < del_len; ++c) {
+			if (*token == delimiters[c]) {
+				*token = '\0';
+				return token + 1;
+			}
+		}
+		if (*token == '\0') {
+			return nullptr;
+		}
+	}
+}
+
+void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
+	if (invisible) {
 		return;
 	}
 
@@ -118,40 +134,34 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	if (!actualFont) {
 		return;
 	}
-	int lines = std::max(1, getNumTextLines());
+	int lines = 1;
+	for (int c = 0; c <= textlen; ++c) {
+		if (text[c] == '\n') {
+			++lines;
+		}
+	}
 	int fullH = lines * actualFont->height(false) + actualFont->getOutline() * 2;
 
-	//char* buf = (char*)malloc(textlen + 1);
-	//memcpy(buf, text, textlen + 1);
+	char* buf = (char*)malloc(textlen + 1);
+	memcpy(buf, text, textlen + 1);
 
 	int yoff = 0;
-	//char* nexttoken = nullptr;
-	//char* token = strtok(buf, "\n");
-	std::string input = text;
+	char* nexttoken;
+	char* token = buf;
+	do {
+		nexttoken = tokenize(token, "\n");
 
-	size_t offset = 0;
-	size_t findChar = 0;
-	std::vector<std::string> tokens;
-	while ( (findChar = input.find('\n', offset)) != std::string::npos ) {
-		tokens.push_back(input.substr(offset, findChar - offset));
-		offset = findChar + 1;
-	}
-	tokens.push_back(input.substr(offset));
-
-
-	for ( auto& str : tokens ) {
-		//nexttoken = strtok(token, '\n');
-
-		if ( activated && showCursor ) {
-			//str.reserve((Uint32)strlen(token) + 2);
-			//str.assign(token);
+		std::string str;
+		if (!nexttoken && activated && showCursor) {
+			str.reserve((Uint32)strlen(token) + 2);
+			str.assign(token);
 			str.append("_");
-		} else if ( activated ) {
-			//str.reserve((Uint32)strlen(token) + 2);
-			//str.assign(token);
+		} else if (!nexttoken && activated) {
+			str.reserve((Uint32)strlen(token) + 2);
+			str.assign(token);
 			str.append(" ");
 		} else {
-			//str.assign(token);
+			str.assign(token);
 		}
 
 		Text* text = Text::get(str.c_str(), font.c_str());
@@ -222,23 +232,12 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
 		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
 		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+		text->drawColor(src, scaledDest, color);
+	} while ((token = nexttoken) != NULL);
 
-		if ( parent && static_cast<Frame*>(parent)->getOpacity() < 100.0 )
-		{
-			Uint8 r, g, b, a;
-			SDL_GetRGBA(color, mainsurface->format, &r, &g, &b, &a);
-			a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
-			text->drawColor(src, scaledDest, SDL_MapRGBA(mainsurface->format, r, g, b, a));
-		}
-		else
-		{
-			text->drawColor(src, scaledDest, color);
-		}
-	}// while ((token = nexttoken) != NULL);
+	free(buf);
 
-	//free(buf);
-
-	drawGlyphs(scaledRect, selectedWidget);
+	drawExtra(scaledRect, selectedWidgets);
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
@@ -344,93 +343,4 @@ void Field::scrollParent() {
 		fActualSize.x = (size.x + size.w) - fSize.w;
 	}
 	fparent->setActualSize(fActualSize);
-}
-
-void Field::reflowTextToFit(const int characterOffset) {
-	if ( text == nullptr || textlen <= 1 ) {
-		return;
-	}
-
-	if ( auto getText = Text::get(text, font.c_str()) )
-	{
-		if ( getText->getWidth() <= (getSize().w - getSize().x) )
-		{
-			// no work to do
-			return;
-		}
-	}
-
-	Font* actualFont = Font::get(font.c_str());
-	if ( !actualFont )
-	{
-		return;
-	}
-
-
-	std::string reflowText = "";
-
-	int charWidth = 0;
-	actualFont->sizeText("_", &charWidth, nullptr);
-	//if ( auto textGet = Text::get("_", font.c_str()) )
-	//{
-	//	charWidth = textGet->getWidth();
-	//}
-
-	if ( charWidth == 0 )
-	{
-		return;
-	}
-	++charWidth;
-	const int charactersPerLine = (getSize().w - getSize().x) / charWidth;
-
-	int currentCharacters = 0;
-	for ( int i = 0; text[i] != '\0'; ++i )
-	{
-		if ( (currentCharacters - characterOffset) > charactersPerLine )
-		{
-			int findSpace = reflowText.rfind(' ', reflowText.size());
-			if ( findSpace != std::string::npos )
-			{
-				int lastWordEnd = reflowText.size();
-				reflowText.at(findSpace) = '\n';
-				currentCharacters = lastWordEnd - findSpace;
-			}
-			else
-			{
-				reflowText += '\n';
-				currentCharacters = 0;
-			}
-
-			reflowText += text[i];
-		}
-		else
-		{
-			if ( text[i] == '\n' )
-			{
-				currentCharacters = 0;
-			}
-			++currentCharacters;
-			reflowText += text[i];
-		}
-	}
-
-	setText(reflowText.c_str());
-}
-
-const int Field::getNumTextLines() const
-{
-	if ( text == nullptr || textlen <= 1 ) {
-		return 0;
-	}
-
-	int numLines = 1;
-
-	for ( int i = 0; text[i] != '\0' && i < textlen - 1; ++i )
-	{
-		if ( text[i] == '\n' )
-		{
-			++numLines;
-		}
-	}
-	return numLines;
 }

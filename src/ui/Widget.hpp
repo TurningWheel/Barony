@@ -35,7 +35,8 @@ public:
     bool            isHideGlyphs() const { return hideGlyphs; }
     Uint32          getHighlightTime() const { return highlightTime; }
     Sint32          getOwner() const { return owner; }
-    void			(*getTickCallback() const)(Widget&) { return callback; }
+    void			(*getTickCallback() const)(Widget&) { return tickCallback; }
+    void			(*getDrawCallback() const)(Widget&, const SDL_Rect) { return drawCallback; }
     const char*     getWidgetSearchParent() const { return widgetSearchParent.c_str(); }
     auto&           getWidgetActions() const { return widgetActions; }
     auto&           getWidgetMovements() const { return widgetMovements; }
@@ -48,7 +49,8 @@ public:
     void    setInvisible(bool _invisible) { invisible = _invisible; }
     void    setHideGlyphs(bool _hideGlyphs) { hideGlyphs = _hideGlyphs; }
     void    setOwner(Sint32 _owner) { owner = _owner; }
-    void	setTickCallback(void (*const fn)(Widget&)) { callback = fn; }
+    void	setTickCallback(void (*const fn)(Widget&)) { tickCallback = fn; }
+    void	setDrawCallback(void (*const fn)(Widget&, const SDL_Rect)) { drawCallback = fn; }
     void    setWidgetTab(const char* s) { widgetMovements.emplace("MenuTab", s); }
     void    setWidgetRight(const char* s) { widgetMovements.emplace("MenuRight", s); widgetMovements.emplace("AltMenuRight", s); }
     void    setWidgetDown(const char* s) { widgetMovements.emplace("MenuDown", s); widgetMovements.emplace("AltMenuDown", s); }
@@ -99,25 +101,31 @@ public:
     //! @return the widget found, or nullptr if it was not found
     Widget* findWidget(const char* name, bool recursive);
 
-    //! find the selected widget amongst our children
-    //! @return the selected widget, or nullptr if it was not found
-    Widget* findSelectedWidget();
+    //! build a list of all the selected widgets amongst our children
+    //! @param outResult a list containing all the selected widgets
+    void findSelectedWidgets(std::vector<Widget*>& outResult);
+
+    //! find the widget selected by the specified owner/player
+    //! @param owner the player who owns the widget
+    //! @return the selected widget or nullptr if it could not be found
+    Widget* findSelectedWidget(int owner);
 
 protected:
-    Widget* parent = nullptr;                       //!< parent widget
-    std::list<Widget*> widgets;                     //!< widget children
-    std::string name;                               //!< widget name
-    bool pressed = false;							//!< pressed state
-    bool reallyPressed = false;						//!< the "actual" pressed state, pre-mouse process
-    bool highlighted = false;                       //!< if true, this widget has the mouse over it
-    bool selected = false;							//!< if true, this widget has focus
-    bool disabled = false;							//!< if true, the widget is unusable and grayed out
-    bool invisible = false;                         //!< if true, widget is both unusable and invisible
-	bool toBeDeleted = false;						//!< if true, the widget will be removed at the end of its process
-    bool hideGlyphs = false;                        //!< true if you don't want to see button prompts on the widget
-    Uint32 highlightTime = 0u;						//!< records the time since the widget was highlighted
-    Sint32 owner = 0;                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
-    void (*callback)(Widget&) = nullptr;			//!< the callback to use each frame for this widget
+    Widget* parent = nullptr;                                   //!< parent widget
+    std::list<Widget*> widgets;                                 //!< widget children
+    std::string name;                                           //!< widget name
+    bool pressed = false;							            //!< pressed state
+    bool reallyPressed = false;						            //!< the "actual" pressed state, pre-mouse process
+    bool highlighted = false;                                   //!< if true, this widget has the mouse over it
+    bool selected = false;							            //!< if true, this widget has focus
+    bool disabled = false;							            //!< if true, the widget is unusable and grayed out
+    bool invisible = false;                                     //!< if true, widget is both unusable and invisible
+	bool toBeDeleted = false;						            //!< if true, the widget will be removed at the end of its process
+    bool hideGlyphs = false;                                    //!< true if you don't want to see button prompts on the widget
+    Uint32 highlightTime = 0u;						            //!< records the time since the widget was highlighted
+    Sint32 owner = 0;                                           //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
+    void (*tickCallback)(Widget&) = nullptr;		            //!< the callback to run each frame for this widget
+    void (*drawCallback)(Widget&, const SDL_Rect) = nullptr;    //!< the callback to run after the widget is drawn
 
     std::unordered_map<std::string, std::string>
         widgetActions;                              //!< widgets to select and activate when input is pressed
@@ -127,5 +135,5 @@ protected:
 
     Frame* findSearchRoot();
 
-    void drawGlyphs(const SDL_Rect size, const Widget* selectedWidget);
+    void drawExtra(const SDL_Rect size, const std::vector<Widget*>& selectedWidgets);
 };

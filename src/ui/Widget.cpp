@@ -40,8 +40,8 @@ void Widget::activate() {
 
 void Widget::process() {
 	if (!disabled) {
-		if (callback) {
-			(*callback)(*this);
+		if (tickCallback) {
+			(*tickCallback)(*this);
 		}
 	}
 }
@@ -78,9 +78,7 @@ Widget* Widget::handleInput() {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result) {
-#ifndef EDITOR
 						playSound(495, 64);
-#endif
 						result->scrollParent();
 						return result;
 					}
@@ -136,17 +134,24 @@ Widget* Widget::findWidget(const char* name, bool recursive) {
 	return nullptr;
 }
 
-Widget* Widget::findSelectedWidget() {
+void Widget::findSelectedWidgets(std::vector<Widget*>& outResult) {
+	if (selected) {
+		outResult.push_back(this);
+	}
 	for (auto widget : widgets) {
-		if (widget->owner != owner) {
-			continue;
-		}
-		if (widget->isSelected()) {
-			return widget;
-		} else {
-			auto result = widget->findSelectedWidget();
-			if (result) {
-				return result;
+		widget->findSelectedWidgets(outResult);
+	}
+}
+
+Widget* Widget::findSelectedWidget(int owner) {
+	if (selected && owner == this->owner) {
+		return this;
+	} else {
+		std::vector<Widget*> selectedWidgets;
+		findSelectedWidgets(selectedWidgets);
+		for (auto widget : selectedWidgets) {
+			if (widget->owner == owner) {
+				return widget;
 			}
 		}
 	}
@@ -176,19 +181,32 @@ void Widget::adoptWidget(Widget& widget) {
 	}
 	widget.owner = owner;
 	widget.parent = this;
-	widget.setOwner(this->getOwner());
 	widgets.push_back(&widget);
 }
 
-void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
-#ifndef NINTENDO
-	return;
-#else
+void Widget::drawExtra(const SDL_Rect size, const std::vector<Widget*>& selectedWidgets) {
+	if (drawCallback) {
+		drawCallback(*this, size);
+	}
+
+#ifdef NINTENDO
 	if (hideGlyphs) {
 		return;
 	}
+	Widget* selectedWidget = nullptr;
+	for (auto widget : selectedWidgets) {
+		if (widget->owner == owner) {
+			selectedWidget = widget;
+			break;
+		}
+	}
 	if (!selectedWidget) {
 		return;
+	} else {
+		auto searchParent = selectedWidget->findSearchRoot();
+		if (searchParent && !isChildOf(*searchParent)) {
+			return;
+		}
 	}
 	int x = size.x + size.w;
 	int y = size.y + size.h;

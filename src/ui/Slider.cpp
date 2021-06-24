@@ -13,7 +13,7 @@ Slider::Slider(Frame& _parent) {
 	_parent.adoptWidget(*this);
 }
 
-void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
+void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
 	if (invisible) {
 		return;
 	}
@@ -100,7 +100,12 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 		}
 	}
 
-	drawGlyphs(_handleSize, selectedWidget);
+	SDL_Rect scaledHandle;
+	scaledHandle.x = _handleSize.x * (float)xres / (float)Frame::virtualScreenX;
+	scaledHandle.y = _handleSize.y * (float)yres / (float)Frame::virtualScreenY;
+	scaledHandle.w = _handleSize.w * (float)xres / (float)Frame::virtualScreenX;
+	scaledHandle.h = _handleSize.h * (float)yres / (float)Frame::virtualScreenY;
+	drawExtra(scaledHandle, selectedWidgets);
 }
 
 Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

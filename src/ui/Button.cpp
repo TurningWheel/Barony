@@ -8,8 +8,6 @@
 #include "Image.hpp"
 #include "Text.hpp"
 
-#include <cassert>
-
 Button::Button() {
 	size.x = 0; size.w = 32;
 	size.y = 0; size.h = 32;
@@ -43,7 +41,25 @@ void Button::activate() {
 	}
 }
 
-void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
+static char* tokenize(char* str, const char* const delimiters) {
+	if (!str || !delimiters) {
+		return nullptr;
+	}
+	size_t del_len = strlen(delimiters);
+	for (char* token = str;; ++token) {
+		for (size_t c = 0; c < del_len; ++c) {
+			if (*token == delimiters[c]) {
+				*token = '\0';
+				return token + 1;
+			}
+		}
+		if (*token == '\0') {
+			return nullptr;
+		}
+	}
+}
+
+void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
 	if (invisible) {
 		return;
 	}
@@ -138,9 +154,9 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 			memcpy(buf, text.c_str(), text.size() + 1);
 			int yoff = 0;
 			char* nexttoken;
-			char* token = strtok(buf, "\n");
+			char* token = buf;
 			do {
-				nexttoken = strtok(NULL, "\n");
+				nexttoken = tokenize(token, "\n");
 
 				std::string str = token;
 
@@ -269,7 +285,7 @@ next:
 		}
 	}
 
-	drawGlyphs(scaledSize, selectedWidget);
+	drawExtra(scaledSize, selectedWidgets);
 }
 
 Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

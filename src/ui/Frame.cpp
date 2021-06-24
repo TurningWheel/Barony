@@ -81,10 +81,12 @@ Frame::~Frame() {
 
 void Frame::draw() {
 	auto _actualSize = allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h};
-	Frame::draw(size, _actualSize, findSelectedWidget());
+	std::vector<Widget*> selectedWidgets;
+	findSelectedWidgets(selectedWidgets);
+	Frame::draw(size, _actualSize, selectedWidgets);
 }
 
-void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
+void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
 	if (disabled || invisible)
 		return;
 
@@ -146,10 +148,10 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		}
 	}
 
-	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	// horizontal slider
 	if (actualSize.w > size.w && scrollbars) {
@@ -331,35 +333,22 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 
 	// draw fields
 	for (auto field : fields) {
-		if ( field->isOntop() )
-		{
-			continue;
-		}
-		field->draw(_size, scroll, selectedWidget);
+		field->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw buttons
 	for (auto button : buttons) {
-		button->draw(_size, scroll, selectedWidget);
+		button->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw sliders
 	for (auto slider : sliders) {
-		slider->draw(_size, scroll, selectedWidget);
+		slider->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw subframes
 	for (auto frame : frames) {
-		frame->draw(_size, scroll, selectedWidget);
-	}
-
-	// draw "on top" fields
-	for ( auto field : fields ) {
-		if ( !field->isOntop() )
-		{
-			continue;
-		}
-		field->draw(_size, scroll, selectedWidget);
+		frame->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw "on top" images
@@ -374,7 +363,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	}
 
 	// draw glyphs
-	drawGlyphs(_size, selectedWidget);
+	drawExtra(scaledSize, selectedWidgets);
 
 	// root frame draws tooltip
 	// TODO on Nintendo, display this next to the currently selected widget
@@ -412,7 +401,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 }
 
 Frame::result_t Frame::process() {
-	result_t result = process(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h}, findSelectedWidget(), true);
+	std::vector<Widget*> selectedWidgets;
+	findSelectedWidgets(selectedWidgets);
+	result_t result = process(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h}, selectedWidgets, true);
 
 	tooltip = nullptr;
 	if (result.tooltip && result.tooltip[0] != '\0') {
@@ -425,17 +416,12 @@ Frame::result_t Frame::process() {
 	return result;
 }
 
-Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget, bool usable) {
+Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets, bool usable) {
 	result_t result;
 	result.removed = false;
 	result.usable = usable;
 	result.highlightTime = SDL_GetTicks();
 	result.tooltip = nullptr;
-
-	if ( parent && inheritParentFrameOpacity )
-	{
-		setOpacity(static_cast<Frame*>(parent)->getOpacity());
-	}
 
 	if (disabled) {
 		return result;
@@ -477,10 +463,10 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
-	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 	Input& input = Input::inputs[owner];
 
@@ -623,7 +609,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 	{
 		for (int i = frames.size() - 1; i >= 0; --i) {
 			Frame* frame = frames[i];
-			result_t frameResult = frame->process(_size, actualSize, selectedWidget, usable);
+			result_t frameResult = frame->process(_size, actualSize, selectedWidgets, usable);
 			usable = result.usable = frameResult.usable;
 			if (!frameResult.removed) {
 				if (frameResult.tooltip != nullptr) {
@@ -1186,9 +1172,8 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 			if (_size.w <= 0 || _size.h <= 0) {
 				return false;
 			} else {
-
-				Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
-				Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+				Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
+				Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 				if (rectContainsPoint(_size, omousex, omousey)) {
 					return true;
 				} else {
@@ -1202,72 +1187,6 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 		return true;
 	}
 #endif
-}
-
-void Frame::warpMouseToFrame(const int player) {
-	SDL_Rect _size {size.x, size.y, size.w, size.h};
-
-	auto _parent = this->parent;
-	while ( _parent ) {
-		auto pframe = static_cast<Frame*>(_parent);
-		//if ( pframe->capturesMouse(&_size, &_actualSize) ) {
-		_size.x += std::max(0, pframe->size.x);
-		_size.y += std::max(0, pframe->size.y);
-		_parent = pframe->parent;
-	}
-
-	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-	inputs.warpMouse(player, 
-		(_size.x + _size.w / 2) * ((float)xres / (float)Frame::virtualScreenX),
-		(_size.y + _size.h / 2) * ((float)yres / (float)Frame::virtualScreenY),
-		flags);
-}
-
-bool Frame::capturesMouseInRealtimeCoords(SDL_Rect* curSize, SDL_Rect* curActualSize) {
-	SDL_Rect newSize = SDL_Rect{ 0, 0, xres, yres };
-	SDL_Rect newActualSize = SDL_Rect{ 0, 0, xres, yres };
-	SDL_Rect& _size = curSize ? *curSize : newSize;
-	SDL_Rect& _actualSize = curActualSize ? *curActualSize : newActualSize;
-
-	if ( parent ) {
-		auto pframe = static_cast<Frame*>(parent);
-		if ( pframe->capturesMouseInRealtimeCoords(&_size, &_actualSize) ) {
-			_size.x += std::max(0, size.x - _actualSize.x);
-			_size.y += std::max(0, size.y - _actualSize.y);
-			if ( size.h < actualSize.h && allowScrolling ) {
-				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
-			}
-			else {
-				_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
-			}
-			if ( size.w < actualSize.w && allowScrolling ) {
-				_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
-			}
-			else {
-				_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
-			}
-			if ( _size.w <= 0 || _size.h <= 0 ) {
-				return false;
-			}
-			else {
-
-				Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-				Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-				if ( rectContainsPoint(_size, mousex, mousey) ) {
-					return true;
-				}
-				else {
-					return false;
-				}
-			}
-		}
-		else {
-			return false;
-		}
-	}
-	else {
-		return true;
-	}
 }
 
 Frame* Frame::getParent() {
@@ -1510,16 +1429,6 @@ void Frame::drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scr
 			return;
 		}
 
-		if ( getOpacity() < 100.0 )
-		{
-			Uint8 r, g, b, a;
-			SDL_GetRGBA(image->color, mainsurface->format, &r, &g, &b, &a);
-			a *= getOpacity() / 100.0;
-			actualImage->drawColor(&src, scaledDest, SDL_MapRGBA(mainsurface->format, r, g, b, a));
-		}
-		else
-		{
-			actualImage->drawColor(&src, scaledDest, image->color);
-		}
+		actualImage->drawColor(&src, scaledDest, image->color);
 	}
 }
