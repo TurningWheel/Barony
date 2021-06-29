@@ -10746,6 +10746,11 @@ void doNewGame(bool makeHighscore) {
 			players[i]->hud.magicRightHand = nullptr;
 		}
 
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			players[i]->hud.resetBars(); // reset XP/HP/MP bars
+		}
+
 		for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;

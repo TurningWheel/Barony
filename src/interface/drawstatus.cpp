@@ -373,6 +373,248 @@ void warpMouseToSelectedHotbarSlot(const int player)
 	inputs.warpMouse(player, pos.x, pos.y, flags);
 }
 
+void drawHPMPBars(int player)
+{
+	const int x1 = players[player]->camera_x1();
+	const int x2 = players[player]->camera_x2();
+	const int y1 = players[player]->camera_y1();
+	const int y2 = players[player]->camera_y2();
+	const int hpmpbarOffsets = 0;
+
+	int playerStatusBarWidth = 38 * uiscale_playerbars;
+	int playerStatusBarHeight = 156 * uiscale_playerbars;
+
+	SDL_Rect pos;
+
+	// PLAYER HEALTH BAR
+	// Display Health bar border
+	pos.x = x1 + 38 + 38 * uiscale_playerbars;
+	pos.w = playerStatusBarWidth;
+	pos.h = playerStatusBarHeight;
+	pos.y = y2 - (playerStatusBarHeight + 12) - hpmpbarOffsets;
+	drawTooltip(&pos);
+	if ( stats[player] && stats[player]->HP > 0
+		&& stats[player]->EFFECTS[EFF_HP_REGEN] )
+	{
+		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
+			(stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
+		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+		{
+			if ( colorblind )
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+			}
+			else
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+			}
+		}
+	}
+
+	// Display "HP" at top of Health bar
+	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[306]);
+
+	// Display border between actual Health bar and "HP"
+	//pos.x = 76;
+	pos.w = playerStatusBarWidth;
+	pos.h = 0;
+	pos.y = y2 - (playerStatusBarHeight - 9) - hpmpbarOffsets;
+	drawTooltip(&pos);
+	if ( stats[player] && stats[player]->HP > 0
+		&& stats[player]->EFFECTS[EFF_HP_REGEN] )
+	{
+		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
+			(stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
+		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+		{
+			if ( colorblind )
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+			}
+			else
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+			}
+		}
+	}
+
+	// Display the actual Health bar's faint background
+	pos.x = x1 + 42 + 38 * uiscale_playerbars;
+	pos.w = playerStatusBarWidth - 5;
+	pos.h = playerStatusBarHeight - 27;
+	pos.y = y2 - 15 - pos.h - hpmpbarOffsets;
+
+	// Change the color depending on if you are poisoned
+	Uint32 color = 0;
+	if ( stats[player] && stats[player]->EFFECTS[EFF_POISONED] )
+	{
+		if ( colorblind )
+		{
+			color = SDL_MapRGB(mainsurface->format, 0, 0, 48); // Display blue
+		}
+		else
+		{
+			color = SDL_MapRGB(mainsurface->format, 0, 48, 0); // Display green
+		}
+	}
+	else
+	{
+		color = SDL_MapRGB(mainsurface->format, 48, 0, 0); // Display red
+	}
+
+	// Draw the actual Health bar's faint background with specified color
+	drawRect(&pos, color, 255);
+
+	// If the Player is alive, base the size of the actual Health bar off remaining HP
+	if ( stats[player] && stats[player]->HP > 0 )
+	{
+		//pos.x = 80;
+		pos.w = playerStatusBarWidth - 5;
+		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[player]->HP) / stats[player]->MAXHP);
+		pos.y = y2 - 15 - pos.h - hpmpbarOffsets;
+
+		if ( stats[player]->EFFECTS[EFF_POISONED] )
+		{
+			if ( !colorblind )
+			{
+				color = SDL_MapRGB(mainsurface->format, 0, 128, 0);
+			}
+			else
+			{
+				color = SDL_MapRGB(mainsurface->format, 0, 0, 128);
+			}
+		}
+		else
+		{
+			color = SDL_MapRGB(mainsurface->format, 128, 0, 0);
+		}
+
+		// Only draw the actual Health bar if the Player is alive
+		drawRect(&pos, color, 255);
+	}
+
+	// Print out the amount of HP the Player currently has
+	if ( stats[player] )
+	{
+		snprintf(tempstr, 4, "%d", stats[player]->HP);
+	}
+	else
+	{
+		snprintf(tempstr, 4, "%d", 0);
+	}
+	if ( uiscale_playerbars >= 1.5 )
+	{
+		pos.x += uiscale_playerbars * 2;
+	}
+	printTextFormatted(font12x12_bmp, pos.x + 16 * uiscale_playerbars - strlen(tempstr) * 6, y2 - (playerStatusBarHeight / 2 + 8) - hpmpbarOffsets, tempstr);
+	int xoffset = pos.x;
+
+	// PLAYER MAGIC BAR
+	// Display the Magic bar border
+	pos.x = x1 + 12 * uiscale_playerbars;
+	pos.w = playerStatusBarWidth;
+	pos.h = playerStatusBarHeight;
+	pos.y = y2 - (playerStatusBarHeight + 12) - hpmpbarOffsets;
+	drawTooltip(&pos);
+	if ( stats[player] && stats[player]->HP > 0
+		&& stats[player]->EFFECTS[EFF_MP_REGEN] )
+	{
+		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
+			(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
+		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+		{
+			if ( colorblind )
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+			}
+			else
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+			}
+		}
+	}
+	Uint32 mpColorBG = SDL_MapRGB(mainsurface->format, 0, 0, 48);
+	Uint32 mpColorFG = SDL_MapRGB(mainsurface->format, 0, 24, 128);
+	if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+	{
+		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3768]);
+		mpColorBG = SDL_MapRGB(mainsurface->format, 32, 48, 0);
+		mpColorFG = SDL_MapRGB(mainsurface->format, 92, 192, 0);
+	}
+	else if ( stats[player] && stats[player]->type == AUTOMATON )
+	{
+		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3474]);
+		mpColorBG = SDL_MapRGB(mainsurface->format, 64, 32, 0);
+		mpColorFG = SDL_MapRGB(mainsurface->format, 192, 92, 0);
+	}
+	else
+	{
+		// Display "MP" at the top of Magic bar
+		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[307]);
+	}
+
+	// Display border between actual Magic bar and "MP"
+	//pos.x = 12;
+	pos.w = playerStatusBarWidth;
+	pos.h = 0;
+	pos.y = y2 - (playerStatusBarHeight - 9) - hpmpbarOffsets;
+	drawTooltip(&pos);
+	if ( stats[player] && stats[player]->HP > 0
+		&& stats[player]->EFFECTS[EFF_MP_REGEN] )
+	{
+		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
+			(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
+		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+		{
+			if ( colorblind )
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+			}
+			else
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+			}
+		}
+	}
+
+	// Display the actual Magic bar's faint background
+	pos.x = x1 + 4 + 12 * uiscale_playerbars;
+	pos.w = playerStatusBarWidth - 5;
+	pos.h = playerStatusBarHeight - 27;
+	pos.y = y2 - 15 - pos.h - hpmpbarOffsets;
+
+	// Draw the actual Magic bar's faint background
+	drawRect(&pos, mpColorBG, 255); // Display blue
+
+									// If the Player has MP, base the size of the actual Magic bar off remaining MP
+	if ( stats[player] && stats[player]->MP > 0 )
+	{
+		//pos.x = 16;
+		pos.w = playerStatusBarWidth - 5;
+		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[player]->MP) / stats[player]->MAXMP);
+		pos.y = y2 - 15 - pos.h - hpmpbarOffsets;
+
+		// Only draw the actual Magic bar if the Player has MP
+		drawRect(&pos, mpColorFG, 255); // Display blue
+	}
+
+	// Print out the amount of MP the Player currently has
+	if ( stats[player] )
+	{
+		snprintf(tempstr, 4, "%d", stats[player]->MP);
+	}
+	else
+	{
+		snprintf(tempstr, 4, "%d", 0);
+	}
+	printTextFormatted(font12x12_bmp, x1 + 32 * uiscale_playerbars - strlen(tempstr) * 6, y2 - (playerStatusBarHeight / 2 + 8) - hpmpbarOffsets, tempstr);
+
+}
+
 void drawStatus(int player)
 {
 	SDL_Rect pos, initial_position;
@@ -623,136 +865,16 @@ void drawStatus(int player)
 	int playerStatusBarWidth = 38 * uiscale_playerbars;
 	int playerStatusBarHeight = 156 * uiscale_playerbars;
 
-	// PLAYER HEALTH BAR
-	// Display Health bar border
-	pos.x = x1 + 38 + 38 * uiscale_playerbars;
-	pos.w = playerStatusBarWidth;
-	pos.h = playerStatusBarHeight;
-	pos.y = y2 - (playerStatusBarHeight + 12);
-	drawTooltip(&pos);
-	if ( stats[player] && stats[player]->HP > 0
-		&& stats[player]->EFFECTS[EFF_HP_REGEN] )
+	if ( !players[player]->hud.hpFrame )
 	{
-		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
-			(stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
-		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
-		{
-			if ( colorblind )
-			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
-			}
-			else
-			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
-			}
-		}
+		drawHPMPBars(player);
 	}
-
-	// Display "HP" at top of Health bar
-	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[306]);
-
-	// Display border between actual Health bar and "HP"
-	//pos.x = 76;
-	pos.w = playerStatusBarWidth;
-	pos.h = 0;
-	pos.y = y2 - (playerStatusBarHeight - 9);
-	drawTooltip(&pos);
-	if ( stats[player] && stats[player]->HP > 0
-		&& stats[player]->EFFECTS[EFF_HP_REGEN] )
-	{
-		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
-			(stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
-		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
-		{
-			if ( colorblind )
-			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
-			}
-			else
-			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
-			}
-		}
-	}
-
-	// Display the actual Health bar's faint background
-	pos.x = x1 + 42 + 38 * uiscale_playerbars;
-	pos.w = playerStatusBarWidth - 5;
-	pos.h = playerStatusBarHeight - 27;
-	pos.y = y2 - 15 - pos.h;
-
-	// Change the color depending on if you are poisoned
-	Uint32 color = 0;
-	if ( stats[player] && stats[player]->EFFECTS[EFF_POISONED] )
-	{
-		if ( colorblind )
-		{
-			color = SDL_MapRGB(mainsurface->format, 0, 0, 48); // Display blue
-		}
-		else
-		{
-			color = SDL_MapRGB(mainsurface->format, 0, 48, 0); // Display green
-		}
-	}
-	else
-	{
-		color = SDL_MapRGB(mainsurface->format, 48, 0, 0); // Display red
-	}
-
-	// Draw the actual Health bar's faint background with specified color
-	drawRect(&pos, color, 255);
-
-	// If the Player is alive, base the size of the actual Health bar off remaining HP
-	if ( stats[player] && stats[player]->HP > 0 )
-	{
-		//pos.x = 80;
-		pos.w = playerStatusBarWidth - 5;
-		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[player]->HP) / stats[player]->MAXHP);
-		pos.y = y2 - 15 - pos.h;
-
-		if ( stats[player]->EFFECTS[EFF_POISONED] )
-		{
-			if ( !colorblind )
-			{
-				color = SDL_MapRGB(mainsurface->format, 0, 128, 0);
-			}
-			else
-			{
-				color = SDL_MapRGB(mainsurface->format, 0, 0, 128);
-			}
-		}
-		else
-		{
-			color = SDL_MapRGB(mainsurface->format, 128, 0, 0);
-		}
-
-		// Only draw the actual Health bar if the Player is alive
-		drawRect(&pos, color, 255);
-	}
-
-	// Print out the amount of HP the Player currently has
-	if ( stats[player] )
-	{
-		snprintf(tempstr, 4, "%d", stats[player]->HP);
-	}
-	else
-	{
-		snprintf(tempstr, 4, "%d", 0);
-	}
-	if ( uiscale_playerbars >= 1.5 )
-	{
-		pos.x += uiscale_playerbars * 2;
-	}
-	printTextFormatted(font12x12_bmp, pos.x + 16 * uiscale_playerbars - strlen(tempstr) * 6, y2 - (playerStatusBarHeight / 2 + 8), tempstr);
-	int xoffset = pos.x;
-
+	
 	// hunger icon
 	if ( stats[player] && stats[player]->type != AUTOMATON
 		&& (svFlags & SV_FLAG_HUNGER) && stats[player]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+		pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
 		pos.y = y2 - 160;
 		pos.w = 64;
 		pos.h = 64;
@@ -770,7 +892,7 @@ void drawStatus(int player)
 	{
 		if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
 		{
-			pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+			pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
 			pos.y = y2 - 160;
 			pos.w = 64;
 			pos.h = 64;
@@ -797,115 +919,12 @@ void drawStatus(int player)
 	// minotaur icon
 	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+		pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
 		pos.y = y2 - 160 + 64 + 2;
 		pos.w = 64;
 		pos.h = 64;
 		drawImageScaled(minotaur_bmp, nullptr, &pos);
 	}
-
-
-	// PLAYER MAGIC BAR
-	// Display the Magic bar border
-	pos.x = x1 + 12 * uiscale_playerbars;
-	pos.w = playerStatusBarWidth;
-	pos.h = playerStatusBarHeight;
-	pos.y = y2 - (playerStatusBarHeight + 12);
-	drawTooltip(&pos);
-	if ( stats[player] && stats[player]->HP > 0
-		&& stats[player]->EFFECTS[EFF_MP_REGEN] )
-	{
-		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
-			(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
-		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
-		{
-			if ( colorblind )
-			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
-			}
-			else
-			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
-			}
-		}
-	}
-	Uint32 mpColorBG = SDL_MapRGB(mainsurface->format, 0, 0, 48);
-	Uint32 mpColorFG = SDL_MapRGB(mainsurface->format, 0, 24, 128);
-	if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
-	{
-		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3768]);
-		mpColorBG = SDL_MapRGB(mainsurface->format, 32, 48, 0);
-		mpColorFG = SDL_MapRGB(mainsurface->format, 92, 192, 0);
-	}
-	else if ( stats[player] && stats[player]->type == AUTOMATON )
-	{
-		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3474]);
-		mpColorBG = SDL_MapRGB(mainsurface->format, 64, 32, 0);
-		mpColorFG = SDL_MapRGB(mainsurface->format, 192, 92, 0);
-	}
-	else
-	{
-		// Display "MP" at the top of Magic bar
-		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[307]);
-	}
-
-	// Display border between actual Magic bar and "MP"
-	//pos.x = 12;
-	pos.w = playerStatusBarWidth;
-	pos.h = 0;
-	pos.y = y2 - (playerStatusBarHeight - 9);
-	drawTooltip(&pos);
-	if ( stats[player] && stats[player]->HP > 0
-		&& stats[player]->EFFECTS[EFF_MP_REGEN] )
-	{
-		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
-		bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
-			(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
-		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
-		{
-			if ( colorblind )
-			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
-			}
-			else
-			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
-			}
-		}
-	}
-
-	// Display the actual Magic bar's faint background
-	pos.x = x1 + 4 + 12 * uiscale_playerbars;
-	pos.w = playerStatusBarWidth - 5;
-	pos.h = playerStatusBarHeight - 27;
-	pos.y = y2 - 15 - pos.h;
-
-	// Draw the actual Magic bar's faint background
-	drawRect(&pos, mpColorBG, 255); // Display blue
-
-	// If the Player has MP, base the size of the actual Magic bar off remaining MP
-	if ( stats[player] && stats[player]->MP > 0 )
-	{
-		//pos.x = 16;
-		pos.w = playerStatusBarWidth - 5;
-		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[player]->MP) / stats[player]->MAXMP);
-		pos.y = y2 - 15 - pos.h;
-
-		// Only draw the actual Magic bar if the Player has MP
-		drawRect(&pos, mpColorFG, 255); // Display blue
-	}
-
-	// Print out the amount of MP the Player currently has
-	if ( stats[player] )
-	{
-		snprintf(tempstr, 4, "%d", stats[player]->MP);
-	}
-	else
-	{
-		snprintf(tempstr, 4, "%d", 0);
-	}
-	printTextFormatted(font12x12_bmp, x1 + 32 * uiscale_playerbars - strlen(tempstr) * 6, y2 - (playerStatusBarHeight / 2 + 8), tempstr);
 
 	// draw action prompts.
 	if ( players[player]->hud.bShowActionPrompts )
@@ -914,7 +933,7 @@ void drawStatus(int player)
 		int iconSize = 48;
 		SDL_Rect skillPos{0, 0, iconSize, iconSize };
 		skillPos.x = hotbar_t.hotbarBox.x - 3.5 * iconSize;
-		skillPos.y = hotbar_t.hotbarBox.y;
+		skillPos.y = players[player]->camera_y2() - 106 - iconSize - 16;
 		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_OFFHAND));
 		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_OFFHAND);
 

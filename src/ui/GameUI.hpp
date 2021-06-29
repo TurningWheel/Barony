@@ -7,7 +7,6 @@ void doFrames();
 
 void newIngameHud();
 void doNewCharacterSheet(int player);
-void newPlayerInventory(const int player);
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr);
 void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy);
