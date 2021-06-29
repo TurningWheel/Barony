@@ -419,6 +419,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 	result.highlightTime = SDL_GetTicks();
 	result.tooltip = nullptr;
 
+	if ( parent && inheritParentFrameOpacity )
+	{
+		setOpacity(static_cast<Frame*>(parent)->getOpacity());
+	}
+
 	if (disabled) {
 		return result;
 	}
@@ -1473,6 +1478,16 @@ void Frame::drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scr
 			return;
 		}
 
-		actualImage->drawColor(&src, scaledDest, image->color);
+		if ( getOpacity() < 100.0 )
+		{
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(image->color, mainsurface->format, &r, &g, &b, &a);
+			a *= getOpacity() / 100.0;
+			actualImage->drawColor(&src, scaledDest, SDL_MapRGBA(mainsurface->format, r, g, b, a));
+		}
+		else
+		{
+			actualImage->drawColor(&src, scaledDest, image->color);
+		}
 	}
 }
