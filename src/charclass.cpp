@@ -2530,6 +2530,8 @@ void initClass(const int player)
 				}
 			}
 		}
+
+		players[player]->hud.resetBars();
 	}
 	//stats[player]->printStats();
 	//PlayerCharacterClassManager playerCharacterClassManager(stats[player], client_classes[player]);

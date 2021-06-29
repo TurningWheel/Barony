@@ -118,34 +118,40 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	if (!actualFont) {
 		return;
 	}
-	int lines = 1;
-	for (int c = 0; c <= textlen; ++c) {
-		if (text[c] == '\n') {
-			++lines;
-		}
-	}
+	int lines = std::max(1, getNumTextLines());
 	int fullH = lines * actualFont->height(false) + actualFont->getOutline() * 2;
 
-	char* buf = (char*)malloc(textlen + 1);
-	memcpy(buf, text, textlen + 1);
+	//char* buf = (char*)malloc(textlen + 1);
+	//memcpy(buf, text, textlen + 1);
 
 	int yoff = 0;
-	char* nexttoken;
-	char* token = strtok(buf, "\n");
-	do {
-		nexttoken = strtok(NULL, "\n");
+	//char* nexttoken = nullptr;
+	//char* token = strtok(buf, "\n");
+	std::string input = text;
 
-		std::string str;
-		if (!nexttoken && activated && showCursor) {
-			str.reserve((Uint32)strlen(token) + 2);
-			str.assign(token);
+	size_t offset = 0;
+	size_t findChar = 0;
+	std::vector<std::string> tokens;
+	while ( (findChar = input.find('\n', offset)) != std::string::npos ) {
+		tokens.push_back(input.substr(offset, findChar - offset));
+		offset = findChar + 1;
+	}
+	tokens.push_back(input.substr(offset));
+
+
+	for ( auto& str : tokens ) {
+		//nexttoken = strtok(token, '\n');
+
+		if ( activated && showCursor ) {
+			//str.reserve((Uint32)strlen(token) + 2);
+			//str.assign(token);
 			str.append("_");
-		} else if (!nexttoken && activated) {
-			str.reserve((Uint32)strlen(token) + 2);
-			str.assign(token);
+		} else if ( activated ) {
+			//str.reserve((Uint32)strlen(token) + 2);
+			//str.assign(token);
 			str.append(" ");
 		} else {
-			str.assign(token);
+			//str.assign(token);
 		}
 
 		Text* text = Text::get(str.c_str(), font.c_str());
@@ -216,10 +222,21 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
 		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
 		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
-		text->drawColor(src, scaledDest, color);
-	} while ((token = nexttoken) != NULL);
 
-	free(buf);
+		if ( parent && static_cast<Frame*>(parent)->getOpacity() < 100.0 )
+		{
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(color, mainsurface->format, &r, &g, &b, &a);
+			a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
+			text->drawColor(src, scaledDest, SDL_MapRGBA(mainsurface->format, r, g, b, a));
+		}
+		else
+		{
+			text->drawColor(src, scaledDest, color);
+		}
+	}// while ((token = nexttoken) != NULL);
+
+	//free(buf);
 
 	drawGlyphs(scaledRect, selectedWidget);
 }

@@ -16,6 +16,7 @@
 #include "messages.hpp"
 #include "engine/audio/sound.hpp"
 #include "input.hpp"
+#include "ui/Frame.hpp"
 
 
 //Splitscreen support stuff.
@@ -666,6 +667,10 @@ public:
 		int selectedSlotX = 0;
 		int selectedSlotY = 0;
 	public:
+		Frame* frame = nullptr;
+		Frame* tooltipFrame = nullptr;
+
+
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
 		Inventory_t(Player& p) : 
@@ -691,6 +696,8 @@ public:
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
 		const int getSelectedSlotPositionX(Item* snapToItem) const;
 		const int getSelectedSlotPositionY(Item* snapToItem) const;
+		void processInventory();
+		void updateInventory();
 		void resetInventory()
 		{
 			if ( bNewInventoryLayout )
@@ -831,6 +838,11 @@ public:
 	{
 		Player& player;
 	public:
+		Frame* hudFrame = nullptr;
+		Frame* xpFrame = nullptr;
+		Frame* hpFrame = nullptr;
+		Frame* mpFrame = nullptr;
+
 		Entity* weapon = nullptr;
 		Entity* arm = nullptr;
 		Entity* magicLeftHand = nullptr;
@@ -857,6 +869,29 @@ public:
 		OPENAL_SOUND* bowDrawingSoundChannel = NULL;
 		ALboolean bowDrawingSoundPlaying = 0;
 #endif
+
+		enum AnimateStates : int {
+			ANIMATE_NONE,
+			ANIMATE_MOVING,
+			ANIMATE_LEVELUP_RISING,
+			ANIMATE_LEVELUP_FALLING
+		};
+
+		struct Bar_t
+		{
+			real_t animateValue = 0.0;
+			real_t animateValue2 = 0.0;
+			real_t animatePreviousSetpoint = 0.0;
+			Sint32 animateSetpoint = 0;
+			Uint32 animateTicks = 0;
+			AnimateStates animateState = ANIMATE_NONE;
+			Uint32 xpLevelups = 0;
+			real_t maxValue = 0.0;
+		};
+		Bar_t xpBar;
+		Bar_t HPBar;
+		Bar_t MPBar;
+
 		HUD_t(Player& p) : player(p)
 		{};
 		~HUD_t() {};
@@ -884,6 +919,11 @@ public:
 		void drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const;
 		void drawActionIcon(SDL_Rect& pos, int skill) const;
 		const int getActionIconForPlayer(ActionPrompts prompt) const;
+		void processHUD();
+		void updateXPBar();
+		void updateHPBar();
+		void updateMPBar();
+		void resetBars();
 	} hud;
 
 	class Magic_t

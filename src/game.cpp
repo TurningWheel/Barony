@@ -4116,6 +4116,11 @@ void ingameHud()
 
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
+		players[player]->inventoryUI.processInventory();
+		players[player]->hud.processHUD();
+		// new right side pane by sheridan
+		doNewCharacterSheet(player);
+
 		if ( !players[player]->isLocalPlayer() )
 		{
 			continue;
@@ -4130,8 +4135,7 @@ void ingameHud()
 			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 			{
 				updateCharacterSheet(player);
-				updatePlayerInventory(player);
-				newPlayerInventory(player);
+				//updatePlayerInventory(player);
 				updateChestInventory(player);
 				GenericGUI[player].updateGUI();
 				players[player]->bookGUI.updateBookGUI();
@@ -4146,12 +4150,9 @@ void ingameHud()
 			else if ( players[player]->gui_mode == GUI_MODE_SHOP )
 			{
 				updateCharacterSheet(player);
-				updatePlayerInventory(player);
+				//updatePlayerInventory(player);
 				updateShopWindow(player);
 			}
-			
-			// new right side pane by sheridan
-			doNewCharacterSheet(player);
 		}
 
 

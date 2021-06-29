@@ -260,6 +260,8 @@ public:
 	const bool						isActivated() const { return activated; }
 	const SDL_Rect&					getListOffset() const { return listOffset; }
 	int								getSelection() const { return selection; }
+	real_t							getOpacity() const { return opacity; }
+	const bool						getInheritParentFrameOpacity() const { return inheritParentFrameOpacity; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -276,6 +278,8 @@ public:
 	void	setScrollBarsEnabled(const bool _scrollbars) { scrollbars = _scrollbars; }
 	void	setAllowScrollBinds(const bool _allow) { allowScrollBinds = _allow; }
 	void	setListOffset(SDL_Rect _size) { listOffset = _size; }
+	void	setInheritParentFrameOpacity(const bool _inherit) { inheritParentFrameOpacity = _inherit; }
+	void	setOpacity(const real_t _opacity) { opacity = _opacity; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -300,6 +304,8 @@ private:
 	bool scrollbars = true;								//!< must be true for sliders to be drawn/usable
 	bool activated = false;								//!< true if this frame is consuming input (to navigate list entries)
 	SDL_Rect listOffset{0, 0, 0, 0};					//!< frame list offset in x, y
+	real_t opacity = 100.0;								//!< opacity multiplier of elements within this frame (image/fields etc)
+	bool inheritParentFrameOpacity = true;				//!< if true, uses parent frame opacity
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;

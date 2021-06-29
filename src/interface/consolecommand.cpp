@@ -3405,6 +3405,19 @@ void consoleCommand(char const * const command_str)
 			}
 			return;
 		}
+		else if ( !strncmp(command_str, "/gimmexp", 8) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				players[clientnum]->entity->getStats()->EXP += 1 + rand() % 50;
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
