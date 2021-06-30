@@ -1247,6 +1247,82 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				}
 			}
 		}
+		else if ( (*it).find("@wire=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@wire=");
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				bool foundExisting = false;
+				std::unordered_set<int> wireSpots;
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					Entity* wire = (Entity*)node->element;
+					if ( wire && wire->behavior == &actCircuit )
+					{
+						int findx = static_cast<int>(wire->x) >> 4;
+						int findy = static_cast<int>(wire->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							wireSpots.insert(static_cast<int>(wire->x / 16) + map.width * static_cast<int>(wire->y / 16));
+						}
+					}
+				}
+				for ( int x = x1; x <= x2; ++x )
+				{
+					for ( int y = y1; y <= y2; ++y )
+					{
+						if ( wireSpots.find(x + map.width * y) == wireSpots.end() )
+						{
+							Entity* wire = newEntity(-1, 1, map.entities, nullptr);
+							wire->sizex = 3;
+							wire->sizey = 3;
+							wire->x = x * 16 + 8;
+							wire->y = y * 16 + 8;
+							wire->z = 5;
+							wire->behavior = &actCircuit;
+							wire->flags[PASSABLE] = true;
+							wire->flags[INVISIBLE] = true;
+							wire->flags[NOUPDATE] = true;
+							wire->skill[28] = 1; //It's a depowered powerable.
+							TileEntityList.addEntity(*wire); // make sure new nodes are added to the tile list to properly update neighbors.
+							wire->updateCircuitNeighbors();
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@unwire=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@unwire=");
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				node_t* nextnode = nullptr;
+				for ( node_t* node = map.entities->first; node; node = nextnode )
+				{
+					nextnode = node->next;
+					Entity* wire = (Entity*)node->element;
+					if ( wire && wire->behavior == &actCircuit )
+					{
+						int findx = static_cast<int>(wire->x) >> 4;
+						int findy = static_cast<int>(wire->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							wire->skill[28] = 1; // unpower the wire
+							wire->updateCircuitNeighbors(); // update surrounding stuff
+							list_RemoveNode(node); // delete this
+						}
+					}
+				}
+			}
+		}
 		else if ( (*it).find("@freezemonsters=") != std::string::npos )
 		{
 			int result = textSourceProcessScriptTag(input, "@freezemonsters=");
