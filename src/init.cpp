@@ -369,6 +369,7 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 	// init new ui engine
+#ifndef EDITOR
 	gui = new Frame("root");
 	SDL_Rect guiRect;
 	guiRect.x = 0;
@@ -378,6 +379,7 @@ int initApp(char const * const title, int fullscreen)
 	gui->setSize(guiRect);
 	gui->setActualSize(guiRect);
 	gui->setHollow(true);
+#endif
 
 	// cache language entries
 	bool cacheText = false;
@@ -399,10 +401,12 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 	// create player classes
+#ifndef EDITOR
 	for ( int c = 0; c < MAXPLAYERS; c++ )
 	{
 		players[c] = new Player(c, true);
 	}
+#endif // !EDITOR
 
 	createLoadingScreen(10);
 	doLoadingScreen();
@@ -2020,10 +2024,12 @@ int deinitApp()
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
+#ifndef EDITOR
 	if (gui) {
 		delete gui;
 		gui = nullptr;
 	}
+#endif
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )

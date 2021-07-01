@@ -13,6 +13,24 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\engine">
+      <UniqueIdentifier>{b1d9a03e-5cbd-4b42-a148-70899e00bacd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\engine\audio">
+      <UniqueIdentifier>{6438c88f-18f9-418c-a62d-15988107541c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ui">
+      <UniqueIdentifier>{4b1cb64c-9162-4527-b703-a78e63fb01ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ui">
+      <UniqueIdentifier>{7b21925a-4390-473e-bc3e-80d98e0b438f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\engine">
+      <UniqueIdentifier>{5d9c1934-df28-436e-bb1c-d09d65265e1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\engine\audio">
+      <UniqueIdentifier>{aedb0d5a-663c-41f9-ad02-bc5141dcb2b0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\editor.hpp">
@@ -27,9 +45,6 @@
     <ClInclude Include="..\..\src\savepng.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\sound.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\VS-includes\Config.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -41,6 +56,42 @@
     </ClInclude>
     <ClInclude Include="..\..\src\mod_tools.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\engine\audio\sound.hpp">
+      <Filter>Header Files\engine\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\Button.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\Field.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\Font.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\Frame.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\Image.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\Slider.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\Text.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\Widget.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\GameUI.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\LoadingScreen.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\engine\audio\music_pc.hpp">
+      <Filter>Header Files\engine\audio</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -77,9 +128,6 @@
     <ClCompile Include="..\..\src\opengl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\sound.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\hash.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -103,6 +151,24 @@
     </ClCompile>
     <ClCompile Include="..\..\src\mod_tools.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\Font.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\Image.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\Text.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\engine\audio\defines.cpp">
+      <Filter>Source Files\engine\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\engine\audio\init.cpp">
+      <Filter>Source Files\engine\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\engine\audio\sound.cpp">
+      <Filter>Source Files\engine\audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

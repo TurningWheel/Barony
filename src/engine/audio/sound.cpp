@@ -1101,6 +1101,7 @@ bool physfsSearchMusicToUpdate()
 	return false;
 }
 
+#ifdef USE_FMOD
 FMOD_RESULT physfsReloadMusic_helper_reloadMusicArray(uint32_t numMusic, const char* filenameTemplate, FMOD::Sound** musicArray, bool reloadAll)
 {
 	for ( int c = 0; c < numMusic; c++ )
@@ -1129,6 +1130,7 @@ FMOD_RESULT physfsReloadMusic_helper_reloadMusicArray(uint32_t numMusic, const c
 
 	return FMOD_OK;
 }
+#endif
 
 void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This should probably return an error.
 {
