@@ -333,7 +333,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 {
 	char* sublevelname, *subRoomName;
 	char sublevelnum[3];
-	map_t* tempMap, *subRoomMap;
+	map_t* tempMap = nullptr;
+	map_t* subRoomMap = nullptr;
 	list_t mapList, *newList, *subRoomList, subRoomMapList;
 	node_t* node, *node2, *node3, *nextnode, *subRoomNode;
 	Sint32 c, i, j;
@@ -347,7 +348,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	Entity* entity, *entity2, *childEntity;
 	Uint32 levellimit;
 	list_t doorList;
-	node_t* doorNode, *subRoomDoorNode;
+	node_t* doorNode = nullptr; 
+	node_t* subRoomDoorNode = nullptr;
 	bool shoplevel = false;
 	map_t shopmap;
 	map_t secretlevelmap;

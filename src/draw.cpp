@@ -1436,7 +1436,7 @@ void drawEntities3D(view_t* camera, int mode)
 		nextnode = node->next;
 		if ( node->next == nullptr && node->list == map.entities )
 		{
-			if ( map.worldUI->first )
+			if ( map.worldUI && map.worldUI->first )
 			{
 				// quick way to attach worldUI to the end of map.entities.
 				nextnode = map.worldUI->first;
