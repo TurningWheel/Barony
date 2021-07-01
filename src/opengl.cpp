@@ -557,7 +557,7 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 {
-	SDL_Surface* sprite;
+	SDL_Surface* sprite = nullptr;
 	real_t s = 1;
 
 	if ( !entity )
@@ -1146,8 +1146,8 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	}
 
 	// draw quad
-	auto w = rendered_text->getWidth();
-	auto h = rendered_text->getHeight();
+	GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
+	GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
 	glBegin(GL_QUADS);
 	glTexCoord2f(0, 0);
 	glVertex3f(0, h / 2, w / 2);
