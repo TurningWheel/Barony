@@ -639,6 +639,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 }
 #endif // !NINTENDO
 
+#ifndef EDITOR
 void ItemTooltips_t::readItemsFromFile()
 {
 	if ( !PHYSFS_getRealDir("/items/items.json") )
@@ -3235,3 +3236,4 @@ void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::
 		index = std::distance(str.begin(), it);
 	}
 }
+#endif // !EDITOR
