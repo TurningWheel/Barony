@@ -138,6 +138,7 @@ void drawMinimap(const int player);
 void handleDamageIndicators(const int player);
 void handleDamageIndicatorTicks();
 void drawStatus(const int player);
+void drawStatusNew(const int player);
 void saveCommand(char* content);
 int loadConfig(char* filename);
 int saveConfig(char const * const filename);
@@ -556,8 +557,9 @@ typedef struct hotbar_slot_t
 } hotbar_slot_t;
 
 
-//Returns a pointer to a hotbar slot if the specified coordinates are in the area of the hotbar. Used for such things as dragging and dropping items.
-hotbar_slot_t* getHotbar(int player, int x, int y, int* outSlotNum = nullptr);
+// Returns a pointer to a hotbar slot if the mouse is over a hotbar slot
+// Used for such things as dragging and dropping items. Uses realtime (mousex/mousey) coords as may be dragging
+hotbar_slot_t* getCurrentHotbarUnderMouse(int player, int* outSlotNum = nullptr);
 
 void warpMouseToSelectedHotbarSlot(const int player);
 

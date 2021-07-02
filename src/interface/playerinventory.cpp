@@ -46,6 +46,7 @@ selectBehavior_t itemSelectBehavior = BEHAVIOR_MOUSE;
 void executeItemMenuOption0(const int player, Item* item, bool is_potion_bad, bool learnedSpell);
 bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 {
+	//TODO UI: VERIFY
 	if ( !item )
 	{
 		return false;
@@ -96,6 +97,14 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 
 void warpMouseToSelectedInventorySlot(const int player)
 {
+	if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr) )
+	{
+		return;
+	}
+
+	//TODO UI: REMOVE
+	messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
+
 	int xres = players[player]->camera_width();
 	int yres = players[player]->camera_height();
 	int x = players[player]->inventoryUI.getSelectedSlotPositionX(nullptr);
@@ -322,6 +331,7 @@ char* itemUseString(int player, const Item* item)
 
 -------------------------------------------------------------------------------*/
 
+//TODO UI: PORT
 void updateAppraisalItemBox(const int player)
 {
 	SDL_Rect pos;
@@ -848,6 +858,7 @@ void select_inventory_slot(const int player, int x, int y)
 
 		if ( hotbarGamepadControlEnabled(player) )
 		{
+			//TODO UI: VERIFY
 			hotbar_t.hotbarHasFocus = true; //Warp to hotbar.
 			float percentage = static_cast<float>(x + 1) / static_cast<float>(inventoryUI.getSizeX());
 			hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
@@ -934,7 +945,7 @@ void select_inventory_slot(const int player, int x, int y)
 	 * * * However, keep in mind that you want a mouse click to trigger drop, just in case potato. You know, controller dying or summat. Don't wanna jam game.
 	 */
 
-void releaseItem(const int player, int x, int y) //TODO: This function uses toggleclick. Conflict with inventory context menu?
+void releaseItem(const int player) //TODO: This function uses toggleclick. Conflict with inventory context menu?
 {
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	int& selectedItemFromHotbar = inputs.getUIInteraction(player)->selectedItemFromHotbar;
@@ -955,6 +966,7 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 
 	if ( inputs.bControllerInputPressed(player, INJOY_MENU_CANCEL) )
 	{
+		//TODO UI: VERIFY
 		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS)
 		{
 			//Warp cursor back into hotbar, for gamepad convenience.
@@ -967,13 +979,19 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 		}
 		else
 		{
-			//Warp cursor back into inventory, for gamepad convenience.
-			int newx = players[player]->inventoryUI.getSelectedSlotPositionX(selectedItem);
-			int newy = players[player]->inventoryUI.getSelectedSlotPositionY(selectedItem);
+			if ( !players[player]->inventoryUI.warpMouseToSelectedItem(selectedItem) )
+			{
+				messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
 
-			//SDL_WarpMouseInWindow(screen, newx, newy);
-			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-			inputs.warpMouse(player, newx, newy, flags);
+				//Warp cursor back into inventory, for gamepad convenience.
+				int newx = players[player]->inventoryUI.getSelectedSlotPositionX(selectedItem);
+				int newy = players[player]->inventoryUI.getSelectedSlotPositionY(selectedItem);
+
+				//SDL_WarpMouseInWindow(screen, newx, newy);
+				Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
+				inputs.warpMouse(player, newx, newy, flags);
+			}
+
 		}
 
 		selectedItem = nullptr;
@@ -1034,6 +1052,7 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 			int slotFrameX = UNKNOWN_SLOT;
 			int slotFrameY = UNKNOWN_SLOT;
 
+			//TODO UI: CLEANUP COMMENTS
 			/*if (mousex >= x && mousey >= y
 			        && mousex < x + players[player]->inventoryUI.getSizeX() * inventorySlotSize
 			        && mousey < y + players[player]->inventoryUI.getSizeY() * inventorySlotSize )
@@ -1161,7 +1180,8 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 			else if (itemCategory(selectedItem) == SPELL_CAT)
 			{
 				//Outside inventory. Spells can't be dropped.
-				hotbar_slot_t* slot = getHotbar(player, mousex, mousey);
+				int slotNum = 0;
+				hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
 				if (slot)
 				{
 					//Add spell to hotbar.
@@ -1178,6 +1198,16 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 						selectedItem = NULL;
 						toggleclick = false;
 					}
+					// empty out duplicate slots that match this item uid.
+					int i = 0;
+					for ( auto& s : players[player]->hotbar.slots() )
+					{
+						if ( i != slotNum && s.item == slot->item )
+						{
+							s.item = 0;
+						}
+						++i;
+					}
 					playSound(139, 64); // click sound
 				}
 				else
@@ -1189,7 +1219,7 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 			{
 				// outside inventory
 				int slotNum = 0;
-				hotbar_slot_t* slot = getHotbar(player, mousex, mousey, &slotNum);
+				hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
 				if (slot)
 				{
 					//Add item to hotbar.
@@ -1223,6 +1253,7 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 				{
 					if ( frame )
 					{
+						//TODO UI: ADD DRAG TO EQUIP ON PAPERDOLL SLOTS
 						if ( frame->findFrame("paperdoll slots") && frame->findFrame("paperdoll slots")->capturesMouseInRealtimeCoords() )
 						{
 							// mouse within character sheet box, no action,
@@ -1255,6 +1286,7 @@ void releaseItem(const int player, int x, int y) //TODO: This function uses togg
 						}
 					}
 
+					//TODO UI: CLEANUP
 					//if ( bPaperDollItem )
 					//{
 					//	if ( mousex >= players[player]->characterSheet.characterSheetBox.x 
@@ -1334,6 +1366,7 @@ bool mouseInBoundsRealtimeCoords(int player, int x1, int x2, int y1, int y2)
 	return false;
 }
 
+//TODO UI: VERIFY BLUE BORDER FOR PAPERDOLL
 void drawBlueInventoryBorder(const int player, const Item& item, int x, int y)
 {
 	SDL_Rect pos;
@@ -1350,20 +1383,17 @@ int tmpx = 0;
 Uint32 tmpTicks = 0;
 int tmpAnimateTicks = 0;
 
-void updateFrameTooltip(const int player, Item* item, const int x, const int y)
+void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 {
-	char tooltipname[32];
-	snprintf(tooltipname, sizeof(tooltipname), "player tooltip %d", player);
-	auto frameMain = gui->findFrame(tooltipname);
+	const int player = this->player.playernum;
 
+	auto frameMain = this->player.inventoryUI.tooltipFrame;
 	if ( !frameMain )
 	{
 		return;
 	}
 
-	char inventoryname[32];
-	snprintf(inventoryname, sizeof(inventoryname), "player inventory %d", player);
-	auto frameInventory = gui->findFrame(inventoryname);
+	auto frameInventory = this->player.inventoryUI.frame;
 	if ( !frameInventory )
 	{
 		return;
@@ -2501,7 +2531,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	}
 
 	frameAttr->setSize(frameAttrPos);
-	frameAttr->setActualSize(SDL_Rect{ 0, 0, frameAttr->getSize().w, frameAttr->getSize().h });
 	totalHeight += frameAttrPos.h;
 
 	// animate?
@@ -2600,7 +2629,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		}
 
 		frameDesc->setSize(frameDescPos);
-		frameDesc->setActualSize(SDL_Rect{ 0, 0, frameDesc->getSize().w, frameDesc->getSize().h });
 		totalHeight += frameDescPos.h;
 	}
 
@@ -2694,7 +2722,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		}
 
 		frameValues->setSize(frameValuesPos);
-		frameValues->setActualSize(SDL_Rect{ 0, 0, frameValues->getSize().w, frameValues->getSize().h });
 		totalHeight += frameValuesPos.h;
 
 		txtIdentifiedValue->setSize(SDL_Rect{ padx * 2, imgGoldIcon->pos.y + lowerIconImgToTextOffset,
@@ -2759,7 +2786,6 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		txtPrompt->setSize(SDL_Rect{ 0, 0, framePromptPos.w, framePromptPos.h });
 
 		framePrompt->setSize(framePromptPos);
-		framePrompt->setActualSize(SDL_Rect{ 0, 0, framePrompt->getSize().w, framePrompt->getSize().h });
 
 	}
 
@@ -2767,8 +2793,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 	auto inventoryBgFrame = frameInventory->findFrame("inventory base");
 	const int tooltipPosX = frameInventory->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
 
-	frameMain->setSize(SDL_Rect{ tooltipPosX, y, tooltipWidth, totalHeight });
-	frameMain->setActualSize(SDL_Rect{ 0, 0, frameMain->getSize().w, frameMain->getSize().h });
+	frameMain->setSize(SDL_Rect{ x, y, tooltipWidth, totalHeight });
 
 	// position the background elements.
 	{
@@ -3539,7 +3564,7 @@ void updatePlayerInventory(const int player)
 						{
 							if ( frame )
 							{
-								updateFrameTooltip(player, item, itemCoordX, itemCoordY);
+								players[player]->hud.updateFrameTooltip(item, itemCoordX, itemCoordY);
 							}
 							spell_t* spell = getSpellFromItem(player, item);
 							drawSpellTooltip(player, spell, item, nullptr);
@@ -3548,7 +3573,7 @@ void updatePlayerInventory(const int player)
 						{
 							if ( frame )
 							{
-								updateFrameTooltip(player, item, itemCoordX, itemCoordY);
+								players[player]->hud.updateFrameTooltip(item, itemCoordX, itemCoordY);
 							}
 							else
 							{
@@ -3736,7 +3761,7 @@ void updatePlayerInventory(const int player)
 	else if ( stats[player]->HP > 0 )
 	{
 		// releasing items
-		releaseItem(player, x, y);
+		releaseItem(player);
 	}
 
 	itemContextMenu(player);
@@ -3761,7 +3786,7 @@ void Player::Inventory_t::updateInventory()
 	frame->setDisabled(false);
 
 	bool disableMouseDisablingHotbarFocus = false;
-	SDL_Rect pos, mode_pos;
+	SDL_Rect mode_pos;
 	node_t* node, *nextnode;
 
 	auto& hotbar_t = players[player]->hotbar;
@@ -3773,15 +3798,9 @@ void Player::Inventory_t::updateInventory()
 	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
 	const int x = getStartX();
-	const int y = getStartY();
+	//const int y = getStartY();
 
 	const int inventorySlotSize = getSlotSize();
-
-	// draw translucent box
-	pos.x = x;
-	pos.y = y;
-	pos.w = getSizeX() * inventorySlotSize;
-	pos.h = getSizeY() * inventorySlotSize;
 
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
@@ -3882,12 +3901,6 @@ void Player::Inventory_t::updateInventory()
 		inputs.controllerClearInput(player, INJOY_MENU_CHEST_GRAB_ALL);
 		playSound(139, 64);
 	}
-
-	// draw grid
-	pos.x = x;
-	pos.y = y;
-	pos.w = getSizeX() * inventorySlotSize;
-	pos.h = getSizeY() * inventorySlotSize;
 
 	resetInventorySlotFrames(player);
 
@@ -4163,7 +4176,6 @@ void Player::Inventory_t::updateInventory()
 
 			if ( item )
 			{
-
 				bool mouseOverSlot = false;
 
 				bool itemOnPaperDoll = false;
@@ -4183,18 +4195,21 @@ void Player::Inventory_t::updateInventory()
 					players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
 				}
 
-				int itemCoordX = 0;
-				int itemCoordY = 0;
 				char slotname[32] = "";
 				snprintf(slotname, sizeof(slotname), "slot %d %d", itemx, itemy);
-				if ( auto slotFrame = frame->findFrame(slotname) )
-				{
-					mouseOverSlot = slotFrame->capturesMouse();
-					itemCoordY = y + slotFrame->getSize().y;
-				}
+				auto slotFrame = frame->findFrame(slotname);
+				mouseOverSlot = slotFrame->capturesMouse();
 
 				if ( mouseOverSlot )
 				{
+					auto inventoryBgFrame = frame->findFrame("inventory base");
+					int tooltipCoordX = frame->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
+					int tooltipCoordY = slotFrame->getSize().y;
+					if ( !itemOnPaperDoll )
+					{
+						tooltipCoordY += frame->findFrame("inventory slots")->getSize().y;
+					}
+
 					// tooltip
 					if ( (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
 						|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
@@ -4203,7 +4218,7 @@ void Player::Inventory_t::updateInventory()
 					}
 					if ( !itemMenuOpen )
 					{
-						updateFrameTooltip(player, item, itemCoordX, itemCoordY);
+						players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY);
 					}
 
 					if ( stats[player]->HP <= 0 )
@@ -4385,7 +4400,7 @@ void Player::Inventory_t::updateInventory()
 	else if ( stats[player]->HP > 0 )
 	{
 		// releasing items
-		releaseItem(player, x, y);
+		releaseItem(player);
 	}
 
 	itemContextMenu(player);
@@ -5347,6 +5362,12 @@ void itemContextMenu(const int player)
 		itemMenuOpen = false;
 		//Warp cursor back into inventory, for gamepad convenience.
 
+		if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr) )
+		{
+			return;
+		}
+
+		messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
 		int newx = players[player]->inventoryUI.getSelectedSlotPositionX(uidToItem(itemMenuItem));
 		int newy = players[player]->inventoryUI.getSelectedSlotPositionY(uidToItem(itemMenuItem));
 		//SDL_WarpMouseInWindow(screen, newx, newy);
@@ -5440,12 +5461,18 @@ void itemContextMenu(const int player)
 	{
 		inputs.controllerClearInput(player, INJOY_MENU_USE);
 		activateSelection = true;
-		//Warp cursor back into inventory, for gamepad convenience.
-		int newx = players[player]->inventoryUI.getSelectedSlotPositionX(nullptr);
-		int newy = players[player]->inventoryUI.getSelectedSlotPositionY(nullptr);
-		//SDL_WarpMouseInWindow(screen, newx, newy);
-		Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-		inputs.warpMouse(player, newx, newy, flags);
+
+		if ( !players[player]->inventoryUI.warpMouseToSelectedItem(nullptr) )
+		{
+			messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
+			//Warp cursor back into inventory, for gamepad convenience.
+			int newx = players[player]->inventoryUI.getSelectedSlotPositionX(nullptr);
+			int newy = players[player]->inventoryUI.getSelectedSlotPositionY(nullptr);
+			//SDL_WarpMouseInWindow(screen, newx, newy);
+			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
+			inputs.warpMouse(player, newx, newy, flags);
+		}
+
 	}
 
 	bool itemWasOnPaperDoll = players[player]->paperDoll.isItemOnDoll(*current_item);

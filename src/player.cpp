@@ -3078,6 +3078,56 @@ const int Player::Inventory_t::getSelectedSlotPositionX(Item* snapToItem) const
 	}
 }
 
+bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem) const
+{
+	if ( frame )
+	{
+		int x = getSelectedSlotX();
+		int y = getSelectedSlotY();
+		if ( snapToItem )
+		{
+			x = snapToItem->x;
+			y = snapToItem->y;
+		}
+
+		if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
+		{
+			auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+			if ( snapToItem )
+			{
+				slot = player.paperDoll.getSlotForItem(*snapToItem);
+			}
+			else
+			{
+				slot = player.paperDoll.paperDollSlotFromCoordinates(x, y);
+			}
+			player.paperDoll.getCoordinatesFromSlotType(slot, x, y);
+		}
+
+		char slotname[32] = "";
+		snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+		if ( y >= PaperDollRows::DOLL_ROW_1 && y <= PaperDollRows::DOLL_ROW_5 )
+		{
+			auto slot = frame->findFrame("paperdoll slots")->findFrame(slotname);
+			if ( slot )
+			{
+				slot->warpMouseToFrame(player.playernum);
+				return true;
+			}
+		}
+		else
+		{
+			auto slot = frame->findFrame("inventory slots")->findFrame(slotname);
+			if ( slot )
+			{
+				slot->warpMouseToFrame(player.playernum);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 const int Player::Inventory_t::getSelectedSlotPositionY(Item* snapToItem) const
 {
 	int x = getSelectedSlotX();
@@ -3087,6 +3137,7 @@ const int Player::Inventory_t::getSelectedSlotPositionY(Item* snapToItem) const
 		x = snapToItem->x;
 		y = snapToItem->y;
 	}
+
 	if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
 	{
 		auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;

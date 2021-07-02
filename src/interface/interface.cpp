@@ -1361,39 +1361,59 @@ bool mouseInBounds(const int player, int x1, int x2, int y1, int y2)
 	return false;
 }
 
-hotbar_slot_t* getHotbar(int player, int x, int y, int* outSlotNum)
+hotbar_slot_t* getCurrentHotbarUnderMouse(int player, int* outSlotNum)
 {
-	if ( players[player]->hotbar.useHotbarFaceMenu )
+	if ( players[player]->hotbar.hotbarFrame )
 	{
 		for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 		{
-			auto& slotRect = players[player]->hotbar.faceButtonPositions[num];
-			if ( x >= slotRect.x && x < (slotRect.x + slotRect.w)
-				&& y >= slotRect.y && y < (slotRect.y + slotRect.h) )
+			if ( auto hotbarSlotFrame = players[player]->hotbar.getHotbarSlotFrame(num) )
 			{
-				if ( outSlotNum )
+				if ( hotbarSlotFrame->capturesMouseInRealtimeCoords() )
 				{
-					*outSlotNum = num;
+					if ( outSlotNum )
+					{
+						*outSlotNum = num;
+					}
+					return &players[player]->hotbar.slots()[num];
 				}
-				return &players[player]->hotbar.slots()[num];
 			}
 		}
-	}
-	else if ( x >= players[player]->hotbar.getStartX() 
-		&& x < players[player]->hotbar.getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar.getSlotSize())
-		&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar.getSlotSize()
-		&& y < players[player]->statusBarUI.getStartY() )
-	{
-		int relx = x - players[player]->hotbar.getStartX(); //X relative to the start of the hotbar.
-		int slot = std::max(0, std::min(relx / (players[player]->hotbar.getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
-		if ( outSlotNum )
-		{
-			*outSlotNum = slot;
-		}
-		return &players[player]->hotbar.slots()[slot]; //The slot will clearly be the x divided by the width of a slot
+		return nullptr;
 	}
 
-	return NULL;
+	//TODO UI: REMOVE
+	//if ( players[player]->hotbar.useHotbarFaceMenu )
+	//{
+	//	for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
+	//	{
+	//		auto& slotRect = players[player]->hotbar.faceButtonPositions[num];
+	//		if ( x >= slotRect.x && x < (slotRect.x + slotRect.w)
+	//			&& y >= slotRect.y && y < (slotRect.y + slotRect.h) )
+	//		{
+	//			if ( outSlotNum )
+	//			{
+	//				*outSlotNum = num;
+	//			}
+	//			return &players[player]->hotbar.slots()[num];
+	//		}
+	//	}
+	//}
+	//else if ( x >= players[player]->hotbar.getStartX() 
+	//	&& x < players[player]->hotbar.getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar.getSlotSize())
+	//	&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar.getSlotSize()
+	//	&& y < players[player]->statusBarUI.getStartY() )
+	//{
+	//	int relx = x - players[player]->hotbar.getStartX(); //X relative to the start of the hotbar.
+	//	int slot = std::max(0, std::min(relx / (players[player]->hotbar.getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
+	//	if ( outSlotNum )
+	//	{
+	//		*outSlotNum = slot;
+	//	}
+	//	return &players[player]->hotbar.slots()[slot]; //The slot will clearly be the x divided by the width of a slot
+	//}
+
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------

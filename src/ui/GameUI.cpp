@@ -189,6 +189,69 @@ void createXPBar(const int player)
 	text->setColor(SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255));
 }
 
+void createHotbar(const int player)
+{
+	auto& hotbar_t = players[player]->hotbar;
+	if ( !hotbar_t.hotbarFrame )
+	{
+		return;
+	}
+	
+	SDL_Rect slotPos{ 0, 0, 44, 44 };
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		char slotname[32];
+		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
+		auto slot = hotbar_t.hotbarFrame->addFrame(slotname);
+		slot->setSize(slotPos);
+		slot->addImage(slotPos, 0xFFFFFFFF, "images/system/HUD/hotbar/HUD_Quickbar_Slot_Box_00.png", "slot img");
+
+		char glyphname[32];
+		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", i);
+		auto glyph = hotbar_t.hotbarFrame->addImage(slotPos, 0xFFFFFFFF, "images/ui/Glyphs/G_Switch_A00.png", glyphname);
+		glyph->disabled = true;
+	}
+
+	auto font = "fonts/pixel_maz.ttf#18#2";
+
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		char slotname[32];
+		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
+		auto slot = hotbar_t.hotbarFrame->findFrame(slotname);
+		assert(slot);
+
+		auto itemSlot = slot->addFrame("slot item");
+		itemSlot->setSize(slot->getSize());
+		createPlayerInventorySlotFrameElements(itemSlot);
+
+		char numStr[4];
+		snprintf(numStr, sizeof(numStr), "%d", i + 1);
+		auto text = slot->addField("slot num text", 4);
+		text->setText(numStr);
+		text->setSize(SDL_Rect{ 0, -8, slotPos.w, slotPos.h });
+		text->setFont(font);
+		text->setVJustify(Field::justify_t::TOP);
+		text->setHJustify(Field::justify_t::LEFT);
+		text->setOntop(true);
+	}
+
+	auto highlightFrame = hotbar_t.hotbarFrame->addFrame("hotbar highlight");
+	highlightFrame->setSize(slotPos);
+	highlightFrame->addImage(slotPos, 0xFFFFFFFF, "images/system/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_00.png", "highlight img");
+	auto itemSlot = highlightFrame->addFrame("slot item");
+	itemSlot->setSize(highlightFrame->getSize());
+	createPlayerInventorySlotFrameElements(itemSlot);
+
+	auto text = highlightFrame->addField("slot num text", 4);
+	text->setText("");
+	text->setSize(SDL_Rect{ 0, -8, slotPos.w, slotPos.h });
+	text->setFont(font);
+	text->setVJustify(Field::justify_t::TOP);
+	text->setHJustify(Field::justify_t::LEFT);
+	text->setOntop(true);
+}
+
 void Player::HUD_t::processHUD()
 {
 	char name[32];
@@ -226,6 +289,36 @@ void Player::HUD_t::processHUD()
 	updateXPBar();
 	updateHPBar();
 	updateMPBar();
+}
+
+void Player::Hotbar_t::processHotbar()
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player hotbar %d", player.playernum);
+	if ( !hotbarFrame )
+	{
+		hotbarFrame = gui->addFrame(name);
+		hotbarFrame->setHollow(true);
+		hotbarFrame->setBorder(0);
+		hotbarFrame->setOwner(player.playernum);
+		createHotbar(player.playernum);
+	}
+	hotbarFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
+		players[player.playernum]->camera_y1(),
+		players[player.playernum]->camera_width(),
+		players[player.playernum]->camera_height() });
+
+	if ( nohud || !players[player.playernum]->isLocalPlayer() )
+	{
+		// hide
+		hotbarFrame->setDisabled(true);
+	}
+	else
+	{
+		hotbarFrame->setDisabled(false);
+	}
+
+	updateHotbar();
 }
 
 void createIngameHud(int player) {
@@ -1767,6 +1860,235 @@ void Player::HUD_t::updateMPBar()
 		mpProgressEndCap->disabled = false;
 		mpProgressBot->disabled = false;
 	}
+}
+
+void Player::Hotbar_t::updateHotbar()
+{
+	if ( !hotbarFrame )
+	{
+		return;
+	}
+
+	const int hotbarStartY1 = Frame::virtualScreenY - 106; // higher row (center group)
+	const int hotbarStartY2 = Frame::virtualScreenY - 96; // lower row (left/right)
+	const int hotbarCentreX = Frame::virtualScreenX / 2;
+	const int hotbarCentreXLeft = hotbarCentreX - 148;
+	const int hotbarCentreXRight = hotbarCentreX + 148;
+
+	if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+	{
+		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		real_t setpointDiff = std::max(0.1, 1.0 - selectedSlotAnimateCurrentValue);
+		selectedSlotAnimateCurrentValue += fpsScale * (setpointDiff / 10.0);
+		selectedSlotAnimateCurrentValue = std::min(1.0, selectedSlotAnimateCurrentValue);
+	}
+	else
+	{
+		selectedSlotAnimateCurrentValue = 0.0;
+	}
+
+	auto highlightSlot = hotbarFrame->findFrame("hotbar highlight");
+	auto highlightSlotImg = highlightSlot->findImage("highlight img");
+	highlightSlotImg->disabled = true;
+
+	// position the slots
+	for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )
+	{
+		char slotname[32];
+		snprintf(slotname, sizeof(slotname), "hotbar slot %d", num);
+		auto slot = hotbarFrame->findFrame(slotname);
+		assert(slot);
+
+		char glyphname[32];
+		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", num);
+		auto glyph = hotbarFrame->findImage(glyphname);
+		assert(glyph);
+		glyph->disabled = true;
+
+		if ( useHotbarFaceMenu && num == 9 )
+		{
+			slot->setDisabled(true);
+		}
+		else
+		{
+			slot->setDisabled(false);
+		}
+
+		SDL_Rect pos = slot->getSize();
+		pos.x = hotbarCentreX;
+		pos.y = hotbarStartY2;
+
+		int slotYMovement = pos.h / 4;
+
+		auto slotItem = slot->findFrame("slot item");
+		slotItem->setDisabled(true);
+
+		if ( useHotbarFaceMenu )
+		{
+			GameController* controller = inputs.getController(player.playernum);
+			if ( controller )
+			{
+				glyph->disabled = slot->isDisabled();
+			}
+
+			slot->findField("slot num text")->setDisabled(true); // disable the hotkey prompts per slot
+			switch ( num )
+			{
+				// left group
+				case 0:
+					pos.x = hotbarCentreXLeft - pos.w / 2 - pos.w + 2;
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = "images/ui/Glyphs/G_Switch_L00.png";
+					break;
+				case 1:
+					pos.x = hotbarCentreXLeft - pos.w / 2;
+					pos.y -= slotYMovement;
+					glyph->path = "images/ui/Glyphs/G_Xbox_X00.png";
+					break;
+				case 2:
+					pos.x = hotbarCentreXLeft + (pos.w / 2 - 2);
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = "images/ui/Glyphs/G_Switch_R00.png";
+					break;
+				// middle group
+				case 3:
+					pos.y = hotbarStartY1;
+					pos.x = hotbarCentreX - pos.w / 2 - pos.w + 2;
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = "images/ui/Glyphs/G_Switch_L00.png";
+					break;
+				case 4:
+					pos.y = hotbarStartY1;
+					pos.y -= slotYMovement;
+					pos.x = hotbarCentreX - pos.w / 2;
+					glyph->path = "images/ui/Glyphs/G_Xbox_Y00.png";
+					break;
+				case 5:
+					pos.y = hotbarStartY1;
+					pos.x = hotbarCentreX + (pos.w / 2 - 2);
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = "images/ui/Glyphs/G_Switch_R00.png";
+					break;
+				// right group
+				case 6:
+					pos.x = hotbarCentreXRight - pos.w / 2 - pos.w + 2;
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = "images/ui/Glyphs/G_Switch_L00.png";
+					break;
+				case 7:
+					pos.x = hotbarCentreXRight - pos.w / 2;
+					pos.y -= slotYMovement;
+					glyph->path = "images/ui/Glyphs/G_Xbox_B00.png";
+					break;
+				case 8:
+					pos.x = hotbarCentreXRight + (pos.w / 2 - 2);
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = "images/ui/Glyphs/G_Switch_R00.png";
+					break;
+				default:
+					break;
+			}
+		}
+		else
+		{
+			slot->findField("slot num text")->setDisabled(false); // enable the hotkey prompts per slot
+			const unsigned int midpoint = NUM_HOTBAR_SLOTS / 2;
+			if ( num < midpoint )
+			{
+				pos.x -= (pos.w) * (midpoint - num);
+			}
+			else
+			{
+				pos.x += (pos.w) * (num - midpoint);
+			}
+		}
+
+		slot->setSize(pos);
+
+		auto glyphImage = Image::get(glyph->path.c_str());
+		if ( glyphImage )
+		{
+			glyph->pos.w = glyphImage->getWidth();
+			glyph->pos.h = glyphImage->getHeight();
+			glyph->pos.x = pos.x + pos.w / 2 - glyph->pos.w / 2;
+			glyph->pos.y = pos.y - glyph->pos.h;
+		}
+
+		if ( current_hotbar == num )
+		{
+			auto slotNumText = slot->findField("slot num text");
+			auto highlightNumText = highlightSlot->findField("slot num text");
+
+			highlightNumText->setText(slotNumText->getText());
+			highlightNumText->setDisabled(slotNumText->isDisabled());
+
+			highlightSlot->setSize(pos); // this follows the slots around
+			highlightSlotImg->disabled = false;
+
+			auto highlightSlotItem = highlightSlot->findFrame("slot item");
+			highlightSlotItem->setDisabled(true);
+			updateSlotFrameFromItem(highlightSlotItem, uidToItem(hotbar[num].item));
+		}
+		else
+		{
+			updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+		}
+
+	}
+}
+
+Frame* Player::Hotbar_t::getHotbarSlotFrame(const int hotbarSlot)
+{
+	if ( !hotbarFrame || hotbarSlot < 0 || hotbarSlot >= NUM_HOTBAR_SLOTS )
+	{
+		return nullptr;
+	}
+
+	char slotname[32];
+	snprintf(slotname, sizeof(slotname), "hotbar slot %d", hotbarSlot);
+	return hotbarFrame->findFrame(slotname);
 }
 
 void doNewCharacterSheet(int player)

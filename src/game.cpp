@@ -3127,8 +3127,8 @@ void handleEvents(void)
 					snprintf(buf, sizeof(buf), "Pad%dStickRightY-", event.caxis.which):
 					snprintf(buf, sizeof(buf), "Pad%dStickRightY+", event.caxis.which);
 					break;
-				case SDL_CONTROLLER_AXIS_TRIGGERLEFT: snprintf(buf, sizeof(buf), "Pad%dLeftTrigger"); break;
-				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: snprintf(buf, sizeof(buf), "Pad%dRightTrigger"); break;
+				case SDL_CONTROLLER_AXIS_TRIGGERLEFT: snprintf(buf, sizeof(buf), "Pad%dLeftTrigger", event.caxis.which); break;
+				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: snprintf(buf, sizeof(buf), "Pad%dRightTrigger", event.caxis.which); break;
 				}
 				Input::lastInputOfAnyKind = buf;
 				break;
@@ -4108,7 +4108,7 @@ void ingameHud()
 				continue;
 			}
 			drawMinimap(player); // Draw the Minimap
-			drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
+			//drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 		}
 	}
 
@@ -4116,16 +4116,20 @@ void ingameHud()
 
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
-		players[player]->inventoryUI.processInventory();
 		players[player]->hud.processHUD();
+		players[player]->hotbar.processHotbar();
+		players[player]->inventoryUI.processInventory();
 		// new right side pane by sheridan
 		doNewCharacterSheet(player);
-
 		if ( !players[player]->isLocalPlayer() )
 		{
 			continue;
 		}
-
+		drawSkillsSheet(player);
+		if ( !nohud )
+		{
+			drawStatusNew(player);
+		}
 		drawSustainedSpells(player);
 		updateAppraisalItemBox(player);
 
@@ -4242,6 +4246,8 @@ void ingameHud()
 				{
 					if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
 					{
+						pos.x *= ((float)Frame::virtualScreenX / (float)xres);
+						pos.y *= ((float)Frame::virtualScreenY / (float)yres);
 						updateSlotFrameFromItem(draggingItemFrame, selectedItem);
 						draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
 					}

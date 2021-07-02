@@ -696,6 +696,7 @@ public:
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
 		const int getSelectedSlotPositionX(Item* snapToItem) const;
 		const int getSelectedSlotPositionY(Item* snapToItem) const;
+		bool warpMouseToSelectedItem(Item* snapToItem) const;
 		void processInventory();
 		void updateInventory();
 		void resetInventory()
@@ -924,6 +925,7 @@ public:
 		void updateHPBar();
 		void updateMPBar();
 		void resetBars();
+		void updateFrameTooltip(Item* item, const int x, const int y);
 	} hud;
 
 	class Magic_t
@@ -1151,6 +1153,8 @@ public:
 		int magicBoomerangHotbarSlot = -1;
 		Uint32 hotbarTooltipLastGameTick = 0;
 		SDL_Rect hotbarBox;
+		Frame* hotbarFrame = nullptr;
+		real_t selectedSlotAnimateCurrentValue = 0.0;
 
 		// temp stuff
 		bool useHotbarRadialMenu = false;
@@ -1235,6 +1239,9 @@ public:
 		void initFaceButtonHotbar();
 		void drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos);
 		FaceMenuGroup getFaceMenuGroupForSlot(int hotbarSlot);
+		void processHotbar();
+		void updateHotbar();
+		Frame* getHotbarSlotFrame(const int hotbarSlot);
 	} hotbar;
 };
 
