@@ -331,6 +331,10 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 
 	// draw fields
 	for (auto field : fields) {
+		if ( field->isOntop() )
+		{
+			continue;
+		}
 		field->draw(_size, scroll, selectedWidget);
 	}
 
@@ -347,6 +351,15 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	// draw subframes
 	for (auto frame : frames) {
 		frame->draw(_size, scroll, selectedWidget);
+	}
+
+	// draw "on top" fields
+	for ( auto field : fields ) {
+		if ( !field->isOntop() )
+		{
+			continue;
+		}
+		field->draw(_size, scroll, selectedWidget);
 	}
 
 	// draw "on top" images
@@ -1189,6 +1202,25 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 		return true;
 	}
 #endif
+}
+
+void Frame::warpMouseToFrame(const int player) {
+	SDL_Rect _size {size.x, size.y, size.w, size.h};
+
+	auto _parent = this->parent;
+	while ( _parent ) {
+		auto pframe = static_cast<Frame*>(_parent);
+		//if ( pframe->capturesMouse(&_size, &_actualSize) ) {
+		_size.x += std::max(0, pframe->size.x);
+		_size.y += std::max(0, pframe->size.y);
+		_parent = pframe->parent;
+	}
+
+	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
+	inputs.warpMouse(player, 
+		(_size.x + _size.w / 2) * ((float)xres / (float)Frame::virtualScreenX),
+		(_size.y + _size.h / 2) * ((float)yres / (float)Frame::virtualScreenY),
+		flags);
 }
 
 bool Frame::capturesMouseInRealtimeCoords(SDL_Rect* curSize, SDL_Rect* curActualSize) {

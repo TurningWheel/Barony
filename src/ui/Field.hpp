@@ -74,6 +74,7 @@ public:
 	const bool					isNumbersOnly() const { return numbersOnly; }
 	void						(*getCallback() const)(Field&) { return callback; }
 	const char*					getGuide() const { return guide.c_str(); }
+	const bool					isOntop() const { return ontop; }
 
 	void	setText(const char* _text);
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
@@ -89,6 +90,7 @@ public:
 	void	setFont(const char* _font) { font = _font; }
 	void	setGuide(const char* _guide) { guide = _guide; }
 	void    reflowTextToFit(const int characterOffset);
+	void	setOntop(const bool _ontop) { ontop = _ontop; }
 
 private:
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field
@@ -105,4 +107,5 @@ private:
 	bool selectAll = false;								//!< whether all the text is selected for editing
 	bool activated = false;								//!< whether field is active for text editing
 	void (*callback)(Field&) = nullptr;					//!< the callback to use after text is entered
+	bool ontop = false;									//!< whether the field is drawn ontop of others
 };

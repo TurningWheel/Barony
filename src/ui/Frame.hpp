@@ -226,6 +226,9 @@ public:
 	//! @return true if it is, false otherwise
 	bool capturesMouseInRealtimeCoords(SDL_Rect* curSize = nullptr, SDL_Rect* curActualSize = nullptr);
 
+	//! warps the player's mouse cursor to the center location of the frame
+	void warpMouseToFrame(const int player);
+
 	//! set the list selection to the given index
 	//! @param index the index to set the list selection to
 	void setSelection(int index);
