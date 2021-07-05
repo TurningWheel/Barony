@@ -1600,6 +1600,8 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 
 	gui_mode = whichGUIMode;
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+	inputs.getUIInteraction(playernum)->toggleclick = false;
+
 	inventory_mode = whichInventoryMode;
 
 	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
@@ -1714,8 +1716,12 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		closeShop(playernum);
 	}
 	gui_mode = GUI_MODE_NONE;
+
+
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
 	{
+		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(playernum)->toggleclick = false;
 		shootmode = true;
 	}
 }

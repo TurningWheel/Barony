@@ -146,7 +146,6 @@ void defaultConfig();
 void updateChestInventory(const int player);
 void updateAppraisalItemBox(const int player);
 void updatePlayerInventory(const int player);
-void updatePlayerInventoryNew(const int player);
 void updateShopWindow(const int player);
 void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
 damageIndicator_t* newDamageIndicator(const int player, double x, double y);
