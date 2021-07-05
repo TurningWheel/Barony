@@ -15,6 +15,7 @@
 #include "../draw.hpp"
 #include "../items.hpp"
 #include "../mod_tools.hpp"
+#include "../input.hpp"
 
 #include <assert.h>
 
@@ -24,7 +25,7 @@ void createHPMPBars(const int player)
 {
 	auto& hud_t = players[player]->hud;
 	const int barTotalHeight = 34;
-	const int hpBarStartY = players[player]->camera_y2() - 106;
+	const int hpBarStartY = (hud_t.hudFrame->getSize().y + hud_t.hudFrame->getSize().h) - 106;
 	const int mpBarStartY = hpBarStartY + barTotalHeight;
 	const int barWidth = 276;
 	const int barStartX = 14;
@@ -144,10 +145,10 @@ void createXPBar(const int player)
 	hud_t.xpFrame = hud_t.hudFrame->addFrame("xp bar");
 	hud_t.xpFrame->setHollow(true);
 
-	const int xpBarStartY = players[player]->camera_y2() - 44;
+	const int xpBarStartY = (hud_t.hudFrame->getSize().y + hud_t.hudFrame->getSize().h) - 44;
 	const int xpBarWidth = 650;
 	const int xpBarTotalHeight = 34;
-	SDL_Rect pos { players[player]->camera_midx() - xpBarWidth / 2, xpBarStartY, xpBarWidth, xpBarTotalHeight };
+	SDL_Rect pos { (hud_t.hudFrame->getSize().x + hud_t.hudFrame->getSize().w / 2) - xpBarWidth / 2, xpBarStartY, xpBarWidth, xpBarTotalHeight };
 	hud_t.xpFrame->setSize(pos);
 
 	auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/system/HUD/xpbar/HUD_Bars_Base_00.png", "xp img base");
@@ -265,8 +266,8 @@ void Player::HUD_t::processHUD()
 	}
 	hudFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
 		players[player.playernum]->camera_y1(),
-		players[player.playernum]->camera_width(),
-		players[player.playernum]->camera_height() });
+		Frame::virtualScreenX,
+		Frame::virtualScreenY });
 
 	if ( nohud || !players[player.playernum]->isLocalPlayer() )
 	{
@@ -1945,12 +1946,12 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = "images/ui/Glyphs/G_Switch_L00.png";
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
 					break;
 				case 1:
 					pos.x = hotbarCentreXLeft - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = "images/ui/Glyphs/G_Xbox_X00.png";
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarLeft");
 					break;
 				case 2:
 					pos.x = hotbarCentreXLeft + (pos.w / 2 - 2);
@@ -1962,7 +1963,7 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = "images/ui/Glyphs/G_Switch_R00.png";
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierRight");
 					break;
 				// middle group
 				case 3:
@@ -1976,13 +1977,13 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = "images/ui/Glyphs/G_Switch_L00.png";
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
 					break;
 				case 4:
 					pos.y = hotbarStartY1;
 					pos.y -= slotYMovement;
 					pos.x = hotbarCentreX - pos.w / 2;
-					glyph->path = "images/ui/Glyphs/G_Xbox_Y00.png";
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarUp");
 					break;
 				case 5:
 					pos.y = hotbarStartY1;
@@ -1995,7 +1996,7 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = "images/ui/Glyphs/G_Switch_R00.png";
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierRight");
 					break;
 				// right group
 				case 6:
@@ -2008,12 +2009,12 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = "images/ui/Glyphs/G_Switch_L00.png";
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
 					break;
 				case 7:
 					pos.x = hotbarCentreXRight - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = "images/ui/Glyphs/G_Xbox_B00.png";
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarRight");
 					break;
 				case 8:
 					pos.x = hotbarCentreXRight + (pos.w / 2 - 2);
@@ -2025,7 +2026,7 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = "images/ui/Glyphs/G_Switch_R00.png";
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierRight");
 					break;
 				default:
 					break;
@@ -2056,20 +2057,41 @@ void Player::Hotbar_t::updateHotbar()
 			glyph->pos.y = pos.y - glyph->pos.h;
 		}
 
+		bool showHighlightedSlot = true;
+		if ( !player.hotbar.hotbarHasFocus && player.inventoryUI.frame && !player.inventoryUI.frame->isDisabled() )
+		{
+			// if inventory visible, don't show selection if navigating within inventory
+			showHighlightedSlot = false;
+		}
+		else if ( player.hotbar.useHotbarFaceMenu 
+			&& player.hotbar.faceMenuButtonHeld == Player::Hotbar_t::FaceMenuGroup::GROUP_NONE
+			&& player.inventoryUI.frame && player.inventoryUI.frame->isDisabled() )
+		{
+			// if inventory invisible, don't show selection if face button not held
+			showHighlightedSlot = false;
+		}
+
 		if ( current_hotbar == num )
 		{
-			auto slotNumText = slot->findField("slot num text");
-			auto highlightNumText = highlightSlot->findField("slot num text");
-
-			highlightNumText->setText(slotNumText->getText());
-			highlightNumText->setDisabled(slotNumText->isDisabled());
-
-			highlightSlot->setSize(pos); // this follows the slots around
-			highlightSlotImg->disabled = false;
-
 			auto highlightSlotItem = highlightSlot->findFrame("slot item");
 			highlightSlotItem->setDisabled(true);
-			updateSlotFrameFromItem(highlightSlotItem, uidToItem(hotbar[num].item));
+
+			if ( showHighlightedSlot )
+			{
+				auto slotNumText = slot->findField("slot num text");
+				auto highlightNumText = highlightSlot->findField("slot num text");
+
+				highlightNumText->setText(slotNumText->getText());
+				highlightNumText->setDisabled(slotNumText->isDisabled());
+
+				highlightSlot->setSize(pos); // this follows the slots around
+				highlightSlotImg->disabled = false;
+				updateSlotFrameFromItem(highlightSlotItem, uidToItem(hotbar[num].item));
+			}
+			else
+			{
+				updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+			}
 		}
 		else
 		{

@@ -2850,6 +2850,7 @@ void handleEvents(void)
 	}
 
 	for (auto& input : Input::inputs) {
+		input.updateReleasedBindings();
 		input.update();
 	}
 
@@ -3026,11 +3027,15 @@ void handleEvents(void)
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
+					Input::mouseButtons[SDL_BUTTON_WHEELUP] = 1;
+					Input::lastInputOfAnyKind = "MouseWheelUp";
 					lastkeypressed = 286;
 				}
 				else if ( event.wheel.y < 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 1;
+					Input::mouseButtons[SDL_BUTTON_WHEELDOWN] = 1;
+					Input::lastInputOfAnyKind = "MouseWheelDown";
 					lastkeypressed = 287;
 				}
 				break;

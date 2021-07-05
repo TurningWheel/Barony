@@ -820,12 +820,19 @@ bool GameController::handleInventoryMovement(const int player)
 		hotbar_t.hotbarHasFocus = false;
 	}
 
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_LEFT) )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") )
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			int newSlot = hotbar_t.current_hotbar - 1;
+
+			hotbar_t.selectHotbarSlot(players[player]->hotbar.current_hotbar - 1);
+			auto slotFrame = hotbar_t.getHotbarSlotFrame(hotbar_t.current_hotbar);
+			if ( slotFrame && slotFrame->isDisabled() )
+			{
+				// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
+				hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar - 1);
+			}
 			/*if ( hotbar_t.useHotbarFaceMenu )
 			{
 				if ( hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6 
@@ -834,8 +841,6 @@ bool GameController::handleInventoryMovement(const int player)
 					newSlot = hotbar_t.current_hotbar - 2;
 				}
 			}*/
-
-			hotbar_t.selectHotbarSlot(newSlot);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
@@ -845,17 +850,24 @@ bool GameController::handleInventoryMovement(const int player)
 				players[player]->inventoryUI.getSelectedSlotX() - 1, 
 				players[player]->inventoryUI.getSelectedSlotY());
 		}
-		inputs.controllerClearInput(player, INJOY_DPAD_LEFT);
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
 
 		dpad_moved = true;
 	}
 
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_RIGHT) )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveRight") )
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			int newSlot = hotbar_t.current_hotbar + 1;
+			
+			hotbar_t.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
+			auto slotFrame = hotbar_t.getHotbarSlotFrame(hotbar_t.current_hotbar);
+			if ( slotFrame && slotFrame->isDisabled() )
+			{
+				// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
+				hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar + 1);
+			}
 			/*if ( hotbar_t.useHotbarFaceMenu )
 			{
 				if ( hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5 )
@@ -863,8 +875,6 @@ bool GameController::handleInventoryMovement(const int player)
 					newSlot = hotbar_t.current_hotbar + 2;
 				}
 			}*/
-
-			hotbar_t.selectHotbarSlot(newSlot);
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
@@ -874,28 +884,28 @@ bool GameController::handleInventoryMovement(const int player)
 				players[player]->inventoryUI.getSelectedSlotX() + 1, 
 				players[player]->inventoryUI.getSelectedSlotY());
 		}
-		inputs.controllerClearInput(player, INJOY_DPAD_RIGHT);
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
 
 		dpad_moved = true;
 	}
 
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveUp") )
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
+			//Warp back to top of inventory.
+			hotbar_t.hotbarHasFocus = false;
+			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1);
 			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6) )
 			{
 				int newSlot = hotbar_t.current_hotbar - 1;
 				hotbar_t.selectHotbarSlot(newSlot);
 				warpMouseToSelectedHotbarSlot(player);
 			}
-			else*/
+			else
 			{
-				//Warp back to top of inventory.
-				hotbar_t.hotbarHasFocus = false;
-				float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1);
-			}
+			}*/
 		}
 		else
 		{
@@ -903,28 +913,28 @@ bool GameController::handleInventoryMovement(const int player)
 				players[player]->inventoryUI.getSelectedSlotX(),
 				players[player]->inventoryUI.getSelectedSlotY() - 1); //Will handle warping to hotbar.
 		}
-		inputs.controllerClearInput(player, INJOY_DPAD_UP);
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
 
 		dpad_moved = true;
 	}
 
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveDown") )
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
+			//Warp back to bottom of inventory.
+			hotbar_t.hotbarHasFocus = false;
+			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0);
 			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5) )
 			{
 				int newSlot = hotbar_t.current_hotbar + 1;
 				hotbar_t.selectHotbarSlot(newSlot);
 				warpMouseToSelectedHotbarSlot(player);
 			}
-			else*/
+			else
 			{
-				//Warp back to bottom of inventory.
-				hotbar_t.hotbarHasFocus = false;
-				float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0);
-			}
+			}*/
 		}
 		else
 		{
@@ -932,7 +942,7 @@ bool GameController::handleInventoryMovement(const int player)
 				players[player]->inventoryUI.getSelectedSlotX(),
 				players[player]->inventoryUI.getSelectedSlotY() + 1);
 		}
-		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
 
 		dpad_moved = true;
 	}
@@ -3020,63 +3030,29 @@ const int Player::Inventory_t::getPlayerItemInventoryY() const
 	return y;
 }
 
-const int Player::Inventory_t::getStartX() const 
-{
-	if ( bNewInventoryLayout )
-	{
-		return (player.characterSheet.characterSheetBox.x) + 8;
-	}
-	else
-	{
-		return (player.camera_midx() - (sizex) * (getSlotSize()) / 2 - inventory_mode_item_img->w / 2);
-	}
-}
-const int Player::Inventory_t::getStartY() const
-{
-	if ( bNewInventoryLayout )
-	{
-		return player.characterSheet.characterSheetBox.y + player.characterSheet.characterSheetBox.h + 2;
-	}
-	else
-	{
-		return player.camera_y1() + starty;
-	}
-}
-
-const int Player::Inventory_t::getSelectedSlotPositionX(Item* snapToItem) const
-{
-	int x = getSelectedSlotX();
-	int y = getSelectedSlotY();
-	if ( snapToItem )
-	{
-		x = snapToItem->x;
-		y = snapToItem->y;
-	}
-	if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
-	{
-		auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
-		if ( snapToItem )
-		{
-			slot = player.paperDoll.getSlotForItem(*snapToItem);
-		}
-		else
-		{
-			slot = player.paperDoll.paperDollSlotFromCoordinates(x, y);
-		}
-		if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
-		{
-			return player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.x
-				+ player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.w / 2;
-		}
-		return player.paperDoll.dollSlots[slot].pos.x + player.paperDoll.dollSlots[slot].pos.w / 2;
-	}
-	else
-	{
-		return getStartX()
-			+ (x * getSlotSize())
-			+ (getSlotSize() / 2);
-	}
-}
+// TODO UI: REMOVE
+//const int Player::Inventory_t::getStartX() const 
+//{
+//	if ( bNewInventoryLayout )
+//	{
+//		return (player.characterSheet.characterSheetBox.x) + 8;
+//	}
+//	else
+//	{
+//		return (player.camera_midx() - (sizex) * (getSlotSize()) / 2 - inventory_mode_item_img->w / 2);
+//	}
+//}
+//const int Player::Inventory_t::getStartY() const
+//{
+//	if ( bNewInventoryLayout )
+//	{
+//		return player.characterSheet.characterSheetBox.y + player.characterSheet.characterSheetBox.h + 2;
+//	}
+//	else
+//	{
+//		return player.camera_y1() + starty;
+//	}
+//}
 
 bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem) const
 {
@@ -3128,41 +3104,77 @@ bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem) const
 	return false;
 }
 
-const int Player::Inventory_t::getSelectedSlotPositionY(Item* snapToItem) const
-{
-	int x = getSelectedSlotX();
-	int y = getSelectedSlotY();
-	if ( snapToItem )
-	{
-		x = snapToItem->x;
-		y = snapToItem->y;
-	}
+// TODO UI: CLEAN UP
+//const int Player::Inventory_t::getSelectedSlotPositionX(Item* snapToItem) const
+//{
+//	int x = getSelectedSlotX();
+//	int y = getSelectedSlotY();
+//	if ( snapToItem )
+//	{
+//		x = snapToItem->x;
+//		y = snapToItem->y;
+//	}
+//	if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
+//	{
+//		auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+//		if ( snapToItem )
+//		{
+//			slot = player.paperDoll.getSlotForItem(*snapToItem);
+//		}
+//		else
+//		{
+//			slot = player.paperDoll.paperDollSlotFromCoordinates(x, y);
+//		}
+//		if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
+//		{
+//			return player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.x
+//				+ player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.w / 2;
+//		}
+//		return player.paperDoll.dollSlots[slot].pos.x + player.paperDoll.dollSlots[slot].pos.w / 2;
+//	}
+//	else
+//	{
+//		return getStartX()
+//			+ (x * getSlotSize())
+//			+ (getSlotSize() / 2);
+//	}
+//}
 
-	if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
-	{
-		auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
-		if ( snapToItem )
-		{
-			slot = player.paperDoll.getSlotForItem(*snapToItem);
-		}
-		else
-		{
-			slot = player.paperDoll.paperDollSlotFromCoordinates(x, y);
-		}
-		if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
-		{
-			return player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.y
-				+ player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.h / 2;
-		}
-		return player.paperDoll.dollSlots[slot].pos.y + player.paperDoll.dollSlots[slot].pos.h / 2;
-	}
-	else
-	{
-		return getStartY()
-			+ (y * getSlotSize())
-			+ (getSlotSize() / 2);
-	}
-}
+//const int Player::Inventory_t::getSelectedSlotPositionY(Item* snapToItem) const
+//{
+//	int x = getSelectedSlotX();
+//	int y = getSelectedSlotY();
+//	if ( snapToItem )
+//	{
+//		x = snapToItem->x;
+//		y = snapToItem->y;
+//	}
+//
+//	if ( player.paperDoll.enabled && (selectedSlotInPaperDoll() || snapToItem) )
+//	{
+//		auto slot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+//		if ( snapToItem )
+//		{
+//			slot = player.paperDoll.getSlotForItem(*snapToItem);
+//		}
+//		else
+//		{
+//			slot = player.paperDoll.paperDollSlotFromCoordinates(x, y);
+//		}
+//		if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
+//		{
+//			return player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.y
+//				+ player.paperDoll.dollSlots[Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES].pos.h / 2;
+//		}
+//		return player.paperDoll.dollSlots[slot].pos.y + player.paperDoll.dollSlots[slot].pos.h / 2;
+//	}
+//	else
+//	{
+//		return getStartY()
+//			+ (y * getSlotSize())
+//			+ (getSlotSize() / 2);
+//	}
+//}
 
 const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const
 {
@@ -3221,26 +3233,23 @@ void Player::PaperDoll_t::drawSlots()
 		return;
 	}
 
-	char framename[32];
-	snprintf(framename, sizeof(framename), "player inventory %d", player.playernum);
-	Frame* guiFrame = gui->findFrame(framename);
-	if ( guiFrame )
+	if ( player.inventoryUI.frame )
 	{
-		if ( !guiFrame->findFrame("paperdoll slots") )
+		if ( !player.inventoryUI.frame->findFrame("paperdoll slots") )
 		{
 			return;
 		}
 
-		auto selectedSlotFrame = guiFrame->findFrame("inventory selected item");
+		auto selectedSlotFrame = player.inventoryUI.frame->findFrame("inventory selected item");
 		if ( !selectedSlotFrame )
 		{
 			return;
 		}
-		auto oldSelectedSlotFrame = guiFrame->findFrame("inventory old selected item");
-		if ( !oldSelectedSlotFrame )
-		{
-			return;
-		}
+		//auto oldSelectedSlotFrame = guiFrame->findFrame("inventory old selected item");
+		//if ( !oldSelectedSlotFrame )
+		//{
+		//	return;
+		//}
 
 		for (auto& slot : dollSlots)
 		{
@@ -3255,7 +3264,7 @@ void Player::PaperDoll_t::drawSlots()
 
 				char slotname[32] = "";
 				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-				auto slotFrame = guiFrame->findFrame("paperdoll slots")->findFrame(slotname);
+				auto slotFrame = player.inventoryUI.frame->findFrame("paperdoll slots")->findFrame(slotname);
 				if ( slotFrame )
 				{
 					if ( slotFrame->capturesMouse() )
@@ -3273,11 +3282,11 @@ void Player::PaperDoll_t::drawSlots()
 							selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 							selectedSlotFrame->setDisabled(false);
 						}
-						else
+						/*else
 						{
 							oldSelectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 							oldSelectedSlotFrame->setDisabled(false);
-						}
+						}*/
 					}
 
 					//if ( !slotFrame->capturesMouse()

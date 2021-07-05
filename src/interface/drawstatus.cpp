@@ -364,19 +364,20 @@ void warpMouseToSelectedHotbarSlot(const int player)
 		return;
 	}
 
-	SDL_Rect pos;
-	const int hotbarSlotSize = players[player]->hotbar.getSlotSize();
-	pos.x = players[player]->hotbar.getStartX() + (players[player]->hotbar.current_hotbar * hotbarSlotSize) + (hotbarSlotSize / 2);
-	pos.y = players[player]->statusBarUI.getStartY() - (hotbarSlotSize / 2);
-
-	if ( players[player]->hotbar.useHotbarFaceMenu )
-	{
-		pos.x = players[player]->hotbar.faceButtonPositions[players[player]->hotbar.current_hotbar].x + (hotbarSlotSize / 2);
-		pos.y = players[player]->hotbar.faceButtonPositions[players[player]->hotbar.current_hotbar].y + (hotbarSlotSize / 2);
-	}
-
-	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-	inputs.warpMouse(player, pos.x, pos.y, flags);
+	// TODO UI: CLEAN UP
+	//SDL_Rect pos;
+	//const int hotbarSlotSize = players[player]->hotbar.getSlotSize();
+	//pos.x = players[player]->hotbar.getStartX() + (players[player]->hotbar.current_hotbar * hotbarSlotSize) + (hotbarSlotSize / 2);
+	//pos.y = players[player]->statusBarUI.getStartY() - (hotbarSlotSize / 2);
+	//
+	//if ( players[player]->hotbar.useHotbarFaceMenu )
+	//{
+	//	pos.x = players[player]->hotbar.faceButtonPositions[players[player]->hotbar.current_hotbar].x + (hotbarSlotSize / 2);
+	//	pos.y = players[player]->hotbar.faceButtonPositions[players[player]->hotbar.current_hotbar].y + (hotbarSlotSize / 2);
+	//}
+	//
+	//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
+	//inputs.warpMouse(player, pos.x, pos.y, flags);
 }
 
 void drawHPMPBars(int player)
@@ -656,7 +657,7 @@ void drawStatus(int player)
 		pos.y = y2 - 16;
 	}
 	//To garner the position of the hotbar.
-	initial_position.x = hotbar_t.getStartX();
+	initial_position.x = 0; /*hotbar_t.getStartX();*/
 	initial_position.y = pos.y;
 	initial_position.w = 0;
 	initial_position.h = 0;
@@ -957,7 +958,7 @@ void drawStatus(int player)
 	int num = 0;
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
 	//pos.x = initial_position.x;
-	pos.x = hotbar_t.getStartX();
+	pos.x = 0; /*hotbar_t.getStartX();*/
 	pos.y = initial_position.y - hotbar_t.getSlotSize();
 
 	hotbar_t.hotbarBox.x = pos.x;
@@ -1781,8 +1782,8 @@ void drawStatus(int player)
 	{
 		Item* item = NULL;
 		const auto& inventoryUI = players[player]->inventoryUI;
-		if ( !(!shootmode && hotbar_numkey_quick_add &&
-				(
+		if ( !(!shootmode && hotbar_numkey_quick_add 
+			/*&&	(
 					(omousex >= inventoryUI.getStartX()
 						&& omousex <= inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize()
 						&& omousey >= inventoryUI.getStartY()
@@ -1794,7 +1795,7 @@ void drawStatus(int player)
 						&& omousey >= initial_position.y - hotbar_t.getSlotSize()
 						&& omousey <= initial_position.y
 					)
-				)
+				)*/
 			) )
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
@@ -2342,7 +2343,7 @@ void drawStatus(int player)
 
 void drawStatusNew(const int player)
 {
-	SDL_Rect pos, initial_position;
+	SDL_Rect pos;
 	Sint32 x, y, z, c, i;
 	node_t* node;
 	string_t* string;
@@ -2377,7 +2378,8 @@ void drawStatusNew(const int player)
 		pos.y = y2 - 16;
 	}
 	//To garner the position of the hotbar.
-	initial_position.x = hotbar_t.getStartX();
+	SDL_Rect initial_position;
+	initial_position.x = 0;// hotbar_t.getStartX();
 	initial_position.y = pos.y;
 	initial_position.w = 0;
 	initial_position.h = 0;
@@ -2678,7 +2680,7 @@ void drawStatusNew(const int player)
 	int num = 0;
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
 	//pos.x = initial_position.x;
-	pos.x = hotbar_t.getStartX();
+	pos.x = 0; // hotbar_t.getStartX();
 	pos.y = initial_position.y - hotbar_t.getSlotSize();
 
 	hotbar_t.hotbarBox.x = pos.x;
@@ -3404,75 +3406,77 @@ void drawStatusNew(const int player)
 							}
 						}
 					}
-					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player) )
+					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add )
 					{
 						Uint32 swapItem = 0;
-						if ( keystatus[SDL_SCANCODE_1] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
 						{
-							keystatus[SDL_SCANCODE_1] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot1");
 							swapItem = hotbar[0].item;
 							hotbar[0].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_2] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot2") )
 						{
-							keystatus[SDL_SCANCODE_2] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot2");
 							swapItem = hotbar[1].item;
 							hotbar[1].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_3] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot3") )
 						{
-							keystatus[SDL_SCANCODE_3] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot3");
 							swapItem = hotbar[2].item;
 							hotbar[2].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_4] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot4") )
 						{
-							keystatus[SDL_SCANCODE_4] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot4");
 							swapItem = hotbar[3].item;
 							hotbar[3].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_5] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot5") )
 						{
-							keystatus[SDL_SCANCODE_5] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot5");
 							swapItem = hotbar[4].item;
 							hotbar[4].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_6] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot6") )
 						{
-							keystatus[SDL_SCANCODE_6] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot6");
 							swapItem = hotbar[5].item;
 							hotbar[5].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_7] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
 						{
-							keystatus[SDL_SCANCODE_7] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot7");
 							swapItem = hotbar[6].item;
 							hotbar[6].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_8] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot8") )
 						{
-							keystatus[SDL_SCANCODE_8] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot8");
 							swapItem = hotbar[7].item;
 							hotbar[7].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_9] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot9") )
 						{
-							keystatus[SDL_SCANCODE_9] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot9");
 							swapItem = hotbar[8].item;
 							hotbar[8].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_0] )
+						if ( Input::inputs[player].binaryToggle("HotbarSlot10")
+							&& hotbar_t.getHotbarSlotFrame(9)
+							&& !hotbar_t.getHotbarSlotFrame(9)->isDisabled() )
 						{
-							keystatus[SDL_SCANCODE_0] = 0;
+							Input::inputs[player].consumeBinaryToggle("HotbarSlot10");
 							swapItem = hotbar[9].item;
 							hotbar[9].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -3527,87 +3531,74 @@ void drawStatusNew(const int player)
 	{
 		Item* item = NULL;
 		const auto& inventoryUI = players[player]->inventoryUI;
-		if ( !(!shootmode && hotbar_numkey_quick_add &&
-			(
-			(omousex >= inventoryUI.getStartX()
-				&& omousex <= inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize()
-				&& omousey >= inventoryUI.getStartY()
-				&& omousey <= inventoryUI.getStartY() + inventoryUI.getSizeY() * inventoryUI.getSlotSize()
-				)
-				||
-				(omousex >= initial_position.x
-					&& omousex <= initial_position.x + hotbar_t.getSlotSize() * NUM_HOTBAR_SLOTS
-					&& omousey >= initial_position.y - hotbar_t.getSlotSize()
-					&& omousey <= initial_position.y
-					)
-				)
-			) )
+		if ( !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player))) )
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
-			if ( inputs.bPlayerUsingKeyboardControl(player) )
+			if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
 			{
-				if ( keystatus[SDL_SCANCODE_1] )
-				{
-					keystatus[SDL_SCANCODE_1] = 0;
-					item = uidToItem(hotbar[0].item);
-					hotbar_t.current_hotbar = 0;
-				}
-				if ( keystatus[SDL_SCANCODE_2] )
-				{
-					keystatus[SDL_SCANCODE_2] = 0;
-					item = uidToItem(hotbar[1].item);
-					hotbar_t.current_hotbar = 1;
-				}
-				if ( keystatus[SDL_SCANCODE_3] )
-				{
-					keystatus[SDL_SCANCODE_3] = 0;
-					item = uidToItem(hotbar[2].item);
-					hotbar_t.current_hotbar = 2;
-				}
-				if ( keystatus[SDL_SCANCODE_4] )
-				{
-					keystatus[SDL_SCANCODE_4] = 0;
-					item = uidToItem(hotbar[3].item);
-					hotbar_t.current_hotbar = 3;
-				}
-				if ( keystatus[SDL_SCANCODE_5] )
-				{
-					keystatus[SDL_SCANCODE_5] = 0;
-					item = uidToItem(hotbar[4].item);
-					hotbar_t.current_hotbar = 4;
-				}
-				if ( keystatus[SDL_SCANCODE_6] )
-				{
-					keystatus[SDL_SCANCODE_6] = 0;
-					item = uidToItem(hotbar[5].item);
-					hotbar_t.current_hotbar = 5;
-				}
-				if ( keystatus[SDL_SCANCODE_7] )
-				{
-					keystatus[SDL_SCANCODE_7] = 0;
-					item = uidToItem(hotbar[6].item);
-					hotbar_t.current_hotbar = 6;
-				}
-				if ( keystatus[SDL_SCANCODE_8] )
-				{
-					keystatus[SDL_SCANCODE_8] = 0;
-					item = uidToItem(hotbar[7].item);
-					hotbar_t.current_hotbar = 7;
-				}
-				if ( keystatus[SDL_SCANCODE_9] )
-				{
-					keystatus[SDL_SCANCODE_9] = 0;
-					item = uidToItem(hotbar[8].item);
-					hotbar_t.current_hotbar = 8;
-				}
-				if ( keystatus[SDL_SCANCODE_0] )
-				{
-					keystatus[SDL_SCANCODE_0] = 0;
-					item = uidToItem(hotbar[9].item);
-					hotbar_t.current_hotbar = 9;
-				}
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot1");
+				item = uidToItem(hotbar[0].item);
+				hotbar_t.current_hotbar = 0;
 			}
+			if ( Input::inputs[player].binaryToggle("HotbarSlot2") )
+			{
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot2");
+				item = uidToItem(hotbar[1].item);
+				hotbar_t.current_hotbar = 1;
+			}
+			if ( Input::inputs[player].binaryToggle("HotbarSlot3") )
+			{
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot3");
+				item = uidToItem(hotbar[2].item);
+				hotbar_t.current_hotbar = 2;
+			}
+			if ( Input::inputs[player].binaryToggle("HotbarSlot4") )
+			{
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot4");
+				item = uidToItem(hotbar[3].item);
+				hotbar_t.current_hotbar = 3;
+			}
+			if ( Input::inputs[player].binaryToggle("HotbarSlot5") )
+			{
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot5");
+				item = uidToItem(hotbar[4].item);
+				hotbar_t.current_hotbar = 4;
+			}
+			if ( Input::inputs[player].binaryToggle("HotbarSlot6") )
+			{
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot6");
+				item = uidToItem(hotbar[5].item);
+				hotbar_t.current_hotbar = 5;
+
+			}
+			if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
+			{
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot7");
+				item = uidToItem(hotbar[6].item);
+				hotbar_t.current_hotbar = 6;
+			}
+			if ( Input::inputs[player].binaryToggle("HotbarSlot8") )
+			{
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot8");
+				item = uidToItem(hotbar[7].item);
+				hotbar_t.current_hotbar = 7;
+			}
+			if ( Input::inputs[player].binaryToggle("HotbarSlot9") )
+			{
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot9");
+				item = uidToItem(hotbar[8].item);
+				hotbar_t.current_hotbar = 8;
+			}
+			if ( Input::inputs[player].binaryToggle("HotbarSlot10")
+				&& hotbar_t.getHotbarSlotFrame(9)
+				&& !hotbar_t.getHotbarSlotFrame(9)->isDisabled() )
+			{
+				Input::inputs[player].consumeBinaryToggle("HotbarSlot10");
+				item = uidToItem(hotbar[9].item);
+				hotbar_t.current_hotbar = 9;
+			}
+
 			if ( players[player]->hotbar.useHotbarFaceMenu
 				&& !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP)
@@ -3619,115 +3610,75 @@ void drawStatusNew(const int player)
 
 				for ( int i = 0; i < 3; ++i )
 				{
-					int button = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B + i;
-					if ( inputs.bControllerRawInputPressed(player, 301 + button) )
+					std::string inputName = "";
+					switch ( i )
 					{
-						if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN) )
-						{
-							inputs.controllerClearRawInput(player, 301 + button);
-							inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN);
-							inputs.controllerClearRawInputRelease(player, 301 + button);
+						case 0:
+							inputName = "HotbarFacebarLeft";
 							break;
-						}
+						case 1:
+							inputName = "HotbarFacebarUp";
+							break;
+						case 2:
+							inputName = "HotbarFacebarRight";
+							break;
+						default:
+							break;
+					}
 
-						switch ( button )
+					if ( Input::inputs[player].binaryToggle(inputName.c_str()) )
+					{
+						if ( Input::inputs[player].binaryToggle("HotbarFacebarCancel") )
 						{
-							case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
-								pressed = Player::Hotbar_t::GROUP_RIGHT;
-								break;
-							case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
-								pressed = Player::Hotbar_t::GROUP_MIDDLE;
-								break;
-							case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
-								pressed = Player::Hotbar_t::GROUP_LEFT;
-								break;
-							default:
-								break;
+							Input::inputs[player].consumeBinaryToggle(inputName.c_str());
+							Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
+							Input::inputs[player].consumeBinaryToggle("HotbarFacebarCancel");
+
+							//inputs.controllerClearRawInput(player, 301 + button);
+							//inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+							//inputs.controllerClearRawInputRelease(player, 301 + button);
+							break;
 						}
 
 						std::array<int, 3> slotOrder = { 0, 1, 2 };
 						int centerSlot = 1;
-						if ( hotbar_t.faceMenuAlternateLayout )
+						if ( inputName == "HotbarFacebarLeft" )
 						{
-							slotOrder = { 0, 2, 1 };
+							pressed = Player::Hotbar_t::GROUP_LEFT;
 						}
-						if ( button == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B )
+						else if ( inputName == "HotbarFacebarUp" )
 						{
-							centerSlot = 7;
-							if ( hotbar_t.faceMenuAlternateLayout )
-							{
-								slotOrder = { 7, 6, 8 };
-							}
-							else
-							{
-								slotOrder = { 6, 7, 8 };
-							}
-						}
-						else if ( button == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y )
-						{
+							pressed = Player::Hotbar_t::GROUP_MIDDLE;
 							centerSlot = 4;
 							slotOrder = { 3, 4, 5 };
 						}
-
-						if ( hotbar_t.faceMenuAlternateLayout )
+						else if ( inputName == "HotbarFacebarRight" )
 						{
-							if ( true )
-							{
-								// temp test
-								if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
-								{
-									hotbar_t.selectHotbarSlot(slotOrder[0]);
-								}
-								else if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
-								{
-									hotbar_t.selectHotbarSlot(slotOrder[2]);
-								}
-								else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
-								{
-									hotbar_t.selectHotbarSlot(slotOrder[1]);
-								}
-							}
-							else
-							{
-								if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
-								{
-									hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
-									inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-								}
-								else if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
-								{
-									hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
-									inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-								}
-								else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
-								{
-									hotbar_t.selectHotbarSlot(slotOrder[1]);
-								}
-							}
+							pressed = Player::Hotbar_t::GROUP_RIGHT;
+							centerSlot = 7;
+							slotOrder = { 6, 7, 8 };
 						}
-						else
+						
+						if ( Input::inputs[player].binaryToggle("HotbarFacebarModifierLeft") )
 						{
-							if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
-							{
-								hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
-								inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-							}
-							else if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
-							{
-								hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
-								inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-							}
-							else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
-							{
-								hotbar_t.selectHotbarSlot(slotOrder[1]);
-							}
+							hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
+							Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierLeft");
+						}
+						else if ( Input::inputs[player].binaryToggle("HotbarFacebarModifierRight") )
+						{
+							hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
+							Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierRight");
+						}
+						else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
+						{
+							hotbar_t.selectHotbarSlot(centerSlot);
 						}
 						break;
 					}
-					else if ( inputs.bControllerRawInputReleased(player, 301 + button) )
+					else if ( Input::inputs[player].binaryReleaseToggle(inputName.c_str()) )
 					{
 						item = uidToItem(players[player]->hotbar.slots()[hotbar_t.current_hotbar].item);
-						inputs.controllerClearRawInputRelease(player, 301 + button);
+						Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
 						break;
 					}
 				}
@@ -3749,20 +3700,12 @@ void drawStatusNew(const int player)
 		//Moving the cursor changes the currently selected hotbar slot.
 		if ( (mousexrel || mouseyrel) && !shootmode )
 		{
-			/*pos.x = initial_position.x;
-			pos.y = initial_position.y - hotbar_t.getSlotSize();*/
-			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_t.getSlotSize() )
+			if ( hotbar_t.hotbarFrame )
 			{
-				/*if ( players[player]->hotbar.useHotbarFaceMenu )
-				{
-					pos.x = players[player]->hotbar.faceButtonPositions[c].x;
-					pos.y = players[player]->hotbar.faceButtonPositions[c].y;
-				}*/
-
-				if ( hotbar_t.hotbarFrame )
+				for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
 				{
 					auto hotbarSlotFrame = hotbar_t.getHotbarSlotFrame(c);
-					if ( !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouseInRealtimeCoords() )
+					if ( hotbarSlotFrame && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouseInRealtimeCoords() )
 					{
 						players[player]->hotbar.selectHotbarSlot(c);
 					}
@@ -3773,74 +3716,79 @@ void drawStatusNew(const int player)
 		bool bumper_moved = false;
 
 		//Gamepad change hotbar selection.
-		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_NEXT)
-			|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+		if ( Input::inputs[player].binaryToggle("HotbarCycleNext")
+			|| Input::inputs[player].binaryToggle("HotbarCycleNextAlt") )
 		{
-			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
-				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
-				&& !GenericGUI[player].isGUIOpen() )
+			std::string inputName = "HotbarCycleNext";
+			if ( Input::inputs[player].binaryToggle("HotbarCycleNextAlt") )
 			{
-				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
-				{
-					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-				}
-				else
-				{
-					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_NEXT);
-					bumper_moved = true;
-				}
-				hotbar_t.hotbarTooltipLastGameTick = ticks;
-				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
+				inputName = "HotbarCycleNextAlt";
 			}
-			else
-			{
-				hotbar_t.hotbarTooltipLastGameTick = 0;
-				/*if ( intro || shootmode )
-				{
-				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
-				{
-				*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-				}
-				}*/
-			}
-		}
-		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_PREV) || *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
-		{
-			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
-				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
-				&& !GenericGUI[player].isGUIOpen() )
-			{
-				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
-				{
-					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-				}
-				else
-				{
-					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_PREV);
-					bumper_moved = true;
-				}
-				hotbar_t.hotbarTooltipLastGameTick = ticks;
-				hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar - 1);
-			}
-			else
-			{
-				hotbar_t.hotbarTooltipLastGameTick = 0;
-				/*if ( intro || shootmode )
-				{
-				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
-				{
-				*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-				}
-				}*/
-			}
-		}
+			Input::inputs[player].consumeBinaryToggle(inputName.c_str());
 
-		if ( bumper_moved && !inputs.getUIInteraction(player)->itemMenuOpen
-			&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
-			&& !players[player]->bookGUI.bBookOpen
-			&& !GenericGUI[player].isGUIOpen() )
+			bool gamepadControl = Input::inputs[player].input(inputName.c_str()).isBindingUsingGamepad();
+			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
+			{
+				// no action, gamepads can't scroll when useHotbarFaceMenu
+			}
+			else if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
+				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
+				&& !GenericGUI[player].isGUIOpen() )
+			{
+				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
+				auto slotFrame = players[player]->hotbar.getHotbarSlotFrame(players[player]->hotbar.current_hotbar);
+				if ( slotFrame && slotFrame->isDisabled() )
+				{
+					// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
+					players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
+				}
+				if ( gamepadControl )
+				{
+					warpMouseToSelectedHotbarSlot(player); // controller only functionality
+				}
+				hotbar_t.hotbarTooltipLastGameTick = ticks;
+			}
+			else
+			{
+				hotbar_t.hotbarTooltipLastGameTick = 0;
+			}
+		}
+		if ( Input::inputs[player].binaryToggle("HotbarCyclePrev")
+			|| Input::inputs[player].binaryToggle("HotbarCyclePrevAlt") )
 		{
-			warpMouseToSelectedHotbarSlot(player);
+			std::string inputName = "HotbarCyclePrev";
+			if ( Input::inputs[player].binaryToggle("HotbarCyclePrevAlt") )
+			{
+				inputName = "HotbarCyclePrevAlt";
+			}
+			Input::inputs[player].consumeBinaryToggle(inputName.c_str());
+
+			bool gamepadControl = Input::inputs[player].input(inputName.c_str()).isBindingUsingGamepad();
+			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
+			{
+				// no action, gamepads can't scroll when useHotbarFaceMenu
+			}
+			else if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
+				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
+				&& !GenericGUI[player].isGUIOpen() )
+			{
+				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar - 1);
+				auto slotFrame = players[player]->hotbar.getHotbarSlotFrame(players[player]->hotbar.current_hotbar);
+				if ( slotFrame && slotFrame->isDisabled() )
+				{
+					// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
+					players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar - 1);
+				}
+				if ( gamepadControl )
+				{
+					warpMouseToSelectedHotbarSlot(player); // controller only functionality
+				}
+				hotbar_t.hotbarTooltipLastGameTick = ticks;
+			}
+			else
+			{
+				hotbar_t.hotbarTooltipLastGameTick = 0;
+			}
 		}
 
 		if ( !inputs.getUIInteraction(player)->itemMenuOpen && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
@@ -3860,21 +3808,19 @@ void drawStatusNew(const int player)
 				item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 			}
 
-			if ( !shootmode && inputs.bControllerInputPressed(player, INJOY_MENU_HOTBAR_CLEAR) && !players[player]->bookGUI.bBookOpen ) //TODO: Don't activate if any of the previous if statement's conditions are true?
+			if ( !shootmode && Input::inputs[player].binaryToggle("HotbarInventoryClearSlot") && !players[player]->bookGUI.bBookOpen ) //TODO: Don't activate if any of the previous if statement's conditions are true?
 			{
 				//Clear a hotbar slot if in-inventory.
-				inputs.controllerClearInput(player, INJOY_MENU_HOTBAR_CLEAR);
-
+				Input::inputs[player].consumeBinaryToggle("HotbarInventoryClearSlot");
 				hotbar[hotbar_t.current_hotbar].item = 0;
 			}
 
-			pos.x = initial_position.x + (hotbar_t.current_hotbar * hotbar_t.getSlotSize());
-			pos.y = initial_position.y - hotbar_t.getSlotSize();
-			if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
-				&& mouseInBounds(player, pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+			if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] 
+				&& Input::inputs[player].binaryToggle("HotbarInventoryDrop")
+				&& mouseInsidePlayerHotbar(player) )
 			{
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
+				Input::inputs[player].consumeBinaryToggle("HotbarInventoryDrop");
 				Item* itemToDrop = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 				if ( itemToDrop )
 				{

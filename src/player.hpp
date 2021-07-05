@@ -686,16 +686,14 @@ public:
 		const int getTotalSize() const { return sizex * sizey; }
 		const int getSizeX() const { return sizex; }
 		const int getSizeY() const { return sizey; }
-		const int getStartX() const;
-		const int getStartY() const;
+		//const int getStartX() const;
+		//const int getStartY() const;
 		const int getSlotSize() const { return static_cast<int>(40 * uiscale_inventory); }
 		void setSizeY(int size) { sizey = size; }
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
 		const int getSelectedSlotX() const { return selectedSlotX; }
 		const int getSelectedSlotY() const { return selectedSlotY; }
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
-		const int getSelectedSlotPositionX(Item* snapToItem) const;
-		const int getSelectedSlotPositionY(Item* snapToItem) const;
 		bool warpMouseToSelectedItem(Item* snapToItem) const;
 		void processInventory();
 		void updateInventory();
@@ -1177,10 +1175,10 @@ public:
 		// end temp stuff
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
-		const int getStartX() const
+		/*const int getStartX() const
 		{
 			return (player.camera_midx() - ((NUM_HOTBAR_SLOTS / 2) * getSlotSize()));
-		}
+		}*/
 		const int getSlotSize() const { return hotbar_img->w * uiscale_hotbar; }
 
 		Hotbar_t(Player& p) : player(p)
