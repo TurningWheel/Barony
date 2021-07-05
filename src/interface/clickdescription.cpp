@@ -97,15 +97,16 @@ void clickDescription(int player, Entity* entity)
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
 			//return NULL;
 
-			if ( mouseInBounds(player, 
-				inventoryUI.getStartX(),
-				inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize(),
-				inventoryUI.getStartY(),
-				inventoryUI.getStartY() + inventoryUI.getSizeY() * inventoryUI.getSlotSize()) )
-			{
-				// clicked in inventory
-				return;
-			}
+			// TODO UI: REPLACE
+			//if ( mouseInBounds(player, 
+			//	inventoryUI.getStartX(),
+			//	inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize(),
+			//	inventoryUI.getStartY(),
+			//	inventoryUI.getStartY() + inventoryUI.getSizeY() * inventoryUI.getSlotSize()) )
+			//{
+			//	// clicked in inventory
+			//	return;
+			//}
 			if ( players[player]->gui_mode == GUI_MODE_SHOP )
 			{
 				int x1 = xres / 2 - SHOPWINDOW_SIZEX / 2, x2 = xres / 2 + SHOPWINDOW_SIZEX / 2;

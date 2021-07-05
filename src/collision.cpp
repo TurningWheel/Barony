@@ -149,22 +149,23 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 					}
 					return NULL;    //Click falls inside the right sidebar.
 				}
+			// TODO UI: REPLACE
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
 			//return NULL;
-			if ( mouseInBounds(player, 
-				inventoryUI.getStartX(),
-				inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize(),
-				inventoryUI.getStartY(),
-				inventoryUI.getStartY() + inventoryUI.getSizeY() * inventoryUI.getSlotSize()) )
-			{
-				// clicked in inventory
-				if ( clickedOnGUI )
-				{
-					*clickedOnGUI = true;
-				}
-				return NULL;
-			}
+			//if ( mouseInBounds(player, 
+			//	inventoryUI.getStartX(),
+			//	inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize(),
+			//	inventoryUI.getStartY(),
+			//	inventoryUI.getStartY() + inventoryUI.getSizeY() * inventoryUI.getSlotSize()) )
+			//{
+			//	// clicked in inventory
+			//	if ( clickedOnGUI )
+			//	{
+			//		*clickedOnGUI = true;
+			//	}
+			//	return NULL;
+			//}
 			if ( players[player]->gui_mode == GUI_MODE_SHOP )
 			{
 				int x1 = xres / 2 - SHOPWINDOW_SIZEX / 2, x2 = xres / 2 + SHOPWINDOW_SIZEX / 2;
