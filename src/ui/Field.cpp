@@ -98,7 +98,7 @@ static char* tokenize(char* str, const char* const delimiters) {
 }
 
 void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
-	if (invisible) {
+	if ( invisible || isDisabled() ) {
 		return;
 	}
 
@@ -134,12 +134,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 	if (!actualFont) {
 		return;
 	}
-	int lines = 1;
-	for (int c = 0; c <= textlen; ++c) {
-		if (text[c] == '\n') {
-			++lines;
-		}
-	}
+	int lines = std::max(1, getNumTextLines());
 	int fullH = lines * actualFont->height(false) + actualFont->getOutline() * 2;
 
 	char* buf = (char*)malloc(textlen + 1);
@@ -232,7 +227,18 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
 		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
 		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
-		text->drawColor(src, scaledDest, color);
+
+		if ( parent && static_cast<Frame*>(parent)->getOpacity() < 100.0 )
+		{
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(color, mainsurface->format, &r, &g, &b, &a);
+			a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
+			text->drawColor(src, scaledDest, SDL_MapRGBA(mainsurface->format, r, g, b, a));
+		}
+		else
+		{
+			text->drawColor(src, scaledDest, color);
+		}
 	} while ((token = nexttoken) != NULL);
 
 	free(buf);
@@ -343,4 +349,93 @@ void Field::scrollParent() {
 		fActualSize.x = (size.x + size.w) - fSize.w;
 	}
 	fparent->setActualSize(fActualSize);
+}
+
+void Field::reflowTextToFit(const int characterOffset) {
+	if ( text == nullptr || textlen <= 1 ) {
+		return;
+	}
+
+	if ( auto getText = Text::get(text, font.c_str()) )
+	{
+		if ( getText->getWidth() <= (getSize().w - getSize().x) )
+		{
+			// no work to do
+			return;
+		}
+	}
+
+	Font* actualFont = Font::get(font.c_str());
+	if ( !actualFont )
+	{
+		return;
+	}
+
+
+	std::string reflowText = "";
+
+	int charWidth = 0;
+	actualFont->sizeText("_", &charWidth, nullptr);
+	//if ( auto textGet = Text::get("_", font.c_str()) )
+	//{
+	//	charWidth = textGet->getWidth();
+	//}
+
+	if ( charWidth == 0 )
+	{
+		return;
+	}
+	++charWidth;
+	const int charactersPerLine = (getSize().w - getSize().x) / charWidth;
+
+	int currentCharacters = 0;
+	for ( int i = 0; text[i] != '\0'; ++i )
+	{
+		if ( (currentCharacters - characterOffset) > charactersPerLine )
+		{
+			int findSpace = reflowText.rfind(' ', reflowText.size());
+			if ( findSpace != std::string::npos )
+			{
+				int lastWordEnd = reflowText.size();
+				reflowText.at(findSpace) = '\n';
+				currentCharacters = lastWordEnd - findSpace;
+			}
+			else
+			{
+				reflowText += '\n';
+				currentCharacters = 0;
+			}
+
+			reflowText += text[i];
+		}
+		else
+		{
+			if ( text[i] == '\n' )
+			{
+				currentCharacters = 0;
+			}
+			++currentCharacters;
+			reflowText += text[i];
+		}
+	}
+
+	setText(reflowText.c_str());
+}
+
+const int Field::getNumTextLines() const
+{
+	if ( text == nullptr || textlen <= 1 ) {
+		return 0;
+	}
+
+	int numLines = 1;
+
+	for ( int i = 0; text[i] != '\0' && i < textlen - 1; ++i )
+	{
+		if ( text[i] == '\n' )
+		{
+			++numLines;
+		}
+	}
+	return numLines;
 }
