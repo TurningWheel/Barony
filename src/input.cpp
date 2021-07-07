@@ -7,7 +7,9 @@ Input Input::inputs[MAXPLAYERS];
 
 const float Input::sensitivity = 1.f;
 const float Input::deadzone = 0.2f;
+const float Input::analogToggleThreshold = .5;
 const Uint32 Input::BUTTON_HELD_TICKS = TICKS_PER_SECOND / 4;
+const Uint32 Input::BUTTON_ANALOG_REPEAT_TICKS = TICKS_PER_SECOND / 4;
 std::unordered_map<std::string, SDL_Scancode> Input::scancodeNames;
 std::unordered_map<int, SDL_GameController*> Input::gameControllers;
 std::unordered_map<int, SDL_Joystick*> Input::joysticks;
@@ -66,6 +68,11 @@ void Input::defaultBindings() {
 		inputs[c].bind("InventoryMoveRight", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str());
 		inputs[c].bind("InventoryMoveDown", (std::string("Pad") + std::to_string(c) + std::string("DpadY+")).c_str());
 
+		inputs[c].bind("InventoryMoveUpAnalog", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str());
+		inputs[c].bind("InventoryMoveLeftAnalog", (std::string("Pad") + std::to_string(c) + std::string("StickRightX-")).c_str());
+		inputs[c].bind("InventoryMoveRightAnalog", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str());
+		inputs[c].bind("InventoryMoveDownAnalog", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str());
+
 		inputs[c].bind("HotbarCyclePrev", (std::string("Pad") + std::to_string(c) + std::string("DpadX-")).c_str());
 		inputs[c].bind("HotbarCycleNext", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str());
 		inputs[c].bind("HotbarCyclePrevAlt", "MouseWheelUp");
@@ -119,6 +126,18 @@ bool Input::binaryToggle(const char* binding) const {
 	return b != bindings.end() ? (*b).second.binary && !(*b).second.consumed : false;
 }
 
+bool Input::analogToggle(const char* binding) const {
+	auto b = bindings.find(binding);
+	if ( b != bindings.end() )
+	{
+		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
+		{
+			return false;
+		}
+	}
+	return b != bindings.end() ? (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed : false;
+}
+
 bool Input::binaryReleaseToggle(const char* binding) const {
 	auto b = bindings.find(binding);
 	if ( b != bindings.end() )
@@ -129,6 +148,24 @@ bool Input::binaryReleaseToggle(const char* binding) const {
 		}
 	}
 	return b != bindings.end() ? (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed : false;
+}
+
+bool Input::consumeAnalogToggle(const char* binding) {
+	auto b = bindings.find(binding);
+	if ( b != bindings.end() )
+	{
+		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
+		{
+			return false;
+		}
+	}
+	if ( b != bindings.end() && (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed ) {
+		(*b).second.analogConsumed = true;
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
 bool Input::consumeBinaryToggle(const char* binding) {
@@ -183,6 +220,20 @@ bool Input::binaryHeldToggle(const char* binding) const {
 	}
 	return b != bindings.end() 
 		? ((*b).second.binary && !(*b).second.consumed && (ticks - (*b).second.binaryHeldTicks) > BUTTON_HELD_TICKS)
+		: false;
+}
+
+bool Input::analogHeldToggle(const char* binding) const {
+	auto b = bindings.find(binding);
+	if ( b != bindings.end() )
+	{
+		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
+		{
+			return false;
+		}
+	}
+	return b != bindings.end()
+		? ((*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed && (ticks - (*b).second.analogHeldTicks) > BUTTON_HELD_TICKS)
 		: false;
 }
 
@@ -557,6 +608,7 @@ void Input::bind(const char* binding, const char* input) {
 void Input::update() {
 	for (auto& pair : bindings) {
 		auto& binding = pair.second;
+		float oldAnalog = binding.analog;
 		binding.analog = analogOf(binding);
 		bool oldBinary = binding.binary;
 		binding.binary = binaryOf(binding);
@@ -584,6 +636,31 @@ void Input::update() {
 			{
 				// button not pressed, reset the held counter
 				binding.binaryHeldTicks = 0;
+			}
+		}
+		
+		const bool analogHigh = binding.analog > analogToggleThreshold;
+		if ( (oldAnalog <= analogToggleThreshold && analogHigh)
+			|| (oldAnalog > analogToggleThreshold && !analogHigh))
+		{
+			binding.analogConsumed = false;
+			if ( analogHigh && binding.analogHeldTicks == 0 )
+			{
+				// start the held detection counter
+				binding.analogHeldTicks = ticks;
+			}
+			else if ( !analogHigh )
+			{
+				// button not pressed, reset the held counter
+				binding.analogHeldTicks = 0;
+			}
+		}
+		else if ( analogHigh )
+		{
+			if ( binding.analogConsumed && (ticks - binding.analogHeldTicks) > BUTTON_ANALOG_REPEAT_TICKS )
+			{
+				binding.analogConsumed = false;
+				binding.analogHeldTicks = ticks;
 			}
 		}
 	}

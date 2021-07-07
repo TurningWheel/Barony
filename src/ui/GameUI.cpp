@@ -45,33 +45,33 @@ void createHPMPBars(const int player)
 
 
 		auto base = hud_t.hpFrame->addImage(SDL_Rect{ 54, 4, barWidth - 54, 26 }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_Base_00.png", "hp img base");
+			"images/ui/HUD/hpmpbars/HUD_Bars_Base_00.png", "hp img base");
 
 		const int progressBarHeight = 22;
 		auto fadeProgressBase = fadeFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade bot");
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade bot");
 		auto fadeProgress = fadeFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade");
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade");
 		auto fadeProgressEndCap = fadeFrame->addImage(SDL_Rect{
 			fadeProgress->pos.x + fadeProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_HPEndFade_00.png", "hp img fade endcap");
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPEndFade_00.png", "hp img fade endcap");
 
 		auto numbase = foregroundFrame->addImage(SDL_Rect{ 0, 4, 48, 26 }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_HPNumBase_00.png", "hp img value");
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPNumBase_00.png", "hp img value");
 		auto div = foregroundFrame->addImage(SDL_Rect{ 46, 0, 8, 34 }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_Separator_00.png", "hp img div");
+			"images/ui/HUD/hpmpbars/HUD_Bars_Separator_00.png", "hp img div");
 
 		auto currentProgressBase = foregroundFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_HPBot_00.png", "hp img progress bot");
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png", "hp img progress bot");
 		auto currentProgress = foregroundFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_HPMid_00.png", "hp img progress");
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png", "hp img progress");
 		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_HPEnd_00.png", "hp img progress endcap");
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png", "hp img progress endcap");
 
 		const int endCapWidth = 16;
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "hp img endcap");
+			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "hp img endcap");
 
 		auto font = "fonts/pixel_maz.ttf#16#2";
 		auto hptext = foregroundFrame->addField("hp text", 16);
@@ -100,33 +100,33 @@ void createHPMPBars(const int player)
 
 
 		auto base = hud_t.mpFrame->addImage(SDL_Rect{ 54, 4, barWidth - 54, 26 }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_Base_00.png", "mp img base");
+			"images/ui/HUD/hpmpbars/HUD_Bars_Base_00.png", "mp img base");
 
 		const int progressBarHeight = 22;
 		auto fadeProgressBase = fadeFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade bot");
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade bot");
 		auto fadeProgress = fadeFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade");
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade");
 		auto fadeProgressEndCap = fadeFrame->addImage(SDL_Rect{
 			fadeProgress->pos.x + fadeProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_MPEndFade_00.png", "mp img fade endcap");
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPEndFade_00.png", "mp img fade endcap");
 
 		auto numbase = foregroundFrame->addImage(SDL_Rect{ 0, 4, 48, 26 }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_MPNumBase_00.png", "mp img value");
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPNumBase_00.png", "mp img value");
 		auto div = foregroundFrame->addImage(SDL_Rect{ 46, 0, 8, 34 }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_Separator_00.png", "mp img div");
+			"images/ui/HUD/hpmpbars/HUD_Bars_Separator_00.png", "mp img div");
 
 		auto currentProgressBase = foregroundFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_MPBot_00.png", "mp img progress bot");
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png", "mp img progress bot");
 		auto currentProgress = foregroundFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_MPMid_00.png", "mp img progress");
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png", "mp img progress");
 		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_MPEnd_00.png", "mp img progress endcap");
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png", "mp img progress endcap");
 
 		const int endCapWidth = 16;
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
-			"images/system/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "mp img endcap");
+			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "mp img endcap");
 
 		auto font = "fonts/pixel_maz.ttf#16#2";
 		auto mptext = foregroundFrame->addField("mp text", 16);
@@ -151,7 +151,7 @@ void createXPBar(const int player)
 	SDL_Rect pos { (hud_t.hudFrame->getSize().x + hud_t.hudFrame->getSize().w / 2) - xpBarWidth / 2, xpBarStartY, xpBarWidth, xpBarTotalHeight };
 	hud_t.xpFrame->setSize(pos);
 
-	auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/system/HUD/xpbar/HUD_Bars_Base_00.png", "xp img base");
+	auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_Base_00.png", "xp img base");
 	bg->pos.x = 0;
 	bg->pos.h = 26;
 	bg->pos.y = 4;
@@ -159,17 +159,17 @@ void createXPBar(const int player)
 	// xpProgress only adjusts width
 	const int progressBarHeight = 22;
 	auto xpProgress = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 1, progressBarHeight }, 0xFFFFFFFF,
-		"images/system/HUD/xpbar/HUD_Bars_ExpMid_00.png", "xp img progress");
+		"images/ui/HUD/xpbar/HUD_Bars_ExpMid_00.png", "xp img progress");
 
 	// xpProgressEndCap only adjusts x position based on xpProgress->pos.x + xpProgress->pos.w
 	auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{0, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-		"images/system/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");
+		"images/ui/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");
 
 	const int endCapWidth = 26;
 	SDL_Rect endCapPos {0, 0, endCapWidth, xpBarTotalHeight};
-	auto endCapLeft = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/system/HUD/xpbar/HUD_Bars_ExpCap1_00.png", "xp img endcap left");
+	auto endCapLeft = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap1_00.png", "xp img endcap left");
 	endCapPos.x = pos.w - endCapPos.w;
-	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/system/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
+	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
 
 	const int textWidth = 40;
 	auto font = "fonts/pixel_maz.ttf#16#2";
@@ -205,7 +205,7 @@ void createHotbar(const int player)
 		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
 		auto slot = hotbar_t.hotbarFrame->addFrame(slotname);
 		slot->setSize(slotPos);
-		slot->addImage(slotPos, 0xFFFFFFFF, "images/system/HUD/hotbar/HUD_Quickbar_Slot_Box_00.png", "slot img");
+		slot->addImage(slotPos, 0xFFFFFFFF, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_00.png", "slot img");
 
 		char glyphname[32];
 		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", i);
@@ -239,7 +239,7 @@ void createHotbar(const int player)
 
 	auto highlightFrame = hotbar_t.hotbarFrame->addFrame("hotbar highlight");
 	highlightFrame->setSize(slotPos);
-	highlightFrame->addImage(slotPos, 0xFFFFFFFF, "images/system/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_00.png", "highlight img");
+	highlightFrame->addImage(slotPos, 0xFFFFFFFF, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_00.png", "highlight img");
 	auto itemSlot = highlightFrame->addFrame("slot item");
 	itemSlot->setSize(highlightFrame->getSize());
 	createPlayerInventorySlotFrameElements(itemSlot);
@@ -1000,25 +1000,25 @@ void createInventoryTooltipFrame(const int player)
 
 	Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
-		color, "images/system/inventory/tooltips/Hover_T00.png", "tooltip top background");
+		color, "images/ui/Inventory/tooltips/Hover_T00.png", "tooltip top background");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
-		color, "images/system/inventory/tooltips/Hover_TL00.png", "tooltip top left");
+		color, "images/ui/Inventory/tooltips/Hover_TL00.png", "tooltip top left");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
-		color, "images/system/inventory/tooltips/Hover_TR00.png", "tooltip top right");
+		color, "images/ui/Inventory/tooltips/Hover_TR00.png", "tooltip top right");
 
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 52 },
-		color, "images/system/inventory/tooltips/Hover_C00.png", "tooltip middle background");
+		color, "images/ui/Inventory/tooltips/Hover_C00.png", "tooltip middle background");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
-		color, "images/system/inventory/tooltips/Hover_L00.png", "tooltip middle left");
+		color, "images/ui/Inventory/tooltips/Hover_L00.png", "tooltip middle left");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
-		color, "images/system/inventory/tooltips/Hover_R00.png", "tooltip middle right");
+		color, "images/ui/Inventory/tooltips/Hover_R00.png", "tooltip middle right");
 
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 26 },
-		color, "images/system/inventory/tooltips/Hover_B00.png", "tooltip bottom background");
+		color, "images/ui/Inventory/tooltips/Hover_B00.png", "tooltip bottom background");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
-		color, "images/system/inventory/tooltips/Hover_BL00.png", "tooltip bottom left");
+		color, "images/ui/Inventory/tooltips/Hover_BL01.png", "tooltip bottom left");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
-		color, "images/system/inventory/tooltips/Hover_BR00.png", "tooltip bottom right");
+		color, "images/ui/Inventory/tooltips/Hover_BR01.png", "tooltip bottom right");
 
 	auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
 	tooltipTextField->setText("Nothing");
@@ -1057,7 +1057,7 @@ void createInventoryTooltipFrame(const int player)
 		attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
 		auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
-			0xFFFFFFFF, "images/system/inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
+			0xFFFFFFFF, "images/ui/Inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
 		spellImageBg->disabled = true;
 		//spellImageBg->color = SDL_MapRGBA(mainsurface->format, 125, 125, 125, 228);
 		auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 40, 40 },
@@ -1065,7 +1065,7 @@ void createInventoryTooltipFrame(const int player)
 		spellImage->disabled = true;
 
 		attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
-			0xFFFFFFFF, "images/system/inventory/tooltips/HUD_Tooltip_Icon_Damage_00.png", "inventory mouse tooltip primary image");
+			0xFFFFFFFF, "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Damage_00.png", "inventory mouse tooltip primary image");
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
@@ -1298,7 +1298,7 @@ void createPlayerInventory(const int player)
 		bgFrame->setActualSize(SDL_Rect{ 0, 0, bgSize.w, bgSize.h });
 		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, bgSize.h },
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
-			"images/system/inventory/HUD_Inventory_Base_00a.png", "inventory base img");
+			"images/ui/Inventory/HUD_Inventory_Base_00a.png", "inventory base img");
 	}
 
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
@@ -1393,22 +1393,89 @@ void createPlayerInventory(const int player)
 	{
 		auto selectedFrame = frame->addFrame("inventory selected item");
 		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
 		selectedFrame->setDisabled(true);
 
 		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "inventory selected highlight");
 
+		auto cursorFrame = frame->addFrame("inventory selected item cursor");
+		cursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
+		cursorFrame->setDisabled(true);
+		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TL.png", "inventory selected cursor topleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TR.png", "inventory selected cursor topright");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BL.png", "inventory selected cursor bottomleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BR.png", "inventory selected cursor bottomright");
+		cursorFrame->setTickCallback([](Widget& widget)
+		{
+			auto selectedSlotCursor = static_cast<Frame*>(&widget);
+			SDL_Rect cursorSize = selectedSlotCursor->getSize();
+
+			int offset = (ticks % 50 < 25) ? 4 : 2;
+
+			if ( auto tl = selectedSlotCursor->findImage("inventory selected cursor topleft") )
+			{
+				tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+			}
+			if ( auto tr = selectedSlotCursor->findImage("inventory selected cursor topright") )
+			{
+				tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+			}
+			if ( auto bl = selectedSlotCursor->findImage("inventory selected cursor bottomleft") )
+			{
+				bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+			}
+			if ( auto br = selectedSlotCursor->findImage("inventory selected cursor bottomright") )
+			{
+				br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+			}
+
+			auto& inventory_t = players[selectedSlotCursor->getOwner()]->inventoryUI;
+			SDL_Rect currentPos = selectedSlotCursor->getSize();
+			const int offsetPosition = 7;
+			if ( inventory_t.selectedSlotAnimateSetpointX - offsetPosition != currentPos.x
+				|| inventory_t.selectedSlotAnimateSetpointY - offsetPosition != currentPos.y )
+			{
+				const real_t fpsScale = 1.0;
+				real_t setpointDiffX = std::max(.1, (1.0 - inventory_t.selectedSlotAnimateX)) / 2.5;
+				real_t setpointDiffY = std::max(.1, (1.0 - inventory_t.selectedSlotAnimateY)) / 2.5;
+				inventory_t.selectedSlotAnimateX += fpsScale * setpointDiffX;
+				inventory_t.selectedSlotAnimateY += fpsScale * setpointDiffY;
+				inventory_t.selectedSlotAnimateX = std::min(1.0, inventory_t.selectedSlotAnimateX);
+				inventory_t.selectedSlotAnimateY = std::min(1.0, inventory_t.selectedSlotAnimateY);
+
+				int destX = inventory_t.selectedSlotAnimateSetpointX - inventory_t.selectedSlotAnimateStartX - offsetPosition;
+				int destY = inventory_t.selectedSlotAnimateSetpointY - inventory_t.selectedSlotAnimateStartY - offsetPosition;
+
+				currentPos.x = inventory_t.selectedSlotAnimateStartX + destX * inventory_t.selectedSlotAnimateX;
+				currentPos.y = inventory_t.selectedSlotAnimateStartY + destY * inventory_t.selectedSlotAnimateY;
+				selectedSlotCursor->setSize(currentPos);
+
+				//messagePlayer(0, "%.2f | %.2f", inventory_t.selectedSlotAnimateX, setpointDiffX);
+			}
+		});
+
+
 		auto oldSelectedFrame = frame->addFrame("inventory old selected item");
 		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		oldSelectedFrame->setActualSize(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h });
 		oldSelectedFrame->setDisabled(true);
 
 		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "inventory old selected highlight");
 	}
+
+	auto bgFrame = frame->findFrame("inventory base");
+	auto flourishFrame = frame->addFrame("inventory base flourish");
+	flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (122 / 2), 202 - 22 + 6, 122, 22 });
+	auto flourishImg = flourishFrame->addImage(SDL_Rect{ 0, 0, flourishFrame->getSize().w, flourishFrame->getSize().h },
+		SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+		"images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
 
 	{
 		auto draggingInventoryItem = frame->addFrame("dragging inventory item");
@@ -2063,7 +2130,7 @@ void Player::Hotbar_t::updateHotbar()
 			// if inventory visible, don't show selection if navigating within inventory
 			showHighlightedSlot = false;
 		}
-		else if ( player.hotbar.useHotbarFaceMenu 
+		else if ( player.hotbar.useHotbarFaceMenu && inputs.getVirtualMouse(player.playernum)->lastMovementFromController
 			&& player.hotbar.faceMenuButtonHeld == Player::Hotbar_t::FaceMenuGroup::GROUP_NONE
 			&& player.inventoryUI.frame && player.inventoryUI.frame->isDisabled() )
 		{
@@ -2087,6 +2154,15 @@ void Player::Hotbar_t::updateHotbar()
 				highlightSlot->setSize(pos); // this follows the slots around
 				highlightSlotImg->disabled = false;
 				updateSlotFrameFromItem(highlightSlotItem, uidToItem(hotbar[num].item));
+
+				if ( player.inventoryUI.frame )
+				{
+					if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
+					{
+						selectedSlotCursor->setDisabled(false);
+						player.inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+					}
+				}
 			}
 			else
 			{

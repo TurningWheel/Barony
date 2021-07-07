@@ -1652,11 +1652,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				textx = textGet->getWidth();
 				texty = textGet->getHeight();
 				imgTopBackground->pos.h = imgTopBackground2XHeight;
-				imgTopBackground->path = "images/system/inventory/tooltips/Hover_T00_2x.png";
+				imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00_2x.png";
 				imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
-				imgTopBackgroundLeft->path = "images/system/inventory/tooltips/Hover_TL00_2x.png";
+				imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00_2x.png";
 				imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
-				imgTopBackgroundRight->path = "images/system/inventory/tooltips/Hover_TR00_2x.png";
+				imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00_2x.png";
 				useDefaultHeaderHeight = false;
 			}
 
@@ -1666,11 +1666,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 	if ( useDefaultHeaderHeight )
 	{
 		imgTopBackground->pos.h = imgTopBackgroundDefaultHeight;
-		imgTopBackground->path = "images/system/inventory/tooltips/Hover_T00.png";
+		imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00.png";
 		imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
-		imgTopBackgroundLeft->path = "images/system/inventory/tooltips/Hover_TL00.png";
+		imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00.png";
 		imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
-		imgTopBackgroundRight->path = "images/system/inventory/tooltips/Hover_TR00.png";
+		imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00.png";
 	}
 
 	if ( ItemTooltips.itemDebug )
@@ -1793,7 +1793,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				{
 					if ( icon.conditionalAttribute == "SPELL_ICON_EFFECT" )
 					{
-						icon.iconPath = "images/system/HUD/HUD_CharSheet_RES_00.png";
+						icon.iconPath = "images/ui/HUD/HUD_CharSheet_RES_00.png";
 					}
 					else if ( icon.conditionalAttribute.find("spell_") != std::string::npos )
 					{
@@ -3919,6 +3919,13 @@ void Player::Inventory_t::updateInventory()
 							{
 								selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 								selectedSlotFrame->setDisabled(false);
+
+								if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+								{
+									selectedSlotCursor->setDisabled(selectedSlotFrame->isDisabled());
+									updateSelectedSlotAnimation(startx, starty, inputs.getVirtualMouse(player)->draw_cursor);
+								}
+								messagePlayer(0, "0: %d, %d", x, y);
 							}
 							else if ( selectedItem->x == x && selectedItem->y == y )
 							{
@@ -3937,35 +3944,77 @@ void Player::Inventory_t::updateInventory()
 	// dragging item - highlight slots
 	if ( auto selectedSlotFrame = frame->findFrame("inventory selected item") )
 	{
-		for ( int x = 0; x < getSizeX(); ++x )
+		if ( selectedItem && selectedSlotFrame->isDisabled() )
 		{
-			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < getSizeY(); ++y )
+			for ( int x = 0; x < getSizeX(); ++x )
 			{
-				char slotname[32] = "";
-				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-				auto slotFrame = frame->findFrame(slotname);
-				if ( !slotFrame )
+				for ( int y = Player::Inventory_t::DOLL_ROW_1; y < getSizeY(); ++y )
 				{
-					continue;
-				}
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+					auto slotFrame = frame->findFrame(slotname);
+					if ( !slotFrame )
+					{
+						continue;
+					}
 
-				int startx = invSlotsFrame->getSize().x + slotFrame->getSize().x;
-				int starty = invSlotsFrame->getSize().y + slotFrame->getSize().y;
-				if ( y >= Player::Inventory_t::DOLL_ROW_1 && y <= Player::Inventory_t::DOLL_ROW_5 )
+					int startx = invSlotsFrame->getSize().x + slotFrame->getSize().x;
+					int starty = invSlotsFrame->getSize().y + slotFrame->getSize().y;
+					if ( y >= Player::Inventory_t::DOLL_ROW_1 && y <= Player::Inventory_t::DOLL_ROW_5 )
+					{
+						startx = dollSlotsFrame->getSize().x + slotFrame->getSize().x;
+						starty = dollSlotsFrame->getSize().y + slotFrame->getSize().y;
+					}
+
+					if ( inputs.getVirtualMouse(player)->draw_cursor )
+					{
+						if ( slotFrame->capturesMouse()
+							&& slotFrame->capturesMouseInRealtimeCoords() )
+						{
+							// don't draw yellow border, but draw cursor
+							if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+							{
+								selectedSlotCursor->setDisabled(false);
+								updateSelectedSlotAnimation(startx, starty, inputs.getVirtualMouse(player)->draw_cursor);
+							}
+						}
+						else if ( !slotFrame->capturesMouse()
+							&& slotFrame->capturesMouseInRealtimeCoords() )
+						{
+							// if dragging item, use realtime coords to find what's selected.
+							selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
+							selectedSlotFrame->setDisabled(false);
+
+							if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+							{
+								selectedSlotCursor->setDisabled(selectedSlotFrame->isDisabled());
+								updateSelectedSlotAnimation(startx, starty, inputs.getVirtualMouse(player)->draw_cursor);
+							}
+							messagePlayer(0, "1: %d, %d", x, y);
+						}
+					}
+					else if ( slotFrame->capturesMouse() && x == getSelectedSlotX() && y == getSelectedSlotY() )
+					{
+						selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
+						selectedSlotFrame->setDisabled(false);
+
+						if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+						{
+							selectedSlotCursor->setDisabled(selectedSlotFrame->isDisabled());
+							updateSelectedSlotAnimation(startx, starty, inputs.getVirtualMouse(player)->draw_cursor);
+						}
+						messagePlayer(0, "2: %d, %d", x, y);
+					}
+
+					if ( !selectedSlotFrame->isDisabled() )
+					{
+						break;
+					}
+				}
+				if ( !selectedSlotFrame->isDisabled() )
 				{
-					startx = dollSlotsFrame->getSize().x + slotFrame->getSize().x;
-					starty = dollSlotsFrame->getSize().y + slotFrame->getSize().x;
+					break;
 				}
-
-				if ( !slotFrame->capturesMouse()
-					&& slotFrame->capturesMouseInRealtimeCoords()
-					&& selectedSlotFrame->isDisabled() )
-				{
-					// if dragging item, use realtime coords to find what's selected.
-					selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
-					selectedSlotFrame->setDisabled(false);
-				}
-
 			}
 		}
 	}

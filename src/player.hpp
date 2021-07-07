@@ -669,7 +669,12 @@ public:
 	public:
 		Frame* frame = nullptr;
 		Frame* tooltipFrame = nullptr;
-
+		real_t selectedSlotAnimateX = 0.0;
+		real_t selectedSlotAnimateY = 0.0;
+		int selectedSlotAnimateSetpointX = 0;
+		int selectedSlotAnimateSetpointY = 0;
+		int selectedSlotAnimateStartX = 0;
+		int selectedSlotAnimateStartY = 0;
 
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
@@ -688,7 +693,7 @@ public:
 		const int getSizeY() const { return sizey; }
 		//const int getStartX() const;
 		//const int getStartY() const;
-		const int getSlotSize() const { return static_cast<int>(40 * uiscale_inventory); }
+		const int getSlotSize() const { return 40; }
 		void setSizeY(int size) { sizey = size; }
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
 		const int getSelectedSlotX() const { return selectedSlotX; }
@@ -728,6 +733,32 @@ public:
 				return 2;
 			}
 			return 1;
+		}
+		void updateSelectedSlotAnimation(int destx, int desty, bool usingMouse)
+		{
+			if ( frame )
+			{
+				if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+				{
+					if ( usingMouse )
+					{
+						selectedSlotCursor->setSize(SDL_Rect{ destx - 7, desty - 7, selectedSlotCursor->getSize().w, selectedSlotCursor->getSize().h });
+						selectedSlotAnimateSetpointX = destx;
+						selectedSlotAnimateSetpointY = desty;
+						selectedSlotAnimateStartX = destx;
+						selectedSlotAnimateStartY = desty;
+					}
+					else if ( selectedSlotAnimateSetpointX != destx || selectedSlotAnimateSetpointY != desty )
+					{
+						selectedSlotAnimateStartX = selectedSlotCursor->getSize().x;
+						selectedSlotAnimateStartY = selectedSlotCursor->getSize().y;
+						selectedSlotAnimateSetpointX = destx;
+						selectedSlotAnimateSetpointY = desty;
+						selectedSlotAnimateX = 0.0;
+						selectedSlotAnimateY = 0.0;
+					}
+				}
+			}
 		}
 
 		enum PaperDollRows : int

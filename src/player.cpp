@@ -313,34 +313,37 @@ void GameController::handleAnalog(int player)
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
 
-			if ( !mouse->draw_cursor )
+			if ( gamePaused )
 			{
-				mouse->draw_cursor = true;
-			}
+				if ( !mouse->draw_cursor )
+				{
+					mouse->draw_cursor = true;
+				}
 
-			if ( inputs.bPlayerUsingKeyboardControl(player) )
-			{
-				//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
-				//mouse->warpMouseInScreen(screen, rightx, righty);
-				// smoother to use virtual mouse than push mouse events
-				if ( gamePaused )
+				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
-					mouse->warpMouseInScreen(screen, rightx, righty);
+					//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
+					//mouse->warpMouseInScreen(screen, rightx, righty);
+					// smoother to use virtual mouse than push mouse events
+					if ( gamePaused )
+					{
+						mouse->warpMouseInScreen(screen, rightx, righty);
+					}
+					else
+					{
+						mouse->warpMouseInCamera(cameras[player], rightx, righty);
+					}
 				}
 				else
 				{
-					mouse->warpMouseInCamera(cameras[player], rightx, righty);
-				}
-			}
-			else
-			{
-				if ( gamePaused )
-				{
-					mouse->warpMouseInScreen(screen, rightx, righty);
-				}
-				else
-				{
-					mouse->warpMouseInCamera(cameras[player], rightx, righty);
+					if ( gamePaused )
+					{
+						mouse->warpMouseInScreen(screen, rightx, righty);
+					}
+					else
+					{
+						mouse->warpMouseInCamera(cameras[player], rightx, righty);
+					}
 				}
 			}
 		}
@@ -820,7 +823,8 @@ bool GameController::handleInventoryMovement(const int player)
 		hotbar_t.hotbarHasFocus = false;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") 
+		|| Input::inputs[player].analogToggle("InventoryMoveLeftAnalog") )
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
@@ -851,11 +855,13 @@ bool GameController::handleInventoryMovement(const int player)
 				players[player]->inventoryUI.getSelectedSlotY());
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
+		Input::inputs[player].consumeAnalogToggle("InventoryMoveLeftAnalog");
 
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveRight") )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveRight")
+		|| Input::inputs[player].analogToggle("InventoryMoveRightAnalog") )
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
@@ -885,11 +891,13 @@ bool GameController::handleInventoryMovement(const int player)
 				players[player]->inventoryUI.getSelectedSlotY());
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
+		Input::inputs[player].consumeAnalogToggle("InventoryMoveRightAnalog");
 
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveUp") )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveUp")
+		|| Input::inputs[player].analogToggle("InventoryMoveUpAnalog") )
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
@@ -914,11 +922,13 @@ bool GameController::handleInventoryMovement(const int player)
 				players[player]->inventoryUI.getSelectedSlotY() - 1); //Will handle warping to hotbar.
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
+		Input::inputs[player].consumeAnalogToggle("InventoryMoveUpAnalog");
 
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveDown") )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveDown")
+		|| Input::inputs[player].analogToggle("InventoryMoveDownAnalog") )
 	{
 		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
 		{
@@ -943,6 +953,7 @@ bool GameController::handleInventoryMovement(const int player)
 				players[player]->inventoryUI.getSelectedSlotY() + 1);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
+		Input::inputs[player].consumeAnalogToggle("InventoryMoveDownAnalog");
 
 		dpad_moved = true;
 	}
@@ -3281,6 +3292,11 @@ void Player::PaperDoll_t::drawSlots()
 						{
 							selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 							selectedSlotFrame->setDisabled(false);
+							if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
+							{
+								selectedSlotCursor->setDisabled(selectedSlotFrame->isDisabled());
+								player.inventoryUI.updateSelectedSlotAnimation(slotFrame->getSize().x, slotFrame->getSize().y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+							}
 						}
 						/*else
 						{

@@ -42,6 +42,10 @@ public:
 		bool binary = false;
 		bool consumed = false;
 
+		bool analogConsumed = false;
+		bool analogHeld = false;
+		Uint32 analogHeldTicks = 0; // tick when the binding was pressed
+
 		Uint32 binaryHeldTicks = 0; // tick when the binding was pressed
 		bool binaryHeld = false; // if the current binding is held
 		bool binaryRelease = false; // to detect when a button is lifted
@@ -101,11 +105,13 @@ public:
 	//! @param binding the binding to query
 	//! @return the bool value (false = not pressed, true = pressed)
 	bool binaryToggle(const char* binding) const;
+	bool analogToggle(const char* binding) const;
 
 	//! consume an input action
 	//! @param binding the binding to be consumed
 	//! @return true if the toggle was consumed (ie the button was pressed)
 	bool consumeBinaryToggle(const char* binding);
+	bool consumeAnalogToggle(const char* binding);
 
 	//! gets the 'released' binary value of a particular input binding, if it's not been consumed
 	//! pressing the input and rereleasing it "unconsumes"
@@ -123,6 +129,7 @@ public:
 	//! @param binding the binding to query
 	//! @return the bool value (false = not pressed, true = pressed for greater than tick time)
 	bool binaryHeldToggle(const char* binding) const;
+	bool analogHeldToggle(const char* binding) const;
 
 	//! gets the input mapped to a particular input binding
 	//! @param binding the binding to query
@@ -181,10 +188,16 @@ private:
 	//! joystick deadzone
 	static const float deadzone;
 
+	//! analog binding threshold
+	static const float analogToggleThreshold;
+
 	//! map of scancodes to input names
 	static std::unordered_map<std::string, SDL_Scancode> scancodeNames;
 	static SDL_Scancode getScancodeFromName(const char* name);
 
 	//! number of game ticks to consider a button 'held' for long-press actions
 	static const Uint32 BUTTON_HELD_TICKS;
+
+	//! number of game ticks to for analog button to repeatedly send
+	static const Uint32 BUTTON_ANALOG_REPEAT_TICKS;
 };

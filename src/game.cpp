@@ -4225,9 +4225,7 @@ void ingameHud()
 
 		FollowerRadialMenu& followerMenu = FollowerMenu[player];
 
-		char framename[32];
-		snprintf(framename, sizeof(framename), "player inventory %d", player);
-		Frame* frame = gui->findFrame(framename);
+		Frame* frame = players[player]->inventoryUI.frame;
 		if ( frame )
 		{
 			if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
@@ -4251,10 +4249,22 @@ void ingameHud()
 				{
 					if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
 					{
-						pos.x *= ((float)Frame::virtualScreenX / (float)xres);
-						pos.y *= ((float)Frame::virtualScreenY / (float)yres);
 						updateSlotFrameFromItem(draggingItemFrame, selectedItem);
-						draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
+
+						Frame* selectedSlotCursor = frame->findFrame("inventory selected item cursor");
+						if ( !inputs.getVirtualMouse(player)->draw_cursor )
+						{
+							SDL_Rect selectedItemCursorPos = frame->findFrame("inventory selected item cursor")->getSize();
+							selectedItemCursorPos.x += selectedItemCursorPos.w / 2;
+							selectedItemCursorPos.y += selectedItemCursorPos.h / 2;
+							draggingItemFrame->setSize(selectedItemCursorPos);
+						}
+						else if ( inputs.getVirtualMouse(player)->draw_cursor )
+						{
+							pos.x *= ((float)Frame::virtualScreenX / (float)xres);
+							pos.y *= ((float)Frame::virtualScreenY / (float)yres);
+							draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
+						}
 					}
 				}
 				else
