@@ -360,7 +360,7 @@ void warpMouseToSelectedHotbarSlot(const int player)
 
 	if ( auto hotbarSlotFrame = players[player]->hotbar.getHotbarSlotFrame(players[player]->hotbar.current_hotbar) )
 	{
-		hotbarSlotFrame->warpMouseToFrame(player);
+		hotbarSlotFrame->warpMouseToFrame(player, (Inputs::SET_CONTROLLER));
 		return;
 	}
 

@@ -3065,7 +3065,7 @@ const int Player::Inventory_t::getPlayerItemInventoryY() const
 //	}
 //}
 
-bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem) const
+bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem, Uint32 flags) const
 {
 	if ( frame )
 	{
@@ -3098,7 +3098,7 @@ bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem) const
 			auto slot = frame->findFrame("paperdoll slots")->findFrame(slotname);
 			if ( slot )
 			{
-				slot->warpMouseToFrame(player.playernum);
+				slot->warpMouseToFrame(player.playernum, flags);
 				return true;
 			}
 		}
@@ -3107,12 +3107,38 @@ bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem) const
 			auto slot = frame->findFrame("inventory slots")->findFrame(slotname);
 			if ( slot )
 			{
-				slot->warpMouseToFrame(player.playernum);
+				slot->warpMouseToFrame(player.playernum, flags);
 				return true;
 			}
 		}
 	}
 	return false;
+}
+
+Frame* Player::Inventory_t::getInventorySlotFrame(int x, int y) const
+{
+	if ( frame )
+	{
+		char slotname[32] = "";
+		snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+		if ( y >= PaperDollRows::DOLL_ROW_1 && y <= PaperDollRows::DOLL_ROW_5 )
+		{
+			auto slot = frame->findFrame("paperdoll slots")->findFrame(slotname);
+			if ( slot )
+			{
+				return slot;
+			}
+		}
+		else
+		{
+			auto slot = frame->findFrame("inventory slots")->findFrame(slotname);
+			if ( slot )
+			{
+				return slot;
+			}
+		}
+	}
+	return nullptr;
 }
 
 // TODO UI: CLEAN UP
@@ -3298,21 +3324,7 @@ void Player::PaperDoll_t::drawSlots()
 								player.inventoryUI.updateSelectedSlotAnimation(slotFrame->getSize().x, slotFrame->getSize().y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
 							}
 						}
-						/*else
-						{
-							oldSelectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
-							oldSelectedSlotFrame->setDisabled(false);
-						}*/
 					}
-
-					//if ( !slotFrame->capturesMouse()
-					//	&& slotFrame->capturesMouseInRealtimeCoords()
-					//	&& selectedSlotFrame->isDisabled() )
-					//{
-					//	// if dragging item, use realtime coords to find what's selected.
-					//	selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
-					//	selectedSlotFrame->setDisabled(false);
-					//}
 				}
 			}
 		}

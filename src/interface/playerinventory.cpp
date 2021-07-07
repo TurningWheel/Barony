@@ -97,7 +97,7 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 
 void warpMouseToSelectedInventorySlot(const int player)
 {
-	if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr) )
+	if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
 	{
 		return;
 	}
@@ -964,23 +964,23 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 
 	auto& hotbar = players[player]->hotbar.slots();
 
-	if ( inputs.bControllerInputPressed(player, INJOY_MENU_CANCEL) )
+	if ( Input::inputs[player].binaryToggle("HotbarInventoryDrop") )
 	{
 		//TODO UI: VERIFY
-		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS)
+		if (selectedItemFromHotbar >= 0 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS)
 		{
-			// TODO UI: REPLACE
 			//Warp cursor back into hotbar, for gamepad convenience.
-			int newx = 0;// (players[player]->hotbar.getStartX()) + (selectedItemFromHotbar * hotbar_img->w) + (hotbar_img->w / 2);
-			int newy = (players[player]->statusBarUI.getStartY())-(hotbar_img->h / 2);
-			//SDL_WarpMouseInWindow(screen, newx, newy);
-			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-			inputs.warpMouse(player, newx, newy, flags);
+			if ( players[player]->hotbar.warpMouseToHotbar(selectedItemFromHotbar, (Inputs::SET_CONTROLLER)) )
+			{
+				players[player]->hotbar.selectHotbarSlot(selectedItemFromHotbar);
+			}
 			hotbar[selectedItemFromHotbar].item = selectedItem->uid;
+			selectedItemFromHotbar = -1;
+			players[player]->hotbar.hotbarHasFocus = true;
 		}
 		else
 		{
-			if ( !players[player]->inventoryUI.warpMouseToSelectedItem(selectedItem) )
+			if ( !players[player]->inventoryUI.warpMouseToSelectedItem(selectedItem, (Inputs::SET_CONTROLLER)) )
 			{
 				messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
 				// TODO UI: REMOVE DEBUG AND CLEAN UP
@@ -992,11 +992,11 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 				//inputs.warpMouse(player, newx, newy, flags);
 			}
-
+			players[player]->hotbar.hotbarHasFocus = false;
 		}
 
 		selectedItem = nullptr;
-		inputs.controllerClearInput(player, INJOY_MENU_CANCEL);
+		Input::inputs[player].consumeBinaryToggle("HotbarInventoryDrop");
 		return;
 	}
 
@@ -4071,6 +4071,22 @@ void Player::Inventory_t::updateInventory()
 						++borderPos.y;
 						oldSelectedSlotFrame->setDisabled(false);
 						oldSelectedSlotFrame->setSize(borderPos);
+
+						auto oldSelectedSlotItem = oldSelectedSlotFrame->findImage("inventory old selected item");
+						oldSelectedSlotItem->disabled = false;
+						if ( item->type == SPELL_ITEM )
+						{
+							oldSelectedSlotItem->path = ItemTooltips.getSpellIconPath(player, *item);
+						}
+						else
+						{
+							node_t* imagePathsNode = list_Node(&items[item->type].images, item->appearance % items[item->type].variations);
+							if ( imagePathsNode )
+							{
+								string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);
+								oldSelectedSlotItem->path = imagePath->data;
+							}
+						}
 					}
 				}
 			}
@@ -4280,12 +4296,12 @@ void Player::Inventory_t::updateInventory()
 						break;
 					}
 
-					if ( inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
+					if ( Input::inputs[player].binaryToggle("HotbarInventoryDrop")
 						&& !itemMenuOpen && !selectedItem && selectedChestSlot[player] < 0
 						&& selectedShopSlot[player] < 0
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
-						inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
+						Input::inputs[player].consumeBinaryToggle("HotbarInventoryDrop");
 						if ( dropItem(item, player) )
 						{
 							item = nullptr;
@@ -4328,6 +4344,7 @@ void Player::Inventory_t::updateInventory()
 						}
 						else
 						{
+							inputs.getUIInteraction(player)->selectedItemFromHotbar = -1;
 							selectedItem = item;
 							//itemSelectBehavior = BEHAVIOR_MOUSE;
 							playSound(139, 64); // click sound
@@ -4456,7 +4473,74 @@ void Player::Inventory_t::updateInventory()
 	else if ( stats[player]->HP > 0 )
 	{
 		// releasing items
+		bool oldSelectedItem = selectedItem != nullptr;
+
 		releaseItem(player);
+
+		if ( oldSelectedItem && !selectedItem && frame )
+		{
+			auto selectedSlotFrame = frame->findFrame("inventory selected item");
+			int selectedSlotFrameX = 0;
+			int selectedSlotFrameY = 0;
+			if ( getSlotFrameXYFromMousePos(player, selectedSlotFrameX, selectedSlotFrameY) )
+			{
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", selectedSlotFrameX, selectedSlotFrameY);
+				if ( auto slotFrame = frame->findFrame(slotname) )
+				{
+					/*if ( selectedSlotFrameX == players[player]->inventoryUI.getSelectedSlotX()
+						&& selectedSlotFrameY == players[player]->inventoryUI.getSelectedSlotY() )
+					{
+					}*/
+					selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getAbsoluteSize().x + 1, slotFrame->getAbsoluteSize().y + 1, 
+						selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
+					selectedSlotFrame->setDisabled(false);
+
+					if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+					{
+						selectedSlotCursor->setDisabled(selectedSlotFrame->isDisabled());
+						updateSelectedSlotAnimation(selectedSlotFrame->getSize().x - 1, selectedSlotFrame->getSize().y - 1, inputs.getVirtualMouse(player)->draw_cursor);
+					}
+				}
+			}
+
+			auto oldSelectedSlotFrame = frame->findFrame("inventory old selected item");
+			oldSelectedSlotFrame->setDisabled(true);
+
+			for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				Item* item = (Item*)node->element;
+				if ( !item ) { continue; }
+				int itemx = item->x;
+				int itemy = item->y;
+
+				bool itemOnPaperDoll = false;
+				if ( players[player]->paperDoll.enabled && itemIsEquipped(item, player) )
+				{
+					auto slotType = players[player]->paperDoll.getSlotForItem(*item);
+					if ( slotType != Player::PaperDoll_t::SLOT_MAX )
+					{
+						itemOnPaperDoll = true;
+					}
+				}
+
+				if ( itemOnPaperDoll )
+				{
+					players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
+				}
+
+				if ( itemx >= 0 && itemx < getSizeX()
+					&& itemy >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1 && itemy < getSizeY() )
+				{
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "slot %d %d", itemx, itemy);
+					auto slotFrame = frame->findFrame(slotname);
+
+					updateSlotFrameFromItem(slotFrame, item);
+				}
+			}
+		}
 	}
 
 	itemContextMenu(player);
@@ -5418,7 +5502,7 @@ void itemContextMenu(const int player)
 		itemMenuOpen = false;
 		//Warp cursor back into inventory, for gamepad convenience.
 
-		if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr) )
+		if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
 		{
 			return;
 		}
@@ -5519,7 +5603,7 @@ void itemContextMenu(const int player)
 		inputs.controllerClearInput(player, INJOY_MENU_USE);
 		activateSelection = true;
 
-		if ( !players[player]->inventoryUI.warpMouseToSelectedItem(nullptr) )
+		if ( !players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
 		{
 			// TODO UI: REMOVE DEBUG AND CLEAN UP
 			messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");

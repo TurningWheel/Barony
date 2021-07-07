@@ -73,6 +73,9 @@ void Input::defaultBindings() {
 		inputs[c].bind("InventoryMoveRightAnalog", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str());
 		inputs[c].bind("InventoryMoveDownAnalog", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str());
 
+		inputs[c].bind("InventoryCharacterRotateLeft", (std::string("Pad") + std::to_string(c) + std::string("StickRightX-")).c_str());
+		inputs[c].bind("InventoryCharacterRotateRight", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str());
+
 		inputs[c].bind("HotbarCyclePrev", (std::string("Pad") + std::to_string(c) + std::string("DpadX-")).c_str());
 		inputs[c].bind("HotbarCycleNext", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str());
 		inputs[c].bind("HotbarCyclePrevAlt", "MouseWheelUp");

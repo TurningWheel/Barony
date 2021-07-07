@@ -1207,23 +1207,26 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 #endif
 }
 
-void Frame::warpMouseToFrame(const int player) {
-	SDL_Rect _size{ size.x, size.y, size.w, size.h };
-
-	auto _parent = this->parent;
-	while ( _parent ) {
-		auto pframe = static_cast<Frame*>(_parent);
-		//if ( pframe->capturesMouse(&_size, &_actualSize) ) {
-		_size.x += std::max(0, pframe->size.x);
-		_size.y += std::max(0, pframe->size.y);
-		_parent = pframe->parent;
-	}
-
-	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
+void Frame::warpMouseToFrame(const int player, Uint32 flags) const
+{
+	SDL_Rect _size = getAbsoluteSize();
 	inputs.warpMouse(player,
 		(_size.x + _size.w / 2) * ((float)xres / (float)Frame::virtualScreenX),
 		(_size.y + _size.h / 2) * ((float)yres / (float)Frame::virtualScreenY),
 		flags);
+}
+
+SDL_Rect Frame::getAbsoluteSize() const
+{
+	SDL_Rect _size{ size.x, size.y, size.w, size.h };
+	auto _parent = this->parent;
+	while ( _parent ) {
+		auto pframe = static_cast<Frame*>(_parent);
+		_size.x += std::max(0, pframe->size.x);
+		_size.y += std::max(0, pframe->size.y);
+		_parent = pframe->parent;
+	}
+	return _size;
 }
 
 bool Frame::capturesMouseInRealtimeCoords(SDL_Rect* curSize, SDL_Rect* curActualSize) {

@@ -1272,6 +1272,115 @@ void createInventoryTooltipFrame(const int player)
 	}
 }
 
+void drawCharacterPreview(const int player, SDL_Rect pos)
+{
+	double ofov = fov;
+	fov = 50;
+
+	//TempTexture* minimapTexture = new TempTexture();
+
+	if ( players[player] != nullptr && players[player]->entity != nullptr )
+	{
+		if ( !softwaremode )
+		{
+			glClear(GL_DEPTH_BUFFER_BIT);
+		}
+		//TODO: These two NOT PLAYERSWAP
+		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
+		//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
+		camera_charsheet.x = players[player]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
+		camera_charsheet.y = players[player]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
+		camera_charsheet.z = players[player]->entity->z * 2;
+		//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
+		camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
+		camera_charsheet.vang = PI / 20;
+
+		camera_charsheet.winx = pos.x;
+		camera_charsheet.winy = pos.y;
+		//camera_charsheet.winx = x1 + 8;
+		//camera_charsheet.winy = y1 + 8;
+
+		camera_charsheet.winw = pos.w;
+		camera_charsheet.winh = pos.h;
+		bool b = players[player]->entity->flags[BRIGHT];
+		players[player]->entity->flags[BRIGHT] = true;
+		if ( !players[player]->entity->flags[INVISIBLE] )
+		{
+			glDrawVoxel(&camera_charsheet, players[player]->entity, REALCOLORS);
+		}
+		players[player]->entity->flags[BRIGHT] = b;
+		int c = 0;
+		if ( multiplayer != CLIENT )
+		{
+			for ( node_t* node = players[player]->entity->children.first; node != nullptr; node = node->next )
+			{
+				if ( c == 0 )
+				{
+					c++;
+					continue;
+				}
+				Entity* entity = (Entity*)node->element;
+				if ( !entity->flags[INVISIBLE] )
+				{
+					b = entity->flags[BRIGHT];
+					entity->flags[BRIGHT] = true;
+					glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+					entity->flags[BRIGHT] = b;
+				}
+				c++;
+			}
+			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( (Sint32)entity->getUID() == -4 )
+				{
+					glDrawSprite(&camera_charsheet, entity, REALCOLORS);
+				}
+			}
+		}
+		else
+		{
+			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
+				{
+					b = entity->flags[BRIGHT];
+					entity->flags[BRIGHT] = true;
+					if ( (Sint32)entity->getUID() == -4 )
+					{
+						glDrawSprite(&camera_charsheet, entity, REALCOLORS);
+					}
+					else
+					{
+						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+					}
+					entity->flags[BRIGHT] = b;
+				}
+			}
+		}
+
+		if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+		{
+			camera_charsheet_offsetyaw -= 0.05;
+		}
+		else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
+		{
+			camera_charsheet_offsetyaw += 0.05;
+		}
+
+		if ( camera_charsheet_offsetyaw > 2 * PI )
+		{
+			camera_charsheet_offsetyaw -= 2 * PI;
+		}
+		if ( camera_charsheet_offsetyaw < 0.0 )
+		{
+			camera_charsheet_offsetyaw += 2 * PI;
+		}
+	}
+	fov = ofov;
+}
+
 void createPlayerInventory(const int player)
 {
 	char name[32];
@@ -1374,7 +1483,9 @@ void createPlayerInventory(const int player)
 			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
 
 			charFrame->setSize(charSize);
-			charFrame->setActualSize(SDL_Rect{ 0, 0, charSize.w, charSize.h });
+			charFrame->setDrawCallback([](Widget& widget, SDL_Rect pos) {
+				drawCharacterPreview(widget.getOwner(), pos);
+			});
 			//charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
 			//	SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
 			//	"images/system/white.png", "inventory character preview bg");
@@ -1399,6 +1510,17 @@ void createPlayerInventory(const int player)
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "inventory selected highlight");
 
+		auto oldSelectedFrame = frame->addFrame("inventory old selected item");
+		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		oldSelectedFrame->setDisabled(true);
+
+		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		auto oldImg = oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128), "", "inventory old selected item");
+		oldImg->disabled = true;
+		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "inventory old selected highlight");
+
 		auto cursorFrame = frame->addFrame("inventory selected item cursor");
 		cursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		cursorFrame->setDisabled(true);
@@ -1411,63 +1533,6 @@ void createPlayerInventory(const int player)
 			color, "images/ui/Inventory/Selector_BL.png", "inventory selected cursor bottomleft");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "images/ui/Inventory/Selector_BR.png", "inventory selected cursor bottomright");
-		cursorFrame->setTickCallback([](Widget& widget)
-		{
-			auto selectedSlotCursor = static_cast<Frame*>(&widget);
-			SDL_Rect cursorSize = selectedSlotCursor->getSize();
-
-			int offset = (ticks % 50 < 25) ? 4 : 2;
-
-			if ( auto tl = selectedSlotCursor->findImage("inventory selected cursor topleft") )
-			{
-				tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
-			}
-			if ( auto tr = selectedSlotCursor->findImage("inventory selected cursor topright") )
-			{
-				tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
-			}
-			if ( auto bl = selectedSlotCursor->findImage("inventory selected cursor bottomleft") )
-			{
-				bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
-			}
-			if ( auto br = selectedSlotCursor->findImage("inventory selected cursor bottomright") )
-			{
-				br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
-			}
-
-			auto& inventory_t = players[selectedSlotCursor->getOwner()]->inventoryUI;
-			SDL_Rect currentPos = selectedSlotCursor->getSize();
-			const int offsetPosition = 7;
-			if ( inventory_t.selectedSlotAnimateSetpointX - offsetPosition != currentPos.x
-				|| inventory_t.selectedSlotAnimateSetpointY - offsetPosition != currentPos.y )
-			{
-				const real_t fpsScale = 1.0;
-				real_t setpointDiffX = std::max(.1, (1.0 - inventory_t.selectedSlotAnimateX)) / 2.5;
-				real_t setpointDiffY = std::max(.1, (1.0 - inventory_t.selectedSlotAnimateY)) / 2.5;
-				inventory_t.selectedSlotAnimateX += fpsScale * setpointDiffX;
-				inventory_t.selectedSlotAnimateY += fpsScale * setpointDiffY;
-				inventory_t.selectedSlotAnimateX = std::min(1.0, inventory_t.selectedSlotAnimateX);
-				inventory_t.selectedSlotAnimateY = std::min(1.0, inventory_t.selectedSlotAnimateY);
-
-				int destX = inventory_t.selectedSlotAnimateSetpointX - inventory_t.selectedSlotAnimateStartX - offsetPosition;
-				int destY = inventory_t.selectedSlotAnimateSetpointY - inventory_t.selectedSlotAnimateStartY - offsetPosition;
-
-				currentPos.x = inventory_t.selectedSlotAnimateStartX + destX * inventory_t.selectedSlotAnimateX;
-				currentPos.y = inventory_t.selectedSlotAnimateStartY + destY * inventory_t.selectedSlotAnimateY;
-				selectedSlotCursor->setSize(currentPos);
-
-				//messagePlayer(0, "%.2f | %.2f", inventory_t.selectedSlotAnimateX, setpointDiffX);
-			}
-		});
-
-
-		auto oldSelectedFrame = frame->addFrame("inventory old selected item");
-		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		oldSelectedFrame->setDisabled(true);
-
-		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
-		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
-			color, "images/system/hotbar_slot.png", "inventory old selected highlight");
 	}
 
 	auto bgFrame = frame->findFrame("inventory base");
@@ -1483,6 +1548,127 @@ void createPlayerInventory(const int player)
 		draggingInventoryItem->setActualSize(SDL_Rect{ 0, 0, draggingInventoryItem->getSize().w, draggingInventoryItem->getSize().h });
 		draggingInventoryItem->setDisabled(true);
 		createPlayerInventorySlotFrameElements(draggingInventoryItem);
+	}
+}
+
+void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, bool usingMouse)
+{
+	if ( frame )
+	{
+		if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+		{
+			if ( usingMouse )
+			{
+				selectedSlotCursor->setSize(
+					SDL_Rect{
+					destx - cursor.cursorToSlotOffset,
+					desty - cursor.cursorToSlotOffset,
+					selectedSlotCursor->getSize().w,
+					selectedSlotCursor->getSize().h
+				}
+				);
+				cursor.animateSetpointX = destx;
+				cursor.animateSetpointY = desty;
+				cursor.animateStartX = destx;
+				cursor.animateStartY = desty;
+			}
+			else if ( cursor.animateSetpointX != destx || cursor.animateSetpointY != desty )
+			{
+				cursor.animateStartX = selectedSlotCursor->getSize().x;
+				cursor.animateStartY = selectedSlotCursor->getSize().y;
+				cursor.animateSetpointX = destx;
+				cursor.animateSetpointY = desty;
+				cursor.animateX = 0.0;
+				cursor.animateY = 0.0;
+				cursor.lastUpdateTick = ticks;
+			}
+		}
+	}
+}
+
+void Player::Inventory_t::updateSelectedItemAnimation()
+{
+	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		real_t setpointDiffX = fpsScale * std::max(.05, (1.0 - selectedItemAnimate.animateX)) / (5);
+		real_t setpointDiffY = fpsScale * std::max(.05, (1.0 - selectedItemAnimate.animateY)) / (5);
+		selectedItemAnimate.animateX += setpointDiffX;
+		selectedItemAnimate.animateY += setpointDiffY;
+		selectedItemAnimate.animateX = std::min(1.0, selectedItemAnimate.animateX);
+		selectedItemAnimate.animateY = std::min(1.0, selectedItemAnimate.animateY);
+	}
+	else
+	{
+		selectedItemAnimate.animateX = 0.0;
+		selectedItemAnimate.animateY = 0.0;
+	}
+}
+
+void Player::Inventory_t::updateCursor()
+{
+	if ( !frame )
+	{
+		return;
+	}
+	if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+	{
+		SDL_Rect cursorSize = selectedSlotCursor->getSize();
+
+		const int smallOffset = 2;
+		const int largeOffset = 4;
+
+		int offset = ((ticks - cursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				//offset = largeOffset;
+			}
+			else
+			{
+				offset = smallOffset;
+			}
+		}
+
+		if ( auto tl = selectedSlotCursor->findImage("inventory selected cursor topleft") )
+		{
+			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+		}
+		if ( auto tr = selectedSlotCursor->findImage("inventory selected cursor topright") )
+		{
+			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+		}
+		if ( auto bl = selectedSlotCursor->findImage("inventory selected cursor bottomleft") )
+		{
+			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+		}
+		if ( auto br = selectedSlotCursor->findImage("inventory selected cursor bottomright") )
+		{
+			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+		}
+
+		SDL_Rect currentPos = selectedSlotCursor->getSize();
+		const int offsetPosition = cursor.cursorToSlotOffset;
+		if ( cursor.animateSetpointX - offsetPosition != currentPos.x
+			|| cursor.animateSetpointY - offsetPosition != currentPos.y )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
+			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
+			cursor.animateX += setpointDiffX;
+			cursor.animateY += setpointDiffY;
+			cursor.animateX = std::min(1.0, cursor.animateX);
+			cursor.animateY = std::min(1.0, cursor.animateY);
+
+			int destX = cursor.animateSetpointX - cursor.animateStartX - offsetPosition;
+			int destY = cursor.animateSetpointY - cursor.animateStartY - offsetPosition;
+
+			currentPos.x = cursor.animateStartX + destX * cursor.animateX;
+			currentPos.y = cursor.animateStartY + destY * cursor.animateY;
+			selectedSlotCursor->setSize(currentPos);
+			//messagePlayer(0, "%.2f | %.2f", inventory_t.selectedSlotAnimateX, setpointDiffX);
+		}
 	}
 }
 
@@ -2175,6 +2361,20 @@ void Player::Hotbar_t::updateHotbar()
 		}
 
 	}
+}
+
+bool Player::Hotbar_t::warpMouseToHotbar(const int hotbarSlot, Uint32 flags)
+{
+	if ( !hotbarFrame || hotbarSlot < 0 || hotbarSlot >= NUM_HOTBAR_SLOTS )
+	{
+		return false;
+	}
+	if ( auto slotFrame = getHotbarSlotFrame(hotbarSlot) )
+	{
+		slotFrame->warpMouseToFrame(player.playernum, flags);
+		return true;
+	}
+	return false;
 }
 
 Frame* Player::Hotbar_t::getHotbarSlotFrame(const int hotbarSlot)

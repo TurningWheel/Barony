@@ -4122,8 +4122,10 @@ void ingameHud()
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		players[player]->hud.processHUD();
+		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
+		players[player]->inventoryUI.updateCursor();
 		// new right side pane by sheridan
 		doNewCharacterSheet(player);
 		if ( !players[player]->isLocalPlayer() )
@@ -4240,11 +4242,6 @@ void ingameHud()
 			if ( inputs.getUIInteraction(player)->selectedItem )
 			{
 				Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
-				pos.x = inputs.getMouse(player, Inputs::X) - 15;
-				pos.y = inputs.getMouse(player, Inputs::Y) - 15;
-				pos.w = 32 * uiscale_inventory;
-				pos.h = 32 * uiscale_inventory;
-
 				if ( frame )
 				{
 					if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
@@ -4254,13 +4251,18 @@ void ingameHud()
 						Frame* selectedSlotCursor = frame->findFrame("inventory selected item cursor");
 						if ( !inputs.getVirtualMouse(player)->draw_cursor )
 						{
-							SDL_Rect selectedItemCursorPos = frame->findFrame("inventory selected item cursor")->getSize();
-							selectedItemCursorPos.x += selectedItemCursorPos.w / 2;
-							selectedItemCursorPos.y += selectedItemCursorPos.h / 2;
+							SDL_Rect selectedItemCursorPos = selectedSlotCursor->getSize();
+							int cursorOffset = players[player]->inventoryUI.cursor.cursorToSlotOffset;
+							selectedItemCursorPos.x += cursorOffset +
+								(players[player]->inventoryUI.selectedItemAnimate.animateX) * (selectedItemCursorPos.w - cursorOffset * 2) / 2;
+							selectedItemCursorPos.y += cursorOffset +
+								(players[player]->inventoryUI.selectedItemAnimate.animateY) * (selectedItemCursorPos.h - cursorOffset * 2) / 2;
 							draggingItemFrame->setSize(selectedItemCursorPos);
 						}
 						else if ( inputs.getVirtualMouse(player)->draw_cursor )
 						{
+							pos.x = inputs.getMouse(player, Inputs::X) - 15;
+							pos.y = inputs.getMouse(player, Inputs::Y) - 15;
 							pos.x *= ((float)Frame::virtualScreenX / (float)xres);
 							pos.y *= ((float)Frame::virtualScreenY / (float)yres);
 							draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
@@ -4269,6 +4271,11 @@ void ingameHud()
 				}
 				else
 				{
+					pos.x = inputs.getMouse(player, Inputs::X) - 15;
+					pos.y = inputs.getMouse(player, Inputs::Y) - 15;
+					pos.w = 32 * uiscale_inventory;
+					pos.h = 32 * uiscale_inventory;
+
 					drawImageScaled(itemSprite(selectedItem), NULL, &pos);
 					if ( selectedItem->count > 1 )
 					{

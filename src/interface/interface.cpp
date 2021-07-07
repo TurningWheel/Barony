@@ -1617,10 +1617,10 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 				vmouse->draw_cursor = false;
 				hotbar.hotbarHasFocus = false;
 				warped = true;
+				int x = inventoryUI.getSelectedSlotX();
+				int y = inventoryUI.getSelectedSlotY();
 				if ( inventoryUI.selectedSlotInPaperDoll() )
 				{
-					int x = inventoryUI.getSelectedSlotX();
-					int y = inventoryUI.getSelectedSlotY();
 					if ( x == Inventory_t::DOLL_COLUMN_LEFT )
 					{
 						x = 0; // warp top left
@@ -1633,6 +1633,12 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 					inventoryUI.selectSlot(x, y);
 				}
 				warpMouseToSelectedInventorySlot(playernum);
+
+				if ( auto slot = inventoryUI.getInventorySlotFrame(x, y) )
+				{
+					SDL_Rect pos = slot->getAbsoluteSize();
+					inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y, true); // instant update slot cursor
+				}
 			}
 		}
 	}
