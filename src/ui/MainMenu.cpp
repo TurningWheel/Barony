@@ -131,7 +131,7 @@ namespace MainMenu {
 
 	static void updateSliderArrows(Frame& frame) {
 		bool drawSliders = false;
-		auto selectedWidget = frame.findSelectedWidget();
+		auto selectedWidget = frame.findSelectedWidget(0);
 		if (selectedWidget && selectedWidget->getType() == Widget::WIDGET_SLIDER) {
 			auto slider = static_cast<Slider*>(selectedWidget);
 			if (slider->isActivated() && slider->getOrientation() == Slider::SLIDER_HORIZONTAL) {
@@ -1190,7 +1190,7 @@ namespace MainMenu {
 					image->path = "images/ui/Main Menus/Settings/Settings_Left_Backing00.png";
 				}
 			}
-			auto selectedWidget = widget.findSelectedWidget();
+			auto selectedWidget = widget.findSelectedWidget(0);
 			if (selectedWidget) {
 				std::string setting;
 				auto name = std::string(selectedWidget->getName());

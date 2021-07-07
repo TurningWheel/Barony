@@ -7,6 +7,7 @@
 #include "Button.hpp"
 #include "Image.hpp"
 #include "Text.hpp"
+#include <cassert>
 
 Button::Button() {
 	size.x = 0; size.w = 32;

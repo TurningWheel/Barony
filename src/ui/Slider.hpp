@@ -38,8 +38,8 @@ public:
     //! draws the slider
     //! @param _size size and position of slider's parent frame
     //! @param _actualSize offset into the parent frame space (scroll)
-	//! @param selectedWidget the currently selected widget, if any
-    void draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget);
+	//! @param selectedWidgets the currently selected widgets, if any
+    void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets);
 
     //! handles slider clicks, etc.
     //! @param _size size and position of slider's parent frame
