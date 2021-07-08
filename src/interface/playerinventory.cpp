@@ -1392,7 +1392,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 	auto& tooltipDisplayedSettings = this->player.inventoryUI.itemTooltipDisplay;
 
 	bool bUpdateDisplayedTooltip = 
-		(!tooltipDisplayedSettings.isItemSameAsCurrent(item) || ItemTooltips.itemDebug);
+		(!tooltipDisplayedSettings.isItemSameAsCurrent(player, item) || ItemTooltips.itemDebug);
 
 	auto frameMain = this->player.inventoryUI.tooltipFrame;
 	if ( !frameMain )
@@ -1529,7 +1529,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 
 	if ( bUpdateDisplayedTooltip )
 	{
-		tooltipDisplayedSettings.updateItem(item);
+		tooltipDisplayedSettings.updateItem(player, item);
 
 		std::string tooltipType = ItemTooltips.tmpItems[item->type].tooltip;
 
