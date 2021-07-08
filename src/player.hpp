@@ -690,6 +690,43 @@ public:
 		};
 		SelectedItemAnimate_t selectedItemAnimate;
 
+		struct ItemTooltipDisplay_t
+		{
+			Uint32 type;
+			int status;
+			int beatitude;
+			int count;
+			Uint32 appearance;
+			bool identified;
+			Uint32 uid;
+
+			int playernum;
+			Sint32 playerLVL;
+			Sint32 playerEXP;
+			Sint32 playerSTR;
+			Sint32 playerDEX;
+			Sint32 playerCON;
+			Sint32 playerINT;
+			Sint32 playerPER;
+			Sint32 playerCHR;
+
+			int opacitySetpoint = 100;
+			real_t opacityAnimate = 1.0;
+			real_t expandAnimate = 1.0;
+			int expandSetpoint = 1;
+			real_t expandCurrent = 1.0;
+			bool expanded = false;
+
+			int tooltipDescriptionHeight = 0;
+			int tooltipWidth = 0;
+			int tooltipHeight = 0;
+
+			bool isItemSameAsCurrent(const int player, Item* newItem);
+			void updateItem(const int player, Item* newItem);
+			ItemTooltipDisplay_t();
+		};
+		ItemTooltipDisplay_t itemTooltipDisplay;
+
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
 		Inventory_t(Player& p) : 
@@ -715,6 +752,7 @@ public:
 		void processInventory();
 		void updateInventory();
 		void updateCursor();
+		void updateInventoryItemTooltip();
 		void updateSelectedItemAnimation();
 		void resetInventory()
 		{

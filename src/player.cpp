@@ -3320,7 +3320,7 @@ void Player::PaperDoll_t::drawSlots()
 							selectedSlotFrame->setDisabled(false);
 							if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
 							{
-								selectedSlotCursor->setDisabled(selectedSlotFrame->isDisabled());
+								selectedSlotCursor->setDisabled(false);
 								player.inventoryUI.updateSelectedSlotAnimation(slotFrame->getSize().x, slotFrame->getSize().y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
 							}
 						}

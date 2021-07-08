@@ -1588,6 +1588,17 @@ void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, bool
 
 void Player::Inventory_t::updateSelectedItemAnimation()
 {
+	if ( frame )
+	{
+		if ( auto selectedSlotFrame = frame->findFrame("inventory selected item") )
+		{
+			selectedSlotFrame->setDisabled(true);
+		}
+		if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+		{
+			selectedSlotCursor->setDisabled(true);
+		}
+	}
 	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 	{
 		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
@@ -1603,6 +1614,132 @@ void Player::Inventory_t::updateSelectedItemAnimation()
 		selectedItemAnimate.animateX = 0.0;
 		selectedItemAnimate.animateY = 0.0;
 	}
+}
+
+void Player::Inventory_t::updateInventoryItemTooltip()
+{
+	if ( !tooltipFrame || !frame )
+	{
+		return;
+	}
+
+	auto& tooltipDisplay = this->itemTooltipDisplay;
+
+	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipDisplay.opacitySetpoint )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		if ( tooltipDisplay.opacitySetpoint == 0 )
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (tooltipDisplay.opacityAnimate)) / (5);
+			tooltipDisplay.opacityAnimate -= setpointDiff;
+			tooltipDisplay.opacityAnimate = std::max(0.0, tooltipDisplay.opacityAnimate);
+		}
+		else
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (1.0 - tooltipDisplay.opacityAnimate)) / (1);
+			tooltipDisplay.opacityAnimate += setpointDiff;
+			tooltipDisplay.opacityAnimate = std::min(1.0, tooltipDisplay.opacityAnimate);
+		}
+		tooltipFrame->setOpacity(tooltipDisplay.opacityAnimate * 100);
+	}
+
+	tooltipDisplay.expandSetpoint = tooltipDisplay.expanded ? 100 : 0;
+	if ( static_cast<int>(tooltipDisplay.expandCurrent * 100) != tooltipDisplay.expandSetpoint )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		if ( tooltipDisplay.expandSetpoint == 0 )
+		{
+			//real_t setpointDiff = fpsScale * std::max(.05, (tooltipDisplay.expandAnimate) / 50);
+			//tooltipDisplay.expandAnimate -= setpointDiff;
+			tooltipDisplay.expandAnimate -= 2 * fpsScale / 100.0;
+			tooltipDisplay.expandAnimate = std::max(0.0, tooltipDisplay.expandAnimate);
+		}
+		else
+		{
+			//real_t setpointDiff = fpsScale * std::max(.05, (1.0 - tooltipDisplay.expandAnimate) / 50);
+			//tooltipDisplay.expandAnimate += setpointDiff;
+			tooltipDisplay.expandAnimate += 2 * fpsScale / 100.0;
+			tooltipDisplay.expandAnimate = std::min(1.0, tooltipDisplay.expandAnimate);
+		}
+		double t = tooltipDisplay.expandAnimate;
+		tooltipDisplay.expandCurrent = t * t * (3.0f - 2.0f * t); // bezier from 0 to width as t (0-1);
+	}
+}
+
+void Player::Inventory_t::ItemTooltipDisplay_t::updateItem(const int player, Item* newItem)
+{
+	if ( newItem && player >= 0 && player < MAXPLAYERS && stats[player] )
+	{
+		uid = newItem->uid;
+		type = newItem->type;
+		status = newItem->status;
+		beatitude = newItem->beatitude;
+		count = newItem->count;
+		appearance = newItem->appearance;
+		identified = newItem->identified;
+
+		if ( stats[player] )
+		{
+			playernum = player;
+			playerLVL = stats[player]->LVL;
+			playerEXP = stats[player]->EXP;
+			playerSTR = statGetSTR(stats[player], players[player]->entity);
+			playerDEX = statGetDEX(stats[player], players[player]->entity);
+			playerCON = statGetCON(stats[player], players[player]->entity);
+			playerINT = statGetINT(stats[player], players[player]->entity);
+			playerPER = statGetPER(stats[player], players[player]->entity);
+			playerCHR = statGetCHR(stats[player], players[player]->entity);
+		}
+	}
+}
+
+bool Player::Inventory_t::ItemTooltipDisplay_t::isItemSameAsCurrent(const int player, Item* newItem)
+{
+	if ( newItem && player >= 0 && player < MAXPLAYERS && stats[player] )
+	{
+		if ( newItem->uid == uid
+			&& newItem->type == type
+			&& newItem->status == status
+			&& newItem->beatitude == beatitude
+			&& newItem->count == count
+			&& newItem->appearance == appearance
+			&& newItem->identified == identified
+			&& playernum == player
+			&& playerLVL == stats[player]->LVL
+			&& playerEXP == stats[player]->EXP
+			&& playerSTR == statGetSTR(stats[player], players[player]->entity)
+			&& playerDEX == statGetDEX(stats[player], players[player]->entity)
+			&& playerCON == statGetCON(stats[player], players[player]->entity)
+			&& playerINT == statGetINT(stats[player], players[player]->entity)
+			&& playerPER == statGetPER(stats[player], players[player]->entity)
+			&& playerCHR == statGetCHR(stats[player], players[player]->entity)
+		)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+Player::Inventory_t::ItemTooltipDisplay_t::ItemTooltipDisplay_t()
+{
+	uid = 0;
+	type = WOODEN_SHIELD;
+	status = BROKEN;
+	beatitude = 0;
+	count = 0;
+	appearance = 0;
+	identified = false;
+
+	playernum = -1;
+	playerLVL = 0;
+	playerEXP = 0;
+	playerSTR = 0;
+	playerDEX = 0;
+	playerCON = 0;
+	playerINT = 0;
+	playerPER = 0;
+	playerCHR = 0;
 }
 
 void Player::Inventory_t::updateCursor()
@@ -2310,22 +2447,22 @@ void Player::Hotbar_t::updateHotbar()
 			glyph->pos.y = pos.y - glyph->pos.h;
 		}
 
-		bool showHighlightedSlot = true;
-		if ( !player.hotbar.hotbarHasFocus && player.inventoryUI.frame && !player.inventoryUI.frame->isDisabled() )
-		{
-			// if inventory visible, don't show selection if navigating within inventory
-			showHighlightedSlot = false;
-		}
-		else if ( player.hotbar.useHotbarFaceMenu && inputs.getVirtualMouse(player.playernum)->lastMovementFromController
-			&& player.hotbar.faceMenuButtonHeld == Player::Hotbar_t::FaceMenuGroup::GROUP_NONE
-			&& player.inventoryUI.frame && player.inventoryUI.frame->isDisabled() )
-		{
-			// if inventory invisible, don't show selection if face button not held
-			showHighlightedSlot = false;
-		}
-
 		if ( current_hotbar == num )
 		{
+			bool showHighlightedSlot = true;
+			if ( !player.hotbar.hotbarHasFocus && player.inventoryUI.frame && !player.inventoryUI.frame->isDisabled() )
+			{
+				// if inventory visible, don't show selection if navigating within inventory
+				showHighlightedSlot = false;
+			}
+			else if ( player.hotbar.useHotbarFaceMenu && inputs.getVirtualMouse(player.playernum)->lastMovementFromController
+				&& player.hotbar.faceMenuButtonHeld == Player::Hotbar_t::FaceMenuGroup::GROUP_NONE
+				&& player.inventoryUI.frame && player.inventoryUI.frame->isDisabled() )
+			{
+				// if inventory invisible, don't show selection if face button not held
+				showHighlightedSlot = false;
+			}
+
 			auto highlightSlotItem = highlightSlot->findFrame("slot item");
 			highlightSlotItem->setDisabled(true);
 
@@ -2343,10 +2480,26 @@ void Player::Hotbar_t::updateHotbar()
 
 				if ( player.inventoryUI.frame )
 				{
-					if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
+					bool showCursor = true;
+					if ( inputs.getUIInteraction(player.playernum)->selectedItem 
+						&& !highlightSlot->capturesMouseInRealtimeCoords() )
 					{
-						selectedSlotCursor->setDisabled(false);
-						player.inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+						showCursor = false;
+					}
+					else if ( !inputs.getUIInteraction(player.playernum)->selectedItem
+						&& !inputs.getVirtualMouse(player.playernum)->lastMovementFromController
+						&& !highlightSlot->capturesMouse() )
+					{
+						showCursor = false;
+					}
+
+					if ( showCursor )
+					{
+						if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
+						{
+							selectedSlotCursor->setDisabled(false);
+							player.inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+						}
 					}
 				}
 			}
@@ -2359,7 +2512,6 @@ void Player::Hotbar_t::updateHotbar()
 		{
 			updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
 		}
-
 	}
 }
 

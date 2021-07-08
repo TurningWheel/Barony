@@ -87,6 +87,11 @@ void Frame::draw() {
 }
 
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
+	if ( parent && inheritParentFrameOpacity )
+	{
+		setOpacity(static_cast<Frame*>(parent)->getOpacity());
+	}
+
 	if (disabled || invisible)
 		return;
 
@@ -436,17 +441,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	result.highlightTime = SDL_GetTicks();
 	result.tooltip = nullptr;
 
-	if ( parent && inheritParentFrameOpacity )
-	{
-		setOpacity(static_cast<Frame*>(parent)->getOpacity());
-	}
-
 	if (disabled) {
 		return result;
 	}
 
 #ifndef EDITOR // bad editor no cookie
-	if (players[clientnum]->shootmode) {
+	if (players[getOwner()]->shootmode) {
 		return result;
 	}
 #endif

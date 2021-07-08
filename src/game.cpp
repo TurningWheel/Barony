@@ -4123,6 +4123,7 @@ void ingameHud()
 	{
 		players[player]->hud.processHUD();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
+		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
 		players[player]->inventoryUI.updateCursor();
