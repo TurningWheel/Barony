@@ -737,35 +737,13 @@ void resetInventorySlotFrames(const int player)
 	snprintf(name, sizeof(name), "player inventory %d", player);
 	if ( Frame* inventoryFrame = gui->findFrame(name) )
 	{
-		if ( Frame* inventorySlotsFrame = inventoryFrame->findFrame("inventory slots") )
+		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
 		{
-			for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+			for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.getSizeY(); ++y )
 			{
-				for ( int y = 0; y < players[player]->inventoryUI.getSizeY(); ++y )
+				if ( auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y) )
 				{
-					char slotname[32] = "";
-					snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-					auto slotFrame = inventorySlotsFrame->findFrame(slotname);
-					if ( slotFrame )
-					{
-						slotFrame->setDisabled(true);
-					}
-				}
-			}
-		}
-		if ( Frame* paperDollSlotsFrame = inventoryFrame->findFrame("paperdoll slots") )
-		{
-			for ( int x = Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_LEFT; x <= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT; ++x )
-			{
-				for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5; ++y )
-				{
-					char slotname[32] = "";
-					snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-					auto slotFrame = paperDollSlotsFrame->findFrame(slotname);
-					if ( slotFrame )
-					{
-						slotFrame->setDisabled(true);
-					}
+					slotFrame->setDisabled(true);
 				}
 			}
 		}
@@ -786,9 +764,7 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy)
 		{
 			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < players[player]->inventoryUI.getSizeY(); ++y )
 			{
-				char slotname[32] = "";
-				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-				auto slotFrame = inventoryFrame->findFrame(slotname);
+				auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y);
 				if ( !slotFrame )
 				{
 					continue;
@@ -1412,6 +1388,8 @@ void createPlayerInventory(const int player)
 
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
 
+	players[player]->inventoryUI.slotFrames.clear();
+
 	const int baseSlotOffsetX = 4;
 	const int baseSlotOffsetY = 0;
 	SDL_Rect invSlotsPos{ 0, 202, basePos.w, 242 };
@@ -1433,6 +1411,7 @@ void createPlayerInventory(const int player)
 				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
 
 				auto slotFrame = invSlotsFrame->addFrame(slotname);
+				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
 				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });
@@ -1467,6 +1446,7 @@ void createPlayerInventory(const int player)
 				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
 
 				auto slotFrame = dollSlotsFrame->addFrame(slotname);
+				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
 				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });

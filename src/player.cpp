@@ -3091,25 +3091,10 @@ bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem, Uint32 flags
 			player.paperDoll.getCoordinatesFromSlotType(slot, x, y);
 		}
 
-		char slotname[32] = "";
-		snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-		if ( y >= PaperDollRows::DOLL_ROW_1 && y <= PaperDollRows::DOLL_ROW_5 )
+		if ( auto slot = getInventorySlotFrame(x, y) )
 		{
-			auto slot = frame->findFrame("paperdoll slots")->findFrame(slotname);
-			if ( slot )
-			{
-				slot->warpMouseToFrame(player.playernum, flags);
-				return true;
-			}
-		}
-		else
-		{
-			auto slot = frame->findFrame("inventory slots")->findFrame(slotname);
-			if ( slot )
-			{
-				slot->warpMouseToFrame(player.playernum, flags);
-				return true;
-			}
+			slot->warpMouseToFrame(player.playernum, flags);
+			return true;
 		}
 	}
 	return false;
@@ -3119,7 +3104,14 @@ Frame* Player::Inventory_t::getInventorySlotFrame(int x, int y) const
 {
 	if ( frame )
 	{
-		char slotname[32] = "";
+		int key = x + y * 100;
+		if ( slotFrames.find(key) != slotFrames.end() )
+		{
+			return slotFrames.at(key);
+		}
+		assert(slotFrames.find(key) == slotFrames.end());
+		return nullptr;
+		/*char slotname[32] = "";
 		snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
 		if ( y >= PaperDollRows::DOLL_ROW_1 && y <= PaperDollRows::DOLL_ROW_5 )
 		{
@@ -3136,7 +3128,7 @@ Frame* Player::Inventory_t::getInventorySlotFrame(int x, int y) const
 			{
 				return slot;
 			}
-		}
+		}*/
 	}
 	return nullptr;
 }
@@ -3245,11 +3237,6 @@ const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const
 	return itemCount < numSlots;
 }
 
-const int Player::PaperDoll_t::getSlotSize() const
-{
-	return 32;
-}
-
 Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::getSlotForItem(const Item& item) const
 {
 	for ( auto& slot : dollSlots )
@@ -3270,114 +3257,116 @@ void Player::PaperDoll_t::drawSlots()
 		return;
 	}
 
-	if ( player.inventoryUI.frame )
-	{
-		if ( !player.inventoryUI.frame->findFrame("paperdoll slots") )
-		{
-			return;
-		}
+	//if ( player.inventoryUI.frame )
+	//{
+	//	if ( !player.inventoryUI.frame->findFrame("paperdoll slots") )
+	//	{
+	//		return;
+	//	}
 
-		auto selectedSlotFrame = player.inventoryUI.frame->findFrame("inventory selected item");
-		if ( !selectedSlotFrame )
-		{
-			return;
-		}
-		//auto oldSelectedSlotFrame = guiFrame->findFrame("inventory old selected item");
-		//if ( !oldSelectedSlotFrame )
-		//{
-		//	return;
-		//}
+	//	auto selectedSlotFrame = player.inventoryUI.frame->findFrame("inventory selected item");
+	//	if ( !selectedSlotFrame )
+	//	{
+	//		return;
+	//	}
+	//	//auto oldSelectedSlotFrame = guiFrame->findFrame("inventory old selected item");
+	//	//if ( !oldSelectedSlotFrame )
+	//	//{
+	//	//	return;
+	//	//}
 
-		for (auto& slot : dollSlots)
-		{
-			slot.bMouseInSlot = false;
-			if ( slot.slotType != PaperDollSlotType::SLOT_MAX )
-			{
-				int x = 0;
-				int y = 0;
-				getCoordinatesFromSlotType(slot.slotType, x, y);
-				
-				if ( y > Player::Inventory_t::DOLL_ROW_5 ) { continue; } // did not find valid coordinate.
+	//	for (auto& slot : dollSlots)
+	//	{
+	//		if ( slot.slotType != PaperDollSlotType::SLOT_MAX )
+	//		{
+	//			int x = 0;
+	//			int y = 0;
+	//			getCoordinatesFromSlotType(slot.slotType, x, y);
+	//			
+	//			if ( y > Player::Inventory_t::DOLL_ROW_5 ) { continue; } // did not find valid coordinate.
 
-				char slotname[32] = "";
-				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-				auto slotFrame = player.inventoryUI.frame->findFrame("paperdoll slots")->findFrame(slotname);
-				if ( slotFrame )
-				{
-					if ( slotFrame->capturesMouse() )
-					{
-						selectPaperDollCoordinatesFromSlotType(slot.slotType);
-					}
+	//			char slotname[32] = "";
+	//			snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+	//			auto slotFrame = player.inventoryUI.frame->findFrame("paperdoll slots")->findFrame(slotname);
+	//			if ( slotFrame )
+	//			{
+	//				if ( slotFrame->capturesMouse() )
+	//				{
+	//					selectPaperDollCoordinatesFromSlotType(slot.slotType);
+	//				}
 
-					if ( x == player.inventoryUI.getSelectedSlotX()
-						&& y == player.inventoryUI.getSelectedSlotY()
-						&& !player.hotbar.hotbarHasFocus )
-					{
-						// enable the selectedSlotFrame
-						if ( !inputs.getUIInteraction(player.playernum)->selectedItem )
-						{
-							selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
-							selectedSlotFrame->setDisabled(false);
-							if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
-							{
-								selectedSlotCursor->setDisabled(false);
-								player.inventoryUI.updateSelectedSlotAnimation(slotFrame->getSize().x, slotFrame->getSize().y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
-							}
-						}
-					}
-				}
-			}
-		}
-		return;
-	}
+	//				if ( x == player.inventoryUI.getSelectedSlotX()
+	//					&& y == player.inventoryUI.getSelectedSlotY()
+	//					&& !player.hotbar.hotbarHasFocus )
+	//				{
+	//					// enable the selectedSlotFrame
+	//					if ( !inputs.getUIInteraction(player.playernum)->selectedItem )
+	//					{
+	//						selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
+	//						selectedSlotFrame->setDisabled(false);
+	//						if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
+	//						{
+	//							selectedSlotCursor->setDisabled(false);
+	//							player.inventoryUI.updateSelectedSlotAnimation(slotFrame->getSize().x, slotFrame->getSize().y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+	//						}
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//	return;
+	//}
+	return;
 
-	auto& charSheetBox = player.characterSheet.characterSheetBox;
 
-	int startx = charSheetBox.x + 2 + 8;
-	int starty = charSheetBox.y + 2 + 8;
+	// TODO UI: CLEAN UP
+	//auto& charSheetBox = player.characterSheet.characterSheetBox;
 
-	SDL_Rect pos{ startx, starty, getSlotSize(), getSlotSize() };
+	//int startx = charSheetBox.x + 2 + 8;
+	//int starty = charSheetBox.y + 2 + 8;
 
-	for ( auto& slot : dollSlots )
-	{
-		slot.bMouseInSlot = false;
-		if ( slot.slotType != PaperDollSlotType::SLOT_MAX )
-		{
-			slot.pos = pos;
+	//SDL_Rect pos{ startx, starty, getSlotSize(), getSlotSize() };
 
-			// grey outline
-			drawRect(&pos, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
-			if ( mouseInBounds(player.playernum, pos.x, pos.x + pos.w, pos.y, pos.y + pos.h) )
-			{
-				slot.bMouseInSlot = true;
-				// yellow highlight
+	//for ( auto& slot : dollSlots )
+	//{
+	//	slot.bMouseInSlot = false;
+	//	if ( slot.slotType != PaperDollSlotType::SLOT_MAX )
+	//	{
+	//		slot.pos = pos;
 
-				selectPaperDollCoordinatesFromSlotType(slot.slotType);
-				if ( !player.hotbar.hotbarHasFocus )
-				{
-					drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 0), 127);
-				}
-			}
+	//		// grey outline
+	//		drawRect(&pos, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+	//		if ( mouseInBounds(player.playernum, pos.x, pos.x + pos.w, pos.y, pos.y + pos.h) )
+	//		{
+	//			slot.bMouseInSlot = true;
+	//			// yellow highlight
 
-			SDL_Rect slotBackground = pos;
-			slotBackground.x += 1;
-			slotBackground.y += 1;
-			slotBackground.w -= 2;
-			slotBackground.h -= 2;
-			// black background
-			drawRect(&slotBackground, 0, 255);
+	//			selectPaperDollCoordinatesFromSlotType(slot.slotType);
+	//			if ( !player.hotbar.hotbarHasFocus )
+	//			{
+	//				drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 0), 127);
+	//			}
+	//		}
 
-			if ( slot.slotType == SLOT_OFFHAND )
-			{
-				pos.x = charSheetBox.x + charSheetBox.w - 2 - 8 - getSlotSize();
-				pos.y = starty;
-			}
-			else
-			{
-				pos.y += 4 + getSlotSize();
-			}
-		}
-	}
+	//		SDL_Rect slotBackground = pos;
+	//		slotBackground.x += 1;
+	//		slotBackground.y += 1;
+	//		slotBackground.w -= 2;
+	//		slotBackground.h -= 2;
+	//		// black background
+	//		drawRect(&slotBackground, 0, 255);
+
+	//		if ( slot.slotType == SLOT_OFFHAND )
+	//		{
+	//			pos.x = charSheetBox.x + charSheetBox.w - 2 - 8 - getSlotSize();
+	//			pos.y = starty;
+	//		}
+	//		else
+	//		{
+	//			pos.y += 4 + getSlotSize();
+	//		}
+	//	}
+	//}
 }
 
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)

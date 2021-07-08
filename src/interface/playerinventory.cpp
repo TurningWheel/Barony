@@ -783,21 +783,6 @@ void Player::PaperDoll_t::selectPaperDollCoordinatesFromSlotType(Player::PaperDo
 	}
 }
 
-void Player::PaperDoll_t::warpMouseToPaperDollSlot(Player::PaperDoll_t::PaperDollSlotType slot)
-{
-	if ( player.shootmode == true )
-	{
-		return;
-	}
-	if ( slot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX || slot < 0 )
-	{
-		return;
-	}
-
-	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-	inputs.warpMouse(player.playernum, dollSlots[slot].pos.x, dollSlots[slot].pos.y, flags);
-}
-
 void select_inventory_slot(const int player, int x, int y)
 {
 	auto& inventoryUI = players[player]->inventoryUI;
@@ -811,7 +796,6 @@ void select_inventory_slot(const int player, int x, int y)
 	if ( doPaperDollMovement )
 	{
 		players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(paperDollSlot);
-		players[player]->paperDoll.warpMouseToPaperDollSlot(paperDollSlot);
 		return;
 	}
 
@@ -3215,9 +3199,9 @@ void updatePlayerInventory(const int player)
 				{
 					itemOnPaperDoll = true;
 					auto& paperDollSlot = players[player]->paperDoll.dollSlots[slotType];
-					itemCoordX = paperDollSlot.pos.x;
-					itemCoordY = paperDollSlot.pos.y;
-					itemDrawnSlotSize = paperDollSlot.pos.w;
+					//itemCoordX = paperDollSlot.pos.x;
+					//itemCoordY = paperDollSlot.pos.y;
+					//itemDrawnSlotSize = paperDollSlot.pos.w;
 				}
 			}
 
@@ -3507,9 +3491,9 @@ void updatePlayerInventory(const int player)
 					{
 						itemOnPaperDoll = true;
 						auto& paperDollSlot = players[player]->paperDoll.dollSlots[slotType];
-						itemCoordX = paperDollSlot.pos.x;
-						itemCoordY = paperDollSlot.pos.y;
-						itemDrawnSlotSize = paperDollSlot.pos.w;
+						//itemCoordX = paperDollSlot.pos.x;
+						//itemCoordY = paperDollSlot.pos.y;
+						//itemDrawnSlotSize = paperDollSlot.pos.w;
 					}
 				}
 
@@ -3891,12 +3875,9 @@ void Player::Inventory_t::updateInventory()
 
 		for ( int x = 0; x < getSizeX(); ++x )
 		{
-			for ( int y = 0; y < getSizeY(); ++y )
+			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < getSizeY(); ++y )
 			{
-				char slotname[32] = "";
-				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-				auto slotFrame = frame->findFrame(slotname);
-				if ( slotFrame )
+				if ( auto slotFrame = getInventorySlotFrame(x, y) )
 				{
 					if ( slotFrame->capturesMouseInRealtimeCoords() )
 					{
@@ -3907,8 +3888,8 @@ void Player::Inventory_t::updateInventory()
 						}
 					}
 
-					int startx = invSlotsFrame->getSize().x + slotFrame->getSize().x;
-					int starty = invSlotsFrame->getSize().y + slotFrame->getSize().y;
+					int startx = slotFrame->getAbsoluteSize().x;
+					int starty = slotFrame->getAbsoluteSize().y;
 
 					if ( x == getSelectedSlotX()
 						&& y == getSelectedSlotY()
@@ -3940,21 +3921,14 @@ void Player::Inventory_t::updateInventory()
 		{
 			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < getSizeY(); ++y )
 			{
-				char slotname[32] = "";
-				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-				auto slotFrame = frame->findFrame(slotname);
+				auto slotFrame = getInventorySlotFrame(x, y);
 				if ( !slotFrame )
 				{
 					continue;
 				}
 
-				int startx = invSlotsFrame->getSize().x + slotFrame->getSize().x;
-				int starty = invSlotsFrame->getSize().y + slotFrame->getSize().y;
-				if ( y >= Player::Inventory_t::DOLL_ROW_1 && y <= Player::Inventory_t::DOLL_ROW_5 )
-				{
-					startx = dollSlotsFrame->getSize().x + slotFrame->getSize().x;
-					starty = dollSlotsFrame->getSize().y + slotFrame->getSize().y;
-				}
+				int startx = slotFrame->getAbsoluteSize().x;
+				int starty = slotFrame->getAbsoluteSize().y;
 
 				if ( inputs.getVirtualMouse(player)->draw_cursor )
 				{
@@ -4030,8 +4004,6 @@ void Player::Inventory_t::updateInventory()
 				{
 					//Draw blue border around the slot if it's the currently grabbed item.
 					//drawBlueInventoryBorder(player, *item, x, y);
-					char slotname[32] = "";
-					snprintf(slotname, sizeof(slotname), "slot %d %d", selectedItem->x, selectedItem->y);
 					Frame* slotFrame = nullptr;
 
 					SDL_Rect borderPos{ 0, 0, oldSelectedSlotFrame->getSize().w, oldSelectedSlotFrame->getSize().h };
@@ -4039,8 +4011,7 @@ void Player::Inventory_t::updateInventory()
 					{
 						int slotx, sloty;
 						this->player.paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), slotx, sloty);
-						snprintf(slotname, sizeof(slotname), "slot %d %d", slotx, sloty);
-						if ( slotFrame = dollSlotsFrame->findFrame(slotname) )
+						if ( slotFrame = getInventorySlotFrame(slotx, sloty) )
 						{
 							borderPos.x = dollSlotsFrame->getSize().x + slotFrame->getSize().x;
 							borderPos.y = dollSlotsFrame->getSize().y + slotFrame->getSize().y;
@@ -4048,8 +4019,7 @@ void Player::Inventory_t::updateInventory()
 					}
 					else
 					{
-						snprintf(slotname, sizeof(slotname), "slot %d %d", selectedItem->x, selectedItem->y);
-						if ( slotFrame = invSlotsFrame->findFrame(slotname) )
+						if ( slotFrame = getInventorySlotFrame(selectedItem->x, selectedItem->y) )
 						{
 							borderPos.x = invSlotsFrame->getSize().x + slotFrame->getSize().x;
 							borderPos.y = invSlotsFrame->getSize().y + slotFrame->getSize().y;
@@ -4104,11 +4074,10 @@ void Player::Inventory_t::updateInventory()
 		if ( itemx >= 0 && itemx < getSizeX()
 			&& itemy >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1 && itemy < getSizeY() )
 		{
-			char slotname[32] = "";
-			snprintf(slotname, sizeof(slotname), "slot %d %d", itemx, itemy);
-			auto slotFrame = frame->findFrame(slotname);
-
-			updateSlotFrameFromItem(slotFrame, item);
+			if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
+			{
+				updateSlotFrameFromItem(slotFrame, item);
+			}
 		}
 	}
 
@@ -4255,9 +4224,8 @@ void Player::Inventory_t::updateInventory()
 					players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
 				}
 
-				char slotname[32] = "";
-				snprintf(slotname, sizeof(slotname), "slot %d %d", itemx, itemy);
-				auto slotFrame = frame->findFrame(slotname);
+				auto slotFrame = getInventorySlotFrame(itemx, itemy);
+				if ( !slotFrame ) { continue; }
 				mouseOverSlot = slotFrame->capturesMouse();
 
 				if ( mouseOverSlot )
@@ -4476,9 +4444,7 @@ void Player::Inventory_t::updateInventory()
 			int selectedSlotFrameY = 0;
 			if ( getSlotFrameXYFromMousePos(player, selectedSlotFrameX, selectedSlotFrameY) )
 			{
-				char slotname[32] = "";
-				snprintf(slotname, sizeof(slotname), "slot %d %d", selectedSlotFrameX, selectedSlotFrameY);
-				if ( auto slotFrame = frame->findFrame(slotname) )
+				if ( auto slotFrame = getInventorySlotFrame(selectedSlotFrameX, selectedSlotFrameY) )
 				{
 					selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getAbsoluteSize().x + 1, slotFrame->getAbsoluteSize().y + 1, 
 						selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
@@ -4550,11 +4516,10 @@ void Player::Inventory_t::updateInventory()
 				if ( itemx >= 0 && itemx < getSizeX()
 					&& itemy >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1 && itemy < getSizeY() )
 				{
-					char slotname[32] = "";
-					snprintf(slotname, sizeof(slotname), "slot %d %d", itemx, itemy);
-					auto slotFrame = frame->findFrame(slotname);
-
-					updateSlotFrameFromItem(slotFrame, item);
+					if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
 				}
 			}
 		}

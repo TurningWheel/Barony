@@ -669,6 +669,7 @@ public:
 	public:
 		Frame* frame = nullptr;
 		Frame* tooltipFrame = nullptr;
+		std::unordered_map<int, Frame*> slotFrames;
 
 		struct Cursor_t
 		{
@@ -1155,16 +1156,14 @@ public:
 		{
 			Uint32 item;
 			PaperDollSlotType slotType;
-			SDL_Rect pos { 0,0,0,0 };
 			PaperDollSlot_t()
 			{
 				item = 0;
 				slotType = SLOT_MAX;
 			}
-			bool bMouseInSlot = false;
 		};
 		std::array<PaperDollSlot_t, kNumPaperDollSlots> dollSlots;
-		const int getSlotSize() const;
+		//const int getSlotSize() const;
 		void initSlots()
 		{
 			returningItemsToInventory.clear();
@@ -1172,7 +1171,6 @@ public:
 			{
 				dollSlots[i].item = 0;
 				dollSlots[i].slotType = static_cast<PaperDollSlotType>(i);
-				dollSlots[i].bMouseInSlot = false;
 			}
 		}
 		void clear()
@@ -1181,9 +1179,6 @@ public:
 			for ( int i = 0; i < kNumPaperDollSlots; ++i )
 			{
 				dollSlots[i].item = 0;
-				dollSlots[i].bMouseInSlot = false;
-				SDL_Rect nullRect{ 0,0,0,0 };
-				dollSlots[i].pos = nullRect;
 			}
 		}
 		void drawSlots();
@@ -1193,7 +1188,6 @@ public:
 		PaperDollSlotType paperDollSlotFromCoordinates(int x, int y) const;
 		void getCoordinatesFromSlotType(PaperDollSlotType slot, int& outx, int& outy) const;
 		void selectPaperDollCoordinatesFromSlotType(PaperDollSlotType slot) const;
-		void warpMouseToPaperDollSlot(PaperDollSlotType slot);
 		std::vector<Uint32> returningItemsToInventory;
 		void warpMouseToMostRecentReturnedInventoryItem();
 	} paperDoll;
