@@ -41,8 +41,6 @@ SDL_Surface* inventory_mode_item_highlighted_img = NULL;
 SDL_Surface* inventory_mode_spell_img = NULL;
 SDL_Surface* inventory_mode_spell_highlighted_img = NULL;
 
-selectBehavior_t itemSelectBehavior = BEHAVIOR_MOUSE;
-
 void executeItemMenuOption0(const int player, Item* item, bool is_potion_bad, bool learnedSpell);
 bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 {
@@ -1318,6 +1316,10 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 
 void cycleInventoryTab(const int player)
 {
+	if ( inputs.getUIInteraction(player)->selectedItem )
+	{
+		return;
+	}
 	if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM)
 	{
 		players[player]->inventory_mode = INVENTORY_MODE_SPELL;
@@ -3593,7 +3595,6 @@ void updatePlayerInventory(const int player)
 						else
 						{
 							selectedItem = item;
-							//itemSelectBehavior = BEHAVIOR_MOUSE;
 							playSound(139, 64); // click sound
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
@@ -3601,7 +3602,6 @@ void updatePlayerInventory(const int player)
 							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) )
 							{
 								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
-								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
 								inputs.mouseClearLeft(player);
 								//TODO: Change the mouse cursor to THE HAND.
@@ -3903,7 +3903,7 @@ void Player::Inventory_t::updateInventory()
 							selectedSlotFrame->setDisabled(false);
 
 							selectedSlotCursor->setDisabled(false);
-							updateSelectedSlotAnimation(startx, starty, inputs.getVirtualMouse(player)->draw_cursor);
+							updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 							//messagePlayer(0, "0: %d, %d", x, y);
 						}
 					}
@@ -3939,7 +3939,7 @@ void Player::Inventory_t::updateInventory()
 						if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
 						{
 							selectedSlotCursor->setDisabled(false);
-							updateSelectedSlotAnimation(startx, starty, inputs.getVirtualMouse(player)->draw_cursor);
+							updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 						}
 						//messagePlayer(0, "5: %d, %d", x, y);
 					}
@@ -3953,7 +3953,7 @@ void Player::Inventory_t::updateInventory()
 						if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
 						{
 							selectedSlotCursor->setDisabled(false);
-							updateSelectedSlotAnimation(startx, starty, inputs.getVirtualMouse(player)->draw_cursor);
+							updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 						}
 						//messagePlayer(0, "1: %d, %d", x, y);
 					}
@@ -3966,7 +3966,7 @@ void Player::Inventory_t::updateInventory()
 					if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
 					{
 						selectedSlotCursor->setDisabled(false);
-						updateSelectedSlotAnimation(startx, starty, inputs.getVirtualMouse(player)->draw_cursor);
+						updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 					}
 					//messagePlayer(0, "2: %d, %d", x, y);
 				}
@@ -4304,7 +4304,6 @@ void Player::Inventory_t::updateInventory()
 						{
 							inputs.getUIInteraction(player)->selectedItemFromHotbar = -1;
 							selectedItem = item;
-							//itemSelectBehavior = BEHAVIOR_MOUSE;
 							playSound(139, 64); // click sound
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
@@ -4312,7 +4311,6 @@ void Player::Inventory_t::updateInventory()
 							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) )
 							{
 								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
-								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
 								inputs.mouseClearLeft(player);
 								//TODO: Change the mouse cursor to THE HAND.
@@ -4453,7 +4451,8 @@ void Player::Inventory_t::updateInventory()
 					if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
 					{
 						selectedSlotCursor->setDisabled(false);
-						updateSelectedSlotAnimation(selectedSlotFrame->getSize().x - 1, selectedSlotFrame->getSize().y - 1, inputs.getVirtualMouse(player)->draw_cursor);
+						updateSelectedSlotAnimation(selectedSlotFrame->getSize().x - 1, selectedSlotFrame->getSize().y - 1, 
+							getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 					}
 					//messagePlayer(player, "6: %d, %d", selectedSlotFrameX, selectedSlotFrameY);
 				}
@@ -4470,7 +4469,8 @@ void Player::Inventory_t::updateInventory()
 						if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
 						{
 							selectedSlotCursor->setDisabled(false);
-							updateSelectedSlotAnimation(hotbarSlotFrame->getAbsoluteSize().x, hotbarSlotFrame->getAbsoluteSize().y, inputs.getVirtualMouse(player)->draw_cursor);
+							updateSelectedSlotAnimation(hotbarSlotFrame->getAbsoluteSize().x - 1, hotbarSlotFrame->getAbsoluteSize().y - 1,
+								hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 						}
 						//messagePlayer(player, "7: hotbar: %d", c);
 						break;

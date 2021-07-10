@@ -20,6 +20,10 @@
 #include <assert.h>
 
 bool newui = false;
+int selectedCursorOpacity = 255;
+int oldSelectedCursorOpacity = 255;
+int hotbarSlotOpacity = 255;
+int hotbarSelectedSlotOpacity = 255;
 
 void createHPMPBars(const int player)
 {
@@ -197,15 +201,15 @@ void createHotbar(const int player)
 	{
 		return;
 	}
-	
-	SDL_Rect slotPos{ 0, 0, 44, 44 };
+	Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, hotbarSlotOpacity);
+	SDL_Rect slotPos{ 0, 0, hotbar_t.getSlotSize(), hotbar_t.getSlotSize() };
 	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 	{
 		char slotname[32];
 		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
 		auto slot = hotbar_t.hotbarFrame->addFrame(slotname);
 		slot->setSize(slotPos);
-		slot->addImage(slotPos, 0xFFFFFFFF, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_00.png", "slot img");
+		slot->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_00.png", "slot img");
 
 		char glyphname[32];
 		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", i);
@@ -239,10 +243,23 @@ void createHotbar(const int player)
 
 	auto highlightFrame = hotbar_t.hotbarFrame->addFrame("hotbar highlight");
 	highlightFrame->setSize(slotPos);
-	highlightFrame->addImage(slotPos, 0xFFFFFFFF, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_00.png", "highlight img");
+	highlightFrame->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_00.png", "highlight img");
 	auto itemSlot = highlightFrame->addFrame("slot item");
 	itemSlot->setSize(highlightFrame->getSize());
 	createPlayerInventorySlotFrameElements(itemSlot);
+
+	auto cursorFrame = hotbar_t.hotbarFrame->addFrame("shootmode selected item cursor");
+	cursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
+	cursorFrame->setDisabled(true);
+	color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
+	cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+		color, "images/ui/Inventory/Selector_TL.png", "shootmode selected cursor topleft");
+	cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+		color, "images/ui/Inventory/Selector_TR.png", "shootmode selected cursor topright");
+	cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+		color, "images/ui/Inventory/Selector_BL.png", "shootmode selected cursor bottomleft");
+	cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+		color, "images/ui/Inventory/Selector_BR.png", "shootmode selected cursor bottomright");
 
 	auto text = highlightFrame->addField("slot num text", 4);
 	text->setText("");
@@ -1357,6 +1374,60 @@ void drawCharacterPreview(const int player, SDL_Rect pos)
 	fov = ofov;
 }
 
+void loadHUDSettingsJSON()
+{
+	if ( !PHYSFS_getRealDir("/data/HUD_settings.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/HUD_settings.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/HUD_settings.json");
+		inputPath.append("/data/HUD_settings.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				if ( d.HasMember("hotbar_slot_opacity") )
+				{
+					hotbarSlotOpacity = d["hotbar_slot_opacity"].GetInt();
+				}
+				if ( d.HasMember("hotbar_selected_slot_opacity") )
+				{
+					hotbarSelectedSlotOpacity = d["hotbar_selected_slot_opacity"].GetInt();
+				}
+				if ( d.HasMember("selected_cursor_opacity") )
+				{
+					selectedCursorOpacity = d["selected_cursor_opacity"].GetInt();
+				}
+				if ( d.HasMember("selected_old_cursor_opacity") )
+				{
+					oldSelectedCursorOpacity = d["selected_old_cursor_opacity"].GetInt();
+				}
+				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+			}
+		}
+	}
+}
+
 void createPlayerInventory(const int player)
 {
 	char name[32];
@@ -1383,7 +1454,7 @@ void createPlayerInventory(const int player)
 		bgFrame->setActualSize(SDL_Rect{ 0, 0, bgSize.w, bgSize.h });
 		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, bgSize.h },
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Inventory_Base_00a.png", "inventory base img");
+			"images/ui/Inventory/HUD_Inventory_Base_02.png", "inventory base img");
 	}
 
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
@@ -1501,10 +1572,23 @@ void createPlayerInventory(const int player)
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "inventory old selected highlight");
 
+		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
+		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
+		oldCursorFrame->setDisabled(true);
+		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, oldSelectedCursorOpacity);
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TL.png", "inventory old cursor topleft");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TR.png", "inventory old cursor topright");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BL.png", "inventory old cursor bottomleft");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BR.png", "inventory old cursor bottomright");
+
 		auto cursorFrame = frame->addFrame("inventory selected item cursor");
 		cursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		cursorFrame->setDisabled(true);
-		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "images/ui/Inventory/Selector_TL.png", "inventory selected cursor topleft");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -1531,7 +1615,7 @@ void createPlayerInventory(const int player)
 	}
 }
 
-void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, bool usingMouse)
+void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse)
 {
 	if ( frame )
 	{
@@ -1543,8 +1627,8 @@ void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, bool
 					SDL_Rect{
 					destx - cursor.cursorToSlotOffset,
 					desty - cursor.cursorToSlotOffset,
-					selectedSlotCursor->getSize().w,
-					selectedSlotCursor->getSize().h
+					width + 2 * (cursor.cursorToSlotOffset + 1),
+					height + 2 * (cursor.cursorToSlotOffset + 1)
 				}
 				);
 				cursor.animateSetpointX = destx;
@@ -1554,13 +1638,56 @@ void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, bool
 			}
 			else if ( cursor.animateSetpointX != destx || cursor.animateSetpointY != desty )
 			{
-				cursor.animateStartX = selectedSlotCursor->getSize().x;
-				cursor.animateStartY = selectedSlotCursor->getSize().y;
+				SDL_Rect size = selectedSlotCursor->getSize();
+				cursor.animateStartX = size.x;
+				cursor.animateStartY = size.y;
+				size.w = width + 2 * (cursor.cursorToSlotOffset + 1);
+				size.h = height + 2 * (cursor.cursorToSlotOffset + 1);
+				selectedSlotCursor->setSize(size);
 				cursor.animateSetpointX = destx;
 				cursor.animateSetpointY = desty;
 				cursor.animateX = 0.0;
 				cursor.animateY = 0.0;
 				cursor.lastUpdateTick = ticks;
+			}
+		}
+	}
+}
+
+void Player::Hotbar_t::updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse)
+{
+	if ( hotbarFrame )
+	{
+		if ( auto selectedSlotCursor = hotbarFrame->findFrame("shootmode selected item cursor") )
+		{
+			if ( usingMouse )
+			{
+				selectedSlotCursor->setSize(
+					SDL_Rect{
+					destx - shootmodeCursor.cursorToSlotOffset,
+					desty - shootmodeCursor.cursorToSlotOffset,
+					width + 2 * (shootmodeCursor.cursorToSlotOffset + 1),
+					height + 2 * (shootmodeCursor.cursorToSlotOffset + 1)
+				}
+				);
+				shootmodeCursor.animateSetpointX = destx;
+				shootmodeCursor.animateSetpointY = desty;
+				shootmodeCursor.animateStartX = destx;
+				shootmodeCursor.animateStartY = desty;
+			}
+			else if ( shootmodeCursor.animateSetpointX != destx || shootmodeCursor.animateSetpointY != desty )
+			{
+				SDL_Rect size = selectedSlotCursor->getSize();
+				shootmodeCursor.animateStartX = size.x;
+				shootmodeCursor.animateStartY = size.y;
+				size.w = width + 2 * (shootmodeCursor.cursorToSlotOffset + 1);
+				size.h = height + 2 * (shootmodeCursor.cursorToSlotOffset + 1);
+				selectedSlotCursor->setSize(size);
+				shootmodeCursor.animateSetpointX = destx;
+				shootmodeCursor.animateSetpointY = desty;
+				shootmodeCursor.animateX = 0.0;
+				shootmodeCursor.animateY = 0.0;
+				shootmodeCursor.lastUpdateTick = ticks;
 			}
 		}
 	}
@@ -1728,6 +1855,49 @@ void Player::Inventory_t::updateCursor()
 	{
 		return;
 	}
+
+	if ( auto oldSelectedSlotCursor = frame->findFrame("inventory old item cursor") )
+	{
+		if ( auto oldSelectedFrame = frame->findFrame("inventory old selected item") )
+		{
+			oldSelectedSlotCursor->setDisabled(oldSelectedFrame->isDisabled());
+
+			if ( !oldSelectedSlotCursor->isDisabled() )
+			{
+				SDL_Rect cursorSize = oldSelectedSlotCursor->getSize();
+				cursorSize.x = (oldSelectedFrame->getSize().x - 1) - cursor.cursorToSlotOffset;
+				cursorSize.y = (oldSelectedFrame->getSize().y - 1) - cursor.cursorToSlotOffset;
+				oldSelectedSlotCursor->setSize(cursorSize);
+
+				int offset = 8;// ((ticks - cursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+
+				Uint8 r, g, b, a;
+				if ( auto tl = oldSelectedSlotCursor->findImage("inventory old cursor topleft") )
+				{
+					tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+					SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+					a = oldSelectedCursorOpacity;
+					tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto tr = oldSelectedSlotCursor->findImage("inventory old cursor topright") )
+				{
+					tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+					tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto bl = oldSelectedSlotCursor->findImage("inventory old cursor bottomleft") )
+				{
+					bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+					bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto br = oldSelectedSlotCursor->findImage("inventory old cursor bottomright") )
+				{
+					br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+					br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+			}
+		}
+	}
+
 	if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
 	{
 		SDL_Rect cursorSize = selectedSlotCursor->getSize();
@@ -1748,21 +1918,28 @@ void Player::Inventory_t::updateCursor()
 			}
 		}
 
+		Uint8 r, g, b, a;
 		if ( auto tl = selectedSlotCursor->findImage("inventory selected cursor topleft") )
 		{
 			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+			a = selectedCursorOpacity;
+			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 		}
 		if ( auto tr = selectedSlotCursor->findImage("inventory selected cursor topright") )
 		{
 			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 		}
 		if ( auto bl = selectedSlotCursor->findImage("inventory selected cursor bottomleft") )
 		{
 			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 		}
 		if ( auto br = selectedSlotCursor->findImage("inventory selected cursor bottomright") )
 		{
 			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 		}
 
 		SDL_Rect currentPos = selectedSlotCursor->getSize();
@@ -1770,6 +1947,125 @@ void Player::Inventory_t::updateCursor()
 		if ( cursor.animateSetpointX - offsetPosition != currentPos.x
 			|| cursor.animateSetpointY - offsetPosition != currentPos.y )
 		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
+			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
+			cursor.animateX += setpointDiffX;
+			cursor.animateY += setpointDiffY;
+			cursor.animateX = std::min(1.0, cursor.animateX);
+			cursor.animateY = std::min(1.0, cursor.animateY);
+
+			int destX = cursor.animateSetpointX - cursor.animateStartX - offsetPosition;
+			int destY = cursor.animateSetpointY - cursor.animateStartY - offsetPosition;
+
+			currentPos.x = cursor.animateStartX + destX * cursor.animateX;
+			currentPos.y = cursor.animateStartY + destY * cursor.animateY;
+			selectedSlotCursor->setSize(currentPos);
+			//messagePlayer(0, "%.2f | %.2f", inventory_t.selectedSlotAnimateX, setpointDiffX);
+		}
+	}
+}
+
+void Player::Hotbar_t::updateCursor()
+{
+	if ( !hotbarFrame )
+	{
+		return;
+	}
+
+	//if ( auto oldSelectedSlotCursor = hotbarFrame->findFrame("inventory old item cursor") )
+	//{
+	//	if ( auto oldSelectedFrame = hotbarFrame->findFrame("inventory old selected item") )
+	//	{
+	//		oldSelectedSlotCursor->setDisabled(oldSelectedFrame->isDisabled());
+
+	//		if ( !oldSelectedSlotCursor->isDisabled() )
+	//		{
+	//			SDL_Rect cursorSize = oldSelectedSlotCursor->getSize();
+	//			cursorSize.x = (oldSelectedFrame->getSize().x - 1) - shootmodeCursor.cursorToSlotOffset;
+	//			cursorSize.y = (oldSelectedFrame->getSize().y - 1) - shootmodeCursor.cursorToSlotOffset;
+	//			oldSelectedSlotCursor->setSize(cursorSize);
+
+	//			int offset = 8;// ((ticks - shootmodeCursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+
+	//			Uint8 r, g, b, a;
+	//			if ( auto tl = oldSelectedSlotCursor->findImage("inventory old cursor topleft") )
+	//			{
+	//				tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+	//				SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+	//				a = oldSelectedCursorOpacity;
+	//				tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	//			}
+	//			if ( auto tr = oldSelectedSlotCursor->findImage("inventory old cursor topright") )
+	//			{
+	//				tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+	//				tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	//			}
+	//			if ( auto bl = oldSelectedSlotCursor->findImage("inventory old cursor bottomleft") )
+	//			{
+	//				bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+	//				bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	//			}
+	//			if ( auto br = oldSelectedSlotCursor->findImage("inventory old cursor bottomright") )
+	//			{
+	//				br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+	//				br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	//			}
+	//		}
+	//	}
+	//}
+
+
+	if ( auto selectedSlotCursor = hotbarFrame->findFrame("shootmode selected item cursor") )
+	{
+		SDL_Rect cursorSize = selectedSlotCursor->getSize();
+
+		const int smallOffset = 2;
+		const int largeOffset = 4;
+
+		int offset = ((ticks - shootmodeCursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				//offset = largeOffset;
+			}
+			else
+			{
+				offset = smallOffset;
+			}
+		}
+
+		Uint8 r, g, b, a;
+		if ( auto tl = selectedSlotCursor->findImage("shootmode selected cursor topleft") )
+		{
+			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+			a = selectedCursorOpacity;
+			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto tr = selectedSlotCursor->findImage("shootmode selected cursor topright") )
+		{
+			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto bl = selectedSlotCursor->findImage("shootmode selected cursor bottomleft") )
+		{
+			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto br = selectedSlotCursor->findImage("shootmode selected cursor bottomright") )
+		{
+			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+
+		SDL_Rect currentPos = selectedSlotCursor->getSize();
+		const int offsetPosition = shootmodeCursor.cursorToSlotOffset;
+		if ( shootmodeCursor.animateSetpointX - offsetPosition != currentPos.x
+			|| shootmodeCursor.animateSetpointY - offsetPosition != currentPos.y )
+		{
+			auto& cursor = shootmodeCursor;
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
 			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
@@ -2246,8 +2542,37 @@ void Player::Hotbar_t::updateHotbar()
 	const int hotbarCentreXLeft = hotbarCentreX - 148;
 	const int hotbarCentreXRight = hotbarCentreX + 148;
 
+	if ( !player.shootmode )
+	{
+		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarCancel") )
+		{
+			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarCancel");
+		}
+		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarLeft") )
+		{
+			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarLeft");
+			Input::inputs[player.shootmode].consumeBinaryReleaseToggle("HotbarFacebarLeft");
+		}
+		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarUp") )
+		{
+			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarUp");
+			Input::inputs[player.shootmode].consumeBinaryReleaseToggle("HotbarFacebarUp");
+		}
+		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarRight") )
+		{
+			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarRight");
+			Input::inputs[player.shootmode].consumeBinaryReleaseToggle("HotbarFacebarRight");
+		}
+		faceMenuButtonHeld = FaceMenuGroup::GROUP_NONE;
+	}
+
+	bool faceMenuSnapCursorInstantly = false;
 	if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
 	{
+		if ( selectedSlotAnimateCurrentValue == 0.0 )
+		{
+			faceMenuSnapCursorInstantly = true;
+		}
 		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
 		real_t setpointDiff = std::max(0.1, 1.0 - selectedSlotAnimateCurrentValue);
 		selectedSlotAnimateCurrentValue += fpsScale * (setpointDiff / 10.0);
@@ -2262,6 +2587,12 @@ void Player::Hotbar_t::updateHotbar()
 	auto highlightSlotImg = highlightSlot->findImage("highlight img");
 	highlightSlotImg->disabled = true;
 
+	auto shootmodeSelectedSlotCursor = hotbarFrame->findFrame("shootmode selected item cursor");
+	if ( shootmodeSelectedSlotCursor )
+	{
+		shootmodeSelectedSlotCursor->setDisabled(true);
+	}
+
 	// position the slots
 	for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 	{
@@ -2269,6 +2600,21 @@ void Player::Hotbar_t::updateHotbar()
 		snprintf(slotname, sizeof(slotname), "hotbar slot %d", num);
 		auto slot = hotbarFrame->findFrame(slotname);
 		assert(slot);
+
+		if ( auto img = slot->findImage("slot img") ) // apply any opacity from config
+		{
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+			a = hotbarSlotOpacity;
+			img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( highlightSlotImg )
+		{
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(highlightSlotImg->color, mainsurface->format, &r, &g, &b, &a);
+			a = hotbarSelectedSlotOpacity;
+			highlightSlotImg->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
 
 		char glyphname[32];
 		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", num);
@@ -2461,25 +2807,53 @@ void Player::Hotbar_t::updateHotbar()
 				if ( player.inventoryUI.frame )
 				{
 					bool showCursor = true;
-					if ( inputs.getUIInteraction(player.playernum)->selectedItem 
-						&& !highlightSlot->capturesMouseInRealtimeCoords() )
+					if ( !player.shootmode )
 					{
-						showCursor = false;
+						if ( inputs.getUIInteraction(player.playernum)->selectedItem 
+							&& !highlightSlot->capturesMouseInRealtimeCoords() )
+						{
+							showCursor = false;
+						}
+						else if ( !inputs.getUIInteraction(player.playernum)->selectedItem
+							&& !inputs.getVirtualMouse(player.playernum)->lastMovementFromController
+							&& !highlightSlot->capturesMouse() )
+						{
+							showCursor = false;
+						}
 					}
-					else if ( !inputs.getUIInteraction(player.playernum)->selectedItem
-						&& !inputs.getVirtualMouse(player.playernum)->lastMovementFromController
-						&& !highlightSlot->capturesMouse() )
+					else if ( player.shootmode )
 					{
-						showCursor = false;
+						showCursor = true;
 					}
 
 					if ( showCursor )
 					{
-						if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
+						if ( !player.shootmode )
 						{
-							selectedSlotCursor->setDisabled(false);
-							player.inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+							if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
+							{
+								selectedSlotCursor->setDisabled(false);
+								player.inventoryUI.updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize(), getSlotSize(), 
+									inputs.getVirtualMouse(player.playernum)->draw_cursor);
+							}
 						}
+						else if ( player.shootmode )
+						{
+							if ( shootmodeSelectedSlotCursor )
+							{
+								shootmodeSelectedSlotCursor->setDisabled(false);
+								bool snapCursor = !inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
+								if ( useHotbarFaceMenu && faceMenuSnapCursorInstantly )
+								{
+									snapCursor = true;
+								}
+								updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize(), getSlotSize(), snapCursor);
+							}
+						}
+					}
+					else
+					{
+						highlightSlotImg->disabled = true;
 					}
 				}
 			}

@@ -787,7 +787,7 @@ public:
 			}
 			return 1;
 		}
-		void updateSelectedSlotAnimation(int destx, int desty, bool usingMouse);
+		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		Frame* getInventorySlotFrame(int x, int y) const;
 
 		enum PaperDollRows : int
@@ -1207,6 +1207,19 @@ public:
 		Frame* hotbarFrame = nullptr;
 		real_t selectedSlotAnimateCurrentValue = 0.0;
 
+		struct Cursor_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+			int animateSetpointX = 0;
+			int animateSetpointY = 0;
+			int animateStartX = 0;
+			int animateStartY = 0;
+			Uint32 lastUpdateTick = 0;
+			const int cursorToSlotOffset = 7;
+		};
+		Cursor_t shootmodeCursor;
+
 		// temp stuff
 		bool useHotbarRadialMenu = false;
 		bool useHotbarFaceMenu = true;
@@ -1228,11 +1241,7 @@ public:
 		// end temp stuff
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
-		/*const int getStartX() const
-		{
-			return (player.camera_midx() - ((NUM_HOTBAR_SLOTS / 2) * getSlotSize()));
-		}*/
-		const int getSlotSize() const { return hotbar_img->w * uiscale_hotbar; }
+		const int getSlotSize() const { return 44; }
 
 		Hotbar_t(Player& p) : player(p)
 		{
@@ -1294,6 +1303,8 @@ public:
 		void updateHotbar();
 		Frame* getHotbarSlotFrame(const int hotbarSlot);
 		bool warpMouseToHotbar(const int hotbarSlot, Uint32 flags);
+		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
+		void updateCursor();
 	} hotbar;
 };
 

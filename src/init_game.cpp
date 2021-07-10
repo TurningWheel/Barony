@@ -35,6 +35,7 @@
 #include "Directory.hpp"
 #include "mod_tools.hpp"
 #include "ui/LoadingScreen.hpp"
+#include "ui/GameUI.hpp"
 
 #include <thread>
 #include <future>
@@ -298,6 +299,8 @@ int initGame()
 
 		ItemTooltips.readItemsFromFile();
 		ItemTooltips.readTooltipsFromFile();
+
+		loadHUDSettingsJSON();
 
 		updateLoadingScreen(94);
 

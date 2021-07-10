@@ -65,7 +65,7 @@ void updateCharacterSheet(const int player)
 	pos.w = 208;
 	pos.h = 180;
 
-	int statWindowY = y1 + 196;
+	/*int statWindowY = y1 + 196;
 	int statWindowY2 = y1 + 404;
 	if ( uiscale_charactersheet )
 	{
@@ -73,20 +73,7 @@ void updateCharacterSheet(const int player)
 		pos.w = 276;
 		statWindowY = y1 + pos.h + 16;
 		statWindowY2 = y1 + 554;
-	}
-
-	char name[32];
-	snprintf(name, sizeof(name), "player inventory %d", player);
-	Frame* frame = gui->findFrame(name);
-	Frame* characterFrame = nullptr;
-	if ( frame )
-	{
-		characterFrame = frame->findFrame("inventory character preview");
-		if ( characterFrame )
-		{
-			pos = characterFrame->getSize();
-		}
-	}
+	}*/
 
 	//drawWindowFancy(x1, y1, x1 + pos.w + 16, y1 + pos.h + 16);
 
@@ -418,18 +405,31 @@ void Player::CharacterSheet_t::setDefaultCharacterSheetBox()
 	characterSheetBox.w = pos.w + 16;
 	characterSheetBox.h = statWindowY;
 
-	statsSheetBox.x = characterSheetBox.x;
-	statsSheetBox.y = statWindowY;
-	statsSheetBox.w = characterSheetBox.w;
-	statsSheetBox.h = statWindowY2 - statWindowY;
 
-	if ( player.inventoryUI.bNewInventoryLayout )
+	if ( players[player.playernum]->inventoryUI.frame )
+	{
+		if ( auto inventoryBaseFrame = players[player.playernum]->inventoryUI.frame->findFrame("inventory base") )
+		{
+			SDL_Rect pos = inventoryBaseFrame->getAbsoluteSize();
+			statsSheetBox.x = (pos.x + pos.w) * xres / Frame::virtualScreenX;
+			statsSheetBox.y = pos.y * xres / Frame::virtualScreenY;
+		}
+	}
+	else
+	{
+		statsSheetBox.x = characterSheetBox.x;
+		statsSheetBox.y = statWindowY;
+		statsSheetBox.w = characterSheetBox.w;
+		statsSheetBox.h = statWindowY2 - statWindowY;
+	}
+
+	/*if ( player.inventoryUI.bNewInventoryLayout )
 	{
 		statsSheetBox.x = characterSheetBox.x + characterSheetBox.w;
 		statsSheetBox.y = characterSheetBox.y;
 
 		characterSheetBox.h = pos.h + 16;
-	}
+	}*/
 }
 
 void Player::CharacterSheet_t::setDefaultPartySheetBox()

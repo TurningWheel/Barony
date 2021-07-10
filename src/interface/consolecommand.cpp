@@ -3418,6 +3418,11 @@ void consoleCommand(char const * const command_str)
 				players[clientnum]->entity->getStats()->EXP += 1 + rand() % 50;
 			}
 		}
+		else if ( !strncmp(command_str, "/loadhudsettings", 16) )
+		{
+			loadHUDSettingsJSON();
+			messagePlayer(clientnum, "Reloaded HUD_settings.json");
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

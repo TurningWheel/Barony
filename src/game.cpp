@@ -3718,15 +3718,16 @@ void ingameHud()
 		{
 			*inputPressedForPlayer(player, impulses[IN_SPELL_LIST]) = 0;
 			inputs.controllerClearInput(player, INJOY_SPELL_LIST);
-			players[player]->gui_mode = GUI_MODE_INVENTORY;
-			inputs.getUIInteraction(player)->selectedItem = nullptr;
-			players[player]->inventory_mode = INVENTORY_MODE_SPELL;
-
-			if ( players[player]->shootmode )
+			if ( !inputs.getUIInteraction(player)->selectedItem )
 			{
-				players[player]->shootmode = false;
-				players[player]->characterSheet.attributespage = 0;
-				//proficienciesPage = 0;
+				players[player]->gui_mode = GUI_MODE_INVENTORY;
+				players[player]->inventory_mode = INVENTORY_MODE_SPELL;
+				if ( players[player]->shootmode )
+				{
+					players[player]->shootmode = false;
+					players[player]->characterSheet.attributespage = 0;
+					//proficienciesPage = 0;
+				}
 			}
 		}
 
@@ -4127,6 +4128,7 @@ void ingameHud()
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
 		players[player]->inventoryUI.updateCursor();
+		players[player]->hotbar.updateCursor();
 		// new right side pane by sheridan
 		doNewCharacterSheet(player);
 		if ( !players[player]->isLocalPlayer() )

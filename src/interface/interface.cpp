@@ -1637,7 +1637,8 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 				if ( auto slot = inventoryUI.getInventorySlotFrame(x, y) )
 				{
 					SDL_Rect pos = slot->getAbsoluteSize();
-					inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y, true); // instant update slot cursor
+					inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y, 
+						inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), true); // instant update slot cursor
 				}
 			}
 		}

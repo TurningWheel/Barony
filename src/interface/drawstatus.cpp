@@ -1102,7 +1102,6 @@ void drawStatus(int player)
 							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
 								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
-								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								inputs.getUIInteraction(player)->toggleclick = true;
 								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
 								//TODO: Change the mouse cursor to THE HAND.
@@ -2831,7 +2830,6 @@ void drawStatusNew(const int player)
 							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
 								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
-								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								inputs.getUIInteraction(player)->toggleclick = true;
 								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
 								//TODO: Change the mouse cursor to THE HAND.
@@ -3531,7 +3529,7 @@ void drawStatusNew(const int player)
 	{
 		Item* item = NULL;
 		const auto& inventoryUI = players[player]->inventoryUI;
-		if ( !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player))) )
+		if ( !shootmode && !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player))) )
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
@@ -3570,7 +3568,6 @@ void drawStatusNew(const int player)
 				Input::inputs[player].consumeBinaryToggle("HotbarSlot6");
 				item = uidToItem(hotbar[5].item);
 				hotbar_t.current_hotbar = 5;
-
 			}
 			if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
 			{
@@ -3598,101 +3595,101 @@ void drawStatusNew(const int player)
 				item = uidToItem(hotbar[9].item);
 				hotbar_t.current_hotbar = 9;
 			}
+		}
 
-			if ( players[player]->hotbar.useHotbarFaceMenu
-				&& !openedChest[player]
-				&& gui_mode != (GUI_MODE_SHOP)
-				&& !GenericGUI[player].isGUIOpen()
-				&& !inputs.getUIInteraction(player)->selectedItem
-				&& shootmode )
+		if ( players[player]->hotbar.useHotbarFaceMenu
+			&& !openedChest[player]
+			&& gui_mode != (GUI_MODE_SHOP)
+			&& !GenericGUI[player].isGUIOpen()
+			&& !inputs.getUIInteraction(player)->selectedItem
+			&& shootmode )
+		{
+			Player::Hotbar_t::FaceMenuGroup pressed = Player::Hotbar_t::GROUP_NONE;
+
+			for ( int i = 0; i < 3; ++i )
 			{
-				Player::Hotbar_t::FaceMenuGroup pressed = Player::Hotbar_t::GROUP_NONE;
-
-				for ( int i = 0; i < 3; ++i )
+				std::string inputName = "";
+				switch ( i )
 				{
-					std::string inputName = "";
-					switch ( i )
-					{
-						case 0:
-							inputName = "HotbarFacebarLeft";
-							break;
-						case 1:
-							inputName = "HotbarFacebarUp";
-							break;
-						case 2:
-							inputName = "HotbarFacebarRight";
-							break;
-						default:
-							break;
-					}
-
-					if ( Input::inputs[player].binaryToggle(inputName.c_str()) )
-					{
-						if ( Input::inputs[player].binaryToggle("HotbarFacebarCancel") )
-						{
-							Input::inputs[player].consumeBinaryToggle(inputName.c_str());
-							Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
-							Input::inputs[player].consumeBinaryToggle("HotbarFacebarCancel");
-
-							//inputs.controllerClearRawInput(player, 301 + button);
-							//inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN);
-							//inputs.controllerClearRawInputRelease(player, 301 + button);
-							break;
-						}
-
-						std::array<int, 3> slotOrder = { 0, 1, 2 };
-						int centerSlot = 1;
-						if ( inputName == "HotbarFacebarLeft" )
-						{
-							pressed = Player::Hotbar_t::GROUP_LEFT;
-						}
-						else if ( inputName == "HotbarFacebarUp" )
-						{
-							pressed = Player::Hotbar_t::GROUP_MIDDLE;
-							centerSlot = 4;
-							slotOrder = { 3, 4, 5 };
-						}
-						else if ( inputName == "HotbarFacebarRight" )
-						{
-							pressed = Player::Hotbar_t::GROUP_RIGHT;
-							centerSlot = 7;
-							slotOrder = { 6, 7, 8 };
-						}
-						
-						if ( Input::inputs[player].binaryToggle("HotbarFacebarModifierLeft") )
-						{
-							hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
-							Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierLeft");
-						}
-						else if ( Input::inputs[player].binaryToggle("HotbarFacebarModifierRight") )
-						{
-							hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
-							Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierRight");
-						}
-						else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
-						{
-							hotbar_t.selectHotbarSlot(centerSlot);
-						}
+					case 0:
+						inputName = "HotbarFacebarLeft";
 						break;
-					}
-					else if ( Input::inputs[player].binaryReleaseToggle(inputName.c_str()) )
-					{
-						item = uidToItem(players[player]->hotbar.slots()[hotbar_t.current_hotbar].item);
-						Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
+					case 1:
+						inputName = "HotbarFacebarUp";
 						break;
-					}
+					case 2:
+						inputName = "HotbarFacebarRight";
+						break;
+					default:
+						break;
 				}
 
-				players[player]->hotbar.faceMenuButtonHeld = pressed;
-
-				if ( pressed != Player::Hotbar_t::GROUP_NONE
-					&& players[player]->hotbar.faceMenuQuickCastEnabled && item && itemCategory(item) == SPELL_CAT )
+				if ( Input::inputs[player].binaryToggle(inputName.c_str()) )
 				{
-					spell_t* spell = getSpellFromItem(player, item);
-					if ( spell && players[player]->magic.selectedSpell() == spell )
+					if ( Input::inputs[player].binaryToggle("HotbarFacebarCancel") )
 					{
-						players[player]->hotbar.faceMenuQuickCast = true;
+						Input::inputs[player].consumeBinaryToggle(inputName.c_str());
+						Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
+						Input::inputs[player].consumeBinaryToggle("HotbarFacebarCancel");
+
+						//inputs.controllerClearRawInput(player, 301 + button);
+						//inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+						//inputs.controllerClearRawInputRelease(player, 301 + button);
+						break;
 					}
+
+					std::array<int, 3> slotOrder = { 0, 1, 2 };
+					int centerSlot = 1;
+					if ( inputName == "HotbarFacebarLeft" )
+					{
+						pressed = Player::Hotbar_t::GROUP_LEFT;
+					}
+					else if ( inputName == "HotbarFacebarUp" )
+					{
+						pressed = Player::Hotbar_t::GROUP_MIDDLE;
+						centerSlot = 4;
+						slotOrder = { 3, 4, 5 };
+					}
+					else if ( inputName == "HotbarFacebarRight" )
+					{
+						pressed = Player::Hotbar_t::GROUP_RIGHT;
+						centerSlot = 7;
+						slotOrder = { 6, 7, 8 };
+					}
+						
+					if ( Input::inputs[player].binaryToggle("HotbarFacebarModifierLeft") )
+					{
+						hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
+						Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierLeft");
+					}
+					else if ( Input::inputs[player].binaryToggle("HotbarFacebarModifierRight") )
+					{
+						hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
+						Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierRight");
+					}
+					else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
+					{
+						hotbar_t.selectHotbarSlot(centerSlot);
+					}
+					break;
+				}
+				else if ( Input::inputs[player].binaryReleaseToggle(inputName.c_str()) )
+				{
+					item = uidToItem(players[player]->hotbar.slots()[hotbar_t.current_hotbar].item);
+					Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
+					break;
+				}
+			}
+
+			players[player]->hotbar.faceMenuButtonHeld = pressed;
+
+			if ( pressed != Player::Hotbar_t::GROUP_NONE
+				&& players[player]->hotbar.faceMenuQuickCastEnabled && item && itemCategory(item) == SPELL_CAT )
+			{
+				spell_t* spell = getSpellFromItem(player, item);
+				if ( spell && players[player]->magic.selectedSpell() == spell )
+				{
+					players[player]->hotbar.faceMenuQuickCast = true;
 				}
 			}
 		}
