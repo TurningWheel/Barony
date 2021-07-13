@@ -1484,9 +1484,13 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 					players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
 					players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
 
-					// unused for now
-					//auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img");
-					//oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+					if ( bUseSelectedSlotCycleAnimation )
+					{
+						if ( auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img") )
+						{
+							oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+						}
+					}
 				}
 
 				if ( !toggleclick )
@@ -1614,8 +1618,13 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
 
 						// unused for now
-						//auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img");
-						//oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+						if ( bUseSelectedSlotCycleAnimation )
+						{
+							if ( auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img") )
+							{
+								oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+							}
+						}
 					}
 
 					if ( !toggleclick )
@@ -4838,50 +4847,60 @@ void Player::Inventory_t::updateInventory()
 
 					if ( numkey_quick_add && !command )
 					{
+						int slotNum = -1;
 						if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot1");
 							hotbar[0].item = item->uid;
+							slotNum = 0;
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot2") )
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot2");
 							hotbar[1].item = item->uid;
+							slotNum = 1;
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot3") )
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot3");
 							hotbar[2].item = item->uid;
+							slotNum = 2;
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot4") )
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot4");
 							hotbar[3].item = item->uid;
+							slotNum = 3;
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot5") )
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot5");
 							hotbar[4].item = item->uid;
+							slotNum = 4;
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot6") )
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot6");
 							hotbar[5].item = item->uid;
+							slotNum = 5;
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot7");
 							hotbar[6].item = item->uid;
+							slotNum = 6;
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot8") )
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot8");
 							hotbar[7].item = item->uid;
+							slotNum = 7;
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot9") )
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot9");
 							hotbar[8].item = item->uid;
+							slotNum = 8;
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot10") 
 							&& this->player.hotbar.getHotbarSlotFrame(9)
@@ -4889,6 +4908,21 @@ void Player::Inventory_t::updateInventory()
 						{
 							Input::inputs[player].consumeBinaryToggle("HotbarSlot10");
 							hotbar[9].item = item->uid;
+							slotNum = 9;
+						}
+
+						// empty out duplicate slots that match this item uid.
+						if ( slotNum >= 0 )
+						{
+							int i = 0;
+							for ( auto& s : players[player]->hotbar.slots() )
+							{
+								if ( i != slotNum && s.item == item->uid )
+								{
+									s.item = 0;
+								}
+								++i;
+							}
 						}
 					}
 					break;

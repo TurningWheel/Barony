@@ -25,6 +25,7 @@ int oldSelectedCursorOpacity = 255;
 int hotbarSlotOpacity = 255;
 int hotbarSelectedSlotOpacity = 255;
 bool bUsePreciseFieldTextReflow = true;
+bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
 
 void createHPMPBars(const int player)
 {
@@ -227,9 +228,13 @@ void createHotbar(const int player)
 		auto slot = hotbar_t.hotbarFrame->findFrame(slotname);
 		assert(slot);
 
-		auto itemSlot = slot->addFrame("slot item");
-		itemSlot->setSize(slot->getSize());
+		auto itemSlot = slot->addFrame("hotbar slot item");
+		SDL_Rect itemSlotTempSize = slot->getSize();
+		itemSlotTempSize.w -= 2;
+		itemSlotTempSize.h -= 2;
+		itemSlot->setSize(itemSlotTempSize); // slightly shrink to align inner item elements within rect.
 		createPlayerInventorySlotFrameElements(itemSlot);
+		itemSlot->setSize(slot->getSize());
 
 		char numStr[4];
 		snprintf(numStr, sizeof(numStr), "%d", i + 1);
@@ -245,9 +250,14 @@ void createHotbar(const int player)
 	auto highlightFrame = hotbar_t.hotbarFrame->addFrame("hotbar highlight");
 	highlightFrame->setSize(slotPos);
 	highlightFrame->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_00.png", "highlight img");
-	auto itemSlot = highlightFrame->addFrame("slot item");
+
+	auto itemSlot = highlightFrame->addFrame("hotbar slot item");
+	SDL_Rect itemSlotTempSize = slotPos;
+	itemSlotTempSize.w -= 2;
+	itemSlotTempSize.h -= 2;
+	itemSlot->setSize(itemSlotTempSize);
+	createPlayerInventorySlotFrameElements(itemSlot); // slightly shrink to align inner item elements within rect.
 	itemSlot->setSize(highlightFrame->getSize());
-	createPlayerInventorySlotFrameElements(itemSlot);
 
 	{
 		auto oldSelectedFrame = hotbar_t.hotbarFrame->addFrame("hotbar old selected item");
@@ -845,15 +855,40 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 	auto spriteImage = spriteImageFrame->findImage("item sprite img");
 
 	spriteImage->path = getItemSpritePath(player, *item);
+	bool disableBackgrounds = false;
 	if ( spriteImage->path != "" )
 	{
 		spriteImageFrame->setDisabled(false);
 		if ( inputs.getUIInteraction(player)->selectedItem == item )
 		{
-			if ( !strcmp(slotFrame->getName(), "slot item") )
+			if ( !strcmp(slotFrame->getName(), "hotbar slot item") ) // hotbar slots
 			{
 				// fade this icon
 				spriteImage->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
+				disableBackgrounds = true;
+			}
+		}
+		else if ( !strcmp(slotFrame->getName(), "hotbar slot item") ) // hotbar slots
+		{
+			auto& hotbar_t = players[player]->hotbar;
+			bool tryDimHotbarSlot = false;
+			if ( hotbar_t.useHotbarFaceMenu && hotbar_t.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE )
+			{
+				tryDimHotbarSlot = true;
+			}
+			spriteImage->color = 0xFFFFFFFF;
+			if ( tryDimHotbarSlot )
+			{
+				std::string hotbarSlotParentStr = slotFrame->getParent()->getName();
+				if ( hotbarSlotParentStr.find("hotbar slot ") != std::string::npos )
+				{
+					int num = stoi(hotbarSlotParentStr.substr(strlen("hotbar slot ")));
+					if ( hotbar_t.faceMenuButtonHeld != hotbar_t.getFaceMenuGroupForSlot(num) )
+					{
+						// fade this icon
+						spriteImage->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
+					}
+				}
 			}
 		}
 		else
@@ -877,7 +912,6 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 		}
 	}
 
-	bool disableBackgrounds = false;
 	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
 	{
 		disableBackgrounds = true;
@@ -1651,7 +1685,7 @@ void createPlayerInventory(const int player)
 		createPlayerInventorySlotFrameElements(draggingInventoryItem);
 	}
 
-	/*{
+	{
 		auto draggingInventoryItemOld = frame->addFrame("dragging inventory item old");
 		draggingInventoryItemOld->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		draggingInventoryItemOld->setActualSize(SDL_Rect{ 0, 0, draggingInventoryItemOld->getSize().w, draggingInventoryItemOld->getSize().h });
@@ -1659,7 +1693,7 @@ void createPlayerInventory(const int player)
 		
 		SDL_Rect imgPos{ 3, 3, draggingInventoryItemOld->getSize().w, draggingInventoryItemOld->getSize().h };
 		auto itemSprite = draggingInventoryItemOld->addImage(imgPos, 0xFFFFFFFF, "", "item sprite img");
-	}*/
+	}
 }
 
 void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse)
@@ -2717,7 +2751,7 @@ void Player::Hotbar_t::updateHotbar()
 
 		int slotYMovement = pos.h / 4;
 
-		auto slotItem = slot->findFrame("slot item");
+		auto slotItem = slot->findFrame("hotbar slot item");
 		slotItem->setDisabled(true);
 
 		if ( useHotbarFaceMenu )
@@ -2869,7 +2903,7 @@ void Player::Hotbar_t::updateHotbar()
 				showHighlightedSlot = false;
 			}
 
-			auto highlightSlotItem = highlightSlot->findFrame("slot item");
+			auto highlightSlotItem = highlightSlot->findFrame("hotbar slot item");
 			highlightSlotItem->setDisabled(true);
 
 			if ( showHighlightedSlot )

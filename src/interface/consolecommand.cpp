@@ -3303,6 +3303,11 @@ void consoleCommand(char const * const command_str)
 			bUsePreciseFieldTextReflow = !bUsePreciseFieldTextReflow;
 			messagePlayer(clientnum, "Set bUsePreciseFieldTextReflow to %d", bUsePreciseFieldTextReflow);
 		}
+		else if ( !strncmp(command_str, "/selectedanimcycle", 18) )
+		{
+			bUseSelectedSlotCycleAnimation = !bUseSelectedSlotCycleAnimation;
+			messagePlayer(clientnum, "Set bUseSelectedSlotCycleAnimation to %d", bUseSelectedSlotCycleAnimation);
+		}
 		else if ( !strncmp(command_str, "/autoloadtooltips", 17) )
 		{
 			ItemTooltips.autoReload = !ItemTooltips.autoReload;

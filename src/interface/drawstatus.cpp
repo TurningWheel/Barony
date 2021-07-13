@@ -2764,7 +2764,7 @@ void drawStatusNew(const int player)
 			//	drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 125);
 			//}
 
-			Uint32 itemColor = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+			/*Uint32 itemColor = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
 			if ( hotbar_t.useHotbarFaceMenu && hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_NONE )
 			{
 				bool dimColor = false;
@@ -2776,7 +2776,7 @@ void drawStatusNew(const int player)
 				{
 					itemColor = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
 				}
-			}
+			}*/
 			//drawImageScaledColor(itemSprite(item), NULL, &pos, itemColor);
 
 			bool disableItemUsage = false;
@@ -3661,10 +3661,6 @@ void drawStatusNew(const int player)
 						Input::inputs[player].consumeBinaryToggle(inputName.c_str());
 						Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
 						Input::inputs[player].consumeBinaryToggle("HotbarFacebarCancel");
-
-						//inputs.controllerClearRawInput(player, 301 + button);
-						//inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN);
-						//inputs.controllerClearRawInputRelease(player, 301 + button);
 						break;
 					}
 
@@ -3686,7 +3682,16 @@ void drawStatusNew(const int player)
 						centerSlot = 7;
 						slotOrder = { 6, 7, 8 };
 					}
-						
+					
+					if ( hotbar_t.current_hotbar < slotOrder[0] ) // boundary checks if multiple face buttons pressed at one time
+					{
+						hotbar_t.selectHotbarSlot(slotOrder[0]);
+					}
+					else if ( hotbar_t.current_hotbar > slotOrder[2] )
+					{
+						hotbar_t.selectHotbarSlot(slotOrder[2]);
+					}
+
 					if ( Input::inputs[player].binaryToggle("HotbarFacebarModifierLeft") )
 					{
 						hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
