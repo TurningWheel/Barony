@@ -3056,6 +3056,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			const int charHeight = 13;
 			const int lowerIconImgToTextOffset = 2;
 
+			const std::string goldImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png";
+			const std::string weightImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png";
+			const std::string spellMPCostImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_ManaRegen_00.png";
+
 			//Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);  -- this produces 8px/13px @ 12 point font, used above
 			//Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
 			if ( tooltipType.find("tooltip_spell_") != std::string::npos )
@@ -3069,6 +3073,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				imgMPCost->pos.y = pady;
 				txtMPCost->setSize(SDL_Rect{ imgMPCost->pos.x + imgMPCost->pos.w + padx,
 					imgMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
+				imgMPCost->path = spellMPCostImagePath;
 
 				frameValuesPos.h += imgMPCost->disabled ? 0 : (imgMPCost->pos.y + imgMPCost->pos.h);
 				frameValuesPos.h += pady;
@@ -3099,6 +3104,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				imgGoldIcon->pos.y = pady;
 				txtGoldValue->setSize(SDL_Rect{ imgGoldIcon->pos.x + imgGoldIcon->pos.w + padx,
 					imgGoldIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
+				imgGoldIcon->path = goldImagePath;
 
 				snprintf(valueBuf, sizeof(valueBuf), "%d", item->getWeight());
 				txtWeightValue->setText(valueBuf);
@@ -3109,6 +3115,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				imgWeightIcon->pos.y = pady;
 				txtWeightValue->setSize(SDL_Rect{ imgWeightIcon->pos.x + imgWeightIcon->pos.w + padx,
 					imgWeightIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgWeightIcon->pos.h });
+				imgWeightIcon->path = weightImagePath;
 				frameValuesPos.h += imgGoldIcon->disabled ? 0 : (imgGoldIcon->pos.y + imgGoldIcon->pos.h);
 				frameValuesPos.h += pady;
 			}
@@ -4352,11 +4359,39 @@ void Player::Inventory_t::updateInventory()
 	// dragging item - highlight slots
 	if ( selectedItem && selectedSlotFrame->isDisabled() )
 	{
+		Frame* hoveringDollSlotFrame = nullptr;
+		int loopStartY = 0;
+		if ( inputs.getVirtualMouse(player)->draw_cursor )
+		{
+			if ( dollSlotsFrame && dollSlotsFrame->capturesMouseInRealtimeCoords() )
+			{
+				auto slotName = items[selectedItem->type].item_slot;
+				Player::PaperDoll_t::PaperDollSlotType dollSlot = getPaperDollSlotFromItemType(*selectedItem);
+				if ( dollSlot != Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX )
+				{
+					// get coordinates of doll slot
+					int slotFrameX, slotFrameY;
+					players[player]->paperDoll.getCoordinatesFromSlotType(dollSlot, slotFrameX, slotFrameY);
+					hoveringDollSlotFrame = getInventorySlotFrame(slotFrameX, slotFrameY);
+				}
+			}
+		}
+		else
+		{
+			loopStartY = DOLL_ROW_1;
+		}
+
 		for ( int x = 0; x < getSizeX(); ++x )
 		{
-			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < getSizeY(); ++y )
+			for ( int y = loopStartY; y < getSizeY(); ++y )
 			{
 				auto slotFrame = getInventorySlotFrame(x, y);
+				if ( hoveringDollSlotFrame )
+				{
+					slotFrame = dollSlotsFrame;
+					--y; // one-off check
+				}
+
 				if ( !slotFrame )
 				{
 					continue;
@@ -4364,13 +4399,19 @@ void Player::Inventory_t::updateInventory()
 
 				int startx = slotFrame->getAbsoluteSize().x;
 				int starty = slotFrame->getAbsoluteSize().y;
+				if ( hoveringDollSlotFrame )
+				{
+					startx = hoveringDollSlotFrame->getAbsoluteSize().x;
+					starty = hoveringDollSlotFrame->getAbsoluteSize().y;
+					hoveringDollSlotFrame = nullptr;
+				}
 
 				if ( inputs.getVirtualMouse(player)->draw_cursor )
 				{
 					if ( slotFrame->capturesMouse()
 						&& slotFrame->capturesMouseInRealtimeCoords() )
 					{
-						// don't draw yellow border, but draw cursor
+						// don't draw yellow border, but draw cursor - we're hovering over our current item
 						if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
 						{
 							selectedSlotCursor->setDisabled(false);
@@ -4729,6 +4770,11 @@ void Player::Inventory_t::updateInventory()
 							inputs.getUIInteraction(player)->selectedItemFromHotbar = -1;
 							selectedItem = item;
 							playSound(139, 64); // click sound
+
+							if ( inputs.getVirtualMouse(player)->draw_cursor )
+							{
+								cursor.lastUpdateTick = ticks;
+							}
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 

@@ -2827,6 +2827,12 @@ void drawStatusNew(const int player)
 							}
 							hotbar[num].item = 0;
 
+							if ( inputs.getVirtualMouse(player)->draw_cursor )
+							{
+								// this is the inventory cursor, not the hotbar-specific one.
+								players[player]->inventoryUI.cursor.lastUpdateTick = ticks;
+							}
+
 							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
 								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);

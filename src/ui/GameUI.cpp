@@ -1262,7 +1262,9 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
-			0xFFFFFFFF, "images/system/per32.png", "inventory mouse tooltip gold image");
+			0xFFFFFFFF, 
+			"images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png",
+			"inventory mouse tooltip gold image");
 
 		tooltipTextField = valueFrame->addField("inventory mouse tooltip gold value", 64);
 		tooltipTextField->setText("Nothing");
@@ -1273,7 +1275,9 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
-			0xFFFFFFFF, "images/system/int32.png", "inventory mouse tooltip weight image");
+			0xFFFFFFFF, 
+			"images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png", 
+			"inventory mouse tooltip weight image");
 
 		tooltipTextField = valueFrame->addField("inventory mouse tooltip weight value", 64);
 		tooltipTextField->setText("Nothing");
