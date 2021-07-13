@@ -24,6 +24,7 @@ int selectedCursorOpacity = 255;
 int oldSelectedCursorOpacity = 255;
 int hotbarSlotOpacity = 255;
 int hotbarSelectedSlotOpacity = 255;
+bool bUsePreciseFieldTextReflow = true;
 
 void createHPMPBars(const int player)
 {

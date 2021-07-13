@@ -3298,6 +3298,11 @@ void consoleCommand(char const * const command_str)
 			ItemTooltips.readTooltipsFromFile();
 			messagePlayer(clientnum, "Reloaded item_tooltips.json");
 		}
+		else if ( !strncmp(command_str, "/reflowtext", 11) )
+		{
+			bUsePreciseFieldTextReflow = !bUsePreciseFieldTextReflow;
+			messagePlayer(clientnum, "Set bUsePreciseFieldTextReflow to %d", bUsePreciseFieldTextReflow);
+		}
 		else if ( !strncmp(command_str, "/autoloadtooltips", 17) )
 		{
 			ItemTooltips.autoReload = !ItemTooltips.autoReload;

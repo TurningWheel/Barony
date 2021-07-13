@@ -6,6 +6,7 @@
 #include "Frame.hpp"
 #include "Field.hpp"
 #include "Text.hpp"
+#include "GameUI.hpp"
 #include <cassert>
 
 Field::Field(const int _textLen) {
@@ -352,6 +353,64 @@ void Field::scrollParent() {
 	fparent->setActualSize(fActualSize);
 }
 
+std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int width, const char* font)
+{
+	std::unordered_map<size_t, std::string> result;
+
+	Font* actualFont = Font::get(font);
+	if ( !actualFont )
+	{
+		return result;
+	}
+	int charWidth = 0;
+	actualFont->sizeText("_", &charWidth, nullptr);
+	if ( charWidth == 0 )
+	{
+		return result;
+	}
+	++charWidth;
+
+	const int charactersPerLine = (width) / charWidth;
+
+	size_t offset = 0;
+	size_t findChar = 0;
+	std::vector<std::string> tokens;
+	while ( (findChar = input.find(' ', offset)) != std::string::npos ) {
+		tokens.push_back(input.substr(offset, findChar - offset));
+		offset = findChar + 1;
+	}
+	tokens.push_back(input.substr(offset));
+
+	size_t currentLine = 0;
+	Text* getText = nullptr;
+	for ( auto& token : tokens )
+	{
+		size_t currentLength = result[currentLine].size();
+		if ( (currentLength + 1 + token.size() < charactersPerLine / 2) )
+		{
+			// this is probably OK
+		}
+		else if ( getText = Text::get(std::string(result[currentLine] + " " + token).c_str(), font) )
+		{
+			if ( getText->getWidth() > width )
+			{
+				++currentLine;
+			}
+		}
+
+		if ( result[currentLine] == "" )
+		{
+			result[currentLine] = token;
+		}
+		else
+		{
+			result[currentLine].append(" ");
+			result[currentLine].append(token);
+		}
+	}
+	return result;
+}
+
 void Field::reflowTextToFit(const int characterOffset) {
 	if ( text == nullptr || textlen <= 1 ) {
 		return;
@@ -365,16 +424,43 @@ void Field::reflowTextToFit(const int characterOffset) {
 			return;
 		}
 	}
+	std::string reflowText = "";
+
+	bool usePreciseStringWidth = bUsePreciseFieldTextReflow;
+	if ( usePreciseStringWidth )
+	{
+		// more expensive, but accurate text reflow.
+		std::vector<std::string> allLines;
+		char* nexttoken;
+		char* token = text;
+		do {
+			nexttoken = tokenize(token, "\n");
+			auto result = reflowTextLine(std::string(token), (getSize().w - getSize().x), font.c_str());
+			for ( size_t i = 0; i < result.size(); ++i )
+			{
+				allLines.push_back(result[i]);
+			}
+		} while ( (token = nexttoken) != NULL );
+
+		for ( auto it = allLines.begin(); it != allLines.end(); ++it )
+		{
+			reflowText += (*it);
+			auto nextStr = std::next(it);
+			if ( nextStr != allLines.end() )
+			{
+				reflowText += '\n';
+			}
+		}
+		setText(reflowText.c_str());
+		return;
+	}
 
 	Font* actualFont = Font::get(font.c_str());
 	if ( !actualFont )
 	{
 		return;
 	}
-
-
-	std::string reflowText = "";
-
+	
 	int charWidth = 0;
 	actualFont->sizeText("_", &charWidth, nullptr);
 	//if ( auto textGet = Text::get("_", font.c_str()) )

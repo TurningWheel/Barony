@@ -16,3 +16,4 @@ void loadHUDSettingsJSON();
 
 // if true, use the new user interface
 extern bool newui;
+extern bool bUsePreciseFieldTextReflow;
