@@ -966,10 +966,10 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 				return (lhs.second < rhs.second); // sort by distance
 			});
 
-			for ( auto& spot : goodspots )
+			/*for ( auto& spot : goodspots )
 			{
 				messagePlayer(0, "%d | %d", spot.first, spot.second);
-			}
+			}*/
 
 			targetSlot = goodspots[0].first;
 			if ( targetSlot != Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX )
