@@ -2834,6 +2834,30 @@ void drawStatusNew(const int player)
 								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
 								//TODO: Change the mouse cursor to THE HAND.
 							}
+
+							if ( hotbar_t.hotbarFrame )
+							{
+								if ( auto oldSelectedItemFrame = hotbar_t.hotbarFrame->findFrame("hotbar old selected item") )
+								{
+									if ( Frame* hotbarFrame = hotbar_t.getHotbarSlotFrame(num) )
+									{
+										oldSelectedItemFrame->setSize(hotbarFrame->getSize());
+										oldSelectedItemFrame->setDisabled(false);
+										if ( auto oldImg = oldSelectedItemFrame->findImage("hotbar old selected item") )
+										{
+											oldImg->disabled = true;
+											if ( selectedItem )
+											{
+												oldImg->path = getItemSpritePath(player, *selectedItem);
+												if ( oldImg->path != "" )
+												{
+													oldImg->disabled = false;
+												}
+											}
+										}
+									}
+								}
+							}
 						}
 					}
 					if ( inputs.bMouseRight(player)

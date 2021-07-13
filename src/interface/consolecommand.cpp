@@ -3423,6 +3423,11 @@ void consoleCommand(char const * const command_str)
 			loadHUDSettingsJSON();
 			messagePlayer(clientnum, "Reloaded HUD_settings.json");
 		}
+		else if ( !strncmp(command_str, "/usepaperdollmovement", 21) )
+		{
+			restrictPaperDollMovement = !restrictPaperDollMovement;
+			messagePlayer(clientnum, "Set restrictPaperDollMovement to %d", restrictPaperDollMovement);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

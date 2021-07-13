@@ -851,8 +851,9 @@ bool GameController::handleInventoryMovement(const int player)
 		{
 			//Navigate inventory.
 			select_inventory_slot(player, 
-				players[player]->inventoryUI.getSelectedSlotX() - 1, 
-				players[player]->inventoryUI.getSelectedSlotY());
+				players[player]->inventoryUI.getSelectedSlotX(), 
+				players[player]->inventoryUI.getSelectedSlotY(),
+				-1, 0);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
 		Input::inputs[player].consumeAnalogToggle("InventoryMoveLeftAnalog");
@@ -886,9 +887,10 @@ bool GameController::handleInventoryMovement(const int player)
 		else
 		{
 			//Navigate inventory.
-			select_inventory_slot(player, 
-				players[player]->inventoryUI.getSelectedSlotX() + 1, 
-				players[player]->inventoryUI.getSelectedSlotY());
+			select_inventory_slot(player,
+				players[player]->inventoryUI.getSelectedSlotX(),
+				players[player]->inventoryUI.getSelectedSlotY(),
+				1, 0);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
 		Input::inputs[player].consumeAnalogToggle("InventoryMoveRightAnalog");
@@ -904,7 +906,7 @@ bool GameController::handleInventoryMovement(const int player)
 			//Warp back to top of inventory.
 			hotbar_t.hotbarHasFocus = false;
 			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1);
+			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1, 0, 0);
 			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6) )
 			{
 				int newSlot = hotbar_t.current_hotbar - 1;
@@ -917,9 +919,11 @@ bool GameController::handleInventoryMovement(const int player)
 		}
 		else
 		{
-			select_inventory_slot(player, 
+			select_inventory_slot(player,
 				players[player]->inventoryUI.getSelectedSlotX(),
-				players[player]->inventoryUI.getSelectedSlotY() - 1); //Will handle warping to hotbar.
+				players[player]->inventoryUI.getSelectedSlotY(),
+				0, -1);
+			//Will handle warping to hotbar.
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
 		Input::inputs[player].consumeAnalogToggle("InventoryMoveUpAnalog");
@@ -935,7 +939,7 @@ bool GameController::handleInventoryMovement(const int player)
 			//Warp back to bottom of inventory.
 			hotbar_t.hotbarHasFocus = false;
 			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0);
+			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0, 0, 0);
 			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5) )
 			{
 				int newSlot = hotbar_t.current_hotbar + 1;
@@ -948,9 +952,10 @@ bool GameController::handleInventoryMovement(const int player)
 		}
 		else
 		{
-			select_inventory_slot(player, 
+			select_inventory_slot(player,
 				players[player]->inventoryUI.getSelectedSlotX(),
-				players[player]->inventoryUI.getSelectedSlotY() + 1);
+				players[player]->inventoryUI.getSelectedSlotY(),
+				0, 1);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
 		Input::inputs[player].consumeAnalogToggle("InventoryMoveDownAnalog");

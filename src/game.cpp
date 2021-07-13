@@ -4231,12 +4231,26 @@ void ingameHud()
 		FollowerRadialMenu& followerMenu = FollowerMenu[player];
 
 		Frame* frame = players[player]->inventoryUI.frame;
+		Frame* draggingItemFrame = nullptr;
+		//Frame* oldDraggingItemFrame = nullptr;
 		if ( frame )
 		{
-			if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
+			if ( draggingItemFrame = frame->findFrame("dragging inventory item") )
 			{
 				draggingItemFrame->setDisabled(true);
 			}
+			// unused for now
+			/*if ( oldDraggingItemFrame = frame->findFrame("dragging inventory item old") )
+			{
+				oldDraggingItemFrame->setDisabled(true);
+				if ( !inputs.getUIInteraction(player)->selectedItem )
+				{
+					if ( auto img = oldDraggingItemFrame->findImage("item sprite img") )
+					{
+						img->path = "";
+					}
+				}
+			}*/
 		}
 
 		if ( players[player]->shootmode == false )
@@ -4247,20 +4261,45 @@ void ingameHud()
 				Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 				if ( frame )
 				{
-					if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
+					if ( draggingItemFrame /*&& oldDraggingItemFrame*/ )
 					{
+						//oldDraggingItemFrame->setDisabled(false);
 						updateSlotFrameFromItem(draggingItemFrame, selectedItem);
 
 						Frame* selectedSlotCursor = frame->findFrame("inventory selected item cursor");
 						if ( !inputs.getVirtualMouse(player)->draw_cursor )
 						{
 							SDL_Rect selectedItemCursorPos = selectedSlotCursor->getSize();
+							SDL_Rect oldDraggingItemPos = selectedItemCursorPos;
+
 							int cursorOffset = players[player]->inventoryUI.cursor.cursorToSlotOffset;
+							real_t animX = players[player]->inventoryUI.selectedItemAnimate.animateX;
+							real_t animY = players[player]->inventoryUI.selectedItemAnimate.animateY;
+							real_t maxX = (selectedItemCursorPos.w - cursorOffset * 2) / 2;
+							real_t maxY = (selectedItemCursorPos.h - cursorOffset * 2) / 2;
+							// linear diagonal motion here
 							selectedItemCursorPos.x += cursorOffset +
-								(players[player]->inventoryUI.selectedItemAnimate.animateX) * (selectedItemCursorPos.w - cursorOffset * 2) / 2;
+								(animX) * (selectedItemCursorPos.w - cursorOffset * 2) / 2;
 							selectedItemCursorPos.y += cursorOffset +
-								(players[player]->inventoryUI.selectedItemAnimate.animateY) * (selectedItemCursorPos.h - cursorOffset * 2) / 2;
+								(animY) * (selectedItemCursorPos.h - cursorOffset * 2) / 2;
 							draggingItemFrame->setSize(selectedItemCursorPos);
+
+							// option to move items in a circular motion
+							/*real_t magnitudeX = cos(animX * PI + 5 * PI / 4);
+							real_t magnitudeY = sin(animY * PI + 5 * PI / 4);
+							selectedItemCursorPos.x += cursorOffset + maxX / 2 + magnitudeX * maxX;
+							selectedItemCursorPos.y += cursorOffset + maxY / 2 + magnitudeY * maxY;
+							draggingItemFrame->setSize(selectedItemCursorPos);
+
+							real_t magnitudeX2 = cos(animX * PI + 1 * PI / 4);
+							real_t magnitudeY2 = sin(animY * PI + 1 * PI / 4);
+							oldDraggingItemPos.x += cursorOffset + maxX / 2 + magnitudeX2 * maxX;
+							oldDraggingItemPos.y += cursorOffset + maxY / 2 + magnitudeY2 * maxY;
+							oldDraggingItemFrame->setSize(oldDraggingItemPos);
+							if ( animX == 1.0 || animY == 1.0 )
+							{
+								oldDraggingItemFrame->setDisabled(true);
+							}*/
 						}
 						else if ( inputs.getVirtualMouse(player)->draw_cursor )
 						{

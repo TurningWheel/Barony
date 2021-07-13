@@ -248,18 +248,46 @@ void createHotbar(const int player)
 	itemSlot->setSize(highlightFrame->getSize());
 	createPlayerInventorySlotFrameElements(itemSlot);
 
-	auto cursorFrame = hotbar_t.hotbarFrame->addFrame("shootmode selected item cursor");
-	cursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
-	cursorFrame->setDisabled(true);
-	color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
-	cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-		color, "images/ui/Inventory/Selector_TL.png", "shootmode selected cursor topleft");
-	cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-		color, "images/ui/Inventory/Selector_TR.png", "shootmode selected cursor topright");
-	cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-		color, "images/ui/Inventory/Selector_BL.png", "shootmode selected cursor bottomleft");
-	cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-		color, "images/ui/Inventory/Selector_BR.png", "shootmode selected cursor bottomright");
+	{
+		auto oldSelectedFrame = hotbar_t.hotbarFrame->addFrame("hotbar old selected item");
+		oldSelectedFrame->setSize(slotPos);
+		oldSelectedFrame->setDisabled(true);
+
+		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		auto oldImg = oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128), "", "hotbar old selected item");
+		oldImg->disabled = true;
+		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "hotbar old selected highlight");
+
+		auto oldCursorFrame = hotbar_t.hotbarFrame->addFrame("hotbar old item cursor");
+		oldCursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
+		oldCursorFrame->setDisabled(true);
+		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, oldSelectedCursorOpacity);
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TL.png", "hotbar old cursor topleft");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TR.png", "hotbar old cursor topright");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BL.png", "hotbar old cursor bottomleft");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BR.png", "hotbar old cursor bottomright");
+	}
+
+	{
+		auto cursorFrame = hotbar_t.hotbarFrame->addFrame("shootmode selected item cursor");
+		cursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
+		cursorFrame->setDisabled(true);
+		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TL.png", "shootmode selected cursor topleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TR.png", "shootmode selected cursor topright");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BL.png", "shootmode selected cursor bottomleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BR.png", "shootmode selected cursor bottomright");
+	}
 
 	auto text = highlightFrame->addField("slot num text", 4);
 	text->setText("");
@@ -814,19 +842,22 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 
 	auto spriteImageFrame = slotFrame->findFrame("item sprite frame");
 	auto spriteImage = spriteImageFrame->findImage("item sprite img");
-	if ( item->type == SPELL_ITEM )
+
+	spriteImage->path = getItemSpritePath(player, *item);
+	if ( spriteImage->path != "" )
 	{
-		spriteImage->path = ItemTooltips.getSpellIconPath(player, *item);
 		spriteImageFrame->setDisabled(false);
-	}
-	else
-	{
-		node_t* imagePathsNode = list_Node(&items[item->type].images, item->appearance % items[item->type].variations);
-		if ( imagePathsNode )
+		if ( inputs.getUIInteraction(player)->selectedItem == item )
 		{
-			string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);
-			spriteImage->path = imagePath->data;
-			spriteImageFrame->setDisabled(false);
+			if ( !strcmp(slotFrame->getName(), "slot item") )
+			{
+				// fade this icon
+				spriteImage->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
+			}
+		}
+		else
+		{
+			spriteImage->color = 0xFFFFFFFF;
 		}
 	}
 
@@ -1561,6 +1592,7 @@ void createPlayerInventory(const int player)
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "inventory selected highlight");
 
+
 		auto oldSelectedFrame = frame->addFrame("inventory old selected item");
 		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		oldSelectedFrame->setDisabled(true);
@@ -1571,6 +1603,13 @@ void createPlayerInventory(const int player)
 		oldImg->disabled = true;
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "inventory old selected highlight");
+
+		auto bgFrame = frame->findFrame("inventory base");
+		auto flourishFrame = frame->addFrame("inventory base flourish");
+		flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (122 / 2), 202 - 22 + 6, 122, 22 });
+		auto flourishImg = flourishFrame->addImage(SDL_Rect{ 0, 0, flourishFrame->getSize().w, flourishFrame->getSize().h },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
 
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
@@ -1599,13 +1638,6 @@ void createPlayerInventory(const int player)
 			color, "images/ui/Inventory/Selector_BR.png", "inventory selected cursor bottomright");
 	}
 
-	auto bgFrame = frame->findFrame("inventory base");
-	auto flourishFrame = frame->addFrame("inventory base flourish");
-	flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (122 / 2), 202 - 22 + 6, 122, 22 });
-	auto flourishImg = flourishFrame->addImage(SDL_Rect{ 0, 0, flourishFrame->getSize().w, flourishFrame->getSize().h },
-		SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
-		"images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
-
 	{
 		auto draggingInventoryItem = frame->addFrame("dragging inventory item");
 		draggingInventoryItem->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
@@ -1613,6 +1645,16 @@ void createPlayerInventory(const int player)
 		draggingInventoryItem->setDisabled(true);
 		createPlayerInventorySlotFrameElements(draggingInventoryItem);
 	}
+
+	/*{
+		auto draggingInventoryItemOld = frame->addFrame("dragging inventory item old");
+		draggingInventoryItemOld->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		draggingInventoryItemOld->setActualSize(SDL_Rect{ 0, 0, draggingInventoryItemOld->getSize().w, draggingInventoryItemOld->getSize().h });
+		draggingInventoryItemOld->setDisabled(true);
+		
+		SDL_Rect imgPos{ 3, 3, draggingInventoryItemOld->getSize().w, draggingInventoryItemOld->getSize().h };
+		auto itemSprite = draggingInventoryItemOld->addImage(imgPos, 0xFFFFFFFF, "", "item sprite img");
+	}*/
 }
 
 void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse)
@@ -1862,6 +1904,22 @@ void Player::Inventory_t::updateCursor()
 		{
 			oldSelectedSlotCursor->setDisabled(oldSelectedFrame->isDisabled());
 
+			if ( player.hotbar.hotbarFrame )
+			{
+				if ( auto highlight = oldSelectedFrame->findImage("inventory old selected highlight") )
+				{
+					highlight->disabled = false;
+					if ( auto oldHotbarSelectedFrame = player.hotbar.hotbarFrame->findFrame("hotbar old selected item") )
+					{
+						if ( !oldHotbarSelectedFrame->isDisabled() )
+						{
+							oldSelectedSlotCursor->setDisabled(true);
+							highlight->disabled = true;
+						}
+					}
+				}
+			}
+
 			if ( !oldSelectedSlotCursor->isDisabled() )
 			{
 				SDL_Rect cursorSize = oldSelectedSlotCursor->getSize();
@@ -1973,48 +2031,47 @@ void Player::Hotbar_t::updateCursor()
 		return;
 	}
 
-	//if ( auto oldSelectedSlotCursor = hotbarFrame->findFrame("inventory old item cursor") )
-	//{
-	//	if ( auto oldSelectedFrame = hotbarFrame->findFrame("inventory old selected item") )
-	//	{
-	//		oldSelectedSlotCursor->setDisabled(oldSelectedFrame->isDisabled());
+	if ( auto oldSelectedSlotCursor = hotbarFrame->findFrame("hotbar old item cursor") )
+	{
+		if ( auto oldSelectedFrame = hotbarFrame->findFrame("hotbar old selected item") )
+		{
+			oldSelectedSlotCursor->setDisabled(oldSelectedFrame->isDisabled());
 
-	//		if ( !oldSelectedSlotCursor->isDisabled() )
-	//		{
-	//			SDL_Rect cursorSize = oldSelectedSlotCursor->getSize();
-	//			cursorSize.x = (oldSelectedFrame->getSize().x - 1) - shootmodeCursor.cursorToSlotOffset;
-	//			cursorSize.y = (oldSelectedFrame->getSize().y - 1) - shootmodeCursor.cursorToSlotOffset;
-	//			oldSelectedSlotCursor->setSize(cursorSize);
+			if ( !oldSelectedSlotCursor->isDisabled() )
+			{
+				SDL_Rect cursorSize = oldSelectedSlotCursor->getSize();
+				cursorSize.x = (oldSelectedFrame->getSize().x - 1) - shootmodeCursor.cursorToSlotOffset;
+				cursorSize.y = (oldSelectedFrame->getSize().y - 1) - shootmodeCursor.cursorToSlotOffset;
+				oldSelectedSlotCursor->setSize(cursorSize);
 
-	//			int offset = 8;// ((ticks - shootmodeCursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+				int offset = 8;// ((ticks - shootmodeCursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
 
-	//			Uint8 r, g, b, a;
-	//			if ( auto tl = oldSelectedSlotCursor->findImage("inventory old cursor topleft") )
-	//			{
-	//				tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
-	//				SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
-	//				a = oldSelectedCursorOpacity;
-	//				tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
-	//			}
-	//			if ( auto tr = oldSelectedSlotCursor->findImage("inventory old cursor topright") )
-	//			{
-	//				tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
-	//				tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
-	//			}
-	//			if ( auto bl = oldSelectedSlotCursor->findImage("inventory old cursor bottomleft") )
-	//			{
-	//				bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
-	//				bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
-	//			}
-	//			if ( auto br = oldSelectedSlotCursor->findImage("inventory old cursor bottomright") )
-	//			{
-	//				br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
-	//				br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
-	//			}
-	//		}
-	//	}
-	//}
-
+				Uint8 r, g, b, a;
+				if ( auto tl = oldSelectedSlotCursor->findImage("hotbar old cursor topleft") )
+				{
+					tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+					SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+					a = oldSelectedCursorOpacity;
+					tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto tr = oldSelectedSlotCursor->findImage("hotbar old cursor topright") )
+				{
+					tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+					tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto bl = oldSelectedSlotCursor->findImage("hotbar old cursor bottomleft") )
+				{
+					bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+					bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto br = oldSelectedSlotCursor->findImage("hotbar old cursor bottomright") )
+				{
+					br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+					br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+			}
+		}
+	}
 
 	if ( auto selectedSlotCursor = hotbarFrame->findFrame("shootmode selected item cursor") )
 	{
@@ -2593,9 +2650,27 @@ void Player::Hotbar_t::updateHotbar()
 		shootmodeSelectedSlotCursor->setDisabled(true);
 	}
 
+	if ( player.shootmode || !inputs.getUIInteraction(player.playernum)->selectedItem )
+	{
+		if ( auto oldSelectedItemFrame = hotbarFrame->findFrame("hotbar old selected item") )
+		{
+			oldSelectedItemFrame->setDisabled(true);
+		}
+	}
+
 	// position the slots
 	for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 	{
+		if ( hotbar[num].item != 0 )
+		{
+			hotbar[num].lastItemUid = hotbar[num].item;
+			if ( Item* item = uidToItem(hotbar[num].item) )
+			{
+				hotbar[num].lastItemType = item->type;
+				hotbar[num].lastItemCategory = itemCategory(item);
+			}
+		}
+
 		char slotname[32];
 		snprintf(slotname, sizeof(slotname), "hotbar slot %d", num);
 		auto slot = hotbarFrame->findFrame(slotname);

@@ -35,7 +35,7 @@
 //Prototype helper functions for player inventory helper functions.
 void itemContextMenu(const int player);
 
-
+bool restrictPaperDollMovement = true;
 SDL_Surface* inventory_mode_item_img = NULL;
 SDL_Surface* inventory_mode_item_highlighted_img = NULL;
 SDL_Surface* inventory_mode_spell_img = NULL;
@@ -91,6 +91,57 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 		return false;
 	}
 	return true;
+}
+
+bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // returns true on equip successful.
+{
+	//TODO UI: VERIFY
+	if ( !item )
+	{
+		return false;
+	}
+
+	bool isBadPotion = (itemCategory(item) == POTION);
+	bool learnedSpell = (itemCategory(item) == SPELLBOOK);
+
+	if ( !players[player]->isLocalPlayer()
+		|| players[player]->paperDoll.isItemOnDoll(*item) )
+	{
+		return false;
+	}
+
+	if ( itemCategory(item) == SPELL_CAT )
+	{
+		printlog("Warning: executed inventory 0 menu on spell");
+		return false;
+	}
+
+	// should always have backpack space?
+	//if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+	//{
+	//	// no backpack space
+	//	messagePlayer(player, language[3997], item->getName());
+	//	return false;
+	//}
+
+	Entity* oldChest = openedChest[player];
+	int oldGUI = players[player]->gui_mode;
+
+	players[player]->gui_mode = GUI_MODE_INVENTORY;
+	openedChest[player] = nullptr;
+
+	executeItemMenuOption0(player, item, isBadPotion, learnedSpell);
+
+	openedChest[player] = oldChest;
+	players[player]->gui_mode = oldGUI;
+
+	players[player]->paperDoll.updateSlots();
+	if ( players[player]->paperDoll.isItemOnDoll(*item) )
+	{
+		return true;
+	}
+	// cursed or couldn't unequip existing item
+	return false;
 }
 
 void warpMouseToSelectedInventorySlot(const int player)
@@ -381,6 +432,48 @@ void updateAppraisalItemBox(const int player)
 		pos.h = 32;
 		drawImageScaled(itemSprite(item), NULL, &pos);
 	}
+}
+
+Player::PaperDoll_t::PaperDollSlotType getPaperDollSlotFromItemType(Item& item)
+{
+	auto slotName = items[item.type].item_slot;
+	Player::PaperDoll_t::PaperDollSlotType dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+	switch ( slotName )
+	{
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_WEAPON;
+			break;
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_OFFHAND;
+			break;
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_GLASSES;
+			break;
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_HELM;
+			break;
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_GLOVES;
+			break;
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_BOOTS;
+			break;
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_BREASTPLATE;
+			break;
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_CLOAK:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_CLOAK;
+			break;
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_AMULET:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_AMULET;
+			break;
+		case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_RING:
+			dollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_RING;
+			break;
+		default:
+			break;
+	}
+	return dollSlot;
 }
 
 void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
@@ -781,10 +874,201 @@ void Player::PaperDoll_t::selectPaperDollCoordinatesFromSlotType(Player::PaperDo
 	}
 }
 
-void select_inventory_slot(const int player, int x, int y)
+bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDollSlot, int currentx, int currenty, int diffx, int diffy, int& xout, int& yout)
 {
 	auto& inventoryUI = players[player]->inventoryUI;
+
+	int x = xout;
+	int y = yout;
+
+	bool movingFromInventory = currenty >= 0;
+
+	if ( !movingFromInventory ) // if last position was in paper doll
+	{
+		if ( x > Player::Inventory_t::DOLL_COLUMN_RIGHT )
+		{
+			x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+		}
+		else if ( x < Player::Inventory_t::DOLL_COLUMN_LEFT )
+		{
+			x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
+		}
+	}
+	else if ( movingFromInventory ) // if last position was in inventory
+	{
+		if ( x > inventoryUI.getSizeX() / 2 )
+		{
+			x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
+		}
+		else
+		{
+			x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+		}
+	}
+
+	if ( y < Player::Inventory_t::DOLL_ROW_1 )
+	{
+		y = inventoryUI.getSizeY() - 1;
+	}
+	else if ( y >= inventoryUI.getSizeY() )
+	{
+		y = Player::Inventory_t::DOLL_ROW_1;
+	}
+	else if ( y >= 0 )
+	{
+		y = Player::Inventory_t::DOLL_ROW_5;
+	}
+
+	if ( players[player]->paperDoll.dollSlots[paperDollSlot].item == 0 && y < 0 )
+	{
+		std::vector<std::pair<Player::PaperDoll_t::PaperDollSlotType, int>> goodspots;
+		for ( auto& slot : players[player]->paperDoll.dollSlots )
+		{
+			if ( slot.slotType == paperDollSlot || slot.item == 0 )
+			{
+				continue;
+			}
+			int slotx, sloty;
+			players[player]->paperDoll.getCoordinatesFromSlotType(slot.slotType, slotx, sloty);
+			int dist = abs(sloty - y);
+			if ( diffy != 0 )
+			{
+				if ( slotx != x ) 
+				{ 
+					if ( !movingFromInventory )
+					{
+						continue;
+					}
+					else if ( movingFromInventory )
+					{
+						// just in case this is the only available slot, add a distance penalty
+						dist += 10;
+					}
+				}
+				if ( diffy > 0 && sloty < y ) { continue; }
+				if ( diffy < 0 && sloty > y ) { continue; }
+			}
+			if ( diffx != 0 )
+			{
+				if ( slotx != x ) { continue; }
+			}
+			goodspots.push_back(std::make_pair(slot.slotType, dist));
+		}
+
+		// try find next available paper doll slot
+		Player::PaperDoll_t::PaperDollSlotType targetSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+		if ( !goodspots.empty() )
+		{
+			std::sort(goodspots.begin(), goodspots.end(),
+				[](const std::pair<Player::PaperDoll_t::PaperDollSlotType, int>& lhs,
+					const std::pair<Player::PaperDoll_t::PaperDollSlotType, int>& rhs)
+			{
+				return (lhs.second < rhs.second); // sort by distance
+			});
+
+			for ( auto& spot : goodspots )
+			{
+				messagePlayer(0, "%d | %d", spot.first, spot.second);
+			}
+
+			targetSlot = goodspots[0].first;
+			if ( targetSlot != Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX )
+			{
+				players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(targetSlot);
+				return true;
+			}
+		}
+		else if ( !movingFromInventory && diffy == 0 && diffx != 0 )
+		{
+			// no action, stay on the current slot
+			return true;
+		}
+	}
+	else
+	{
+		players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(paperDollSlot);
+		return true;
+	}
+
+	if ( diffy > 0 )
+	{
+		yout = 0;
+	}
+	else if ( diffy < 0 )
+	{
+		yout = Player::Inventory_t::DOLL_ROW_1 - 1;
+	}
+	return false;
+}
+
+// only called by handleInventoryMovement in player.cpp
+void select_inventory_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	auto& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+	auto& inventoryUI = players[player]->inventoryUI;
 	auto paperDollSlot = Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX;
+
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	if ( selectedItem )
+	{
+		auto selectedItemDollSlot = getPaperDollSlotFromItemType(*selectedItem);
+		int dollx, dolly;
+		players[player]->paperDoll.getCoordinatesFromSlotType(selectedItemDollSlot, dollx, dolly);
+		if ( selectedItemDollSlot != Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX )
+		{
+			if ( currenty < 0 ) // moving from doll
+			{
+				if ( diffy < 0 )
+				{
+					y = inventoryUI.getSizeY() - 1;
+				}
+				else if ( diffy > 0 )
+				{
+					y = 0;
+				}
+
+				x = currentx; // x no effect.
+
+				if ( diffy != 0 )
+				{
+					if ( currentx == Player::Inventory_t::DOLL_COLUMN_LEFT )
+					{
+						x = 0;
+					}
+					else
+					{
+						x = inventoryUI.getSizeX() - 1;
+					}
+				}
+				inventoryUI.selectSlot(x, y);
+				return;
+			}
+			else
+			{
+				if ( y >= inventoryUI.getSizeY() )
+				{
+					players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+					return;
+				}
+				else if ( y < 0 )
+				{
+					players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+					return;
+				}
+			}
+		}
+		else
+		{
+			if ( y < 0 )
+			{
+				y = inventoryUI.getSizeY() - 1;
+			}
+		}
+	}
+
+
 	if ( players[player]->paperDoll.enabled )
 	{
 		paperDollSlot = players[player]->paperDoll.paperDollSlotFromCoordinates(x, y);
@@ -793,8 +1077,18 @@ void select_inventory_slot(const int player, int x, int y)
 
 	if ( doPaperDollMovement )
 	{
-		players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(paperDollSlot);
-		return;
+		if ( !restrictPaperDollMovement )
+		{
+			players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(paperDollSlot);
+			return;
+		}
+		else
+		{
+			if ( moveInPaperDoll(player, paperDollSlot, currentx, currenty, diffx, diffy, x, y) )
+			{
+				return;
+			}
+		}
 	}
 
 	if ( x < 0 )   //Wrap around left boundary.
@@ -838,14 +1132,14 @@ void select_inventory_slot(const int player, int x, int y)
 	{
 		y = inventoryUI.getSizeY() - 1;
 
-		if ( hotbarGamepadControlEnabled(player) )
-		{
-			//TODO UI: VERIFY
-			hotbar_t.hotbarHasFocus = true; //Warp to hotbar.
-			float percentage = static_cast<float>(x + 1) / static_cast<float>(inventoryUI.getSizeX());
-			hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
-			warpMouseToSelectedHotbarSlot(player);
-		}
+		//if ( hotbarGamepadControlEnabled(player) )
+		//{
+		//	//TODO UI: VERIFY
+		//	hotbar_t.hotbarHasFocus = true; //Warp to hotbar.
+		//	float percentage = static_cast<float>(x + 1) / static_cast<float>(inventoryUI.getSizeX());
+		//	hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
+		//	warpMouseToSelectedHotbarSlot(player);
+		//}
 	}
 	if ( y >= inventoryUI.getSizeY() )   //Hit bottom. Wrap around or go to shop/chest?
 	{
@@ -895,17 +1189,35 @@ void select_inventory_slot(const int player, int x, int y)
 		{
 			y = 0;
 
-			if ( hotbarGamepadControlEnabled(player) )
+			/*if ( hotbarGamepadControlEnabled(player) )
 			{
 				hotbar_t.hotbarHasFocus = true;
 				float percentage = static_cast<float>(x + 1) / static_cast<float>(inventoryUI.getSizeX());
 				hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
 				warpMouseToSelectedHotbarSlot(player);
-			}
+			}*/
 		}
 	}
 
 	inventoryUI.selectSlot(x, y);
+}
+
+std::string getItemSpritePath(const int player, Item& item)
+{
+	if ( item.type == SPELL_ITEM )
+	{
+		return ItemTooltips.getSpellIconPath(player, item);
+	}
+	else
+	{
+		node_t* imagePathsNode = list_Node(&items[item.type].images, item.appearance % items[item.type].variations);
+		if ( imagePathsNode )
+		{
+			string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);
+			return imagePath->data;
+		}
+	}
+	return "";
 }
 
 /*-------------------------------------------------------------------------------
@@ -1036,11 +1348,8 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 			int slotFrameY = UNKNOWN_SLOT;
 
 			//TODO UI: CLEANUP COMMENTS
-			/*if (mousex >= x && mousey >= y
-			        && mousex < x + players[player]->inventoryUI.getSizeX() * inventorySlotSize
-			        && mousey < y + players[player]->inventoryUI.getSizeY() * inventorySlotSize )
-			{*/
-			if ( getSlotFrameXYFromMousePos(player, slotFrameX, slotFrameY) && slotFrameY > Player::Inventory_t::DOLL_ROW_5 )
+			bool mouseOverSlot = getSlotFrameXYFromMousePos(player, slotFrameX, slotFrameY);
+			if ( mouseOverSlot && slotFrameY > Player::Inventory_t::DOLL_ROW_5 )
 			{
 				if ( bPaperDollItem )
 				{
@@ -1117,6 +1426,15 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 								{
 									selectedItem->x = newx;
 									selectedItem->y = newy;
+
+									if ( selectedItem
+										&& oldx == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE
+										&& oldy == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE )
+									{
+										// item was on paperdoll, now is unequipped. oldx/y needs to be returning to inventory
+										oldx = Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE;
+										oldy = Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE;
+									}
 								}
 							}
 
@@ -1151,6 +1469,24 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 							selectedItem->y = newy;
 						}
 					}
+					else if ( swappedItem 
+						&& selectedItem 
+						&& selectedItem->x == Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE )
+					{
+						// item was on paperdoll, swapped, now is unequipped. 
+						// find a new home for the new selectedItem
+						autosortInventory(player, true);
+					}
+				}
+
+				if ( swappedItem && selectedItem )
+				{
+					players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
+					players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
+
+					// unused for now
+					//auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img");
+					//oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
 				}
 
 				if ( !toggleclick )
@@ -1198,6 +1534,98 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 					selectedItem = NULL;
 				}
 			}
+			else if ( frame && frame->findFrame("paperdoll slots") && frame->findFrame("paperdoll slots")->capturesMouseInRealtimeCoords() )
+			{
+				// get slot for item type
+				// if slot type is invalid, cancel.
+				auto slotName = items[selectedItem->type].item_slot;
+				Player::PaperDoll_t::PaperDollSlotType dollSlot = getPaperDollSlotFromItemType(*selectedItem);
+
+				if ( bPaperDollItem || slotName == ItemEquippableSlot::NO_EQUIP || dollSlot == Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX )
+				{
+					// moving paper doll item onto own area - or item can't be equipped, no action.
+					selectedItem = NULL;
+					toggleclick = false;
+				}
+				else
+				{
+					// get coordinates of doll slot
+					players[player]->paperDoll.getCoordinatesFromSlotType(dollSlot, slotFrameX, slotFrameY);
+
+					Item* swappedItem = nullptr;
+					toggleclick = false;
+
+					for ( node = stats[player]->inventory.first; node != NULL;
+						node = nextnode )
+					{
+						nextnode = node->next;
+						Item* tempItem = (Item*)(node->element); 
+						if ( !tempItem ) { continue; }
+						if ( tempItem == selectedItem )	{ continue;	}
+
+						if ( players[player]->paperDoll.getSlotForItem(*tempItem) != dollSlot )
+						{
+							continue;
+						}
+						swappedItem = tempItem;
+						break;
+					}
+
+					if ( swappedItem )
+					{
+						int oldx = selectedItem->x;
+						int oldy = selectedItem->y;
+
+						int newx = slotFrameX;
+						int newy = slotFrameY;
+
+						// try to equip the selected item
+						bool equipped = executeItemMenuOption0ForInventoryItem(player, selectedItem);
+						if ( !equipped )
+						{
+							// failure to equip
+							selectedItem->x = oldx;
+							selectedItem->y = oldy;
+							selectedItem = nullptr;
+							toggleclick = false;
+							if ( inputs.bMouseLeft(player) )
+							{
+								inputs.mouseClearLeft(player);
+							}
+							return;
+						}
+
+						// success - assign selectedItem to the newly picked up item from the paper doll
+						swappedItem->x = oldx;
+						swappedItem->y = oldy;
+						selectedItem = swappedItem;
+						toggleclick = true;
+					}
+					else
+					{
+						// free slot - let us try equip.
+						bool equipped = executeItemMenuOption0ForInventoryItem(player, selectedItem);
+						toggleclick = false;
+					}
+
+					if ( swappedItem && selectedItem )
+					{
+						players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
+						players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
+
+						// unused for now
+						//auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img");
+						//oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+					}
+
+					if ( !toggleclick )
+					{
+						selectedItem = nullptr;
+					}
+
+					playSound(139, 64); // click sound
+				}
+			}
 			else
 			{
 				// outside inventory
@@ -1234,76 +1662,32 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				}
 				else
 				{
-					if ( frame )
+					if ( bPaperDollItem )
 					{
-						//TODO UI: ADD DRAG TO EQUIP ON PAPERDOLL SLOTS
-						if ( frame->findFrame("paperdoll slots") && frame->findFrame("paperdoll slots")->capturesMouseInRealtimeCoords() )
+						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem); // unequip item
+						if ( !unequipped )
 						{
-							// mouse within character sheet box, no action,
 							selectedItem = NULL;
 							toggleclick = false;
 						}
+					}
+					else
+					{
+						if ( selectedItem->count > 1 ) // drop item
+						{
+							if ( dropItem(selectedItem, player) )
+							{
+								selectedItem = NULL;
+							}
+							toggleclick = true;
+						}
 						else
 						{
-							if ( bPaperDollItem )
-							{
-								executeItemMenuOption0ForPaperDoll(player, selectedItem); // unequip item
-							}
-							else
-							{
-								if ( selectedItem->count > 1 ) // drop item
-								{
-									if ( dropItem(selectedItem, player) )
-									{
-										selectedItem = NULL;
-									}
-									toggleclick = true;
-								}
-								else
-								{
-									dropItem(selectedItem, player);
-									selectedItem = NULL;
-									toggleclick = false;
-								}
-							}
+							dropItem(selectedItem, player);
+							selectedItem = NULL;
+							toggleclick = false;
 						}
 					}
-
-					//TODO UI: CLEANUP
-					//if ( bPaperDollItem )
-					//{
-					//	if ( mousex >= players[player]->characterSheet.characterSheetBox.x 
-					//		&& mousey >= players[player]->characterSheet.characterSheetBox.y
-					//		&& mousex < players[player]->characterSheet.characterSheetBox.x + players[player]->characterSheet.characterSheetBox.w
-					//		&& mousey < players[player]->characterSheet.characterSheetBox.y + players[player]->characterSheet.characterSheetBox.h
-					//		)
-					//	{
-					//		// mouse within character sheet box, no action,
-					//	}
-					//	else
-					//	{
-					//		executeItemMenuOption0ForPaperDoll(player, selectedItem);
-					//	}
-					//	selectedItem = NULL;
-					//	toggleclick = false;
-					//}
-					//else
-					//{
-					//	if ( selectedItem->count > 1 )
-					//	{
-					//		if ( dropItem(selectedItem, player) )
-					//		{
-					//			selectedItem = NULL;
-					//		}
-					//		toggleclick = true;
-					//	}
-					//	else
-					//	{
-					//		dropItem(selectedItem, player);
-					//		selectedItem = NULL;
-					//		toggleclick = false;
-					//	}
-					//}
 				}
 			}
 		}
@@ -1637,16 +2021,36 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 		{
 			txtHeader->setSize(SDL_Rect{ 0, 0, itemTooltip.headerMaxWidths[headerMaxWidthKey], 0 });
 			txtHeader->reflowTextToFit(0);
-			Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont());
-			if ( textGet )
+
+			std::string input = txtHeader->getText();
+			size_t offset = 0;
+			size_t findChar = 0;
+			std::vector<std::string> tokens;
+			while ( (findChar = input.find('\n', offset)) != std::string::npos ) {
+				tokens.push_back(input.substr(offset, findChar - offset));
+				offset = findChar + 1;
+			}
+			tokens.push_back(input.substr(offset));
+
+			int newWidth = 0;
+			if ( tokens.size() == 1 )
 			{
-				if ( textGet->getWidth() == textx )
+				// no reflow
+			}
+			else
+			{
+				unsigned int newWidth = 0;
+				for ( auto& str : tokens ) 
 				{
-					// no reflow
+					if ( Text* textGet = Text::get(str.c_str(), txtHeader->getFont()) )
+					{
+						newWidth = std::max(newWidth, textGet->getWidth());
+					}
 				}
-				else
+
+				if ( Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont()) )
 				{
-					textx = textGet->getWidth();
+					textx = newWidth;
 					texty = textGet->getHeight();
 					imgTopBackground->pos.h = imgTopBackground2XHeight;
 					imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00_2x.png";
@@ -1656,8 +2060,32 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 					imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00_2x.png";
 					useDefaultHeaderHeight = false;
 				}
-
 			}
+
+			//if ( Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont()) )
+			//{
+
+			//}
+			//if ( textGet )
+			//{
+			//	if ( textGet->getWidth() == textx )
+			//	{
+			//		// no reflow
+			//	}
+			//	else
+			//	{
+			//		textx = textGet->getWidth();
+			//		texty = textGet->getHeight();
+			//		imgTopBackground->pos.h = imgTopBackground2XHeight;
+			//		imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00_2x.png";
+			//		imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
+			//		imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00_2x.png";
+			//		imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
+			//		imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00_2x.png";
+			//		useDefaultHeaderHeight = false;
+			//	}
+
+			//}
 		}
 
 		if ( useDefaultHeaderHeight )
@@ -2591,6 +3019,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			frameDesc->setSize(frameDescPos);
 			totalHeight += frameDescPos.h;
 		}
+		else
+		{
+			tooltipDisplayedSettings.tooltipDescriptionHeight = 0;
+		}
 
 		SDL_Rect frameValuesPos = frameDescPos;
 		if ( !frameValues->isDisabled() )
@@ -2761,8 +3193,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 		const int heightDiff = tooltipDisplayedSettings.tooltipDescriptionHeight - frameDescPos.h;
 		
 		SDL_Rect frameValuesPos = frameValues->getSize();
-		frameValuesPos.y = frameDescPos.y + frameDescPos.h;
-		frameValues->setSize(frameValuesPos);
+		if ( !frameDesc->isDisabled() )
+		{
+			frameValuesPos.y = frameDescPos.y + frameDescPos.h;
+			frameValues->setSize(frameValuesPos);
+		}
 
 		SDL_Rect framePromptPos = framePrompt->getSize();
 		framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
@@ -4029,24 +4464,13 @@ void Player::Inventory_t::updateInventory()
 					{
 						++borderPos.x;
 						++borderPos.y;
+
 						oldSelectedSlotFrame->setDisabled(false);
 						oldSelectedSlotFrame->setSize(borderPos);
 
 						auto oldSelectedSlotItem = oldSelectedSlotFrame->findImage("inventory old selected item");
 						oldSelectedSlotItem->disabled = false;
-						if ( item->type == SPELL_ITEM )
-						{
-							oldSelectedSlotItem->path = ItemTooltips.getSpellIconPath(player, *item);
-						}
-						else
-						{
-							node_t* imagePathsNode = list_Node(&items[item->type].images, item->appearance % items[item->type].variations);
-							if ( imagePathsNode )
-							{
-								string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);
-								oldSelectedSlotItem->path = imagePath->data;
-							}
-						}
+						oldSelectedSlotItem->path = getItemSpritePath(player, *item);
 					}
 				}
 			}
@@ -4430,6 +4854,7 @@ void Player::Inventory_t::updateInventory()
 	{
 		// releasing items
 		bool oldSelectedItem = selectedItem != nullptr;
+		Uint32 oldUid = selectedItem ? selectedItem->uid : 0;
 
 		releaseItem(player);
 
@@ -4459,6 +4884,11 @@ void Player::Inventory_t::updateInventory()
 			}
 			else if ( hotbar_t.hotbarFrame )
 			{
+				if ( auto oldselectedSlotCursor = hotbar_t.hotbarFrame->findFrame("hotbar old item cursor") )
+				{
+					oldselectedSlotCursor->setDisabled(true);
+				}
+
 				for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
 				{
 					auto hotbarSlotFrame = hotbar_t.getHotbarSlotFrame(c);
@@ -4519,6 +4949,29 @@ void Player::Inventory_t::updateInventory()
 					if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
 					{
 						updateSlotFrameFromItem(slotFrame, item);
+					}
+				}
+			}
+		}
+
+		if ( hotbar_t.hotbarFrame ) 
+		{
+			if ( auto oldSelectedItemFrame = hotbar_t.hotbarFrame->findFrame("hotbar old selected item") )
+			{
+				if ( !selectedItem )
+				{
+					// hide the 'old' transparent item frame
+					oldSelectedItemFrame->setDisabled(true);
+				}
+				if ( selectedItem && oldSelectedItem )
+				{
+					if ( oldUid != 0 && selectedItem->uid != oldUid )
+					{
+						// if swapped item, then the old item image is outdated, hide it, but still show cursor
+						if ( auto oldImg = oldSelectedItemFrame->findImage("hotbar old selected item") )
+						{
+							oldImg->disabled = true;
+						}
 					}
 				}
 			}

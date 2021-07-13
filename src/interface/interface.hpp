@@ -112,7 +112,7 @@ extern int itemscroll;
 extern view_t camera_charsheet;
 extern real_t camera_charsheet_offsetyaw;
 
-void select_inventory_slot(int player, int x, int y);
+void select_inventory_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -173,6 +173,7 @@ extern SDL_Surface* inventory_mode_item_img;
 extern SDL_Surface* inventory_mode_item_highlighted_img;
 extern SDL_Surface* inventory_mode_spell_img;
 extern SDL_Surface* inventory_mode_spell_highlighted_img;
+extern bool restrictPaperDollMovement;
 
 //Chest GUI definitions.
 //#define CHEST_INVENTORY_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + chestgui_offset_x)
@@ -539,7 +540,10 @@ typedef struct hotbar_slot_t
 	/*
 	* This is an item's ID. It just resolves to NULL if an item is no longer valid.
 	*/
-	Uint32 item;
+	Uint32 item = 0;
+	Uint32 lastItemUid = 0;
+	int lastItemCategory = -1;
+	int lastItemType = -1;
 } hotbar_slot_t;
 
 
@@ -718,3 +722,4 @@ public:
 extern FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 
 SDL_Rect getRectForSkillIcon(const int skill);
+std::string getItemSpritePath(const int player, Item& item);
