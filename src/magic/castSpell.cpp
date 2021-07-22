@@ -254,7 +254,7 @@ bool isSpellcasterBeginner(int player, Entity* caster)
 	{
 		return false;
 	}
-	else if ( caster->behavior == &actMonster )
+	else if ( caster && caster->behavior == &actMonster )
 	{
 		return false;
 	}
