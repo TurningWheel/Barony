@@ -3736,7 +3736,8 @@ void ingameHud()
 		if ( players[player]->isLocalPlayerAlive() )
 		{
 			bool hasSpellbook = false;
-			bool tryQuickCast = players[player]->hotbar.faceMenuQuickCast;
+			bool tryHotbarQuickCast = players[player]->hotbar.faceMenuQuickCast;
+			bool tryInventoryQuickCast = players[player]->magic.doQuickCastSpell();
 			if ( stats[player]->shield && itemCategory(stats[player]->shield) == SPELLBOOK )
 			{
 				hasSpellbook = true;
@@ -3744,15 +3745,20 @@ void ingameHud()
 
 			players[player]->hotbar.faceMenuQuickCast = false;
 
-			if ( !command &&
+			bool allowCasting = false;
+			if ( tryInventoryQuickCast )
+			{
+				allowCasting = true;
+			}
+			else if (!command &&
 				(*inputPressedForPlayer(player, impulses[IN_CAST_SPELL])
 					|| (players[player]->shootmode
-						&& (inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL) || tryQuickCast))
+						&& (inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL) || tryHotbarQuickCast))
 					|| (hasSpellbook && *inputPressedForPlayer(player, impulses[IN_DEFEND]))
-					|| (hasSpellbook && players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)))
+					|| (hasSpellbook && players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
 				)
 			{
-				bool allowCasting = true;
+				allowCasting = true;
 				if ( *inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) || *inputPressedForPlayer(player, impulses[IN_DEFEND]) )
 				{
 					if ( ((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE || impulses[IN_DEFEND] == RIGHT_CLICK_IMPULSE)
@@ -3796,46 +3802,35 @@ void ingameHud()
 						}
 					}
 				}
+			}
 
-				if ( allowCasting )
+			if ( allowCasting )
+			{
+				*inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) = 0;
+				if ( players[player]->shootmode )
 				{
-					*inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) = 0;
-					if ( players[player]->shootmode )
+					inputs.controllerClearInput(player, INJOY_GAME_CAST_SPELL);
+				}
+				if ( players[player] && players[player]->entity )
+				{
+					if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
 					{
-						inputs.controllerClearInput(player, INJOY_GAME_CAST_SPELL);
-					}
-					if ( players[player] && players[player]->entity )
-					{
-						if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
+						if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
 						{
-							if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
-							{
-								messagePlayer(player, language[2999]); // prevent casting of spell.
-							}
-							else
-							{
-								if ( achievementBrawlerMode && players[player]->magic.selectedSpell() )
-								{
-									messagePlayer(player, language[2998]); // notify no longer eligible for achievement but still cast.
-								}
-								if ( hasSpellbook
-									&& (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
-								{
-									castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
-								}
-								else
-								{
-									castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
-								}
-								if ( players[player]->magic.selectedSpell() )
-								{
-									conductGameChallenges[CONDUCT_BRAWLER] = 0;
-								}
-							}
+							messagePlayer(player, language[2999]); // prevent casting of spell.
 						}
 						else
 						{
-							if ( hasSpellbook && (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
+							if ( achievementBrawlerMode && players[player]->magic.selectedSpell() )
+							{
+								messagePlayer(player, language[2998]); // notify no longer eligible for achievement but still cast.
+							}
+							if ( tryInventoryQuickCast )
+							{
+								castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
+							}
+							else if ( hasSpellbook
+								&& (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
 							{
 								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
 							}
@@ -3843,13 +3838,33 @@ void ingameHud()
 							{
 								castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
 							}
+							if ( players[player]->magic.selectedSpell() )
+							{
+								conductGameChallenges[CONDUCT_BRAWLER] = 0;
+							}
 						}
 					}
-					*inputPressedForPlayer(player, impulses[IN_DEFEND]) = 0;
-					inputs.controllerClearInput(player, INJOY_GAME_DEFEND);
+					else
+					{
+						if ( tryInventoryQuickCast )
+						{
+							castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
+						}
+						else if ( hasSpellbook && (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
+						{
+							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
+						}
+						else
+						{
+							castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
+						}
+					}
 				}
+				*inputPressedForPlayer(player, impulses[IN_DEFEND]) = 0;
+				inputs.controllerClearInput(player, INJOY_GAME_DEFEND);
 			}
 		}
+		players[player]->magic.resetQuickCastSpell();
 
 		if ( !command && *inputPressedForPlayer(player, impulses[IN_TOGGLECHATLOG])
 			|| (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_TOGGLECHATLOG)) )

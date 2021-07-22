@@ -3283,6 +3283,20 @@ void Player::PaperDoll_t::drawSlots()
 	//}
 }
 
+void Player::Magic_t::setQuickCastSpellFromInventory(Item* item)
+{
+	if ( quick_cast_spell ) // spell already queued, ignore.
+	{
+		return;
+	}
+	quick_cast_spell = nullptr;
+	if ( !item || itemCategory(item) != SPELL_CAT )
+	{
+		return;
+	}
+	quick_cast_spell = getSpellFromItem(player.playernum, item);
+}
+
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 {
 	// todo: add condition like getMouse()? && (!getVirtualMouse(player)->lastMovementFromController 

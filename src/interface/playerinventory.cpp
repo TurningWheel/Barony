@@ -34,7 +34,6 @@
 
 //Prototype helper functions for player inventory helper functions.
 void itemContextMenu(const int player);
-
 bool restrictPaperDollMovement = true;
 SDL_Surface* inventory_mode_item_img = NULL;
 SDL_Surface* inventory_mode_item_highlighted_img = NULL;
@@ -49,9 +48,6 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 	{
 		return false;
 	}
-
-	bool isBadPotion = (itemCategory(item) == POTION);
-	bool learnedSpell = (itemCategory(item) == SPELLBOOK);
 
 	if ( !players[player]->isLocalPlayer()
 		|| !players[player]->paperDoll.enabled
@@ -73,16 +69,11 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 		return false;
 	}
 
-	Entity* oldChest = openedChest[player];
-	int oldGUI = players[player]->gui_mode;
-
 	players[player]->gui_mode = GUI_MODE_INVENTORY;
 	openedChest[player] = nullptr;
 
-	executeItemMenuOption0(player, item, isBadPotion, learnedSpell);
-
-	openedChest[player] = oldChest;
-	players[player]->gui_mode = oldGUI;
+	players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
+	//executeItemMenuOption0(player, item, isBadPotion, learnedSpell);
 
 	players[player]->paperDoll.updateSlots();
 	if ( players[player]->paperDoll.isItemOnDoll(*item) )
@@ -100,9 +91,6 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 	{
 		return false;
 	}
-
-	bool isBadPotion = (itemCategory(item) == POTION);
-	bool learnedSpell = (itemCategory(item) == SPELLBOOK);
 
 	if ( !players[player]->isLocalPlayer()
 		|| players[player]->paperDoll.isItemOnDoll(*item) )
@@ -127,13 +115,8 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 	Entity* oldChest = openedChest[player];
 	int oldGUI = players[player]->gui_mode;
 
-	players[player]->gui_mode = GUI_MODE_INVENTORY;
-	openedChest[player] = nullptr;
-
-	executeItemMenuOption0(player, item, isBadPotion, learnedSpell);
-
-	openedChest[player] = oldChest;
-	players[player]->gui_mode = oldGUI;
+	//executeItemMenuOption0(player, item, isBadPotion, learnedSpell);
+	players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
 
 	players[player]->paperDoll.updateSlots();
 	if ( players[player]->paperDoll.isItemOnDoll(*item) )
@@ -176,11 +159,16 @@ void warpMouseToSelectedInventorySlot(const int player)
 
 -------------------------------------------------------------------------------*/
 
-char* itemUseString(int player, const Item* item)
+const char* itemEquipString(int player, const Item& item)
 {
-	if ( itemCategory(item) == WEAPON )
+	if ( items[item.type].item_slot == ItemEquippableSlot::NO_EQUIP && !(itemCategory(&item) == SPELL_CAT) )
 	{
-		if ( itemIsEquipped(item, player) )
+		return "Invalid";
+	}
+
+	if ( itemCategory(&item) == WEAPON )
+	{
+		if ( itemIsEquipped(&item, player) )
 		{
 			return language[323];
 		}
@@ -189,9 +177,9 @@ char* itemUseString(int player, const Item* item)
 			return language[324];
 		}
 	}
-	else if ( itemCategory(item) == ARMOR )
+	else if ( itemCategory(&item) == ARMOR )
 	{
-		switch ( item->type )
+		switch ( item.type )
 		{
 			case WOODEN_SHIELD:
 			case BRONZE_SHIELD:
@@ -200,7 +188,7 @@ char* itemUseString(int player, const Item* item)
 			case STEEL_SHIELD_RESISTANCE:
 			case CRYSTAL_SHIELD:
 			case MIRROR_SHIELD:
-				if ( itemIsEquipped(item, player) )
+				if ( itemIsEquipped(&item, player) )
 				{
 					return language[325];
 				}
@@ -211,7 +199,7 @@ char* itemUseString(int player, const Item* item)
 			default:
 				break;
 		}
-		if ( itemIsEquipped(item, player) )
+		if ( itemIsEquipped(&item, player) )
 		{
 			return language[327];
 		}
@@ -220,9 +208,9 @@ char* itemUseString(int player, const Item* item)
 			return language[328];
 		}
 	}
-	else if ( itemCategory(item) == AMULET )
+	else if ( itemCategory(&item) == AMULET )
 	{
-		if ( itemIsEquipped(item, player) )
+		if ( itemIsEquipped(&item, player) )
 		{
 			return language[327];
 		}
@@ -231,17 +219,9 @@ char* itemUseString(int player, const Item* item)
 			return language[328];
 		}
 	}
-	else if ( itemCategory(item) == POTION )
+	else if ( itemCategory(&item) == POTION )
 	{
-		return language[329];
-	}
-	else if ( itemCategory(item) == SCROLL )
-	{
-		return language[330];
-	}
-	else if ( itemCategory(item) == MAGICSTAFF )
-	{
-		if ( itemIsEquipped(item, player) )
+		if ( itemIsEquipped(&item, player) )
 		{
 			return language[323];
 		}
@@ -250,9 +230,20 @@ char* itemUseString(int player, const Item* item)
 			return language[324];
 		}
 	}
-	else if ( itemCategory(item) == RING )
+	else if ( itemCategory(&item) == MAGICSTAFF )
 	{
-		if ( itemIsEquipped(item, player) )
+		if ( itemIsEquipped(&item, player) )
+		{
+			return language[323];
+		}
+		else
+		{
+			return language[324];
+		}
+	}
+	else if ( itemCategory(&item) == RING )
+	{
+		if ( itemIsEquipped(&item, player) )
 		{
 			return language[327];
 		}
@@ -261,13 +252,9 @@ char* itemUseString(int player, const Item* item)
 			return language[331];
 		}
 	}
-	else if ( itemCategory(item) == SPELLBOOK )
+	else if ( itemCategory(&item) == SPELLBOOK )
 	{
-		return language[330];
-	}
-	else if ( itemCategory(item) == GEM )
-	{
-		if ( itemIsEquipped(item, player) )
+		if ( itemIsEquipped(&item, player) )
 		{
 			return language[323];
 		}
@@ -276,9 +263,9 @@ char* itemUseString(int player, const Item* item)
 			return language[324];
 		}
 	}
-	else if ( itemCategory(item) == THROWN )
+	else if ( itemCategory(&item) == GEM )
 	{
-		if ( itemIsEquipped(item, player) )
+		if ( itemIsEquipped(&item, player) )
 		{
 			return language[323];
 		}
@@ -287,12 +274,23 @@ char* itemUseString(int player, const Item* item)
 			return language[324];
 		}
 	}
-	else if ( itemCategory(item) == TOOL )
+	else if ( itemCategory(&item) == THROWN )
 	{
-		switch ( item->type )
+		if ( itemIsEquipped(&item, player) )
+		{
+			return language[323];
+		}
+		else
+		{
+			return language[324];
+		}
+	}
+	else if ( itemCategory(&item) == TOOL )
+	{
+		switch ( item.type )
 		{
 			case TOOL_PICKAXE:
-				if ( itemIsEquipped(item, player) )
+				if ( itemIsEquipped(&item, player) )
 				{
 					return language[323];
 				}
@@ -300,13 +298,9 @@ char* itemUseString(int player, const Item* item)
 				{
 					return language[324];
 				}
-			case TOOL_TINOPENER:
-				return language[1881];
-			case TOOL_MIRROR:
-				return language[332];
 			case TOOL_LOCKPICK:
 			case TOOL_SKELETONKEY:
-				if ( itemIsEquipped(item, player) )
+				if ( itemIsEquipped(&item, player) )
 				{
 					return language[333];
 				}
@@ -317,7 +311,7 @@ char* itemUseString(int player, const Item* item)
 			case TOOL_TORCH:
 			case TOOL_LANTERN:
 			case TOOL_CRYSTALSHARD:
-				if ( itemIsEquipped(item, player) )
+				if ( itemIsEquipped(&item, player) )
 				{
 					return language[335];
 				}
@@ -326,7 +320,7 @@ char* itemUseString(int player, const Item* item)
 					return language[336];
 				}
 			case TOOL_BLINDFOLD:
-				if ( itemIsEquipped(item, player) )
+				if ( itemIsEquipped(&item, player) )
 				{
 					return language[327];
 				}
@@ -334,10 +328,8 @@ char* itemUseString(int player, const Item* item)
 				{
 					return language[328];
 				}
-			case TOOL_TOWEL:
-				return language[332];
 			case TOOL_GLASSES:
-				if ( itemIsEquipped(item, player) )
+				if ( itemIsEquipped(&item, player) )
 				{
 					return language[327];
 				}
@@ -345,6 +337,60 @@ char* itemUseString(int player, const Item* item)
 				{
 					return language[331];
 				}
+			default:
+				if ( itemIsEquipped(&item, player) )
+				{
+					return language[323];
+				}
+				else
+				{
+					return language[324];
+				}
+		}
+	}
+	else if ( itemCategory(&item) == FOOD )
+	{
+		if ( itemIsEquipped(&item, player) )
+		{
+			return language[323];
+		}
+		else
+		{
+			return language[324];
+		}
+	}
+	else if ( itemCategory(&item) == SPELL_CAT )
+	{
+		return language[339];
+	}
+
+	return "Invalid";
+}
+
+const char* itemUseString(int player, const Item& item)
+{
+	if ( itemCategory(&item) == POTION )
+	{
+		return language[329];
+	}
+	else if ( itemCategory(&item) == SCROLL )
+	{
+		return language[330];
+	}
+	else if ( itemCategory(&item) == SPELLBOOK )
+	{
+		return language[330];
+	}
+	else if ( itemCategory(&item) == TOOL )
+	{
+		switch ( item.type )
+		{
+			case TOOL_TINOPENER:
+				return language[1881];
+			case TOOL_MIRROR:
+				return language[332];
+			case TOOL_TOWEL:
+				return language[332];
 			case TOOL_BEARTRAP:
 				return language[337];
 			case TOOL_ALEMBIC:
@@ -357,20 +403,213 @@ char* itemUseString(int player, const Item* item)
 				break;
 		}
 	}
-	else if ( itemCategory(item) == FOOD )
+	else if ( itemCategory(&item) == FOOD )
 	{
 		return language[338];
 	}
-	else if ( itemCategory(item) == BOOK )
+	else if ( itemCategory(&item) == BOOK )
 	{
 		return language[330];
 	}
-	else if ( itemCategory(item) == SPELL_CAT )
-	{
-		return language[339];
-	}
 	return language[332];
 }
+
+// deprecated
+//char* itemUseStringOld(int player, const Item* item)
+//{
+//	if ( itemCategory(item) == WEAPON )
+//	{
+//		if ( itemIsEquipped(item, player) )
+//		{
+//			return language[323];
+//		}
+//		else
+//		{
+//			return language[324];
+//		}
+//	}
+//	else if ( itemCategory(item) == ARMOR )
+//	{
+//		switch ( item->type )
+//		{
+//			case WOODEN_SHIELD:
+//			case BRONZE_SHIELD:
+//			case IRON_SHIELD:
+//			case STEEL_SHIELD:
+//			case STEEL_SHIELD_RESISTANCE:
+//			case CRYSTAL_SHIELD:
+//			case MIRROR_SHIELD:
+//				if ( itemIsEquipped(item, player) )
+//				{
+//					return language[325];
+//				}
+//				else
+//				{
+//					return language[326];
+//				}
+//			default:
+//				break;
+//		}
+//		if ( itemIsEquipped(item, player) )
+//		{
+//			return language[327];
+//		}
+//		else
+//		{
+//			return language[328];
+//		}
+//	}
+//	else if ( itemCategory(item) == AMULET )
+//	{
+//		if ( itemIsEquipped(item, player) )
+//		{
+//			return language[327];
+//		}
+//		else
+//		{
+//			return language[328];
+//		}
+//	}
+//	else if ( itemCategory(item) == POTION )
+//	{
+//		return language[329];
+//	}
+//	else if ( itemCategory(item) == SCROLL )
+//	{
+//		return language[330];
+//	}
+//	else if ( itemCategory(item) == MAGICSTAFF )
+//	{
+//		if ( itemIsEquipped(item, player) )
+//		{
+//			return language[323];
+//		}
+//		else
+//		{
+//			return language[324];
+//		}
+//	}
+//	else if ( itemCategory(item) == RING )
+//	{
+//		if ( itemIsEquipped(item, player) )
+//		{
+//			return language[327];
+//		}
+//		else
+//		{
+//			return language[331];
+//		}
+//	}
+//	else if ( itemCategory(item) == SPELLBOOK )
+//	{
+//		return language[330];
+//	}
+//	else if ( itemCategory(item) == GEM )
+//	{
+//		if ( itemIsEquipped(item, player) )
+//		{
+//			return language[323];
+//		}
+//		else
+//		{
+//			return language[324];
+//		}
+//	}
+//	else if ( itemCategory(item) == THROWN )
+//	{
+//		if ( itemIsEquipped(item, player) )
+//		{
+//			return language[323];
+//		}
+//		else
+//		{
+//			return language[324];
+//		}
+//	}
+//	else if ( itemCategory(item) == TOOL )
+//	{
+//		switch ( item->type )
+//		{
+//			case TOOL_PICKAXE:
+//				if ( itemIsEquipped(item, player) )
+//				{
+//					return language[323];
+//				}
+//				else
+//				{
+//					return language[324];
+//				}
+//			case TOOL_TINOPENER:
+//				return language[1881];
+//			case TOOL_MIRROR:
+//				return language[332];
+//			case TOOL_LOCKPICK:
+//			case TOOL_SKELETONKEY:
+//				if ( itemIsEquipped(item, player) )
+//				{
+//					return language[333];
+//				}
+//				else
+//				{
+//					return language[334];
+//				}
+//			case TOOL_TORCH:
+//			case TOOL_LANTERN:
+//			case TOOL_CRYSTALSHARD:
+//				if ( itemIsEquipped(item, player) )
+//				{
+//					return language[335];
+//				}
+//				else
+//				{
+//					return language[336];
+//				}
+//			case TOOL_BLINDFOLD:
+//				if ( itemIsEquipped(item, player) )
+//				{
+//					return language[327];
+//				}
+//				else
+//				{
+//					return language[328];
+//				}
+//			case TOOL_TOWEL:
+//				return language[332];
+//			case TOOL_GLASSES:
+//				if ( itemIsEquipped(item, player) )
+//				{
+//					return language[327];
+//				}
+//				else
+//				{
+//					return language[331];
+//				}
+//			case TOOL_BEARTRAP:
+//				return language[337];
+//			case TOOL_ALEMBIC:
+//				return language[3339];
+//			case TOOL_METAL_SCRAP:
+//			case TOOL_MAGIC_SCRAP:
+//				return language[1881];
+//				break;
+//			default:
+//				break;
+//		}
+//	}
+//	else if ( itemCategory(item) == FOOD )
+//	{
+//		return language[338];
+//	}
+//	else if ( itemCategory(item) == BOOK )
+//	{
+//		return language[330];
+//	}
+//	else if ( itemCategory(item) == SPELL_CAT )
+//	{
+//		return language[339];
+//	}
+//	return language[332];
+//}
 
 /*-------------------------------------------------------------------------------
 
@@ -1014,8 +1253,6 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 	if ( selectedItem )
 	{
 		auto selectedItemDollSlot = getPaperDollSlotFromItemType(*selectedItem);
-		int dollx, dolly;
-		players[player]->paperDoll.getCoordinatesFromSlotType(selectedItemDollSlot, dollx, dolly);
 		if ( selectedItemDollSlot != Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX )
 		{
 			if ( currenty < 0 ) // moving from doll
@@ -1065,9 +1302,15 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			{
 				y = inventoryUI.getSizeY() - 1;
 			}
+			else if ( itemCategory(selectedItem) == SPELL_CAT )
+			{
+				if ( y >= inventoryUI.getSizeY() )
+				{
+					y = 0;
+				}
+			}
 		}
 	}
-
 
 	if ( players[player]->paperDoll.enabled )
 	{
@@ -1781,6 +2024,18 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 
 	auto frameInventory = this->player.inventoryUI.frame;
 	if ( !frameInventory )
+	{
+		return;
+	}
+
+	auto frameInteract = this->player.inventoryUI.interactFrame;
+	if ( !frameInteract )
+	{
+		return;
+	}
+
+	auto frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
+	if ( !frameTooltipPrompt )
 	{
 		return;
 	}
@@ -3273,6 +3528,53 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 	tooltipDisplayedSettings.opacityAnimate = 1.0;
 	frameMain->setDisabled(false);
 	frameMain->setOpacity(100.0);
+
+
+	/*SDL_Rect interactPos = frameInteract->getSize();
+	interactPos.x = frameMain->getSize().x + 6;
+	interactPos.y = frameMain->getSize().y + frameMain->getSize().h - 2;
+	frameInteract->setSize(interactPos);
+
+	if ( auto interactGlyph = frameInteract->findImage("glyph 1") )
+	{
+		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuConfirm");
+	}
+	if ( auto interactGlyph = frameInteract->findImage("glyph 2") )
+	{
+		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuAlt2");
+	}
+	if ( auto interactGlyph = frameInteract->findImage("glyph 3") )
+	{
+		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuCancel");
+	}
+	if ( auto interactGlyph = frameInteract->findImage("glyph 4") )
+	{
+		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuAlt1");
+	}*/
+	inputs.getUIInteraction(player)->itemMenuItem = item->uid;
+
+	frameTooltipPrompt->setDisabled(false);
+	frameTooltipPrompt->setOpacity(frameMain->getOpacity());
+	SDL_Rect promptPos = frameTooltipPrompt->getSize();
+	promptPos.x = frameMain->getSize().x + frameMain->getSize().w - 6 - promptPos.w;
+	promptPos.y = frameMain->getSize().y + frameMain->getSize().h - 2;
+	frameTooltipPrompt->setSize(promptPos);
+	if ( auto interactGlyph = frameTooltipPrompt->findImage("glyph interact") )
+	{
+		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuConfirm");
+	}
+	if ( auto interactGlyph = frameTooltipPrompt->findImage("glyph grab") )
+	{
+		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuAlt1");
+	}
+	if ( auto interactGlyph = frameTooltipPrompt->findImage("glyph drop") )
+	{
+		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuCancel");
+	}
+	if ( auto interactGlyph = frameTooltipPrompt->findImage("glyph hotbar") )
+	{
+		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuAlt2");
+	}
 }
 
 void updatePlayerInventory(const int player)
@@ -4192,7 +4494,7 @@ void Player::Inventory_t::updateInventory()
 	frame->setDisabled(false);
 
 	bool disableMouseDisablingHotbarFocus = false;
-	SDL_Rect mode_pos;
+	SDL_Rect mode_pos{-100, -100, 0, 0};
 	node_t* node, *nextnode;
 
 	auto& hotbar_t = players[player]->hotbar;
@@ -4317,8 +4619,7 @@ void Player::Inventory_t::updateInventory()
 	auto selectedSlotFrame = frame->findFrame("inventory selected item");
 	auto selectedSlotCursor = frame->findFrame("inventory selected item cursor");
 
-	if ( !itemMenuOpen
-		&& selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
+	if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 		&& GenericGUI[player].selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
@@ -4330,12 +4631,15 @@ void Player::Inventory_t::updateInventory()
 			{
 				if ( auto slotFrame = getInventorySlotFrame(x, y) )
 				{
-					if ( slotFrame->capturesMouseInRealtimeCoords() )
+					if ( !itemMenuOpen ) // don't update selected slot while item menu open
 					{
-						selectSlot(x, y);
-						if ( hotbar_t.hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+						if ( slotFrame->capturesMouseInRealtimeCoords() )
 						{
-							hotbar_t.hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+							selectSlot(x, y);
+							if ( hotbar_t.hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+							{
+								hotbar_t.hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+							}
 						}
 					}
 
@@ -4346,9 +4650,10 @@ void Player::Inventory_t::updateInventory()
 						&& y == getSelectedSlotY()
 						&& !hotbar_t.hotbarHasFocus )
 					{
-						if ( !selectedItem 
-							&& (!inputs.getVirtualMouse(player)->draw_cursor 
-								|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrame->capturesMouse())) )
+						if ( itemMenuOpen || // if item menu open, then always draw cursor on current item.
+							(!selectedItem	// otherwise, if no selected item, and mouse hovering over item
+								&& (!inputs.getVirtualMouse(player)->draw_cursor 
+								|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrame->capturesMouse()))) )
 						{
 							selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 							selectedSlotFrame->setDisabled(false);
@@ -4820,12 +5125,27 @@ void Player::Inventory_t::updateInventory()
 						{
 							// open a drop-down menu of options for "using" the item
 							itemMenuOpen = true;
-							itemMenuX = mousex + 8;
-							itemMenuY = mousey;
+							itemMenuX = (inputs.getMouse(player, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + 8;
+							itemMenuY = (inputs.getMouse(player, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+							if ( auto interactMenuTop = interactFrame->findImage("interact top background") )
+							{
+								// 10px is slot half height, minus the top interact text height
+								// mouse will be situated halfway in first menu option
+								itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
+							}
+							if ( auto highlightImage = interactFrame->findImage("interact selected highlight") )
+							{
+								highlightImage->disabled = true;
+							}
 							itemMenuSelected = 0;
 							itemMenuItem = item->uid;
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
+
+							if ( inputs.getVirtualMouse(player)->draw_cursor )
+							{
+								cursor.lastUpdateTick = ticks;
+							}
 
 							if ( inputs.bControllerInputPressed(player, INJOY_MENU_USE) )
 							{
@@ -5057,7 +5377,7 @@ void Player::Inventory_t::updateInventory()
 			}
 		}
 	}
-
+	updateItemContextMenu();
 	itemContextMenu(player);
 }
 
@@ -5186,6 +5506,228 @@ void Player::PaperDoll_t::updateSlots()
 	}
 }
 
+const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item)
+{
+	switch ( prompt )
+	{
+		case PROMPT_EQUIP:
+		case PROMPT_UNEQUIP:
+		case PROMPT_SPELL_EQUIP:
+			return itemEquipString(player, item);
+		case PROMPT_INTERACT:
+		case PROMPT_EAT:
+			return itemUseString(player, item);
+		case PROMPT_SPELL_QUICKCAST:
+			return language[4049];
+		case PROMPT_TINKER:
+			return language[3670];
+			break;
+		case PROMPT_APPRAISE:
+			return language[1161];
+		case PROMPT_CONSUME:
+			return language[3487];
+		case PROMPT_INSPECT:
+			return language[1881];
+		case PROMPT_SELL:
+			return language[345];
+			break;
+		case PROMPT_BUY:
+			break;
+		case PROMPT_STORE_CHEST:
+			return language[344];
+		case PROMPT_RETRIEVE_CHEST:
+			break;
+		case PROMPT_DROP:
+			return language[1162];
+	}
+	return "Invalid";
+}
+
+std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item)
+{
+	std::vector<ItemContextMenuPrompts> options;
+	if ( !item )
+	{
+		return options;
+	}
+
+	bool playerOwnedItem = false;
+	if ( item->node )
+	{
+		if ( item->node->list == &stats[player]->inventory )
+		{
+			playerOwnedItem = true;
+		}
+	}
+
+	if ( openedChest[player] )
+	{
+		if ( playerOwnedItem )
+		{
+			options.push_back(PROMPT_STORE_CHEST);
+		}
+		else
+		{
+			options.push_back(PROMPT_RETRIEVE_CHEST);
+		}
+		return options;
+	}
+	if ( players[player]->gui_mode == GUI_MODE_SHOP )
+	{
+		if ( playerOwnedItem )
+		{
+			options.push_back(PROMPT_SELL);
+		}
+		else
+		{
+			options.push_back(PROMPT_BUY);
+		}
+		return options;
+	}
+
+	if ( itemCategory(item) == SPELL_CAT )
+	{
+		options.push_back(PROMPT_SPELL_EQUIP);
+		options.push_back(PROMPT_SPELL_QUICKCAST);
+		return options;
+	}
+
+	if ( itemCategory(item) == POTION )
+	{
+		bool is_potion_bad = isPotionBad(*item);
+		if ( is_potion_bad )
+		{
+			options.push_back(PROMPT_EQUIP);
+			options.push_back(PROMPT_EAT);
+			options.push_back(PROMPT_APPRAISE);
+			options.push_back(PROMPT_DROP);
+		}
+		else
+		{
+			options.push_back(PROMPT_EAT);
+			options.push_back(PROMPT_EQUIP);
+			options.push_back(PROMPT_APPRAISE);
+			options.push_back(PROMPT_DROP);
+		}
+		return options;
+	}
+	else if ( item->type == TOOL_ALEMBIC )
+	{
+		options.push_back(PROMPT_INTERACT);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( item->type == TOOL_TINKERING_KIT )
+	{
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_TINKER);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) )
+	{
+		if ( item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP )
+		{
+			options.push_back(PROMPT_CONSUME);
+			options.push_back(PROMPT_INSPECT);
+			options.push_back(PROMPT_APPRAISE);
+			options.push_back(PROMPT_DROP);
+		}
+		else if ( itemCategory(item) == FOOD )
+		{
+			options.push_back(PROMPT_CONSUME);
+			options.push_back(PROMPT_APPRAISE);
+			options.push_back(PROMPT_DROP);
+		}
+		else if ( itemCategory(item) == GEM )
+		{
+			options.push_back(PROMPT_EQUIP);
+			options.push_back(PROMPT_CONSUME);
+			options.push_back(PROMPT_APPRAISE);
+			options.push_back(PROMPT_DROP);
+		}
+		else
+		{
+			options.push_back(PROMPT_INTERACT);
+			options.push_back(PROMPT_CONSUME);
+			options.push_back(PROMPT_APPRAISE);
+			options.push_back(PROMPT_DROP);
+		}
+	}
+	else if ( item->type == FOOD_CREAMPIE )
+	{
+		options.push_back(PROMPT_EAT);
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( itemCategory(item) == SPELLBOOK )
+	{
+		bool learnedSpell = playerLearnedSpellbook(player, item);
+		if ( itemIsEquipped(item, player) )
+		{
+			learnedSpell = true; // equipped spellbook will unequip on use.
+		}
+		else if ( stats[player] && stats[player]->type == GOBLIN )
+		{
+			// goblinos can't learn spells but always equip books.
+			learnedSpell = true; 
+		}
+		else if ( players[player] && players[player]->entity )
+		{
+			if ( players[player]->entity->effectShapeshift == CREATURE_IMP )
+			{
+				learnedSpell = true; // imps can't learn spells but always equip books.
+			}
+		}
+		if ( learnedSpell )
+		{
+			options.push_back(PROMPT_EQUIP);
+			options.push_back(PROMPT_INTERACT);
+		}
+		else
+		{
+			options.push_back(PROMPT_INTERACT);
+			options.push_back(PROMPT_EQUIP);
+		}
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( items[item->type].item_slot != ItemEquippableSlot::NO_EQUIP )
+	{
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else
+	{
+		options.push_back(PROMPT_INTERACT);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+
+	for ( auto it = options.begin(); it != options.end(); )
+	{
+		if ( *it == PROMPT_EQUIP )
+		{
+			if ( itemIsEquipped(item, player) )
+			{
+				*it = PROMPT_UNEQUIP;
+			}
+		}
+		if ( *it == PROMPT_APPRAISE )
+		{
+			if ( item->identified )
+			{
+				it = options.erase(it);
+				continue;
+			}
+		}
+		++it;
+	}
+	return options;
+}
+
 inline bool itemMenuSkipRow1ForShopsAndChests(const int player, const Item& item)
 {
 	if ( (openedChest[player] || players[player]->gui_mode == GUI_MODE_SHOP)
@@ -5221,8 +5763,8 @@ inline void drawItemMenuSlots(const int player, const Item& item, int slot_width
 	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
 
 	//Draw the action select boxes. "Appraise", "Use, "Equip", etc.
-	int current_x = itemMenuX;
-	int current_y = itemMenuY;
+	int current_x = itemMenuX + 300;
+	int current_y = itemMenuY + 300;
 	drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 0); //Option 0 => Store in chest, sell, use.
 	if (itemCategory(&item) != SPELL_CAT)
 	{
@@ -5286,7 +5828,7 @@ inline void drawOptionSell(int x, int y)
 inline void drawOptionUse(const int player, const Item& item, int x, int y)
 {
 	int width = 0;
-	ttfPrintTextFormatted(ttf12, x + 50 - strlen(itemUseString(player, &item)) * TTF12_WIDTH / 2, y + 4, "%s", itemUseString(player, &item));
+	ttfPrintTextFormatted(ttf12, x + 50 - strlen(itemUseString(player, item)) * TTF12_WIDTH / 2, y + 4, "%s", itemUseString(player, item));
 }
 
 inline void drawOptionUnwield(int x, int y)
@@ -5635,6 +6177,7 @@ inline void drawItemMenuOptionUsableAndWieldable(const int player, const Item& i
  */
 inline void selectItemMenuSlot(const int player, const Item& item, int x, int y, int slot_width, int slot_height)
 {
+	return;
 	int& itemMenuX = inputs.getUIInteraction(player)->itemMenuX;
 	int& itemMenuY = inputs.getUIInteraction(player)->itemMenuY;
 	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
@@ -6001,8 +6544,8 @@ void itemContextMenu(const int player)
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
 	Uint32& itemMenuItem = inputs.getUIInteraction(player)->itemMenuItem;
-	int& itemMenuX = inputs.getUIInteraction(player)->itemMenuX;
-	int& itemMenuY = inputs.getUIInteraction(player)->itemMenuY;
+	int itemMenuX = inputs.getUIInteraction(player)->itemMenuX + 300;
+	int itemMenuY = inputs.getUIInteraction(player)->itemMenuY + 300;
 	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
 
@@ -6107,7 +6650,7 @@ void itemContextMenu(const int player)
 	}
 
 	selectItemMenuSlot(player, *current_item, itemMenuX, itemMenuY, slot_width, slot_height);
-
+	return;
 	bool activateSelection = false;
 	if (!inputs.bMouseRight(player) && !toggleclick)
 	{

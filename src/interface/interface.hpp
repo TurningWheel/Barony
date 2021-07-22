@@ -723,3 +723,24 @@ extern FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 
 SDL_Rect getRectForSkillIcon(const int skill);
 std::string getItemSpritePath(const int player, Item& item);
+
+enum ItemContextMenuPrompts {
+	PROMPT_EQUIP,
+	PROMPT_UNEQUIP,
+	PROMPT_SPELL_EQUIP,
+	PROMPT_SPELL_QUICKCAST,
+	PROMPT_APPRAISE,
+	PROMPT_INTERACT,
+	PROMPT_EAT,
+	PROMPT_CONSUME,
+	PROMPT_INSPECT,
+	PROMPT_SELL,
+	PROMPT_BUY,
+	PROMPT_STORE_CHEST,
+	PROMPT_RETRIEVE_CHEST,
+	PROMPT_DROP,
+	PROMPT_TINKER
+};
+
+std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);
+const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item);

@@ -669,6 +669,8 @@ public:
 	public:
 		Frame* frame = nullptr;
 		Frame* tooltipFrame = nullptr;
+		Frame* interactFrame = nullptr;
+		Frame* tooltipPromptFrame = nullptr;
 		std::unordered_map<int, Frame*> slotFrames;
 
 		struct Cursor_t
@@ -755,6 +757,8 @@ public:
 		void updateCursor();
 		void updateInventoryItemTooltip();
 		void updateSelectedItemAnimation();
+		void updateItemContextMenu();
+		void activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt);
 		void resetInventory()
 		{
 			if ( bNewInventoryLayout )
@@ -990,6 +994,7 @@ public:
 	{
 		Player& player;
 		spell_t* selected_spell = nullptr; //The spell the player has currently selected.
+		spell_t* quick_cast_spell = nullptr; //Spell ready for quick-casting
 	public:
 		spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { nullptr, nullptr, nullptr, nullptr, nullptr };
 		int selected_spell_last_appearance = -1;
@@ -1009,12 +1014,17 @@ public:
 				selected_spell_alternate[c] = nullptr;
 			}
 			selected_spell_last_appearance = -1;
+			quick_cast_spell = nullptr;
 		}
 		void equipSpell(spell_t* spell) 
 		{ 
 			selected_spell = spell; 
 		}
+		void setQuickCastSpellFromInventory(Item* item);
+		bool doQuickCastSpell() { return quick_cast_spell != nullptr; }
+		void resetQuickCastSpell() { quick_cast_spell = nullptr; }
 		spell_t* selectedSpell() const { return selected_spell; }
+		spell_t* quickCastSpell() const { return quick_cast_spell; }
 
 	} magic;
 	class PlayerSettings_t

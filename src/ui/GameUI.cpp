@@ -5,6 +5,7 @@
 #include "Image.hpp"
 #include "Field.hpp"
 #include "Button.hpp"
+#include "Text.hpp"
 
 #include "../main.hpp"
 #include "../game.hpp"
@@ -26,6 +27,14 @@ int hotbarSlotOpacity = 255;
 int hotbarSelectedSlotOpacity = 255;
 bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
+struct CustomColors_t
+{
+	Uint32 itemContextMenuHeadingText = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionText = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionSelectedText = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionImg = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionSelectedImg = 0xFFFFFFFF;
+} hudColors;
 
 void createHPMPBars(const int player)
 {
@@ -1079,10 +1088,13 @@ void createInventoryTooltipFrame(const int player)
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
 		color, "images/ui/Inventory/tooltips/Hover_BR01.png", "tooltip bottom right");
 
+	const std::string headerFont = "fonts/pixelmix.ttf#14#2";
+	const std::string bodyFont = "fonts/pixelmix.ttf#12";
+
 	auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
 	tooltipTextField->setText("Nothing");
 	tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-	tooltipTextField->setFont("fonts/pixelmix.ttf#14");
+	tooltipTextField->setFont(headerFont.c_str());
 	tooltipTextField->setHJustify(Field::justify_t::LEFT);
 	tooltipTextField->setVJustify(Field::justify_t::CENTER);
 	tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
@@ -1128,7 +1140,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1136,7 +1148,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value highlight", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1144,7 +1156,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value positive text", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1152,7 +1164,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value negative text", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1160,7 +1172,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value slot name", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::RIGHT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1170,7 +1182,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1178,7 +1190,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value highlight", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1186,7 +1198,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value positive text", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1194,7 +1206,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value negative text", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1204,7 +1216,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1212,7 +1224,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value highlight", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1220,7 +1232,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value positive text", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1228,7 +1240,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value negative text", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1236,7 +1248,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip attributes text", 1024);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1252,7 +1264,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = descFrame->addField("inventory mouse tooltip description", 1024);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1261,7 +1273,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = descFrame->addField("inventory mouse tooltip description positive text", 1024);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
 		//tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 1, 151, 246, 255));
@@ -1270,7 +1282,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = descFrame->addField("inventory mouse tooltip description negative text", 1024);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 215, 38, 61, 255));
@@ -1290,7 +1302,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = valueFrame->addField("inventory mouse tooltip identified value", 64);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1303,7 +1315,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = valueFrame->addField("inventory mouse tooltip gold value", 64);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1316,7 +1328,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = valueFrame->addField("inventory mouse tooltip weight value", 64);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -1328,10 +1340,297 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField = promptFrame->addField("inventory mouse tooltip prompt", 1024);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::RIGHT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+	}
+
+	snprintf(name, sizeof(name), "player interact %d", player);
+	if ( auto interactFrame = gui->addFrame(name) )
+	{
+		players[player]->inventoryUI.interactFrame = interactFrame;
+		const int interactWidth = 106;
+		interactFrame->setSize(SDL_Rect{ 0, 0, interactWidth + 6 * 2, 100 });
+		interactFrame->setDisabled(true);
+		interactFrame->setInheritParentFrameOpacity(false);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		const int topBackgroundHeight = 30;
+		const int optionHeight = 20;
+
+		interactFrame->addImage(SDL_Rect{ 12, 0, 0, 34 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_T01.png", "interact top background");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL01.png", "interact top left");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR01.png", "interact top right");
+
+		interactFrame->addImage(SDL_Rect{ 4, 34, 0, 76 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_C01.png", "interact middle background");
+		interactFrame->addImage(SDL_Rect{ 0, 34, 4, 76 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_L01.png", "interact middle left");
+		interactFrame->addImage(SDL_Rect{ 0, 34, 4, 76 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_R01.png", "interact middle right");
+
+		interactFrame->addImage(SDL_Rect{ 12, 96, 0, 10 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_B01.png", "interact bottom background");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_BL01.png", "interact bottom left");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_BR01.png", "interact bottom right");
+
+		/*interactFrame->addImage(SDL_Rect{ 16, 0, interactWidth, topBackgroundHeight },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_T00.png", "interact top background");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 16, topBackgroundHeight },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL00.png", "interact top left");
+		interactFrame->addImage(SDL_Rect{ interactWidth + 16, 0, 16, topBackgroundHeight },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR00.png", "interact top right");
+
+		interactFrame->addImage(SDL_Rect{ 0, topBackgroundHeight, 6, 76 },
+			color, "images/ui/Inventory/tooltips/HoverExt_L00.png", "interact middle left");
+		interactFrame->addImage(SDL_Rect{ interactWidth + 6, topBackgroundHeight, 6, 76 },
+			color, "images/ui/Inventory/tooltips/HoverExt_R00.png", "interact middle right");
+		interactFrame->addImage(SDL_Rect{ 4, topBackgroundHeight, interactWidth + 2, 76 },
+			hudColors.itemContextMenuOptionImg, "images/system/white.png", "interact middle background");
+
+		interactFrame->addImage(SDL_Rect{ 4, 96, interactWidth + 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_B00.png", "interact bottom background");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_BL00.png", "interact bottom left");
+		interactFrame->addImage(SDL_Rect{ interactWidth + 4 * 2, 96, 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");*/
+
+		interactFrame->addImage(SDL_Rect{ 6, optionHeight, interactWidth, 76 },
+			hudColors.itemContextMenuOptionSelectedImg, "images/system/whitecurve.png", "interact selected highlight");
+
+		auto interactText = interactFrame->addField("interact text", 32);
+		interactText->setText("Interact");
+		interactText->setSize(SDL_Rect{ 0, 2, 0, topBackgroundHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::CENTER);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(hudColors.itemContextMenuHeadingText);
+
+		const int interactOptionStartX = 4;
+		const int interactOptionStartY = 36;
+		const int glyphSize = 20;
+
+		auto interactGlyph1 = interactFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4, interactOptionStartY + 4, glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 1");
+
+		const int textAlignX = interactGlyph1->pos.x + interactGlyph1->pos.w + 6;
+		int textAlignY = interactGlyph1->pos.y - 8;
+		const int textWidth = 80;
+		const int textHeight = glyphSize + 8;
+
+		Uint32 textColor = hudColors.itemContextMenuOptionText;
+		
+		interactText = interactFrame->addField("interact option 1", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{ 
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+
+		auto interactGlyph2 = interactFrame->addImage(
+			SDL_Rect{  interactOptionStartX + 4, 
+				interactGlyph1->pos.y + interactGlyph1->pos.h + 4, 
+				glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 2");
+
+		textAlignY = interactGlyph2->pos.y - 8;
+		interactText = interactFrame->addField("interact option 2", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+
+		auto interactGlyph3 = interactFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4,
+			interactGlyph2->pos.y + interactGlyph2->pos.h + 4,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 3");
+
+		textAlignY = interactGlyph3->pos.y - 8;
+		interactText = interactFrame->addField("interact option 3", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+
+		auto interactGlyph4 = interactFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4,
+			interactGlyph3->pos.y + interactGlyph3->pos.h + 4,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 4");
+
+		textAlignY = interactGlyph4->pos.y - 8;
+		interactText = interactFrame->addField("interact option 4", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+
+		auto interactGlyph5 = interactFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4,
+			interactGlyph4->pos.y + interactGlyph4->pos.h + 4,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 5");
+
+		textAlignY = interactGlyph5->pos.y - 8;
+		interactText = interactFrame->addField("interact option 5", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+	}
+
+	snprintf(name, sizeof(name), "player item prompt %d", player);
+	if ( auto promptFrame = gui->addFrame(name) )
+	{
+		players[player]->inventoryUI.tooltipPromptFrame = promptFrame;
+		const int interactWidth = 208;
+		SDL_Rect promptSize{ 0, 0, interactWidth + 6 * 2, 100 };
+		promptFrame->setDisabled(true);
+		promptFrame->setInheritParentFrameOpacity(false);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+
+		auto middleCenter = promptFrame->addImage(SDL_Rect{ 6, 2, interactWidth, 76 },
+			color, "images/ui/Inventory/tooltips/Hover_C00.png", "interact middle background");
+		auto middleTop = promptFrame->addImage(SDL_Rect{ 6, 0, interactWidth, 2 },
+			color, "images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle top background");
+		auto middleBottom = promptFrame->addImage(SDL_Rect{ 6, 0, interactWidth, 2 },
+			color, "images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle bottom background");
+		promptFrame->addImage(SDL_Rect{ 0, 0, 6, 76 },
+			color, "images/ui/Inventory/tooltips/HoverExt_L00.png", "interact middle left");
+		promptFrame->addImage(SDL_Rect{ interactWidth + 6, 0, 6, 76 },
+			color, "images/ui/Inventory/tooltips/HoverExt_R00.png", "interact middle right");
+
+		auto bottomCenter = promptFrame->addImage(SDL_Rect{ 4, 76, interactWidth + 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_B00.png", "interact bottom background");
+		auto bottomLeft = promptFrame->addImage(SDL_Rect{ 0, 76, 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_BL00.png", "interact bottom left");
+		auto bottomRight = promptFrame->addImage(SDL_Rect{ interactWidth + 4 * 2, 76, 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");
+
+		const int interactOptionStartX = 4;
+		const int interactOptionStartY = 8;
+		const int glyphSize = 20;
+
+		auto interactGlyph1 = promptFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4, interactOptionStartY, glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph grab");
+
+		int textAlignX = interactGlyph1->pos.x + interactGlyph1->pos.w + 6;
+		int textAlignY = interactGlyph1->pos.y;
+		const int textWidth = 80;
+		const int textHeight = glyphSize;
+
+		auto promptText = promptFrame->addField("txt grab", 32);
+		promptText->setText("Grab");
+		promptText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::LEFT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+
+		auto interactGlyph2 = promptFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4,
+			interactGlyph1->pos.y + interactGlyph1->pos.h + 4,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph interact");
+
+		textAlignY = interactGlyph2->pos.y;
+		promptText = promptFrame->addField("txt interact", 32);
+		promptText->setText("Interact");
+		promptText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::LEFT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+
+		auto interactGlyph3 = promptFrame->addImage(
+			SDL_Rect{ promptText->getSize().x + promptText->getSize().w + 4,
+			interactOptionStartY,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph hotbar");
+
+		textAlignX = interactGlyph3->pos.x + interactGlyph3->pos.w + 6;
+		textAlignY = interactGlyph3->pos.y;
+
+		promptText = promptFrame->addField("txt hotbar", 32);
+		promptText->setText("Hotbar");
+		promptText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::LEFT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+
+		auto interactGlyph4 = promptFrame->addImage(
+			SDL_Rect{ interactGlyph3->pos.x,
+			interactGlyph3->pos.y + interactGlyph3->pos.h + 4,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph drop");
+
+		textAlignY = interactGlyph4->pos.y;
+
+		textAlignY = interactGlyph4->pos.y;
+		promptText = promptFrame->addField("txt drop", 32);
+		promptText->setText("Drop");
+		promptText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY - 3,
+			textWidth, textHeight + 6 });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::LEFT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+
+		bottomCenter->pos.y = interactGlyph4->pos.y + interactGlyph4->pos.h + 8;
+		bottomLeft->pos.y = bottomCenter->pos.y;
+		bottomRight->pos.y = bottomCenter->pos.y;
+
+		promptSize.h = bottomCenter->pos.y + bottomCenter->pos.h;
+
+		promptFrame->setSize(promptSize);
+		middleCenter->pos.h = bottomCenter->pos.y - 4;
+		middleBottom->pos.y = bottomCenter->pos.y - 2;
 	}
 }
 
@@ -1491,6 +1790,49 @@ void loadHUDSettingsJSON()
 				if ( d.HasMember("selected_old_cursor_opacity") )
 				{
 					oldSelectedCursorOpacity = d["selected_old_cursor_opacity"].GetInt();
+				}
+				if ( d.HasMember("colors") )
+				{
+					if ( d["colors"].HasMember("itemmenu_heading_text") )
+					{
+						hudColors.itemContextMenuHeadingText = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_heading_text"]["r"].GetInt(),
+							d["colors"]["itemmenu_heading_text"]["g"].GetInt(),
+							d["colors"]["itemmenu_heading_text"]["b"].GetInt(),
+							d["colors"]["itemmenu_heading_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("itemmenu_option_text") )
+					{
+						hudColors.itemContextMenuOptionText = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_option_text"]["r"].GetInt(),
+							d["colors"]["itemmenu_option_text"]["g"].GetInt(),
+							d["colors"]["itemmenu_option_text"]["b"].GetInt(),
+							d["colors"]["itemmenu_option_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("itemmenu_selected_text") )
+					{
+						hudColors.itemContextMenuOptionSelectedText = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_selected_text"]["r"].GetInt(),
+							d["colors"]["itemmenu_selected_text"]["g"].GetInt(),
+							d["colors"]["itemmenu_selected_text"]["b"].GetInt(),
+							d["colors"]["itemmenu_selected_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("itemmenu_selected_img") )
+					{
+						hudColors.itemContextMenuOptionSelectedImg = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_selected_img"]["r"].GetInt(),
+							d["colors"]["itemmenu_selected_img"]["g"].GetInt(),
+							d["colors"]["itemmenu_selected_img"]["b"].GetInt(),
+							d["colors"]["itemmenu_selected_img"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("itemmenu_option_img") )
+					{
+						hudColors.itemContextMenuOptionImg = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_option_img"]["r"].GetInt(),
+							d["colors"]["itemmenu_option_img"]["g"].GetInt(),
+							d["colors"]["itemmenu_option_img"]["b"].GetInt(),
+							d["colors"]["itemmenu_option_img"]["a"].GetInt());
+					}
 				}
 				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 			}
@@ -1735,6 +2077,463 @@ void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int 
 	}
 }
 
+void Player::Inventory_t::updateItemContextMenu()
+{
+	bool& toggleclick = inputs.getUIInteraction(player.playernum)->toggleclick;
+	bool& itemMenuOpen = inputs.getUIInteraction(player.playernum)->itemMenuOpen;
+	int& itemMenuSelected = inputs.getUIInteraction(player.playernum)->itemMenuSelected;
+	Uint32& itemMenuItem = inputs.getUIInteraction(player.playernum)->itemMenuItem;
+	int& itemMenuX = inputs.getUIInteraction(player.playernum)->itemMenuX;
+	int& itemMenuY = inputs.getUIInteraction(player.playernum)->itemMenuY;
+	const Sint32 mousex = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+
+	Item* item = uidToItem(itemMenuItem);
+	if ( !interactFrame )
+	{
+		itemMenuOpen = false;
+		return;
+	}
+
+	if ( !item || !itemMenuOpen )
+	{
+		itemMenuOpen = false;
+		interactFrame->setDisabled(true);
+		return;
+	}
+
+	interactFrame->setDisabled(false);
+
+	auto options = getContextMenuOptionsForItem(player.playernum, item);
+	std::vector<std::pair<Frame::image_t*, Field*>> optionFrames;
+	auto glyph1 = interactFrame->findImage("glyph 1");
+	auto option1 = interactFrame->findField("interact option 1");
+	auto glyph2 = interactFrame->findImage("glyph 2");
+	auto option2 = interactFrame->findField("interact option 2");
+	auto glyph3 = interactFrame->findImage("glyph 3");
+	auto option3 = interactFrame->findField("interact option 3");
+	auto glyph4 = interactFrame->findImage("glyph 4");
+	auto option4 = interactFrame->findField("interact option 4");
+	auto glyph5 = interactFrame->findImage("glyph 5");
+	auto option5 = interactFrame->findField("interact option 5");
+	if ( glyph1 && option1 )
+	{
+		optionFrames.push_back(std::make_pair(glyph1, option1));
+	}
+	if ( glyph2 && option2 )
+	{
+		optionFrames.push_back(std::make_pair(glyph2, option2));
+	}
+	if ( glyph3 && option3 )
+	{
+		optionFrames.push_back(std::make_pair(glyph3, option3));
+	}
+	if ( glyph4 && option4 )
+	{
+		optionFrames.push_back(std::make_pair(glyph4, option4));
+	}
+	if ( glyph5 && option5 )
+	{
+		optionFrames.push_back(std::make_pair(glyph5, option5));
+	}
+
+	auto highlightImage = interactFrame->findImage("interact selected highlight");
+	highlightImage->disabled = true;
+	highlightImage->color = hudColors.itemContextMenuOptionSelectedImg;
+	
+	size_t index = 0;
+	unsigned int maxWidth = 0;
+	if ( auto interactText = interactFrame->findField("interact text") )
+	{
+		interactText->setColor(hudColors.itemContextMenuHeadingText);
+		if ( auto textGet = Text::get(interactText->getText(), interactText->getFont()) )
+		{
+			maxWidth = textGet->getWidth();
+		}
+	}
+	int maxHeight = 0;
+	const int textPaddingX = 8;
+
+	for ( auto& optionPair : optionFrames )
+	{
+		auto& img = optionPair.first;
+		auto& txt = optionPair.second;
+		txt->setColor(hudColors.itemContextMenuOptionText);
+		if ( index >= options.size() )
+		{
+			txt->setDisabled(true);
+			img->disabled = true;
+			continue;
+		}
+
+		txt->setDisabled(false);
+		img->disabled = true;
+		auto promptType = options[index];
+		
+		// in-case we want controller support here.
+		/*switch ( promptType ) 
+		{
+			case PROMPT_EQUIP:
+			case PROMPT_UNEQUIP:
+			case PROMPT_SPELL_EQUIP:
+				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuAlt1");
+				break;
+			case PROMPT_APPRAISE:
+				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuAlt2");
+				break;
+			case PROMPT_DROP:
+				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuCancel");
+				break;
+			default:
+				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuConfirm");
+				break;
+		}
+
+		if ( img->path == "" )
+		{
+			img->disabled = true;
+		}*/
+
+		txt->setText(getContextMenuLangEntry(player.playernum, promptType, *item));
+		if ( auto textGet = Text::get(txt->getText(), txt->getFont()) )
+		{
+			maxWidth = std::max(textGet->getWidth(), maxWidth);
+			
+			SDL_Rect size = txt->getSize();
+			size.w = textGet->getWidth();
+			if ( img->disabled )
+			{
+				size.x = textPaddingX;
+				txt->setHJustify(Field::justify_t::CENTER);
+			}
+			else
+			{
+				size.x = img->pos.x + img->pos.w + textPaddingX;
+				txt->setHJustify(Field::justify_t::LEFT);
+			}
+			txt->setSize(size);
+		}
+		
+		maxHeight = std::max(img->pos.y + img->pos.h, maxHeight);
+		++index;
+	}
+
+	const int rightClickProtectBuffer = (right_click_protect ? 0 : 10);
+
+	index = 0;
+	for ( auto& optionPair : optionFrames )
+	{
+		auto& img = optionPair.first;
+		auto& txt = optionPair.second;
+
+		if ( txt->getHJustify() == Field::justify_t::CENTER )
+		{
+			SDL_Rect size = txt->getSize();
+			size.w = maxWidth;
+			txt->setSize(size);
+		}
+
+		if ( index < options.size() )
+		{
+			auto ml = interactFrame->findImage("interact middle left");
+			SDL_Rect absoluteSize = txt->getAbsoluteSize();
+			absoluteSize.x -= (4 + ml->pos.w) + rightClickProtectBuffer;
+			absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
+			absoluteSize.y += 4;
+			absoluteSize.h -= 4;
+			if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+				&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+			{
+				itemMenuSelected = index;
+			}
+		}
+		++index;
+	}
+
+	const int textStartX = (glyph1->disabled ? 0 : glyph1->pos.x + glyph1->pos.w) + textPaddingX;
+	const int frameWidth = maxWidth + textStartX + textPaddingX;
+
+	const int posX = inputs.getMouse(player.playernum, Inputs::MouseInputs::X) * (real_t)Frame::virtualScreenX / xres;
+	const int posY = inputs.getMouse(player.playernum, Inputs::MouseInputs::Y) * (real_t)Frame::virtualScreenY / yres;
+	SDL_Rect frameSize = interactFrame->getSize();
+	frameSize.x = itemMenuX;
+	frameSize.y = itemMenuY;
+
+	// position the frame elements
+	int interimHeight = 0;
+	{
+		auto tl = interactFrame->findImage("interact top left");
+		auto tmid = interactFrame->findImage("interact top background");
+		tmid->pos.w = frameWidth - tl->pos.w * 2;
+		auto tr = interactFrame->findImage("interact top right");
+		tr->pos.x = tmid->pos.x + tmid->pos.w;
+
+		interimHeight = tmid->pos.y + tmid->pos.h;
+		frameSize.w = tr->pos.x + tr->pos.w;
+	}
+	{
+		const int middleOffsetY = 4;
+		auto ml = interactFrame->findImage("interact middle left");
+		ml->pos.h = maxHeight - interimHeight - middleOffsetY;
+		auto mmid = interactFrame->findImage("interact middle background");
+		mmid->pos.h = ml->pos.h;
+		mmid->pos.w = frameWidth - (ml->pos.w) * 2;
+		mmid->color = hudColors.itemContextMenuOptionImg;
+		auto mr = interactFrame->findImage("interact middle right");
+		mr->pos.h = ml->pos.h;
+		mr->pos.x = mmid->pos.x + mmid->pos.w;
+
+		interimHeight = mmid->pos.y + mmid->pos.h;
+	}
+	{
+		auto bl = interactFrame->findImage("interact bottom left");
+		bl->pos.y = interimHeight;
+		auto bmid = interactFrame->findImage("interact bottom background");
+		bmid->pos.y = interimHeight;
+		bmid->pos.w = frameWidth - bl->pos.w * 2;
+		auto br = interactFrame->findImage("interact bottom right");
+		br->pos.y = interimHeight;
+		br->pos.x = bmid->pos.x + bmid->pos.w;
+
+		frameSize.h = br->pos.y + br->pos.h;
+	}
+	
+	if ( auto interactText = interactFrame->findField("interact text") )
+	{
+		SDL_Rect size = interactText->getSize();
+		size.x = 0;
+		size.w = frameSize.w;
+		interactText->setSize(size);
+	}
+
+	interactFrame->setSize(frameSize);
+
+	SDL_Rect absoluteSize = interactFrame->getAbsoluteSize();
+	// right click protect uses exact border, else there is 10 px buffer
+	absoluteSize.x -= rightClickProtectBuffer;
+	absoluteSize.w += rightClickProtectBuffer;
+	if ( !(mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+		&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h) )
+	{
+		itemMenuSelected = -1;
+	}
+
+	if ( itemMenuSelected >= 0 && itemMenuSelected < options.size() )
+	{
+		auto& txt = optionFrames[itemMenuSelected].second;
+		txt->setColor(hudColors.itemContextMenuOptionSelectedText);
+		SDL_Rect size = txt->getSize();
+		size.x -= 4;
+		size.w += 2 * 4;
+		size.h += 2;
+		highlightImage->pos = size;
+		highlightImage->disabled = false;
+	}
+
+	bool activateSelection = false;
+	if ( !inputs.bMouseRight(player.playernum) && !toggleclick )
+	{
+		activateSelection = true;
+	}
+	if ( activateSelection )
+	{
+		if ( itemMenuSelected >= 0 && itemMenuSelected < options.size() )
+		{
+			activateItemContextMenuOption(item, options[itemMenuSelected]);
+		}
+		//Close the menu.
+		itemMenuOpen = false;
+		itemMenuItem = 0;
+	}
+}
+
+void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt)
+{
+	const int player = this->player.playernum;
+	bool disableItemUsage = false;
+	if ( players[player] && players[player]->entity )
+	{
+		if ( players[player]->entity->effectShapeshift != NOTHING )
+		{
+			// shape shifted, disable some items
+			if ( !item->usableWhileShapeshifted(stats[player]) )
+			{
+				disableItemUsage = true;
+			}
+			if ( item->type == FOOD_CREAMPIE && (prompt == PROMPT_UNEQUIP || prompt == PROMPT_EQUIP) )
+			{
+				disableItemUsage = true;
+			}
+		}
+		else
+		{
+			if ( itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
+			{
+				if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 )
+				{
+					disableItemUsage = true;
+				}
+			}
+		}
+	}
+
+	if ( client_classes[player] == CLASS_SHAMAN )
+	{
+		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
+		{
+			disableItemUsage = true;
+		}
+	}
+
+	//PROMPT_EQUIP,
+	//PROMPT_UNEQUIP,
+	//PROMPT_SPELL_EQUIP,
+	//PROMPT_INTERACT,
+	//PROMPT_EAT,
+	//PROMPT_CONSUME,
+//PROMPT_SPELL_QUICKCAST,
+//PROMPT_INSPECT,
+//PROMPT_SELL,
+//PROMPT_BUY,
+//PROMPT_STORE_CHEST,
+//PROMPT_RETRIEVE_CHEST,
+	//PROMPT_APPRAISE,
+	//PROMPT_DROP
+	if ( prompt == PROMPT_APPRAISE )
+	{
+		players[player]->inventoryUI.appraisal.appraiseItem(item);
+		return;
+	}
+	else if ( prompt == PROMPT_DROP )
+	{
+		dropItem(item, player);
+		return;
+	}
+	else if ( prompt == PROMPT_SELL )
+	{
+	}
+	else if ( prompt == PROMPT_STORE_CHEST )
+	{
+	}
+	else if ( prompt == PROMPT_EAT )
+	{
+		if ( !disableItemUsage )
+		{
+			useItem(item, player);
+		}
+		return;
+	}
+	else if ( prompt == PROMPT_CONSUME )
+	{
+		// consume item
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "FODA");
+			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+			SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+			net_packet->data[24] = item->identified;
+			net_packet->data[25] = player;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		item_FoodAutomaton(item, player);
+		return;
+	}
+	else if ( prompt == PROMPT_INTERACT || prompt == PROMPT_INSPECT || prompt == PROMPT_TINKER )
+	{
+		if ( item->type == TOOL_ALEMBIC )
+		{
+			// not experimenting
+			if ( !disableItemUsage )
+			{
+				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, false, item);
+			}
+			else
+			{
+				messagePlayer(player, language[3432]); // unable to use in current form message.
+			}
+		}
+		else if ( item->type == TOOL_TINKERING_KIT )
+		{
+			if ( !disableItemUsage )
+			{
+				GenericGUI[player].openGUI(GUI_TYPE_TINKERING, item);
+			}
+			else
+			{
+				messagePlayer(player, language[3432]); // unable to use in current form message.
+			}
+		}
+		else
+		{
+			useItem(item, player);
+		}
+		return;
+	}
+	else if ( prompt == PROMPT_EQUIP 
+		|| prompt == PROMPT_UNEQUIP
+		|| prompt == PROMPT_SPELL_EQUIP )
+	{
+		if ( isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook )
+		{
+			return; // don't try to equip shields while casting
+		}
+
+		if ( !disableItemUsage )
+		{
+			if ( prompt == PROMPT_EQUIP
+				|| prompt == PROMPT_UNEQUIP )
+			{
+				if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON
+					|| itemCategory(item) == SPELLBOOK )
+				{
+					playerTryEquipItemAndUpdateServer(player, item, true);
+					return;
+				}
+			}
+
+			useItem(item, player);
+			return;
+		}
+		else
+		{
+			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+			{
+				messagePlayer(player, language[3488]); // unable to use with current level.
+			}
+			else
+			{
+				messagePlayer(player, language[3432]); // unable to use in current form message.
+			}
+		}
+		return;
+	}
+	else if ( prompt == PROMPT_SPELL_QUICKCAST )
+	{
+		if ( !disableItemUsage )
+		{
+			players[player]->magic.setQuickCastSpellFromInventory(item);
+		}
+		else
+		{
+			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+			{
+				messagePlayer(player, language[3488]); // unable to use with current level.
+			}
+			else
+			{
+				messagePlayer(player, language[3432]); // unable to use in current form message.
+			}
+		}
+		return;
+	}
+}
+
 void Player::Hotbar_t::updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse)
 {
 	if ( hotbarFrame )
@@ -1829,6 +2628,11 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 			tooltipDisplay.opacityAnimate = std::min(1.0, tooltipDisplay.opacityAnimate);
 		}
 		tooltipFrame->setOpacity(tooltipDisplay.opacityAnimate * 100);
+	}
+
+	if ( tooltipPromptFrame )
+	{
+		tooltipPromptFrame->setOpacity(tooltipFrame->getOpacity());
 	}
 
 	tooltipDisplay.expandSetpoint = tooltipDisplay.expanded ? 100 : 0;
@@ -2005,13 +2809,14 @@ void Player::Inventory_t::updateCursor()
 		int offset = ((ticks - cursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem 
+				|| inputs.getUIInteraction(player.playernum)->itemMenuOpen )
 			{
-				//offset = largeOffset;
+				// animate cursor
 			}
 			else
 			{
-				offset = smallOffset;
+				offset = smallOffset; // don't animate while mouse normal hovering
 			}
 		}
 
