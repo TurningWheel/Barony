@@ -1051,7 +1051,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		return;
 	}
 
-	auto rendered_text = Text::get(text.c_str(), "fonts/pixelmix.ttf#30#2");
+	auto rendered_text = Text::get(text.c_str(), "fonts/pixelmix.ttf#32#2");
 	auto textureId = rendered_text->getTexID();
 
 	// setup projection

@@ -20,7 +20,7 @@
 
 static Frame* playerHud[MAXPLAYERS] = { nullptr };
 static Frame* playerInventory[MAXPLAYERS] = { nullptr };
-bool newui = false;
+bool newui = true;
 
 void createIngameHud(int player) {
     char name[32];
@@ -40,10 +40,10 @@ void createIngameHud(int player) {
     }
 
 #ifdef NINTENDO
-    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
+    static const char* bigfont = "rom://fonts/pixelmix.ttf#16";
     static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
 #else
-    static const char* bigfont = "fonts/pixelmix.ttf#18";
+    static const char* bigfont = "fonts/pixelmix.ttf#16";
     static const char* smallfont = "fonts/pixel_maz.ttf#14";
 #endif // NINTENDO
 
@@ -715,7 +715,7 @@ void createInventoryTooltipFrame(const int player)
 		auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#14");
+		tooltipTextField->setFont("fonts/pixelmix.ttf#16");
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
@@ -761,7 +761,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -769,7 +769,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value highlight", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -777,7 +777,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value positive text", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -785,7 +785,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value negative text", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -793,7 +793,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value slot name", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::RIGHT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -803,7 +803,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -811,7 +811,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value highlight", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -819,7 +819,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value positive text", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -827,7 +827,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value negative text", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -837,7 +837,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -845,7 +845,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value highlight", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -853,7 +853,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value positive text", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -861,7 +861,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value negative text", 256);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -869,7 +869,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = attrFrame->addField("inventory mouse tooltip attributes text", 1024);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::TOP);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -885,7 +885,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = descFrame->addField("inventory mouse tooltip description", 1024);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::TOP);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -894,7 +894,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = descFrame->addField("inventory mouse tooltip description positive text", 1024);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::TOP);
 			//tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 1, 151, 246, 255));
@@ -903,7 +903,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = descFrame->addField("inventory mouse tooltip description negative text", 1024);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::TOP);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 215, 38, 61, 255));
@@ -923,7 +923,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = valueFrame->addField("inventory mouse tooltip identified value", 64);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -934,7 +934,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = valueFrame->addField("inventory mouse tooltip gold value", 64);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -945,7 +945,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = valueFrame->addField("inventory mouse tooltip weight value", 64);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::LEFT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
@@ -959,7 +959,7 @@ void createInventoryTooltipFrame(const int player)
 			tooltipTextField = promptFrame->addField("inventory mouse tooltip prompt", 1024);
 			tooltipTextField->setText("Nothing");
 			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
+			tooltipTextField->setFont("fonts/pixelmix.ttf#8");
 			tooltipTextField->setHJustify(Field::justify_t::RIGHT);
 			tooltipTextField->setVJustify(Field::justify_t::CENTER);
 			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
@@ -1124,10 +1124,10 @@ void newPlayerInventory(const int player)
 void doNewCharacterSheet(int player)
 {
 #ifdef NINTENDO
-    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
+    static const char* bigfont = "rom://fonts/pixelmix.ttf#16";
     static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
 #else // NINTENDO
-    static const char* bigfont = "fonts/pixelmix.ttf#18";
+    static const char* bigfont = "fonts/pixelmix.ttf#16";
     static const char* smallfont = "fonts/pixel_maz.ttf#14";
 #endif // NINTENDO
 

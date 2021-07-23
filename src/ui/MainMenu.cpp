@@ -41,11 +41,11 @@ namespace MainMenu {
 	static int main_menu_cursor_y = 0;
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
 
-	static const char* bigfont_outline = "fonts/pixelmix.ttf#18#2";
-	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#18#0";
+	static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
+	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
 	static const char* smallfont_outline = "fonts/pixel_maz.ttf#14#2";
-	static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#14#2";
-	static const char* menu_option_font = "fonts/pixel_maz.ttf#24#2";
+	static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#14#0";
+	static const char* menu_option_font = "fonts/pixel_maz.ttf#28#2";
 
 	static inline void soundToggleMenu() {
 		playSound(500, 48);
@@ -3650,7 +3650,7 @@ namespace MainMenu {
 			"backdrop"
 		);
 
-		static const char* banner_font = "fonts/pixel_maz.ttf#32#2";
+		static const char* banner_font = "fonts/pixel_maz.ttf#36#2";
 
 		auto banner = card->addField("invite_banner", 64);
 		banner->setText((std::string("PLAYER ") + std::to_string(index + 1)).c_str());
@@ -3703,7 +3703,7 @@ namespace MainMenu {
 			"backdrop"
 		);
 
-		static const char* banner_font = "fonts/pixel_maz.ttf#32#2";
+		static const char* banner_font = "fonts/pixel_maz.ttf#36#2";
 
 		auto banner = card->addField("invite_banner", 64);
 		banner->setText("INVITE");
@@ -4182,7 +4182,7 @@ namespace MainMenu {
 			}
 			});
 
-		static const char* pixel_maz_outline = "fonts/pixel_maz.ttf#32#2";
+		static const char* pixel_maz_outline = "fonts/pixel_maz.ttf#36#2";
 
 		auto window_title = settings->addField("window_title", 64);
 		window_title->setFont(pixel_maz_outline);

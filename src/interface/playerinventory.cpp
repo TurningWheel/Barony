@@ -1361,7 +1361,7 @@ void updateFrameTooltip(const int player, Item* item, const int x, const int y)
 		return;
 	}
 
-	static const char* bigfont = "fonts/pixelmix.ttf#18";
+	static const char* bigfont = "fonts/pixelmix.ttf#16";
 	auto frameMain = guiFrame->findFrame("inventory mouse tooltip");
 	auto frameAttr = frameMain->findFrame("inventory mouse tooltip attributes frame");
 	auto frameDesc = frameMain->findFrame("inventory mouse tooltip description frame");
