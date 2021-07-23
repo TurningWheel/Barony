@@ -1483,6 +1483,9 @@ bool ItemTooltips_t::bIsSpellDamageOrHealingType(spell_t* spell)
 
 int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook)
 {
+#ifdef EDITOR
+	return 0;
+#else
 	if ( !spell )
 	{
 		return 0;
@@ -1533,10 +1536,14 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 		}
 	}
 	return damage;
+#endif
 }
 
 std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	spell_t* spell = getSpellFromItem(player, &item);
 	if ( !spell || spellItems.find(spell->ID) == spellItems.end() )
 	{
@@ -1561,10 +1568,12 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 		}
 	}
 	return str;
+#endif
 }
 
 std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 {
+#ifndef EDITOR
 	spell_t* spell = nullptr;
 	
 	if ( itemCategory(&item) == SPELLBOOK )
@@ -1632,6 +1641,9 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 	}
 
 	return str;
+#else
+	return std::string("");
+#endif
 }
 
 real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
@@ -1665,6 +1677,9 @@ real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
 
 std::string& ItemTooltips_t::getSpellTypeString(const int player, Item& item)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	spell_t* spell = getSpellFromItem(player, &item);
 	if ( !spell )
 	{
@@ -1692,10 +1707,14 @@ std::string& ItemTooltips_t::getSpellTypeString(const int player, Item& item)
 			return defaultString;
 			break;
 	}
+#endif
 }
 
 std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	spell_t* spell = getSpellFromItem(player, &item);
 	if ( !spell )
 	{
@@ -1778,10 +1797,14 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 		}
 	}
 	return buf;
+#endif
 }
 
 std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 {
+#ifdef EDITOR
+	return "items/images/null.png";
+#else
 	node_t* spellImageNode = nullptr;
 	if ( itemCategory(&item) == MAGICSTAFF )
 	{
@@ -1828,10 +1851,14 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 		}
 	}
 	return "items/images/null.png";
+#endif
 }
 
 std::string& ItemTooltips_t::getItemPotionAlchemyAdjective(const int player, Uint32 itemType)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	if ( adjectives.find("potion_alchemy_types") == adjectives.end() )
 	{
 		return defaultString;
@@ -1852,10 +1879,14 @@ std::string& ItemTooltips_t::getItemPotionAlchemyAdjective(const int player, Uin
 	{
 		return adjectives["potion_alchemy_types"]["no_ingredient"];
 	}
+#endif
 }
 
 std::string& ItemTooltips_t::getItemPotionHarmAllyAdjective(Item& item)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	if ( adjectives.find("potion_ally_damage") == adjectives.end() )
 	{
 		return defaultString;
@@ -1870,6 +1901,7 @@ std::string& ItemTooltips_t::getItemPotionHarmAllyAdjective(Item& item)
 	{
 		return adjectives["potion_ally_damage"]["harm_ally"];
 	}
+#endif
 }
 
 std::string& ItemTooltips_t::getItemProficiencyName(int proficiency)
@@ -2016,6 +2048,7 @@ std::string& ItemTooltips_t::getItemEquipmentEffectsForAttributesText(std::strin
 
 Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& attribute)
 {
+#ifndef EDITOR
 	Sint32 stat = 0;
 	bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
 	if ( item.beatitude >= 0 || cursedItemIsBuff )
@@ -2024,10 +2057,14 @@ Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& 
 	}
 	stat += (cursedItemIsBuff ? abs(item.beatitude) : item.beatitude);
 	return stat;
+#else
+	return 0;
+#endif
 }
 
 void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute)
 {
+#ifndef EDITOR
 	auto itemTooltip = tooltips[tooltipType];
 
 	char buf[128];
@@ -2352,6 +2389,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		return;
 	}
 	str = buf;
+#endif
 }
 
 void ItemTooltips_t::formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str)
@@ -2365,6 +2403,7 @@ void ItemTooltips_t::formatItemDescription(const int player, std::string tooltip
 
 void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag)
 {
+#ifndef EDITOR
 	if ( !stats[player] )
 	{
 		str = "";
@@ -3045,6 +3084,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		return;
 	}
 	str = buf;
+#endif
 }
 
 void ItemTooltips_t::stripOutHighlightBracketText(std::string& str, std::string& bracketText)

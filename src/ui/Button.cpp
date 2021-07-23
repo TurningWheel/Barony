@@ -1,7 +1,6 @@
 ﻿// Button.cpp
 
 #include "../main.hpp"
-#include "../player.hpp"
 #include "../draw.hpp"
 #include "Frame.hpp"
 #include "Button.hpp"

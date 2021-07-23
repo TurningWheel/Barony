@@ -15,7 +15,6 @@
 #include "hash.hpp"
 #include "entity.hpp"
 #include "player.hpp"
-#include "magic/magic.hpp"
 #include "ui/Frame.hpp"
 #ifndef NINTENDO
 #include "editor.hpp"

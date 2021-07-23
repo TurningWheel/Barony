@@ -102,11 +102,6 @@ public:
 	//! @param input the input to bind to the action
 	void bind(const char* binding, const char* input);
 
-	//! add a game controller to our public map of controllers
-	//! @param id the id of the controller
-	//! @param controller the controller to add
-	static void addGameController(int id, GameController& controller);
-
 	//! refresh bindings (eg after a new controller is detected)
 	void refresh();
 

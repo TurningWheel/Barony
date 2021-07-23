@@ -33,7 +33,9 @@
  #include <steam/steam_api.h>
  #include "steam.hpp"
 #endif // STEAMWORKS
+#ifndef EDITOR
 #include "player.hpp"
+#endif
 #include "items.hpp"
 #include "cppfuncs.hpp"
 #include "ui/Text.hpp"
@@ -399,10 +401,13 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 	// create player classes
+	// TODO/FIXME: why isn't this in initGame? why is it in init.cpp?
+#ifndef EDITOR
 	for ( int c = 0; c < MAXPLAYERS; c++ )
 	{
 		players[c] = new Player(c, true);
 	}
+#endif
 
 	createLoadingScreen(10);
 	doLoadingScreen();

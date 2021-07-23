@@ -1,5 +1,4 @@
 #include "input.hpp"
-#include "player.hpp"
 
 #include <algorithm>
 
@@ -43,13 +42,6 @@ void Input::defaultBindings() {
 		inputs[c].bind("MenuScrollLeft", (std::string("Pad") + std::to_string(c) + std::string("StickRightX-")).c_str());
 		inputs[c].bind("MenuScrollRight", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str());
 		inputs[c].bind("MenuScrollDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str());
-	}
-}
-
-void Input::addGameController(int id, GameController& controller) {
-	gameControllers.emplace(id, controller.sdl_device);
-	for (auto& input : inputs) {
-		input.refresh();
 	}
 }
 
