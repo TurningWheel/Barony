@@ -40,10 +40,10 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 	if (_railSize.w > 0 && _railSize.h > 0) {
 		if (railImage.empty()) {
-			int x = (_railSize.x) * (float)xres / (float)Frame::virtualScreenX;
-			int y = (_railSize.y) * (float)yres / (float)Frame::virtualScreenY;
-			int w = (_railSize.x + _railSize.w) * (float)xres / (float)Frame::virtualScreenX;
-			int h = (_railSize.y + _railSize.h) * (float)yres / (float)Frame::virtualScreenY;
+			int x = (_railSize.x);
+			int y = (_railSize.y);
+			int w = (_railSize.x + _railSize.w);
+			int h = (_railSize.y + _railSize.h);
 			drawDepressed(x, y, w, h);
 		} else {
 			Frame::image_t image;
@@ -75,10 +75,10 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) 
 			(handleImageActivated.empty() ? handleImage : handleImageActivated) :
 			handleImage;
 		if (imageToUse.empty()) {
-			int x = (_handleSize.x) * (float)xres / (float)Frame::virtualScreenX;
-			int y = (_handleSize.y) * (float)yres / (float)Frame::virtualScreenY;
-			int w = (_handleSize.x + _handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
-			int h = (_handleSize.y + _handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
+			int x = (_handleSize.x);
+			int y = (_handleSize.y);
+			int w = (_handleSize.x + _handleSize.w);
+			int h = (_handleSize.y + _handleSize.h);
 			drawWindow(x, y, w, h);
 		} else {
 			Frame::image_t image;

@@ -159,11 +159,11 @@ void Text::render() {
 	rendered = true;
 }
 
-void Text::draw(SDL_Rect src, SDL_Rect dest) {
-	drawColor(src, dest, 0xffffffff);
+void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) {
+	drawColor(src, dest, viewport, 0xffffffff);
 }
 
-void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
+void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) {
 	if (!rendered) {
 		render();
 	}
@@ -174,10 +174,14 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
-	glViewport(0, 0, xres, yres);
+	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
 	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
+	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	auto src = _src;
+	auto dest = _dest;
 
 	if (resolution_factor != 1) {
 		src.x *= resolution_factor;
@@ -204,13 +208,13 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 	// draw quad
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * ((real_t)src.y / surf->h));
-	glVertex2f(dest.x, yres - dest.y);
+	glVertex2f(dest.x, viewport.h - dest.y);
 	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
-	glVertex2f(dest.x, yres - dest.y - dest.h);
+	glVertex2f(dest.x, viewport.h - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
-	glVertex2f(dest.x + dest.w, yres - dest.y - dest.h);
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * ((real_t)src.y / surf->h));
-	glVertex2f(dest.x + dest.w, yres - dest.y);
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
 	glEnd();
 
 	// unbind texture

@@ -286,6 +286,30 @@ int initApp(char const * const title, int fullscreen)
 		{
 			noextensions = true;
 		}
+		else if ( (SDL_glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glGenFramebuffers")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteFramebuffers")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)SDL_GL_GetProcAddress("glBindFramebuffer")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)SDL_GL_GetProcAddress("glFramebufferTexture2D")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glDrawBuffers = (PFNGLDRAWBUFFERSPROC)SDL_GL_GetProcAddress("glDrawBuffers")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC)SDL_GL_GetProcAddress("glBlendFuncSeparate")) == NULL )
+		{
+			noextensions = true;
+		}
 /*
 // Unused
 		else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL )
@@ -371,15 +395,7 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 	// init new ui engine
-	gui = new Frame("root");
-	SDL_Rect guiRect;
-	guiRect.x = 0;
-	guiRect.y = 0;
-	guiRect.w = Frame::virtualScreenX;
-	guiRect.h = Frame::virtualScreenY;
-	gui->setSize(guiRect);
-	gui->setActualSize(guiRect);
-	gui->setHollow(true);
+	Frame::guiInit();
 
 	// cache language entries
 	bool cacheText = false;
@@ -2025,10 +2041,7 @@ int deinitApp()
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
-	if (gui) {
-		delete gui;
-		gui = nullptr;
-	}
+	Frame::guiDestroy();
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )

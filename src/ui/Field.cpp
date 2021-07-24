@@ -95,10 +95,10 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		return;
 
 	SDL_Rect scaledRect;
-	scaledRect.x = rect.x * (float)xres / (float)Frame::virtualScreenX;
-	scaledRect.y = rect.y * (float)yres / (float)Frame::virtualScreenY;
-	scaledRect.w = rect.w * (float)xres / (float)Frame::virtualScreenX;
-	scaledRect.h = rect.h * (float)yres / (float)Frame::virtualScreenY;
+	scaledRect.x = rect.x;
+	scaledRect.y = rect.y;
+	scaledRect.w = rect.w;
+	scaledRect.h = rect.h;
 
 	if (activated) {
 		if (selectAll) {
@@ -212,11 +212,11 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		}
 
 		SDL_Rect scaledDest;
-		scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
-		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
-		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
-		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
-		text->drawColor(src, scaledDest, color);
+		scaledDest.x = dest.x;
+		scaledDest.y = dest.y;
+		scaledDest.w = dest.w;
+		scaledDest.h = dest.h;
+		text->drawColor(src, scaledDest, SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, color);
 	} while ((token = nexttoken) != NULL);
 
 	free(buf);

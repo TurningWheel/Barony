@@ -384,7 +384,7 @@ int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha )
 	auto format = mainsurface->format;
 	Uint32 c = (color & (format->Rmask | format->Gmask | format->Bmask)) | (alpha << format->Ashift);
 	auto image = Image::get("images/system/white.png");
-	image->drawColor(nullptr, *src, c);
+	image->drawColor(nullptr, *src, SDL_Rect{0, 0, xres, yres}, c);
 	return 0;
 }
 

@@ -103,6 +103,12 @@ public:
 	//! virtual screen size (height)
 	static const int virtualScreenY = 720;
 
+	//! init ui engine
+	static void guiInit();
+
+	//! destroy ui engine
+	static void guiDestroy();
+
 	//! draws the frame and all of its subelements
 	void draw();
 
