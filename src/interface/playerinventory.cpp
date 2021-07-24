@@ -2002,6 +2002,44 @@ void drawBlueInventoryBorder(const int player, const Item& item, int x, int y)
 	drawBox(&pos, color, 127);
 }
 
+int getContextMenuOptionOrder(ItemContextMenuPrompts prompt)
+{
+	std::string bindingName = getContextMenuOptionBindingName(prompt);
+	if ( bindingName == "MenuAlt1" )
+	{
+#ifdef NINTENDO
+		return 1;
+#else
+		return 2;
+#endif
+	}
+	else if ( bindingName == "MenuAlt2" )
+	{
+#ifdef NINTENDO
+		return 2;
+#else
+		return 1;
+#endif
+	}
+	else if ( bindingName == "MenuConfirm" )
+	{
+#ifdef NINTENDO
+		return 3;
+#else
+		return 4;
+#endif
+	}
+	else if ( bindingName == "MenuCancel" )
+	{
+#ifdef NINTENDO
+		return 4;
+#else
+		return 3;
+#endif
+	}
+	return 5;
+}
+
 void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 {
 	const int player = this->player.playernum;
@@ -3529,51 +3567,72 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 	frameMain->setDisabled(false);
 	frameMain->setOpacity(100.0);
 
+	//inputs.getUIInteraction(player)->itemMenuItem = item->uid;
 
-	/*SDL_Rect interactPos = frameInteract->getSize();
-	interactPos.x = frameMain->getSize().x + 6;
-	interactPos.y = frameMain->getSize().y + frameMain->getSize().h - 2;
-	frameInteract->setSize(interactPos);
+	// quick prompt stuff here.
+	{
+		auto options = getContextMenuOptionsForItem(player, item);
+		options.push_back(ItemContextMenuPrompts::PROMPT_GRAB); // additional prompt here for non-right click menu
+		auto findAppraise = std::find(options.begin(), options.end(), ItemContextMenuPrompts::PROMPT_APPRAISE);
+		if ( findAppraise != options.end() )
+		{
+			options.erase(findAppraise);
+		}
+		std::sort(options.begin(), options.end(), [](const ItemContextMenuPrompts& lhs, const ItemContextMenuPrompts& rhs) {
+			return getContextMenuOptionOrder(lhs) < getContextMenuOptionOrder(rhs);
+		});
 
-	if ( auto interactGlyph = frameInteract->findImage("glyph 1") )
-	{
-		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuConfirm");
-	}
-	if ( auto interactGlyph = frameInteract->findImage("glyph 2") )
-	{
-		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuAlt2");
-	}
-	if ( auto interactGlyph = frameInteract->findImage("glyph 3") )
-	{
-		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuCancel");
-	}
-	if ( auto interactGlyph = frameInteract->findImage("glyph 4") )
-	{
-		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuAlt1");
-	}*/
-	inputs.getUIInteraction(player)->itemMenuItem = item->uid;
+		if ( !options.empty() )
+		{
+			frameTooltipPrompt->setDisabled(false);
+			frameTooltipPrompt->setOpacity(frameMain->getOpacity());
+			SDL_Rect promptPos = frameTooltipPrompt->getSize();
+			promptPos.x = frameMain->getSize().x + frameMain->getSize().w - 6 - promptPos.w;
+			promptPos.y = frameMain->getSize().y + frameMain->getSize().h - 2;
+			frameTooltipPrompt->setSize(promptPos);
 
-	frameTooltipPrompt->setDisabled(false);
-	frameTooltipPrompt->setOpacity(frameMain->getOpacity());
-	SDL_Rect promptPos = frameTooltipPrompt->getSize();
-	promptPos.x = frameMain->getSize().x + frameMain->getSize().w - 6 - promptPos.w;
-	promptPos.y = frameMain->getSize().y + frameMain->getSize().h - 2;
-	frameTooltipPrompt->setSize(promptPos);
-	if ( auto interactGlyph = frameTooltipPrompt->findImage("glyph interact") )
-	{
-		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuConfirm");
-	}
-	if ( auto interactGlyph = frameTooltipPrompt->findImage("glyph grab") )
-	{
-		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuAlt1");
-	}
-	if ( auto interactGlyph = frameTooltipPrompt->findImage("glyph drop") )
-	{
-		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuCancel");
-	}
-	if ( auto interactGlyph = frameTooltipPrompt->findImage("glyph hotbar") )
-	{
-		interactGlyph->path = Input::inputs[player].getGlyphPathForInput("MenuAlt2");
+			std::vector<std::pair<Frame::image_t*, Field*>> promptFrames;
+			
+			// disable all the text and prompts
+			for ( int index = 1; index < 5; ++index )
+			{
+				char imgName[16];
+				char fieldName[16];
+				snprintf(imgName, sizeof(imgName), "glyph %d", index);
+				snprintf(fieldName, sizeof(imgName), "txt %d", index);
+				auto img = frameTooltipPrompt->findImage(imgName);
+				auto txt = frameTooltipPrompt->findField(fieldName);
+				if ( img && txt )
+				{
+					//img->disabled = true;
+					txt->setDisabled(true);
+					promptFrames.push_back(std::make_pair(img, txt));
+				}
+			}
+
+			// set the text and button prompts from the available options
+			for ( auto& option : options )
+			{
+				char imgName[16];
+				char fieldName[16];
+				const int order = getContextMenuOptionOrder(option);
+
+				snprintf(imgName, sizeof(imgName), "glyph %d", order);
+				snprintf(fieldName, sizeof(imgName), "txt %d", order);
+				auto img = frameTooltipPrompt->findImage(imgName);
+				auto txt = frameTooltipPrompt->findField(fieldName);
+				img->disabled = false;
+				txt->setDisabled(false);
+				img->path = Input::inputs[player].getGlyphPathForInput(getContextMenuOptionBindingName(option).c_str());
+				txt->setText(getContextMenuLangEntry(player, option, *item));
+			}
+
+			for ( auto& pair : promptFrames )
+			{
+				auto& img = pair.first;
+				auto& txt = pair.second;
+			}
+		}
 	}
 }
 
@@ -5506,6 +5565,36 @@ void Player::PaperDoll_t::updateSlots()
 	}
 }
 
+std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt)
+{
+	switch ( prompt )
+	{
+		case PROMPT_EQUIP:
+		case PROMPT_UNEQUIP:
+		case PROMPT_SPELL_EQUIP:
+			return "MenuAlt2";
+		case PROMPT_GRAB:
+			return "MenuAlt1";
+		case PROMPT_TINKER:
+		case PROMPT_INTERACT:
+		case PROMPT_EAT:
+		case PROMPT_SPELL_QUICKCAST:
+		case PROMPT_CONSUME:
+		case PROMPT_SELL:
+		case PROMPT_BUY:
+		case PROMPT_STORE_CHEST:
+		case PROMPT_RETRIEVE_CHEST:
+		case PROMPT_INSPECT:
+			return "MenuConfirm";
+		case PROMPT_DROP:
+			return "MenuCancel";
+		case PROMPT_APPRAISE:
+			return "InventoryTooltipPromptAppraise";
+		default:
+			return "";
+	}
+}
+
 const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item)
 {
 	switch ( prompt )
@@ -5539,6 +5628,10 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			break;
 		case PROMPT_DROP:
 			return language[1162];
+		case PROMPT_GRAB:
+			return language[4050];
+		default:
+			return "Invalid";
 	}
 	return "Invalid";
 }
@@ -5609,7 +5702,6 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
-		return options;
 	}
 	else if ( item->type == TOOL_ALEMBIC )
 	{

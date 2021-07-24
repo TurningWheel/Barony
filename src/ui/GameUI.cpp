@@ -1405,7 +1405,7 @@ void createInventoryTooltipFrame(const int player)
 			hudColors.itemContextMenuOptionSelectedImg, "images/system/whitecurve.png", "interact selected highlight");
 
 		auto interactText = interactFrame->addField("interact text", 32);
-		interactText->setText("Interact");
+		interactText->setText(language[4040]);
 		interactText->setSize(SDL_Rect{ 0, 2, 0, topBackgroundHeight });
 		interactText->setFont("fonts/pixel_maz.ttf#14#2");
 		interactText->setHJustify(Field::justify_t::CENTER);
@@ -1520,7 +1520,7 @@ void createInventoryTooltipFrame(const int player)
 		promptFrame->setDisabled(true);
 		promptFrame->setInheritParentFrameOpacity(false);
 
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 192);
 
 		auto middleCenter = promptFrame->addImage(SDL_Rect{ 6, 2, interactWidth, 76 },
 			color, "images/ui/Inventory/tooltips/Hover_C00.png", "interact middle background");
@@ -1528,9 +1528,9 @@ void createInventoryTooltipFrame(const int player)
 			color, "images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle top background");
 		auto middleBottom = promptFrame->addImage(SDL_Rect{ 6, 0, interactWidth, 2 },
 			color, "images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle bottom background");
-		promptFrame->addImage(SDL_Rect{ 0, 0, 6, 76 },
+		auto middleLeft = promptFrame->addImage(SDL_Rect{ 0, 0, 6, 76 },
 			color, "images/ui/Inventory/tooltips/HoverExt_L00.png", "interact middle left");
-		promptFrame->addImage(SDL_Rect{ interactWidth + 6, 0, 6, 76 },
+		auto middleRight = promptFrame->addImage(SDL_Rect{ interactWidth + 6, 0, 6, 76 },
 			color, "images/ui/Inventory/tooltips/HoverExt_R00.png", "interact middle right");
 
 		auto bottomCenter = promptFrame->addImage(SDL_Rect{ 4, 76, interactWidth + 4, 4 },
@@ -1540,61 +1540,64 @@ void createInventoryTooltipFrame(const int player)
 		auto bottomRight = promptFrame->addImage(SDL_Rect{ interactWidth + 4 * 2, 76, 4, 4 },
 			color, "images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");
 
-		const int interactOptionStartX = 4;
+		const int interactOptionStartX = 60;
 		const int interactOptionStartY = 8;
 		const int glyphSize = 20;
 
 		auto interactGlyph1 = promptFrame->addImage(
-			SDL_Rect{ interactOptionStartX + 4, interactOptionStartY, glyphSize, glyphSize },
-			0xFFFFFFFF, "", "glyph grab");
-
-		int textAlignX = interactGlyph1->pos.x + interactGlyph1->pos.w + 6;
-		int textAlignY = interactGlyph1->pos.y;
-		const int textWidth = 80;
-		const int textHeight = glyphSize;
-
-		auto promptText = promptFrame->addField("txt grab", 32);
-		promptText->setText("Grab");
-		promptText->setSize(SDL_Rect{
-			textAlignX,
-			textAlignY,
-			textWidth, textHeight });
-		promptText->setFont("fonts/pixel_maz.ttf#14#2");
-		promptText->setHJustify(Field::justify_t::LEFT);
-		promptText->setVJustify(Field::justify_t::CENTER);
-		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+			SDL_Rect{ interactOptionStartX, interactOptionStartY, glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 1");
 
 		auto interactGlyph2 = promptFrame->addImage(
-			SDL_Rect{ interactOptionStartX + 4,
-			interactGlyph1->pos.y + interactGlyph1->pos.h + 4,
+			SDL_Rect{ interactGlyph1->pos.x - (glyphSize / 2), 
+			interactGlyph1->pos.y + glyphSize,
 			glyphSize, glyphSize },
-			0xFFFFFFFF, "", "glyph interact");
-
-		textAlignY = interactGlyph2->pos.y;
-		promptText = promptFrame->addField("txt interact", 32);
-		promptText->setText("Interact");
-		promptText->setSize(SDL_Rect{
-			textAlignX,
-			textAlignY,
-			textWidth, textHeight });
-		promptText->setFont("fonts/pixel_maz.ttf#14#2");
-		promptText->setHJustify(Field::justify_t::LEFT);
-		promptText->setVJustify(Field::justify_t::CENTER);
-		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+			0xFFFFFFFF, "", "glyph 2");
 
 		auto interactGlyph3 = promptFrame->addImage(
-			SDL_Rect{ promptText->getSize().x + promptText->getSize().w + 4,
-			interactOptionStartY,
+			SDL_Rect{ interactGlyph1->pos.x + (glyphSize + glyphSize / 4), interactGlyph1->pos.y, glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 3");
+
+		auto interactGlyph4 = promptFrame->addImage(
+			SDL_Rect{ interactGlyph3->pos.x - (glyphSize / 2), interactGlyph2->pos.y,
 			glyphSize, glyphSize },
-			0xFFFFFFFF, "", "glyph hotbar");
+			0xFFFFFFFF, "", "glyph 4");
 
-		textAlignX = interactGlyph3->pos.x + interactGlyph3->pos.w + 6;
-		textAlignY = interactGlyph3->pos.y;
+		const int textWidth = 80;
+		const int textHeight = glyphSize + 8;
 
-		promptText = promptFrame->addField("txt hotbar", 32);
-		promptText->setText("Hotbar");
+		int textAlignY = interactGlyph1->pos.y - 4;
+		int textAlignXRightJustify = interactGlyph1->pos.x - 6 - textWidth;
+		auto promptText = promptFrame->addField("txt 1", 32);
+		promptText->setText(language[4050]);
 		promptText->setSize(SDL_Rect{
-			textAlignX,
+			textAlignXRightJustify,
+			textAlignY,
+			textWidth, textHeight });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::RIGHT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+
+		textAlignXRightJustify = interactGlyph2->pos.x - 6 - textWidth;
+		textAlignY = interactGlyph2->pos.y - 4;
+		promptText = promptFrame->addField("txt 2", 32);
+		promptText->setText(language[4040]);
+		promptText->setSize(SDL_Rect{
+			textAlignXRightJustify,
+			textAlignY,
+			textWidth, textHeight });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::RIGHT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+
+		int textAlignXLeftJustify = interactGlyph3->pos.x + interactGlyph3->pos.w + 6;
+		textAlignY = interactGlyph3->pos.y - 4;
+		promptText = promptFrame->addField("txt 3", 32);
+		promptText->setText("Equip");
+		promptText->setSize(SDL_Rect{
+			textAlignXLeftJustify,
 			textAlignY,
 			textWidth, textHeight });
 		promptText->setFont("fonts/pixel_maz.ttf#14#2");
@@ -1602,21 +1605,14 @@ void createInventoryTooltipFrame(const int player)
 		promptText->setVJustify(Field::justify_t::CENTER);
 		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
 
-		auto interactGlyph4 = promptFrame->addImage(
-			SDL_Rect{ interactGlyph3->pos.x,
-			interactGlyph3->pos.y + interactGlyph3->pos.h + 4,
-			glyphSize, glyphSize },
-			0xFFFFFFFF, "", "glyph drop");
-
-		textAlignY = interactGlyph4->pos.y;
-
-		textAlignY = interactGlyph4->pos.y;
-		promptText = promptFrame->addField("txt drop", 32);
+		textAlignXLeftJustify = interactGlyph4->pos.x + interactGlyph4->pos.w + 6;
+		textAlignY = interactGlyph4->pos.y - 4;
+		promptText = promptFrame->addField("txt 4", 32);
 		promptText->setText("Drop");
 		promptText->setSize(SDL_Rect{
-			textAlignX,
-			textAlignY - 3,
-			textWidth, textHeight + 6 });
+			textAlignXLeftJustify,
+			textAlignY,
+			textWidth, textHeight });
 		promptText->setFont("fonts/pixel_maz.ttf#14#2");
 		promptText->setHJustify(Field::justify_t::LEFT);
 		promptText->setVJustify(Field::justify_t::CENTER);
@@ -1630,6 +1626,8 @@ void createInventoryTooltipFrame(const int player)
 
 		promptFrame->setSize(promptSize);
 		middleCenter->pos.h = bottomCenter->pos.y - 4;
+		middleLeft->pos.h = bottomCenter->pos.y;
+		middleRight->pos.h = bottomCenter->pos.y;
 		middleBottom->pos.y = bottomCenter->pos.y - 2;
 	}
 }

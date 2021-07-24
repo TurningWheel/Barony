@@ -739,8 +739,10 @@ enum ItemContextMenuPrompts {
 	PROMPT_STORE_CHEST,
 	PROMPT_RETRIEVE_CHEST,
 	PROMPT_DROP,
-	PROMPT_TINKER
+	PROMPT_TINKER,
+	PROMPT_GRAB
 };
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);
 const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item);
+std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt);
