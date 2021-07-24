@@ -5655,7 +5655,7 @@ int main(int argc, char** argv)
 
 				if ( !gamePaused )
 				{
-					if ( newui ) 
+					if ( /*newui*/ 0 ) 
 					{
 						newIngameHud();
 					}
