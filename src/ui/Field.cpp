@@ -6,6 +6,7 @@
 #include "Frame.hpp"
 #include "Field.hpp"
 #include "Text.hpp"
+#include "Image.hpp"
 
 #include <cassert>
 
@@ -101,10 +102,12 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	scaledRect.h = rect.h;
 
 	if (activated) {
+		auto white = Image::get("images/system/white.png");
+		const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 		if (selectAll) {
-			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 127, 127, 0), 255);
+			white->drawColor(nullptr, scaledRect, viewport, makeColor(127, 127, 0, 255));
 		} else {
-			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
+			white->drawColor(nullptr, scaledRect, viewport, makeColor(0, 0, 127, 255));
 		}
 	}
 

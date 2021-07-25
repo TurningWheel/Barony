@@ -218,30 +218,32 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	scaledSize.w = _size.w;
 	scaledSize.h = _size.h;
 
+	auto white = Image::get("images/system/white.png");
+	Uint8 r = color >> mainsurface->format->Rshift; r = (r / 3) * 2;
+	Uint8 g = color >> mainsurface->format->Gshift; g = (g / 3) * 2;
+	Uint8 b = color >> mainsurface->format->Bshift; b = (b / 3) * 2;
+	Uint8 a = color >> mainsurface->format->Ashift;
+	Uint32 darkColor =
+		(Uint32)r << mainsurface->format->Rshift |
+		(Uint32)g << mainsurface->format->Gshift |
+		(Uint32)b << mainsurface->format->Bshift |
+		(Uint32)a << mainsurface->format->Ashift;
+
 	// draw frame background
 	if (!hollow) {
-		Uint8 r = color >> mainsurface->format->Rshift; r = (r / 3) * 2;
-		Uint8 g = color >> mainsurface->format->Gshift; g = (g / 3) * 2;
-		Uint8 b = color >> mainsurface->format->Bshift; b = (b / 3) * 2;
-		Uint8 a = color >> mainsurface->format->Ashift;
-		Uint32 darkColor =
-			(Uint32)r << mainsurface->format->Rshift |
-			(Uint32)g << mainsurface->format->Gshift |
-			(Uint32)b << mainsurface->format->Bshift |
-			(Uint32)a << mainsurface->format->Ashift;
 		SDL_Rect inner;
 		inner.x = (_size.x + border);
 		inner.y = (_size.y + border);
 		inner.w = (_size.w - border*2);
 		inner.h = (_size.h - border*2);
 		if (borderStyle == BORDER_BEVEL_HIGH) {
-			drawRect(&scaledSize, darkColor, (Uint8)(darkColor>>mainsurface->format->Ashift));
-			drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
+			white->drawColor(nullptr, scaledSize, viewport, darkColor);
+			white->drawColor(nullptr, inner, viewport, color);
 		} else if (borderStyle == BORDER_BEVEL_LOW) {
-			drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
-			drawRect(&inner, darkColor, (Uint8)(darkColor>>mainsurface->format->Ashift));
+			white->drawColor(nullptr, scaledSize, viewport, color);
+			white->drawColor(nullptr, inner, viewport, darkColor);
 		} else {
-			drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
+			white->drawColor(nullptr, scaledSize, viewport, color);
 		}
 	}
 
@@ -266,7 +268,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		barRect.y = scaledSize.y + scaledSize.h;
 		barRect.w = scaledSize.w;
 		barRect.h = sliderSize * (float)yres / (float)Frame::virtualScreenY;
-		drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
+		white->drawColor(nullptr, barRect, viewport, darkColor);
 
 		// handle
 		float winFactor = ((float)_size.w / (float)actualSize.w);
@@ -279,15 +281,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		handleRect.w = handleSize;
 		handleRect.h = sliderSize;
 
-		int x = handleRect.x;
-		int y = handleRect.y;
-		int w = handleRect.x + handleRect.w;
-		int h = handleRect.y + handleRect.h;
 		if (rectContainsPoint(barRect, omousex, omousey)) {
 			// TODO highlight
-			drawWindow(x, y, w, h);
+			white->drawColor(nullptr, handleRect, viewport, color);
 		} else {
-			drawWindow(x, y, w, h);
+			white->drawColor(nullptr, handleRect, viewport, color);
 		}
 	}
 
@@ -298,7 +296,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		barRect.y = scaledSize.y;
 		barRect.w = sliderSize;
 		barRect.h = scaledSize.h;
-		drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
+		white->drawColor(nullptr, barRect, viewport, darkColor);
 
 		// handle
 		float winFactor = ((float)_size.h / (float)actualSize.h);
@@ -311,15 +309,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		handleRect.w = sliderSize;
 		handleRect.h = handleSize;
 
-		int x = handleRect.x;
-		int y = handleRect.y;
-		int w = handleRect.x + handleRect.w;
-		int h = handleRect.y + handleRect.h;
 		if (rectContainsPoint(barRect, omousex, omousey)) {
 			// TODO highlight
-			drawWindow(x, y, w, h);
+			white->drawColor(nullptr, handleRect, viewport, color);
 		} else {
-			drawWindow(x, y, w, h);
+			white->drawColor(nullptr, handleRect, viewport, color);
 		}
 	}
 
@@ -330,21 +324,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 		barRect.y = scaledSize.y + scaledSize.h;
 		barRect.w = sliderSize;
 		barRect.h = sliderSize;
-		if (border > 0) {
-			switch (borderStyle) {
-			case BORDER_FLAT:
-				drawRect(&barRect, SDL_MapRGB(mainsurface->format, 160, 160, 192), 255);
-				break;
-			case BORDER_BEVEL_HIGH:
-				drawWindow(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
-				break;
-			case BORDER_BEVEL_LOW:
-				drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
-				break;
-			}
-		} else {
-			drawDepressed(barRect.x, barRect.y, barRect.x + barRect.w, barRect.y + barRect.h);
-		}
+		white->drawColor(nullptr, barRect, viewport, color);
 	}
 
 	SDL_Rect scroll = actualSize;
@@ -416,11 +396,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 			entryback.w = entryback.w;
 			entryback.h = entryback.h;
 			if (entry.pressed) {
-				drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
+				white->drawColor(nullptr, entryback, viewport, color);
 			} else if (entry.highlighted) {
-				drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
+				white->drawColor(nullptr, entryback, viewport, color);
 			} else if (selection >= 0 && selection == i) {
-				drawRect(&entryback, color, (Uint8)(color>>mainsurface->format->Ashift));
+				white->drawColor(nullptr, entryback, viewport, color);
 			}
 
 			SDL_Rect scaledDest;
@@ -489,14 +469,14 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 				_src.y = _src.y;
 				_src.w = _src.w;
 				_src.h = _src.h;
-				drawRect(&_src, tooltip_border_color, (Uint8)(tooltip_border_color>>mainsurface->format->Ashift));
+				white->drawColor(nullptr, _src, viewport, tooltip_border_color);
 
 				SDL_Rect src2{src.x + border, src.y + border, src.w - border * 2, src.h - border * 2};
 				src2.x = src2.x;
 				src2.y = src2.y;
 				src2.w = src2.w;
 				src2.h = src2.h;
-				drawRect(&src2, tooltip_background, (Uint8)(tooltip_background>>mainsurface->format->Ashift));
+				white->drawColor(nullptr, src2, viewport, tooltip_background);
 
 				text->drawColor(SDL_Rect{0,0,0,0}, src2, viewport, tooltip_text_color);
 			}
