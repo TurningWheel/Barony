@@ -28,8 +28,8 @@ Font::Font(const char* _name) {
 		printlog("failed to load '%s': %s", path.c_str(), TTF_GetError());
 		return;
 	}
-	TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
-	TTF_SetFontKerning(font, 0);
+	TTF_SetFontHinting(font, TTF_HINTING_MONO);
+	TTF_SetFontKerning(font, 1);
 }
 
 Font::~Font() {

@@ -45,7 +45,7 @@ namespace MainMenu {
 	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
 	static const char* smallfont_outline = "fonts/pixel_maz.ttf#14#2";
 	static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#14#0";
-	static const char* menu_option_font = "fonts/pixel_maz.ttf#28#2";
+	static const char* menu_option_font = "fonts/pixel_maz.ttf#24#2";
 
 	static inline void soundToggleMenu() {
 		playSound(500, 48);
@@ -1295,9 +1295,8 @@ namespace MainMenu {
 				std::string("setting_") + std::string(setting.name) + std::string("_button"),
 				std::string("setting_") + std::string(setting.name) + std::string("_customize_button"));
 		default:
-			assert(0 && "Unknown setting type!");
 			return std::make_pair(
-				std::string(""),
+				std::string("setting_") + std::string(setting.name) + std::string("_dropdown"),
 				std::string(""));
 		}
 	}
@@ -1756,21 +1755,28 @@ namespace MainMenu {
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
+		static float credits_scroll = 0.f;
+
 		auto credits = main_menu_frame->addFrame("credits");
 		credits->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		credits->setActualSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY + font->height() * 80});
+		credits->setActualSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY + font->height() * 81});
 		credits->setScrollBarsEnabled(false);
 		credits->setAllowScrollBinds(false);
 		credits->setHollow(true);
 		credits->setBorder(0);
 		credits->setTickCallback([](Widget& widget){
-			auto credits = static_cast<Frame*>(&widget);
-			auto size = credits->getActualSize();
-			size.y += 1;
-			if (size.y >= size.h) {
-				size.y = 0;
+			const float inc = 1.f * ((float)TICKS_PER_SECOND / (float)fpsLimit);
+			int old_credits_scroll = (int)credits_scroll;
+			credits_scroll += inc;
+			if (old_credits_scroll != (int)credits_scroll) {
+				auto credits = static_cast<Frame*>(&widget);
+				auto size = credits->getActualSize();
+				size.y += 1;
+				if (size.y >= size.h) {
+					size.y = 0;
+				}
+				credits->setActualSize(size);
 			}
-			credits->setActualSize(size);
 			});
 
 		// titles

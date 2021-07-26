@@ -9,7 +9,7 @@
 
 GLuint Text::vao = 0;
 GLuint Text::vbo[BUFFER_TYPE_LENGTH] = { 0 };
-constexpr int resolution_factor = 4;
+constexpr int resolution_factor = 1;
 
 const GLfloat Text::positions[8]{
 	0.f, 0.f,
@@ -142,7 +142,11 @@ void Text::render() {
 		32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 	SDL_Rect dest{ 0, 0, width * resolution_factor, height * resolution_factor };
 	SDL_Rect src{ 0, 0, width, height };
-	SDL_BlitScaled(surf, &src, newSurf, &dest); // blit onto a purely RGBA Surface
+	if (resolution_factor > 1) {
+		SDL_BlitScaled(surf, &src, newSurf, &dest);
+	} else {
+		SDL_BlitSurface(surf, &src, newSurf, &dest);
+	}
 	SDL_FreeSurface(surf);
 	surf = newSurf;
 
