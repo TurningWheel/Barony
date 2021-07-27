@@ -744,5 +744,6 @@ enum ItemContextMenuPrompts {
 };
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);
+std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item);
 const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item);
 std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt);

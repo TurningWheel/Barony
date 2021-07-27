@@ -1515,12 +1515,12 @@ void createInventoryTooltipFrame(const int player)
 	if ( auto promptFrame = gui->addFrame(name) )
 	{
 		players[player]->inventoryUI.tooltipPromptFrame = promptFrame;
-		const int interactWidth = 208;
+		const int interactWidth = 0;
 		SDL_Rect promptSize{ 0, 0, interactWidth + 6 * 2, 100 };
 		promptFrame->setDisabled(true);
 		promptFrame->setInheritParentFrameOpacity(false);
 
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 192);
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 64);
 
 		auto middleCenter = promptFrame->addImage(SDL_Rect{ 6, 2, interactWidth, 76 },
 			color, "images/ui/Inventory/tooltips/Hover_C00.png", "interact middle background");
@@ -1566,6 +1566,8 @@ void createInventoryTooltipFrame(const int player)
 		const int textWidth = 80;
 		const int textHeight = glyphSize + 8;
 
+		Uint32 promptTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+
 		int textAlignY = interactGlyph1->pos.y - 4;
 		int textAlignXRightJustify = interactGlyph1->pos.x - 6 - textWidth;
 		auto promptText = promptFrame->addField("txt 1", 32);
@@ -1577,7 +1579,7 @@ void createInventoryTooltipFrame(const int player)
 		promptText->setFont("fonts/pixel_maz.ttf#14#2");
 		promptText->setHJustify(Field::justify_t::RIGHT);
 		promptText->setVJustify(Field::justify_t::CENTER);
-		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+		promptText->setColor(promptTextColor);
 
 		textAlignXRightJustify = interactGlyph2->pos.x - 6 - textWidth;
 		textAlignY = interactGlyph2->pos.y - 4;
@@ -1590,7 +1592,7 @@ void createInventoryTooltipFrame(const int player)
 		promptText->setFont("fonts/pixel_maz.ttf#14#2");
 		promptText->setHJustify(Field::justify_t::RIGHT);
 		promptText->setVJustify(Field::justify_t::CENTER);
-		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+		promptText->setColor(promptTextColor);
 
 		int textAlignXLeftJustify = interactGlyph3->pos.x + interactGlyph3->pos.w + 6;
 		textAlignY = interactGlyph3->pos.y - 4;
@@ -1603,7 +1605,7 @@ void createInventoryTooltipFrame(const int player)
 		promptText->setFont("fonts/pixel_maz.ttf#14#2");
 		promptText->setHJustify(Field::justify_t::LEFT);
 		promptText->setVJustify(Field::justify_t::CENTER);
-		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+		promptText->setColor(promptTextColor);
 
 		textAlignXLeftJustify = interactGlyph4->pos.x + interactGlyph4->pos.w + 6;
 		textAlignY = interactGlyph4->pos.y - 4;
@@ -1616,7 +1618,7 @@ void createInventoryTooltipFrame(const int player)
 		promptText->setFont("fonts/pixel_maz.ttf#14#2");
 		promptText->setHJustify(Field::justify_t::LEFT);
 		promptText->setVJustify(Field::justify_t::CENTER);
-		promptText->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+		promptText->setColor(promptTextColor);
 
 		bottomCenter->pos.y = interactGlyph4->pos.y + interactGlyph4->pos.h + 8;
 		bottomLeft->pos.y = bottomCenter->pos.y;
@@ -2412,6 +2414,14 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_STORE_CHEST )
 	{
+	}
+	else if ( prompt == PROMPT_GRAB )
+	{
+		inputs.getUIInteraction(player)->selectedItem = item;
+		playSound(139, 64); // click sound
+		inputs.getUIInteraction(player)->toggleclick = true;
+		inputs.mouseClearLeft(player);
+		return;
 	}
 	else if ( prompt == PROMPT_EAT )
 	{

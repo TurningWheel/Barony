@@ -2806,7 +2806,7 @@ void drawStatusNew(const int player)
 				if ( !shootmode && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouse() )
 				{
 					if ( (inputs.bMouseLeft(player)
-						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
+						|| (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str())
 							&& !openedChest[player]
 							&& gui_mode != (GUI_MODE_SHOP)
 							&& !GenericGUI[player].isGUIOpen()))
@@ -2833,9 +2833,10 @@ void drawStatusNew(const int player)
 								players[player]->inventoryUI.cursor.lastUpdateTick = ticks;
 							}
 
-							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
+							if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str()) 
+								&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
-								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
+								Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str());
 								inputs.getUIInteraction(player)->toggleclick = true;
 								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
 								//TODO: Change the mouse cursor to THE HAND.
@@ -3848,11 +3849,11 @@ void drawStatusNew(const int player)
 			}
 
 			if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] 
-				&& Input::inputs[player].binaryToggle("HotbarInventoryDrop")
+				&& Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str())
 				&& mouseInsidePlayerHotbar(player) )
 			{
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				Input::inputs[player].consumeBinaryToggle("HotbarInventoryDrop");
+				Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str());
 				Item* itemToDrop = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 				if ( itemToDrop )
 				{

@@ -60,7 +60,6 @@ void Input::defaultBindings() {
 		inputs[c].bind("HotbarFacebarModifierRight", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str());
 		inputs[c].bind("HotbarFacebarCancel", (std::string("Pad") + std::to_string(c) + std::string("DpadY+")).c_str());
 
-		inputs[c].bind("HotbarInventoryDrop", (std::string("Pad") + std::to_string(c) + std::string("ButtonB")).c_str());
 		inputs[c].bind("HotbarInventoryClearSlot", (std::string("Pad") + std::to_string(c) + std::string("ButtonY")).c_str());
 
 		inputs[c].bind("InventoryMoveUp", (std::string("Pad") + std::to_string(c) + std::string("DpadY-")).c_str());

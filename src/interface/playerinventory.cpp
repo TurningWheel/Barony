@@ -1302,12 +1302,9 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			{
 				y = inventoryUI.getSizeY() - 1;
 			}
-			else if ( itemCategory(selectedItem) == SPELL_CAT )
+			if ( y >= inventoryUI.getSizeY() )
 			{
-				if ( y >= inventoryUI.getSizeY() )
-				{
-					y = 0;
-				}
+				y = 0;
 			}
 		}
 	}
@@ -1501,7 +1498,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 
 	auto& hotbar = players[player]->hotbar.slots();
 
-	if ( Input::inputs[player].binaryToggle("HotbarInventoryDrop") )
+	if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str()) )
 	{
 		//TODO UI: VERIFY
 		if (selectedItemFromHotbar >= 0 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS)
@@ -1533,7 +1530,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 		}
 
 		selectedItem = nullptr;
-		Input::inputs[player].consumeBinaryToggle("HotbarInventoryDrop");
+		Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str());
 		return;
 	}
 
@@ -1555,9 +1552,9 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 	// releasing items
 	if ( (!inputs.bMouseLeft(player) && !toggleclick)
 		|| (inputs.bMouseLeft(player) && toggleclick)
-		|| ( (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)) && toggleclick) )
+		|| ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str()) && toggleclick) )
 	{
-		inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
+		Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str());
 		if (openedChest[player] && itemCategory(selectedItem) != SPELL_CAT)
 		{
 			if (mousex >= getChestGUIStartX(player) && mousey >= getChestGUIStartY(player)
@@ -3568,16 +3565,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 	frameMain->setOpacity(100.0);
 
 	//inputs.getUIInteraction(player)->itemMenuItem = item->uid;
-
 	// quick prompt stuff here.
+	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
+	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+	frameTooltipPrompt->setDisabled(true);
+	if ( !itemMenuOpen && !selectedItem && !inputs.getVirtualMouse(player)->draw_cursor )
 	{
-		auto options = getContextMenuOptionsForItem(player, item);
-		options.push_back(ItemContextMenuPrompts::PROMPT_GRAB); // additional prompt here for non-right click menu
-		auto findAppraise = std::find(options.begin(), options.end(), ItemContextMenuPrompts::PROMPT_APPRAISE);
-		if ( findAppraise != options.end() )
-		{
-			options.erase(findAppraise);
-		}
+		auto options = getContextTooltipOptionsForItem(player, item);
+
 		std::sort(options.begin(), options.end(), [](const ItemContextMenuPrompts& lhs, const ItemContextMenuPrompts& rhs) {
 			return getContextMenuOptionOrder(lhs) < getContextMenuOptionOrder(rhs);
 		});
@@ -3586,11 +3581,6 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 		{
 			frameTooltipPrompt->setDisabled(false);
 			frameTooltipPrompt->setOpacity(frameMain->getOpacity());
-			SDL_Rect promptPos = frameTooltipPrompt->getSize();
-			promptPos.x = frameMain->getSize().x + frameMain->getSize().w - 6 - promptPos.w;
-			promptPos.y = frameMain->getSize().y + frameMain->getSize().h - 2;
-			frameTooltipPrompt->setSize(promptPos);
-
 			std::vector<std::pair<Frame::image_t*, Field*>> promptFrames;
 			
 			// disable all the text and prompts
@@ -3604,7 +3594,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				auto txt = frameTooltipPrompt->findField(fieldName);
 				if ( img && txt )
 				{
-					//img->disabled = true;
+					Uint8 r, g, b, a;
+					SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+					a = 128;
+					img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 					txt->setDisabled(true);
 					promptFrames.push_back(std::make_pair(img, txt));
 				}
@@ -3622,16 +3615,89 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				auto img = frameTooltipPrompt->findImage(imgName);
 				auto txt = frameTooltipPrompt->findField(fieldName);
 				img->disabled = false;
+				Uint8 r, g, b, a;
+				SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+				a = 255;
+				img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 				txt->setDisabled(false);
 				img->path = Input::inputs[player].getGlyphPathForInput(getContextMenuOptionBindingName(option).c_str());
 				txt->setText(getContextMenuLangEntry(player, option, *item));
 			}
 
+			int alignx1 = xres;
 			for ( auto& pair : promptFrames )
 			{
 				auto& img = pair.first;
 				auto& txt = pair.second;
+				if ( !txt->isDisabled() )
+				{
+					if ( auto textGet = Text::get(txt->getText(), txt->getFont()) )
+					{
+						if ( txt->getHJustify() == Field::justify_t::RIGHT )
+						{
+							// find the furthest left text
+							alignx1 = std::min(txt->getSize().x + txt->getSize().w - (int)textGet->getWidth(), alignx1);
+						}
+					}
+				}
 			}
+
+			// shift everything by the further left text as anchor
+			for ( auto& pair : promptFrames )
+			{
+				auto& img = pair.first;
+				auto& txt = pair.second;
+
+				int offset = -(alignx1 - 8);
+				img->pos.x += offset;
+				SDL_Rect txtSize = txt->getSize();
+				txtSize.x += offset;
+				txt->setSize(txtSize);
+			}
+
+			// find the furthest right text for the width of the frame
+			int alignx2 = 0;
+			for ( auto& pair : promptFrames )
+			{
+				auto& img = pair.first;
+				auto& txt = pair.second;
+				if ( !txt->isDisabled() )
+				{
+					if ( auto textGet = Text::get(txt->getText(), txt->getFont()) )
+					{
+						if ( txt->getHJustify() == Field::justify_t::LEFT )
+						{
+							alignx2 = std::max(txt->getSize().x + (int)textGet->getWidth(), alignx2);
+						}
+					}
+				}
+			}
+
+			SDL_Rect promptPos = frameTooltipPrompt->getSize();
+			const int width = (alignx2 - 4); // 4px padding
+			{
+				auto middleCenter = frameTooltipPrompt->findImage("interact middle background");
+				middleCenter->pos.w = width;
+				auto middleTop = frameTooltipPrompt->findImage("interact middle top background");
+				middleTop->pos.w = width;
+				auto middleBottom = frameTooltipPrompt->findImage("interact middle bottom background");
+				middleBottom->pos.w = width;
+				auto middleLeft = frameTooltipPrompt->findImage("interact middle left");
+				auto middleRight = frameTooltipPrompt->findImage("interact middle right");
+				middleRight->pos.x = middleLeft->pos.x + middleLeft->pos.w + width;
+
+				auto bottomCenter = frameTooltipPrompt->findImage("interact bottom background");
+				bottomCenter->pos.w = width + 4;
+				auto bottomLeft = frameTooltipPrompt->findImage("interact bottom left");
+				auto bottomRight = frameTooltipPrompt->findImage("interact bottom right");
+				bottomRight->pos.x = bottomCenter->pos.x + bottomCenter->pos.w;
+
+				promptPos.w = middleRight->pos.x + middleRight->pos.w;
+			}
+
+			promptPos.x = frameMain->getSize().x + frameMain->getSize().w - 6 - promptPos.w;
+			promptPos.y = frameMain->getSize().y + frameMain->getSize().h - 2;
+			frameTooltipPrompt->setSize(promptPos);
 		}
 	}
 }
@@ -5039,273 +5105,270 @@ void Player::Inventory_t::updateInventory()
 		for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 		{
 			nextnode = node->next;
-			Item* item = (Item*)node->element;  //I don't like that there's not a check that either are null.
-
-			if ( item )
+			Item* item = (Item*)node->element;
+			if ( !item )
 			{
-				bool mouseOverSlot = false;
+				continue;
+			}
 
-				bool itemOnPaperDoll = false;
-				if ( players[player]->paperDoll.enabled && itemIsEquipped(item, player) )
+			bool mouseOverSlot = false;
+
+			bool itemOnPaperDoll = false;
+			if ( players[player]->paperDoll.enabled && itemIsEquipped(item, player) )
+			{
+				auto slotType = players[player]->paperDoll.getSlotForItem(*item);
+				if ( slotType != Player::PaperDoll_t::SLOT_MAX )
 				{
-					auto slotType = players[player]->paperDoll.getSlotForItem(*item);
-					if ( slotType != Player::PaperDoll_t::SLOT_MAX )
-					{
-						itemOnPaperDoll = true;
-					}
+					itemOnPaperDoll = true;
+				}
+			}
+
+			int itemx = item->x;
+			int itemy = item->y;
+			if ( itemOnPaperDoll )
+			{
+				players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
+			}
+
+			auto slotFrame = getInventorySlotFrame(itemx, itemy);
+			if ( !slotFrame ) { continue; }
+			mouseOverSlot = slotFrame->capturesMouse();
+
+			if ( mouseOverSlot )
+			{
+				auto inventoryBgFrame = frame->findFrame("inventory base");
+				int tooltipCoordX = frame->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
+				int tooltipCoordY = slotFrame->getSize().y;
+				if ( !itemOnPaperDoll )
+				{
+					tooltipCoordY += frame->findFrame("inventory slots")->getSize().y;
 				}
 
-				int itemx = item->x;
-				int itemy = item->y;
-				if ( itemOnPaperDoll )
+				// tooltip
+				if ( (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
+					|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
 				{
-					players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
+					continue;    //Skip over this items since the filter is blocking it (eg spell in normal inventory or vice versa).
 				}
 
-				auto slotFrame = getInventorySlotFrame(itemx, itemy);
-				if ( !slotFrame ) { continue; }
-				mouseOverSlot = slotFrame->capturesMouse();
-
-				if ( mouseOverSlot )
+				bool tooltipOpen = false;
+				if ( !itemMenuOpen )
 				{
-					auto inventoryBgFrame = frame->findFrame("inventory base");
-					int tooltipCoordX = frame->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
-					int tooltipCoordY = slotFrame->getSize().y;
-					if ( !itemOnPaperDoll )
-					{
-						tooltipCoordY += frame->findFrame("inventory slots")->getSize().y;
-					}
+					tooltipOpen = true;
+					players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY);
+				}
 
-					// tooltip
-					if ( (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
-						|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
-					{
-						continue;    //Skip over this items since the filter is blocking it (eg spell in normal inventory or vice versa).
-					}
-					if ( !itemMenuOpen )
-					{
-						players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY);
-					}
+				if ( stats[player]->HP <= 0 )
+				{
+					break;
+				}
 
-					if ( stats[player]->HP <= 0 )
+				if ( tooltipOpen && !tooltipPromptFrame->isDisabled() 
+					&& !itemMenuOpen && !selectedItem && selectedChestSlot[player] < 0
+					&& selectedShopSlot[player] < 0
+					&& GenericGUI[player].selectedSlot < 0 )
+				{
+					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
+					bool bindingPressed = false;
+					for ( auto& option : contextTooltipOptions )
 					{
+						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(option).c_str()) )
+						{
+							bindingPressed = true;
+							activateItemContextMenuOption(item, option);
+						}
+					}
+					if ( bindingPressed )
+					{
+						for ( auto& option : contextTooltipOptions )
+						{
+							// clear the other bindings just in case.
+							Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(option).c_str());
+						}
 						break;
 					}
+				}
 
-					if ( Input::inputs[player].binaryToggle("HotbarInventoryDrop")
-						&& !itemMenuOpen && !selectedItem && selectedChestSlot[player] < 0
-						&& selectedShopSlot[player] < 0
-						&& GenericGUI[player].selectedSlot < 0 )
+
+				bool disableItemUsage = false;
+				if ( item )
+				{
+					if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarInventoryDrop");
-						if ( dropItem(item, player) )
+						// shape shifted, disable some items
+						if ( !item->usableWhileShapeshifted(stats[player]) )
+						{
+							disableItemUsage = true;
+						}
+					}
+					if ( client_classes[player] == CLASS_SHAMAN )
+					{
+						if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
+						{
+							disableItemUsage = true;
+						}
+					}
+				}
+
+				// handle clicking
+				if ( inputs.bMouseLeft(player) && !selectedItem && !itemMenuOpen )
+				{
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						if ( dropItem(item, player) ) // Quick item drop
 						{
 							item = nullptr;
 						}
 					}
-
-					bool disableItemUsage = false;
-					if ( item )
+					else
 					{
-						if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+						inputs.getUIInteraction(player)->selectedItemFromHotbar = -1;
+						selectedItem = item;
+						playSound(139, 64); // click sound
+
+						if ( inputs.getVirtualMouse(player)->draw_cursor )
 						{
-							// shape shifted, disable some items
-							if ( !item->usableWhileShapeshifted(stats[player]) )
-							{
-								disableItemUsage = true;
-							}
+							cursor.lastUpdateTick = ticks;
 						}
-						if ( client_classes[player] == CLASS_SHAMAN )
-						{
-							if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
-							{
-								disableItemUsage = true;
-							}
-						}
+
+						toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 					}
-
-					// handle clicking
-					if ( (inputs.bMouseLeft(player)
-						|| (inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)
-							&& selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
-							&& GenericGUI[player].selectedSlot < 0))
-						&& !selectedItem && !itemMenuOpen )
-					{
-						if ( !(inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
-						{
-							if ( dropItem(item, player) ) // Quick item drop
-							{
-								item = nullptr;
-							}
-						}
-						else
-						{
-							inputs.getUIInteraction(player)->selectedItemFromHotbar = -1;
-							selectedItem = item;
-							playSound(139, 64); // click sound
-
-							if ( inputs.getVirtualMouse(player)->draw_cursor )
-							{
-								cursor.lastUpdateTick = ticks;
-							}
-
-							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
-
-							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) )
-							{
-								inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
-								toggleclick = true;
-								inputs.mouseClearLeft(player);
-								//TODO: Change the mouse cursor to THE HAND.
-							}
-						}
-					}
-					else if ( (inputs.bMouseRight(player)
-						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
-							&& selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
-							&& GenericGUI[player].selectedSlot < 0))
-						&& !itemMenuOpen && !selectedItem )
-					{
-						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(inputs.bControllerInputPressed(player, INJOY_MENU_USE) && selectedChestSlot[player] < 0) ) //TODO: selected shop slot, identify, remove curse?
-						{
-							// auto-appraise the item
-							appraisal.appraiseItem(item);
-							inputs.mouseClearRight(player);
-						}
-						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
-							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT])
-							&& !(inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
-						{
-							inputs.mouseClearRight(player);
-							// force equip potion/spellbook
-							playerTryEquipItemAndUpdateServer(player, item, false);
-						}
-						else
-						{
-							// open a drop-down menu of options for "using" the item
-							itemMenuOpen = true;
-							itemMenuX = (inputs.getMouse(player, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + 8;
-							itemMenuY = (inputs.getMouse(player, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-							if ( auto interactMenuTop = interactFrame->findImage("interact top background") )
-							{
-								// 10px is slot half height, minus the top interact text height
-								// mouse will be situated halfway in first menu option
-								itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
-							}
-							if ( auto highlightImage = interactFrame->findImage("interact selected highlight") )
-							{
-								highlightImage->disabled = true;
-							}
-							itemMenuSelected = 0;
-							itemMenuItem = item->uid;
-
-							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
-
-							if ( inputs.getVirtualMouse(player)->draw_cursor )
-							{
-								cursor.lastUpdateTick = ticks;
-							}
-
-							if ( inputs.bControllerInputPressed(player, INJOY_MENU_USE) )
-							{
-								inputs.controllerClearInput(player, INJOY_MENU_USE);
-								toggleclick = true;
-							}
-						}
-					}
-
-					bool numkey_quick_add = hotbar_numkey_quick_add;
-					if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 &&
-						players[player] && players[player]->entity && players[player]->entity->effectShapeshift )
-					{
-						if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 )
-						{
-							numkey_quick_add = false;
-						}
-					}
-
-					if ( numkey_quick_add && !command )
-					{
-						int slotNum = -1;
-						if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot1");
-							hotbar[0].item = item->uid;
-							slotNum = 0;
-						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot2") )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot2");
-							hotbar[1].item = item->uid;
-							slotNum = 1;
-						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot3") )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot3");
-							hotbar[2].item = item->uid;
-							slotNum = 2;
-						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot4") )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot4");
-							hotbar[3].item = item->uid;
-							slotNum = 3;
-						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot5") )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot5");
-							hotbar[4].item = item->uid;
-							slotNum = 4;
-						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot6") )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot6");
-							hotbar[5].item = item->uid;
-							slotNum = 5;
-						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot7");
-							hotbar[6].item = item->uid;
-							slotNum = 6;
-						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot8") )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot8");
-							hotbar[7].item = item->uid;
-							slotNum = 7;
-						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot9") )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot9");
-							hotbar[8].item = item->uid;
-							slotNum = 8;
-						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot10") 
-							&& this->player.hotbar.getHotbarSlotFrame(9)
-							&& !this->player.hotbar.getHotbarSlotFrame(9)->isDisabled() )
-						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot10");
-							hotbar[9].item = item->uid;
-							slotNum = 9;
-						}
-
-						// empty out duplicate slots that match this item uid.
-						if ( slotNum >= 0 )
-						{
-							int i = 0;
-							for ( auto& s : players[player]->hotbar.slots() )
-							{
-								if ( i != slotNum && s.item == item->uid )
-								{
-									s.item = 0;
-								}
-								++i;
-							}
-						}
-					}
-					break;
 				}
+				else if ( inputs.bMouseRight(player)
+					&& !itemMenuOpen && !selectedItem )
+				{
+					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && selectedChestSlot[player] < 0 ) //TODO: selected shop slot, identify, remove curse?
+					{
+						// auto-appraise the item
+						appraisal.appraiseItem(item);
+						inputs.mouseClearRight(player);
+					}
+					else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
+						(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
+					{
+						inputs.mouseClearRight(player);
+						// force equip potion/spellbook
+						playerTryEquipItemAndUpdateServer(player, item, false);
+					}
+					else
+					{
+						// open a drop-down menu of options for "using" the item
+						itemMenuOpen = true;
+						itemMenuX = (inputs.getMouse(player, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + 8;
+						itemMenuY = (inputs.getMouse(player, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+						if ( auto interactMenuTop = interactFrame->findImage("interact top background") )
+						{
+							// 10px is slot half height, minus the top interact text height
+							// mouse will be situated halfway in first menu option
+							itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
+						}
+						if ( auto highlightImage = interactFrame->findImage("interact selected highlight") )
+						{
+							highlightImage->disabled = true;
+						}
+						itemMenuSelected = 0;
+						itemMenuItem = item->uid;
+
+						toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
+
+						if ( inputs.getVirtualMouse(player)->draw_cursor )
+						{
+							cursor.lastUpdateTick = ticks;
+						}
+					}
+				}
+
+				bool numkey_quick_add = hotbar_numkey_quick_add;
+				if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 &&
+					players[player] && players[player]->entity && players[player]->entity->effectShapeshift )
+				{
+					if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 )
+					{
+						numkey_quick_add = false;
+					}
+				}
+
+				if ( numkey_quick_add && !command && item )
+				{
+					int slotNum = -1;
+					if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot1");
+						hotbar[0].item = item->uid;
+						slotNum = 0;
+					}
+					if ( Input::inputs[player].binaryToggle("HotbarSlot2") )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot2");
+						hotbar[1].item = item->uid;
+						slotNum = 1;
+					}
+					if ( Input::inputs[player].binaryToggle("HotbarSlot3") )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot3");
+						hotbar[2].item = item->uid;
+						slotNum = 2;
+					}
+					if ( Input::inputs[player].binaryToggle("HotbarSlot4") )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot4");
+						hotbar[3].item = item->uid;
+						slotNum = 3;
+					}
+					if ( Input::inputs[player].binaryToggle("HotbarSlot5") )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot5");
+						hotbar[4].item = item->uid;
+						slotNum = 4;
+					}
+					if ( Input::inputs[player].binaryToggle("HotbarSlot6") )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot6");
+						hotbar[5].item = item->uid;
+						slotNum = 5;
+					}
+					if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot7");
+						hotbar[6].item = item->uid;
+						slotNum = 6;
+					}
+					if ( Input::inputs[player].binaryToggle("HotbarSlot8") )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot8");
+						hotbar[7].item = item->uid;
+						slotNum = 7;
+					}
+					if ( Input::inputs[player].binaryToggle("HotbarSlot9") )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot9");
+						hotbar[8].item = item->uid;
+						slotNum = 8;
+					}
+					if ( Input::inputs[player].binaryToggle("HotbarSlot10") 
+						&& this->player.hotbar.getHotbarSlotFrame(9)
+						&& !this->player.hotbar.getHotbarSlotFrame(9)->isDisabled() )
+					{
+						Input::inputs[player].consumeBinaryToggle("HotbarSlot10");
+						hotbar[9].item = item->uid;
+						slotNum = 9;
+					}
+
+					// empty out duplicate slots that match this item uid.
+					if ( slotNum >= 0 )
+					{
+						int i = 0;
+						for ( auto& s : players[player]->hotbar.slots() )
+						{
+							if ( i != slotNum && s.item == item->uid )
+							{
+								s.item = 0;
+							}
+							++i;
+						}
+					}
+				}
+				break;
 			}
 		}
 	}
@@ -5634,6 +5697,18 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			return "Invalid";
 	}
 	return "Invalid";
+}
+
+std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item)
+{
+	auto options = getContextMenuOptionsForItem(player, item);
+	options.push_back(ItemContextMenuPrompts::PROMPT_GRAB); // additional prompt here for non-right click menu
+	auto findAppraise = std::find(options.begin(), options.end(), ItemContextMenuPrompts::PROMPT_APPRAISE);
+	if ( findAppraise != options.end() )
+	{
+		options.erase(findAppraise);
+	}
+	return options;
 }
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item)
@@ -6633,6 +6708,7 @@ inline void executeItemMenuOption3(const int player, Item* item)
 
 void itemContextMenu(const int player)
 {
+	return;
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
 	Uint32& itemMenuItem = inputs.getUIInteraction(player)->itemMenuItem;
