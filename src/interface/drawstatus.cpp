@@ -3560,7 +3560,7 @@ void drawStatusNew(const int player)
 	{
 		Item* item = NULL;
 		const auto& inventoryUI = players[player]->inventoryUI;
-		if ( !shootmode && !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player))) )
+		if ( shootmode || (!shootmode && !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player)))) )
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
