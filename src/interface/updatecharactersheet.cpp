@@ -529,7 +529,7 @@ void drawSkillsSheet(const int player)
 	}
 	players[player]->characterSheet.setDefaultSkillsSheetBox();
 
-	pos.x = players[player]->characterSheet.skillsSheetBox.x;
+	pos.x = players[player]->characterSheet.skillsSheetBox.x - 208;
 	pos.y = players[player]->characterSheet.skillsSheetBox.y;
 	pos.w = players[player]->characterSheet.skillsSheetBox.w;
 	pos.h = players[player]->characterSheet.skillsSheetBox.h;

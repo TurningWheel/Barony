@@ -34,6 +34,9 @@ struct CustomColors_t
 	Uint32 itemContextMenuOptionSelectedText = 0xFFFFFFFF;
 	Uint32 itemContextMenuOptionImg = 0xFFFFFFFF;
 	Uint32 itemContextMenuOptionSelectedImg = 0xFFFFFFFF;
+	Uint32 characterSheetNeutral = 0xFFFFFFFF;
+	Uint32 characterSheetGreen = 0xFFFFFFFF;
+	Uint32 characterSheetRed = 0xFFFFFFFF;
 } hudColors;
 
 void createHPMPBars(const int player)
@@ -355,6 +358,1091 @@ void Player::HUD_t::processHUD()
 	updateXPBar();
 	updateHPBar();
 	updateMPBar();
+}
+
+void Player::MessageZone_t::createChatbox()
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player chat %d", player.playernum);
+	if ( !gui->findFrame(name) )
+	{
+		Frame* chatMainFrame = gui->addFrame(name);
+		chatMainFrame->setHollow(true);
+		chatMainFrame->setBorder(0);
+		chatMainFrame->setOwner(player.playernum);
+		chatMainFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
+			players[player.playernum]->camera_y1(),
+			Frame::virtualScreenX,
+			Frame::virtualScreenY });
+		chatFrame = chatMainFrame;
+		Frame* messages = chatMainFrame->addFrame("message box");
+		messages->setSize(SDL_Rect{ 224, 16, 
+			players[player.playernum]->camera_width() / 2, 
+			players[player.playernum]->camera_height() });
+
+		static const char* bigfont = "fonts/pixelmix.ttf#16#2";
+		SDL_Rect entryPos{ 0, 0, messages->getSize().w, 0 };
+		for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
+		{
+			char msgName[32];
+			snprintf(msgName, sizeof(msgName), "message %d", i);
+			auto entry = messages->addField(msgName, ADD_MESSAGE_BUFFER_LENGTH);
+			entry->setFont(bigfont);
+			entry->setSize(entryPos);
+			entry->setDisabled(true);
+		}
+	}
+}
+
+void Player::MessageZone_t::processChatbox()
+{
+	if ( !chatFrame )
+	{
+		createChatbox();
+	}
+
+	chatFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
+		players[player.playernum]->camera_y1(),
+		players[player.playernum]->camera_width(),
+		players[player.playernum]->camera_height() });
+
+	const int leftAlignedBottomY = 484;
+	const int topAlignedBottomY = 216;
+	int topAlignedPaddingX = 224;
+	chatboxTopAlignedPos = SDL_Rect{ topAlignedPaddingX, 0,
+		players[player.playernum]->camera_width() - topAlignedPaddingX * 2,
+		players[player.playernum]->camera_height() };
+	chatboxLeftAlignedPos = SDL_Rect{ 8, 0, players[player.playernum]->camera_width() / 2,
+		players[player.playernum]->camera_height() };
+
+	Frame* messageBoxFrame = chatFrame->findFrame("message box");
+	SDL_Rect messageBoxSize = messageBoxFrame->getSize();
+	if ( player.shootmode && messageBoxSize.x == chatboxTopAlignedPos.x )
+	{
+		chatboxMovedResize = true;
+	}
+	else if ( !player.shootmode && messageBoxSize.x == chatboxLeftAlignedPos.x )
+	{
+		chatboxMovedResize = true;
+	}
+
+	if ( chatboxMovedResize )
+	{
+		if ( player.shootmode )
+		{
+			messageBoxSize = chatboxLeftAlignedPos;
+		}
+		else
+		{
+			messageBoxSize = chatboxTopAlignedPos;
+		}
+	}
+
+	char msgName[32];
+	for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
+	{
+		snprintf(msgName, sizeof(msgName), "message %d", i);
+		if ( auto entry = messageBoxFrame->findField(msgName) )
+		{
+			entry->setDisabled(true);
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.w = messageBoxSize.w;
+			entry->setSize(entryPos);
+		}
+	}
+
+	const int entryPaddingY = 4;
+	int currentY = (messageBoxSize.h);
+	int index = 0;
+
+	bool messageDrawDescending = false;
+	if ( messageDrawDescending )
+	{
+		currentY = 4;
+	}
+
+	for ( Message *current : notification_messages )
+	{
+		if ( index >= MESSAGE_MAX_ENTRIES )
+		{
+			break;
+		}
+
+		Uint32 color = current->text->color ^ mainsurface->format->Amask;
+		color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
+
+		snprintf(msgName, sizeof(msgName), "message %d", index);
+		if ( auto entry = messageBoxFrame->findField(msgName) )
+		{
+			entry->setDisabled(false);
+			entry->setColor(color);
+			entry->setText(current->text->data);
+
+			if ( current->requiresResize )
+			{
+				entry->reflowTextToFit(0);
+				//current->requiresResize = false;
+			}
+
+			Text* textGet = Text::get(entry->getText(), entry->getFont());
+			if ( !messageDrawDescending )
+			{
+				currentY -= textGet->getHeight();
+			}
+
+			SDL_Rect pos = entry->getSize();
+			pos.h = textGet->getHeight();
+			pos.y = currentY;
+			if ( messageDrawDescending )
+			{
+				currentY += textGet->getHeight();
+			}
+			entry->setSize(pos);
+			if ( pos.y < 0 )
+			{
+				entry->setDisabled(true); // clipping outside of frame
+			}
+		}
+
+		if ( messageDrawDescending )
+		{
+			currentY += entryPaddingY;
+		}
+		else
+		{
+			currentY -= entryPaddingY;
+		}
+		++index;
+	}
+
+	if ( player.shootmode )
+	{
+		messageBoxSize.y = leftAlignedBottomY - messageBoxSize.h;
+	}
+	else
+	{
+		messageBoxSize.y = topAlignedBottomY - messageBoxSize.h;
+	}
+	if ( messageDrawDescending )
+	{
+		messageBoxSize.y = 4;
+	}
+	messageBoxFrame->setSize(messageBoxSize);
+	/*int newHeight = messageBoxSize.h - currentY;
+	messageBoxSize.h = newHeight;
+
+	if ( currentY < 0 )
+	{
+		for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
+		{
+			snprintf(msgName, sizeof(msgName), "message %d", i);
+			if ( auto entry = messageBoxFrame->findField(msgName) )
+			{
+				SDL_Rect pos = entry->getSize();
+				pos.y -= currentY;
+				entry->setSize(pos);
+			}
+		}
+	}*/
+}
+
+void Player::CharacterSheet_t::createCharacterSheet()
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player sheet %d", player.playernum);
+	if ( !gui->findFrame(name) )
+	{
+		Frame* sheetFrame = gui->addFrame(name);
+		sheetFrame->setHollow(true);
+		sheetFrame->setBorder(0);
+		sheetFrame->setOwner(player.playernum);
+		sheetFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
+			players[player.playernum]->camera_y1(),
+			Frame::virtualScreenX,
+			Frame::virtualScreenY });
+		this->sheetFrame = sheetFrame;
+
+		const int bgWidth = 208;
+		const int leftAlignX = sheetFrame->getSize().x + sheetFrame->getSize().w - bgWidth;
+		{
+			Frame* fullscreenBg = sheetFrame->addFrame("sheet bg fullscreen");
+			fullscreenBg->setSize(SDL_Rect{ leftAlignX,
+				0, 208, Frame::virtualScreenY });
+			// if splitscreen 3/4 - disable the fullscreen background + title text.
+			fullscreenBg->addImage(SDL_Rect{ 0, 0, fullscreenBg->getSize().w, fullscreenBg->getSize().h },
+				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_00.png", "bg image");
+
+			const char* titleFont = "fonts/pixel_maz.ttf#14#2";
+			auto characterSheetTitleText = fullscreenBg->addField("character sheet title text", 32);
+			characterSheetTitleText->setFont(titleFont);
+			characterSheetTitleText->setSize(SDL_Rect{ 6, 120, 202, 32 });
+			characterSheetTitleText->setText("CHARACTER SHEET");
+			characterSheetTitleText->setVJustify(Field::justify_t::CENTER);
+			characterSheetTitleText->setHJustify(Field::justify_t::CENTER);
+		}
+
+		// log / map buttons
+		{
+			const char* buttonFont = "fonts/pixel_maz.ttf#14#2";
+			SDL_Rect buttonFramePos{ leftAlignX + 9, 6, 196, 82 };
+			auto buttonFrame = sheetFrame->addFrame("log map buttons");
+			buttonFrame->setSize(buttonFramePos);
+
+			SDL_Rect buttonPos{0, 0, buttonFramePos.w, 40};
+			buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "map button img");
+			auto mapText = buttonFrame->addField("map button text", 32);
+			mapText->setFont(buttonFont);
+			mapText->setSize(buttonPos);
+			mapText->setVJustify(Field::justify_t::CENTER);
+			mapText->setHJustify(Field::justify_t::CENTER);
+			mapText->setText("OPEN MAP");
+
+			buttonPos.y = buttonPos.y + buttonPos.h + 2;
+			buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "log button img");
+			auto logText = buttonFrame->addField("log button text", 32);
+			logText->setFont(buttonFont);
+			logText->setSize(buttonPos);
+			logText->setVJustify(Field::justify_t::CENTER);
+			logText->setHJustify(Field::justify_t::CENTER);
+			logText->setText("OPEN LOG");
+		}
+
+		// game timer
+		{
+			const char* timerFont = "fonts/pixel_maz.ttf#14#2";
+			Uint32 timerTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+
+			Frame* timerFrame = sheetFrame->addFrame("game timer");
+			timerFrame->setSize(SDL_Rect{leftAlignX + 36, 90, 142, 26});
+			timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonArrows_00.png", "timer icon img");
+			auto timerImg = timerFrame->addImage(SDL_Rect{ 30, 0, 112, 26 }, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Timer_Backing_00.png", "timer bg img");
+			auto timerText = timerFrame->addField("timer text", 32);
+			timerText->setFont(timerFont);
+
+			SDL_Rect textPos = timerImg->pos;
+			textPos.x += 12;
+			timerText->setSize(textPos);
+			timerText->setVJustify(Field::justify_t::CENTER);
+			timerText->setText("00:92:30:89");
+			timerText->setColor(timerTextColor);
+		}
+
+		// skills button
+		{
+			const char* skillsFont = "fonts/pixel_maz.ttf#14#2";
+			Frame* skillsFrame = sheetFrame->addFrame("skills button");
+			skillsFrame->setSize(SDL_Rect{ leftAlignX + 14, 270, 186, 42 });
+			auto skillsImg = skillsFrame->addImage(SDL_Rect{0, 0, skillsFrame->getSize().w, skillsFrame->getSize().h},
+				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png", "skills button img");
+			auto skillsText = skillsFrame->addField("skills text", 32);
+			skillsText->setFont(skillsFont);
+			skillsText->setSize(skillsImg->pos);
+			skillsText->setVJustify(Field::justify_t::CENTER);
+			skillsText->setHJustify(Field::justify_t::CENTER);
+			skillsText->setText("Skills List");
+		}
+
+		Frame* characterFrame = sheetFrame->addFrame("character info");
+		const char* infoFont = "fonts/pixel_maz.ttf#14#2";
+		characterFrame->setSize(SDL_Rect{ leftAlignX, 150, bgWidth, 116});
+		const int infoTextHeight = 18;
+		Uint32 infoTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+		Uint32 classTextColor = SDL_MapRGBA(mainsurface->format, 74, 66, 207, 255);
+		{
+			SDL_Rect characterTextImgPos{ 16, 14, 182, 100 };
+			characterFrame->addImage(characterTextImgPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Text_Backing_00.png", "character info text img");
+			auto nameText = characterFrame->addField("character name text", 32);
+			nameText->setFont(infoFont);
+			nameText->setSize(SDL_Rect{ characterTextImgPos.x + 18, 
+				characterTextImgPos.y, 
+				146, 
+				infoTextHeight });
+			nameText->setText("Slartibartfast");
+			nameText->setVJustify(Field::justify_t::CENTER);
+			nameText->setHJustify(Field::justify_t::CENTER);
+			nameText->setColor(infoTextColor);
+
+			auto levelText = characterFrame->addField("character level text", 32);
+			levelText->setFont(infoFont);
+			levelText->setSize(SDL_Rect{ characterTextImgPos.x + 4, 
+				characterTextImgPos.y + 26, 
+				174, 
+				infoTextHeight });
+			levelText->setText("Level 237");
+			levelText->setVJustify(Field::justify_t::CENTER);
+			levelText->setColor(infoTextColor);
+
+			auto classText = characterFrame->addField("character class text", 32);
+			classText->setFont(infoFont);
+			classText->setSize(SDL_Rect{ characterTextImgPos.x + 4,
+				characterTextImgPos.y + 26,
+				174,
+				infoTextHeight });
+			classText->setText("Barbarian");
+			classText->setVJustify(Field::justify_t::CENTER);
+			classText->setHJustify(Field::justify_t::RIGHT);
+			classText->setColor(classTextColor);
+
+			auto floorText = characterFrame->addField("dungeon floor text", 32);
+			floorText->setFont(infoFont);
+			floorText->setSize(SDL_Rect{ characterTextImgPos.x + 18, 
+				characterTextImgPos.y + 52, 
+				146, 
+				infoTextHeight });
+			floorText->setText("Floor 27");
+			floorText->setVJustify(Field::justify_t::CENTER);
+			floorText->setHJustify(Field::justify_t::CENTER);
+			floorText->setColor(infoTextColor);
+
+			auto goldTitleText = characterFrame->addField("gold text title", 8);
+			goldTitleText->setFont(infoFont);
+			goldTitleText->setSize(SDL_Rect{ 58, 92, 52, 22 });
+			goldTitleText->setText("GOLD");
+			goldTitleText->setVJustify(Field::justify_t::CENTER);
+			goldTitleText->setColor(infoTextColor);
+
+			auto goldText = characterFrame->addField("gold text", 32);
+			goldText->setFont(infoFont);
+			goldText->setSize(SDL_Rect{ 110, 92, 70, 22 });
+			goldText->setText("270000");
+			goldText->setVJustify(Field::justify_t::CENTER);
+			goldText->setHJustify(Field::justify_t::CENTER);
+			goldText->setColor(infoTextColor);
+
+			auto goldImg = characterFrame->addImage(SDL_Rect{ 26, 88, 20, 28 }, 
+				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonMoney_00.png", "gold img");
+		}
+
+		{
+			Frame* statsFrame = sheetFrame->addFrame("stats");
+			statsFrame->setSize(SDL_Rect{ leftAlignX, 344, bgWidth, 192 }); // y is 2px above the STR icon, 2px below CHR icon
+			SDL_Rect iconPos{ 20, 4, 24, 24 };
+			const int headingLeftX = iconPos.x + iconPos.w + 10;
+			const int baseStatLeftX = headingLeftX + 32;
+			const int modifiedStatLeftX = baseStatLeftX + 64;
+			SDL_Rect textPos{ headingLeftX, iconPos.y, 40, iconPos.h };
+			Uint32 statTextColor = hudColors.characterSheetNeutral;
+
+			const char* statFont = "fonts/pixel_maz.ttf#14#2";
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_STR_00.png", "str icon");
+			{
+				auto textBase = statsFrame->addField("str text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("STR");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("str text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("-1");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("str text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("342");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_DEX_00.png", "dex icon");
+			{
+				auto textBase = statsFrame->addField("dex text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("DEX");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("dex text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("1");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("dex text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("2");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CON_00.png", "con icon");
+			{
+				auto textBase = statsFrame->addField("con text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("CON");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("con text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("0");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("con text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("-2");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_INT_00.png", "int icon");
+			{
+				auto textBase = statsFrame->addField("int text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("INT");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("int text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("3");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("int text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_PER_00.png", "per icon");
+			{
+				auto textBase = statsFrame->addField("per text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("PER");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("per text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("-400");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("per text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("-299");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CHA_00.png", "chr icon");
+			{
+				auto textBase = statsFrame->addField("chr text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("CHR");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("chr text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("2");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("chr text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("");
+				textStatModified->setColor(statTextColor);
+			}
+		}
+
+		{
+			Frame* attributesFrame = sheetFrame->addFrame("attributes");
+			attributesFrame->setSize(SDL_Rect{ leftAlignX, 550, bgWidth, 160 }); // y is 2px above the ATK icon, 2px below WGT icon
+			SDL_Rect iconPos{ 20, 4, 24, 24 };
+			const int headingLeftX = iconPos.x + iconPos.w + 10;
+			const int baseStatLeftX = headingLeftX + 44;
+			SDL_Rect textPos{ headingLeftX, iconPos.y, 80, iconPos.h };
+			Uint32 statTextColor = hudColors.characterSheetNeutral;
+
+			const char* attributeFont = "fonts/pixel_maz.ttf#14#2";
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ATT_00.png", "atk icon");
+			{
+				auto textBase = attributesFrame->addField("atk text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("ATK");
+				textBase->setColor(statTextColor);
+				auto textStat = attributesFrame->addField("atk text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("14");
+				textStat->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_AC_00.png", "ac icon");
+			{
+				auto textBase = attributesFrame->addField("ac text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("AC");
+				textBase->setColor(statTextColor);
+				auto textStat = attributesFrame->addField("ac text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("3");
+				textStat->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_RES_00.png", "res icon");
+			{
+				auto textBase = attributesFrame->addField("res text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("RES");
+				textBase->setColor(statTextColor);
+				auto textStat = attributesFrame->addField("res text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("100%");
+				textStat->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_REGEN_00.png", "regen icon");
+			{
+				auto textBase = attributesFrame->addField("regen text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("RGN");
+				textBase->setColor(statTextColor);
+
+				auto textDiv = attributesFrame->addField("regen text divider", 4);
+				textDiv->setVJustify(Field::justify_t::CENTER);
+				textDiv->setHJustify(Field::justify_t::CENTER);
+				textDiv->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textDiv->setSize(textPos);
+				textDiv->setText("/");
+				textDiv->setColor(statTextColor);
+
+				SDL_Rect hpmpTextPos = textPos;
+				const int middleX = (textPos.x + textPos.w / 2);
+				auto textRegenHP = attributesFrame->addField("regen text hp", 16);
+				textRegenHP->setVJustify(Field::justify_t::CENTER);
+				textRegenHP->setHJustify(Field::justify_t::RIGHT);
+				textRegenHP->setFont(attributeFont);
+				hpmpTextPos.x = middleX - 4 - hpmpTextPos.w;
+				textRegenHP->setSize(hpmpTextPos);
+				textRegenHP->setText("0.2");
+				textRegenHP->setColor(statTextColor);
+
+				auto textRegenMP = attributesFrame->addField("regen text mp", 16);
+				textRegenMP->setVJustify(Field::justify_t::CENTER);
+				textRegenMP->setHJustify(Field::justify_t::LEFT);
+				textRegenMP->setFont(attributeFont);
+				hpmpTextPos.x = middleX + 4;
+				textRegenMP->setSize(hpmpTextPos);
+				textRegenMP->setText("0.1");
+				textRegenMP->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_WGT_00.png", "weight icon");
+			{
+				auto textBase = attributesFrame->addField("weight text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("WGT");
+				textBase->setColor(statTextColor);
+				auto textStat = attributesFrame->addField("weight text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("120");
+				textStat->setColor(statTextColor);
+			}
+		}
+	}
+}
+
+void Player::CharacterSheet_t::processCharacterSheet()
+{
+	if ( !sheetFrame )
+	{
+		createCharacterSheet();
+	}
+
+	if ( !stats[player.playernum] || !players[player.playernum]->isLocalPlayer() )
+	{
+		sheetFrame->setDisabled(true);
+		return;
+	}
+
+	if ( players[player.playernum]->shootmode )
+	{
+		sheetFrame->setDisabled(true);
+		return;
+	}
+	sheetFrame->setDisabled(false);
+
+	updateGameTimer();
+	updateStats();
+	updateAttributes();
+	updateCharacterInfo();
+}
+
+void Player::CharacterSheet_t::updateGameTimer()
+{
+	auto timerText = sheetFrame->findFrame("game timer")->findField("timer text");
+	char buf[32];
+
+	Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
+	Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
+	Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
+	Uint32 day = ((completionTime / TICKS_PER_SECOND) / 60) / 60 / 24;
+	snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
+	timerText->setText(buf);
+}
+
+void Player::CharacterSheet_t::updateCharacterInfo()
+{
+	auto characterInfoFrame = sheetFrame->findFrame("character info");
+	char buf[32];
+	if ( auto name = characterInfoFrame->findField("character name text") )
+	{
+		name->setText(stats[player.playernum]->name);
+	}
+	if ( auto className = characterInfoFrame->findField("character class text") )
+	{
+		std::string classname = playerClassLangEntry(client_classes[player.playernum], player.playernum);
+		if ( !classname.empty() )
+		{
+			if ( classname[0] >= 'a' && classname[0] <= 'z' )
+			{
+				classname[0] = toupper(classname[0]);
+			}
+			className->setText(classname.c_str());
+		}
+	}
+	if ( auto charLevel = characterInfoFrame->findField("character level text") )
+	{
+		snprintf(buf, sizeof(buf), language[4051], stats[player.playernum]->LVL);
+		charLevel->setText(buf);
+	}
+	if ( auto floor = characterInfoFrame->findField("dungeon floor text") )
+	{
+		snprintf(buf, sizeof(buf), language[4052], currentlevel);
+		floor->setText(buf);
+	}
+	if ( auto gold = characterInfoFrame->findField("gold text") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->GOLD);
+		gold->setText(buf);
+	}
+}
+
+void Player::CharacterSheet_t::updateStats()
+{
+	auto statsFrame = sheetFrame->findFrame("stats");
+	char buf[32];
+
+	if ( auto field = statsFrame->findField("str text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->STR);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("str text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->STR )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->STR )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("dex text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->DEX);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("dex text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->DEX )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->DEX )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("con text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CON);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetCON(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("con text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->CON )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->CON )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("int text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->INT);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetINT(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("int text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->INT )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->INT )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("per text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->PER);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetPER(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("per text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->PER )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->PER )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("chr text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CHR);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetCHR(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("chr text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->CHR )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->CHR )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+}
+
+void Player::CharacterSheet_t::updateAttributes()
+{
+	auto attributesFrame = sheetFrame->findFrame("attributes");
+	char buf[32];
+
+	if ( auto field = attributesFrame->findField("atk text stat") )
+	{
+		Sint32 dummy[6];
+		snprintf(buf, sizeof(buf), "%d", displayAttackPower(player.playernum, dummy));
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+	}
+
+	if ( auto field = attributesFrame->findField("ac text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", AC(stats[player.playernum]));
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+	}
+
+	if ( auto field = attributesFrame->findField("res text stat") )
+	{
+		real_t resistance = 0.0;
+		if ( players[player.playernum]->entity )
+		{
+			players[player.playernum]->entity;
+			resistance = 100 - 100 / (players[player.playernum]->entity->getMagicResistance() + 1);
+		}
+		snprintf(buf, sizeof(buf), "%.f%%", resistance);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+		if ( resistance > 0.01 )
+		{
+			field->setColor(hudColors.characterSheetGreen);
+		}
+	}
+
+	if ( auto field = attributesFrame->findField("regen text hp") )
+	{
+		real_t regen = 0.0;
+		field->setColor(hudColors.characterSheetNeutral);
+		if ( players[player.playernum]->entity && stats[player.playernum]->HP > 0 )
+		{
+			regen = (static_cast<real_t>(players[player.playernum]->entity->getHealthRegenInterval(*stats[player.playernum])) / TICKS_PER_SECOND);
+			if ( stats[player.playernum]->type == SKELETON )
+			{
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					regen = HEAL_TIME * 4 / TICKS_PER_SECOND;
+				}
+			}
+			if ( regen < 0 )
+			{
+				regen = 0.0;
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					field->setColor(hudColors.characterSheetNeutral);
+				}
+				else
+				{
+					field->setColor(hudColors.characterSheetRed);
+				}
+			}
+			else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
+			{
+				field->setColor(hudColors.characterSheetGreen);
+			}
+		}
+		else
+		{
+			regen = HEAL_TIME / TICKS_PER_SECOND;
+		}
+
+		if ( regen > 0.01 )
+		{
+			real_t nominalRegen = HEAL_TIME / TICKS_PER_SECOND;
+			regen = nominalRegen / regen;
+		}
+		snprintf(buf, sizeof(buf), "%.1f", regen);
+		field->setText(buf);
+	}
+
+	if ( auto field = attributesFrame->findField("regen text mp") )
+	{
+		real_t regen = 0.0;
+		field->setColor(hudColors.characterSheetNeutral);
+		if ( players[player.playernum]->entity )
+		{
+			regen = (static_cast<real_t>(players[player.playernum]->entity->getManaRegenInterval(*stats[player.playernum])) / TICKS_PER_SECOND);
+			if ( stats[player.playernum]->type == AUTOMATON )
+			{
+				if ( stats[player.playernum]->HUNGER <= 300 )
+				{
+					regen /= 6; // degrade faster
+				}
+				else if ( stats[player.playernum]->HUNGER > 1200 )
+				{
+					if ( stats[player.playernum]->MP / static_cast<real_t>(std::max(1, stats[player.playernum]->MAXMP)) <= 0.5 )
+					{
+						regen /= 4; // increase faster at < 50% mana
+					}
+					else
+					{
+						regen /= 2; // increase less faster at > 50% mana
+					}
+				}
+				else if ( stats[player.playernum]->HUNGER > 300 )
+				{
+					// normal manaRegenInterval 300-1200 hunger.
+				}
+			}
+
+			if ( regen < 0.0 /*stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0*/ )
+			{
+				regen = 0.0;
+			}
+
+			if ( stats[player.playernum]->type == AUTOMATON )
+			{
+				if ( stats[player.playernum]->HUNGER <= 300 )
+				{
+					field->setColor(hudColors.characterSheetRed);
+				}
+				else if ( regen < static_cast<real_t>(players[player.playernum]->entity->getBaseManaRegen(*stats[player.playernum])) / TICKS_PER_SECOND )
+				{
+					field->setColor(hudColors.characterSheetGreen);
+				}
+			}
+			else if ( stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->appearance == 0 )
+			{
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					field->setColor(hudColors.characterSheetNeutral);
+				}
+				else
+				{
+					field->setColor(hudColors.characterSheetRed);
+				}
+			}
+			else if ( regen < static_cast<real_t>(players[player.playernum]->entity->getBaseManaRegen(*stats[player.playernum])) / TICKS_PER_SECOND )
+			{
+				field->setColor(hudColors.characterSheetGreen);
+			}
+		}
+		else
+		{
+			regen = MAGIC_REGEN_TIME / TICKS_PER_SECOND;
+		}
+
+		if ( regen > 0.01 )
+		{
+			real_t nominalRegen = MAGIC_REGEN_TIME / TICKS_PER_SECOND;
+			regen = nominalRegen / regen;
+		}
+		snprintf(buf, sizeof(buf), "%.1f", regen);
+		field->setText(buf);
+	}
+
+	if ( auto field = attributesFrame->findField("weight text stat") )
+	{
+		Sint32 weight = 0;
+		for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				weight += item->getWeight();
+			}
+		}
+		weight += stats[player.playernum]->GOLD / 100;
+		snprintf(buf, sizeof(buf), "%d", weight);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+	}
 }
 
 void Player::Hotbar_t::processHotbar()
@@ -1089,7 +2177,7 @@ void createInventoryTooltipFrame(const int player)
 		color, "images/ui/Inventory/tooltips/Hover_BR01.png", "tooltip bottom right");
 
 	const std::string headerFont = "fonts/pixelmix.ttf#14#2";
-	const std::string bodyFont = "fonts/pixelmix.ttf#12";
+	const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
 
 	auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
 	tooltipTextField->setText("Nothing");
@@ -1832,6 +2920,30 @@ void loadHUDSettingsJSON()
 							d["colors"]["itemmenu_option_img"]["g"].GetInt(),
 							d["colors"]["itemmenu_option_img"]["b"].GetInt(),
 							d["colors"]["itemmenu_option_img"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_neutral_text") )
+					{
+						hudColors.characterSheetNeutral = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["charsheet_neutral_text"]["r"].GetInt(),
+							d["colors"]["charsheet_neutral_text"]["g"].GetInt(),
+							d["colors"]["charsheet_neutral_text"]["b"].GetInt(),
+							d["colors"]["charsheet_neutral_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_positive_text") )
+					{
+						hudColors.characterSheetGreen = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["charsheet_positive_text"]["r"].GetInt(),
+							d["colors"]["charsheet_positive_text"]["g"].GetInt(),
+							d["colors"]["charsheet_positive_text"]["b"].GetInt(),
+							d["colors"]["charsheet_positive_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_negative_text") )
+					{
+						hudColors.characterSheetRed = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["charsheet_negative_text"]["r"].GetInt(),
+							d["colors"]["charsheet_negative_text"]["g"].GetInt(),
+							d["colors"]["charsheet_negative_text"]["b"].GetInt(),
+							d["colors"]["charsheet_negative_text"]["a"].GetInt());
 					}
 				}
 				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());

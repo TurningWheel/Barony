@@ -4128,7 +4128,7 @@ void ingameHud()
 			{
 				continue;
 			}
-			drawMinimap(player); // Draw the Minimap
+			//drawMinimap(player); // Draw the Minimap
 			//drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 		}
 	}
@@ -4137,7 +4137,9 @@ void ingameHud()
 
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
+		players[player]->messageZone.processChatbox();
 		players[player]->hud.processHUD();
+		players[player]->characterSheet.processCharacterSheet();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
@@ -4150,7 +4152,7 @@ void ingameHud()
 		{
 			continue;
 		}
-		drawSkillsSheet(player);
+		//drawSkillsSheet(player);
 		if ( !nohud )
 		{
 			drawStatusNew(player);
@@ -4163,7 +4165,7 @@ void ingameHud()
 		{
 			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 			{
-				updateCharacterSheet(player);
+				//updateCharacterSheet(player);
 				//updatePlayerInventory(player);
 				updateChestInventory(player);
 				GenericGUI[player].updateGUI();

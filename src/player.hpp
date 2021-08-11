@@ -895,6 +895,14 @@ public:
 		bool lock_right_sidebar = false;
 		int proficienciesPage = 0;
 		int attributespage = 0;
+
+		Frame* sheetFrame = nullptr;
+		void createCharacterSheet();
+		void processCharacterSheet();
+		void updateGameTimer();
+		void updateStats();
+		void updateAttributes();
+		void updateCharacterInfo();
 	} characterSheet;
 
 	class HUD_t
@@ -1070,6 +1078,9 @@ public:
 		static const int MESSAGE_FADE_RATE = 10;
 		TTF_Font* font = ttf16;
 		Uint32 old_sdl_ticks;
+		bool chatboxMovedResize = false;
+		SDL_Rect chatboxLeftAlignedPos;
+		SDL_Rect chatboxTopAlignedPos;
 		Player& player;
 	public:
 		static const int ADD_MESSAGE_BUFFER_LENGTH = 256;
@@ -1091,6 +1102,11 @@ public:
 		int getMessageZoneStartY();
 		//Maximum number of messages displayed on screen at once before the oldest message is automatically deleted.
 		int getMaxTotalLines();
+
+		static const int MESSAGE_MAX_ENTRIES = 20;
+		Frame* chatFrame = nullptr;
+		void createChatbox();
+		void processChatbox();
 
 		int fontSize() { return getHeightOfFont(font); }
 	} messageZone;
