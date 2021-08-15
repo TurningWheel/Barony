@@ -1056,10 +1056,161 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	}
 	sheetFrame->setDisabled(false);
 
+	player.GUI.handleCharacterSheetMovement();
+
 	updateGameTimer();
 	updateStats();
 	updateAttributes();
 	updateCharacterInfo();
+}
+
+void Player::CharacterSheet_t::selectElement(SheetElements element, bool moveCursor)
+{
+	selectedElement = element;
+
+	Frame* elementFrame = nullptr;
+	Frame::image_t* img = nullptr;
+	Field* elementField = nullptr;
+	switch ( element )
+	{
+		case SHEET_OPEN_LOG:
+			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
+			{
+				img = elementFrame->findImage("log button img");
+			}
+			break;
+		case SHEET_OPEN_MAP:
+			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
+			{
+				img = elementFrame->findImage("map button img");
+			}
+			break;
+		case SHEET_SKILL_LIST:
+			elementFrame = sheetFrame->findFrame("skills button");
+			break;
+		case SHEET_TIMER:
+			elementFrame = sheetFrame->findFrame("game timer");
+			break;
+		case SHEET_GOLD:
+			if ( elementFrame = sheetFrame->findFrame("character info") )
+			{
+				elementField = elementFrame->findField("gold text");
+			}
+			break;
+		case SHEET_DUNGEON_FLOOR:
+			if ( elementFrame = sheetFrame->findFrame("character info") )
+			{
+				elementField = elementFrame->findField("dungeon floor text");
+			}
+			break;
+		case SHEET_CHAR_CLASS:
+			if ( elementFrame = sheetFrame->findFrame("character info") )
+			{
+				elementField = elementFrame->findField("character class text");
+			}
+			break;
+		case SHEET_CHAR_RACE_SEX:
+			if ( elementFrame = sheetFrame->findFrame("character info") )
+			{
+				elementField = elementFrame->findField("character level text");
+			}
+			break;
+		case SHEET_STR:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("str text stat");
+			}
+			break;
+		case SHEET_DEX:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("dex text stat");
+			}
+			break;
+		case SHEET_CON:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("con text stat");
+			}
+			break;
+		case SHEET_INT:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("int text stat");
+			}
+			break;
+		case SHEET_PER:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("per text stat");
+			}
+			break;
+		case SHEET_CHR:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("chr text stat");
+			}
+			break;
+		case SHEET_ATK:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("atk text stat");
+			}
+			break;
+		case SHEET_AC:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("ac text stat");
+			}
+			break;
+		case SHEET_POW:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("atk text stat");
+			}
+			break;
+		case SHEET_RES:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("res text stat");
+			}
+			break;
+		case SHEET_RGN:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("regen text title");
+			}
+			break;
+		case SHEET_WGT:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("weight text stat");
+			}
+			break;
+		default:
+			elementFrame = nullptr;
+			break;
+	}
+
+	SDL_Rect pos{ 0, 0, 0, 0 };
+	if ( elementFrame && moveCursor )
+	{
+		elementFrame->warpMouseToFrame(player.playernum, (Inputs::SET_CONTROLLER));
+		pos = elementFrame->getAbsoluteSize();
+		if ( img )
+		{
+			pos.x += img->pos.x;
+			pos.y += img->pos.y;
+			pos.w = img->pos.w;
+			pos.h = img->pos.h;
+		}
+		if ( elementField )
+		{
+			pos = elementField->getAbsoluteSize();
+		}
+		player.hud.setCursorDisabled(false);
+		player.hud.updateCursorAnimation(pos.x, pos.y, pos.w, pos.h, false);
+	}
 }
 
 void Player::CharacterSheet_t::updateGameTimer()
@@ -3118,6 +3269,7 @@ void createPlayerInventory(const int player)
 			color, "images/ui/Inventory/SelectorGrey_BR.png", "inventory old cursor bottomright");
 
 		auto cursorFrame = frame->addFrame("inventory selected item cursor");
+		players[player]->inventoryUI.selectedItemCursorFrame = cursorFrame;
 		cursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		cursorFrame->setDisabled(true);
 		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
@@ -3154,11 +3306,11 @@ void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int 
 {
 	if ( frame )
 	{
-		if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+		if ( selectedItemCursorFrame )
 		{
 			if ( usingMouse )
 			{
-				selectedSlotCursor->setSize(
+				selectedItemCursorFrame->setSize(
 					SDL_Rect{
 					destx - cursor.cursorToSlotOffset,
 					desty - cursor.cursorToSlotOffset,
@@ -3173,12 +3325,12 @@ void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int 
 			}
 			else if ( cursor.animateSetpointX != destx || cursor.animateSetpointY != desty )
 			{
-				SDL_Rect size = selectedSlotCursor->getSize();
+				SDL_Rect size = selectedItemCursorFrame->getSize();
 				cursor.animateStartX = size.x;
 				cursor.animateStartY = size.y;
 				size.w = width + 2 * (cursor.cursorToSlotOffset + 1);
 				size.h = height + 2 * (cursor.cursorToSlotOffset + 1);
-				selectedSlotCursor->setSize(size);
+				selectedItemCursorFrame->setSize(size);
 				cursor.animateSetpointX = destx;
 				cursor.animateSetpointY = desty;
 				cursor.animateX = 0.0;
@@ -3701,9 +3853,9 @@ void Player::Inventory_t::updateSelectedItemAnimation()
 		{
 			selectedSlotFrame->setDisabled(true);
 		}
-		if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+		if ( selectedItemCursorFrame )
 		{
-			selectedSlotCursor->setDisabled(true);
+			selectedItemCursorFrame->setDisabled(true);
 		}
 	}
 	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
@@ -3919,9 +4071,9 @@ void Player::Inventory_t::updateCursor()
 		}
 	}
 
-	if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
+	if ( selectedItemCursorFrame )
 	{
-		SDL_Rect cursorSize = selectedSlotCursor->getSize();
+		SDL_Rect cursorSize = selectedItemCursorFrame->getSize();
 
 		const int smallOffset = 2;
 		const int largeOffset = 4;
@@ -3941,30 +4093,30 @@ void Player::Inventory_t::updateCursor()
 		}
 
 		Uint8 r, g, b, a;
-		if ( auto tl = selectedSlotCursor->findImage("inventory selected cursor topleft") )
+		if ( auto tl = selectedItemCursorFrame->findImage("inventory selected cursor topleft") )
 		{
 			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
 			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
 			a = selectedCursorOpacity;
 			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 		}
-		if ( auto tr = selectedSlotCursor->findImage("inventory selected cursor topright") )
+		if ( auto tr = selectedItemCursorFrame->findImage("inventory selected cursor topright") )
 		{
 			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
 			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 		}
-		if ( auto bl = selectedSlotCursor->findImage("inventory selected cursor bottomleft") )
+		if ( auto bl = selectedItemCursorFrame->findImage("inventory selected cursor bottomleft") )
 		{
 			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
 			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 		}
-		if ( auto br = selectedSlotCursor->findImage("inventory selected cursor bottomright") )
+		if ( auto br = selectedItemCursorFrame->findImage("inventory selected cursor bottomright") )
 		{
 			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
 			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 		}
 
-		SDL_Rect currentPos = selectedSlotCursor->getSize();
+		SDL_Rect currentPos = selectedItemCursorFrame->getSize();
 		const int offsetPosition = cursor.cursorToSlotOffset;
 		if ( cursor.animateSetpointX - offsetPosition != currentPos.x
 			|| cursor.animateSetpointY - offsetPosition != currentPos.y )
@@ -3982,8 +4134,153 @@ void Player::Inventory_t::updateCursor()
 
 			currentPos.x = cursor.animateStartX + destX * cursor.animateX;
 			currentPos.y = cursor.animateStartY + destY * cursor.animateY;
-			selectedSlotCursor->setSize(currentPos);
+			selectedItemCursorFrame->setSize(currentPos);
 			//messagePlayer(0, "%.2f | %.2f", inventory_t.selectedSlotAnimateX, setpointDiffX);
+		}
+	}
+}
+
+void Player::HUD_t::updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse)
+{
+	if ( cursorFrame )
+	{
+		if ( auto hudCursor = cursorFrame->findFrame("hud cursor") )
+		{
+			if ( usingMouse )
+			{
+				hudCursor->setSize(
+					SDL_Rect{
+					destx - cursor.cursorToSlotOffset,
+					desty - cursor.cursorToSlotOffset,
+					width + 2 * (cursor.cursorToSlotOffset + 1),
+					height + 2 * (cursor.cursorToSlotOffset + 1)
+				}
+				);
+				cursor.animateSetpointX = destx;
+				cursor.animateSetpointY = desty;
+				cursor.animateStartX = destx;
+				cursor.animateStartY = desty;
+			}
+			else if ( cursor.animateSetpointX != destx || cursor.animateSetpointY != desty )
+			{
+				SDL_Rect size = hudCursor->getSize();
+				cursor.animateStartX = size.x;
+				cursor.animateStartY = size.y;
+				size.w = width + 2 * (cursor.cursorToSlotOffset + 1);
+				size.h = height + 2 * (cursor.cursorToSlotOffset + 1);
+				hudCursor->setSize(size);
+				cursor.animateSetpointX = destx;
+				cursor.animateSetpointY = desty;
+				cursor.animateX = 0.0;
+				cursor.animateY = 0.0;
+				cursor.lastUpdateTick = ticks;
+			}
+		}
+	}
+}
+
+void Player::HUD_t::updateCursor()
+{
+	if ( !cursorFrame )
+	{
+		char name[32];
+		snprintf(name, sizeof(name), "player hud cursor %d", player.playernum);
+		cursorFrame = gui->addFrame(name);
+		cursorFrame->setHollow(true);
+		cursorFrame->setBorder(0);
+		cursorFrame->setOwner(player.playernum);
+
+		auto cursor = cursorFrame->addFrame("hud cursor");
+		cursor->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
+		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TL.png", "hud cursor topleft");
+		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TR.png", "hud cursor topright");
+		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BL.png", "hud cursor bottomleft");
+		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BR.png", "hud cursor bottomright");
+	}
+
+	cursorFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
+		players[player.playernum]->camera_y1(),
+		Frame::virtualScreenX,
+		Frame::virtualScreenY });
+
+	if ( !players[player.playernum]->isLocalPlayer() || players[player.playernum]->shootmode || players[player.playernum]->GUI.bActiveModuleUsesInventory() )
+	{
+		// hide
+		cursorFrame->setDisabled(true);
+	}
+	else
+	{
+		cursorFrame->setDisabled(false);
+	}
+
+	if ( auto hudCursor = cursorFrame->findFrame("hud cursor") )
+	{
+		SDL_Rect cursorSize = hudCursor->getSize();
+		const int smallOffset = 2;
+		const int largeOffset = 4;
+
+		int offset = ((ticks - cursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			//if ( inputs.getUIInteraction(player.playernum)->selectedItem
+			//	|| inputs.getUIInteraction(player.playernum)->itemMenuOpen )
+			//{
+			//	// animate cursor
+			//}
+			//else
+			{
+				offset = smallOffset; // don't animate while mouse normal hovering
+			}
+		}
+
+		Uint8 r, g, b, a;
+		if ( auto tl = hudCursor->findImage("hud cursor topleft") )
+		{
+			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+			a = selectedCursorOpacity;
+			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto tr = hudCursor->findImage("hud cursor topright") )
+		{
+			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto bl = hudCursor->findImage("hud cursor bottomleft") )
+		{
+			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto br = hudCursor->findImage("hud cursor bottomright") )
+		{
+			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+
+		SDL_Rect currentPos = hudCursor->getSize();
+		const int offsetPosition = cursor.cursorToSlotOffset;
+		if ( cursor.animateSetpointX - offsetPosition != currentPos.x
+			|| cursor.animateSetpointY - offsetPosition != currentPos.y )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
+			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
+			cursor.animateX += setpointDiffX;
+			cursor.animateY += setpointDiffY;
+			cursor.animateX = std::min(1.0, cursor.animateX);
+			cursor.animateY = std::min(1.0, cursor.animateY);
+
+			int destX = cursor.animateSetpointX - cursor.animateStartX - offsetPosition;
+			int destY = cursor.animateSetpointY - cursor.animateStartY - offsetPosition;
+
+			currentPos.x = cursor.animateStartX + destX * cursor.animateX;
+			currentPos.y = cursor.animateStartY + destY * cursor.animateY;
+			hudCursor->setSize(currentPos);
 		}
 	}
 }
@@ -4815,7 +5112,8 @@ void Player::Hotbar_t::updateHotbar()
 		if ( current_hotbar == num )
 		{
 			bool showHighlightedSlot = true;
-			if ( !player.hotbar.hotbarHasFocus && player.inventoryUI.frame && !player.inventoryUI.frame->isDisabled() )
+			if ( players[player.playernum]->GUI.activeModule != Player::GUI_t::MODULE_HOTBAR
+				&& player.inventoryUI.frame && !player.inventoryUI.frame->isDisabled() )
 			{
 				// if inventory visible, don't show selection if navigating within inventory
 				showHighlightedSlot = false;
@@ -4869,9 +5167,9 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						if ( !player.shootmode )
 						{
-							if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
+							if ( players[player.playernum]->inventoryUI.selectedItemCursorFrame )
 							{
-								selectedSlotCursor->setDisabled(false);
+								players[player.playernum]->inventoryUI.selectedItemCursorFrame->setDisabled(false);
 								player.inventoryUI.updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize(), getSlotSize(), 
 									inputs.getVirtualMouse(player.playernum)->draw_cursor);
 							}
@@ -4932,71 +5230,6 @@ Frame* Player::Hotbar_t::getHotbarSlotFrame(const int hotbarSlot)
 	char slotname[32];
 	snprintf(slotname, sizeof(slotname), "hotbar slot %d", hotbarSlot);
 	return hotbarFrame->findFrame(slotname);
-}
-
-void doNewCharacterSheet(int player)
-{
-#ifdef NINTENDO
-    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
-    static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
-#else // NINTENDO
-    static const char* bigfont = "fonts/pixelmix.ttf#18";
-    static const char* smallfont = "fonts/pixel_maz.ttf#14";
-#endif // NINTENDO
-
-	return;
-
-	const int w = 200;
-	char name[32];
-	snprintf(name, sizeof(name), "player charsheet %d", player);
-    Frame* frame = gui->findFrame(name);
-    if (!frame) {
-        frame = gui->addFrame(name);
-        frame->setSize(SDL_Rect{
-            players[player]->camera_x2() - w,
-            players[player]->camera_y1(),
-            w, players[player]->camera_height()});
-        frame->setColor(makeColor(154, 154, 154, 255));
-
-        // map button
-        {
-            Button* b = frame->addButton("minimap button");
-            b->setFont(smallfont);
-            b->setText("Open Map");
-            b->setSize(SDL_Rect{0, 8, frame->getSize().w, 40});
-            b->setBorder(2);
-            b->setBorderColor(makeColor(128, 128, 128, 255));
-            b->setColor(makeColor(192, 192, 192, 255));
-            b->setTextColor(makeColor(255, 255, 255, 255));
-        }
-
-        // log button
-        {
-            Button* b = frame->addButton("log button");
-            b->setFont(smallfont);
-            b->setText("Open Log");
-            b->setSize(SDL_Rect{0, 56, frame->getSize().w, 40});
-            b->setBorder(2);
-            b->setBorderColor(makeColor(128, 128, 128, 255));
-            b->setColor(makeColor(192, 192, 192, 255));
-            b->setTextColor(makeColor(255, 255, 255, 255));
-        }
-
-        // game timer
-        {
-
-        }
-
-        // 
-        {
-        }
-    } else {
-        frame->setDisabled(players[player]->shootmode);
-		frame->setSize(SDL_Rect{
-			players[player]->camera_x2() - w,
-			players[player]->camera_y1(),
-			w, players[player]->camera_height() });
-    }
 }
 
 static Uint32 gui_ticks = 0u;

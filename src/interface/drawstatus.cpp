@@ -363,21 +363,6 @@ void warpMouseToSelectedHotbarSlot(const int player)
 		hotbarSlotFrame->warpMouseToFrame(player, (Inputs::SET_CONTROLLER));
 		return;
 	}
-
-	// TODO UI: CLEAN UP
-	//SDL_Rect pos;
-	//const int hotbarSlotSize = players[player]->hotbar.getSlotSize();
-	//pos.x = players[player]->hotbar.getStartX() + (players[player]->hotbar.current_hotbar * hotbarSlotSize) + (hotbarSlotSize / 2);
-	//pos.y = players[player]->statusBarUI.getStartY() - (hotbarSlotSize / 2);
-	//
-	//if ( players[player]->hotbar.useHotbarFaceMenu )
-	//{
-	//	pos.x = players[player]->hotbar.faceButtonPositions[players[player]->hotbar.current_hotbar].x + (hotbarSlotSize / 2);
-	//	pos.y = players[player]->hotbar.faceButtonPositions[players[player]->hotbar.current_hotbar].y + (hotbarSlotSize / 2);
-	//}
-	//
-	//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-	//inputs.warpMouse(player, pos.x, pos.y, flags);
 }
 
 void drawHPMPBars(int player)

@@ -289,12 +289,6 @@ public:
 	float y_forceMaxStrafeThreshold = 0.7;
 
 	/*
-	 * Uses dpad to move the cursor around the inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleInventoryMovement(const int player);
-
-	/*
 	 * Uses dpad to move the cursor around a chest's inventory and select items.
 	 * Returns true if moved.
 	 */
@@ -657,6 +651,37 @@ public:
 	int inventory_mode = INVENTORY_MODE_ITEM;
 	int gui_mode = GUI_MODE_NONE;
 
+	class GUI_t
+	{
+		Player& player;
+	public:
+		GUI_t(Player& p) :
+			player(p)
+		{};
+		~GUI_t() {};
+		enum GUIModules
+		{
+			MODULE_NONE,
+			MODULE_INVENTORY,
+			MODULE_SHOP,
+			MODULE_CHEST,
+			MODULE_REMOVECURSE,
+			MODULE_IDENTIFY,
+			MODULE_TINKERING,
+			MODULE_FOLLOWERMENU,
+			MODULE_CHARACTERSHEET,
+			MODULE_SKILLS_LIST,
+			MODULE_BOOK_VIEW,
+			MODULE_HOTBAR
+		};
+		GUIModules activeModule = MODULE_NONE;
+		void activateModule(GUIModules module);
+		bool warpControllerToModule(bool moveCursorInstantly);
+		bool bActiveModuleUsesInventory();
+		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
+		bool handleInventoryMovement(); // controller movement for hotbar/inventory
+	} GUI;
+
 	class Inventory_t
 	{
 		int sizex = 0;
@@ -671,6 +696,7 @@ public:
 		Frame* tooltipFrame = nullptr;
 		Frame* interactFrame = nullptr;
 		Frame* tooltipPromptFrame = nullptr;
+		Frame* selectedItemCursorFrame = nullptr;
 		std::unordered_map<int, Frame*> slotFrames;
 
 		struct Cursor_t
@@ -896,7 +922,35 @@ public:
 		int proficienciesPage = 0;
 		int attributespage = 0;
 
+		enum SheetElements
+		{
+			SHEET_UNSELECTED,
+			SHEET_OPEN_LOG,
+			SHEET_OPEN_MAP,
+			SHEET_TIMER,
+			SHEET_GOLD,
+			SHEET_DUNGEON_FLOOR,
+			SHEET_CHAR_CLASS,
+			SHEET_CHAR_RACE_SEX,
+			SHEET_SKILL_LIST,
+			SHEET_STR,
+			SHEET_DEX,
+			SHEET_CON,
+			SHEET_INT,
+			SHEET_PER,
+			SHEET_CHR,
+			SHEET_ATK,
+			SHEET_AC,
+			SHEET_POW,
+			SHEET_RES,
+			SHEET_RGN,
+			SHEET_WGT,
+			SHEET_ENUM_END
+		};
+
 		Frame* sheetFrame = nullptr;
+		SheetElements selectedElement = SHEET_UNSELECTED;
+		void selectElement(SheetElements element, bool moveCursor = false);
 		void createCharacterSheet();
 		void processCharacterSheet();
 		void updateGameTimer();
@@ -913,6 +967,7 @@ public:
 		Frame* xpFrame = nullptr;
 		Frame* hpFrame = nullptr;
 		Frame* mpFrame = nullptr;
+		Frame* cursorFrame = nullptr;
 
 		Entity* weapon = nullptr;
 		Entity* arm = nullptr;
@@ -940,6 +995,18 @@ public:
 		OPENAL_SOUND* bowDrawingSoundChannel = NULL;
 		ALboolean bowDrawingSoundPlaying = 0;
 #endif
+		struct Cursor_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+			int animateSetpointX = 0;
+			int animateSetpointY = 0;
+			int animateStartX = 0;
+			int animateStartY = 0;
+			Uint32 lastUpdateTick = 0;
+			const int cursorToSlotOffset = 7;
+		};
+		Cursor_t cursor;
 
 		enum AnimateStates : int {
 			ANIMATE_NONE,
@@ -996,6 +1063,9 @@ public:
 		void updateMPBar();
 		void resetBars();
 		void updateFrameTooltip(Item* item, const int x, const int y);
+		void updateCursor();
+		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
+		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
 	} hud;
 
 	class Magic_t
@@ -1289,7 +1359,7 @@ public:
 			faceButtonTopYPosition = yres;
 			swapHotbarOnShapeshift = 0;
 			current_hotbar = 0;
-			hotbarHasFocus = false;
+			//hotbarHasFocus = false;
 			magicBoomerangHotbarSlot = -1;
 			hotbarTooltipLastGameTick = 0;
 			for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
@@ -1326,7 +1396,7 @@ public:
 				slot = 0;
 			}
 			current_hotbar = slot;
-			hotbarHasFocus = true;
+			player.GUI.activateModule(GUI_t::MODULE_HOTBAR);
 		}
 		void initFaceButtonHotbar();
 		void drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos);

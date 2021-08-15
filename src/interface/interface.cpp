@@ -1576,6 +1576,92 @@ Sint8* inputPressedForPlayer(int player, Uint32 scancode)
 	}
 }
 
+bool Player::GUI_t::bActiveModuleUsesInventory()
+{
+	switch ( activeModule )
+	{
+		case MODULE_INVENTORY:
+		case MODULE_HOTBAR:
+		case MODULE_SHOP:
+		case MODULE_CHEST:
+		case MODULE_REMOVECURSE:
+		case MODULE_IDENTIFY:
+		case MODULE_TINKERING:
+			return true;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
+{
+	bool warped = false;
+	if ( auto vmouse = inputs.getVirtualMouse(player.playernum) )
+	{
+		if ( !vmouse->lastMovementFromController )
+		{
+			return false;
+		}
+		vmouse->draw_cursor = false;
+	}
+
+	if ( activeModule == MODULE_INVENTORY )
+	{
+		auto& inventoryUI = player.inventoryUI;
+		warpMouseToSelectedInventorySlot(player.playernum);
+
+		if ( auto slot = inventoryUI.getInventorySlotFrame(inventoryUI.getSelectedSlotX(), inventoryUI.getSelectedSlotY()) )
+		{
+			SDL_Rect pos = slot->getAbsoluteSize();
+			inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+				inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+		}
+		return true;
+	}
+	else if ( activeModule == MODULE_HOTBAR )
+	{
+		warpMouseToSelectedHotbarSlot(player.playernum);
+		return true;
+	}
+	else if ( activeModule == MODULE_CHARACTERSHEET )
+	{
+		player.characterSheet.selectElement(player.characterSheet.selectedElement, true);
+		return true;
+	}
+	return warped;
+}
+
+void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
+{
+	GUIModules oldModule = activeModule;
+	activeModule = module;
+
+	if ( oldModule != activeModule )
+	{
+		Frame* hudCursor = nullptr;
+		if ( player.hud.cursorFrame )
+		{
+			hudCursor = player.hud.cursorFrame->findFrame("hud cursor");
+		}
+		if ( hudCursor && player.inventoryUI.selectedItemCursorFrame )
+		{
+			if ( (oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR)
+				&& !(activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR) )
+			{
+				SDL_Rect size = player.inventoryUI.selectedItemCursorFrame->getSize();
+				player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
+			}
+			else if ( (activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR)
+				&& !(oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR) )
+			{
+				SDL_Rect size = hudCursor->getSize();
+				player.inventoryUI.updateSelectedSlotAnimation(size.x, size.y, size.w, size.h, true);
+			}
+		}
+	}
+}
+
 void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMode)
 {
 	if ( !inputs.bPlayerIsControllable(playernum) )
@@ -1590,15 +1676,13 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 		FollowerMenu[playernum].closeFollowerMenuGUI();
 	}
 
-	bool warpMouseToInventorySlot = false;
-	if ( inputs.hasController(playernum) 
-		&& gui_mode == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE
-		&& !FollowerMenu[playernum].followerToCommand )
-	{
-		warpMouseToInventorySlot = true;
-	}
-
+	int oldgui = gui_mode;
 	gui_mode = whichGUIMode;
+	/*if ( oldgui == GUI_MODE_NONE && gui_mode == GUI_MODE_INVENTORY )
+	{
+	//	GUI.activateModule(GUI_t::MODULE_INVENTORY);
+	}*/
+	GUI.activateModule(GUI_t::MODULE_INVENTORY);
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 	inputs.getUIInteraction(playernum)->toggleclick = false;
 
@@ -1607,40 +1691,35 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
 
 	bool warped = false;
+	bool warpMouseToInventorySlot = false;
+	if ( inputs.hasController(playernum)
+		&& oldgui == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE
+		&& GUI.activeModule == GUI_t::MODULE_INVENTORY
+		&& !FollowerMenu[playernum].followerToCommand )
+	{
+		warpMouseToInventorySlot = true;
+	}
 	if ( warpMouseToInventorySlot )
 	{
 		// hide cursor, select an inventory slot and disable hotbar focus.
-		if ( auto vmouse = inputs.getVirtualMouse(playernum) )
+		int x = inventoryUI.getSelectedSlotX();
+		int y = inventoryUI.getSelectedSlotY();
+		if ( inventoryUI.selectedSlotInPaperDoll() )
 		{
-			if ( vmouse->lastMovementFromController )
+			if ( x == Inventory_t::DOLL_COLUMN_LEFT )
 			{
-				vmouse->draw_cursor = false;
-				hotbar.hotbarHasFocus = false;
-				warped = true;
-				int x = inventoryUI.getSelectedSlotX();
-				int y = inventoryUI.getSelectedSlotY();
-				if ( inventoryUI.selectedSlotInPaperDoll() )
-				{
-					if ( x == Inventory_t::DOLL_COLUMN_LEFT )
-					{
-						x = 0; // warp top left
-					}
-					else
-					{
-						x = inventoryUI.getSizeX() - 1; // warp top right
-					}
-					y = 0;
-					inventoryUI.selectSlot(x, y);
-				}
-				warpMouseToSelectedInventorySlot(playernum);
-
-				if ( auto slot = inventoryUI.getInventorySlotFrame(x, y) )
-				{
-					SDL_Rect pos = slot->getAbsoluteSize();
-					inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y, 
-						inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), true); // instant update slot cursor
-				}
+				x = 0; // warp top left
 			}
+			else
+			{
+				x = inventoryUI.getSizeX() - 1; // warp top right
+			}
+			y = 0;
+			inventoryUI.selectSlot(x, y);
+		}
+		if ( GUI.warpControllerToModule(true) )
+		{
+			warped = true;
 		}
 	}
 
@@ -1649,6 +1728,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 		inputs.warpMouse(playernum, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2), flags);
 	}
 
+	// TODO UI: CLEAN UP
 	//if ( inputs.bPlayerUsingKeyboardControl(playernum) )
 	//{
 	//	SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -1676,7 +1756,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	//	mouse->oy = mouse->y;
 	//}
 	
-	players[playernum]->characterSheet.attributespage = 0;
+	//players[playernum]->characterSheet.attributespage = 0;
 	//proficienciesPage = 0;
 }
 

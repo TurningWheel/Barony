@@ -792,41 +792,125 @@ const bool hotbarGamepadControlEnabled(const int player)
 		&& !GenericGUI[player].isGUIOpen());
 }
 
-bool GameController::handleInventoryMovement(const int player)
+bool Player::GUI_t::handleCharacterSheetMovement()
 {
-	bool dpad_moved = false;
-
-	if ( inputs.getUIInteraction(player)->itemMenuOpen )
+	if ( activeModule != MODULE_CHARACTERSHEET )
 	{
 		return false;
 	}
+	bool dpad_moved = false;
+	int player = this->player.playernum;
 
+	/*if ( Input::inputs[player].binaryToggle("InventoryMoveLeft")
+		|| Input::inputs[player].analogToggle("InventoryMoveLeftAnalog") )
+	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
+		Input::inputs[player].consumeAnalogToggle("InventoryMoveLeftAnalog");
+
+		dpad_moved = true;
+	}
+
+	if ( Input::inputs[player].binaryToggle("InventoryMoveRight")
+		|| Input::inputs[player].analogToggle("InventoryMoveRightAnalog") )
+	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
+		Input::inputs[player].consumeAnalogToggle("InventoryMoveRightAnalog");
+
+		dpad_moved = true;
+	}*/
+
+	auto& characterSheet_t = players[player]->characterSheet;
+	int currentElement = characterSheet_t.selectedElement;
+
+	if ( Input::inputs[player].binaryToggle("InventoryMoveUp")
+		|| Input::inputs[player].analogToggle("InventoryMoveUpAnalog") )
+	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
+		Input::inputs[player].consumeAnalogToggle("InventoryMoveUpAnalog");
+
+		currentElement = currentElement - 1;
+		if ( currentElement <= Player::CharacterSheet_t::SHEET_UNSELECTED )
+		{
+			currentElement = Player::CharacterSheet_t::SHEET_ENUM_END - 1;
+		}
+		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement);
+		dpad_moved = true;
+	}
+
+	if ( Input::inputs[player].binaryToggle("InventoryMoveDown")
+		|| Input::inputs[player].analogToggle("InventoryMoveDownAnalog") )
+	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
+		Input::inputs[player].consumeAnalogToggle("InventoryMoveDownAnalog");
+
+		currentElement = currentElement + 1;
+		if ( currentElement >= Player::CharacterSheet_t::SHEET_ENUM_END )
+		{
+			currentElement = Player::CharacterSheet_t::SHEET_UNSELECTED + 1;
+		}
+		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement);
+		dpad_moved = true;
+	}
+
+	if ( dpad_moved )
+	{
+		dpad_moved = false;
+		warpControllerToModule(false);
+		inputs.getVirtualMouse(player)->draw_cursor = false;
+		return true;
+	}
+	return false;
+}
+
+bool Player::GUI_t::handleInventoryMovement()
+{
+	bool dpad_moved = false;
+
+	if ( inputs.getUIInteraction(player.playernum)->itemMenuOpen )
+	{
+		return false;
+	}
+	int player = this->player.playernum;
 	auto& hotbar_t = players[player]->hotbar;
 
 	if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
 	{
-		hotbar_t.hotbarHasFocus = !hotbar_t.hotbarHasFocus;
-		if ( hotbar_t.hotbarHasFocus )
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 		{
-			warpMouseToSelectedHotbarSlot(player);
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
+			players[player]->GUI.warpControllerToModule(false);
 		}
-		else
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 		{
-			warpMouseToSelectedInventorySlot(player);
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+			players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP);
+			players[player]->GUI.warpControllerToModule(false);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+			players[player]->GUI.warpControllerToModule(false);
+		}
+
 		inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
 		inputs.getVirtualMouse(player)->draw_cursor = false;
 	}
 
-	if ( hotbar_t.hotbarHasFocus && !hotbarGamepadControlEnabled(player) )
+	if ( !bActiveModuleUsesInventory() )
 	{
-		hotbar_t.hotbarHasFocus = false;
+		return false;
 	}
+
+	//if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !hotbarGamepadControlEnabled(player) )
+	//{
+	//	players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+	//}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") 
 		|| Input::inputs[player].analogToggle("InventoryMoveLeftAnalog") )
 	{
-		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+			&& hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
 
@@ -864,7 +948,8 @@ bool GameController::handleInventoryMovement(const int player)
 	if ( Input::inputs[player].binaryToggle("InventoryMoveRight")
 		|| Input::inputs[player].analogToggle("InventoryMoveRightAnalog") )
 	{
-		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+			&& hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
 			
@@ -901,10 +986,11 @@ bool GameController::handleInventoryMovement(const int player)
 	if ( Input::inputs[player].binaryToggle("InventoryMoveUp")
 		|| Input::inputs[player].analogToggle("InventoryMoveUpAnalog") )
 	{
-		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+			&& hotbarGamepadControlEnabled(player) )
 		{
 			//Warp back to top of inventory.
-			hotbar_t.hotbarHasFocus = false;
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
 			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1, 0, 0);
 			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6) )
@@ -934,10 +1020,11 @@ bool GameController::handleInventoryMovement(const int player)
 	if ( Input::inputs[player].binaryToggle("InventoryMoveDown")
 		|| Input::inputs[player].analogToggle("InventoryMoveDownAnalog") )
 	{
-		if ( hotbar_t.hotbarHasFocus && hotbarGamepadControlEnabled(player) )
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+			&& hotbarGamepadControlEnabled(player) )
 		{
 			//Warp back to bottom of inventory.
-			hotbar_t.hotbarHasFocus = false;
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
 			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0, 0, 0);
 			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5) )
@@ -1515,6 +1602,7 @@ void GameController::stopRumble()
 }
 
 Player::Player(int in_playernum, bool in_local_host) : 
+	GUI(*this),
 	inventoryUI(*this),
 	statusBarUI(*this),
 	hud(*this),
@@ -3166,121 +3254,7 @@ Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::getSlotForItem(const
 void Player::PaperDoll_t::drawSlots()
 {
 	updateSlots();
-	if ( player.shootmode || !enabled || !player.isLocalPlayer() )
-	{
-		return;
-	}
-
-	//if ( player.inventoryUI.frame )
-	//{
-	//	if ( !player.inventoryUI.frame->findFrame("paperdoll slots") )
-	//	{
-	//		return;
-	//	}
-
-	//	auto selectedSlotFrame = player.inventoryUI.frame->findFrame("inventory selected item");
-	//	if ( !selectedSlotFrame )
-	//	{
-	//		return;
-	//	}
-	//	//auto oldSelectedSlotFrame = guiFrame->findFrame("inventory old selected item");
-	//	//if ( !oldSelectedSlotFrame )
-	//	//{
-	//	//	return;
-	//	//}
-
-	//	for (auto& slot : dollSlots)
-	//	{
-	//		if ( slot.slotType != PaperDollSlotType::SLOT_MAX )
-	//		{
-	//			int x = 0;
-	//			int y = 0;
-	//			getCoordinatesFromSlotType(slot.slotType, x, y);
-	//			
-	//			if ( y > Player::Inventory_t::DOLL_ROW_5 ) { continue; } // did not find valid coordinate.
-
-	//			char slotname[32] = "";
-	//			snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-	//			auto slotFrame = player.inventoryUI.frame->findFrame("paperdoll slots")->findFrame(slotname);
-	//			if ( slotFrame )
-	//			{
-	//				if ( slotFrame->capturesMouse() )
-	//				{
-	//					selectPaperDollCoordinatesFromSlotType(slot.slotType);
-	//				}
-
-	//				if ( x == player.inventoryUI.getSelectedSlotX()
-	//					&& y == player.inventoryUI.getSelectedSlotY()
-	//					&& !player.hotbar.hotbarHasFocus )
-	//				{
-	//					// enable the selectedSlotFrame
-	//					if ( !inputs.getUIInteraction(player.playernum)->selectedItem )
-	//					{
-	//						selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getSize().x + 1, slotFrame->getSize().y + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
-	//						selectedSlotFrame->setDisabled(false);
-	//						if ( auto selectedSlotCursor = player.inventoryUI.frame->findFrame("inventory selected item cursor") )
-	//						{
-	//							selectedSlotCursor->setDisabled(false);
-	//							player.inventoryUI.updateSelectedSlotAnimation(slotFrame->getSize().x, slotFrame->getSize().y, inputs.getVirtualMouse(player.playernum)->draw_cursor);
-	//						}
-	//					}
-	//				}
-	//			}
-	//		}
-	//	}
-	//	return;
-	//}
 	return;
-
-
-	// TODO UI: CLEAN UP
-	//auto& charSheetBox = player.characterSheet.characterSheetBox;
-
-	//int startx = charSheetBox.x + 2 + 8;
-	//int starty = charSheetBox.y + 2 + 8;
-
-	//SDL_Rect pos{ startx, starty, getSlotSize(), getSlotSize() };
-
-	//for ( auto& slot : dollSlots )
-	//{
-	//	slot.bMouseInSlot = false;
-	//	if ( slot.slotType != PaperDollSlotType::SLOT_MAX )
-	//	{
-	//		slot.pos = pos;
-
-	//		// grey outline
-	//		drawRect(&pos, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
-	//		if ( mouseInBounds(player.playernum, pos.x, pos.x + pos.w, pos.y, pos.y + pos.h) )
-	//		{
-	//			slot.bMouseInSlot = true;
-	//			// yellow highlight
-
-	//			selectPaperDollCoordinatesFromSlotType(slot.slotType);
-	//			if ( !player.hotbar.hotbarHasFocus )
-	//			{
-	//				drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 0), 127);
-	//			}
-	//		}
-
-	//		SDL_Rect slotBackground = pos;
-	//		slotBackground.x += 1;
-	//		slotBackground.y += 1;
-	//		slotBackground.w -= 2;
-	//		slotBackground.h -= 2;
-	//		// black background
-	//		drawRect(&slotBackground, 0, 255);
-
-	//		if ( slot.slotType == SLOT_OFFHAND )
-	//		{
-	//			pos.x = charSheetBox.x + charSheetBox.w - 2 - 8 - getSlotSize();
-	//			pos.y = starty;
-	//		}
-	//		else
-	//		{
-	//			pos.y += 4 + getSlotSize();
-	//		}
-	//	}
-	//}
 }
 
 void Player::Magic_t::setQuickCastSpellFromInventory(Item* item)

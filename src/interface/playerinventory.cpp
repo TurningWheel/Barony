@@ -1371,15 +1371,6 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 	if ( y < 0 )   //Wrap around top to bottom.
 	{
 		y = inventoryUI.getSizeY() - 1;
-
-		//if ( hotbarGamepadControlEnabled(player) )
-		//{
-		//	//TODO UI: VERIFY
-		//	hotbar_t.hotbarHasFocus = true; //Warp to hotbar.
-		//	float percentage = static_cast<float>(x + 1) / static_cast<float>(inventoryUI.getSizeX());
-		//	hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
-		//	warpMouseToSelectedHotbarSlot(player);
-		//}
 	}
 	if ( y >= inventoryUI.getSizeY() )   //Hit bottom. Wrap around or go to shop/chest?
 	{
@@ -1428,14 +1419,6 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 		if ( warpInv )   //Wrap around to top.
 		{
 			y = 0;
-
-			/*if ( hotbarGamepadControlEnabled(player) )
-			{
-				hotbar_t.hotbarHasFocus = true;
-				float percentage = static_cast<float>(x + 1) / static_cast<float>(inventoryUI.getSizeX());
-				hotbar_t.selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
-				warpMouseToSelectedHotbarSlot(player);
-			}*/
 		}
 	}
 
@@ -1510,7 +1493,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 			}
 			hotbar[selectedItemFromHotbar].item = selectedItem->uid;
 			selectedItemFromHotbar = -1;
-			players[player]->hotbar.hotbarHasFocus = true;
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
 		}
 		else
 		{
@@ -1526,7 +1509,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 				//inputs.warpMouse(player, newx, newy, flags);
 			}
-			players[player]->hotbar.hotbarHasFocus = false;
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 		}
 
 		selectedItem = nullptr;
@@ -3766,7 +3749,7 @@ void updatePlayerInventory(const int player)
 		}
 		else if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0 
 			&& !itemMenuOpen && GenericGUI[player].selectedSlot < 0
-			&& inputs.getController(player)->handleInventoryMovement(player) ) // handleInventoryMovement should be at the end of this check
+			&& players[player]->GUI.handleInventoryMovement() ) // handleInventoryMovement should be at the end of this check
 		{
 			if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
@@ -4666,16 +4649,16 @@ void Player::Inventory_t::updateInventory()
 		}
 		else if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 			&& !itemMenuOpen && GenericGUI[player].selectedSlot < 0
-			&& inputs.getController(player)->handleInventoryMovement(player) ) // handleInventoryMovement should be at the end of this check
+			&& players[player]->GUI.handleInventoryMovement() ) // handleInventoryMovement should be at the end of this check
 		{
 			if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
-				if ( !hotbar_t.hotbarHasFocus )
+				if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 				{
 					warpMouseToSelectedInventorySlot(player);
 				}
-				else
+				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
 					disableMouseDisablingHotbarFocus = true;
 				}
@@ -4742,7 +4725,7 @@ void Player::Inventory_t::updateInventory()
 	auto dollSlotsFrame = frame->findFrame("paperdoll slots");
 
 	auto selectedSlotFrame = frame->findFrame("inventory selected item");
-	auto selectedSlotCursor = frame->findFrame("inventory selected item cursor");
+	auto selectedSlotCursor = selectedItemCursorFrame;
 
 	if ( selectedChestSlot[player] < 0 && selectedShopSlot[player] < 0
 		&& GenericGUI[player].selectedSlot < 0 )
@@ -4761,10 +4744,15 @@ void Player::Inventory_t::updateInventory()
 						if ( slotFrame->capturesMouseInRealtimeCoords() )
 						{
 							selectSlot(x, y);
-							if ( hotbar_t.hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+							if ( inputs.getVirtualMouse(player)->draw_cursor )
 							{
-								hotbar_t.hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+								// mouse movement captures the inventory
+								players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 							}
+							/*if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !disableMouseDisablingHotbarFocus )
+							{
+								players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+							}*/
 						}
 					}
 
@@ -4773,7 +4761,7 @@ void Player::Inventory_t::updateInventory()
 
 					if ( x == getSelectedSlotX()
 						&& y == getSelectedSlotY()
-						&& !hotbar_t.hotbarHasFocus )
+						&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 					{
 						if ( itemMenuOpen || // if item menu open, then always draw cursor on current item.
 							(!selectedItem	// otherwise, if no selected item, and mouse hovering over item
@@ -4851,11 +4839,8 @@ void Player::Inventory_t::updateInventory()
 						&& slotFrame->capturesMouseInRealtimeCoords() )
 					{
 						// don't draw yellow border, but draw cursor - we're hovering over our current item
-						if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
-						{
-							selectedSlotCursor->setDisabled(false);
-							updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
-						}
+						selectedSlotCursor->setDisabled(false);
+						updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 						//messagePlayer(0, "5: %d, %d", x, y);
 					}
 					else if ( !slotFrame->capturesMouse()
@@ -4865,11 +4850,8 @@ void Player::Inventory_t::updateInventory()
 						selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 						selectedSlotFrame->setDisabled(false);
 
-						if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
-						{
-							selectedSlotCursor->setDisabled(false);
-							updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
-						}
+						selectedSlotCursor->setDisabled(false);
+						updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 						//messagePlayer(0, "1: %d, %d", x, y);
 					}
 				}
@@ -4878,11 +4860,8 @@ void Player::Inventory_t::updateInventory()
 					selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 					selectedSlotFrame->setDisabled(false);
 
-					if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
-					{
-						selectedSlotCursor->setDisabled(false);
-						updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
-					}
+					selectedSlotCursor->setDisabled(false);
+					updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 					//messagePlayer(0, "2: %d, %d", x, y);
 				}
 
@@ -5134,7 +5113,13 @@ void Player::Inventory_t::updateInventory()
 			if ( !slotFrame ) { continue; }
 			mouseOverSlot = slotFrame->capturesMouse();
 
-			if ( mouseOverSlot )
+			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
+			{
+				// mouse movement captures the inventory
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+			}
+
+			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
 			{
 				auto inventoryBgFrame = frame->findFrame("inventory base");
 				int tooltipCoordX = frame->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
@@ -5395,12 +5380,9 @@ void Player::Inventory_t::updateInventory()
 						selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 					selectedSlotFrame->setDisabled(false);
 
-					if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
-					{
-						selectedSlotCursor->setDisabled(false);
-						updateSelectedSlotAnimation(selectedSlotFrame->getSize().x - 1, selectedSlotFrame->getSize().y - 1, 
-							getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
-					}
+					selectedSlotCursor->setDisabled(false);
+					updateSelectedSlotAnimation(selectedSlotFrame->getSize().x - 1, selectedSlotFrame->getSize().y - 1, 
+						getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 					//messagePlayer(player, "6: %d, %d", selectedSlotFrameX, selectedSlotFrameY);
 				}
 			}
@@ -5418,12 +5400,9 @@ void Player::Inventory_t::updateInventory()
 					{
 						players[player]->hotbar.selectHotbarSlot(c);
 
-						if ( auto selectedSlotCursor = frame->findFrame("inventory selected item cursor") )
-						{
-							selectedSlotCursor->setDisabled(false);
-							updateSelectedSlotAnimation(hotbarSlotFrame->getAbsoluteSize().x - 1, hotbarSlotFrame->getAbsoluteSize().y - 1,
-								hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
-						}
+						selectedSlotCursor->setDisabled(false);
+						updateSelectedSlotAnimation(hotbarSlotFrame->getAbsoluteSize().x - 1, hotbarSlotFrame->getAbsoluteSize().y - 1,
+							hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 						//messagePlayer(player, "7: hotbar: %d", c);
 						break;
 					}

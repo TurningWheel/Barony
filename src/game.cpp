@@ -4146,13 +4146,12 @@ void ingameHud()
 		players[player]->inventoryUI.processInventory();
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
-		// new right side pane by sheridan
-		doNewCharacterSheet(player);
+		players[player]->hud.updateCursor();
 		if ( !players[player]->isLocalPlayer() )
 		{
 			continue;
 		}
-		//drawSkillsSheet(player);
+		drawSkillsSheet(player);
 		if ( !nohud )
 		{
 			drawStatusNew(player);
@@ -4289,7 +4288,7 @@ void ingameHud()
 						}
 						updateSlotFrameFromItem(draggingItemFrame, selectedItem);
 
-						Frame* selectedSlotCursor = frame->findFrame("inventory selected item cursor");
+						Frame* selectedSlotCursor = players[player]->inventoryUI.selectedItemCursorFrame;
 						if ( !inputs.getVirtualMouse(player)->draw_cursor )
 						{
 							SDL_Rect selectedItemCursorPos = selectedSlotCursor->getSize();
