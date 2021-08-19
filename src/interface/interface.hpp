@@ -489,14 +489,7 @@ extern SDL_Surface* bookgui_img;
 //extern SDL_Surface *bookclose_img;
 extern SDL_Surface* book_highlighted_left_img; //Draw this when the mouse is over the left half of the book.
 extern SDL_Surface* book_highlighted_right_img; //Draw this when the mouse is over the right half of the book.
-//extern node_t* book_page;
-//extern int bookgui_offset_x;
-//extern int bookgui_offset_y;
-//extern bool dragging_book_GUI; //The book GUI is being dragged.
-//extern bool book_open; //Is there a book open?
-struct book_t;
-//extern struct book_t* open_book;
-//extern Item* open_book_item; //A pointer to the open book's item, so that the game knows to close the book when the player drops that item.
+class BookParser_t;
 #define BOOK_FONT ttf12
 #define BOOK_FONT_WIDTH TTF12_WIDTH
 #define BOOK_FONT_HEIGHT TTF12_HEIGHT

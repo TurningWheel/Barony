@@ -871,22 +871,22 @@ public:
 	class BookGUI_t
 	{
 		Player& player;
-		static const int BOOK_TITLE_PADDING = 2; //The amount of empty space above and below the book titlename.
-		static const int FLIPMARGIN = 240;
-		static const int DRAGHEIGHT_BOOK = 32;
 	public:
-		static const int BOOK_PAGE_WIDTH = 248;
-		static const int BOOK_PAGE_HEIGHT = 256;
+		static const int BOOK_PAGE_WIDTH = 220;
+		static const int BOOK_PAGE_HEIGHT = 260;
 		BookGUI_t(Player& p) : player(p)
 		{};
 		~BookGUI_t() {};
+
+		real_t bookFadeInAnimationY = 0.0;
+
+		Frame* bookFrame = nullptr;
 		int offsetx = 0;
 		int offsety = 0;
-		bool draggingBookGUI = false;
 		bool bBookOpen = false;
-		node_t* bookPageNode = nullptr;
 		Item* openBookItem = nullptr;
-		book_t* book = nullptr;
+		std::string openBookName = "";
+		int currentBookPage = 0;
 		const int getStartX() const
 		{
 			return ((player.camera_midx() - (getBookWidth() / 2)) + offsetx);
@@ -899,7 +899,8 @@ public:
 		const int getBookHeight() const { return bookgui_img->h; }
 		void updateBookGUI();
 		void closeBookGUI();
-		void openBook(struct book_t* book, Item* item);
+		void createBookGUI();
+		void openBook(int index, Item* item);
 	} bookGUI;
 
 	class CharacterSheet_t
