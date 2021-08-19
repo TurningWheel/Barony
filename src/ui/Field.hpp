@@ -93,7 +93,9 @@ public:
 	void	setFont(const char* _font) { font = _font; }
 	void	setGuide(const char* _guide) { guide = _guide; }
 	void    reflowTextToFit(const int characterOffset);
+	int		getLastLineThatFitsWithinHeight();
 	void	setOntop(const bool _ontop) { ontop = _ontop; }
+	static char* tokenize(char* str, const char* const delimiters);
 
 private:
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field

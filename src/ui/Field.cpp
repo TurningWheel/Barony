@@ -81,7 +81,7 @@ void Field::deactivate() {
 	}
 }
 
-static char* tokenize(char* str, const char* const delimiters) {
+char* Field::tokenize(char* str, const char* const delimiters) {
 	if (!str || !delimiters) {
 		return nullptr;
 	}
@@ -375,6 +375,18 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 	size_t offset = 0;
 	size_t findChar = 0;
 	std::vector<std::string> tokens;
+	/*switch ( rand() % 3 )
+	{
+		case 0:
+		input = " this is a test ";
+			break;
+		case 1:
+		input = " this is  a test  ";
+			break;
+		case 2:
+		input = "  this is  a test !";
+			break;
+	}*/
 	while ( (findChar = input.find(' ', offset)) != std::string::npos ) {
 		tokens.push_back(input.substr(offset, findChar - offset));
 		offset = findChar + 1;
@@ -383,6 +395,7 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 
 	size_t currentLine = 0;
 	Text* getText = nullptr;
+	bool lastInsertedManualSpace = false;
 	for ( auto& token : tokens )
 	{
 		size_t currentLength = result[currentLine].size();
@@ -400,15 +413,77 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 
 		if ( result[currentLine] == "" )
 		{
-			result[currentLine] = token;
+			if ( token == "" && tokens.size() > 1 ) // if there's only 1 token "" then it doesn't need a space.
+			{
+				lastInsertedManualSpace = true;
+				result[currentLine] = " ";
+			}
+			else
+			{
+				result[currentLine] = token;
+			}
 		}
 		else
 		{
-			result[currentLine].append(" ");
+			if ( !lastInsertedManualSpace )
+			{
+				result[currentLine].append(" ");
+			}
+			lastInsertedManualSpace = false;
 			result[currentLine].append(token);
 		}
 	}
+	/*if ( result.size() == 1 )
+	{
+		if ( result[0] != input )
+		{
+			printlog("Inequality: |%s|%s|", result[0].c_str(), input.c_str());
+		}
+		assert(result[0] == input);
+	}*/
 	return result;
+}
+
+int Field::getLastLineThatFitsWithinHeight()
+{
+	if ( text == nullptr || textlen <= 1 ) {
+		return -1;
+	}
+	if ( auto getText = Text::get(text, font.c_str()) )
+	{
+		if ( getText->getHeight() <= getSize().h/* - getSize().y*/ )
+		{
+			return -1;
+		}
+	}
+	else
+	{
+		return -1;
+	}
+
+	std::string allLines;
+	int lineNumber = 0;
+	char* nexttoken;
+	char* token = text;
+	do {
+		nexttoken = tokenize(token, "\n");
+		if ( !allLines.empty() )
+		{
+			allLines.push_back('\n');
+		}
+		allLines += token[0];
+		if ( auto getText = Text::get(allLines.c_str(), font.c_str()) )
+		{
+			if ( getText->getHeight() > getSize().h )
+			{
+				// doesn't fit, return the last line number.
+				return lineNumber;
+			}
+		}
+		++lineNumber;
+	} while ( (token = nexttoken) != NULL );
+
+	return -1;
 }
 
 void Field::reflowTextToFit(const int characterOffset) {
@@ -418,7 +493,7 @@ void Field::reflowTextToFit(const int characterOffset) {
 
 	if ( auto getText = Text::get(text, font.c_str()) )
 	{
-		if ( getText->getWidth() <= (getSize().w - getSize().x) )
+		if ( getText->getWidth() <= (getSize().w) )
 		{
 			// no work to do
 			return;
@@ -435,7 +510,7 @@ void Field::reflowTextToFit(const int characterOffset) {
 		char* token = text;
 		do {
 			nexttoken = tokenize(token, "\n");
-			auto result = reflowTextLine(std::string(token), (getSize().w - getSize().x), font.c_str());
+			auto result = reflowTextLine(std::string(token), (getSize().w), font.c_str());
 			for ( size_t i = 0; i < result.size(); ++i )
 			{
 				allLines.push_back(result[i]);
@@ -473,7 +548,7 @@ void Field::reflowTextToFit(const int characterOffset) {
 		return;
 	}
 	++charWidth;
-	const int charactersPerLine = (getSize().w - getSize().x) / charWidth;
+	const int charactersPerLine = (getSize().w) / charWidth;
 
 	int currentCharacters = 0;
 	for ( int i = 0; text[i] != '\0'; ++i )
