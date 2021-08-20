@@ -1609,32 +1609,6 @@ void handleMainMenu(bool mode)
 			drawImageScaled(title_bmp, nullptr, &src);
 		}
 
-		const bool i_want_to_test_sdl_ttf = false;
-		if (i_want_to_test_sdl_ttf) {
-			const char* font = Font::defaultFont;
-			Text* text = Text::get("This. Is. For. BARONY!!", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{100, yres - 100, 0, 0}, 0xFF00FFFF);
-
-			font = "lang/en.ttf#32";
-			text = Text::get("Will the real Baron Herx PLEASE stand up!", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{300, 32, 0, 0}, 0xFFFF00FF);
-
-			int text_y = 300;
-			font = "lang/en.ttf#92";
-			text = Text::get("SDL_TTF SPONSORED BY me.", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{32, text_y, 0, 0}, 0xFFFF00FF);
-
-			text_y += text->getHeight() + 4;
-			font = "lang/en.ttf#92";
-			text = Text::get("ALL HAIL POTATO KING", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{32, text_y, 0, 0}, 0xFFEF23FF);
-
-			text_y += text->getHeight();
-			font = "lang/en.ttf#22";
-			text = Text::get("run the gauntlet f00lz!!1!", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{100, text_y, 0, 0}, 0xFFEF23FF);
-		}
-
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);

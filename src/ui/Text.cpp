@@ -9,6 +9,7 @@
 
 GLuint Text::vao = 0;
 GLuint Text::vbo[BUFFER_TYPE_LENGTH] = { 0 };
+constexpr int resolution_factor = 1;
 
 const GLfloat Text::positions[8]{
 	0.f, 0.f,
@@ -137,11 +138,16 @@ void Text::render() {
 	++width;
 
 	// translate the original surface to an RGBA surface
-	SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width, height, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	SDL_Rect dest{ 0, 0, 0, 0 };
+	SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width * resolution_factor, height * resolution_factor,
+		32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	SDL_Rect dest{ 0, 0, width * resolution_factor, height * resolution_factor };
 	SDL_Rect src{ 0, 0, width, height };
-	SDL_BlitSurface(surf, &src, newSurf, &dest); // blit onto a purely RGBA Surface
-	SDL_FreeSurface(surf); //TODO: Why does this give a heap exception in NX?
+	if (resolution_factor > 1) {
+		SDL_BlitScaled(surf, &src, newSurf, &dest);
+	} else {
+		SDL_BlitSurface(surf, &src, newSurf, &dest);
+	}
+	SDL_FreeSurface(surf);
 	surf = newSurf;
 
 	// load the new surface as a GL texture
@@ -157,11 +163,11 @@ void Text::render() {
 	rendered = true;
 }
 
-void Text::draw(SDL_Rect src, SDL_Rect dest) {
-	drawColor(src, dest, 0xffffffff);
+void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) {
+	drawColor(src, dest, viewport, 0xffffffff);
 }
 
-void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
+void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) {
 	if (!rendered) {
 		render();
 	}
@@ -172,10 +178,21 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
-	glViewport(0, 0, xres, yres);
+	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
 	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
+	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	auto src = _src;
+	auto dest = _dest;
+
+	if (resolution_factor != 1) {
+		src.x *= resolution_factor;
+		src.y *= resolution_factor;
+		src.w *= resolution_factor;
+		src.h *= resolution_factor;
+	}
 
 	src.w = src.w <= 0 ? surf->w : src.w;
 	src.h = src.h <= 0 ? surf->h : src.h;
@@ -195,13 +212,13 @@ void Text::drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color) {
 	// draw quad
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * ((real_t)src.y / surf->h));
-	glVertex2f(dest.x, yres - dest.y);
+	glVertex2f(dest.x, viewport.h - dest.y);
 	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
-	glVertex2f(dest.x, yres - dest.y - dest.h);
+	glVertex2f(dest.x, viewport.h - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
-	glVertex2f(dest.x + dest.w, yres - dest.y - dest.h);
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * ((real_t)src.y / surf->h));
-	glVertex2f(dest.x + dest.w, yres - dest.y);
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
 	glEnd();
 
 	// unbind texture

@@ -1,5 +1,4 @@
 #include "input.hpp"
-#include "player.hpp"
 
 #include <algorithm>
 
@@ -91,13 +90,6 @@ void Input::defaultBindings() {
 		inputs[c].bind("HotbarSlot8", "8");
 		inputs[c].bind("HotbarSlot9", "9");
 		inputs[c].bind("HotbarSlot10", "0");
-	}
-}
-
-void Input::addGameController(int id, GameController& controller) {
-	gameControllers.emplace(id, controller.sdl_device);
-	for (auto& input : inputs) {
-		input.refresh();
 	}
 }
 

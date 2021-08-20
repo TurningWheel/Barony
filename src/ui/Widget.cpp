@@ -214,16 +214,16 @@ void Widget::drawExtra(const SDL_Rect size, const std::vector<Widget*>& selected
 	auto action = actions.begin();
 	if (selectedWidget == this) {
 		auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
-		int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-		int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+		int w = image->getWidth();
+		int h = image->getHeight();
 		image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 		x -= w;
 	}
 	if ((action = actions.find("MenuCancel")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_B00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -231,8 +231,8 @@ void Widget::drawExtra(const SDL_Rect size, const std::vector<Widget*>& selected
 	if ((action = actions.find("MenuAlt1")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_Y00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -240,8 +240,8 @@ void Widget::drawExtra(const SDL_Rect size, const std::vector<Widget*>& selected
 	if ((action = actions.find("MenuAlt2")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_X00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -249,8 +249,8 @@ void Widget::drawExtra(const SDL_Rect size, const std::vector<Widget*>& selected
 	if ((action = actions.find("MenuStart")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_+00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -258,8 +258,8 @@ void Widget::drawExtra(const SDL_Rect size, const std::vector<Widget*>& selected
 	if ((action = actions.find("MenuSelect")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_-00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -267,8 +267,8 @@ void Widget::drawExtra(const SDL_Rect size, const std::vector<Widget*>& selected
 	if ((action = actions.find("MenuPageLeft")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_L00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -276,8 +276,8 @@ void Widget::drawExtra(const SDL_Rect size, const std::vector<Widget*>& selected
 	if ((action = actions.find("MenuPageRight")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_R00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}

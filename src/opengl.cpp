@@ -26,6 +26,12 @@ PFNGLBINDVERTEXARRAYPROC SDL_glBindVertexArray;
 PFNGLDELETEVERTEXARRAYSPROC SDL_glDeleteVertexArrays;
 PFNGLENABLEVERTEXATTRIBARRAYPROC SDL_glEnableVertexAttribArray;
 PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
+PFNGLGENFRAMEBUFFERSPROC SDL_glGenFramebuffers;
+PFNGLDELETEFRAMEBUFFERSPROC SDL_glDeleteFramebuffers;
+PFNGLBINDFRAMEBUFFERPROC SDL_glBindFramebuffer;
+PFNGLFRAMEBUFFERTEXTURE2DPROC SDL_glFramebufferTexture2D;
+PFNGLDRAWBUFFERSPROC SDL_glDrawBuffers;
+PFNGLBLENDFUNCSEPARATEPROC SDL_glBlendFuncSeparate;
 #endif
 
 void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
@@ -1051,7 +1057,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		return;
 	}
 
-	auto rendered_text = Text::get(text.c_str(), "fonts/pixelmix.ttf#30#2");
+	auto rendered_text = Text::get(text.c_str(), "fonts/pixelmix.ttf#32#2");
 	auto textureId = rendered_text->getTexID();
 
 	// setup projection
