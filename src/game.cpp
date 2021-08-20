@@ -4151,7 +4151,7 @@ void ingameHud()
 		{
 			continue;
 		}
-		drawSkillsSheet(player);
+		//drawSkillsSheet(player);
 		if ( !nohud )
 		{
 			drawStatusNew(player);
