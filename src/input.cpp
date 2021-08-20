@@ -1,4 +1,5 @@
 #include "input.hpp"
+#include "player.hpp"
 
 #include <algorithm>
 

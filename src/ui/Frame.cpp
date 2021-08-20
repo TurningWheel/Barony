@@ -153,7 +153,9 @@ void Frame::draw() {
 	//glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	auto _actualSize = allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h};
-	Frame::draw(size, _actualSize, findSelectedWidget());
+	std::vector<Widget*> selectedWidgets;
+	findSelectedWidgets(selectedWidgets);
+	Frame::draw(size, _actualSize, selectedWidgets);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -181,7 +183,7 @@ void Frame::draw() {
 	glColor4f(1.f, 1.f, 1.f, 1.f);
 }
 
-void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
+void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
 	if (disabled || invisible)
 		return;
 
@@ -417,22 +419,35 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 
 	// draw fields
 	for (auto field : fields) {
-		field->draw(_size, scroll, selectedWidget);
+		if ( field->isOntop() )
+		{
+			continue;
+		}
+		field->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw buttons
 	for (auto button : buttons) {
-		button->draw(_size, scroll, selectedWidget);
+		button->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw sliders
 	for (auto slider : sliders) {
-		slider->draw(_size, scroll, selectedWidget);
+		slider->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw subframes
-	for (auto frame : frames) {
-		frame->draw(_size, scroll, selectedWidget);
+	for ( auto frame : frames ) {
+		frame->draw(_size, scroll, selectedWidgets);
+	}
+
+	// draw "on top" fields
+	for ( auto field : fields ) {
+		if ( !field->isOntop() )
+		{
+			continue;
+		}
+		field->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw "on top" images
@@ -447,7 +462,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 	}
 
 	// draw glyphs
-	drawGlyphs(_size, selectedWidget);
+	drawGlyphs(_size, selectedWidgets);
 
 	// root frame draws tooltip
 	// TODO on Nintendo, display this next to the currently selected widget
@@ -485,7 +500,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget) {
 }
 
 Frame::result_t Frame::process() {
-	result_t result = process(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h}, findSelectedWidget(), true);
+	std::vector<Widget*> selectedWidgets;
+	findSelectedWidgets(selectedWidgets);
+	result_t result = process(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h}, selectedWidgets, true);
 
 	tooltip = nullptr;
 	if (result.tooltip && result.tooltip[0] != '\0') {
@@ -498,19 +515,24 @@ Frame::result_t Frame::process() {
 	return result;
 }
 
-Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget, bool usable) {
+Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets, bool usable) {
 	result_t result;
 	result.removed = false;
 	result.usable = usable;
 	result.highlightTime = SDL_GetTicks();
 	result.tooltip = nullptr;
 
+	if ( parent && inheritParentFrameOpacity )
+	{
+		setOpacity(static_cast<Frame*>(parent)->getOpacity());
+	}
+
 	if (disabled) {
 		return result;
 	}
 
 #ifndef EDITOR // bad editor no cookie
-	if (players[clientnum]->shootmode) {
+	if ( players[getOwner()]->shootmode ) {
 		return result;
 	}
 #endif
@@ -698,7 +720,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, Widget* sel
 	{
 		for (int i = frames.size() - 1; i >= 0; --i) {
 			Frame* frame = frames[i];
-			result_t frameResult = frame->process(_size, actualSize, selectedWidget, usable);
+			result_t frameResult = frame->process(_size, actualSize, selectedWidgets, usable);
 			usable = result.usable = frameResult.usable;
 			if (!frameResult.removed) {
 				if (frameResult.tooltip != nullptr) {
@@ -1283,6 +1305,28 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 #endif
 }
 
+void Frame::warpMouseToFrame(const int player, Uint32 flags) const
+{
+	SDL_Rect _size = getAbsoluteSize();
+	inputs.warpMouse(player,
+		(_size.x + _size.w / 2) * ((float)xres / (float)Frame::virtualScreenX),
+		(_size.y + _size.h / 2) * ((float)yres / (float)Frame::virtualScreenY),
+		flags);
+}
+
+SDL_Rect Frame::getAbsoluteSize() const
+{
+	SDL_Rect _size{ size.x, size.y, size.w, size.h };
+	auto _parent = this->parent;
+	while ( _parent ) {
+		auto pframe = static_cast<Frame*>(_parent);
+		_size.x += std::max(0, pframe->size.x);
+		_size.y += std::max(0, pframe->size.y);
+		_parent = pframe->parent;
+	}
+	return _size;
+}
+
 bool Frame::capturesMouseInRealtimeCoords(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 	SDL_Rect newSize = SDL_Rect{ 0, 0, xres, yres };
 	SDL_Rect newActualSize = SDL_Rect{ 0, 0, xres, yres };
@@ -1574,6 +1618,17 @@ void Frame::drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scr
 			return;
 		}
 
-		actualImage->drawColor(&src, scaledDest, SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, image->color);
+		if ( getOpacity() < 100.0 )
+		{
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(image->color, mainsurface->format, &r, &g, &b, &a);
+			a *= getOpacity() / 100.0;
+			actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+				SDL_MapRGBA(mainsurface->format, r, g, b, a));
+		}
+		else
+		{
+			actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, image->color);
+		}
 	}
 }

@@ -181,10 +181,11 @@ void Widget::adoptWidget(Widget& widget) {
 	}
 	widget.owner = owner;
 	widget.parent = this;
+	widget.setOwner(this->getOwner());
 	widgets.push_back(&widget);
 }
 
-void Widget::drawExtra(const SDL_Rect size, const std::vector<Widget*>& selectedWidgets) {
+void Widget::drawGlyphs(const SDL_Rect size, const std::vector<Widget*>& selectedWidgets) {
 	if (drawCallback) {
 		drawCallback(*this, size);
 	}

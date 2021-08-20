@@ -135,5 +135,5 @@ protected:
 
     Frame* findSearchRoot();
 
-    void drawExtra(const SDL_Rect size, const std::vector<Widget*>& selectedWidgets);
+    void drawGlyphs(const SDL_Rect size, const std::vector<Widget*>& selectedWidgets);
 };

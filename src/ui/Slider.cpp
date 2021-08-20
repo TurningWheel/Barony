@@ -109,7 +109,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 	scaledHandle.y = _handleSize.y * (float)yres / (float)Frame::virtualScreenY;
 	scaledHandle.w = _handleSize.w * (float)xres / (float)Frame::virtualScreenX;
 	scaledHandle.h = _handleSize.h * (float)yres / (float)Frame::virtualScreenY;
-	drawExtra(scaledHandle, selectedWidgets);
+	drawGlyphs(scaledHandle, selectedWidgets);
 }
 
 Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

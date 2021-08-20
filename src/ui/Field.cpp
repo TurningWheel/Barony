@@ -7,6 +7,7 @@
 #include "Field.hpp"
 #include "Text.hpp"
 #include "GameUI.hpp"
+#include "Image.hpp"
 #include <cassert>
 
 Field::Field(const int _textLen) {
@@ -113,16 +114,18 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 		return;
 
 	SDL_Rect scaledRect;
-	scaledRect.x = rect.x * (float)xres / (float)Frame::virtualScreenX;
-	scaledRect.y = rect.y * (float)yres / (float)Frame::virtualScreenY;
-	scaledRect.w = rect.w * (float)xres / (float)Frame::virtualScreenX;
-	scaledRect.h = rect.h * (float)yres / (float)Frame::virtualScreenY;
+	scaledRect.x = rect.x;
+	scaledRect.y = rect.y;
+	scaledRect.w = rect.w;
+	scaledRect.h = rect.h;
 
 	if (activated) {
+		auto white = Image::get("images/system/white.png");
+		const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
 		if (selectAll) {
-			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 127, 127, 0), 255);
+			white->drawColor(nullptr, scaledRect, viewport, makeColor(127, 127, 0, 255));
 		} else {
-			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
+			white->drawColor(nullptr, scaledRect, viewport, makeColor(0, 0, 127, 255));
 		}
 	}
 
@@ -235,17 +238,17 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 			Uint8 r, g, b, a;
 			SDL_GetRGBA(color, mainsurface->format, &r, &g, &b, &a);
 			a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
-			text->drawColor(src, scaledDest, SDL_MapRGBA(mainsurface->format, r, g, b, a));
+			text->drawColor(src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, SDL_MapRGBA(mainsurface->format, r, g, b, a));
 		}
 		else
 		{
-			text->drawColor(src, scaledDest, color);
+			text->drawColor(src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, color);
 		}
 	} while ((token = nexttoken) != NULL);
 
 	free(buf);
 
-	drawExtra(scaledRect, selectedWidgets);
+	drawGlyphs(scaledRect, selectedWidgets);
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

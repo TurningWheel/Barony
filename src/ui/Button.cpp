@@ -273,7 +273,7 @@ next:
 		}
 	}
 
-	drawExtra(scaledSize, selectedWidgets);
+	drawGlyphs(scaledSize, selectedWidgets);
 }
 
 Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
