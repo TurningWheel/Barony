@@ -42,6 +42,7 @@ extern std::vector<Book_t> allBooks;
 class BookParser_t
 {
 	static const int MAX_FILE_LENGTH = 192000;
+	const int versionJSON = 1;
 public:
 	bool booksRequireCompiling();
 	bool readCompiledBooks();

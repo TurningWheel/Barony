@@ -355,32 +355,39 @@ void BookParser_t::createBooks(bool forceCacheRebuild)
 
 void BookParser_t::writeCompiledBooks()
 {
-	std::string inputPath = PHYSFS_getRealDir("/books/compiled_books.json");
-	inputPath.append("/books/compiled_books.json");
+	std::string inputPath = outputdir;
+	inputPath.append(PHYSFS_getDirSeparator());
+	std::string fileName = "books/compiled_books.json";
 
 	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	rapidjson::Document d;
 	if ( !fp )
 	{
-		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
-		return;
+		printlog("[JSON]: Could not locate json file %s, creating new file.", inputPath.c_str());
+		d.SetObject();
+		CustomHelpers::addMemberToRoot(d, "version", rapidjson::Value(versionJSON));
 	}
-	char buf[MAX_FILE_LENGTH];
-	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
-	buf[count] = '\0';
-	rapidjson::StringStream is(buf);
-	FileIO::close(fp);
-
-	rapidjson::Document d;
-	d.ParseStream(is);
-
-	if ( !d.HasMember("version") || !d.HasMember("books") )
+	else
 	{
-		printlog("[JSON]: Could not read member 'version' or 'books', possible invalid syntax.");
-		printlog("[Books]: Error: Failed to compile books into file: '%s'", inputPath.c_str());
-		return;
+		char buf[MAX_FILE_LENGTH];
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
+		d.ParseStream(is);
+
+		if ( !d.HasMember("version") )
+		{
+			printlog("[JSON]: Could not read member 'version', possible invalid syntax.");
+			printlog("[Books]: Error: Failed to compile books into file: '%s'", inputPath.c_str());
+			return;
+		}
 	}
 
-	d.EraseMember("books");
+	if ( d.HasMember("books") )
+	{
+		d.EraseMember("books");
+	}
 	rapidjson::Value booksObj(rapidjson::kObjectType);
 	CustomHelpers::addMemberToRoot(d, "books", booksObj);
 
