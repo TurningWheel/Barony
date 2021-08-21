@@ -33,11 +33,10 @@ void Player::BookGUI_t::createBookGUI()
 	snprintf(name, sizeof(name), "player book %d", player.playernum);
 	Frame* frame = gui->addFrame(name);
 	bookFrame = frame;
-	frame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
-		players[player.playernum]->camera_y1(),
-		players[player.playernum]->camera_width(),
-		players[player.playernum]->camera_height() });
-	frame->setActualSize(frame->getSize());
+	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
 	frame->setHollow(true);
 	frame->setBorder(0);
 	frame->setOwner(player.playernum);
@@ -137,14 +136,14 @@ void Player::BookGUI_t::updateBookGUI()
 	}
 
 	bookFrame->setDisabled(false);
-	bookFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
-		players[player.playernum]->camera_y1(),
-		Frame::virtualScreenX,
-		Frame::virtualScreenY });
+	bookFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
 	
 	auto innerFrame = bookFrame->findFrame("book frame");
 	SDL_Rect bookSize = innerFrame->getSize();
-	bookSize.x = bookFrame->getSize().x + bookFrame->getSize().w / 2 - bookSize.w / 2;
+	bookSize.x = bookFrame->getSize().w / 2 - bookSize.w / 2;
 
 	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 	real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - bookFadeInAnimationY)) / 5.0;
@@ -157,8 +156,8 @@ void Player::BookGUI_t::updateBookGUI()
 	a = 128 * bookFadeInAnimationY;
 	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 
-	int baseY = (bookFrame->getSize().y + bookFrame->getSize().h / 2 - bookSize.h / 2);
-	bookSize.y = -baseY + 2 * bookFadeInAnimationY * (baseY);
+	int baseY = (bookFrame->getSize().h / 2 - bookSize.h / 2);
+	bookSize.y = -bookSize.h + bookFadeInAnimationY * (baseY + bookSize.h);
 	innerFrame->setSize(bookSize);
 
 	//Center the book GUI.
@@ -261,22 +260,6 @@ void Player::BookGUI_t::updateBookGUI()
 	{
 		rightColumn->setText("");
 	}
-
-	//for ( auto& book : allBooks )
-	//{
-	//	if ( book.name == openBookName )
-	//	{
-	//		if ( book.formattedPages.size() > 2 )
-	//		{
-	//			//Text::dumpCache();
-	//			leftColumn->setText(newbook.formattedPages[0].c_str());
-	//			//auto textGet = Text::get(leftColumn->getText(), leftColumn->getFont());
-	//			rightColumn->setText(newbook.formattedPages[1].c_str());
-	//		}
-	//		break;
-	//	}
-	//}
-
 	return;
 
 	//std::string pageText = "";

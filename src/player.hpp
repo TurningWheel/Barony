@@ -639,6 +639,12 @@ public:
 	const int camera_y2() const { return cam->winy + cam->winh; }
 	const int camera_width() const { return cam->winw; }
 	const int camera_height() const { return cam->winh; }
+	const int camera_virtualx1() const { return cam->winx * ((float)Frame::virtualScreenX / xres); }
+	const int camera_virtualx2() const { return (cam->winx + cam->winw)* ((float)Frame::virtualScreenX / xres); }
+	const int camera_virtualy1() const { return cam->winy * ((float)Frame::virtualScreenY / yres); }
+	const int camera_virtualy2() const { return (cam->winy + cam->winh) * ((float)Frame::virtualScreenY / yres); }
+	const int camera_virtualWidth() const { return cam->winw * ((float)Frame::virtualScreenX / xres); }
+	const int camera_virtualHeight() const { return cam->winh * ((float)Frame::virtualScreenY / yres); }
 	const int camera_midx() const { return camera_x1() + camera_width() / 2; }
 	const int camera_midy() const { return camera_y1() + camera_height() / 2; }
 	const bool isLocalPlayer() const;

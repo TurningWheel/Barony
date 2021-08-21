@@ -332,10 +332,10 @@ void Player::HUD_t::processHUD()
 		hudFrame->setBorder(0);
 		hudFrame->setOwner(player.playernum);
 	}
-	hudFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
-		players[player.playernum]->camera_y1(),
-		Frame::virtualScreenX,
-		Frame::virtualScreenY });
+	hudFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
 
 	if ( nohud || !players[player.playernum]->isLocalPlayer() )
 	{
@@ -370,15 +370,15 @@ void Player::MessageZone_t::createChatbox()
 		chatMainFrame->setHollow(true);
 		chatMainFrame->setBorder(0);
 		chatMainFrame->setOwner(player.playernum);
-		chatMainFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
-			players[player.playernum]->camera_y1(),
+		chatMainFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+			players[player.playernum]->camera_virtualy1(),
 			Frame::virtualScreenX,
 			Frame::virtualScreenY });
 		chatFrame = chatMainFrame;
 		Frame* messages = chatMainFrame->addFrame("message box");
 		messages->setSize(SDL_Rect{ 224, 16, 
-			players[player.playernum]->camera_width() / 2, 
-			players[player.playernum]->camera_height() });
+			players[player.playernum]->camera_virtualWidth() / 2,
+			players[player.playernum]->camera_virtualHeight() });
 
 		static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 		SDL_Rect entryPos{ 0, 0, messages->getSize().w, 0 };
@@ -401,19 +401,19 @@ void Player::MessageZone_t::processChatbox()
 		createChatbox();
 	}
 
-	chatFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
-		players[player.playernum]->camera_y1(),
-		players[player.playernum]->camera_width(),
-		players[player.playernum]->camera_height() });
+	chatFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
 
 	const int leftAlignedBottomY = 484;
 	const int topAlignedBottomY = 216;
 	int topAlignedPaddingX = 224;
 	chatboxTopAlignedPos = SDL_Rect{ topAlignedPaddingX, 0,
-		players[player.playernum]->camera_width() - topAlignedPaddingX * 2,
-		players[player.playernum]->camera_height() };
-	chatboxLeftAlignedPos = SDL_Rect{ 8, 0, players[player.playernum]->camera_width() / 2,
-		players[player.playernum]->camera_height() };
+		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX * 2,
+		players[player.playernum]->camera_virtualHeight() };
+	chatboxLeftAlignedPos = SDL_Rect{ 8, 0, players[player.playernum]->camera_virtualWidth() / 2,
+		players[player.playernum]->camera_virtualHeight() };
 
 	Frame* messageBoxFrame = chatFrame->findFrame("message box");
 	SDL_Rect messageBoxSize = messageBoxFrame->getSize();
@@ -556,8 +556,8 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		sheetFrame->setHollow(true);
 		sheetFrame->setBorder(0);
 		sheetFrame->setOwner(player.playernum);
-		sheetFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
-			players[player.playernum]->camera_y1(),
+		sheetFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+			players[player.playernum]->camera_virtualy1(),
 			Frame::virtualScreenX,
 			Frame::virtualScreenY });
 		this->sheetFrame = sheetFrame;
@@ -1608,10 +1608,10 @@ void Player::Hotbar_t::processHotbar()
 		hotbarFrame->setOwner(player.playernum);
 		createHotbar(player.playernum);
 	}
-	hotbarFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
-		players[player.playernum]->camera_y1(),
-		players[player.playernum]->camera_width(),
-		players[player.playernum]->camera_height() });
+	hotbarFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
 
 	if ( nohud || !players[player.playernum]->isLocalPlayer() )
 	{
@@ -1662,14 +1662,12 @@ void createIngameHud(int player) {
         int y = (player / 2) * Frame::virtualScreenY / 2;
         frame->setSize(SDL_Rect{x, y, Frame::virtualScreenX / 2, Frame::virtualScreenY / 2});
     }
-    frame->setActualSize(SDL_Rect{0, 0, frame->getSize().w, frame->getSize().h});
     frame->setHollow(true);
     frame->setBorder(0);
 
     // chat
     Frame* chat = frame->addFrame("chat");
     chat->setSize(SDL_Rect{224, 16, 832, 200});
-    chat->setActualSize(SDL_Rect{0, 0, 832, 200});
     chat->setFont(bigfont);
     {
         auto e = chat->addEntry("chat", true);
@@ -1730,7 +1728,6 @@ void createIngameHud(int player) {
             hp->setBorderStyle(Frame::BORDER_BEVEL_HIGH);
             hp->setBorder(2);
             hp->setSize(SDL_Rect{16, 32 + 56 * i, 160, 16});
-            hp->setActualSize(SDL_Rect{0, 0, hp->getSize().w, hp->getSize().h});
             auto red = hp->addImage(
                 SDL_Rect{4, 4, hp->getSize().w - 8, hp->getSize().h - 8},
                 0xff8888ff,
@@ -1748,7 +1745,6 @@ void createIngameHud(int player) {
             mp->setBorderStyle(Frame::BORDER_BEVEL_HIGH);
             mp->setBorder(2);
             mp->setSize(SDL_Rect{16, 48 + 56 * i, 160, 16});
-            mp->setActualSize(SDL_Rect{0, 0, mp->getSize().w, mp->getSize().h});
             auto blue = mp->addImage(
                 SDL_Rect{4, 4, mp->getSize().w - 8, mp->getSize().h - 8},
                 0xffff8888,
@@ -1780,7 +1776,6 @@ void createIngameHud(int player) {
             snprintf(name, sizeof(name), "ally hp bar %d", c + 1);
             Frame* bar = frame->addFrame(name);
             bar->setSize(SDL_Rect{frame->getSize().w - 128, 14 + 18 * c, 112, 14});
-            bar->setActualSize(SDL_Rect{0, 0, bar->getSize().w, bar->getSize().h});
             bar->setColor(0xffaaaaaa);
             auto red = bar->addImage(
                 SDL_Rect{2, 2, bar->getSize().w - 4, bar->getSize().h - 4},
@@ -1842,13 +1837,6 @@ void createIngameHud(int player) {
             24
             }
         );
-        xpbar->setActualSize(SDL_Rect{
-            0,
-            0,
-            w * num_hotbar_slots,
-            24
-            }
-        );
         xpbar->setColor(0xffaaaaaa);
         {
             auto progress = xpbar->addImage(
@@ -1880,7 +1868,6 @@ void createIngameHud(int player) {
         Frame* hp = frame->addFrame("hp");
         hp->setColor(0xffffffff);
         hp->setSize(SDL_Rect{16, frame->getSize().h - 96, 40, 24});
-        hp->setActualSize(SDL_Rect{0, 0, 40, 24});
         {
             auto red = hp->addImage(
                 SDL_Rect{4, 4, 32, 16},
@@ -1892,7 +1879,6 @@ void createIngameHud(int player) {
         Frame* hp_bar = frame->addFrame("hp_bar");
         hp_bar->setColor(0xffffffff);
         hp_bar->setSize(SDL_Rect{56, frame->getSize().h - 96, 256, 24});
-        hp_bar->setActualSize(SDL_Rect{0, 0, 256, 24});
         {
             auto red = hp_bar->addImage(
                 SDL_Rect{4, 4, hp_bar->getSize().w - 8, 16},
@@ -1915,7 +1901,6 @@ void createIngameHud(int player) {
         Frame* mp = frame->addFrame("mp");
         mp->setColor(0xffffffff);
         mp->setSize(SDL_Rect{16, frame->getSize().h - 68, 40, 24});
-        mp->setActualSize(SDL_Rect{0, 0, 40, 24});
         {
             auto blue = mp->addImage(
                 SDL_Rect{4, 4, 32, 16},
@@ -1927,7 +1912,6 @@ void createIngameHud(int player) {
         Frame* mp_bar = frame->addFrame("mp_bar");
         mp_bar->setColor(0xffffffff);
         mp_bar->setSize(SDL_Rect{56, frame->getSize().h - 68, 64, 24});
-        mp_bar->setActualSize(SDL_Rect{0, 0, 64, 24});
         {
             auto blue = mp_bar->addImage(
                 SDL_Rect{4, 4, mp_bar->getSize().w - 8, 16},
@@ -1981,28 +1965,24 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 
 	auto beatitudeFrame = slotFrame->addFrame("beatitude status frame"); // covers unidentified status as well
 	beatitudeFrame->setSize(slotSize);
-	beatitudeFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	beatitudeFrame->setHollow(true);
 	beatitudeFrame->setDisabled(true);
 	beatitudeFrame->addImage(coloredBackgroundPos, 0xFFFFFFFF, "images/system/white.png", "beatitude status bg");
 
 	auto brokenStatusFrame = slotFrame->addFrame("broken status frame");
 	brokenStatusFrame->setSize(slotSize);
-	brokenStatusFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	brokenStatusFrame->setHollow(true);
 	brokenStatusFrame->setDisabled(true);
 	brokenStatusFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 160, 160, 160, 64), "images/system/white.png", "broken status bg");
 
 	auto itemSpriteFrame = slotFrame->addFrame("item sprite frame");
 	itemSpriteFrame->setSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
-	itemSpriteFrame->setActualSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
 	itemSpriteFrame->setHollow(true);
 	itemSpriteFrame->setDisabled(true);
 	itemSpriteFrame->addImage(slotSize, 0xFFFFFFFF, "images/system/white.png", "item sprite img");
 
 	auto unusableFrame = slotFrame->addFrame("unusable item frame");
 	unusableFrame->setSize(slotSize);
-	unusableFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	unusableFrame->setHollow(true);
 	unusableFrame->setDisabled(true);
 	unusableFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
@@ -2011,7 +1991,6 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	static const char* qtyfont = "fonts/pixel_maz.ttf#14#2";
 	auto quantityFrame = slotFrame->addFrame("quantity frame");
 	quantityFrame->setSize(slotSize);
-	quantityFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	quantityFrame->setHollow(true);
 	Field* qtyText = quantityFrame->addField("quantity text", 32);
 	qtyText->setFont(qtyfont);
@@ -2023,14 +2002,12 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 
 	auto equippedIconFrame = slotFrame->addFrame("equipped icon frame");
 	equippedIconFrame->setSize(slotSize);
-	equippedIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	equippedIconFrame->setHollow(true);
 	SDL_Rect equippedImgPos = { 3, slotSize.h - 17, 16, 16 };
 	equippedIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Equipped.png", "equipped icon img");
 
 	auto brokenIconFrame = slotFrame->addFrame("broken icon frame");
 	brokenIconFrame->setSize(slotSize);
-	brokenIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	brokenIconFrame->setHollow(true);
 	brokenIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Broken.png", "broken icon img");
 }
@@ -2294,7 +2271,6 @@ void createInventoryTooltipFrame(const int player)
 		players[player]->inventoryUI.tooltipFrame = gui->addFrame(name);
 		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipFrame->setActualSize(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, tooltipFrame->getSize().h });
 		tooltipFrame->setDisabled(true);
 		tooltipFrame->setInheritParentFrameOpacity(false);
 	}
@@ -3109,11 +3085,10 @@ void createPlayerInventory(const int player)
 	snprintf(name, sizeof(name), "player inventory %d", player);
 	Frame* frame = gui->addFrame(name);
 	players[player]->inventoryUI.frame = frame;
-	frame->setSize(SDL_Rect{ players[player]->camera_x1(),
-		players[player]->camera_y1(),
-		players[player]->camera_width(),
-		players[player]->camera_height() });
-	frame->setActualSize(frame->getSize());
+	frame->setSize(SDL_Rect{ players[player]->camera_virtualx1(),
+		players[player]->camera_virtualy1(),
+		players[player]->camera_virtualWidth(),
+		players[player]->camera_virtualHeight() });
 	frame->setHollow(true);
 	frame->setBorder(0);
 	frame->setOwner(player);
@@ -3126,7 +3101,6 @@ void createPlayerInventory(const int player)
 		auto bgFrame = frame->addFrame("inventory base");
 		bgFrame->setSize(basePos);
 		const auto bgSize = bgFrame->getSize();
-		bgFrame->setActualSize(SDL_Rect{ 0, 0, bgSize.w, bgSize.h });
 		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, bgSize.h },
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Inventory_Base_02.png", "inventory base img");
@@ -3142,7 +3116,6 @@ void createPlayerInventory(const int player)
 	{
 		const auto invSlotsFrame = frame->addFrame("inventory slots");
 		invSlotsFrame->setSize(invSlotsPos);
-		invSlotsFrame->setActualSize(SDL_Rect{ 0, 0, invSlotsFrame->getSize().w, invSlotsFrame->getSize().h });
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 
@@ -3160,7 +3133,6 @@ void createPlayerInventory(const int player)
 				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
-				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });
 				//slotFrame->setDisabled(true);
 
 				createPlayerInventorySlotFrameElements(slotFrame);
@@ -3172,7 +3144,6 @@ void createPlayerInventory(const int player)
 		SDL_Rect dollSlotsPos{ 0, 0, basePos.w, invSlotsPos.y };
 		const auto dollSlotsFrame = frame->addFrame("paperdoll slots");
 		dollSlotsFrame->setSize(dollSlotsPos);
-		dollSlotsFrame->setActualSize(SDL_Rect{ 0, 0, dollSlotsFrame->getSize().w, dollSlotsFrame->getSize().h });
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 
@@ -3195,7 +3166,6 @@ void createPlayerInventory(const int player)
 				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
-				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });
 				//slotFrame->setDisabled(true);
 
 				createPlayerInventorySlotFrameElements(slotFrame);
@@ -3219,7 +3189,6 @@ void createPlayerInventory(const int player)
 
 		/*auto selectedFrame = dollSlotsFrame->addFrame("paperdoll selected item");
 		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
 		selectedFrame->setDisabled(true);
 
 		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
@@ -3286,7 +3255,6 @@ void createPlayerInventory(const int player)
 	{
 		auto draggingInventoryItem = frame->addFrame("dragging inventory item");
 		draggingInventoryItem->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		draggingInventoryItem->setActualSize(SDL_Rect{ 0, 0, draggingInventoryItem->getSize().w, draggingInventoryItem->getSize().h });
 		draggingInventoryItem->setDisabled(true);
 		createPlayerInventorySlotFrameElements(draggingInventoryItem);
 	}
@@ -3294,7 +3262,6 @@ void createPlayerInventory(const int player)
 	{
 		auto draggingInventoryItemOld = frame->addFrame("dragging inventory item old");
 		draggingInventoryItemOld->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		draggingInventoryItemOld->setActualSize(SDL_Rect{ 0, 0, draggingInventoryItemOld->getSize().w, draggingInventoryItemOld->getSize().h });
 		draggingInventoryItemOld->setDisabled(true);
 		
 		SDL_Rect imgPos{ 3, 3, draggingInventoryItemOld->getSize().w, draggingInventoryItemOld->getSize().h };
@@ -4203,10 +4170,10 @@ void Player::HUD_t::updateCursor()
 			color, "images/ui/Inventory/Selector_BR.png", "hud cursor bottomright");
 	}
 
-	cursorFrame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
-		players[player.playernum]->camera_y1(),
-		Frame::virtualScreenX,
-		Frame::virtualScreenY });
+	cursorFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
 
 	if ( !players[player.playernum]->isLocalPlayer() || players[player.playernum]->shootmode || players[player.playernum]->GUI.bActiveModuleUsesInventory() )
 	{
@@ -4410,11 +4377,10 @@ void Player::Inventory_t::processInventory()
 		createPlayerInventory(player.playernum);
 	}
 
-	frame->setSize(SDL_Rect{ players[player.playernum]->camera_x1(),
-		players[player.playernum]->camera_y1(),
-		players[player.playernum]->camera_width(),
-		players[player.playernum]->camera_height()});
-	frame->setActualSize(SDL_Rect{0, 0, frame->getSize().w, frame->getSize().h});
+	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight()});
 
 	bool tooltipWasDisabled = tooltipFrame->isDisabled();
 
@@ -4854,9 +4820,9 @@ void Player::Hotbar_t::updateHotbar()
 		return;
 	}
 
-	const int hotbarStartY1 = Frame::virtualScreenY - 106; // higher row (center group)
-	const int hotbarStartY2 = Frame::virtualScreenY - 96; // lower row (left/right)
-	const int hotbarCentreX = Frame::virtualScreenX / 2;
+	const int hotbarStartY1 = hotbarFrame->getSize().h - 106; // higher row (center group)
+	const int hotbarStartY2 = hotbarFrame->getSize().h - 96; // lower row (left/right)
+	const int hotbarCentreX = hotbarFrame->getSize().w / 2;
 	const int hotbarCentreXLeft = hotbarCentreX - 148;
 	const int hotbarCentreXRight = hotbarCentreX + 148;
 
