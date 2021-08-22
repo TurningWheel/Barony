@@ -21,6 +21,7 @@
 #include "interface.hpp"
 #include "../ui/Field.hpp"
 #include "../ui/Text.hpp"
+#include "../ui/Image.hpp"
 
 void Player::BookGUI_t::createBookGUI()
 {
@@ -52,15 +53,54 @@ void Player::BookGUI_t::createBookGUI()
 
 	Frame* bookBackground = frame->addFrame("book frame");
 	const int width = 534;
+	const int promptHeight = 27;
+	const int promptWidth = 60;
 	const int height = 306;
-	bookBackground->setSize(SDL_Rect{ frame->getSize().x, frame->getSize().y, width, height });
-	bookBackground->addImage(SDL_Rect{ 0, 0, width, height }, 0xFFFFFFFF,
+	bookBackground->setSize(SDL_Rect{ frame->getSize().x, frame->getSize().y, width, height + promptHeight * 2});
+	auto bgImg = bookBackground->addImage(SDL_Rect{ 0, promptHeight, width, height }, 0xFFFFFFFF,
 		"images/ui/Books/Book_00.png", "book img");
 
 	auto prevPage = bookBackground->addFrame("prev page mouse boundary");
-	prevPage->setSize(SDL_Rect{ 0, 0, width / 2, height });
+	prevPage->setSize(SDL_Rect{ 0, bgImg->pos.y, width / 2, height });
 	auto nextPage = bookBackground->addFrame("next page mouse boundary");
-	nextPage->setSize(SDL_Rect{ width / 2, 0, width, height });
+	nextPage->setSize(SDL_Rect{ width / 2, bgImg->pos.y, width, height });
+
+	std::string promptFont = "fonts/pixel_maz.ttf#16#2";
+	auto promptBack = bookBackground->addField("prompt back txt", 16);
+	promptBack->setSize(SDL_Rect{ bgImg->pos.x + bgImg->pos.w - promptWidth - 16, // lower right corner
+		bgImg->pos.y + bgImg->pos.h, promptWidth, promptHeight });
+	promptBack->setFont(promptFont.c_str());
+	promptBack->setHJustify(Field::justify_t::RIGHT);
+	promptBack->setVJustify(Field::justify_t::CENTER);
+	promptBack->setText(language[4053]);
+
+	auto promptBackImg = bookBackground->addImage(SDL_Rect{0, 0, 0, 0}, 0xFFFFFFFF,
+		"",	"prompt back img");
+	promptBackImg->disabled = true;
+	
+	auto promptNextPage = bookBackground->addField("prompt next txt", 16);
+	promptNextPage->setSize(SDL_Rect{ bgImg->pos.x + bgImg->pos.w - promptWidth - 16, // upper right corner
+		0, promptWidth, promptHeight });
+	promptNextPage->setFont(promptFont.c_str());
+	promptNextPage->setHJustify(Field::justify_t::RIGHT);
+	promptNextPage->setVJustify(Field::justify_t::CENTER);
+	promptNextPage->setText(language[4054]);
+
+	auto promptNextPageImg = bookBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+		"", "prompt next img");
+	promptNextPageImg->disabled = true;
+
+	auto promptPrevPage = bookBackground->addField("prompt prev txt", 16);
+	promptPrevPage->setSize(SDL_Rect{ 16, // upper left corner
+		0, promptWidth, promptHeight });
+	promptPrevPage->setFont(promptFont.c_str());
+	promptPrevPage->setHJustify(Field::justify_t::LEFT);
+	promptPrevPage->setVJustify(Field::justify_t::CENTER);
+	promptPrevPage->setText(language[4055]);
+
+	auto promptPrevPageImg = bookBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+		"", "prompt prev img");
+	promptPrevPageImg->disabled = true;
 
 	std::string bookFont = "fonts/pixel_maz.ttf#16";
 	Field* bookLeftColumnText = bookBackground->addField("left column text", 1024);
@@ -69,7 +109,7 @@ void Player::BookGUI_t::createBookGUI()
 	const int pageHeight = BOOK_PAGE_HEIGHT + 10;
 	const int leftMargin = 30;
 	const int topMargin = 10;
-	bookLeftColumnText->setSize(SDL_Rect{ leftMargin, topMargin, pageWidth, pageHeight });
+	bookLeftColumnText->setSize(SDL_Rect{ leftMargin, bgImg->pos.y + topMargin, pageWidth, pageHeight });
 	bookLeftColumnText->setFont(bookFont.c_str());
 	bookLeftColumnText->setHJustify(Field::justify_t::LEFT);
 	bookLeftColumnText->setVJustify(Field::justify_t::TOP);
@@ -80,7 +120,7 @@ void Player::BookGUI_t::createBookGUI()
 
 	Field* bookRightColumnText = bookBackground->addField("right column text", 1024);
 	bookRightColumnText->setText("Nothing");
-	bookRightColumnText->setSize(SDL_Rect{ width - pageWidth - leftMargin, topMargin, pageWidth, pageHeight });
+	bookRightColumnText->setSize(SDL_Rect{ width - pageWidth - leftMargin, bgImg->pos.y + topMargin, pageWidth, pageHeight });
 	bookRightColumnText->setFont(bookFont.c_str());
 	bookRightColumnText->setHJustify(Field::justify_t::LEFT);
 	bookRightColumnText->setVJustify(Field::justify_t::TOP);
@@ -160,6 +200,88 @@ void Player::BookGUI_t::updateBookGUI()
 	bookSize.y = -bookSize.h + bookFadeInAnimationY * (baseY + bookSize.h);
 	innerFrame->setSize(bookSize);
 
+	bool drawGlyphs = !::inputs.getVirtualMouse(player.playernum)->draw_cursor;
+	int numPages = allBooks[bookIndex].formattedPages.size();
+	bool canAdvanceNextPage = (currentBookPage + 2 < numPages);
+	bool canAdvancePrevPage = (currentBookPage - 2 >= 0);
+
+	if ( auto promptBack = innerFrame->findField("prompt back txt") )
+	{
+		promptBack->setDisabled(!drawGlyphs);
+		promptBack->setText(language[4053]);
+		auto promptImg = innerFrame->findImage("prompt back img");
+		promptImg->disabled = !drawGlyphs;
+		SDL_Rect glyphPos = promptImg->pos;
+		if ( auto textGet = Text::get(promptBack->getText(), promptBack->getFont()) )
+		{
+			SDL_Rect textPos = promptBack->getSize();
+			textPos.w = textGet->getWidth();
+			textPos.x = bookSize.w - textPos.w - 16;
+			promptBack->setSize(textPos);
+			glyphPos.x = promptBack->getSize().x + promptBack->getSize().w - textGet->getWidth() - 4;
+		}
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuCancel");
+		Image* glyphImage = Image::get(promptImg->path.c_str());
+		if ( glyphImage )
+		{
+			glyphPos.w = glyphImage->getWidth();
+			glyphPos.h = glyphImage->getHeight();
+			glyphPos.x -= glyphPos.w;
+			glyphPos.y = promptBack->getSize().y + promptBack->getSize().h / 2 - glyphPos.h / 2;
+			promptImg->pos = glyphPos;
+		}
+	}
+	if ( auto promptNext = innerFrame->findField("prompt next txt") )
+	{
+		promptNext->setDisabled(!drawGlyphs || !canAdvanceNextPage);
+		promptNext->setText(language[4054]);
+		auto promptImg = innerFrame->findImage("prompt next img");
+		promptImg->disabled = promptNext->isDisabled();
+		SDL_Rect glyphPos = promptImg->pos;
+		SDL_Rect textPos = promptNext->getSize();
+		if ( auto textGet = Text::get(promptNext->getText(), promptNext->getFont()) )
+		{
+			textPos.w = textGet->getWidth();
+		}
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuPageRight");
+		Image* glyphImage = Image::get(promptImg->path.c_str());
+		if ( glyphImage )
+		{
+			glyphPos.w = glyphImage->getWidth();
+			glyphPos.h = glyphImage->getHeight();
+			glyphPos.x = bookSize.w - 16 - glyphPos.w;
+			glyphPos.y = promptNext->getSize().y + promptNext->getSize().h / 2 - glyphPos.h / 2;
+			promptImg->pos = glyphPos;
+		}
+		textPos.x = glyphPos.x - 4 - textPos.w;
+		promptNext->setSize(textPos);
+	}
+	if ( auto promptPrev = innerFrame->findField("prompt prev txt") )
+	{
+		promptPrev->setDisabled(!drawGlyphs || !canAdvancePrevPage);
+		promptPrev->setText(language[4055]);
+		auto promptImg = innerFrame->findImage("prompt prev img");
+		promptImg->disabled = promptPrev->isDisabled();
+		SDL_Rect glyphPos = promptImg->pos;
+		SDL_Rect textPos = promptPrev->getSize();
+		if ( auto textGet = Text::get(promptPrev->getText(), promptPrev->getFont()) )
+		{
+			textPos.w = textGet->getWidth();
+		}
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuPageLeft");
+		Image* glyphImage = Image::get(promptImg->path.c_str());
+		if ( glyphImage )
+		{
+			glyphPos.w = glyphImage->getWidth();
+			glyphPos.h = glyphImage->getHeight();
+			glyphPos.x = 16;
+			glyphPos.y = promptPrev->getSize().y + promptPrev->getSize().h / 2 - glyphPos.h / 2;
+			promptImg->pos = glyphPos;
+		}
+		textPos.x = glyphPos.x + glyphPos.w + 4;
+		promptPrev->setSize(textPos);
+	}
+
 	//Center the book GUI.
 	SDL_Rect pos;
 	pos.x = getStartX();
@@ -179,34 +301,6 @@ void Player::BookGUI_t::updateBookGUI()
 		drawImage(bookgui_img, NULL, &pos);
 	}*/
 
-	int numPages = allBooks[bookIndex].formattedPages.size();
-
-	if ( inputs.bControllerInputPressed(player.playernum, INJOY_MENU_BOOK_NEXT) )
-	{
-		inputs.controllerClearInput(player.playernum, INJOY_MENU_BOOK_NEXT);
-		if ( currentBookPage + 2 < numPages )
-		{
-			currentBookPage += 2;
-			playSound(83 + rand() % 6, 128);
-		}
-	}
-
-	if ( inputs.bControllerInputPressed(player.playernum, INJOY_MENU_BOOK_PREV) )
-	{
-		inputs.controllerClearInput(player.playernum, INJOY_MENU_BOOK_PREV);
-		if ( currentBookPage - 2 >= 0 )
-		{
-			currentBookPage -= 2;
-			playSound(83 + rand() % 6, 128);
-		}
-	}
-
-	if ( inputs.bControllerInputPressed(player.playernum, INJOY_MENU_CANCEL) )
-	{
-		inputs.controllerClearInput(player.playernum, INJOY_MENU_CANCEL);
-		closeBookGUI();
-	}
-
 	auto leftColumn = innerFrame->findField("left column text");
 	auto rightColumn = innerFrame->findField("right column text");
 
@@ -220,8 +314,9 @@ void Player::BookGUI_t::updateBookGUI()
 		if ( nextPageBoundary->capturesMouse() )
 		{
 			inputs.mouseClearLeft(player.playernum);
-			if ( currentBookPage + 2 < numPages )
+			if ( canAdvanceNextPage )
 			{
+				canAdvanceNextPage = false;
 				currentBookPage += 2;
 				playSound(83 + rand() % 6, 128);
 			}
@@ -229,8 +324,9 @@ void Player::BookGUI_t::updateBookGUI()
 		else if ( prevPageBoundary->capturesMouse() )
 		{
 			inputs.mouseClearLeft(player.playernum);
-			if ( currentBookPage - 2 >= 0 )
+			if ( canAdvancePrevPage )
 			{
+				canAdvancePrevPage = false;
 				currentBookPage -= 2;
 				playSound(83 + rand() % 6, 128);
 			}
@@ -238,7 +334,34 @@ void Player::BookGUI_t::updateBookGUI()
 		if ( !innerFrame->capturesMouse() )
 		{
 			inputs.mouseClearLeft(player.playernum);
-			// closing book
+			closeBookGUI();
+			return;
+		}
+	}
+
+	if ( player.GUI.activeModule == player.GUI.MODULE_BOOK_VIEW )
+	{
+		if ( Input::inputs[player.playernum].binaryToggle("MenuPageRight") )
+		{
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuPageRight");
+			if ( canAdvanceNextPage )
+			{
+				currentBookPage += 2;
+				playSound(83 + rand() % 6, 128);
+			}
+		}
+		if ( Input::inputs[player.playernum].binaryToggle("MenuPageLeft") )
+		{
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuPageLeft");
+			if ( canAdvancePrevPage )
+			{
+				currentBookPage -= 2;
+				playSound(83 + rand() % 6, 128);
+			}
+		}
+		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
+		{
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
 			closeBookGUI();
 			return;
 		}
@@ -355,6 +478,17 @@ void Player::BookGUI_t::closeBookGUI()
 	bBookOpen = false;
 	openBookName = "";
 	openBookItem = nullptr;
+
+	if ( bookFrame )
+	{
+		bookFrame->setDisabled(true);
+	}
+
+	if ( !player.shootmode )
+	{
+		players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY,
+			INVENTORY_MODE_ITEM);
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -372,7 +506,8 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 		return;
 	}
 
-	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY, 
+		INVENTORY_MODE_ITEM, player.GUI.MODULE_BOOK_VIEW); // Reset the GUI to the inventory.
 	bBookOpen = true;
 	openBookName = getBookNameFromIndex(index);
 	openBookItem = item;

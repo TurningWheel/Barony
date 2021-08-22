@@ -4175,7 +4175,10 @@ void Player::HUD_t::updateCursor()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
-	if ( !players[player.playernum]->isLocalPlayer() || players[player.playernum]->shootmode || players[player.playernum]->GUI.bActiveModuleUsesInventory() )
+	if ( !players[player.playernum]->isLocalPlayer() 
+		|| players[player.playernum]->shootmode 
+		|| players[player.playernum]->GUI.bActiveModuleUsesInventory()
+		|| players[player.playernum]->GUI.bActiveModuleHasNoCursor() )
 	{
 		// hide
 		cursorFrame->setDisabled(true);

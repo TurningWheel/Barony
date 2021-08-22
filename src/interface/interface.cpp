@@ -1576,6 +1576,18 @@ Sint8* inputPressedForPlayer(int player, Uint32 scancode)
 	}
 }
 
+bool Player::GUI_t::bActiveModuleHasNoCursor()
+{
+	switch ( activeModule )
+	{
+		case MODULE_BOOK_VIEW:
+			return true;
+		default:
+			break;
+	}
+	return false;
+}
+
 bool Player::GUI_t::bActiveModuleUsesInventory()
 {
 	switch ( activeModule )
@@ -1647,7 +1659,8 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 		if ( hudCursor && player.inventoryUI.selectedItemCursorFrame )
 		{
 			if ( (oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR)
-				&& !(activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR) )
+				&& !(activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR)
+				&& !bActiveModuleHasNoCursor() )
 			{
 				SDL_Rect size = player.inventoryUI.selectedItemCursorFrame->getSize();
 				player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
@@ -1662,7 +1675,7 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 	}
 }
 
-void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMode)
+void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMode, const int whichModule)
 {
 	if ( !inputs.bPlayerIsControllable(playernum) )
 	{
@@ -1682,7 +1695,8 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	{
 	//	GUI.activateModule(GUI_t::MODULE_INVENTORY);
 	}*/
-	GUI.activateModule(GUI_t::MODULE_INVENTORY);
+	int oldmodule = GUI.activeModule;
+	GUI.activateModule((GUI_t::GUIModules)whichModule);
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 	inputs.getUIInteraction(playernum)->toggleclick = false;
 
@@ -1693,8 +1707,8 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	bool warped = false;
 	bool warpMouseToInventorySlot = false;
 	if ( inputs.hasController(playernum)
-		&& oldgui == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE
-		&& GUI.activeModule == GUI_t::MODULE_INVENTORY
+		&& ((oldgui == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE) 
+			|| (oldmodule != GUI.activeModule && GUI.activeModule == GUI_t::MODULE_INVENTORY))
 		&& !FollowerMenu[playernum].followerToCommand )
 	{
 		warpMouseToInventorySlot = true;
@@ -1727,37 +1741,6 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	{
 		inputs.warpMouse(playernum, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2), flags);
 	}
-
-	// TODO UI: CLEAN UP
-	//if ( inputs.bPlayerUsingKeyboardControl(playernum) )
-	//{
-	//	SDL_SetRelativeMouseMode(SDL_FALSE);
-	//	//SDL_WarpMouseInWindow(screen, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2));
-	//	mousex = camera_x1() + (camera_width() / 2);
-	//	mousey = camera_y1() + (camera_height() / 2);
-	//	omousex = mousex;
-	//	omousey = mousey;
-
-	//	if ( inputs.hasController(playernum) )
-	//	{
-	//		const auto& mouse = inputs.getVirtualMouse(playernum);
-	//		mouse->x = mousex;
-	//		mouse->y = mousey;
-	//		mouse->ox = omousex;
-	//		mouse->oy = omousey;
-	//	}
-	//}
-	//else if ( inputs.hasController(playernum) )
-	//{
-	//	const auto& mouse = inputs.getVirtualMouse(playernum);
-	//	mouse->x = camera_x1() + (camera_width() / 2);
-	//	mouse->y = camera_y1() + (camera_height() / 2);
-	//	mouse->ox = mouse->x;
-	//	mouse->oy = mouse->y;
-	//}
-	
-	//players[playernum]->characterSheet.attributespage = 0;
-	//proficienciesPage = 0;
 }
 
 void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
@@ -1803,6 +1786,7 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		closeShop(playernum);
 	}
 	gui_mode = GUI_MODE_NONE;
+	GUI.activateModule(GUI_t::MODULE_NONE);
 
 
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )

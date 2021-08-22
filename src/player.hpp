@@ -650,13 +650,6 @@ public:
 	const bool isLocalPlayer() const;
 	const bool isLocalPlayerAlive() const;
 
-	//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
-	void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
-	void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose);
-	bool shootmode = false;
-	int inventory_mode = INVENTORY_MODE_ITEM;
-	int gui_mode = GUI_MODE_NONE;
-
 	class GUI_t
 	{
 		Player& player;
@@ -684,9 +677,17 @@ public:
 		void activateModule(GUIModules module);
 		bool warpControllerToModule(bool moveCursorInstantly);
 		bool bActiveModuleUsesInventory();
+		bool bActiveModuleHasNoCursor();
 		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
 	} GUI;
+
+	//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
+	void openStatusScreen(const int whichGUIMode, const int whichInventoryMode, const int whichModule = Player::GUI_t::MODULE_INVENTORY); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
+	void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose);
+	bool shootmode = false;
+	int inventory_mode = INVENTORY_MODE_ITEM;
+	int gui_mode = GUI_MODE_NONE;
 
 	class Inventory_t
 	{
