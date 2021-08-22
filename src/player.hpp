@@ -1065,7 +1065,14 @@ public:
 		void drawActionIcon(SDL_Rect& pos, int skill) const;
 		const int getActionIconForPlayer(ActionPrompts prompt) const;
 		void processHUD();
+		int XP_FRAME_WIDTH = 650;
+		int XP_FRAME_START_Y = 44;
+		int XP_FRAME_HEIGHT = 34;
 		void updateXPBar();
+		int HPMP_FRAME_WIDTH = 276;
+		int HPMP_FRAME_START_X = 14;
+		int HPMP_FRAME_START_Y = 106;
+		int HPMP_FRAME_HEIGHT = 34;
 		void updateHPBar();
 		void updateMPBar();
 		void resetBars();

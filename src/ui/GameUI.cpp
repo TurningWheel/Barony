@@ -42,11 +42,11 @@ struct CustomColors_t
 void createHPMPBars(const int player)
 {
 	auto& hud_t = players[player]->hud;
-	const int barTotalHeight = 34;
-	const int hpBarStartY = (hud_t.hudFrame->getSize().y + hud_t.hudFrame->getSize().h) - 106;
+	const int barTotalHeight = hud_t.HPMP_FRAME_HEIGHT;
+	const int hpBarStartY = (hud_t.hudFrame->getSize().h - hud_t.HPMP_FRAME_START_Y);
 	const int mpBarStartY = hpBarStartY + barTotalHeight;
-	const int barWidth = 276;
-	const int barStartX = 14;
+	const int barWidth = hud_t.HPMP_FRAME_WIDTH;
+	const int barStartX = hud_t.HPMP_FRAME_START_X;
 	{
 		hud_t.hpFrame = hud_t.hudFrame->addFrame("hp bar");
 		hud_t.hpFrame->setHollow(true);
@@ -163,10 +163,10 @@ void createXPBar(const int player)
 	hud_t.xpFrame = hud_t.hudFrame->addFrame("xp bar");
 	hud_t.xpFrame->setHollow(true);
 
-	const int xpBarStartY = (hud_t.hudFrame->getSize().y + hud_t.hudFrame->getSize().h) - 44;
-	const int xpBarWidth = 650;
-	const int xpBarTotalHeight = 34;
-	SDL_Rect pos { (hud_t.hudFrame->getSize().x + hud_t.hudFrame->getSize().w / 2) - xpBarWidth / 2, xpBarStartY, xpBarWidth, xpBarTotalHeight };
+	const int xpBarStartY = (hud_t.hudFrame->getSize().h) - hud_t.XP_FRAME_START_Y;
+	const int xpBarWidth = hud_t.XP_FRAME_WIDTH;
+	const int xpBarTotalHeight = hud_t.XP_FRAME_HEIGHT;
+	SDL_Rect pos { (hud_t.hudFrame->getSize().w / 2) - xpBarWidth / 2, xpBarStartY, xpBarWidth, xpBarTotalHeight };
 	hud_t.xpFrame->setSize(pos);
 
 	auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_Base_00.png", "xp img base");
@@ -4427,6 +4427,11 @@ void Player::HUD_t::updateXPBar()
 		return;
 	}
 
+	SDL_Rect pos = xpFrame->getSize();
+	pos.x = hudFrame->getSize().w / 2 - pos.w / 2;
+	pos.y = hudFrame->getSize().h - XP_FRAME_START_Y;
+	xpFrame->setSize(pos);
+
 	xpBar.animateSetpoint = std::min(100, stats[player.playernum]->EXP);
 	xpBar.maxValue = 1000.0;
 
@@ -4526,6 +4531,11 @@ void Player::HUD_t::updateHPBar()
 	{
 		return;
 	}
+
+	SDL_Rect pos = hpFrame->getSize();
+	pos.x = HPMP_FRAME_START_X;
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y;
+	hpFrame->setSize(pos);
 
 	auto hpForegroundFrame = hpFrame->findFrame("hp foreground frame");
 	auto hpBg = hpFrame->findImage("hp img base");
@@ -4679,6 +4689,11 @@ void Player::HUD_t::updateMPBar()
 	{
 		return;
 	}
+
+	SDL_Rect pos = mpFrame->getSize();
+	pos.x = HPMP_FRAME_START_X;
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT;
+	mpFrame->setSize(pos);
 
 	auto mpForegroundFrame = mpFrame->findFrame("mp foreground frame");
 	auto mpBg = mpFrame->findImage("mp img base");

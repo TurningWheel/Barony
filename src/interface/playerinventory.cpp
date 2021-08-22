@@ -4758,6 +4758,8 @@ void Player::Inventory_t::updateInventory()
 
 					int startx = slotFrame->getAbsoluteSize().x;
 					int starty = slotFrame->getAbsoluteSize().y;
+					startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+					starty -= players[player]->camera_virtualy1();
 
 					if ( x == getSelectedSlotX()
 						&& y == getSelectedSlotY()
@@ -4832,6 +4834,9 @@ void Player::Inventory_t::updateInventory()
 					starty = hoveringDollSlotFrame->getAbsoluteSize().y;
 					hoveringDollSlotFrame = nullptr;
 				}
+
+				startx -= players[player]->camera_virtualx1();  // offset any splitscreen camera positioning.
+				starty -= players[player]->camera_virtualy1();
 
 				if ( inputs.getVirtualMouse(player)->draw_cursor )
 				{
@@ -5123,7 +5128,7 @@ void Player::Inventory_t::updateInventory()
 			{
 				auto inventoryBgFrame = frame->findFrame("inventory base");
 				int tooltipCoordX = frame->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
-				int tooltipCoordY = slotFrame->getSize().y;
+				int tooltipCoordY = frame->getSize().y + slotFrame->getSize().y;
 				if ( !itemOnPaperDoll )
 				{
 					tooltipCoordY += frame->findFrame("inventory slots")->getSize().y;
@@ -5376,7 +5381,10 @@ void Player::Inventory_t::updateInventory()
 			{
 				if ( auto slotFrame = getInventorySlotFrame(selectedSlotFrameX, selectedSlotFrameY) )
 				{
-					selectedSlotFrame->setSize(SDL_Rect{ slotFrame->getAbsoluteSize().x + 1, slotFrame->getAbsoluteSize().y + 1, 
+					int startx = slotFrame->getAbsoluteSize().x - players[player]->camera_virtualx1();
+					int starty = slotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
+
+					selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1,
 						selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 					selectedSlotFrame->setDisabled(false);
 
@@ -5401,7 +5409,11 @@ void Player::Inventory_t::updateInventory()
 						players[player]->hotbar.selectHotbarSlot(c);
 
 						selectedSlotCursor->setDisabled(false);
-						updateSelectedSlotAnimation(hotbarSlotFrame->getAbsoluteSize().x - 1, hotbarSlotFrame->getAbsoluteSize().y - 1,
+
+						int startx = hotbarSlotFrame->getAbsoluteSize().x - players[player]->camera_virtualx1();
+						int starty = hotbarSlotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
+
+						updateSelectedSlotAnimation(startx - 1, starty - 1,
 							hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 						//messagePlayer(player, "7: hotbar: %d", c);
 						break;

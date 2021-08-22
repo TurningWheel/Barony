@@ -4338,6 +4338,8 @@ void ingameHud()
 							pos.y = inputs.getMouse(player, Inputs::Y) - 15;
 							pos.x *= ((float)Frame::virtualScreenX / (float)xres);
 							pos.y *= ((float)Frame::virtualScreenY / (float)yres);
+							pos.x -= players[player]->camera_virtualx1();
+							pos.y -= players[player]->camera_virtualy1();
 							draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
 						}
 					}
