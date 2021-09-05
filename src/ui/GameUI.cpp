@@ -4719,71 +4719,6 @@ SDL_Surface* blitEnemyBar(const int player)
 		SDL_SetSurfaceAlphaMod(txtSurf, a * frameOpacity);
 		SDL_BlitSurface(txtSurf, nullptr, sprite, &pos);
 	}
-
-	/*	SDL_Rect pos;
-		pos.w = 48;
-		pos.h = 48;
-		pos.x = tooltip.w - pos.w - 8;
-		pos.y = TTF12_HEIGHT;
-		SDL_Surface** itemSurf = static_cast<SDL_Surface**>(node->element);
-		SDL_BlitScaled(*itemSurf, nullptr, sprite, &pos);
-
-		GLuint itemTexid = 0;
-		SDL_Surface* textSurf = glTextSurface(item->description(), &itemTexid);
-		if ( textSurf )
-		{
-			pos.x = 4;
-			pos.y = 0;
-			SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-		}
-		char buf[256] = "";
-		if ( !item->identified )
-		{
-			textSurf = glTextSurface(language[309], &itemTexid);
-			if ( textSurf )
-			{
-				pos.y += TTF12_HEIGHT;
-				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-			}
-		}
-		else
-		{
-			if ( item->beatitude < 0 )
-			{
-				textSurf = glTextSurface(language[310], &itemTexid);
-			}
-			else if ( item->beatitude > 0 )
-			{
-				textSurf = glTextSurface(language[312], &itemTexid);
-			}
-			else
-			{
-				textSurf = glTextSurface(language[311], &itemTexid);
-			}
-			if ( textSurf )
-			{
-				pos.y += TTF12_HEIGHT;
-				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-			}
-		}
-
-		snprintf(buf, 255, language[313], items[item->type].weight);
-		textSurf = glTextSurface(buf, &itemTexid);
-		if ( textSurf )
-		{
-			pos.y += TTF12_HEIGHT;
-			SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-		}
-		snprintf(buf, 255, language[314], item->sellValue(player));
-		textSurf = glTextSurface(buf, &itemTexid);
-		if ( textSurf )
-		{
-			pos.y += TTF12_HEIGHT;
-			SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-		}
-		free(item);
-		item = nullptr;
-	}*/
 	return sprite;
 }
 
@@ -4810,17 +4745,24 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 
 	if ( enemyDetails )
 	{
-		enemyBar->animatePreviousSetpoint = enemyDetails->animatePreviousSetpoint;
-		enemyBar->animateValue = enemyDetails->animateValue;
-		enemyBar->animateValue2 = enemyDetails->animateValue2;
-		enemyBar->animateSetpoint = enemyDetails->animateSetpoint;
-		enemyBar->animateTicks = enemyDetails->animateTicks;
-		enemyBar->maxValue = enemyDetails->maxValue;
+		enemyBar->animatePreviousSetpoint = enemyDetails->animator.previousSetpoint;
+		enemyBar->animateValue = enemyDetails->animator.foregroundValue;
+		enemyBar->animateValue2 = enemyDetails->animator.backgroundValue;
+		enemyBar->animateSetpoint = enemyDetails->animator.setpoint;
+		enemyBar->animateTicks = enemyDetails->animator.animateTicks;
+		enemyBar->maxValue = enemyDetails->animator.maxValue;
 		enemyBar->fadeOut = 100.0;
-		damageNumber = enemyDetails->damageTaken;
-		enemyDetails->damageTaken = -1;
+		damageNumber = enemyDetails->animator.damageTaken;
+		enemyDetails->animator.damageTaken = -1;
+
+		if ( Entity* entity = uidToEntity(enemyDetails->enemy_uid) )
+		{
+			enemyDetails->worldX = entity->x;
+			enemyDetails->worldY = entity->y;
+			enemyDetails->worldZ = entity->z;
+		}
 	}
-	if ( !enemyDetails )
+	if ( !enemyDetails || enemyDetails->expired == true )
 	{
 		doFadeout = true;
 	}
@@ -4833,8 +4775,6 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 	}
 	else
 	{
-		//enemyBar->fadeIn += 20.0 * (60.f / std::max(1U, fpsLimit));
-		//if ( enemyBar->fadeIn > 100.0 ) { enemyBar->fadeIn = 100.0; }
 		enemyBar->fadeIn = 100.0;
 		whichFrame->setOpacity(enemyBar->fadeIn);
 	}
@@ -4902,12 +4842,11 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 
 		int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
 		progressWidth *= multiplier; // scale the progress bars
-		baseBg->pos.w = backgroundWidth - diff;
-		baseEndCap->pos.x = baseBg->pos.x + baseBg->pos.w; // move the background endcap by x pixels as above
+		baseBg->pos.w = backgroundWidth - diff; // move the background bar by x pixels
+		baseEndCap->pos.x = baseBg->pos.x + baseBg->pos.w; // move the background endcap by the new width
 
 		hpProgress->pos.w = progressWidth;
 		hpProgressEndcap->pos.x = hpProgress->pos.x + hpProgress->pos.w;
-		//baseBg->pos.w = backgroundWidth - diff; // move the background bar by x pixels as above
 
 		pos.x = (hudFrame->getSize().w / 2) - ENEMYBAR_FRAME_WIDTH / 2 - 6;
 		int widthChange = ((ENEMYBAR_BAR_WIDTH - hpProgressEndcap->pos.w) - progressWidth);
@@ -4917,8 +4856,6 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 		textPos.y = baseBg->pos.y;
 		textPos.h = baseBg->pos.h;
 		nameTxt->setSize(textPos);
-
-		//messagePlayer(0, "%d | %d", pos.x, player.camera_virtualWidth() - (pos.x + baseEndCap->pos.x + baseEndCap->pos.w));
 	}
 
 	int startY = hudFrame->getSize().h - ENEMYBAR_FRAME_START_Y - 100;
@@ -4928,7 +4865,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 	}
 	else
 	{
-		pos.y = startY;// -(10 * (100.0 - enemyBar->fadeIn) / 100.0);
+		pos.y = startY;
 	}
 	whichFrame->setSize(pos);
 	
@@ -5123,12 +5060,27 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 
 	if ( enemyDetails )
 	{
-		enemyDetails->animatePreviousSetpoint = enemyBar->animatePreviousSetpoint;
-		enemyDetails->animateValue = enemyBar->animateValue;
-		enemyDetails->animateValue2 = enemyBar->animateValue2;
-		enemyDetails->animateSetpoint = enemyBar->animateSetpoint;
-		enemyDetails->animateTicks = enemyBar->animateTicks;
-		enemyDetails->maxValue = enemyBar->maxValue;
+		enemyDetails->animator.previousSetpoint = enemyBar->animatePreviousSetpoint;
+		enemyDetails->animator.foregroundValue = enemyBar->animateValue;
+		enemyDetails->animator.backgroundValue = enemyBar->animateValue2;
+		enemyDetails->animator.setpoint = enemyBar->animateSetpoint;
+		enemyDetails->animator.animateTicks = enemyBar->animateTicks;
+		enemyDetails->animator.maxValue = enemyBar->maxValue;
+		enemyDetails->animator.fadeIn = enemyBar->fadeIn;
+		enemyDetails->animator.fadeOut = enemyBar->fadeOut;
+		if ( enemyDetails->worldTexture )
+		{
+			delete enemyDetails->worldTexture;
+			enemyDetails->worldTexture = nullptr;
+		}
+		if ( enemyDetails->worldSurfaceSprite )
+		{
+			SDL_FreeSurface(enemyDetails->worldSurfaceSprite);
+			enemyDetails->worldSurfaceSprite = nullptr;
+		}
+		enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum);
+		enemyDetails->worldTexture = new TempTexture();
+		enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
 	}
 
 	whichFrame->setDisabled(true);
