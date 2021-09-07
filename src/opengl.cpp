@@ -15,6 +15,8 @@
 #include "files.hpp"
 #include "items.hpp"
 #include "ui/Text.hpp"
+#include "ui/GameUI.hpp"
+#include "interface/interface.hpp"
 
 #ifdef WINDOWS
 PFNGLGENBUFFERSPROC SDL_glGenBuffers;
@@ -36,6 +38,173 @@ void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar
 	fW = fH * aspect;
 
 	glFrustum(-fW, fW, -fH, fH, zNear, zFar);
+}
+
+// WIP vector helpers
+typedef struct vec4 {
+	float x; float y; float z; float w;
+} vec4_t;
+
+typedef struct mat4x4 {
+	vec4_t x; vec4_t y; vec4_t z; vec4_t w;
+} mat4x4_t;
+
+#define mat4x4(F) (mat4x4_t {\
+    F, 0.f, 0.f, 0.f,\
+    0.f, F, 0.f, 0.f,\
+    0.f, 0.f, F, 0.f,\
+    0.f, 0.f, 0.f, F,\
+})
+#define mat4x4_copy(M) (mat4x4_t {\
+    M.x.x, M.x.y, M.x.z, M.x.w,\
+    M.y.x, M.y.y, M.y.z, M.y.w,\
+    M.z.x, M.z.y, M.z.z, M.z.w,\
+    M.w.x, M.w.y, M.w.z, M.w.w,\
+})
+
+#define vec4(F) (vec4_t{F, F, F, F})
+#define vec4_copy(V) (vec4_t{V.x, V.y, V.z, V.w})
+
+vec4_t* mul_mat_vec4(vec4_t* result, const mat4x4_t* m, const vec4_t* v) {
+	result->x = m->x.x * v->x + m->y.x * v->y + m->z.x * v->z + m->w.x * v->w;
+	result->y = m->x.y * v->x + m->y.y * v->y + m->z.y * v->z + m->w.y * v->w;
+	result->z = m->x.z * v->x + m->y.z * v->y + m->z.z * v->z + m->w.z * v->w;
+	result->w = m->x.w * v->x + m->y.w * v->y + m->z.w * v->z + m->w.w * v->w;
+	return result;
+}
+
+vec4_t* add_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->x + b->x;
+	result->y = a->y + b->y;
+	result->z = a->z + b->z;
+	result->w = a->w + b->w;
+	return result;
+}
+
+vec4_t* sub_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->x - b->x;
+	result->y = a->y - b->y;
+	result->z = a->z - b->z;
+	result->w = a->w - b->w;
+	return result;
+}
+
+vec4_t* mul_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->x * b->x;
+	result->y = a->y * b->y;
+	result->z = a->z * b->z;
+	result->w = a->w * b->w;
+	return result;
+}
+
+vec4_t* div_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->x / b->x;
+	result->y = a->y / b->y;
+	result->z = a->z / b->z;
+	result->w = a->w / b->w;
+	return result;
+}
+
+vec4_t* pow_vec4(vec4_t* result, const vec4_t* v, float f) {
+	result->x = v->x * f;
+	result->y = v->y * f;
+	result->z = v->z * f;
+	result->w = v->w * f;
+	return result;
+}
+
+float dot_vec4(const vec4_t* a, const vec4_t* b) {
+	return a->x * b->x + a->y * b->y + a->z * b->z + a->w * b->w;
+}
+
+vec4_t* cross_vec3(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->y * b->z - a->z * b->y;
+	result->y = a->z * b->x - a->x * b->z;
+	result->z = a->x * b->y - a->y * b->x;
+	return result;
+}
+
+vec4_t* cross_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->y * b->z - a->z * b->y;
+	result->y = a->z * b->w - a->w * b->z;
+	result->z = a->w * b->x - a->x * b->w;
+	result->w = a->x * b->y - a->y * b->x;
+	return result;
+}
+
+float length_vec4(const vec4_t* v) {
+	return sqrtf(v->x * v->x + v->y * v->y + v->z * v->z + v->w * v->w);
+}
+
+vec4_t* normal_vec4(vec4_t* result, const vec4_t* v) {
+	float length = length_vec4(v);
+	result->x = v->x / length;
+	result->y = v->y / length;
+	result->z = v->z / length;
+	result->w = v->w / length;
+	return result;
+}
+
+mat4x4_t* mul_mat(mat4x4_t* result, const mat4x4_t* m1, const mat4x4_t* m2) {
+	(void)add_vec4(
+		&result->x,
+		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->x, m2->x.x), pow_vec4(&vec4(0.f), &m1->y, m2->x.y)),
+		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->z, m2->x.z), pow_vec4(&vec4(0.f), &m1->w, m2->x.w))
+	);
+	(void)add_vec4(
+		&result->y,
+		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->x, m2->y.x), pow_vec4(&vec4(0.f), &m1->y, m2->y.y)),
+		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->z, m2->y.z), pow_vec4(&vec4(0.f), &m1->w, m2->y.w))
+	);
+	(void)add_vec4(
+		&result->z,
+		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->x, m2->z.x), pow_vec4(&vec4(0.f), &m1->y, m2->z.y)),
+		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->z, m2->z.z), pow_vec4(&vec4(0.f), &m1->w, m2->z.w))
+	);
+	(void)add_vec4(
+		&result->w,
+		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->x, m2->w.x), pow_vec4(&vec4(0.f), &m1->y, m2->w.y)),
+		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->z, m2->w.z), pow_vec4(&vec4(0.f), &m1->w, m2->w.w))
+	);
+	return result;
+}
+
+vec4_t project(
+	const vec4_t* world,
+	const mat4x4_t* model,
+	const mat4x4_t* projview,
+	const vec4_t* window
+) {
+	vec4_t result = *world; result.w = 1.f;
+	mul_mat_vec4(&result, model, &vec4_copy(result));
+	mul_mat_vec4(&result, projview, &vec4_copy(result));
+	div_vec4(&result, &result, &vec4(result.w));
+	mul_vec4(&result, &result, &vec4(0.5f));
+	add_vec4(&result, &result, &vec4(0.5f));
+	result.x = result.x * window->z + window->x;
+	result.y = result.y * window->w + window->y;
+	return result;
+}
+
+mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16])
+{
+	result->x.x = matArray[0];
+	result->x.y = matArray[1];
+	result->x.z = matArray[2];
+	result->x.w = matArray[3];
+	result->y.x = matArray[4];
+	result->y.y = matArray[5];
+	result->y.z = matArray[6];
+	result->y.w = matArray[7];
+	result->z.x = matArray[8];
+	result->z.y = matArray[9];
+	result->z.z = matArray[10];
+	result->z.w = matArray[11];
+	result->w.x = matArray[12];
+	result->w.y = matArray[13];
+	result->w.z = matArray[14];
+	result->w.w = matArray[15];
+	return result;
 }
 
 /*-------------------------------------------------------------------------------
@@ -555,6 +724,232 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 	return image;
 }
 
+void glDrawEnemyBarSprite(view_t* camera, Entity* entity, int mode, int player, Uint32 uid)
+{
+	SDL_Surface* sprite = enemyHPDamageBarHandler[player].HPBars[uid].worldSurfaceSprite;//blitEnemyBar(player);
+	if ( !sprite )
+	{
+		return;
+	}
+
+	real_t s = 1;
+
+	// setup projection
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	glEnable(GL_DEPTH_TEST);
+
+	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
+	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
+	GLfloat rotz = 0; // get z rotation
+	glRotatef(rotx, 1, 0, 0); // rotate pitch
+	glRotatef(roty, 0, 1, 0); // rotate yaw
+	glRotatef(rotz, 0, 0, 1); // rotate roll
+	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+
+	GLfloat projectionMatrix[16];
+	glGetFloatv(GL_PROJECTION_MATRIX, projectionMatrix);
+
+	// setup model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glPushMatrix();
+	if ( mode == REALCOLORS )
+	{
+		glEnable(GL_BLEND);
+	}
+	else
+	{
+		glDisable(GL_BLEND);
+	}
+
+	// assign texture
+	TempTexture* tex = enemyHPDamageBarHandler[player].HPBars[uid].worldTexture;
+	//tex = new TempTexture();
+	//tex->load(sprite, false, true);
+	if ( mode == REALCOLORS )
+	{
+		tex->bind();
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	// translate sprite and rotate towards camera
+	/*if ( entity )
+	{
+		real_t height = entity->z - 6;
+		glTranslatef(entity->x * 2, -height * 2 - 1, entity->y * 2);
+	}
+	else*/
+	{
+		real_t height = enemyHPDamageBarHandler[player].HPBars[uid].worldZ - 6;
+		glTranslatef(enemyHPDamageBarHandler[player].HPBars[uid].worldX * 2,
+			-height * 2 - 1, 
+			enemyHPDamageBarHandler[player].HPBars[uid].worldY * 2);
+	}
+
+	real_t tangent = 180 - camera->ang * (180 / PI);
+	glRotatef(tangent, 0, 1, 0);
+
+	float scaleFactor = 0.08;
+	glScalef(scaleFactor, scaleFactor, scaleFactor);
+
+	if ( entity && entity->flags[OVERDRAW] )
+	{
+	}
+	glDepthRange(0, .99);
+
+	// get shade factor
+	if ( mode == REALCOLORS )
+	{
+		glColor4f(1.f, 1.f, 1.f, 1);
+	}
+	else
+	{
+		if ( entity )
+		{
+			Uint32 uid = entity->getUID();
+			glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
+		}
+	}
+
+	// WIP figure out screen coordinate translation
+	GLfloat modelViewMatrix[16];
+	glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
+
+	// draw quad
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0);
+	glVertex3f(0, sprite->h / 2, sprite->w / 2);
+	glTexCoord2f(0, 1);
+	glVertex3f(0, -sprite->h / 2, sprite->w / 2);
+	glTexCoord2f(1, 1);
+	glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
+	glTexCoord2f(1, 0);
+	glVertex3f(0, sprite->h / 2, -sprite->w / 2);
+	glEnd();
+	glDepthRange(0, 1);
+	glPopMatrix();
+
+	vec4_t worldCoords[4]; // 0, 0, 0, 1.f is centre of rendered quad
+	worldCoords[0].x = 0.f; // top left
+	worldCoords[0].y = sprite->h / 2;
+	worldCoords[0].z = sprite->w / 2;
+	worldCoords[0].w = 1.f;
+	worldCoords[1].x = 0.f; // top right
+	worldCoords[1].y = sprite->h / 2;
+	worldCoords[1].z = -sprite->w / 2;
+	worldCoords[1].w = 1.f;
+	worldCoords[2].x = 0.f; // bottom left
+	worldCoords[2].y = -sprite->h / 2;
+	worldCoords[2].z = sprite->w / 2;
+	worldCoords[2].w = 1.f;
+	worldCoords[3].x = 0.f; // bottom right
+	worldCoords[3].y = -sprite->h / 2;
+	worldCoords[3].z = -sprite->w / 2;
+	worldCoords[3].w = 1.f;
+
+	mat4x4_t projMat4;
+	mat_from_array(&projMat4, projectionMatrix);
+
+	mat4x4_t modelMat4;
+	mat_from_array(&modelMat4, modelViewMatrix);
+
+	vec4_t window = { 0.f, 0.f, camera->winw, camera->winh };
+	mat4x4_t projViewModel4;
+	mul_mat(&projViewModel4, &projMat4, &modelMat4);
+
+	mat4x4_t identityMatrix = mat4x4(1.f);
+	bool anyVertexVisible = false;
+	for ( int i = 0; i < 4; ++i )
+	{
+		vec4_t res = project(&worldCoords[i], &identityMatrix, &projViewModel4, &window);
+		bool visibleX = res.x >= 0.0 && res.x < window.z && projViewModel4.w.z >= 0;
+		bool visibleY = res.y >= 0.0 && res.y < window.w && projViewModel4.w.z >= 0;
+		printTextFormatted(font16x16_bmp, 8, 8 + i * 16, "%d: visibleX: %d | visibleY: %d", i, visibleX, visibleY);
+		if ( visibleX && visibleY )
+		{
+			anyVertexVisible = true;
+		}
+		SDL_Rect resPos{ res.x, window.w - res.y, 4, 4 };
+		drawRect(&resPos, 0xFFFFFF00, 255);
+	}
+	printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Any vertex visible: %d", anyVertexVisible);
+
+	//mat4x4_t tmp4;
+	//mul_mat(&tmp4, &viewMat4, &modelMat4);
+
+	//vec4_t clipSpacePos;
+	//vec4_t npcSpacePos;
+	//mul_mat_vec4(&clipSpacePos, &projViewMat4, &vec4_copy(worldCoords));
+	//npcSpacePos.x = clipSpacePos.x / clipSpacePos.w;
+	//npcSpacePos.y = clipSpacePos.y / clipSpacePos.w;
+	//npcSpacePos.z = clipSpacePos.z / clipSpacePos.w;
+	//npcSpacePos.w = clipSpacePos.w;
+	//vec4_t npcSpacePos2 = npcSpacePos;
+
+	//normal_vec4(&npcSpacePos2, &vec4_copy(npcSpacePos2));
+	/*npcSpacePos.x = npcSpacePos.x / npcSpacePos.w;
+	npcSpacePos.y = npcSpacePos.y / npcSpacePos.w;
+	npcSpacePos.z = npcSpacePos.z / npcSpacePos.w;
+	npcSpacePos.w = clipSpacePos.w;
+	normal_vec4(&npcSpacePos, &vec4_copy(npcSpacePos));*/
+
+
+	//printTextFormatted(font8x8_bmp, 8, 8, "%.3f %.3f %.3f %.3f", tmp4.x.x, tmp4.x.y, tmp4.x.z, tmp4.x.w);
+	//printTextFormatted(font8x8_bmp, 8, 16, "%.3f %.3f %.3f %.3f", tmp4.y.x, tmp4.y.y, tmp4.y.z, tmp4.y.w);
+	//printTextFormatted(font8x8_bmp, 8, 24, "%.3f %.3f %.3f %.3f", tmp4.z.x, tmp4.z.y, tmp4.z.z, tmp4.z.w);
+	//printTextFormatted(font8x8_bmp, 8, 32, "%.3f %.3f %.3f %.3f", tmp4.w.x, tmp4.w.y, tmp4.w.z, tmp4.w.w);
+	//printTextFormatted(font8x8_bmp, 8, 40, "%.3f %.3f %.3f %.3f", combinedMatrix[0], combinedMatrix[1], combinedMatrix[2], combinedMatrix[3]);
+	//printTextFormatted(font8x8_bmp, 8, 48, "%.3f %.3f %.3f %.3f", combinedMatrix[4], combinedMatrix[5], combinedMatrix[6], combinedMatrix[7]);
+	//printTextFormatted(font8x8_bmp, 8, 56, "%.3f %.3f %.3f %.3f", combinedMatrix[8], combinedMatrix[9], combinedMatrix[10], combinedMatrix[11]);
+	//printTextFormatted(font8x8_bmp, 8, 64, "%.3f %.3f %.3f %.3f", combinedMatrix[12], combinedMatrix[13], combinedMatrix[14], combinedMatrix[15]);
+
+	//printTextFormatted(font16x16_bmp, 8, 86, "%.3f %.3f %.3f %.3f", res.x, res.y, res.z, res.w);
+	//printTextFormatted(font16x16_bmp, 8, 104, "clipSpace: %.3f %.3f %.3f %.3f", clipSpacePos.x, clipSpacePos.y, clipSpacePos.z, clipSpacePos.w);
+	
+	//printTextFormatted(font16x16_bmp, 8, 120, "npcSpace2: %.3f %.3f %.3f %.3f", npcSpacePos2.x, npcSpacePos2.y, npcSpacePos2.z, npcSpacePos2.w);
+
+
+	//real_t camx = ((npcSpacePos2.x + 1.0) / 2.0) * window.z + window.x;
+	//real_t camy = window.w - (((npcSpacePos2.y + 1.0) / 2.0) * window.w + window.y);
+	//printTextFormatted(font16x16_bmp, 8, 152, "%.3f %.3f", camx, camy);
+
+
+	//npcSpacePos2.x = npcSpacePos2.x / -npcSpacePos2.z;
+	//npcSpacePos2.y = npcSpacePos2.y / -npcSpacePos2.z;
+	//
+	//camx = ((npcSpacePos2.x + 1.0) / 2.0) * window.z + window.x;
+	//camy = window.w - (((npcSpacePos2.y + 1.0) / 2.0) * window.w + window.y);
+	//printTextFormatted(font16x16_bmp, 8, 168, "%.3f %.3f", camx, camy);
+	//printTextFormatted(font16x16_bmp, 8, 184, "npcSpace2 normalized: %.3f %.3f", npcSpacePos2.x, npcSpacePos2.y);
+	//SDL_Rect tmpPos = SDL_Rect{ (int)(window.z - camx), (int)(window.w - camy), 4, 4 };
+	//drawRect(&tmpPos, 0xFF0000FF, 255);
+	//
+	////npcSpacePos2.x = (npcSpacePos2.x + sprite->w / 2) / (float(sprite->w));
+	////npcSpacePos2.y = (npcSpacePos2.y + sprite->h / 2) / (float(sprite->h));
+	//
+	//camx = ((npcSpacePos2.x + sprite->w / 2) / (float)(sprite->w));
+	//camy = ((npcSpacePos2.y + sprite->h / 2) / (float)(sprite->h));
+	//
+	//printTextFormatted(font16x16_bmp, 8, 200, "%.3f %.3f", camx, camy);
+	//real_t pRasterx = std::floor(camx * window.z) - window.z / 2;
+	//real_t pRastery = std::floor((1 - camy) * window.w) - window.w / 2;
+	//printTextFormatted(font16x16_bmp, 8, 216, "raster xy: %.3f %.3f", pRasterx, pRastery);
+	//
+	//camx = ((npcSpacePos2.x + 1.0) / 2.0) * window.z + window.x;
+	//camy = window.w - (((npcSpacePos2.y + 1.0) / 2.0) * window.w + window.y);
+	//camx -= pRasterx;
+	//camy -= pRastery;
+	//
+	//tmpPos = SDL_Rect{ (int)(window.z - camx), (int)(window.w - camy), 4, 4 };
+	//drawRect(&tmpPos, 0xFF00FF00, 255);
+}
+
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 {
 	SDL_Surface* sprite = nullptr;
@@ -564,7 +959,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	{
 		return;
 	}
-	if ( !uidToEntity(entity->parent) )
+	if ( !uidToEntity(entity->parent) && entity->behavior == &actSpriteWorldTooltip )
 	{
 		return;
 	}
@@ -826,6 +1221,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		real_t tangent = 180;
 		glRotatef(tangent, 0, 1, 0);
 	}
+
 	glScalef(entity->scalex, entity->scalez, entity->scaley);
 
 	if ( entity->flags[OVERDRAW] )
@@ -1051,7 +1447,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		return;
 	}
 
-	auto rendered_text = Text::get(text.c_str(), "fonts/pixelmix.ttf#30#2");
+	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#16#2");
 	auto textureId = rendered_text->getTexID();
 
 	// setup projection
@@ -1116,6 +1512,13 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	if ( entity->flags[OVERDRAW] )
 	{
 		glDepthRange(0, 0.1);
+	}
+	else
+	{
+		if ( entity->behavior != &actSpriteNametag )
+		{
+			glDepthRange(0, 0.98);
+		}
 	}
 
 	// get shade factor
