@@ -57,17 +57,7 @@ void Frame::listener_t::onChangeName(const char* name) {
 	entryCast->text = name;
 }
 
-void Frame::guiInit() {
-	gui = new Frame("root");
-	SDL_Rect guiRect;
-	guiRect.x = 0;
-	guiRect.y = 0;
-	guiRect.w = Frame::virtualScreenX;
-	guiRect.h = Frame::virtualScreenY;
-	gui->setSize(guiRect);
-	gui->setActualSize(guiRect);
-	gui->setHollow(true);
-
+void Frame::fboInit() {
 	SDL_glGenFramebuffers(1, &gui_fbo);
 	SDL_glBindFramebuffer(GL_FRAMEBUFFER, gui_fbo);
 
@@ -98,11 +88,7 @@ void Frame::guiInit() {
 	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Frame::guiDestroy() {
-	if (gui) {
-		delete gui;
-		gui = nullptr;
-	}
+void Frame::fboDestroy() {
 	if (gui_fbo) {
 		SDL_glDeleteFramebuffers(1, &gui_fbo);
 		gui_fbo = 0;
@@ -115,6 +101,28 @@ void Frame::guiDestroy() {
 		glDeleteTextures(1, &gui_fbo_depth);
 		gui_fbo_depth = 0;
 	}
+}
+
+void Frame::guiInit() {
+	gui = new Frame("root");
+	SDL_Rect guiRect;
+	guiRect.x = 0;
+	guiRect.y = 0;
+	guiRect.w = Frame::virtualScreenX;
+	guiRect.h = Frame::virtualScreenY;
+	gui->setSize(guiRect);
+	gui->setActualSize(guiRect);
+	gui->setHollow(true);
+
+	fboInit();
+}
+
+void Frame::guiDestroy() {
+	if (gui) {
+		delete gui;
+		gui = nullptr;
+	}
+	fboDestroy();
 }
 
 Frame::Frame(const char* _name) {
