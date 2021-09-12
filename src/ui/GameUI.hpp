@@ -12,6 +12,7 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy);
 void resetInventorySlotFrames(const int player);
 void createPlayerInventorySlotFrameElements(Frame* slotFrame);
 void loadHUDSettingsJSON();
+SDL_Surface* blitEnemyBar(const int player);
 
 // if true, use the new user interface
 extern bool newui;

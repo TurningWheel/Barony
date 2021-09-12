@@ -169,23 +169,6 @@ mat4x4_t* mul_mat(mat4x4_t* result, const mat4x4_t* m1, const mat4x4_t* m2) {
 	return result;
 }
 
-vec4_t project(
-	const vec4_t* world,
-	const mat4x4_t* model,
-	const mat4x4_t* projview,
-	const vec4_t* window
-) {
-	vec4_t result = *world; result.w = 1.f;
-	mul_mat_vec4(&result, model, &vec4_copy(result));
-	mul_mat_vec4(&result, projview, &vec4_copy(result));
-	div_vec4(&result, &result, &vec4(result.w));
-	mul_vec4(&result, &result, &vec4(0.5f));
-	add_vec4(&result, &result, &vec4(0.5f));
-	result.x = result.x * window->z + window->x;
-	result.y = result.y * window->w + window->y;
-	return result;
-}
-
 mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16])
 {
 	result->x.x = matArray[0];
@@ -204,6 +187,186 @@ mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16])
 	result->w.y = matArray[13];
 	result->w.z = matArray[14];
 	result->w.w = matArray[15];
+	return result;
+}
+
+bool invertMatrix4x4(const mat4x4_t* m, float invOut[16])
+{
+	double inv[16], det;
+	int i;
+
+	inv[0] = m->y.y * m->z.z * m->w.w -
+		m->y.y * m->z.w * m->w.z -
+		m->z.y * m->y.z * m->w.w +
+		m->z.y * m->y.w * m->w.z +
+		m->w.y * m->y.z * m->z.w -
+		m->w.y * m->y.w * m->z.z;
+
+	inv[4] = -m->y.x * m->z.z * m->w.w +
+		m->y.x * m->z.w * m->w.z +
+		m->z.x * m->y.z * m->w.w -
+		m->z.x * m->y.w * m->w.z -
+		m->w.x * m->y.z * m->z.w +
+		m->w.x * m->y.w * m->z.z;
+
+	inv[8] = m->y.x * m->z.y * m->w.w -
+		m->y.x * m->z.w * m->w.y -
+		m->z.x * m->y.y * m->w.w +
+		m->z.x * m->y.w * m->w.y +
+		m->w.x * m->y.y * m->z.w -
+		m->w.x * m->y.w * m->z.y;
+
+	inv[12] = -m->y.x * m->z.y * m->w.z +
+		m->y.x * m->z.z * m->w.y +
+		m->z.x * m->y.y * m->w.z -
+		m->z.x * m->y.z * m->w.y -
+		m->w.x * m->y.y * m->z.z +
+		m->w.x * m->y.z * m->z.y;
+
+	inv[1] = -m->x.y * m->z.z * m->w.w +
+		m->x.y * m->z.w * m->w.z +
+		m->z.y * m->x.z * m->w.w -
+		m->z.y * m->x.w * m->w.z -
+		m->w.y * m->x.z * m->z.w +
+		m->w.y * m->x.w * m->z.z;
+
+	inv[5] = m->x.x * m->z.z * m->w.w -
+		m->x.x * m->z.w * m->w.z -
+		m->z.x * m->x.z * m->w.w +
+		m->z.x * m->x.w * m->w.z +
+		m->w.x * m->x.z * m->z.w -
+		m->w.x * m->x.w * m->z.z;
+
+	inv[9] = -m->x.x * m->z.y * m->w.w +
+		m->x.x * m->z.w * m->w.y +
+		m->z.x * m->x.y * m->w.w -
+		m->z.x * m->x.w * m->w.y -
+		m->w.x * m->x.y * m->z.w +
+		m->w.x * m->x.w * m->z.y;
+
+	inv[13] = m->x.x * m->z.y * m->w.z -
+		m->x.x * m->z.z * m->w.y -
+		m->z.x * m->x.y * m->w.z +
+		m->z.x * m->x.z * m->w.y +
+		m->w.x * m->x.y * m->z.z -
+		m->w.x * m->x.z * m->z.y;
+
+	inv[2] = m->x.y * m->y.z * m->w.w -
+		m->x.y * m->y.w * m->w.z -
+		m->y.y * m->x.z * m->w.w +
+		m->y.y * m->x.w * m->w.z +
+		m->w.y * m->x.z * m->y.w -
+		m->w.y * m->x.w * m->y.z;
+
+	inv[6] = -m->x.x * m->y.z * m->w.w +
+		m->x.x * m->y.w * m->w.z +
+		m->y.x * m->x.z * m->w.w -
+		m->y.x * m->x.w * m->w.z -
+		m->w.x * m->x.z * m->y.w +
+		m->w.x * m->x.w * m->y.z;
+
+	inv[10] = m->x.x * m->y.y * m->w.w -
+		m->x.x * m->y.w * m->w.y -
+		m->y.x * m->x.y * m->w.w +
+		m->y.x * m->x.w * m->w.y +
+		m->w.x * m->x.y * m->y.w -
+		m->w.x * m->x.w * m->y.y;
+
+	inv[14] = -m->x.x * m->y.y * m->w.z +
+		m->x.x * m->y.z * m->w.y +
+		m->y.x * m->x.y * m->w.z -
+		m->y.x * m->x.z * m->w.y -
+		m->w.x * m->x.y * m->y.z +
+		m->w.x * m->x.z * m->y.y;
+
+	inv[3] = -m->x.y * m->y.z * m->z.w +
+		m->x.y * m->y.w * m->z.z +
+		m->y.y * m->x.z * m->z.w -
+		m->y.y * m->x.w * m->z.z -
+		m->z.y * m->x.z * m->y.w +
+		m->z.y * m->x.w * m->y.z;
+
+	inv[7] = m->x.x * m->y.z * m->z.w -
+		m->x.x * m->y.w * m->z.z -
+		m->y.x * m->x.z * m->z.w +
+		m->y.x * m->x.w * m->z.z +
+		m->z.x * m->x.z * m->y.w -
+		m->z.x * m->x.w * m->y.z;
+
+	inv[11] = -m->x.x * m->y.y * m->z.w +
+		m->x.x * m->y.w * m->z.y +
+		m->y.x * m->x.y * m->z.w -
+		m->y.x * m->x.w * m->z.y -
+		m->z.x * m->x.y * m->y.w +
+		m->z.x * m->x.w * m->y.y;
+
+	inv[15] = m->x.x * m->y.y * m->z.z -
+		m->x.x * m->y.z * m->z.y -
+		m->y.x * m->x.y * m->z.z +
+		m->y.x * m->x.z * m->z.y +
+		m->z.x * m->x.y * m->y.z -
+		m->z.x * m->x.z * m->y.y;
+
+	det = m->x.x * inv[0] + m->x.y * inv[4] + m->x.z * inv[8] + m->x.w * inv[12];
+
+	if ( det == 0 )
+		return false;
+
+	det = 1.0 / det;
+
+	for ( i = 0; i < 16; i++ )
+		invOut[i] = inv[i] * det;
+
+	return true;
+}
+
+vec4_t project(
+	const vec4_t* world,
+	const mat4x4_t* model,
+	const mat4x4_t* projview,
+	const vec4_t* window
+) {
+	vec4_t result = *world; result.w = 1.f;
+	mul_mat_vec4(&result, model, &vec4_copy(result));
+	mul_mat_vec4(&result, projview, &vec4_copy(result));
+
+	//float invertedProjview[16];
+	//invertMatrix4x4(projview, invertedProjview);
+	//mat4x4_t invertedProjviewMat;
+	//mat_from_array(&invertedProjviewMat, invertedProjview);
+	//mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(result));
+
+	div_vec4(&result, &result, &vec4(result.w));
+	mul_vec4(&result, &result, &vec4(0.5f));
+	add_vec4(&result, &result, &vec4(0.5f));
+	result.x = result.x * window->z + window->x;
+	result.y = result.y * window->w + window->y;
+	return result;
+}
+
+vec4_t unproject(
+	const vec4_t* screenCoords,
+	const mat4x4_t* model,
+	const mat4x4_t* projview,
+	const vec4_t* window
+) {
+	vec4_t result = *screenCoords;
+	result.x -= window->x;
+	result.y -= window->y;
+	result.x /= window->z;
+	result.y /= window->w;
+
+	sub_vec4(&result, &result, &vec4(0.5f));
+	div_vec4(&result, &result, &vec4(0.5f));
+
+	float invertedProjview[16];
+	invertMatrix4x4(projview, invertedProjview);
+	mat4x4_t invertedProjviewMat;
+	mat_from_array(&invertedProjviewMat, invertedProjview);
+	mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(result));
+
+	div_vec4(&result, &result, &vec4(result.w));
+
 	return result;
 }
 
@@ -724,12 +887,17 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 	return image;
 }
 
-void glDrawEnemyBarSprite(view_t* camera, Entity* entity, int mode, int player, Uint32 uid)
+bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly)
 {
-	SDL_Surface* sprite = enemyHPDamageBarHandler[player].HPBars[uid].worldSurfaceSprite;//blitEnemyBar(player);
+	if ( !enemyHPBarDetails ) 
+	{
+		return false;
+	}
+	auto enemybar = (EnemyHPDamageBarHandler::EnemyHPDetails*)enemyHPBarDetails;
+	SDL_Surface* sprite = enemybar->worldSurfaceSprite;
 	if ( !sprite )
 	{
-		return;
+		return false;
 	}
 
 	real_t s = 1;
@@ -740,6 +908,8 @@ void glDrawEnemyBarSprite(view_t* camera, Entity* entity, int mode, int player, 
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f);
 
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
@@ -766,31 +936,27 @@ void glDrawEnemyBarSprite(view_t* camera, Entity* entity, int mode, int player, 
 	}
 
 	// assign texture
-	TempTexture* tex = enemyHPDamageBarHandler[player].HPBars[uid].worldTexture;
-	//tex = new TempTexture();
-	//tex->load(sprite, false, true);
-	if ( mode == REALCOLORS )
+	TempTexture* tex = enemybar->worldTexture;
+	if ( !doVisibilityCheckOnly )
 	{
-		tex->bind();
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D, 0);
+		if ( mode == REALCOLORS )
+		{
+			if ( tex )
+			{
+				tex->bind();
+			}
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
 	}
 
 	// translate sprite and rotate towards camera
-	/*if ( entity )
-	{
-		real_t height = entity->z - 6;
-		glTranslatef(entity->x * 2, -height * 2 - 1, entity->y * 2);
-	}
-	else*/
-	{
-		real_t height = enemyHPDamageBarHandler[player].HPBars[uid].worldZ - 6;
-		glTranslatef(enemyHPDamageBarHandler[player].HPBars[uid].worldX * 2,
-			-height * 2 - 1, 
-			enemyHPDamageBarHandler[player].HPBars[uid].worldY * 2);
-	}
+	real_t height = enemybar->worldZ - 6;
+	glTranslatef(enemybar->worldX * 2,
+		-height * 2 - 1, 
+		enemybar->worldY * 2);
 
 	real_t tangent = 180 - camera->ang * (180 / PI);
 	glRotatef(tangent, 0, 1, 0);
@@ -798,9 +964,9 @@ void glDrawEnemyBarSprite(view_t* camera, Entity* entity, int mode, int player, 
 	float scaleFactor = 0.08;
 	glScalef(scaleFactor, scaleFactor, scaleFactor);
 
-	if ( entity && entity->flags[OVERDRAW] )
+	/*if ( entity && entity->flags[OVERDRAW] )
 	{
-	}
+	}*/
 	glDepthRange(0, .99);
 
 	// get shade factor
@@ -810,30 +976,11 @@ void glDrawEnemyBarSprite(view_t* camera, Entity* entity, int mode, int player, 
 	}
 	else
 	{
-		if ( entity )
-		{
-			Uint32 uid = entity->getUID();
-			glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-		}
+		glColor4ub((Uint8)(enemybar->enemy_uid), (Uint8)(enemybar->enemy_uid >> 8), (Uint8)(enemybar->enemy_uid >> 16), (Uint8)(enemybar->enemy_uid >> 24));
 	}
 
-	// WIP figure out screen coordinate translation
 	GLfloat modelViewMatrix[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(0, sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(0, 1);
-	glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(1, 1);
-	glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-	glTexCoord2f(1, 0);
-	glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-	glEnd();
-	glDepthRange(0, 1);
-	glPopMatrix();
 
 	vec4_t worldCoords[4]; // 0, 0, 0, 1.f is centre of rendered quad
 	worldCoords[0].x = 0.f; // top left
@@ -859,26 +1006,75 @@ void glDrawEnemyBarSprite(view_t* camera, Entity* entity, int mode, int player, 
 	mat4x4_t modelMat4;
 	mat_from_array(&modelMat4, modelViewMatrix);
 
-	vec4_t window = { 0.f, 0.f, camera->winw, camera->winh };
+	vec4_t window = { camera->winx, camera->winy, camera->winw, camera->winh };
 	mat4x4_t projViewModel4;
 	mul_mat(&projViewModel4, &projMat4, &modelMat4);
 
 	mat4x4_t identityMatrix = mat4x4(1.f);
 	bool anyVertexVisible = false;
-	for ( int i = 0; i < 4; ++i )
+	if ( enemybar->enemy_hp > 0 ) // don't update if dead target.
 	{
-		vec4_t res = project(&worldCoords[i], &identityMatrix, &projViewModel4, &window);
-		bool visibleX = res.x >= 0.0 && res.x < window.z && projViewModel4.w.z >= 0;
-		bool visibleY = res.y >= 0.0 && res.y < window.w && projViewModel4.w.z >= 0;
-		printTextFormatted(font16x16_bmp, 8, 8 + i * 16, "%d: visibleX: %d | visibleY: %d", i, visibleX, visibleY);
-		if ( visibleX && visibleY )
+		enemybar->glWorldOffsetY = 0.f;
+		vec4_t screenCoordinates = project(&worldCoords[0], &identityMatrix, &projViewModel4, &window); // top-left coord
+		if ( screenCoordinates.y >= (window.w + window.y) && projViewModel4.w.z >= 0 ) // above camera limit
 		{
-			anyVertexVisible = true;
+			float pixelOffset = abs(screenCoordinates.y - (window.w + window.y));
+			screenCoordinates.y -= pixelOffset;
+			vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window); // convert back into worldCoords
+			enemybar->glWorldOffsetY = (worldCoords[0].y - worldCoords2.y);
 		}
-		SDL_Rect resPos{ res.x, window.w - res.y, 4, 4 };
-		drawRect(&resPos, 0xFFFFFF00, 255);
+		else if ( false ) // code to check lower bounds of camera - in case needed.
+		{
+			screenCoordinates = project(&worldCoords[2], &identityMatrix, &projViewModel4, &window); // bottom-left coord
+			if ( screenCoordinates.y < (window.y) && projViewModel4.w.z >= 0 ) // below camera limit
+			{
+				float pixelOffset = abs(window.y - (screenCoordinates.y));
+				screenCoordinates.y -= pixelOffset;
+				vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window); // convert back into worldCoords
+				enemybar->glWorldOffsetY = -(worldCoords[2].y - worldCoords2.y);
+			}
+		}
 	}
-	printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Any vertex visible: %d", anyVertexVisible);
+
+	if ( abs(enemybar->glWorldOffsetY) <= 0.001 )
+	{
+		// rotate up/down pitch towards camera, requires offset to be 0
+		real_t tangent2 = camera->vang * 180 / PI; 
+		glRotatef(tangent2, 0, 0, 1);
+	}
+
+	//	bool visibleX = res[i].x >= window.x && res[i].x < (window.z + window.x) && projViewModel4.w.z >= 0;
+	//	bool visibleY = res[i].y >= window.y && res[i].y < (window.w + window.y) && projViewModel4.w.z >= 0;
+	//	//printTextFormatted(font16x16_bmp, 8, 8 + i * 16, "%d: visibleX: %d | visibleY: %d", i, visibleX, visibleY);
+	//	if ( visibleX && visibleY )
+	//	{
+	//		anyVertexVisible = true;
+	//	}
+	//	//SDL_Rect resPos{ res.x, window.w - res.y, 4, 4 };
+	//	//drawRect(&resPos, 0xFFFFFF00, 255);
+	//}
+
+	if ( !doVisibilityCheckOnly )
+	{
+		// draw quad
+		glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);
+		glVertex3f(0, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glTexCoord2f(0, 1);
+		glVertex3f(0, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glTexCoord2f(1, 1);
+		glVertex3f(0, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glTexCoord2f(1, 0);
+		glVertex3f(0, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glEnd();
+	}
+	glDepthRange(0, 1);
+	glPopMatrix();
+
+	glDisable(GL_ALPHA_TEST);
+
+	//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Any vertex visible: %d", anyVertexVisible);
+	return anyVertexVisible;
 }
 
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
@@ -931,6 +1127,9 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f);
+
 	if ( !entity->flags[OVERDRAW] || entity->flags[OVERDRAW] )
 	{
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
@@ -1217,6 +1416,8 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	glDepthRange(0, 1);
 	glPopMatrix();
 
+	glDisable(GL_ALPHA_TEST);
+
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
 		if ( tex ) {
@@ -1242,6 +1443,8 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f);
 	if (!entity->flags[OVERDRAW])
 	{
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
@@ -1369,6 +1572,8 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glEnd();
 	glDepthRange(0, 1);
 	glPopMatrix();
+
+	glDisable(GL_ALPHA_TEST);
 }
 
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
@@ -1387,6 +1592,8 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f);
 	if ( !entity->flags[OVERDRAW] )
 	{
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
@@ -1494,6 +1701,8 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	glEnd();
 	glDepthRange(0, 1);
 	glPopMatrix();
+
+	glDisable(GL_ALPHA_TEST);
 }
 
 /*-------------------------------------------------------------------------------

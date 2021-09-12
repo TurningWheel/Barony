@@ -975,6 +975,10 @@ public:
 		Frame* xpFrame = nullptr;
 		Frame* hpFrame = nullptr;
 		Frame* mpFrame = nullptr;
+		Frame* enemyBarFrame = nullptr;
+		Frame* enemyBarFrameHUD = nullptr;
+		real_t hudDamageTextVelocityX = 0.0;
+		real_t hudDamageTextVelocityY = 0.0;
 		Frame* cursorFrame = nullptr;
 
 		Entity* weapon = nullptr;
@@ -1033,10 +1037,14 @@ public:
 			AnimateStates animateState = ANIMATE_NONE;
 			Uint32 xpLevelups = 0;
 			real_t maxValue = 0.0;
+			real_t fadeIn = 0.0;
+			real_t fadeOut = 0.0;
+			real_t widthMultiplier = 1.0;
 		};
 		Bar_t xpBar;
 		Bar_t HPBar;
 		Bar_t MPBar;
+		Bar_t enemyBar;
 
 		HUD_t(Player& p) : player(p)
 		{};
@@ -1076,6 +1084,12 @@ public:
 		int HPMP_FRAME_HEIGHT = 34;
 		void updateHPBar();
 		void updateMPBar();
+		const int ENEMYBAR_FRAME_WIDTH = 564;
+		const int ENEMYBAR_BAR_WIDTH = 556;
+		const int ENEMYBAR_FRAME_START_Y = 182;
+		const int ENEMYBAR_FRAME_HEIGHT = 44;
+		void updateEnemyBar(Frame* whichFrame);
+		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
 		void updateFrameTooltip(Item* item, const int x, const int y);
 		void updateCursor();

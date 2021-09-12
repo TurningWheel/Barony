@@ -8337,6 +8337,91 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 	return false;
 }
 
+void EnemyHPDamageBarHandler::cullExpiredHPBars()
+{
+	for ( auto it = HPBars.begin(); it != HPBars.end(); )
+	{
+		if ( ticks - (*it).second.enemy_timer >= k_maxTickLifetime )
+		{
+			(*it).second.expired = true;
+			if ( (*it).second.animator.fadeOut <= 0.01 )
+			{
+				it = HPBars.erase(it); // no need to show this bar, delete it
+			}
+			else
+			{
+				++it;
+			}
+		}
+		else
+		{
+			++it;
+		}
+	}
+}
+
+EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::getMostRecentHPBar(int index)
+{
+	if ( HPBars.empty() )
+	{
+		lastEnemyUid = 0;
+	}
+
+	Uint32 mostRecentTicks = 0;
+	auto mostRecentEntry = HPBars.end();
+	auto highPriorityMostRecentEntry = HPBars.end();
+	bool foundHighPriorityEntry = false;
+	for ( auto it = HPBars.begin(); it != HPBars.end(); )
+	{
+		if ( false /*ticks - (*it).second.enemy_timer >= k_maxTickLifetime * 120*/ )
+		{
+			++it;
+		}
+		else
+		{
+			if ( (*it).second.enemy_timer > mostRecentTicks && (*it).second.shouldDisplay )
+			{
+				if ( mostRecentEntry != HPBars.end() )
+				{
+					// previous most recent tick should not display until updated by high priority.
+					// since we've found a new one to display.
+					(*mostRecentEntry).second.shouldDisplay = false;
+				}
+				if ( !(*it).second.lowPriorityTick )
+				{
+					// this is a normal priority damage update (not burn/poison etc)
+					// if a newer tick is low priority, then defer to this one.
+					highPriorityMostRecentEntry = it;
+					foundHighPriorityEntry = true;
+				}
+				mostRecentEntry = it;
+				mostRecentTicks = (*it).second.enemy_timer;
+				//queuedBars.push(std::make_pair(mostRecentTicks, mostRecentEntry->first));
+			}
+			++it;
+		}
+	}
+
+	if ( mostRecentTicks > 0 )
+	{
+		if ( !foundHighPriorityEntry )
+		{
+			// all low priority, just display the last added.
+		}
+		else
+		{
+			if ( (mostRecentEntry != highPriorityMostRecentEntry) && foundHighPriorityEntry )
+			{
+				// the most recent was low priority, so defer to the most recent high priority.
+				mostRecentEntry = highPriorityMostRecentEntry;
+			}
+		}
+
+		return &(*mostRecentEntry).second;
+	}
+	return nullptr;
+}
+
 void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 {
 	if ( HPBars.empty() )
@@ -8479,15 +8564,16 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 		}
 
 		// name
-		int x = players[player]->camera_midx() - longestline(HPDetails.enemy_name) * TTF12_WIDTH / 2 + 2;
+		int x = players[player]->camera_midx() - longestline(HPDetails.enemy_name.c_str()) * TTF12_WIDTH / 2 + 2;
 		int y = pos.y + 16 - TTF12_HEIGHT / 2 + 2;
-		ttfPrintText(ttf12, x, y, HPDetails.enemy_name);
+		ttfPrintText(ttf12, x, y, HPDetails.enemy_name.c_str());
 	}
 }
 
 void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority)
 {
 	auto find = HPBars.find(uid);
+	EnemyHPDetails* details = nullptr;
 	if ( find != HPBars.end() )
 	{
 		// uid exists in list.
@@ -8500,11 +8586,29 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 			(*find).second.shouldDisplay = true;
 		}
 		(*find).second.enemy_timer = ticks;
+		details = &(*find).second; 
+		details->animator.previousSetpoint = details->animator.setpoint;
+		details->displayOnHUD = false;
+		details->hasDistanceCheck = false;
+		details->expired = false;
 	}
 	else
 	{
-		HPBars.insert(std::make_pair(uid, EnemyHPDetails(HP, maxHP, oldHP, color, name, isLowPriority)));
+		HPBars.insert(std::make_pair(uid, EnemyHPDetails(uid, HP, maxHP, oldHP, color, name, isLowPriority)));
+		auto find = HPBars.find(uid);
+		details = &(*find).second;
+		details->animator.previousSetpoint = details->enemy_oldhp;
+		details->animator.backgroundValue = details->enemy_oldhp;
 	}
+
+	details->animator.maxValue = details->enemy_maxhp;
+	details->animator.setpoint = details->enemy_hp;
+	details->animator.foregroundValue = details->animator.setpoint;
+	details->animator.animateTicks = ticks;
+	details->animator.damageTaken = std::max(-1, oldHP - HP);
+
+	spawnDamageGib(uidToEntity(uid), details->animator.damageTaken);
+	lastEnemyUid = uid;
 }
 
 SDL_Rect getRectForSkillIcon(const int skill)

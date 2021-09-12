@@ -22,7 +22,6 @@
 #include "interface.hpp"
 #include "../colors.hpp"
 
-//char enemy_name[128];
 //Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
 //Uint32 enemy_timer = 0, enemy_lastuid = 0;
 //Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
@@ -174,6 +173,7 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick)
 {
 	// server/singleplayer only function.
+	hp = std::max(0, hp); // bounds checking - furniture can go negative
 	int player = -1;
 	int c;
 
@@ -2380,7 +2380,7 @@ void drawStatusNew(const int player)
 	players[player]->statusBarUI.messageStatusBarBox.h = pos.h;
 
 	// enemy health
-	enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
+	//enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
 
 	// messages
 	if ( !hide_statusbar )

@@ -17,6 +17,7 @@
 #include "../items.hpp"
 #include "../mod_tools.hpp"
 #include "../input.hpp"
+#include "../collision.hpp"
 
 #include <assert.h>
 
@@ -459,10 +460,20 @@ void Player::HUD_t::processHUD()
 	{
 		createEnemyBar(player.playernum, enemyBarFrame);
 	}
+	if ( !enemyBarFrameHUD )
+	{
+		createEnemyBar(player.playernum, enemyBarFrameHUD);
+	}
 	updateXPBar();
 	updateHPBar();
 	updateMPBar();
-	updateEnemyBar(enemyBarFrame);
+	enemyHPDamageBarHandler[player.playernum].cullExpiredHPBars();
+	enemyBarFrame->setDisabled(true);
+	enemyBarFrameHUD->setDisabled(true);
+	for ( auto& HPBar : enemyHPDamageBarHandler[player.playernum].HPBars )
+	{
+		updateEnemyBar2(enemyBarFrame, &HPBar.second);
+	}
 }
 
 void Player::MessageZone_t::createChatbox()
@@ -4633,13 +4644,10 @@ void Player::HUD_t::updateXPBar()
 	xpProgressEndCap->pos.x = xpProgress->pos.x + xpProgress->pos.w;
 }
 
-real_t txtVelocityX;
-real_t txtVelocityY;
-
 SDL_Surface* blitEnemyBar(const int player)
 {
 	Frame* frame = players[player]->hud.enemyBarFrame;
-	if ( !frame || !players[player]->isLocalPlayer() || frame->getOpacity() <= 0.001 )
+	if ( !frame || !players[player]->isLocalPlayer() )
 	{
 		return nullptr;
 	}
@@ -4720,6 +4728,427 @@ SDL_Surface* blitEnemyBar(const int player)
 		SDL_BlitSurface(txtSurf, nullptr, sprite, &pos);
 	}
 	return sprite;
+}
+
+void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
+{
+	if ( !whichFrame )
+	{
+		return;
+	}
+
+	if ( !enemyHPDetails )
+	{
+
+		return;
+	}
+
+	if ( !player.isLocalPlayer() )
+	{
+		return;
+	}
+
+	EnemyHPDamageBarHandler::EnemyHPDetails* enemyDetails = static_cast<EnemyHPDamageBarHandler::EnemyHPDetails*>(enemyHPDetails);
+
+	Entity* entity = uidToEntity(enemyDetails->enemy_uid);
+	if ( entity )
+	{
+		enemyDetails->worldX = entity->x;
+		enemyDetails->worldY = entity->y;
+		enemyDetails->worldZ = entity->z;
+	}
+	else
+	{
+		enemyDetails->enemy_hp = 0;
+	}
+
+	bool bIsMostRecentHPBar = enemyHPDamageBarHandler[player.playernum].getMostRecentHPBar() == enemyDetails;
+	if ( bIsMostRecentHPBar && !enemyDetails->hasDistanceCheck )
+	{
+		//enemyDetails->hasDistanceCheck = true;
+		auto& camera = cameras[player.playernum];
+		double playerdist = sqrt(pow(camera.x * 16.0 - enemyDetails->worldX, 2) + pow(camera.y * 16.0 - enemyDetails->worldY, 2));
+		if ( playerdist >= 3 * 16.0 )
+		{
+			//enemyDetails->displayOnHUD = true;
+		}
+	}
+
+
+	SDL_Rect pos = whichFrame->getSize();
+	bool doFadeout = false;
+	bool doAnimation = true;
+	if ( enemyDetails->displayOnHUD && whichFrame == enemyBarFrameHUD )
+	{
+		doAnimation = false;
+	}
+
+	if ( enemyDetails->expired == true )
+	{
+		doFadeout = true;
+	}
+	else
+	{
+		enemyDetails->animator.fadeOut = 100.0;
+	}
+
+	if ( doFadeout )
+	{
+		if ( doAnimation )
+		{
+			enemyDetails->animator.fadeOut -= 10.0 * (60.f / std::max(1U, fpsLimit));
+			if ( enemyDetails->animator.fadeOut < 0.0 ) 
+			{ 
+				enemyDetails->animator.fadeOut = 0.0; 
+				enemyDetails->animator.fadeIn = 0.0;
+			}
+		}
+		whichFrame->setOpacity(enemyDetails->animator.fadeOut);
+	}
+	else
+	{
+		enemyDetails->animator.fadeIn = 100.0;
+		whichFrame->setOpacity(enemyDetails->animator.fadeIn);
+	}
+
+	auto baseBg = whichFrame->findImage("base img");
+	auto baseEndCap = whichFrame->findImage("base img endcap");
+
+	auto foregroundFrame = whichFrame->findFrame("bar progress frame");
+	auto hpProgress = foregroundFrame->findImage("progress img");
+	auto hpProgressEndcap = foregroundFrame->findImage("progress img endcap");
+
+	auto dmgFrame = whichFrame->findFrame("bar dmg frame");
+	auto dmgProgress = dmgFrame->findImage("dmg img");
+	auto dmgEndCap = dmgFrame->findImage("dmg img endcap");
+	//auto bubblesImg = dmgFrame->findImage("img bubbles");
+
+	real_t progressWidth = ENEMYBAR_BAR_WIDTH - hpProgressEndcap->pos.w;
+	int backgroundWidth = ENEMYBAR_BAR_WIDTH - baseEndCap->pos.w;
+
+	auto nameTxt = whichFrame->findField("enemy name txt");
+
+	// handle bar size changing
+	{
+		std::vector<std::pair<real_t, int>>widthHealthBreakpoints; // width %, then HP value
+		widthHealthBreakpoints.push_back(std::make_pair(0.5, 10));
+		widthHealthBreakpoints.push_back(std::make_pair(0.60, 20));
+		widthHealthBreakpoints.push_back(std::make_pair(0.70, 50));
+		widthHealthBreakpoints.push_back(std::make_pair(0.80, 100));
+		widthHealthBreakpoints.push_back(std::make_pair(0.90, 250));
+		widthHealthBreakpoints.push_back(std::make_pair(1.00, 1000));
+
+		enemyDetails->animator.widthMultiplier = 1.0;
+		auto prevIt = widthHealthBreakpoints.end();
+		bool foundBreakpoint = false;
+		for ( auto it = widthHealthBreakpoints.begin(); it != widthHealthBreakpoints.end(); ++it )
+		{
+			int healthThreshold = (*it).second;
+			real_t widthEntry = (*it).first;
+			if ( (int)enemyDetails->animator.maxValue <= healthThreshold )
+			{
+				real_t width = 0.0;
+				if ( prevIt != widthHealthBreakpoints.end() )
+				{
+					width = (*prevIt).first;
+					// get linear scaled value between the breakponts
+					width += (widthEntry - (*prevIt).first) * ((int)enemyDetails->animator.maxValue - (*prevIt).second) / ((*it).second - (*prevIt).second);
+				}
+				else
+				{
+					// set as minimum width
+					width = widthEntry;
+				}
+				enemyDetails->animator.widthMultiplier = width;
+				foundBreakpoint = true;
+				break;
+			}
+			prevIt = it;
+		}
+		if ( !foundBreakpoint )
+		{
+			enemyDetails->animator.widthMultiplier = widthHealthBreakpoints[widthHealthBreakpoints.size() - 1].first;
+		}
+
+		real_t multiplier = enemyDetails->animator.widthMultiplier;
+
+		int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
+		progressWidth *= multiplier; // scale the progress bars
+		baseBg->pos.w = backgroundWidth - diff; // move the background bar by x pixels
+		baseEndCap->pos.x = baseBg->pos.x + baseBg->pos.w; // move the background endcap by the new width
+
+		hpProgress->pos.w = progressWidth;
+		hpProgressEndcap->pos.x = hpProgress->pos.x + hpProgress->pos.w;
+
+		pos.x = (hudFrame->getSize().w / 2) - ENEMYBAR_FRAME_WIDTH / 2 - 6;
+		int widthChange = ((ENEMYBAR_BAR_WIDTH - hpProgressEndcap->pos.w) - progressWidth);
+		pos.x += widthChange / 2;
+		SDL_Rect textPos = nameTxt->getSize();
+		textPos.w = ENEMYBAR_FRAME_WIDTH - widthChange;
+		textPos.y = baseBg->pos.y;
+		textPos.h = baseBg->pos.h;
+		nameTxt->setSize(textPos);
+	}
+
+	int startY = hudFrame->getSize().h - ENEMYBAR_FRAME_START_Y - 100;
+	if ( doFadeout )
+	{
+		pos.y = startY + (15 * (100.0 - enemyDetails->animator.fadeOut) / 100.0); // slide out downwards
+	}
+	else
+	{
+		pos.y = startY;
+	}
+	whichFrame->setSize(pos);
+
+	enemyDetails->animator.previousSetpoint = enemyDetails->animator.setpoint;
+	real_t& hpForegroundValue = enemyDetails->animator.foregroundValue;
+	real_t& hpFadedValue = enemyDetails->animator.backgroundValue;
+
+	if ( doAnimation )
+	{
+		enemyDetails->animator.setpoint = enemyDetails->enemy_hp;
+		if ( enemyDetails->animator.setpoint < enemyDetails->animator.previousSetpoint ) // insta-change as losing health
+		{
+			hpForegroundValue = enemyDetails->animator.setpoint;
+			enemyDetails->animator.animateTicks = ticks;
+		}
+
+		if ( enemyDetails->animator.maxValue > enemyDetails->enemy_maxhp )
+		{
+			hpFadedValue = enemyDetails->animator.setpoint; // resetting game etc, stop fade animation sticking out of frame
+		}
+		enemyDetails->animator.maxValue = enemyDetails->enemy_maxhp;
+
+
+		if ( hpForegroundValue < enemyDetails->animator.setpoint ) // gaining HP, animate
+		{
+			real_t setpointDiff = std::max(0.01, enemyDetails->animator.setpoint - hpForegroundValue);
+			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+			hpForegroundValue = std::min(static_cast<real_t>(enemyDetails->animator.setpoint), hpForegroundValue);
+
+			if ( abs(enemyDetails->animator.setpoint) - abs(hpForegroundValue) <= .05 )
+			{
+				hpForegroundValue = enemyDetails->animator.setpoint;
+			}
+		}
+		else if ( hpForegroundValue > enemyDetails->animator.setpoint ) // losing HP, snap to value
+		{
+			hpForegroundValue = enemyDetails->animator.setpoint;
+		}
+
+		if ( hpFadedValue < enemyDetails->animator.setpoint )
+		{
+			hpFadedValue = hpForegroundValue;
+			enemyDetails->animator.animateTicks = ticks;
+		}
+		else if ( hpFadedValue > enemyDetails->animator.setpoint )
+		{
+			if ( ticks - enemyDetails->animator.animateTicks > 30 || enemyDetails->animator.setpoint <= 0 ) // fall after x ticks
+			{
+				real_t setpointDiff = std::max(0.01, hpFadedValue - enemyDetails->animator.setpoint);
+				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+				real_t intervals = 10.0;
+				if ( enemyDetails->animator.setpoint <= 0 )
+				{
+					intervals = 30.0; // dramatic
+				}
+				hpFadedValue -= fpsScale * (setpointDiff / intervals); // reach it in X intervals, scaled to FPS
+				hpFadedValue = std::max(static_cast<real_t>(enemyDetails->animator.setpoint), hpFadedValue);
+			}
+		}
+		else
+		{
+			enemyDetails->animator.animateTicks = ticks;
+		}
+	}
+
+	auto skullFrame = whichFrame->findFrame("skull frame");
+	std::vector<std::pair<Frame::image_t*, int>> allSkulls;
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 0 img"), 0));
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 25 img"), 25));
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 50 img"), 50));
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 100 img"), 75));
+	real_t healthPercentage = 100 * enemyDetails->animator.setpoint / std::max(1.0, enemyDetails->animator.maxValue);
+	int skullIndex = 0;
+	for ( auto& skull : allSkulls )
+	{
+		if ( !skull.first ) { continue; }
+
+		Uint8 r, g, b, a;
+		SDL_GetRGBA(skull.first->color, mainsurface->format, &r, &g, &b, &a);
+		real_t& skullOpacity = enemyDetails->animator.skullOpacities[skullIndex];
+
+		if ( doAnimation )
+		{
+			if ( (int)healthPercentage < skull.second )
+			{
+				real_t opacityChange = 4 * (60.f / std::max(1U, fpsLimit)); // change independent of fps
+				skullOpacity = std::max(0, (int)(skullOpacity - opacityChange));
+			}
+			else if ( (int)healthPercentage >= skull.second )
+			{
+				real_t opacityChange = 255;// *(144.f / std::max(1U, fpsLimit)); // change independent of fps
+				skullOpacity = std::min(255, (int)(skullOpacity + opacityChange));
+			}
+		}
+		a = skullOpacity;
+		a *= enemyDetails->animator.fadeOut / 100.0;
+		skull.first->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		++skullIndex;
+	}
+
+	nameTxt->setText(enemyDetails->enemy_name.c_str());
+
+	real_t foregroundPercent = hpForegroundValue / enemyDetails->animator.maxValue;
+	hpProgress->pos.w = std::max(1, static_cast<int>((progressWidth)* foregroundPercent));
+	hpProgressEndcap->pos.x = hpProgress->pos.x + hpProgress->pos.w;
+
+	real_t fadePercent = hpFadedValue / enemyDetails->animator.maxValue;
+	dmgProgress->pos.w = std::max(1, static_cast<int>((progressWidth)* fadePercent));
+	dmgEndCap->pos.x = dmgProgress->pos.x + dmgProgress->pos.w;
+	if ( dmgProgress->pos.w == 1 && enemyDetails->animator.setpoint <= 0 )
+	{
+		dmgProgress->disabled = true;
+		real_t& opacity = enemyDetails->animator.damageFrameOpacity;
+		if ( doAnimation )
+		{
+			real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independent of fps
+			opacity = std::max(0.0, opacity - opacityChange);
+		}
+		dmgFrame->setOpacity(opacity);
+		dmgFrame->setOpacity(dmgFrame->getOpacity() * enemyDetails->animator.fadeOut / 100.0);
+		// make this element fade out to the left
+		dmgEndCap->pos.x = 0 - (dmgEndCap->pos.w * (1.0 - opacity / 100.0));
+	}
+	else
+	{
+		dmgProgress->disabled = false;
+		enemyDetails->animator.damageFrameOpacity = enemyDetails->animator.fadeOut;
+		dmgFrame->setOpacity(enemyDetails->animator.fadeOut);
+	}
+
+	if ( enemyDetails->animator.setpoint <= 0 )
+	{
+		// hide all the progress elements when dead, as endcap/base don't shrink
+		// hpProgress width 0px defaults to original size, so hide that too
+		hpProgress->disabled = true;
+		hpProgressEndcap->disabled = true;
+	}
+	else
+	{
+		hpProgress->disabled = false;
+		hpProgressEndcap->disabled = false;
+	}
+
+	// damage number on HUD
+	if ( enemyDetails->displayOnHUD && whichFrame == enemyBarFrameHUD )
+	{
+		auto dmgText = hudFrame->findField("enemy dmg txt");
+		Sint32 damageNumber = enemyDetails->animator.damageTaken;
+		enemyDetails->animator.damageTaken = -1;
+		if ( damageNumber >= 0 )
+		{
+			char buf[128] = "";
+			itoa(damageNumber, buf, 10);
+			dmgText->setText(buf);
+			dmgText->setDisabled(false);
+			SDL_Rect txtPos = dmgText->getSize();
+			SDL_Rect barPos = foregroundFrame->getAbsoluteSize();
+			//txtPos.x = barPos.x + baseBg->pos.x/* + baseBg->pos.w*/;
+			//txtPos.y = barPos.y - 30;
+			txtPos.x = 30 + player.camera_virtualWidth() / 2;
+			txtPos.y = -50 + player.camera_virtualHeight() / 2;
+			txtPos.w = Text::get(dmgText->getText(), dmgText->getFont())->getWidth();
+			txtPos.h = Text::get(dmgText->getText(), dmgText->getFont())->getHeight();
+			dmgText->setSize(txtPos);
+			hudDamageTextVelocityX = 1.0;
+			hudDamageTextVelocityY = 3.0;
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+			dmgText->setColor(makeColor(r, g, b, 255));
+		}
+
+		if ( !dmgText->isDisabled() )
+		{
+			SDL_Rect txtPos = dmgText->getSize();
+			txtPos.x += hudDamageTextVelocityX;
+			txtPos.y -= hudDamageTextVelocityY;
+			hudDamageTextVelocityX += .05;
+			hudDamageTextVelocityY -= .3;
+			dmgText->setSize(txtPos);
+			if ( hudDamageTextVelocityY < -2.0 )
+			{
+				Uint8 r, g, b, a;
+				SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+				a = (std::max(0, (int)a - 16));
+				dmgText->setColor(makeColor(r, g, b, a));
+				if ( a == 0 )
+				{
+					dmgText->setDisabled(true);
+				}
+			}
+		}
+	}
+
+	if ( enemyDetails->worldTexture )
+	{
+		delete enemyDetails->worldTexture;
+		enemyDetails->worldTexture = nullptr;
+	}
+	if ( enemyDetails->worldSurfaceSprite )
+	{
+		SDL_FreeSurface(enemyDetails->worldSurfaceSprite);
+		enemyDetails->worldSurfaceSprite = nullptr;
+	}
+
+	enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum);
+	enemyDetails->worldTexture = new TempTexture();
+	enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
+	bool anyVertexVisible = false;
+	//if ( bIsMostRecentHPBar && !enemyDetails->displayOnHUD && !enemyDetails->hasDistanceCheck )
+	//{
+	//	enemyDetails->hasDistanceCheck = true;
+	//	anyVertexVisible = glDrawEnemyBarSprite(&cameras[player.playernum],
+	//		uidToEntity(enemyDetails->enemy_uid),
+	//		REALCOLORS, player.playernum, enemyDetails->enemy_uid, true);
+
+	//	bool lineTraceHitTarget = false;
+	//	if ( entity && players[player.playernum]->entity )
+	//	{
+	//		Entity* playerEntity = players[player.playernum]->entity;
+	//		real_t tangent = atan2(entity->y - playerEntity->y, entity->x - playerEntity->x);
+	//		lineTraceTarget(playerEntity, playerEntity->x, playerEntity->y, tangent, 256, 1, false, entity);
+	//		if ( hit.entity == entity )
+	//		{
+	//			//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Hit entity");
+	//			lineTraceHitTarget = true;
+	//		}
+	//	}
+
+	//	if ( !anyVertexVisible || !lineTraceHitTarget )
+	//	{
+	//		enemyDetails->displayOnHUD = true;
+	//	}
+	//}
+
+	whichFrame->setDisabled(true);
+	if ( !enemyDetails->displayOnHUD )
+	{
+		//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Any vertex visible: %d", anyVertexVisible);
+	}
+	else
+	{
+		if ( whichFrame == enemyBarFrameHUD )
+		{
+			whichFrame->setDisabled(false);
+		}
+		else
+		{
+			updateEnemyBar2(enemyBarFrameHUD, enemyHPDetails);
+		}
+	}
 }
 
 void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
@@ -5029,8 +5458,8 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 			txtPos.w = Text::get(dmgText->getText(), dmgText->getFont())->getWidth();
 			txtPos.h = Text::get(dmgText->getText(), dmgText->getFont())->getHeight();
 			dmgText->setSize(txtPos);
-			txtVelocityX = 1.0;
-			txtVelocityY = 3.0;
+			hudDamageTextVelocityX = 1.0;
+			hudDamageTextVelocityY = 3.0;
 			Uint8 r, g, b, a;
 			SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
 			dmgText->setColor(makeColor(r, g, b, 255));
@@ -5039,12 +5468,12 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 		if ( !dmgText->isDisabled() )
 		{
 			SDL_Rect txtPos = dmgText->getSize();
-			txtPos.x += txtVelocityX;
-			txtPos.y -= txtVelocityY;
-			txtVelocityX += .05;
-			txtVelocityY -= .3;
+			txtPos.x += hudDamageTextVelocityX;
+			txtPos.y -= hudDamageTextVelocityY;
+			hudDamageTextVelocityX += .05;
+			hudDamageTextVelocityY -= .3;
 			dmgText->setSize(txtPos);
-			if ( txtVelocityY < -2.0 )
+			if ( hudDamageTextVelocityY < -2.0 )
 			{
 				Uint8 r, g, b, a;
 				SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);

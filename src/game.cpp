@@ -1354,6 +1354,7 @@ void gameLogic(void)
 						{
 							FollowerMenu[i].closeFollowerMenuGUI(true);
 						}
+						enemyHPDamageBarHandler[i].HPBars.clear();
 					}
 
 					assignActions(&map);

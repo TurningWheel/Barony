@@ -13,6 +13,7 @@
 
 #include "../main.hpp"
 #include "../game.hpp"
+#include "../draw.hpp"
 
 class Item;
 
@@ -37,21 +38,49 @@ class EnemyHPDamageBarHandler
 {
 	const int k_maxTickLifetime = 120;
 public:
-
+	struct BarAnimator_t
+	{
+		real_t foregroundValue = 0.0;
+		real_t backgroundValue = 0.0;
+		real_t previousSetpoint = 0.0;
+		Sint32 setpoint = 0;
+		Uint32 animateTicks = 0;
+		Sint32 damageTaken = -1;
+		real_t widthMultiplier = 1.0;
+		real_t maxValue = 0.0;
+		real_t currentOpacity = 0.0;
+		real_t fadeOut = 100.0;
+		real_t fadeIn = 100.0;
+		real_t skullOpacities[4];
+		real_t damageFrameOpacity = 100.0;
+		BarAnimator_t() { 
+			for ( int i = 0; i < 4; ++i )
+			{
+				skullOpacities[i] = 100.0;
+			}
+		}
+	};
 	struct EnemyHPDetails
 	{
-		char enemy_name[128] = "";
+		BarAnimator_t animator;
+		std::string enemy_name = "";
 		Sint32 enemy_hp = 0;
 		Sint32 enemy_maxhp = 0;
 		Sint32 enemy_oldhp = 0;
 		Uint32 enemy_timer = 0;
 		Uint32 enemy_bar_color = 0;
+		Uint32 enemy_uid = 0;
 		bool lowPriorityTick = false;
 		bool shouldDisplay = true;
+		bool hasDistanceCheck = false;
+		bool displayOnHUD = false;
+		bool expired = false;
 		real_t depletionAnimationPercent = 100.0;
-		EnemyHPDetails(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name, bool isLowPriority)
+		float glWorldOffsetY = 0.0;
+		EnemyHPDetails() {};
+		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name, bool isLowPriority)
 		{
-			memset(enemy_name, 0, 128);
+			enemy_uid = uid;
 			enemy_hp = HP;
 			enemy_maxhp = maxHP;
 			enemy_oldhp = oldHP;
@@ -61,14 +90,35 @@ public:
 			enemy_bar_color = color;
 			lowPriorityTick = isLowPriority;
 			shouldDisplay = true;
-			strcpy(enemy_name, name);
+			enemy_name = name;
 		}
+		~EnemyHPDetails()
+		{
+			if ( worldTexture )
+			{
+				delete worldTexture;
+				worldTexture = nullptr;
+			}
+			if ( worldSurfaceSprite ) {
+				SDL_FreeSurface(worldSurfaceSprite);
+				worldSurfaceSprite = nullptr;
+			}
+		}
+
+		real_t worldX = 0.0;
+		real_t worldY = 0.0;
+		real_t worldZ = 0.0;
+		TempTexture* worldTexture = nullptr;
+		SDL_Surface* worldSurfaceSprite = nullptr;
 	};
 
 	Uint32 enemy_bar_client_color = 0;
 	std::unordered_map<Uint32, EnemyHPDetails> HPBars;
 	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority);
 	void displayCurrentHPBar(const int player);
+	void cullExpiredHPBars();
+	EnemyHPDetails* getMostRecentHPBar(int index = 0);
+	Uint32 lastEnemyUid = 0;
 };
 extern EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 
