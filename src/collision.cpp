@@ -962,6 +962,10 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		angle += PI * 2;
 	}
 
+	if ( !my )
+	{
+		return nullptr;
+	}
 	int originx = static_cast<int>(my->x) >> 4;
 	int originy = static_cast<int>(my->y) >> 4;
 	std::vector<list_t*> entLists; // stores the possible entities to look through depending on the quadrant.

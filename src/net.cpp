@@ -3715,6 +3715,7 @@ void clientHandlePacket()
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			minimapPings[i].clear(); // clear minimap pings
+			enemyHPDamageBarHandler[i].HPBars.clear();
 		}
 		globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
