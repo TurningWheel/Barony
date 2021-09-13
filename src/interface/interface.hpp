@@ -36,8 +36,15 @@ extern real_t uiscale_inventory;
 
 class EnemyHPDamageBarHandler
 {
-	const int k_maxTickLifetime = 120;
 public:
+	static int maxTickLifetime;
+	static int maxTickFurnitureLifetime;
+	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsMonsters;
+	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsFurniture;
+	enum HPBarType {
+		BAR_TYPE_CREATURE,
+		BAR_TYPE_FURNITURE
+	};
 	struct BarAnimator_t
 	{
 		real_t foregroundValue = 0.0;
@@ -62,6 +69,7 @@ public:
 	};
 	struct EnemyHPDetails
 	{
+		HPBarType barType = BAR_TYPE_CREATURE;
 		BarAnimator_t animator;
 		std::string enemy_name = "";
 		Sint32 enemy_hp = 0;
@@ -80,6 +88,13 @@ public:
 		EnemyHPDetails() {};
 		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name, bool isLowPriority)
 		{
+			if ( Entity* entity = uidToEntity(uid) )
+			{
+				if ( entity->behavior != &actMonster && entity->behavior != actPlayer )
+				{
+					barType = BAR_TYPE_FURNITURE;
+				}
+			}
 			enemy_uid = uid;
 			enemy_hp = HP;
 			enemy_maxhp = maxHP;
@@ -108,6 +123,7 @@ public:
 		real_t worldX = 0.0;
 		real_t worldY = 0.0;
 		real_t worldZ = 0.0;
+		real_t screenDistance = 0.0;
 		TempTexture* worldTexture = nullptr;
 		SDL_Surface* worldSurfaceSprite = nullptr;
 	};

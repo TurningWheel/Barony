@@ -163,6 +163,11 @@ EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 GenericGUIMenu GenericGUI[MAXPLAYERS];
 
+int EnemyHPDamageBarHandler::maxTickLifetime = 120;
+int EnemyHPDamageBarHandler::maxTickFurnitureLifetime = 60;
+std::vector<std::pair<real_t, int>> EnemyHPDamageBarHandler::widthHealthBreakpointsMonsters;
+std::vector<std::pair<real_t, int>> EnemyHPDamageBarHandler::widthHealthBreakpointsFurniture;
+
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
 	std::make_pair(&title_bmp, "images/system/title.png"),
@@ -8341,7 +8346,12 @@ void EnemyHPDamageBarHandler::cullExpiredHPBars()
 {
 	for ( auto it = HPBars.begin(); it != HPBars.end(); )
 	{
-		if ( ticks - (*it).second.enemy_timer >= k_maxTickLifetime )
+		int tickLifetime = EnemyHPDamageBarHandler::maxTickLifetime;
+		if ( (*it).second.barType == BAR_TYPE_FURNITURE )
+		{
+			tickLifetime = EnemyHPDamageBarHandler::maxTickFurnitureLifetime;
+		}
+		if ( ticks - (*it).second.enemy_timer >= tickLifetime )
 		{
 			(*it).second.expired = true;
 			if ( (*it).second.animator.fadeOut <= 0.01 )
@@ -8434,7 +8444,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	bool foundHighPriorityEntry = false;
 	for ( auto it = HPBars.begin(); it != HPBars.end(); )
 	{
-		if ( ticks - (*it).second.enemy_timer >= k_maxTickLifetime )
+		if ( ticks - (*it).second.enemy_timer >= EnemyHPDamageBarHandler::maxTickLifetime )
 		{
 			it = HPBars.erase(it); // no need to show this bar, delete it
 		}

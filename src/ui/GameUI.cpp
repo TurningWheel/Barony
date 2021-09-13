@@ -18,6 +18,7 @@
 #include "../mod_tools.hpp"
 #include "../input.hpp"
 #include "../collision.hpp"
+#include "../monster.hpp"
 
 #include <assert.h>
 
@@ -39,6 +40,58 @@ struct CustomColors_t
 	Uint32 characterSheetGreen = 0xFFFFFFFF;
 	Uint32 characterSheetRed = 0xFFFFFFFF;
 } hudColors;
+
+std::string getEnemyBarSpriteName(Entity* entity)
+{
+	if ( !entity ) { return "default"; }
+
+	if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+	{
+		int type = entity->getMonsterTypeFromSprite();
+		if ( type < NUMMONSTERS && type >= 0 )
+		{
+			return monstertypename[type];
+		}
+	}
+	else if ( entity->behavior == &actDoor )
+	{
+		return "door";
+	}
+	else if ( entity->behavior == &actChest )
+	{
+		return "chest";
+	}
+	else if ( entity->behavior == &actFurniture )
+	{
+		switch ( entity->furnitureType )
+		{
+			case FURNITURE_TABLE:
+			case FURNITURE_PODIUM:
+				return "table";
+				break;
+			default:
+				return "chair";
+				break;
+		}
+	}
+	return "default";
+}
+
+struct EnemyBarSettings_t
+{
+	std::unordered_map<std::string, float> heightOffsets;
+	std::unordered_map<std::string, float> screenDistanceOffsets;
+	float getHeightOffset(Entity* entity)
+	{
+		if ( !entity ) { return 0.f; }
+		return heightOffsets[getEnemyBarSpriteName(entity)];
+	}
+	float getScreenDistanceOffset(Entity* entity)
+	{
+		if ( !entity ) { return 0.f; }
+		return screenDistanceOffsets[getEnemyBarSpriteName(entity)];
+	}
+} enemyBarSettings;
 
 void createHPMPBars(const int player)
 {
@@ -3122,6 +3175,77 @@ void loadHUDSettingsJSON()
 				{
 					oldSelectedCursorOpacity = d["selected_old_cursor_opacity"].GetInt();
 				}
+				if ( d.HasMember("enemy_hp_bars") )
+				{
+					if ( d["enemy_hp_bars"].HasMember("world_height_offsets") )
+					{
+						enemyBarSettings.heightOffsets.clear();
+						for ( rapidjson::Value::ConstMemberIterator itr = d["enemy_hp_bars"]["world_height_offsets"].MemberBegin();
+							itr != d["enemy_hp_bars"]["world_height_offsets"].MemberEnd(); ++itr )
+						{
+							enemyBarSettings.heightOffsets[itr->name.GetString()] = itr->value.GetFloat();
+						}
+					}
+					if ( d["enemy_hp_bars"].HasMember("screen_depth_distance_offset") )
+					{
+						enemyBarSettings.screenDistanceOffsets.clear();
+						for ( rapidjson::Value::ConstMemberIterator itr = d["enemy_hp_bars"]["screen_depth_distance_offset"].MemberBegin();
+							itr != d["enemy_hp_bars"]["screen_depth_distance_offset"].MemberEnd(); ++itr )
+						{
+							enemyBarSettings.screenDistanceOffsets[itr->name.GetString()] = itr->value.GetFloat();
+						}
+					}
+					if ( d["enemy_hp_bars"].HasMember("monster_bar_width_to_hp_intervals") )
+					{
+						EnemyHPDamageBarHandler::widthHealthBreakpointsMonsters.clear();
+						for ( rapidjson::Value::ConstValueIterator itr = d["enemy_hp_bars"]["monster_bar_width_to_hp_intervals"].Begin();
+							itr != d["enemy_hp_bars"]["monster_bar_width_to_hp_intervals"].End(); ++itr )
+						{
+							// you need to FindMember() if getting objects from an array...
+							auto widthPercentMember = itr->FindMember("width_percent");
+							auto hpThresholdMember = itr->FindMember("hp_threshold");
+							if ( !widthPercentMember->value.IsInt() || !hpThresholdMember->value.IsInt() )
+							{
+								printlog("[JSON]: Error: Enemy bar HP or width was not int!");
+								continue;
+							}
+							real_t widthPercent = widthPercentMember->value.GetInt();
+							widthPercent /= 100.0;
+							int hpThreshold = hpThresholdMember->value.GetInt();
+							EnemyHPDamageBarHandler::widthHealthBreakpointsMonsters.push_back(
+								std::make_pair(widthPercent, hpThreshold));
+						}
+					}
+					if ( d["enemy_hp_bars"].HasMember("furniture_bar_width_to_hp_intervals") )
+					{
+						EnemyHPDamageBarHandler::widthHealthBreakpointsFurniture.clear();
+						for ( rapidjson::Value::ConstValueIterator itr = d["enemy_hp_bars"]["furniture_bar_width_to_hp_intervals"].Begin();
+							itr != d["enemy_hp_bars"]["furniture_bar_width_to_hp_intervals"].End(); ++itr )
+						{
+							// you need to FindMember() if getting objects from an array...
+							auto widthPercentMember = itr->FindMember("width_percent");
+							auto hpThresholdMember = itr->FindMember("hp_threshold");
+							if ( !widthPercentMember->value.IsInt() || !hpThresholdMember->value.IsInt() )
+							{
+								printlog("[JSON]: Error: Enemy bar HP or width was not int!");
+								continue;
+							}
+							real_t widthPercent = widthPercentMember->value.GetInt();
+							widthPercent /= 100.0;
+							int hpThreshold = hpThresholdMember->value.GetInt();
+							EnemyHPDamageBarHandler::widthHealthBreakpointsFurniture.push_back(
+								std::make_pair(widthPercent, hpThreshold));
+						}
+					}
+					if ( d["enemy_hp_bars"].HasMember("monster_bar_lifetime_ticks") )
+					{
+						EnemyHPDamageBarHandler::maxTickLifetime = d["enemy_hp_bars"]["monster_bar_lifetime_ticks"].GetInt();
+					}
+					if ( d["enemy_hp_bars"].HasMember("furniture_bar_lifetime_ticks") )
+					{
+						EnemyHPDamageBarHandler::maxTickFurnitureLifetime = d["enemy_hp_bars"]["furniture_bar_lifetime_ticks"].GetInt();
+					}
+				}
 				if ( d.HasMember("colors") )
 				{
 					if ( d["colors"].HasMember("itemmenu_heading_text") )
@@ -4739,7 +4863,6 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 
 	if ( !enemyHPDetails )
 	{
-
 		return;
 	}
 
@@ -4755,7 +4878,19 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	{
 		enemyDetails->worldX = entity->x;
 		enemyDetails->worldY = entity->y;
-		enemyDetails->worldZ = entity->z;
+		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
+		{
+			if ( entity->doorStartAng == 0 )
+			{
+				enemyDetails->worldY -= 5;
+			}
+			else
+			{
+				enemyDetails->worldX -= 5;
+			}
+		}
+		enemyDetails->worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
+		enemyDetails->screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
 	}
 	else
 	{
@@ -4830,13 +4965,25 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 
 	// handle bar size changing
 	{
-		std::vector<std::pair<real_t, int>>widthHealthBreakpoints; // width %, then HP value
-		widthHealthBreakpoints.push_back(std::make_pair(0.5, 10));
-		widthHealthBreakpoints.push_back(std::make_pair(0.60, 20));
-		widthHealthBreakpoints.push_back(std::make_pair(0.70, 50));
-		widthHealthBreakpoints.push_back(std::make_pair(0.80, 100));
-		widthHealthBreakpoints.push_back(std::make_pair(0.90, 250));
-		widthHealthBreakpoints.push_back(std::make_pair(1.00, 1000));
+		std::vector<std::pair<real_t, int>> widthHealthBreakpoints;
+		if ( enemyDetails->barType == EnemyHPDamageBarHandler::BAR_TYPE_CREATURE )
+		{
+			widthHealthBreakpoints = EnemyHPDamageBarHandler::widthHealthBreakpointsMonsters;
+		}
+		else
+		{
+			widthHealthBreakpoints = EnemyHPDamageBarHandler::widthHealthBreakpointsFurniture;
+		}
+		if ( widthHealthBreakpoints.empty() ) // width %, then HP value
+		{
+			// build some defaults
+			widthHealthBreakpoints.push_back(std::make_pair(0.5, 10));
+			widthHealthBreakpoints.push_back(std::make_pair(0.60, 20));
+			widthHealthBreakpoints.push_back(std::make_pair(0.70, 50));
+			widthHealthBreakpoints.push_back(std::make_pair(0.80, 100));
+			widthHealthBreakpoints.push_back(std::make_pair(0.90, 250));
+			widthHealthBreakpoints.push_back(std::make_pair(1.00, 1000));
+		}
 
 		enemyDetails->animator.widthMultiplier = 1.0;
 		auto prevIt = widthHealthBreakpoints.end();
@@ -5106,32 +5253,6 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum);
 	enemyDetails->worldTexture = new TempTexture();
 	enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
-	bool anyVertexVisible = false;
-	//if ( bIsMostRecentHPBar && !enemyDetails->displayOnHUD && !enemyDetails->hasDistanceCheck )
-	//{
-	//	enemyDetails->hasDistanceCheck = true;
-	//	anyVertexVisible = glDrawEnemyBarSprite(&cameras[player.playernum],
-	//		uidToEntity(enemyDetails->enemy_uid),
-	//		REALCOLORS, player.playernum, enemyDetails->enemy_uid, true);
-
-	//	bool lineTraceHitTarget = false;
-	//	if ( entity && players[player.playernum]->entity )
-	//	{
-	//		Entity* playerEntity = players[player.playernum]->entity;
-	//		real_t tangent = atan2(entity->y - playerEntity->y, entity->x - playerEntity->x);
-	//		lineTraceTarget(playerEntity, playerEntity->x, playerEntity->y, tangent, 256, 1, false, entity);
-	//		if ( hit.entity == entity )
-	//		{
-	//			//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Hit entity");
-	//			lineTraceHitTarget = true;
-	//		}
-	//	}
-
-	//	if ( !anyVertexVisible || !lineTraceHitTarget )
-	//	{
-	//		enemyDetails->displayOnHUD = true;
-	//	}
-	//}
 
 	whichFrame->setDisabled(true);
 	if ( !enemyDetails->displayOnHUD )

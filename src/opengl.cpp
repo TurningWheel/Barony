@@ -983,19 +983,19 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
 
 	vec4_t worldCoords[4]; // 0, 0, 0, 1.f is centre of rendered quad
-	worldCoords[0].x = 0.f; // top left
+	worldCoords[0].x = enemybar->screenDistance; // top left
 	worldCoords[0].y = sprite->h / 2;
 	worldCoords[0].z = sprite->w / 2;
 	worldCoords[0].w = 1.f;
-	worldCoords[1].x = 0.f; // top right
+	worldCoords[1].x = enemybar->screenDistance; // top right
 	worldCoords[1].y = sprite->h / 2;
 	worldCoords[1].z = -sprite->w / 2;
 	worldCoords[1].w = 1.f;
-	worldCoords[2].x = 0.f; // bottom left
+	worldCoords[2].x = enemybar->screenDistance; // bottom left
 	worldCoords[2].y = -sprite->h / 2;
 	worldCoords[2].z = sprite->w / 2;
 	worldCoords[2].w = 1.f;
-	worldCoords[3].x = 0.f; // bottom right
+	worldCoords[3].x = enemybar->screenDistance; // bottom right
 	worldCoords[3].y = -sprite->h / 2;
 	worldCoords[3].z = -sprite->w / 2;
 	worldCoords[3].w = 1.f;
@@ -1036,7 +1036,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 		}
 	}
 
-	if ( abs(enemybar->glWorldOffsetY) <= 0.001 )
+	if ( abs(enemybar->glWorldOffsetY) <= 0.001 && abs(enemybar->screenDistance) <= 0.001 )
 	{
 		// rotate up/down pitch towards camera, requires offset to be 0
 		real_t tangent2 = camera->vang * 180 / PI; 
@@ -1059,13 +1059,13 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 		// draw quad
 		glBegin(GL_QUADS);
 		glTexCoord2f(0, 0);
-		glVertex3f(0, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
 		glTexCoord2f(0, 1);
-		glVertex3f(0, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
 		glTexCoord2f(1, 1);
-		glVertex3f(0, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
 		glTexCoord2f(1, 0);
-		glVertex3f(0, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
 		glEnd();
 	}
 	glDepthRange(0, 1);
