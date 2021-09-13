@@ -2279,7 +2279,8 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		else if ( conditionalAttribute == "AC" )
 		{
 			Sint32 AC = item.armorGetAC(stats[player]);
-			snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(std::string("AC")).c_str());
+			std::string attribute("AC");
+			snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(attribute).c_str());
 		}
 		else
 		{
@@ -2294,7 +2295,8 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		|| tooltipType.find("tooltip_ring") != std::string::npos )
 	{
 		Sint32 AC = item.armorGetAC(stats[player]);
-		snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(std::string("AC")).c_str());
+		std::string attribute("AC");
+		snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(attribute).c_str());
 	}
 	else if ( tooltipType.find("tooltip_mace") != std::string::npos
 		|| tooltipType.find("tooltip_sword") != std::string::npos
@@ -2929,8 +2931,9 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				damageOrHealing = adjectives["spell_strings"]["healing"];
 			}
 
+			std::string attribute("INT");
 			snprintf(buf, sizeof(buf), str.c_str(),
-				intBonus, damageOrHealing.c_str(), getItemStatShortName(std::string("INT")).c_str(),
+				intBonus, damageOrHealing.c_str(), getItemStatShortName(attribute).c_str(),
 				beatitudeBonus, damageOrHealing.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
 		else if ( detailTag.compare("spellbook_cast_success") == 0 )
@@ -3013,8 +3016,9 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			{
 				damageOrHealing = adjectives["spell_strings"]["healing"];
 			}
+			std::string attribute("INT");
 			snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
-				bonusPercent, damageOrHealing.c_str(), getItemStatShortName(std::string("INT")).c_str());
+				bonusPercent, damageOrHealing.c_str(), getItemStatShortName(attribute).c_str());
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{

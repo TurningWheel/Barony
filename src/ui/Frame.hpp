@@ -105,9 +105,11 @@ public:
 
 	//! init ui engine
 	static void guiInit();
+	static void fboInit();
 
 	//! destroy ui engine
 	static void guiDestroy();
+	static void fboDestroy();
 
 	//! draws the frame and all of its subelements
 	void draw();

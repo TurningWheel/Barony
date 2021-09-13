@@ -2694,7 +2694,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			txtAttributes->setDisabled(false);
 			txtAttributes->setColor(itemTooltip.descriptionTextColor);
 			int index = 0;
-			for ( auto& it = itemTooltip.descriptionText.begin(); it != itemTooltip.descriptionText.end(); ++it )
+			for ( auto it = itemTooltip.descriptionText.begin(); it != itemTooltip.descriptionText.end(); ++it )
 			{
 				descriptionTextString += (*it);
 				if ( std::next(it) != itemTooltip.descriptionText.end() )
@@ -3027,7 +3027,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				}
 
 				std::string tagText = "";
-				for ( auto& it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
+				for ( auto it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
 				{
 					tagText += (*it);
 					if ( std::next(it) != itemTooltip.detailsText[tag.c_str()].end() )

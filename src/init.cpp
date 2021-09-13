@@ -2620,6 +2620,9 @@ bool changeVideoMode()
 	// delete old texture names (they're going away anyway)
 	glDeleteTextures(MAXTEXTURES, texid);
 
+	// destroy gui fbo
+	Frame::fboDestroy();
+
 	// delete vertex data
 	if ( !disablevbos )
 	{
@@ -2684,6 +2687,9 @@ bool changeVideoMode()
 	Image::dumpCache();
 	Font::dumpCache();
 #endif // !EDITOR
+
+	// create new frame fbo
+	Frame::fboInit();
 
 #endif
 	// success
