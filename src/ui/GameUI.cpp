@@ -6330,9 +6330,9 @@ void doFrames() {
 	{
 		while ( gui_ticks < ticks )
 		{
-			(void)gui->process();
 			++gui_ticks;
 		}
+		(void)gui->process();
 		gui->draw();
 	}
 }

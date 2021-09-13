@@ -3188,7 +3188,10 @@ void handleEvents(void)
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", id);
 						inputs.addControllerIDToNextAvailableInput(id);
-						Input::addGameController(id, controller);
+						Input::gameControllers.emplace(id, const_cast<SDL_GameController*>(controller.getControllerDevice()));
+						for (int c = 0; c < 4; ++c) {
+							Input::inputs[c].refresh();
+						}
 					}
 					else
 					{
@@ -3211,7 +3214,6 @@ void handleEvents(void)
 				{
 					if ( controller.isActive() && controller.getControllerDevice() == pad )
 					{
-						Input::gameControllers.erase(instanceID);
 						inputs.removeControllerWithDeviceID(controller.getID());
 						printlog("(Device %d removed as game controller, instance id: %d.)\n", controller.getID(), instanceID);
 						controller.close();
@@ -5758,7 +5760,7 @@ int main(int argc, char** argv)
 
 				if ( !gamePaused )
 				{
-					if ( newui ) 
+					if ( /*newui*/ 0 ) 
 					{
 						newIngameHud();
 					}

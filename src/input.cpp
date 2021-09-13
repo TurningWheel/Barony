@@ -94,13 +94,6 @@ void Input::defaultBindings() {
 	}
 }
 
-void Input::addGameController(int id, GameController& controller) {
-	gameControllers.emplace(id, controller.sdl_device);
-	for (auto& input : inputs) {
-		input.refresh();
-	}
-}
-
 float Input::analog(const char* binding) const {
 	auto b = bindings.find(binding);
 	return b != bindings.end() ? (*b).second.analog : 0.f;

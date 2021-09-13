@@ -33,12 +33,15 @@ public:
 	//! draws the text
 	//! @param src defines a subsection of the text image to actually draw (width 0 and height 0 uses whole image)
 	//! @param dest the position and size of the image on-screen (width 0 and height 0 defaults to 1:1 scale)
-	void draw(SDL_Rect src, SDL_Rect dest);
+	//! @param viewport the dimensions of the viewport
+	void draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport);
 
 	//! draws the text with the given color
 	//! @param src defines a subsection of the text image to actually draw (width 0 and height 0 uses whole image)
 	//! @param dest the position and size of the image on-screen (width 0 and height 0 defaults to 1:1 scale)
-	void drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color);
+	//! @param viewport the dimensions of the viewport
+	//! @param color 32-bit encoded color to colorize the text
+	void drawColor(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color);
 
 	//! get a Text object from the engine
 	//! @param str The Text's string

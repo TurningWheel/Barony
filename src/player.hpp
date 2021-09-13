@@ -24,9 +24,6 @@
 //TODO: Move these into each and every individual player.
 extern Entity* selectedEntity[MAXPLAYERS];
 extern Entity* lastSelectedEntity[MAXPLAYERS];
-extern Sint32 mousex, mousey;
-extern Sint32 omousex, omousey;
-extern Sint32 mousexrel, mouseyrel;
 
 /*
  * TODO: Will need to make messages work for each hotseat player.
@@ -60,7 +57,6 @@ extern bool gamepad_menuy_invert;
 
 class GameController
 {
-	friend class Input;
 	SDL_GameController* sdl_device;
 	SDL_Haptic* sdl_haptic;
 	int id;

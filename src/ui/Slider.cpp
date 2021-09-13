@@ -33,6 +33,9 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 
 	bool focused = highlighted || selected;
 
+	auto white = Image::get("images/system/white.png");
+	const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+
 	// draw rail
 	_railSize.x = _size.x + std::max(0, railSize.x - _actualSize.x);
 	_railSize.y = _size.y + std::max(0, railSize.y - _actualSize.y);
@@ -40,11 +43,16 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 	if (_railSize.w > 0 && _railSize.h > 0) {
 		if (railImage.empty()) {
-			int x = (_railSize.x) * (float)xres / (float)Frame::virtualScreenX;
-			int y = (_railSize.y) * (float)yres / (float)Frame::virtualScreenY;
-			int w = (_railSize.x + _railSize.w) * (float)xres / (float)Frame::virtualScreenX;
-			int h = (_railSize.y + _railSize.h) * (float)yres / (float)Frame::virtualScreenY;
-			drawDepressed(x, y, w, h);
+			Uint8 r = color >> mainsurface->format->Rshift; r = (r / 3) * 2;
+			Uint8 g = color >> mainsurface->format->Gshift; g = (g / 3) * 2;
+			Uint8 b = color >> mainsurface->format->Bshift; b = (b / 3) * 2;
+			Uint8 a = color >> mainsurface->format->Ashift;
+			Uint32 darkColor =
+				(Uint32)r << mainsurface->format->Rshift |
+				(Uint32)g << mainsurface->format->Gshift |
+				(Uint32)b << mainsurface->format->Bshift |
+				(Uint32)a << mainsurface->format->Ashift;
+			white->drawColor(nullptr, _railSize, viewport, darkColor);
 		} else {
 			Frame::image_t image;
 			image.path = railImage;
@@ -75,11 +83,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 			(handleImageActivated.empty() ? handleImage : handleImageActivated) :
 			handleImage;
 		if (imageToUse.empty()) {
-			int x = (_handleSize.x) * (float)xres / (float)Frame::virtualScreenX;
-			int y = (_handleSize.y) * (float)yres / (float)Frame::virtualScreenY;
-			int w = (_handleSize.x + _handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
-			int h = (_handleSize.y + _handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
-			drawWindow(x, y, w, h);
+			white->drawColor(nullptr, _handleSize, viewport, color);
 		} else {
 			Frame::image_t image;
 			image.path = imageToUse;
@@ -105,7 +109,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 	scaledHandle.y = _handleSize.y * (float)yres / (float)Frame::virtualScreenY;
 	scaledHandle.w = _handleSize.w * (float)xres / (float)Frame::virtualScreenX;
 	scaledHandle.h = _handleSize.h * (float)yres / (float)Frame::virtualScreenY;
-	drawExtra(scaledHandle, selectedWidgets);
+	drawGlyphs(scaledHandle, selectedWidgets);
 }
 
 Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

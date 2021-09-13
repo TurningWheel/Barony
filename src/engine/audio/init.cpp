@@ -12,7 +12,6 @@
 #include "../../main.hpp"
 #include "../../files.hpp"
 #include "sound.hpp"
-#include "../../player.hpp"
 
 bool initSoundEngine()
 {
