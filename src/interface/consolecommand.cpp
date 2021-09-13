@@ -488,6 +488,24 @@ void consoleCommand(char const * const command_str)
 				break;
 			}
 		}
+		if (initialized)
+		{
+			if ( !changeVideoMode() )
+			{
+				printlog("critical error! Attempting to abort safely...\n");
+				mainloop = 0;
+			}
+			if ( zbuffer != NULL )
+			{
+				free(zbuffer);
+			}
+			zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
+			if ( clickmap != NULL )
+			{
+				free(clickmap);
+			}
+			clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
+		}
 	}
 	else if ( !strncmp(command_str, "/rscale", 7) )
 	{
@@ -3298,6 +3316,16 @@ void consoleCommand(char const * const command_str)
 			ItemTooltips.readTooltipsFromFile();
 			messagePlayer(clientnum, "Reloaded item_tooltips.json");
 		}
+		else if ( !strncmp(command_str, "/reflowtext", 11) )
+		{
+			bUsePreciseFieldTextReflow = !bUsePreciseFieldTextReflow;
+			messagePlayer(clientnum, "Set bUsePreciseFieldTextReflow to %d", bUsePreciseFieldTextReflow);
+		}
+		else if ( !strncmp(command_str, "/selectedanimcycle", 18) )
+		{
+			bUseSelectedSlotCycleAnimation = !bUseSelectedSlotCycleAnimation;
+			messagePlayer(clientnum, "Set bUseSelectedSlotCycleAnimation to %d", bUseSelectedSlotCycleAnimation);
+		}
 		else if ( !strncmp(command_str, "/autoloadtooltips", 17) )
 		{
 			ItemTooltips.autoReload = !ItemTooltips.autoReload;
@@ -3404,6 +3432,29 @@ void consoleCommand(char const * const command_str)
 				bool learned = addSpell(spell->ID, clientnum, true);
 			}
 			return;
+		}
+		else if ( !strncmp(command_str, "/gimmexp", 8) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				players[clientnum]->entity->getStats()->EXP += 1 + rand() % 50;
+			}
+		}
+		else if ( !strncmp(command_str, "/loadhudsettings", 16) )
+		{
+			loadHUDSettingsJSON();
+			messagePlayer(clientnum, "Reloaded HUD_settings.json");
+		}
+		else if ( !strncmp(command_str, "/usepaperdollmovement", 21) )
+		{
+			restrictPaperDollMovement = !restrictPaperDollMovement;
+			messagePlayer(clientnum, "Set restrictPaperDollMovement to %d", restrictPaperDollMovement);
 		}
 		else
 		{

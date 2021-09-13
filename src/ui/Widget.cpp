@@ -40,8 +40,8 @@ void Widget::activate() {
 
 void Widget::process() {
 	if (!disabled) {
-		if (callback) {
-			(*callback)(*this);
+		if (tickCallback) {
+			(*tickCallback)(*this);
 		}
 	}
 }
@@ -78,9 +78,7 @@ Widget* Widget::handleInput() {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result) {
-#ifndef EDITOR
 						playSound(495, 64);
-#endif
 						result->scrollParent();
 						return result;
 					}
@@ -136,17 +134,24 @@ Widget* Widget::findWidget(const char* name, bool recursive) {
 	return nullptr;
 }
 
-Widget* Widget::findSelectedWidget() {
+void Widget::findSelectedWidgets(std::vector<Widget*>& outResult) {
+	if (selected) {
+		outResult.push_back(this);
+	}
 	for (auto widget : widgets) {
-		if (widget->owner != owner) {
-			continue;
-		}
-		if (widget->isSelected()) {
-			return widget;
-		} else {
-			auto result = widget->findSelectedWidget();
-			if (result) {
-				return result;
+		widget->findSelectedWidgets(outResult);
+	}
+}
+
+Widget* Widget::findSelectedWidget(int owner) {
+	if (selected && owner == this->owner) {
+		return this;
+	} else {
+		std::vector<Widget*> selectedWidgets;
+		findSelectedWidgets(selectedWidgets);
+		for (auto widget : selectedWidgets) {
+			if (widget->owner == owner) {
+				return widget;
 			}
 		}
 	}
@@ -180,15 +185,29 @@ void Widget::adoptWidget(Widget& widget) {
 	widgets.push_back(&widget);
 }
 
-void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
-#ifndef NINTENDO
-	return;
-#else
+void Widget::drawGlyphs(const SDL_Rect size, const std::vector<Widget*>& selectedWidgets) {
+	if (drawCallback) {
+		drawCallback(*this, size);
+	}
+
+#ifdef NINTENDO
 	if (hideGlyphs) {
 		return;
 	}
+	Widget* selectedWidget = nullptr;
+	for (auto widget : selectedWidgets) {
+		if (widget->owner == owner) {
+			selectedWidget = widget;
+			break;
+		}
+	}
 	if (!selectedWidget) {
 		return;
+	} else {
+		auto searchParent = selectedWidget->findSearchRoot();
+		if (searchParent && !isChildOf(*searchParent)) {
+			return;
+		}
 	}
 	int x = size.x + size.w;
 	int y = size.y + size.h;
@@ -196,16 +215,16 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 	auto action = actions.begin();
 	if (selectedWidget == this) {
 		auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
-		int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-		int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+		int w = image->getWidth();
+		int h = image->getHeight();
 		image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 		x -= w;
 	}
 	if ((action = actions.find("MenuCancel")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_B00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -213,8 +232,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 	if ((action = actions.find("MenuAlt1")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_Y00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -222,8 +241,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 	if ((action = actions.find("MenuAlt2")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_X00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -231,8 +250,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 	if ((action = actions.find("MenuStart")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_+00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -240,8 +259,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 	if ((action = actions.find("MenuSelect")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_-00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -249,8 +268,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 	if ((action = actions.find("MenuPageLeft")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_L00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}
@@ -258,8 +277,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const Widget* selectedWidget) {
 	if ((action = actions.find("MenuPageRight")) != actions.end()) {
 		if (action->second == name) {
 			auto image = Image::get("images/ui/Glyphs/G_Switch_R00.png");
-			int w = image->getWidth() * (float)xres / (float)Frame::virtualScreenX;
-			int h = image->getHeight() * (float)yres / (float)Frame::virtualScreenY;
+			int w = image->getWidth();
+			int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
 			x -= w;
 		}

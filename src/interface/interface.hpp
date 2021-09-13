@@ -13,6 +13,7 @@
 
 #include "../main.hpp"
 #include "../game.hpp"
+#include "../draw.hpp"
 
 class Item;
 
@@ -35,23 +36,66 @@ extern real_t uiscale_inventory;
 
 class EnemyHPDamageBarHandler
 {
-	const int k_maxTickLifetime = 120;
 public:
-
+	static int maxTickLifetime;
+	static int maxTickFurnitureLifetime;
+	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsMonsters;
+	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsFurniture;
+	enum HPBarType {
+		BAR_TYPE_CREATURE,
+		BAR_TYPE_FURNITURE
+	};
+	struct BarAnimator_t
+	{
+		real_t foregroundValue = 0.0;
+		real_t backgroundValue = 0.0;
+		real_t previousSetpoint = 0.0;
+		Sint32 setpoint = 0;
+		Uint32 animateTicks = 0;
+		Sint32 damageTaken = -1;
+		real_t widthMultiplier = 1.0;
+		real_t maxValue = 0.0;
+		real_t currentOpacity = 0.0;
+		real_t fadeOut = 100.0;
+		real_t fadeIn = 100.0;
+		real_t skullOpacities[4];
+		real_t damageFrameOpacity = 100.0;
+		BarAnimator_t() { 
+			for ( int i = 0; i < 4; ++i )
+			{
+				skullOpacities[i] = 100.0;
+			}
+		}
+	};
 	struct EnemyHPDetails
 	{
-		char enemy_name[128] = "";
+		HPBarType barType = BAR_TYPE_CREATURE;
+		BarAnimator_t animator;
+		std::string enemy_name = "";
 		Sint32 enemy_hp = 0;
 		Sint32 enemy_maxhp = 0;
 		Sint32 enemy_oldhp = 0;
 		Uint32 enemy_timer = 0;
 		Uint32 enemy_bar_color = 0;
+		Uint32 enemy_uid = 0;
 		bool lowPriorityTick = false;
 		bool shouldDisplay = true;
+		bool hasDistanceCheck = false;
+		bool displayOnHUD = false;
+		bool expired = false;
 		real_t depletionAnimationPercent = 100.0;
-		EnemyHPDetails(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name, bool isLowPriority)
+		float glWorldOffsetY = 0.0;
+		EnemyHPDetails() {};
+		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name, bool isLowPriority)
 		{
-			memset(enemy_name, 0, 128);
+			if ( Entity* entity = uidToEntity(uid) )
+			{
+				if ( entity->behavior != &actMonster && entity->behavior != actPlayer )
+				{
+					barType = BAR_TYPE_FURNITURE;
+				}
+			}
+			enemy_uid = uid;
 			enemy_hp = HP;
 			enemy_maxhp = maxHP;
 			enemy_oldhp = oldHP;
@@ -61,14 +105,36 @@ public:
 			enemy_bar_color = color;
 			lowPriorityTick = isLowPriority;
 			shouldDisplay = true;
-			strcpy(enemy_name, name);
+			enemy_name = name;
 		}
+		~EnemyHPDetails()
+		{
+			if ( worldTexture )
+			{
+				delete worldTexture;
+				worldTexture = nullptr;
+			}
+			if ( worldSurfaceSprite ) {
+				SDL_FreeSurface(worldSurfaceSprite);
+				worldSurfaceSprite = nullptr;
+			}
+		}
+
+		real_t worldX = 0.0;
+		real_t worldY = 0.0;
+		real_t worldZ = 0.0;
+		real_t screenDistance = 0.0;
+		TempTexture* worldTexture = nullptr;
+		SDL_Surface* worldSurfaceSprite = nullptr;
 	};
 
 	Uint32 enemy_bar_client_color = 0;
 	std::unordered_map<Uint32, EnemyHPDetails> HPBars;
 	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority);
 	void displayCurrentHPBar(const int player);
+	void cullExpiredHPBars();
+	EnemyHPDetails* getMostRecentHPBar(int index = 0);
+	Uint32 lastEnemyUid = 0;
 };
 extern EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 
@@ -112,7 +178,7 @@ extern int itemscroll;
 extern view_t camera_charsheet;
 extern real_t camera_charsheet_offsetyaw;
 
-void select_inventory_slot(int player, int x, int y);
+void select_inventory_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -138,6 +204,7 @@ void drawMinimap(const int player);
 void handleDamageIndicators(const int player);
 void handleDamageIndicatorTicks();
 void drawStatus(const int player);
+void drawStatusNew(const int player);
 void saveCommand(char* content);
 int loadConfig(char* filename);
 int saveConfig(char const * const filename);
@@ -172,19 +239,7 @@ extern SDL_Surface* inventory_mode_item_img;
 extern SDL_Surface* inventory_mode_item_highlighted_img;
 extern SDL_Surface* inventory_mode_spell_img;
 extern SDL_Surface* inventory_mode_spell_highlighted_img;
-
-/*
- * Determines how item select (pick up, release) mechanic works.
- *		BEHAVIOR_MOUSE = press left button to pick up, release left button to drop,
- *		BEHAVIOR_GAMEPAD = press mapped button (x by default) to select/"grab" item, press again to drop.
- */
-enum selectBehavior_t
-{
-	BEHAVIOR_MOUSE = 0,
-	BEHAVIOR_GAMEPAD = 1,
-	ENUM_LEN = 2
-};
-extern selectBehavior_t itemSelectBehavior;
+extern bool restrictPaperDollMovement;
 
 //Chest GUI definitions.
 //#define CHEST_INVENTORY_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + chestgui_offset_x)
@@ -500,14 +555,7 @@ extern SDL_Surface* bookgui_img;
 //extern SDL_Surface *bookclose_img;
 extern SDL_Surface* book_highlighted_left_img; //Draw this when the mouse is over the left half of the book.
 extern SDL_Surface* book_highlighted_right_img; //Draw this when the mouse is over the right half of the book.
-//extern node_t* book_page;
-//extern int bookgui_offset_x;
-//extern int bookgui_offset_y;
-//extern bool dragging_book_GUI; //The book GUI is being dragged.
-//extern bool book_open; //Is there a book open?
-struct book_t;
-//extern struct book_t* open_book;
-//extern Item* open_book_item; //A pointer to the open book's item, so that the game knows to close the book when the player drops that item.
+class BookParser_t;
 #define BOOK_FONT ttf12
 #define BOOK_FONT_WIDTH TTF12_WIDTH
 #define BOOK_FONT_HEIGHT TTF12_HEIGHT
@@ -551,12 +599,16 @@ typedef struct hotbar_slot_t
 	/*
 	* This is an item's ID. It just resolves to NULL if an item is no longer valid.
 	*/
-	Uint32 item;
+	Uint32 item = 0;
+	Uint32 lastItemUid = 0;
+	int lastItemCategory = -1;
+	int lastItemType = -1;
 } hotbar_slot_t;
 
 
-//Returns a pointer to a hotbar slot if the specified coordinates are in the area of the hotbar. Used for such things as dragging and dropping items.
-hotbar_slot_t* getHotbar(int player, int x, int y, int* outSlotNum = nullptr);
+// Returns a pointer to a hotbar slot if the mouse is over a hotbar slot
+// Used for such things as dragging and dropping items. Uses realtime (mousex/mousey) coords as may be dragging
+hotbar_slot_t* getCurrentHotbarUnderMouse(int player, int* outSlotNum = nullptr);
 
 void warpMouseToSelectedHotbarSlot(const int player);
 
@@ -729,3 +781,28 @@ public:
 extern FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 
 SDL_Rect getRectForSkillIcon(const int skill);
+std::string getItemSpritePath(const int player, Item& item);
+
+enum ItemContextMenuPrompts {
+	PROMPT_EQUIP,
+	PROMPT_UNEQUIP,
+	PROMPT_SPELL_EQUIP,
+	PROMPT_SPELL_QUICKCAST,
+	PROMPT_APPRAISE,
+	PROMPT_INTERACT,
+	PROMPT_EAT,
+	PROMPT_CONSUME,
+	PROMPT_INSPECT,
+	PROMPT_SELL,
+	PROMPT_BUY,
+	PROMPT_STORE_CHEST,
+	PROMPT_RETRIEVE_CHEST,
+	PROMPT_DROP,
+	PROMPT_TINKER,
+	PROMPT_GRAB
+};
+
+std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);
+std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item);
+const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item);
+std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt);

@@ -6,12 +6,15 @@ void doFrames();
 #include "Frame.hpp"
 
 void newIngameHud();
-void doNewCharacterSheet(int player);
-void newPlayerInventory(const int player);
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr);
 void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy);
 void resetInventorySlotFrames(const int player);
+void createPlayerInventorySlotFrameElements(Frame* slotFrame);
+void loadHUDSettingsJSON();
+SDL_Surface* blitEnemyBar(const int player);
 
 // if true, use the new user interface
 extern bool newui;
+extern bool bUsePreciseFieldTextReflow;
+extern bool bUseSelectedSlotCycleAnimation;

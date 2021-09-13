@@ -189,6 +189,12 @@ extern PFNGLBINDVERTEXARRAYPROC SDL_glBindVertexArray;
 extern PFNGLDELETEVERTEXARRAYSPROC SDL_glDeleteVertexArrays;
 extern PFNGLENABLEVERTEXATTRIBARRAYPROC SDL_glEnableVertexAttribArray;
 extern PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
+extern PFNGLGENFRAMEBUFFERSPROC SDL_glGenFramebuffers;
+extern PFNGLDELETEFRAMEBUFFERSPROC SDL_glDeleteFramebuffers;
+extern PFNGLBINDFRAMEBUFFERPROC SDL_glBindFramebuffer;
+extern PFNGLFRAMEBUFFERTEXTURE2DPROC SDL_glFramebufferTexture2D;
+extern PFNGLDRAWBUFFERSPROC SDL_glDrawBuffers;
+extern PFNGLBLENDFUNCSEPARATEPROC SDL_glBlendFuncSeparate;
 #else
 #define SDL_glGenBuffers glGenBuffers
 #define SDL_glBindBuffer glBindBuffer
@@ -199,6 +205,12 @@ extern PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
 #define SDL_glDeleteVertexArrays glDeleteVertexArrays
 #define SDL_glEnableVertexAttribArray glEnableVertexAttribArray
 #define SDL_glVertexAttribPointer glVertexAttribPointer
+#define SDL_glGenFramebuffers glGenFramebuffers
+#define SDL_glDeleteFramebuffers glDeleteFramebuffers
+#define SDL_glBindFramebuffer glBindFramebuffer
+#define SDL_glFramebufferTexture2D glFramebufferTexture2D
+#define SDL_glDrawBuffers glDrawBuffers
+#define SDL_glBlendFuncSeparate glBlendFuncSeparate
 #endif
 
 #define AVERAGEFRAMES 32
@@ -561,6 +573,9 @@ extern int mainloop;
 extern Uint32 ticks;
 extern Uint32 lastkeypressed;
 extern Sint8 keystatus[512];
+extern Sint32 mousex, mousey;
+extern Sint32 omousex, omousey;
+extern Sint32 mousexrel, mouseyrel;
 extern char* inputstr;
 extern int inputlen;
 extern string lastname;
@@ -759,6 +774,7 @@ real_t getLightForEntity(real_t x, real_t y);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
+bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
 real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);

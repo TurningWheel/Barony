@@ -678,7 +678,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == BOOK )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1007], books[appearance % numbooks]->name);
+					snprintf(&tempstr[c], 1024 - c, language[1007], getBookNameFromIndex(appearance % numbooks).c_str());
 				}
 				else
 				{
@@ -748,7 +748,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == BOOK )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1033], count, books[appearance % numbooks]->name);
+					snprintf(&tempstr[c], 1024 - c, language[1033], count, getBookNameFromIndex(appearance % numbooks).c_str());
 				}
 				else
 				{
@@ -827,7 +827,7 @@ char* Item::description() const
 				{
 					if ( itemCategory(this) == BOOK )
 					{
-						snprintf(&tempstr[c], 1024 - c, language[1007], books[appearance % numbooks]->name);
+						snprintf(&tempstr[c], 1024 - c, language[1007], getBookNameFromIndex(appearance % numbooks).c_str());
 					}
 					else
 					{
@@ -904,7 +904,7 @@ char* Item::description() const
 				{
 					if ( itemCategory(this) == BOOK )
 					{
-						snprintf(&tempstr[c], 1024 - c, language[1086], count, books[appearance % numbooks]->name);
+						snprintf(&tempstr[c], 1024 - c, language[1086], count, getBookNameFromIndex(appearance % numbooks).c_str());
 					}
 					else
 					{
@@ -954,7 +954,7 @@ char* Item::getName() const
 		{
 			if ( itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1007], books[appearance % numbooks]->name);
+				snprintf(tempstr, sizeof(tempstr), language[1007], getBookNameFromIndex(appearance % numbooks).c_str());
 			}
 			else
 			{
@@ -969,7 +969,7 @@ char* Item::getName() const
 			}
 			else if ( itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1007], books[appearance % numbooks]->name);
+				snprintf(tempstr, sizeof(tempstr), language[1007], getBookNameFromIndex(appearance % numbooks).c_str());
 			}
 			else
 			{
@@ -2599,7 +2599,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 				{
 					if (!players[player]->entity->isBlind())
 					{
-						players[player]->bookGUI.openBook(books[item->appearance % numbooks], item);
+						players[player]->bookGUI.openBook(item->appearance % numbooks, item);
 						conductIlliterate = false;
 					}
 					else

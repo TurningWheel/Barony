@@ -14,7 +14,6 @@
 #include "stat.hpp"
 #include "entity.hpp"
 #include "items.hpp"
-#include "magic/magic.hpp"
 
 //Destructor
 Stat::~Stat() {}
@@ -31,7 +30,6 @@ Returns a pointer to a new instance of the Stats class
 void Stat::clearStats() {}
 Stat* Stat::copyStats()
 {
-	node_t* node;
 	int c;
 
 	// create new stat, using the type (HUMAN, SKELETON) as a reference.

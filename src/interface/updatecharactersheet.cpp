@@ -65,7 +65,7 @@ void updateCharacterSheet(const int player)
 	pos.w = 208;
 	pos.h = 180;
 
-	int statWindowY = y1 + 196;
+	/*int statWindowY = y1 + 196;
 	int statWindowY2 = y1 + 404;
 	if ( uiscale_charactersheet )
 	{
@@ -73,20 +73,7 @@ void updateCharacterSheet(const int player)
 		pos.w = 276;
 		statWindowY = y1 + pos.h + 16;
 		statWindowY2 = y1 + 554;
-	}
-
-	char name[32];
-	snprintf(name, sizeof(name), "player inventory %d", player);
-	Frame* frame = gui->findFrame(name);
-	Frame* characterFrame = nullptr;
-	if ( frame )
-	{
-		characterFrame = frame->findFrame("inventory character preview");
-		if ( characterFrame )
-		{
-			pos = characterFrame->getSize();
-		}
-	}
+	}*/
 
 	//drawWindowFancy(x1, y1, x1 + pos.w + 16, y1 + pos.h + 16);
 
@@ -102,134 +89,134 @@ void updateCharacterSheet(const int player)
 	drawWindowFancy(statWindowBox.x, statWindowBox.y, statWindowBox.x + statWindowBox.w, statWindowBox.y + statWindowBox.h);
 
 	// character sheet
-	double ofov = fov;
-	fov = 50;
-	if (players[player] != nullptr && players[player]->entity != nullptr)
-	{
-		if (!softwaremode)
-		{
-			glClear(GL_DEPTH_BUFFER_BIT);
-		}
-		//TODO: These two NOT PLAYERSWAP
-		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
-		//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
-		camera_charsheet.x = players[player]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
-		camera_charsheet.y = players[player]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
-		camera_charsheet.z = players[player]->entity->z * 2;
-		//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
-		camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
-		camera_charsheet.vang = PI / 20;
-		
-		camera_charsheet.winx = pos.x;
-		camera_charsheet.winy = pos.y;
-		//camera_charsheet.winx = x1 + 8;
-		//camera_charsheet.winy = y1 + 8;
-		
-		camera_charsheet.winw = pos.w;
-		camera_charsheet.winh = pos.h;
-		b = players[player]->entity->flags[BRIGHT];
-		players[player]->entity->flags[BRIGHT] = true;
-		if ( !players[player]->entity->flags[INVISIBLE] )
-		{
-			glDrawVoxel(&camera_charsheet, players[player]->entity, REALCOLORS);
-		}
-		players[player]->entity->flags[BRIGHT] = b;
-		c = 0;
-		if (multiplayer != CLIENT)
-		{
-			for (node = players[player]->entity->children.first; node != nullptr; node = node->next)
-			{
-				if (c == 0)
-				{
-					c++;
-					continue;
-				}
-				entity = (Entity*) node->element;
-				if ( !entity->flags[INVISIBLE] )
-				{
-					b = entity->flags[BRIGHT];
-					entity->flags[BRIGHT] = true;
-					glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
-					entity->flags[BRIGHT] = b;
-				}
-				c++;
-			}
-			for ( node = map.entities->first; node != NULL; node = node->next )
-			{
-				entity = (Entity*) node->element;
-				if ( (Sint32)entity->getUID() == -4 )
-				{
-					glDrawSprite(&camera_charsheet, entity, REALCOLORS);
-				}
-			}
-		}
-		else
-		{
-			for ( node = map.entities->first; node != NULL; node = node->next )
-			{
-				entity = (Entity*) node->element;
-				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
-				{
-					b = entity->flags[BRIGHT];
-					entity->flags[BRIGHT] = true;
-					if ( (Sint32)entity->getUID() == -4 )
-					{
-						glDrawSprite(&camera_charsheet, entity, REALCOLORS);
-					}
-					else
-					{
-						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
-					}
-					entity->flags[BRIGHT] = b;
-				}
-			}
-		}
+	//double ofov = fov;
+	//fov = 50;
+	//if (false && players[player] != nullptr && players[player]->entity != nullptr)
+	//{
+	//	if (!softwaremode)
+	//	{
+	//		glClear(GL_DEPTH_BUFFER_BIT);
+	//	}
+	//	//TODO: These two NOT PLAYERSWAP
+	//	//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
+	//	//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
+	//	camera_charsheet.x = players[player]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
+	//	camera_charsheet.y = players[player]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
+	//	camera_charsheet.z = players[player]->entity->z * 2;
+	//	//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
+	//	camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
+	//	camera_charsheet.vang = PI / 20;
+	//	
+	//	camera_charsheet.winx = pos.x;
+	//	camera_charsheet.winy = pos.y;
+	//	//camera_charsheet.winx = x1 + 8;
+	//	//camera_charsheet.winy = y1 + 8;
+	//	
+	//	camera_charsheet.winw = pos.w;
+	//	camera_charsheet.winh = pos.h;
+	//	b = players[player]->entity->flags[BRIGHT];
+	//	players[player]->entity->flags[BRIGHT] = true;
+	//	if ( !players[player]->entity->flags[INVISIBLE] )
+	//	{
+	//		glDrawVoxel(&camera_charsheet, players[player]->entity, REALCOLORS);
+	//	}
+	//	players[player]->entity->flags[BRIGHT] = b;
+	//	c = 0;
+	//	if (multiplayer != CLIENT)
+	//	{
+	//		for (node = players[player]->entity->children.first; node != nullptr; node = node->next)
+	//		{
+	//			if (c == 0)
+	//			{
+	//				c++;
+	//				continue;
+	//			}
+	//			entity = (Entity*) node->element;
+	//			if ( !entity->flags[INVISIBLE] )
+	//			{
+	//				b = entity->flags[BRIGHT];
+	//				entity->flags[BRIGHT] = true;
+	//				glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+	//				entity->flags[BRIGHT] = b;
+	//			}
+	//			c++;
+	//		}
+	//		for ( node = map.entities->first; node != NULL; node = node->next )
+	//		{
+	//			entity = (Entity*) node->element;
+	//			if ( (Sint32)entity->getUID() == -4 )
+	//			{
+	//				glDrawSprite(&camera_charsheet, entity, REALCOLORS);
+	//			}
+	//		}
+	//	}
+	//	else
+	//	{
+	//		for ( node = map.entities->first; node != NULL; node = node->next )
+	//		{
+	//			entity = (Entity*) node->element;
+	//			if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
+	//			{
+	//				b = entity->flags[BRIGHT];
+	//				entity->flags[BRIGHT] = true;
+	//				if ( (Sint32)entity->getUID() == -4 )
+	//				{
+	//					glDrawSprite(&camera_charsheet, entity, REALCOLORS);
+	//				}
+	//				else
+	//				{
+	//					glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+	//				}
+	//				entity->flags[BRIGHT] = b;
+	//			}
+	//		}
+	//	}
 
-		SDL_Rect rotateBtn;
-		rotateBtn.w = 16;
-		rotateBtn.h = 16;
-		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
-		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+	//	SDL_Rect rotateBtn;
+	//	rotateBtn.w = 16;
+	//	rotateBtn.h = 16;
+	//	rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
+	//	rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
 
-		if ( players[player]->paperDoll.enabled )
-		{
-			rotateBtn.x -= players[player]->paperDoll.getSlotSize() + 4;
-			rotateBtn.y -= 2;
-		}
+	//	if ( players[player]->paperDoll.enabled )
+	//	{
+	//		rotateBtn.x -= players[player]->paperDoll.getSlotSize() + 4;
+	//		rotateBtn.y -= 2;
+	//	}
 
-		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
-		{
-			if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
-			{
-				camera_charsheet_offsetyaw += 0.05;
-				if ( camera_charsheet_offsetyaw > 2 * PI )
-				{
-					camera_charsheet_offsetyaw -= 2 * PI;
-				}
-				drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-			}
-		}
-		ttfPrintText(ttf12, rotateBtn.x + 2, rotateBtn.y + 2, ">");
+	//	drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+	//	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
+	//	{
+	//		if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+	//		{
+	//			camera_charsheet_offsetyaw += 0.05;
+	//			if ( camera_charsheet_offsetyaw > 2 * PI )
+	//			{
+	//				camera_charsheet_offsetyaw -= 2 * PI;
+	//			}
+	//			drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+	//		}
+	//	}
+	//	ttfPrintText(ttf12, rotateBtn.x + 2, rotateBtn.y + 2, ">");
 
-		// second button
-		rotateBtn.x -= rotateBtn.w + 4;
-		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
-		{
-			if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
-			{
-				camera_charsheet_offsetyaw -= 0.05;
-				if ( camera_charsheet_offsetyaw < 0.f )
-				{
-					camera_charsheet_offsetyaw += 2 * PI;
-				}
-				drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-			}
-		}
-		ttfPrintText(ttf12, rotateBtn.x, rotateBtn.y + 2, "<");
-	}
-	fov = ofov;
+	//	// second button
+	//	rotateBtn.x -= rotateBtn.w + 4;
+	//	drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+	//	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
+	//	{
+	//		if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+	//		{
+	//			camera_charsheet_offsetyaw -= 0.05;
+	//			if ( camera_charsheet_offsetyaw < 0.f )
+	//			{
+	//				camera_charsheet_offsetyaw += 2 * PI;
+	//			}
+	//			drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+	//		}
+	//	}
+	//	ttfPrintText(ttf12, rotateBtn.x, rotateBtn.y + 2, "<");
+	//}
+	//fov = ofov;
 
 	TTF_Font* fontStat = ttf12;
 	int text_x = statWindowBox.x + 8;
@@ -418,18 +405,31 @@ void Player::CharacterSheet_t::setDefaultCharacterSheetBox()
 	characterSheetBox.w = pos.w + 16;
 	characterSheetBox.h = statWindowY;
 
-	statsSheetBox.x = characterSheetBox.x;
-	statsSheetBox.y = statWindowY;
-	statsSheetBox.w = characterSheetBox.w;
-	statsSheetBox.h = statWindowY2 - statWindowY;
 
-	if ( player.inventoryUI.bNewInventoryLayout )
+	if ( players[player.playernum]->inventoryUI.frame )
+	{
+		if ( auto inventoryBaseFrame = players[player.playernum]->inventoryUI.frame->findFrame("inventory base") )
+		{
+			SDL_Rect pos = inventoryBaseFrame->getAbsoluteSize();
+			statsSheetBox.x = (pos.x + pos.w) * xres / Frame::virtualScreenX;
+			statsSheetBox.y = pos.y * xres / Frame::virtualScreenY;
+		}
+	}
+	else
+	{
+		statsSheetBox.x = characterSheetBox.x;
+		statsSheetBox.y = statWindowY;
+		statsSheetBox.w = characterSheetBox.w;
+		statsSheetBox.h = statWindowY2 - statWindowY;
+	}
+
+	/*if ( player.inventoryUI.bNewInventoryLayout )
 	{
 		statsSheetBox.x = characterSheetBox.x + characterSheetBox.w;
 		statsSheetBox.y = characterSheetBox.y;
 
 		characterSheetBox.h = pos.h + 16;
-	}
+	}*/
 }
 
 void Player::CharacterSheet_t::setDefaultPartySheetBox()
@@ -529,7 +529,7 @@ void drawSkillsSheet(const int player)
 	}
 	players[player]->characterSheet.setDefaultSkillsSheetBox();
 
-	pos.x = players[player]->characterSheet.skillsSheetBox.x;
+	pos.x = players[player]->characterSheet.skillsSheetBox.x - 208;
 	pos.y = players[player]->characterSheet.skillsSheetBox.y;
 	pos.w = players[player]->characterSheet.skillsSheetBox.w;
 	pos.h = players[player]->characterSheet.skillsSheetBox.h;

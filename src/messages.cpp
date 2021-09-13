@@ -108,6 +108,7 @@ void Player::MessageZone_t::addMessage(Uint32 color, char* content, ...)
 			exit(1); //Should it do this?
 		}
 
+		new_message->requiresResize = true;
 		new_message->text->color = color;
 		new_message->text->lines = 1;
 		if (content != NULL)
@@ -252,6 +253,7 @@ void Player::MessageZone_t::updateMessages()
 
 void Player::MessageZone_t::drawMessages()
 {
+	return;
 	for ( Message *current : notification_messages )
 	{
 		Uint32 color = current->text->color ^ mainsurface->format->Amask;

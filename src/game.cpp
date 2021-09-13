@@ -1354,6 +1354,7 @@ void gameLogic(void)
 						{
 							FollowerMenu[i].closeFollowerMenuGUI(true);
 						}
+						enemyHPDamageBarHandler[i].HPBars.clear();
 					}
 
 					assignActions(&map);
@@ -2850,6 +2851,7 @@ void handleEvents(void)
 	}
 
 	for (auto& input : Input::inputs) {
+		input.updateReleasedBindings();
 		input.update();
 	}
 
@@ -3026,11 +3028,15 @@ void handleEvents(void)
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
+					Input::mouseButtons[SDL_BUTTON_WHEELUP] = 1;
+					Input::lastInputOfAnyKind = "MouseWheelUp";
 					lastkeypressed = 286;
 				}
 				else if ( event.wheel.y < 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 1;
+					Input::mouseButtons[SDL_BUTTON_WHEELDOWN] = 1;
+					Input::lastInputOfAnyKind = "MouseWheelDown";
 					lastkeypressed = 287;
 				}
 				break;
@@ -3127,8 +3133,8 @@ void handleEvents(void)
 					snprintf(buf, sizeof(buf), "Pad%dStickRightY-", event.caxis.which):
 					snprintf(buf, sizeof(buf), "Pad%dStickRightY+", event.caxis.which);
 					break;
-				case SDL_CONTROLLER_AXIS_TRIGGERLEFT: snprintf(buf, sizeof(buf), "Pad%dLeftTrigger"); break;
-				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: snprintf(buf, sizeof(buf), "Pad%dRightTrigger"); break;
+				case SDL_CONTROLLER_AXIS_TRIGGERLEFT: snprintf(buf, sizeof(buf), "Pad%dLeftTrigger", event.caxis.which); break;
+				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: snprintf(buf, sizeof(buf), "Pad%dRightTrigger", event.caxis.which); break;
 				}
 				Input::lastInputOfAnyKind = buf;
 				break;
@@ -3182,7 +3188,10 @@ void handleEvents(void)
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", id);
 						inputs.addControllerIDToNextAvailableInput(id);
-						Input::addGameController(id, controller);
+						Input::gameControllers.emplace(id, const_cast<SDL_GameController*>(controller.getControllerDevice()));
+						for (int c = 0; c < 4; ++c) {
+							Input::inputs[c].refresh();
+						}
 					}
 					else
 					{
@@ -3205,7 +3214,6 @@ void handleEvents(void)
 				{
 					if ( controller.isActive() && controller.getControllerDevice() == pad )
 					{
-						Input::gameControllers.erase(instanceID);
 						inputs.removeControllerWithDeviceID(controller.getID());
 						printlog("(Device %d removed as game controller, instance id: %d.)\n", controller.getID(), instanceID);
 						controller.close();
@@ -3713,15 +3721,16 @@ void ingameHud()
 		{
 			*inputPressedForPlayer(player, impulses[IN_SPELL_LIST]) = 0;
 			inputs.controllerClearInput(player, INJOY_SPELL_LIST);
-			players[player]->gui_mode = GUI_MODE_INVENTORY;
-			inputs.getUIInteraction(player)->selectedItem = nullptr;
-			players[player]->inventory_mode = INVENTORY_MODE_SPELL;
-
-			if ( players[player]->shootmode )
+			if ( !inputs.getUIInteraction(player)->selectedItem )
 			{
-				players[player]->shootmode = false;
-				players[player]->characterSheet.attributespage = 0;
-				//proficienciesPage = 0;
+				players[player]->gui_mode = GUI_MODE_INVENTORY;
+				players[player]->inventory_mode = INVENTORY_MODE_SPELL;
+				if ( players[player]->shootmode )
+				{
+					players[player]->shootmode = false;
+					players[player]->characterSheet.attributespage = 0;
+					//proficienciesPage = 0;
+				}
 			}
 		}
 
@@ -3730,7 +3739,8 @@ void ingameHud()
 		if ( players[player]->isLocalPlayerAlive() )
 		{
 			bool hasSpellbook = false;
-			bool tryQuickCast = players[player]->hotbar.faceMenuQuickCast;
+			bool tryHotbarQuickCast = players[player]->hotbar.faceMenuQuickCast;
+			bool tryInventoryQuickCast = players[player]->magic.doQuickCastSpell();
 			if ( stats[player]->shield && itemCategory(stats[player]->shield) == SPELLBOOK )
 			{
 				hasSpellbook = true;
@@ -3738,15 +3748,20 @@ void ingameHud()
 
 			players[player]->hotbar.faceMenuQuickCast = false;
 
-			if ( !command &&
+			bool allowCasting = false;
+			if ( tryInventoryQuickCast )
+			{
+				allowCasting = true;
+			}
+			else if (!command &&
 				(*inputPressedForPlayer(player, impulses[IN_CAST_SPELL])
 					|| (players[player]->shootmode
-						&& (inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL) || tryQuickCast))
+						&& (inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL) || tryHotbarQuickCast))
 					|| (hasSpellbook && *inputPressedForPlayer(player, impulses[IN_DEFEND]))
-					|| (hasSpellbook && players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)))
+					|| (hasSpellbook && players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
 				)
 			{
-				bool allowCasting = true;
+				allowCasting = true;
 				if ( *inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) || *inputPressedForPlayer(player, impulses[IN_DEFEND]) )
 				{
 					if ( ((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE || impulses[IN_DEFEND] == RIGHT_CLICK_IMPULSE)
@@ -3790,46 +3805,35 @@ void ingameHud()
 						}
 					}
 				}
+			}
 
-				if ( allowCasting )
+			if ( allowCasting )
+			{
+				*inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) = 0;
+				if ( players[player]->shootmode )
 				{
-					*inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) = 0;
-					if ( players[player]->shootmode )
+					inputs.controllerClearInput(player, INJOY_GAME_CAST_SPELL);
+				}
+				if ( players[player] && players[player]->entity )
+				{
+					if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
 					{
-						inputs.controllerClearInput(player, INJOY_GAME_CAST_SPELL);
-					}
-					if ( players[player] && players[player]->entity )
-					{
-						if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
+						if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
 						{
-							if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
-							{
-								messagePlayer(player, language[2999]); // prevent casting of spell.
-							}
-							else
-							{
-								if ( achievementBrawlerMode && players[player]->magic.selectedSpell() )
-								{
-									messagePlayer(player, language[2998]); // notify no longer eligible for achievement but still cast.
-								}
-								if ( hasSpellbook
-									&& (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
-								{
-									castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
-								}
-								else
-								{
-									castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
-								}
-								if ( players[player]->magic.selectedSpell() )
-								{
-									conductGameChallenges[CONDUCT_BRAWLER] = 0;
-								}
-							}
+							messagePlayer(player, language[2999]); // prevent casting of spell.
 						}
 						else
 						{
-							if ( hasSpellbook && (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
+							if ( achievementBrawlerMode && players[player]->magic.selectedSpell() )
+							{
+								messagePlayer(player, language[2998]); // notify no longer eligible for achievement but still cast.
+							}
+							if ( tryInventoryQuickCast )
+							{
+								castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
+							}
+							else if ( hasSpellbook
+								&& (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
 							{
 								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
 							}
@@ -3837,13 +3841,33 @@ void ingameHud()
 							{
 								castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
 							}
+							if ( players[player]->magic.selectedSpell() )
+							{
+								conductGameChallenges[CONDUCT_BRAWLER] = 0;
+							}
 						}
 					}
-					*inputPressedForPlayer(player, impulses[IN_DEFEND]) = 0;
-					inputs.controllerClearInput(player, INJOY_GAME_DEFEND);
+					else
+					{
+						if ( tryInventoryQuickCast )
+						{
+							castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
+						}
+						else if ( hasSpellbook && (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
+						{
+							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
+						}
+						else
+						{
+							castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
+						}
+					}
 				}
+				*inputPressedForPlayer(player, impulses[IN_DEFEND]) = 0;
+				inputs.controllerClearInput(player, INJOY_GAME_DEFEND);
 			}
 		}
+		players[player]->magic.resetQuickCastSpell();
 
 		if ( !command && *inputPressedForPlayer(player, impulses[IN_TOGGLECHATLOG])
 			|| (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_TOGGLECHATLOG)) )
@@ -4107,8 +4131,8 @@ void ingameHud()
 			{
 				continue;
 			}
-			drawMinimap(player); // Draw the Minimap
-			drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
+			//drawMinimap(player); // Draw the Minimap
+			//drawStatus(player); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 		}
 	}
 
@@ -4116,11 +4140,25 @@ void ingameHud()
 
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
+		players[player]->messageZone.processChatbox();
+		players[player]->hud.processHUD();
+		players[player]->characterSheet.processCharacterSheet();
+		players[player]->inventoryUI.updateSelectedItemAnimation();
+		players[player]->inventoryUI.updateInventoryItemTooltip();
+		players[player]->hotbar.processHotbar();
+		players[player]->inventoryUI.processInventory();
+		players[player]->inventoryUI.updateCursor();
+		players[player]->hotbar.updateCursor();
+		players[player]->hud.updateCursor();
 		if ( !players[player]->isLocalPlayer() )
 		{
 			continue;
 		}
-
+		//drawSkillsSheet(player);
+		if ( !nohud )
+		{
+			drawStatusNew(player);
+		}
 		drawSustainedSpells(player);
 		updateAppraisalItemBox(player);
 
@@ -4129,9 +4167,8 @@ void ingameHud()
 		{
 			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 			{
-				updateCharacterSheet(player);
-				updatePlayerInventory(player);
-				newPlayerInventory(player);
+				//updateCharacterSheet(player);
+				//updatePlayerInventory(player);
 				updateChestInventory(player);
 				GenericGUI[player].updateGUI();
 				players[player]->bookGUI.updateBookGUI();
@@ -4146,12 +4183,9 @@ void ingameHud()
 			else if ( players[player]->gui_mode == GUI_MODE_SHOP )
 			{
 				updateCharacterSheet(player);
-				updatePlayerInventory(player);
+				//updatePlayerInventory(player);
 				updateShopWindow(player);
 			}
-			
-			// new right side pane by sheridan
-			doNewCharacterSheet(player);
 		}
 
 
@@ -4215,14 +4249,29 @@ void ingameHud()
 
 		FollowerRadialMenu& followerMenu = FollowerMenu[player];
 
-		char framename[32];
-		snprintf(framename, sizeof(framename), "player inventory %d", player);
-		Frame* frame = gui->findFrame(framename);
+		Frame* frame = players[player]->inventoryUI.frame;
+		Frame* draggingItemFrame = nullptr;
+		Frame* oldDraggingItemFrame = nullptr;
 		if ( frame )
 		{
-			if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
+			if ( draggingItemFrame = frame->findFrame("dragging inventory item") )
 			{
 				draggingItemFrame->setDisabled(true);
+			}
+			// unused for now
+			if ( bUseSelectedSlotCycleAnimation )
+			{
+				if ( oldDraggingItemFrame = frame->findFrame("dragging inventory item old") )
+				{
+					oldDraggingItemFrame->setDisabled(true);
+					if ( !inputs.getUIInteraction(player)->selectedItem )
+					{
+						if ( auto img = oldDraggingItemFrame->findImage("item sprite img") )
+						{
+							img->path = "";
+						}
+					}
+				}
 			}
 		}
 
@@ -4232,21 +4281,79 @@ void ingameHud()
 			if ( inputs.getUIInteraction(player)->selectedItem )
 			{
 				Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
-				pos.x = inputs.getMouse(player, Inputs::X) - 15;
-				pos.y = inputs.getMouse(player, Inputs::Y) - 15;
-				pos.w = 32 * uiscale_inventory;
-				pos.h = 32 * uiscale_inventory;
-
 				if ( frame )
 				{
-					if ( auto draggingItemFrame = frame->findFrame("dragging inventory item") )
+					if ( draggingItemFrame )
 					{
+						if ( oldDraggingItemFrame )
+						{
+							oldDraggingItemFrame->setDisabled(false);
+						}
 						updateSlotFrameFromItem(draggingItemFrame, selectedItem);
-						draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
+
+						Frame* selectedSlotCursor = players[player]->inventoryUI.selectedItemCursorFrame;
+						if ( !inputs.getVirtualMouse(player)->draw_cursor )
+						{
+							SDL_Rect selectedItemCursorPos = selectedSlotCursor->getSize();
+							SDL_Rect oldDraggingItemPos = selectedItemCursorPos;
+
+							int cursorOffset = players[player]->inventoryUI.cursor.cursorToSlotOffset;
+							real_t animX = players[player]->inventoryUI.selectedItemAnimate.animateX;
+							real_t animY = players[player]->inventoryUI.selectedItemAnimate.animateY;
+							real_t maxX = (selectedItemCursorPos.w - cursorOffset * 2) / 2;
+							real_t maxY = (selectedItemCursorPos.h - cursorOffset * 2) / 2;
+
+							if ( !bUseSelectedSlotCycleAnimation )
+							{
+								// linear diagonal motion here
+								selectedItemCursorPos.x += cursorOffset +
+									(animX) * (selectedItemCursorPos.w - cursorOffset * 2) / 2;
+								selectedItemCursorPos.y += cursorOffset +
+									(animY) * (selectedItemCursorPos.h - cursorOffset * 2) / 2;
+								draggingItemFrame->setSize(selectedItemCursorPos);
+							}
+							else
+							{
+								if ( oldDraggingItemFrame )
+								{
+									// option to move items in a circular motion
+									real_t magnitudeX = cos(animX * PI + 5 * PI / 4);
+									real_t magnitudeY = sin(animY * PI + 5 * PI / 4);
+									selectedItemCursorPos.x += cursorOffset + maxX / 2 + magnitudeX * maxX;
+									selectedItemCursorPos.y += cursorOffset + maxY / 2 + magnitudeY * maxY;
+									draggingItemFrame->setSize(selectedItemCursorPos);
+
+									real_t magnitudeX2 = cos(animX * PI + 1 * PI / 4);
+									real_t magnitudeY2 = sin(animY * PI + 1 * PI / 4);
+									oldDraggingItemPos.x += cursorOffset + maxX / 2 + magnitudeX2 * maxX;
+									oldDraggingItemPos.y += cursorOffset + maxY / 2 + magnitudeY2 * maxY;
+									oldDraggingItemFrame->setSize(oldDraggingItemPos);
+									if ( animX == 1.0 || animY == 1.0 )
+									{
+										oldDraggingItemFrame->setDisabled(true);
+									}
+								}
+							}
+						}
+						else if ( inputs.getVirtualMouse(player)->draw_cursor )
+						{
+							pos.x = inputs.getMouse(player, Inputs::X) - 15;
+							pos.y = inputs.getMouse(player, Inputs::Y) - 15;
+							pos.x *= ((float)Frame::virtualScreenX / (float)xres);
+							pos.y *= ((float)Frame::virtualScreenY / (float)yres);
+							pos.x -= players[player]->camera_virtualx1();
+							pos.y -= players[player]->camera_virtualy1();
+							draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
+						}
 					}
 				}
 				else
 				{
+					pos.x = inputs.getMouse(player, Inputs::X) - 15;
+					pos.y = inputs.getMouse(player, Inputs::Y) - 15;
+					pos.w = 32 * uiscale_inventory;
+					pos.h = 32 * uiscale_inventory;
+
 					drawImageScaled(itemSprite(selectedItem), NULL, &pos);
 					if ( selectedItem->count > 1 )
 					{
@@ -5653,7 +5760,7 @@ int main(int argc, char** argv)
 
 				if ( !gamePaused )
 				{
-					if ( newui ) 
+					if ( /*newui*/ 0 ) 
 					{
 						newIngameHud();
 					}

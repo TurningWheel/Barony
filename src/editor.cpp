@@ -73,6 +73,11 @@ void actHudArrowModel(Entity* my) {} // dummy for draw.cpp
 void actLeftHandMagic(Entity* my) {} // dummy for draw.cpp
 void actRightHandMagic(Entity* my) {} // dummy for draw.cpp
 void messagePlayer(int player, char const * const message, ...) {} // dummy
+void updateLoadingScreen(real_t progress) {} // dummy
+void doLoadingScreen() {}
+void destroyLoadingScreen() {}
+void createLoadingScreen(real_t progress) {}
+
 map_t copymap;
 
 int errorMessage = 0;

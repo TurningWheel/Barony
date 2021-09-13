@@ -5994,5 +5994,6 @@ Changing this gameflag is disabled in current game mode.#
 4046 item#
 4047 No interactions available#
 4048 You don't feel like yourself.#
+4049 Quick-cast#
 
 4099 end#

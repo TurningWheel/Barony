@@ -13,7 +13,9 @@
 #include "../../files.hpp"
 #include "../../game.hpp"
 #include "sound.hpp"
+#ifndef EDITOR
 #include "../../player.hpp"
+#endif
 
 #ifdef USE_FMOD
 #include "fmod_errors.h"
@@ -59,10 +61,12 @@ void sound_update()
 	bool playing = false;
 
 	auto& camera = cameras[clientnum];
+#ifndef EDITOR
 	if ( splitscreen )
 	{
 		camera = cameras[0];
 	}
+#endif
 
 	position.x = -camera.y;
 	position.y = -camera.z / 32;
@@ -1101,6 +1105,7 @@ bool physfsSearchMusicToUpdate()
 	return false;
 }
 
+#ifdef USE_FMOD
 FMOD_RESULT physfsReloadMusic_helper_reloadMusicArray(uint32_t numMusic, const char* filenameTemplate, FMOD::Sound** musicArray, bool reloadAll)
 {
 	for ( int c = 0; c < numMusic; c++ )
@@ -1129,6 +1134,7 @@ FMOD_RESULT physfsReloadMusic_helper_reloadMusicArray(uint32_t numMusic, const c
 
 	return FMOD_OK;
 }
+#endif
 
 void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This should probably return an error.
 {

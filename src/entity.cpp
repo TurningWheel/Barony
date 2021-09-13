@@ -2595,6 +2595,13 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		myStats->EXP -= 100;
 		myStats->LVL++;
+
+		if ( player >= 0 && players[player]->isLocalPlayer() )
+		{
+			players[player]->hud.xpBar.animateState = Player::HUD_t::AnimateStates::ANIMATE_LEVELUP_RISING;
+			players[player]->hud.xpBar.xpLevelups++;
+		}
+
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 		messagePlayerColor(player, color, language[622]);
 		playSoundPlayer(player, 97, 128);

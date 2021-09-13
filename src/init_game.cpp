@@ -35,6 +35,8 @@
 #include "Directory.hpp"
 #include "mod_tools.hpp"
 #include "ui/LoadingScreen.hpp"
+#include "ui/GameUI.hpp"
+#include "ui/Text.hpp"
 
 #include <thread>
 #include <future>
@@ -280,7 +282,7 @@ int initGame()
 			}
 		}
 		FileIO::close(fp);
-		createBooks();
+		bookParser_t.createBooks(false);
 		setupSpells();
 
 #ifdef NINTENDO
@@ -298,6 +300,8 @@ int initGame()
 
 		ItemTooltips.readItemsFromFile();
 		ItemTooltips.readTooltipsFromFile();
+
+		loadHUDSettingsJSON();
 
 		updateLoadingScreen(94);
 
@@ -462,6 +466,7 @@ int initGame()
 	int result = loading_task.get();
 	if (result == 0)
 	{
+		Text::dumpCache(); // createBooks makes some invalid Text() surfaces, this cleans them up for re-rendering.
 		gameModeManager.Tutorial.init();
 
 		for ( int c = 0; c < NUMITEMS; c++ )
@@ -637,30 +642,7 @@ void deinitGame()
 		list_FreeAll(&chestInv[i]);
 	}
 	freeInterfaceResources();
-	if ( books )
-	{
-		for ( c = 0; c < numbooks; c++ )
-		{
-			if ( books[c] )
-			{
-				if ( books[c]->name )
-				{
-					free(books[c]->name);
-				}
-				if ( books[c]->text )
-				{
-					free(books[c]->text);
-				}
-				if ( books[c]->bookgui_render_title )
-				{
-					free(books[c]->bookgui_render_title);
-				}
-				list_FreeAll(&books[c]->pages);
-				free(books[c]);
-			}
-		}
-		free(books);
-	}
+	bookParser_t.deleteBooks();
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		players[c]->inventoryUI.appraisal.timer = 0;

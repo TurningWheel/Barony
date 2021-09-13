@@ -5,6 +5,7 @@
 #include "Image.hpp"
 #include "Field.hpp"
 #include "Button.hpp"
+#include "Text.hpp"
 
 #include "../main.hpp"
 #include "../game.hpp"
@@ -15,19 +16,1791 @@
 #include "../draw.hpp"
 #include "../items.hpp"
 #include "../mod_tools.hpp"
+#include "../input.hpp"
+#include "../collision.hpp"
+#include "../monster.hpp"
 
 #include <assert.h>
 
-static Frame* playerHud[MAXPLAYERS] = { nullptr };
-static Frame* playerInventory[MAXPLAYERS] = { nullptr };
 bool newui = false;
+int selectedCursorOpacity = 255;
+int oldSelectedCursorOpacity = 255;
+int hotbarSlotOpacity = 255;
+int hotbarSelectedSlotOpacity = 255;
+bool bUsePreciseFieldTextReflow = true;
+bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
+struct CustomColors_t
+{
+	Uint32 itemContextMenuHeadingText = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionText = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionSelectedText = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionImg = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionSelectedImg = 0xFFFFFFFF;
+	Uint32 characterSheetNeutral = 0xFFFFFFFF;
+	Uint32 characterSheetGreen = 0xFFFFFFFF;
+	Uint32 characterSheetRed = 0xFFFFFFFF;
+} hudColors;
+
+std::string getEnemyBarSpriteName(Entity* entity)
+{
+	if ( !entity ) { return "default"; }
+
+	if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+	{
+		int type = entity->getMonsterTypeFromSprite();
+		if ( type < NUMMONSTERS && type >= 0 )
+		{
+			return monstertypename[type];
+		}
+	}
+	else if ( entity->behavior == &actDoor )
+	{
+		return "door";
+	}
+	else if ( entity->behavior == &actChest )
+	{
+		return "chest";
+	}
+	else if ( entity->behavior == &actFurniture )
+	{
+		switch ( entity->furnitureType )
+		{
+			case FURNITURE_TABLE:
+			case FURNITURE_PODIUM:
+				return "table";
+				break;
+			default:
+				return "chair";
+				break;
+		}
+	}
+	return "default";
+}
+
+struct EnemyBarSettings_t
+{
+	std::unordered_map<std::string, float> heightOffsets;
+	std::unordered_map<std::string, float> screenDistanceOffsets;
+	float getHeightOffset(Entity* entity)
+	{
+		if ( !entity ) { return 0.f; }
+		return heightOffsets[getEnemyBarSpriteName(entity)];
+	}
+	float getScreenDistanceOffset(Entity* entity)
+	{
+		if ( !entity ) { return 0.f; }
+		return screenDistanceOffsets[getEnemyBarSpriteName(entity)];
+	}
+} enemyBarSettings;
+
+void createHPMPBars(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	const int barTotalHeight = hud_t.HPMP_FRAME_HEIGHT;
+	const int hpBarStartY = (hud_t.hudFrame->getSize().h - hud_t.HPMP_FRAME_START_Y);
+	const int mpBarStartY = hpBarStartY + barTotalHeight;
+	const int barWidth = hud_t.HPMP_FRAME_WIDTH;
+	const int barStartX = hud_t.HPMP_FRAME_START_X;
+	{
+		hud_t.hpFrame = hud_t.hudFrame->addFrame("hp bar");
+		hud_t.hpFrame->setHollow(true);
+
+		SDL_Rect pos{ barStartX, hpBarStartY, barWidth, barTotalHeight };
+		hud_t.hpFrame->setSize(pos);
+
+		auto fadeFrame = hud_t.hpFrame->addFrame("hp fade frame");
+		fadeFrame->setSize(SDL_Rect{0, 0, barWidth, barTotalHeight});
+		fadeFrame->setInheritParentFrameOpacity(false);
+
+		auto foregroundFrame = hud_t.hpFrame->addFrame("hp foreground frame");
+		foregroundFrame->setSize(SDL_Rect{ 0, 0, barWidth, barTotalHeight });
+
+
+		auto base = hud_t.hpFrame->addImage(SDL_Rect{ 54, 4, barWidth - 54, 26 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Base_00.png", "hp img base");
+
+		const int progressBarHeight = 22;
+		auto fadeProgressBase = fadeFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade bot");
+		auto fadeProgress = fadeFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade");
+		auto fadeProgressEndCap = fadeFrame->addImage(SDL_Rect{
+			fadeProgress->pos.x + fadeProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPEndFade_00.png", "hp img fade endcap");
+
+		auto numbase = foregroundFrame->addImage(SDL_Rect{ 0, 4, 48, 26 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPNumBase_00.png", "hp img value");
+		auto div = foregroundFrame->addImage(SDL_Rect{ 46, 0, 8, 34 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Separator_00.png", "hp img div");
+
+		auto currentProgressBase = foregroundFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png", "hp img progress bot");
+		auto currentProgress = foregroundFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png", "hp img progress");
+		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
+			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png", "hp img progress endcap");
+
+		const int endCapWidth = 16;
+		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "hp img endcap");
+
+		auto font = "fonts/pixel_maz.ttf#16#2";
+		auto hptext = foregroundFrame->addField("hp text", 16);
+		hptext->setText("0");
+		hptext->setSize(numbase->pos);
+		hptext->setFont(font);
+		hptext->setVJustify(Field::justify_t::CENTER);
+		hptext->setHJustify(Field::justify_t::CENTER);
+		hptext->setColor(SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255));
+	}
+
+	// MP bar below
+	{
+		hud_t.mpFrame = hud_t.hudFrame->addFrame("mp bar");
+		hud_t.mpFrame->setHollow(true);
+
+		SDL_Rect pos{ barStartX, mpBarStartY, barWidth, barTotalHeight };
+		hud_t.mpFrame->setSize(pos);
+
+		auto fadeFrame = hud_t.mpFrame->addFrame("mp fade frame");
+		fadeFrame->setSize(SDL_Rect{ 0, 0, barWidth, barTotalHeight });
+		fadeFrame->setInheritParentFrameOpacity(false);
+
+		auto foregroundFrame = hud_t.mpFrame->addFrame("mp foreground frame");
+		foregroundFrame->setSize(SDL_Rect{ 0, 0, barWidth, barTotalHeight });
+
+
+		auto base = hud_t.mpFrame->addImage(SDL_Rect{ 54, 4, barWidth - 54, 26 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Base_00.png", "mp img base");
+
+		const int progressBarHeight = 22;
+		auto fadeProgressBase = fadeFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade bot");
+		auto fadeProgress = fadeFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade");
+		auto fadeProgressEndCap = fadeFrame->addImage(SDL_Rect{
+			fadeProgress->pos.x + fadeProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPEndFade_00.png", "mp img fade endcap");
+
+		auto numbase = foregroundFrame->addImage(SDL_Rect{ 0, 4, 48, 26 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPNumBase_00.png", "mp img value");
+		auto div = foregroundFrame->addImage(SDL_Rect{ 46, 0, 8, 34 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Separator_00.png", "mp img div");
+
+		auto currentProgressBase = foregroundFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png", "mp img progress bot");
+		auto currentProgress = foregroundFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png", "mp img progress");
+		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
+			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png", "mp img progress endcap");
+
+		const int endCapWidth = 16;
+		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "mp img endcap");
+
+		auto font = "fonts/pixel_maz.ttf#16#2";
+		auto mptext = foregroundFrame->addField("mp text", 16);
+		mptext->setText("0");
+		mptext->setSize(numbase->pos);
+		mptext->setFont(font);
+		mptext->setVJustify(Field::justify_t::CENTER);
+		mptext->setHJustify(Field::justify_t::CENTER);
+		mptext->setColor(SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255));
+	}
+}
+
+void createEnemyBar(const int player, Frame*& frame)
+{
+	auto& hud_t = players[player]->hud;
+	frame = hud_t.hudFrame->addFrame("enemy bar");
+	frame->setHollow(true);
+	frame->setInheritParentFrameOpacity(false);
+	frame->setOpacity(0.0);
+	const int barTotalHeight = hud_t.ENEMYBAR_FRAME_HEIGHT;
+	const int barStartY = (hud_t.hudFrame->getSize().h - hud_t.ENEMYBAR_FRAME_START_Y- 100);
+	const int barWidth = hud_t.ENEMYBAR_FRAME_WIDTH;
+
+	SDL_Rect pos{ (hud_t.hudFrame->getSize().w / 2) - barWidth / 2 - 6, barStartY, barWidth, barTotalHeight };
+	frame->setSize(pos);
+
+	auto bg = frame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Back_Body_01.png", "base img");
+	bg->pos.x = 6;
+	bg->pos.h = 34;
+	bg->pos.y = 4;
+	bg->pos.w = 548;
+	bg->color = makeColor(255, 255, 255, 255);
+
+	auto bgEndCap = frame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Back_Cap_01.png", "base img endcap");
+	bgEndCap->pos.x = bg->pos.x + bg->pos.w;
+	bgEndCap->pos.h = bg->pos.h;
+	bgEndCap->pos.y = bg->pos.y;
+	bgEndCap->pos.w = 8;
+	bgEndCap->color = bg->color;
+
+	auto dmgFrame = frame->addFrame("bar dmg frame");
+	dmgFrame->setSize(SDL_Rect{ bg->pos.x, bg->pos.y, bg->pos.w + bgEndCap->pos.w, 34 });
+	dmgFrame->setInheritParentFrameOpacity(false);
+	auto dmg = dmgFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_DMG_Body_01.png", "dmg img");
+	dmg->pos.x = 0;
+	dmg->pos.h = bg->pos.h;
+	dmg->pos.y = 0;
+	dmg->pos.w = 548 / 2 + 100;
+	dmg->color = makeColor(255, 255, 255, 224);
+
+	auto dmgEndCap = dmgFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_DMG_Cap_01.png", "dmg img endcap");
+	dmgEndCap->pos.x = dmg->pos.w;
+	dmgEndCap->pos.h = dmg->pos.h;
+	dmgEndCap->pos.y = 0;
+	dmgEndCap->pos.w = 10;
+	dmgEndCap->color = dmg->color;
+
+	/*auto bubbles = dmgFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Bubbles_00.png", "img bubbles");
+	bubbles->pos.x = 0;
+	bubbles->pos.h = 20;
+	bubbles->pos.y = dmgFrame->getSize().h / 2 - bubbles->pos.h / 2;
+	if ( auto img = Image::get(bubbles->path.c_str()) )
+	{
+		bubbles->pos.w = img->getWidth();
+	}*/
+
+	auto progressFrame = frame->addFrame("bar progress frame");
+	progressFrame->setSize(SDL_Rect{ bg->pos.x, bg->pos.y + 2, bg->pos.w + bgEndCap->pos.w, 30 });
+	progressFrame->setOpacity(100.0);
+	auto fg = progressFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Fill_Body_00.png", "progress img");
+	fg->pos.x = 0;
+	fg->pos.h = bg->pos.h - 4;
+	fg->pos.y = 0;
+	fg->pos.w = 548;
+
+	auto fgEndCap = progressFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Fill_Cap_00.png", "progress img endcap");
+	fgEndCap->pos.x = fg->pos.x + fg->pos.w;
+	fgEndCap->pos.h = fg->pos.h;
+	fgEndCap->pos.y = 0;
+	if ( auto img = Image::get(fgEndCap->path.c_str()) )
+	{
+		fgEndCap->pos.w = img->getWidth();
+	}
+
+	auto skullFrame = frame->addFrame("skull frame");
+	skullFrame->setSize(SDL_Rect{ 0, 0, 24, 44 });
+	auto skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face4_00.png", "skull 0 img");
+	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face3_00.png", "skull 25 img");
+	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face2_00.png", "skull 50 img");
+	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face1_00.png", "skull 100 img");
+
+	std::string font = "fonts/pixel_maz.ttf#16#2";
+	Uint32 color = makeColor(235, 191, 140, 255);
+	auto enemyName = frame->addField("enemy name txt", 128);
+	enemyName->setSize(SDL_Rect{ 0, 0, frame->getSize().w, frame->getSize().h});
+	enemyName->setFont(font.c_str());
+	enemyName->setColor(color);
+	enemyName->setHJustify(Field::justify_t::CENTER);
+	enemyName->setVJustify(Field::justify_t::CENTER);
+	enemyName->setText("Skeleton");
+	enemyName->setOntop(true);
+
+	auto dmgText = hud_t.hudFrame->addField("enemy dmg txt", 128);
+	dmgText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+	dmgText->setFont("fonts/pixel_maz.ttf#32#2");
+	dmgText->setColor(color);
+	dmgText->setHJustify(Field::justify_t::LEFT);
+	dmgText->setVJustify(Field::justify_t::TOP);
+	dmgText->setText("0");
+	dmgText->setOntop(true);
+}
+
+void createXPBar(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	hud_t.xpFrame = hud_t.hudFrame->addFrame("xp bar");
+	hud_t.xpFrame->setHollow(true);
+
+	const int xpBarStartY = (hud_t.hudFrame->getSize().h) - hud_t.XP_FRAME_START_Y;
+	const int xpBarWidth = hud_t.XP_FRAME_WIDTH;
+	const int xpBarTotalHeight = hud_t.XP_FRAME_HEIGHT;
+	SDL_Rect pos { (hud_t.hudFrame->getSize().w / 2) - xpBarWidth / 2, xpBarStartY, xpBarWidth, xpBarTotalHeight };
+	hud_t.xpFrame->setSize(pos);
+
+	auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_Base_00.png", "xp img base");
+	bg->pos.x = 0;
+	bg->pos.h = 26;
+	bg->pos.y = 4;
+
+	// xpProgress only adjusts width
+	const int progressBarHeight = 22;
+	auto xpProgress = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 1, progressBarHeight }, 0xFFFFFFFF,
+		"images/ui/HUD/xpbar/HUD_Bars_ExpMid_00.png", "xp img progress");
+
+	// xpProgressEndCap only adjusts x position based on xpProgress->pos.x + xpProgress->pos.w
+	auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{0, 6, 8, progressBarHeight }, 0xFFFFFFFF,
+		"images/ui/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");
+
+	const int endCapWidth = 26;
+	SDL_Rect endCapPos {0, 0, endCapWidth, xpBarTotalHeight};
+	auto endCapLeft = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap1_00.png", "xp img endcap left");
+	endCapPos.x = pos.w - endCapPos.w;
+	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
+
+	const int textWidth = 40;
+	auto font = "fonts/pixel_maz.ttf#16#2";
+	auto textStatic = hud_t.xpFrame->addField("xp text static", 16);
+	textStatic->setText("/100");
+	textStatic->setSize(SDL_Rect{ pos.w / 2 - 4, 0, textWidth, pos.h }); // x - 4 to center the slash
+	textStatic->setFont(font);
+	textStatic->setVJustify(Field::justify_t::CENTER);
+	textStatic->setHJustify(Field::justify_t::LEFT);
+	textStatic->setColor(SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255));
+
+	auto text = hud_t.xpFrame->addField("xp text current", 16);
+	text->setText("0");
+	text->setSize(SDL_Rect{ pos.w / 2 - (4 * 2) - textWidth, 0, textWidth, pos.h }); // x - 4 to center the slash
+	text->setFont(font);
+	text->setVJustify(Field::justify_t::CENTER);
+	text->setHJustify(Field::justify_t::RIGHT);
+	text->setColor(SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255));
+}
+
+void createHotbar(const int player)
+{
+	auto& hotbar_t = players[player]->hotbar;
+	if ( !hotbar_t.hotbarFrame )
+	{
+		return;
+	}
+	Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, hotbarSlotOpacity);
+	SDL_Rect slotPos{ 0, 0, hotbar_t.getSlotSize(), hotbar_t.getSlotSize() };
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		char slotname[32];
+		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
+		auto slot = hotbar_t.hotbarFrame->addFrame(slotname);
+		slot->setSize(slotPos);
+		slot->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_00.png", "slot img");
+
+		char glyphname[32];
+		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", i);
+		auto glyph = hotbar_t.hotbarFrame->addImage(slotPos, 0xFFFFFFFF, "images/ui/Glyphs/G_Switch_A00.png", glyphname);
+		glyph->disabled = true;
+	}
+
+	auto font = "fonts/pixel_maz.ttf#18#2";
+
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		char slotname[32];
+		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
+		auto slot = hotbar_t.hotbarFrame->findFrame(slotname);
+		assert(slot);
+
+		auto itemSlot = slot->addFrame("hotbar slot item");
+		SDL_Rect itemSlotTempSize = slot->getSize();
+		itemSlotTempSize.w -= 2;
+		itemSlotTempSize.h -= 2;
+		itemSlot->setSize(itemSlotTempSize); // slightly shrink to align inner item elements within rect.
+		createPlayerInventorySlotFrameElements(itemSlot);
+		itemSlot->setSize(slot->getSize());
+
+		char numStr[4];
+		snprintf(numStr, sizeof(numStr), "%d", i + 1);
+		auto text = slot->addField("slot num text", 4);
+		text->setText(numStr);
+		text->setSize(SDL_Rect{ 0, -8, slotPos.w, slotPos.h });
+		text->setFont(font);
+		text->setVJustify(Field::justify_t::TOP);
+		text->setHJustify(Field::justify_t::LEFT);
+		text->setOntop(true);
+	}
+
+	auto highlightFrame = hotbar_t.hotbarFrame->addFrame("hotbar highlight");
+	highlightFrame->setSize(slotPos);
+	highlightFrame->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_00.png", "highlight img");
+
+	auto itemSlot = highlightFrame->addFrame("hotbar slot item");
+	SDL_Rect itemSlotTempSize = slotPos;
+	itemSlotTempSize.w -= 2;
+	itemSlotTempSize.h -= 2;
+	itemSlot->setSize(itemSlotTempSize);
+	createPlayerInventorySlotFrameElements(itemSlot); // slightly shrink to align inner item elements within rect.
+	itemSlot->setSize(highlightFrame->getSize());
+
+	{
+		auto oldSelectedFrame = hotbar_t.hotbarFrame->addFrame("hotbar old selected item");
+		oldSelectedFrame->setSize(slotPos);
+		oldSelectedFrame->setDisabled(true);
+
+		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		auto oldImg = oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128), "", "hotbar old selected item");
+		oldImg->disabled = true;
+		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+			color, "images/system/hotbar_slot.png", "hotbar old selected highlight");
+
+		auto oldCursorFrame = hotbar_t.hotbarFrame->addFrame("hotbar old item cursor");
+		oldCursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
+		oldCursorFrame->setDisabled(true);
+		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, oldSelectedCursorOpacity);
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TL.png", "hotbar old cursor topleft");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TR.png", "hotbar old cursor topright");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BL.png", "hotbar old cursor bottomleft");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BR.png", "hotbar old cursor bottomright");
+	}
+
+	{
+		auto cursorFrame = hotbar_t.hotbarFrame->addFrame("shootmode selected item cursor");
+		cursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
+		cursorFrame->setDisabled(true);
+		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TL.png", "shootmode selected cursor topleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TR.png", "shootmode selected cursor topright");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BL.png", "shootmode selected cursor bottomleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BR.png", "shootmode selected cursor bottomright");
+	}
+
+	auto text = highlightFrame->addField("slot num text", 4);
+	text->setText("");
+	text->setSize(SDL_Rect{ 0, -8, slotPos.w, slotPos.h });
+	text->setFont(font);
+	text->setVJustify(Field::justify_t::TOP);
+	text->setHJustify(Field::justify_t::LEFT);
+	text->setOntop(true);
+}
+
+void Player::HUD_t::processHUD()
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player hud %d", player.playernum);
+	if ( !hudFrame )
+	{
+		hudFrame = gui->addFrame(name);
+		hudFrame->setHollow(true);
+		hudFrame->setBorder(0);
+		hudFrame->setOwner(player.playernum);
+	}
+	hudFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+
+	if ( nohud || !players[player.playernum]->isLocalPlayer() )
+	{
+		// hide
+		hudFrame->setDisabled(true);
+	}
+	else
+	{
+		hudFrame->setDisabled(false);
+	}
+
+	if ( !xpFrame )
+	{
+		createXPBar(player.playernum);
+	}
+	if ( !hpFrame )
+	{
+		createHPMPBars(player.playernum);
+	}
+	if ( !enemyBarFrame )
+	{
+		createEnemyBar(player.playernum, enemyBarFrame);
+	}
+	if ( !enemyBarFrameHUD )
+	{
+		createEnemyBar(player.playernum, enemyBarFrameHUD);
+	}
+	updateXPBar();
+	updateHPBar();
+	updateMPBar();
+	enemyHPDamageBarHandler[player.playernum].cullExpiredHPBars();
+	enemyBarFrame->setDisabled(true);
+	enemyBarFrameHUD->setDisabled(true);
+	for ( auto& HPBar : enemyHPDamageBarHandler[player.playernum].HPBars )
+	{
+		updateEnemyBar2(enemyBarFrame, &HPBar.second);
+	}
+}
+
+void Player::MessageZone_t::createChatbox()
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player chat %d", player.playernum);
+	if ( !gui->findFrame(name) )
+	{
+		Frame* chatMainFrame = gui->addFrame(name);
+		chatMainFrame->setHollow(true);
+		chatMainFrame->setBorder(0);
+		chatMainFrame->setOwner(player.playernum);
+		chatMainFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+			players[player.playernum]->camera_virtualy1(),
+			Frame::virtualScreenX,
+			Frame::virtualScreenY });
+		chatFrame = chatMainFrame;
+		Frame* messages = chatMainFrame->addFrame("message box");
+		messages->setSize(SDL_Rect{ 224, 16, 
+			players[player.playernum]->camera_virtualWidth() / 2,
+			players[player.playernum]->camera_virtualHeight() });
+
+		static const char* bigfont = "fonts/pixelmix.ttf#16#2";
+		SDL_Rect entryPos{ 0, 0, messages->getSize().w, 0 };
+		for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
+		{
+			char msgName[32];
+			snprintf(msgName, sizeof(msgName), "message %d", i);
+			auto entry = messages->addField(msgName, ADD_MESSAGE_BUFFER_LENGTH);
+			entry->setFont(bigfont);
+			entry->setSize(entryPos);
+			entry->setDisabled(true);
+		}
+	}
+}
+
+void Player::MessageZone_t::processChatbox()
+{
+	if ( !chatFrame )
+	{
+		createChatbox();
+	}
+
+	chatFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+
+	const int leftAlignedBottomY = 484;
+	const int topAlignedBottomY = 216;
+	int topAlignedPaddingX = 224;
+	chatboxTopAlignedPos = SDL_Rect{ topAlignedPaddingX, 0,
+		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX * 2,
+		players[player.playernum]->camera_virtualHeight() };
+	chatboxLeftAlignedPos = SDL_Rect{ 8, 0, players[player.playernum]->camera_virtualWidth() / 2,
+		players[player.playernum]->camera_virtualHeight() };
+
+	Frame* messageBoxFrame = chatFrame->findFrame("message box");
+	SDL_Rect messageBoxSize = messageBoxFrame->getSize();
+	if ( player.shootmode && messageBoxSize.x == chatboxTopAlignedPos.x )
+	{
+		chatboxMovedResize = true;
+	}
+	else if ( !player.shootmode && messageBoxSize.x == chatboxLeftAlignedPos.x )
+	{
+		chatboxMovedResize = true;
+	}
+
+	if ( chatboxMovedResize )
+	{
+		if ( player.shootmode )
+		{
+			messageBoxSize = chatboxLeftAlignedPos;
+		}
+		else
+		{
+			messageBoxSize = chatboxTopAlignedPos;
+		}
+	}
+
+	char msgName[32];
+	for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
+	{
+		snprintf(msgName, sizeof(msgName), "message %d", i);
+		if ( auto entry = messageBoxFrame->findField(msgName) )
+		{
+			entry->setDisabled(true);
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.w = messageBoxSize.w;
+			entry->setSize(entryPos);
+		}
+	}
+
+	const int entryPaddingY = 4;
+	int currentY = (messageBoxSize.h);
+	int index = 0;
+
+	bool messageDrawDescending = false;
+	if ( messageDrawDescending )
+	{
+		currentY = 4;
+	}
+
+	for ( Message *current : notification_messages )
+	{
+		if ( index >= MESSAGE_MAX_ENTRIES )
+		{
+			break;
+		}
+
+		Uint32 color = current->text->color ^ mainsurface->format->Amask;
+		color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
+
+		snprintf(msgName, sizeof(msgName), "message %d", index);
+		if ( auto entry = messageBoxFrame->findField(msgName) )
+		{
+			entry->setDisabled(false);
+			entry->setColor(color);
+			entry->setText(current->text->data);
+
+			if ( current->requiresResize )
+			{
+				entry->reflowTextToFit(0);
+				//current->requiresResize = false;
+			}
+
+			Text* textGet = Text::get(entry->getText(), entry->getFont());
+			if ( !messageDrawDescending )
+			{
+				currentY -= textGet->getHeight();
+			}
+
+			SDL_Rect pos = entry->getSize();
+			pos.h = textGet->getHeight();
+			pos.y = currentY;
+			if ( messageDrawDescending )
+			{
+				currentY += textGet->getHeight();
+			}
+			entry->setSize(pos);
+			if ( pos.y < 0 )
+			{
+				entry->setDisabled(true); // clipping outside of frame
+			}
+		}
+
+		if ( messageDrawDescending )
+		{
+			currentY += entryPaddingY;
+		}
+		else
+		{
+			currentY -= entryPaddingY;
+		}
+		++index;
+	}
+
+	if ( player.shootmode )
+	{
+		messageBoxSize.y = leftAlignedBottomY - messageBoxSize.h;
+	}
+	else
+	{
+		messageBoxSize.y = topAlignedBottomY - messageBoxSize.h;
+	}
+	if ( messageDrawDescending )
+	{
+		messageBoxSize.y = 4;
+	}
+	messageBoxFrame->setSize(messageBoxSize);
+	/*int newHeight = messageBoxSize.h - currentY;
+	messageBoxSize.h = newHeight;
+
+	if ( currentY < 0 )
+	{
+		for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
+		{
+			snprintf(msgName, sizeof(msgName), "message %d", i);
+			if ( auto entry = messageBoxFrame->findField(msgName) )
+			{
+				SDL_Rect pos = entry->getSize();
+				pos.y -= currentY;
+				entry->setSize(pos);
+			}
+		}
+	}*/
+}
+
+void Player::CharacterSheet_t::createCharacterSheet()
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player sheet %d", player.playernum);
+	if ( !gui->findFrame(name) )
+	{
+		Frame* sheetFrame = gui->addFrame(name);
+		sheetFrame->setHollow(true);
+		sheetFrame->setBorder(0);
+		sheetFrame->setOwner(player.playernum);
+		sheetFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+			players[player.playernum]->camera_virtualy1(),
+			Frame::virtualScreenX,
+			Frame::virtualScreenY });
+		this->sheetFrame = sheetFrame;
+
+		const int bgWidth = 208;
+		const int leftAlignX = sheetFrame->getSize().x + sheetFrame->getSize().w - bgWidth;
+		{
+			Frame* fullscreenBg = sheetFrame->addFrame("sheet bg fullscreen");
+			fullscreenBg->setSize(SDL_Rect{ leftAlignX,
+				0, 208, Frame::virtualScreenY });
+			// if splitscreen 3/4 - disable the fullscreen background + title text.
+			fullscreenBg->addImage(SDL_Rect{ 0, 0, fullscreenBg->getSize().w, fullscreenBg->getSize().h },
+				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_00.png", "bg image");
+
+			const char* titleFont = "fonts/pixel_maz.ttf#14#2";
+			auto characterSheetTitleText = fullscreenBg->addField("character sheet title text", 32);
+			characterSheetTitleText->setFont(titleFont);
+			characterSheetTitleText->setSize(SDL_Rect{ 6, 120, 202, 32 });
+			characterSheetTitleText->setText("CHARACTER SHEET");
+			characterSheetTitleText->setVJustify(Field::justify_t::CENTER);
+			characterSheetTitleText->setHJustify(Field::justify_t::CENTER);
+		}
+
+		// log / map buttons
+		{
+			const char* buttonFont = "fonts/pixel_maz.ttf#14#2";
+			SDL_Rect buttonFramePos{ leftAlignX + 9, 6, 196, 82 };
+			auto buttonFrame = sheetFrame->addFrame("log map buttons");
+			buttonFrame->setSize(buttonFramePos);
+
+			SDL_Rect buttonPos{0, 0, buttonFramePos.w, 40};
+			buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "map button img");
+			auto mapText = buttonFrame->addField("map button text", 32);
+			mapText->setFont(buttonFont);
+			mapText->setSize(buttonPos);
+			mapText->setVJustify(Field::justify_t::CENTER);
+			mapText->setHJustify(Field::justify_t::CENTER);
+			mapText->setText("OPEN MAP");
+
+			buttonPos.y = buttonPos.y + buttonPos.h + 2;
+			buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "log button img");
+			auto logText = buttonFrame->addField("log button text", 32);
+			logText->setFont(buttonFont);
+			logText->setSize(buttonPos);
+			logText->setVJustify(Field::justify_t::CENTER);
+			logText->setHJustify(Field::justify_t::CENTER);
+			logText->setText("OPEN LOG");
+		}
+
+		// game timer
+		{
+			const char* timerFont = "fonts/pixel_maz.ttf#14#2";
+			Uint32 timerTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+
+			Frame* timerFrame = sheetFrame->addFrame("game timer");
+			timerFrame->setSize(SDL_Rect{leftAlignX + 36, 90, 142, 26});
+			timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonArrows_00.png", "timer icon img");
+			auto timerImg = timerFrame->addImage(SDL_Rect{ 30, 0, 112, 26 }, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Timer_Backing_00.png", "timer bg img");
+			auto timerText = timerFrame->addField("timer text", 32);
+			timerText->setFont(timerFont);
+
+			SDL_Rect textPos = timerImg->pos;
+			textPos.x += 12;
+			timerText->setSize(textPos);
+			timerText->setVJustify(Field::justify_t::CENTER);
+			timerText->setText("00:92:30:89");
+			timerText->setColor(timerTextColor);
+		}
+
+		// skills button
+		{
+			const char* skillsFont = "fonts/pixel_maz.ttf#14#2";
+			Frame* skillsFrame = sheetFrame->addFrame("skills button");
+			skillsFrame->setSize(SDL_Rect{ leftAlignX + 14, 270, 186, 42 });
+			auto skillsImg = skillsFrame->addImage(SDL_Rect{0, 0, skillsFrame->getSize().w, skillsFrame->getSize().h},
+				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png", "skills button img");
+			auto skillsText = skillsFrame->addField("skills text", 32);
+			skillsText->setFont(skillsFont);
+			skillsText->setSize(skillsImg->pos);
+			skillsText->setVJustify(Field::justify_t::CENTER);
+			skillsText->setHJustify(Field::justify_t::CENTER);
+			skillsText->setText("Skills List");
+		}
+
+		Frame* characterFrame = sheetFrame->addFrame("character info");
+		const char* infoFont = "fonts/pixel_maz.ttf#14#2";
+		characterFrame->setSize(SDL_Rect{ leftAlignX, 150, bgWidth, 116});
+		const int infoTextHeight = 18;
+		Uint32 infoTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+		Uint32 classTextColor = SDL_MapRGBA(mainsurface->format, 74, 66, 207, 255);
+		{
+			SDL_Rect characterTextImgPos{ 16, 14, 182, 100 };
+			characterFrame->addImage(characterTextImgPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Text_Backing_00.png", "character info text img");
+			auto nameText = characterFrame->addField("character name text", 32);
+			nameText->setFont(infoFont);
+			nameText->setSize(SDL_Rect{ characterTextImgPos.x + 18, 
+				characterTextImgPos.y, 
+				146, 
+				infoTextHeight });
+			nameText->setText("Slartibartfast");
+			nameText->setVJustify(Field::justify_t::CENTER);
+			nameText->setHJustify(Field::justify_t::CENTER);
+			nameText->setColor(infoTextColor);
+
+			auto levelText = characterFrame->addField("character level text", 32);
+			levelText->setFont(infoFont);
+			levelText->setSize(SDL_Rect{ characterTextImgPos.x + 4, 
+				characterTextImgPos.y + 26, 
+				174, 
+				infoTextHeight });
+			levelText->setText("Level 237");
+			levelText->setVJustify(Field::justify_t::CENTER);
+			levelText->setColor(infoTextColor);
+
+			auto classText = characterFrame->addField("character class text", 32);
+			classText->setFont(infoFont);
+			classText->setSize(SDL_Rect{ characterTextImgPos.x + 4,
+				characterTextImgPos.y + 26,
+				174,
+				infoTextHeight });
+			classText->setText("Barbarian");
+			classText->setVJustify(Field::justify_t::CENTER);
+			classText->setHJustify(Field::justify_t::RIGHT);
+			classText->setColor(classTextColor);
+
+			auto floorText = characterFrame->addField("dungeon floor text", 32);
+			floorText->setFont(infoFont);
+			floorText->setSize(SDL_Rect{ characterTextImgPos.x + 18, 
+				characterTextImgPos.y + 52, 
+				146, 
+				infoTextHeight });
+			floorText->setText("Floor 27");
+			floorText->setVJustify(Field::justify_t::CENTER);
+			floorText->setHJustify(Field::justify_t::CENTER);
+			floorText->setColor(infoTextColor);
+
+			auto goldTitleText = characterFrame->addField("gold text title", 8);
+			goldTitleText->setFont(infoFont);
+			goldTitleText->setSize(SDL_Rect{ 58, 92, 52, 22 });
+			goldTitleText->setText("GOLD");
+			goldTitleText->setVJustify(Field::justify_t::CENTER);
+			goldTitleText->setColor(infoTextColor);
+
+			auto goldText = characterFrame->addField("gold text", 32);
+			goldText->setFont(infoFont);
+			goldText->setSize(SDL_Rect{ 110, 92, 70, 22 });
+			goldText->setText("270000");
+			goldText->setVJustify(Field::justify_t::CENTER);
+			goldText->setHJustify(Field::justify_t::CENTER);
+			goldText->setColor(infoTextColor);
+
+			auto goldImg = characterFrame->addImage(SDL_Rect{ 26, 88, 20, 28 }, 
+				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonMoney_00.png", "gold img");
+		}
+
+		{
+			Frame* statsFrame = sheetFrame->addFrame("stats");
+			statsFrame->setSize(SDL_Rect{ leftAlignX, 344, bgWidth, 192 }); // y is 2px above the STR icon, 2px below CHR icon
+			SDL_Rect iconPos{ 20, 4, 24, 24 };
+			const int headingLeftX = iconPos.x + iconPos.w + 10;
+			const int baseStatLeftX = headingLeftX + 32;
+			const int modifiedStatLeftX = baseStatLeftX + 64;
+			SDL_Rect textPos{ headingLeftX, iconPos.y, 40, iconPos.h };
+			Uint32 statTextColor = hudColors.characterSheetNeutral;
+
+			const char* statFont = "fonts/pixel_maz.ttf#14#2";
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_STR_00.png", "str icon");
+			{
+				auto textBase = statsFrame->addField("str text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("STR");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("str text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("-1");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("str text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("342");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_DEX_00.png", "dex icon");
+			{
+				auto textBase = statsFrame->addField("dex text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("DEX");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("dex text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("1");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("dex text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("2");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CON_00.png", "con icon");
+			{
+				auto textBase = statsFrame->addField("con text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("CON");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("con text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("0");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("con text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("-2");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_INT_00.png", "int icon");
+			{
+				auto textBase = statsFrame->addField("int text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("INT");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("int text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("3");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("int text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_PER_00.png", "per icon");
+			{
+				auto textBase = statsFrame->addField("per text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("PER");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("per text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("-400");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("per text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("-299");
+				textStatModified->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CHA_00.png", "chr icon");
+			{
+				auto textBase = statsFrame->addField("chr text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(statFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("CHR");
+				textBase->setColor(statTextColor);
+				auto textStat = statsFrame->addField("chr text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(statFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("2");
+				textStat->setColor(statTextColor);
+				auto textStatModified = statsFrame->addField("chr text modified", 32);
+				textStatModified->setVJustify(Field::justify_t::CENTER);
+				textStatModified->setHJustify(Field::justify_t::CENTER);
+				textStatModified->setFont(statFont);
+				textPos.x = modifiedStatLeftX;
+				textStatModified->setSize(textPos);
+				textStatModified->setText("");
+				textStatModified->setColor(statTextColor);
+			}
+		}
+
+		{
+			Frame* attributesFrame = sheetFrame->addFrame("attributes");
+			attributesFrame->setSize(SDL_Rect{ leftAlignX, 550, bgWidth, 160 }); // y is 2px above the ATK icon, 2px below WGT icon
+			SDL_Rect iconPos{ 20, 4, 24, 24 };
+			const int headingLeftX = iconPos.x + iconPos.w + 10;
+			const int baseStatLeftX = headingLeftX + 44;
+			SDL_Rect textPos{ headingLeftX, iconPos.y, 80, iconPos.h };
+			Uint32 statTextColor = hudColors.characterSheetNeutral;
+
+			const char* attributeFont = "fonts/pixel_maz.ttf#14#2";
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ATT_00.png", "atk icon");
+			{
+				auto textBase = attributesFrame->addField("atk text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("ATK");
+				textBase->setColor(statTextColor);
+				auto textStat = attributesFrame->addField("atk text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("14");
+				textStat->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_AC_00.png", "ac icon");
+			{
+				auto textBase = attributesFrame->addField("ac text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("AC");
+				textBase->setColor(statTextColor);
+				auto textStat = attributesFrame->addField("ac text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("3");
+				textStat->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_RES_00.png", "res icon");
+			{
+				auto textBase = attributesFrame->addField("res text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("RES");
+				textBase->setColor(statTextColor);
+				auto textStat = attributesFrame->addField("res text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("100%");
+				textStat->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_REGEN_00.png", "regen icon");
+			{
+				auto textBase = attributesFrame->addField("regen text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("RGN");
+				textBase->setColor(statTextColor);
+
+				auto textDiv = attributesFrame->addField("regen text divider", 4);
+				textDiv->setVJustify(Field::justify_t::CENTER);
+				textDiv->setHJustify(Field::justify_t::CENTER);
+				textDiv->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textDiv->setSize(textPos);
+				textDiv->setText("/");
+				textDiv->setColor(statTextColor);
+
+				SDL_Rect hpmpTextPos = textPos;
+				const int middleX = (textPos.x + textPos.w / 2);
+				auto textRegenHP = attributesFrame->addField("regen text hp", 16);
+				textRegenHP->setVJustify(Field::justify_t::CENTER);
+				textRegenHP->setHJustify(Field::justify_t::RIGHT);
+				textRegenHP->setFont(attributeFont);
+				hpmpTextPos.x = middleX - 4 - hpmpTextPos.w;
+				textRegenHP->setSize(hpmpTextPos);
+				textRegenHP->setText("0.2");
+				textRegenHP->setColor(statTextColor);
+
+				auto textRegenMP = attributesFrame->addField("regen text mp", 16);
+				textRegenMP->setVJustify(Field::justify_t::CENTER);
+				textRegenMP->setHJustify(Field::justify_t::LEFT);
+				textRegenMP->setFont(attributeFont);
+				hpmpTextPos.x = middleX + 4;
+				textRegenMP->setSize(hpmpTextPos);
+				textRegenMP->setText("0.1");
+				textRegenMP->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + 8;
+			textPos.y = iconPos.y + 1;
+			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_WGT_00.png", "weight icon");
+			{
+				auto textBase = attributesFrame->addField("weight text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("WGT");
+				textBase->setColor(statTextColor);
+				auto textStat = attributesFrame->addField("weight text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("120");
+				textStat->setColor(statTextColor);
+			}
+		}
+	}
+}
+
+void Player::CharacterSheet_t::processCharacterSheet()
+{
+	if ( !sheetFrame )
+	{
+		createCharacterSheet();
+	}
+
+	if ( !stats[player.playernum] || !players[player.playernum]->isLocalPlayer() )
+	{
+		sheetFrame->setDisabled(true);
+		return;
+	}
+
+	if ( players[player.playernum]->shootmode )
+	{
+		sheetFrame->setDisabled(true);
+		return;
+	}
+	sheetFrame->setDisabled(false);
+
+	player.GUI.handleCharacterSheetMovement();
+
+	updateGameTimer();
+	updateStats();
+	updateAttributes();
+	updateCharacterInfo();
+}
+
+void Player::CharacterSheet_t::selectElement(SheetElements element, bool moveCursor)
+{
+	selectedElement = element;
+
+	Frame* elementFrame = nullptr;
+	Frame::image_t* img = nullptr;
+	Field* elementField = nullptr;
+	switch ( element )
+	{
+		case SHEET_OPEN_LOG:
+			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
+			{
+				img = elementFrame->findImage("log button img");
+			}
+			break;
+		case SHEET_OPEN_MAP:
+			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
+			{
+				img = elementFrame->findImage("map button img");
+			}
+			break;
+		case SHEET_SKILL_LIST:
+			elementFrame = sheetFrame->findFrame("skills button");
+			break;
+		case SHEET_TIMER:
+			elementFrame = sheetFrame->findFrame("game timer");
+			break;
+		case SHEET_GOLD:
+			if ( elementFrame = sheetFrame->findFrame("character info") )
+			{
+				elementField = elementFrame->findField("gold text");
+			}
+			break;
+		case SHEET_DUNGEON_FLOOR:
+			if ( elementFrame = sheetFrame->findFrame("character info") )
+			{
+				elementField = elementFrame->findField("dungeon floor text");
+			}
+			break;
+		case SHEET_CHAR_CLASS:
+			if ( elementFrame = sheetFrame->findFrame("character info") )
+			{
+				elementField = elementFrame->findField("character class text");
+			}
+			break;
+		case SHEET_CHAR_RACE_SEX:
+			if ( elementFrame = sheetFrame->findFrame("character info") )
+			{
+				elementField = elementFrame->findField("character level text");
+			}
+			break;
+		case SHEET_STR:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("str text stat");
+			}
+			break;
+		case SHEET_DEX:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("dex text stat");
+			}
+			break;
+		case SHEET_CON:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("con text stat");
+			}
+			break;
+		case SHEET_INT:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("int text stat");
+			}
+			break;
+		case SHEET_PER:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("per text stat");
+			}
+			break;
+		case SHEET_CHR:
+			if ( elementFrame = sheetFrame->findFrame("stats") )
+			{
+				elementField = elementFrame->findField("chr text stat");
+			}
+			break;
+		case SHEET_ATK:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("atk text stat");
+			}
+			break;
+		case SHEET_AC:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("ac text stat");
+			}
+			break;
+		case SHEET_POW:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("atk text stat");
+			}
+			break;
+		case SHEET_RES:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("res text stat");
+			}
+			break;
+		case SHEET_RGN:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("regen text title");
+			}
+			break;
+		case SHEET_WGT:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				elementField = elementFrame->findField("weight text stat");
+			}
+			break;
+		default:
+			elementFrame = nullptr;
+			break;
+	}
+
+	SDL_Rect pos{ 0, 0, 0, 0 };
+	if ( elementFrame && moveCursor )
+	{
+		elementFrame->warpMouseToFrame(player.playernum, (Inputs::SET_CONTROLLER));
+		pos = elementFrame->getAbsoluteSize();
+		if ( img )
+		{
+			pos.x += img->pos.x;
+			pos.y += img->pos.y;
+			pos.w = img->pos.w;
+			pos.h = img->pos.h;
+		}
+		if ( elementField )
+		{
+			pos = elementField->getAbsoluteSize();
+		}
+		player.hud.setCursorDisabled(false);
+		player.hud.updateCursorAnimation(pos.x, pos.y, pos.w, pos.h, false);
+	}
+}
+
+void Player::CharacterSheet_t::updateGameTimer()
+{
+	auto timerText = sheetFrame->findFrame("game timer")->findField("timer text");
+	char buf[32];
+
+	Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
+	Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
+	Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
+	Uint32 day = ((completionTime / TICKS_PER_SECOND) / 60) / 60 / 24;
+	snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
+	timerText->setText(buf);
+}
+
+void Player::CharacterSheet_t::updateCharacterInfo()
+{
+	auto characterInfoFrame = sheetFrame->findFrame("character info");
+	char buf[32];
+	if ( auto name = characterInfoFrame->findField("character name text") )
+	{
+		name->setText(stats[player.playernum]->name);
+	}
+	if ( auto className = characterInfoFrame->findField("character class text") )
+	{
+		std::string classname = playerClassLangEntry(client_classes[player.playernum], player.playernum);
+		if ( !classname.empty() )
+		{
+			if ( classname[0] >= 'a' && classname[0] <= 'z' )
+			{
+				classname[0] = toupper(classname[0]);
+			}
+			className->setText(classname.c_str());
+		}
+	}
+	if ( auto charLevel = characterInfoFrame->findField("character level text") )
+	{
+		snprintf(buf, sizeof(buf), language[4051], stats[player.playernum]->LVL);
+		charLevel->setText(buf);
+	}
+	if ( auto floor = characterInfoFrame->findField("dungeon floor text") )
+	{
+		snprintf(buf, sizeof(buf), language[4052], currentlevel);
+		floor->setText(buf);
+	}
+	if ( auto gold = characterInfoFrame->findField("gold text") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->GOLD);
+		gold->setText(buf);
+	}
+}
+
+void Player::CharacterSheet_t::updateStats()
+{
+	auto statsFrame = sheetFrame->findFrame("stats");
+	char buf[32];
+
+	if ( auto field = statsFrame->findField("str text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->STR);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("str text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->STR )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->STR )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("dex text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->DEX);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("dex text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->DEX )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->DEX )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("con text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CON);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetCON(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("con text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->CON )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->CON )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("int text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->INT);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetINT(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("int text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->INT )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->INT )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("per text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->PER);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetPER(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("per text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->PER )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->PER )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+	if ( auto field = statsFrame->findField("chr text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CHR);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+
+		Sint32 modifiedStat = statGetCHR(stats[player.playernum], players[player.playernum]->entity);
+		if ( auto modifiedField = statsFrame->findField("chr text modified") )
+		{
+			modifiedField->setColor(hudColors.characterSheetNeutral);
+			modifiedField->setDisabled(true);
+			snprintf(buf, sizeof(buf), "%d", modifiedStat);
+			modifiedField->setText(buf);
+			if ( modifiedStat > stats[player.playernum]->CHR )
+			{
+				modifiedField->setColor(hudColors.characterSheetGreen);
+				modifiedField->setDisabled(false);
+			}
+			else if ( modifiedStat < stats[player.playernum]->CHR )
+			{
+				modifiedField->setColor(hudColors.characterSheetRed);
+				modifiedField->setDisabled(false);
+			}
+		}
+	}
+}
+
+void Player::CharacterSheet_t::updateAttributes()
+{
+	auto attributesFrame = sheetFrame->findFrame("attributes");
+	char buf[32];
+
+	if ( auto field = attributesFrame->findField("atk text stat") )
+	{
+		Sint32 dummy[6];
+		snprintf(buf, sizeof(buf), "%d", displayAttackPower(player.playernum, dummy));
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+	}
+
+	if ( auto field = attributesFrame->findField("ac text stat") )
+	{
+		snprintf(buf, sizeof(buf), "%d", AC(stats[player.playernum]));
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+	}
+
+	if ( auto field = attributesFrame->findField("res text stat") )
+	{
+		real_t resistance = 0.0;
+		if ( players[player.playernum]->entity )
+		{
+			players[player.playernum]->entity;
+			resistance = 100 - 100 / (players[player.playernum]->entity->getMagicResistance() + 1);
+		}
+		snprintf(buf, sizeof(buf), "%.f%%", resistance);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+		if ( resistance > 0.01 )
+		{
+			field->setColor(hudColors.characterSheetGreen);
+		}
+	}
+
+	if ( auto field = attributesFrame->findField("regen text hp") )
+	{
+		real_t regen = 0.0;
+		field->setColor(hudColors.characterSheetNeutral);
+		if ( players[player.playernum]->entity && stats[player.playernum]->HP > 0 )
+		{
+			regen = (static_cast<real_t>(players[player.playernum]->entity->getHealthRegenInterval(*stats[player.playernum])) / TICKS_PER_SECOND);
+			if ( stats[player.playernum]->type == SKELETON )
+			{
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					regen = HEAL_TIME * 4 / TICKS_PER_SECOND;
+				}
+			}
+			if ( regen < 0 )
+			{
+				regen = 0.0;
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					field->setColor(hudColors.characterSheetNeutral);
+				}
+				else
+				{
+					field->setColor(hudColors.characterSheetRed);
+				}
+			}
+			else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
+			{
+				field->setColor(hudColors.characterSheetGreen);
+			}
+		}
+		else
+		{
+			regen = HEAL_TIME / TICKS_PER_SECOND;
+		}
+
+		if ( regen > 0.01 )
+		{
+			real_t nominalRegen = HEAL_TIME / TICKS_PER_SECOND;
+			regen = nominalRegen / regen;
+		}
+		snprintf(buf, sizeof(buf), "%.1f", regen);
+		field->setText(buf);
+	}
+
+	if ( auto field = attributesFrame->findField("regen text mp") )
+	{
+		real_t regen = 0.0;
+		field->setColor(hudColors.characterSheetNeutral);
+		if ( players[player.playernum]->entity )
+		{
+			regen = (static_cast<real_t>(players[player.playernum]->entity->getManaRegenInterval(*stats[player.playernum])) / TICKS_PER_SECOND);
+			if ( stats[player.playernum]->type == AUTOMATON )
+			{
+				if ( stats[player.playernum]->HUNGER <= 300 )
+				{
+					regen /= 6; // degrade faster
+				}
+				else if ( stats[player.playernum]->HUNGER > 1200 )
+				{
+					if ( stats[player.playernum]->MP / static_cast<real_t>(std::max(1, stats[player.playernum]->MAXMP)) <= 0.5 )
+					{
+						regen /= 4; // increase faster at < 50% mana
+					}
+					else
+					{
+						regen /= 2; // increase less faster at > 50% mana
+					}
+				}
+				else if ( stats[player.playernum]->HUNGER > 300 )
+				{
+					// normal manaRegenInterval 300-1200 hunger.
+				}
+			}
+
+			if ( regen < 0.0 /*stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0*/ )
+			{
+				regen = 0.0;
+			}
+
+			if ( stats[player.playernum]->type == AUTOMATON )
+			{
+				if ( stats[player.playernum]->HUNGER <= 300 )
+				{
+					field->setColor(hudColors.characterSheetRed);
+				}
+				else if ( regen < static_cast<real_t>(players[player.playernum]->entity->getBaseManaRegen(*stats[player.playernum])) / TICKS_PER_SECOND )
+				{
+					field->setColor(hudColors.characterSheetGreen);
+				}
+			}
+			else if ( stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->appearance == 0 )
+			{
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					field->setColor(hudColors.characterSheetNeutral);
+				}
+				else
+				{
+					field->setColor(hudColors.characterSheetRed);
+				}
+			}
+			else if ( regen < static_cast<real_t>(players[player.playernum]->entity->getBaseManaRegen(*stats[player.playernum])) / TICKS_PER_SECOND )
+			{
+				field->setColor(hudColors.characterSheetGreen);
+			}
+		}
+		else
+		{
+			regen = MAGIC_REGEN_TIME / TICKS_PER_SECOND;
+		}
+
+		if ( regen > 0.01 )
+		{
+			real_t nominalRegen = MAGIC_REGEN_TIME / TICKS_PER_SECOND;
+			regen = nominalRegen / regen;
+		}
+		snprintf(buf, sizeof(buf), "%.1f", regen);
+		field->setText(buf);
+	}
+
+	if ( auto field = attributesFrame->findField("weight text stat") )
+	{
+		Sint32 weight = 0;
+		for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				weight += item->getWeight();
+			}
+		}
+		weight += stats[player.playernum]->GOLD / 100;
+		snprintf(buf, sizeof(buf), "%d", weight);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+	}
+}
+
+void Player::Hotbar_t::processHotbar()
+{
+	char name[32];
+	snprintf(name, sizeof(name), "player hotbar %d", player.playernum);
+	if ( !hotbarFrame )
+	{
+		hotbarFrame = gui->addFrame(name);
+		hotbarFrame->setHollow(true);
+		hotbarFrame->setBorder(0);
+		hotbarFrame->setOwner(player.playernum);
+		createHotbar(player.playernum);
+	}
+	hotbarFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+
+	if ( nohud || !players[player.playernum]->isLocalPlayer() )
+	{
+		// hide
+		hotbarFrame->setDisabled(true);
+	}
+	else
+	{
+		hotbarFrame->setDisabled(false);
+	}
+
+	updateHotbar();
+}
 
 void createIngameHud(int player) {
     char name[32];
     snprintf(name, sizeof(name), "player hud %d", player);
     Frame* frame = gui->addFrame(name);
 
-    playerHud[player] = frame;
+    players[player]->hud.hudFrame = frame;
     int playercount = 0;
     if (multiplayer == SINGLE) {
         for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -58,14 +1831,12 @@ void createIngameHud(int player) {
         int y = (player / 2) * Frame::virtualScreenY / 2;
         frame->setSize(SDL_Rect{x, y, Frame::virtualScreenX / 2, Frame::virtualScreenY / 2});
     }
-    frame->setActualSize(SDL_Rect{0, 0, frame->getSize().w, frame->getSize().h});
     frame->setHollow(true);
     frame->setBorder(0);
 
     // chat
     Frame* chat = frame->addFrame("chat");
     chat->setSize(SDL_Rect{224, 16, 832, 200});
-    chat->setActualSize(SDL_Rect{0, 0, 832, 200});
     chat->setFont(bigfont);
     {
         auto e = chat->addEntry("chat", true);
@@ -126,7 +1897,6 @@ void createIngameHud(int player) {
             hp->setBorderStyle(Frame::BORDER_BEVEL_HIGH);
             hp->setBorder(2);
             hp->setSize(SDL_Rect{16, 32 + 56 * i, 160, 16});
-            hp->setActualSize(SDL_Rect{0, 0, hp->getSize().w, hp->getSize().h});
             auto red = hp->addImage(
                 SDL_Rect{4, 4, hp->getSize().w - 8, hp->getSize().h - 8},
                 0xff8888ff,
@@ -144,7 +1914,6 @@ void createIngameHud(int player) {
             mp->setBorderStyle(Frame::BORDER_BEVEL_HIGH);
             mp->setBorder(2);
             mp->setSize(SDL_Rect{16, 48 + 56 * i, 160, 16});
-            mp->setActualSize(SDL_Rect{0, 0, mp->getSize().w, mp->getSize().h});
             auto blue = mp->addImage(
                 SDL_Rect{4, 4, mp->getSize().w - 8, mp->getSize().h - 8},
                 0xffff8888,
@@ -176,7 +1945,6 @@ void createIngameHud(int player) {
             snprintf(name, sizeof(name), "ally hp bar %d", c + 1);
             Frame* bar = frame->addFrame(name);
             bar->setSize(SDL_Rect{frame->getSize().w - 128, 14 + 18 * c, 112, 14});
-            bar->setActualSize(SDL_Rect{0, 0, bar->getSize().w, bar->getSize().h});
             bar->setColor(0xffaaaaaa);
             auto red = bar->addImage(
                 SDL_Rect{2, 2, bar->getSize().w - 4, bar->getSize().h - 4},
@@ -238,13 +2006,6 @@ void createIngameHud(int player) {
             24
             }
         );
-        xpbar->setActualSize(SDL_Rect{
-            0,
-            0,
-            w * num_hotbar_slots,
-            24
-            }
-        );
         xpbar->setColor(0xffaaaaaa);
         {
             auto progress = xpbar->addImage(
@@ -276,7 +2037,6 @@ void createIngameHud(int player) {
         Frame* hp = frame->addFrame("hp");
         hp->setColor(0xffffffff);
         hp->setSize(SDL_Rect{16, frame->getSize().h - 96, 40, 24});
-        hp->setActualSize(SDL_Rect{0, 0, 40, 24});
         {
             auto red = hp->addImage(
                 SDL_Rect{4, 4, 32, 16},
@@ -288,7 +2048,6 @@ void createIngameHud(int player) {
         Frame* hp_bar = frame->addFrame("hp_bar");
         hp_bar->setColor(0xffffffff);
         hp_bar->setSize(SDL_Rect{56, frame->getSize().h - 96, 256, 24});
-        hp_bar->setActualSize(SDL_Rect{0, 0, 256, 24});
         {
             auto red = hp_bar->addImage(
                 SDL_Rect{4, 4, hp_bar->getSize().w - 8, 16},
@@ -311,7 +2070,6 @@ void createIngameHud(int player) {
         Frame* mp = frame->addFrame("mp");
         mp->setColor(0xffffffff);
         mp->setSize(SDL_Rect{16, frame->getSize().h - 68, 40, 24});
-        mp->setActualSize(SDL_Rect{0, 0, 40, 24});
         {
             auto blue = mp->addImage(
                 SDL_Rect{4, 4, 32, 16},
@@ -323,7 +2081,6 @@ void createIngameHud(int player) {
         Frame* mp_bar = frame->addFrame("mp_bar");
         mp_bar->setColor(0xffffffff);
         mp_bar->setSize(SDL_Rect{56, frame->getSize().h - 68, 64, 24});
-        mp_bar->setActualSize(SDL_Rect{0, 0, 64, 24});
         {
             auto blue = mp_bar->addImage(
                 SDL_Rect{4, 4, mp_bar->getSize().w - 8, 16},
@@ -353,7 +2110,7 @@ void createIngameHud(int player) {
 void newIngameHud() {
     if (!nohud) {
         // here is where splitscreen
-        if (!playerHud[clientnum]) {
+        if (!players[clientnum]->hud.hudFrame) {
             createIngameHud(clientnum);
         }
 
@@ -377,56 +2134,49 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 
 	auto beatitudeFrame = slotFrame->addFrame("beatitude status frame"); // covers unidentified status as well
 	beatitudeFrame->setSize(slotSize);
-	beatitudeFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	beatitudeFrame->setHollow(true);
 	beatitudeFrame->setDisabled(true);
 	beatitudeFrame->addImage(coloredBackgroundPos, 0xFFFFFFFF, "images/system/white.png", "beatitude status bg");
 
 	auto brokenStatusFrame = slotFrame->addFrame("broken status frame");
 	brokenStatusFrame->setSize(slotSize);
-	brokenStatusFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	brokenStatusFrame->setHollow(true);
 	brokenStatusFrame->setDisabled(true);
 	brokenStatusFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 160, 160, 160, 64), "images/system/white.png", "broken status bg");
 
 	auto itemSpriteFrame = slotFrame->addFrame("item sprite frame");
 	itemSpriteFrame->setSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
-	itemSpriteFrame->setActualSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
 	itemSpriteFrame->setHollow(true);
 	itemSpriteFrame->setDisabled(true);
 	itemSpriteFrame->addImage(slotSize, 0xFFFFFFFF, "images/system/white.png", "item sprite img");
 
 	auto unusableFrame = slotFrame->addFrame("unusable item frame");
 	unusableFrame->setSize(slotSize);
-	unusableFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	unusableFrame->setHollow(true);
 	unusableFrame->setDisabled(true);
 	unusableFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
 
-	static const char* font = "fonts/pixel_maz.ttf#32";
 
+	static const char* qtyfont = "fonts/pixel_maz.ttf#14#2";
 	auto quantityFrame = slotFrame->addFrame("quantity frame");
 	quantityFrame->setSize(slotSize);
-	quantityFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	quantityFrame->setHollow(true);
 	Field* qtyText = quantityFrame->addField("quantity text", 32);
-	qtyText->setFont(font);
+	qtyText->setFont(qtyfont);
 	qtyText->setColor(0xffffffff);
-	qtyText->setHJustify(Field::justify_t::RIGHT);
-	qtyText->setVJustify(Field::justify_t::BOTTOM);
+	qtyText->setHJustify(Field::justify_t::BOTTOM);
+	qtyText->setVJustify(Field::justify_t::RIGHT);
 	qtyText->setText("10");
-	qtyText->setSize(SDL_Rect{ 4, 8, quantityFrame->getSize().w, quantityFrame->getSize().h });
+	qtyText->setSize(SDL_Rect{ 0, 6, quantityFrame->getSize().w, quantityFrame->getSize().h });
 
 	auto equippedIconFrame = slotFrame->addFrame("equipped icon frame");
 	equippedIconFrame->setSize(slotSize);
-	equippedIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	equippedIconFrame->setHollow(true);
 	SDL_Rect equippedImgPos = { 3, slotSize.h - 17, 16, 16 };
 	equippedIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Equipped.png", "equipped icon img");
 
 	auto brokenIconFrame = slotFrame->addFrame("broken icon frame");
 	brokenIconFrame->setSize(slotSize);
-	brokenIconFrame->setActualSize(SDL_Rect{ 0, 0, slotSize.w, slotSize.h });
 	brokenIconFrame->setHollow(true);
 	brokenIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Broken.png", "broken icon img");
 }
@@ -437,35 +2187,13 @@ void resetInventorySlotFrames(const int player)
 	snprintf(name, sizeof(name), "player inventory %d", player);
 	if ( Frame* inventoryFrame = gui->findFrame(name) )
 	{
-		if ( Frame* inventorySlotsFrame = inventoryFrame->findFrame("inventory slots") )
+		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
 		{
-			for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+			for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.getSizeY(); ++y )
 			{
-				for ( int y = 0; y < players[player]->inventoryUI.getSizeY(); ++y )
+				if ( auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y) )
 				{
-					char slotname[32] = "";
-					snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-					auto slotFrame = inventorySlotsFrame->findFrame(slotname);
-					if ( slotFrame )
-					{
-						slotFrame->setDisabled(true);
-					}
-				}
-			}
-		}
-		if ( Frame* paperDollSlotsFrame = inventoryFrame->findFrame("paperdoll slots") )
-		{
-			for ( int x = Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_LEFT; x <= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT; ++x )
-			{
-				for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5; ++y )
-				{
-					char slotname[32] = "";
-					snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-					auto slotFrame = paperDollSlotsFrame->findFrame(slotname);
-					if ( slotFrame )
-					{
-						slotFrame->setDisabled(true);
-					}
+					slotFrame->setDisabled(true);
 				}
 			}
 		}
@@ -486,9 +2214,7 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy)
 		{
 			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < players[player]->inventoryUI.getSizeY(); ++y )
 			{
-				char slotname[32] = "";
-				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
-				auto slotFrame = inventoryFrame->findFrame(slotname);
+				auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y);
 				if ( !slotFrame )
 				{
 					continue;
@@ -521,19 +2247,47 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 
 	auto spriteImageFrame = slotFrame->findFrame("item sprite frame");
 	auto spriteImage = spriteImageFrame->findImage("item sprite img");
-	if ( item->type == SPELL_ITEM )
+
+	spriteImage->path = getItemSpritePath(player, *item);
+	bool disableBackgrounds = false;
+	if ( spriteImage->path != "" )
 	{
-		spriteImage->path = ItemTooltips.getSpellIconPath(player, *item);
 		spriteImageFrame->setDisabled(false);
-	}
-	else
-	{
-		node_t* imagePathsNode = list_Node(&items[item->type].images, item->appearance % items[item->type].variations);
-		if ( imagePathsNode )
+		if ( inputs.getUIInteraction(player)->selectedItem == item )
 		{
-			string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);
-			spriteImage->path = imagePath->data;
-			spriteImageFrame->setDisabled(false);
+			if ( !strcmp(slotFrame->getName(), "hotbar slot item") ) // hotbar slots
+			{
+				// fade this icon
+				spriteImage->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
+				disableBackgrounds = true;
+			}
+		}
+		else if ( !strcmp(slotFrame->getName(), "hotbar slot item") ) // hotbar slots
+		{
+			auto& hotbar_t = players[player]->hotbar;
+			bool tryDimHotbarSlot = false;
+			if ( hotbar_t.useHotbarFaceMenu && hotbar_t.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE )
+			{
+				tryDimHotbarSlot = true;
+			}
+			spriteImage->color = 0xFFFFFFFF;
+			if ( tryDimHotbarSlot )
+			{
+				std::string hotbarSlotParentStr = slotFrame->getParent()->getName();
+				if ( hotbarSlotParentStr.find("hotbar slot ") != std::string::npos )
+				{
+					int num = stoi(hotbarSlotParentStr.substr(strlen("hotbar slot ")));
+					if ( hotbar_t.faceMenuButtonHeld != hotbar_t.getFaceMenuGroupForSlot(num) )
+					{
+						// fade this icon
+						spriteImage->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
+					}
+				}
+			}
+		}
+		else
+		{
+			spriteImage->color = 0xFFFFFFFF;
 		}
 	}
 
@@ -552,7 +2306,6 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 		}
 	}
 
-	bool disableBackgrounds = false;
 	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
 	{
 		disableBackgrounds = true;
@@ -594,9 +2347,12 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 	if ( auto brokenStatusFrame = slotFrame->findFrame("broken status frame") )
 	{
 		brokenStatusFrame->setDisabled(true);
-		if ( item->status == BROKEN )
+		if ( !disableBackgrounds )
 		{
-			brokenStatusFrame->setDisabled(false);
+			if ( item->status == BROKEN )
+			{
+				brokenStatusFrame->setDisabled(false);
+			}
 		}
 	}
 
@@ -654,7 +2410,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 	if ( auto equippedIconFrame = slotFrame->findFrame("equipped icon frame") )
 	{
 		equippedIconFrame->setDisabled(true);
-		if ( equipped )
+		if ( equipped && !disableBackgrounds )
 		{
 			equippedIconFrame->setDisabled(false);
 		}
@@ -662,7 +2418,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 	if ( auto brokenIconFrame = slotFrame->findFrame("broken icon frame") )
 	{
 		brokenIconFrame->setDisabled(true);
-		if ( broken )
+		if ( broken && !disableBackgrounds )
 		{
 			brokenIconFrame->setDisabled(false);
 		}
@@ -677,292 +2433,888 @@ void createInventoryTooltipFrame(const int player)
 	}
 
 	char name[32];
-	snprintf(name, sizeof(name), "player inventory %d", player);
-	if ( Frame* inventoryFrame = gui->findFrame(name) )
+	snprintf(name, sizeof(name), "player tooltip %d", player);
+
+	if ( !players[player]->inventoryUI.tooltipFrame )
 	{
-		if ( inventoryFrame->findFrame("inventory mouse tooltip") )
-		{
-			return;
-		}
-
-		auto tooltipFrame = inventoryFrame->addFrame("inventory mouse tooltip");
+		players[player]->inventoryUI.tooltipFrame = gui->addFrame(name);
+		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipFrame->setActualSize(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, tooltipFrame->getSize().h });
 		tooltipFrame->setDisabled(true);
+		tooltipFrame->setInheritParentFrameOpacity(false);
+	}
+	else
+	{
+		return;
+	}
 
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
-		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
-			color, "images/system/inventory/tooltips/Hover_T00.png", "tooltip top background");
-		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
-			color, "images/system/inventory/tooltips/Hover_TL00.png", "tooltip top left");
-		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
-			color, "images/system/inventory/tooltips/Hover_TR00.png", "tooltip top right");
+	auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 
-		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 52 },
-			color, "images/system/inventory/tooltips/Hover_C00.png", "tooltip middle background");
-		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
-			color, "images/system/inventory/tooltips/Hover_L00.png", "tooltip middle left");
-		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
-			color, "images/system/inventory/tooltips/Hover_R00.png", "tooltip middle right");
+	Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
+		color, "images/ui/Inventory/tooltips/Hover_T00.png", "tooltip top background");
+	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+		color, "images/ui/Inventory/tooltips/Hover_TL00.png", "tooltip top left");
+	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+		color, "images/ui/Inventory/tooltips/Hover_TR00.png", "tooltip top right");
 
-		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 26 },
-			color, "images/system/inventory/tooltips/Hover_B00.png", "tooltip bottom background");
-		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
-			color, "images/system/inventory/tooltips/Hover_BL00.png", "tooltip bottom left");
-		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
-			color, "images/system/inventory/tooltips/Hover_BR00.png", "tooltip bottom right");
+	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 52 },
+		color, "images/ui/Inventory/tooltips/Hover_C00.png", "tooltip middle background");
+	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
+		color, "images/ui/Inventory/tooltips/Hover_L00.png", "tooltip middle left");
+	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
+		color, "images/ui/Inventory/tooltips/Hover_R00.png", "tooltip middle right");
 
-		auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
+	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 26 },
+		color, "images/ui/Inventory/tooltips/Hover_B00.png", "tooltip bottom background");
+	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
+		color, "images/ui/Inventory/tooltips/Hover_BL01.png", "tooltip bottom left");
+	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
+		color, "images/ui/Inventory/tooltips/Hover_BR01.png", "tooltip bottom right");
+
+	const std::string headerFont = "fonts/pixelmix.ttf#14#2";
+	const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
+
+	auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
+	tooltipTextField->setText("Nothing");
+	tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+	tooltipTextField->setFont(headerFont.c_str());
+	tooltipTextField->setHJustify(Field::justify_t::LEFT);
+	tooltipTextField->setVJustify(Field::justify_t::CENTER);
+	tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
+
+	// temporary debug stuff
+	{
+		Frame::image_t* tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip min");
+		tmp->color = SDL_MapRGBA(mainsurface->format, 255, 0, 0, 255);
+		tmp->disabled = true;
+		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip max");
+		tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 255);
+		tmp->disabled = true;
+		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header max");
+		tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		tmp->disabled = true;
+		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg");
+		tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		tmp->disabled = true;
+		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg new");
+		tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		tmp->disabled = true;
+	}
+
+	if ( auto attrFrame = tooltipFrame->addFrame("inventory mouse tooltip attributes frame") )
+	{
+		attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+		auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
+			0xFFFFFFFF, "images/ui/Inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
+		spellImageBg->disabled = true;
+		//spellImageBg->color = SDL_MapRGBA(mainsurface->format, 125, 125, 125, 228);
+		auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 40, 40 },
+			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip spell image");
+		spellImage->disabled = true;
+
+		attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+			0xFFFFFFFF, "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Damage_00.png", "inventory mouse tooltip primary image");
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		tooltipTextField->setFont("fonts/pixelmix.ttf#14");
+		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value highlight", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value positive text", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value negative text", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value slot name", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::RIGHT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+			0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip secondary image");
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value highlight", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value positive text", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value negative text", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+			0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip third image");
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value highlight", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value positive text", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value negative text", 256);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = attrFrame->addField("inventory mouse tooltip attributes text", 1024);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::TOP);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+	}
+	if ( auto descFrame = tooltipFrame->addFrame("inventory mouse tooltip description frame") )
+	{
+		descFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+		descFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
+			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+			"images/system/white.png", "inventory mouse tooltip description divider");
+
+		tooltipTextField = descFrame->addField("inventory mouse tooltip description", 1024);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::TOP);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
 
-		// temporary
+		tooltipTextField = descFrame->addField("inventory mouse tooltip description positive text", 1024);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::TOP);
+		//tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 1, 151, 246, 255));
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		tooltipTextField = descFrame->addField("inventory mouse tooltip description negative text", 1024);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::TOP);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 215, 38, 61, 255));
+	}
+	if ( auto valueFrame = tooltipFrame->addFrame("inventory mouse tooltip value frame") )
+	{
+		valueFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+		valueFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255), 
+			"images/system/white.png", "inventory mouse tooltip value background");
+
+		valueFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
+			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+			"images/system/white.png", "inventory mouse tooltip value divider");
+
+		tooltipTextField = valueFrame->addField("inventory mouse tooltip identified value", 64);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
+			0xFFFFFFFF, 
+			"images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png",
+			"inventory mouse tooltip gold image");
+
+		tooltipTextField = valueFrame->addField("inventory mouse tooltip gold value", 64);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+
+		valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
+			0xFFFFFFFF, 
+			"images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png", 
+			"inventory mouse tooltip weight image");
+
+		tooltipTextField = valueFrame->addField("inventory mouse tooltip weight value", 64);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+	}
+	if ( auto promptFrame = tooltipFrame->addFrame("inventory mouse tooltip prompt frame") )
+	{
+		promptFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+		tooltipTextField = promptFrame->addField("inventory mouse tooltip prompt", 1024);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::RIGHT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+	}
+
+	snprintf(name, sizeof(name), "player interact %d", player);
+	if ( auto interactFrame = gui->addFrame(name) )
+	{
+		players[player]->inventoryUI.interactFrame = interactFrame;
+		const int interactWidth = 106;
+		interactFrame->setSize(SDL_Rect{ 0, 0, interactWidth + 6 * 2, 100 });
+		interactFrame->setDisabled(true);
+		interactFrame->setInheritParentFrameOpacity(false);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		const int topBackgroundHeight = 30;
+		const int optionHeight = 20;
+
+		interactFrame->addImage(SDL_Rect{ 12, 0, 0, 34 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_T01.png", "interact top background");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL01.png", "interact top left");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR01.png", "interact top right");
+
+		interactFrame->addImage(SDL_Rect{ 4, 34, 0, 76 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_C01.png", "interact middle background");
+		interactFrame->addImage(SDL_Rect{ 0, 34, 4, 76 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_L01.png", "interact middle left");
+		interactFrame->addImage(SDL_Rect{ 0, 34, 4, 76 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_R01.png", "interact middle right");
+
+		interactFrame->addImage(SDL_Rect{ 12, 96, 0, 10 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_B01.png", "interact bottom background");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_BL01.png", "interact bottom left");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_BR01.png", "interact bottom right");
+
+		/*interactFrame->addImage(SDL_Rect{ 16, 0, interactWidth, topBackgroundHeight },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_T00.png", "interact top background");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 16, topBackgroundHeight },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL00.png", "interact top left");
+		interactFrame->addImage(SDL_Rect{ interactWidth + 16, 0, 16, topBackgroundHeight },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR00.png", "interact top right");
+
+		interactFrame->addImage(SDL_Rect{ 0, topBackgroundHeight, 6, 76 },
+			color, "images/ui/Inventory/tooltips/HoverExt_L00.png", "interact middle left");
+		interactFrame->addImage(SDL_Rect{ interactWidth + 6, topBackgroundHeight, 6, 76 },
+			color, "images/ui/Inventory/tooltips/HoverExt_R00.png", "interact middle right");
+		interactFrame->addImage(SDL_Rect{ 4, topBackgroundHeight, interactWidth + 2, 76 },
+			hudColors.itemContextMenuOptionImg, "images/system/white.png", "interact middle background");
+
+		interactFrame->addImage(SDL_Rect{ 4, 96, interactWidth + 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_B00.png", "interact bottom background");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_BL00.png", "interact bottom left");
+		interactFrame->addImage(SDL_Rect{ interactWidth + 4 * 2, 96, 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");*/
+
+		interactFrame->addImage(SDL_Rect{ 6, optionHeight, interactWidth, 76 },
+			hudColors.itemContextMenuOptionSelectedImg, "images/system/whitecurve.png", "interact selected highlight");
+
+		auto interactText = interactFrame->addField("interact text", 32);
+		interactText->setText(language[4040]);
+		interactText->setSize(SDL_Rect{ 0, 2, 0, topBackgroundHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::CENTER);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(hudColors.itemContextMenuHeadingText);
+
+		const int interactOptionStartX = 4;
+		const int interactOptionStartY = 36;
+		const int glyphSize = 20;
+
+		auto interactGlyph1 = interactFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4, interactOptionStartY + 4, glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 1");
+
+		const int textAlignX = interactGlyph1->pos.x + interactGlyph1->pos.w + 6;
+		int textAlignY = interactGlyph1->pos.y - 8;
+		const int textWidth = 80;
+		const int textHeight = glyphSize + 8;
+
+		Uint32 textColor = hudColors.itemContextMenuOptionText;
+		
+		interactText = interactFrame->addField("interact option 1", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{ 
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+
+		auto interactGlyph2 = interactFrame->addImage(
+			SDL_Rect{  interactOptionStartX + 4, 
+				interactGlyph1->pos.y + interactGlyph1->pos.h + 4, 
+				glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 2");
+
+		textAlignY = interactGlyph2->pos.y - 8;
+		interactText = interactFrame->addField("interact option 2", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+
+		auto interactGlyph3 = interactFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4,
+			interactGlyph2->pos.y + interactGlyph2->pos.h + 4,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 3");
+
+		textAlignY = interactGlyph3->pos.y - 8;
+		interactText = interactFrame->addField("interact option 3", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+
+		auto interactGlyph4 = interactFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4,
+			interactGlyph3->pos.y + interactGlyph3->pos.h + 4,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 4");
+
+		textAlignY = interactGlyph4->pos.y - 8;
+		interactText = interactFrame->addField("interact option 4", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+
+		auto interactGlyph5 = interactFrame->addImage(
+			SDL_Rect{ interactOptionStartX + 4,
+			interactGlyph4->pos.y + interactGlyph4->pos.h + 4,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 5");
+
+		textAlignY = interactGlyph5->pos.y - 8;
+		interactText = interactFrame->addField("interact option 5", 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+	}
+
+	snprintf(name, sizeof(name), "player item prompt %d", player);
+	if ( auto promptFrame = gui->addFrame(name) )
+	{
+		players[player]->inventoryUI.tooltipPromptFrame = promptFrame;
+		const int interactWidth = 0;
+		SDL_Rect promptSize{ 0, 0, interactWidth + 6 * 2, 100 };
+		promptFrame->setDisabled(true);
+		promptFrame->setInheritParentFrameOpacity(false);
+
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 64);
+
+		auto middleCenter = promptFrame->addImage(SDL_Rect{ 6, 2, interactWidth, 76 },
+			color, "images/ui/Inventory/tooltips/Hover_C00.png", "interact middle background");
+		auto middleTop = promptFrame->addImage(SDL_Rect{ 6, 0, interactWidth, 2 },
+			color, "images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle top background");
+		auto middleBottom = promptFrame->addImage(SDL_Rect{ 6, 0, interactWidth, 2 },
+			color, "images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle bottom background");
+		auto middleLeft = promptFrame->addImage(SDL_Rect{ 0, 0, 6, 76 },
+			color, "images/ui/Inventory/tooltips/HoverExt_L00.png", "interact middle left");
+		auto middleRight = promptFrame->addImage(SDL_Rect{ interactWidth + 6, 0, 6, 76 },
+			color, "images/ui/Inventory/tooltips/HoverExt_R00.png", "interact middle right");
+
+		auto bottomCenter = promptFrame->addImage(SDL_Rect{ 4, 76, interactWidth + 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_B00.png", "interact bottom background");
+		auto bottomLeft = promptFrame->addImage(SDL_Rect{ 0, 76, 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_BL00.png", "interact bottom left");
+		auto bottomRight = promptFrame->addImage(SDL_Rect{ interactWidth + 4 * 2, 76, 4, 4 },
+			color, "images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");
+
+		const int interactOptionStartX = 60;
+		const int interactOptionStartY = 8;
+		const int glyphSize = 20;
+
+		auto interactGlyph1 = promptFrame->addImage(
+			SDL_Rect{ interactOptionStartX, interactOptionStartY, glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 1");
+
+		auto interactGlyph2 = promptFrame->addImage(
+			SDL_Rect{ interactGlyph1->pos.x - (glyphSize / 2), 
+			interactGlyph1->pos.y + glyphSize,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 2");
+
+		auto interactGlyph3 = promptFrame->addImage(
+			SDL_Rect{ interactGlyph1->pos.x + (glyphSize + glyphSize / 4), interactGlyph1->pos.y, glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 3");
+
+		auto interactGlyph4 = promptFrame->addImage(
+			SDL_Rect{ interactGlyph3->pos.x - (glyphSize / 2), interactGlyph2->pos.y,
+			glyphSize, glyphSize },
+			0xFFFFFFFF, "", "glyph 4");
+
+		const int textWidth = 80;
+		const int textHeight = glyphSize + 8;
+
+		Uint32 promptTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+
+		int textAlignY = interactGlyph1->pos.y - 4;
+		int textAlignXRightJustify = interactGlyph1->pos.x - 6 - textWidth;
+		auto promptText = promptFrame->addField("txt 1", 32);
+		promptText->setText(language[4050]);
+		promptText->setSize(SDL_Rect{
+			textAlignXRightJustify,
+			textAlignY,
+			textWidth, textHeight });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::RIGHT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(promptTextColor);
+
+		textAlignXRightJustify = interactGlyph2->pos.x - 6 - textWidth;
+		textAlignY = interactGlyph2->pos.y - 4;
+		promptText = promptFrame->addField("txt 2", 32);
+		promptText->setText(language[4040]);
+		promptText->setSize(SDL_Rect{
+			textAlignXRightJustify,
+			textAlignY,
+			textWidth, textHeight });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::RIGHT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(promptTextColor);
+
+		int textAlignXLeftJustify = interactGlyph3->pos.x + interactGlyph3->pos.w + 6;
+		textAlignY = interactGlyph3->pos.y - 4;
+		promptText = promptFrame->addField("txt 3", 32);
+		promptText->setText("Equip");
+		promptText->setSize(SDL_Rect{
+			textAlignXLeftJustify,
+			textAlignY,
+			textWidth, textHeight });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::LEFT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(promptTextColor);
+
+		textAlignXLeftJustify = interactGlyph4->pos.x + interactGlyph4->pos.w + 6;
+		textAlignY = interactGlyph4->pos.y - 4;
+		promptText = promptFrame->addField("txt 4", 32);
+		promptText->setText("Drop");
+		promptText->setSize(SDL_Rect{
+			textAlignXLeftJustify,
+			textAlignY,
+			textWidth, textHeight });
+		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setHJustify(Field::justify_t::LEFT);
+		promptText->setVJustify(Field::justify_t::CENTER);
+		promptText->setColor(promptTextColor);
+
+		bottomCenter->pos.y = interactGlyph4->pos.y + interactGlyph4->pos.h + 8;
+		bottomLeft->pos.y = bottomCenter->pos.y;
+		bottomRight->pos.y = bottomCenter->pos.y;
+
+		promptSize.h = bottomCenter->pos.y + bottomCenter->pos.h;
+
+		promptFrame->setSize(promptSize);
+		middleCenter->pos.h = bottomCenter->pos.y - 4;
+		middleLeft->pos.h = bottomCenter->pos.y;
+		middleRight->pos.h = bottomCenter->pos.y;
+		middleBottom->pos.y = bottomCenter->pos.y - 2;
+	}
+}
+
+void drawCharacterPreview(const int player, SDL_Rect pos)
+{
+	double ofov = fov;
+	fov = 50;
+
+	//TempTexture* minimapTexture = new TempTexture();
+
+	if ( players[player] != nullptr && players[player]->entity != nullptr )
+	{
+		if ( !softwaremode )
 		{
-			Frame::image_t* tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
-			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip min");
-			tmp->color = SDL_MapRGBA(mainsurface->format, 255, 0, 0, 255);
-			tmp->disabled = true;
-			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
-				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip max");
-			tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 255);
-			tmp->disabled = true;
-			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
-				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header max");
-			tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
-			tmp->disabled = true;
-			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
-				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg");
-			tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
-			tmp->disabled = true;
-			tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
-				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg new");
-			tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
-			tmp->disabled = true;
+			glClear(GL_DEPTH_BUFFER_BIT);
+		}
+		//TODO: These two NOT PLAYERSWAP
+		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
+		//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
+		camera_charsheet.x = players[player]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
+		camera_charsheet.y = players[player]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
+		camera_charsheet.z = players[player]->entity->z * 2;
+		//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
+		camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
+		camera_charsheet.vang = PI / 20;
+
+		camera_charsheet.winx = pos.x;
+		camera_charsheet.winy = pos.y;
+		//camera_charsheet.winx = x1 + 8;
+		//camera_charsheet.winy = y1 + 8;
+
+		camera_charsheet.winw = pos.w;
+		camera_charsheet.winh = pos.h;
+		bool b = players[player]->entity->flags[BRIGHT];
+		players[player]->entity->flags[BRIGHT] = true;
+		if ( !players[player]->entity->flags[INVISIBLE] )
+		{
+			glDrawVoxel(&camera_charsheet, players[player]->entity, REALCOLORS);
+		}
+		players[player]->entity->flags[BRIGHT] = b;
+		int c = 0;
+		if ( multiplayer != CLIENT )
+		{
+			for ( node_t* node = players[player]->entity->children.first; node != nullptr; node = node->next )
+			{
+				if ( c == 0 )
+				{
+					c++;
+					continue;
+				}
+				Entity* entity = (Entity*)node->element;
+				if ( !entity->flags[INVISIBLE] )
+				{
+					b = entity->flags[BRIGHT];
+					entity->flags[BRIGHT] = true;
+					glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+					entity->flags[BRIGHT] = b;
+				}
+				c++;
+			}
+			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( (Sint32)entity->getUID() == -4 )
+				{
+					glDrawSprite(&camera_charsheet, entity, REALCOLORS);
+				}
+			}
+		}
+		else
+		{
+			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
+				{
+					b = entity->flags[BRIGHT];
+					entity->flags[BRIGHT] = true;
+					if ( (Sint32)entity->getUID() == -4 )
+					{
+						glDrawSprite(&camera_charsheet, entity, REALCOLORS);
+					}
+					else
+					{
+						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+					}
+					entity->flags[BRIGHT] = b;
+				}
+			}
 		}
 
-		if ( auto attrFrame = tooltipFrame->addFrame("inventory mouse tooltip attributes frame") )
+		if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
 		{
-			attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
-
-			auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
-				0xFFFFFFFF, "images/system/inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
-			spellImageBg->disabled = true;
-			//spellImageBg->color = SDL_MapRGBA(mainsurface->format, 125, 125, 125, 228);
-			auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 40, 40 },
-				0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip spell image");
-			spellImage->disabled = true;
-
-			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
-				0xFFFFFFFF, "images/system/inventory/tooltips/HUD_Tooltip_Icon_Damage_00.png", "inventory mouse tooltip primary image");
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value highlight", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value positive text", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value negative text", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value slot name", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::RIGHT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
-				0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip secondary image");
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value highlight", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value positive text", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value negative text", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
-				0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip third image");
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value highlight", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value positive text", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip third value negative text", 256);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = attrFrame->addField("inventory mouse tooltip attributes text", 1024);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::TOP);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+			camera_charsheet_offsetyaw -= 0.05;
 		}
-		if ( auto descFrame = tooltipFrame->addFrame("inventory mouse tooltip description frame") )
+		else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
 		{
-			descFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
-
-			descFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
-				SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
-				"images/system/white.png", "inventory mouse tooltip description divider");
-
-			tooltipTextField = descFrame->addField("inventory mouse tooltip description", 1024);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::TOP);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
-
-			tooltipTextField = descFrame->addField("inventory mouse tooltip description positive text", 1024);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::TOP);
-			//tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 1, 151, 246, 255));
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			tooltipTextField = descFrame->addField("inventory mouse tooltip description negative text", 1024);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::TOP);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 215, 38, 61, 255));
+			camera_charsheet_offsetyaw += 0.05;
 		}
-		if ( auto valueFrame = tooltipFrame->addFrame("inventory mouse tooltip value frame") )
+
+		if ( camera_charsheet_offsetyaw > 2 * PI )
 		{
-			valueFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
-
-			valueFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
-				SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255), 
-				"images/system/white.png", "inventory mouse tooltip value background");
-
-			valueFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
-				SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
-				"images/system/white.png", "inventory mouse tooltip value divider");
-
-			tooltipTextField = valueFrame->addField("inventory mouse tooltip identified value", 64);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
-				0xFFFFFFFF, "images/system/per32.png", "inventory mouse tooltip gold image");
-
-			tooltipTextField = valueFrame->addField("inventory mouse tooltip gold value", 64);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-
-			valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
-				0xFFFFFFFF, "images/system/int32.png", "inventory mouse tooltip weight image");
-
-			tooltipTextField = valueFrame->addField("inventory mouse tooltip weight value", 64);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::LEFT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+			camera_charsheet_offsetyaw -= 2 * PI;
 		}
-		if ( auto promptFrame = tooltipFrame->addFrame("inventory mouse tooltip prompt frame") )
+		if ( camera_charsheet_offsetyaw < 0.0 )
 		{
-			promptFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			/*promptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
-				0xFFFFFFFF, "images/system/white.png", "tooltip temp background");*/
+			camera_charsheet_offsetyaw += 2 * PI;
+		}
+	}
+	fov = ofov;
+}
 
-			tooltipTextField = promptFrame->addField("inventory mouse tooltip prompt", 1024);
-			tooltipTextField->setText("Nothing");
-			tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
-			tooltipTextField->setFont("fonts/pixelmix.ttf#12");
-			tooltipTextField->setHJustify(Field::justify_t::RIGHT);
-			tooltipTextField->setVJustify(Field::justify_t::CENTER);
-			tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+void loadHUDSettingsJSON()
+{
+	if ( !PHYSFS_getRealDir("/data/HUD_settings.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/HUD_settings.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/HUD_settings.json");
+		inputPath.append("/data/HUD_settings.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				if ( d.HasMember("hotbar_slot_opacity") )
+				{
+					hotbarSlotOpacity = d["hotbar_slot_opacity"].GetInt();
+				}
+				if ( d.HasMember("hotbar_selected_slot_opacity") )
+				{
+					hotbarSelectedSlotOpacity = d["hotbar_selected_slot_opacity"].GetInt();
+				}
+				if ( d.HasMember("selected_cursor_opacity") )
+				{
+					selectedCursorOpacity = d["selected_cursor_opacity"].GetInt();
+				}
+				if ( d.HasMember("selected_old_cursor_opacity") )
+				{
+					oldSelectedCursorOpacity = d["selected_old_cursor_opacity"].GetInt();
+				}
+				if ( d.HasMember("enemy_hp_bars") )
+				{
+					if ( d["enemy_hp_bars"].HasMember("world_height_offsets") )
+					{
+						enemyBarSettings.heightOffsets.clear();
+						for ( rapidjson::Value::ConstMemberIterator itr = d["enemy_hp_bars"]["world_height_offsets"].MemberBegin();
+							itr != d["enemy_hp_bars"]["world_height_offsets"].MemberEnd(); ++itr )
+						{
+							enemyBarSettings.heightOffsets[itr->name.GetString()] = itr->value.GetFloat();
+						}
+					}
+					if ( d["enemy_hp_bars"].HasMember("screen_depth_distance_offset") )
+					{
+						enemyBarSettings.screenDistanceOffsets.clear();
+						for ( rapidjson::Value::ConstMemberIterator itr = d["enemy_hp_bars"]["screen_depth_distance_offset"].MemberBegin();
+							itr != d["enemy_hp_bars"]["screen_depth_distance_offset"].MemberEnd(); ++itr )
+						{
+							enemyBarSettings.screenDistanceOffsets[itr->name.GetString()] = itr->value.GetFloat();
+						}
+					}
+					if ( d["enemy_hp_bars"].HasMember("monster_bar_width_to_hp_intervals") )
+					{
+						EnemyHPDamageBarHandler::widthHealthBreakpointsMonsters.clear();
+						for ( rapidjson::Value::ConstValueIterator itr = d["enemy_hp_bars"]["monster_bar_width_to_hp_intervals"].Begin();
+							itr != d["enemy_hp_bars"]["monster_bar_width_to_hp_intervals"].End(); ++itr )
+						{
+							// you need to FindMember() if getting objects from an array...
+							auto widthPercentMember = itr->FindMember("width_percent");
+							auto hpThresholdMember = itr->FindMember("hp_threshold");
+							if ( !widthPercentMember->value.IsInt() || !hpThresholdMember->value.IsInt() )
+							{
+								printlog("[JSON]: Error: Enemy bar HP or width was not int!");
+								continue;
+							}
+							real_t widthPercent = widthPercentMember->value.GetInt();
+							widthPercent /= 100.0;
+							int hpThreshold = hpThresholdMember->value.GetInt();
+							EnemyHPDamageBarHandler::widthHealthBreakpointsMonsters.push_back(
+								std::make_pair(widthPercent, hpThreshold));
+						}
+					}
+					if ( d["enemy_hp_bars"].HasMember("furniture_bar_width_to_hp_intervals") )
+					{
+						EnemyHPDamageBarHandler::widthHealthBreakpointsFurniture.clear();
+						for ( rapidjson::Value::ConstValueIterator itr = d["enemy_hp_bars"]["furniture_bar_width_to_hp_intervals"].Begin();
+							itr != d["enemy_hp_bars"]["furniture_bar_width_to_hp_intervals"].End(); ++itr )
+						{
+							// you need to FindMember() if getting objects from an array...
+							auto widthPercentMember = itr->FindMember("width_percent");
+							auto hpThresholdMember = itr->FindMember("hp_threshold");
+							if ( !widthPercentMember->value.IsInt() || !hpThresholdMember->value.IsInt() )
+							{
+								printlog("[JSON]: Error: Enemy bar HP or width was not int!");
+								continue;
+							}
+							real_t widthPercent = widthPercentMember->value.GetInt();
+							widthPercent /= 100.0;
+							int hpThreshold = hpThresholdMember->value.GetInt();
+							EnemyHPDamageBarHandler::widthHealthBreakpointsFurniture.push_back(
+								std::make_pair(widthPercent, hpThreshold));
+						}
+					}
+					if ( d["enemy_hp_bars"].HasMember("monster_bar_lifetime_ticks") )
+					{
+						EnemyHPDamageBarHandler::maxTickLifetime = d["enemy_hp_bars"]["monster_bar_lifetime_ticks"].GetInt();
+					}
+					if ( d["enemy_hp_bars"].HasMember("furniture_bar_lifetime_ticks") )
+					{
+						EnemyHPDamageBarHandler::maxTickFurnitureLifetime = d["enemy_hp_bars"]["furniture_bar_lifetime_ticks"].GetInt();
+					}
+				}
+				if ( d.HasMember("colors") )
+				{
+					if ( d["colors"].HasMember("itemmenu_heading_text") )
+					{
+						hudColors.itemContextMenuHeadingText = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_heading_text"]["r"].GetInt(),
+							d["colors"]["itemmenu_heading_text"]["g"].GetInt(),
+							d["colors"]["itemmenu_heading_text"]["b"].GetInt(),
+							d["colors"]["itemmenu_heading_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("itemmenu_option_text") )
+					{
+						hudColors.itemContextMenuOptionText = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_option_text"]["r"].GetInt(),
+							d["colors"]["itemmenu_option_text"]["g"].GetInt(),
+							d["colors"]["itemmenu_option_text"]["b"].GetInt(),
+							d["colors"]["itemmenu_option_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("itemmenu_selected_text") )
+					{
+						hudColors.itemContextMenuOptionSelectedText = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_selected_text"]["r"].GetInt(),
+							d["colors"]["itemmenu_selected_text"]["g"].GetInt(),
+							d["colors"]["itemmenu_selected_text"]["b"].GetInt(),
+							d["colors"]["itemmenu_selected_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("itemmenu_selected_img") )
+					{
+						hudColors.itemContextMenuOptionSelectedImg = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_selected_img"]["r"].GetInt(),
+							d["colors"]["itemmenu_selected_img"]["g"].GetInt(),
+							d["colors"]["itemmenu_selected_img"]["b"].GetInt(),
+							d["colors"]["itemmenu_selected_img"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("itemmenu_option_img") )
+					{
+						hudColors.itemContextMenuOptionImg = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["itemmenu_option_img"]["r"].GetInt(),
+							d["colors"]["itemmenu_option_img"]["g"].GetInt(),
+							d["colors"]["itemmenu_option_img"]["b"].GetInt(),
+							d["colors"]["itemmenu_option_img"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_neutral_text") )
+					{
+						hudColors.characterSheetNeutral = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["charsheet_neutral_text"]["r"].GetInt(),
+							d["colors"]["charsheet_neutral_text"]["g"].GetInt(),
+							d["colors"]["charsheet_neutral_text"]["b"].GetInt(),
+							d["colors"]["charsheet_neutral_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_positive_text") )
+					{
+						hudColors.characterSheetGreen = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["charsheet_positive_text"]["r"].GetInt(),
+							d["colors"]["charsheet_positive_text"]["g"].GetInt(),
+							d["colors"]["charsheet_positive_text"]["b"].GetInt(),
+							d["colors"]["charsheet_positive_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_negative_text") )
+					{
+						hudColors.characterSheetRed = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["charsheet_negative_text"]["r"].GetInt(),
+							d["colors"]["charsheet_negative_text"]["g"].GetInt(),
+							d["colors"]["charsheet_negative_text"]["b"].GetInt(),
+							d["colors"]["charsheet_negative_text"]["a"].GetInt());
+					}
+				}
+				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+			}
 		}
 	}
 }
@@ -972,15 +3324,15 @@ void createPlayerInventory(const int player)
 	char name[32];
 	snprintf(name, sizeof(name), "player inventory %d", player);
 	Frame* frame = gui->addFrame(name);
-	playerInventory[player] = frame;
-	frame->setSize(SDL_Rect{ players[player]->camera_x1(),
-		players[player]->camera_y1(),
-		players[player]->camera_width(),
-		players[player]->camera_height() });
-	frame->setActualSize(frame->getSize());
+	players[player]->inventoryUI.frame = frame;
+	frame->setSize(SDL_Rect{ players[player]->camera_virtualx1(),
+		players[player]->camera_virtualy1(),
+		players[player]->camera_virtualWidth(),
+		players[player]->camera_virtualHeight() });
 	frame->setHollow(true);
 	frame->setBorder(0);
 	frame->setOwner(player);
+	frame->setInheritParentFrameOpacity(false);
 
 	createInventoryTooltipFrame(player);
 
@@ -989,13 +3341,14 @@ void createPlayerInventory(const int player)
 		auto bgFrame = frame->addFrame("inventory base");
 		bgFrame->setSize(basePos);
 		const auto bgSize = bgFrame->getSize();
-		bgFrame->setActualSize(SDL_Rect{ 0, 0, bgSize.w, bgSize.h });
 		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, bgSize.h },
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
-			"images/system/inventory/HUD_Inventory_Base_00a.png", "inventory base img");
+			"images/ui/Inventory/HUD_Inventory_Base_02.png", "inventory base img");
 	}
 
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+	players[player]->inventoryUI.slotFrames.clear();
 
 	const int baseSlotOffsetX = 4;
 	const int baseSlotOffsetY = 0;
@@ -1003,7 +3356,6 @@ void createPlayerInventory(const int player)
 	{
 		const auto invSlotsFrame = frame->addFrame("inventory slots");
 		invSlotsFrame->setSize(invSlotsPos);
-		invSlotsFrame->setActualSize(SDL_Rect{ 0, 0, invSlotsFrame->getSize().w, invSlotsFrame->getSize().h });
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 
@@ -1018,9 +3370,9 @@ void createPlayerInventory(const int player)
 				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
 
 				auto slotFrame = invSlotsFrame->addFrame(slotname);
+				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
-				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });
 				//slotFrame->setDisabled(true);
 
 				createPlayerInventorySlotFrameElements(slotFrame);
@@ -1032,7 +3384,6 @@ void createPlayerInventory(const int player)
 		SDL_Rect dollSlotsPos{ 0, 0, basePos.w, invSlotsPos.y };
 		const auto dollSlotsFrame = frame->addFrame("paperdoll slots");
 		dollSlotsFrame->setSize(dollSlotsPos);
-		dollSlotsFrame->setActualSize(SDL_Rect{ 0, 0, dollSlotsFrame->getSize().w, dollSlotsFrame->getSize().h });
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 
@@ -1052,9 +3403,9 @@ void createPlayerInventory(const int player)
 				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
 
 				auto slotFrame = dollSlotsFrame->addFrame(slotname);
+				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
-				slotFrame->setActualSize(SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h });
 				//slotFrame->setDisabled(true);
 
 				createPlayerInventorySlotFrameElements(slotFrame);
@@ -1068,7 +3419,9 @@ void createPlayerInventory(const int player)
 			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
 
 			charFrame->setSize(charSize);
-			charFrame->setActualSize(SDL_Rect{ 0, 0, charSize.w, charSize.h });
+			charFrame->setDrawCallback([](Widget& widget, SDL_Rect pos) {
+				drawCharacterPreview(widget.getOwner(), pos);
+			});
 			//charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
 			//	SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
 			//	"images/system/white.png", "inventory character preview bg");
@@ -1076,7 +3429,6 @@ void createPlayerInventory(const int player)
 
 		/*auto selectedFrame = dollSlotsFrame->addFrame("paperdoll selected item");
 		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
 		selectedFrame->setDisabled(true);
 
 		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
@@ -1087,95 +3439,2889 @@ void createPlayerInventory(const int player)
 	{
 		auto selectedFrame = frame->addFrame("inventory selected item");
 		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		selectedFrame->setActualSize(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h });
 		selectedFrame->setDisabled(true);
 
 		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "inventory selected highlight");
 
+
 		auto oldSelectedFrame = frame->addFrame("inventory old selected item");
 		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		oldSelectedFrame->setActualSize(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h });
 		oldSelectedFrame->setDisabled(true);
 
 		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		auto oldImg = oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128), "", "inventory old selected item");
+		oldImg->disabled = true;
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "inventory old selected highlight");
+
+		auto bgFrame = frame->findFrame("inventory base");
+		auto flourishFrame = frame->addFrame("inventory base flourish");
+		flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (122 / 2), 202 - 22 + 6, 122, 22 });
+		auto flourishImg = flourishFrame->addImage(SDL_Rect{ 0, 0, flourishFrame->getSize().w, flourishFrame->getSize().h },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
+
+		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
+		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
+		oldCursorFrame->setDisabled(true);
+		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, oldSelectedCursorOpacity);
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TL.png", "inventory old cursor topleft");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TR.png", "inventory old cursor topright");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BL.png", "inventory old cursor bottomleft");
+		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BR.png", "inventory old cursor bottomright");
+
+		auto cursorFrame = frame->addFrame("inventory selected item cursor");
+		players[player]->inventoryUI.selectedItemCursorFrame = cursorFrame;
+		cursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
+		cursorFrame->setDisabled(true);
+		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TL.png", "inventory selected cursor topleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TR.png", "inventory selected cursor topright");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BL.png", "inventory selected cursor bottomleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BR.png", "inventory selected cursor bottomright");
 	}
 
 	{
 		auto draggingInventoryItem = frame->addFrame("dragging inventory item");
 		draggingInventoryItem->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		draggingInventoryItem->setActualSize(SDL_Rect{ 0, 0, draggingInventoryItem->getSize().w, draggingInventoryItem->getSize().h });
 		draggingInventoryItem->setDisabled(true);
 		createPlayerInventorySlotFrameElements(draggingInventoryItem);
 	}
-}
 
-void newPlayerInventory(const int player)
-{
-	if ( !playerInventory[player] )
 	{
-		createPlayerInventory(player);
+		auto draggingInventoryItemOld = frame->addFrame("dragging inventory item old");
+		draggingInventoryItemOld->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		draggingInventoryItemOld->setDisabled(true);
+		
+		SDL_Rect imgPos{ 3, 3, draggingInventoryItemOld->getSize().w, draggingInventoryItemOld->getSize().h };
+		auto itemSprite = draggingInventoryItemOld->addImage(imgPos, 0xFFFFFFFF, "", "item sprite img");
 	}
 }
 
-void doNewCharacterSheet(int player)
+void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse)
 {
-#ifdef NINTENDO
-    static const char* bigfont = "rom://fonts/pixelmix.ttf#18";
-    static const char* smallfont = "rom://fonts/pixel_maz.ttf#32";
-#else // NINTENDO
-    static const char* bigfont = "fonts/pixelmix.ttf#18";
-    static const char* smallfont = "fonts/pixel_maz.ttf#14";
-#endif // NINTENDO
+	if ( frame )
+	{
+		if ( selectedItemCursorFrame )
+		{
+			if ( usingMouse )
+			{
+				selectedItemCursorFrame->setSize(
+					SDL_Rect{
+					destx - cursor.cursorToSlotOffset,
+					desty - cursor.cursorToSlotOffset,
+					width + 2 * (cursor.cursorToSlotOffset + 1),
+					height + 2 * (cursor.cursorToSlotOffset + 1)
+				}
+				);
+				cursor.animateSetpointX = destx;
+				cursor.animateSetpointY = desty;
+				cursor.animateStartX = destx;
+				cursor.animateStartY = desty;
+			}
+			else if ( cursor.animateSetpointX != destx || cursor.animateSetpointY != desty )
+			{
+				SDL_Rect size = selectedItemCursorFrame->getSize();
+				cursor.animateStartX = size.x;
+				cursor.animateStartY = size.y;
+				size.w = width + 2 * (cursor.cursorToSlotOffset + 1);
+				size.h = height + 2 * (cursor.cursorToSlotOffset + 1);
+				selectedItemCursorFrame->setSize(size);
+				cursor.animateSetpointX = destx;
+				cursor.animateSetpointY = desty;
+				cursor.animateX = 0.0;
+				cursor.animateY = 0.0;
+				cursor.lastUpdateTick = ticks;
+			}
+		}
+	}
+}
 
-    Frame* frame = gui->findFrame("Character sheet");
-    if (!frame) {
-        const int w = 200;
-        frame = gui->addFrame("Character sheet");
-        frame->setSize(SDL_Rect{
-            players[player]->camera_x2() - w,
-            players[player]->camera_y1(),
-            w, players[player]->camera_height()});
-        frame->setColor(makeColor(154, 154, 154, 255));
+void Player::Inventory_t::updateItemContextMenu()
+{
+	bool& toggleclick = inputs.getUIInteraction(player.playernum)->toggleclick;
+	bool& itemMenuOpen = inputs.getUIInteraction(player.playernum)->itemMenuOpen;
+	int& itemMenuSelected = inputs.getUIInteraction(player.playernum)->itemMenuSelected;
+	Uint32& itemMenuItem = inputs.getUIInteraction(player.playernum)->itemMenuItem;
+	int& itemMenuX = inputs.getUIInteraction(player.playernum)->itemMenuX;
+	int& itemMenuY = inputs.getUIInteraction(player.playernum)->itemMenuY;
+	const Sint32 mousex = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 
-        // map button
-        {
-            Button* b = frame->addButton("minimap button");
-            b->setFont(smallfont);
-            b->setText("Open Map");
-            b->setSize(SDL_Rect{0, 8, frame->getSize().w, 40});
-            b->setBorder(2);
-            b->setBorderColor(makeColor(128, 128, 128, 255));
-            b->setColor(makeColor(192, 192, 192, 255));
-            b->setTextColor(makeColor(255, 255, 255, 255));
-        }
+	Item* item = uidToItem(itemMenuItem);
+	if ( !interactFrame )
+	{
+		itemMenuOpen = false;
+		return;
+	}
 
-        // log button
-        {
-            Button* b = frame->addButton("log button");
-            b->setFont(smallfont);
-            b->setText("Open Log");
-            b->setSize(SDL_Rect{0, 56, frame->getSize().w, 40});
-            b->setBorder(2);
-            b->setBorderColor(makeColor(128, 128, 128, 255));
-            b->setColor(makeColor(192, 192, 192, 255));
-            b->setTextColor(makeColor(255, 255, 255, 255));
-        }
+	if ( !item || !itemMenuOpen )
+	{
+		itemMenuOpen = false;
+		interactFrame->setDisabled(true);
+		return;
+	}
 
-        // game timer
-        {
+	interactFrame->setDisabled(false);
 
-        }
+	auto options = getContextMenuOptionsForItem(player.playernum, item);
+	std::vector<std::pair<Frame::image_t*, Field*>> optionFrames;
+	auto glyph1 = interactFrame->findImage("glyph 1");
+	auto option1 = interactFrame->findField("interact option 1");
+	auto glyph2 = interactFrame->findImage("glyph 2");
+	auto option2 = interactFrame->findField("interact option 2");
+	auto glyph3 = interactFrame->findImage("glyph 3");
+	auto option3 = interactFrame->findField("interact option 3");
+	auto glyph4 = interactFrame->findImage("glyph 4");
+	auto option4 = interactFrame->findField("interact option 4");
+	auto glyph5 = interactFrame->findImage("glyph 5");
+	auto option5 = interactFrame->findField("interact option 5");
+	if ( glyph1 && option1 )
+	{
+		optionFrames.push_back(std::make_pair(glyph1, option1));
+	}
+	if ( glyph2 && option2 )
+	{
+		optionFrames.push_back(std::make_pair(glyph2, option2));
+	}
+	if ( glyph3 && option3 )
+	{
+		optionFrames.push_back(std::make_pair(glyph3, option3));
+	}
+	if ( glyph4 && option4 )
+	{
+		optionFrames.push_back(std::make_pair(glyph4, option4));
+	}
+	if ( glyph5 && option5 )
+	{
+		optionFrames.push_back(std::make_pair(glyph5, option5));
+	}
 
-        // 
-        {
-        }
-    } else {
-        frame->setDisabled(players[player]->shootmode);
-    }
+	auto highlightImage = interactFrame->findImage("interact selected highlight");
+	highlightImage->disabled = true;
+	highlightImage->color = hudColors.itemContextMenuOptionSelectedImg;
+	
+	size_t index = 0;
+	unsigned int maxWidth = 0;
+	if ( auto interactText = interactFrame->findField("interact text") )
+	{
+		interactText->setColor(hudColors.itemContextMenuHeadingText);
+		if ( auto textGet = Text::get(interactText->getText(), interactText->getFont()) )
+		{
+			maxWidth = textGet->getWidth();
+		}
+	}
+	int maxHeight = 0;
+	const int textPaddingX = 8;
+
+	for ( auto& optionPair : optionFrames )
+	{
+		auto& img = optionPair.first;
+		auto& txt = optionPair.second;
+		txt->setColor(hudColors.itemContextMenuOptionText);
+		if ( index >= options.size() )
+		{
+			txt->setDisabled(true);
+			img->disabled = true;
+			continue;
+		}
+
+		txt->setDisabled(false);
+		img->disabled = true;
+		auto promptType = options[index];
+		
+		// in-case we want controller support here.
+		/*switch ( promptType ) 
+		{
+			case PROMPT_EQUIP:
+			case PROMPT_UNEQUIP:
+			case PROMPT_SPELL_EQUIP:
+				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuAlt1");
+				break;
+			case PROMPT_APPRAISE:
+				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuAlt2");
+				break;
+			case PROMPT_DROP:
+				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuCancel");
+				break;
+			default:
+				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuConfirm");
+				break;
+		}
+
+		if ( img->path == "" )
+		{
+			img->disabled = true;
+		}*/
+
+		txt->setText(getContextMenuLangEntry(player.playernum, promptType, *item));
+		if ( auto textGet = Text::get(txt->getText(), txt->getFont()) )
+		{
+			maxWidth = std::max(textGet->getWidth(), maxWidth);
+			
+			SDL_Rect size = txt->getSize();
+			size.w = textGet->getWidth();
+			if ( img->disabled )
+			{
+				size.x = textPaddingX;
+				txt->setHJustify(Field::justify_t::CENTER);
+			}
+			else
+			{
+				size.x = img->pos.x + img->pos.w + textPaddingX;
+				txt->setHJustify(Field::justify_t::LEFT);
+			}
+			txt->setSize(size);
+		}
+		
+		maxHeight = std::max(img->pos.y + img->pos.h, maxHeight);
+		++index;
+	}
+
+	const int rightClickProtectBuffer = (right_click_protect ? 0 : 10);
+
+	index = 0;
+	for ( auto& optionPair : optionFrames )
+	{
+		auto& img = optionPair.first;
+		auto& txt = optionPair.second;
+
+		if ( txt->getHJustify() == Field::justify_t::CENTER )
+		{
+			SDL_Rect size = txt->getSize();
+			size.w = maxWidth;
+			txt->setSize(size);
+		}
+
+		if ( index < options.size() )
+		{
+			auto ml = interactFrame->findImage("interact middle left");
+			SDL_Rect absoluteSize = txt->getAbsoluteSize();
+			absoluteSize.x -= (4 + ml->pos.w) + rightClickProtectBuffer;
+			absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
+			absoluteSize.y += 4;
+			absoluteSize.h -= 4;
+			if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+				&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+			{
+				itemMenuSelected = index;
+			}
+		}
+		++index;
+	}
+
+	const int textStartX = (glyph1->disabled ? 0 : glyph1->pos.x + glyph1->pos.w) + textPaddingX;
+	const int frameWidth = maxWidth + textStartX + textPaddingX;
+
+	const int posX = inputs.getMouse(player.playernum, Inputs::MouseInputs::X) * (real_t)Frame::virtualScreenX / xres;
+	const int posY = inputs.getMouse(player.playernum, Inputs::MouseInputs::Y) * (real_t)Frame::virtualScreenY / yres;
+	SDL_Rect frameSize = interactFrame->getSize();
+	frameSize.x = itemMenuX;
+	frameSize.y = itemMenuY;
+
+	// position the frame elements
+	int interimHeight = 0;
+	{
+		auto tl = interactFrame->findImage("interact top left");
+		auto tmid = interactFrame->findImage("interact top background");
+		tmid->pos.w = frameWidth - tl->pos.w * 2;
+		auto tr = interactFrame->findImage("interact top right");
+		tr->pos.x = tmid->pos.x + tmid->pos.w;
+
+		interimHeight = tmid->pos.y + tmid->pos.h;
+		frameSize.w = tr->pos.x + tr->pos.w;
+	}
+	{
+		const int middleOffsetY = 4;
+		auto ml = interactFrame->findImage("interact middle left");
+		ml->pos.h = maxHeight - interimHeight - middleOffsetY;
+		auto mmid = interactFrame->findImage("interact middle background");
+		mmid->pos.h = ml->pos.h;
+		mmid->pos.w = frameWidth - (ml->pos.w) * 2;
+		mmid->color = hudColors.itemContextMenuOptionImg;
+		auto mr = interactFrame->findImage("interact middle right");
+		mr->pos.h = ml->pos.h;
+		mr->pos.x = mmid->pos.x + mmid->pos.w;
+
+		interimHeight = mmid->pos.y + mmid->pos.h;
+	}
+	{
+		auto bl = interactFrame->findImage("interact bottom left");
+		bl->pos.y = interimHeight;
+		auto bmid = interactFrame->findImage("interact bottom background");
+		bmid->pos.y = interimHeight;
+		bmid->pos.w = frameWidth - bl->pos.w * 2;
+		auto br = interactFrame->findImage("interact bottom right");
+		br->pos.y = interimHeight;
+		br->pos.x = bmid->pos.x + bmid->pos.w;
+
+		frameSize.h = br->pos.y + br->pos.h;
+	}
+	
+	if ( auto interactText = interactFrame->findField("interact text") )
+	{
+		SDL_Rect size = interactText->getSize();
+		size.x = 0;
+		size.w = frameSize.w;
+		interactText->setSize(size);
+	}
+
+	interactFrame->setSize(frameSize);
+
+	SDL_Rect absoluteSize = interactFrame->getAbsoluteSize();
+	// right click protect uses exact border, else there is 10 px buffer
+	absoluteSize.x -= rightClickProtectBuffer;
+	absoluteSize.w += rightClickProtectBuffer;
+	if ( !(mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+		&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h) )
+	{
+		itemMenuSelected = -1;
+	}
+
+	if ( itemMenuSelected >= 0 && itemMenuSelected < options.size() )
+	{
+		auto& txt = optionFrames[itemMenuSelected].second;
+		txt->setColor(hudColors.itemContextMenuOptionSelectedText);
+		SDL_Rect size = txt->getSize();
+		size.x -= 4;
+		size.w += 2 * 4;
+		size.h += 2;
+		highlightImage->pos = size;
+		highlightImage->disabled = false;
+	}
+
+	bool activateSelection = false;
+	if ( !inputs.bMouseRight(player.playernum) && !toggleclick )
+	{
+		activateSelection = true;
+	}
+	if ( activateSelection )
+	{
+		if ( itemMenuSelected >= 0 && itemMenuSelected < options.size() )
+		{
+			activateItemContextMenuOption(item, options[itemMenuSelected]);
+		}
+		//Close the menu.
+		itemMenuOpen = false;
+		itemMenuItem = 0;
+	}
+}
+
+void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt)
+{
+	const int player = this->player.playernum;
+	bool disableItemUsage = false;
+	if ( players[player] && players[player]->entity )
+	{
+		if ( players[player]->entity->effectShapeshift != NOTHING )
+		{
+			// shape shifted, disable some items
+			if ( !item->usableWhileShapeshifted(stats[player]) )
+			{
+				disableItemUsage = true;
+			}
+			if ( item->type == FOOD_CREAMPIE && (prompt == PROMPT_UNEQUIP || prompt == PROMPT_EQUIP) )
+			{
+				disableItemUsage = true;
+			}
+		}
+		else
+		{
+			if ( itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
+			{
+				if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 )
+				{
+					disableItemUsage = true;
+				}
+			}
+		}
+	}
+
+	if ( client_classes[player] == CLASS_SHAMAN )
+	{
+		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
+		{
+			disableItemUsage = true;
+		}
+	}
+
+	//PROMPT_EQUIP,
+	//PROMPT_UNEQUIP,
+	//PROMPT_SPELL_EQUIP,
+	//PROMPT_INTERACT,
+	//PROMPT_EAT,
+	//PROMPT_CONSUME,
+//PROMPT_SPELL_QUICKCAST,
+//PROMPT_INSPECT,
+//PROMPT_SELL,
+//PROMPT_BUY,
+//PROMPT_STORE_CHEST,
+//PROMPT_RETRIEVE_CHEST,
+	//PROMPT_APPRAISE,
+	//PROMPT_DROP
+	if ( prompt == PROMPT_APPRAISE )
+	{
+		players[player]->inventoryUI.appraisal.appraiseItem(item);
+		return;
+	}
+	else if ( prompt == PROMPT_DROP )
+	{
+		dropItem(item, player);
+		return;
+	}
+	else if ( prompt == PROMPT_SELL )
+	{
+	}
+	else if ( prompt == PROMPT_STORE_CHEST )
+	{
+	}
+	else if ( prompt == PROMPT_GRAB )
+	{
+		inputs.getUIInteraction(player)->selectedItem = item;
+		playSound(139, 64); // click sound
+		inputs.getUIInteraction(player)->toggleclick = true;
+		inputs.mouseClearLeft(player);
+		return;
+	}
+	else if ( prompt == PROMPT_EAT )
+	{
+		if ( !disableItemUsage )
+		{
+			useItem(item, player);
+		}
+		return;
+	}
+	else if ( prompt == PROMPT_CONSUME )
+	{
+		// consume item
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "FODA");
+			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+			SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+			net_packet->data[24] = item->identified;
+			net_packet->data[25] = player;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		item_FoodAutomaton(item, player);
+		return;
+	}
+	else if ( prompt == PROMPT_INTERACT || prompt == PROMPT_INSPECT || prompt == PROMPT_TINKER )
+	{
+		if ( item->type == TOOL_ALEMBIC )
+		{
+			// not experimenting
+			if ( !disableItemUsage )
+			{
+				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, false, item);
+			}
+			else
+			{
+				messagePlayer(player, language[3432]); // unable to use in current form message.
+			}
+		}
+		else if ( item->type == TOOL_TINKERING_KIT )
+		{
+			if ( !disableItemUsage )
+			{
+				GenericGUI[player].openGUI(GUI_TYPE_TINKERING, item);
+			}
+			else
+			{
+				messagePlayer(player, language[3432]); // unable to use in current form message.
+			}
+		}
+		else
+		{
+			useItem(item, player);
+		}
+		return;
+	}
+	else if ( prompt == PROMPT_EQUIP 
+		|| prompt == PROMPT_UNEQUIP
+		|| prompt == PROMPT_SPELL_EQUIP )
+	{
+		if ( isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook )
+		{
+			return; // don't try to equip shields while casting
+		}
+
+		if ( !disableItemUsage )
+		{
+			if ( prompt == PROMPT_EQUIP
+				|| prompt == PROMPT_UNEQUIP )
+			{
+				if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON
+					|| itemCategory(item) == SPELLBOOK )
+				{
+					playerTryEquipItemAndUpdateServer(player, item, true);
+					return;
+				}
+			}
+
+			useItem(item, player);
+			return;
+		}
+		else
+		{
+			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+			{
+				messagePlayer(player, language[3488]); // unable to use with current level.
+			}
+			else
+			{
+				messagePlayer(player, language[3432]); // unable to use in current form message.
+			}
+		}
+		return;
+	}
+	else if ( prompt == PROMPT_SPELL_QUICKCAST )
+	{
+		if ( !disableItemUsage )
+		{
+			players[player]->magic.setQuickCastSpellFromInventory(item);
+		}
+		else
+		{
+			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+			{
+				messagePlayer(player, language[3488]); // unable to use with current level.
+			}
+			else
+			{
+				messagePlayer(player, language[3432]); // unable to use in current form message.
+			}
+		}
+		return;
+	}
+}
+
+void Player::Hotbar_t::updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse)
+{
+	if ( hotbarFrame )
+	{
+		if ( auto selectedSlotCursor = hotbarFrame->findFrame("shootmode selected item cursor") )
+		{
+			if ( usingMouse )
+			{
+				selectedSlotCursor->setSize(
+					SDL_Rect{
+					destx - shootmodeCursor.cursorToSlotOffset,
+					desty - shootmodeCursor.cursorToSlotOffset,
+					width + 2 * (shootmodeCursor.cursorToSlotOffset + 1),
+					height + 2 * (shootmodeCursor.cursorToSlotOffset + 1)
+				}
+				);
+				shootmodeCursor.animateSetpointX = destx;
+				shootmodeCursor.animateSetpointY = desty;
+				shootmodeCursor.animateStartX = destx;
+				shootmodeCursor.animateStartY = desty;
+			}
+			else if ( shootmodeCursor.animateSetpointX != destx || shootmodeCursor.animateSetpointY != desty )
+			{
+				SDL_Rect size = selectedSlotCursor->getSize();
+				shootmodeCursor.animateStartX = size.x;
+				shootmodeCursor.animateStartY = size.y;
+				size.w = width + 2 * (shootmodeCursor.cursorToSlotOffset + 1);
+				size.h = height + 2 * (shootmodeCursor.cursorToSlotOffset + 1);
+				selectedSlotCursor->setSize(size);
+				shootmodeCursor.animateSetpointX = destx;
+				shootmodeCursor.animateSetpointY = desty;
+				shootmodeCursor.animateX = 0.0;
+				shootmodeCursor.animateY = 0.0;
+				shootmodeCursor.lastUpdateTick = ticks;
+			}
+		}
+	}
+}
+
+void Player::Inventory_t::updateSelectedItemAnimation()
+{
+	if ( frame )
+	{
+		if ( auto selectedSlotFrame = frame->findFrame("inventory selected item") )
+		{
+			selectedSlotFrame->setDisabled(true);
+		}
+		if ( selectedItemCursorFrame )
+		{
+			selectedItemCursorFrame->setDisabled(true);
+		}
+	}
+	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		real_t setpointDiffX = fpsScale * std::max(.05, (1.0 - selectedItemAnimate.animateX)) / (5);
+		real_t setpointDiffY = fpsScale * std::max(.05, (1.0 - selectedItemAnimate.animateY)) / (5);
+		selectedItemAnimate.animateX += setpointDiffX;
+		selectedItemAnimate.animateY += setpointDiffY;
+		selectedItemAnimate.animateX = std::min(1.0, selectedItemAnimate.animateX);
+		selectedItemAnimate.animateY = std::min(1.0, selectedItemAnimate.animateY);
+	}
+	else
+	{
+		selectedItemAnimate.animateX = 0.0;
+		selectedItemAnimate.animateY = 0.0;
+	}
+}
+
+void Player::Inventory_t::updateInventoryItemTooltip()
+{
+	if ( !tooltipFrame || !frame )
+	{
+		return;
+	}
+
+	auto& tooltipDisplay = this->itemTooltipDisplay;
+
+	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipDisplay.opacitySetpoint )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		if ( tooltipDisplay.opacitySetpoint == 0 )
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (tooltipDisplay.opacityAnimate)) / (5);
+			tooltipDisplay.opacityAnimate -= setpointDiff;
+			tooltipDisplay.opacityAnimate = std::max(0.0, tooltipDisplay.opacityAnimate);
+		}
+		else
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (1.0 - tooltipDisplay.opacityAnimate)) / (1);
+			tooltipDisplay.opacityAnimate += setpointDiff;
+			tooltipDisplay.opacityAnimate = std::min(1.0, tooltipDisplay.opacityAnimate);
+		}
+		tooltipFrame->setOpacity(tooltipDisplay.opacityAnimate * 100);
+	}
+
+	if ( tooltipPromptFrame )
+	{
+		tooltipPromptFrame->setOpacity(tooltipFrame->getOpacity());
+	}
+
+	tooltipDisplay.expandSetpoint = tooltipDisplay.expanded ? 100 : 0;
+	if ( static_cast<int>(tooltipDisplay.expandCurrent * 100) != tooltipDisplay.expandSetpoint )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		if ( tooltipDisplay.expandSetpoint == 0 )
+		{
+			//real_t setpointDiff = fpsScale * std::max(.05, (tooltipDisplay.expandAnimate) / 50);
+			//tooltipDisplay.expandAnimate -= setpointDiff;
+			tooltipDisplay.expandAnimate -= 2 * fpsScale / 100.0;
+			tooltipDisplay.expandAnimate = std::max(0.0, tooltipDisplay.expandAnimate);
+		}
+		else
+		{
+			//real_t setpointDiff = fpsScale * std::max(.05, (1.0 - tooltipDisplay.expandAnimate) / 50);
+			//tooltipDisplay.expandAnimate += setpointDiff;
+			tooltipDisplay.expandAnimate += 2 * fpsScale / 100.0;
+			tooltipDisplay.expandAnimate = std::min(1.0, tooltipDisplay.expandAnimate);
+		}
+		double t = tooltipDisplay.expandAnimate;
+		tooltipDisplay.expandCurrent = t * t * (3.0f - 2.0f * t); // bezier from 0 to width as t (0-1);
+	}
+}
+
+void Player::Inventory_t::ItemTooltipDisplay_t::updateItem(const int player, Item* newItem)
+{
+	if ( newItem && player >= 0 && player < MAXPLAYERS && stats[player] )
+	{
+		uid = newItem->uid;
+		type = newItem->type;
+		status = newItem->status;
+		beatitude = newItem->beatitude;
+		count = newItem->count;
+		appearance = newItem->appearance;
+		identified = newItem->identified;
+
+		if ( stats[player] )
+		{
+			playernum = player;
+			playerLVL = stats[player]->LVL;
+			playerEXP = stats[player]->EXP;
+			playerSTR = statGetSTR(stats[player], players[player]->entity);
+			playerDEX = statGetDEX(stats[player], players[player]->entity);
+			playerCON = statGetCON(stats[player], players[player]->entity);
+			playerINT = statGetINT(stats[player], players[player]->entity);
+			playerPER = statGetPER(stats[player], players[player]->entity);
+			playerCHR = statGetCHR(stats[player], players[player]->entity);
+		}
+	}
+}
+
+bool Player::Inventory_t::ItemTooltipDisplay_t::isItemSameAsCurrent(const int player, Item* newItem)
+{
+	if ( newItem && player >= 0 && player < MAXPLAYERS && stats[player] )
+	{
+		if ( newItem->uid == uid
+			&& newItem->type == type
+			&& newItem->status == status
+			&& newItem->beatitude == beatitude
+			&& newItem->count == count
+			&& newItem->appearance == appearance
+			&& newItem->identified == identified
+			&& playernum == player
+			&& playerLVL == stats[player]->LVL
+			&& playerEXP == stats[player]->EXP
+			&& playerSTR == statGetSTR(stats[player], players[player]->entity)
+			&& playerDEX == statGetDEX(stats[player], players[player]->entity)
+			&& playerCON == statGetCON(stats[player], players[player]->entity)
+			&& playerINT == statGetINT(stats[player], players[player]->entity)
+			&& playerPER == statGetPER(stats[player], players[player]->entity)
+			&& playerCHR == statGetCHR(stats[player], players[player]->entity)
+		)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+Player::Inventory_t::ItemTooltipDisplay_t::ItemTooltipDisplay_t()
+{
+	uid = 0;
+	type = WOODEN_SHIELD;
+	status = BROKEN;
+	beatitude = 0;
+	count = 0;
+	appearance = 0;
+	identified = false;
+
+	playernum = -1;
+	playerLVL = 0;
+	playerEXP = 0;
+	playerSTR = 0;
+	playerDEX = 0;
+	playerCON = 0;
+	playerINT = 0;
+	playerPER = 0;
+	playerCHR = 0;
+}
+
+void Player::Inventory_t::updateCursor()
+{
+	if ( !frame )
+	{
+		return;
+	}
+
+	if ( auto oldSelectedSlotCursor = frame->findFrame("inventory old item cursor") )
+	{
+		if ( auto oldSelectedFrame = frame->findFrame("inventory old selected item") )
+		{
+			oldSelectedSlotCursor->setDisabled(oldSelectedFrame->isDisabled());
+
+			if ( player.hotbar.hotbarFrame )
+			{
+				if ( auto highlight = oldSelectedFrame->findImage("inventory old selected highlight") )
+				{
+					highlight->disabled = false;
+					if ( auto oldHotbarSelectedFrame = player.hotbar.hotbarFrame->findFrame("hotbar old selected item") )
+					{
+						if ( !oldHotbarSelectedFrame->isDisabled() )
+						{
+							oldSelectedSlotCursor->setDisabled(true);
+							highlight->disabled = true;
+						}
+					}
+				}
+			}
+
+			if ( !oldSelectedSlotCursor->isDisabled() )
+			{
+				SDL_Rect cursorSize = oldSelectedSlotCursor->getSize();
+				cursorSize.x = (oldSelectedFrame->getSize().x - 1) - cursor.cursorToSlotOffset;
+				cursorSize.y = (oldSelectedFrame->getSize().y - 1) - cursor.cursorToSlotOffset;
+				oldSelectedSlotCursor->setSize(cursorSize);
+
+				int offset = 8;// ((ticks - cursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+
+				Uint8 r, g, b, a;
+				if ( auto tl = oldSelectedSlotCursor->findImage("inventory old cursor topleft") )
+				{
+					tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+					SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+					a = oldSelectedCursorOpacity;
+					tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto tr = oldSelectedSlotCursor->findImage("inventory old cursor topright") )
+				{
+					tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+					tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto bl = oldSelectedSlotCursor->findImage("inventory old cursor bottomleft") )
+				{
+					bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+					bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto br = oldSelectedSlotCursor->findImage("inventory old cursor bottomright") )
+				{
+					br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+					br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+			}
+		}
+	}
+
+	if ( selectedItemCursorFrame )
+	{
+		SDL_Rect cursorSize = selectedItemCursorFrame->getSize();
+
+		const int smallOffset = 2;
+		const int largeOffset = 4;
+
+		int offset = ((ticks - cursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem 
+				|| inputs.getUIInteraction(player.playernum)->itemMenuOpen )
+			{
+				// animate cursor
+			}
+			else
+			{
+				offset = smallOffset; // don't animate while mouse normal hovering
+			}
+		}
+
+		Uint8 r, g, b, a;
+		if ( auto tl = selectedItemCursorFrame->findImage("inventory selected cursor topleft") )
+		{
+			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+			a = selectedCursorOpacity;
+			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto tr = selectedItemCursorFrame->findImage("inventory selected cursor topright") )
+		{
+			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto bl = selectedItemCursorFrame->findImage("inventory selected cursor bottomleft") )
+		{
+			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto br = selectedItemCursorFrame->findImage("inventory selected cursor bottomright") )
+		{
+			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+
+		SDL_Rect currentPos = selectedItemCursorFrame->getSize();
+		const int offsetPosition = cursor.cursorToSlotOffset;
+		if ( cursor.animateSetpointX - offsetPosition != currentPos.x
+			|| cursor.animateSetpointY - offsetPosition != currentPos.y )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
+			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
+			cursor.animateX += setpointDiffX;
+			cursor.animateY += setpointDiffY;
+			cursor.animateX = std::min(1.0, cursor.animateX);
+			cursor.animateY = std::min(1.0, cursor.animateY);
+
+			int destX = cursor.animateSetpointX - cursor.animateStartX - offsetPosition;
+			int destY = cursor.animateSetpointY - cursor.animateStartY - offsetPosition;
+
+			currentPos.x = cursor.animateStartX + destX * cursor.animateX;
+			currentPos.y = cursor.animateStartY + destY * cursor.animateY;
+			selectedItemCursorFrame->setSize(currentPos);
+			//messagePlayer(0, "%.2f | %.2f", inventory_t.selectedSlotAnimateX, setpointDiffX);
+		}
+	}
+}
+
+void Player::HUD_t::updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse)
+{
+	if ( cursorFrame )
+	{
+		if ( auto hudCursor = cursorFrame->findFrame("hud cursor") )
+		{
+			if ( usingMouse )
+			{
+				hudCursor->setSize(
+					SDL_Rect{
+					destx - cursor.cursorToSlotOffset,
+					desty - cursor.cursorToSlotOffset,
+					width + 2 * (cursor.cursorToSlotOffset + 1),
+					height + 2 * (cursor.cursorToSlotOffset + 1)
+				}
+				);
+				cursor.animateSetpointX = destx;
+				cursor.animateSetpointY = desty;
+				cursor.animateStartX = destx;
+				cursor.animateStartY = desty;
+			}
+			else if ( cursor.animateSetpointX != destx || cursor.animateSetpointY != desty )
+			{
+				SDL_Rect size = hudCursor->getSize();
+				cursor.animateStartX = size.x;
+				cursor.animateStartY = size.y;
+				size.w = width + 2 * (cursor.cursorToSlotOffset + 1);
+				size.h = height + 2 * (cursor.cursorToSlotOffset + 1);
+				hudCursor->setSize(size);
+				cursor.animateSetpointX = destx;
+				cursor.animateSetpointY = desty;
+				cursor.animateX = 0.0;
+				cursor.animateY = 0.0;
+				cursor.lastUpdateTick = ticks;
+			}
+		}
+	}
+}
+
+void Player::HUD_t::updateCursor()
+{
+	if ( !cursorFrame )
+	{
+		char name[32];
+		snprintf(name, sizeof(name), "player hud cursor %d", player.playernum);
+		cursorFrame = gui->addFrame(name);
+		cursorFrame->setHollow(true);
+		cursorFrame->setBorder(0);
+		cursorFrame->setOwner(player.playernum);
+
+		auto cursor = cursorFrame->addFrame("hud cursor");
+		cursor->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
+		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TL.png", "hud cursor topleft");
+		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_TR.png", "hud cursor topright");
+		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BL.png", "hud cursor bottomleft");
+		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/Selector_BR.png", "hud cursor bottomright");
+	}
+
+	cursorFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+
+	if ( !players[player.playernum]->isLocalPlayer() 
+		|| players[player.playernum]->shootmode 
+		|| players[player.playernum]->GUI.bActiveModuleUsesInventory()
+		|| players[player.playernum]->GUI.bActiveModuleHasNoCursor() )
+	{
+		// hide
+		cursorFrame->setDisabled(true);
+	}
+	else
+	{
+		cursorFrame->setDisabled(false);
+	}
+
+	if ( auto hudCursor = cursorFrame->findFrame("hud cursor") )
+	{
+		SDL_Rect cursorSize = hudCursor->getSize();
+		const int smallOffset = 2;
+		const int largeOffset = 4;
+
+		int offset = ((ticks - cursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			//if ( inputs.getUIInteraction(player.playernum)->selectedItem
+			//	|| inputs.getUIInteraction(player.playernum)->itemMenuOpen )
+			//{
+			//	// animate cursor
+			//}
+			//else
+			{
+				offset = smallOffset; // don't animate while mouse normal hovering
+			}
+		}
+
+		Uint8 r, g, b, a;
+		if ( auto tl = hudCursor->findImage("hud cursor topleft") )
+		{
+			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+			a = selectedCursorOpacity;
+			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto tr = hudCursor->findImage("hud cursor topright") )
+		{
+			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto bl = hudCursor->findImage("hud cursor bottomleft") )
+		{
+			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto br = hudCursor->findImage("hud cursor bottomright") )
+		{
+			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+
+		SDL_Rect currentPos = hudCursor->getSize();
+		const int offsetPosition = cursor.cursorToSlotOffset;
+		if ( cursor.animateSetpointX - offsetPosition != currentPos.x
+			|| cursor.animateSetpointY - offsetPosition != currentPos.y )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
+			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
+			cursor.animateX += setpointDiffX;
+			cursor.animateY += setpointDiffY;
+			cursor.animateX = std::min(1.0, cursor.animateX);
+			cursor.animateY = std::min(1.0, cursor.animateY);
+
+			int destX = cursor.animateSetpointX - cursor.animateStartX - offsetPosition;
+			int destY = cursor.animateSetpointY - cursor.animateStartY - offsetPosition;
+
+			currentPos.x = cursor.animateStartX + destX * cursor.animateX;
+			currentPos.y = cursor.animateStartY + destY * cursor.animateY;
+			hudCursor->setSize(currentPos);
+		}
+	}
+}
+
+void Player::Hotbar_t::updateCursor()
+{
+	if ( !hotbarFrame )
+	{
+		return;
+	}
+
+	if ( auto oldSelectedSlotCursor = hotbarFrame->findFrame("hotbar old item cursor") )
+	{
+		if ( auto oldSelectedFrame = hotbarFrame->findFrame("hotbar old selected item") )
+		{
+			oldSelectedSlotCursor->setDisabled(oldSelectedFrame->isDisabled());
+
+			if ( !oldSelectedSlotCursor->isDisabled() )
+			{
+				SDL_Rect cursorSize = oldSelectedSlotCursor->getSize();
+				cursorSize.x = (oldSelectedFrame->getSize().x - 1) - shootmodeCursor.cursorToSlotOffset;
+				cursorSize.y = (oldSelectedFrame->getSize().y - 1) - shootmodeCursor.cursorToSlotOffset;
+				oldSelectedSlotCursor->setSize(cursorSize);
+
+				int offset = 8;// ((ticks - shootmodeCursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+
+				Uint8 r, g, b, a;
+				if ( auto tl = oldSelectedSlotCursor->findImage("hotbar old cursor topleft") )
+				{
+					tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+					SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+					a = oldSelectedCursorOpacity;
+					tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto tr = oldSelectedSlotCursor->findImage("hotbar old cursor topright") )
+				{
+					tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+					tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto bl = oldSelectedSlotCursor->findImage("hotbar old cursor bottomleft") )
+				{
+					bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+					bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+				if ( auto br = oldSelectedSlotCursor->findImage("hotbar old cursor bottomright") )
+				{
+					br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+					br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				}
+			}
+		}
+	}
+
+	if ( auto selectedSlotCursor = hotbarFrame->findFrame("shootmode selected item cursor") )
+	{
+		SDL_Rect cursorSize = selectedSlotCursor->getSize();
+
+		const int smallOffset = 2;
+		const int largeOffset = 4;
+
+		int offset = ((ticks - shootmodeCursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				//offset = largeOffset;
+			}
+			else
+			{
+				offset = smallOffset;
+			}
+		}
+
+		Uint8 r, g, b, a;
+		if ( auto tl = selectedSlotCursor->findImage("shootmode selected cursor topleft") )
+		{
+			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+			a = selectedCursorOpacity;
+			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto tr = selectedSlotCursor->findImage("shootmode selected cursor topright") )
+		{
+			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto bl = selectedSlotCursor->findImage("shootmode selected cursor bottomleft") )
+		{
+			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
+			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( auto br = selectedSlotCursor->findImage("shootmode selected cursor bottomright") )
+		{
+			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
+			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+
+		SDL_Rect currentPos = selectedSlotCursor->getSize();
+		const int offsetPosition = shootmodeCursor.cursorToSlotOffset;
+		if ( shootmodeCursor.animateSetpointX - offsetPosition != currentPos.x
+			|| shootmodeCursor.animateSetpointY - offsetPosition != currentPos.y )
+		{
+			auto& cursor = shootmodeCursor;
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
+			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
+			cursor.animateX += setpointDiffX;
+			cursor.animateY += setpointDiffY;
+			cursor.animateX = std::min(1.0, cursor.animateX);
+			cursor.animateY = std::min(1.0, cursor.animateY);
+
+			int destX = cursor.animateSetpointX - cursor.animateStartX - offsetPosition;
+			int destY = cursor.animateSetpointY - cursor.animateStartY - offsetPosition;
+
+			currentPos.x = cursor.animateStartX + destX * cursor.animateX;
+			currentPos.y = cursor.animateStartY + destY * cursor.animateY;
+			selectedSlotCursor->setSize(currentPos);
+			//messagePlayer(0, "%.2f | %.2f", inventory_t.selectedSlotAnimateX, setpointDiffX);
+		}
+	}
+}
+
+void Player::Inventory_t::processInventory()
+{
+	if ( !frame )
+	{
+		createPlayerInventory(player.playernum);
+	}
+
+	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight()});
+
+	bool tooltipWasDisabled = tooltipFrame->isDisabled();
+
+	updateInventory();
+
+	if ( tooltipWasDisabled && !tooltipFrame->isDisabled() )
+	{
+		tooltipFrame->setOpacity(0.0);
+	}
+}
+
+void Player::HUD_t::resetBars()
+{
+	if ( xpFrame )
+	{
+		xpBar.animateSetpoint = std::min(100, stats[player.playernum]->EXP) * 10;
+		xpBar.animateValue = xpBar.animateSetpoint;
+		xpBar.animatePreviousSetpoint = xpBar.animateSetpoint;
+		xpBar.animateState = ANIMATE_NONE;
+		xpBar.xpLevelups = 0;
+	}
+	if ( hpFrame )
+	{
+		HPBar.animateSetpoint = stats[player.playernum]->HP;
+		HPBar.animateValue = HPBar.animateSetpoint;
+		HPBar.animateValue2 = HPBar.animateSetpoint;
+		HPBar.animatePreviousSetpoint = HPBar.animateSetpoint;
+		HPBar.animateState = ANIMATE_NONE;
+	}
+	if ( mpFrame )
+	{
+		MPBar.animateSetpoint = stats[player.playernum]->MP;
+		MPBar.animateValue = MPBar.animateSetpoint;
+		MPBar.animateValue2 = MPBar.animateSetpoint;
+		MPBar.animatePreviousSetpoint = MPBar.animateSetpoint;
+		MPBar.animateState = ANIMATE_NONE;
+	}
+}
+
+void Player::HUD_t::updateXPBar()
+{
+	if ( !xpFrame )
+	{
+		return;
+	}
+
+	SDL_Rect pos = xpFrame->getSize();
+	pos.x = hudFrame->getSize().w / 2 - pos.w / 2;
+	pos.y = hudFrame->getSize().h - XP_FRAME_START_Y;
+	xpFrame->setSize(pos);
+
+	xpBar.animateSetpoint = std::min(100, stats[player.playernum]->EXP);
+	xpBar.maxValue = 1000.0;
+
+	if ( xpBar.animateState == ANIMATE_LEVELUP_RISING )
+	{
+		xpBar.animateTicks = ticks;
+
+		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		xpBar.animateValue += fpsScale * (10); // constant speed
+		xpBar.animateValue = std::min(xpBar.maxValue, xpBar.animateValue);
+		if ( xpBar.animateValue == xpBar.maxValue )
+		{
+			xpBar.animateState = ANIMATE_LEVELUP_FALLING;
+		}
+	}
+	else if ( xpBar.animateState == ANIMATE_LEVELUP_FALLING )
+	{
+		if ( ticks - xpBar.animateTicks > TICKS_PER_SECOND * 2 )
+		{
+			int decrement = 40;
+			double scaledDecrement = (decrement * (144.f / std::max(1U, fpsLimit)));
+			xpBar.animateValue -= scaledDecrement;
+			if ( xpBar.animateValue <= 0 )
+			{
+				xpBar.animateValue = 0.0;
+				xpBar.xpLevelups = 0; // disable looping maybe one day use it
+				if ( xpBar.xpLevelups > 1 )
+				{
+					--xpBar.xpLevelups;
+					xpBar.animateState = ANIMATE_LEVELUP_RISING;
+				}
+				else
+				{
+					xpBar.xpLevelups = 0;
+					xpBar.animateState = ANIMATE_NONE;
+				}
+			}
+		}
+	}
+	else
+	{
+		int increment = 3;
+		double scaledIncrement = (increment * (144.f / std::max(1U, fpsLimit)));
+		if ( xpBar.animateValue < xpBar.animateSetpoint * 10 )
+		{
+			//real_t diff = std::max(.1, (xpBar.animateSetpoint * 10 - xpBar.animateValue) / 200.0); // 0.1-5 value
+			//if ( xpBar.animateSetpoint * 10 >= xpBar.maxValue )
+			//{
+			//	diff = 5;
+			//}
+			//scaledIncrement *= 0.2 * pow(diff, 2) + .5;
+			//xpBar.animateValue = std::min(xpBar.animateSetpoint * 10.0, xpBar.animateValue + scaledIncrement);
+
+			real_t setpointDiff = std::max(50.0, xpBar.animateSetpoint * 10.0 - xpBar.animateValue);
+			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			xpBar.animateValue += fpsScale * (setpointDiff / 50.0); // reach it in x intervals, scaled to FPS
+			xpBar.animateValue = std::min(static_cast<real_t>(xpBar.animateSetpoint * 10.0), xpBar.animateValue);
+			//messagePlayer(0, "%.2f | %.2f", diff, scaledIncrement);
+		}
+		//else if ( xpBar.animateValue > xpBar.animateSetpoint * 10 )
+		//{
+		//	real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		//	xpBar.animateValue += fpsScale * (10); // constant speed
+		//	xpBar.animateValue = std::min(xpBar.maxValue, xpBar.animateValue);
+		//}
+		//else
+		//{
+		//	xpBar.animateTicks = ticks;
+		//}
+
+		xpBar.animateTicks = ticks;
+
+		//if ( xpBar.animateValue == xpBar.maxValue )
+		//{
+		//	xpBar.animateState = ANIMATE_LEVELUP;
+		//}
+	}
+
+	char playerXPText[16];
+	snprintf(playerXPText, sizeof(playerXPText), "%.f", xpBar.animateValue / 10);
+	
+	auto xpText = xpFrame->findField("xp text current");
+	xpText->setText(playerXPText);
+
+	auto xpBg = xpFrame->findImage("xp img base");
+	auto xpProgress = xpFrame->findImage("xp img progress");
+	auto xpProgressEndCap = xpFrame->findImage("xp img progress endcap");
+
+	real_t percent = xpBar.animateValue / 1000.0;
+	xpProgress->pos.w = std::max(1, static_cast<int>((xpBg->pos.w - xpProgressEndCap->pos.w) * percent));
+	xpProgressEndCap->pos.x = xpProgress->pos.x + xpProgress->pos.w;
+}
+
+SDL_Surface* blitEnemyBar(const int player)
+{
+	Frame* frame = players[player]->hud.enemyBarFrame;
+	if ( !frame || !players[player]->isLocalPlayer() )
+	{
+		return nullptr;
+	}
+
+	auto baseBg = frame->findImage("base img");
+	auto baseEndCap = frame->findImage("base img endcap");
+	real_t frameOpacity = frame->getOpacity() / 100.0;
+
+	auto foregroundFrame = frame->findFrame("bar progress frame");
+	auto hpProgress = foregroundFrame->findImage("progress img");
+	auto hpProgressEndcap = foregroundFrame->findImage("progress img endcap");
+
+	auto dmgFrame = frame->findFrame("bar dmg frame");
+	auto dmgProgress = dmgFrame->findImage("dmg img");
+	auto dmgEndCap = dmgFrame->findImage("dmg img endcap");
+
+	auto skullFrame = frame->findFrame("skull frame");
+	int totalWidth = baseBg->pos.x + baseBg->pos.w + baseEndCap->pos.w;
+	SDL_Surface* sprite = SDL_CreateRGBSurface(0, totalWidth, frame->getSize().h, 32,
+		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	for ( auto& img : frame->getImages() )
+	{
+		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+		Uint8 r, g, b, a;
+		SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
+		SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+		SDL_Rect pos = img->pos;
+		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+	}
+	for ( auto& img : dmgFrame->getImages() )
+	{
+		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+		Uint8 r, g, b, a;
+		SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
+		//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+		SDL_Rect pos = img->pos;
+		pos.x += dmgFrame->getSize().x;
+		pos.y += dmgFrame->getSize().y;
+		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+	}
+	for ( auto& img : foregroundFrame->getImages() )
+	{
+		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+		Uint8 r, g, b, a;
+		SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
+		//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+		SDL_Rect pos = img->pos;
+		pos.x += foregroundFrame->getSize().x;
+		pos.y += foregroundFrame->getSize().y;
+		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+	}
+	for ( auto& img : skullFrame->getImages() )
+	{
+		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+		Uint8 r, g, b, a;
+		SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
+		SDL_Rect pos = img->pos;
+		pos.x += skullFrame->getSize().x;
+		pos.y += skullFrame->getSize().y;
+		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+	}
+	for ( auto& txt : frame->getFields() )
+	{
+		auto textGet = Text::get(txt->getText(), txt->getFont());
+		SDL_Surface* txtSurf = const_cast<SDL_Surface*>(textGet->getSurf());
+		SDL_Rect pos;
+		pos.w = textGet->getWidth();
+		pos.h = textGet->getHeight();
+		pos.x = sprite->w / 2 - pos.w / 2;
+		pos.y = sprite->h / 2 - pos.h / 2;
+		Uint8 r, g, b, a;
+		SDL_GetRGBA(txt->getColor(), mainsurface->format, &r, &g, &b, &a);
+		SDL_SetSurfaceAlphaMod(txtSurf, a * frameOpacity);
+		SDL_BlitSurface(txtSurf, nullptr, sprite, &pos);
+	}
+	return sprite;
+}
+
+void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
+{
+	if ( !whichFrame )
+	{
+		return;
+	}
+
+	if ( !enemyHPDetails )
+	{
+		return;
+	}
+
+	if ( !player.isLocalPlayer() )
+	{
+		return;
+	}
+
+	EnemyHPDamageBarHandler::EnemyHPDetails* enemyDetails = static_cast<EnemyHPDamageBarHandler::EnemyHPDetails*>(enemyHPDetails);
+
+	Entity* entity = uidToEntity(enemyDetails->enemy_uid);
+	if ( entity )
+	{
+		enemyDetails->worldX = entity->x;
+		enemyDetails->worldY = entity->y;
+		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
+		{
+			if ( entity->doorStartAng == 0 )
+			{
+				enemyDetails->worldY -= 5;
+			}
+			else
+			{
+				enemyDetails->worldX -= 5;
+			}
+		}
+		enemyDetails->worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
+		enemyDetails->screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
+	}
+	else
+	{
+		enemyDetails->enemy_hp = 0;
+	}
+
+	bool bIsMostRecentHPBar = enemyHPDamageBarHandler[player.playernum].getMostRecentHPBar() == enemyDetails;
+	if ( bIsMostRecentHPBar && !enemyDetails->hasDistanceCheck )
+	{
+		//enemyDetails->hasDistanceCheck = true;
+		auto& camera = cameras[player.playernum];
+		double playerdist = sqrt(pow(camera.x * 16.0 - enemyDetails->worldX, 2) + pow(camera.y * 16.0 - enemyDetails->worldY, 2));
+		if ( playerdist >= 3 * 16.0 )
+		{
+			//enemyDetails->displayOnHUD = true;
+		}
+	}
+
+
+	SDL_Rect pos = whichFrame->getSize();
+	bool doFadeout = false;
+	bool doAnimation = true;
+	if ( enemyDetails->displayOnHUD && whichFrame == enemyBarFrameHUD )
+	{
+		doAnimation = false;
+	}
+
+	if ( enemyDetails->expired == true )
+	{
+		doFadeout = true;
+	}
+	else
+	{
+		enemyDetails->animator.fadeOut = 100.0;
+	}
+
+	if ( doFadeout )
+	{
+		if ( doAnimation )
+		{
+			enemyDetails->animator.fadeOut -= 10.0 * (60.f / std::max(1U, fpsLimit));
+			if ( enemyDetails->animator.fadeOut < 0.0 ) 
+			{ 
+				enemyDetails->animator.fadeOut = 0.0; 
+				enemyDetails->animator.fadeIn = 0.0;
+			}
+		}
+		whichFrame->setOpacity(enemyDetails->animator.fadeOut);
+	}
+	else
+	{
+		enemyDetails->animator.fadeIn = 100.0;
+		whichFrame->setOpacity(enemyDetails->animator.fadeIn);
+	}
+
+	auto baseBg = whichFrame->findImage("base img");
+	auto baseEndCap = whichFrame->findImage("base img endcap");
+
+	auto foregroundFrame = whichFrame->findFrame("bar progress frame");
+	auto hpProgress = foregroundFrame->findImage("progress img");
+	auto hpProgressEndcap = foregroundFrame->findImage("progress img endcap");
+
+	auto dmgFrame = whichFrame->findFrame("bar dmg frame");
+	auto dmgProgress = dmgFrame->findImage("dmg img");
+	auto dmgEndCap = dmgFrame->findImage("dmg img endcap");
+	//auto bubblesImg = dmgFrame->findImage("img bubbles");
+
+	real_t progressWidth = ENEMYBAR_BAR_WIDTH - hpProgressEndcap->pos.w;
+	int backgroundWidth = ENEMYBAR_BAR_WIDTH - baseEndCap->pos.w;
+
+	auto nameTxt = whichFrame->findField("enemy name txt");
+
+	// handle bar size changing
+	{
+		std::vector<std::pair<real_t, int>> widthHealthBreakpoints;
+		if ( enemyDetails->barType == EnemyHPDamageBarHandler::BAR_TYPE_CREATURE )
+		{
+			widthHealthBreakpoints = EnemyHPDamageBarHandler::widthHealthBreakpointsMonsters;
+		}
+		else
+		{
+			widthHealthBreakpoints = EnemyHPDamageBarHandler::widthHealthBreakpointsFurniture;
+		}
+		if ( widthHealthBreakpoints.empty() ) // width %, then HP value
+		{
+			// build some defaults
+			widthHealthBreakpoints.push_back(std::make_pair(0.5, 10));
+			widthHealthBreakpoints.push_back(std::make_pair(0.60, 20));
+			widthHealthBreakpoints.push_back(std::make_pair(0.70, 50));
+			widthHealthBreakpoints.push_back(std::make_pair(0.80, 100));
+			widthHealthBreakpoints.push_back(std::make_pair(0.90, 250));
+			widthHealthBreakpoints.push_back(std::make_pair(1.00, 1000));
+		}
+
+		enemyDetails->animator.widthMultiplier = 1.0;
+		auto prevIt = widthHealthBreakpoints.end();
+		bool foundBreakpoint = false;
+		for ( auto it = widthHealthBreakpoints.begin(); it != widthHealthBreakpoints.end(); ++it )
+		{
+			int healthThreshold = (*it).second;
+			real_t widthEntry = (*it).first;
+			if ( (int)enemyDetails->animator.maxValue <= healthThreshold )
+			{
+				real_t width = 0.0;
+				if ( prevIt != widthHealthBreakpoints.end() )
+				{
+					width = (*prevIt).first;
+					// get linear scaled value between the breakponts
+					width += (widthEntry - (*prevIt).first) * ((int)enemyDetails->animator.maxValue - (*prevIt).second) / ((*it).second - (*prevIt).second);
+				}
+				else
+				{
+					// set as minimum width
+					width = widthEntry;
+				}
+				enemyDetails->animator.widthMultiplier = width;
+				foundBreakpoint = true;
+				break;
+			}
+			prevIt = it;
+		}
+		if ( !foundBreakpoint )
+		{
+			enemyDetails->animator.widthMultiplier = widthHealthBreakpoints[widthHealthBreakpoints.size() - 1].first;
+		}
+
+		real_t multiplier = enemyDetails->animator.widthMultiplier;
+
+		int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
+		progressWidth *= multiplier; // scale the progress bars
+		baseBg->pos.w = backgroundWidth - diff; // move the background bar by x pixels
+		baseEndCap->pos.x = baseBg->pos.x + baseBg->pos.w; // move the background endcap by the new width
+
+		hpProgress->pos.w = progressWidth;
+		hpProgressEndcap->pos.x = hpProgress->pos.x + hpProgress->pos.w;
+
+		pos.x = (hudFrame->getSize().w / 2) - ENEMYBAR_FRAME_WIDTH / 2 - 6;
+		int widthChange = ((ENEMYBAR_BAR_WIDTH - hpProgressEndcap->pos.w) - progressWidth);
+		pos.x += widthChange / 2;
+		SDL_Rect textPos = nameTxt->getSize();
+		textPos.w = ENEMYBAR_FRAME_WIDTH - widthChange;
+		textPos.y = baseBg->pos.y;
+		textPos.h = baseBg->pos.h;
+		nameTxt->setSize(textPos);
+	}
+
+	int startY = hudFrame->getSize().h - ENEMYBAR_FRAME_START_Y - 100;
+	if ( doFadeout )
+	{
+		pos.y = startY + (15 * (100.0 - enemyDetails->animator.fadeOut) / 100.0); // slide out downwards
+	}
+	else
+	{
+		pos.y = startY;
+	}
+	whichFrame->setSize(pos);
+
+	enemyDetails->animator.previousSetpoint = enemyDetails->animator.setpoint;
+	real_t& hpForegroundValue = enemyDetails->animator.foregroundValue;
+	real_t& hpFadedValue = enemyDetails->animator.backgroundValue;
+
+	if ( doAnimation )
+	{
+		enemyDetails->animator.setpoint = enemyDetails->enemy_hp;
+		if ( enemyDetails->animator.setpoint < enemyDetails->animator.previousSetpoint ) // insta-change as losing health
+		{
+			hpForegroundValue = enemyDetails->animator.setpoint;
+			enemyDetails->animator.animateTicks = ticks;
+		}
+
+		if ( enemyDetails->animator.maxValue > enemyDetails->enemy_maxhp )
+		{
+			hpFadedValue = enemyDetails->animator.setpoint; // resetting game etc, stop fade animation sticking out of frame
+		}
+		enemyDetails->animator.maxValue = enemyDetails->enemy_maxhp;
+
+
+		if ( hpForegroundValue < enemyDetails->animator.setpoint ) // gaining HP, animate
+		{
+			real_t setpointDiff = std::max(0.01, enemyDetails->animator.setpoint - hpForegroundValue);
+			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+			hpForegroundValue = std::min(static_cast<real_t>(enemyDetails->animator.setpoint), hpForegroundValue);
+
+			if ( abs(enemyDetails->animator.setpoint) - abs(hpForegroundValue) <= .05 )
+			{
+				hpForegroundValue = enemyDetails->animator.setpoint;
+			}
+		}
+		else if ( hpForegroundValue > enemyDetails->animator.setpoint ) // losing HP, snap to value
+		{
+			hpForegroundValue = enemyDetails->animator.setpoint;
+		}
+
+		if ( hpFadedValue < enemyDetails->animator.setpoint )
+		{
+			hpFadedValue = hpForegroundValue;
+			enemyDetails->animator.animateTicks = ticks;
+		}
+		else if ( hpFadedValue > enemyDetails->animator.setpoint )
+		{
+			if ( ticks - enemyDetails->animator.animateTicks > 30 || enemyDetails->animator.setpoint <= 0 ) // fall after x ticks
+			{
+				real_t setpointDiff = std::max(0.01, hpFadedValue - enemyDetails->animator.setpoint);
+				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+				real_t intervals = 10.0;
+				if ( enemyDetails->animator.setpoint <= 0 )
+				{
+					intervals = 30.0; // dramatic
+				}
+				hpFadedValue -= fpsScale * (setpointDiff / intervals); // reach it in X intervals, scaled to FPS
+				hpFadedValue = std::max(static_cast<real_t>(enemyDetails->animator.setpoint), hpFadedValue);
+			}
+		}
+		else
+		{
+			enemyDetails->animator.animateTicks = ticks;
+		}
+	}
+
+	auto skullFrame = whichFrame->findFrame("skull frame");
+	std::vector<std::pair<Frame::image_t*, int>> allSkulls;
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 0 img"), 0));
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 25 img"), 25));
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 50 img"), 50));
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 100 img"), 75));
+	real_t healthPercentage = 100 * enemyDetails->animator.setpoint / std::max(1.0, enemyDetails->animator.maxValue);
+	int skullIndex = 0;
+	for ( auto& skull : allSkulls )
+	{
+		if ( !skull.first ) { continue; }
+
+		Uint8 r, g, b, a;
+		SDL_GetRGBA(skull.first->color, mainsurface->format, &r, &g, &b, &a);
+		real_t& skullOpacity = enemyDetails->animator.skullOpacities[skullIndex];
+
+		if ( doAnimation )
+		{
+			if ( (int)healthPercentage < skull.second )
+			{
+				real_t opacityChange = 4 * (60.f / std::max(1U, fpsLimit)); // change independent of fps
+				skullOpacity = std::max(0, (int)(skullOpacity - opacityChange));
+			}
+			else if ( (int)healthPercentage >= skull.second )
+			{
+				real_t opacityChange = 255;// *(144.f / std::max(1U, fpsLimit)); // change independent of fps
+				skullOpacity = std::min(255, (int)(skullOpacity + opacityChange));
+			}
+		}
+		a = skullOpacity;
+		a *= enemyDetails->animator.fadeOut / 100.0;
+		skull.first->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		++skullIndex;
+	}
+
+	nameTxt->setText(enemyDetails->enemy_name.c_str());
+
+	real_t foregroundPercent = hpForegroundValue / enemyDetails->animator.maxValue;
+	hpProgress->pos.w = std::max(1, static_cast<int>((progressWidth)* foregroundPercent));
+	hpProgressEndcap->pos.x = hpProgress->pos.x + hpProgress->pos.w;
+
+	real_t fadePercent = hpFadedValue / enemyDetails->animator.maxValue;
+	dmgProgress->pos.w = std::max(1, static_cast<int>((progressWidth)* fadePercent));
+	dmgEndCap->pos.x = dmgProgress->pos.x + dmgProgress->pos.w;
+	if ( dmgProgress->pos.w == 1 && enemyDetails->animator.setpoint <= 0 )
+	{
+		dmgProgress->disabled = true;
+		real_t& opacity = enemyDetails->animator.damageFrameOpacity;
+		if ( doAnimation )
+		{
+			real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independent of fps
+			opacity = std::max(0.0, opacity - opacityChange);
+		}
+		dmgFrame->setOpacity(opacity);
+		dmgFrame->setOpacity(dmgFrame->getOpacity() * enemyDetails->animator.fadeOut / 100.0);
+		// make this element fade out to the left
+		dmgEndCap->pos.x = 0 - (dmgEndCap->pos.w * (1.0 - opacity / 100.0));
+	}
+	else
+	{
+		dmgProgress->disabled = false;
+		enemyDetails->animator.damageFrameOpacity = enemyDetails->animator.fadeOut;
+		dmgFrame->setOpacity(enemyDetails->animator.fadeOut);
+	}
+
+	if ( enemyDetails->animator.setpoint <= 0 )
+	{
+		// hide all the progress elements when dead, as endcap/base don't shrink
+		// hpProgress width 0px defaults to original size, so hide that too
+		hpProgress->disabled = true;
+		hpProgressEndcap->disabled = true;
+	}
+	else
+	{
+		hpProgress->disabled = false;
+		hpProgressEndcap->disabled = false;
+	}
+
+	// damage number on HUD
+	if ( enemyDetails->displayOnHUD && whichFrame == enemyBarFrameHUD )
+	{
+		auto dmgText = hudFrame->findField("enemy dmg txt");
+		Sint32 damageNumber = enemyDetails->animator.damageTaken;
+		enemyDetails->animator.damageTaken = -1;
+		if ( damageNumber >= 0 )
+		{
+			char buf[128] = "";
+			itoa(damageNumber, buf, 10);
+			dmgText->setText(buf);
+			dmgText->setDisabled(false);
+			SDL_Rect txtPos = dmgText->getSize();
+			SDL_Rect barPos = foregroundFrame->getAbsoluteSize();
+			//txtPos.x = barPos.x + baseBg->pos.x/* + baseBg->pos.w*/;
+			//txtPos.y = barPos.y - 30;
+			txtPos.x = 30 + player.camera_virtualWidth() / 2;
+			txtPos.y = -50 + player.camera_virtualHeight() / 2;
+			txtPos.w = Text::get(dmgText->getText(), dmgText->getFont())->getWidth();
+			txtPos.h = Text::get(dmgText->getText(), dmgText->getFont())->getHeight();
+			dmgText->setSize(txtPos);
+			hudDamageTextVelocityX = 1.0;
+			hudDamageTextVelocityY = 3.0;
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+			dmgText->setColor(makeColor(r, g, b, 255));
+		}
+
+		if ( !dmgText->isDisabled() )
+		{
+			SDL_Rect txtPos = dmgText->getSize();
+			txtPos.x += hudDamageTextVelocityX;
+			txtPos.y -= hudDamageTextVelocityY;
+			hudDamageTextVelocityX += .05;
+			hudDamageTextVelocityY -= .3;
+			dmgText->setSize(txtPos);
+			if ( hudDamageTextVelocityY < -2.0 )
+			{
+				Uint8 r, g, b, a;
+				SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+				a = (std::max(0, (int)a - 16));
+				dmgText->setColor(makeColor(r, g, b, a));
+				if ( a == 0 )
+				{
+					dmgText->setDisabled(true);
+				}
+			}
+		}
+	}
+
+	if ( enemyDetails->worldTexture )
+	{
+		delete enemyDetails->worldTexture;
+		enemyDetails->worldTexture = nullptr;
+	}
+	if ( enemyDetails->worldSurfaceSprite )
+	{
+		SDL_FreeSurface(enemyDetails->worldSurfaceSprite);
+		enemyDetails->worldSurfaceSprite = nullptr;
+	}
+
+	enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum);
+	enemyDetails->worldTexture = new TempTexture();
+	enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
+
+	whichFrame->setDisabled(true);
+	if ( !enemyDetails->displayOnHUD )
+	{
+		//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Any vertex visible: %d", anyVertexVisible);
+	}
+	else
+	{
+		if ( whichFrame == enemyBarFrameHUD )
+		{
+			whichFrame->setDisabled(false);
+		}
+		else
+		{
+			updateEnemyBar2(enemyBarFrameHUD, enemyHPDetails);
+		}
+	}
+}
+
+void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
+{
+	if ( !whichFrame )
+	{
+		return;
+	}
+
+	if ( !player.isLocalPlayer() )
+	{
+		return;
+	}
+
+	SDL_Rect pos = whichFrame->getSize();
+	bool doFadeout = false;
+
+	EnemyHPDamageBarHandler::EnemyHPDetails* enemyDetails = nullptr;
+	Bar_t* enemyBar = nullptr;
+	Sint32 damageNumber = -1;
+	enemyDetails = enemyHPDamageBarHandler[player.playernum].getMostRecentHPBar();
+	enemyBar = &this->enemyBar;
+
+	if ( enemyDetails )
+	{
+		enemyBar->animatePreviousSetpoint = enemyDetails->animator.previousSetpoint;
+		enemyBar->animateValue = enemyDetails->animator.foregroundValue;
+		enemyBar->animateValue2 = enemyDetails->animator.backgroundValue;
+		enemyBar->animateSetpoint = enemyDetails->animator.setpoint;
+		enemyBar->animateTicks = enemyDetails->animator.animateTicks;
+		enemyBar->maxValue = enemyDetails->animator.maxValue;
+		enemyBar->fadeOut = 100.0;
+		damageNumber = enemyDetails->animator.damageTaken;
+		enemyDetails->animator.damageTaken = -1;
+
+		if ( Entity* entity = uidToEntity(enemyDetails->enemy_uid) )
+		{
+			enemyDetails->worldX = entity->x;
+			enemyDetails->worldY = entity->y;
+			enemyDetails->worldZ = entity->z;
+		}
+	}
+	if ( !enemyDetails || enemyDetails->expired == true )
+	{
+		doFadeout = true;
+	}
+
+	if ( doFadeout )
+	{
+		enemyBar->fadeOut -= 10.0 * (60.f / std::max(1U, fpsLimit));
+		if ( enemyBar->fadeOut < 0.0 ) { enemyBar->fadeOut = 0.0; enemyBar->fadeIn = 0.0; }
+		whichFrame->setOpacity(enemyBar->fadeOut);
+	}
+	else
+	{
+		enemyBar->fadeIn = 100.0;
+		whichFrame->setOpacity(enemyBar->fadeIn);
+	}
+
+	auto baseBg = whichFrame->findImage("base img");
+	auto baseEndCap = whichFrame->findImage("base img endcap");
+	
+	auto foregroundFrame = whichFrame->findFrame("bar progress frame");
+	auto hpProgress = foregroundFrame->findImage("progress img");
+	auto hpProgressEndcap = foregroundFrame->findImage("progress img endcap");
+
+	auto dmgFrame = whichFrame->findFrame("bar dmg frame");
+	auto dmgProgress = dmgFrame->findImage("dmg img");
+	auto dmgEndCap = dmgFrame->findImage("dmg img endcap");
+	//auto bubblesImg = dmgFrame->findImage("img bubbles");
+
+	real_t progressWidth = ENEMYBAR_BAR_WIDTH - hpProgressEndcap->pos.w;
+	int backgroundWidth = ENEMYBAR_BAR_WIDTH - baseEndCap->pos.w;
+
+	auto nameTxt = whichFrame->findField("enemy name txt");
+
+	// handle bar size changing
+	{
+		std::vector<std::pair<real_t, int>>widthHealthBreakpoints; // width %, then HP value
+		widthHealthBreakpoints.push_back(std::make_pair(0.5, 10));
+		widthHealthBreakpoints.push_back(std::make_pair(0.60, 20));
+		widthHealthBreakpoints.push_back(std::make_pair(0.70, 50));
+		widthHealthBreakpoints.push_back(std::make_pair(0.80, 100));
+		widthHealthBreakpoints.push_back(std::make_pair(0.90, 250));
+		widthHealthBreakpoints.push_back(std::make_pair(1.00, 1000));
+
+		enemyBar->widthMultiplier = 1.0;
+		auto prevIt = widthHealthBreakpoints.end();
+		bool foundBreakpoint = false;
+		for ( auto it = widthHealthBreakpoints.begin(); it != widthHealthBreakpoints.end(); ++it )
+		{
+			int healthThreshold = (*it).second;
+			real_t widthEntry = (*it).first;
+			if ( (int)enemyBar->maxValue <= healthThreshold )
+			{
+				real_t width = 0.0;
+				if ( prevIt != widthHealthBreakpoints.end() )
+				{
+					width = (*prevIt).first;
+					// get linear scaled value between the breakponts
+					width += (widthEntry - (*prevIt).first) * ((int)enemyBar->maxValue - (*prevIt).second) / ((*it).second - (*prevIt).second);
+				}
+				else
+				{
+					// set as minimum width
+					width = widthEntry;  /**((int)enemyBar->maxValue) / ((*it).second);*/
+				}
+				enemyBar->widthMultiplier = width;
+				foundBreakpoint = true;
+				break;
+			}
+			prevIt = it;
+		}
+		if ( !foundBreakpoint )
+		{
+			enemyBar->widthMultiplier = widthHealthBreakpoints[widthHealthBreakpoints.size() - 1].first;
+		}
+
+		real_t multiplier = enemyBar->widthMultiplier;
+
+		int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
+		progressWidth *= multiplier; // scale the progress bars
+		baseBg->pos.w = backgroundWidth - diff; // move the background bar by x pixels
+		baseEndCap->pos.x = baseBg->pos.x + baseBg->pos.w; // move the background endcap by the new width
+
+		hpProgress->pos.w = progressWidth;
+		hpProgressEndcap->pos.x = hpProgress->pos.x + hpProgress->pos.w;
+
+		pos.x = (hudFrame->getSize().w / 2) - ENEMYBAR_FRAME_WIDTH / 2 - 6;
+		int widthChange = ((ENEMYBAR_BAR_WIDTH - hpProgressEndcap->pos.w) - progressWidth);
+		pos.x += widthChange / 2;
+		SDL_Rect textPos = nameTxt->getSize();
+		textPos.w = ENEMYBAR_FRAME_WIDTH - widthChange;
+		textPos.y = baseBg->pos.y;
+		textPos.h = baseBg->pos.h;
+		nameTxt->setSize(textPos);
+	}
+
+	int startY = hudFrame->getSize().h - ENEMYBAR_FRAME_START_Y - 100;
+	if ( doFadeout )
+	{
+		pos.y = startY + (15 * (100.0 - enemyBar->fadeOut) / 100.0); // slide out downwards
+	}
+	else
+	{
+		pos.y = startY;
+	}
+	whichFrame->setSize(pos);
+	
+	//messagePlayer(0, "%.2f | %.2f | %.2f | %d", enemyDetails->animateValue, 
+	//	enemyDetails->animateValue2, enemyDetails->animatePreviousSetpoint, enemyDetails->animateSetpoint);
+
+	enemyBar->animatePreviousSetpoint = enemyBar->animateSetpoint;
+	real_t& hpForegroundValue = enemyBar->animateValue;
+	real_t& hpFadedValue = enemyBar->animateValue2;
+
+	if ( enemyDetails )
+	{
+		enemyBar->animateSetpoint = enemyDetails->enemy_hp;
+		if ( enemyBar->animateSetpoint < enemyBar->animatePreviousSetpoint ) // insta-change as losing health
+		{
+			hpForegroundValue = enemyBar->animateSetpoint;
+			enemyBar->animateTicks = ticks;
+		}
+	
+		if ( enemyBar->maxValue > enemyDetails->enemy_maxhp )
+		{
+			hpFadedValue = enemyBar->animateSetpoint; // resetting game etc, stop fade animation sticking out of frame
+		}
+		enemyBar->maxValue = enemyDetails->enemy_maxhp;
+	}
+
+
+	if ( hpForegroundValue < enemyBar->animateSetpoint ) // gaining HP, animate
+	{
+		real_t setpointDiff = std::max(0.01, enemyBar->animateSetpoint - hpForegroundValue);
+		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+		hpForegroundValue = std::min(static_cast<real_t>(enemyBar->animateSetpoint), hpForegroundValue);
+
+		if ( abs(enemyBar->animateSetpoint) - abs(hpForegroundValue) <= .05 )
+		{
+			hpForegroundValue = enemyBar->animateSetpoint;
+		}
+	}
+	else if ( hpForegroundValue > enemyBar->animateSetpoint ) // losing HP, snap to value
+	{
+		hpForegroundValue = enemyBar->animateSetpoint;
+	}
+
+	if ( hpFadedValue < enemyBar->animateSetpoint )
+	{
+		hpFadedValue = hpForegroundValue;
+		enemyBar->animateTicks = ticks;
+	}
+	else if ( hpFadedValue > enemyBar->animateSetpoint )
+	{
+		if ( ticks - enemyBar->animateTicks > 30 || enemyBar->animateSetpoint <= 0 ) // fall after x ticks
+		{
+			real_t setpointDiff = std::max(0.01, hpFadedValue - enemyBar->animateSetpoint);
+			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			real_t intervals = 10.0;
+			if ( enemyBar->animateSetpoint <= 0 )
+			{
+				intervals = 30.0; // dramatic
+			}
+			hpFadedValue -= fpsScale * (setpointDiff / intervals); // reach it in X intervals, scaled to FPS
+			hpFadedValue = std::max(static_cast<real_t>(enemyBar->animateSetpoint), hpFadedValue);
+		}
+	}
+	else
+	{
+		enemyBar->animateTicks = ticks;
+	}
+
+	auto skullFrame = whichFrame->findFrame("skull frame");
+	std::vector<std::pair<Frame::image_t*, int>> allSkulls;
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 0 img"), 0));
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 25 img"), 25));
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 50 img"), 50));
+	allSkulls.push_back(std::make_pair(skullFrame->findImage("skull 100 img"), 75));
+	real_t healthPercentage = 100 * enemyBar->animateSetpoint / std::max(1.0, enemyBar->maxValue);
+	for ( auto& skull : allSkulls )
+	{
+		if ( !skull.first ) { continue; }
+
+		Uint8 r, g, b, a;
+		SDL_GetRGBA(skull.first->color, mainsurface->format, &r, &g, &b, &a);
+
+		if ( (int)healthPercentage < skull.second )
+		{
+			real_t opacityChange = 4 * (60.f / std::max(1U, fpsLimit)); // change independent of fps
+			a = std::max(0, a - (int)opacityChange);
+		}
+		else if ( (int)healthPercentage >= skull.second )
+		{
+			real_t opacityChange = 255;// *(144.f / std::max(1U, fpsLimit)); // change independent of fps
+			a = std::min(255, a + (int)opacityChange);
+		}
+		a *= whichFrame->getOpacity() / 100.0;
+		skull.first->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	}
+
+	//char playerHPText[16];
+	//snprintf(playerHPText, sizeof(playerHPText), "%d", stats[player.playernum]->HP);
+	if ( enemyDetails )
+	{
+		nameTxt->setText(enemyDetails->enemy_name.c_str());
+	}
+
+	//auto hpText = hpForegroundFrame->findField("hp text");
+	//hpText->setText(playerHPText);
+
+	real_t foregroundPercent = hpForegroundValue / enemyBar->maxValue;
+	hpProgress->pos.w = std::max(1, static_cast<int>((progressWidth) * foregroundPercent));
+	hpProgressEndcap->pos.x = hpProgress->pos.x + hpProgress->pos.w;
+
+	real_t fadePercent = hpFadedValue / enemyBar->maxValue;
+	dmgProgress->pos.w = std::max(1, static_cast<int>((progressWidth) * fadePercent));
+	dmgEndCap->pos.x = dmgProgress->pos.x + dmgProgress->pos.w;
+	if ( dmgProgress->pos.w == 1 && enemyBar->animateSetpoint <= 0 )
+	{
+		dmgProgress->disabled = true;
+		real_t opacity = dmgFrame->getOpacity();
+		real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independent of fps
+		dmgFrame->setOpacity(std::max(0.0, opacity - opacityChange));
+		dmgFrame->setOpacity(dmgFrame->getOpacity() * whichFrame->getOpacity() / 100.0);
+		// make this element fade out to the left
+		dmgEndCap->pos.x = 0 - (dmgEndCap->pos.w * (1.0 - opacity / 100.0));
+	}
+	else
+	{
+		dmgProgress->disabled = false;
+		dmgFrame->setOpacity(whichFrame->getOpacity());
+	}
+
+	//bubblesImg->pos.x = dmgEndCap->pos.x - bubblesImg->pos.w;
+
+	if ( enemyBar->animateSetpoint <= 0 )
+	{
+		// hide all the progress elements when dead, as endcap/base don't shrink
+		// hpProgress width 0px defaults to original size, so hide that too
+		hpProgress->disabled = true;
+		hpProgressEndcap->disabled = true;
+	}
+	else
+	{
+		hpProgress->disabled = false;
+		hpProgressEndcap->disabled = false;
+	}
+
+	auto dmgText = hudFrame->findField("enemy dmg txt");
+	// damage number on HUD
+	{
+		if ( damageNumber >= 0 )
+		{
+			char buf[128] = "";
+			itoa(damageNumber, buf, 10);
+			dmgText->setText(buf);
+			dmgText->setDisabled(false);
+			SDL_Rect txtPos = dmgText->getSize();
+			SDL_Rect barPos = foregroundFrame->getAbsoluteSize();
+			//txtPos.x = barPos.x + baseBg->pos.x/* + baseBg->pos.w*/;
+			//txtPos.y = barPos.y - 30;
+			txtPos.x = 30 + player.camera_virtualWidth() / 2;
+			txtPos.y = -50 + player.camera_virtualHeight() / 2;
+			txtPos.w = Text::get(dmgText->getText(), dmgText->getFont())->getWidth();
+			txtPos.h = Text::get(dmgText->getText(), dmgText->getFont())->getHeight();
+			dmgText->setSize(txtPos);
+			hudDamageTextVelocityX = 1.0;
+			hudDamageTextVelocityY = 3.0;
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+			dmgText->setColor(makeColor(r, g, b, 255));
+		}
+
+		if ( !dmgText->isDisabled() )
+		{
+			SDL_Rect txtPos = dmgText->getSize();
+			txtPos.x += hudDamageTextVelocityX;
+			txtPos.y -= hudDamageTextVelocityY;
+			hudDamageTextVelocityX += .05;
+			hudDamageTextVelocityY -= .3;
+			dmgText->setSize(txtPos);
+			if ( hudDamageTextVelocityY < -2.0 )
+			{
+				Uint8 r, g, b, a;
+				SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+				a = (std::max(0, (int)a - 16));
+				dmgText->setColor(makeColor(r, g, b, a));
+				if ( a == 0 )
+				{
+					dmgText->setDisabled(true);
+				}
+			}
+		}
+	}
+
+	if ( enemyDetails )
+	{
+		enemyDetails->animator.previousSetpoint = enemyBar->animatePreviousSetpoint;
+		enemyDetails->animator.foregroundValue = enemyBar->animateValue;
+		enemyDetails->animator.backgroundValue = enemyBar->animateValue2;
+		enemyDetails->animator.setpoint = enemyBar->animateSetpoint;
+		enemyDetails->animator.animateTicks = enemyBar->animateTicks;
+		enemyDetails->animator.maxValue = enemyBar->maxValue;
+		enemyDetails->animator.fadeIn = enemyBar->fadeIn;
+		enemyDetails->animator.fadeOut = enemyBar->fadeOut;
+		if ( enemyDetails->worldTexture )
+		{
+			delete enemyDetails->worldTexture;
+			enemyDetails->worldTexture = nullptr;
+		}
+		if ( enemyDetails->worldSurfaceSprite )
+		{
+			SDL_FreeSurface(enemyDetails->worldSurfaceSprite);
+			enemyDetails->worldSurfaceSprite = nullptr;
+		}
+		enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum);
+		enemyDetails->worldTexture = new TempTexture();
+		enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
+	}
+
+	whichFrame->setDisabled(true);
+}
+
+void Player::HUD_t::updateHPBar()
+{
+	if ( !hpFrame )
+	{
+		return;
+	}
+
+	SDL_Rect pos = hpFrame->getSize();
+	pos.x = HPMP_FRAME_START_X;
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y;
+	hpFrame->setSize(pos);
+
+	auto hpForegroundFrame = hpFrame->findFrame("hp foreground frame");
+	auto hpBg = hpFrame->findImage("hp img base");
+	auto hpEndcap = hpForegroundFrame->findImage("hp img endcap");
+	auto hpProgressBot = hpForegroundFrame->findImage("hp img progress bot");
+	auto hpProgress = hpForegroundFrame->findImage("hp img progress");
+	auto hpProgressEndCap = hpForegroundFrame->findImage("hp img progress endcap");
+	auto hpFadeFrame = hpFrame->findFrame("hp fade frame");
+	auto hpFadedBase = hpFadeFrame->findImage("hp img fade bot");
+	auto hpFaded = hpFadeFrame->findImage("hp img fade");
+	auto hpFadedEndCap = hpFadeFrame->findImage("hp img fade endcap");
+
+	real_t progressWidth = hpFrame->getSize().w - 74;
+	int backgroundWidth = hpFrame->getSize().w - 54;
+
+	// handle bar size changing
+	{
+		real_t multiplier = 1.0;
+		const Sint32 maxHPWidth = 160;
+		if ( stats[player.playernum]->MAXHP < maxHPWidth )
+		{
+			// start at 30%, increase 2.5% every 5 HP past 20 MAXHP
+			multiplier = .3 + (.025 * ((std::max(0, stats[player.playernum]->MAXHP - 20) / 5)));
+		}
+
+		int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
+		progressWidth *= multiplier; // scale the progress bars
+		hpBg->pos.w = backgroundWidth - diff; // move the background bar by x pixels as above
+		hpEndcap->pos.x = hpFrame->getSize().w - hpEndcap->pos.w - diff; // move the background endcap by x pixels as above
+	}
+
+	HPBar.animatePreviousSetpoint = HPBar.animateSetpoint;
+	real_t& hpForegroundValue = HPBar.animateValue;
+	real_t& hpFadedValue = HPBar.animateValue2;
+
+	HPBar.animateSetpoint = stats[player.playernum]->HP;
+	if ( HPBar.animateSetpoint < HPBar.animatePreviousSetpoint ) // insta-change as losing health
+	{
+		hpForegroundValue = HPBar.animateSetpoint;
+		HPBar.animateTicks = ticks;
+	}
+
+	if ( HPBar.maxValue > stats[player.playernum]->MAXHP )
+	{
+		hpFadedValue = HPBar.animateSetpoint; // resetting game etc, stop fade animation sticking out of frame
+	}
+
+	HPBar.maxValue = stats[player.playernum]->MAXHP;
+
+	if ( hpForegroundValue < HPBar.animateSetpoint ) // gaining HP, animate
+	{
+		real_t setpointDiff = std::max(0.0, HPBar.animateSetpoint - hpForegroundValue);
+		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+		hpForegroundValue = std::min(static_cast<real_t>(HPBar.animateSetpoint), hpForegroundValue);
+
+		if ( abs(HPBar.animateSetpoint) - abs(hpForegroundValue) <= 1.0 )
+		{
+			hpForegroundValue = HPBar.animateSetpoint;
+		}
+
+		/*	int increment = 3;
+			double scaledIncrement = (increment * (144.f / std::max(1U, fpsLimit)));*/
+		//real_t diff = std::max(.1, (HPBar.animateSetpoint * 10 - hpForegroundValue) / (maxValue / 5)); // 0.1-5 value
+		//if ( HPBar.animateSetpoint * 10 >= maxValue )
+		//{
+		//	diff = 5;
+		//}
+		//scaledIncrement *= 0.2 * pow(diff, 2) + .5;
+
+		//hpForegroundValue = std::min(HPBar.animateSetpoint * 10.0, hpForegroundValue + scaledIncrement);
+		//messagePlayer(0, "%.2f | %.2f", hpForegroundValue);
+	}
+	else if ( hpForegroundValue > HPBar.animateSetpoint ) // losing HP, snap to value
+	{
+		hpForegroundValue = HPBar.animateSetpoint;
+	}
+
+	if ( hpFadedValue < HPBar.animateSetpoint )
+	{
+		hpFadedValue = hpForegroundValue;
+		HPBar.animateTicks = ticks;
+	}
+	else if ( hpFadedValue > HPBar.animateSetpoint )
+	{
+		if ( ticks - HPBar.animateTicks > 30 /*|| stats[player.playernum]->HP <= 0*/ ) // fall after x ticks
+		{
+			real_t setpointDiff = std::max(0.01, hpFadedValue - HPBar.animateSetpoint);
+			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			hpFadedValue -= fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+			hpFadedValue = std::max(static_cast<real_t>(HPBar.animateSetpoint), hpFadedValue);
+		}
+	}
+	else
+	{
+		HPBar.animateTicks = ticks;
+	}
+
+	char playerHPText[16];
+	snprintf(playerHPText, sizeof(playerHPText), "%d", stats[player.playernum]->HP);
+
+	auto hpText = hpForegroundFrame->findField("hp text");
+	hpText->setText(playerHPText);
+
+	real_t foregroundPercent = hpForegroundValue / HPBar.maxValue;
+	hpProgress->pos.w = std::max(1, static_cast<int>((progressWidth) * foregroundPercent));
+	hpProgressEndCap->pos.x = hpProgress->pos.x + hpProgress->pos.w;
+
+	real_t fadePercent = hpFadedValue / HPBar.maxValue;
+	hpFaded->pos.w = std::max(1, static_cast<int>((progressWidth) * fadePercent));
+	hpFadedEndCap->pos.x = hpFaded->pos.x + hpFaded->pos.w;
+	if ( hpFaded->pos.w == 1 && stats[player.playernum]->HP <= 0 )
+	{
+		hpFaded->disabled = true;
+		real_t opacity = hpFadeFrame->getOpacity();
+		real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independant of fps
+		hpFadeFrame->setOpacity(std::max(0.0, opacity - opacityChange));
+
+		// make this element fade out to the left, starting 54px then finally at 40px. @ 40px it's out of shot (6 width + 8 endcap width)
+		hpFadedBase->pos.x = 54 - (14 * (1.0 - opacity / 100.0)); 
+		hpFadedEndCap->pos.x = hpFadedBase->pos.x + hpFadedBase->pos.w;
+	}
+	else
+	{
+		hpFaded->disabled = false;
+		hpFadeFrame->setOpacity(100.0);
+
+		// reset to 54px left as we altered in above if statement
+		hpFadedBase->pos.x = 54;
+	}
+
+	if ( stats[player.playernum]->HP <= 0 ) 
+	{
+		// hide all the progress elements when dead, as endcap/base don't shrink
+		// hpProgress width 0px defaults to original size, so hide that too
+		hpProgress->disabled = true;
+		hpProgressEndCap->disabled = true;
+		hpProgressBot->disabled = true;
+	}
+	else
+	{
+		hpProgress->disabled = false;
+		hpProgressEndCap->disabled = false;
+		hpProgressBot->disabled = false;
+	}
+}
+
+void Player::HUD_t::updateMPBar()
+{
+	if ( !mpFrame )
+	{
+		return;
+	}
+
+	SDL_Rect pos = mpFrame->getSize();
+	pos.x = HPMP_FRAME_START_X;
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT;
+	mpFrame->setSize(pos);
+
+	auto mpForegroundFrame = mpFrame->findFrame("mp foreground frame");
+	auto mpBg = mpFrame->findImage("mp img base");
+	auto mpEndcap = mpForegroundFrame->findImage("mp img endcap");
+	auto mpProgressBot = mpForegroundFrame->findImage("mp img progress bot");
+	auto mpProgress = mpForegroundFrame->findImage("mp img progress");
+	auto mpProgressEndCap = mpForegroundFrame->findImage("mp img progress endcap");
+	auto mpFadeFrame = mpFrame->findFrame("mp fade frame");
+	auto mpFadedBase = mpFadeFrame->findImage("mp img fade bot");
+	auto mpFaded = mpFadeFrame->findImage("mp img fade");
+	auto mpFadedEndCap = mpFadeFrame->findImage("mp img fade endcap");
+
+	real_t progressWidth = mpFrame->getSize().w - 74;
+	int backgroundWidth = mpFrame->getSize().w - 54;
+
+	// handle bar size changing
+	{
+		real_t multiplier = 1.0;
+		const Sint32 maxMPWidth = 160;
+		if ( stats[player.playernum]->MAXMP < maxMPWidth )
+		{
+			// start at 30%, increase 2.5% every 5 MP past 20 MAXMP
+			multiplier = .3 + (.025 * ((std::max(0, stats[player.playernum]->MAXMP - 20) / 5)));
+		}
+
+		int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
+		progressWidth *= multiplier; // scale the progress bars
+		mpBg->pos.w = backgroundWidth - diff; // move the background bar by x pixels as above
+		mpEndcap->pos.x = mpFrame->getSize().w - mpEndcap->pos.w - diff; // move the background endcap by x pixels as above
+	}
+
+	MPBar.animatePreviousSetpoint = MPBar.animateSetpoint;
+	real_t& mpForegroundValue = MPBar.animateValue;
+	real_t& mpFadedValue = MPBar.animateValue2;
+
+	MPBar.animateSetpoint = stats[player.playernum]->MP;
+	if ( MPBar.animateSetpoint < MPBar.animatePreviousSetpoint ) // insta-change as losing health
+	{
+		mpForegroundValue = MPBar.animateSetpoint;
+		MPBar.animateTicks = ticks;
+	}
+
+	if ( MPBar.maxValue > stats[player.playernum]->MAXMP )
+	{
+		mpFadedValue = MPBar.animateSetpoint; // resetting game etc, stop fade animation sticking out of frame
+	}
+
+	MPBar.maxValue = stats[player.playernum]->MAXMP;
+	if ( mpForegroundValue < MPBar.animateSetpoint ) // gaining MP, animate
+	{
+		real_t setpointDiff = std::max(.1, MPBar.animateSetpoint - mpForegroundValue);
+		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		mpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+		mpForegroundValue = std::min(static_cast<real_t>(MPBar.animateSetpoint), mpForegroundValue);
+
+		/*if ( abs(MPBar.animateSetpoint) - abs(mpForegroundValue) <= 1.0 )
+		{
+			mpForegroundValue = MPBar.animateSetpoint;
+		}*/
+	}
+	else if ( mpForegroundValue > MPBar.animateSetpoint ) // losing MP, snap to value
+	{
+		mpForegroundValue = MPBar.animateSetpoint;
+	}
+
+	if ( mpFadedValue < MPBar.animateSetpoint )
+	{
+		mpFadedValue = mpForegroundValue;
+		MPBar.animateTicks = ticks;
+	}
+	else if ( mpFadedValue > MPBar.animateSetpoint )
+	{
+		if ( ticks - MPBar.animateTicks > 30 /*|| stats[player.playernum]->MP <= 0*/ ) // fall after x ticks
+		{
+			real_t setpointDiff = std::max(0.1, mpFadedValue - MPBar.animateSetpoint);
+			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			mpFadedValue -= fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+			mpFadedValue = std::max(static_cast<real_t>(MPBar.animateSetpoint), mpFadedValue);
+		}
+	}
+	else
+	{
+		MPBar.animateTicks = ticks;
+	}
+
+	char playerMPText[16];
+	snprintf(playerMPText, sizeof(playerMPText), "%d", stats[player.playernum]->MP);
+
+	auto mpText = mpForegroundFrame->findField("mp text");
+	mpText->setText(playerMPText);
+
+	real_t foregroundPercent = mpForegroundValue / MPBar.maxValue;
+	mpProgress->pos.w = std::max(1, static_cast<int>((progressWidth)* foregroundPercent));
+	mpProgressEndCap->pos.x = mpProgress->pos.x + mpProgress->pos.w;
+
+	real_t fadePercent = mpFadedValue / MPBar.maxValue;
+	mpFaded->pos.w = std::max(1, static_cast<int>((progressWidth)* fadePercent));
+	mpFadedEndCap->pos.x = mpFaded->pos.x + mpFaded->pos.w;
+	if ( mpFaded->pos.w == 1 && stats[player.playernum]->MP <= 0 )
+	{
+		mpFaded->disabled = true;
+		real_t opacity = mpFadeFrame->getOpacity();
+		real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independant of fps
+		mpFadeFrame->setOpacity(std::max(0.0, opacity - opacityChange));
+
+		// make this element fade out to the left, starting 54px then finally at 40px. @ 40px it's out of shot (6 width + 8 endcap width)
+		mpFadedBase->pos.x = 54 - (14 * (1.0 - opacity / 100.0));
+		mpFadedEndCap->pos.x = mpFadedBase->pos.x + mpFadedBase->pos.w;
+	}
+	else
+	{
+		mpFaded->disabled = false;
+		mpFadeFrame->setOpacity(100.0);
+
+		// reset to 54px left as we altered in above if statement
+		mpFadedBase->pos.x = 54;
+	}
+
+	if ( stats[player.playernum]->MP <= 0 )
+	{
+		// hide all the progress elements when dead, as endcap/base don't shrink
+		// mpProgress width 0px defaults to original size, so hide that too
+		mpProgress->disabled = true;
+		mpProgressEndCap->disabled = true;
+		mpProgressBot->disabled = true;
+	}
+	else
+	{
+		mpProgress->disabled = false;
+		mpProgressEndCap->disabled = false;
+		mpProgressBot->disabled = false;
+	}
+}
+
+void Player::Hotbar_t::updateHotbar()
+{
+	if ( !hotbarFrame )
+	{
+		return;
+	}
+
+	const int hotbarStartY1 = hotbarFrame->getSize().h - 106; // higher row (center group)
+	const int hotbarStartY2 = hotbarFrame->getSize().h - 96; // lower row (left/right)
+	const int hotbarCentreX = hotbarFrame->getSize().w / 2;
+	const int hotbarCentreXLeft = hotbarCentreX - 148;
+	const int hotbarCentreXRight = hotbarCentreX + 148;
+
+	if ( !player.shootmode )
+	{
+		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarCancel") )
+		{
+			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarCancel");
+		}
+		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarLeft") )
+		{
+			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarLeft");
+			Input::inputs[player.shootmode].consumeBinaryReleaseToggle("HotbarFacebarLeft");
+		}
+		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarUp") )
+		{
+			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarUp");
+			Input::inputs[player.shootmode].consumeBinaryReleaseToggle("HotbarFacebarUp");
+		}
+		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarRight") )
+		{
+			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarRight");
+			Input::inputs[player.shootmode].consumeBinaryReleaseToggle("HotbarFacebarRight");
+		}
+		faceMenuButtonHeld = FaceMenuGroup::GROUP_NONE;
+	}
+
+	bool faceMenuSnapCursorInstantly = false;
+	if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+	{
+		if ( selectedSlotAnimateCurrentValue == 0.0 )
+		{
+			faceMenuSnapCursorInstantly = true;
+		}
+		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		real_t setpointDiff = std::max(0.1, 1.0 - selectedSlotAnimateCurrentValue);
+		selectedSlotAnimateCurrentValue += fpsScale * (setpointDiff / 10.0);
+		selectedSlotAnimateCurrentValue = std::min(1.0, selectedSlotAnimateCurrentValue);
+	}
+	else
+	{
+		selectedSlotAnimateCurrentValue = 0.0;
+	}
+
+	auto highlightSlot = hotbarFrame->findFrame("hotbar highlight");
+	auto highlightSlotImg = highlightSlot->findImage("highlight img");
+	highlightSlotImg->disabled = true;
+
+	auto shootmodeSelectedSlotCursor = hotbarFrame->findFrame("shootmode selected item cursor");
+	if ( shootmodeSelectedSlotCursor )
+	{
+		shootmodeSelectedSlotCursor->setDisabled(true);
+	}
+
+	if ( player.shootmode || !inputs.getUIInteraction(player.playernum)->selectedItem )
+	{
+		if ( auto oldSelectedItemFrame = hotbarFrame->findFrame("hotbar old selected item") )
+		{
+			oldSelectedItemFrame->setDisabled(true);
+		}
+	}
+
+	// position the slots
+	for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )
+	{
+		if ( hotbar[num].item != 0 )
+		{
+			hotbar[num].lastItemUid = hotbar[num].item;
+			if ( Item* item = uidToItem(hotbar[num].item) )
+			{
+				hotbar[num].lastItemType = item->type;
+				hotbar[num].lastItemCategory = itemCategory(item);
+			}
+		}
+
+		char slotname[32];
+		snprintf(slotname, sizeof(slotname), "hotbar slot %d", num);
+		auto slot = hotbarFrame->findFrame(slotname);
+		assert(slot);
+
+		if ( auto img = slot->findImage("slot img") ) // apply any opacity from config
+		{
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+			a = hotbarSlotOpacity;
+			img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+		if ( highlightSlotImg )
+		{
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(highlightSlotImg->color, mainsurface->format, &r, &g, &b, &a);
+			a = hotbarSelectedSlotOpacity;
+			highlightSlotImg->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		}
+
+		char glyphname[32];
+		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", num);
+		auto glyph = hotbarFrame->findImage(glyphname);
+		assert(glyph);
+		glyph->disabled = true;
+
+		if ( useHotbarFaceMenu && num == 9 )
+		{
+			slot->setDisabled(true);
+		}
+		else
+		{
+			slot->setDisabled(false);
+		}
+
+		SDL_Rect pos = slot->getSize();
+		pos.x = hotbarCentreX;
+		pos.y = hotbarStartY2;
+
+		int slotYMovement = pos.h / 4;
+
+		auto slotItem = slot->findFrame("hotbar slot item");
+		slotItem->setDisabled(true);
+
+		if ( useHotbarFaceMenu )
+		{
+			GameController* controller = inputs.getController(player.playernum);
+			if ( controller )
+			{
+				glyph->disabled = slot->isDisabled();
+			}
+
+			slot->findField("slot num text")->setDisabled(true); // disable the hotkey prompts per slot
+			switch ( num )
+			{
+				// left group
+				case 0:
+					pos.x = hotbarCentreXLeft - pos.w / 2 - pos.w + 2;
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
+					break;
+				case 1:
+					pos.x = hotbarCentreXLeft - pos.w / 2;
+					pos.y -= slotYMovement;
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarLeft");
+					break;
+				case 2:
+					pos.x = hotbarCentreXLeft + (pos.w / 2 - 2);
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierRight");
+					break;
+				// middle group
+				case 3:
+					pos.y = hotbarStartY1;
+					pos.x = hotbarCentreX - pos.w / 2 - pos.w + 2;
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
+					break;
+				case 4:
+					pos.y = hotbarStartY1;
+					pos.y -= slotYMovement;
+					pos.x = hotbarCentreX - pos.w / 2;
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarUp");
+					break;
+				case 5:
+					pos.y = hotbarStartY1;
+					pos.x = hotbarCentreX + (pos.w / 2 - 2);
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierRight");
+					break;
+				// right group
+				case 6:
+					pos.x = hotbarCentreXRight - pos.w / 2 - pos.w + 2;
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
+					break;
+				case 7:
+					pos.x = hotbarCentreXRight - pos.w / 2;
+					pos.y -= slotYMovement;
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarRight");
+					break;
+				case 8:
+					pos.x = hotbarCentreXRight + (pos.w / 2 - 2);
+					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT )
+					{
+						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+					}
+					else
+					{
+						glyph->disabled = true;
+					}
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierRight");
+					break;
+				default:
+					break;
+			}
+		}
+		else
+		{
+			slot->findField("slot num text")->setDisabled(false); // enable the hotkey prompts per slot
+			const unsigned int midpoint = NUM_HOTBAR_SLOTS / 2;
+			if ( num < midpoint )
+			{
+				pos.x -= (pos.w) * (midpoint - num);
+			}
+			else
+			{
+				pos.x += (pos.w) * (num - midpoint);
+			}
+		}
+
+		slot->setSize(pos);
+
+		auto glyphImage = Image::get(glyph->path.c_str());
+		if ( glyphImage )
+		{
+			glyph->pos.w = glyphImage->getWidth();
+			glyph->pos.h = glyphImage->getHeight();
+			glyph->pos.x = pos.x + pos.w / 2 - glyph->pos.w / 2;
+			glyph->pos.y = pos.y - glyph->pos.h;
+		}
+
+		if ( current_hotbar == num )
+		{
+			bool showHighlightedSlot = true;
+			if ( players[player.playernum]->GUI.activeModule != Player::GUI_t::MODULE_HOTBAR
+				&& player.inventoryUI.frame && !player.inventoryUI.frame->isDisabled() )
+			{
+				// if inventory visible, don't show selection if navigating within inventory
+				showHighlightedSlot = false;
+			}
+			else if ( player.hotbar.useHotbarFaceMenu && inputs.getVirtualMouse(player.playernum)->lastMovementFromController
+				&& player.hotbar.faceMenuButtonHeld == Player::Hotbar_t::FaceMenuGroup::GROUP_NONE
+				&& player.inventoryUI.frame && player.inventoryUI.frame->isDisabled() )
+			{
+				// if inventory invisible, don't show selection if face button not held
+				showHighlightedSlot = false;
+			}
+
+			auto highlightSlotItem = highlightSlot->findFrame("hotbar slot item");
+			highlightSlotItem->setDisabled(true);
+
+			if ( showHighlightedSlot )
+			{
+				auto slotNumText = slot->findField("slot num text");
+				auto highlightNumText = highlightSlot->findField("slot num text");
+
+				highlightNumText->setText(slotNumText->getText());
+				highlightNumText->setDisabled(slotNumText->isDisabled());
+
+				highlightSlot->setSize(pos); // this follows the slots around
+				highlightSlotImg->disabled = false;
+				updateSlotFrameFromItem(highlightSlotItem, uidToItem(hotbar[num].item));
+
+				if ( player.inventoryUI.frame )
+				{
+					bool showCursor = true;
+					if ( !player.shootmode )
+					{
+						if ( inputs.getUIInteraction(player.playernum)->selectedItem 
+							&& !highlightSlot->capturesMouseInRealtimeCoords() )
+						{
+							showCursor = false;
+						}
+						else if ( !inputs.getUIInteraction(player.playernum)->selectedItem
+							&& !inputs.getVirtualMouse(player.playernum)->lastMovementFromController
+							&& !highlightSlot->capturesMouse() )
+						{
+							showCursor = false;
+						}
+					}
+					else if ( player.shootmode )
+					{
+						showCursor = true;
+					}
+
+					if ( showCursor )
+					{
+						if ( !player.shootmode )
+						{
+							if ( players[player.playernum]->inventoryUI.selectedItemCursorFrame )
+							{
+								players[player.playernum]->inventoryUI.selectedItemCursorFrame->setDisabled(false);
+								player.inventoryUI.updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize(), getSlotSize(), 
+									inputs.getVirtualMouse(player.playernum)->draw_cursor);
+							}
+						}
+						else if ( player.shootmode )
+						{
+							if ( shootmodeSelectedSlotCursor )
+							{
+								shootmodeSelectedSlotCursor->setDisabled(false);
+								bool snapCursor = !inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
+								if ( useHotbarFaceMenu && faceMenuSnapCursorInstantly )
+								{
+									snapCursor = true;
+								}
+								updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize(), getSlotSize(), snapCursor);
+							}
+						}
+					}
+					else
+					{
+						highlightSlotImg->disabled = true;
+					}
+				}
+			}
+			else
+			{
+				updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+			}
+		}
+		else
+		{
+			updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+		}
+	}
+}
+
+bool Player::Hotbar_t::warpMouseToHotbar(const int hotbarSlot, Uint32 flags)
+{
+	if ( !hotbarFrame || hotbarSlot < 0 || hotbarSlot >= NUM_HOTBAR_SLOTS )
+	{
+		return false;
+	}
+	if ( auto slotFrame = getHotbarSlotFrame(hotbarSlot) )
+	{
+		slotFrame->warpMouseToFrame(player.playernum, flags);
+		return true;
+	}
+	return false;
+}
+
+Frame* Player::Hotbar_t::getHotbarSlotFrame(const int hotbarSlot)
+{
+	if ( !hotbarFrame || hotbarSlot < 0 || hotbarSlot >= NUM_HOTBAR_SLOTS )
+	{
+		return nullptr;
+	}
+
+	char slotname[32];
+	snprintf(slotname, sizeof(slotname), "hotbar slot %d", hotbarSlot);
+	return hotbarFrame->findFrame(slotname);
 }
 
 static Uint32 gui_ticks = 0u;
@@ -1184,9 +6330,9 @@ void doFrames() {
 	{
 		while ( gui_ticks < ticks )
 		{
-			(void)gui->process();
 			++gui_ticks;
 		}
+		(void)gui->process();
 		gui->draw();
 	}
 }

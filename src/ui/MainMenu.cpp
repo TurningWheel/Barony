@@ -41,10 +41,10 @@ namespace MainMenu {
 	static int main_menu_cursor_y = 0;
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
 
-	static const char* bigfont_outline = "fonts/pixelmix.ttf#18#2";
-	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#18#0";
+	static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
+	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
 	static const char* smallfont_outline = "fonts/pixel_maz.ttf#14#2";
-	static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#14#2";
+	static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#14#0";
 	static const char* menu_option_font = "fonts/pixel_maz.ttf#24#2";
 
 	static inline void soundToggleMenu() {
@@ -100,7 +100,7 @@ namespace MainMenu {
 		}
 
 		// bob cursor
-		const float bobrate = (float)PI * 2.f / (float)TICKS_PER_SECOND;
+		const float bobrate = (float)PI * 2.f / (float)fpsLimit;
 		main_menu_cursor_bob += bobrate;
 		if (main_menu_cursor_bob >= (float)PI * 2.f) {
 			main_menu_cursor_bob -= (float)PI * 2.f;
@@ -131,7 +131,7 @@ namespace MainMenu {
 
 	static void updateSliderArrows(Frame& frame) {
 		bool drawSliders = false;
-		auto selectedWidget = frame.findSelectedWidget();
+		auto selectedWidget = frame.findSelectedWidget(0);
 		if (selectedWidget && selectedWidget->getType() == Widget::WIDGET_SLIDER) {
 			auto slider = static_cast<Slider*>(selectedWidget);
 			if (slider->isActivated() && slider->getOrientation() == Slider::SLIDER_HORIZONTAL) {
@@ -270,12 +270,6 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	static int story_text_pause = 0;
-	static int story_text_scroll = 0;
-	static int story_text_section = 0;
-	static float story_text_writer = 0.f;
-	static bool story_text_end = false;
-
 	static const char* intro_text =
 	u8"Long ago, the bustling town of Hamlet was the envy of all its neighbors,\nfor it was the most thriving city in all the land.#"
 	u8"Its prosperity was unmatched for generations until the evil Baron Herx came\nto power.#"
@@ -294,11 +288,11 @@ namespace MainMenu {
 			"backdrop"
 		);
 
-		story_text_pause = 0;
-		story_text_scroll = 0;
-		story_text_section = 0;
-		story_text_writer = 0.f;
-		story_text_end = false;
+		static int story_text_pause = 0;
+		static int story_text_section = 0;
+		static float story_text_scroll = 0.f;
+		static float story_text_writer = 0.f;
+		static bool story_text_end = false;
 
 		auto back_button = main_menu_frame->addButton("back");
 		back_button->setText("Skip story");
@@ -342,21 +336,33 @@ namespace MainMenu {
 		field->setColor(makeColor(255, 255, 255, 255));
 
 		textbox1->setTickCallback([](Widget& widget){
+			const float inc = 1.f * ((float)TICKS_PER_SECOND / (float)fpsLimit);
 			auto textbox1 = static_cast<Frame*>(&widget);
 			auto story_font = Font::get(bigfont_outline); assert(story_font);
-			if (story_text_scroll > 0) {
-				auto textbox2 = textbox1->findFrame("story_text_box");
-				assert(textbox2);
-				auto size = textbox2->getActualSize();
-				++size.y;
-				textbox2->setActualSize(size);
-				--story_text_scroll;
+			if (story_text_scroll > 0.f) {
+				int old_story_text_scroll = (int)story_text_scroll;
+				story_text_scroll -= inc;
+				if (story_text_scroll < 0.f) {
+					story_text_scroll = 0.f;
+				}
+				bool advanced_image = false;
+				if (old_story_text_scroll >= story_font->height() &&
+					story_text_scroll <= story_font->height()) {
+					advanced_image = true;
+				}
+				if ((int)story_text_scroll != old_story_text_scroll) {
+					auto textbox2 = textbox1->findFrame("story_text_box");
+					assert(textbox2);
+					auto size = textbox2->getActualSize();
+					++size.y;
+					textbox2->setActualSize(size);
+				}
 				if (story_text_section % 2 == 0) {
 					auto backdrop = main_menu_frame->findImage("backdrop");
 					if (backdrop) {
 						Uint8 c = 255 * (fabs(story_text_scroll - story_font->height()) / story_font->height());
 						backdrop->color = makeColor(c, c, c, 255);
-						if (c == 0) {
+						if (advanced_image) {
 							char c = backdrop->path[backdrop->path.size() - 5];
 							backdrop->path[backdrop->path.size() - 5] = c + 1;
 						}
@@ -374,7 +380,7 @@ namespace MainMenu {
 						}
 					}
 				} else {
-					--story_text_writer;
+					story_text_writer -= 1.f;
 					if (story_text_writer <= 0.f) {
 						story_text_writer = fmodf(story_text_writer, 1.f);
 						auto textbox2 = textbox1->findFrame("story_text_box");
@@ -388,20 +394,20 @@ namespace MainMenu {
 							char c = intro_text[len];
 							if (c == '#') {
 								++story_text_section;
-								story_text_pause = TICKS_PER_SECOND * 5;
+								story_text_pause = fpsLimit * 5;
 								c = '\n';
 							} else if (c == ',') {
-								story_text_writer += TICKS_PER_SECOND / 5.f;
+								story_text_writer += fpsLimit / 5.f;
 							} else if (c == '.') {
-								story_text_writer += TICKS_PER_SECOND / 2.f;
+								story_text_writer += fpsLimit / 2.f;
 							} else {
-								story_text_writer += TICKS_PER_SECOND / 30.f;
+								story_text_writer += fpsLimit / 30.f;
 							}
 							buf[len] = c;
 							buf[len + 1] = '\0';
 							text->setText(buf);
 						} else {
-							story_text_pause = TICKS_PER_SECOND * 5;
+							story_text_pause = fpsLimit * 5;
 							story_text_end = true;
 						}
 					}
@@ -1190,7 +1196,7 @@ namespace MainMenu {
 					image->path = "images/ui/Main Menus/Settings/Settings_Left_Backing00.png";
 				}
 			}
-			auto selectedWidget = widget.findSelectedWidget();
+			auto selectedWidget = widget.findSelectedWidget(0);
 			if (selectedWidget) {
 				std::string setting;
 				auto name = std::string(selectedWidget->getName());
@@ -1289,9 +1295,8 @@ namespace MainMenu {
 				std::string("setting_") + std::string(setting.name) + std::string("_button"),
 				std::string("setting_") + std::string(setting.name) + std::string("_customize_button"));
 		default:
-			assert(0 && "Unknown setting type!");
 			return std::make_pair(
-				std::string(""),
+				std::string("setting_") + std::string(setting.name) + std::string("_dropdown"),
 				std::string(""));
 		}
 	}
@@ -1750,21 +1755,28 @@ namespace MainMenu {
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
+		static float credits_scroll = 0.f;
+
 		auto credits = main_menu_frame->addFrame("credits");
 		credits->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		credits->setActualSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY + font->height() * 80});
+		credits->setActualSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY + font->height() * 81});
 		credits->setScrollBarsEnabled(false);
 		credits->setAllowScrollBinds(false);
 		credits->setHollow(true);
 		credits->setBorder(0);
 		credits->setTickCallback([](Widget& widget){
-			auto credits = static_cast<Frame*>(&widget);
-			auto size = credits->getActualSize();
-			size.y += 1;
-			if (size.y >= size.h) {
-				size.y = 0;
+			const float inc = 1.f * ((float)TICKS_PER_SECOND / (float)fpsLimit);
+			int old_credits_scroll = (int)credits_scroll;
+			credits_scroll += inc;
+			if (old_credits_scroll != (int)credits_scroll) {
+				auto credits = static_cast<Frame*>(&widget);
+				auto size = credits->getActualSize();
+				size.y += 1;
+				if (size.y >= size.h) {
+					size.y = 0;
+				}
+				credits->setActualSize(size);
 			}
-			credits->setActualSize(size);
 			});
 
 		// titles
@@ -3650,7 +3662,7 @@ namespace MainMenu {
 			"backdrop"
 		);
 
-		static const char* banner_font = "fonts/pixel_maz.ttf#32#2";
+		static const char* banner_font = "fonts/pixel_maz.ttf#36#2";
 
 		auto banner = card->addField("invite_banner", 64);
 		banner->setText((std::string("PLAYER ") + std::to_string(index + 1)).c_str());
@@ -3703,7 +3715,7 @@ namespace MainMenu {
 			"backdrop"
 		);
 
-		static const char* banner_font = "fonts/pixel_maz.ttf#32#2";
+		static const char* banner_font = "fonts/pixel_maz.ttf#36#2";
 
 		auto banner = card->addField("invite_banner", 64);
 		banner->setText("INVITE");
@@ -4182,7 +4194,7 @@ namespace MainMenu {
 			}
 			});
 
-		static const char* pixel_maz_outline = "fonts/pixel_maz.ttf#32#2";
+		static const char* pixel_maz_outline = "fonts/pixel_maz.ttf#36#2";
 
 		auto window_title = settings->addField("window_title", 64);
 		window_title->setFont(pixel_maz_outline);

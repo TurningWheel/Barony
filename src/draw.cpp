@@ -15,7 +15,6 @@
 #include "hash.hpp"
 #include "entity.hpp"
 #include "player.hpp"
-#include "magic/magic.hpp"
 #include "ui/Frame.hpp"
 #ifndef NINTENDO
 #include "editor.hpp"
@@ -385,7 +384,7 @@ int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha )
 	auto format = mainsurface->format;
 	Uint32 c = (color & (format->Rmask | format->Gmask | format->Bmask)) | (alpha << format->Ashift);
 	auto image = Image::get("images/system/white.png");
-	image->drawColor(nullptr, *src, c);
+	image->drawColor(nullptr, *src, SDL_Rect{0, 0, xres, yres}, c);
 	return 0;
 }
 
@@ -1427,6 +1426,23 @@ void drawEntities3D(view_t* camera, int mode)
 		return;
 	}
 
+	enum SpriteTypes
+	{
+		SPRITE_ENTITY,
+		SPRITE_HPBAR
+	};
+	std::vector<std::tuple<real_t, void*, SpriteTypes>> spritesToDraw;
+
+	int currentPlayerViewport = -1;
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		if ( &cameras[c] == camera )
+		{
+			currentPlayerViewport = c;
+			break;
+		}
+	}
+
 	glEnable(GL_SCISSOR_TEST);
 	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	node_t* nextnode = nullptr;
@@ -1436,7 +1452,7 @@ void drawEntities3D(view_t* camera, int mode)
 		nextnode = node->next;
 		if ( node->next == nullptr && node->list == map.entities )
 		{
-			if ( map.worldUI->first )
+			if ( map.worldUI && map.worldUI->first )
 			{
 				// quick way to attach worldUI to the end of map.entities.
 				nextnode = map.worldUI->first;
@@ -1463,15 +1479,6 @@ void drawEntities3D(view_t* camera, int mode)
 		if ( entity->flags[OVERDRAW] && splitscreen )
 		{
 			// need to skip some HUD models in splitscreen.
-			int currentPlayerViewport = -1;
-			for ( int c = 0; c < MAXPLAYERS; ++c )
-			{
-				if ( &cameras[c] == camera )
-				{
-					currentPlayerViewport = c;
-					break;
-				}
-			}
 			if ( currentPlayerViewport >= 0 )
 			{
 				if ( entity->behavior == &actHudWeapon 
@@ -1515,16 +1522,35 @@ void drawEntities3D(view_t* camera, int mode)
 						int playersTag = playerEntityMatchesUid(entity->parent);
 						if ( playersTag >= 0 )
 						{
-							glDrawSpriteFromImage(camera, entity, stats[playersTag]->name, mode);
+							real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+								+ pow(camera->y * 16.0 - entity->y, 2));
+							spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
 						}
 					}
 					else if ( entity->behavior == &actSpriteWorldTooltip )
 					{
-						glDrawWorldUISprite(camera, entity, mode);
+						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+							+ pow(camera->y * 16.0 - entity->y, 2));
+						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+					}
+					else if ( entity->behavior == &actDamageGib )
+					{
+						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+							+ pow(camera->y * 16.0 - entity->y, 2));
+						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
 					}
 					else
 					{
-						glDrawSprite(camera, entity, mode);
+						if ( !entity->flags[OVERDRAW] )
+						{
+							real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+								+ pow(camera->y * 16.0 - entity->y, 2));
+							spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+						}
+						else
+						{
+							glDrawSprite(camera, entity, mode);
+						}
 					}
 				}
 			}
@@ -1543,6 +1569,55 @@ void drawEntities3D(view_t* camera, int mode)
 			{
 				glDrawSprite(camera, entity, mode);
 			}
+		}
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		for ( auto& enemybar : enemyHPDamageBarHandler[i].HPBars )
+		{
+			real_t camDist = (pow(camera->x * 16.0 - enemybar.second.worldX, 2)
+				+ pow(camera->y * 16.0 - enemybar.second.worldY, 2));
+			spritesToDraw.push_back(std::make_tuple(camDist, &enemybar, SPRITE_HPBAR));
+		}
+	}
+
+	std::sort(spritesToDraw.begin(), spritesToDraw.end(), 
+		[](const std::tuple<real_t, void*, SpriteTypes>& lhs, const std::tuple<real_t, void*, SpriteTypes>& rhs) {
+		return lhs > rhs;
+	});
+	for ( auto& distSpriteType : spritesToDraw )
+	{
+		if ( std::get<2>(distSpriteType) == SpriteTypes::SPRITE_ENTITY )
+		{
+			Entity* entity = (Entity*)std::get<1>(distSpriteType);
+			if ( entity->behavior == &actSpriteNametag )
+			{
+				int playersTag = playerEntityMatchesUid(entity->parent);
+				if ( playersTag >= 0 )
+				{
+					glDrawSpriteFromImage(camera, entity, stats[playersTag]->name, mode);
+				}
+			}
+			else if ( entity->behavior == &actSpriteWorldTooltip )
+			{
+				glDrawWorldUISprite(camera, entity, mode);
+			}
+			else if ( entity->behavior == &actDamageGib )
+			{
+				char buf[16];
+				snprintf(buf, sizeof(buf), "%d", entity->skill[0]);
+				glDrawSpriteFromImage(camera, entity, buf, mode);
+			}
+			else
+			{
+				glDrawSprite(camera, entity, mode);
+			}
+		}
+		else if ( std::get<2>(distSpriteType) == SpriteTypes::SPRITE_HPBAR )
+		{
+			auto enemybar = (std::pair<Uint32, EnemyHPDamageBarHandler::EnemyHPDetails>*)std::get<1>(distSpriteType);
+			glDrawEnemyBarSprite(camera, mode, &enemybar->second, false);
 		}
 	}
 

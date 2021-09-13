@@ -103,6 +103,14 @@ public:
 	//! virtual screen size (height)
 	static const int virtualScreenY = 720;
 
+	//! init ui engine
+	static void guiInit();
+	static void fboInit();
+
+	//! destroy ui engine
+	static void guiDestroy();
+	static void fboDestroy();
+
 	//! draws the frame and all of its subelements
 	void draw();
 
@@ -226,6 +234,12 @@ public:
 	//! @return true if it is, false otherwise
 	bool capturesMouseInRealtimeCoords(SDL_Rect* curSize = nullptr, SDL_Rect* curActualSize = nullptr);
 
+	//! warps the player's mouse cursor to the center location of the frame
+	void warpMouseToFrame(const int player, Uint32 flags) const;
+
+	//! gets the physical screen-space x/y (not relative to current parent - but to the absolute root)
+	SDL_Rect getAbsoluteSize() const;
+
 	//! set the list selection to the given index
 	//! @param index the index to set the list selection to
 	void setSelection(int index);
@@ -260,6 +274,8 @@ public:
 	const bool						isActivated() const { return activated; }
 	const SDL_Rect&					getListOffset() const { return listOffset; }
 	int								getSelection() const { return selection; }
+	real_t							getOpacity() const { return opacity; }
+	const bool						getInheritParentFrameOpacity() const { return inheritParentFrameOpacity; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -276,6 +292,8 @@ public:
 	void	setScrollBarsEnabled(const bool _scrollbars) { scrollbars = _scrollbars; }
 	void	setAllowScrollBinds(const bool _allow) { allowScrollBinds = _allow; }
 	void	setListOffset(SDL_Rect _size) { listOffset = _size; }
+	void	setInheritParentFrameOpacity(const bool _inherit) { inheritParentFrameOpacity = _inherit; }
+	void	setOpacity(const real_t _opacity) { opacity = _opacity; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -300,6 +318,8 @@ private:
 	bool scrollbars = true;								//!< must be true for sliders to be drawn/usable
 	bool activated = false;								//!< true if this frame is consuming input (to navigate list entries)
 	SDL_Rect listOffset{0, 0, 0, 0};					//!< frame list offset in x, y
+	real_t opacity = 100.0;								//!< opacity multiplier of elements within this frame (image/fields etc)
+	bool inheritParentFrameOpacity = true;				//!< if true, uses parent frame opacity
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;
@@ -318,15 +338,16 @@ private:
 	//! draws the frame and all of its subelements
 	//! @param _size real position of the frame onscreen
 	//! @param _actualSize offset into the frame space (scroll)
-	//! @param selectedWidget the currently selected widget, if any
-	void draw(SDL_Rect _size, SDL_Rect _actualSize, Widget* selectedWidget);
+	//! @param selectedWidgets the currently selected widgets, if any
+	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets);
 
 	//! handle clicks and other events
 	//! @param _size real position of the frame onscreen
 	//! @param _actualSize offset into the frame space (scroll)
+	//! @param selectedWidgets the currently selected widgets, if any
 	//! @param usable true if another object doesn't have the mouse's attention, false otherwise
 	//! @return compiled results of frame processing
-	result_t process(SDL_Rect _size, SDL_Rect actualSize, Widget* selectedWidget, const bool usable);
+	result_t process(SDL_Rect _size, SDL_Rect actualSize, const std::vector<Widget*>& selectedWidgets, const bool usable);
 };
 
 // root frame object

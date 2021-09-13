@@ -1407,6 +1407,8 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				chance = 0; // not allowed to control summons
 			}
 
+			bool doPacify = false;
+
 			if ( parent && hit.entity == parent )
 			{
 				// caster hit themselves somehow... get pacified.
@@ -1461,7 +1463,11 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				}
 			}
 			else if ( parent && rand() % 100 < chance
-				&& (hitstats->leader_uid == 0 || (allowStealFollowers && hitstats->leader_uid != parent->getUID()) )
+				&& ( (hitstats->leader_uid == 0 && hit.entity->getUID() != casterStats->leader_uid)
+					|| (allowStealFollowers 
+						&& hitstats->leader_uid != parent->getUID() // my target is not already following me
+						&& hit.entity->getUID() != casterStats->leader_uid // my target is not my leader (otherwise we're each other's leader and that's bad)
+						) ) 
 				&& player < 0 
 				&& hitstats->type != SHOPKEEPER
 				&& currentCharmedFollowerCount == 0
@@ -1475,8 +1481,28 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				{
 					whoToFollow = parent->monsterAllyGetPlayerLeader();
 				}
+				else if ( parent->behavior == &actMonster )
+				{
+					if (Entity* leaderOfTarget = uidToEntity(casterStats->leader_uid))
+					{
+						whoToFollow = leaderOfTarget;
+						if ( whoToFollow->getUID() == casterStats->leader_uid )
+						{
+							// this is my leader, ignore
+							doPacify = true;
+						}
+						if ( Stat* whoToFollowStats = whoToFollow->getStats() )
+						{
+							if ( whoToFollowStats->leader_uid == parent->getUID() )
+							{
+								// i am their leader, ignore
+								doPacify = true;
+							}
+						}
+					}
+				}
 
-				if ( forceFollower(*whoToFollow, *hit.entity) )
+				if ( !doPacify && forceFollower(*whoToFollow, *hit.entity) )
 				{
 					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_CHARM_MONSTER, 0);
 					createParticleCharmMonster(hit.entity);
@@ -1537,6 +1563,11 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				}
 			}
 			else
+			{
+				doPacify = true;
+			}
+
+			if ( doPacify )
 			{
 				// had a chance, or currently in service of another monster, or a player, or spell no parent, failed to completely charm. 
 				// loses will to attack.

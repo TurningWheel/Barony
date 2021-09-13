@@ -15,7 +15,6 @@ See LICENSE for details.
 #include "stat.hpp"
 #include "entity.hpp"
 #include "items.hpp"
-#include "magic/magic.hpp"
 
 // Constructor
 Stat::Stat(Sint32 sprite) :

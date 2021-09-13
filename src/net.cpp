@@ -3360,6 +3360,9 @@ void clientHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "LVLI", 4))
 	{
 		// Note - set to 250 ticks, higher values will require resending/using 16 bit data.
+		players[clientnum]->hud.xpBar.animateState = Player::HUD_t::AnimateStates::ANIMATE_LEVELUP_RISING;
+		players[clientnum]->hud.xpBar.xpLevelups++;
+
 		stats[clientnum]->PLAYER_LVL_STAT_TIMER[STAT_STR] = (Uint8)net_packet->data[5];
 		stats[clientnum]->PLAYER_LVL_STAT_TIMER[STAT_DEX] = (Uint8)net_packet->data[6];
 		stats[clientnum]->PLAYER_LVL_STAT_TIMER[STAT_CON] = (Uint8)net_packet->data[7];
@@ -3712,6 +3715,7 @@ void clientHandlePacket()
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			minimapPings[i].clear(); // clear minimap pings
+			enemyHPDamageBarHandler[i].HPBars.clear();
 		}
 		globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 

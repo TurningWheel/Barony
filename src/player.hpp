@@ -16,6 +16,7 @@
 #include "messages.hpp"
 #include "engine/audio/sound.hpp"
 #include "input.hpp"
+#include "ui/Frame.hpp"
 
 
 //Splitscreen support stuff.
@@ -23,9 +24,6 @@
 //TODO: Move these into each and every individual player.
 extern Entity* selectedEntity[MAXPLAYERS];
 extern Entity* lastSelectedEntity[MAXPLAYERS];
-extern Sint32 mousex, mousey;
-extern Sint32 omousex, omousey;
-extern Sint32 mousexrel, mouseyrel;
 
 /*
  * TODO: Will need to make messages work for each hotseat player.
@@ -59,7 +57,6 @@ extern bool gamepad_menuy_invert;
 
 class GameController
 {
-	friend class Input;
 	SDL_GameController* sdl_device;
 	SDL_Haptic* sdl_haptic;
 	int id;
@@ -286,12 +283,6 @@ public:
 	float x_forceMaxForwardThreshold = 0.7;
 	float x_forceMaxBackwardThreshold = 0.5;
 	float y_forceMaxStrafeThreshold = 0.7;
-
-	/*
-	 * Uses dpad to move the cursor around the inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleInventoryMovement(const int player);
 
 	/*
 	 * Uses dpad to move the cursor around a chest's inventory and select items.
@@ -644,13 +635,51 @@ public:
 	const int camera_y2() const { return cam->winy + cam->winh; }
 	const int camera_width() const { return cam->winw; }
 	const int camera_height() const { return cam->winh; }
+	const int camera_virtualx1() const { return cam->winx * ((float)Frame::virtualScreenX / xres); }
+	const int camera_virtualx2() const { return (cam->winx + cam->winw)* ((float)Frame::virtualScreenX / xres); }
+	const int camera_virtualy1() const { return cam->winy * ((float)Frame::virtualScreenY / yres); }
+	const int camera_virtualy2() const { return (cam->winy + cam->winh) * ((float)Frame::virtualScreenY / yres); }
+	const int camera_virtualWidth() const { return cam->winw * ((float)Frame::virtualScreenX / xres); }
+	const int camera_virtualHeight() const { return cam->winh * ((float)Frame::virtualScreenY / yres); }
 	const int camera_midx() const { return camera_x1() + camera_width() / 2; }
 	const int camera_midy() const { return camera_y1() + camera_height() / 2; }
 	const bool isLocalPlayer() const;
 	const bool isLocalPlayerAlive() const;
 
+	class GUI_t
+	{
+		Player& player;
+	public:
+		GUI_t(Player& p) :
+			player(p)
+		{};
+		~GUI_t() {};
+		enum GUIModules
+		{
+			MODULE_NONE,
+			MODULE_INVENTORY,
+			MODULE_SHOP,
+			MODULE_CHEST,
+			MODULE_REMOVECURSE,
+			MODULE_IDENTIFY,
+			MODULE_TINKERING,
+			MODULE_FOLLOWERMENU,
+			MODULE_CHARACTERSHEET,
+			MODULE_SKILLS_LIST,
+			MODULE_BOOK_VIEW,
+			MODULE_HOTBAR
+		};
+		GUIModules activeModule = MODULE_NONE;
+		void activateModule(GUIModules module);
+		bool warpControllerToModule(bool moveCursorInstantly);
+		bool bActiveModuleUsesInventory();
+		bool bActiveModuleHasNoCursor();
+		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
+		bool handleInventoryMovement(); // controller movement for hotbar/inventory
+	} GUI;
+
 	//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
-	void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
+	void openStatusScreen(const int whichGUIMode, const int whichInventoryMode, const int whichModule = Player::GUI_t::MODULE_INVENTORY); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
 	void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose);
 	bool shootmode = false;
 	int inventory_mode = INVENTORY_MODE_ITEM;
@@ -666,6 +695,70 @@ public:
 		int selectedSlotX = 0;
 		int selectedSlotY = 0;
 	public:
+		Frame* frame = nullptr;
+		Frame* tooltipFrame = nullptr;
+		Frame* interactFrame = nullptr;
+		Frame* tooltipPromptFrame = nullptr;
+		Frame* selectedItemCursorFrame = nullptr;
+		std::unordered_map<int, Frame*> slotFrames;
+
+		struct Cursor_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+			int animateSetpointX = 0;
+			int animateSetpointY = 0;
+			int animateStartX = 0;
+			int animateStartY = 0;
+			Uint32 lastUpdateTick = 0;
+			const int cursorToSlotOffset = 7;
+		};
+		Cursor_t cursor;
+
+		struct SelectedItemAnimate_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+		};
+		SelectedItemAnimate_t selectedItemAnimate;
+
+		struct ItemTooltipDisplay_t
+		{
+			Uint32 type;
+			int status;
+			int beatitude;
+			int count;
+			Uint32 appearance;
+			bool identified;
+			Uint32 uid;
+
+			int playernum;
+			Sint32 playerLVL;
+			Sint32 playerEXP;
+			Sint32 playerSTR;
+			Sint32 playerDEX;
+			Sint32 playerCON;
+			Sint32 playerINT;
+			Sint32 playerPER;
+			Sint32 playerCHR;
+
+			int opacitySetpoint = 100;
+			real_t opacityAnimate = 1.0;
+			real_t expandAnimate = 1.0;
+			int expandSetpoint = 1;
+			real_t expandCurrent = 1.0;
+			bool expanded = false;
+
+			int tooltipDescriptionHeight = 0;
+			int tooltipWidth = 0;
+			int tooltipHeight = 0;
+
+			bool isItemSameAsCurrent(const int player, Item* newItem);
+			void updateItem(const int player, Item* newItem);
+			ItemTooltipDisplay_t();
+		};
+		ItemTooltipDisplay_t itemTooltipDisplay;
+
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
 		Inventory_t(Player& p) : 
@@ -681,16 +774,20 @@ public:
 		const int getTotalSize() const { return sizex * sizey; }
 		const int getSizeX() const { return sizex; }
 		const int getSizeY() const { return sizey; }
-		const int getStartX() const;
-		const int getStartY() const;
-		const int getSlotSize() const { return static_cast<int>(40 * uiscale_inventory); }
+		const int getSlotSize() const { return 40; }
 		void setSizeY(int size) { sizey = size; }
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
 		const int getSelectedSlotX() const { return selectedSlotX; }
 		const int getSelectedSlotY() const { return selectedSlotY; }
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
-		const int getSelectedSlotPositionX(Item* snapToItem) const;
-		const int getSelectedSlotPositionY(Item* snapToItem) const;
+		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags) const;
+		void processInventory();
+		void updateInventory();
+		void updateCursor();
+		void updateInventoryItemTooltip();
+		void updateSelectedItemAnimation();
+		void updateItemContextMenu();
+		void activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt);
 		void resetInventory()
 		{
 			if ( bNewInventoryLayout )
@@ -723,6 +820,8 @@ public:
 			}
 			return 1;
 		}
+		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
+		Frame* getInventorySlotFrame(int x, int y) const;
 
 		enum PaperDollRows : int
 		{
@@ -775,22 +874,22 @@ public:
 	class BookGUI_t
 	{
 		Player& player;
-		static const int BOOK_TITLE_PADDING = 2; //The amount of empty space above and below the book titlename.
-		static const int FLIPMARGIN = 240;
-		static const int DRAGHEIGHT_BOOK = 32;
 	public:
-		static const int BOOK_PAGE_WIDTH = 248;
-		static const int BOOK_PAGE_HEIGHT = 256;
+		static const int BOOK_PAGE_WIDTH = 220;
+		static const int BOOK_PAGE_HEIGHT = 260;
 		BookGUI_t(Player& p) : player(p)
 		{};
 		~BookGUI_t() {};
+
+		real_t bookFadeInAnimationY = 0.0;
+
+		Frame* bookFrame = nullptr;
 		int offsetx = 0;
 		int offsety = 0;
-		bool draggingBookGUI = false;
 		bool bBookOpen = false;
-		node_t* bookPageNode = nullptr;
 		Item* openBookItem = nullptr;
-		book_t* book = nullptr;
+		std::string openBookName = "";
+		int currentBookPage = 0;
 		const int getStartX() const
 		{
 			return ((player.camera_midx() - (getBookWidth() / 2)) + offsetx);
@@ -803,7 +902,8 @@ public:
 		const int getBookHeight() const { return bookgui_img->h; }
 		void updateBookGUI();
 		void closeBookGUI();
-		void openBook(struct book_t* book, Item* item);
+		void createBookGUI();
+		void openBook(int index, Item* item);
 	} bookGUI;
 
 	class CharacterSheet_t
@@ -825,12 +925,58 @@ public:
 		bool lock_right_sidebar = false;
 		int proficienciesPage = 0;
 		int attributespage = 0;
+
+		enum SheetElements
+		{
+			SHEET_UNSELECTED,
+			SHEET_OPEN_LOG,
+			SHEET_OPEN_MAP,
+			SHEET_TIMER,
+			SHEET_GOLD,
+			SHEET_DUNGEON_FLOOR,
+			SHEET_CHAR_CLASS,
+			SHEET_CHAR_RACE_SEX,
+			SHEET_SKILL_LIST,
+			SHEET_STR,
+			SHEET_DEX,
+			SHEET_CON,
+			SHEET_INT,
+			SHEET_PER,
+			SHEET_CHR,
+			SHEET_ATK,
+			SHEET_AC,
+			SHEET_POW,
+			SHEET_RES,
+			SHEET_RGN,
+			SHEET_WGT,
+			SHEET_ENUM_END
+		};
+
+		Frame* sheetFrame = nullptr;
+		SheetElements selectedElement = SHEET_UNSELECTED;
+		void selectElement(SheetElements element, bool moveCursor = false);
+		void createCharacterSheet();
+		void processCharacterSheet();
+		void updateGameTimer();
+		void updateStats();
+		void updateAttributes();
+		void updateCharacterInfo();
 	} characterSheet;
 
 	class HUD_t
 	{
 		Player& player;
 	public:
+		Frame* hudFrame = nullptr;
+		Frame* xpFrame = nullptr;
+		Frame* hpFrame = nullptr;
+		Frame* mpFrame = nullptr;
+		Frame* enemyBarFrame = nullptr;
+		Frame* enemyBarFrameHUD = nullptr;
+		real_t hudDamageTextVelocityX = 0.0;
+		real_t hudDamageTextVelocityY = 0.0;
+		Frame* cursorFrame = nullptr;
+
 		Entity* weapon = nullptr;
 		Entity* arm = nullptr;
 		Entity* magicLeftHand = nullptr;
@@ -857,6 +1003,45 @@ public:
 		OPENAL_SOUND* bowDrawingSoundChannel = NULL;
 		ALboolean bowDrawingSoundPlaying = 0;
 #endif
+		struct Cursor_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+			int animateSetpointX = 0;
+			int animateSetpointY = 0;
+			int animateStartX = 0;
+			int animateStartY = 0;
+			Uint32 lastUpdateTick = 0;
+			const int cursorToSlotOffset = 7;
+		};
+		Cursor_t cursor;
+
+		enum AnimateStates : int {
+			ANIMATE_NONE,
+			ANIMATE_MOVING,
+			ANIMATE_LEVELUP_RISING,
+			ANIMATE_LEVELUP_FALLING
+		};
+
+		struct Bar_t
+		{
+			real_t animateValue = 0.0;
+			real_t animateValue2 = 0.0;
+			real_t animatePreviousSetpoint = 0.0;
+			Sint32 animateSetpoint = 0;
+			Uint32 animateTicks = 0;
+			AnimateStates animateState = ANIMATE_NONE;
+			Uint32 xpLevelups = 0;
+			real_t maxValue = 0.0;
+			real_t fadeIn = 0.0;
+			real_t fadeOut = 0.0;
+			real_t widthMultiplier = 1.0;
+		};
+		Bar_t xpBar;
+		Bar_t HPBar;
+		Bar_t MPBar;
+		Bar_t enemyBar;
+
 		HUD_t(Player& p) : player(p)
 		{};
 		~HUD_t() {};
@@ -884,12 +1069,35 @@ public:
 		void drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const;
 		void drawActionIcon(SDL_Rect& pos, int skill) const;
 		const int getActionIconForPlayer(ActionPrompts prompt) const;
+		void processHUD();
+		int XP_FRAME_WIDTH = 650;
+		int XP_FRAME_START_Y = 44;
+		int XP_FRAME_HEIGHT = 34;
+		void updateXPBar();
+		int HPMP_FRAME_WIDTH = 276;
+		int HPMP_FRAME_START_X = 14;
+		int HPMP_FRAME_START_Y = 106;
+		int HPMP_FRAME_HEIGHT = 34;
+		void updateHPBar();
+		void updateMPBar();
+		const int ENEMYBAR_FRAME_WIDTH = 564;
+		const int ENEMYBAR_BAR_WIDTH = 556;
+		const int ENEMYBAR_FRAME_START_Y = 182;
+		const int ENEMYBAR_FRAME_HEIGHT = 44;
+		void updateEnemyBar(Frame* whichFrame);
+		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
+		void resetBars();
+		void updateFrameTooltip(Item* item, const int x, const int y);
+		void updateCursor();
+		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
+		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
 	} hud;
 
 	class Magic_t
 	{
 		Player& player;
 		spell_t* selected_spell = nullptr; //The spell the player has currently selected.
+		spell_t* quick_cast_spell = nullptr; //Spell ready for quick-casting
 	public:
 		spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { nullptr, nullptr, nullptr, nullptr, nullptr };
 		int selected_spell_last_appearance = -1;
@@ -909,12 +1117,17 @@ public:
 				selected_spell_alternate[c] = nullptr;
 			}
 			selected_spell_last_appearance = -1;
+			quick_cast_spell = nullptr;
 		}
 		void equipSpell(spell_t* spell) 
 		{ 
 			selected_spell = spell; 
 		}
+		void setQuickCastSpellFromInventory(Item* item);
+		bool doQuickCastSpell() { return quick_cast_spell != nullptr; }
+		void resetQuickCastSpell() { quick_cast_spell = nullptr; }
 		spell_t* selectedSpell() const { return selected_spell; }
+		spell_t* quickCastSpell() const { return quick_cast_spell; }
 
 	} magic;
 	class PlayerSettings_t
@@ -960,6 +1173,9 @@ public:
 		static const int MESSAGE_FADE_RATE = 10;
 		TTF_Font* font = ttf16;
 		Uint32 old_sdl_ticks;
+		bool chatboxMovedResize = false;
+		SDL_Rect chatboxLeftAlignedPos;
+		SDL_Rect chatboxTopAlignedPos;
 		Player& player;
 	public:
 		static const int ADD_MESSAGE_BUFFER_LENGTH = 256;
@@ -981,6 +1197,11 @@ public:
 		int getMessageZoneStartY();
 		//Maximum number of messages displayed on screen at once before the oldest message is automatically deleted.
 		int getMaxTotalLines();
+
+		static const int MESSAGE_MAX_ENTRIES = 20;
+		Frame* chatFrame = nullptr;
+		void createChatbox();
+		void processChatbox();
 
 		int fontSize() { return getHeightOfFont(font); }
 	} messageZone;
@@ -1056,16 +1277,14 @@ public:
 		{
 			Uint32 item;
 			PaperDollSlotType slotType;
-			SDL_Rect pos { 0,0,0,0 };
 			PaperDollSlot_t()
 			{
 				item = 0;
 				slotType = SLOT_MAX;
 			}
-			bool bMouseInSlot = false;
 		};
 		std::array<PaperDollSlot_t, kNumPaperDollSlots> dollSlots;
-		const int getSlotSize() const;
+		//const int getSlotSize() const;
 		void initSlots()
 		{
 			returningItemsToInventory.clear();
@@ -1073,7 +1292,6 @@ public:
 			{
 				dollSlots[i].item = 0;
 				dollSlots[i].slotType = static_cast<PaperDollSlotType>(i);
-				dollSlots[i].bMouseInSlot = false;
 			}
 		}
 		void clear()
@@ -1082,9 +1300,6 @@ public:
 			for ( int i = 0; i < kNumPaperDollSlots; ++i )
 			{
 				dollSlots[i].item = 0;
-				dollSlots[i].bMouseInSlot = false;
-				SDL_Rect nullRect{ 0,0,0,0 };
-				dollSlots[i].pos = nullRect;
 			}
 		}
 		void drawSlots();
@@ -1094,7 +1309,6 @@ public:
 		PaperDollSlotType paperDollSlotFromCoordinates(int x, int y) const;
 		void getCoordinatesFromSlotType(PaperDollSlotType slot, int& outx, int& outy) const;
 		void selectPaperDollCoordinatesFromSlotType(PaperDollSlotType slot) const;
-		void warpMouseToPaperDollSlot(PaperDollSlotType slot);
 		std::vector<Uint32> returningItemsToInventory;
 		void warpMouseToMostRecentReturnedInventoryItem();
 	} paperDoll;
@@ -1111,6 +1325,21 @@ public:
 		int magicBoomerangHotbarSlot = -1;
 		Uint32 hotbarTooltipLastGameTick = 0;
 		SDL_Rect hotbarBox;
+		Frame* hotbarFrame = nullptr;
+		real_t selectedSlotAnimateCurrentValue = 0.0;
+
+		struct Cursor_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+			int animateSetpointX = 0;
+			int animateSetpointY = 0;
+			int animateStartX = 0;
+			int animateStartY = 0;
+			Uint32 lastUpdateTick = 0;
+			const int cursorToSlotOffset = 7;
+		};
+		Cursor_t shootmodeCursor;
 
 		// temp stuff
 		bool useHotbarRadialMenu = false;
@@ -1133,11 +1362,7 @@ public:
 		// end temp stuff
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
-		const int getStartX() const
-		{
-			return (player.camera_midx() - ((NUM_HOTBAR_SLOTS / 2) * getSlotSize()));
-		}
-		const int getSlotSize() const { return hotbar_img->w * uiscale_hotbar; }
+		const int getSlotSize() const { return 44; }
 
 		Hotbar_t(Player& p) : player(p)
 		{
@@ -1159,7 +1384,7 @@ public:
 			faceButtonTopYPosition = yres;
 			swapHotbarOnShapeshift = 0;
 			current_hotbar = 0;
-			hotbarHasFocus = false;
+			//hotbarHasFocus = false;
 			magicBoomerangHotbarSlot = -1;
 			hotbarTooltipLastGameTick = 0;
 			for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
@@ -1169,9 +1394,15 @@ public:
 			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 			{
 				hotbar[i].item = 0;
+				hotbar[i].lastItemUid = 0;
+				hotbar[i].lastItemCategory = -1;
+				hotbar[i].lastItemType = -1;
 				for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
 				{
 					hotbar_alternate[j][i].item = 0;
+					hotbar_alternate[j][i].lastItemUid = 0;
+					hotbar_alternate[j][i].lastItemCategory = -1;
+					hotbar_alternate[j][i].lastItemType = -1;
 				}
 			}
 		}
@@ -1190,11 +1421,17 @@ public:
 				slot = 0;
 			}
 			current_hotbar = slot;
-			hotbarHasFocus = true;
+			player.GUI.activateModule(GUI_t::MODULE_HOTBAR);
 		}
 		void initFaceButtonHotbar();
 		void drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos);
 		FaceMenuGroup getFaceMenuGroupForSlot(int hotbarSlot);
+		void processHotbar();
+		void updateHotbar();
+		Frame* getHotbarSlotFrame(const int hotbarSlot);
+		bool warpMouseToHotbar(const int hotbarSlot, Uint32 flags);
+		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
+		void updateCursor();
 	} hotbar;
 };
 

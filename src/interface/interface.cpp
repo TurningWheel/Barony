@@ -163,6 +163,11 @@ EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 GenericGUIMenu GenericGUI[MAXPLAYERS];
 
+int EnemyHPDamageBarHandler::maxTickLifetime = 120;
+int EnemyHPDamageBarHandler::maxTickFurnitureLifetime = 60;
+std::vector<std::pair<real_t, int>> EnemyHPDamageBarHandler::widthHealthBreakpointsMonsters;
+std::vector<std::pair<real_t, int>> EnemyHPDamageBarHandler::widthHealthBreakpointsFurniture;
+
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
 	std::make_pair(&title_bmp, "images/system/title.png"),
@@ -1361,39 +1366,59 @@ bool mouseInBounds(const int player, int x1, int x2, int y1, int y2)
 	return false;
 }
 
-hotbar_slot_t* getHotbar(int player, int x, int y, int* outSlotNum)
+hotbar_slot_t* getCurrentHotbarUnderMouse(int player, int* outSlotNum)
 {
-	if ( players[player]->hotbar.useHotbarFaceMenu )
+	if ( players[player]->hotbar.hotbarFrame )
 	{
 		for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 		{
-			auto& slotRect = players[player]->hotbar.faceButtonPositions[num];
-			if ( x >= slotRect.x && x < (slotRect.x + slotRect.w)
-				&& y >= slotRect.y && y < (slotRect.y + slotRect.h) )
+			if ( auto hotbarSlotFrame = players[player]->hotbar.getHotbarSlotFrame(num) )
 			{
-				if ( outSlotNum )
+				if ( hotbarSlotFrame->capturesMouseInRealtimeCoords() )
 				{
-					*outSlotNum = num;
+					if ( outSlotNum )
+					{
+						*outSlotNum = num;
+					}
+					return &players[player]->hotbar.slots()[num];
 				}
-				return &players[player]->hotbar.slots()[num];
 			}
 		}
-	}
-	else if ( x >= players[player]->hotbar.getStartX() 
-		&& x < players[player]->hotbar.getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar.getSlotSize())
-		&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar.getSlotSize()
-		&& y < players[player]->statusBarUI.getStartY() )
-	{
-		int relx = x - players[player]->hotbar.getStartX(); //X relative to the start of the hotbar.
-		int slot = std::max(0, std::min(relx / (players[player]->hotbar.getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
-		if ( outSlotNum )
-		{
-			*outSlotNum = slot;
-		}
-		return &players[player]->hotbar.slots()[slot]; //The slot will clearly be the x divided by the width of a slot
+		return nullptr;
 	}
 
-	return NULL;
+	//TODO UI: REMOVE
+	//if ( players[player]->hotbar.useHotbarFaceMenu )
+	//{
+	//	for ( Uint32 num = 0; num < NUM_HOTBAR_SLOTS; ++num )
+	//	{
+	//		auto& slotRect = players[player]->hotbar.faceButtonPositions[num];
+	//		if ( x >= slotRect.x && x < (slotRect.x + slotRect.w)
+	//			&& y >= slotRect.y && y < (slotRect.y + slotRect.h) )
+	//		{
+	//			if ( outSlotNum )
+	//			{
+	//				*outSlotNum = num;
+	//			}
+	//			return &players[player]->hotbar.slots()[num];
+	//		}
+	//	}
+	//}
+	//else if ( x >= players[player]->hotbar.getStartX() 
+	//	&& x < players[player]->hotbar.getStartX() + (NUM_HOTBAR_SLOTS * players[player]->hotbar.getSlotSize())
+	//	&& y >= players[player]->statusBarUI.getStartY() - players[player]->hotbar.getSlotSize()
+	//	&& y < players[player]->statusBarUI.getStartY() )
+	//{
+	//	int relx = x - players[player]->hotbar.getStartX(); //X relative to the start of the hotbar.
+	//	int slot = std::max(0, std::min(relx / (players[player]->hotbar.getSlotSize()), static_cast<int>(NUM_HOTBAR_SLOTS - 1))); // bounds check
+	//	if ( outSlotNum )
+	//	{
+	//		*outSlotNum = slot;
+	//	}
+	//	return &players[player]->hotbar.slots()[slot]; //The slot will clearly be the x divided by the width of a slot
+	//}
+
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1556,7 +1581,106 @@ Sint8* inputPressedForPlayer(int player, Uint32 scancode)
 	}
 }
 
-void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMode)
+bool Player::GUI_t::bActiveModuleHasNoCursor()
+{
+	switch ( activeModule )
+	{
+		case MODULE_BOOK_VIEW:
+			return true;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool Player::GUI_t::bActiveModuleUsesInventory()
+{
+	switch ( activeModule )
+	{
+		case MODULE_INVENTORY:
+		case MODULE_HOTBAR:
+		case MODULE_SHOP:
+		case MODULE_CHEST:
+		case MODULE_REMOVECURSE:
+		case MODULE_IDENTIFY:
+		case MODULE_TINKERING:
+			return true;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
+{
+	bool warped = false;
+	if ( auto vmouse = inputs.getVirtualMouse(player.playernum) )
+	{
+		if ( !vmouse->lastMovementFromController )
+		{
+			return false;
+		}
+		vmouse->draw_cursor = false;
+	}
+
+	if ( activeModule == MODULE_INVENTORY )
+	{
+		auto& inventoryUI = player.inventoryUI;
+		warpMouseToSelectedInventorySlot(player.playernum);
+
+		if ( auto slot = inventoryUI.getInventorySlotFrame(inventoryUI.getSelectedSlotX(), inventoryUI.getSelectedSlotY()) )
+		{
+			SDL_Rect pos = slot->getAbsoluteSize();
+			inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+				inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+		}
+		return true;
+	}
+	else if ( activeModule == MODULE_HOTBAR )
+	{
+		warpMouseToSelectedHotbarSlot(player.playernum);
+		return true;
+	}
+	else if ( activeModule == MODULE_CHARACTERSHEET )
+	{
+		player.characterSheet.selectElement(player.characterSheet.selectedElement, true);
+		return true;
+	}
+	return warped;
+}
+
+void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
+{
+	GUIModules oldModule = activeModule;
+	activeModule = module;
+
+	if ( oldModule != activeModule )
+	{
+		Frame* hudCursor = nullptr;
+		if ( player.hud.cursorFrame )
+		{
+			hudCursor = player.hud.cursorFrame->findFrame("hud cursor");
+		}
+		if ( hudCursor && player.inventoryUI.selectedItemCursorFrame )
+		{
+			if ( (oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR)
+				&& !(activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR)
+				&& !bActiveModuleHasNoCursor() )
+			{
+				SDL_Rect size = player.inventoryUI.selectedItemCursorFrame->getSize();
+				player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
+			}
+			else if ( (activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR)
+				&& !(oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR) )
+			{
+				SDL_Rect size = hudCursor->getSize();
+				player.inventoryUI.updateSelectedSlotAnimation(size.x, size.y, size.w, size.h, true);
+			}
+		}
+	}
+}
+
+void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMode, const int whichModule)
 {
 	if ( !inputs.bPlayerIsControllable(playernum) )
 	{
@@ -1570,48 +1694,51 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 		FollowerMenu[playernum].closeFollowerMenuGUI();
 	}
 
-	bool warpMouseToInventorySlot = false;
-	if ( inputs.hasController(playernum) 
-		&& gui_mode == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE
-		&& !FollowerMenu[playernum].followerToCommand )
-	{
-		warpMouseToInventorySlot = true;
-	}
-
+	int oldgui = gui_mode;
 	gui_mode = whichGUIMode;
+	/*if ( oldgui == GUI_MODE_NONE && gui_mode == GUI_MODE_INVENTORY )
+	{
+	//	GUI.activateModule(GUI_t::MODULE_INVENTORY);
+	}*/
+	int oldmodule = GUI.activeModule;
+	GUI.activateModule((GUI_t::GUIModules)whichModule);
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+	inputs.getUIInteraction(playernum)->toggleclick = false;
+
 	inventory_mode = whichInventoryMode;
 
 	Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
 
 	bool warped = false;
+	bool warpMouseToInventorySlot = false;
+	if ( inputs.hasController(playernum)
+		&& ((oldgui == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE) 
+			|| (oldmodule != GUI.activeModule && GUI.activeModule == GUI_t::MODULE_INVENTORY))
+		&& !FollowerMenu[playernum].followerToCommand )
+	{
+		warpMouseToInventorySlot = true;
+	}
 	if ( warpMouseToInventorySlot )
 	{
 		// hide cursor, select an inventory slot and disable hotbar focus.
-		if ( auto vmouse = inputs.getVirtualMouse(playernum) )
+		int x = inventoryUI.getSelectedSlotX();
+		int y = inventoryUI.getSelectedSlotY();
+		if ( inventoryUI.selectedSlotInPaperDoll() )
 		{
-			if ( vmouse->lastMovementFromController )
+			if ( x == Inventory_t::DOLL_COLUMN_LEFT )
 			{
-				vmouse->draw_cursor = false;
-				hotbar.hotbarHasFocus = false;
-				warped = true;
-				if ( inventoryUI.selectedSlotInPaperDoll() )
-				{
-					int x = inventoryUI.getSelectedSlotX();
-					int y = inventoryUI.getSelectedSlotY();
-					if ( x == Inventory_t::DOLL_COLUMN_LEFT )
-					{
-						x = 0; // warp top left
-					}
-					else
-					{
-						x = inventoryUI.getSizeX() - 1; // warp top right
-					}
-					y = 0;
-					inventoryUI.selectSlot(x, y);
-				}
-				warpMouseToSelectedInventorySlot(playernum);
+				x = 0; // warp top left
 			}
+			else
+			{
+				x = inventoryUI.getSizeX() - 1; // warp top right
+			}
+			y = 0;
+			inventoryUI.selectSlot(x, y);
+		}
+		if ( GUI.warpControllerToModule(true) )
+		{
+			warped = true;
 		}
 	}
 
@@ -1619,36 +1746,6 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	{
 		inputs.warpMouse(playernum, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2), flags);
 	}
-
-	//if ( inputs.bPlayerUsingKeyboardControl(playernum) )
-	//{
-	//	SDL_SetRelativeMouseMode(SDL_FALSE);
-	//	//SDL_WarpMouseInWindow(screen, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2));
-	//	mousex = camera_x1() + (camera_width() / 2);
-	//	mousey = camera_y1() + (camera_height() / 2);
-	//	omousex = mousex;
-	//	omousey = mousey;
-
-	//	if ( inputs.hasController(playernum) )
-	//	{
-	//		const auto& mouse = inputs.getVirtualMouse(playernum);
-	//		mouse->x = mousex;
-	//		mouse->y = mousey;
-	//		mouse->ox = omousex;
-	//		mouse->oy = omousey;
-	//	}
-	//}
-	//else if ( inputs.hasController(playernum) )
-	//{
-	//	const auto& mouse = inputs.getVirtualMouse(playernum);
-	//	mouse->x = camera_x1() + (camera_width() / 2);
-	//	mouse->y = camera_y1() + (camera_height() / 2);
-	//	mouse->ox = mouse->x;
-	//	mouse->oy = mouse->y;
-	//}
-	
-	players[playernum]->characterSheet.attributespage = 0;
-	//proficienciesPage = 0;
 }
 
 void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
@@ -1694,8 +1791,13 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		closeShop(playernum);
 	}
 	gui_mode = GUI_MODE_NONE;
+	GUI.activateModule(GUI_t::MODULE_NONE);
+
+
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
 	{
+		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(playernum)->toggleclick = false;
 		shootmode = true;
 	}
 }
@@ -8240,6 +8342,96 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 	return false;
 }
 
+void EnemyHPDamageBarHandler::cullExpiredHPBars()
+{
+	for ( auto it = HPBars.begin(); it != HPBars.end(); )
+	{
+		int tickLifetime = EnemyHPDamageBarHandler::maxTickLifetime;
+		if ( (*it).second.barType == BAR_TYPE_FURNITURE )
+		{
+			tickLifetime = EnemyHPDamageBarHandler::maxTickFurnitureLifetime;
+		}
+		if ( ticks - (*it).second.enemy_timer >= tickLifetime )
+		{
+			(*it).second.expired = true;
+			if ( (*it).second.animator.fadeOut <= 0.01 )
+			{
+				it = HPBars.erase(it); // no need to show this bar, delete it
+			}
+			else
+			{
+				++it;
+			}
+		}
+		else
+		{
+			++it;
+		}
+	}
+}
+
+EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::getMostRecentHPBar(int index)
+{
+	if ( HPBars.empty() )
+	{
+		lastEnemyUid = 0;
+	}
+
+	Uint32 mostRecentTicks = 0;
+	auto mostRecentEntry = HPBars.end();
+	auto highPriorityMostRecentEntry = HPBars.end();
+	bool foundHighPriorityEntry = false;
+	for ( auto it = HPBars.begin(); it != HPBars.end(); )
+	{
+		if ( false /*ticks - (*it).second.enemy_timer >= k_maxTickLifetime * 120*/ )
+		{
+			++it;
+		}
+		else
+		{
+			if ( (*it).second.enemy_timer > mostRecentTicks && (*it).second.shouldDisplay )
+			{
+				if ( mostRecentEntry != HPBars.end() )
+				{
+					// previous most recent tick should not display until updated by high priority.
+					// since we've found a new one to display.
+					(*mostRecentEntry).second.shouldDisplay = false;
+				}
+				if ( !(*it).second.lowPriorityTick )
+				{
+					// this is a normal priority damage update (not burn/poison etc)
+					// if a newer tick is low priority, then defer to this one.
+					highPriorityMostRecentEntry = it;
+					foundHighPriorityEntry = true;
+				}
+				mostRecentEntry = it;
+				mostRecentTicks = (*it).second.enemy_timer;
+				//queuedBars.push(std::make_pair(mostRecentTicks, mostRecentEntry->first));
+			}
+			++it;
+		}
+	}
+
+	if ( mostRecentTicks > 0 )
+	{
+		if ( !foundHighPriorityEntry )
+		{
+			// all low priority, just display the last added.
+		}
+		else
+		{
+			if ( (mostRecentEntry != highPriorityMostRecentEntry) && foundHighPriorityEntry )
+			{
+				// the most recent was low priority, so defer to the most recent high priority.
+				mostRecentEntry = highPriorityMostRecentEntry;
+			}
+		}
+
+		return &(*mostRecentEntry).second;
+	}
+	return nullptr;
+}
+
 void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 {
 	if ( HPBars.empty() )
@@ -8252,7 +8444,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	bool foundHighPriorityEntry = false;
 	for ( auto it = HPBars.begin(); it != HPBars.end(); )
 	{
-		if ( ticks - (*it).second.enemy_timer >= k_maxTickLifetime )
+		if ( ticks - (*it).second.enemy_timer >= EnemyHPDamageBarHandler::maxTickLifetime )
 		{
 			it = HPBars.erase(it); // no need to show this bar, delete it
 		}
@@ -8382,15 +8574,16 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 		}
 
 		// name
-		int x = players[player]->camera_midx() - longestline(HPDetails.enemy_name) * TTF12_WIDTH / 2 + 2;
+		int x = players[player]->camera_midx() - longestline(HPDetails.enemy_name.c_str()) * TTF12_WIDTH / 2 + 2;
 		int y = pos.y + 16 - TTF12_HEIGHT / 2 + 2;
-		ttfPrintText(ttf12, x, y, HPDetails.enemy_name);
+		ttfPrintText(ttf12, x, y, HPDetails.enemy_name.c_str());
 	}
 }
 
 void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority)
 {
 	auto find = HPBars.find(uid);
+	EnemyHPDetails* details = nullptr;
 	if ( find != HPBars.end() )
 	{
 		// uid exists in list.
@@ -8403,11 +8596,29 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 			(*find).second.shouldDisplay = true;
 		}
 		(*find).second.enemy_timer = ticks;
+		details = &(*find).second; 
+		details->animator.previousSetpoint = details->animator.setpoint;
+		details->displayOnHUD = false;
+		details->hasDistanceCheck = false;
+		details->expired = false;
 	}
 	else
 	{
-		HPBars.insert(std::make_pair(uid, EnemyHPDetails(HP, maxHP, oldHP, color, name, isLowPriority)));
+		HPBars.insert(std::make_pair(uid, EnemyHPDetails(uid, HP, maxHP, oldHP, color, name, isLowPriority)));
+		auto find = HPBars.find(uid);
+		details = &(*find).second;
+		details->animator.previousSetpoint = details->enemy_oldhp;
+		details->animator.backgroundValue = details->enemy_oldhp;
 	}
+
+	details->animator.maxValue = details->enemy_maxhp;
+	details->animator.setpoint = details->enemy_hp;
+	details->animator.foregroundValue = details->animator.setpoint;
+	details->animator.animateTicks = ticks;
+	details->animator.damageTaken = std::max(-1, oldHP - HP);
+
+	spawnDamageGib(uidToEntity(uid), details->animator.damageTaken);
+	lastEnemyUid = uid;
 }
 
 SDL_Rect getRectForSkillIcon(const int skill)

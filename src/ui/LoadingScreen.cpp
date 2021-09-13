@@ -27,7 +27,7 @@ void createLoadingScreen(real_t progress) {
 		"images/ui/LoadingScreen/backdrop_loading.png",
 		"backdrop"
 	);
-	loading_frame->addImage(
+	auto progress_background = loading_frame->addImage(
 		SDL_Rect{10, Frame::virtualScreenY - 60, Frame::virtualScreenX - 20, 50},
 		makeColor(255, 0, 0, 127),
 		"images/system/white.png",
@@ -45,6 +45,13 @@ void createLoadingScreen(real_t progress) {
 		"images/ui/LoadingScreen/boulder0.png",
 		"spinning_widget"
 	);
+	auto text = loading_frame->addField("text", 8);
+	text->setSize(progress_background->pos);
+	text->setJustify(Field::justify_t::CENTER);
+	text->setFont("fonts/pixelmix.ttf#32#2");
+	char buf[8];
+	snprintf(buf, sizeof(buf), "%d%%", (int)progress);
+	text->setText(buf);
 }
 
 void updateLoadingScreen(real_t progress) {
@@ -54,12 +61,19 @@ void updateLoadingScreen(real_t progress) {
 	{
 		return;
 	}
+
 	auto progress_filled = loading_frame->findImage("progress_filled");
-	if (!progress_filled)
+	if (progress_filled)
 	{
-		return;
+		progress_filled->pos = SDL_Rect{10, Frame::virtualScreenY - 60, (int)((Frame::virtualScreenX - 20) * progress / (real_t)100), 50};
 	}
-	progress_filled->pos = SDL_Rect{10, Frame::virtualScreenY - 60, (int)((Frame::virtualScreenX - 20) * progress / (real_t)100), 50};
+
+	auto text = loading_frame->findField("text");
+	if (text) {
+		char buf[8];
+		snprintf(buf, sizeof(buf), "%d%%", (int)progress);
+		text->setText(buf);
+	}
 }
 
 void doLoadingScreen() {
