@@ -192,6 +192,11 @@ void Frame::draw() {
 }
 
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
+	if ( parent && inheritParentFrameOpacity )
+	{
+		setOpacity(static_cast<Frame*>(parent)->getOpacity());
+	}
+
 	if (disabled || invisible)
 		return;
 
@@ -529,11 +534,6 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	result.usable = usable;
 	result.highlightTime = SDL_GetTicks();
 	result.tooltip = nullptr;
-
-	if ( parent && inheritParentFrameOpacity )
-	{
-		setOpacity(static_cast<Frame*>(parent)->getOpacity());
-	}
 
 	if (disabled) {
 		return result;
