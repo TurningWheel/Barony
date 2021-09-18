@@ -228,10 +228,10 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 		}
 
 		SDL_Rect scaledDest;
-		scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
-		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
-		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
-		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+		scaledDest.x = dest.x;
+		scaledDest.y = dest.y;
+		scaledDest.w = dest.w;
+		scaledDest.h = dest.h;
 
 		if ( parent && static_cast<Frame*>(parent)->getOpacity() < 100.0 )
 		{
