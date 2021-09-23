@@ -358,6 +358,7 @@ void BookParser_t::writeCompiledBooks()
 	std::string inputPath = outputdir;
 	inputPath.append(PHYSFS_getDirSeparator());
 	std::string fileName = "books/compiled_books.json";
+	inputPath.append(fileName);
 
 	File* fp = FileIO::open(inputPath.c_str(), "rb");
 	rapidjson::Document d;

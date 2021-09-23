@@ -151,16 +151,22 @@ void Text::render() {
 	surf = newSurf;
 
 	// load the new surface as a GL texture
-	SDL_LockSurface(surf);
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-	SDL_UnlockSurface(surf);
-
-	rendered = true;
+	if ( surf )
+	{
+		SDL_LockSurface(surf);
+		glBindTexture(GL_TEXTURE_2D, texid);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+		SDL_UnlockSurface(surf);
+		rendered = true;
+	}
+	else
+	{
+		rendered = false;
+	}
 }
 
 void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) {
@@ -172,6 +178,9 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 		render();
 	}
 	if (!rendered) {
+		return;
+	}
+	if ( !surf ) {
 		return;
 	}
 
