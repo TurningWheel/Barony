@@ -1060,18 +1060,21 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	//	//drawRect(&resPos, 0xFFFFFF00, 255);
 	//}
 
+	int drawOffsetY = (enemybar->worldSurfaceSpriteStatusEffects ? -enemybar->worldSurfaceSpriteStatusEffects->h / 2 : 0);
+	drawOffsetY += enemybar->glWorldOffsetY;
+
 	if ( !doVisibilityCheckOnly )
 	{
 		// draw quad
 		glBegin(GL_QUADS);
 		glTexCoord2f(0, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
 		glTexCoord2f(0, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
 		glTexCoord2f(1, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
 		glTexCoord2f(1, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
 		glEnd();
 	}
 	glDepthRange(0, 1);

@@ -462,6 +462,12 @@ void actSpriteWorldTooltip(Entity* my)
 	return;
 }
 
+void actDamageGib(Entity* my)
+{
+	// dummy function
+	return;
+}
+
 void actSpriteWorldTooltip(Entity* my);
 
 void actGoldBag(Entity* my)

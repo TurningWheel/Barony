@@ -395,7 +395,9 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 	// init new ui engine
+#ifndef EDITOR
 	Frame::guiInit();
+#endif
 
 	// cache language entries
 	bool cacheText = false;
@@ -2041,7 +2043,9 @@ int deinitApp()
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
+#ifndef EDITOR
 	Frame::guiDestroy();
+#endif
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )
@@ -2621,7 +2625,9 @@ bool changeVideoMode()
 	glDeleteTextures(MAXTEXTURES, texid);
 
 	// destroy gui fbo
+#ifndef EDITOR
 	Frame::fboDestroy();
+#endif
 
 	// delete vertex data
 	if ( !disablevbos )
@@ -2689,7 +2695,9 @@ bool changeVideoMode()
 #endif // !EDITOR
 
 	// create new frame fbo
+#ifndef EDITOR
 	Frame::fboInit();
+#endif
 
 #endif
 	// success

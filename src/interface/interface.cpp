@@ -30,6 +30,7 @@
 #include "../scores.hpp"
 #include "../scrolls.hpp"
 #include "../lobbies.hpp"
+#include "../ui/GameUI.hpp"
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
@@ -8617,8 +8618,60 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 	details->animator.animateTicks = ticks;
 	details->animator.damageTaken = std::max(-1, oldHP - HP);
 
-	spawnDamageGib(uidToEntity(uid), details->animator.damageTaken);
+	Entity* entity = uidToEntity(uid);
+	spawnDamageGib(entity, details->animator.damageTaken);
 	lastEnemyUid = uid;
+
+	if ( entity )
+	{
+		details->worldX = entity->x;
+		details->worldY = entity->y;
+		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
+		{
+			if ( entity->doorStartAng == 0 )
+			{
+				details->worldY -= 5;
+			}
+			else
+			{
+				details->worldX -= 5;
+			}
+		}
+		details->worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
+		details->screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
+	}
+	if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+	{
+		if ( Stat* stat = entity->getStats() )
+		{
+			details->enemy_statusEffects1 = 0;
+			details->enemy_statusEffects2 = 0;
+			details->enemy_statusEffectsLowDuration1 = 0;
+			details->enemy_statusEffectsLowDuration2 = 0;
+			for ( int i = 0; i < NUMEFFECTS; ++i )
+			{
+				if ( stat->EFFECTS[i] )
+				{
+					if ( i < 32 )
+					{
+						details->enemy_statusEffects1 |= (1 << i);
+						if ( stat->EFFECTS_TIMERS[i] > 0 && stat->EFFECTS_TIMERS[i] < 5 * TICKS_PER_SECOND )
+						{
+							details->enemy_statusEffectsLowDuration1 |= (1 << i);
+						}
+					}
+					else if ( i < 64 )
+					{
+						details->enemy_statusEffects2 |= (1 << (i - 32));
+						if ( stat->EFFECTS_TIMERS[i] > 0 && stat->EFFECTS_TIMERS[i] < 5 * TICKS_PER_SECOND )
+						{
+							details->enemy_statusEffectsLowDuration2 |= (1 << i);
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 SDL_Rect getRectForSkillIcon(const int skill)
