@@ -40,8 +40,9 @@ struct CustomColors_t
 	Uint32 characterSheetGreen = 0xFFFFFFFF;
 	Uint32 characterSheetRed = 0xFFFFFFFF;
 } hudColors;
+EnemyBarSettings_t enemyBarSettings;
 
-std::string getEnemyBarSpriteName(Entity* entity)
+std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 {
 	if ( !entity ) { return "default"; }
 
@@ -76,22 +77,6 @@ std::string getEnemyBarSpriteName(Entity* entity)
 	}
 	return "default";
 }
-
-struct EnemyBarSettings_t
-{
-	std::unordered_map<std::string, float> heightOffsets;
-	std::unordered_map<std::string, float> screenDistanceOffsets;
-	float getHeightOffset(Entity* entity)
-	{
-		if ( !entity ) { return 0.f; }
-		return heightOffsets[getEnemyBarSpriteName(entity)];
-	}
-	float getScreenDistanceOffset(Entity* entity)
-	{
-		if ( !entity ) { return 0.f; }
-		return screenDistanceOffsets[getEnemyBarSpriteName(entity)];
-	}
-} enemyBarSettings;
 
 void createHPMPBars(const int player)
 {
@@ -1614,7 +1599,6 @@ void Player::CharacterSheet_t::updateAttributes()
 		real_t resistance = 0.0;
 		if ( players[player.playernum]->entity )
 		{
-			players[player.playernum]->entity;
 			resistance = 100 - 100 / (players[player.playernum]->entity->getMagicResistance() + 1);
 		}
 		snprintf(buf, sizeof(buf), "%.f%%", resistance);
@@ -3042,7 +3026,8 @@ void drawCharacterPreview(const int player, SDL_Rect pos)
 		camera_charsheet.vang = PI / 20;
 
 		camera_charsheet.winx = pos.x;
-		camera_charsheet.winy = pos.y;
+		// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
+		camera_charsheet.winy = pos.y + (yres - Frame::virtualScreenY); 
 		//camera_charsheet.winx = x1 + 8;
 		//camera_charsheet.winy = y1 + 8;
 
@@ -3422,9 +3407,9 @@ void createPlayerInventory(const int player)
 			charFrame->setDrawCallback([](Widget& widget, SDL_Rect pos) {
 				drawCharacterPreview(widget.getOwner(), pos);
 			});
-			//charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
-			//	SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
-			//	"images/system/white.png", "inventory character preview bg");
+			/*charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
+				SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+				"images/system/white.png", "inventory character preview bg");*/
 		}
 
 		/*auto selectedFrame = dollSlotsFrame->addFrame("paperdoll selected item");
@@ -4768,7 +4753,7 @@ void Player::HUD_t::updateXPBar()
 	xpProgressEndCap->pos.x = xpProgress->pos.x + xpProgress->pos.w;
 }
 
-SDL_Surface* blitEnemyBar(const int player)
+SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 {
 	Frame* frame = players[player]->hud.enemyBarFrame;
 	if ( !frame || !players[player]->isLocalPlayer() )
@@ -4790,7 +4775,15 @@ SDL_Surface* blitEnemyBar(const int player)
 
 	auto skullFrame = frame->findFrame("skull frame");
 	int totalWidth = baseBg->pos.x + baseBg->pos.w + baseEndCap->pos.w;
-	SDL_Surface* sprite = SDL_CreateRGBSurface(0, totalWidth, frame->getSize().h, 32,
+	int totalHeight = frame->getSize().h;
+	int statusEffectOffsetY = 0;
+	if ( statusEffectSprite ) 
+	{ 
+		statusEffectOffsetY = statusEffectSprite->h;
+		totalHeight += statusEffectOffsetY;
+	}
+
+	SDL_Surface* sprite = SDL_CreateRGBSurface(0, totalWidth, totalHeight, 32,
 		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 	for ( auto& img : frame->getImages() )
 	{
@@ -4800,6 +4793,7 @@ SDL_Surface* blitEnemyBar(const int player)
 		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
 		SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
 		SDL_Rect pos = img->pos;
+		pos.y += statusEffectOffsetY;
 		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
 	}
 	for ( auto& img : dmgFrame->getImages() )
@@ -4812,6 +4806,7 @@ SDL_Surface* blitEnemyBar(const int player)
 		SDL_Rect pos = img->pos;
 		pos.x += dmgFrame->getSize().x;
 		pos.y += dmgFrame->getSize().y;
+		pos.y += statusEffectOffsetY;
 		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
 	}
 	for ( auto& img : foregroundFrame->getImages() )
@@ -4824,6 +4819,7 @@ SDL_Surface* blitEnemyBar(const int player)
 		SDL_Rect pos = img->pos;
 		pos.x += foregroundFrame->getSize().x;
 		pos.y += foregroundFrame->getSize().y;
+		pos.y += statusEffectOffsetY;
 		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
 	}
 	for ( auto& img : skullFrame->getImages() )
@@ -4835,6 +4831,7 @@ SDL_Surface* blitEnemyBar(const int player)
 		SDL_Rect pos = img->pos;
 		pos.x += skullFrame->getSize().x;
 		pos.y += skullFrame->getSize().y;
+		pos.y += statusEffectOffsetY;
 		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
 	}
 	for ( auto& txt : frame->getFields() )
@@ -4845,12 +4842,129 @@ SDL_Surface* blitEnemyBar(const int player)
 		pos.w = textGet->getWidth();
 		pos.h = textGet->getHeight();
 		pos.x = sprite->w / 2 - pos.w / 2;
-		pos.y = sprite->h / 2 - pos.h / 2;
+		pos.y = frame->getSize().h / 2 - pos.h / 2;
+		pos.y += statusEffectOffsetY;
 		Uint8 r, g, b, a;
 		SDL_GetRGBA(txt->getColor(), mainsurface->format, &r, &g, &b, &a);
 		SDL_SetSurfaceAlphaMod(txtSurf, a * frameOpacity);
 		SDL_BlitSurface(txtSurf, nullptr, sprite, &pos);
 	}
+	if ( statusEffectSprite )
+	{
+		SDL_Rect pos{0, 0, statusEffectSprite->w, statusEffectSprite->h};
+		SDL_BlitSurface(statusEffectSprite, nullptr, sprite, &pos);
+	}
+	return sprite;
+}
+
+SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(const int player)
+{
+	Entity* entity = uidToEntity(enemy_uid);
+	if ( entity && (entity->behavior != &actPlayer && entity->behavior != &actMonster) )
+	{
+		return nullptr;
+	}
+	Frame* frame = players[player]->hud.enemyBarFrame;
+	if ( !frame || !players[player]->isLocalPlayer() )
+	{
+		return nullptr;
+	}
+	if ( enemy_statusEffects1 == 0 && enemy_statusEffects2 == 0 )
+	{
+		return nullptr;
+	}
+	auto baseBg = frame->findImage("base img");
+	auto baseEndCap = frame->findImage("base img endcap");
+	real_t frameOpacity = frame->getOpacity() / 100.0;
+	const int maxWidth = baseBg->pos.x + baseBg->pos.w + baseEndCap->pos.w;
+	const int iconHeight = 32;
+	const int iconWidth = 32;
+
+	SDL_Surface* sprite = SDL_CreateRGBSurface(0, maxWidth, iconHeight + 2, 32,
+		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+
+	int playernum = -1;
+	if ( entity && entity->behavior == &actPlayer )
+	{
+		playernum = entity->skill[2];
+	}
+
+	int currentX = (maxWidth / 2);
+	bool anyStatusEffect = false;
+
+	std::vector<std::pair<SDL_Surface*, bool>> statusEffectIcons;
+	if ( enemy_statusEffects1 != 0 )
+	{
+		for ( int i = 0; i < 32; ++i )
+		{
+			if ( (enemy_statusEffects1 & (1 << i)) != 0 )
+			{
+				if ( SDL_Surface* srcSurf = getStatusEffectSprite(entity,
+					(entity ? entity->getStats() : nullptr), i, playernum) )
+				{
+					bool blinking = false;
+					if ( (enemy_statusEffectsLowDuration1 & (1 << i)) != 0 )
+					{
+						blinking = true;
+					}
+					statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+				}
+			}
+		}
+	}
+	if ( enemy_statusEffects2 != 0 )
+	{
+		for ( int i = 0; i < 32; ++i )
+		{
+			if ( (enemy_statusEffects2 & (1 << i)) != 0 )
+			{
+				if ( SDL_Surface* srcSurf = getStatusEffectSprite(entity,
+					(entity ? entity->getStats() : nullptr), i + 32, playernum) )
+				{
+					bool blinking = false;
+					if ( (enemy_statusEffectsLowDuration2 & (1 << i)) != 0 )
+					{
+						blinking = true;
+					}
+					statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+				}
+			}
+		}
+	}
+
+	const int numIcons = statusEffectIcons.size();
+	const int iconTotalWidth = iconWidth + 2;
+	if ( numIcons % 2 == 1 ) // odd numbered
+	{
+		currentX -= ((iconTotalWidth) * (numIcons / 2)) + (iconTotalWidth / 2);
+	}
+	else
+	{
+		currentX -= ((iconTotalWidth) * (numIcons / 2));
+	}
+
+	for ( auto& icon : statusEffectIcons )
+	{
+		anyStatusEffect = true;
+		int tickModifier = ticks % 25;
+		real_t alpha = 255 * frameOpacity;
+		if ( tickModifier >= 12 && icon.second )
+		{
+			alpha = 0;
+		}
+		SDL_SetSurfaceAlphaMod(icon.first, alpha);
+		//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+		SDL_Rect pos{ currentX, 0, iconWidth, iconHeight };
+		SDL_BlitScaled(icon.first, nullptr, sprite, &pos);
+		currentX += (iconWidth + 2);
+	}
+
+	if ( !anyStatusEffect )
+	{
+		SDL_FreeSurface(sprite);
+		sprite = nullptr;
+	}
+
 	return sprite;
 }
 
@@ -5198,7 +5312,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		if ( damageNumber >= 0 )
 		{
 			char buf[128] = "";
-			itoa(damageNumber, buf, 10);
+			snprintf(buf, sizeof(buf), "%d", damageNumber);
 			dmgText->setText(buf);
 			dmgText->setDisabled(false);
 			SDL_Rect txtPos = dmgText->getSize();
@@ -5249,8 +5363,14 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		SDL_FreeSurface(enemyDetails->worldSurfaceSprite);
 		enemyDetails->worldSurfaceSprite = nullptr;
 	}
+	if ( enemyDetails->worldSurfaceSpriteStatusEffects )
+	{
+		SDL_FreeSurface(enemyDetails->worldSurfaceSpriteStatusEffects);
+		enemyDetails->worldSurfaceSpriteStatusEffects = nullptr;
+	}
 
-	enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum);
+	enemyDetails->worldSurfaceSpriteStatusEffects = enemyDetails->blitEnemyBarStatusEffects(player.playernum);
+	enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum, enemyDetails->worldSurfaceSpriteStatusEffects);
 	enemyDetails->worldTexture = new TempTexture();
 	enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
 
@@ -5567,7 +5687,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 		if ( damageNumber >= 0 )
 		{
 			char buf[128] = "";
-			itoa(damageNumber, buf, 10);
+			snprintf(buf, sizeof(buf), "%d", damageNumber);
 			dmgText->setText(buf);
 			dmgText->setDisabled(false);
 			SDL_Rect txtPos = dmgText->getSize();
@@ -5628,7 +5748,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 			SDL_FreeSurface(enemyDetails->worldSurfaceSprite);
 			enemyDetails->worldSurfaceSprite = nullptr;
 		}
-		enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum);
+		enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum, enemyDetails->worldSurfaceSpriteStatusEffects);
 		enemyDetails->worldTexture = new TempTexture();
 		enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
 	}
