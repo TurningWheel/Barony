@@ -5652,9 +5652,9 @@ void assignActions(map_t* map)
 				entity->sizey = 4;
 				entity->x += 8;
 				entity->y += 8;
-				entity->z = 5;
+				entity->z = 3.5;
 				entity->behavior = &actStatueAnimator;
-				entity->sprite = 245;
+				entity->sprite = 995;
 				entity->skill[0] = 0;
 				entity->flags[BRIGHT] = true;
 				break;
