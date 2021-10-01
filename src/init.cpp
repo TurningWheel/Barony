@@ -136,6 +136,7 @@ int initApp(char const * const title, int fullscreen)
 			PHYSFS_mkdir("logfiles");
 			PHYSFS_mkdir("data");
 			PHYSFS_mkdir("data/custom-monsters");
+			PHYSFS_mkdir("data/statues");
 #ifdef NINTENDO
 			PHYSFS_mkdir("mods");
 			std::string path = outputdir;
@@ -983,8 +984,8 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 				{
 					FileIO::close(model_cache);
 				}
+				return;
 			}
-			return;
 		}
 	}
 
@@ -1943,12 +1944,20 @@ void generateVBOs(int start, int end)
 	std::unique_ptr<GLuint[]> color_shifted_buffers(new GLuint[count]);
 	SDL_glGenBuffers(count, color_shifted_buffers.get());
 
+	std::unique_ptr<GLuint[]> grayscale_color_buffers(new GLuint[count]);
+	SDL_glGenBuffers(count, grayscale_color_buffers.get());
+
+	std::unique_ptr<GLuint[]> grayscale_color_shifted_buffers(new GLuint[count]);
+	SDL_glGenBuffers(count, grayscale_color_shifted_buffers.get());
+
 	for ( int c = start; c < end; ++c )
 	{
 		polymodel_t *model = &polymodels[c];
 		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
 		std::unique_ptr<GLfloat[]> colors(new GLfloat[9 * model->numfaces]);
 		std::unique_ptr<GLfloat[]> colors_shifted(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> grayscale_colors(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> grayscale_colors_shifted(new GLfloat[9 * model->numfaces]);
 		for ( int i = 0; i < model->numfaces; i++ )
 		{
 			const polytriangle_t *face = &model->faces[i];
@@ -1968,12 +1977,23 @@ void generateVBOs(int start, int end)
 				colors_shifted[data_index] = face->b / 255.f;
 				colors_shifted[data_index + 1] = face->r / 255.f;
 				colors_shifted[data_index + 2] = face->g / 255.f;
+
+				real_t grayscaleFactor = (face->r + face->g + face->b) / 3.0;
+				grayscale_colors[data_index] = grayscaleFactor / 255.f;
+				grayscale_colors[data_index + 1] = grayscaleFactor / 255.f;
+				grayscale_colors[data_index + 2] = grayscaleFactor / 255.f;
+
+				grayscale_colors_shifted[data_index] = grayscaleFactor / 255.f;
+				grayscale_colors_shifted[data_index + 1] = grayscaleFactor / 255.f;
+				grayscale_colors_shifted[data_index + 2] = grayscaleFactor / 255.f;
 			}
 		}
 		model->va = vas[c - start];
 		model->vbo = vbos[c - start];
 		model->colors = color_buffers[c - start];
 		model->colors_shifted = color_shifted_buffers[c - start];
+		model->grayscale_colors = grayscale_color_buffers[c - start];
+		model->grayscale_colors_shifted = grayscale_color_shifted_buffers[c - start];
 		SDL_glBindVertexArray(model->va);
 
 		// vertex data
@@ -1988,6 +2008,14 @@ void generateVBOs(int start, int end)
 		// shifted color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+
+		// grayscale color data
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+
+		// grayscale shifted color data
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors_shifted);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 	}
 }
 
@@ -2177,6 +2205,18 @@ int deinitApp()
 				if ( polymodels[c].va )
 				{
 					SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+				}
+				if ( polymodels[c].colors_shifted )
+				{
+					SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+				}
+				if ( polymodels[c].grayscale_colors )
+				{
+					SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
+				}
+				if ( polymodels[c].grayscale_colors_shifted )
+				{
+					SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
 				}
 			}
 		}
@@ -2637,6 +2677,9 @@ bool changeVideoMode()
 			SDL_glDeleteBuffers(1, &polymodels[c].vbo);
 			SDL_glDeleteBuffers(1, &polymodels[c].colors);
 			SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+			SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+			SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
+			SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
 		}
 	}
 

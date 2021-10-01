@@ -1377,6 +1377,14 @@ void consoleCommand(char const * const command_str)
 					{
 						SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
 					}
+					if ( polymodels[c].grayscale_colors )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
+					}
+					if ( polymodels[c].grayscale_colors_shifted )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
+					}
 				}
 				models[c] = loadVoxel(name2);
 			}
@@ -2710,7 +2718,7 @@ void consoleCommand(char const * const command_str)
 		{
 			networkTickrate = atoi(&command_str[10]);
 			networkTickrate = std::max<Uint32>(1, networkTickrate);
-			messagePlayer(clientnum, "Set tickrate to %d, network processing allowed %3.0f percent of frame limit interval. Default value 2.", 
+			messagePlayer(clientnum, "Set tickrate to %d, network processing allowed %3.0f percent of frame limit interval. Default value 2.",
 				networkTickrate, 100.f / networkTickrate);
 		}
 		else if ( !strncmp(command_str, "/disablenetcodefpslimit", 23) )
@@ -2744,7 +2752,7 @@ void consoleCommand(char const * const command_str)
 				messagePlayer(clientnum, language[284]);
 				return;
 			}
-			
+
 			Uint32 newseed = atoi(&command_str[12]);
 			forceMapSeed = newseed;
 			messagePlayer(clientnum, "Set next map seed to: %d", forceMapSeed);
@@ -3455,6 +3463,15 @@ void consoleCommand(char const * const command_str)
 		{
 			restrictPaperDollMovement = !restrictPaperDollMovement;
 			messagePlayer(clientnum, "Set restrictPaperDollMovement to %d", restrictPaperDollMovement);
+		}
+		else if ( !strncmp(command_str, "/exportstatue", 13) )
+		{
+			StatueManager.exportActive = true;
+		}
+		else if ( !strncmp(command_str, "/importstatue ", 14) )
+		{
+			int index = atoi(&command_str[14]);
+			StatueManager.readStatueFromFile(index);
 		}
 		else
 		{

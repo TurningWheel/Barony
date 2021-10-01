@@ -220,6 +220,8 @@ void actLiquid(Entity* my);
 void actEmpty(Entity* my);
 void actFurniture(Entity* my);
 void actMCaxe(Entity* my);
+void actStatueAnimator(Entity* my);
+void actStatue(Entity* my);
 void actDoorFrame(Entity* my);
 void actDeathCam(Entity* my);
 void actPlayerLimb(Entity* my);

@@ -525,6 +525,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		}
 	}
 
+	bool doGrayScale = false;
+	real_t grayScaleFactor = 0.0;
+	if ( entity->grayscaleGLRender > 0.001 )
+	{
+		doGrayScale = true;
+		grayScaleFactor = entity->grayscaleGLRender;
+	}
+
 	// get shade factor
 	if (!entity->flags[BRIGHT])
 	{
@@ -716,22 +724,27 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 			{
 				if ( mode == REALCOLORS )
 				{
+					Uint8 r, g, b;
+					r = polymodels[modelindex].faces[index].r;
+					b = polymodels[modelindex].faces[index].g;
+					g = polymodels[modelindex].faces[index].b;
+
 					if ( entity->flags[USERFLAG2] )
 					{
 						if ( entity->behavior == &actMonster 
 							&& (entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 						{
 							// dont invert human heads, or automaton heads.
-							glColor3f((polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s, (polymodels[modelindex].faces[index].b / 255.f)*s );
+							glColor3f((r / 255.f)*s, (g / 255.f)*s, (b / 255.f)*s );
 						}
 						else
 						{
-							glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s);
+							glColor3f((b / 255.f)*s, (r / 255.f)*s, (g / 255.f)*s);
 						}
 					}
 					else
 					{
-						glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s );
+						glColor3f((b / 255.f)*s, (r / 255.f)*s, (g / 255.f)*s );
 					}
 				}
 				else
@@ -764,16 +777,37 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() 
 						|| entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 					{
-						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+						if ( doGrayScale )
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
+						}
+						else
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+						}
 					}
 					else
 					{
-						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
+						if ( doGrayScale )
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors_shifted);
+						}
+						else
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
+						}
 					}
 				}
 				else
 				{
-					SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+					if ( doGrayScale )
+					{
+						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
+					}
+					else
+					{
+						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+					}
 				}
 				glColorPointer(3, GL_FLOAT, 0, 0);
 				GLfloat params_col[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };

@@ -142,7 +142,9 @@ int checkSpriteType(Sint32 sprite)
 		return 22;
 	case 1:
 		return 23;
-		break;
+	case 169:
+		// statue
+		return 24;
 	default:
 		return 0;
 		break;
@@ -889,7 +891,9 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"SPELLBOT",
 	"DUMMYBOT",
 	"GYROBOT",
-	"UNUSED"
+	"UNUSED",
+	"STATUE ANIMATOR",
+	"STATUE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1785,6 +1789,21 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 		{
 			// set default new entity attributes.
 			entityNew->playerStartDir = 0;
+		}
+	}
+	else if ( spriteType == 24 ) // statue
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->statueDir = entityToCopy->statueDir;
+			entityNew->statueId = entityToCopy->statueId;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->statueDir = 0;
+			entityNew->statueId = 0;
 		}
 	}
 

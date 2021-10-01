@@ -275,6 +275,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	interactedByMonster(skill[47]),
 	highlightForUI(fskill[29]),
 	highlightForUIGlow(fskill[28]),
+	grayscaleGLRender(fskill[27]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
@@ -310,7 +311,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	worldTooltipInit(skill[3]),
 	worldTooltipFadeDelay(skill[4]),
 	worldTooltipIgnoreDrawing(skill[5]),
-	worldTooltipRequiresButtonHeld(skill[6])
+	worldTooltipRequiresButtonHeld(skill[6]),
+	statueInit(skill[0]),
+	statueDir(skill[1]),
+	statueId(skill[3])
 {
 	int c;
 	// add the entity to the entity list

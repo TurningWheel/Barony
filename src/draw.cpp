@@ -1572,6 +1572,7 @@ void drawEntities3D(view_t* camera, int mode)
 		}
 	}
 
+#ifndef EDITOR
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		for ( auto& enemybar : enemyHPDamageBarHandler[i].HPBars )
@@ -1581,6 +1582,7 @@ void drawEntities3D(view_t* camera, int mode)
 			spritesToDraw.push_back(std::make_tuple(camDist, &enemybar, SPRITE_HPBAR));
 		}
 	}
+#endif
 
 	std::sort(spritesToDraw.begin(), spritesToDraw.end(), 
 		[](const std::tuple<real_t, void*, SpriteTypes>& lhs, const std::tuple<real_t, void*, SpriteTypes>& rhs) {
@@ -1616,8 +1618,10 @@ void drawEntities3D(view_t* camera, int mode)
 		}
 		else if ( std::get<2>(distSpriteType) == SpriteTypes::SPRITE_HPBAR )
 		{
+#ifndef EDITOR
 			auto enemybar = (std::pair<Uint32, EnemyHPDamageBarHandler::EnemyHPDetails>*)std::get<1>(distSpriteType);
 			glDrawEnemyBarSprite(camera, mode, &enemybar->second, false);
+#endif
 		}
 	}
 

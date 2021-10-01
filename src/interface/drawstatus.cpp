@@ -21,6 +21,7 @@
 #include "../player.hpp"
 #include "interface.hpp"
 #include "../colors.hpp"
+#include "../mod_tools.hpp"
 
 //Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
 //Uint32 enemy_timer = 0, enemy_lastuid = 0;
@@ -1784,7 +1785,7 @@ void drawStatus(int player)
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
-			if ( inputs.bPlayerUsingKeyboardControl(player) )
+			if ( inputs.bPlayerUsingKeyboardControl(player) && !StatueManager.activeEditing )
 			{
 				if ( keystatus[SDL_SCANCODE_1] )
 				{

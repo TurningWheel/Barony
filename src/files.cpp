@@ -1179,6 +1179,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 							fp->read(&entity->playerStartDir, sizeof(Sint32), 1);
 						}
 						break;
+					case 24:
+						fp->read(&entity->statueDir, sizeof(Sint32), 1);
+						fp->read(&entity->statueId, sizeof(Sint32), 1);
+						break;
 					default:
 						break;
 				}
@@ -1586,6 +1590,10 @@ int saveMap(const char* filename2)
 					break;
 				case 23:
 					fp->write(&entity->playerStartDir, sizeof(Sint32), 1);
+					break;
+				case 24:
+					fp->write(&entity->statueDir, sizeof(Sint32), 1);
+					fp->write(&entity->statueId, sizeof(Sint32), 1);
 					break;
 				default:
 					break;
@@ -2043,6 +2051,14 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 			if ( polymodels[c].colors_shifted )
 			{
 				SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+			}
+			if ( polymodels[c].grayscale_colors )
+			{
+				SDL_glDeleteVertexArrays(1, &polymodels[c].grayscale_colors);
+			}
+			if ( polymodels[c].grayscale_colors_shifted )
+			{
+				SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
 			}
 		}
 	}
