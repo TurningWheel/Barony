@@ -6,6 +6,7 @@
 #include "Slider.hpp"
 #include "Text.hpp"
 
+#include "../init.hpp"
 #include "../net.hpp"
 #include "../player.hpp"
 #include "../stat.hpp"
@@ -909,6 +910,112 @@ namespace MainMenu {
 		);
 	}
 
+	static void settingsResolution(Button& button) {
+		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+		auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+		auto resolution = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(resolution);
+		auto dropdown = settings_subwindow->addFrame("setting_resolution_dropdown"); assert(dropdown);
+		dropdown->setSize(SDL_Rect{
+			resolution->getSize().x,
+			resolution->getSize().y,
+			174,
+			362
+			});
+		dropdown->setActualSize(SDL_Rect{0, 0, dropdown->getSize().w, dropdown->getSize().h});
+		dropdown->setColor(0);
+		dropdown->setBorder(0);
+		dropdown->setDropDown(true);
+
+		auto background = dropdown->addImage(
+			dropdown->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Settings/Settings_Drop_ScrollBG00.png",
+			"background"
+		);
+
+		int border = 4;
+		auto dropdown_list = dropdown->addFrame("list");
+		dropdown_list->setSize(SDL_Rect{0, border, dropdown->getSize().w, dropdown->getSize().h - border*2});
+		dropdown_list->setActualSize(SDL_Rect{0, 0, dropdown_list->getSize().w, dropdown_list->getSize().h});
+		dropdown_list->setColor(0);
+		dropdown_list->setBorder(0);
+		dropdown_list->setFont(bigfont_outline);
+		dropdown_list->setListOffset(SDL_Rect{0, 12, 0, 0});
+		dropdown_list->setListJustify(Frame::justify_t::CENTER);
+		dropdown_list->setScrollBarsEnabled(false);
+		dropdown_list->select();
+
+		for (int i = 0;; ++i) {
+			auto str = std::string("__") + std::to_string(i);
+			auto find = resolution->getWidgetActions().find(str);
+			if (find != resolution->getWidgetActions().end()) {
+				auto res = find->second.c_str();
+				auto entry = dropdown_list->addEntry(res, false);
+				entry->text = res;
+				entry->click = [](Frame::entry_t& entry){
+					int new_xres, new_yres;
+					sscanf(entry.name.c_str(), "%d x %d", &new_xres, &new_yres);
+					if (new_xres != xres || new_yres != yres) {
+						xres = new_xres;
+						yres = new_yres;
+						if ( !changeVideoMode() ) {
+							printlog("critical error! Attempting to abort safely...\n");
+							mainloop = 0;
+						}
+						auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+						auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+						auto resolution = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(resolution);
+						resolution->setText(entry.name.c_str());
+					}
+				};
+				entry->ctrlClick = entry->click;
+				dropdown_list->resizeForEntries();
+				auto size = dropdown_list->getActualSize();
+				size.h += 14;
+				dropdown_list->setActualSize(size);
+
+				int x, y;
+				sscanf(entry->name.c_str(), "%d x %d", &x, &y);
+				if (x == xres && y == yres) {
+					dropdown_list->setSelection(i);
+					dropdown_list->scrollToSelection(true);
+				}
+			}
+			else {
+				break;
+			}
+		}
+
+		auto selection = dropdown_list->addImage(
+			SDL_Rect{8, 0, 158, 30},
+			0xffffffff,
+			"images/ui/Main Menus/Settings/Settings_Drop_SelectBacking00.png",
+			"selection"
+		);
+		dropdown_list->setTickCallback([](Widget& widget){
+			Frame* dropdown_list = static_cast<Frame*>(&widget); assert(dropdown_list);
+			auto selection = dropdown_list->findImage("selection"); assert(selection);
+			if (dropdown_list->getSelection() >= 0 && dropdown_list->getSelection() < dropdown_list->getEntries().size()) {
+				selection->disabled = false;
+				int entrySize = 0;
+				Font* _font = Font::get(bigfont_outline);
+				if (_font != nullptr) {
+					entrySize = _font->height();
+					entrySize += entrySize / 2;
+				}
+				selection->pos.y = dropdown_list->getSelection() * entrySize + 12;
+			} else {
+				selection->disabled = true;
+			}
+			auto size = dropdown_list->getActualSize();
+			size.x = 0;
+			dropdown_list->setActualSize(size);
+			});
+	}
+
+	static void settingsWindowMode(Button& button) {
+	}
+
 	static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
 		std::string fullname = std::string("subheader_") + name;
 		auto image = frame.addImage(
@@ -1078,21 +1185,22 @@ namespace MainMenu {
 		const char* text,
 		const char* tip,
 		const std::vector<const char*>& items,
+		const char* selected,
 		void (*callback)(Button&))
 	{
 		std::string fullname = std::string("setting_") + name;
 		int result = settingsAddOption(frame, y, name, text, tip);
-		auto button = frame.addButton((fullname + "_dropdown").c_str());
+		auto button = frame.addButton((fullname + "_dropdown_button").c_str());
 		button->setSize(SDL_Rect{
 			390,
-			y + 4,
-			158,
-			44});
-		button->setFont(smallfont_outline);
-		button->setText(items[0]);
+			y,
+			174,
+			52});
+		button->setFont(bigfont_outline);
+		button->setText(selected);
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
-		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
+		button->setBackground("images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(127,127,127,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
@@ -1102,6 +1210,9 @@ namespace MainMenu {
 		button->setWidgetPageRight("tab_right");
 		button->addWidgetAction("MenuAlt1", "restore_defaults");
 		button->addWidgetAction("MenuStart", "confirm_and_exit");
+		for (int i = 0; i < items.size(); ++i) {
+			button->addWidgetAction((std::string("__") + std::to_string(i)).c_str(), items[i]);
+		}
 		return result;
 	}
 
@@ -1296,7 +1407,7 @@ namespace MainMenu {
 				std::string("setting_") + std::string(setting.name) + std::string("_customize_button"));
 		default:
 			return std::make_pair(
-				std::string("setting_") + std::string(setting.name) + std::string("_dropdown"),
+				std::string("setting_") + std::string(setting.name) + std::string("_dropdown_button"),
 				std::string(""));
 		}
 	}
@@ -1445,14 +1556,42 @@ namespace MainMenu {
 			"Toggle the flickering appearance of torches and other light fixtures in the game world.",
 			allSettings.light_flicker_enabled, [](Button& button){soundToggle(); allSettings.light_flicker_enabled = button.isPressed();});
 
+		int selected_res = 0;
+		std::list<resolution> resolutions;
+		getResolutionList(resolutions);
+		std::vector<std::string> resolutions_formatted;
+		std::vector<const char*> resolutions_formatted_ptrs;
+		resolutions_formatted.reserve(resolutions.size());
+		resolutions_formatted_ptrs.reserve(resolutions.size());
+
+		int index;
+		std::list<resolution>::iterator it;
+		for (index = 0, it = resolutions.begin(); it != resolutions.end(); ++it, ++index) {
+			auto& res = *it;
+			const int x = std::get<0>(res);
+			const int y = std::get<1>(res);
+			char buf[32];
+			snprintf(buf, sizeof(buf), "%d x %d", x, y);
+			resolutions_formatted.push_back(std::string(buf));
+			resolutions_formatted_ptrs.push_back(resolutions_formatted.back().c_str());
+			if (xres == x && yres == y) {
+				selected_res = index;
+			}
+		}
+
+		const char* selected_mode = fullscreen ?
+			borderless ?
+			"Borderless" : "Fullscreen":
+			"Windowed";
+
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 #ifndef NINTENDO
 		y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
-			{"1280 x 720", "1920 x 1080"},
-			nullptr);
+			resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
+			settingsResolution);
 		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
-			{"Fullscreen", "Borderless", "Windowed"},
-			nullptr);
+			{"Fullscreen", "Borderless", "Windowed"}, selected_mode,
+			settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
 			allSettings.vsync_enabled, [](Button& button){soundToggle(); allSettings.vsync_enabled = button.isPressed();});

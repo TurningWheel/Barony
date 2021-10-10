@@ -382,7 +382,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 			int textSizeH = text->getHeight();
 
 			SDL_Rect pos;
-			pos.x = _size.x + border + listOffset.x - scroll.x;
+			switch (justify) {
+			case justify_t::LEFT: pos.x = _size.x + border + listOffset.x - scroll.x; break;
+			case justify_t::CENTER: pos.x = _size.x + (_size.w - textSizeW) / 2 + listOffset.x - scroll.x; break;
+			case justify_t::RIGHT: pos.x = _size.x + _size.w - textSizeW - border + listOffset.x - scroll.x; break;
+			}
 			pos.y = _size.y + border + listOffset.y + i * entrySize - scroll.y;
 			pos.w = textSizeW;
 			pos.h = textSizeH;
@@ -696,11 +700,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (this->actualSize.h <= size.h) {
 				if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					this->actualSize.x += std::min(entrySize * 4, size.w);
+					this->actualSize.x += std::min(entrySize * 2, size.w);
 					usable = result.usable = false;
 				} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
 					mousestatus[SDL_BUTTON_WHEELUP] = 0;
-					this->actualSize.x -= std::min(entrySize * 4, size.w);
+					this->actualSize.x -= std::min(entrySize * 2, size.w);
 					usable = result.usable = false;
 				}
 			}
@@ -710,11 +714,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		if (this->actualSize.h > size.h) {
 			if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
 				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-				this->actualSize.y += std::min(entrySize * 4, size.h);
+				this->actualSize.y += std::min(entrySize * 2, size.h);
 				usable = result.usable = false;
 			} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
 				mousestatus[SDL_BUTTON_WHEELUP] = 0;
-				this->actualSize.y -= std::min(entrySize * 4, size.h);
+				this->actualSize.y -= std::min(entrySize * 2, size.h);
 				usable = result.usable = false;
 			}
 		}
@@ -793,7 +797,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if (rectContainsPoint(sliderRect, omousex, omousey)) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
-						this->actualSize.x += omousex < handleRect.x ? -std::min(entrySize * 4, size.w) : std::min(entrySize * 4, size.w);
+						this->actualSize.x += omousex < handleRect.x ? -std::min(entrySize * 2, size.w) : std::min(entrySize * 2, size.w);
 						this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - size.w));
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
@@ -843,7 +847,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if (rectContainsPoint(sliderRect, omousex, omousey)) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
-						this->actualSize.y += omousey < handleRect.y ? -std::min(entrySize * 4, size.h) : std::min(entrySize * 4, size.h);
+						this->actualSize.y += omousey < handleRect.y ? -std::min(entrySize * 2, size.h) : std::min(entrySize * 2, size.h);
 						this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - size.h));
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
@@ -1259,7 +1263,6 @@ void Frame::resizeForEntries() {
 		entrySize = _font->height();
 		entrySize += entrySize / 2;
 	}
-	actualSize.w = size.w;
 	actualSize.h = (Uint32)list.size() * entrySize;
 	actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 }
@@ -1440,7 +1443,7 @@ void Frame::enableScroll(bool enabled) {
 	allowScrolling = enabled;
 }
 
-void Frame::scrollToSelection() {
+void Frame::scrollToSelection(bool scroll_to_top) {
 	if (selection == -1) {
 		return;
 	}
@@ -1457,7 +1460,7 @@ void Frame::scrollToSelection() {
 		entrySize = _font->height();
 		entrySize += entrySize / 2;
 	}
-	if (actualSize.y > index * entrySize) {
+	if (scroll_to_top || actualSize.y > index * entrySize) {
 		actualSize.y = index * entrySize;
 	}
 	if (actualSize.y + size.h < (index + 1) * entrySize) {
