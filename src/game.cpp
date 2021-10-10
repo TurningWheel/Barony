@@ -3417,16 +3417,6 @@ void handleEvents(void)
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;
 					}
-					if (zbuffer != NULL)
-					{
-						free(zbuffer);
-					}
-					zbuffer = (real_t*)malloc(sizeof(real_t) * xres * yres);
-					if (clickmap != NULL)
-					{
-						free(clickmap);
-					}
-					clickmap = (Entity**)malloc(sizeof(Entity*)*xres * yres);
 				}
 				break;
 				/*case SDL_CONTROLLERAXISMOTION:

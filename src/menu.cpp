@@ -168,7 +168,6 @@ int serialVerifyWindow = 0;
 bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
 
-typedef std::tuple<int, int> resolution;
 std::list<resolution> resolutions;
 Uint32 settings_fov;
 Uint32 settings_fps;
@@ -12123,7 +12122,7 @@ void openGameoverWindow()
 }
 
 // get
-void getResolutionList()
+void getResolutionList(std::list<resolution>& resolutions)
 {
 	// for now just use the resolution modes on the first
 	// display.
@@ -12145,9 +12144,13 @@ void getResolutionList()
 		}
 	}
 
-	// Sort by total number of pixels
+	// Sort first by xres and then by yres
 	resolutions.sort([](resolution a, resolution b) {
-		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
+		if (std::get<0>(a) == std::get<0>(b)) {
+			return std::get<1>(a) > std::get<1>(b);
+		} else {
+			return std::get<0>(a) > std::get<0>(b);
+		}
 	});
 	resolutions.unique();
 
@@ -12262,7 +12265,7 @@ void openSettingsWindow()
 	button_t* button;
 	int c;
 
-	getResolutionList();
+	getResolutionList(resolutions);
 
 	// set the "settings" variables
 	settings_xres = xres;
@@ -14204,16 +14207,6 @@ void applySettings()
 			printlog("critical error! Attempting to abort safely...\n");
 			mainloop = 0;
 		}
-		if ( zbuffer != NULL )
-		{
-			free(zbuffer);
-		}
-		zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
-		if ( clickmap != NULL )
-		{
-			free(clickmap);
-		}
-		clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 	}
 	// set audio options
 	sfxvolume = settings_sfxvolume;

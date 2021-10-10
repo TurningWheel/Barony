@@ -2609,9 +2609,15 @@ bool initVideo()
 
 -------------------------------------------------------------------------------*/
 
-bool changeVideoMode()
+bool changeVideoMode(int new_xres, int new_yres)
 {
-	printlog("changing video mode.\n");
+	if (new_xres) {
+		xres = new_xres;
+	}
+	if (new_yres) {
+		yres = new_yres;
+	}
+	printlog("changing video mode (%d x %d).\n", xres, yres);
 #ifdef PANDORA
 	GO_InitFBO();
 #else
@@ -2692,6 +2698,18 @@ bool changeVideoMode()
 	Frame::fboInit();
 
 #endif
+
+	if ( zbuffer != NULL )
+	{
+		free(zbuffer);
+	}
+	zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
+	if ( clickmap != NULL )
+	{
+		free(clickmap);
+	}
+	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
+
 	// success
 	return true;
 }
