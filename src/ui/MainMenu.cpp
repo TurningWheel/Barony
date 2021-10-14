@@ -1021,6 +1021,7 @@ namespace MainMenu {
 
 	static void settingsResolution(Button& button) {
 		settingsOpenDropdown(button, "resolution", false, [](Frame::entry_t& entry){
+			soundActivate();
 			int new_xres, new_yres;
 			sscanf(entry.name.c_str(), "%d x %d", &new_xres, &new_yres);
 			allSettings.resolution_x = new_xres;
@@ -1037,6 +1038,7 @@ namespace MainMenu {
 
 	static void settingsWindowMode(Button& button) {
 		settingsOpenDropdown(button, "window_mode", true, [](Frame::entry_t& entry){
+			soundActivate();
 			do {
 				if (entry.name == "Windowed") {
 					allSettings.window_mode = 0;
@@ -1509,6 +1511,8 @@ namespace MainMenu {
 	void settingsUI(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			settingsSelect(*settings_subwindow, {Setting::Type::BooleanWithCustomize, "add_items_to_hotbar"});
 			return;
 		}
@@ -1575,6 +1579,8 @@ namespace MainMenu {
 	void settingsVideo(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "content_control"});
 			return;
 		}
@@ -1689,6 +1695,8 @@ namespace MainMenu {
 	void settingsAudio(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
 			return;
 		}
@@ -1752,6 +1760,8 @@ namespace MainMenu {
 	void settingsControls(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
 			return;
 		}
@@ -1820,6 +1830,8 @@ namespace MainMenu {
 	void settingsGame(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "classic_mode"});
 			return;
 		}
