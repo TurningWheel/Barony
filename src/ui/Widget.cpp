@@ -143,6 +143,15 @@ void Widget::findSelectedWidgets(std::vector<Widget*>& outResult) {
 	}
 }
 
+void Widget::findSelectedWidgets(std::vector<const Widget*>& outResult) const {
+	if (selected) {
+		outResult.push_back(this);
+	}
+	for (auto widget : widgets) {
+		widget->findSelectedWidgets(outResult);
+	}
+}
+
 Widget* Widget::findSelectedWidget(int owner) {
 	if (selected && owner == this->owner) {
 		return this;
@@ -185,7 +194,7 @@ void Widget::adoptWidget(Widget& widget) {
 	widgets.push_back(&widget);
 }
 
-void Widget::drawGlyphs(const SDL_Rect size, const std::vector<Widget*>& selectedWidgets) {
+void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const {
 	if (drawCallback) {
 		drawCallback(*this, size);
 	}

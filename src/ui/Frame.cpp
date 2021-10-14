@@ -151,7 +151,7 @@ Frame::~Frame() {
 	clear();
 }
 
-void Frame::draw() {
+void Frame::draw() const {
 	SDL_glBindFramebuffer(GL_FRAMEBUFFER, gui_fbo);
 	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gui_fbo_color, 0);
 	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gui_fbo_depth, 0);
@@ -161,7 +161,7 @@ void Frame::draw() {
 	//glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	auto _actualSize = allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h};
-	std::vector<Widget*> selectedWidgets;
+	std::vector<const Widget*> selectedWidgets;
 	findSelectedWidgets(selectedWidgets);
 	Frame::draw(size, _actualSize, selectedWidgets);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -191,12 +191,7 @@ void Frame::draw() {
 	glColor4f(1.f, 1.f, 1.f, 1.f);
 }
 
-void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
-	if ( parent && inheritParentFrameOpacity )
-	{
-		setOpacity(static_cast<Frame*>(parent)->getOpacity());
-	}
-
+void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if (disabled || invisible)
 		return;
 
@@ -267,11 +262,15 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
 	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousexrel = (inputs.getMouse(owner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mouseyrel = (inputs.getMouse(owner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
 	// horizontal slider
@@ -548,6 +547,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		return result;
 	}
 #endif
+	if ( parent && inheritParentFrameOpacity ) {
+		setOpacity(static_cast<Frame*>(parent)->getOpacity());
+	}
 
 	// warning: overloading member variable!
 	SDL_Rect actualSize = allowScrolling ? this->actualSize : SDL_Rect{0, 0, size.w, size.h};
@@ -584,11 +586,15 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
 	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousexrel = (inputs.getMouse(owner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mouseyrel = (inputs.getMouse(owner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
 	Input& input = Input::inputs[owner];
@@ -714,11 +720,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (this->actualSize.h <= size.h) {
 				if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					this->actualSize.x += std::min(entrySize * 2, size.w);
+					this->actualSize.x += std::min(entrySize, size.w);
 					usable = result.usable = false;
 				} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
 					mousestatus[SDL_BUTTON_WHEELUP] = 0;
-					this->actualSize.x -= std::min(entrySize * 2, size.w);
+					this->actualSize.x -= std::min(entrySize, size.w);
 					usable = result.usable = false;
 				}
 			}
@@ -728,11 +734,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		if (this->actualSize.h > size.h) {
 			if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
 				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-				this->actualSize.y += std::min(entrySize * 2, size.h);
+				this->actualSize.y += std::min(entrySize, size.h);
 				usable = result.usable = false;
 			} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
 				mousestatus[SDL_BUTTON_WHEELUP] = 0;
-				this->actualSize.y -= std::min(entrySize * 2, size.h);
+				this->actualSize.y -= std::min(entrySize, size.h);
 				usable = result.usable = false;
 			}
 		}
@@ -794,7 +800,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if (rectContainsPoint(sliderRect, omousex, omousey)) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
-						this->actualSize.x += omousex < handleRect.x ? -std::min(entrySize * 2, size.w) : std::min(entrySize * 2, size.w);
+						this->actualSize.x += omousex < handleRect.x ? -std::min(entrySize, size.w) : std::min(entrySize, size.w);
 						this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - size.w));
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
@@ -844,7 +850,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if (rectContainsPoint(sliderRect, omousex, omousey)) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
-						this->actualSize.y += omousey < handleRect.y ? -std::min(entrySize * 2, size.h) : std::min(entrySize * 2, size.h);
+						this->actualSize.y += omousey < handleRect.y ? -std::min(entrySize, size.h) : std::min(entrySize, size.h);
 						this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - size.h));
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
@@ -867,6 +873,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (usable && buttonResult.highlighted) {
 				result.highlightTime = buttonResult.highlightTime;
 				result.tooltip = buttonResult.tooltip;
+				if (mousexrel || mouseyrel) {
+					button->select();
+				}
 				if (buttonResult.clicked) {
 					button->activate();
 				}
@@ -894,6 +903,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (usable && sliderResult.highlighted) {
 				result.highlightTime = sliderResult.highlightTime;
 				result.tooltip = sliderResult.tooltip;
+				if (mousexrel || mouseyrel) {
+					slider->select();
+				}
 				if (sliderResult.clicked) {
 					slider->fireCallback();
 				}
@@ -920,12 +932,15 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			}
 
 			SDL_Rect entryRect;
-			entryRect.x = _size.x + border - actualSize.x; entryRect.w = _size.w - border * 2;
-			entryRect.y = _size.y + border + i * entrySize - actualSize.y; entryRect.h = entrySize;
+			entryRect.x = _size.x + border - actualSize.x + listOffset.x; entryRect.w = _size.w - border * 2;
+			entryRect.y = _size.y + border + i * entrySize - actualSize.y + listOffset.y; entryRect.h = entrySize;
 
 			if (rectContainsPoint(_size, omousex, omousey) && rectContainsPoint(entryRect, omousex, omousey)) {
 				result.highlightTime = entry->highlightTime;
 				result.tooltip = entry->tooltip.c_str();
+				if (mousexrel || mouseyrel) {
+					selection = i;
+				}
 				if (mousestatus[SDL_BUTTON_LEFT]) {
 					if (!entry->pressed) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -965,8 +980,13 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 			Field::result_t fieldResult = field->process(_size, actualSize, usable);
 			if (usable) {
-				if (field->isSelected() && fieldResult.highlighted) {
-					result.usable = usable = false;
+				if (fieldResult.highlighted) {
+					if (mousexrel || mouseyrel) {
+						field->select();
+					}
+					if (field->isSelected()) {
+						result.usable = usable = false;
+					}
 				}
 			}
 
@@ -1584,7 +1604,7 @@ void createTestUI() {
 	}
 }
 
-void Frame::drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll) {
+void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll) const {
 	assert(image);
 	const Image* actualImage = Image::get(image->path.c_str());
 	if (actualImage) {

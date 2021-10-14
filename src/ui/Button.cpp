@@ -59,7 +59,7 @@ static char* tokenize(char* str, const char* const delimiters) {
 	}
 }
 
-void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
+void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if (invisible) {
 		return;
 	}

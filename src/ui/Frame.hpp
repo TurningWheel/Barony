@@ -120,7 +120,7 @@ public:
 	static void fboDestroy();
 
 	//! draws the frame and all of its subelements
-	void draw();
+	void draw() const;
 
 	//! handle clicks and other events
 	//! @return compiled results of frame processing
@@ -260,7 +260,7 @@ public:
 	//! @param image the image to draw
 	//! @param _size the size of the rectangle to clip against
 	//! @param scroll the amount by which to offset the image in x/y
-	void drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll);
+	void drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll) const;
 
 	//! scroll to the current list entry selection in the frame
 	//! @param scroll_to_top if true, scroll the selection to the very top of the frame
@@ -351,7 +351,7 @@ private:
 	//! @param _size real position of the frame onscreen
 	//! @param _actualSize offset into the frame space (scroll)
 	//! @param selectedWidgets the currently selected widgets, if any
-	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets);
+	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
 
 	//! handle clicks and other events
 	//! @param _size real position of the frame onscreen

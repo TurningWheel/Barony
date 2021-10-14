@@ -13,7 +13,7 @@ Slider::Slider(Frame& _parent) {
 	_parent.adoptWidget(*this);
 }
 
-void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
+void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if (invisible) {
 		return;
 	}
@@ -22,14 +22,6 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 	}
 
 	SDL_Rect _handleSize, _railSize;
-
-	if (orientation == SLIDER_HORIZONTAL) {
-		handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
-		handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
-	} else if (orientation == SLIDER_VERTICAL) {
-		handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
-		handleSize.y = railSize.y - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.h;
-	}
 
 	bool focused = highlighted || selected;
 
@@ -135,8 +127,13 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 
 	SDL_Rect _handleSize, _railSize;
 
-	handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
-	handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
+	if (orientation == SLIDER_HORIZONTAL) {
+		handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
+		handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
+	} else if (orientation == SLIDER_VERTICAL) {
+		handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
+		handleSize.y = railSize.y - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.h;
+	}
 
 	_railSize.x = _size.x + std::max(0, railSize.x - _actualSize.x);
 	_railSize.y = _size.y + std::max(0, railSize.y - _actualSize.y);

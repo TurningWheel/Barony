@@ -3419,7 +3419,7 @@ void createPlayerInventory(const int player)
 			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
 
 			charFrame->setSize(charSize);
-			charFrame->setDrawCallback([](Widget& widget, SDL_Rect pos) {
+			charFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
 				drawCharacterPreview(widget.getOwner(), pos);
 			});
 			//charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },

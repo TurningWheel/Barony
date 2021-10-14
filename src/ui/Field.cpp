@@ -100,7 +100,7 @@ char* Field::tokenize(char* str, const char* const delimiters) {
 	}
 }
 
-void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
+void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if ( invisible || isDisabled() ) {
 		return;
 	}
