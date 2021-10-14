@@ -282,7 +282,7 @@ int initGame()
 			}
 		}
 		FileIO::close(fp);
-		bookParser_t.createBooks(false);
+		//bookParser_t.createBooks(false);
 		setupSpells();
 
 #ifdef NINTENDO

@@ -22,7 +22,7 @@
 
 #include <assert.h>
 
-bool newui = false;
+bool newui = true;
 int selectedCursorOpacity = 255;
 int oldSelectedCursorOpacity = 255;
 int hotbarSlotOpacity = 255;
