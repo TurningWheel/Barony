@@ -92,6 +92,20 @@ void Input::defaultBindings() {
 		inputs[c].bind("HotbarSlot9", "9");
 		inputs[c].bind("HotbarSlot10", "0");
 	}
+#ifndef NINTENDO
+	inputs[0].bind("MenuUp", "Up");
+	inputs[0].bind("MenuLeft", "Left");
+	inputs[0].bind("MenuRight", "Right");
+	inputs[0].bind("MenuDown", "Down");
+	inputs[0].bind("MenuConfirm", "Space");
+	inputs[0].bind("MenuCancel", "Escape");
+	inputs[0].bind("MenuAlt1", "Left Shift");
+	inputs[0].bind("MenuAlt2", "Left Alt");
+	inputs[0].bind("MenuStart", "Return");
+	inputs[0].bind("MenuSelect", "Backspace");
+	inputs[0].bind("MenuPageLeft", "[");
+	inputs[0].bind("MenuPageRight", "]");
+#endif
 }
 
 float Input::analog(const char* binding) const {

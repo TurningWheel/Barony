@@ -635,9 +635,6 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					search->select();
 				}
 			}
-			if (dropDown) {
-				toBeDeleted = true;
-			}
 		}
 
 		// choose a selection
@@ -931,6 +928,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				result.tooltip = entry->tooltip.c_str();
 				if (mousestatus[SDL_BUTTON_LEFT]) {
 					if (!entry->pressed) {
+						mousestatus[SDL_BUTTON_LEFT] = 0;
 						entry->pressed = true;
 						activateEntry(*entry);
 					}
@@ -1444,15 +1442,8 @@ void Frame::enableScroll(bool enabled) {
 }
 
 void Frame::scrollToSelection(bool scroll_to_top) {
-	if (selection == -1) {
+	if (selection < 0 || selection >= list.size()) {
 		return;
-	}
-	int index = 0;
-	for (auto entry : list) {
-		if (entry == list[selection]) {
-			break;
-		}
-		++index;
 	}
 	int entrySize = 20;
 	Font* _font = Font::get(font.c_str());
@@ -1460,6 +1451,7 @@ void Frame::scrollToSelection(bool scroll_to_top) {
 		entrySize = _font->height();
 		entrySize += entrySize / 2;
 	}
+	const int index = selection;
 	if (scroll_to_top || actualSize.y > index * entrySize) {
 		actualSize.y = index * entrySize;
 	}
@@ -1477,6 +1469,9 @@ void Frame::activateEntry(entry_t& entry) {
 		if (entry.click) {
 			(*entry.click)(entry);
 		}
+	}
+	if (dropDown) {
+		toBeDeleted = true;
 	}
 }
 

@@ -44,9 +44,10 @@ namespace MainMenu {
 
 	static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
 	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
-	static const char* smallfont_outline = "fonts/pixel_maz.ttf#14#2";
-	static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#14#0";
-	static const char* menu_option_font = "fonts/pixel_maz.ttf#24#2";
+	static const char* smallfont_outline = "fonts/pixel_maz.ttf#32#2";
+	static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#32#0";
+	static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
+	static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
 
 	static inline void soundToggleMenu() {
 		playSound(500, 48);
@@ -448,11 +449,7 @@ namespace MainMenu {
 		shaking = allSettings.shaking_enabled;
 		bobbing = allSettings.bobbing_enabled;
 		flickerLights = allSettings.light_flicker_enabled;
-		xres = allSettings.resolution_x;
-		yres = allSettings.resolution_y;
-		verticalSync = allSettings.vsync_enabled;
 		vertical_splitscreen = allSettings.vertical_split_enabled;
-		vidgamma = allSettings.gamma / 100.f;
 		fov = allSettings.fov;
 		fpsLimit = allSettings.fps;
 		master_volume = allSettings.master_volume;
@@ -479,6 +476,31 @@ namespace MainMenu {
 		svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
 		svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
 		svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
+
+		// change video mode
+		switch (allSettings.window_mode) {
+		case 0:
+			fullscreen = false;
+			borderless = false;
+			break;
+		case 1:
+			fullscreen = true;
+			borderless = false;
+			break;
+		case 2:
+			fullscreen = true;
+			borderless = true;
+			break;
+		default:
+			assert("Unknown video mode" && 0);
+			break;
+		}
+		vidgamma = allSettings.gamma / 100.f;
+		verticalSync = allSettings.vsync_enabled;
+		if ( !changeVideoMode(allSettings.resolution_x, allSettings.resolution_y) ) {
+			printlog("critical error! Attempting to abort safely...\n");
+			mainloop = 0;
+		}
 
 		// transmit server flags
 		if ( !intro && multiplayer == SERVER ) {
@@ -528,6 +550,7 @@ namespace MainMenu {
 		allSettings.shaking_enabled = true;
 		allSettings.bobbing_enabled = true;
 		allSettings.light_flicker_enabled = true;
+		allSettings.window_mode = 0;
 		allSettings.resolution_x = 1280;
 		allSettings.resolution_y = 720;
 		allSettings.vsync_enabled = true;
@@ -910,16 +933,16 @@ namespace MainMenu {
 		);
 	}
 
-	static void settingsResolution(Button& button) {
+	static void settingsOpenDropdown(Button& button, const char* name, bool small_dropdown, void(*entry_func)(Frame::entry_t&)) {
+		std::string dropdown_name = "setting_" + std::string(name) + "_dropdown";
 		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 		auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-		auto resolution = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(resolution);
-		auto dropdown = settings_subwindow->addFrame("setting_resolution_dropdown"); assert(dropdown);
+		auto dropdown = settings_subwindow->addFrame(dropdown_name.c_str()); assert(dropdown);
 		dropdown->setSize(SDL_Rect{
-			resolution->getSize().x,
-			resolution->getSize().y,
+			button.getSize().x,
+			button.getSize().y,
 			174,
-			362
+			small_dropdown ? 181 : 362
 			});
 		dropdown->setActualSize(SDL_Rect{0, 0, dropdown->getSize().w, dropdown->getSize().h});
 		dropdown->setColor(0);
@@ -929,7 +952,9 @@ namespace MainMenu {
 		auto background = dropdown->addImage(
 			dropdown->getActualSize(),
 			0xffffffff,
-			"images/ui/Main Menus/Settings/Settings_Drop_ScrollBG00.png",
+			small_dropdown ?
+				"images/ui/Main Menus/Settings/Settings_Drop_ScrollBG01.png" :
+				"images/ui/Main Menus/Settings/Settings_Drop_ScrollBG00.png",
 			"background"
 		);
 
@@ -940,51 +965,34 @@ namespace MainMenu {
 		dropdown_list->setColor(0);
 		dropdown_list->setBorder(0);
 		dropdown_list->setFont(bigfont_outline);
-		dropdown_list->setListOffset(SDL_Rect{0, 12, 0, 0});
+		dropdown_list->setListOffset(SDL_Rect{0, 11, 0, 0});
 		dropdown_list->setListJustify(Frame::justify_t::CENTER);
 		dropdown_list->setScrollBarsEnabled(false);
 		dropdown_list->select();
+		dropdown_list->activate();
 
 		for (int i = 0;; ++i) {
 			auto str = std::string("__") + std::to_string(i);
-			auto find = resolution->getWidgetActions().find(str);
-			if (find != resolution->getWidgetActions().end()) {
-				auto res = find->second.c_str();
-				auto entry = dropdown_list->addEntry(res, false);
-				entry->text = res;
-				entry->click = [](Frame::entry_t& entry){
-					int new_xres, new_yres;
-					sscanf(entry.name.c_str(), "%d x %d", &new_xres, &new_yres);
-					if (new_xres != xres || new_yres != yres) {
-						xres = new_xres;
-						yres = new_yres;
-						if ( !changeVideoMode() ) {
-							printlog("critical error! Attempting to abort safely...\n");
-							mainloop = 0;
-						}
-						auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-						auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-						auto resolution = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(resolution);
-						resolution->setText(entry.name.c_str());
-					}
-				};
-				entry->ctrlClick = entry->click;
+			auto find = button.getWidgetActions().find(str);
+			if (find != button.getWidgetActions().end()) {
+				auto entry_name = find->second.c_str();
+				auto entry = dropdown_list->addEntry(entry_name, false);
+				entry->text = entry_name;
+				entry->click = entry_func;
+				entry->ctrlClick = entry_func;
 				dropdown_list->resizeForEntries();
 				auto size = dropdown_list->getActualSize();
 				size.h += 14;
 				dropdown_list->setActualSize(size);
-
-				int x, y;
-				sscanf(entry->name.c_str(), "%d x %d", &x, &y);
-				if (x == xres && y == yres) {
+				if (strcmp(button.getText(), entry_name) == 0) {
 					dropdown_list->setSelection(i);
-					dropdown_list->scrollToSelection(true);
 				}
 			}
 			else {
 				break;
 			}
 		}
+		dropdown_list->scrollToSelection(true);
 
 		auto selection = dropdown_list->addImage(
 			SDL_Rect{8, 0, 158, 30},
@@ -992,6 +1000,7 @@ namespace MainMenu {
 			"images/ui/Main Menus/Settings/Settings_Drop_SelectBacking00.png",
 			"selection"
 		);
+
 		dropdown_list->setTickCallback([](Widget& widget){
 			Frame* dropdown_list = static_cast<Frame*>(&widget); assert(dropdown_list);
 			auto selection = dropdown_list->findImage("selection"); assert(selection);
@@ -1003,17 +1012,53 @@ namespace MainMenu {
 					entrySize = _font->height();
 					entrySize += entrySize / 2;
 				}
-				selection->pos.y = dropdown_list->getSelection() * entrySize + 12;
+				selection->pos.y = dropdown_list->getSelection() * entrySize + 8;
 			} else {
 				selection->disabled = true;
 			}
-			auto size = dropdown_list->getActualSize();
-			size.x = 0;
-			dropdown_list->setActualSize(size);
+			});
+	}
+
+	static void settingsResolution(Button& button) {
+		settingsOpenDropdown(button, "resolution", false, [](Frame::entry_t& entry){
+			int new_xres, new_yres;
+			sscanf(entry.name.c_str(), "%d x %d", &new_xres, &new_yres);
+			allSettings.resolution_x = new_xres;
+			allSettings.resolution_y = new_yres;
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			auto button = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(button);
+			auto dropdown = settings_subwindow->findFrame("setting_resolution_dropdown"); assert(dropdown);
+			button->setText(entry.name.c_str());
+			dropdown->removeSelf();
+			button->select();
 			});
 	}
 
 	static void settingsWindowMode(Button& button) {
+		settingsOpenDropdown(button, "window_mode", true, [](Frame::entry_t& entry){
+			do {
+				if (entry.name == "Windowed") {
+					allSettings.window_mode = 0;
+					break;
+				}
+				if (entry.name == "Fullscreen") {
+					allSettings.window_mode = 1;
+					break;
+				}
+				if (entry.name == "Borderless") {
+					allSettings.window_mode = 2;
+					break;
+				}
+			} while (0);
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			auto button = settings_subwindow->findButton("setting_window_mode_dropdown_button"); assert(button);
+			auto dropdown = settings_subwindow->findFrame("setting_window_mode_dropdown"); assert(dropdown);
+			button->setText(entry.name.c_str());
+			dropdown->removeSelf();
+			button->select();
+			});
 	}
 
 	static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
@@ -1201,6 +1246,7 @@ namespace MainMenu {
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
+		button->setBackgroundHighlighted("images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(127,127,127,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
@@ -1574,15 +1620,12 @@ namespace MainMenu {
 			snprintf(buf, sizeof(buf), "%d x %d", x, y);
 			resolutions_formatted.push_back(std::string(buf));
 			resolutions_formatted_ptrs.push_back(resolutions_formatted.back().c_str());
-			if (xres == x && yres == y) {
+			if (allSettings.resolution_x == x && allSettings.resolution_y == y) {
 				selected_res = index;
 			}
 		}
 
-		const char* selected_mode = fullscreen ?
-			borderless ?
-			"Borderless" : "Fullscreen":
-			"Windowed";
+		const char* selected_mode = fullscreen ? (borderless ? "Borderless" : "Fullscreen") : "Windowed";
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 #ifndef NINTENDO
@@ -1590,7 +1633,7 @@ namespace MainMenu {
 			resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
 			settingsResolution);
 		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
-			{"Fullscreen", "Borderless", "Windowed"}, selected_mode,
+			{"Windowed", "Fullscreen", "Borderless"}, selected_mode,
 			settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
@@ -3801,8 +3844,6 @@ namespace MainMenu {
 			"backdrop"
 		);
 
-		static const char* banner_font = "fonts/pixel_maz.ttf#36#2";
-
 		auto banner = card->addField("invite_banner", 64);
 		banner->setText((std::string("PLAYER ") + std::to_string(index + 1)).c_str());
 		banner->setFont(banner_font);
@@ -3853,8 +3894,6 @@ namespace MainMenu {
 			"images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png",
 			"backdrop"
 		);
-
-		static const char* banner_font = "fonts/pixel_maz.ttf#36#2";
 
 		auto banner = card->addField("invite_banner", 64);
 		banner->setText("INVITE");
@@ -4257,6 +4296,7 @@ namespace MainMenu {
 		allSettings.shaking_enabled = shaking;
 		allSettings.bobbing_enabled = bobbing;
 		allSettings.light_flicker_enabled = flickerLights;
+		allSettings.window_mode = fullscreen ? (borderless ? 2 : 1) : 0;
 		allSettings.resolution_x = xres;
 		allSettings.resolution_y = yres;
 		allSettings.vsync_enabled = verticalSync;
@@ -4333,10 +4373,8 @@ namespace MainMenu {
 			}
 			});
 
-		static const char* pixel_maz_outline = "fonts/pixel_maz.ttf#36#2";
-
 		auto window_title = settings->addField("window_title", 64);
-		window_title->setFont(pixel_maz_outline);
+		window_title->setFont(banner_font);
 		window_title->setSize(SDL_Rect{394, 26, 338, 24});
 		window_title->setJustify(Field::justify_t::CENTER);
 		window_title->setText("SETTINGS");
@@ -4356,7 +4394,7 @@ namespace MainMenu {
 			auto button = settings->addButton(tabs[c].name);
 			button->setCallback(tabs[c].callback);
 			button->setText(tabs[c].name);
-			button->setFont(pixel_maz_outline);
+			button->setFont(banner_font);
 			button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
 			button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
 			button->setSize(SDL_Rect{76 + (272 - 76) * c, 64, 184, 64});

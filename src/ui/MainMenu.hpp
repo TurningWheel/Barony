@@ -54,6 +54,7 @@ namespace MainMenu {
 		bool shaking_enabled;
 		bool bobbing_enabled;
 		bool light_flicker_enabled;
+		int window_mode; // 0 = windowed, 1 = fullscreen, 2 = borderless
 		int resolution_x;
 		int resolution_y;
 		bool vsync_enabled;
