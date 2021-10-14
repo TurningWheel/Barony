@@ -128,11 +128,11 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	SDL_Rect _handleSize, _railSize;
 
 	if (orientation == SLIDER_HORIZONTAL) {
-		handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
+		handleSize.x = (railSize.x + border) - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.w - border * 2);
 		handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
 	} else if (orientation == SLIDER_VERTICAL) {
 		handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
-		handleSize.y = railSize.y - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.h;
+		handleSize.y = (railSize.y + border) - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.h - border * 2);
 	}
 
 	_railSize.x = _size.x + std::max(0, railSize.x - _actualSize.x);
@@ -145,8 +145,8 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
 	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
 
-	int offX = _size.x + railSize.x - _actualSize.x;
-	int offY = _size.y + railSize.y - _actualSize.y;
+	int offX = _size.x + (railSize.x + border) - _actualSize.x;
+	int offY = _size.y + (railSize.y + border) - _actualSize.y;
 	if (orientation == SLIDER_HORIZONTAL) {
 		_size.x = std::max(_size.x, _railSize.x - _handleSize.w / 2);
 		_size.y = std::max(_size.y, _railSize.y + _railSize.h / 2 - _handleSize.h / 2);
@@ -192,10 +192,10 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 			pressed = true;
 			float oldValue = value;
 			if (orientation == SLIDER_HORIZONTAL) {
-				value = ((float)(mousex - offX) / railSize.w) * (float)(maxValue - minValue) + minValue;
+				value = ((float)(mousex - offX) / (railSize.w - border * 2)) * (float)(maxValue - minValue) + minValue;
 			}
 			else if (orientation == SLIDER_VERTICAL) {
-				value = ((float)(mousey - offY) / railSize.h) * (float)(maxValue - minValue) + minValue;
+				value = ((float)(mousey - offY) / (railSize.h - border * 2)) * (float)(maxValue - minValue) + minValue;
 			}
 			value = std::min(std::max(minValue, value), maxValue);
 			if (oldValue != value) {

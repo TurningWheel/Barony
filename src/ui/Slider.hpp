@@ -101,7 +101,7 @@ private:
     float maxValue = 0.f;                           //!< maximum value
     float minValue = 0.f;                           //!< minimum value
     float valueSpeed = 1.f;                         //!< how fast the slider moves when we press a button
-    int border = 2;                                 //!< border size in pixels
+    int border = 0;                                 //!< border size in pixels
     bool activated = false;                         //!< if true, the slider captures all input
     SDL_Rect handleSize;                            //!< size of the handle in pixels
     SDL_Rect railSize;                              //!< size of the rail in pixels

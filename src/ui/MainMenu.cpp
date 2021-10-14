@@ -831,6 +831,7 @@ namespace MainMenu {
 			auto slider = window->addSlider((std::string("sort_slider") + std::to_string(c)).c_str());
 			slider->setMaxValue(6.f);
 			slider->setMinValue(-6.f);
+			slider->setBorder(24);
 			slider->setRailSize(SDL_Rect{158, 100 + 50 *c, 724, 24});
 			slider->setHandleSize(SDL_Rect{0, 0, 52, 54});
 			slider->setRailImage("images/ui/Main Menus/Settings/AutoSort/transparent.png");
@@ -1310,8 +1311,10 @@ namespace MainMenu {
 				});
 		}
 		auto slider = frame.addSlider((fullname + "_slider").c_str());
+		slider->setOrientation(Slider::orientation_t::SLIDER_HORIZONTAL);
 		slider->setMinValue(minValue);
 		slider->setMaxValue(maxValue);
+		slider->setBorder(16);
 		slider->setValue(value);
 		slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, 450, 24});
 		slider->setHandleSize(SDL_Rect{0, 0, 52, 42});
@@ -1393,6 +1396,7 @@ namespace MainMenu {
 		);
 		rock_background->tiled = true;
 		auto slider = settings_subwindow->addSlider("scroll_slider");
+		slider->setBorder(24);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
 		slider->setRailSize(SDL_Rect{1038, 16, 30, 440});
 		slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
@@ -3405,6 +3409,7 @@ namespace MainMenu {
 			slider->setRailImage("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
 			slider->setHandleImage("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_SliderB_00.png");
 			slider->setOrientation(Slider::orientation_t::SLIDER_VERTICAL);
+			slider->setBorder(24);
 			slider->setMinValue(0.f);
 			slider->setMaxValue(subframe->getActualSize().h - 258);
 			slider->setCallback([](Slider& slider){
