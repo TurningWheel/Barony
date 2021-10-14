@@ -690,6 +690,23 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
+	// process frames
+	{
+		for (int i = frames.size() - 1; i >= 0; --i) {
+			Frame* frame = frames[i];
+			result_t frameResult = frame->process(_size, actualSize, selectedWidgets, usable);
+			usable = result.usable = frameResult.usable;
+			if (!frameResult.removed) {
+				if (frameResult.tooltip != nullptr) {
+					result = frameResult;
+				}
+			} else {
+				delete frame;
+				frames.erase(frames.begin() + i);
+			}
+		}
+	}
+
 	// scroll with mouse wheel
 	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable && allowScrolling && allowScrollBinds) {
 		// x scroll with mouse wheel
@@ -723,23 +740,6 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		// bound
 		this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - size.w));
 		this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - size.h));
-	}
-
-	// process frames
-	{
-		for (int i = frames.size() - 1; i >= 0; --i) {
-			Frame* frame = frames[i];
-			result_t frameResult = frame->process(_size, actualSize, selectedWidgets, usable);
-			usable = result.usable = frameResult.usable;
-			if (!frameResult.removed) {
-				if (frameResult.tooltip != nullptr) {
-					result = frameResult;
-				}
-			} else {
-				delete frame;
-				frames.erase(frames.begin() + i);
-			}
-		}
 	}
 
 	// process (frame view) sliders
