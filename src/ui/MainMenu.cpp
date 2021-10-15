@@ -4600,9 +4600,91 @@ namespace MainMenu {
 		confirm_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
 	}
 
+	static int quit_motd = -1;
+
 	void mainQuit(Button& button) {
+		if (main_menu_frame->findFrame("quit_confirm")) {
+			return;
+		}
+
 		soundActivate();
-		// TODO
+		
+		auto frame = main_menu_frame->addFrame("quit_confirm");
+		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
+		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
+		frame->setColor(0);
+		frame->setBorder(0);
+		frame->addImage(
+			frame->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
+			"background"
+		);
+
+		static const char* quit_messages[][3] {
+			{"You want to leave, eh?\nThen get out and don't come back!", "Fine geez", "Never!"},
+			{"Just cancel your plans.\nI'll wait.", "Good luck", "Sure"},
+			{"You couldn't kill the lich anyway.", "You're right", "Oh yeah?"},
+			{"The gnomes are laughing at you!\nAre you really gonna take that?", "Yeah :(", "No way!"},
+			{"Don't go now! There's a\nboulder trap around the corner!", "Kill me", "Oh thanks"},
+			{"I'll tell your parents\nyou said a bad word.", "Poop", "Please no"},
+			{"Please don't leave!\nThere's more treasure to loot!", "Don't care", "More loot!"},
+			{"Just be glad I can't summon\nthe minotaur in real life.", "Too bad", "Point taken"},
+			{"I'd leave too.\nThis game looks just like Minecraft.", "lol", "Ouch"}
+		};
+		constexpr int num_quit_messages = sizeof(quit_messages) / (sizeof(const char*) * 3);
+
+		if (quit_motd >= num_quit_messages) {
+			quit_motd = 0;
+		}
+		if (quit_motd < 0) {
+			quit_motd = rand() % num_quit_messages;
+		}
+
+		auto text = frame->addField("text", 128);
+		text->setSize(SDL_Rect{30, 28, 304, 46});
+		text->setFont(smallfont_no_outline);
+		text->setText(quit_messages[quit_motd][0]);
+		text->setJustify(Field::justify_t::CENTER);
+
+		auto okay = frame->addButton("okay");
+		okay->setSize(SDL_Rect{58, 78, 130, 52});
+		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+		okay->setColor(makeColor(127, 127, 127, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(127, 127, 127, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText(quit_messages[quit_motd][1]);
+		okay->setWidgetRight("cancel");
+		okay->setWidgetBack("cancel");
+		okay->select();
+		okay->setCallback([](Button&){mainloop = 0;});
+
+		auto cancel = frame->addButton("cancel");
+		cancel->setSize(SDL_Rect{196, 78, 108, 52});
+		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		cancel->setColor(makeColor(127, 127, 127, 255));
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setTextColor(makeColor(127, 127, 127, 255));
+		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setFont(smallfont_outline);
+		cancel->setText(quit_messages[quit_motd][2]);
+		cancel->setWidgetLeft("okay");
+		cancel->setWidgetBack("cancel");
+		cancel->setCallback([](Button&){
+			soundCancel();
+			assert(main_menu_frame);
+			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+			auto quit_button = buttons->findButton("QUIT"); assert(quit_button);
+			quit_button->select();
+			auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+			if (quit_confirm) {
+				quit_confirm->removeSelf();
+			}
+			});
+
+		++quit_motd;
 	}
 
 /******************************************************************************/
