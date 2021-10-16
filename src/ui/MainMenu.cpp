@@ -584,7 +584,7 @@ namespace MainMenu {
 		allSettings.cheats_enabled = false;
 	}
 
-	void settingsCustomizeInventorySorting(Button&);
+	static void settingsCustomizeInventorySorting(Button&);
 
 	static void inventorySortingDefaults(Button& button) {
 		soundActivate();
@@ -628,7 +628,7 @@ namespace MainMenu {
 		allSettings.inventory_sorting.save();
 	}
 
-	void settingsCustomizeInventorySorting(Button& button) {
+	static void settingsCustomizeInventorySorting(Button& button) {
 		soundActivate();
 
 		auto window = main_menu_frame->addFrame("inventory_sorting_window");
@@ -1065,6 +1065,124 @@ namespace MainMenu {
 			dropdown->removeSelf();
 			button->select();
 			});
+	}
+
+	static Frame* settingsGenericWindow(const char* name, const char* title) {
+		auto window = main_menu_frame->addFrame(name);
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 826) / 2,
+			(Frame::virtualScreenY - 718) / 2,
+			826,
+			718});
+		window->setActualSize(SDL_Rect{0, 0, 826, 718});
+		window->setBorder(0);
+		window->setColor(0);
+
+		auto help_text = window->addField("help_text", 256);
+		help_text->setSize(SDL_Rect{30, 566, 766, 54});
+		help_text->setFont(smallfont_no_outline);
+		help_text->setJustify(Field::justify_t::CENTER);
+		help_text->setText("Help text goes here");
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window00.png",
+			"background"
+		);
+
+		auto timber = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window01.png",
+			"timber"
+		);
+		timber->ontop = true;
+
+		auto banner = window->addField("title", 64);
+		banner->setSize(SDL_Rect{246, 22, 338, 24});
+		banner->setFont(banner_font);
+		banner->setText(title);
+		banner->setJustify(Field::justify_t::CENTER);
+
+		auto subwindow = window->addFrame("subwindow");
+		subwindow->setSize(SDL_Rect{30, 64, 766, 502});
+		subwindow->setActualSize(SDL_Rect{0, 0, 766, 502});
+		subwindow->setBorder(0);
+		subwindow->setColor(0);
+
+		auto rocks = subwindow->addImage(
+			subwindow->getActualSize(),
+			makeColor(127, 127, 127, 251),
+			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Rocks00.png",
+			"rocks"
+		);
+		rocks->tiled = true;
+
+		auto defaults = window->addButton("defaults");
+		defaults->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
+		defaults->setColor(makeColor(127, 127, 127, 255));
+		defaults->setHighlightColor(makeColor(255, 255, 255, 255));
+		defaults->setTextColor(makeColor(127, 127, 127, 255));
+		defaults->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		defaults->setSize(SDL_Rect{156, 630, 164, 62});
+		defaults->setText("Restore\nDefaults");
+		defaults->setFont(smallfont_outline);
+		defaults->setWidgetBack("discard");
+		defaults->addWidgetAction("MenuStart", "confirm");
+		defaults->addWidgetAction("MenuAlt2", "defaults");
+		defaults->setWidgetRight("discard");
+		
+		auto discard = window->addButton("discard");
+		discard->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
+		discard->setColor(makeColor(127, 127, 127, 255));
+		discard->setHighlightColor(makeColor(255, 255, 255, 255));
+		discard->setTextColor(makeColor(127, 127, 127, 255));
+		discard->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		discard->setText("Discard\n& Exit");
+		discard->setFont(smallfont_outline);
+		discard->setSize(SDL_Rect{
+			(window->getActualSize().w - 164) / 2,
+			630,
+			164,
+			62}
+		);
+		discard->setCallback([](Button& button){
+			soundCancel();
+			auto parent = static_cast<Frame*>(button.getParent());
+			parent->removeSelf();
+			});
+		discard->setWidgetBack("discard");
+		discard->addWidgetAction("MenuStart", "confirm");
+		discard->addWidgetAction("MenuAlt2", "defaults");
+		discard->setWidgetLeft("defaults");
+		discard->setWidgetRight("confirm");
+
+		auto confirm = window->addButton("confirm");
+		confirm->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
+		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
+		confirm->setTextColor(makeColor(127, 127, 127, 255));
+		confirm->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		confirm->setText("Confirm\n& Exit");
+		confirm->setFont(smallfont_outline);
+		confirm->setSize(SDL_Rect{504, 630, 164, 62});
+		confirm->setCallback([](Button& button){
+			soundActivate();
+			auto parent = static_cast<Frame*>(button.getParent());
+			parent->removeSelf();
+			});
+		confirm->setWidgetBack("discard");
+		confirm->addWidgetAction("MenuStart", "confirm");
+		confirm->addWidgetAction("MenuAlt2", "defaults");
+		confirm->setWidgetLeft("discard");
+		confirm->select();
+
+		return window;
+	}
+
+	static void settingsBindings(Button& button) {
+		auto bindings = settingsGenericWindow("bindings", "BINDINGS");
 	}
 
 	static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
@@ -1778,7 +1896,7 @@ namespace MainMenu {
 		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General Settings");
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
-			nullptr);
+			settingsBindings);
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
