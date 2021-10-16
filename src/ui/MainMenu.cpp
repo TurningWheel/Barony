@@ -831,7 +831,6 @@ namespace MainMenu {
 			auto slider = window->addSlider((std::string("sort_slider") + std::to_string(c)).c_str());
 			slider->setMaxValue(6.f);
 			slider->setMinValue(-6.f);
-			slider->setBorder(24);
 			slider->setRailSize(SDL_Rect{158, 100 + 50 *c, 724, 24});
 			slider->setHandleSize(SDL_Rect{0, 0, 52, 54});
 			slider->setRailImage("images/ui/Main Menus/Settings/AutoSort/transparent.png");
@@ -892,9 +891,13 @@ namespace MainMenu {
 					auto number = std::string(slider->getName()).substr(sizeof("sort_slider") - 1);
 					int c = atoi(number.c_str());
 					auto icon = window->findImage((std::string("sort_slider_img") + std::to_string(c)).c_str()); assert(icon);
-					icon->disabled = false;
-					icon->pos.x = slider->getHandleSize().x;
-					icon->pos.y = slider->getHandleSize().y;
+					int x = slider->getHandleSize().x;
+					int y = slider->getHandleSize().y;
+					if (x || y) {
+						icon->disabled = false;
+						icon->pos.x = x;
+						icon->pos.y = y;
+					}
 					if (slider->isSelected()) {
 						slider->setHandleImage("images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_BackBrown00.png");
 					} else {

@@ -66,6 +66,16 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	}
 	
 	// draw handle
+	SDL_Rect handleSize = this->handleSize;
+	if (handleSize.x == 0 && handleSize.y == 0) {
+		if (orientation == SLIDER_HORIZONTAL) {
+			handleSize.x = (railSize.x + border) - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.w - border * 2);
+			handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
+		} else if (orientation == SLIDER_VERTICAL) {
+			handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
+			handleSize.y = (railSize.y + border) - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.h - border * 2);
+		}
+	}
 	_handleSize.x = _size.x + std::max(0, handleSize.x - _actualSize.x);
 	_handleSize.y = _size.y + std::max(0, handleSize.y - _actualSize.y);
 	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
@@ -107,6 +117,14 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
 	Widget::process();
 
+	if (orientation == SLIDER_HORIZONTAL) {
+		handleSize.x = (railSize.x + border) - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.w - border * 2);
+		handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
+	} else if (orientation == SLIDER_VERTICAL) {
+		handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
+		handleSize.y = (railSize.y + border) - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.h - border * 2);
+	}
+
 	result_t result;
 	result.tooltip = nullptr;
 	result.highlightTime = SDL_GetTicks();
@@ -126,14 +144,6 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	}
 
 	SDL_Rect _handleSize, _railSize;
-
-	if (orientation == SLIDER_HORIZONTAL) {
-		handleSize.x = (railSize.x + border) - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.w - border * 2);
-		handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
-	} else if (orientation == SLIDER_VERTICAL) {
-		handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
-		handleSize.y = (railSize.y + border) - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.h - border * 2);
-	}
 
 	_railSize.x = _size.x + std::max(0, railSize.x - _actualSize.x);
 	_railSize.y = _size.y + std::max(0, railSize.y - _actualSize.y);
