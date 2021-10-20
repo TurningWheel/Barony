@@ -2850,6 +2850,7 @@ void handleEvents(void)
 		inputs.updateAllMouse();
 	}
 
+	Input::lastInputOfAnyKind = "";
 	for (auto& input : Input::inputs) {
 		input.updateReleasedBindings();
 		input.update();

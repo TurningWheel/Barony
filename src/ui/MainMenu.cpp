@@ -169,6 +169,48 @@ namespace MainMenu {
 		}
 	}
 
+	static void updateSettingSelection(Frame& frame) {
+		auto& images = frame.getImages();
+		for (auto image : images) {
+			if (image->path == "images/ui/Main Menus/Settings/Settings_Left_BackingSelect00.png") {
+				image->path = "images/ui/Main Menus/Settings/Settings_Left_Backing00.png";
+			}
+		}
+		static Widget* current_selected_widget = nullptr;
+		auto selectedWidget = frame.findSelectedWidget(0);
+		if (selectedWidget && current_selected_widget != selectedWidget) {
+			current_selected_widget = selectedWidget;
+			std::string setting;
+			auto name = std::string(selectedWidget->getName());
+			if (selectedWidget->getType() == Widget::WIDGET_SLIDER) {
+				setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_slider") - 1) - (sizeof("setting_") - 1));
+			} else if (selectedWidget->getType() == Widget::WIDGET_BUTTON) {
+				auto button = static_cast<Button*>(selectedWidget);
+				auto customize = "images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
+				auto binding = "images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonChoosing00.png";
+				if (strcmp(button->getBackground(), customize) == 0) {
+					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
+				} else if (strcmp(button->getBackground(), binding) == 0) {
+					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));
+				} else {
+					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_button") - 1) - (sizeof("setting_") - 1));
+				}
+			}
+			if (!setting.empty()) {
+				auto image = frame.findImage((std::string("setting_") + setting + std::string("_image")).c_str());
+				if (image) {
+					image->path = "images/ui/Main Menus/Settings/Settings_Left_BackingSelect00.png";
+				}
+				auto field = frame.findField((std::string("setting_") + setting + std::string("_field")).c_str());
+				if (field) {
+					auto settings = static_cast<Frame*>(frame.getParent());
+					auto tooltip = settings->findField("tooltip"); assert(tooltip);
+					tooltip->setText(field->getGuide());
+				}
+			}
+		}
+	}
+
 	static Button* createBackWidget(Frame* parent, void (*callback)(Button&)) {
 		auto back = parent->addFrame("back");
 		back->setSize(SDL_Rect{5, 5, 66, 36});
@@ -430,6 +472,7 @@ namespace MainMenu {
 			Customize = 2,
 			BooleanWithCustomize = 3,
 			Dropdown = 4,
+			Binding = 5,
 		};
 		Type type;
 		const char* name;
@@ -1067,124 +1110,6 @@ namespace MainMenu {
 			});
 	}
 
-	static Frame* settingsGenericWindow(const char* name, const char* title) {
-		auto window = main_menu_frame->addFrame(name);
-		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 826) / 2,
-			(Frame::virtualScreenY - 718) / 2,
-			826,
-			718});
-		window->setActualSize(SDL_Rect{0, 0, 826, 718});
-		window->setBorder(0);
-		window->setColor(0);
-
-		auto help_text = window->addField("help_text", 256);
-		help_text->setSize(SDL_Rect{30, 566, 766, 54});
-		help_text->setFont(smallfont_no_outline);
-		help_text->setJustify(Field::justify_t::CENTER);
-		help_text->setText("Help text goes here");
-
-		auto background = window->addImage(
-			window->getActualSize(),
-			0xffffffff,
-			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window00.png",
-			"background"
-		);
-
-		auto timber = window->addImage(
-			window->getActualSize(),
-			0xffffffff,
-			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window01.png",
-			"timber"
-		);
-		timber->ontop = true;
-
-		auto banner = window->addField("title", 64);
-		banner->setSize(SDL_Rect{246, 22, 338, 24});
-		banner->setFont(banner_font);
-		banner->setText(title);
-		banner->setJustify(Field::justify_t::CENTER);
-
-		auto subwindow = window->addFrame("subwindow");
-		subwindow->setSize(SDL_Rect{30, 64, 766, 502});
-		subwindow->setActualSize(SDL_Rect{0, 0, 766, 502});
-		subwindow->setBorder(0);
-		subwindow->setColor(0);
-
-		auto rocks = subwindow->addImage(
-			subwindow->getActualSize(),
-			makeColor(127, 127, 127, 251),
-			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Rocks00.png",
-			"rocks"
-		);
-		rocks->tiled = true;
-
-		auto defaults = window->addButton("defaults");
-		defaults->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
-		defaults->setColor(makeColor(127, 127, 127, 255));
-		defaults->setHighlightColor(makeColor(255, 255, 255, 255));
-		defaults->setTextColor(makeColor(127, 127, 127, 255));
-		defaults->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		defaults->setSize(SDL_Rect{156, 630, 164, 62});
-		defaults->setText("Restore\nDefaults");
-		defaults->setFont(smallfont_outline);
-		defaults->setWidgetBack("discard");
-		defaults->addWidgetAction("MenuStart", "confirm");
-		defaults->addWidgetAction("MenuAlt2", "defaults");
-		defaults->setWidgetRight("discard");
-		
-		auto discard = window->addButton("discard");
-		discard->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
-		discard->setColor(makeColor(127, 127, 127, 255));
-		discard->setHighlightColor(makeColor(255, 255, 255, 255));
-		discard->setTextColor(makeColor(127, 127, 127, 255));
-		discard->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		discard->setText("Discard\n& Exit");
-		discard->setFont(smallfont_outline);
-		discard->setSize(SDL_Rect{
-			(window->getActualSize().w - 164) / 2,
-			630,
-			164,
-			62}
-		);
-		discard->setCallback([](Button& button){
-			soundCancel();
-			auto parent = static_cast<Frame*>(button.getParent());
-			parent->removeSelf();
-			});
-		discard->setWidgetBack("discard");
-		discard->addWidgetAction("MenuStart", "confirm");
-		discard->addWidgetAction("MenuAlt2", "defaults");
-		discard->setWidgetLeft("defaults");
-		discard->setWidgetRight("confirm");
-
-		auto confirm = window->addButton("confirm");
-		confirm->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
-		confirm->setColor(makeColor(127, 127, 127, 255));
-		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
-		confirm->setTextColor(makeColor(127, 127, 127, 255));
-		confirm->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		confirm->setText("Confirm\n& Exit");
-		confirm->setFont(smallfont_outline);
-		confirm->setSize(SDL_Rect{504, 630, 164, 62});
-		confirm->setCallback([](Button& button){
-			soundActivate();
-			auto parent = static_cast<Frame*>(button.getParent());
-			parent->removeSelf();
-			});
-		confirm->setWidgetBack("discard");
-		confirm->addWidgetAction("MenuStart", "confirm");
-		confirm->addWidgetAction("MenuAlt2", "defaults");
-		confirm->setWidgetLeft("discard");
-		confirm->select();
-
-		return window;
-	}
-
-	static void settingsBindings(Button& button) {
-		auto bindings = settingsGenericWindow("bindings", "BINDINGS");
-	}
-
 	static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
 		std::string fullname = std::string("subheader_") + name;
 		auto image = frame.addImage(
@@ -1234,6 +1159,37 @@ namespace MainMenu {
 		return size.h + 10;
 	}
 
+	static int settingsAddBinding(
+		Frame& frame,
+		int y,
+		const char* binding,
+		const char* tip,
+		void (*callback)(Button&))
+	{
+		std::string fullname = std::string("setting_") + binding;
+		int result = settingsAddOption(frame, y, binding, binding, tip);
+		auto button = frame.addButton((fullname + "_binding_button").c_str());
+		button->setSize(SDL_Rect{
+			390,
+			y + 4,
+			98,
+			44});
+		button->setFont(smallfont_outline);
+		button->setText(Input::inputs[0].binding(binding));
+		button->setJustify(Button::justify_t::CENTER);
+		button->setCallback(callback);
+		button->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonChoosing00.png");
+		button->setHighlightColor(makeColor(255,255,255,255));
+		button->setColor(makeColor(127,127,127,255));
+		button->setTextHighlightColor(makeColor(255,255,255,255));
+		button->setTextColor(makeColor(127,127,127,255));
+		button->setWidgetSearchParent(frame.getParent()->getName());
+		button->setWidgetBack("discard_and_exit");
+		button->addWidgetAction("MenuAlt1", "restore_defaults");
+		button->addWidgetAction("MenuStart", "confirm_and_exit");
+		return result;
+	}
+
 	static int settingsAddBooleanOption(
 		Frame& frame,
 		int y,
@@ -1263,6 +1219,7 @@ namespace MainMenu {
 		button->setColor(makeColor(127,127,127,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
 		button->setTextColor(makeColor(127,127,127,255));
+		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
 		button->setWidgetPageRight("tab_right");
@@ -1298,6 +1255,7 @@ namespace MainMenu {
 		button->setColor(makeColor(127,127,127,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
 		button->setTextColor(makeColor(127,127,127,255));
+		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetLeft((fullname + "_button").c_str());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -1305,6 +1263,7 @@ namespace MainMenu {
 		button->addWidgetAction("MenuAlt1", "restore_defaults");
 		button->addWidgetAction("MenuStart", "confirm_and_exit");
 		auto boolean = frame.findButton((fullname + "_button").c_str()); assert(boolean);
+		boolean->setWidgetSearchParent(frame.getParent()->getName());
 		boolean->setWidgetRight((fullname + "_customize_button").c_str());
 		boolean->setWidgetBack("discard_and_exit");
 		boolean->setWidgetPageLeft("tab_left");
@@ -1339,6 +1298,7 @@ namespace MainMenu {
 		button->setColor(makeColor(127,127,127,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
 		button->setTextColor(makeColor(127,127,127,255));
+		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
 		button->setWidgetPageRight("tab_right");
@@ -1375,6 +1335,7 @@ namespace MainMenu {
 		button->setColor(makeColor(127,127,127,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
 		button->setTextColor(makeColor(127,127,127,255));
+		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
 		button->setWidgetPageRight("tab_right");
@@ -1444,6 +1405,7 @@ namespace MainMenu {
 		slider->setHighlightColor(makeColor(255,255,255,255));
 		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Slide00.png");
 		slider->setRailImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Backing00.png");
+		slider->setWidgetSearchParent(frame.getParent()->getName());
 		slider->setWidgetBack("discard_and_exit");
 		slider->setWidgetPageLeft("tab_left");
 		slider->setWidgetPageRight("tab_right");
@@ -1473,40 +1435,7 @@ namespace MainMenu {
 		settings_subwindow->setBorder(0);
 		settings_subwindow->setTickCallback([](Widget& widget){
 			auto frame = static_cast<Frame*>(&widget);
-			auto& images = frame->getImages();
-			for (auto image : images) {
-				if (image->path == "images/ui/Main Menus/Settings/Settings_Left_BackingSelect00.png") {
-					image->path = "images/ui/Main Menus/Settings/Settings_Left_Backing00.png";
-				}
-			}
-			auto selectedWidget = widget.findSelectedWidget(0);
-			if (selectedWidget) {
-				std::string setting;
-				auto name = std::string(selectedWidget->getName());
-				if (selectedWidget->getType() == Widget::WIDGET_SLIDER) {
-					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_slider") - 1) - (sizeof("setting_") - 1));
-				} else if (selectedWidget->getType() == Widget::WIDGET_BUTTON) {
-					auto button = static_cast<Button*>(selectedWidget);
-					auto customize = "images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
-					if (strcmp(button->getBackground(), customize) == 0) {
-						setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
-					} else {
-						setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_button") - 1) - (sizeof("setting_") - 1));
-					}
-				}
-				if (!setting.empty()) {
-					auto image = frame->findImage((std::string("setting_") + setting + std::string("_image")).c_str());
-					if (image) {
-						image->path = "images/ui/Main Menus/Settings/Settings_Left_BackingSelect00.png";
-					}
-					auto field = frame->findField((std::string("setting_") + setting + std::string("_field")).c_str());
-					if (field) {
-						auto settings = static_cast<Frame*>(frame->getParent());
-						auto tooltip = settings->findField("tooltip"); assert(tooltip);
-						tooltip->setText(field->getGuide());
-					}
-				}
-			}
+			updateSettingSelection(*frame);
 			updateSliderArrows(*frame);
 			});
 		auto rock_background = settings_subwindow->addImage(
@@ -1578,10 +1507,16 @@ namespace MainMenu {
 			return std::make_pair(
 				std::string("setting_") + std::string(setting.name) + std::string("_button"),
 				std::string("setting_") + std::string(setting.name) + std::string("_customize_button"));
-		default:
+		case Setting::Type::Dropdown:
 			return std::make_pair(
 				std::string("setting_") + std::string(setting.name) + std::string("_dropdown_button"),
 				std::string(""));
+		case Setting::Type::Binding:
+			return std::make_pair(
+				std::string("setting_") + std::string(setting.name) + std::string("_binding_button"),
+				std::string(""));
+		default:
+			return std::make_pair(std::string(""), std::string(""));
 		}
 	}
 
@@ -1592,14 +1527,15 @@ namespace MainMenu {
 	}
 
 	static void settingsSubwindowFinalize(Frame& frame, int y) {
-		const int height = std::max(224 * 2, y);
-		frame.setActualSize(SDL_Rect{0, 0, 547 * 2, height});
+		auto size = frame.getActualSize();
+		const int height = std::max(size.h, y);
+		frame.setActualSize(SDL_Rect{0, 0, size.w, height});
 		auto rock_background = frame.findImage("background"); assert(rock_background);
 		rock_background->pos = frame.getActualSize();
 		auto slider = frame.findSlider("scroll_slider"); assert(slider);
 		slider->setValue(0.f);
 		slider->setMinValue(0.f);
-		slider->setMaxValue(height - 224 * 2);
+		slider->setMaxValue(height - size.h);
 	}
 
 	static void hookSettingToSetting(Frame& frame, const Setting& setting1, const Setting& setting2) {
@@ -1631,6 +1567,275 @@ namespace MainMenu {
 			auto& setting2 = (*std::next(it));
 			hookSettingToSetting(frame, setting1, setting2);
 		}
+	}
+
+	static Frame* settingsGenericWindow(const char* name, const char* title) {
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto window = dimmer->addFrame(name);
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 826) / 2,
+			(Frame::virtualScreenY - 718) / 2,
+			826,
+			718});
+		window->setActualSize(SDL_Rect{0, 0, 826, 718});
+		window->setBorder(0);
+		window->setColor(0);
+
+		auto tooltip = window->addField("tooltip", 256);
+		tooltip->setSize(SDL_Rect{30, 566, 766, 54});
+		tooltip->setFont(smallfont_no_outline);
+		tooltip->setJustify(Field::justify_t::CENTER);
+		tooltip->setText("");
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window00.png",
+			"background"
+		);
+
+		auto timber = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window01.png",
+			"timber"
+		);
+		timber->ontop = true;
+
+		auto banner = window->addField("title", 64);
+		banner->setSize(SDL_Rect{246, 22, 338, 24});
+		banner->setFont(banner_font);
+		banner->setText(title);
+		banner->setJustify(Field::justify_t::CENTER);
+
+		auto subwindow = window->addFrame("subwindow");
+		subwindow->setSize(SDL_Rect{30, 64, 766, 502});
+		subwindow->setActualSize(SDL_Rect{0, 0, 766, 502});
+		subwindow->setScrollBarsEnabled(false);
+		subwindow->setBorder(0);
+		subwindow->setColor(0);
+		subwindow->setTickCallback([](Widget& widget){
+			auto frame = static_cast<Frame*>(&widget);
+			updateSettingSelection(*frame);
+			});
+
+		auto rocks = subwindow->addImage(
+			subwindow->getActualSize(),
+			makeColor(127, 127, 127, 251),
+			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Rocks00.png",
+			"background"
+		);
+		rocks->tiled = true;
+
+		auto slider = subwindow->addSlider("scroll_slider");
+		slider->setBorder(24);
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		slider->setRailSize(SDL_Rect{732, 8, 30, 486});
+		slider->setRailImage("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBar00.png");
+		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
+		slider->setHandleImage("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBoulder00.png");
+		slider->setCallback([](Slider& slider){
+			Frame* frame = static_cast<Frame*>(slider.getParent());
+			auto actualSize = frame->getActualSize();
+			actualSize.y = slider.getValue();
+			frame->setActualSize(actualSize);
+			auto railSize = slider.getRailSize();
+			railSize.y = 8 + actualSize.y;
+			slider.setRailSize(railSize);
+			});
+		slider->setTickCallback([](Widget& widget){
+			Slider* slider = static_cast<Slider*>(&widget);
+			Frame* frame = static_cast<Frame*>(slider->getParent());
+			auto actualSize = frame->getActualSize();
+			slider->setValue(actualSize.y);
+			auto railSize = slider->getRailSize();
+			railSize.y = 8 + actualSize.y;
+			slider->setRailSize(railSize);
+			});
+
+		auto defaults = window->addButton("restore_defaults");
+		defaults->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
+		defaults->setColor(makeColor(127, 127, 127, 255));
+		defaults->setHighlightColor(makeColor(255, 255, 255, 255));
+		defaults->setTextColor(makeColor(127, 127, 127, 255));
+		defaults->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		defaults->setSize(SDL_Rect{156, 630, 164, 62});
+		defaults->setText("Restore\nDefaults");
+		defaults->setFont(smallfont_outline);
+		defaults->setWidgetSearchParent(name);
+		defaults->setWidgetBack("discard_and_exit");
+		defaults->addWidgetAction("MenuStart", "confirm_and_exit");
+		defaults->addWidgetAction("MenuAlt1", "restore_defaults");
+		defaults->setWidgetRight("discard_and_exit");
+
+		auto discard = window->addButton("discard_and_exit");
+		discard->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
+		discard->setColor(makeColor(127, 127, 127, 255));
+		discard->setHighlightColor(makeColor(255, 255, 255, 255));
+		discard->setTextColor(makeColor(127, 127, 127, 255));
+		discard->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		discard->setText("Discard\n& Exit");
+		discard->setFont(smallfont_outline);
+		discard->setSize(SDL_Rect{
+			(window->getActualSize().w - 164) / 2,
+			630,
+			164,
+			62}
+		);
+		discard->setCallback([](Button& button){
+			soundCancel();
+			auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+			auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+			parent_background->removeSelf();
+			});
+		discard->setWidgetSearchParent(name);
+		discard->setWidgetBack("discard_and_exit");
+		discard->addWidgetAction("MenuStart", "confirm_and_exit");
+		discard->addWidgetAction("MenuAlt1", "restore_defaults");
+		discard->setWidgetLeft("restore_defaults");
+		discard->setWidgetRight("confirm_and_exit");
+
+		auto confirm = window->addButton("confirm_and_exit");
+		confirm->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
+		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
+		confirm->setTextColor(makeColor(127, 127, 127, 255));
+		confirm->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		confirm->setText("Confirm\n& Exit");
+		confirm->setFont(smallfont_outline);
+		confirm->setSize(SDL_Rect{504, 630, 164, 62});
+		confirm->setCallback([](Button& button){
+			soundActivate();
+			auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+			auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+			parent_background->removeSelf();
+			});
+		confirm->setWidgetSearchParent(name);
+		confirm->setWidgetBack("discard_and_exit");
+		confirm->addWidgetAction("MenuStart", "confirm_and_exit");
+		confirm->addWidgetAction("MenuAlt1", "restore_defaults");
+		confirm->setWidgetLeft("discard_and_exit");
+		confirm->select();
+
+		return window;
+	}
+
+	static void settingsBindings(Button& button) {
+		soundActivate();
+		auto window = settingsGenericWindow("bindings", "BINDINGS"); assert(window);
+		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+		int y = 8;
+
+		static const std::vector<Setting> bindings = {
+			{Setting::Type::Binding, "Move Forward"},
+			{Setting::Type::Binding, "Move Left"},
+			{Setting::Type::Binding, "Move Backward"},
+			{Setting::Type::Binding, "Move Right"},
+			{Setting::Type::Binding, "Turn Left"},
+			{Setting::Type::Binding, "Turn Right"},
+			{Setting::Type::Binding, "Look Up"},
+			{Setting::Type::Binding, "Look Down"},
+			{Setting::Type::Binding, "Chat"},
+			{Setting::Type::Binding, "Console Command"},
+			{Setting::Type::Binding, "Character Status"},
+			{Setting::Type::Binding, "Spell List"},
+			{Setting::Type::Binding, "Cast Spell"},
+			{Setting::Type::Binding, "Block"},
+			{Setting::Type::Binding, "Sneak"},
+			{Setting::Type::Binding, "Attack"},
+			{Setting::Type::Binding, "Use"},
+			{Setting::Type::Binding, "Autosort Inventory"},
+			{Setting::Type::Binding, "Command NPC"},
+			{Setting::Type::Binding, "Show NPC Commands"},
+			{Setting::Type::Binding, "Cycle NPCs"},
+			{Setting::Type::Binding, "Hotbar Scroll Left"},
+			{Setting::Type::Binding, "Hotbar Scroll Right"},
+			{Setting::Type::Binding, "Hotbar Select"},
+		};
+
+		static bool bind_mode;
+		static Button* bound_button = nullptr;
+		static std::string bound_binding = "";
+		static int bound_player = -1;
+		bind_mode = false;
+
+		for (auto& binding : bindings) {
+			char tip[256];
+			snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
+			y += settingsAddBinding(*subwindow, y, binding.name, tip,
+				[](Button& button){
+					soundToggle();
+					auto& name = std::string(button.getName());
+					bind_mode = true;
+					bound_button = &button;
+					bound_binding = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));;
+					bound_player = 0;
+					button.setText(". . .");
+					auto subwindow = static_cast<Frame*>(button.getParent()); assert(subwindow);
+					auto settings = static_cast<Frame*>(subwindow->getParent()); assert(settings);
+					auto tooltip = settings->findField("tooltip"); assert(tooltip);
+					char buf[256];
+					snprintf(buf, sizeof(buf),
+						"Binding \"%s\". Press ESC to cancel.\n"
+						"The next input you activate will be bound to this action.",
+						bound_binding.c_str());
+					tooltip->setText(buf);
+					Input::clearDefaultBindings();
+
+					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
+					auto confirm = bindings->findButton("confirm_and_exit"); assert(confirm);
+					auto discard = bindings->findButton("discard_and_exit"); assert(discard);
+					auto defaults = bindings->findButton("restore_defaults"); assert(defaults);
+					confirm->setDisabled(true);
+					discard->setDisabled(true);
+					defaults->setDisabled(true);
+				});
+		}
+
+		window->setTickCallback([](Widget&){
+			if (bind_mode) {
+				if (bound_button) {
+					if (!Input::lastInputOfAnyKind.empty()) {
+						if (Input::lastInputOfAnyKind != "Escape") {
+							Input::inputs[bound_player].bind(bound_binding.c_str(),
+								Input::lastInputOfAnyKind.c_str());
+						}
+						bound_button->setText(Input::inputs[bound_player].binding(bound_binding.c_str()));
+						bound_button = nullptr;
+					}
+				} else {
+					if (!Input::inputs[bound_player].binary(bound_binding.c_str())) {
+						auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
+						auto confirm = bindings->findButton("confirm_and_exit"); assert(confirm);
+						auto discard = bindings->findButton("discard_and_exit"); assert(discard);
+						auto defaults = bindings->findButton("restore_defaults"); assert(defaults);
+						confirm->setDisabled(false);
+						discard->setDisabled(false);
+						defaults->setDisabled(false);
+						
+						auto binding = Input::inputs[bound_player].binding(bound_binding.c_str());
+						auto tooltip = bindings->findField("tooltip"); assert(tooltip);
+						char buf[256];
+						snprintf(buf, sizeof(buf), "Bound \"%s\" to \"%s\"", bound_binding.c_str(), binding);
+						tooltip->setText(buf);
+
+						Input::defaultBindings();
+						bound_binding = "";
+						bound_player = -1;
+						bind_mode = false;
+					}
+				}
+			}
+			});
+
+		hookSettings(*subwindow, bindings);
+		settingsSubwindowFinalize(*subwindow, y);
+		settingsSelect(*subwindow, bindings.front());
 	}
 
 	void settingsUI(Button& button) {
@@ -4109,7 +4314,13 @@ namespace MainMenu {
 /******************************************************************************/
 
 	static void createPlayWindow() {
-		auto window = main_menu_frame->addFrame("play_game_window");
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto window = dimmer->addFrame("play_game_window");
 		window->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 218 * 2) / 2,
 			(Frame::virtualScreenY - 130 * 2) / 2,
@@ -4159,6 +4370,7 @@ namespace MainMenu {
 		(void)createBackWidget(window, [](Button& button){
 			soundCancel();
 			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
 			assert(main_menu_frame);
@@ -4225,10 +4437,17 @@ namespace MainMenu {
 
 		// remove "Play Game" window
 		auto frame = static_cast<Frame*>(button.getParent());
+		frame = static_cast<Frame*>(frame->getParent());
 		frame->removeSelf();
 
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
 		// create "Local or Network" window
-		auto window = main_menu_frame->addFrame("local_or_network_window");
+		auto window = dimmer->addFrame("local_or_network_window");
 		window->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 436) / 2,
 			(Frame::virtualScreenY - 240) / 2,
@@ -4254,6 +4473,7 @@ namespace MainMenu {
 		(void)createBackWidget(window, [](Button& button){
 			soundCancel();
 			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
 			createPlayWindow();
@@ -4467,7 +4687,13 @@ namespace MainMenu {
 		allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
 		allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
 
-		auto settings = main_menu_frame->addFrame("settings");
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto settings = dimmer->addFrame("settings");
 		settings->setSize(SDL_Rect{(Frame::virtualScreenX - 1126) / 2, (Frame::virtualScreenY - 718) / 2, 1126, 718});
 		settings->setActualSize(SDL_Rect{0, 0, settings->getSize().w, settings->getSize().h});
 		settings->setColor(0);
@@ -4538,6 +4764,7 @@ namespace MainMenu {
 			button->setSize(SDL_Rect{76 + (272 - 76) * c, 64, 184, 64});
 			button->setColor(makeColor(255, 255, 255, 191));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
+			button->setWidgetSearchParent("settings");
 			button->setWidgetPageLeft("tab_left");
 			button->setWidgetPageRight("tab_right");
 			button->addWidgetAction("MenuAlt1", "restore_defaults");
@@ -4572,6 +4799,7 @@ namespace MainMenu {
 		tab_left->setSize(SDL_Rect{32, 68, 38, 58});
 		tab_left->setColor(makeColor(255, 255, 255, 191));
 		tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
+		tab_left->setWidgetSearchParent("settings");
 		tab_left->setWidgetBack("discard_and_exit");
 		tab_left->setWidgetPageLeft("tab_left");
 		tab_left->setWidgetPageRight("tab_right");
@@ -4608,6 +4836,7 @@ namespace MainMenu {
 		tab_right->setSize(SDL_Rect{1056, 68, 38, 58});
 		tab_right->setColor(makeColor(255, 255, 255, 191));
 		tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
+		tab_right->setWidgetSearchParent("settings");
 		tab_right->setWidgetBack("discard_and_exit");
 		tab_right->setWidgetPageLeft("tab_left");
 		tab_right->setWidgetPageRight("tab_right");
@@ -4652,6 +4881,7 @@ namespace MainMenu {
 		restore_defaults->setFont(smallfont_outline);
 		restore_defaults->setColor(makeColor(255, 255, 255, 191));
 		restore_defaults->setHighlightColor(makeColor(255, 255, 255, 255));
+		restore_defaults->setWidgetSearchParent("settings");
 		restore_defaults->setWidgetBack("discard_and_exit");
 		restore_defaults->setWidgetPageLeft("tab_left");
 		restore_defaults->setWidgetPageRight("tab_right");
@@ -4672,17 +4902,20 @@ namespace MainMenu {
 		discard_and_exit->setFont(smallfont_outline);
 		discard_and_exit->setColor(makeColor(255, 255, 255, 191));
 		discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
-		discard_and_exit->setCallback([](Button&){
+		discard_and_exit->setCallback([](Button& button){
 			soundCancel();
-			assert(main_menu_frame);
-			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
-			settings_button->select();
-			auto settings = main_menu_frame->findFrame("settings");
+			if (main_menu_frame) {
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
+				settings_button->select();
+			}
+			auto settings = static_cast<Frame*>(button.getParent());
 			if (settings) {
-				settings->removeSelf();
+				auto dimmer = static_cast<Frame*>(settings->getParent());
+				dimmer->removeSelf();
 			}
 			});
+		discard_and_exit->setWidgetSearchParent("settings");
 		discard_and_exit->setWidgetBack("discard_and_exit");
 		discard_and_exit->setWidgetPageLeft("tab_left");
 		discard_and_exit->setWidgetPageRight("tab_right");
@@ -4700,18 +4933,21 @@ namespace MainMenu {
 		confirm_and_exit->setFont(smallfont_outline);
 		confirm_and_exit->setColor(makeColor(255, 255, 255, 191));
 		confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
-		confirm_and_exit->setCallback([](Button&){
+		confirm_and_exit->setCallback([](Button& button){
 			soundActivate();
-			assert(main_menu_frame);
 			settingsSave();
-			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
-			settings_button->select();
-			auto settings = main_menu_frame->findFrame("settings");
+			if (main_menu_frame) {
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
+				settings_button->select();
+			}
+			auto settings = static_cast<Frame*>(button.getParent());
 			if (settings) {
-				settings->removeSelf();
+				auto dimmer = static_cast<Frame*>(settings->getParent());
+				dimmer->removeSelf();
 			}
 			});
+		confirm_and_exit->setWidgetSearchParent("settings");
 		confirm_and_exit->setWidgetBack("discard_and_exit");
 		confirm_and_exit->setWidgetPageLeft("tab_left");
 		confirm_and_exit->setWidgetPageRight("tab_right");
@@ -4729,8 +4965,14 @@ namespace MainMenu {
 		}
 
 		soundActivate();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
 		
-		auto frame = main_menu_frame->addFrame("quit_confirm");
+		auto frame = dimmer->addFrame("quit_confirm");
 		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
 		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
 		frame->setColor(0);
@@ -4801,7 +5043,8 @@ namespace MainMenu {
 			quit_button->select();
 			auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
 			if (quit_confirm) {
-				quit_confirm->removeSelf();
+				auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
+				dimmer->removeSelf();
 			}
 			});
 

@@ -115,6 +115,34 @@ void Input::defaultBindings() {
 #endif
 }
 
+void Input::clearDefaultBindings() {
+	// This is used to disable UI bindings while the player is rebinding keys
+	// in the game settings. Maybe it will be used for other things though...
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+		inputs[c].bind("MenuTab", "");
+		inputs[c].bind("MenuUp", "");
+		inputs[c].bind("MenuLeft", "");
+		inputs[c].bind("MenuRight", "");
+		inputs[c].bind("MenuDown", "");
+		inputs[c].bind("MenuConfirm", "");
+		inputs[c].bind("MenuCancel", "");
+		inputs[c].bind("MenuAlt1", "");
+		inputs[c].bind("MenuAlt2", "");
+		inputs[c].bind("MenuStart", "");
+		inputs[c].bind("MenuSelect", "");
+		inputs[c].bind("MenuPageLeft", "");
+		inputs[c].bind("MenuPageRight", "");
+		inputs[c].bind("AltMenuUp", "");
+		inputs[c].bind("AltMenuLeft", "");
+		inputs[c].bind("AltMenuRight", "");
+		inputs[c].bind("AltMenuDown", "");
+		inputs[c].bind("MenuScrollUp", "");
+		inputs[c].bind("MenuScrollLeft", "");
+		inputs[c].bind("MenuScrollRight", "");
+		inputs[c].bind("MenuScrollDown", "");
+	}
+}
+
 float Input::analog(const char* binding) const {
 	auto b = bindings.find(binding);
 	return b != bindings.end() ? (*b).second.analog : 0.f;
@@ -382,6 +410,7 @@ void Input::bind(const char* binding, const char* input) {
 		auto result = bindings.emplace(binding, binding_t());
 		b = result.first;
 	}
+	(*b).second = binding_t();
 	(*b).second.input.assign(input);
 	if (input == nullptr) {
 		(*b).second.type = binding_t::INVALID;
