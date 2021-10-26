@@ -994,10 +994,11 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	PLAYER_VELX *= pow(0.75, refreshRateDelta);
 	PLAYER_VELY *= pow(0.75, refreshRateDelta);
 
-	/*if ( keystatus[SDL_SCANCODE_G] )
-	{
-		messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
-	}*/
+	//if ( keystatus[SDL_SCANCODE_G] )
+	//{
+	//	//messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
+	//	//messagePlayer(0, "Vel: %5.5f", sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
+	//}
 
 	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
 	{
