@@ -146,7 +146,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		return;
 	}
 	int lines = std::max(1, getNumTextLines());
-	int fullH = lines * actualFont->height(false) + actualFont->getOutline() * 2;
+	int fullH = lines * (actualFont->height(false) + actualFont->getOutline() * 2);
 
 	char* buf = (char*)malloc(textlen + 1);
 	memcpy(buf, text, textlen + 1);

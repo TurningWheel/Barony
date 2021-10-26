@@ -1796,6 +1796,7 @@ namespace MainMenu {
 		static bool bind_mode;
 		static Button* bound_button = nullptr;
 		static std::string bound_binding = "";
+		static std::string bound_input = "";
 		static int bound_player = -1;
 		bind_mode = false;
 
@@ -1835,6 +1836,7 @@ namespace MainMenu {
 					auto& name = std::string(button.getName());
 					bind_mode = true;
 					bound_button = &button;
+					bound_input = button.getText();
 					bound_binding = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));;
 					bound_player = 0;
 					button.setText(". . .");
@@ -1843,7 +1845,7 @@ namespace MainMenu {
 					auto tooltip = settings->findField("tooltip"); assert(tooltip);
 					char buf[256];
 					snprintf(buf, sizeof(buf),
-						"Binding \"%s\". Press ESC to cancel.\n"
+						"Binding \"%s\". Press ESC to cancel or DEL to delete the binding.\n"
 						"The next input you activate will be bound to this action.",
 						bound_binding.c_str());
 					tooltip->setText(buf);
@@ -1864,47 +1866,52 @@ namespace MainMenu {
 
 		window->setTickCallback([](Widget&){
 			if (bind_mode) {
-				if (bound_button) {
-					if (!Input::lastInputOfAnyKind.empty()) {
-						if (Input::lastInputOfAnyKind != "Escape") {
-							Input::inputs[bound_player].bind(bound_binding.c_str(),
-								Input::lastInputOfAnyKind.c_str());
-						} else {
-							Input::keys[SDL_SCANCODE_ESCAPE] = 0;
-						}
-						bound_button->setText(Input::inputs[bound_player].binding(bound_binding.c_str()));
-						bound_button = nullptr;
-
-						// fixes a bug where these inputs don't reset themselves
-						Input::mouseButtons[SDL_BUTTON_WHEELUP] = 0;
-						Input::mouseButtons[SDL_BUTTON_WHEELDOWN] = 0;
-					}
-				} else {
-					if (!Input::inputs[bound_player].binary(bound_binding.c_str())) {
-						auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
-						auto confirm = bindings->findButton("confirm_and_exit"); assert(confirm);
-						auto discard = bindings->findButton("discard_and_exit"); assert(discard);
-						auto defaults = bindings->findButton("restore_defaults"); assert(defaults);
-						confirm->setDisabled(false);
-						discard->setDisabled(false);
-						defaults->setDisabled(false);
-
-						auto subwindow = bindings->findFrame("subwindow"); assert(subwindow);
-						for (auto button : subwindow->getButtons()) {
-							button->setDisabled(false);
-						}
-						
-						auto binding = Input::inputs[bound_player].binding(bound_binding.c_str());
-						auto tooltip = bindings->findField("tooltip"); assert(tooltip);
+				if (bound_button && !Input::lastInputOfAnyKind.empty()) {
+					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
+					auto tooltip = bindings->findField("tooltip"); assert(tooltip);
+					if (Input::lastInputOfAnyKind == "Escape") {
+						bound_button->setText(bound_input.c_str());
 						char buf[256];
-						snprintf(buf, sizeof(buf), "Bound \"%s\" to \"%s\"", bound_binding.c_str(), binding);
+						snprintf(buf, sizeof(buf), "Cancelled rebinding \"%s\"", bound_binding.c_str());
 						tooltip->setText(buf);
-
-						Input::defaultBindings();
-						bound_binding = "";
-						bound_player = -1;
-						bind_mode = false;
+						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
+					} else if (Input::lastInputOfAnyKind == "Delete") {
+						bound_button->setText("");
+						char buf[256];
+						snprintf(buf, sizeof(buf), "Deleted \"%s\" binding.", bound_binding.c_str());
+						tooltip->setText(buf);
+						//Input::inputs[bound_player].bind(bound_binding.c_str(), nullptr);
+					} else {
+						bound_button->setText(Input::lastInputOfAnyKind.c_str());
+						char buf[256];
+						snprintf(buf, sizeof(buf), "Bound \"%s\" to \"%s\"", bound_binding.c_str(), Input::lastInputOfAnyKind.c_str());
+						tooltip->setText(buf);
+						//Input::inputs[bound_player].bind(bound_binding.c_str(), Input::lastInputOfAnyKind.c_str());
 					}
+					bound_button = nullptr;
+				}
+				else if (!bound_button &&
+					!Input::mouseButtons[SDL_BUTTON_LEFT] &&
+					!Input::mouseButtons[SDL_BUTTON_WHEELDOWN] &&
+					!Input::mouseButtons[SDL_BUTTON_WHEELUP] &&
+					!Input::keys[SDL_SCANCODE_SPACE]) {
+					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
+					auto confirm = bindings->findButton("confirm_and_exit"); assert(confirm);
+					auto discard = bindings->findButton("discard_and_exit"); assert(discard);
+					auto defaults = bindings->findButton("restore_defaults"); assert(defaults);
+					confirm->setDisabled(false);
+					discard->setDisabled(false);
+					defaults->setDisabled(false);
+
+					auto subwindow = bindings->findFrame("subwindow"); assert(subwindow);
+					for (auto button : subwindow->getButtons()) {
+						button->setDisabled(false);
+					}
+
+					Input::defaultBindings();
+					bound_binding = "";
+					bound_player = -1;
+					bind_mode = false;
 				}
 			}
 			});
