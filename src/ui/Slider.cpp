@@ -14,7 +14,7 @@ Slider::Slider(Frame& _parent) {
 }
 
 void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
-	if (invisible) {
+	if ( invisible || isDisabled() ) {
 		return;
 	}
 	if (maxValue == minValue) {
@@ -167,10 +167,17 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		return result;
 	}
 
+#ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+#else
+	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+#endif
 
 #ifndef NINTENDO
 	if (rectContainsPoint(_size, omousex, omousey)) {
