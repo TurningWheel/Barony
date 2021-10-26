@@ -140,7 +140,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 		return;
 	}
 	int lines = std::max(1, getNumTextLines());
-	int fullH = lines * actualFont->height(false) + actualFont->getOutline() * 2;
+	int fullH = lines * (actualFont->height(false) + actualFont->getOutline() * 2);
 
 	char* buf = (char*)malloc(textlen + 1);
 	memcpy(buf, text, textlen + 1);
@@ -445,6 +445,35 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 		assert(result[0] == input);
 	}*/
 	return result;
+}
+
+std::string Field::getLongestLine()
+{
+	if ( text == nullptr || textlen <= 1 ) {
+		return "";
+	}
+	if ( getNumTextLines() <= 1 )
+	{
+		return text;
+	}
+	char* nexttoken;
+	char* token = text;
+	std::string originalText = text;
+	std::string longestLine = "";
+	int longestLineWidth = 0;
+	do {
+		nexttoken = tokenize(token, "\n");
+		if ( auto getText = Text::get(token, font.c_str()) )
+		{
+			if ( getText->getWidth() > longestLineWidth )
+			{
+				longestLineWidth = getText->getWidth();
+				longestLine = token;
+			}
+		}
+	} while ( (token = nexttoken) != NULL );
+	setText(originalText.c_str()); // make sure to replace the original text field, as tokenize will modify it
+	return longestLine;
 }
 
 int Field::getLastLineThatFitsWithinHeight()

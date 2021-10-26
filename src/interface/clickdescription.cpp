@@ -93,6 +93,11 @@ void clickDescription(int player, Entity* entity)
 				{
 					return;    //Click falls inside the right sidebar.
 				}
+
+			if ( players[player]->skillSheet.bSkillSheetOpen )
+			{
+				return;
+			}
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
 			//return NULL;

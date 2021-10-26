@@ -301,6 +301,7 @@ int initGame()
 		ItemTooltips.readTooltipsFromFile();
 
 		loadHUDSettingsJSON();
+		Player::SkillSheet_t::loadSkillSheetJSON();
 
 		updateLoadingScreen(94);
 

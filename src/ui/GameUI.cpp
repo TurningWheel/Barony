@@ -6,6 +6,7 @@
 #include "Field.hpp"
 #include "Button.hpp"
 #include "Text.hpp"
+#include "Slider.hpp"
 
 #include "../main.hpp"
 #include "../game.hpp"
@@ -3110,6 +3111,204 @@ void drawCharacterPreview(const int player, SDL_Rect pos)
 		}
 	}
 	fov = ofov;
+}
+
+Player::SkillSheet_t::SkillSheetData_t Player::SkillSheet_t::skillSheetData;
+void Player::SkillSheet_t::loadSkillSheetJSON()
+{
+	if ( !PHYSFS_getRealDir("/data/skillsheet_entries.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/skillsheet_entries.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/skillsheet_entries.json");
+		inputPath.append("/data/skillsheet_entries.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				if ( d.HasMember("skills") )
+				{
+					auto& allEntries = skillSheetData.skillEntries;
+					allEntries.clear();
+					for ( rapidjson::Value::ConstValueIterator itr = d["skills"].Begin();
+						itr != d["skills"].End(); ++itr )
+					{
+						allEntries.push_back(SkillSheetData_t::SkillEntry_t());
+						auto& entry = allEntries[allEntries.size() - 1];
+						if ( (*itr).HasMember("name") )
+						{
+							entry.name = (*itr)["name"].GetString();
+						}
+						if ( (*itr).HasMember("id") )
+						{
+							entry.skillId = (*itr)["id"].GetInt();
+						}
+						if ( (*itr).HasMember("icon_base_path") )
+						{
+							entry.skillIconPath = (*itr)["icon_base_path"].GetString();
+						}
+						if ( (*itr).HasMember("icon_legend_path") )
+						{
+							entry.skillIconPathLegend = (*itr)["icon_legend_path"].GetString();
+						}
+						if ( (*itr).HasMember("icon_stat_path") )
+						{
+							entry.statIconPath = (*itr)["icon_stat_path"].GetString();
+						}
+						if ( (*itr).HasMember("description") )
+						{
+							entry.description = (*itr)["description"].GetString();
+						}
+						if ( (*itr).HasMember("legend_text") )
+						{
+							entry.legendaryDescription = (*itr)["legend_text"].GetString();
+						}
+						if ( (*itr).HasMember("effects") )
+						{
+							for ( rapidjson::Value::ConstValueIterator eff_itr = (*itr)["effects"].Begin(); eff_itr != (*itr)["effects"].End(); ++eff_itr )
+							{
+								entry.effects.push_back(SkillSheetData_t::SkillEntry_t::SkillEffect_t());
+								auto& effect = entry.effects[entry.effects.size() - 1];
+								effect.tag = (*eff_itr)["tag"].GetString();
+								effect.title = (*eff_itr)["title"].GetString();
+								effect.rawValue = (*eff_itr)["value"].GetString();
+							}
+						}
+						if ( (*itr).HasMember("effects_position") )
+						{
+							for ( rapidjson::Value::ConstMemberIterator effPos_itr = (*itr)["effects_position"].MemberBegin(); 
+								effPos_itr != (*itr)["effects_position"].MemberEnd(); ++effPos_itr )
+							{
+								std::string memberName = effPos_itr->name.GetString();
+								if ( memberName == "effect_start_offset_x" )
+								{
+									entry.effectStartOffsetX = effPos_itr->value.GetInt();
+								}
+								else if ( memberName == "effect_background_offset_x" )
+								{
+									entry.effectBackgroundOffsetX = effPos_itr->value.GetInt();
+								}
+								else if ( memberName == "effect_background_width" )
+								{
+									entry.effectBackgroundWidth = effPos_itr->value.GetInt();
+								}
+							}
+						}
+					}
+				}
+				if ( d.HasMember("skill_select_images") )
+				{
+					if ( d["skill_select_images"].HasMember("highlight_left") )
+					{
+						skillSheetData.highlightSkillImg = d["skill_select_images"]["highlight_left"].GetString();
+					}
+					if ( d["skill_select_images"].HasMember("selected_left") )
+					{
+						skillSheetData.selectSkillImg = d["skill_select_images"]["selected_left"].GetString();
+					}
+					if ( d["skill_select_images"].HasMember("highlight_right") )
+					{
+						skillSheetData.highlightSkillImg_Right = d["skill_select_images"]["highlight_right"].GetString();
+					}
+					if ( d["skill_select_images"].HasMember("selected_right") )
+					{
+						skillSheetData.selectSkillImg_Right = d["skill_select_images"]["selected_right"].GetString();
+					}
+				}
+				if ( d.HasMember("skill_background_icons") )
+				{
+					if ( d["skill_background_icons"].HasMember("default") )
+					{
+						skillSheetData.iconBgPathDefault = d["skill_background_icons"]["default"].GetString();
+					}
+					if ( d["skill_background_icons"].HasMember("default_selected") )
+					{
+						skillSheetData.iconBgSelectedPathDefault = d["skill_background_icons"]["default_selected"].GetString();
+					}
+					if ( d["skill_background_icons"].HasMember("novice") )
+					{
+						skillSheetData.iconBgPathNovice = d["skill_background_icons"]["novice"].GetString();
+					}
+					if ( d["skill_background_icons"].HasMember("novice_selected") )
+					{
+						skillSheetData.iconBgSelectedPathNovice = d["skill_background_icons"]["novice_selected"].GetString();
+					}
+					if ( d["skill_background_icons"].HasMember("expert") )
+					{
+						skillSheetData.iconBgPathExpert = d["skill_background_icons"]["expert"].GetString();
+					}
+					if ( d["skill_background_icons"].HasMember("expert_selected") )
+					{
+						skillSheetData.iconBgSelectedPathExpert = d["skill_background_icons"]["expert_selected"].GetString();
+					}
+					if ( d["skill_background_icons"].HasMember("legend") )
+					{
+						skillSheetData.iconBgPathLegend = d["skill_background_icons"]["legend"].GetString();
+					}
+					if ( d["skill_background_icons"].HasMember("legend_selected") )
+					{
+						skillSheetData.iconBgSelectedPathLegend = d["skill_background_icons"]["legend_selected"].GetString();
+					}
+				}
+				if ( d.HasMember("colors") )
+				{
+					if ( d["colors"].HasMember("default") )
+					{
+						skillSheetData.defaultTextColor = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["default"]["r"].GetInt(),
+							d["colors"]["default"]["g"].GetInt(),
+							d["colors"]["default"]["b"].GetInt(),
+							d["colors"]["default"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("novice") )
+					{
+						skillSheetData.noviceTextColor = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["novice"]["r"].GetInt(),
+							d["colors"]["novice"]["g"].GetInt(),
+							d["colors"]["novice"]["b"].GetInt(),
+							d["colors"]["novice"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("expert") )
+					{
+						skillSheetData.expertTextColor = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["expert"]["r"].GetInt(),
+							d["colors"]["expert"]["g"].GetInt(),
+							d["colors"]["expert"]["b"].GetInt(),
+							d["colors"]["expert"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("legend") )
+					{
+						skillSheetData.legendTextColor = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["legend"]["r"].GetInt(),
+							d["colors"]["legend"]["g"].GetInt(),
+							d["colors"]["legend"]["b"].GetInt(),
+							d["colors"]["legend"]["a"].GetInt());
+					}
+				}
+				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+			}
+		}
+	}
 }
 
 void loadHUDSettingsJSON()
@@ -6454,5 +6653,1823 @@ void doFrames() {
 		}
 		(void)gui->process();
 		gui->draw();
+	}
+}
+
+void Player::SkillSheet_t::createSkillSheet()
+{
+	if ( skillFrame )
+	{
+		return;
+	}
+
+	char name[32];
+	snprintf(name, sizeof(name), "player skills %d", player.playernum);
+	Frame* frame = gui->addFrame(name);
+	skillFrame = frame;
+	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+	frame->setHollow(true);
+	frame->setBorder(0);
+	frame->setOwner(player.playernum);
+	frame->setInheritParentFrameOpacity(false);
+
+	auto fade = skillFrame->addImage(
+		SDL_Rect{ 0, 0, skillFrame->getSize().w, skillFrame->getSize().h },
+		0, "images/system/white.png", "fade img");
+	Uint8 r, g, b, a;
+	SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
+	a = 0;
+	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+
+	Frame* skillBackground = frame->addFrame("skills frame");
+	const int width = 684;
+	const int height = 404;
+	skillBackground->setSize(SDL_Rect{ frame->getSize().x, frame->getSize().y, width, height });
+	auto bgImg = skillBackground->addImage(SDL_Rect{ 0, 0, width, height }, 0xFFFFFFFF,
+		"images/ui/SkillSheet/UI_Skills_Window_01.png", "skills img");
+
+	const int skillEntryStartY = 38;
+	SDL_Rect skillEntryPos{ 0, skillEntryStartY, 218, 40 };
+	skillEntryPos.x = skillBackground->getSize().w - skillEntryPos.w;
+	SDL_Rect skillSelectorPos{ 6, 2, 176, 32 };
+	Frame* allSkillEntries = skillBackground->addFrame("skill entries frame");
+	allSkillEntries->setSize(SDL_Rect{ 0, 0, skillBackground->getSize().w, skillBackground->getSize().h });
+
+	const char* boldFont = "fonts/pixel_maz_multiline.ttf#16#2";
+	const char* numberFont = "fonts/pixelmix.ttf#16";
+	const char* titleFont = "fonts/pixel_maz_multiline.ttf#24#2";
+	const char* descFont = "fonts/pixel_maz_multiline.ttf#16#2";
+	for ( int i = 0; i < 8; ++i ) // left side
+	{
+		char skillname[32];
+		snprintf(skillname, sizeof(skillname), "skill %d", i);
+		Frame* entry = allSkillEntries->addFrame(skillname);
+		entry->setSize(skillEntryPos);
+		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_SkillSelector_00.png", "selector img");
+		SDL_Rect imgBgPos{ skillEntryPos.w - 36, 0, 36, 36 };
+		entry->addImage(imgBgPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_Icons_BG00_00.png", "skill icon bg");
+		SDL_Rect imgFgPos{ imgBgPos.x + 6, imgBgPos.y + 6, 24, 24 };
+		entry->addImage(imgFgPos, 0xFFFFFFFF, "", "skill icon fg");
+		SDL_Rect statPos{ 10, 6, 24, 24 };
+		auto statIcon = entry->addImage(statPos, 0xFFFFFFFF, "", "stat icon");
+		if ( i < skillSheetData.skillEntries.size() )
+		{
+			statIcon->path = skillSheetData.skillEntries[i].statIconPath;
+		}
+		skillEntryPos.y += skillEntryPos.h;
+
+		SDL_Rect profNamePos{ statPos.x + statPos.w + 4, 4, 98, 28 };
+		Field* profName = entry->addField("skill name", 64);
+		profName->setSize(profNamePos);
+		profName->setHJustify(Field::justify_t::RIGHT);
+		profName->setVJustify(Field::justify_t::CENTER);
+		profName->setFont(boldFont);
+		profName->setColor(skillSheetData.defaultTextColor);
+		if ( i < skillSheetData.skillEntries.size() )
+		{
+			profName->setText(skillSheetData.skillEntries[i].name.c_str());
+		}
+		else
+		{
+			profName->setText("Default");
+		}
+
+		SDL_Rect profLevelPos{ profNamePos.x + profNamePos.w + 8, profNamePos.y, 34, 28 };
+		Field* profLevel = entry->addField("skill level", 16);
+		profLevel->setSize(profLevelPos);
+		profLevel->setHJustify(Field::justify_t::RIGHT);
+		profLevel->setVJustify(Field::justify_t::CENTER);
+		profLevel->setFont(numberFont);
+		profLevel->setColor(skillSheetData.defaultTextColor);
+		profLevel->setText("0");
+	}
+
+	skillEntryPos.x = skillBackground->getSize().w - skillEntryPos.w;
+	skillEntryPos.x = 0;
+	skillEntryPos.y = skillEntryStartY;
+	skillSelectorPos.x = 36;
+
+	for ( int i = 8; i < 16; ++i ) // right side
+	{
+		char skillname[32];
+		snprintf(skillname, sizeof(skillname), "skill %d", i);
+		Frame* entry = allSkillEntries->addFrame(skillname);
+		entry->setSize(skillEntryPos);
+		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_SkillSelectorR_00.png", "selector img");
+		SDL_Rect imgBgPos{ 0, 0, 36, 36 };
+		entry->addImage(imgBgPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_Icons_BG00_00.png", "skill icon bg");
+		SDL_Rect imgFgPos{ imgBgPos.x + 6, imgBgPos.y + 6, 24, 24 };
+		entry->addImage(imgFgPos, 0xFFFFFFFF, "images/ui/SkillSheet/icons/Alchemy01.png", "skill icon fg");
+		SDL_Rect statPos{ skillEntryPos.w - 10 - 24, 6, 24, 24 };
+		auto statIcon = entry->addImage(statPos, 0xFFFFFFFF, "", "stat icon");
+		if ( i < skillSheetData.skillEntries.size() )
+		{
+			statIcon->path = skillSheetData.skillEntries[i].statIconPath;
+		}
+		skillEntryPos.y += skillEntryPos.h;
+
+		SDL_Rect profNamePos{ statPos.x - 4 - 98, 4, 98, 28 };
+		Field* profName = entry->addField("skill name", 64);
+		profName->setSize(profNamePos);
+		profName->setHJustify(Field::justify_t::LEFT);
+		profName->setVJustify(Field::justify_t::CENTER);
+		profName->setFont(boldFont);
+		profName->setColor(skillSheetData.defaultTextColor);
+		if ( i < skillSheetData.skillEntries.size() )
+		{
+			profName->setText(skillSheetData.skillEntries[i].name.c_str());
+		}
+		else
+		{
+			profName->setText("Default");
+		}
+
+		SDL_Rect profLevelPos{ profNamePos.x - 12 - 34, profNamePos.y, 34, 28 };
+		Field* profLevel = entry->addField("skill level", 16);
+		profLevel->setSize(profLevelPos);
+		profLevel->setHJustify(Field::justify_t::RIGHT);
+		profLevel->setVJustify(Field::justify_t::CENTER);
+		profLevel->setFont(numberFont);
+		profLevel->setColor(skillSheetData.defaultTextColor);
+		profLevel->setText("0");
+	}
+
+	SDL_Rect skillTitlePos{ skillBackground->getSize().w / 2 - 320 / 2, 16, 320, 40 };
+	auto skillTitleTxt = skillBackground->addField("skill title txt", 64);
+	skillTitleTxt->setHJustify(Field::justify_t::CENTER);
+	skillTitleTxt->setVJustify(Field::justify_t::CENTER);
+	skillTitleTxt->setText("");
+	skillTitleTxt->setSize(skillTitlePos);
+	skillTitleTxt->setFont(titleFont);
+	skillTitleTxt->setColor(makeColor(201, 162, 100, 255));
+
+	SDL_Rect descPos{ 8, 64, 320, 324 };
+	descPos.x = skillBackground->getSize().w / 2 - descPos.w / 2;
+	auto skillDescriptionFrame = skillBackground->addFrame("skill desc frame");
+	skillDescriptionFrame->setSize(descPos);
+
+	/*auto debugRect = skillDescriptionFrame->addImage(SDL_Rect{ 0, 0, descPos.w, descPos.h }, 0xFFFFFFFF,
+		"images/system/white.png", "")*/;
+
+	auto slider = skillDescriptionFrame->addSlider("skill slider");
+	slider->setMinValue(0);
+	slider->setMaxValue(100);
+	slider->setValue(0);
+	SDL_Rect sliderPos{ descPos.w - 4 - 30, 4, 30, descPos.h - 8 };
+	slider->setRailSize(SDL_Rect{ sliderPos });
+	slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
+	slider->setOrientation(Slider::SLIDER_VERTICAL);
+	//slider->setCallback(callback);
+	slider->setColor(makeColor(127, 127, 127, 255));
+	slider->setHighlightColor(makeColor(255, 255, 255, 255));
+	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
+	slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+
+	Font* actualFont = Font::get(descFont);
+	int fontHeight;
+	actualFont->sizeText("_", nullptr, &fontHeight);
+
+	auto scrollAreaOuterFrame = skillDescriptionFrame->addFrame("scroll area outer frame");
+	scrollAreaOuterFrame->setSize(SDL_Rect{ 16, 4, sliderPos.x - 4 - 16, descPos.h - 8 });
+	auto scrollAreaFrame = scrollAreaOuterFrame->addFrame("skill scroll area");
+	scrollAreaFrame->setSize(SDL_Rect{ 0, 0, scrollAreaOuterFrame->getSize().w, 1000 });
+
+	SDL_Rect txtPos{ 0, 0, scrollAreaFrame->getSize().w, scrollAreaFrame->getSize().h };
+	{
+		auto skillLvlHeaderTxt = scrollAreaFrame->addField("skill lvl header txt", 128);
+		skillLvlHeaderTxt->setFont(descFont);
+		skillLvlHeaderTxt->setSize(txtPos);
+		skillLvlHeaderTxt->setText("Skill Level:");
+
+		auto skillLvlHeaderVal = scrollAreaFrame->addField("skill lvl header val", 128);
+		skillLvlHeaderVal->setFont(descFont);
+		skillLvlHeaderVal->setSize(txtPos);
+		skillLvlHeaderVal->setText("");
+		skillLvlHeaderVal->setHJustify(Field::justify_t::RIGHT);
+
+		txtPos.y += fontHeight;
+	}
+	{
+		const int iconSize = 24;
+		auto statIcon = scrollAreaFrame->addImage(
+			SDL_Rect{ txtPos.x + txtPos.w - iconSize, txtPos.y, iconSize, iconSize },
+			0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_DEX_00.png",	"stat icon");
+
+		txtPos.y += std::max(0, iconSize - fontHeight);
+		auto statHeaderTxt = scrollAreaFrame->addField("stat header txt", 128);
+		statHeaderTxt->setFont(descFont);
+		statHeaderTxt->setSize(txtPos);
+		statHeaderTxt->setText("Associated Stat:");
+
+		auto statTypeTxt = scrollAreaFrame->addField("stat type txt", 128);
+		statTypeTxt->setFont(descFont);
+		txtPos.w -= iconSize + 4;
+		statTypeTxt->setSize(txtPos);
+		txtPos.w += iconSize + 4;
+		statTypeTxt->setText("");
+		statTypeTxt->setHJustify(Field::justify_t::RIGHT);
+		txtPos.y += fontHeight;
+		txtPos.y += fontHeight / 2;
+	}
+	{
+		auto skillDescriptionTxt = scrollAreaFrame->addField("skill desc txt", 1024);
+		skillDescriptionTxt->setFont(descFont);
+		skillDescriptionTxt->setSize(txtPos);
+		skillDescriptionTxt->setText("");
+
+		int txtHeight = skillDescriptionTxt->getNumTextLines() * actualFont->height(true);
+
+		txtPos.y += txtHeight;
+		txtPos.y += fontHeight / 2;
+
+	}
+	{
+		char effectFrameName[64] = "";
+		char effectFieldName[64] = "";
+		char effectFieldVal[64] = "";
+		char effectBgName[64];
+		int effectXOffset = 72; // tmp paramters - configured in skillsheet json
+		int effectBackgroundXOffset = 8;
+		int effectBackgroundWidth = 80;
+		for ( int i = 0; i < 10; ++i )
+		{
+			snprintf(effectFrameName, sizeof(effectFrameName), "effect %d frame", i);
+			auto effectFrame = scrollAreaFrame->addFrame(effectFrameName);
+			effectFrame->setSize(SDL_Rect{ txtPos.x, txtPos.y - 2, txtPos.w, fontHeight + 8 });
+			effectFrame->addImage(
+				SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 }, 
+				makeColor(101, 87, 67, 255), "images/system/white.png", "effect frame bg highlight");
+			effectFrame->addImage(
+				SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 },
+				makeColor(101, 33, 33, 28), "images/system/white.png", "effect frame bg tmp");
+			int valueX =  effectFrame->getSize().w - effectXOffset;
+
+			auto valBgImgFrame = effectFrame->addFrame("effect val bg frame");
+			valBgImgFrame->setSize(SDL_Rect{ valueX - effectBackgroundXOffset, 0, effectBackgroundWidth, effectFrame->getSize().h - 4});
+			{
+				Frame::image_t* tmp = valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+					0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", "effect bg top left");
+				if ( tmp )
+				{
+					tmp->pos.w = Image::get(tmp->path.c_str())->getWidth();
+					tmp->pos.h = Image::get(tmp->path.c_str())->getHeight();
+				}
+				tmp = valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+					0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", "effect bg top right");
+				if ( tmp )
+				{
+					tmp->pos.w = Image::get(tmp->path.c_str())->getWidth();
+					tmp->pos.h = Image::get(tmp->path.c_str())->getHeight();
+				}
+				tmp = valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+					0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", "effect bg top middle");
+				if ( tmp )
+				{
+					tmp->pos.w = Image::get(tmp->path.c_str())->getWidth();
+					tmp->pos.h = Image::get(tmp->path.c_str())->getHeight();
+				}
+				tmp = valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+					0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", "effect bg left");
+				if ( tmp )
+				{
+					tmp->pos.w = Image::get(tmp->path.c_str())->getWidth();
+					tmp->pos.h = Image::get(tmp->path.c_str())->getHeight();
+				}
+				tmp = valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+					0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", "effect bg right");
+				if ( tmp )
+				{
+					tmp->pos.w = Image::get(tmp->path.c_str())->getWidth();
+					tmp->pos.h = Image::get(tmp->path.c_str())->getHeight();
+				}
+				tmp = valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+					0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", "effect bg middle");
+				if ( tmp )
+				{
+					tmp->pos.w = Image::get(tmp->path.c_str())->getWidth();
+					tmp->pos.h = Image::get(tmp->path.c_str())->getHeight();
+				}
+				tmp = valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+					0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", "effect bg bottom left");
+				if ( tmp )
+				{
+					tmp->pos.w = Image::get(tmp->path.c_str())->getWidth();
+					tmp->pos.h = Image::get(tmp->path.c_str())->getHeight();
+				}
+				tmp = valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+					0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", "effect bg bottom right");
+				if ( tmp )
+				{
+					tmp->pos.w = Image::get(tmp->path.c_str())->getWidth();
+					tmp->pos.h = Image::get(tmp->path.c_str())->getHeight();
+				}
+				tmp = valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+					0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", "effect bg bottom middle");
+				if ( tmp )
+				{
+					tmp->pos.w = Image::get(tmp->path.c_str())->getWidth();
+					tmp->pos.h = Image::get(tmp->path.c_str())->getHeight();
+				}
+			}
+
+			auto effectTxtFrame = effectFrame->addFrame("effect txt frame");
+			effectTxtFrame->setSize(SDL_Rect{ 0, 0, effectFrame->getSize().w - effectXOffset - effectBackgroundXOffset, effectFrame->getSize().h - 4 });
+			auto effectTxt = effectTxtFrame->addField("effect txt", 128);
+			effectTxt->setFont(descFont);
+			effectTxt->setSize(SDL_Rect{0, 0, 1000, effectTxtFrame->getSize().h}); // large 1000px to handle large text length marquee
+			effectTxt->setVJustify(Field::justify_t::CENTER);
+			effectTxt->setText("");
+			effectTxt->setColor(makeColor(201, 162, 100, 255));
+
+			auto effectValFrame = effectFrame->addFrame("effect val frame");
+			effectValFrame->setSize(SDL_Rect{ valueX, 0, effectXOffset, effectFrame->getSize().h - 4 });
+			auto effectVal = effectValFrame->addField("effect val", 128);
+			effectVal->setFont(descFont);
+			effectVal->setSize(SDL_Rect{ 0, 0, 1000, effectValFrame->getSize().h }); // large 1000px to handle large text length marquee
+			effectVal->setVJustify(Field::justify_t::CENTER);
+			effectVal->setText("");
+			effectVal->setColor(makeColor(201, 162, 100, 255));
+
+			//effectFrame->setDisabled(true);
+
+			txtPos.y += effectFrame->getSize().h;
+		}
+	}
+	{
+		auto legendDivImg = scrollAreaFrame->addImage(SDL_Rect{ 0, txtPos.y, 212, 28 }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_Separator_00.png", "legend div");
+		legendDivImg->pos.x = scrollAreaFrame->getSize().w / 2 - legendDivImg->pos.w / 2;
+		auto legendDivTxt = scrollAreaFrame->addField("legend div text", 128);
+		legendDivTxt->setText(language[4056]);
+		SDL_Rect legendDivTxtPos = legendDivImg->pos;
+		legendDivTxt->setSize(legendDivTxtPos);
+		legendDivTxt->setFont(descFont);
+		legendDivTxt->setHJustify(Field::justify_t::CENTER);
+
+		auto legendFrame = scrollAreaFrame->addFrame("legend frame");
+		SDL_Rect legendPos{ 0, txtPos.y, txtPos.w, 100 };
+		legendFrame->setSize(legendPos);
+		auto tl = legendFrame->addImage(SDL_Rect{ 0, 0, 18, 18 }, 0xFFFFFFFF, 
+			"images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png", "top left img");
+		auto tm = legendFrame->addImage(SDL_Rect{ 18, 0, legendPos.w - 18 * 2, 18 }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png", "top img");
+		auto tr = legendFrame->addImage(SDL_Rect{ legendPos.w - 18, 0, 18, 18 }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png", "top right img");
+
+		auto ml = legendFrame->addImage(SDL_Rect{ 0, 18, 18, legendPos.h - 18 * 2 }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png", "middle left img");
+		auto mm = legendFrame->addImage(SDL_Rect{ 18, 18, legendPos.w - 18 * 2, ml->pos.h }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png", "middle img");
+		auto mr = legendFrame->addImage(SDL_Rect{ legendPos.w - 18, 18, 18, ml->pos.h }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png", "middle right img");
+
+		auto bl = legendFrame->addImage(SDL_Rect{ 0, ml->pos.y + ml->pos.h, 18, 18 }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png", "bottom left img");
+		auto bm = legendFrame->addImage(SDL_Rect{ 18, bl->pos.y, legendPos.w - 18 * 2, 18 }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png", "bottom img");
+		auto br = legendFrame->addImage(SDL_Rect{ legendPos.w - 18, bl->pos.y, 18, 18 }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png", "bottom right img");
+
+		auto legendText = legendFrame->addField("legend text", 256);
+		legendText->setText("");
+		legendText->setSize(mm->pos);
+		legendText->setFont(descFont);
+		legendText->setHJustify(Field::justify_t::CENTER);
+	}
+	/*auto debugRect = skillDescriptionFrame->addImage(txtPos, 0xFFFFFFFF,
+	"images/system/white.png", "");*/
+}
+
+void Player::SkillSheet_t::resetSkillDisplay()
+{
+	bSkillSheetEntryLoaded = false;
+	scrollPercent = 0.0;
+	scrollInertia = 0.0;
+
+	if ( skillFrame )
+	{
+		auto innerFrame = skillFrame->findFrame("skills frame");
+		auto skillDescriptionFrame = innerFrame->findFrame("skill desc frame");
+		auto slider = skillDescriptionFrame->findSlider("skill slider");
+		slider->setValue(0.0);
+	}
+
+	for ( auto& skillEntry : skillSheetData.skillEntries )
+	{
+		for ( auto& skillEffect : skillEntry.effects )
+		{
+			skillEffect.marqueeTicks = 0;
+			skillEffect.marquee = 0.0;
+		}
+	}
+}
+
+void Player::SkillSheet_t::closeSkillSheet()
+{
+	bSkillSheetOpen = false;
+	if ( skillFrame )
+	{
+		skillFrame->setDisabled(true);
+	}
+	resetSkillDisplay();
+}
+
+void Player::SkillSheet_t::openSkillSheet()
+{
+	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY,
+		INVENTORY_MODE_ITEM, player.GUI.MODULE_SKILLS_LIST); // Reset the GUI to the inventory.
+	bSkillSheetOpen = true;
+	openTick = ticks;
+	resetSkillDisplay();
+	if ( selectedSkill < 0 )
+	{
+		selectSkill(0);
+	}
+}
+
+std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue)
+{
+	char buf[128] = "";
+	if ( !players[playernum] ) { return ""; }
+	Entity* player = players[playernum]->entity;
+	real_t val = 0.0;
+	real_t val2 = 0.0;
+	if ( proficiency == PRO_STEALTH )
+	{
+		if ( tag == "STEALTH_VIS_REDUCTION" )
+		{
+			val = stats[playernum]->PROFICIENCIES[proficiency] * 2 * 100 / 512.f; // % visibility reduction
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "STEALTH_SNEAK_VIS" )
+		{
+			val = (2 + (stats[playernum]->PROFICIENCIES[proficiency] / 40)); // night vision when sneaking
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "STEALTH_BACKSTAB" )
+		{
+			val = (stats[playernum]->PROFICIENCIES[proficiency] / 20 + 2) * 2; // backstab dmg
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val *= 2;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "STEALTH_CURRENT_VIS" )
+		{
+			if ( player )
+			{
+				val = player->entityLightAfterReductions(*stats[playernum], nullptr);
+				val = std::max(1, (static_cast<int>(val / 32.0))); // general visibility
+				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			}
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_RANGED )
+	{
+		if ( tag == "RANGED_DMG_RANGE" )
+		{
+			val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "RANGED_DEGRADE_CHANCE" )
+		{
+			val = 50 + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 10;
+			if ( stats[playernum]->type == GOBLIN )
+			{
+				val += 20;
+				if ( stats[playernum]->PROFICIENCIES[proficiency] < SKILL_LEVEL_LEGENDARY )
+				{
+					val = std::min(val, 90.0);
+				}
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "RANGED_THROWN_DMG" )
+		{
+			int skillLVL = stats[playernum]->PROFICIENCIES[proficiency] / 20; // thrown dmg bonus
+			val = 100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "RANGED_PIERCE_CHANCE" )
+		{
+			if ( player )
+			{
+				val = std::min(std::max(player->getPER() / 2, 0), 50);
+				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			}
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_SHIELD )
+	{
+		if ( tag == "BLOCK_AC_INCREASE" )
+		{
+			val = 5 + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 5);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "BLOCK_DEGRADE_NORMAL_CHANCE" )
+		{
+			val = 25 + (stats[playernum]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
+			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10));
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		else if ( tag == "BLOCK_DEGRADE_DEFENDING_CHANCE" )
+		{
+			val = 10 + (stats[playernum]->type == GOBLIN ? 10 : 0); // degrade on 0 dmg
+			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10));
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val = 40 + (stats[playernum]->type == GOBLIN ? 10 : 0);
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_UNARMED )
+	{
+		if ( tag == "UNARMED_DMG_RANGE" )
+		{
+			val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "UNARMED_BONUS_DMG" )
+		{
+			val = static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "GLOVE_DEGRADE_CHANCE" )
+		{
+			val = 100 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "GLOVE_DEGRADE0_CHANCE" )
+		{
+			val = 8 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "UNARMED_KNOCKBACK_DIST" )
+		{
+			val = static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 20;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_SWORD )
+	{
+		if ( tag == "SWORD_DMG_RANGE" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+			}
+			else
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "SWORD_DEGRADE_CHANCE" )
+		{
+			val = 50 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "SWORD_DEGRADE0_CHANCE" )
+		{
+			val = 4 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_POLEARM )
+	{
+		if ( tag == "POLEARM_DMG_RANGE" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+			}
+			else
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "POLEARM_DEGRADE_CHANCE" )
+		{
+			val = 50 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "POLEARM_DEGRADE0_CHANCE" )
+		{
+			val = 4 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_AXE )
+	{
+		if ( tag == "AXE_DMG_RANGE" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+			}
+			else
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "AXE_DEGRADE_CHANCE" )
+		{
+			val = 50 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "AXE_DEGRADE0_CHANCE" )
+		{
+			val = 4 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_MACE )
+	{
+		if ( tag == "MACE_DMG_RANGE" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+			}
+			else
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MACE_DEGRADE_CHANCE" )
+		{
+			val = 50 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MACE_DEGRADE0_CHANCE" )
+		{
+			val = 4 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			if ( svFlags & SV_FLAG_HARDCORE )
+			{
+				val *= 2;
+			}
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 0.0;
+			}
+			if ( val > 0.0001 )
+			{
+				val = 100 / val;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_SWIMMING )
+	{
+		if ( tag == "SWIM_SPEED" )
+		{
+			val = (((stats[playernum]->PROFICIENCIES[proficiency] / 100.f) * 50.f) + 50); // water movement speed
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_LEADERSHIP )
+	{
+		if ( tag == "LEADER_MAX_FOLLOWERS" )
+		{
+			val = std::min(8, std::max(4, 2 * (stats[playernum]->PROFICIENCIES[proficiency] / 20))); // max followers
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "LEADER_FOLLOWER_SPEED" )
+		{
+			val = 1 + (stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "LEADER_CHARM_MONSTER" )
+		{
+			val = 80 + ((statGetCHR(stats[playernum], player) + stats[playernum]->PROFICIENCIES[proficiency]) / 20) * 10;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "LIST_LEADER_AVAILABLE_FOLLOWERS" )
+		{
+			snprintf(buf, sizeof(buf), rawValue.c_str(), "  - TODO\n  - TODO\n  - TODO");
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_TRADING )
+	{
+		if ( tag == "TRADING_BUY_PRICE" )
+		{
+			val = 1 / ((50 + stats[playernum]->PROFICIENCIES[proficiency]) / 150.f); // buy value
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		else if ( tag == "TRADING_SELL_PRICE" )
+		{
+			val = (50 + stats[playernum]->PROFICIENCIES[proficiency]) / 150.f; // sell value
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_APPRAISAL )
+	{
+		if ( tag == "APPRAISE_GOLD_SPEED" )
+		{
+			val = (60.f / (stats[playernum]->PROFICIENCIES[proficiency] + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		else if ( tag == "APPRAISE_MAX_GOLD_VALUE" )
+		{
+			val = 10 * (stats[playernum]->PROFICIENCIES[proficiency] + (statGetPER(stats[playernum], player) * 5)); // max gold value can appraise
+			if ( val < 0.1 )
+			{
+				val = 9;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "APPRAISE_WORTHLESS_GLASS" )
+		{
+			if ( (stats[playernum]->PROFICIENCIES[proficiency] + (statGetPER(stats[playernum], player) * 5)) >= 100 )
+			{
+				snprintf(buf, sizeof(buf), rawValue.c_str(), language[1314]); // yes
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), rawValue.c_str(), language[1315]); // no
+			}
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_LOCKPICKING )
+	{
+		Sint32 PER = statGetPER(stats[playernum], player);
+		if ( tag == "TINKERING_LOCKPICK_CHESTS_DOORS" )
+		{
+			val = stats[playernum]->PROFICIENCIES[proficiency] / 2.f; // lockpick chests/doors
+			if ( stats[playernum]->PROFICIENCIES[proficiency] == SKILL_LEVEL_LEGENDARY )
+			{
+				val = 100.f;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "TINKERING_SCRAP_CHESTS" )
+		{
+			val = std::min(100.f, stats[playernum]->PROFICIENCIES[proficiency] + 50.f);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "TINKERING_SCRAP_AUTOMATONS" )
+		{
+			if ( stats[playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_EXPERT )
+			{
+				val = 100.f; // lockpick automatons
+			}
+			else
+			{
+				val = (100 - 100 / (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20 + 1))); // lockpick automatons
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "TINKERING_DISARM_ARROWS" )
+		{
+			val = (100 - 100 / (std::max(1, static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10)))); // disarm arrow traps
+			if ( stats[playernum]->PROFICIENCIES[proficiency] < SKILL_LEVEL_BASIC )
+			{
+				val = 0.f;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "TINKERING_KIT_SCRAP_BONUS" )
+		{
+			// bonus scrapping chances.
+			int skillLVL = std::min(5, static_cast<int>((stats[playernum]->PROFICIENCIES[proficiency] + PER) / 20));
+			skillLVL = std::max(0, skillLVL);
+			switch ( skillLVL )
+			{
+				case 5:
+					val = 150.f;
+					break;
+				case 4:
+					val = 125.f;
+					break;
+				case 3:
+					val = 50.f;
+					break;
+				case 2:
+					val = 25.f;
+					break;
+				case 1:
+					val = 12.5;
+					break;
+				default:
+					val = 0.f;
+					break;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "TINKERING_KIT_REPAIR_ITEM" )
+		{
+			std::string canRepairItems = language[4057]; // none
+			if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
+			{
+				canRepairItems = language[4058]; // all
+			}
+			else if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
+			{
+				canRepairItems = language[4059]; // 2/0
+			}
+			else if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
+			{
+				canRepairItems = language[4060]; // 1/0
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), canRepairItems.c_str());
+		}
+		else if ( tag == "TINKERING_MAX_ALLIES" )
+		{
+			val = maximumTinkeringBotsCanBeDeployed(stats[playernum]);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_ALCHEMY )
+	{
+		if ( tag == "ALCHEMY_POTION_EFFECT_DMG" )
+		{
+			int skillLVL = stats[playernum]->PROFICIENCIES[proficiency] / 20;
+			val = 100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "ALCHEMY_THROWN_IMPACT_DMG" )
+		{
+			int skillLVL = stats[playernum]->PROFICIENCIES[proficiency] / 20;
+			val = 100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "ALCHEMY_DUPLICATION_CHANCE" )
+		{
+			val = 50.f + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 10;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "ALCHEMY_EMPTY_BOTTLE_CONSUME" )
+		{
+			val = std::min(80, (60 + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 10));
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "ALCHEMY_EMPTY_BOTTLE_BREW" )
+		{
+			val = 50.f + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 5;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "ALCHEMY_LEARNT_INGREDIENTS" )
+		{
+			snprintf(buf, sizeof(buf), rawValue.c_str(), "  - TODO\n  - TODO\n  - TODO");
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_SPELLCASTING )
+	{
+		if ( tag == "CASTING_MP_REGEN" )
+		{
+			if ( player )
+			{
+				val = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "CASTING_BEGINNER" )
+		{
+			if ( isSpellcasterBeginner(playernum, player) )
+			{
+				snprintf(buf, sizeof(buf), rawValue.c_str(), language[1314]); // yes
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), rawValue.c_str(), language[1315]); // no
+			}
+		}
+		else if ( tag == "CASTING_SPELLBOOK_FUMBLE" )
+		{
+			int skillLVL = std::min(std::max(0, stats[playernum]->PROFICIENCIES[proficiency] + statGetINT(stats[playernum], player)), 100);
+			skillLVL /= 20;
+			std::string tierName = language[4061];
+			tierName += " ";
+			if ( skillLVL == 0 )
+			{
+				tierName += "I";
+			}
+			else if ( skillLVL == 1 )
+			{
+				tierName += "II";
+			}
+			else if ( skillLVL == 2 )
+			{
+				tierName += "III";
+			}
+			else if ( skillLVL == 3 )
+			{
+				tierName += "IV";
+			}
+			else if ( skillLVL == 4 )
+			{
+				tierName += "V";
+			}
+			else if ( skillLVL >= 5 )
+			{
+				tierName += "VI";
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), tierName.c_str());
+		}
+		return buf;
+	}
+	else if ( proficiency == PRO_MAGIC )
+	{
+		/*if ( tag == "CASTING_MP_REGEN" )
+		{
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "CASTING_BEGINNER" )
+		{
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "CASTING_SPELLBOOK_FUMBLE" )
+		{
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}*/
+	}
+	
+	return "";
+}
+
+void Player::SkillSheet_t::selectSkill(int skill)
+{
+	selectedSkill = skill;
+	bSkillSheetEntryLoaded = false;
+	openTick = ticks;
+	resetSkillDisplay();
+}
+
+void Player::SkillSheet_t::processSkillSheet()
+{
+	if ( !skillFrame )
+	{
+		createSkillSheet();
+	}
+
+	if ( keystatus[SDL_SCANCODE_K] )
+	{
+		if ( !bSkillSheetOpen )
+		{
+			openSkillSheet();
+		}
+		else
+		{
+			closeSkillSheet();
+		}
+		keystatus[SDL_SCANCODE_K] = 0;
+	}
+
+	if ( !bSkillSheetOpen )
+	{
+		skillFrame->setDisabled(true);
+
+		auto innerFrame = skillFrame->findFrame("skills frame");
+		SDL_Rect pos = innerFrame->getSize();
+		skillsFadeInAnimationY = 0.0;
+		pos.y = -pos.h;
+		innerFrame->setSize(pos);
+
+		auto fade = skillFrame->findImage("fade img");
+		Uint8 r, g, b, a;
+		SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
+		a = 0;
+		fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		return;
+	}
+
+	skillFrame->setDisabled(false);
+	skillFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+
+	auto innerFrame = skillFrame->findFrame("skills frame");
+	SDL_Rect sheetSize = innerFrame->getSize();
+	sheetSize.x = skillFrame->getSize().w / 2 - sheetSize.w / 2;
+
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - skillsFadeInAnimationY)) / 5.0;
+	skillsFadeInAnimationY += setpointDiffX;
+	skillsFadeInAnimationY = std::min(1.0, skillsFadeInAnimationY);
+
+	auto fade = skillFrame->findImage("fade img");
+	Uint8 r, g, b, a;
+	SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
+	a = 128 * skillsFadeInAnimationY;
+	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+
+	int baseY = (skillFrame->getSize().h / 2 - sheetSize.h / 2);
+	sheetSize.y = -sheetSize.h + skillsFadeInAnimationY * (baseY + sheetSize.h);
+	innerFrame->setSize(sheetSize);
+
+	auto skillDescriptionFrame = innerFrame->findFrame("skill desc frame");
+	auto slider = skillDescriptionFrame->findSlider("skill slider");
+	bool sliderDisabled = slider->isDisabled();
+
+	if ( stats[player.playernum] && skillSheetData.skillEntries.size() > 0 )
+	{
+		if ( Frame* allSkillEntries = innerFrame->findFrame("skill entries frame") )
+		{
+			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+			{
+				char skillname[32];
+				snprintf(skillname, sizeof(skillname), "skill %d", i);
+				auto entry = allSkillEntries->findFrame(skillname);
+
+				if ( i >= skillSheetData.skillEntries.size() )
+				{
+					entry->setDisabled(true);
+					break;
+				}
+				entry->setDisabled(false);
+				int proficiency = skillSheetData.skillEntries[i].skillId;
+
+				auto skillLevel = entry->findField("skill level");
+				char skillLevelText[32];
+				snprintf(skillLevelText, sizeof(skillLevelText), "%d", stats[player.playernum]->PROFICIENCIES[proficiency]);
+				skillLevel->setText(skillLevelText);
+
+				auto skillIconBg = entry->findImage("skill icon bg");
+				auto skillIconFg = entry->findImage("skill icon fg");
+				skillIconFg->path = skillSheetData.skillEntries[i].skillIconPath;
+
+				auto statIcon = entry->findImage("stat icon");
+				statIcon->disabled = true;
+
+				auto selectorIcon = entry->findImage("selector img");
+				selectorIcon->disabled = true;
+
+				if ( entry->capturesMouse() )
+				{
+					highlightedSkill = i;
+					if ( inputs.bMouseLeft(player.playernum) )
+					{
+						selectSkill(i);
+						//inputs.mouseClearLeft(player.playernum);
+					}
+				}
+
+				if ( selectedSkill == i || highlightedSkill == i )
+				{
+					selectorIcon->disabled = false;
+					if ( selectedSkill == i && highlightedSkill == i )
+					{
+						selectorIcon->path = (i < 8) ? "images/ui/SkillSheet/UI_Skills_SkillSelector100_00.png" : "images/ui/SkillSheet/UI_Skills_SkillSelector100R_00.png";
+					}
+					else if ( highlightedSkill == i )
+					{
+						selectorIcon->path = (i < 8) ? skillSheetData.highlightSkillImg : skillSheetData.highlightSkillImg_Right;
+					}
+					else if ( selectedSkill == i )
+					{
+						selectorIcon->path = (i < 8) ? skillSheetData.selectSkillImg : skillSheetData.selectSkillImg_Right;
+					}
+				}
+
+				if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_LEGENDARY )
+				{
+					skillIconFg->path = skillSheetData.skillEntries[i].skillIconPathLegend;
+					skillLevel->setColor(skillSheetData.legendTextColor);
+					if ( selectedSkill == i )
+					{
+						skillIconBg->path = skillSheetData.iconBgSelectedPathLegend;
+					}
+					else
+					{
+						skillIconBg->path = skillSheetData.iconBgPathLegend;
+					}
+				}
+				else if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_EXPERT )
+				{
+					skillLevel->setColor(skillSheetData.expertTextColor);
+					if ( selectedSkill == i )
+					{
+						skillIconBg->path = skillSheetData.iconBgSelectedPathExpert;
+					}
+					else
+					{
+						skillIconBg->path = skillSheetData.iconBgPathExpert;
+					}
+				}
+				else if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_BASIC )
+				{
+					skillLevel->setColor(skillSheetData.noviceTextColor);
+					if ( selectedSkill == i )
+					{
+						skillIconBg->path = skillSheetData.iconBgSelectedPathNovice;
+					}
+					else
+					{
+						skillIconBg->path = skillSheetData.iconBgPathNovice;
+					}
+				}
+				else
+				{
+					skillLevel->setColor(skillSheetData.defaultTextColor);
+					if ( selectedSkill == i )
+					{
+						skillIconBg->path = skillSheetData.iconBgSelectedPathDefault;
+					}
+					else
+					{
+						skillIconBg->path = skillSheetData.iconBgPathDefault;
+					}
+				}
+				//statIcon->path = skillIconFg->path;
+				//skillIconFg->path = "";
+			}
+		}
+
+		int lowestY = 0;
+		auto scrollAreaOuterFrame = skillDescriptionFrame->findFrame("scroll area outer frame");
+		auto scrollArea = scrollAreaOuterFrame->findFrame("skill scroll area");
+		SDL_Rect scrollOuterFramePos = scrollAreaOuterFrame->getSize();
+		SDL_Rect scrollAreaPos = scrollArea->getSize();
+
+		if ( keystatus[SDL_SCANCODE_J] )
+		{
+			keystatus[SDL_SCANCODE_J] = 0;
+			slider->setDisabled(!slider->isDisabled());
+		}
+		int sliderOffsetW = 0;
+		if ( slider->isDisabled() )
+		{
+			int diff = (scrollOuterFramePos.w - (skillDescriptionFrame->getSize().w - 32));
+			sliderOffsetW = -diff;
+		}
+		else
+		{
+			int diff = (scrollOuterFramePos.w - (slider->getRailSize().x - 4 - 16));
+			sliderOffsetW = -diff;
+		}
+		if ( sliderOffsetW != 0 )
+		{
+			bSkillSheetEntryLoaded = false;
+		}
+
+		scrollOuterFramePos.w += sliderOffsetW;
+		scrollAreaOuterFrame->setSize(scrollOuterFramePos);
+		scrollAreaPos.w = scrollOuterFramePos.w;
+		scrollArea->setSize(scrollAreaPos);
+
+		if ( slider->isDisabled() )
+		{
+			scrollPercent = 0.0;
+			scrollInertia = 0.0;
+		}
+
+		if ( selectedSkill >= 0 && selectedSkill < skillSheetData.skillEntries.size() )
+		{
+			auto skillLvlHeaderVal = scrollArea->findField("skill lvl header val");
+			char skillLvl[128] = "";
+			int proficiency = skillSheetData.skillEntries[selectedSkill].skillId;
+			int proficiencyValue = stats[player.playernum]->PROFICIENCIES[proficiency];
+			std::string skillLvlTitle = "";
+			if ( proficiencyValue >= SKILL_LEVEL_LEGENDARY )
+			{
+				skillLvlTitle = language[369];
+			}
+			else if ( proficiencyValue >= SKILL_LEVEL_MASTER )
+			{
+				skillLvlTitle = language[368];
+			}
+			else if ( proficiencyValue >= SKILL_LEVEL_EXPERT )
+			{
+				skillLvlTitle = language[367];
+			}
+			else if ( proficiencyValue >= SKILL_LEVEL_SKILLED )
+			{
+				skillLvlTitle = language[366];
+			}
+			else if ( proficiencyValue >= SKILL_LEVEL_BASIC )
+			{
+				skillLvlTitle = language[365];
+			}
+			else if ( proficiencyValue >= SKILL_LEVEL_NOVICE )
+			{
+				skillLvlTitle = language[364];
+			}
+			else
+			{
+				skillLvlTitle = language[363];
+			}
+			skillLvlTitle.erase(std::remove(skillLvlTitle.begin(), skillLvlTitle.end(), ' '), skillLvlTitle.end()); // trim whitespace
+			snprintf(skillLvl, sizeof(skillLvl), "%s (%d)", skillLvlTitle.c_str(), stats[player.playernum]->PROFICIENCIES[proficiency]);
+			skillLvlHeaderVal->setText(skillLvl);
+
+			SDL_Rect skillLvlHeaderValPos = skillLvlHeaderVal->getSize();
+			skillLvlHeaderValPos.x += sliderOffsetW;
+			skillLvlHeaderVal->setSize(skillLvlHeaderValPos);
+
+			if ( !bSkillSheetEntryLoaded )
+			{
+				auto skillTitleTxt = innerFrame->findField("skill title txt");
+				skillTitleTxt->setText(skillSheetData.skillEntries[selectedSkill].name.c_str());
+
+				auto statTypeTxt = scrollArea->findField("stat type txt");
+				auto statIcon = scrollArea->findImage("stat icon");
+				statIcon->path = skillSheetData.skillEntries[selectedSkill].statIconPath;
+				switch ( getStatForProficiency(proficiency) )
+				{
+					case STAT_STR:
+						statTypeTxt->setText("STR");
+						break;
+					case STAT_DEX:
+						statTypeTxt->setText("DEX");
+						break;
+					case STAT_CON:
+						statTypeTxt->setText("CON");
+						break;
+					case STAT_INT:
+						statTypeTxt->setText("INT");
+						break;
+					case STAT_PER:
+						statTypeTxt->setText("PER");
+						break;
+					case STAT_CHR:
+						statTypeTxt->setText("CHR");
+						break;
+					default:
+						break;
+				}
+
+				SDL_Rect statTypeTxtPos = statTypeTxt->getSize();
+				statTypeTxtPos.x += sliderOffsetW;
+				statTypeTxt->setSize(statTypeTxtPos);
+				statIcon->pos.x += sliderOffsetW;
+			}
+
+			auto skillDescriptionTxt = scrollArea->findField("skill desc txt");
+			int moveEffectsOffsetY = 0;
+			Font* actualFont = Font::get(skillDescriptionTxt->getFont());
+			if ( !bSkillSheetEntryLoaded )
+			{
+				SDL_Rect skillDescriptionTxtPos = skillDescriptionTxt->getSize();
+				skillDescriptionTxtPos.w = scrollAreaPos.w;
+				skillDescriptionTxt->setSize(skillDescriptionTxtPos);
+
+				int txtHeightOld = skillDescriptionTxt->getNumTextLines() * actualFont->height(true);
+				skillDescriptionTxt->setText(skillSheetData.skillEntries[selectedSkill].description.c_str());
+				skillDescriptionTxt->reflowTextToFit(0);
+				int txtHeightNew = skillDescriptionTxt->getNumTextLines() * actualFont->height(true);
+
+				if ( txtHeightNew != txtHeightOld )
+				{
+					moveEffectsOffsetY = (txtHeightNew - txtHeightOld);
+				}
+			}
+
+			lowestY = std::max(lowestY, skillDescriptionTxt->getSize().y + skillDescriptionTxt->getNumTextLines() * actualFont->height(true));
+			
+			int previousEffectFrameHeight = 0;
+			for ( int eff = 0; eff < 10; ++eff )
+			{
+				char effectFrameName[64] = "";
+				snprintf(effectFrameName, sizeof(effectFrameName), "effect %d frame", eff);
+				auto effectFrame = scrollArea->findFrame(effectFrameName);
+				if ( !effectFrame ) { continue; }
+
+				effectFrame->setDisabled(true);
+				SDL_Rect effectFramePos = effectFrame->getSize();
+				effectFramePos.w = scrollAreaPos.w;
+
+				if ( moveEffectsOffsetY != 0 )
+				{
+					effectFramePos.y += moveEffectsOffsetY;
+				}
+				effectFrame->setSize(effectFramePos);
+
+				if ( eff < skillSheetData.skillEntries[selectedSkill].effects.size() )
+				{
+					effectFrame->setDisabled(false);
+
+					auto& effect_t = skillSheetData.skillEntries[selectedSkill].effects[eff];
+					auto effectTxtFrame = effectFrame->findFrame("effect txt frame");
+					auto effectTxt = effectTxtFrame->findField("effect txt");
+					auto effectValFrame = effectFrame->findFrame("effect val frame");
+					auto effectVal = effectValFrame->findField("effect val");
+					auto effectBgImgFrame = effectFrame->findFrame("effect val bg frame");
+					{
+						// adjust position to match width of container
+						SDL_Rect effectTxtFramePos = effectTxtFrame->getSize();
+						SDL_Rect effectValFramePos = effectValFrame->getSize();
+						SDL_Rect effectBgImgFramePos = effectBgImgFrame->getSize();
+						const auto& effectStartOffsetX = skillSheetData.skillEntries[selectedSkill].effectStartOffsetX;
+						const auto& effectBackgroundOffsetX = skillSheetData.skillEntries[selectedSkill].effectBackgroundOffsetX;
+						const auto& effectBackgroundWidth = skillSheetData.skillEntries[selectedSkill].effectBackgroundWidth;
+						effectTxtFramePos.w = effectFrame->getSize().w - effectStartOffsetX - effectBackgroundOffsetX;
+						effectValFramePos.x = effectFrame->getSize().w - effectStartOffsetX;
+						effectValFramePos.w = effectStartOffsetX;
+						effectBgImgFramePos.x = effectFrame->getSize().w - effectStartOffsetX - effectBackgroundOffsetX;
+						effectBgImgFramePos.w = effectBackgroundWidth;
+						effectTxtFrame->setSize(effectTxtFramePos);
+						effectValFrame->setSize(effectValFramePos);
+						effectBgImgFrame->setSize(effectBgImgFramePos);
+					}
+
+					effectTxt->setText(effect_t.title.c_str());
+					if ( effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->PROFICIENCIES[proficiency]
+						|| effect_t.value == "" )
+					{
+						effect_t.effectUpdatedAtSkillLevel = stats[player.playernum]->PROFICIENCIES[proficiency];
+						effect_t.value = formatSkillSheetEffects(player.playernum, proficiency, effect_t.tag, effect_t.rawValue);
+					}
+					effectVal->setText(effect_t.value.c_str());
+
+					Font* effectTxtFont = Font::get(effectTxt->getFont());
+					int fontHeight;
+					effectTxtFont->sizeText("_", nullptr, &fontHeight);
+					int numEffectLines = effectTxt->getNumTextLines();
+					effectFramePos = effectFrame->getSize();
+					if ( numEffectLines > 1 )
+					{
+						effectFramePos.h = (fontHeight * numEffectLines) + 8;
+					}
+					else
+					{
+						effectFramePos.h = fontHeight + 8;
+					}
+					if ( eff > 0 )
+					{
+						effectFramePos.y = previousEffectFrameHeight; // don't adjust first effect frame y pos
+					}
+					effectFrame->setSize(effectFramePos);
+
+					{
+						// adjust position to match height of container
+						SDL_Rect effectTxtFramePos = effectTxtFrame->getSize();
+						SDL_Rect effectValFramePos = effectValFrame->getSize();
+						SDL_Rect effectBgImgFramePos = effectBgImgFrame->getSize();
+						const int containerHeight = effectFramePos.h - 4;
+						effectTxtFramePos.h = containerHeight;
+						effectValFramePos.h = containerHeight;
+						effectTxtFrame->setSize(effectTxtFramePos);
+						effectValFrame->setSize(effectValFramePos);
+	
+						SDL_Rect effectTxtPos = effectTxt->getSize();
+						effectTxtPos.h = containerHeight;
+						effectTxt->setSize(effectTxtPos);
+						SDL_Rect effectValPos = effectVal->getSize();
+						effectValPos.h = containerHeight;
+						effectVal->setSize(effectValPos);
+
+						if ( numEffectLines > 1 )
+						{
+							effectBgImgFramePos.h = (fontHeight + 8) * effectVal->getNumTextLines();
+							effectBgImgFramePos.y = (containerHeight / 2 - effectBgImgFramePos.h / 2);
+						}
+						else
+						{
+							effectBgImgFramePos.y = 0;
+							effectBgImgFramePos.h = containerHeight;
+						}
+						effectBgImgFrame->setSize(effectBgImgFramePos);
+
+						auto effectFrameBgImg = effectFrame->findImage("effect frame bg highlight");
+						effectFrameBgImg->pos = SDL_Rect{ 0, effectFrame->getSize().h - 2, effectFrame->getSize().w, 1 };
+
+						auto effectFrameBgImgTmp = effectFrame->findImage("effect frame bg tmp");
+						effectFrameBgImgTmp->pos = SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h };
+					}
+
+					{
+						// adjust inner background image elements
+						auto tl = effectBgImgFrame->findImage("effect bg top left");
+						tl->pos.x = 0;
+						tl->pos.y = 0;
+						auto tr = effectBgImgFrame->findImage("effect bg top right");
+						tr->pos.x = effectBgImgFrame->getSize().w - tr->pos.w;
+						tr->pos.y = 0;
+						auto tm = effectBgImgFrame->findImage("effect bg top middle");
+						tm->pos.x = tl->pos.x + tl->pos.w;
+						tm->pos.w = effectBgImgFrame->getSize().w - tr->pos.w - tl->pos.w;
+						auto bl = effectBgImgFrame->findImage("effect bg bottom left");
+						bl->pos.x = 0;
+						bl->pos.y = effectBgImgFrame->getSize().h - bl->pos.h;
+						auto br = effectBgImgFrame->findImage("effect bg bottom right");
+						br->pos.x = effectBgImgFrame->getSize().w - br->pos.w;
+						br->pos.y = bl->pos.y;
+						auto bm = effectBgImgFrame->findImage("effect bg bottom middle");
+						bm->pos.x = tm->pos.x;
+						bm->pos.w = tm->pos.w;
+						bm->pos.y = bl->pos.y;
+						auto ml = effectBgImgFrame->findImage("effect bg left");
+						ml->pos.x = 0;
+						ml->pos.y = tl->pos.y + tl->pos.h;
+						ml->pos.h = effectBgImgFrame->getSize().h - bl->pos.h - tl->pos.h;
+						auto mr = effectBgImgFrame->findImage("effect bg right");
+						mr->pos.x = effectBgImgFrame->getSize().w - mr->pos.w;
+						mr->pos.y = ml->pos.y;
+						mr->pos.h = ml->pos.h;
+						auto mm = effectBgImgFrame->findImage("effect bg middle");
+						mm->pos.x = ml->pos.x + ml->pos.w;
+						mm->pos.y = ml->pos.y;
+						mm->pos.w = effectBgImgFrame->getSize().w - ml->pos.w - mr->pos.w;
+						mm->pos.h = ml->pos.h;
+					}
+
+					lowestY = std::max(lowestY, effectFrame->getSize().y + effectFrame->getSize().h);
+
+					auto textGetTitle = Text::get(effectTxt->getText(), effectTxt->getFont());
+					int titleWidth = textGetTitle->getWidth();
+					if ( numEffectLines > 1 )
+					{
+						auto textGetTitle = Text::get(effectTxt->getLongestLine().c_str(), effectTxt->getFont());
+						titleWidth = textGetTitle->getWidth();
+					}
+					auto textGetValue = Text::get(effectVal->getText(), effectVal->getFont());
+					int valueWidth = textGetValue->getWidth();
+
+					// check marquee if needed
+					if ( ticks - openTick > TICKS_PER_SECOND * 2 )
+					{
+						bool doMarquee = false;
+						doMarquee = doMarquee || (titleWidth > (effectTxt->getSize().x + effectTxtFrame->getSize().w));
+						doMarquee = doMarquee || (valueWidth > (effectVal->getSize().x + effectValFrame->getSize().w));
+
+						if ( doMarquee )
+						{
+							const real_t fpsScale = (60.f / std::max(1U, fpsLimit)); // ported from 60Hz
+							effect_t.marquee += (.005 * fpsScale);
+							//effect_t.marquee = std::min(1.0, effect_t.marquee);
+
+							/*if ( effect_t.marqueeTicks == 0 && effect_t.marquee >= 1.0 )
+							{
+								effect_t.marqueeTicks = ticks;
+							}*/
+							/*if ( effect_t.marqueeTicks > 0 && (ticks - effect_t.marqueeTicks > TICKS_PER_SECOND * 2) )
+							{
+								effect_t.marqueeTicks = 0;
+								effect_t.marquee = 0.0;
+							}*/
+						}
+					}
+					SDL_Rect posTitle = effectTxt->getSize();
+					int scrollTitleLength = titleWidth - effectTxtFrame->getSize().w;
+					if ( titleWidth <= effectTxtFrame->getSize().w )
+					{
+						scrollTitleLength = 0;
+						posTitle.x = 0;
+						effect_t.marqueeCompleted = false;
+						effect_t.marquee = 0.0;
+						effect_t.marqueeTicks = 0;
+					}
+					else
+					{
+						posTitle.x = std::max((int)(-effect_t.marquee * 100), -scrollTitleLength);
+						if ( posTitle.x == -scrollTitleLength )
+						{
+							if ( !effect_t.marqueeCompleted )
+							{
+								effect_t.marqueeTicks = ticks;
+							}
+							effect_t.marqueeCompleted = true;
+						}
+						else
+						{
+							effect_t.marqueeCompleted = false;
+						}
+					}
+					//posTitle.x = -scrollTitleLength * effect_t.marquee;
+					effectTxt->setSize(posTitle);
+
+					SDL_Rect posValue = effectVal->getSize();
+					int scrollValueLength = valueWidth - effectValFrame->getSize().w;
+					if ( valueWidth <= effectValFrame->getSize().w )
+					{
+						scrollValueLength = 0;
+					}
+					posValue.x = -scrollValueLength * effect_t.marquee;
+					effectVal->setSize(posValue);
+				}
+
+				previousEffectFrameHeight = effectFrame->getSize().y + effectFrame->getSize().h;
+			}
+
+			Uint32 lastMarqueeTick = 0;
+			bool allMarqueeCompleted = true;
+			for ( auto& effect_t : skillSheetData.skillEntries[selectedSkill].effects )
+			{
+				if ( effect_t.marquee > 0.0 )
+				{
+					if ( !effect_t.marqueeCompleted )
+					{
+						allMarqueeCompleted = false;
+					}
+					lastMarqueeTick = std::max(effect_t.marqueeTicks, lastMarqueeTick);
+				}
+			}
+			if ( allMarqueeCompleted && lastMarqueeTick > 0 && ((ticks - lastMarqueeTick) > 2 * TICKS_PER_SECOND) )
+			{
+				for ( auto& effect_t : skillSheetData.skillEntries[selectedSkill].effects )
+				{
+					effect_t.marquee = 0.0;
+					effect_t.marqueeCompleted = false;
+					effect_t.marqueeTicks = 0;
+				}
+				openTick = (ticks > TICKS_PER_SECOND) ? (ticks - TICKS_PER_SECOND) : ticks;
+			}
+
+			// legend panel
+			auto legendDivImg = scrollArea->findImage("legend div");
+			legendDivImg->pos.x = scrollArea->getSize().w / 2 - legendDivImg->pos.w / 2;
+			legendDivImg->pos.y = lowestY + 8;
+			auto legendDivTxt = scrollArea->findField("legend div text");
+			SDL_Rect legendDivTxtPos = legendDivTxt->getSize();
+			legendDivTxtPos.x = legendDivImg->pos.x;
+			legendDivTxtPos.w = legendDivImg->pos.w;
+			legendDivTxtPos.y = legendDivImg->pos.y + legendDivImg->pos.h - 16;
+			legendDivTxtPos.h = actualFont->height(true);
+			legendDivTxt->setSize(legendDivTxtPos);
+			lowestY = legendDivTxtPos.y + legendDivTxtPos.h;
+
+			auto legendFrame = scrollArea->findFrame("legend frame");
+			SDL_Rect legendPos = legendFrame->getSize();
+			legendPos.y = lowestY;
+			legendPos.w = scrollArea->getSize().w;
+			legendFrame->setSize(legendPos);
+
+			auto tl = legendFrame->findImage("top left img");
+			auto tm = legendFrame->findImage("top img");
+			auto tr = legendFrame->findImage("top right img");
+			tm->pos.w = legendPos.w - tl->pos.w - tr->pos.w;
+			tr->pos.x = legendPos.w - tr->pos.w;
+
+			auto legendText = legendFrame->findField("legend text");
+			legendText->setText(skillSheetData.skillEntries[selectedSkill].legendaryDescription.c_str());
+			SDL_Rect legendTextPos = legendText->getSize();
+			legendTextPos.w = tm->pos.w;
+			legendText->setSize(legendTextPos);
+			legendText->reflowTextToFit(0);
+			legendTextPos.h = legendText->getNumTextLines() * actualFont->height(true);
+			legendTextPos.y = tm->pos.y + tm->pos.h / 2;
+			legendText->setSize(legendTextPos);
+
+
+			auto ml = legendFrame->findImage("middle left img");
+			ml->pos.h = legendTextPos.h - tm->pos.h;
+			auto mm = legendFrame->findImage("middle img");
+			mm->pos.h = ml->pos.h;
+			auto mr = legendFrame->findImage("middle right img");
+			mr->pos.h = ml->pos.h;
+			mm->pos.w = legendPos.w - ml->pos.w - mr->pos.w;
+			mr->pos.x = legendPos.w - mr->pos.w;
+
+			auto bl = legendFrame->findImage("bottom left img");
+			bl->pos.y = ml->pos.y + ml->pos.h;
+			auto bm = legendFrame->findImage("bottom img");
+			bm->pos.y = bl->pos.y;
+			auto br = legendFrame->findImage("bottom right img");
+			br->pos.y = bl->pos.y;
+			bm->pos.w = legendPos.w - bl->pos.w - br->pos.w;
+			br->pos.x = legendPos.w - br->pos.w;
+
+			if ( proficiencyValue < SKILL_LEVEL_LEGENDARY )
+			{
+				tl->path = "images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png";
+				tm->path = "images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png";
+				tr->path = "images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png";
+
+				ml->path = "images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png";
+				mm->path = "images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png";
+				mr->path = "images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png";
+
+				bl->path = "images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png";
+				bm->path = "images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png";
+				br->path = "images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png";
+			}
+			else
+			{
+				tl->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_TL_00.png";
+				tm->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_T_00.png";
+				tr->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_TR_00.png";
+
+				ml->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_ML_00.png";
+				mm->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_M_00.png";
+				mr->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_MR_00.png";
+
+				bl->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_BL_00.png";
+				bm->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_B_00.png";
+				br->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_BR_00.png";
+			}
+
+			legendPos.h = bl->pos.y + bl->pos.h;
+			legendFrame->setSize(legendPos);
+
+			lowestY = legendPos.y + legendPos.h;
+			lowestY += 4; // small buffer after legend box
+		}
+
+		if ( !slider->isDisabled() )
+		{
+			if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+			{
+				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+				scrollInertia = std::min(scrollInertia + .05, .15);
+			}
+			if ( mousestatus[SDL_BUTTON_WHEELUP] )
+			{
+				mousestatus[SDL_BUTTON_WHEELUP] = 0;
+				scrollInertia = std::max(scrollInertia - .05, -.15);
+			}
+		}
+
+		if ( abs(scrollInertia) > 0.0 )
+		{
+			scrollInertia *= .9;
+			if ( abs(scrollInertia) < .01 )
+			{
+				scrollInertia = 0.0;
+			}
+			scrollPercent = std::min(1.0, std::max(scrollPercent + scrollInertia, 0.00));
+			if ( scrollPercent >= 1.0 || scrollPercent <= 0.0 )
+			{
+				scrollInertia = 0.0;
+			}
+			slider->setValue(scrollPercent * 100);
+		}
+
+		scrollPercent = slider->getValue() / 100.0;
+		scrollAreaPos = scrollArea->getSize();
+		if ( lowestY > scrollAreaOuterFrame->getSize().h )
+		{
+			scrollAreaPos.y = -(lowestY - scrollAreaOuterFrame->getSize().h) * scrollPercent;
+			slider->setDisabled(false);
+		}
+		else
+		{
+			scrollAreaPos.y = 0;
+			slider->setDisabled(true);
+		}
+		scrollArea->setSize(scrollAreaPos);
+	}
+
+	if ( sliderDisabled != slider->isDisabled() )
+	{
+		// rerun this function
+		processSkillSheet();
+		bSkillSheetEntryLoaded = false;
+	}
+	else
+	{
+		bSkillSheetEntryLoaded = true;
 	}
 }

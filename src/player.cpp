@@ -1608,6 +1608,7 @@ Player::Player(int in_playernum, bool in_local_host) :
 	hud(*this),
 	magic(*this),
 	characterSheet(*this),
+	skillSheet(*this),
 	movement(*this),
 	messageZone(*this),
 	worldUI(*this),

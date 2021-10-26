@@ -94,6 +94,7 @@ public:
 	void	setGuide(const char* _guide) { guide = _guide; }
 	void    reflowTextToFit(const int characterOffset);
 	int		getLastLineThatFitsWithinHeight();
+	std::string getLongestLine();
 	void	setOntop(const bool _ontop) { ontop = _ontop; }
 	static char* tokenize(char* str, const char* const delimiters);
 

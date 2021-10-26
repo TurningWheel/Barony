@@ -4102,6 +4102,10 @@ void ingameHud()
 			{
 				players[player]->bookGUI.closeBookGUI();
 			}
+			if ( players[player]->skillSheet.bSkillSheetOpen )
+			{
+				players[player]->skillSheet.closeSkillSheet();
+			}
 
 			gui_clickdrag[player] = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
 
@@ -4145,6 +4149,7 @@ void ingameHud()
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
+		players[player]->skillSheet.processSkillSheet();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
 		players[player]->inventoryUI.updateCursor();

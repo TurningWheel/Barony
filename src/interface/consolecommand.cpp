@@ -3459,6 +3459,11 @@ void consoleCommand(char const * const command_str)
 			loadHUDSettingsJSON();
 			messagePlayer(clientnum, "Reloaded HUD_settings.json");
 		}
+		else if ( !strncmp(command_str, "/loadskillsheet", 15) )
+		{
+			Player::SkillSheet_t::loadSkillSheetJSON();
+			messagePlayer(clientnum, "Reloaded skillsheet_entries.json");
+		}
 		else if ( !strncmp(command_str, "/usepaperdollmovement", 21) )
 		{
 			restrictPaperDollMovement = !restrictPaperDollMovement;

@@ -102,7 +102,7 @@ void Player::BookGUI_t::createBookGUI()
 		"", "prompt prev img");
 	promptPrevPageImg->disabled = true;
 
-	std::string bookFont = "fonts/pixel_maz.ttf#16";
+	std::string bookFont = "fonts/pixel_maz.ttf#14";
 	Field* bookLeftColumnText = bookBackground->addField("left column text", 1024);
 	bookLeftColumnText->setText("Nothing");
 	const int pageWidth = BOOK_PAGE_WIDTH;
@@ -114,7 +114,7 @@ void Player::BookGUI_t::createBookGUI()
 	bookLeftColumnText->setHJustify(Field::justify_t::LEFT);
 	bookLeftColumnText->setVJustify(Field::justify_t::TOP);
 	bookLeftColumnText->setColor(SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255));
-	//bookLeftColumnText->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
+	//bookLeftColumnText->setColor(makeColor(201, 162, 100, 255));
 
 	//bookBackground->addImage(bookLeftColumnText->getSize(), 0xFFFFFFFF, "images/system/white.png", "debug img");
 
