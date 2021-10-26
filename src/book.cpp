@@ -620,7 +620,8 @@ void BookParser_t::createBook(std::string filename)
 		firstIteration = false;
 		pageText += token;
 		tmpField->setText(pageText.c_str());
-		if ( auto getText = Text::get(tmpField->getText(), tmpField->getFont()) )
+		if ( auto getText = Text::get(tmpField->getText(), tmpField->getFont(),
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 		{
 			int textHeight = getText->getHeight();
 			if ( textHeight > tmpField->getSize().h )
@@ -694,7 +695,8 @@ void BookParser_t::createBook(std::string filename)
 	//		}
 	//	}
 	//	tmpField.setText(pageText.c_str());
-	//	if ( auto getText = Text::get(tmpField.getText(), tmpField.getFont()) )
+	//	if ( auto getText = Text::get(tmpField.getText(), tmpField.getFont(),
+	//		makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 	//	{
 	//		if ( getText->getHeight() > tmpField.getSize().h - tmpField.getSize().y )
 	//		{

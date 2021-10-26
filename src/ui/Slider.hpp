@@ -57,6 +57,9 @@ public:
     //! trigger callback
     void fireCallback();
 
+    //! update the position of the handle
+    void updateHandlePosition();
+
     //! deselect the slider
     virtual void deselect() override;
 

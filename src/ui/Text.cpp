@@ -54,17 +54,37 @@ size_t getNumTextLines(std::string& str)
 }
 
 void Text::render() {
-	// load font
 	std::string strToRender;
-	std::string fontName;
-	size_t fontIndex = 0u;
-	if ((fontIndex = name.find(fontBreak)) != std::string::npos) {
-		fontName = name.substr(fontIndex + 1, UINT32_MAX);
-		strToRender = name.substr(0, fontIndex).c_str();
+	std::string fontName = Font::defaultFont;
+	Uint32 textColor = makeColor(255, 255, 255, 255);
+	Uint32 outlineColor = makeColor(0, 0, 0, 255);
+
+	size_t index;
+	std::string rest = name;
+	if ((index = rest.find(fontBreak)) != std::string::npos) {
+		strToRender = rest.substr(0, index);
+		rest = rest.substr(index + 1);
+		if ((index = rest.find(fontBreak)) != std::string::npos) {
+			fontName = rest.substr(0, index);
+			rest = rest.substr(index + 1);
+			if ((index = rest.find(fontBreak)) != std::string::npos) {
+				textColor = strtoul(rest.substr(0, index).c_str(), nullptr, 16);
+				rest = rest.substr(index + 1);
+				if ((index = rest.find(fontBreak)) != std::string::npos) {
+					outlineColor = strtoul(rest.substr(0, index).c_str(), nullptr, 16);
+				} else {
+					outlineColor = strtoul(rest.c_str(), nullptr, 16);
+				}
+			} else {
+				textColor = strtoul(rest.c_str(), nullptr, 16);
+			}
+		} else {
+			fontName = rest;
+		}
 	} else {
-		fontName = Font::defaultFont;
-		strToRender = name.c_str();
+		strToRender = rest;
 	}
+
 #ifdef NINTENDO
 	// fixes weird crash in SDL_ttf when string length < 2
 	while ( strToRender.size() < 2 ) {
@@ -76,14 +96,20 @@ void Text::render() {
 		strToRender.append(" ");
 	}
 #endif
+
 	Font* font = Font::get(fontName.c_str());
 	if (!font) {
 		return;
 	}
 	TTF_Font* ttf = font->getTTF();
 
-	SDL_Color colorBlack = { 0, 0, 0, 255 };
-	SDL_Color colorWhite = { 255, 255, 255, 255 };
+	SDL_Color colorText;
+	SDL_GetRGBA(textColor, mainsurface->format,
+		&colorText.r, &colorText.g, &colorText.b, &colorText.a);
+
+	SDL_Color colorOutline;
+	SDL_GetRGBA(outlineColor, mainsurface->format,
+		&colorOutline.r, &colorOutline.g, &colorOutline.b, &colorOutline.a);
 
 	if (surf) {
 		SDL_FreeSurface(surf);
@@ -93,9 +119,9 @@ void Text::render() {
 	int outlineSize = font->getOutline();
 	if ( outlineSize > 0 ) {
 		TTF_SetFontOutline(ttf, outlineSize);
-		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorBlack);
+		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorOutline);
 		TTF_SetFontOutline(ttf, 0);
-		SDL_Surface* text = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorWhite);
+		SDL_Surface* text = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorText);
 		SDL_Rect rect;
 		rect.x = outlineSize; rect.y = outlineSize;
 		SDL_BlitSurface(text, NULL, surf, &rect);
@@ -103,7 +129,7 @@ void Text::render() {
 	}
 	else {
 		TTF_SetFontOutline(ttf, 0);
-		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorWhite);
+		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorText);
 	}
 	assert(surf);
 	if ( texid == 0 ) {
@@ -229,7 +255,7 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 static std::unordered_map<std::string, Text*> hashed_text;
 static const int TEXT_BUDGET = 1000;
 
-Text* Text::get(const char* str, const char* font) {
+Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outlineColor) {
 	if (!str) {
 		return nullptr;
 	}
@@ -238,13 +264,22 @@ Text* Text::get(const char* str, const char* font) {
 	}
 	size_t len0 = strlen(str);
 	size_t len1 = strlen(font);
-	char textAndFont[65536]; // better not try to render more than 64kb of text...
-	size_t totalLen = len0 + len1 + 2;
+	char textAndFont[65536] = { '\0' }; // better not try to render more than 64kb of text...
+	size_t totalLen =
+		len0 + sizeof(fontBreak) +
+		len1 + sizeof(fontBreak) +
+		10 + sizeof(fontBreak) +
+		10 + sizeof(fontBreak) +
+		sizeof('\0');
 	if (totalLen > sizeof(textAndFont)) {
 		assert(0 && "Trying to render > 64kb of ttf text");
 		return nullptr;
 	}
-	snprintf(textAndFont, totalLen, "%s%c%s", str, Text::fontBreak, font);
+	snprintf(textAndFont, sizeof(textAndFont), "%s%c%s%c%#010x%c%#010x",
+		str, Text::fontBreak,
+		font, Text::fontBreak,
+		textColor, Text::fontBreak,
+		outlineColor, Text::fontBreak);
 
 	Text* text = nullptr;
 	auto search = hashed_text.find(textAndFont);

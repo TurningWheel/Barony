@@ -371,7 +371,8 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			}
 
 			// get rendered text
-			Text* text = Text::get(entry.text.c_str(), font.c_str());
+			Text* text = Text::get(entry.text.c_str(), font.c_str(),
+				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 			if (text == nullptr) {
 				continue;
 			}
@@ -488,7 +489,8 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			if (font) {
 				int border = tooltip_border_width;
 
-				Text* text = Text::get(tooltip, font->getName());
+				Text* text = Text::get(tooltip, font->getName(),
+					makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 				SDL_Rect src;
 				src.x = mousex + 20;
 				src.y = mousey;

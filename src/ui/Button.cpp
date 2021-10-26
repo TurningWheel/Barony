@@ -148,7 +148,8 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 
 				std::string str = token;
 
-				Text* _text = Text::get(str.c_str(), font.c_str());
+				Text* _text = Text::get(str.c_str(), font.c_str(),
+					makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 				assert(_text);
 
 				int x, y, w, h;

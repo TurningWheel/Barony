@@ -114,9 +114,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	drawGlyphs(scaledHandle, selectedWidgets);
 }
 
-Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
-	Widget::process();
-
+void Slider::updateHandlePosition() {
 	if (orientation == SLIDER_HORIZONTAL) {
 		handleSize.x = (railSize.x + border) - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.w - border * 2);
 		handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
@@ -124,6 +122,12 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
 		handleSize.y = (railSize.y + border) - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.h - border * 2);
 	}
+}
+
+Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
+	Widget::process();
+
+	updateHandlePosition();
 
 	result_t result;
 	result.tooltip = nullptr;

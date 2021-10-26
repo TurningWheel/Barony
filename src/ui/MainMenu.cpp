@@ -176,10 +176,8 @@ namespace MainMenu {
 				image->path = "images/ui/Main Menus/Settings/Settings_Left_Backing00.png";
 			}
 		}
-		static Widget* current_selected_widget = nullptr;
 		auto selectedWidget = frame.findSelectedWidget(0);
-		if (selectedWidget && current_selected_widget != selectedWidget) {
-			current_selected_widget = selectedWidget;
+		if (selectedWidget) {
 			std::string setting;
 			auto name = std::string(selectedWidget->getName());
 			if (selectedWidget->getType() == Widget::WIDGET_SLIDER) {
@@ -188,10 +186,13 @@ namespace MainMenu {
 				auto button = static_cast<Button*>(selectedWidget);
 				auto customize = "images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
 				auto binding = "images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonChoosing00.png";
+				auto dropdown = "images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png";
 				if (strcmp(button->getBackground(), customize) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getBackground(), binding) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));
+				} else if (strcmp(button->getBackground(), dropdown) == 0) {
+					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_dropdown_button") - 1) - (sizeof("setting_") - 1));
 				} else {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_button") - 1) - (sizeof("setting_") - 1));
 				}
@@ -203,9 +204,13 @@ namespace MainMenu {
 				}
 				auto field = frame.findField((std::string("setting_") + setting + std::string("_field")).c_str());
 				if (field) {
-					auto settings = static_cast<Frame*>(frame.getParent());
-					auto tooltip = settings->findField("tooltip"); assert(tooltip);
-					tooltip->setText(field->getGuide());
+					static Widget* current_selected_widget = nullptr;
+					if (current_selected_widget != selectedWidget) {
+						current_selected_widget = selectedWidget;
+						auto settings = static_cast<Frame*>(frame.getParent());
+						auto tooltip = settings->findField("tooltip"); assert(tooltip);
+						tooltip->setText(field->getGuide());
+					}
 				}
 			}
 		}
@@ -473,6 +478,7 @@ namespace MainMenu {
 			BooleanWithCustomize = 3,
 			Dropdown = 4,
 			Binding = 5,
+			//Field = 6,
 		};
 		Type type;
 		const char* name;
@@ -982,9 +988,8 @@ namespace MainMenu {
 
 	static void settingsOpenDropdown(Button& button, const char* name, bool small_dropdown, void(*entry_func)(Frame::entry_t&)) {
 		std::string dropdown_name = "setting_" + std::string(name) + "_dropdown";
-		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-		auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-		auto dropdown = settings_subwindow->addFrame(dropdown_name.c_str()); assert(dropdown);
+		auto frame = static_cast<Frame*>(button.getParent());
+		auto dropdown = frame->addFrame(dropdown_name.c_str()); assert(dropdown);
 		dropdown->setSize(SDL_Rect{
 			button.getSize().x,
 			button.getSize().y,
@@ -1036,7 +1041,25 @@ namespace MainMenu {
 				}
 			}
 			else {
-				break;
+				auto str = std::string("~__") + std::to_string(i);
+				auto find = button.getWidgetActions().find(str);
+				if (find != button.getWidgetActions().end()) {
+					auto entry_name = find->second.c_str();
+					auto entry = dropdown_list->addEntry(entry_name, false);
+					entry->text = entry_name;
+					entry->click = [](Frame::entry_t&){soundError();};
+					entry->ctrlClick = entry->click;
+					entry->color = makeColor(127, 127, 127, 255);
+					dropdown_list->resizeForEntries();
+					auto size = dropdown_list->getActualSize();
+					size.h += 14;
+					dropdown_list->setActualSize(size);
+					if (strcmp(button.getText(), entry_name) == 0) {
+						dropdown_list->setSelection(i);
+					}
+				} else {
+					break;
+				}
 			}
 		}
 		dropdown_list->scrollToSelection(true);
@@ -1110,11 +1133,13 @@ namespace MainMenu {
 			});
 	}
 
-	static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text) {
+	static int settingsAddSubHeader(Frame& frame, int y, const char* name, const char* text, bool generic_window = false) {
 		std::string fullname = std::string("subheader_") + name;
 		auto image = frame.addImage(
-			SDL_Rect{0, y, 1080, 42},
+			SDL_Rect{0, y, frame.getSize().w, 42},
 			0xffffffff,
+			generic_window?
+			"images/ui/Main Menus/Settings/GenericWindow/UI_MM14_HeaderBacking00.png":
 			"images/ui/Main Menus/Settings/Settings_SubHeading_Backing00.png",
 			(fullname + "_image").c_str()
 		);
@@ -1123,16 +1148,17 @@ namespace MainMenu {
 		field->setFont(bigfont_outline);
 		field->setText(text);
 		field->setJustify(Field::justify_t::CENTER);
-		Text* text_image = Text::get(text, field->getFont());
+		Text* text_image = Text::get(field->getText(), field->getFont(),
+			field->getTextColor(), field->getOutlineColor());
 		int w = text_image->getWidth();
 		auto fleur_left = frame.addImage(
-			SDL_Rect{ (1080 - w) / 2 - 26 - 8, y + 6, 26, 30 },
+			SDL_Rect{ (image->pos.w - w) / 2 - 26 - 8, y + 6, 26, 30 },
 			0xffffffff,
 			"images/ui/Main Menus/Settings/Settings_SubHeading_Fleur00.png",
 			(fullname + "_fleur_left").c_str()
 		);
 		auto fleur_right = frame.addImage(
-			SDL_Rect{ (1080 + w) / 2 + 8, y + 6, 26, 30 },
+			SDL_Rect{ (image->pos.w + w) / 2 + 8, y + 6, 26, 30 },
 			0xffffffff,
 			"images/ui/Main Menus/Settings/Settings_SubHeading_Fleur00.png",
 			(fullname + "_fleur_right").c_str()
@@ -1172,13 +1198,13 @@ namespace MainMenu {
 		button->setSize(SDL_Rect{
 			390,
 			y + 4,
-			98,
+			158,
 			44});
 		button->setFont(smallfont_outline);
 		button->setText(Input::inputs[0].binding(binding));
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
-		button->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonChoosing00.png");
+		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(127,127,127,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
@@ -1315,7 +1341,8 @@ namespace MainMenu {
 		const char* tip,
 		const std::vector<const char*>& items,
 		const char* selected,
-		void (*callback)(Button&))
+		void (*callback)(Button&),
+		const std::set<int>& grayed_items = {})
 	{
 		std::string fullname = std::string("setting_") + name;
 		int result = settingsAddOption(frame, y, name, text, tip);
@@ -1342,7 +1369,11 @@ namespace MainMenu {
 		button->addWidgetAction("MenuAlt1", "restore_defaults");
 		button->addWidgetAction("MenuStart", "confirm_and_exit");
 		for (int i = 0; i < items.size(); ++i) {
-			button->addWidgetAction((std::string("__") + std::to_string(i)).c_str(), items[i]);
+			if (grayed_items.find(i) == grayed_items.end()) {
+				button->addWidgetAction((std::string("__") + std::to_string(i)).c_str(), items[i]);
+			} else {
+				button->addWidgetAction((std::string("~__") + std::to_string(i)).c_str(), items[i]);
+			}
 		}
 		return result;
 	}
@@ -1448,7 +1479,7 @@ namespace MainMenu {
 		auto slider = settings_subwindow->addSlider("scroll_slider");
 		slider->setBorder(24);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setRailSize(SDL_Rect{1038, 16, 30, 440});
+		slider->setRailSize(SDL_Rect{1040, 8, 30, 440});
 		slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
@@ -1458,8 +1489,9 @@ namespace MainMenu {
 			actualSize.y = slider.getValue();
 			frame->setActualSize(actualSize);
 			auto railSize = slider.getRailSize();
-			railSize.y = 16 + actualSize.y;
+			railSize.y = 8 + actualSize.y;
 			slider.setRailSize(railSize);
+			slider.updateHandlePosition();
 			});
 		slider->setTickCallback([](Widget& widget){
 			Slider* slider = static_cast<Slider*>(&widget);
@@ -1467,8 +1499,9 @@ namespace MainMenu {
 			auto actualSize = frame->getActualSize();
 			slider->setValue(actualSize.y);
 			auto railSize = slider->getRailSize();
-			railSize.y = 16 + actualSize.y;
+			railSize.y = 8 + actualSize.y;
 			slider->setRailSize(railSize);
+			slider->updateHandlePosition();
 			});
 		auto sliderLeft = settings_subwindow->addImage(
 			SDL_Rect{0, 0, 30, 44},
@@ -1635,7 +1668,7 @@ namespace MainMenu {
 		auto slider = subwindow->addSlider("scroll_slider");
 		slider->setBorder(24);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setRailSize(SDL_Rect{732, 8, 30, 486});
+		slider->setRailSize(SDL_Rect{724, 8, 30, 486});
 		slider->setRailImage("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBar00.png");
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setHandleImage("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBoulder00.png");
@@ -1647,6 +1680,7 @@ namespace MainMenu {
 			auto railSize = slider.getRailSize();
 			railSize.y = 8 + actualSize.y;
 			slider.setRailSize(railSize);
+			slider.updateHandlePosition();
 			});
 		slider->setTickCallback([](Widget& widget){
 			Slider* slider = static_cast<Slider*>(&widget);
@@ -1656,6 +1690,7 @@ namespace MainMenu {
 			auto railSize = slider->getRailSize();
 			railSize.y = 8 + actualSize.y;
 			slider->setRailSize(railSize);
+			slider->updateHandlePosition();
 			});
 
 		auto defaults = window->addButton("restore_defaults");
@@ -1729,7 +1764,7 @@ namespace MainMenu {
 		soundActivate();
 		auto window = settingsGenericWindow("bindings", "BINDINGS"); assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
-		int y = 8;
+		int y = 0;
 
 		static const std::vector<Setting> bindings = {
 			{Setting::Type::Binding, "Move Forward"},
@@ -1764,6 +1799,33 @@ namespace MainMenu {
 		static int bound_player = -1;
 		bind_mode = false;
 
+		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Profiles", true);
+
+		y += settingsAddDropdown(*subwindow, y, "player_dropdown_button", "Player",
+			"Select the player whose controls you wish to customize.",
+			{"Player 1", "Player 2", "Player 3", "Player 4"},
+			"Player 1", [](Button& button){
+				soundActivate();
+				settingsOpenDropdown(button, "player_dropdown", true, nullptr);
+			});
+
+		int num_controllers = (int)std::max(Input::gameControllers.size(), Input::joysticks.size());
+		num_controllers = std::min(std::max(1, num_controllers + 1), 5);
+		std::set<int> locked_controllers;
+		for (int i = num_controllers; i < 5; ++i) {
+			locked_controllers.emplace(i);
+		}
+
+		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
+			"Select a controller for the given player.",
+			{"KB & Mouse", "Gamepad 1", "Gamepad 2", "Gamepad 3", "Gamepad 4"},
+			"KB & Mouse", [](Button& button){
+				soundActivate();
+				settingsOpenDropdown(button, "device_dropdown", true, nullptr);
+			}, locked_controllers);
+
+		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Bindings", true);
+
 		for (auto& binding : bindings) {
 			char tip[256];
 			snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
@@ -1786,6 +1848,9 @@ namespace MainMenu {
 						bound_binding.c_str());
 					tooltip->setText(buf);
 					Input::clearDefaultBindings();
+					for (auto button : subwindow->getButtons()) {
+						button->setDisabled(true);
+					}
 
 					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
 					auto confirm = bindings->findButton("confirm_and_exit"); assert(confirm);
@@ -1804,9 +1869,15 @@ namespace MainMenu {
 						if (Input::lastInputOfAnyKind != "Escape") {
 							Input::inputs[bound_player].bind(bound_binding.c_str(),
 								Input::lastInputOfAnyKind.c_str());
+						} else {
+							Input::keys[SDL_SCANCODE_ESCAPE] = 0;
 						}
 						bound_button->setText(Input::inputs[bound_player].binding(bound_binding.c_str()));
 						bound_button = nullptr;
+
+						// fixes a bug where these inputs don't reset themselves
+						Input::mouseButtons[SDL_BUTTON_WHEELUP] = 0;
+						Input::mouseButtons[SDL_BUTTON_WHEELDOWN] = 0;
 					}
 				} else {
 					if (!Input::inputs[bound_player].binary(bound_binding.c_str())) {
@@ -1817,6 +1888,11 @@ namespace MainMenu {
 						confirm->setDisabled(false);
 						discard->setDisabled(false);
 						defaults->setDisabled(false);
+
+						auto subwindow = bindings->findFrame("subwindow"); assert(subwindow);
+						for (auto button : subwindow->getButtons()) {
+							button->setDisabled(false);
+						}
 						
 						auto binding = Input::inputs[bound_player].binding(bound_binding.c_str());
 						auto tooltip = bindings->findField("tooltip"); assert(tooltip);
@@ -1833,6 +1909,12 @@ namespace MainMenu {
 			}
 			});
 
+		hookSettings(*subwindow,
+			{{Setting::Type::Dropdown, "player_dropdown_button"},
+			{Setting::Type::Dropdown, "device_dropdown_button"},
+			//{Setting::Type::Field, "preset_entry"},
+			bindings[0],
+			});
 		hookSettings(*subwindow, bindings);
 		settingsSubwindowFinalize(*subwindow, y);
 		settingsSelect(*subwindow, bindings.front());
