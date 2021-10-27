@@ -673,31 +673,6 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
-	// scroll with right stick
-	if (allowScrolling && allowScrollBinds) {
-		Input& input = Input::inputs[owner];
-
-		// x scroll
-		if (this->actualSize.w > size.w) {
-			if (input.binary("MenuScrollRight")) {
-				this->actualSize.x += std::min(this->actualSize.x + 5, this->actualSize.w - _size.w);
-			}
-			else if (input.binary("MenuScrollLeft")) {
-				this->actualSize.x -= std::max(this->actualSize.x - 5, 0);
-			}
-		}
-
-		// y scroll
-		if (this->actualSize.h > size.h) {
-			if (input.binary("MenuScrollDown")) {
-				this->actualSize.y = std::min(this->actualSize.y + 5, this->actualSize.h - _size.h);
-			}
-			else if (input.binary("MenuScrollUp")) {
-				this->actualSize.y = std::max(this->actualSize.y - 5, 0);
-			}
-		}
-	}
-
 	// process frames
 	{
 		for (int i = frames.size() - 1; i >= 0; --i) {
@@ -715,39 +690,78 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
-	// scroll with mouse wheel
-	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable && allowScrolling && allowScrollBinds) {
-		// x scroll with mouse wheel
+	// scroll with right stick
+	if (usable && allowScrolling && allowScrollBinds) {
+		Input& input = Input::inputs[owner];
+
+		// x scroll
 		if (this->actualSize.w > size.w) {
-			if (this->actualSize.h <= size.h) {
-				if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
-					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					this->actualSize.x += std::min(entrySize, size.w);
-					usable = result.usable = false;
-				} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
-					mousestatus[SDL_BUTTON_WHEELUP] = 0;
-					this->actualSize.x -= std::min(entrySize, size.w);
-					usable = result.usable = false;
+			if (input.binary("MenuScrollRight")) {
+				this->actualSize.x += std::min(this->actualSize.x + 5, this->actualSize.w - _size.w);
+				usable = result.usable = false;
+			}
+			else if (input.binary("MenuScrollLeft")) {
+				this->actualSize.x -= std::max(this->actualSize.x - 5, 0);
+				usable = result.usable = false;
+			}
+		}
+
+		// y scroll
+		if (this->actualSize.h > size.h) {
+			if (input.binary("MenuScrollDown")) {
+				this->actualSize.y = std::min(this->actualSize.y + 5, this->actualSize.h - _size.h);
+				usable = result.usable = false;
+			}
+			else if (input.binary("MenuScrollUp")) {
+				this->actualSize.y = std::max(this->actualSize.y - 5, 0);
+				usable = result.usable = false;
+			}
+		}
+	}
+
+	// scroll with mouse wheel
+	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable) {
+		bool mwheeldown = false;
+		bool mwheelup = false;
+		if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
+			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+			mwheeldown = true;
+		}
+		if (mousestatus[SDL_BUTTON_WHEELUP]) {
+			mousestatus[SDL_BUTTON_WHEELUP] = 0;
+			mwheelup = true;
+		}
+		if (allowScrolling && allowScrollBinds) {
+			if (mwheeldown || mwheelup) {
+				usable = result.usable = false;
+
+				// x scroll with mouse wheel
+				if (this->actualSize.w > size.w) {
+					if (this->actualSize.h <= size.h) {
+						if (mwheeldown) {
+							this->actualSize.x += std::min(entrySize, size.w);
+						}
+						if (mwheelup) {
+							this->actualSize.x -= std::min(entrySize, size.w);
+						}
+						this->actualSize.x = std::min(std::max(0, this->actualSize.x),
+							std::max(0, this->actualSize.w - size.w));
+					}
+				}
+
+				// y scroll with mouse wheel
+				if (this->actualSize.h > size.h) {
+					if (mwheeldown) {
+						this->actualSize.y += std::min(entrySize, size.h);
+					}
+					if (mwheelup) {
+						this->actualSize.y -= std::min(entrySize, size.h);
+					}
+					this->actualSize.y = std::min(std::max(0, this->actualSize.y),
+						std::max(0, this->actualSize.h - size.h));
 				}
 			}
 		}
-
-		// y scroll with mouse wheel
-		if (this->actualSize.h > size.h) {
-			if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
-				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-				this->actualSize.y += std::min(entrySize, size.h);
-				usable = result.usable = false;
-			} else if (mousestatus[SDL_BUTTON_WHEELUP]) {
-				mousestatus[SDL_BUTTON_WHEELUP] = 0;
-				this->actualSize.y -= std::min(entrySize, size.h);
-				usable = result.usable = false;
-			}
-		}
-
-		// bound
-		this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - size.w));
-		this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - size.h));
 	}
 
 	// process (frame view) sliders
@@ -1476,9 +1490,11 @@ void Frame::scrollToSelection(bool scroll_to_top) {
 	const int index = selection;
 	if (scroll_to_top || actualSize.y > index * entrySize) {
 		actualSize.y = index * entrySize;
+		actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 	}
 	if (actualSize.y + size.h < (index + 1) * entrySize) {
 		actualSize.y = (index + 1) * entrySize - size.h;
+		actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 	}
 }
 

@@ -319,6 +319,110 @@ namespace MainMenu {
 
 /******************************************************************************/
 
+	inline void Bindings::save() {
+		FileHelper::writeObject("config/bindings.json", EFileFormat::Json, *this);
+	}
+
+	inline Bindings Bindings::load() {
+		Bindings bindings;
+		bool result = FileHelper::readObject("config/bindings.json", bindings);
+		return result ? bindings : reset();
+	}
+
+	inline Bindings Bindings::reset() {
+		Bindings bindings;
+		for (int c = 0; c < 4; ++c) {
+			bindings.devices[c] = c;
+
+			bindings.kb_mouse_bindings[c].emplace("Move Forward", "W");
+			bindings.kb_mouse_bindings[c].emplace("Move Left", "A");
+			bindings.kb_mouse_bindings[c].emplace("Move Backward", "S");
+			bindings.kb_mouse_bindings[c].emplace("Move Right", "D");
+			bindings.kb_mouse_bindings[c].emplace("Turn Left", "Left");
+			bindings.kb_mouse_bindings[c].emplace("Turn Right", "Right");
+			bindings.kb_mouse_bindings[c].emplace("Look Up", "Up");
+			bindings.kb_mouse_bindings[c].emplace("Look Down", "Down");
+			bindings.kb_mouse_bindings[c].emplace("Chat", "Return");
+			bindings.kb_mouse_bindings[c].emplace("Console Command", "/");
+			bindings.kb_mouse_bindings[c].emplace("Character Status", "Tab");
+			bindings.kb_mouse_bindings[c].emplace("Spell List", "M");
+			bindings.kb_mouse_bindings[c].emplace("Cast Spell", "F");
+			bindings.kb_mouse_bindings[c].emplace("Block", "Space");
+			bindings.kb_mouse_bindings[c].emplace("Sneak", "Shift");
+			bindings.kb_mouse_bindings[c].emplace("Attack", "Mouse1");
+			bindings.kb_mouse_bindings[c].emplace("Use", "Mouse3");
+			bindings.kb_mouse_bindings[c].emplace("Autosort Inventory", "Y");
+			bindings.kb_mouse_bindings[c].emplace("Command NPC", "C");
+			bindings.kb_mouse_bindings[c].emplace("Show NPC Commands", "X");
+			bindings.kb_mouse_bindings[c].emplace("Cycle NPCs", "Z");
+			bindings.kb_mouse_bindings[c].emplace("Hotbar Scroll Left", "[");
+			bindings.kb_mouse_bindings[c].emplace("Hotbar Scroll Right", "]");
+			bindings.kb_mouse_bindings[c].emplace("Hotbar Select", "\\");
+
+			bindings.gamepad_bindings[c].emplace("Move Forward", "StickLeftY-");
+			bindings.gamepad_bindings[c].emplace("Move Left", "StickLeftX-");
+			bindings.gamepad_bindings[c].emplace("Move Backward", "StickLeftY+");
+			bindings.gamepad_bindings[c].emplace("Move Right", "StickLeftX+");
+			bindings.gamepad_bindings[c].emplace("Turn Left", "StickRightX-");
+			bindings.gamepad_bindings[c].emplace("Turn Right", "StickRightX+");
+			bindings.gamepad_bindings[c].emplace("Look Up", "StickRightY-");
+			bindings.gamepad_bindings[c].emplace("Look Down", "StickRightY+");
+			bindings.gamepad_bindings[c].emplace("Character Status", "ButtonSelect");
+			bindings.gamepad_bindings[c].emplace("Cast Spell", "RightBumper");
+			bindings.gamepad_bindings[c].emplace("Block", "LeftTrigger");
+			bindings.gamepad_bindings[c].emplace("Sneak", "LeftTrigger");
+			bindings.gamepad_bindings[c].emplace("Attack", "RightTrigger");
+			bindings.gamepad_bindings[c].emplace("Use", "ButtonA");
+			bindings.gamepad_bindings[c].emplace("Command NPC", "DpadY-");
+			bindings.gamepad_bindings[c].emplace("Show NPC Commands", "DpadX+");
+			bindings.gamepad_bindings[c].emplace("Cycle NPCs", "DpadX-");
+			bindings.gamepad_bindings[c].emplace("Hotbar Scroll Left", "ButtonLeftBumper");
+			bindings.gamepad_bindings[c].emplace("Hotbar Scroll Right", "ButtonRightBumper");
+			bindings.gamepad_bindings[c].emplace("Hotbar Select", "ButtonY");
+		}
+		return bindings;
+	}
+
+/******************************************************************************/
+
+	inline void Minimap::save() {
+		minimapTransparencyForeground = 100 - foreground_opacity;
+		minimapTransparencyBackground = 100 - background_opacity;
+		minimapScale = map_scale;
+		minimapObjectZoom = icon_scale;
+	}
+
+	inline Minimap Minimap::load() {
+		Minimap minimap;
+		minimap.foreground_opacity = 100 - minimapTransparencyForeground;
+		minimap.background_opacity = 100 - minimapTransparencyBackground;
+		minimap.map_scale = minimapScale;
+		minimap.icon_scale = minimapObjectZoom;
+		return minimap;
+	}
+
+	inline Minimap Minimap::reset() {
+		return Minimap();
+	}
+
+/******************************************************************************/
+
+	inline void Messages::save() {
+		FileHelper::writeObject("config/messages.json", EFileFormat::Json, *this);
+	}
+
+	inline Messages Messages::load() {
+		Messages messages;
+		bool result = FileHelper::readObject("config/messages.json", messages);
+		return result ? messages : reset();
+	}
+
+	inline Messages Messages::reset() {
+		return Messages();
+	}
+
+/******************************************************************************/
+
 	static const char* intro_text =
 	u8"Long ago, the bustling town of Hamlet was the envy of all its neighbors,\nfor it was the most thriving city in all the land.#"
 	u8"Its prosperity was unmatched for generations until the evil Baron Herx came\nto power.#"
@@ -488,7 +592,9 @@ namespace MainMenu {
 		auto_hotbar_new_items = allSettings.add_items_to_hotbar_enabled;
 		allSettings.inventory_sorting.save();
 		right_click_protect = !allSettings.use_on_release_enabled;
+		allSettings.minimap.save();
 		disable_messages = !allSettings.show_messages_enabled;
+		allSettings.show_messages.save();
 		hide_playertags = !allSettings.show_player_nametags_enabled;
 		nohud = !allSettings.show_hud_enabled;
 		broadcast = !allSettings.show_ip_address_enabled;
@@ -509,6 +615,7 @@ namespace MainMenu {
 		minimapPingMute = !allSettings.minimap_pings_enabled;
 		mute_player_monster_sounds = !allSettings.player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !allSettings.out_of_focus_audio_enabled;
+		allSettings.bindings.save();
 		hotbar_numkey_quick_add = allSettings.numkeys_in_inventory_enabled;
 		mousespeed = allSettings.mouse_sensitivity;
 		reversemouse = allSettings.reverse_mouse_enabled;
@@ -589,7 +696,9 @@ namespace MainMenu {
 		allSettings.add_items_to_hotbar_enabled = true;
 		allSettings.inventory_sorting = InventorySorting::reset();
 		allSettings.use_on_release_enabled = true;
+		allSettings.minimap.reset();
 		allSettings.show_messages_enabled = true;
+		allSettings.show_messages.reset();
 		allSettings.show_player_nametags_enabled = true;
 		allSettings.show_hud_enabled = true;
 		allSettings.show_ip_address_enabled = true;
@@ -615,6 +724,7 @@ namespace MainMenu {
 		allSettings.minimap_pings_enabled = true;
 		allSettings.player_monster_sounds_enabled = true;
 		allSettings.out_of_focus_audio_enabled = true;
+		allSettings.bindings.reset();
 		allSettings.numkeys_in_inventory_enabled = true;
 		allSettings.mouse_sensitivity = 32.f;
 		allSettings.reverse_mouse_enabled = false;
@@ -1188,6 +1298,7 @@ namespace MainMenu {
 	static int settingsAddBinding(
 		Frame& frame,
 		int y,
+		int player_index,
 		const char* binding,
 		const char* tip,
 		void (*callback)(Button&))
@@ -1201,7 +1312,17 @@ namespace MainMenu {
 			158,
 			44});
 		button->setFont(smallfont_outline);
-		button->setText(Input::inputs[0].binding(binding));
+		auto device = allSettings.bindings.devices[player_index];
+		auto& bindings =
+			device == 0 ? allSettings.bindings.kb_mouse_bindings[player_index]:
+			device >= 1 && device <= 4 ? allSettings.bindings.gamepad_bindings[player_index]:
+			allSettings.bindings.joystick_bindings[player_index];
+		auto find = bindings.find(binding);
+		if (find != bindings.end()) {
+			button->setText(find->second.c_str());
+		} else {
+			button->setText("[unbound]");
+		}
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
@@ -1602,7 +1723,13 @@ namespace MainMenu {
 		}
 	}
 
-	static Frame* settingsGenericWindow(const char* name, const char* title) {
+	static Frame* settingsGenericWindow(
+		const char* name,
+		const char* title,
+		void (*defaults_callback)(Button&),
+		void (*discard_callback)(Button&),
+		void (*confirm_callback)(Button&))
+	{
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		dimmer->setActualSize(dimmer->getSize());
@@ -1655,6 +1782,7 @@ namespace MainMenu {
 		subwindow->setTickCallback([](Widget& widget){
 			auto frame = static_cast<Frame*>(&widget);
 			updateSettingSelection(*frame);
+			updateSliderArrows(*frame);
 			});
 
 		auto rocks = subwindow->addImage(
@@ -1693,6 +1821,24 @@ namespace MainMenu {
 			slider->updateHandlePosition();
 			});
 
+		auto sliderLeft = subwindow->addImage(
+			SDL_Rect{0, 0, 30, 44},
+			0xffffffff,
+			"images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Left00.png",
+			"slider_left"
+		);
+		sliderLeft->disabled = true;
+		sliderLeft->ontop = true;
+
+		auto sliderRight = subwindow->addImage(
+			SDL_Rect{0, 0, 30, 44},
+			0xffffffff,
+			"images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Right00.png",
+			"slider_right"
+		);
+		sliderRight->disabled = true;
+		sliderRight->ontop = true;
+
 		auto defaults = window->addButton("restore_defaults");
 		defaults->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
 		defaults->setColor(makeColor(127, 127, 127, 255));
@@ -1707,6 +1853,7 @@ namespace MainMenu {
 		defaults->addWidgetAction("MenuStart", "confirm_and_exit");
 		defaults->addWidgetAction("MenuAlt1", "restore_defaults");
 		defaults->setWidgetRight("discard_and_exit");
+		defaults->setCallback(defaults_callback);
 
 		auto discard = window->addButton("discard_and_exit");
 		discard->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
@@ -1722,12 +1869,7 @@ namespace MainMenu {
 			164,
 			62}
 		);
-		discard->setCallback([](Button& button){
-			soundCancel();
-			auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
-			auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
-			parent_background->removeSelf();
-			});
+		discard->setCallback(discard_callback);
 		discard->setWidgetSearchParent(name);
 		discard->setWidgetBack("discard_and_exit");
 		discard->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -1744,12 +1886,7 @@ namespace MainMenu {
 		confirm->setText("Confirm\n& Exit");
 		confirm->setFont(smallfont_outline);
 		confirm->setSize(SDL_Rect{504, 630, 164, 62});
-		confirm->setCallback([](Button& button){
-			soundActivate();
-			auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
-			auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
-			parent_background->removeSelf();
-			});
+		confirm->setCallback(confirm_callback);
 		confirm->setWidgetSearchParent(name);
 		confirm->setWidgetBack("discard_and_exit");
 		confirm->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -1760,9 +1897,229 @@ namespace MainMenu {
 		return window;
 	}
 
-	static void settingsBindings(Button& button) {
+	static void settingsMinimap(Button& button) {
 		soundActivate();
-		auto window = settingsGenericWindow("bindings", "BINDINGS"); assert(window);
+		auto window = settingsGenericWindow("minimap", "MINIMAP",
+			[](Button& button){ // restore defaults
+				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+				parent_background->removeSelf();
+				allSettings.minimap = Minimap::reset();
+				settingsMinimap(button);
+			},
+			[](Button& button){ // discard & exit
+				soundCancel();
+				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+				parent_background->removeSelf();
+				allSettings.minimap.load();
+			},
+			[](Button& button){ // confirm & exit
+				soundActivate();
+				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+				parent_background->removeSelf();
+				allSettings.minimap.save();
+			});
+		assert(window);
+		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+		int y = 0;
+
+		y += settingsAddSubHeader(*subwindow, y, "scale_header", "Scale", true);
+
+		y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
+			"Scale the map to be larger or smaller.",
+			100, 100, 200, true, nullptr);
+
+		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
+			"Scale the size of icons on the map (such as players and allies)",
+			100, 50, 200, true, nullptr);
+
+		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
+
+		y += settingsAddSlider(*subwindow, y, "foreground_opacity", "Foreground opacity",
+			"Set the opacity of the minimap's foreground.",
+			100, 0, 100, true, nullptr);
+
+		y += settingsAddSlider(*subwindow, y, "background_opacity", "Background opacity",
+			"Set the opacity of the minimap's background.",
+			100, 0, 100, true, nullptr);
+
+		hookSettings(*subwindow,
+			{{Setting::Type::Slider, "map_scale"},
+			{Setting::Type::Slider, "icon_scale"},
+			{Setting::Type::Slider, "foreground_opacity"},
+			{Setting::Type::Slider, "background_opacity"},
+			});
+		settingsSubwindowFinalize(*subwindow, y);
+		settingsSelect(*subwindow, {Setting::Type::Slider, "map_scale"});
+	}
+
+	static void settingsMessages(Button& button) {
+		soundActivate();
+		auto window = settingsGenericWindow("messages", "MESSAGES",
+			[](Button& button){ // restore defaults
+				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+				parent_background->removeSelf();
+				allSettings.show_messages = Messages::reset();
+				settingsMessages(button);
+			},
+			[](Button& button){ // discard & exit
+				soundCancel();
+				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+				parent_background->removeSelf();
+				allSettings.show_messages.load();
+			},
+			[](Button& button){ // confirm & exit
+				soundActivate();
+				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+				parent_background->removeSelf();
+				allSettings.show_messages.save();
+			});
+		assert(window);
+		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+		int y = 0;
+
+		y += settingsAddSubHeader(*subwindow, y, "categories_header", "Categories", true);
+
+		// TODO bind these to actual settings
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_combat", "Combat messages",
+			"Enable report of damage received or given in combat.",
+			true, nullptr);
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_status", "Status messages",
+			"Enable report of player character status changes and other passive effects.",
+			true, nullptr);
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_inventory", "Inventory messages",
+			"Enable report of inventory and item appraisal messages.",
+			true, nullptr);
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_equipment", "Equipment messages",
+			"Enable report of player equipment changes.",
+			true, nullptr);
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_world", "World messages",
+			"Enable report of diegetic messages, such as speech and text.",
+			true, nullptr);
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_chat", "Player chat",
+			"Enable multiplayer chat.",
+			true, nullptr);
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_progression", "Progression messages",
+			"Enable report of player character progression messages (ie level-ups).",
+			true, nullptr);
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_interaction", "Interaction messages",
+			"Enable report of player interactions with the world.",
+			true, nullptr);
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_inspection", "Inspection messages",
+			"Enable player inspections of world objects.",
+			true, nullptr);
+
+		hookSettings(*subwindow,
+			{{Setting::Type::Boolean, "messages_combat"},
+			{Setting::Type::Boolean, "messages_status"},
+			{Setting::Type::Boolean, "messages_inventory"},
+			{Setting::Type::Boolean, "messages_equipment"},
+			{Setting::Type::Boolean, "messages_world"},
+			{Setting::Type::Boolean, "messages_chat"},
+			{Setting::Type::Boolean, "messages_progression"},
+			{Setting::Type::Boolean, "messages_interaction"},
+			{Setting::Type::Boolean, "messages_inspection"},
+			});
+		settingsSubwindowFinalize(*subwindow, y);
+		settingsSelect(*subwindow, {Setting::Type::Boolean, "messages_combat"});
+	}
+
+	static const char* getDeviceNameForIndex(int index) {
+		switch (index) {
+		case 0: return "KB & Mouse";
+		case 1: return "Gamepad 1";
+		case 2: return "Gamepad 2";
+		case 3: return "Gamepad 3";
+		case 4: return "Gamepad 4";
+		case 5: return "Joystick 1";
+		case 6: return "Joystick 2";
+		case 7: return "Joystick 3";
+		case 8: return "Joystick 4";
+		default: return "Unknown";
+		}
+	}
+
+	static int getDeviceIndexForName(const char* name) {
+		if (strcmp(name, "KB & Mouse") == 0) { return 0; }
+		if (strcmp(name, "Gamepad 1") == 0) { return 1; }
+		if (strcmp(name, "Gamepad 2") == 0) { return 2; }
+		if (strcmp(name, "Gamepad 3") == 0) { return 3; }
+		if (strcmp(name, "Gamepad 4") == 0) { return 4; }
+		if (strcmp(name, "Joystick 1") == 0) { return 5; }
+		if (strcmp(name, "Joystick 2") == 0) { return 6; }
+		if (strcmp(name, "Joystick 3") == 0) { return 7; }
+		if (strcmp(name, "Joystick 4") == 0) { return 8; }
+		else { return -1; }
+	}
+
+	static bool settingsBind(int player_index, int device_index, const char* binding, const char* input) {
+		assert(binding);
+		auto& bindings =
+			device_index == 0 ? allSettings.bindings.kb_mouse_bindings[player_index]:
+			device_index >= 1 && device_index <= 4 ? allSettings.bindings.gamepad_bindings[player_index]:
+			allSettings.bindings.joystick_bindings[player_index];
+		if (input == nullptr) {
+			bindings.erase(binding);
+			return true;
+		} else {
+			std::string input_to_store;
+			if (device_index >= 1 && device_index <= 4 && strncmp(input, "Pad", 3) == 0) {
+				input_to_store = input + 4;
+			}
+			else if (device_index >= 5 && device_index <= 8 && strncmp(input, "Joy", 3) == 0) {
+				input_to_store = input + 4;
+			}
+			else if (device_index == 0 && strncmp(input, "Pad", 3) && strncmp(input, "Joy", 3)) {
+				input_to_store = input;
+			}
+			if (input_to_store.empty()) {
+				return false;
+			} else {
+				bindings.insert_or_assign(binding, input_to_store.c_str());
+				return true;
+			}
+		}
+	}
+
+	static void settingsBindings(int player_index, Setting setting_to_select) {
+		soundActivate();
+		auto window = settingsGenericWindow("bindings", "BINDINGS",
+			[](Button& button){ // restore defaults
+				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+				parent_background->removeSelf();
+				allSettings.bindings = Bindings::reset();
+				settingsBindings(0, {Setting::Type::Dropdown, "player_dropdown_button"});
+			},
+			[](Button& button){ // discard & exit
+				soundCancel();
+				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+				parent_background->removeSelf();
+				allSettings.bindings.load();
+			},
+			[](Button& button){ // confirm & exit
+				soundActivate();
+				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
+				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+				parent_background->removeSelf();
+				allSettings.bindings.save();
+			});
+		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
 		int y = 0;
 
@@ -1797,32 +2154,59 @@ namespace MainMenu {
 		static Button* bound_button = nullptr;
 		static std::string bound_binding = "";
 		static std::string bound_input = "";
-		static int bound_player = -1;
+		static int bound_player;
+		static int bound_device;
+		bound_player = player_index;
+		bound_device = allSettings.bindings.devices[bound_player];
 		bind_mode = false;
 
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Profiles", true);
 
+		std::string player_str = "Player " + std::to_string(player_index + 1);
 		y += settingsAddDropdown(*subwindow, y, "player_dropdown_button", "Player",
 			"Select the player whose controls you wish to customize.",
-			{"Player 1", "Player 2", "Player 3", "Player 4"},
-			"Player 1", [](Button& button){
+			{"Player 1", "Player 2", "Player 3", "Player 4"}, player_str.c_str(),
+			[](Button& button){
 				soundActivate();
-				settingsOpenDropdown(button, "player_dropdown", true, nullptr);
+				settingsOpenDropdown(button, "player_dropdown", true,
+					[](Frame::entry_t& entry){
+						soundActivate();
+						auto parent = main_menu_frame->findFrame("bindings");
+						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+						parent_background->removeSelf();
+						int player_index = (int)(entry.name.back() - '1');
+						settingsBindings(player_index, {Setting::Type::Dropdown, "player_dropdown_button"});
+					});
 			});
 
-		int num_controllers = (int)std::max(Input::gameControllers.size(), Input::joysticks.size());
-		num_controllers = std::min(std::max(1, num_controllers + 1), 5);
 		std::set<int> locked_controllers;
-		for (int i = num_controllers; i < 5; ++i) {
+		for (int i = 1 + Input::gameControllers.size(); i < 5; ++i) {
+			locked_controllers.emplace(i);
+		}
+		for (int i = 5 + Input::joysticks.size(); i < 9; ++i) {
 			locked_controllers.emplace(i);
 		}
 
+		std::vector<const char*> devices;
+		devices.reserve(9);
+		for (int i = 0; i < 9; ++i) {
+			devices.push_back(getDeviceNameForIndex(i));
+		}
+
 		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
-			"Select a controller for the given player.",
-			{"KB & Mouse", "Gamepad 1", "Gamepad 2", "Gamepad 3", "Gamepad 4"},
-			"KB & Mouse", [](Button& button){
+			"Select a controller for the given player.", devices, getDeviceNameForIndex(allSettings.bindings.devices[player_index]),
+			[](Button& button){
 				soundActivate();
-				settingsOpenDropdown(button, "device_dropdown", true, nullptr);
+				settingsOpenDropdown(button, "device_dropdown", false,
+					[](Frame::entry_t& entry){
+						soundActivate();
+						auto parent = main_menu_frame->findFrame("bindings");
+						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+						parent_background->removeSelf();
+						int device_index = getDeviceIndexForName(entry.text.c_str());
+						allSettings.bindings.devices[bound_player] = device_index;
+						settingsBindings(bound_player, {Setting::Type::Dropdown, "device_dropdown_button"});
+					});
 			}, locked_controllers);
 
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Bindings", true);
@@ -1830,15 +2214,14 @@ namespace MainMenu {
 		for (auto& binding : bindings) {
 			char tip[256];
 			snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
-			y += settingsAddBinding(*subwindow, y, binding.name, tip,
+			y += settingsAddBinding(*subwindow, y, player_index, binding.name, tip,
 				[](Button& button){
 					soundToggle();
 					auto& name = std::string(button.getName());
 					bind_mode = true;
 					bound_button = &button;
 					bound_input = button.getText();
-					bound_binding = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));;
-					bound_player = 0;
+					bound_binding = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));
 					button.setText(". . .");
 					auto subwindow = static_cast<Frame*>(button.getParent()); assert(subwindow);
 					auto settings = static_cast<Frame*>(subwindow->getParent()); assert(settings);
@@ -1876,19 +2259,29 @@ namespace MainMenu {
 						tooltip->setText(buf);
 						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
 					} else if (Input::lastInputOfAnyKind == "Delete") {
-						bound_button->setText("");
+						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), nullptr);
+						bound_button->setText("[unbound]");
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Deleted \"%s\" binding.", bound_binding.c_str());
 						tooltip->setText(buf);
-						//Input::inputs[bound_player].bind(bound_binding.c_str(), nullptr);
 					} else {
-						bound_button->setText(Input::lastInputOfAnyKind.c_str());
+						bool result = settingsBind(bound_player, bound_device, bound_binding.c_str(), Input::lastInputOfAnyKind.c_str());
+						if (!result) {
+							goto bind_failed;
+						}
+						auto begin = Input::lastInputOfAnyKind.substr(0, 3);
+						std:: string newinput = begin == "Pad" || begin == "Joy" ?
+								Input::lastInputOfAnyKind.substr(4) : Input::lastInputOfAnyKind;
+						bound_button->setText(newinput.c_str());
 						char buf[256];
-						snprintf(buf, sizeof(buf), "Bound \"%s\" to \"%s\"", bound_binding.c_str(), Input::lastInputOfAnyKind.c_str());
+						snprintf(buf, sizeof(buf), "Bound \"%s\" to \"%s\"", bound_binding.c_str(), newinput.c_str());
 						tooltip->setText(buf);
-						//Input::inputs[bound_player].bind(bound_binding.c_str(), Input::lastInputOfAnyKind.c_str());
 					}
 					bound_button = nullptr;
+				bind_failed:
+					// fixes a bug where these are not released after being used
+					Input::mouseButtons[SDL_BUTTON_WHEELDOWN] = 0;
+					Input::mouseButtons[SDL_BUTTON_WHEELUP] = 0;
 				}
 				else if (!bound_button &&
 					!Input::mouseButtons[SDL_BUTTON_LEFT] &&
@@ -1910,7 +2303,6 @@ namespace MainMenu {
 
 					Input::defaultBindings();
 					bound_binding = "";
-					bound_player = -1;
 					bind_mode = false;
 				}
 			}
@@ -1919,12 +2311,11 @@ namespace MainMenu {
 		hookSettings(*subwindow,
 			{{Setting::Type::Dropdown, "player_dropdown_button"},
 			{Setting::Type::Dropdown, "device_dropdown_button"},
-			//{Setting::Type::Field, "preset_entry"},
 			bindings[0],
 			});
 		hookSettings(*subwindow, bindings);
 		settingsSubwindowFinalize(*subwindow, y);
-		settingsSelect(*subwindow, bindings.front());
+		settingsSelect(*subwindow, setting_to_select);
 	}
 
 	void settingsUI(Button& button) {
@@ -1932,16 +2323,15 @@ namespace MainMenu {
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			settingsSelect(*settings_subwindow, {Setting::Type::BooleanWithCustomize, "add_items_to_hotbar"});
+			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "add_items_to_hotbar"});
 			return;
 		}
 		int y = 0;
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "inventory", "Inventory Options");
-		y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "add_items_to_hotbar", "Add Items to Hotbar",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "add_items_to_hotbar", "Add Items to Hotbar",
 			"Automatically fill the hotbar with recently collected items.",
-			allSettings.add_items_to_hotbar_enabled, [](Button& button){soundToggle(); allSettings.add_items_to_hotbar_enabled = button.isPressed();},
-			settingsCustomizeInventorySorting);
+			allSettings.add_items_to_hotbar_enabled, [](Button& button){soundToggle(); allSettings.add_items_to_hotbar_enabled = button.isPressed();});
 		y += settingsAddCustomize(*settings_subwindow, y, "inventory_sorting", "Inventory Sorting",
 			"Customize the way items are automatically sorted in your inventory.",
 			settingsCustomizeInventorySorting);
@@ -1954,11 +2344,11 @@ namespace MainMenu {
 		y += settingsAddSubHeader(*settings_subwindow, y, "hud", "HUD Options");
 		y += settingsAddCustomize(*settings_subwindow, y, "minimap_settings", "Minimap Settings",
 			"Customize the appearance of the in-game minimap.",
-			nullptr);
+			[](Button& button){allSettings.minimap = Minimap::load(); settingsMinimap(button);});
 		y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "show_messages", "Show Messages",
 			"Customize which messages will be logged to the player, if any.",
 			allSettings.show_messages_enabled, [](Button& button){soundToggle(); allSettings.show_messages_enabled = button.isPressed();},
-			nullptr);
+			[](Button& button){allSettings.show_messages = Messages::load(); settingsMessages(button);});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_player_nametags", "Show Player Nametags",
 			"Display the name of each player character above their avatar.",
 			allSettings.show_player_nametags_enabled, [](Button& button){soundToggle(); allSettings.show_player_nametags_enabled = button.isPressed();});
@@ -1973,7 +2363,7 @@ namespace MainMenu {
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::BooleanWithCustomize, "add_items_to_hotbar"},
+			{{Setting::Type::Boolean, "add_items_to_hotbar"},
 			{Setting::Type::Customize, "inventory_sorting"},
 			{Setting::Type::Boolean, "use_on_release"},
 			{Setting::Type::Customize, "minimap_settings"},
@@ -1983,7 +2373,7 @@ namespace MainMenu {
 			{Setting::Type::Boolean, "show_ip_address"}});
 #else
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::BooleanWithCustomize, "add_items_to_hotbar"},
+			{{Setting::Type::Boolean, "add_items_to_hotbar"},
 			{Setting::Type::Customize, "inventory_sorting"},
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
@@ -1992,7 +2382,7 @@ namespace MainMenu {
 #endif
 
 		settingsSubwindowFinalize(*settings_subwindow, y);
-		settingsSelect(*settings_subwindow, {Setting::Type::BooleanWithCustomize, "add_items_to_hotbar"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "add_items_to_hotbar"});
 	}
 
 	void settingsVideo(Button& button) {
@@ -2190,7 +2580,7 @@ namespace MainMenu {
 		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General Settings");
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
-			settingsBindings);
+			[](Button&){allSettings.bindings = Bindings::load(); settingsBindings(0, {Setting::Type::Dropdown, "player_dropdown_button"});});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
@@ -2212,6 +2602,7 @@ namespace MainMenu {
 
 #ifdef NINTENDO
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
+		// TODO
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
 			"Modify controller bindings.",
 			nullptr);
@@ -4733,7 +5124,9 @@ namespace MainMenu {
 		allSettings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
 		allSettings.inventory_sorting = InventorySorting::load();
 		allSettings.use_on_release_enabled = !right_click_protect;
+		allSettings.minimap = Minimap::load();
 		allSettings.show_messages_enabled = !disable_messages;
+		allSettings.show_messages = Messages::load();
 		allSettings.show_player_nametags_enabled = !hide_playertags;
 		allSettings.show_hud_enabled = !nohud;
 		allSettings.show_ip_address_enabled = !broadcast;
@@ -4759,6 +5152,7 @@ namespace MainMenu {
 		allSettings.minimap_pings_enabled = !minimapPingMute;
 		allSettings.player_monster_sounds_enabled = !mute_player_monster_sounds;
 		allSettings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
+		allSettings.bindings = Bindings::load();
 		allSettings.numkeys_in_inventory_enabled = hotbar_numkey_quick_add;
 		allSettings.mouse_sensitivity = mousespeed;
 		allSettings.reverse_mouse_enabled = reversemouse;

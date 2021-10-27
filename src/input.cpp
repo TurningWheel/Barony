@@ -410,7 +410,6 @@ void Input::bind(const char* binding, const char* input) {
 		auto result = bindings.emplace(binding, binding_t());
 		b = result.first;
 	}
-	(*b).second = binding_t();
 	(*b).second.input.assign(input);
 	if (input == nullptr) {
 		(*b).second.type = binding_t::INVALID;

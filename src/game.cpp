@@ -5113,7 +5113,8 @@ int main(int argc, char** argv)
 						inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 						inputs.controllerClearInput(clientnum, INJOY_MENU_CANCEL);
 						fadealpha = 255;
-#if (!defined STEAMWORKS && !defined USE_EOS && !defined NINTENDO)
+						// Yeah we're just not going to do the "Please don't pirate us" message anymore
+#if (0)
 						introstage = 0;
 						fadeout = false;
 						fadefinished = false;

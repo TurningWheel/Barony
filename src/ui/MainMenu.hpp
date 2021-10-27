@@ -1,5 +1,10 @@
 #pragma once
 
+#include <unordered_map>
+#include <string>
+#include "../main.hpp"
+#include "../json.hpp"
+
 class Button;
 
 namespace MainMenu {
@@ -38,13 +43,106 @@ namespace MainMenu {
 		static inline InventorySorting reset();
 	};
 
+	struct Bindings {
+		int devices[4];
+		std::unordered_map<std::string, std::string> kb_mouse_bindings[4];
+		std::unordered_map<std::string, std::string> gamepad_bindings[4];
+		std::unordered_map<std::string, std::string> joystick_bindings[4];
+		inline void save();
+		static inline Bindings load();
+		static inline Bindings reset();
+		void serialize(FileInterface* file) {
+			Uint32 num_players = 4;
+			file->propertyName("players");
+			file->beginArray(num_players);
+			for (int c = 0; c < std::min(num_players, (Uint32)4); ++c) {
+				file->beginObject();
+				file->property("device", devices[c]);
+				for (int j = 0; j < 3; ++j) {
+					auto& bindings =
+						j == 0 ? kb_mouse_bindings[c]:
+						j == 1 ? gamepad_bindings[c]:
+						joystick_bindings[c];
+					file->propertyName(
+						j == 0 ? "kb_mouse_bindings":
+						j == 1 ? "gamepad_bindings":
+						"joystick_bindings");
+					if (file->isReading()) {
+						bindings.clear();
+					}
+					Uint32 count = bindings.size();
+					file->beginArray(count);
+					if (file->isReading()) {
+						for (Uint32 index = 0; index < count; ++index) {
+							file->beginObject();
+							std::string binding;
+							file->property("binding", binding);
+							std::string input;
+							file->property("input", input);
+							bindings.emplace(binding, input);
+							file->endObject();
+						}
+					} else {
+						for (auto& bind : bindings) {
+							file->beginObject();
+							std::string binding = bind.first;
+							file->property("binding", binding);
+							std::string input = bind.second;
+							file->property("input", input);
+							file->endObject();
+						}
+					}
+					file->endArray();
+				}
+				file->endObject();
+			}
+			file->endArray();
+		}
+	};
+
+	struct Minimap {
+		int map_scale = 2;
+		int icon_scale = 2;
+		int foreground_opacity = 100;
+		int background_opacity = 100;
+		inline void save();
+		static inline Minimap load();
+		static inline Minimap reset();
+	};
+
+	struct Messages {
+		bool combat = true;
+		bool status = true;
+		bool inventory = true;
+		bool equipment = true;
+		bool world = true;
+		bool chat = true;
+		bool progression = true;
+		bool interaction = true;
+		bool inspection = true;
+		inline void save();
+		static inline Messages load();
+		static inline Messages reset();
+		void serialize(FileInterface* file) {
+			file->property("combat", combat);
+			file->property("status", status);
+			file->property("inventory", inventory);
+			file->property("equipment", equipment);
+			file->property("world", world);
+			file->property("chat", chat);
+			file->property("progression", progression);
+			file->property("interaction", interaction);
+			file->property("inspection", inspection);
+		}
+	};
+
 	struct AllSettings {
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		bool use_on_release_enabled;
-		//Whatever minimap;
+		Minimap minimap;
 		bool show_messages_enabled;
-		//Whatever show_messages;
+		Messages show_messages;
 		bool show_player_nametags_enabled;
 		bool show_hud_enabled;
 		bool show_ip_address_enabled;
@@ -70,7 +168,7 @@ namespace MainMenu {
 		bool minimap_pings_enabled;
 		bool player_monster_sounds_enabled;
 		bool out_of_focus_audio_enabled;
-		//Whatever bindings;
+		Bindings bindings;
 		bool numkeys_in_inventory_enabled;
 		float mouse_sensitivity;
 		bool reverse_mouse_enabled;
