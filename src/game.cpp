@@ -4149,9 +4149,9 @@ void ingameHud()
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
-		players[player]->skillSheet.processSkillSheet();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
+		players[player]->skillSheet.processSkillSheet();
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();
