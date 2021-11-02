@@ -207,12 +207,17 @@ namespace MainMenu {
 	void mainPlayModdedGame(Button&);
 	void mainHallOfRecords(Button&);
 	void mainSettings(Button&);
-	void mainQuit(Button&);
+	void mainClose(Button&);
+	void mainEndLife(Button&);
+	void mainRestartGame(Button&);
+	void mainQuitToMainMenu(Button&);
+	void mainQuitToDesktop(Button&);
 
-	void doMainMenu();
-	void createMainMenu();
+	void doMainMenu(bool ingame);
+	void createMainMenu(bool ingame);
 	void destroyMainMenu();
 	void createDummyMainMenu();
+	void closeMainMenu();
 
 	enum class LobbyType {
 		LobbyLocal,

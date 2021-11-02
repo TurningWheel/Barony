@@ -4146,12 +4146,15 @@ void ingameHud()
 			continue;
 		}
 		//drawSkillsSheet(player);
-		if ( !nohud )
+		if ( !gamePaused )
 		{
-			drawStatusNew(player);
+			if ( !nohud )
+			{
+				drawStatusNew(player);
+			}
+			drawSustainedSpells(player);
+			updateAppraisalItemBox(player);
 		}
-		drawSustainedSpells(player);
-		updateAppraisalItemBox(player);
 
 		// inventory and stats
 		if ( players[player]->shootmode == false )
@@ -5390,7 +5393,7 @@ int main(int argc, char** argv)
 
 						if (newui)
 						{
-							MainMenu::doMainMenu();
+							MainMenu::doMainMenu(!intro);
 						}
 						else
 						{
@@ -5748,35 +5751,23 @@ int main(int argc, char** argv)
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
-				doFrames();
+				if ( /*newui*/ 0 ) 
+				{
+					newIngameHud();
+				}
+				else 
+				{
+					ingameHud();
+				}
 
-				if ( !gamePaused )
-				{
-					if ( /*newui*/ 0 ) 
-					{
-						newIngameHud();
-					}
-					else 
-					{
-						ingameHud();
-					}
-				}
-				else if ( !multiplayer )
-				{
-					// darken the rest of the screen
-					src.x = 0;
-					src.y = 0;
-					src.w = mainsurface->w;
-					src.h = mainsurface->h;
-					drawRect(&src, SDL_MapRGB(mainsurface->format, 0, 0, 0), 127);
-				}
+				doFrames();
 
 				if ( gamePaused )
 				{
 					// handle menu
 					if (newui)
 					{
-						MainMenu::doMainMenu();
+						MainMenu::doMainMenu(!intro);
 					}
 					else
 					{
@@ -5785,6 +5776,8 @@ int main(int argc, char** argv)
 				}
 				else
 				{
+					MainMenu::destroyMainMenu();
+
 					// draw subwindow
 					if ( !movie )
 					{

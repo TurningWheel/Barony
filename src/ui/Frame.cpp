@@ -544,11 +544,6 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		return result;
 	}
 
-#ifndef EDITOR // bad editor no cookie
-	if ( players[getOwner()]->shootmode ) {
-		return result;
-	}
-#endif
 	if ( parent && inheritParentFrameOpacity ) {
 		setOpacity(static_cast<Frame*>(parent)->getOpacity());
 	}

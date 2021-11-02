@@ -491,7 +491,7 @@ void Player::HUD_t::processHUD()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
-	if ( nohud || !players[player.playernum]->isLocalPlayer() )
+	if ( gamePaused || nohud || !players[player.playernum]->isLocalPlayer() )
 	{
 		// hide
 		hudFrame->setDisabled(true);
@@ -585,6 +585,11 @@ void Player::MessageZone_t::processChatbox()
 		players[player.playernum]->camera_virtualHeight() };
 
 	Frame* messageBoxFrame = chatFrame->findFrame("message box");
+	if (gamePaused) {
+		messageBoxFrame->setDisabled(true);
+	} else {
+		messageBoxFrame->setDisabled(false);
+	}
 	SDL_Rect messageBoxSize = messageBoxFrame->getSize();
 	if ( player.shootmode && messageBoxSize.x == chatboxTopAlignedPos.x )
 	{
@@ -1783,7 +1788,7 @@ void Player::Hotbar_t::processHotbar()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
-	if ( nohud || !players[player.playernum]->isLocalPlayer() )
+	if ( gamePaused || nohud || !players[player.playernum]->isLocalPlayer() )
 	{
 		// hide
 		hotbarFrame->setDisabled(true);

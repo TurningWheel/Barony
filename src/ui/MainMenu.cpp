@@ -109,21 +109,23 @@ namespace MainMenu {
 		}
 
 		// update cursor position
-		auto cursor = main_menu_frame->findImage("cursor");
-		if (cursor) {
-			cursor->disabled = !buttonSelected;
-			int diff = main_menu_cursor_y - cursor->pos.y;
-			if (diff > 0) {
-				diff = std::max(1, diff / 2);
-			} else if (diff < 0) {
-				diff = std::min(-1, diff / 2);
+		if (main_menu_frame) {
+			auto cursor = main_menu_frame->findImage("cursor");
+			if (cursor) {
+				cursor->disabled = !buttonSelected;
+				int diff = main_menu_cursor_y - cursor->pos.y;
+				if (diff > 0) {
+					diff = std::max(1, diff / 2);
+				} else if (diff < 0) {
+					diff = std::min(-1, diff / 2);
+				}
+				cursor->pos = SDL_Rect{
+					main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
+					diff + cursor->pos.y,
+					37 * 2,
+					23 * 2
+				};
 			}
-			cursor->pos = SDL_Rect{
-				main_menu_cursor_x + (int)(sinf(main_menu_cursor_bob) * 16.f) - 16,
-				diff + cursor->pos.y,
-				37 * 2,
-				23 * 2
-			};
 		}
 	}
 
@@ -175,6 +177,9 @@ namespace MainMenu {
 			if (image->path == "images/ui/Main Menus/Settings/Settings_Left_BackingSelect00.png") {
 				image->path = "images/ui/Main Menus/Settings/Settings_Left_Backing00.png";
 			}
+			if (image->path == "images/ui/Main Menus/Settings/GenericWindow/Settings_Left_BackingSelect_Short00.png") {
+				image->path = "images/ui/Main Menus/Settings/GenericWindow/Settings_Left_Backing_Short00.png";
+			}
 		}
 		auto selectedWidget = frame.findSelectedWidget(0);
 		if (selectedWidget) {
@@ -199,8 +204,11 @@ namespace MainMenu {
 			}
 			if (!setting.empty()) {
 				auto image = frame.findImage((std::string("setting_") + setting + std::string("_image")).c_str());
-				if (image) {
+				if (image && image->path == "images/ui/Main Menus/Settings/Settings_Left_Backing00.png") {
 					image->path = "images/ui/Main Menus/Settings/Settings_Left_BackingSelect00.png";
+				}
+				else if (image && image->path == "images/ui/Main Menus/Settings/GenericWindow/Settings_Left_Backing_Short00.png") {
+					image->path = "images/ui/Main Menus/Settings/GenericWindow/Settings_Left_BackingSelect_Short00.png";
 				}
 				auto field = frame.findField((std::string("setting_") + setting + std::string("_field")).c_str());
 				if (field) {
@@ -1276,11 +1284,20 @@ namespace MainMenu {
 		return image->pos.h + 6;
 	}
 
-	static int settingsAddOption(Frame& frame, int y, const char* name, const char* text, const char* tip) {
+	static int settingsAddOption(
+		Frame& frame,
+		int y,
+		const char* name,
+		const char* text,
+		const char* tip,
+		bool _short = false
+	) {
 		std::string fullname = std::string("setting_") + name;
 		auto image = frame.addImage(
-			SDL_Rect{0, y, 382, 52},
+			SDL_Rect{0, y, _short ? 278 : 382, 52},
 			0xffffffff,
+			_short ?
+			"images/ui/Main Menus/Settings/GenericWindow/Settings_Left_Backing_Short00.png":
 			"images/ui/Main Menus/Settings/Settings_Left_Backing00.png",
 			(fullname + "_image").c_str()
 		);
@@ -1509,12 +1526,13 @@ namespace MainMenu {
 		float minValue,
 		float maxValue,
 		bool percent,
-		void (*callback)(Slider&))
+		void (*callback)(Slider&),
+		bool _short = false)
 	{
 		std::string fullname = std::string("setting_") + name;
-		int result = settingsAddOption(frame, y, name, text, tip);
+		int result = settingsAddOption(frame, y, name, text, tip, _short);
 		auto box = frame.addImage(
-			SDL_Rect{402, y + 4, 132, 44},
+			SDL_Rect{_short ? 298 : 402, y + 4, 132, 44},
 			0xffffffff,
 			"images/ui/Main Menus/Settings/Settings_Value_Backing00.png",
 			(fullname + "_box").c_str()
@@ -1550,13 +1568,17 @@ namespace MainMenu {
 		slider->setMaxValue(maxValue);
 		slider->setBorder(16);
 		slider->setValue(value);
-		slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, 450, 24});
+		slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, _short ? 282 : 450, 24});
 		slider->setHandleSize(SDL_Rect{0, 0, 52, 42});
 		slider->setCallback(callback);
 		slider->setColor(makeColor(127,127,127,255));
 		slider->setHighlightColor(makeColor(255,255,255,255));
 		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Slide00.png");
-		slider->setRailImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Backing00.png");
+		if (_short) {
+			slider->setRailImage("images/ui/Main Menus/Settings/GenericWindow/Settings_ValueSlider_Backing_Short00.png");
+		} else {
+			slider->setRailImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Backing00.png");
+		}
 		slider->setWidgetSearchParent(frame.getParent()->getName());
 		slider->setWidgetBack("discard_and_exit");
 		slider->setWidgetPageLeft("tab_left");
@@ -1929,21 +1951,21 @@ namespace MainMenu {
 
 		y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
 			"Scale the map to be larger or smaller.",
-			100, 100, 200, true, nullptr);
+			100, 100, 200, true, nullptr, true);
 
 		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
 			"Scale the size of icons on the map (such as players and allies)",
-			100, 50, 200, true, nullptr);
+			100, 50, 200, true, nullptr, true);
 
 		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
 
 		y += settingsAddSlider(*subwindow, y, "foreground_opacity", "Foreground opacity",
 			"Set the opacity of the minimap's foreground.",
-			100, 0, 100, true, nullptr);
+			100, 0, 100, true, nullptr, true);
 
 		y += settingsAddSlider(*subwindow, y, "background_opacity", "Background opacity",
 			"Set the opacity of the minimap's background.",
-			100, 0, 100, true, nullptr);
+			100, 0, 100, true, nullptr, true);
 
 		hookSettings(*subwindow,
 			{{Setting::Type::Slider, "map_scale"},
@@ -2748,7 +2770,7 @@ namespace MainMenu {
 		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
 		back_button->setCallback([](Button& b){
 			destroyMainMenu();
-			createMainMenu();
+			createMainMenu(false);
 			mainHallOfRecords(b);
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 			auto credits = buttons->findButton("CREDITS"); assert(credits);
@@ -2933,7 +2955,7 @@ namespace MainMenu {
 			{"PLAY MODDED GAME", mainPlayModdedGame},
 			{"HALL OF RECORDS", mainHallOfRecords},
 			{"SETTINGS", mainSettings},
-			{"QUIT", mainQuit}
+			{"QUIT", mainQuitToDesktop}
 		};
 #endif
 		const int num_options = sizeof(options) / sizeof(options[0]);
@@ -4754,7 +4776,7 @@ namespace MainMenu {
 		auto back_button = createBackWidget(lobby, [](Button&){
 			soundCancel();
 			destroyMainMenu();
-			createMainMenu();
+			createMainMenu(false);
 			});
 
 		auto back_frame = back_button->getParent();
@@ -5440,9 +5462,13 @@ namespace MainMenu {
 		confirm_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
 	}
 
-	static int quit_motd = -1;
-
-	void mainQuit(Button& button) {
+	void quitConfirmWindow(
+		const char* window_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&)
+	) {
 		if (main_menu_frame->findFrame("quit_confirm")) {
 			return;
 		}
@@ -5454,7 +5480,7 @@ namespace MainMenu {
 		dimmer->setActualSize(dimmer->getSize());
 		dimmer->setColor(makeColor(0, 0, 0, 63));
 		dimmer->setBorder(0);
-		
+
 		auto frame = dimmer->addFrame("quit_confirm");
 		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
 		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
@@ -5467,6 +5493,117 @@ namespace MainMenu {
 			"background"
 		);
 
+		auto text = frame->addField("text", 128);
+		text->setSize(SDL_Rect{30, 28, 304, 46});
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+
+		auto okay = frame->addButton("okay");
+		okay->setSize(SDL_Rect{58, 78, 130, 52});
+		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+		okay->setColor(makeColor(127, 127, 127, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(127, 127, 127, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText(okay_text);
+		okay->setWidgetRight("cancel");
+		okay->setWidgetBack("cancel");
+		okay->select();
+		okay->setCallback(okay_callback);
+
+		auto cancel = frame->addButton("cancel");
+		cancel->setSize(SDL_Rect{196, 78, 108, 52});
+		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		cancel->setColor(makeColor(127, 127, 127, 255));
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setTextColor(makeColor(127, 127, 127, 255));
+		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setFont(smallfont_outline);
+		cancel->setText(cancel_text);
+		cancel->setWidgetLeft("okay");
+		cancel->setWidgetBack("cancel");
+		cancel->setCallback(cancel_callback);
+	}
+
+	void mainEndLife(Button& button) {
+		quitConfirmWindow(
+			"Are you sure you want to die?\nThere is no return from this.", // window text
+			"End Life", // okay text
+			"Cancel", // cancel text
+			[](Button&){ // okay
+				soundActivate();
+				closeMainMenu();
+				stats[clientnum]->HP = 0;
+			},
+			[](Button&){ // cancel
+				soundCancel();
+				assert(main_menu_frame);
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
+				quit_button->select();
+				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				if (quit_confirm) {
+					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
+					dimmer->removeSelf();
+				}
+			});
+	}
+
+	void mainRestartGame(Button& button) {
+		quitConfirmWindow(
+			"Are you sure you want to restart?\nThis adventure will be lost forever.", // window text
+			"Restart", // okay text
+			"Cancel", // cancel text
+			[](Button&){ // okay
+				soundActivate();
+				destroyMainMenu();
+				createDummyMainMenu();
+				main_menu_fade_destination = FadeDestination::GameStart;
+				fadeout = true;
+			},
+			[](Button&){ // cancel
+				soundCancel();
+				assert(main_menu_frame);
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
+				quit_button->select();
+				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				if (quit_confirm) {
+					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
+					dimmer->removeSelf();
+				}
+			});
+	}
+
+	void mainQuitToMainMenu(Button& button) {
+		quitConfirmWindow(
+			"All progress before the current\ndungeon level will be saved.", // window text
+			"Quit to Menu", // okay text
+			"Cancel", // cancel text
+			[](Button&){ // okay
+				soundActivate();
+				destroyMainMenu();
+				createDummyMainMenu();
+				main_menu_fade_destination = FadeDestination::RootMainMenu;
+				fadeout = true;
+			},
+			[](Button&){ // cancel
+				soundCancel();
+				assert(main_menu_frame);
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
+				quit_button->select();
+				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				if (quit_confirm) {
+					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
+					dimmer->removeSelf();
+				}
+			});
+	}
+
+	void mainQuitToDesktop(Button& button) {
 		static const char* quit_messages[][3] {
 			{"You want to leave, eh?\nThen get out and don't come back!", "Fine geez", "Never!"},
 			{"Just cancel your plans.\nI'll wait.", "Good luck", "Sure"},
@@ -5480,6 +5617,8 @@ namespace MainMenu {
 		};
 		constexpr int num_quit_messages = sizeof(quit_messages) / (sizeof(const char*) * 3);
 
+		static int quit_motd = -2;
+		++quit_motd;
 		if (quit_motd >= num_quit_messages) {
 			quit_motd = 0;
 		}
@@ -5487,58 +5626,42 @@ namespace MainMenu {
 			quit_motd = rand() % num_quit_messages;
 		}
 
-		auto text = frame->addField("text", 128);
-		text->setSize(SDL_Rect{30, 28, 304, 46});
-		text->setFont(smallfont_no_outline);
-		text->setText(quit_messages[quit_motd][0]);
-		text->setJustify(Field::justify_t::CENTER);
-
-		auto okay = frame->addButton("okay");
-		okay->setSize(SDL_Rect{58, 78, 130, 52});
-		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
-		okay->setColor(makeColor(127, 127, 127, 255));
-		okay->setHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setTextColor(makeColor(127, 127, 127, 255));
-		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setFont(smallfont_outline);
-		okay->setText(quit_messages[quit_motd][1]);
-		okay->setWidgetRight("cancel");
-		okay->setWidgetBack("cancel");
-		okay->select();
-		okay->setCallback([](Button&){mainloop = 0;});
-
-		auto cancel = frame->addButton("cancel");
-		cancel->setSize(SDL_Rect{196, 78, 108, 52});
-		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
-		cancel->setColor(makeColor(127, 127, 127, 255));
-		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setTextColor(makeColor(127, 127, 127, 255));
-		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setFont(smallfont_outline);
-		cancel->setText(quit_messages[quit_motd][2]);
-		cancel->setWidgetLeft("okay");
-		cancel->setWidgetBack("cancel");
-		cancel->setCallback([](Button&){
-			soundCancel();
-			assert(main_menu_frame);
-			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto quit_button = buttons->findButton("QUIT"); assert(quit_button);
-			quit_button->select();
-			auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
-			if (quit_confirm) {
-				auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
-				dimmer->removeSelf();
-			}
+		quitConfirmWindow(
+			quit_messages[quit_motd][0], // window text
+			quit_messages[quit_motd][1], // okay text
+			quit_messages[quit_motd][2], // cancel text
+			[](Button&){ // okay
+				soundActivate();
+				mainloop = 0;
+			},
+			[](Button&){ // cancel
+				soundCancel();
+				assert(main_menu_frame);
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto quit_button = buttons->findButton("QUIT");
+				if (!quit_button) {
+					quit_button = buttons->findButton("QUIT TO DESKTOP");
+				}
+				assert(quit_button);
+				quit_button->select();
+				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				if (quit_confirm) {
+					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
+					dimmer->removeSelf();
+				}
 			});
+	}
 
-		++quit_motd;
+	void mainClose(Button& button) {
+		soundActivate();
+		closeMainMenu();
 	}
 
 /******************************************************************************/
 
-	void doMainMenu() {
+	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {
-			createMainMenu();
+			createMainMenu(ingame);
 		}
 
 		assert(main_menu_frame);
@@ -5547,7 +5670,7 @@ namespace MainMenu {
 			if (fadeout && fadealpha >= 255) {
 				if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 					destroyMainMenu();
-					createMainMenu();
+					createMainMenu(ingame);
 					playMusic(intromusic[1], true, true, false);
 				}
 				if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
@@ -5555,6 +5678,7 @@ namespace MainMenu {
 					playMusic(sounds[501], false, true, false);
 				}
 				if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
+					destroyMainMenu();
 					multiplayer = SINGLE;
 					numplayers = 0;
 					gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
@@ -5568,6 +5692,7 @@ namespace MainMenu {
 					doNewGame(false);
 				}
 				if (main_menu_fade_destination == FadeDestination::GameStart) {
+					destroyMainMenu();
 					multiplayer = SINGLE;
 					numplayers = 0;
 					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
@@ -5579,13 +5704,13 @@ namespace MainMenu {
 		}
 	}
 
-	void createMainMenu() {
+	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
+		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
-		main_menu_frame->setHollow(true);
-		main_menu_frame->setBorder(0);
+		main_menu_frame->setColor(ingame ? makeColor(0, 0, 0, 63) : 0);
 		main_menu_frame->setTickCallback(tickMainMenu);
 
 		int y = 16;
@@ -5604,41 +5729,59 @@ namespace MainMenu {
 		);
 		y += title->pos.h;
 
-		auto notification = main_menu_frame->addFrame("notification");
-		notification->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 236 * 2) / 2,
-			y,
-			236 * 2,
-			49 * 2
-			});
-		notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-		notification->addImage(notification->getActualSize(), 0xffffffff,
-			"images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png", "background");
-		y += notification->getSize().h;
-		y += 16;
+		if (!ingame) {
+			auto notification = main_menu_frame->addFrame("notification");
+			notification->setSize(SDL_Rect{
+				(Frame::virtualScreenX - 236 * 2) / 2,
+				y,
+				236 * 2,
+				49 * 2
+				});
+			notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
+			notification->addImage(notification->getActualSize(), 0xffffffff,
+				"images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png", "background");
+			y += notification->getSize().h;
+			y += 16;
+		}
 
 		struct Option {
 			const char* name;
 			void (*callback)(Button&);
 		};
+		std::vector<Option> options;
+		if (ingame) {
+			options.insert(options.begin(), {
+				{"BACK TO GAME", mainClose},
+				{"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				{"SETTINGS", mainSettings},
+				{"END LIFE", mainEndLife},
+				{"RESTART GAME", mainRestartGame},
+				{"QUIT TO MAIN MENU", mainQuitToMainMenu},
+				{"QUIT TO DESKTOP", mainQuitToDesktop},
+				});
+		} else {
 #ifdef NINTENDO
-		Option options[] = {
-			{"PLAY GAME", mainPlayGame},
-			{"HALL OF RECORDS", mainHallOfRecords},
-			{"SETTINGS", mainSettings}
-		};
+			options.insert(options.begin(), {
+				{"PLAY GAME", mainPlayGame},
+				{"HALL OF RECORDS", mainHallOfRecords},
+				{"SETTINGS", mainSettings},
+				});
 #else
-		Option options[] = {
-			{"PLAY GAME", mainPlayGame},
-			{"PLAY MODDED GAME", mainPlayModdedGame},
-			{"HALL OF RECORDS", mainHallOfRecords},
-			{"SETTINGS", mainSettings},
-			{"QUIT", mainQuit}
-		};
+			options.insert(options.begin(), {
+				{"PLAY GAME", mainPlayGame},
+				{"PLAY MODDED GAME", mainPlayModdedGame},
+				{"HALL OF RECORDS", mainHallOfRecords},
+				{"SETTINGS", mainSettings},
+				{"QUIT", mainQuitToDesktop},
+				});
 #endif
+		}
 
-		const int num_options = sizeof(options) / sizeof(options[0]);
+		const int num_options = options.size();
 
+		if (ingame) {
+			y = (Frame::virtualScreenY - num_options * 32) / 2;
+		}
 		main_menu_buttons_height = y;
 
 		auto buttons = main_menu_frame->addFrame("buttons");
@@ -5675,12 +5818,12 @@ namespace MainMenu {
 		}
 		y += 16;
 
-		auto play = buttons->findButton("PLAY GAME");
-		if (play) {
-			play->select();
+		auto button = buttons->findButton(ingame ? "BACK TO GAME" : "PLAY GAME");
+		if (button) {
+			button->select();
 			if (main_menu_cursor_x == 0 && main_menu_cursor_y == 0) {
-				main_menu_cursor_x = play->getSize().x - 80;
-				main_menu_cursor_y = play->getSize().y - 9 + buttons->getSize().y;
+				main_menu_cursor_x = button->getSize().x - 80;
+				main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
 			}
 		}
 
@@ -5696,68 +5839,72 @@ namespace MainMenu {
 			"cursor"
 		);
 
-		for (int c = 0; c < 2; ++c) {
-			std::string name = std::string("banner") + std::to_string(c + 1);
-			auto banner = main_menu_frame->addFrame(name.c_str());
-			banner->setSize(SDL_Rect{
-				(Frame::virtualScreenX - 472) / 2,
-				y,
-				472,
-				76
+		if (!ingame) {
+			for (int c = 0; c < 2; ++c) {
+				std::string name = std::string("banner") + std::to_string(c + 1);
+				auto banner = main_menu_frame->addFrame(name.c_str());
+				banner->setSize(SDL_Rect{
+					(Frame::virtualScreenX - 472) / 2,
+					y,
+					472,
+					76
+					});
+				banner->setActualSize(SDL_Rect{0, 0, banner->getSize().w, banner->getSize().h});
+				std::string background = std::string("images/ui/Main Menus/Main/UI_MainMenu_EXBanner") + std::to_string(c + 1) + std::string(".png");
+				banner->addImage(banner->getActualSize(), 0xffffffff, background.c_str());
+				y += banner->getSize().h;
+				y += 16;
+			}
+
+			auto copyright = main_menu_frame->addField("copyright", 64);
+			copyright->setFont(bigfont_outline);
+			copyright->setText(u8"Copyright \u00A9 2021, Turning Wheel LLC");
+			copyright->setJustify(Field::justify_t::CENTER);
+			copyright->setSize(SDL_Rect{
+				(Frame::virtualScreenX - 512) / 2,
+				Frame::virtualScreenY - 50,
+				512,
+				50
 				});
-			banner->setActualSize(SDL_Rect{0, 0, banner->getSize().w, banner->getSize().h});
-			std::string background = std::string("images/ui/Main Menus/Main/UI_MainMenu_EXBanner") + std::to_string(c + 1) + std::string(".png");
-			banner->addImage(banner->getActualSize(), 0xffffffff, background.c_str());
-			y += banner->getSize().h;
-			y += 16;
-		}
+			copyright->setColor(0xffffffff);
 
-		auto copyright = main_menu_frame->addField("copyright", 64);
-		copyright->setFont(bigfont_outline);
-		copyright->setText(u8"Copyright \u00A9 2021, Turning Wheel LLC");
-		copyright->setJustify(Field::justify_t::CENTER);
-		copyright->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 512) / 2,
-			Frame::virtualScreenY - 50,
-			512,
-			50
-			});
-		copyright->setColor(0xffffffff);
-
-		auto version = main_menu_frame->addField("version", 32);
-		version->setFont(smallfont_outline);
-		version->setText(VERSION);
-		version->setHJustify(Field::justify_t::RIGHT);
-		version->setVJustify(Field::justify_t::BOTTOM);
-		version->setSize(SDL_Rect{
-			Frame::virtualScreenX - 200,
-			Frame::virtualScreenY - 54,
-			200,
-			50
-			});
-		version->setColor(0xffffffff);
+			auto version = main_menu_frame->addField("version", 32);
+			version->setFont(smallfont_outline);
+			version->setText(VERSION);
+			version->setHJustify(Field::justify_t::RIGHT);
+			version->setVJustify(Field::justify_t::BOTTOM);
+			version->setSize(SDL_Rect{
+				Frame::virtualScreenX - 200,
+				Frame::virtualScreenY - 54,
+				200,
+				50
+				});
+			version->setColor(0xffffffff);
 
 #ifndef NINTENDO
-		int num_online_players = 1337; // TODO change me!
-		std::string online_players_text = std::string("Players online: ") + std::to_string(num_online_players);
-		auto online_players = main_menu_frame->addField("online_players", 32);
-		online_players->setFont(smallfont_outline);
-		online_players->setText(online_players_text.c_str());
-		online_players->setHJustify(Field::justify_t::RIGHT);
-		online_players->setVJustify(Field::justify_t::TOP);
-		online_players->setSize(SDL_Rect{
-			Frame::virtualScreenX - 200,
-			4,
-			200,
-			50
-			});
-		online_players->setColor(0xffffffff);
+			int num_online_players = 1337; // TODO change me!
+			std::string online_players_text = std::string("Players online: ") + std::to_string(num_online_players);
+			auto online_players = main_menu_frame->addField("online_players", 32);
+			online_players->setFont(smallfont_outline);
+			online_players->setText(online_players_text.c_str());
+			online_players->setHJustify(Field::justify_t::RIGHT);
+			online_players->setVJustify(Field::justify_t::TOP);
+			online_players->setSize(SDL_Rect{
+				Frame::virtualScreenX - 200,
+				4,
+				200,
+				50
+				});
+			online_players->setColor(0xffffffff);
 #endif
+		}
 	}
 
 	void destroyMainMenu() {
-		main_menu_frame->removeSelf();
-		main_menu_frame = nullptr;
+		if (main_menu_frame) {
+			main_menu_frame->removeSelf();
+			main_menu_frame = nullptr;
+		}
 	}
 
 	void createDummyMainMenu() {
@@ -5767,5 +5914,10 @@ namespace MainMenu {
 		main_menu_frame->setHollow(true);
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setTickCallback(tickMainMenu);
+	}
+
+	void closeMainMenu() {
+		destroyMainMenu();
+		gamePaused = false;
 	}
 }
