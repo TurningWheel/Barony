@@ -3188,7 +3188,7 @@ void handleEvents(void)
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", id);
 						inputs.addControllerIDToNextAvailableInput(id);
-						Input::gameControllers.emplace(id, const_cast<SDL_GameController*>(controller.getControllerDevice()));
+						Input::gameControllers[id]= const_cast<SDL_GameController*>(controller.getControllerDevice());
 						for (int c = 0; c < 4; ++c) {
 							Input::inputs[c].refresh();
 						}
