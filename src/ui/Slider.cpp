@@ -14,7 +14,7 @@ Slider::Slider(Frame& _parent) {
 }
 
 void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
-	if (invisible) {
+	if ( invisible || isDisabled() ) {
 		return;
 	}
 	if (maxValue == minValue) {

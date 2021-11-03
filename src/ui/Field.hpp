@@ -65,8 +65,11 @@ public:
 	//! gets the physical screen-space x/y (not relative to current parent - but to the absolute root)
 	SDL_Rect getAbsoluteSize() const;
 
-	//! TODO comment pls
+	//! gets the last line number that fits within the field y + height (to check if overflowing container)
 	int getLastLineThatFitsWithinHeight();
+
+	//! gets longest line of field, measured by actual text width
+	std::string getLongestLine();
 
 	virtual type_t              getType() const override { return WIDGET_FIELD; }
 	const char*					getText() const { return text; }

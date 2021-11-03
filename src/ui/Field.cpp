@@ -504,6 +504,7 @@ int Field::getLastLineThatFitsWithinHeight()
 	int lineNumber = 0;
 	char* nexttoken;
 	char* token = text;
+	std::string originalText = text;
 	do {
 		nexttoken = tokenize(token, "\n");
 		if ( !allLines.empty() )
@@ -516,12 +517,13 @@ int Field::getLastLineThatFitsWithinHeight()
 			if ( getText->getHeight() > getSize().h )
 			{
 				// doesn't fit, return the last line number.
+				setText(originalText.c_str()); // make sure to replace the original text field, as tokenize will modify it
 				return lineNumber;
 			}
 		}
 		++lineNumber;
 	} while ( (token = nexttoken) != NULL );
-
+	setText(originalText.c_str()); // make sure to replace the original text field, as tokenize will modify it
 	return -1;
 }
 
