@@ -599,7 +599,7 @@ void BookParser_t::createBook(std::string filename)
 	const int MAX_PARSE_CHARACTERS = 65535;
 	Field* tmpField = new Field(MAX_PARSE_CHARACTERS);
 	tmpField->setSize(SDL_Rect{ 0, 0, Player::BookGUI_t::BOOK_PAGE_WIDTH, Player::BookGUI_t::BOOK_PAGE_HEIGHT });
-	tmpField->setFont("fonts/pixel_maz.ttf#16");
+	tmpField->setFont("fonts/pixel_maz.ttf#32");
 	tmpField->setText(pageText.c_str());
 	tmpField->reflowTextToFit(0);
 

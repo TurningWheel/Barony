@@ -470,7 +470,7 @@ std::string Field::getLongestLine()
 	int longestLineWidth = 0;
 	do {
 		nexttoken = tokenize(token, "\n");
-		if ( auto getText = Text::get(token, font.c_str()) )
+		if ( auto getText = Text::get(token, font.c_str(), textColor, outlineColor) )
 		{
 			if ( getText->getWidth() > longestLineWidth )
 			{

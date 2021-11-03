@@ -212,7 +212,7 @@ void createHPMPBars(const int player)
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "hp img endcap");
 
-		auto font = "fonts/pixel_maz.ttf#16#2";
+		auto font = "fonts/pixel_maz.ttf#32#2";
 		auto hptext = foregroundFrame->addField("hp text", 16);
 		hptext->setText("0");
 		hptext->setSize(numbase->pos);
@@ -267,7 +267,7 @@ void createHPMPBars(const int player)
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "mp img endcap");
 
-		auto font = "fonts/pixel_maz.ttf#16#2";
+		auto font = "fonts/pixel_maz.ttf#32#2";
 		auto mptext = foregroundFrame->addField("mp text", 16);
 		mptext->setText("0");
 		mptext->setSize(numbase->pos);
@@ -411,7 +411,7 @@ void createXPBar(const int player)
 	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
 
 	const int textWidth = 40;
-	auto font = "fonts/pixel_maz.ttf#16#2";
+	auto font = "fonts/pixel_maz.ttf#32#2";
 	auto textStatic = hud_t.xpFrame->addField("xp text static", 16);
 	textStatic->setText("/100");
 	textStatic->setSize(SDL_Rect{ pos.w / 2 - 4, 0, textWidth, pos.h }); // x - 4 to center the slash
@@ -452,7 +452,7 @@ void createHotbar(const int player)
 		glyph->disabled = true;
 	}
 
-	auto font = "fonts/pixel_maz.ttf#18#2";
+	auto font = "fonts/pixel_maz.ttf#32#2";
 
 	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 	{
@@ -473,7 +473,7 @@ void createHotbar(const int player)
 		snprintf(numStr, sizeof(numStr), "%d", i + 1);
 		auto text = slot->addField("slot num text", 4);
 		text->setText(numStr);
-		text->setSize(SDL_Rect{ 0, -8, slotPos.w, slotPos.h });
+		text->setSize(SDL_Rect{ 0, -4, slotPos.w, slotPos.h });
 		text->setFont(font);
 		text->setVJustify(Field::justify_t::TOP);
 		text->setHJustify(Field::justify_t::LEFT);
@@ -535,7 +535,7 @@ void createHotbar(const int player)
 
 	auto text = highlightFrame->addField("slot num text", 4);
 	text->setText("");
-	text->setSize(SDL_Rect{ 0, -8, slotPos.w, slotPos.h });
+	text->setSize(SDL_Rect{ 0, -4, slotPos.w, slotPos.h });
 	text->setFont(font);
 	text->setVJustify(Field::justify_t::TOP);
 	text->setHJustify(Field::justify_t::LEFT);
@@ -814,7 +814,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			fullscreenBg->addImage(SDL_Rect{ 0, 0, fullscreenBg->getSize().w, fullscreenBg->getSize().h },
 				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_00.png", "bg image");
 
-			const char* titleFont = "fonts/pixel_maz.ttf#14#2";
+			const char* titleFont = "fonts/pixel_maz.ttf#32#2";
 			auto characterSheetTitleText = fullscreenBg->addField("character sheet title text", 32);
 			characterSheetTitleText->setFont(titleFont);
 			characterSheetTitleText->setSize(SDL_Rect{ 6, 120, 202, 32 });
@@ -825,7 +825,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 		// log / map buttons
 		{
-			const char* buttonFont = "fonts/pixel_maz.ttf#14#2";
+			const char* buttonFont = "fonts/pixel_maz.ttf#32#2";
 			SDL_Rect buttonFramePos{ leftAlignX + 9, 6, 196, 82 };
 			auto buttonFrame = sheetFrame->addFrame("log map buttons");
 			buttonFrame->setSize(buttonFramePos);
@@ -851,7 +851,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 		// game timer
 		{
-			const char* timerFont = "fonts/pixel_maz.ttf#14#2";
+			const char* timerFont = "fonts/pixel_maz.ttf#32#2";
 			Uint32 timerTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
 
 			Frame* timerFrame = sheetFrame->addFrame("game timer");
@@ -871,7 +871,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 		// skills button
 		{
-			const char* skillsFont = "fonts/pixel_maz.ttf#14#2";
+			const char* skillsFont = "fonts/pixel_maz.ttf#32#2";
 			Frame* skillsFrame = sheetFrame->addFrame("skills button");
 			skillsFrame->setSize(SDL_Rect{ leftAlignX + 14, 270, 186, 42 });
 			auto skillsImg = skillsFrame->addImage(SDL_Rect{0, 0, skillsFrame->getSize().w, skillsFrame->getSize().h},
@@ -885,7 +885,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		}
 
 		Frame* characterFrame = sheetFrame->addFrame("character info");
-		const char* infoFont = "fonts/pixel_maz.ttf#14#2";
+		const char* infoFont = "fonts/pixel_maz.ttf#32#2";
 		characterFrame->setSize(SDL_Rect{ leftAlignX, 150, bgWidth, 116});
 		const int infoTextHeight = 18;
 		Uint32 infoTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
@@ -965,7 +965,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			SDL_Rect textPos{ headingLeftX, iconPos.y, 40, iconPos.h };
 			Uint32 statTextColor = hudColors.characterSheetNeutral;
 
-			const char* statFont = "fonts/pixel_maz.ttf#14#2";
+			const char* statFont = "fonts/pixel_maz.ttf#32#2";
 			textPos.y = iconPos.y + 1;
 			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_STR_00.png", "str icon");
 			{
@@ -1149,7 +1149,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			SDL_Rect textPos{ headingLeftX, iconPos.y, 80, iconPos.h };
 			Uint32 statTextColor = hudColors.characterSheetNeutral;
 
-			const char* attributeFont = "fonts/pixel_maz.ttf#14#2";
+			const char* attributeFont = "fonts/pixel_maz.ttf#32#2";
 			textPos.y = iconPos.y + 1;
 			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ATT_00.png", "atk icon");
 			{
@@ -2229,7 +2229,7 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	unusableFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
 
 
-	static const char* qtyfont = "fonts/pixel_maz.ttf#14#2";
+	static const char* qtyfont = "fonts/pixel_maz.ttf#32#2";
 	auto quantityFrame = slotFrame->addFrame("quantity frame");
 	quantityFrame->setSize(slotSize);
 	quantityFrame->setHollow(true);
@@ -2860,10 +2860,12 @@ void createInventoryTooltipFrame(const int player)
 		interactFrame->addImage(SDL_Rect{ 6, optionHeight, interactWidth, 76 },
 			hudColors.itemContextMenuOptionSelectedImg, "images/system/whitecurve.png", "interact selected highlight");
 
+		const char* interactFont = "fonts/pixel_maz.ttf#32#2";
+
 		auto interactText = interactFrame->addField("interact text", 32);
 		interactText->setText(language[4040]);
 		interactText->setSize(SDL_Rect{ 0, 2, 0, topBackgroundHeight });
-		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setFont(interactFont);
 		interactText->setHJustify(Field::justify_t::CENTER);
 		interactText->setVJustify(Field::justify_t::CENTER);
 		interactText->setColor(hudColors.itemContextMenuHeadingText);
@@ -2889,7 +2891,7 @@ void createInventoryTooltipFrame(const int player)
 			textAlignX,
 			textAlignY,
 			textWidth, textHeight });
-		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setFont(interactFont);
 		interactText->setHJustify(Field::justify_t::LEFT);
 		interactText->setVJustify(Field::justify_t::CENTER);
 		interactText->setColor(textColor);
@@ -2907,7 +2909,7 @@ void createInventoryTooltipFrame(const int player)
 			textAlignX,
 			textAlignY,
 			textWidth, textHeight });
-		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setFont(interactFont);
 		interactText->setHJustify(Field::justify_t::LEFT);
 		interactText->setVJustify(Field::justify_t::CENTER);
 		interactText->setColor(textColor);
@@ -2925,7 +2927,7 @@ void createInventoryTooltipFrame(const int player)
 			textAlignX,
 			textAlignY,
 			textWidth, textHeight });
-		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setFont(interactFont);
 		interactText->setHJustify(Field::justify_t::LEFT);
 		interactText->setVJustify(Field::justify_t::CENTER);
 		interactText->setColor(textColor);
@@ -2943,7 +2945,7 @@ void createInventoryTooltipFrame(const int player)
 			textAlignX,
 			textAlignY,
 			textWidth, textHeight });
-		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setFont(interactFont);
 		interactText->setHJustify(Field::justify_t::LEFT);
 		interactText->setVJustify(Field::justify_t::CENTER);
 		interactText->setColor(textColor);
@@ -2961,7 +2963,7 @@ void createInventoryTooltipFrame(const int player)
 			textAlignX,
 			textAlignY,
 			textWidth, textHeight });
-		interactText->setFont("fonts/pixel_maz.ttf#14#2");
+		interactText->setFont(interactFont);
 		interactText->setHJustify(Field::justify_t::LEFT);
 		interactText->setVJustify(Field::justify_t::CENTER);
 		interactText->setColor(textColor);
@@ -3023,7 +3025,7 @@ void createInventoryTooltipFrame(const int player)
 		const int textHeight = glyphSize + 8;
 
 		Uint32 promptTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
-
+		const char * promptFont = "fonts/pixel_maz.ttf#32#2";
 		int textAlignY = interactGlyph1->pos.y - 4;
 		int textAlignXRightJustify = interactGlyph1->pos.x - 6 - textWidth;
 		auto promptText = promptFrame->addField("txt 1", 32);
@@ -3032,7 +3034,7 @@ void createInventoryTooltipFrame(const int player)
 			textAlignXRightJustify,
 			textAlignY,
 			textWidth, textHeight });
-		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setFont(promptFont);
 		promptText->setHJustify(Field::justify_t::RIGHT);
 		promptText->setVJustify(Field::justify_t::CENTER);
 		promptText->setColor(promptTextColor);
@@ -3045,7 +3047,7 @@ void createInventoryTooltipFrame(const int player)
 			textAlignXRightJustify,
 			textAlignY,
 			textWidth, textHeight });
-		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setFont(promptFont);
 		promptText->setHJustify(Field::justify_t::RIGHT);
 		promptText->setVJustify(Field::justify_t::CENTER);
 		promptText->setColor(promptTextColor);
@@ -3058,7 +3060,7 @@ void createInventoryTooltipFrame(const int player)
 			textAlignXLeftJustify,
 			textAlignY,
 			textWidth, textHeight });
-		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setFont(promptFont);
 		promptText->setHJustify(Field::justify_t::LEFT);
 		promptText->setVJustify(Field::justify_t::CENTER);
 		promptText->setColor(promptTextColor);
@@ -3071,7 +3073,7 @@ void createInventoryTooltipFrame(const int player)
 			textAlignXLeftJustify,
 			textAlignY,
 			textWidth, textHeight });
-		promptText->setFont("fonts/pixel_maz.ttf#14#2");
+		promptText->setFont(promptFont);
 		promptText->setHJustify(Field::justify_t::LEFT);
 		promptText->setVJustify(Field::justify_t::CENTER);
 		promptText->setColor(promptTextColor);
@@ -7189,7 +7191,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		legendText->setHJustify(Field::justify_t::CENTER);
 	}
 	
-	std::string promptFont = "fonts/pixel_maz.ttf#16#2";
+	std::string promptFont = "fonts/pixel_maz.ttf#32#2";
 	const int promptWidth = 60;
 	const int promptHeight = 27;
 	auto promptBack = frame->addField("prompt back txt", 16);
@@ -8710,14 +8712,17 @@ void Player::SkillSheet_t::processSkillSheet()
 
 					lowestY = std::max(lowestY, effectFrame->getSize().y + effectFrame->getSize().h);
 
-					auto textGetTitle = Text::get(effectTxt->getText(), effectTxt->getFont());
+					auto textGetTitle = Text::get(effectTxt->getText(), effectTxt->getFont(),
+						effectTxt->getTextColor(), effectTxt->getOutlineColor());
 					int titleWidth = textGetTitle->getWidth();
 					if ( numEffectLines > 1 )
 					{
-						auto textGetTitle = Text::get(effectTxt->getLongestLine().c_str(), effectTxt->getFont());
+						auto textGetTitle = Text::get(effectTxt->getLongestLine().c_str(), effectTxt->getFont(),
+							effectTxt->getTextColor(), effectTxt->getOutlineColor());
 						titleWidth = textGetTitle->getWidth();
 					}
-					auto textGetValue = Text::get(effectVal->getText(), effectVal->getFont());
+					auto textGetValue = Text::get(effectVal->getText(), effectVal->getFont(),
+						effectVal->getTextColor(), effectVal->getOutlineColor());
 					int valueWidth = textGetValue->getWidth();
 
 					// check marquee if needed
@@ -8993,7 +8998,8 @@ void Player::SkillSheet_t::processSkillSheet()
 		auto promptImg = skillFrame->findImage("prompt back img");
 		promptImg->disabled = !drawGlyphs;
 		SDL_Rect glyphPos = promptImg->pos;
-		if ( auto textGet = Text::get(promptBack->getText(), promptBack->getFont()) )
+		if ( auto textGet = Text::get(promptBack->getText(), promptBack->getFont(),
+			promptBack->getTextColor(), promptBack->getOutlineColor()) )
 		{
 			SDL_Rect textPos = promptBack->getSize();
 			textPos.w = textGet->getWidth();
@@ -9031,7 +9037,8 @@ void Player::SkillSheet_t::processSkillSheet()
 		auto promptImg = skillFrame->findImage("prompt scroll img");
 		promptImg->disabled = !drawGlyphs;
 		SDL_Rect glyphPos = promptImg->pos;
-		if ( auto textGet = Text::get(promptScroll->getText(), promptScroll->getFont()) )
+		if ( auto textGet = Text::get(promptScroll->getText(), promptScroll->getFont(),
+			promptScroll->getTextColor(), promptScroll->getOutlineColor()) )
 		{
 			SDL_Rect textPos = promptScroll->getSize();
 			textPos.w = textGet->getWidth();

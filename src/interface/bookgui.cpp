@@ -65,7 +65,7 @@ void Player::BookGUI_t::createBookGUI()
 	auto nextPage = bookBackground->addFrame("next page mouse boundary");
 	nextPage->setSize(SDL_Rect{ width / 2, bgImg->pos.y, width, height });
 
-	std::string promptFont = "fonts/pixel_maz.ttf#16#2";
+	std::string promptFont = "fonts/pixel_maz.ttf#32#2";
 	auto promptBack = bookBackground->addField("prompt back txt", 16);
 	promptBack->setSize(SDL_Rect{ bgImg->pos.x + bgImg->pos.w - promptWidth - 16, // lower right corner
 		bgImg->pos.y + bgImg->pos.h, promptWidth, promptHeight });
@@ -105,7 +105,7 @@ void Player::BookGUI_t::createBookGUI()
 		"", "prompt prev img");
 	promptPrevPageImg->disabled = true;
 
-	std::string bookFont = "fonts/pixel_maz.ttf#14";
+	std::string bookFont = "fonts/pixel_maz.ttf#30";
 	Field* bookLeftColumnText = bookBackground->addField("left column text", 1024);
 	bookLeftColumnText->setText("Nothing");
 	const int pageWidth = BOOK_PAGE_WIDTH;
