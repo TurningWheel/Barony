@@ -5751,6 +5751,8 @@ int main(int argc, char** argv)
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
+				doFrames();
+
 				if ( /*newui*/ 0 ) 
 				{
 					newIngameHud();
@@ -5759,8 +5761,6 @@ int main(int argc, char** argv)
 				{
 					ingameHud();
 				}
-
-				doFrames();
 
 				if ( gamePaused )
 				{
