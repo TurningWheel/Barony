@@ -5224,12 +5224,15 @@ namespace MainMenu {
 
 		settings->setTickCallback([](Widget& widget){
 			auto settings = static_cast<Frame*>(&widget);
-			const char* tabs[] = {
+			std::vector<const char*> tabs = {
 				"UI",
 				"Video",
 				"Audio",
-				"Controls"
+				"Controls",
 			};
+			if (!intro) {
+				tabs.push_back("Game");
+			}
 			for (auto name : tabs) {
 				auto button = settings->findButton(name);
 				if (button) {
@@ -5252,21 +5255,25 @@ namespace MainMenu {
 			const char* name;
 			void (*callback)(Button&);
 		};
-		Option tabs[] = {
+		std::vector<Option> tabs = {
 			{"UI", settingsUI},
 			{"Video", settingsVideo},
 			{"Audio", settingsAudio},
-			{"Controls", settingsControls}
+			{"Controls", settingsControls},
 		};
-		int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
+		if (!intro) {
+			tabs.push_back({"Game", settingsGame});
+		}
+		const int num_tabs = tabs.size();
 		for (int c = 0; c < num_tabs; ++c) {
+			const int x = settings->getSize().w / (num_tabs + 1);
 			auto button = settings->addButton(tabs[c].name);
 			button->setCallback(tabs[c].callback);
 			button->setText(tabs[c].name);
 			button->setFont(banner_font);
 			button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
 			button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
-			button->setSize(SDL_Rect{76 + (272 - 76) * c, 64, 184, 64});
+			button->setSize(SDL_Rect{x + (x * c) - 184 / 2, 64, 184, 64});
 			button->setColor(makeColor(255, 255, 255, 191));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent("settings");
@@ -5314,12 +5321,15 @@ namespace MainMenu {
 		tab_left->addWidgetAction("MenuStart", "confirm_and_exit");
 		tab_left->setCallback([](Button&){
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-			const char* tabs[] = {
+			std::vector<const char*> tabs = {
 				"UI",
 				"Video",
 				"Audio",
-				"Controls"
+				"Controls",
 			};
+			if (!intro) {
+				tabs.push_back("Game");
+			}
 			const char* prevtab = nullptr;
 			for (auto tab : tabs) {
 				auto button = settings->findButton(tab); assert(button);
@@ -5351,12 +5361,15 @@ namespace MainMenu {
 		tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
 		tab_right->setCallback([](Button&){
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-			const char* tabs[] = {
+			std::vector<const char*> tabs = {
 				"Controls",
 				"Audio",
 				"Video",
 				"UI",
 			};
+			if (!intro) {
+				tabs.insert(tabs.begin(), "Game");
+			}
 			const char* nexttab = nullptr;
 			for (auto tab : tabs) {
 				auto button = settings->findButton(tab); assert(button);
@@ -5541,7 +5554,7 @@ namespace MainMenu {
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
+				auto quit_button = buttons->findButton("END LIFE"); assert(quit_button);
 				quit_button->select();
 				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
 				if (quit_confirm) {
@@ -5571,7 +5584,7 @@ namespace MainMenu {
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
+				auto quit_button = buttons->findButton("RESTART GAME"); assert(quit_button);
 				quit_button->select();
 				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
 				if (quit_confirm) {
