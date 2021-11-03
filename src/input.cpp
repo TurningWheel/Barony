@@ -330,6 +330,22 @@ std::string Input::getGlyphPathForInput(binding_t binding) const
 		}
 #endif
 	}
+	else if ( binding.type == binding_t::bindtype_t::CONTROLLER_AXIS )
+	{
+		switch ( binding.padAxis )
+		{
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
+				return rootPath + "G_Switch_LStick00.png";
+			default:
+				return "";
+		}
+	}
 	else if ( binding.type == binding_t::bindtype_t::KEYBOARD )
 	{
 		return "";

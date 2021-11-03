@@ -1587,6 +1587,7 @@ bool Player::GUI_t::bActiveModuleHasNoCursor()
 	switch ( activeModule )
 	{
 		case MODULE_BOOK_VIEW:
+		case MODULE_SKILLS_LIST:
 			return true;
 		default:
 			break;

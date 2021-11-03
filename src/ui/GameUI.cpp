@@ -3297,6 +3297,25 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 						}
 					}
 				}
+				if ( d.HasMember("window_scaling") )
+				{
+					if ( d["window_scaling"].HasMember("standard_scale_modifier_x") )
+					{
+						windowHeightScaleX = d["window_scaling"]["standard_scale_modifier_x"].GetDouble();
+					}
+					if ( d["window_scaling"].HasMember("standard_scale_modifier_y") )
+					{
+						windowHeightScaleY = d["window_scaling"]["standard_scale_modifier_y"].GetDouble();
+					}
+					if ( d["window_scaling"].HasMember("compact_scale_modifier_x") )
+					{
+						windowCompactHeightScaleX = d["window_scaling"]["compact_scale_modifier_x"].GetDouble();
+					}
+					if ( d["window_scaling"].HasMember("compact_scale_modifier_y") )
+					{
+						windowCompactHeightScaleY = d["window_scaling"]["compact_scale_modifier_y"].GetDouble();
+					}
+				}
 				if ( d.HasMember("skill_select_images") )
 				{
 					if ( d["skill_select_images"].HasMember("highlight_left") )
@@ -6354,24 +6373,24 @@ void Player::Hotbar_t::updateHotbar()
 
 	if ( !player.shootmode )
 	{
-		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarCancel") )
+		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarCancel") )
 		{
-			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarCancel");
+			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarCancel");
 		}
-		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarLeft") )
+		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarLeft") )
 		{
-			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarLeft");
-			Input::inputs[player.shootmode].consumeBinaryReleaseToggle("HotbarFacebarLeft");
+			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarLeft");
+			Input::inputs[player.playernum].consumeBinaryReleaseToggle("HotbarFacebarLeft");
 		}
-		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarUp") )
+		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarUp") )
 		{
-			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarUp");
-			Input::inputs[player.shootmode].consumeBinaryReleaseToggle("HotbarFacebarUp");
+			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarUp");
+			Input::inputs[player.playernum].consumeBinaryReleaseToggle("HotbarFacebarUp");
 		}
-		if ( Input::inputs[player.shootmode].binaryToggle("HotbarFacebarRight") )
+		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarRight") )
 		{
-			Input::inputs[player.shootmode].consumeBinaryToggle("HotbarFacebarRight");
-			Input::inputs[player.shootmode].consumeBinaryReleaseToggle("HotbarFacebarRight");
+			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarRight");
+			Input::inputs[player.playernum].consumeBinaryReleaseToggle("HotbarFacebarRight");
 		}
 		faceMenuButtonHeld = FaceMenuGroup::GROUP_NONE;
 	}
@@ -6737,6 +6756,11 @@ void doFrames() {
 	}
 }
 
+real_t Player::SkillSheet_t::windowCompactHeightScaleX = 0.0;
+real_t Player::SkillSheet_t::windowCompactHeightScaleY = 0.0;
+real_t Player::SkillSheet_t::windowHeightScaleX = 0.0;
+real_t Player::SkillSheet_t::windowHeightScaleY = 0.0;
+
 void Player::SkillSheet_t::createSkillSheet()
 {
 	if ( skillFrame )
@@ -6791,11 +6815,11 @@ void Player::SkillSheet_t::createSkillSheet()
 	{
 		Uint32 color = makeColor(255, 255, 255, 255);
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_TL_03.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			color, "images/ui/SkillSheet/UI_Skills_Window_TL_04.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_TR_03.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			color, "images/ui/SkillSheet/UI_Skills_Window_TR_04.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_T_03.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			color, "images/ui/SkillSheet/UI_Skills_Window_T_04.png", skillsheetEffectBackgroundImages[TOP].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
 			color, "images/ui/SkillSheet/UI_Skills_Window_L_03.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
@@ -6917,7 +6941,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		profLevel->setText("0");
 	}
 
-	SDL_Rect skillTitlePos{ skillBackground->getSize().w / 2 - 320 / 2, 16, 320, 40 };
+	SDL_Rect skillTitlePos{ skillBackground->getSize().w / 2 - 320 / 2, 14, 320, 40 };
 	auto skillTitleTxt = skillBackground->addField("skill title txt", 64);
 	skillTitleTxt->setHJustify(Field::justify_t::CENTER);
 	skillTitleTxt->setVJustify(Field::justify_t::CENTER);
@@ -6927,7 +6951,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	skillTitleTxt->setOntop(true);
 	skillTitleTxt->setColor(makeColor(201, 162, 100, 255));
 
-	SDL_Rect descPos{ 0, 64, 320, 324 };
+	SDL_Rect descPos{ 0, 54, 320, 324 };
 	descPos.x = skillBackground->getSize().w / 2 - descPos.w / 2;
 	auto skillDescriptionFrame = skillBackground->addFrame("skill desc frame");
 	skillDescriptionFrame->setSize(descPos);
@@ -7141,6 +7165,10 @@ void Player::SkillSheet_t::createSkillSheet()
 		auto br = legendFrame->addImage(SDL_Rect{ legendPos.w - 18, bl->pos.y, 18, 18 }, 0xFFFFFFFF,
 			"images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png", "bottom right img");
 
+		auto backerImg = scrollAreaFrame->addImage(SDL_Rect{ 0, 0, 154, 12 }, 0xFFFFFFFF,
+			"images/ui/SkillSheet/UI_Skills_LegendTextBacker_00.png", "legend txt backer img");
+		backerImg->disabled = true;
+
 		auto legendText = legendFrame->addField("legend text", 256);
 		legendText->setText("");
 		legendText->setSize(mm->pos);
@@ -7151,35 +7179,41 @@ void Player::SkillSheet_t::createSkillSheet()
 	std::string promptFont = "fonts/pixel_maz.ttf#16#2";
 	const int promptWidth = 60;
 	const int promptHeight = 27;
-	auto promptBack = skillBackground->addField("prompt back txt", 16);
-	promptBack->setSize(SDL_Rect{ skillBackground->getSize().w - promptWidth - 16, // lower right corner
+	auto promptBack = frame->addField("prompt back txt", 16);
+	promptBack->setSize(SDL_Rect{ frame->getSize().w - promptWidth - 16, // lower right corner
 		0, promptWidth, promptHeight });
 	promptBack->setFont(promptFont.c_str());
 	promptBack->setHJustify(Field::justify_t::RIGHT);
 	promptBack->setVJustify(Field::justify_t::CENTER);
 	promptBack->setText(language[4053]);
+	//promptBack->setOntop(true);
+	promptBack->setColor(makeColor(201, 162, 100, 255));
 
-	auto promptBackImg = skillBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+	auto promptBackImg = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 		"", "prompt back img");
 	promptBackImg->disabled = true;
+	//promptBackImg->ontop = true;
 
-	/*auto debugRect = skillDescriptionFrame->addImage(txtPos, 0xFFFFFFFF,
-	"images/system/white.png", "");*/
+	auto promptScroll = frame->addField("prompt scroll txt", 16);
+	promptScroll->setSize(SDL_Rect{ frame->getSize().w - promptWidth - 16, // lower right corner
+		0, promptWidth, promptHeight });
+	promptScroll->setFont(promptFont.c_str());
+	promptScroll->setHJustify(Field::justify_t::LEFT);
+	promptScroll->setVJustify(Field::justify_t::CENTER);
+	promptScroll->setText(language[4062]);
+	//promptScroll->setOntop(true);
+	promptScroll->setColor(makeColor(201, 162, 100, 255));
+
+	auto promptScrollImg = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+		"", "prompt scroll img");
+	promptScrollImg->disabled = true;
+	promptScrollImg->ontop = true;
 }
 
 void Player::SkillSheet_t::resetSkillDisplay()
 {
 	bSkillSheetEntryLoaded = false;
-	scrollPercent = 0.0;
 	scrollInertia = 0.0;
-
-	if ( skillFrame )
-	{
-		auto innerFrame = skillFrame->findFrame("skills frame");
-		auto skillDescriptionFrame = innerFrame->findFrame("skill desc frame");
-		auto slider = skillDescriptionFrame->findSlider("skill slider");
-		slider->setValue(0.0);
-	}
 
 	for ( auto& skillEntry : skillSheetData.skillEntries )
 	{
@@ -7207,10 +7241,22 @@ void Player::SkillSheet_t::openSkillSheet()
 		INVENTORY_MODE_ITEM, player.GUI.MODULE_SKILLS_LIST); // Reset the GUI to the inventory.
 	bSkillSheetOpen = true;
 	openTick = ticks;
+	scrollPercent = 0.0;
+	if ( skillFrame )
+	{
+		auto innerFrame = skillFrame->findFrame("skills frame");
+		auto skillDescriptionFrame = innerFrame->findFrame("skill desc frame");
+		auto slider = skillDescriptionFrame->findSlider("skill slider");
+		slider->setValue(0.0);
+	}
 	resetSkillDisplay();
 	if ( selectedSkill < 0 )
 	{
 		selectSkill(0);
+	}
+	if ( ::inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+	{
+		highlightedSkill = selectedSkill;
 	}
 }
 
@@ -7881,12 +7927,6 @@ void Player::SkillSheet_t::selectSkill(int skill)
 	resetSkillDisplay();
 }
 
-real_t percentXTmp = 0.0;
-real_t percentYTmp = 0.0;
-int showHideSkillSheet = 0;
-real_t percentShowHideSkillSheet = 0.0;
-bool bUseCompactSkillsView = true;
-
 void Player::SkillSheet_t::processSkillSheet()
 {
 	if ( !skillFrame )
@@ -7931,6 +7971,27 @@ void Player::SkillSheet_t::processSkillSheet()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
+	bool oldCompactViewVal = bUseCompactSkillsView;
+	if ( splitscreen && players[player.playernum]->camera_virtualHeight() < Frame::virtualScreenY * .8 )
+	{
+		// use compact view.
+		bUseCompactSkillsView = true;
+	}
+	else
+	{
+		bUseCompactSkillsView = false;
+	}
+	if ( oldCompactViewVal != bUseCompactSkillsView && bUseCompactSkillsView )
+	{
+		skillSlideAmount = 1.0;
+		skillSlideDirection = 1;
+	}
+	if ( !bUseCompactSkillsView )
+	{
+		skillSlideAmount = 0.0;
+		skillSlideDirection = 0;
+	}
+
 	auto innerFrame = skillFrame->findFrame("skills frame");
 	SDL_Rect sheetSize = innerFrame->getSize();
 	Frame* allSkillEntriesLeft = innerFrame->findFrame("skill entries frame left");
@@ -7944,32 +8005,33 @@ void Player::SkillSheet_t::processSkillSheet()
 	SDL_Rect scrollOuterFramePos = scrollAreaOuterFrame->getSize();
 	SDL_Rect scrollAreaPos = scrollArea->getSize();
 
-	int compactViewWidthOffset = (showHideSkillSheet != 0 ? allSkillEntriesLeft->getSize().w / 2 : 0);
+	real_t slideTravelDistance = 52;
+	int compactViewWidthOffset = (skillSlideDirection != 0 ? 104: 0);
 	{
 		// dynamic width/height adjustments of outer containers
-		sheetSize.h = std::max(0, std::min(skillFrame->getSize().h, (int)(404 + percentYTmp * 80)));
-		sheetSize.w = std::max(0, std::min(skillFrame->getSize().w, 
-			(int)(684 + percentXTmp * 80 - compactViewWidthOffset)));
+		sheetSize.h = std::max(0, std::min(skillFrame->getSize().h - 8, 
+			(int)(404 + (bUseCompactSkillsView ? windowCompactHeightScaleY : windowHeightScaleY) * 80)));
+		sheetSize.w = std::max(0, std::min(skillFrame->getSize().w - 8, 
+			(int)(684 + (bUseCompactSkillsView ? windowCompactHeightScaleX : windowHeightScaleX) * 80)));
 		innerFrame->setSize(sheetSize);
 
 		SDL_Rect skillDescPos = skillDescriptionFrame->getSize();
 		skillDescPos.h = innerFrame->getSize().h - skillDescPos.y - 16;
 		skillDescPos.w = innerFrame->getSize().w + compactViewWidthOffset - allSkillEntriesLeft->getSize().w - allSkillEntriesRight->getSize().w;
 		skillDescPos.x = innerFrame->getSize().w / 2 - skillDescPos.w / 2;
-		if ( showHideSkillSheet != 0 )
+		if ( skillSlideDirection != 0 )
 		{
-			skillDescPos.x += (percentShowHideSkillSheet) * allSkillEntriesLeft->getSize().w * .25;
+			skillDescPos.x += (skillSlideAmount) * slideTravelDistance;
 		}
 		skillDescriptionFrame->setSize(skillDescPos);
 
-		scrollOuterFramePos.h = skillDescPos.h - 8;
+		scrollOuterFramePos.h = skillDescPos.h - 4;
 
 		auto leftWingPos = allSkillEntriesLeft->getSize();
 		auto rightWingPos = allSkillEntriesRight->getSize();
 
-		bool useHalfWidth = false;// showHideSkillSheet != 0;
-		leftWingPos.x = 0 + (useHalfWidth ? leftWingPos.w * .25 : 0);
-		rightWingPos.x = innerFrame->getSize().w - rightWingPos.w - (useHalfWidth ? rightWingPos.w * .25 : 0);
+		leftWingPos.x = 0;
+		rightWingPos.x = innerFrame->getSize().w - rightWingPos.w;
 		leftWingPos.y = std::max(0, innerFrame->getSize().h / 2 - leftWingPos.h / 2);
 		rightWingPos.y = std::max(0, innerFrame->getSize().h / 2 - rightWingPos.h / 2);
 		allSkillEntriesLeft->setSize(leftWingPos);
@@ -8001,9 +8063,9 @@ void Player::SkillSheet_t::processSkillSheet()
 		flourishBottom->pos.y = backgroundHeight - flourishBottom->pos.h;
 
 		bgImgFramePos.x = innerFrame->getSize().w / 2 - backgroundWidth / 2;
-		if ( showHideSkillSheet != 0 )
+		if ( skillSlideDirection != 0 )
 		{
-			bgImgFramePos.x += (percentShowHideSkillSheet) * allSkillEntriesLeft->getSize().w * .25;
+			bgImgFramePos.x += (skillSlideAmount) * slideTravelDistance;
 		}
 		bgImgFramePos.y = 0;
 		bgImgFramePos.w = backgroundWidth;
@@ -8041,22 +8103,22 @@ void Player::SkillSheet_t::processSkillSheet()
 	{
 		if ( keystatus[SDL_SCANCODE_LSHIFT] )
 		{
-			percentXTmp = std::max(percentXTmp - .01, -1.0);
+			windowHeightScaleX = std::max(windowHeightScaleX - .01, -1.0);
 		}
 		else
 		{
-			percentXTmp = std::min(percentXTmp + .01, 1.0);
+			windowHeightScaleX = std::min(windowHeightScaleX + .01, 1.0);
 		}
 	}
 	if ( keystatus[SDL_SCANCODE_F2] )
 	{
 		if ( keystatus[SDL_SCANCODE_LSHIFT] )
 		{
-			percentYTmp = std::max(percentYTmp - .01, -1.0);
+			windowHeightScaleY = std::max(windowHeightScaleY - .01, -1.0);
 		}
 		else
 		{
-			percentYTmp = std::min(percentYTmp + .01, 1.0);
+			windowHeightScaleY = std::min(windowHeightScaleY + .01, 1.0);
 		}
 	}
 	if ( keystatus[SDL_SCANCODE_F3] )
@@ -8064,37 +8126,168 @@ void Player::SkillSheet_t::processSkillSheet()
 		keystatus[SDL_SCANCODE_F3] = 0;
 		if ( keystatus[SDL_SCANCODE_LCTRL] )
 		{
-			bUseCompactSkillsView = !bUseCompactSkillsView;
+			//bUseCompactSkillsView = !bUseCompactSkillsView;
 		}
 		else if ( keystatus[SDL_SCANCODE_LSHIFT] )
 		{
-			showHideSkillSheet = 0;
+			skillSlideDirection = 0;
 		}
 		else
 		{
-			showHideSkillSheet = (showHideSkillSheet != 1) ? 1 : -1;
-			//percentShowHideSkillSheet = 0.0;
+			skillSlideDirection = (skillSlideDirection != 1) ? 1 : -1;
+			//skillSlideAmount = 0.0;
 		}
 	}
-	if ( showHideSkillSheet != 0 )
+	if ( skillSlideDirection != 0 )
 	{
 		const real_t fpsScale = (144.0 / std::max(1U, fpsLimit)); // ported from 144Hz
-		real_t setpointDiff = std::max(0.1, 1.0 - abs(percentShowHideSkillSheet));
-		percentShowHideSkillSheet += fpsScale * (setpointDiff / 5.0) * showHideSkillSheet;
-		if ( percentShowHideSkillSheet < -1.0 )
+		real_t setpointDiff = std::max(0.1, 1.0 - abs(skillSlideAmount));
+		skillSlideAmount += fpsScale * (setpointDiff / 5.0) * skillSlideDirection;
+		if ( skillSlideAmount < -1.0 )
 		{
-			percentShowHideSkillSheet = -1.0;
+			skillSlideAmount = -1.0;
 		}
-		if ( percentShowHideSkillSheet > 1.0 )
+		if ( skillSlideAmount > 1.0 )
 		{
-			percentShowHideSkillSheet = 1.0;
+			skillSlideAmount = 1.0;
 		}
 	}
 
 	int lowestSkillEntryY = 0;
+	bool dpad_moved = false;
+	if ( ::inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		highlightedSkill = -1; // if using mouse, clear out the highlighted skill data to be updated below
+	}
+	int defaultHighlightedSkill = 0;
+	if ( selectedSkill >= 0 && selectedSkill < NUMPROFICIENCIES )
+	{
+		defaultHighlightedSkill = selectedSkill;
+	}
+	bool closeSheetAction = false;
+	if ( player.GUI.activeModule == player.GUI.MODULE_SKILLS_LIST )
+	{
+		if ( Input::inputs[player.playernum].binaryToggle("MenuUp") )
+		{
+			dpad_moved = true;
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuUp");
+			if ( highlightedSkill < 0 || highlightedSkill >= NUMPROFICIENCIES )
+			{
+				highlightedSkill = defaultHighlightedSkill;
+			}
+			else if ( highlightedSkill < NUMPROFICIENCIES / 2 )
+			{
+				--highlightedSkill;
+				if ( highlightedSkill < 0 )
+				{
+					highlightedSkill = (NUMPROFICIENCIES / 2) - 1;
+				}
+			}
+			else
+			{
+				--highlightedSkill;
+				if ( highlightedSkill < NUMPROFICIENCIES / 2 )
+				{
+					highlightedSkill = NUMPROFICIENCIES - 1;
+				}
+			}
+			if ( selectedSkill != highlightedSkill )
+			{
+				selectSkill(highlightedSkill);
+			}
+		}
+		if ( Input::inputs[player.playernum].binaryToggle("MenuDown") )
+		{
+			dpad_moved = true;
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuDown");
+			if ( highlightedSkill < 0 || highlightedSkill >= NUMPROFICIENCIES )
+			{
+				highlightedSkill = defaultHighlightedSkill;
+			}
+			else if ( highlightedSkill < (NUMPROFICIENCIES / 2) )
+			{
+				++highlightedSkill;
+				if ( highlightedSkill >= NUMPROFICIENCIES / 2 )
+				{
+					highlightedSkill = 0;
+				}
+			}
+			else
+			{
+				++highlightedSkill;
+				if ( highlightedSkill >= NUMPROFICIENCIES )
+				{
+					highlightedSkill = (NUMPROFICIENCIES / 2);
+				}
+			}
+			if ( selectedSkill != highlightedSkill )
+			{
+				selectSkill(highlightedSkill);
+			}
+		}
+		if ( Input::inputs[player.playernum].binaryToggle("MenuLeft") )
+		{
+			dpad_moved = true;
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeft");
+			if ( highlightedSkill < 0 || highlightedSkill >= NUMPROFICIENCIES )
+			{
+				highlightedSkill = defaultHighlightedSkill;
+			}
+			else if ( highlightedSkill < NUMPROFICIENCIES / 2 )
+			{
+				highlightedSkill += NUMPROFICIENCIES / 2;
+			}
+			else
+			{
+				highlightedSkill -= NUMPROFICIENCIES / 2;
+			}
+			if ( selectedSkill != highlightedSkill )
+			{
+				selectSkill(highlightedSkill);
+			}
+		}
+		if ( Input::inputs[player.playernum].binaryToggle("MenuRight") )
+		{
+			dpad_moved = true;
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuRight");
+			if ( highlightedSkill < 0 || highlightedSkill >= NUMPROFICIENCIES )
+			{
+				highlightedSkill = defaultHighlightedSkill;
+			}
+			else if ( highlightedSkill < NUMPROFICIENCIES / 2 )
+			{
+				highlightedSkill += NUMPROFICIENCIES / 2;
+			}
+			else
+			{
+				highlightedSkill -= NUMPROFICIENCIES / 2;
+			}
+			if ( selectedSkill != highlightedSkill )
+			{
+				selectSkill(highlightedSkill);
+			}
+		}
+
+		if ( dpad_moved )
+		{
+			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+		}
+		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
+		{
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
+			closeSheetAction = true;
+		}
+	}
+	bool mouseClickedOutOfBounds = false;
+	if ( inputs.bPlayerUsingKeyboardControl(player.playernum) && inputs.bMouseLeft(player.playernum) )
+	{
+		mouseClickedOutOfBounds = true;
+	}
+
 	if ( stats[player.playernum] && skillSheetData.skillEntries.size() > 0 )
 	{
 		bool skillDescAreaCapturesMouse = bgImgFrame->capturesMouse();
+		if ( skillDescAreaCapturesMouse ) { mouseClickedOutOfBounds = false; }
 		const int skillEntryStartY = bUseCompactSkillsView ? 28 : 38;
 		const int entryHeight = bUseCompactSkillsView ? 36 : 40;
 		SDL_Rect entryResizePos{ 0, skillEntryStartY, 0, entryHeight };
@@ -8143,24 +8336,29 @@ void Player::SkillSheet_t::processSkillSheet()
 			auto selectorIcon = entry->findImage("selector img");
 			selectorIcon->disabled = true;
 
-			if ( entry->capturesMouse() && !skillDescAreaCapturesMouse )
+			if ( entry->capturesMouse() )
 			{
-				highlightedSkill = i;
-				if ( showHideSkillSheet != 0 )
+				mouseClickedOutOfBounds = false;
+				if ( ::inputs.getVirtualMouse(player.playernum)->draw_cursor
+					&& entry->capturesMouse() && !skillDescAreaCapturesMouse )
 				{
-					if ( highlightedSkill >= 8 )
+					highlightedSkill = i;
+					if ( skillSlideDirection != 0 )
 					{
-						showHideSkillSheet = 1;
+						if ( highlightedSkill >= 8 )
+						{
+							skillSlideDirection = 1;
+						}
+						else
+						{
+							skillSlideDirection = -1;
+						}
 					}
-					else
+					if ( inputs.bMouseLeft(player.playernum) )
 					{
-						showHideSkillSheet = -1;
+						selectSkill(i);
+						inputs.mouseClearLeft(player.playernum);
 					}
-				}
-				if ( inputs.bMouseLeft(player.playernum) )
-				{
-					selectSkill(i);
-					//inputs.mouseClearLeft(player.playernum);
 				}
 			}
 
@@ -8269,7 +8467,6 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		if ( slider->isDisabled() )
 		{
-			scrollPercent = 0.0;
 			scrollInertia = 0.0;
 		}
 
@@ -8496,38 +8693,6 @@ void Player::SkillSheet_t::processSkillSheet()
 						// adjust inner background image elements
 						imageResizeToContainer9x9(effectBgImgFrame, 
 							SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h }, skillsheetEffectBackgroundImages);
-						/*auto tl = effectBgImgFrame->findImage("effect bg top left");
-						tl->pos.x = 0;
-						tl->pos.y = 0;
-						auto tr = effectBgImgFrame->findImage("effect bg top right");
-						tr->pos.x = effectBgImgFrame->getSize().w - tr->pos.w;
-						tr->pos.y = 0;
-						auto tm = effectBgImgFrame->findImage("effect bg top middle");
-						tm->pos.x = tl->pos.x + tl->pos.w;
-						tm->pos.w = effectBgImgFrame->getSize().w - tr->pos.w - tl->pos.w;
-						auto bl = effectBgImgFrame->findImage("effect bg bottom left");
-						bl->pos.x = 0;
-						bl->pos.y = effectBgImgFrame->getSize().h - bl->pos.h;
-						auto br = effectBgImgFrame->findImage("effect bg bottom right");
-						br->pos.x = effectBgImgFrame->getSize().w - br->pos.w;
-						br->pos.y = bl->pos.y;
-						auto bm = effectBgImgFrame->findImage("effect bg bottom middle");
-						bm->pos.x = tm->pos.x;
-						bm->pos.w = tm->pos.w;
-						bm->pos.y = bl->pos.y;
-						auto ml = effectBgImgFrame->findImage("effect bg left");
-						ml->pos.x = 0;
-						ml->pos.y = tl->pos.y + tl->pos.h;
-						ml->pos.h = effectBgImgFrame->getSize().h - bl->pos.h - tl->pos.h;
-						auto mr = effectBgImgFrame->findImage("effect bg right");
-						mr->pos.x = effectBgImgFrame->getSize().w - mr->pos.w;
-						mr->pos.y = ml->pos.y;
-						mr->pos.h = ml->pos.h;
-						auto mm = effectBgImgFrame->findImage("effect bg middle");
-						mm->pos.x = ml->pos.x + ml->pos.w;
-						mm->pos.y = ml->pos.y;
-						mm->pos.w = effectBgImgFrame->getSize().w - ml->pos.w - mr->pos.w;
-						mm->pos.h = ml->pos.h;*/
 					}
 
 					lowestY = std::max(lowestY, effectFrame->getSize().y + effectFrame->getSize().h);
@@ -8632,6 +8797,9 @@ void Player::SkillSheet_t::processSkillSheet()
 				openTick = (ticks > TICKS_PER_SECOND) ? (ticks - TICKS_PER_SECOND) : ticks;
 			}
 
+			Uint32 legendGoldColor = makeColor(230, 183, 20, 255);
+			Uint32 legendRegularColor = makeColor(201, 162, 100, 255);
+
 			// legend panel
 			auto legendDivImg = scrollArea->findImage("legend div");
 			legendDivImg->pos.x = scrollArea->getSize().w / 2 - legendDivImg->pos.w / 2;
@@ -8644,6 +8812,15 @@ void Player::SkillSheet_t::processSkillSheet()
 			legendDivTxtPos.h = actualFont->height(true);
 			legendDivTxt->setSize(legendDivTxtPos);
 			lowestY = legendDivTxtPos.y + legendDivTxtPos.h;
+
+			auto legendBackerImg = scrollArea->findImage("legend txt backer img");
+			legendBackerImg->pos.x = scrollArea->getSize().w / 2 - legendBackerImg->pos.w / 2;
+			legendBackerImg->pos.y = legendDivTxtPos.y + 6;
+			legendBackerImg->disabled = true;
+			if ( proficiencyValue >= SKILL_LEVEL_LEGENDARY )
+			{
+				legendBackerImg->disabled = false;
+			}
 
 			auto legendFrame = scrollArea->findFrame("legend frame");
 			SDL_Rect legendPos = legendFrame->getSize();
@@ -8667,7 +8844,6 @@ void Player::SkillSheet_t::processSkillSheet()
 			legendTextPos.y = tm->pos.y + tm->pos.h / 2;
 			legendText->setSize(legendTextPos);
 
-
 			auto ml = legendFrame->findImage("middle left img");
 			ml->pos.h = legendTextPos.h - tm->pos.h;
 			auto mm = legendFrame->findImage("middle img");
@@ -8688,6 +8864,8 @@ void Player::SkillSheet_t::processSkillSheet()
 
 			if ( proficiencyValue < SKILL_LEVEL_LEGENDARY )
 			{
+				legendDivTxt->setColor(legendRegularColor);
+				legendText->setColor(legendRegularColor);
 				tl->path = "images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png";
 				tm->path = "images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png";
 				tr->path = "images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png";
@@ -8702,6 +8880,8 @@ void Player::SkillSheet_t::processSkillSheet()
 			}
 			else
 			{
+				legendDivTxt->setColor(legendGoldColor);
+				legendText->setColor(legendGoldColor);
 				tl->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_TL_00.png";
 				tm->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_T_00.png";
 				tr->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_TR_00.png";
@@ -8719,20 +8899,46 @@ void Player::SkillSheet_t::processSkillSheet()
 			legendFrame->setSize(legendPos);
 
 			lowestY = legendPos.y + legendPos.h;
-			lowestY += 4; // small buffer after legend box
+			if ( lowestY < scrollAreaOuterFrame->getSize().h )
+			{
+				// shift the legend items as far to the bottom as possible.
+				int offset = scrollAreaOuterFrame->getSize().h - lowestY;
+				legendDivImg->pos.y += offset;
+				legendBackerImg->pos.y += offset;
+				legendDivTxt->setPos(legendDivTxt->getSize().x, legendDivTxt->getSize().y + offset);
+				legendFrame->setPos(legendFrame->getSize().x, legendFrame->getSize().y + offset);
+			}
+			//lowestY += 4; // small buffer after legend box
 		}
 
 		if ( !slider->isDisabled() )
 		{
-			if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 			{
-				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-				scrollInertia = std::min(scrollInertia + .05, .15);
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				{
+					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+					scrollInertia = std::min(scrollInertia + .05, .15);
+				}
+				if ( mousestatus[SDL_BUTTON_WHEELUP] )
+				{
+					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					scrollInertia = std::max(scrollInertia - .05, -.15);
+				}
 			}
-			if ( mousestatus[SDL_BUTTON_WHEELUP] )
+			if ( Input::inputs[player.playernum].analog("MenuScrollDown") )
 			{
-				mousestatus[SDL_BUTTON_WHEELUP] = 0;
-				scrollInertia = std::max(scrollInertia - .05, -.15);
+				scrollInertia = 0.0;
+				real_t delta = Input::inputs[player.playernum].analog("MenuScrollDown");
+				scrollPercent = std::min(1.0, scrollPercent + .05 * (60.f / std::max(1U, fpsLimit)) * delta);
+				slider->setValue(scrollPercent * 100);
+			}
+			else if ( Input::inputs[player.playernum].analog("MenuScrollUp") )
+			{
+				scrollInertia = 0.0;
+				real_t delta = Input::inputs[player.playernum].analog("MenuScrollUp");
+				scrollPercent = std::max(0.0, scrollPercent -.05 * (60.f / std::max(1U, fpsLimit) * delta));
+				slider->setValue(scrollPercent * 100);
 			}
 		}
 
@@ -8766,20 +8972,24 @@ void Player::SkillSheet_t::processSkillSheet()
 		scrollArea->setSize(scrollAreaPos);
 	}
 
-	bool drawGlyphs = ::inputs.getVirtualMouse(player.playernum)->draw_cursor;
-	if ( auto promptBack = innerFrame->findField("prompt back txt") )
+	bool drawGlyphs = ::inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
+	if ( auto promptBack = skillFrame->findField("prompt back txt") )
 	{
 		promptBack->setDisabled(!drawGlyphs);
 		promptBack->setText(language[4053]);
-		auto promptImg = innerFrame->findImage("prompt back img");
+		auto promptImg = skillFrame->findImage("prompt back img");
 		promptImg->disabled = !drawGlyphs;
 		SDL_Rect glyphPos = promptImg->pos;
 		if ( auto textGet = Text::get(promptBack->getText(), promptBack->getFont()) )
 		{
 			SDL_Rect textPos = promptBack->getSize();
 			textPos.w = textGet->getWidth();
-			textPos.x = innerFrame->getSize().w - textPos.w - 16;
-			textPos.y = lowestSkillEntryY + 4;
+			textPos.x = innerFrame->getSize().x + innerFrame->getSize().w - textPos.w - 16;
+			textPos.y = innerFrame->getSize().y + allSkillEntriesLeft->getSize().y + lowestSkillEntryY + 4;
+			if ( !bUseCompactSkillsView )
+			{
+				textPos.y -= 4;
+			}
 			promptBack->setSize(textPos);
 			glyphPos.x = promptBack->getSize().x + promptBack->getSize().w - textGet->getWidth() - 4;
 		}
@@ -8794,6 +9004,61 @@ void Player::SkillSheet_t::processSkillSheet()
 			promptImg->pos = glyphPos;
 		}
 	}
+	if ( auto promptScroll = skillFrame->findField("prompt scroll txt") )
+	{
+		promptScroll->setDisabled(!drawGlyphs);
+		if ( bUseCompactSkillsView )
+		{
+			promptScroll->setText(language[4063]);
+		}
+		else
+		{
+			promptScroll->setText(language[4062]);
+		}
+		auto promptImg = skillFrame->findImage("prompt scroll img");
+		promptImg->disabled = !drawGlyphs;
+		SDL_Rect glyphPos = promptImg->pos;
+		if ( auto textGet = Text::get(promptScroll->getText(), promptScroll->getFont()) )
+		{
+			SDL_Rect textPos = promptScroll->getSize();
+			textPos.w = textGet->getWidth();
+			if ( bUseCompactSkillsView )
+			{
+				textPos.x = innerFrame->getSize().x + 16;
+				textPos.y = innerFrame->getSize().y + allSkillEntriesLeft->getSize().y + lowestSkillEntryY + 4;
+			}
+			else
+			{
+				textPos.x = innerFrame->getSize().x + innerFrame->getSize().w / 2 - textPos.w / 2;
+				textPos.y = innerFrame->getSize().y + innerFrame->getSize().h - 8;
+			}
+			promptScroll->setSize(textPos);
+		}
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuScrollDown");
+		Image* glyphImage = Image::get(promptImg->path.c_str());
+		if ( glyphImage )
+		{
+			SDL_Rect textPos = promptScroll->getSize();
+			glyphPos.w = glyphImage->getWidth();
+			glyphPos.h = glyphImage->getHeight();
+			glyphPos.x = textPos.x;
+			if ( !bUseCompactSkillsView ) // centred
+			{
+				glyphPos.x -= glyphPos.w / 2 + 2;
+			}
+			glyphPos.y = promptScroll->getSize().y + promptScroll->getSize().h / 2 - glyphPos.h / 2;
+			promptImg->pos = glyphPos;
+
+			textPos.x = glyphPos.x + glyphPos.w + 4;
+			promptScroll->setSize(textPos);
+		}
+	}
+
+	if ( closeSheetAction || mouseClickedOutOfBounds )
+	{
+		closeSkillSheet();
+		return;
+	}
 
 	if ( sliderDisabled != slider->isDisabled() )
 	{
@@ -8805,4 +9070,5 @@ void Player::SkillSheet_t::processSkillSheet()
 	{
 		bSkillSheetEntryLoaded = true;
 	}
+
 }

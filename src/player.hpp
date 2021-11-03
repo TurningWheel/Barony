@@ -980,6 +980,13 @@ public:
 		bool bSkillSheetEntryLoaded = false;
 		real_t scrollPercent = 0.0;
 		real_t scrollInertia = 0.0;
+		int skillSlideDirection = 0;
+		real_t skillSlideAmount = 0.0;
+		bool bUseCompactSkillsView = false;
+		static real_t windowHeightScaleX;
+		static real_t windowHeightScaleY;
+		static real_t windowCompactHeightScaleX;
+		static real_t windowCompactHeightScaleY;
 
 		static struct SkillSheetData_t
 		{

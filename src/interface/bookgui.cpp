@@ -73,6 +73,7 @@ void Player::BookGUI_t::createBookGUI()
 	promptBack->setHJustify(Field::justify_t::RIGHT);
 	promptBack->setVJustify(Field::justify_t::CENTER);
 	promptBack->setText(language[4053]);
+	promptBack->setColor(makeColor(201, 162, 100, 255));
 
 	auto promptBackImg = bookBackground->addImage(SDL_Rect{0, 0, 0, 0}, 0xFFFFFFFF,
 		"",	"prompt back img");
@@ -85,6 +86,7 @@ void Player::BookGUI_t::createBookGUI()
 	promptNextPage->setHJustify(Field::justify_t::RIGHT);
 	promptNextPage->setVJustify(Field::justify_t::CENTER);
 	promptNextPage->setText(language[4054]);
+	promptNextPage->setColor(makeColor(201, 162, 100, 255));
 
 	auto promptNextPageImg = bookBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 		"", "prompt next img");
@@ -97,6 +99,7 @@ void Player::BookGUI_t::createBookGUI()
 	promptPrevPage->setHJustify(Field::justify_t::LEFT);
 	promptPrevPage->setVJustify(Field::justify_t::CENTER);
 	promptPrevPage->setText(language[4055]);
+	promptPrevPage->setColor(makeColor(201, 162, 100, 255));
 
 	auto promptPrevPageImg = bookBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 		"", "prompt prev img");
@@ -200,7 +203,7 @@ void Player::BookGUI_t::updateBookGUI()
 	bookSize.y = -bookSize.h + bookFadeInAnimationY * (baseY + bookSize.h);
 	innerFrame->setSize(bookSize);
 
-	bool drawGlyphs = !::inputs.getVirtualMouse(player.playernum)->draw_cursor;
+	bool drawGlyphs = ::inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
 	int numPages = allBooks[bookIndex].formattedPages.size();
 	bool canAdvanceNextPage = (currentBookPage + 2 < numPages);
 	bool canAdvancePrevPage = (currentBookPage - 2 >= 0);
