@@ -13,12 +13,18 @@
 Field::Field(const int _textLen) {
 	textlen = std::max(_textLen, 0);
 	text = new char[textlen + 1];
+	color = makeColor(255, 255, 255, 255);
+	textColor = makeColor(255, 255, 255, 255);
+	outlineColor = makeColor(0, 0, 0, 255);
 	memset(text, 0, textlen + 1);
 }
 
 Field::Field(const char* _text) {
 	textlen = strlen(_text);
 	text = new char[textlen + 1];
+	color = makeColor(255, 255, 255, 255);
+	textColor = makeColor(255, 255, 255, 255);
+	outlineColor = makeColor(0, 0, 0, 255);
 	setText(_text);
 }
 
@@ -100,7 +106,7 @@ char* Field::tokenize(char* str, const char* const delimiters) {
 	}
 }
 
-void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
+void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if ( invisible || isDisabled() ) {
 		return;
 	}
@@ -164,7 +170,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 			str.assign(token);
 		}
 
-		Text* text = Text::get(str.c_str(), font.c_str());
+		Text* text = Text::get(str.c_str(), font.c_str(), textColor, outlineColor);
 		assert(text);
 
 		// get the size of the rendered text
@@ -406,7 +412,8 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 		{
 			// this is probably OK
 		}
-		else if ( getText = Text::get(std::string(result[currentLine] + " " + token).c_str(), font) )
+		else if ( getText = Text::get(std::string(result[currentLine] + " " + token).c_str(), font,
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 		{
 			if ( getText->getWidth() > width )
 			{
@@ -481,7 +488,7 @@ int Field::getLastLineThatFitsWithinHeight()
 	if ( text == nullptr || textlen <= 1 ) {
 		return -1;
 	}
-	if ( auto getText = Text::get(text, font.c_str()) )
+	if ( auto getText = Text::get(text, font.c_str(), textColor, outlineColor) )
 	{
 		if ( getText->getHeight() <= getSize().h/* - getSize().y*/ )
 		{
@@ -504,7 +511,7 @@ int Field::getLastLineThatFitsWithinHeight()
 			allLines.push_back('\n');
 		}
 		allLines += token[0];
-		if ( auto getText = Text::get(allLines.c_str(), font.c_str()) )
+		if ( auto getText = Text::get(allLines.c_str(), font.c_str(), textColor, outlineColor) )
 		{
 			if ( getText->getHeight() > getSize().h )
 			{
@@ -523,7 +530,7 @@ void Field::reflowTextToFit(const int characterOffset) {
 		return;
 	}
 
-	if ( auto getText = Text::get(text, font.c_str()) )
+	if ( auto getText = Text::get(text, font.c_str(), textColor, outlineColor) )
 	{
 		if ( getText->getWidth() <= (getSize().w) )
 		{
@@ -570,7 +577,7 @@ void Field::reflowTextToFit(const int characterOffset) {
 	
 	int charWidth = 0;
 	actualFont->sizeText("_", &charWidth, nullptr);
-	//if ( auto textGet = Text::get("_", font.c_str()) )
+	//if ( auto textGet = Text::get("_", font.c_str(), textColor, outlineColor) )
 	//{
 	//	charWidth = textGet->getWidth();
 	//}

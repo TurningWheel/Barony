@@ -22,7 +22,7 @@ private:
 
 public:
 	//! special char marks font to be used
-	static const char fontBreak = 8;
+	static const char fontBreak = '\b';
 
 	const char*				getName() const { return name.c_str(); }
 	const GLuint			getTexID() const { return texid; }
@@ -46,8 +46,10 @@ public:
 	//! get a Text object from the engine
 	//! @param str The Text's string
 	//! @param font the Text's font
+	//! @param textColor the color of the rendered text
+	//! @param outlineColor the color of the rendered outline
 	//! @return the Text or nullptr if it could not be retrieved
-	static Text* get(const char* str, const char* font);
+	static Text* get(const char* str, const char* font, Uint32 textColor, Uint32 outlineColor);
 
 	//! dump engine's text cache
 	static void dumpCache();

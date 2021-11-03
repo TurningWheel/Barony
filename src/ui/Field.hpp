@@ -53,7 +53,7 @@ public:
 	//! @param _size size and position of field's parent frame
 	//! @param _actualSize offset into the parent frame space (scroll)
 	//! @param selectedWidgets the currently selected widgets, if any
-	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets);
+	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
 
 	//! handles clicks, etc.
 	//! @param _size size and position of field's parent frame
@@ -65,10 +65,15 @@ public:
 	//! gets the physical screen-space x/y (not relative to current parent - but to the absolute root)
 	SDL_Rect getAbsoluteSize() const;
 
+	//! TODO comment pls
+	int getLastLineThatFitsWithinHeight();
+
 	virtual type_t              getType() const override { return WIDGET_FIELD; }
 	const char*					getText() const { return text; }
 	const char*					getFont() const { return font.c_str(); }
 	const Uint32				getColor() const { return color; }
+	const Uint32				getTextColor() const { return textColor; }
+	const Uint32				getOutlineColor() const { return outlineColor; }
 	const SDL_Rect				getSize() const { return size; }
 	const int					getHJustify() const { return static_cast<int>(hjustify); }
 	const int					getVJustify() const { return static_cast<int>(vjustify); }
@@ -83,6 +88,8 @@ public:
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
 	void	setSize(const SDL_Rect _size) { size = _size; }
 	void	setColor(const Uint32 _color) { color = _color; }
+	void	setTextColor(const Uint32 _color) { textColor = _color; }
+	void	setOutlineColor(const Uint32 _color) { outlineColor = _color; }
 	void	setEditable(const bool _editable) { editable = _editable; }
 	void	setNumbersOnly(const bool _numbersOnly) { numbersOnly = _numbersOnly; }
 	void	setJustify(const int _justify) { hjustify = vjustify = static_cast<justify_t>(_justify); }
@@ -93,8 +100,6 @@ public:
 	void	setFont(const char* _font) { font = _font; }
 	void	setGuide(const char* _guide) { guide = _guide; }
 	void    reflowTextToFit(const int characterOffset);
-	int		getLastLineThatFitsWithinHeight();
-	std::string getLongestLine();
 	void	setOntop(const bool _ontop) { ontop = _ontop; }
 	static char* tokenize(char* str, const char* const delimiters);
 
@@ -103,7 +108,9 @@ private:
 	std::string guide;									//!< string to use as a descriptive guide for the field (eg "Enter character's name");
 	char* text = nullptr;								//!< internal text buffer
 	size_t textlen = 0;									//!< length of internal text buffer
-	Uint32 color = 0xFFFFFFFF;							//!< text color
+	Uint32 color;										//!< color mixed w/ final rendered text
+	Uint32 textColor;									//!< text color
+	Uint32 outlineColor;								//!< outline color
 	SDL_Rect size;										//!< size of the field in pixels
 	justify_t hjustify = LEFT;							//!< horizontal text justification
 	justify_t vjustify = TOP;							//!< vertical text justification

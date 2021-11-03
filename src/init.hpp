@@ -13,7 +13,7 @@
 int initApp(char const * const title, int fullscreen);
 int deinitApp();
 bool initVideo();
-bool changeVideoMode();
+bool changeVideoMode(int new_xres = 0, int new_yres = 0);
 void generatePolyModels(int start, int end, bool forceCacheRebuild);
 void generateVBOs(int start, int end);
 int loadLanguage(char const * const lang);

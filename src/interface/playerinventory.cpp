@@ -2257,7 +2257,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
 		}
 		txtHeader->setText(buf);
-		Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont());
+		Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 		if ( textGet )
 		{
 			textx = textGet->getWidth();
@@ -2324,13 +2325,15 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				unsigned int newWidth = 0;
 				for ( auto& str : tokens ) 
 				{
-					if ( Text* textGet = Text::get(str.c_str(), txtHeader->getFont()) )
+					if ( Text* textGet = Text::get(str.c_str(), txtHeader->getFont(),
+						makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 					{
 						newWidth = std::max(newWidth, textGet->getWidth());
 					}
 				}
 
-				if ( Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont()) )
+				if ( Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
+					makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 				{
 					textx = newWidth;
 					texty = textGet->getHeight();
@@ -2344,7 +2347,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				}
 			}
 
-			//if ( Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont()) )
+			//if ( Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
+			//	  makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 			//{
 
 			//}
@@ -3083,7 +3087,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			int numLines = txtPrimaryValue->getNumTextLines();
 			if ( numLines > 1 )
 			{
-				auto textGet = Text::get(txtPrimaryValue->getText(), txtPrimaryValue->getFont());
+				auto textGet = Text::get(txtPrimaryValue->getText(), txtPrimaryValue->getFont(),
+					makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 				if ( textGet )
 				{
 					imgPrimaryIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
@@ -3126,7 +3131,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			int numLines = txtSecondaryValue->getNumTextLines();
 			if ( numLines > 1 )
 			{
-				auto textGet = Text::get(txtSecondaryValue->getText(), txtSecondaryValue->getFont());
+				auto textGet = Text::get(txtSecondaryValue->getText(), txtSecondaryValue->getFont(),
+					makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 				if ( textGet )
 				{
 					imgSecondaryIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
@@ -3164,7 +3170,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			int numLines = txtThirdValue->getNumTextLines();
 			if ( numLines > 1 )
 			{
-				auto textGet = Text::get(txtThirdValue->getText(), txtThirdValue->getFont());
+				auto textGet = Text::get(txtThirdValue->getText(), txtThirdValue->getFont(),
+					makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 				if ( textGet )
 				{
 					imgThirdIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
@@ -3257,7 +3264,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			const int charHeight = 13;
 			//Font::get(txtDescription->getFont())->sizeText("_", nullptr, &charHeight); -- this produces 13px @ 12 point font, used above
 
-			/*auto textGet = Text::get(txtDescription->getText(), txtDescription->getFont());
+			/*auto textGet = Text::get(txtDescription->getText(), txtDescription->getFont(),
+				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 			if ( textGet )
 			{
 				auto tmp = textGet->getWidth();
@@ -3614,7 +3622,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				auto& txt = pair.second;
 				if ( !txt->isDisabled() )
 				{
-					if ( auto textGet = Text::get(txt->getText(), txt->getFont()) )
+					if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
+						makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 					{
 						if ( txt->getHJustify() == Field::justify_t::RIGHT )
 						{
@@ -3646,7 +3655,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				auto& txt = pair.second;
 				if ( !txt->isDisabled() )
 				{
-					if ( auto textGet = Text::get(txt->getText(), txt->getFont()) )
+					if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
+						makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 					{
 						if ( txt->getHJustify() == Field::justify_t::LEFT )
 						{

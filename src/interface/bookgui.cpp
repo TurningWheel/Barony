@@ -215,7 +215,8 @@ void Player::BookGUI_t::updateBookGUI()
 		auto promptImg = innerFrame->findImage("prompt back img");
 		promptImg->disabled = !drawGlyphs;
 		SDL_Rect glyphPos = promptImg->pos;
-		if ( auto textGet = Text::get(promptBack->getText(), promptBack->getFont()) )
+		if ( auto textGet = Text::get(promptBack->getText(), promptBack->getFont(),
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 		{
 			SDL_Rect textPos = promptBack->getSize();
 			textPos.w = textGet->getWidth();
@@ -242,7 +243,8 @@ void Player::BookGUI_t::updateBookGUI()
 		promptImg->disabled = promptNext->isDisabled();
 		SDL_Rect glyphPos = promptImg->pos;
 		SDL_Rect textPos = promptNext->getSize();
-		if ( auto textGet = Text::get(promptNext->getText(), promptNext->getFont()) )
+		if ( auto textGet = Text::get(promptNext->getText(), promptNext->getFont(),
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 		{
 			textPos.w = textGet->getWidth();
 		}
@@ -267,7 +269,8 @@ void Player::BookGUI_t::updateBookGUI()
 		promptImg->disabled = promptPrev->isDisabled();
 		SDL_Rect glyphPos = promptImg->pos;
 		SDL_Rect textPos = promptPrev->getSize();
-		if ( auto textGet = Text::get(promptPrev->getText(), promptPrev->getFont()) )
+		if ( auto textGet = Text::get(promptPrev->getText(), promptPrev->getFont(),
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 		{
 			textPos.w = textGet->getWidth();
 		}
@@ -435,7 +438,8 @@ void Player::BookGUI_t::updateBookGUI()
 	//	firstIteration = false;
 	//	pageText += token;
 	//	leftColumn->setText(pageText.c_str());
-	//	if ( auto getText = Text::get(leftColumn->getText(), leftColumn->getFont()) )
+	//	if ( auto getText = Text::get(leftColumn->getText(), leftColumn->getFont(),
+	//		makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 	//	{
 	//		int textHeight = getText->getHeight();
 	//		if ( textHeight > leftColumn->getSize().h )

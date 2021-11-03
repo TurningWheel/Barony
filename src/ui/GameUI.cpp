@@ -23,7 +23,7 @@
 
 #include <assert.h>
 
-bool newui = false;
+bool newui = true;
 int selectedCursorOpacity = 255;
 int oldSelectedCursorOpacity = 255;
 int hotbarSlotOpacity = 255;
@@ -558,7 +558,7 @@ void Player::HUD_t::processHUD()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
-	if ( nohud || !players[player.playernum]->isLocalPlayer() )
+	if ( gamePaused || nohud || !players[player.playernum]->isLocalPlayer() )
 	{
 		// hide
 		hudFrame->setDisabled(true);
@@ -652,6 +652,11 @@ void Player::MessageZone_t::processChatbox()
 		players[player.playernum]->camera_virtualHeight() };
 
 	Frame* messageBoxFrame = chatFrame->findFrame("message box");
+	if (gamePaused) {
+		messageBoxFrame->setDisabled(true);
+	} else {
+		messageBoxFrame->setDisabled(false);
+	}
 	SDL_Rect messageBoxSize = messageBoxFrame->getSize();
 	if ( player.shootmode && messageBoxSize.x == chatboxTopAlignedPos.x )
 	{
@@ -720,7 +725,8 @@ void Player::MessageZone_t::processChatbox()
 				//current->requiresResize = false;
 			}
 
-			Text* textGet = Text::get(entry->getText(), entry->getFont());
+			Text* textGet = Text::get(entry->getText(), entry->getFont(),
+				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 			if ( !messageDrawDescending )
 			{
 				currentY -= textGet->getHeight();
@@ -1848,7 +1854,7 @@ void Player::Hotbar_t::processHotbar()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
-	if ( nohud || !players[player.playernum]->isLocalPlayer() )
+	if ( gamePaused || nohud || !players[player.playernum]->isLocalPlayer() )
 	{
 		// hide
 		hotbarFrame->setDisabled(true);
@@ -3703,7 +3709,7 @@ void createPlayerInventory(const int player)
 			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
 
 			charFrame->setSize(charSize);
-			charFrame->setDrawCallback([](Widget& widget, SDL_Rect pos) {
+			charFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
 				drawCharacterPreview(widget.getOwner(), pos);
 			});
 			/*charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
@@ -3901,7 +3907,8 @@ void Player::Inventory_t::updateItemContextMenu()
 	if ( auto interactText = interactFrame->findField("interact text") )
 	{
 		interactText->setColor(hudColors.itemContextMenuHeadingText);
-		if ( auto textGet = Text::get(interactText->getText(), interactText->getFont()) )
+		if ( auto textGet = Text::get(interactText->getText(), interactText->getFont(),
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 		{
 			maxWidth = textGet->getWidth();
 		}
@@ -3950,7 +3957,8 @@ void Player::Inventory_t::updateItemContextMenu()
 		}*/
 
 		txt->setText(getContextMenuLangEntry(player.playernum, promptType, *item));
-		if ( auto textGet = Text::get(txt->getText(), txt->getFont()) )
+		if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 		{
 			maxWidth = std::max(textGet->getWidth(), maxWidth);
 			
@@ -5135,7 +5143,8 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 	}
 	for ( auto& txt : frame->getFields() )
 	{
-		auto textGet = Text::get(txt->getText(), txt->getFont());
+		auto textGet = Text::get(txt->getText(), txt->getFont(),
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 		SDL_Surface* txtSurf = const_cast<SDL_Surface*>(textGet->getSurf());
 		SDL_Rect pos;
 		pos.w = textGet->getWidth();
@@ -5618,10 +5627,12 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 			SDL_Rect barPos = foregroundFrame->getAbsoluteSize();
 			//txtPos.x = barPos.x + baseBg->pos.x/* + baseBg->pos.w*/;
 			//txtPos.y = barPos.y - 30;
+			auto text = Text::get(dmgText->getText(), dmgText->getFont(),
+				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 			txtPos.x = 30 + player.camera_virtualWidth() / 2;
 			txtPos.y = -50 + player.camera_virtualHeight() / 2;
-			txtPos.w = Text::get(dmgText->getText(), dmgText->getFont())->getWidth();
-			txtPos.h = Text::get(dmgText->getText(), dmgText->getFont())->getHeight();
+			txtPos.w = text->getWidth();
+			txtPos.h = text->getHeight();
 			dmgText->setSize(txtPos);
 			hudDamageTextVelocityX = 1.0;
 			hudDamageTextVelocityY = 3.0;
@@ -5993,10 +6004,12 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 			SDL_Rect barPos = foregroundFrame->getAbsoluteSize();
 			//txtPos.x = barPos.x + baseBg->pos.x/* + baseBg->pos.w*/;
 			//txtPos.y = barPos.y - 30;
+			auto text = Text::get(dmgText->getText(), dmgText->getFont(),
+				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 			txtPos.x = 30 + player.camera_virtualWidth() / 2;
 			txtPos.y = -50 + player.camera_virtualHeight() / 2;
-			txtPos.w = Text::get(dmgText->getText(), dmgText->getFont())->getWidth();
-			txtPos.h = Text::get(dmgText->getText(), dmgText->getFont())->getHeight();
+			txtPos.w = text->getWidth();
+			txtPos.h = text->getHeight();
 			dmgText->setSize(txtPos);
 			hudDamageTextVelocityX = 1.0;
 			hudDamageTextVelocityY = 3.0;

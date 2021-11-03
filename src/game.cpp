@@ -2850,6 +2850,7 @@ void handleEvents(void)
 		inputs.updateAllMouse();
 	}
 
+	Input::lastInputOfAnyKind = "";
 	for (auto& input : Input::inputs) {
 		input.updateReleasedBindings();
 		input.update();
@@ -3417,16 +3418,6 @@ void handleEvents(void)
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;
 					}
-					if (zbuffer != NULL)
-					{
-						free(zbuffer);
-					}
-					zbuffer = (real_t*)malloc(sizeof(real_t) * xres * yres);
-					if (clickmap != NULL)
-					{
-						free(clickmap);
-					}
-					clickmap = (Entity**)malloc(sizeof(Entity*)*xres * yres);
 				}
 				break;
 				/*case SDL_CONTROLLERAXISMOTION:
@@ -4160,12 +4151,15 @@ void ingameHud()
 			continue;
 		}
 		//drawSkillsSheet(player);
-		if ( !nohud )
+		if ( !gamePaused )
 		{
-			drawStatusNew(player);
+			if ( !nohud )
+			{
+				drawStatusNew(player);
+			}
+			drawSustainedSpells(player);
+			updateAppraisalItemBox(player);
 		}
-		drawSustainedSpells(player);
-		updateAppraisalItemBox(player);
 
 		// inventory and stats
 		if ( players[player]->shootmode == false )
@@ -5127,7 +5121,8 @@ int main(int argc, char** argv)
 						inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 						inputs.controllerClearInput(clientnum, INJOY_MENU_CANCEL);
 						fadealpha = 255;
-#if (!defined STEAMWORKS && !defined USE_EOS && !defined NINTENDO)
+						// Yeah we're just not going to do the "Please don't pirate us" message anymore
+#if (0)
 						introstage = 0;
 						fadeout = false;
 						fadefinished = false;
@@ -5403,7 +5398,7 @@ int main(int argc, char** argv)
 
 						if (newui)
 						{
-							MainMenu::doMainMenu();
+							MainMenu::doMainMenu(!intro);
 						}
 						else
 						{
@@ -5761,35 +5756,23 @@ int main(int argc, char** argv)
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
-				doFrames();
+				if ( /*newui*/ 0 ) 
+				{
+					newIngameHud();
+				}
+				else 
+				{
+					ingameHud();
+				}
 
-				if ( !gamePaused )
-				{
-					if ( /*newui*/ 0 ) 
-					{
-						newIngameHud();
-					}
-					else 
-					{
-						ingameHud();
-					}
-				}
-				else if ( !multiplayer )
-				{
-					// darken the rest of the screen
-					src.x = 0;
-					src.y = 0;
-					src.w = mainsurface->w;
-					src.h = mainsurface->h;
-					drawRect(&src, SDL_MapRGB(mainsurface->format, 0, 0, 0), 127);
-				}
+				doFrames();
 
 				if ( gamePaused )
 				{
 					// handle menu
 					if (newui)
 					{
-						MainMenu::doMainMenu();
+						MainMenu::doMainMenu(!intro);
 					}
 					else
 					{
@@ -5798,6 +5781,8 @@ int main(int argc, char** argv)
 				}
 				else
 				{
+					MainMenu::destroyMainMenu();
+
 					// draw subwindow
 					if ( !movie )
 					{

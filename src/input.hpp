@@ -35,6 +35,9 @@ public:
 	//! set default bindings for all players
 	static void defaultBindings();
 
+	//! clear default bindings
+	static void clearDefaultBindings();
+
 	//! input mapping
 	struct binding_t {
 		std::string input = "";

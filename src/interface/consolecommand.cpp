@@ -495,16 +495,6 @@ void consoleCommand(char const * const command_str)
 				printlog("critical error! Attempting to abort safely...\n");
 				mainloop = 0;
 			}
-			if ( zbuffer != NULL )
-			{
-				free(zbuffer);
-			}
-			zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
-			if ( clickmap != NULL )
-			{
-				free(clickmap);
-			}
-			clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 		}
 	}
 	else if ( !strncmp(command_str, "/rscale", 7) )
