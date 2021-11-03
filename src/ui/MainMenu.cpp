@@ -5554,7 +5554,7 @@ namespace MainMenu {
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
+				auto quit_button = buttons->findButton("END LIFE"); assert(quit_button);
 				quit_button->select();
 				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
 				if (quit_confirm) {
@@ -5584,7 +5584,7 @@ namespace MainMenu {
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
+				auto quit_button = buttons->findButton("RESTART GAME"); assert(quit_button);
 				quit_button->select();
 				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
 				if (quit_confirm) {
