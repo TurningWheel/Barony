@@ -5560,7 +5560,11 @@ namespace MainMenu {
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				main_menu_fade_destination = FadeDestination::GameStart;
+				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+					main_menu_fade_destination = FadeDestination::GameStart;
+				} else {
+					main_menu_fade_destination = FadeDestination::HallOfTrials;
+				}
 				fadeout = true;
 			},
 			[](Button&){ // cancel
@@ -5666,12 +5670,20 @@ namespace MainMenu {
 
 		assert(main_menu_frame);
 
-		if (main_menu_fade_destination != FadeDestination::None) {
-			if (fadeout && fadealpha >= 255) {
+		if (fadeout && fadealpha >= 255) {
+			if (main_menu_fade_destination == FadeDestination::None) {
+				// generally speaking, this shouldn't ever happen. if it did: fix your shit!
+				// if for some reason this happens in release mode, just boot the player to the main menu.
+				assert(0 &&
+					"Set a FadeDestination so the new menu manager knows where to kick the player to."
+					"Don't know where? Try MainMenu::FadeDestination::RootMainMenu");
+				main_menu_fade_destination = FadeDestination::RootMainMenu;
+			} else {
 				if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 					destroyMainMenu();
-					createMainMenu(ingame);
-					playMusic(intromusic[1], true, true, false);
+					victory = 0;
+					doEndgame();
+					createMainMenu(false);
 				}
 				if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
 					createStoryScreen();
