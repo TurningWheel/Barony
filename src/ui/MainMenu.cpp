@@ -2811,7 +2811,7 @@ namespace MainMenu {
 		text1->setColor(makeColor(255, 191, 32, 255));
 		text1->setHJustify(Field::justify_t::CENTER);
 		text1->setVJustify(Field::justify_t::TOP);
-		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 81});
+		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 82});
 		text1->setText(
 			u8"Project lead, programming, and design\n"
 			u8" \n"
@@ -2862,7 +2862,7 @@ namespace MainMenu {
 		text2->setColor(0xffffffff);
 		text2->setHJustify(Field::justify_t::CENTER);
 		text2->setVJustify(Field::justify_t::TOP);
-		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 81});
+		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 82});
 		text2->setText(
 			u8" \n"
 			u8"Sheridan Rathbun\n"
