@@ -5334,7 +5334,8 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 			case POTION_JUICE:
 			case POTION_ACID:
 			case POTION_INVISIBILITY:
-				if ( clientLearnedAlchemyIngredients.find(item->type) != clientLearnedAlchemyIngredients.end() )
+				if ( clientLearnedAlchemyIngredients[gui_player].find(item->type) 
+					!= clientLearnedAlchemyIngredients[gui_player].end() )
 				{
 					return true;
 				}
@@ -5367,7 +5368,8 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 			case POTION_RESTOREMAGIC:
 			case POTION_SPEED:
 			case POTION_POLYMORPH:
-				if ( clientLearnedAlchemyIngredients.find(item->type) != clientLearnedAlchemyIngredients.end() )
+				if ( clientLearnedAlchemyIngredients[gui_player].find(item->type) 
+					!= clientLearnedAlchemyIngredients[gui_player].end() )
 				{
 					return true;
 				}
@@ -5798,9 +5800,11 @@ void GenericGUIMenu::alchemyCombinePotions()
 	}
 
 	bool knewBothBaseIngredients = false;
-	if ( clientLearnedAlchemyIngredients.find(basePotion->type) != clientLearnedAlchemyIngredients.end() )
+	if ( clientLearnedAlchemyIngredients[gui_player].find(basePotion->type) 
+		!= clientLearnedAlchemyIngredients[gui_player].end() )
 	{
-		if ( clientLearnedAlchemyIngredients.find(secondaryPotion->type) != clientLearnedAlchemyIngredients.end() )
+		if ( clientLearnedAlchemyIngredients[gui_player].find(secondaryPotion->type)
+			!= clientLearnedAlchemyIngredients[gui_player].end() )
 		{
 			// knew about both combinations.
 			if ( !tryDuplicatePotion && !explodeSelf && result != POTION_SICKNESS )
@@ -5991,10 +5995,11 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 		// loop through to get the index number to insert into gameStatistics[STATISTICS_ALCHEMY_RECIPES]
 		if ( (*it).first == type )
 		{
-			if ( clientLearnedAlchemyIngredients.find(type) == clientLearnedAlchemyIngredients.end() )
+			if ( clientLearnedAlchemyIngredients[gui_player].find(type) 
+				== clientLearnedAlchemyIngredients[gui_player].end() )
 			{
 				// new recipe!
-				clientLearnedAlchemyIngredients.insert(type);
+				clientLearnedAlchemyIngredients[gui_player].insert(type);
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 				if ( notify )
 				{
@@ -7117,6 +7122,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case ENCHANTED_FEATHER:
 			*metal = 0;
 			*magic = 8;
+			break;
 
 		case IRON_SPEAR:
 		case IRON_SWORD:

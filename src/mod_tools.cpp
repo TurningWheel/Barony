@@ -1865,7 +1865,7 @@ std::string& ItemTooltips_t::getItemPotionAlchemyAdjective(const int player, Uin
 	{
 		return defaultString;
 	}
-	if ( clientLearnedAlchemyIngredients.find(itemType) == clientLearnedAlchemyIngredients.end() )
+	if ( clientLearnedAlchemyIngredients[player].find(itemType) == clientLearnedAlchemyIngredients[player].end() )
 	{
 		return adjectives["potion_alchemy_types"]["unknown"];
 	}
