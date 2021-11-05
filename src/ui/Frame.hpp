@@ -36,6 +36,14 @@ public:
 		BORDER_MAX
 	};
 
+	//! list text justification
+	enum justify_t {
+		LEFT,
+		RIGHT,
+		CENTER,
+		JUSTIFY_TYPE_LENGTH
+	};
+
 	//! frame image
 	struct image_t {
 		std::string name;
@@ -112,7 +120,7 @@ public:
 	static void fboDestroy();
 
 	//! draws the frame and all of its subelements
-	void draw();
+	void draw() const;
 
 	//! handle clicks and other events
 	//! @return compiled results of frame processing
@@ -252,7 +260,11 @@ public:
 	//! @param image the image to draw
 	//! @param _size the size of the rectangle to clip against
 	//! @param scroll the amount by which to offset the image in x/y
-	void drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll);
+	void drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll) const;
+
+	//! scroll to the current list entry selection in the frame
+	//! @param scroll_to_top if true, scroll the selection to the very top of the frame
+	void scrollToSelection(bool scroll_to_top = false);
 
 	virtual type_t					getType() const override { return WIDGET_FRAME; }
 	const char*						getFont() const { return font.c_str(); }
@@ -276,6 +288,7 @@ public:
 	int								getSelection() const { return selection; }
 	real_t							getOpacity() const { return opacity; }
 	const bool						getInheritParentFrameOpacity() const { return inheritParentFrameOpacity; }
+	justify_t						getJustify() const { return justify; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -294,6 +307,7 @@ public:
 	void	setListOffset(SDL_Rect _size) { listOffset = _size; }
 	void	setInheritParentFrameOpacity(const bool _inherit) { inheritParentFrameOpacity = _inherit; }
 	void	setOpacity(const real_t _opacity) { opacity = _opacity; }
+	void	setListJustify(justify_t _justify) { justify = _justify; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -320,6 +334,7 @@ private:
 	SDL_Rect listOffset{0, 0, 0, 0};					//!< frame list offset in x, y
 	real_t opacity = 100.0;								//!< opacity multiplier of elements within this frame (image/fields etc)
 	bool inheritParentFrameOpacity = true;				//!< if true, uses parent frame opacity
+	justify_t justify = justify_t::LEFT;				//!< frame list horizontal justification
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;
@@ -327,9 +342,6 @@ private:
 	std::vector<image_t*> images;
 	std::vector<Slider*> sliders;
 	std::vector<entry_t*> list;
-
-	//! scroll to the current list entry selection in the frame
-	void scrollToSelection();
 
 	//! activate the given list entry
 	//! @param entry the entry to activate
@@ -339,7 +351,7 @@ private:
 	//! @param _size real position of the frame onscreen
 	//! @param _actualSize offset into the frame space (scroll)
 	//! @param selectedWidgets the currently selected widgets, if any
-	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets);
+	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
 
 	//! handle clicks and other events
 	//! @param _size real position of the frame onscreen

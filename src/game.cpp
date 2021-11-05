@@ -2850,6 +2850,7 @@ void handleEvents(void)
 		inputs.updateAllMouse();
 	}
 
+	Input::lastInputOfAnyKind = "";
 	for (auto& input : Input::inputs) {
 		input.updateReleasedBindings();
 		input.update();
@@ -3188,7 +3189,7 @@ void handleEvents(void)
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", id);
 						inputs.addControllerIDToNextAvailableInput(id);
-						Input::gameControllers.emplace(id, const_cast<SDL_GameController*>(controller.getControllerDevice()));
+						Input::gameControllers[id]= const_cast<SDL_GameController*>(controller.getControllerDevice());
 						for (int c = 0; c < 4; ++c) {
 							Input::inputs[c].refresh();
 						}
@@ -3417,16 +3418,6 @@ void handleEvents(void)
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;
 					}
-					if (zbuffer != NULL)
-					{
-						free(zbuffer);
-					}
-					zbuffer = (real_t*)malloc(sizeof(real_t) * xres * yres);
-					if (clickmap != NULL)
-					{
-						free(clickmap);
-					}
-					clickmap = (Entity**)malloc(sizeof(Entity*)*xres * yres);
 				}
 				break;
 				/*case SDL_CONTROLLERAXISMOTION:
@@ -4102,6 +4093,10 @@ void ingameHud()
 			{
 				players[player]->bookGUI.closeBookGUI();
 			}
+			if ( players[player]->skillSheet.bSkillSheetOpen )
+			{
+				players[player]->skillSheet.closeSkillSheet();
+			}
 
 			gui_clickdrag[player] = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
 
@@ -4147,6 +4142,7 @@ void ingameHud()
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
+		players[player]->skillSheet.processSkillSheet();
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();
@@ -4155,12 +4151,15 @@ void ingameHud()
 			continue;
 		}
 		//drawSkillsSheet(player);
-		if ( !nohud )
+		if ( !gamePaused )
 		{
-			drawStatusNew(player);
+			if ( !nohud )
+			{
+				drawStatusNew(player);
+			}
+			drawSustainedSpells(player);
+			updateAppraisalItemBox(player);
 		}
-		drawSustainedSpells(player);
-		updateAppraisalItemBox(player);
 
 		// inventory and stats
 		if ( players[player]->shootmode == false )
@@ -5122,7 +5121,8 @@ int main(int argc, char** argv)
 						inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 						inputs.controllerClearInput(clientnum, INJOY_MENU_CANCEL);
 						fadealpha = 255;
-#if (!defined STEAMWORKS && !defined USE_EOS && !defined NINTENDO)
+						// Yeah we're just not going to do the "Please don't pirate us" message anymore
+#if (0)
 						introstage = 0;
 						fadeout = false;
 						fadefinished = false;
@@ -5398,7 +5398,7 @@ int main(int argc, char** argv)
 
 						if (newui)
 						{
-							MainMenu::doMainMenu();
+							MainMenu::doMainMenu(!intro);
 						}
 						else
 						{
@@ -5758,25 +5758,13 @@ int main(int argc, char** argv)
 
 				doFrames();
 
-				if ( !gamePaused )
+				if ( /*newui*/ 0 ) 
 				{
-					if ( /*newui*/ 0 ) 
-					{
-						newIngameHud();
-					}
-					else 
-					{
-						ingameHud();
-					}
+					newIngameHud();
 				}
-				else if ( !multiplayer )
+				else 
 				{
-					// darken the rest of the screen
-					src.x = 0;
-					src.y = 0;
-					src.w = mainsurface->w;
-					src.h = mainsurface->h;
-					drawRect(&src, SDL_MapRGB(mainsurface->format, 0, 0, 0), 127);
+					ingameHud();
 				}
 
 				if ( gamePaused )
@@ -5784,7 +5772,7 @@ int main(int argc, char** argv)
 					// handle menu
 					if (newui)
 					{
-						MainMenu::doMainMenu();
+						MainMenu::doMainMenu(!intro);
 					}
 					else
 					{
@@ -5793,6 +5781,8 @@ int main(int argc, char** argv)
 				}
 				else
 				{
+					MainMenu::destroyMainMenu();
+
 					// draw subwindow
 					if ( !movie )
 					{

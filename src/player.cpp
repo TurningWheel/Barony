@@ -1261,6 +1261,11 @@ void initGameControllers()
 		{
 			printlog("(Device %d successfully initialized as game controller.)\n", c);
 			inputs.setControllerID(c, controller_itr->getID());
+			Input::gameControllers[controller_itr->getID()] = 
+				const_cast<SDL_GameController*>(controller_itr->getControllerDevice());
+			for ( int c = 0; c < 4; ++c ) {
+				Input::inputs[c].refresh();
+			}
 			found = true;
 
 			controller_itr = std::next(controller_itr);
@@ -1608,6 +1613,7 @@ Player::Player(int in_playernum, bool in_local_host) :
 	hud(*this),
 	magic(*this),
 	characterSheet(*this),
+	skillSheet(*this),
 	movement(*this),
 	messageZone(*this),
 	worldUI(*this),

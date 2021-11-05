@@ -12,7 +12,24 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy);
 void resetInventorySlotFrames(const int player);
 void createPlayerInventorySlotFrameElements(Frame* slotFrame);
 void loadHUDSettingsJSON();
-SDL_Surface* blitEnemyBar(const int player);
+SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite);
+struct EnemyBarSettings_t
+{
+	std::unordered_map<std::string, float> heightOffsets;
+	std::unordered_map<std::string, float> screenDistanceOffsets;
+	std::string getEnemyBarSpriteName(Entity* entity);
+	float getHeightOffset(Entity* entity)
+	{
+		if ( !entity ) { return 0.f; }
+		return heightOffsets[getEnemyBarSpriteName(entity)];
+	}
+	float getScreenDistanceOffset(Entity* entity)
+	{
+		if ( !entity ) { return 0.f; }
+		return screenDistanceOffsets[getEnemyBarSpriteName(entity)];
+	}
+};
+extern EnemyBarSettings_t enemyBarSettings;
 
 // if true, use the new user interface
 extern bool newui;

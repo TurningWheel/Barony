@@ -5646,6 +5646,29 @@ void assignActions(map_t* map)
 				item = nullptr;
 			}
 				break;
+			case 168: 
+				//Statue Animator
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 3.5;
+				entity->behavior = &actStatueAnimator;
+				entity->sprite = 995;
+				entity->skill[0] = 0;
+				entity->flags[BRIGHT] = true;
+				break;
+			case 169:
+				//Statue
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 3.5;
+				entity->behavior = &actStatue;
+				entity->sprite = 995;
+				entity->yaw = entity->statueDir * PI / 2;
+				break;
 			default:
 				break;
 		}

@@ -589,13 +589,13 @@ thou makest use of them.#
 
 # skill levels
 
-363                  none#
-364                novice#
-365                 basic#
-366               skilled#
-367                expert#
-368                master#
-369                legend#
+363                  None#
+364                Novice#
+365                 Basic#
+366               Skilled#
+367                Expert#
+368                Master#
+369                Legend#
 
 
 # rest of the character sheet
@@ -5995,5 +5995,21 @@ Changing this gameflag is disabled in current game mode.#
 4047 No interactions available#
 4048 You don't feel like yourself.#
 4049 Quick-cast#
+4050 Grab#
+4051 Level %d#
+4052 Floor %d#
+4053 Close#
+4054 Next Page#
+4055 Previous Page#
+4056 LEGEND BONUS#
+4057 None#
+4058 All items#
+4059 2 Metal
+/ 0 Magic#
+4060 1 Metal
+/ 0 Magic#
+4061 Tier#
+4062 Scroll up/down#
+4063 Scroll#
 
 4099 end#

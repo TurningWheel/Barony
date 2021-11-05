@@ -27,6 +27,7 @@
 #include "colors.hpp"
 #include "draw.hpp"
 #include "mod_tools.hpp"
+#include "classdescriptions.hpp"
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
@@ -993,10 +994,11 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	PLAYER_VELX *= pow(0.75, refreshRateDelta);
 	PLAYER_VELY *= pow(0.75, refreshRateDelta);
 
-	/*if ( keystatus[SDL_SCANCODE_G] )
-	{
-		messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
-	}*/
+	//if ( keystatus[SDL_SCANCODE_G] )
+	//{
+	//	//messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
+	//	//messagePlayer(0, "Vel: %5.5f", sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
+	//}
 
 	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
 	{
@@ -1124,6 +1126,426 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 		else
 		{
 			cameras[PLAYER_NUM].vang = my->pitch;
+		}
+	}
+}
+
+void statueCycleItem(Item& item, bool dirForward)
+{
+	int cat = items[item.type].item_slot;
+	item.appearance = rand();
+	if ( dirForward )
+	{
+		for ( int i = item.type + 1; i <= NUMITEMS && i != item.type; ++i )
+		{
+			if ( i == NUMITEMS )
+			{
+				i = 0;
+			}
+			if ( items[i].item_slot == cat )
+			{
+				item.type = ItemType(i);
+				break;
+			}
+		}
+	}
+	else
+	{
+		for ( int i = item.type - 1; i < NUMITEMS && i != item.type; --i )
+		{
+			if ( i < 0 )
+			{
+				i = NUMITEMS - 1;
+			}
+			if ( items[i].item_slot == cat )
+			{
+				item.type = ItemType(i);
+				break;
+			}
+		}
+	}
+}
+
+void doStatueEditor(int player)
+{
+	if ( !StatueManager.activeEditing ) { return; }
+	if ( player != clientnum ) { return; }
+
+	Sint32 mouseX = inputs.getMouse(player, Inputs::OX);
+	Sint32 mouseY = inputs.getMouse(player, Inputs::OY);
+	bool shootmode = players[player]->shootmode;
+
+	if ( ticks % 5 == 0 )
+	{
+		Entity* underMouse = nullptr;
+		Uint32 uidnum = 0;
+		if ( !shootmode )
+		{
+			uidnum = GO_GetPixelU32(mouseX, yres - mouseY, cameras[player]);
+			if ( uidnum > 0 )
+			{
+				underMouse = uidToEntity(uidnum);
+			}
+		}
+		else
+		{
+			uidnum = GO_GetPixelU32(cameras[player].winw / 2, yres - cameras[player].winh / 2, cameras[player]);
+			if ( uidnum > 0 )
+			{
+				underMouse = uidToEntity(uidnum);
+			}
+		}
+		if ( underMouse )
+		{
+			underMouse->highlightForUI = 1.0;
+			if ( underMouse->behavior == &actPlayerLimb )
+			{
+				underMouse = players[underMouse->skill[2]]->entity;
+			}
+			if ( underMouse->behavior == &actPlayer )
+			{
+				StatueManager.editingPlayerUid = underMouse->getUID();
+				StatueManager.lastEntityUnderMouse = uidnum;
+			}
+		}
+	}
+
+
+	if ( Entity* playerEntity = uidToEntity(StatueManager.editingPlayerUid) )
+	{
+		playerEntity->highlightForUI = 0.0;
+		if ( StatueManager.drawGreyscale )
+		{
+			playerEntity->grayscaleGLRender = 1.0;
+		}
+		else
+		{
+			playerEntity->grayscaleGLRender = 0.0;
+		}
+		for ( auto& bodypart : playerEntity->bodyparts )
+		{
+			bodypart->highlightForUI = 0.0;
+			if ( StatueManager.drawGreyscale )
+			{
+				bodypart->grayscaleGLRender = 1.0;
+			}
+			else
+			{
+				bodypart->grayscaleGLRender = 0.0;
+			}
+		}
+	}
+
+	if ( !command )
+	{
+		if ( Entity* limb = uidToEntity(StatueManager.lastEntityUnderMouse) )
+		{
+			limb->highlightForUI = 1.0;
+			if ( keystatus[SDL_SCANCODE_O] )
+			{
+				keystatus[SDL_SCANCODE_O] = 0;
+				limb->pitch += PI / 32;
+			}
+			if ( keystatus[SDL_SCANCODE_P] )
+			{
+				keystatus[SDL_SCANCODE_P] = 0;
+				limb->pitch -= PI / 32;
+			}
+			if ( keystatus[SDL_SCANCODE_K] )
+			{
+				keystatus[SDL_SCANCODE_K] = 0;
+				limb->roll += PI / 32;
+			}
+			if ( keystatus[SDL_SCANCODE_L] )
+			{
+				keystatus[SDL_SCANCODE_L] = 0;
+				limb->roll -= PI / 32;
+			}
+			if ( keystatus[SDL_SCANCODE_COMMA] )
+			{
+				keystatus[SDL_SCANCODE_COMMA] = 0;
+				limb->yaw += PI / 32;
+			}
+			if ( keystatus[SDL_SCANCODE_PERIOD] )
+			{
+				keystatus[SDL_SCANCODE_PERIOD] = 0;
+				limb->yaw -= PI / 32;
+			}
+		}
+
+		if ( Entity* playerEntity = uidToEntity(StatueManager.editingPlayerUid) )
+		{
+			Stat* stats = playerEntity->getStats();
+
+			if ( keystatus[SDL_SCANCODE_LEFTBRACKET] )
+			{
+				keystatus[SDL_SCANCODE_LEFTBRACKET] = 0;
+				StatueManager.statueEditorHeightOffset -= .25;
+			}
+			if ( keystatus[SDL_SCANCODE_RIGHTBRACKET] )
+			{
+				keystatus[SDL_SCANCODE_RIGHTBRACKET] = 0;
+				StatueManager.statueEditorHeightOffset += .25;
+			}
+
+			if ( keystatus[SDL_SCANCODE_F1] )
+			{
+				keystatus[SDL_SCANCODE_F1] = 0;
+
+				++stats->playerRace;
+				if ( playerEntity->getMonsterFromPlayerRace(stats->playerRace) == HUMAN && stats->playerRace > 0 )
+				{
+					stats->playerRace = RACE_HUMAN;
+				}
+				if ( playerEntity->getMonsterFromPlayerRace(stats->playerRace) != HUMAN )
+				{
+					stats->appearance = 0;
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_F2] )
+			{
+				keystatus[SDL_SCANCODE_F2] = 0;
+
+				++stats->appearance;
+				if ( stats->appearance >= NUMAPPEARANCES )
+				{
+					stats->appearance = 0;
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_F3] )
+			{
+				keystatus[SDL_SCANCODE_F3] = 0;
+				if ( stats->sex == MALE )
+				{
+					stats->sex = FEMALE;
+				}
+				else
+				{
+					stats->sex = MALE;
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_F4] )
+			{
+				keystatus[SDL_SCANCODE_F4] = 0;
+				StatueManager.drawGreyscale = !StatueManager.drawGreyscale;
+			}
+
+			if ( keystatus[SDL_SCANCODE_1] )
+			{
+				keystatus[SDL_SCANCODE_1] = 0;
+				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				{
+					if ( stats->helmet )
+					{
+						list_RemoveNode(stats->helmet->node);
+						stats->helmet = nullptr;
+					}
+				}
+				else
+				{
+					if ( !stats->helmet )
+					{
+						stats->helmet = newItem(LEATHER_HELM, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+					}
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						statueCycleItem(*stats->helmet, false);
+					}
+					else
+					{
+						statueCycleItem(*stats->helmet, true);
+					}
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_2] )
+			{
+				keystatus[SDL_SCANCODE_2] = 0;
+				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				{
+					if ( stats->breastplate )
+					{
+						list_RemoveNode(stats->breastplate->node);
+						stats->breastplate = nullptr;
+					}
+				}
+				else
+				{
+					if ( !stats->breastplate )
+					{
+						stats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+					}
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						statueCycleItem(*stats->breastplate, false);
+					}
+					else
+					{
+						statueCycleItem(*stats->breastplate, true);
+					}
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_3] )
+			{
+				keystatus[SDL_SCANCODE_3] = 0;
+				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				{
+					if ( stats->gloves )
+					{
+						list_RemoveNode(stats->gloves->node);
+						stats->gloves = nullptr;
+					}
+				}
+				else
+				{
+					if ( !stats->gloves )
+					{
+						stats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+					}
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						statueCycleItem(*stats->gloves, false);
+					}
+					else
+					{
+						statueCycleItem(*stats->gloves, true);
+					}
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_4] )
+			{
+				keystatus[SDL_SCANCODE_4] = 0;
+				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				{
+					if ( stats->shoes )
+					{
+						list_RemoveNode(stats->shoes->node);
+						stats->shoes = nullptr;
+					}
+				}
+				else
+				{
+					if ( !stats->shoes )
+					{
+						stats->shoes = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+					}
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						statueCycleItem(*stats->shoes, false);
+					}
+					else
+					{
+						statueCycleItem(*stats->shoes, true);
+					}
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_5] )
+			{
+				keystatus[SDL_SCANCODE_5] = 0;
+				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				{
+					if ( stats->weapon )
+					{
+						list_RemoveNode(stats->weapon->node);
+						stats->weapon = nullptr;
+					}
+				}
+				else
+				{
+					if ( !stats->weapon )
+					{
+						stats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+					}
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						statueCycleItem(*stats->weapon, false);
+					}
+					else
+					{
+						statueCycleItem(*stats->weapon, true);
+					}
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_6] )
+			{
+				keystatus[SDL_SCANCODE_6] = 0;
+				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				{
+					if ( stats->shield )
+					{
+						list_RemoveNode(stats->shield->node);
+						stats->shield = nullptr;
+					}
+				}
+				else
+				{
+					if ( !stats->shield )
+					{
+						stats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+					}
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						statueCycleItem(*stats->shield, false);
+					}
+					else
+					{
+						statueCycleItem(*stats->shield, true);
+					}
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_7] )
+			{
+				keystatus[SDL_SCANCODE_7] = 0;
+				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				{
+					if ( stats->mask )
+					{
+						list_RemoveNode(stats->mask->node);
+						stats->mask = nullptr;
+					}
+				}
+				else
+				{
+					if ( !stats->mask )
+					{
+						stats->mask = newItem(TOOL_GLASSES, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+					}
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						statueCycleItem(*stats->mask, false);
+					}
+					else
+					{
+						statueCycleItem(*stats->mask, true);
+					}
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_8] )
+			{
+				keystatus[SDL_SCANCODE_8] = 0;
+				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				{
+					if ( stats->cloak )
+					{
+						list_RemoveNode(stats->cloak->node);
+						stats->cloak = nullptr;
+					}
+				}
+				else
+				{
+					if ( !stats->cloak )
+					{
+						stats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+					}
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						statueCycleItem(*stats->cloak, false);
+					}
+					else
+					{
+						statueCycleItem(*stats->cloak, true);
+					}
+				}
+			}
 		}
 	}
 }
@@ -2099,11 +2521,11 @@ void actPlayer(Entity* my)
 	}
 
 	// debug stuff
-	if ( !command && keystatus[SDL_SCANCODE_O] )
+	/*if ( !command && keystatus[SDL_SCANCODE_O] )
 	{
 		consoleCommand("/facebaralternate");
 		keystatus[SDL_SCANCODE_O] = 0;
-	}
+	}*/
 	if ( inputs.hasController(PLAYER_NUM) )
 	{
 		//if ( keystatus[SDL_SCANCODE_KP_1] )
@@ -2961,23 +3383,19 @@ void actPlayer(Entity* my)
 		my->effectTimes();
 	}
 
+	bool freezeLimbMovements = false;
+	if ( StatueManager.editingPlayerUid > 0 
+		&& uidToEntity(StatueManager.editingPlayerUid) == players[PLAYER_NUM]->entity )
+	{
+		freezeLimbMovements = true;
+	}
+
 	// invisibility
 	if ( !intro )
 	{
-		if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
+		if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER || StatueManager.activeEditing )
 		{
-			if ( stats[PLAYER_NUM]->ring != NULL )
-				if ( stats[PLAYER_NUM]->ring->type == RING_INVISIBILITY )
-				{
-					wearingring = true;
-				}
-			if ( stats[PLAYER_NUM]->cloak != NULL )
-				if ( stats[PLAYER_NUM]->cloak->type == CLOAK_INVISIBILITY )
-				{
-					wearingring = true;
-				}
-			//if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
-			if ( my->isInvisible() )
+			if ( my->isInvisible() && !freezeLimbMovements )
 			{
 				if ( !my->flags[INVISIBLE] )
 				{
@@ -3457,6 +3875,7 @@ void actPlayer(Entity* my)
 		if ( intro == false )
 		{
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
+			doStatueEditor(PLAYER_NUM);
 
 			if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 			{
@@ -3943,7 +4362,7 @@ void actPlayer(Entity* my)
 	}
 
 	// server controls players primarily
-	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
+	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER || StatueManager.activeEditing )
 	{
 		// set head model
 		if ( playerRace != HUMAN )
@@ -4722,7 +5141,7 @@ void actPlayer(Entity* my)
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 	}
 
-	if ( (players[PLAYER_NUM]->isLocalPlayer()) && ticks % 65 == 0 )
+	if ( (players[PLAYER_NUM]->isLocalPlayer()) && ticks % 65 == 0 && stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] )
 	{
 		for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 		{
@@ -4929,20 +5348,23 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( entity->pitch < 0 )
+						if ( !freezeLimbMovements )
 						{
-							entity->pitch += 1 / fmax(limbSpeed * .1, 10.0);
-							if ( entity->pitch > 0 )
-							{
-								entity->pitch = 0;
-							}
-						}
-						else if ( entity->pitch > 0 )
-						{
-							entity->pitch -= 1 / fmax(limbSpeed * .1, 10.0);
 							if ( entity->pitch < 0 )
 							{
-								entity->pitch = 0;
+								entity->pitch += 1 / fmax(limbSpeed * .1, 10.0);
+								if ( entity->pitch > 0 )
+								{
+									entity->pitch = 0;
+								}
+							}
+							else if ( entity->pitch > 0 )
+							{
+								entity->pitch -= 1 / fmax(limbSpeed * .1, 10.0);
+								if ( entity->pitch < 0 )
+								{
+									entity->pitch = 0;
+								}
 							}
 						}
 					}
@@ -5339,20 +5761,23 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( entity->pitch < 0 )
+						if ( !freezeLimbMovements )
 						{
-							entity->pitch += 1 / fmax(limbSpeed * .1, 10.0);
-							if ( entity->pitch > 0 )
-							{
-								entity->pitch = 0;
-							}
-						}
-						else if ( entity->pitch > 0 )
-						{
-							entity->pitch -= 1 / fmax(limbSpeed * .1, 10.0);
 							if ( entity->pitch < 0 )
 							{
-								entity->pitch = 0;
+								entity->pitch += 1 / fmax(limbSpeed * .1, 10.0);
+								if ( entity->pitch > 0 )
+								{
+									entity->pitch = 0;
+								}
+							}
+							else if ( entity->pitch > 0 )
+							{
+								entity->pitch -= 1 / fmax(limbSpeed * .1, 10.0);
+								if ( entity->pitch < 0 )
+								{
+									entity->pitch = 0;
+								}
 							}
 						}
 					}

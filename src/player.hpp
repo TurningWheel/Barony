@@ -963,6 +963,90 @@ public:
 		void updateCharacterInfo();
 	} characterSheet;
 
+	class SkillSheet_t
+	{
+		Player& player;
+	public:
+		SkillSheet_t(Player& p) : player(p)
+		{};
+		~SkillSheet_t() {};
+
+		Frame* skillFrame = nullptr;
+		int selectedSkill = 0;
+		int highlightedSkill = 0;
+		real_t skillsFadeInAnimationY = 0.0;
+		bool bSkillSheetOpen = false;
+		Uint32 openTick = 0;
+		bool bSkillSheetEntryLoaded = false;
+		real_t scrollPercent = 0.0;
+		real_t scrollInertia = 0.0;
+		int skillSlideDirection = 0;
+		real_t skillSlideAmount = 0.0;
+		bool bUseCompactSkillsView = false;
+		static real_t windowHeightScaleX;
+		static real_t windowHeightScaleY;
+		static real_t windowCompactHeightScaleX;
+		static real_t windowCompactHeightScaleY;
+
+		static struct SkillSheetData_t
+		{
+			Uint32 defaultTextColor = 0xFFFFFFFF;
+			Uint32 noviceTextColor = 0xFFFFFFFF;
+			Uint32 expertTextColor = 0xFFFFFFFF;
+			Uint32 legendTextColor = 0xFFFFFFFF;
+			struct SkillEntry_t
+			{
+				SkillEntry_t() {};
+				~SkillEntry_t() {};
+				std::string name;
+				int skillId = -1;
+				std::string skillIconPath;
+				std::string skillIconPathLegend;
+				std::string statIconPath;
+				std::string description;
+				std::string legendaryDescription;
+				int effectStartOffsetX = 72;
+				int effectBackgroundOffsetX = 8;
+				int effectBackgroundWidth = 80;
+				struct SkillEffect_t
+				{
+					SkillEffect_t() {};
+					~SkillEffect_t() {};
+					std::string tag;
+					std::string title;
+					std::string rawValue;
+					std::string value;
+					real_t marquee = 0.0;
+					Uint32 marqueeTicks = 0;
+					bool marqueeCompleted = false;
+					int effectUpdatedAtSkillLevel = -1;
+				};
+				std::vector<SkillEffect_t> effects;
+			};
+			std::vector<SkillEntry_t> skillEntries;
+			std::string iconBgPathDefault = "";
+			std::string iconBgPathNovice = "";
+			std::string iconBgPathExpert = "";
+			std::string iconBgPathLegend = "";
+			std::string iconBgSelectedPathDefault = "";
+			std::string iconBgSelectedPathNovice = "";
+			std::string iconBgSelectedPathExpert = "";
+			std::string iconBgSelectedPathLegend = "";
+			std::string highlightSkillImg = "";
+			std::string selectSkillImg = "";
+			std::string highlightSkillImg_Right = "";
+			std::string selectSkillImg_Right = "";
+		} skillSheetData;
+
+		void selectSkill(int skill);
+		void createSkillSheet();
+		void processSkillSheet();
+		void closeSkillSheet();
+		void openSkillSheet();
+		void resetSkillDisplay();
+		static void loadSkillSheetJSON();
+	} skillSheet;
+
 	class HUD_t
 	{
 		Player& player;

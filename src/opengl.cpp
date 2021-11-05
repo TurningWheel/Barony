@@ -525,6 +525,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		}
 	}
 
+	bool doGrayScale = false;
+	real_t grayScaleFactor = 0.0;
+	if ( entity->grayscaleGLRender > 0.001 )
+	{
+		doGrayScale = true;
+		grayScaleFactor = entity->grayscaleGLRender;
+	}
+
 	// get shade factor
 	if (!entity->flags[BRIGHT])
 	{
@@ -716,22 +724,27 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 			{
 				if ( mode == REALCOLORS )
 				{
+					Uint8 r, g, b;
+					r = polymodels[modelindex].faces[index].r;
+					b = polymodels[modelindex].faces[index].g;
+					g = polymodels[modelindex].faces[index].b;
+
 					if ( entity->flags[USERFLAG2] )
 					{
 						if ( entity->behavior == &actMonster 
 							&& (entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 						{
 							// dont invert human heads, or automaton heads.
-							glColor3f((polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s, (polymodels[modelindex].faces[index].b / 255.f)*s );
+							glColor3f((r / 255.f)*s, (g / 255.f)*s, (b / 255.f)*s );
 						}
 						else
 						{
-							glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s);
+							glColor3f((b / 255.f)*s, (r / 255.f)*s, (g / 255.f)*s);
 						}
 					}
 					else
 					{
-						glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s );
+						glColor3f((b / 255.f)*s, (r / 255.f)*s, (g / 255.f)*s );
 					}
 				}
 				else
@@ -764,16 +777,37 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() 
 						|| entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 					{
-						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+						if ( doGrayScale )
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
+						}
+						else
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+						}
 					}
 					else
 					{
-						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
+						if ( doGrayScale )
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors_shifted);
+						}
+						else
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
+						}
 					}
 				}
 				else
 				{
-					SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+					if ( doGrayScale )
+					{
+						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
+					}
+					else
+					{
+						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+					}
 				}
 				glColorPointer(3, GL_FLOAT, 0, 0);
 				GLfloat params_col[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
@@ -844,14 +878,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 {
 	SDL_Surface* image = sprites[0];
-	GLuint textureId = texid[sprites[0]->refcount];
+	GLuint textureId = texid[(long int)sprites[0]->userdata];
 	char textToRetrieve[128];
 	strncpy(textToRetrieve, text.c_str(), 127);
 	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 127)] = '\0';
 
 	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
 	{
-		textureId = texid[image->refcount];
+		textureId = texid[(long int)image->userdata];
 	}
 	else
 	{
@@ -876,7 +910,7 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 		SDL_FreeSurface(textSurf);
 		// load the text outline surface as a GL texture
 		allsurfaces[imgref] = image;
-		allsurfaces[imgref]->refcount = imgref;
+		allsurfaces[imgref]->userdata = (void *)((long int)imgref);
 		glLoadTexture(allsurfaces[imgref], imgref);
 		imgref++;
 		// store the surface in the text surface cache
@@ -884,7 +918,7 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 		{
 			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
 		}
-		textureId = texid[image->refcount];
+		textureId = texid[(long int)image->userdata];
 	}
 	if ( outTextId )
 	{
@@ -1060,18 +1094,21 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	//	//drawRect(&resPos, 0xFFFFFF00, 255);
 	//}
 
+	int drawOffsetY = (enemybar->worldSurfaceSpriteStatusEffects ? -enemybar->worldSurfaceSpriteStatusEffects->h / 2 : 0);
+	drawOffsetY += enemybar->glWorldOffsetY;
+
 	if ( !doVisibilityCheckOnly )
 	{
 		// draw quad
 		glBegin(GL_QUADS);
 		glTexCoord2f(0, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
 		glTexCoord2f(0, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
 		glTexCoord2f(1, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
 		glTexCoord2f(1, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
 		glEnd();
 	}
 	glDepthRange(0, 1);
@@ -1499,7 +1536,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 
 	if ( mode == REALCOLORS )
 	{
-		glBindTexture(GL_TEXTURE_2D, texid[sprite->refcount]);
+		glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]);
 	}
 	else
 	{
@@ -1589,7 +1626,8 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		return;
 	}
 
-	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#16#2");
+	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#32#2",
+		makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 	auto textureId = rendered_text->getTexID();
 
 	// setup projection
@@ -1832,7 +1870,7 @@ void glDrawWorld(view_t* camera, int mode)
 
 		// first (higher) sky layer
 		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
+		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
 		glVertex3f(-CLIPFAR * 16, 64, -CLIPFAR * 16);
@@ -1849,7 +1887,7 @@ void glDrawWorld(view_t* camera, int mode)
 
 		// second (closer) sky layer
 		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
+		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
 		glVertex3f(-CLIPFAR * 16, 32, -CLIPFAR * 16);
@@ -1922,12 +1960,12 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( map.tiles[index] < 0 || map.tiles[index] >= numtiles )
 							{
-								new_tex = texid[sprites[0]->refcount];
+								new_tex = texid[(long int)sprites[0]->userdata];
 								//glBindTexture(GL_TEXTURE_2D, texid[sprites[0]->refcount]);
 							}
 							else
 							{
-								new_tex = texid[tiles[map.tiles[index]]->refcount];
+								new_tex = texid[(long int)tiles[map.tiles[index]]->userdata];
 								//glBindTexture(GL_TEXTURE_2D, texid[tiles[map.tiles[index]]->refcount]);
 							}
 						}
@@ -2250,7 +2288,7 @@ void glDrawWorld(view_t* camera, int mode)
 						// bind texture
 						if ( mode == REALCOLORS )
 						{
-							new_tex = texid[tiles[mapceilingtile]->refcount];
+							new_tex = texid[(long int)tiles[mapceilingtile]->userdata];
 							//glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
 							if (cur_tex!=new_tex)
 							{

@@ -283,6 +283,8 @@ extern Sint32 oldXres;
 extern Sint32 oldYres;
 extern button_t* revertResolutionButton;
 
+typedef std::tuple<int, int> resolution;
+void getResolutionList(std::list<resolution>&);
 void applySettings();
 void openConfirmResolutionWindow();
 void buttonAcceptResolution(button_t* my);

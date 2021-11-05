@@ -282,7 +282,6 @@ int initGame()
 			}
 		}
 		FileIO::close(fp);
-		bookParser_t.createBooks(false);
 		setupSpells();
 
 #ifdef NINTENDO
@@ -302,6 +301,7 @@ int initGame()
 		ItemTooltips.readTooltipsFromFile();
 
 		loadHUDSettingsJSON();
+		Player::SkillSheet_t::loadSkillSheetJSON();
 
 		updateLoadingScreen(94);
 
@@ -466,6 +466,7 @@ int initGame()
 	int result = loading_task.get();
 	if (result == 0)
 	{
+		bookParser_t.createBooks(false);
 		Text::dumpCache(); // createBooks makes some invalid Text() surfaces, this cleans them up for re-rendering.
 		gameModeManager.Tutorial.init();
 

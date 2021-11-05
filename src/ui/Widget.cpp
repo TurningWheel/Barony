@@ -77,7 +77,7 @@ Widget* Widget::handleInput() {
 				if (!move.second.empty()) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
-					if (result) {
+					if (result && !result->disabled && !result->invisible) {
 						playSound(495, 64);
 						result->scrollParent();
 						return result;
@@ -92,7 +92,7 @@ Widget* Widget::handleInput() {
 				if (!action.second.empty()) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(action.second.c_str(), true);
-					if (result) {
+					if (result && !result->disabled) {
 						result->activate();
 						return nullptr;
 					}
@@ -101,7 +101,7 @@ Widget* Widget::handleInput() {
 		}
 
 		// activate current selection
-		if (input.consumeBinaryToggle("MenuConfirm")) {
+		if (input.consumeBinaryToggle("MenuConfirm") && !disabled) {
 			activate();
 			return nullptr;
 		}
@@ -135,6 +135,15 @@ Widget* Widget::findWidget(const char* name, bool recursive) {
 }
 
 void Widget::findSelectedWidgets(std::vector<Widget*>& outResult) {
+	if (selected) {
+		outResult.push_back(this);
+	}
+	for (auto widget : widgets) {
+		widget->findSelectedWidgets(outResult);
+	}
+}
+
+void Widget::findSelectedWidgets(std::vector<const Widget*>& outResult) const {
 	if (selected) {
 		outResult.push_back(this);
 	}
@@ -185,7 +194,7 @@ void Widget::adoptWidget(Widget& widget) {
 	widgets.push_back(&widget);
 }
 
-void Widget::drawGlyphs(const SDL_Rect size, const std::vector<Widget*>& selectedWidgets) {
+void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const {
 	if (drawCallback) {
 		drawCallback(*this, size);
 	}

@@ -78,6 +78,10 @@ public:
 		Uint32 enemy_timer = 0;
 		Uint32 enemy_bar_color = 0;
 		Uint32 enemy_uid = 0;
+		Uint32 enemy_statusEffects1 = 0;
+		Uint32 enemy_statusEffects2 = 0;
+		Uint32 enemy_statusEffectsLowDuration1 = 0;
+		Uint32 enemy_statusEffectsLowDuration2 = 0;
 		bool lowPriorityTick = false;
 		bool shouldDisplay = true;
 		bool hasDistanceCheck = false;
@@ -114,6 +118,10 @@ public:
 				delete worldTexture;
 				worldTexture = nullptr;
 			}
+			if ( worldSurfaceSpriteStatusEffects ) {
+				SDL_FreeSurface(worldSurfaceSpriteStatusEffects);
+				worldSurfaceSpriteStatusEffects = nullptr;
+			}
 			if ( worldSurfaceSprite ) {
 				SDL_FreeSurface(worldSurfaceSprite);
 				worldSurfaceSprite = nullptr;
@@ -126,6 +134,8 @@ public:
 		real_t screenDistance = 0.0;
 		TempTexture* worldTexture = nullptr;
 		SDL_Surface* worldSurfaceSprite = nullptr;
+		SDL_Surface* worldSurfaceSpriteStatusEffects = nullptr;
+		SDL_Surface* blitEnemyBarStatusEffects(const int player);
 	};
 
 	Uint32 enemy_bar_client_color = 0;
@@ -295,6 +305,7 @@ void updateMagicGUI();
 extern SDL_Surface* identifyGUI_img;
 
 void drawSustainedSpells(const int player); //Draws an icon for every sustained spell.
+SDL_Surface* getStatusEffectSprite(Entity* entity, Stat* stat, const int effect, const int player);
 
 enum GUICurrentType
 {

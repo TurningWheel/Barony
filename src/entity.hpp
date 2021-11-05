@@ -219,6 +219,7 @@ public:
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
 	real_t& highlightForUI; //fskill[29] for highlighting interactibles
 	real_t& highlightForUIGlow; //fskill[28] for highlighting animation
+	real_t& grayscaleGLRender; //fskill[27] for grayscale rendering
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
@@ -503,6 +504,11 @@ public:
 	Sint32& worldTooltipFadeDelay; //skill[4]
 	Sint32& worldTooltipIgnoreDrawing; //skill[5]
 	Sint32& worldTooltipRequiresButtonHeld; //skill[6]
+
+	//--STATUES--
+	Sint32& statueInit; //skill[0]
+	Sint32& statueDir; //skill[1]
+	Sint32& statueId; //skill[3]
 
 	void pedestalOrbInit(); // init orb properties
 
@@ -1033,7 +1039,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 290;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 168;
+static const int NUM_EDITOR_SPRITES = 170;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

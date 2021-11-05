@@ -514,6 +514,8 @@ typedef struct polymodel_t
 	GLuint vbo;
 	GLuint colors;
 	GLuint colors_shifted;
+	GLuint grayscale_colors;
+	GLuint grayscale_colors_shifted;
 	GLuint va;
 } polymodel_t;
 
