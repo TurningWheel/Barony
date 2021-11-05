@@ -3454,6 +3454,123 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 			}
 		}
 	}
+
+	if ( !PHYSFS_getRealDir("/data/skillsheet_leadership_entries.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/skillsheet_leadership_entries.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/skillsheet_leadership_entries.json");
+		inputPath.append("/data/skillsheet_leadership_entries.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				if ( d.HasMember("leadership_allies_base") )
+				{
+					auto& allyTable = skillSheetData.leadershipAllyTableBase;
+					allyTable.clear();
+					for ( rapidjson::Value::ConstMemberIterator itr = d["leadership_allies_base"].MemberBegin();
+						itr != d["leadership_allies_base"].MemberEnd(); ++itr )
+					{
+						std::string monsterName = itr->name.GetString();
+						int monsterType = -1;
+						for ( int i = 0; i < NUMMONSTERS; ++i )
+						{
+							if ( monsterName.compare(monstertypename[i]) == 0 )
+							{
+								monsterType = i;
+								break;
+							}
+						}
+						if ( monsterType < 0 ) { continue; }
+						if ( itr->value.IsArray() )
+						{
+							for ( rapidjson::Value::ConstValueIterator ally_itr = itr->value.Begin();
+								ally_itr != itr->value.End(); ++ally_itr )
+							{
+								std::string allyName = ally_itr->GetString();
+								int allyType = -1;
+								for ( int i = 0; i < NUMMONSTERS; ++i )
+								{
+									if ( allyName.compare(monstertypename[i]) == 0 )
+									{
+										allyType = i;
+										break;
+									}
+								}
+								if ( allyType >= 0 )
+								{
+									allyTable[(Monster)monsterType].push_back((Monster)allyType);
+								}
+							}
+						}
+					}
+				}
+				if ( d.HasMember("leadership_allies_legendary") )
+				{
+					auto& allyTable = skillSheetData.leadershipAllyTableLegendary;
+					allyTable.clear();
+					for ( rapidjson::Value::ConstMemberIterator itr = d["leadership_allies_legendary"].MemberBegin();
+						itr != d["leadership_allies_legendary"].MemberEnd(); ++itr )
+					{
+						std::string monsterName = itr->name.GetString();
+						int monsterType = -1;
+						for ( int i = 0; i < NUMMONSTERS; ++i )
+						{
+							if ( monsterName.compare(monstertypename[i]) == 0 )
+							{
+								monsterType = i;
+								break;
+							}
+						}
+						if ( monsterType < 0 ) { continue; }
+						if ( itr->value.IsArray() )
+						{
+							for ( rapidjson::Value::ConstValueIterator ally_itr = itr->value.Begin();
+								ally_itr != itr->value.End(); ++ally_itr )
+							{
+								std::string allyName = ally_itr->GetString();
+								int allyType = -1;
+								for ( int i = 0; i < NUMMONSTERS; ++i )
+								{
+									if ( allyName.compare(monstertypename[i]) == 0 )
+									{
+										allyType = i;
+										break;
+									}
+								}
+								if ( allyType >= 0 )
+								{
+									allyTable[(Monster)monsterType].push_back((Monster)allyType);
+								}
+							}
+						}
+					}
+				}
+				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+			}
+		}
+	}
 }
 
 void loadHUDSettingsJSON()
@@ -6812,6 +6929,7 @@ real_t Player::SkillSheet_t::windowCompactHeightScaleX = 0.0;
 real_t Player::SkillSheet_t::windowCompactHeightScaleY = 0.0;
 real_t Player::SkillSheet_t::windowHeightScaleX = 0.0;
 real_t Player::SkillSheet_t::windowHeightScaleY = 0.0;
+bool Player::SkillSheet_t::generateFollowerTableForSkillsheet = false;
 
 void Player::SkillSheet_t::createSkillSheet()
 {
@@ -7316,6 +7434,16 @@ void Player::SkillSheet_t::openSkillSheet()
 	}
 }
 
+void capitalizeString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	char letter = str[0];
+	if ( letter >= 'a' && letter <= 'z' )
+	{
+		str[0] = toupper(letter);
+	}
+}
+
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue)
 {
 	char buf[1024] = "";
@@ -7386,7 +7514,8 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "RANGED_THROWN_DMG" )
 		{
 			int skillLVL = stats[playernum]->PROFICIENCIES[proficiency] / 20; // thrown dmg bonus
-			val = 100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
+			// +0% baseline
+			val = 100 * (thrownDamageSkillMultipliers[std::min(skillLVL, 5)] - thrownDamageSkillMultipliers[0]);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "RANGED_PIERCE_CHANCE" )
@@ -7703,9 +7832,31 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	}
 	else if ( proficiency == PRO_SWIMMING )
 	{
-		if ( tag == "SWIM_SPEED" )
+		if ( tag == "SWIM_SPEED_TOTAL" )
 		{
 			val = (((stats[playernum]->PROFICIENCIES[proficiency] / 100.f) * 50.f) + 50); // water movement speed
+			if ( stats[playernum]->type == SKELETON )
+			{
+				val *= .5;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "SWIM_SPEED_BASE" )
+		{
+			val = -50.0; // water movement speed
+			if ( stats[playernum]->type == SKELETON )
+			{
+				val -= 25.0;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "SWIM_SPEED_BONUS" )
+		{
+			val = (((stats[playernum]->PROFICIENCIES[proficiency] / 100.f) * 50.f)); // water movement speed
+			if ( stats[playernum]->type == SKELETON )
+			{
+				val *= .5;
+			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		return buf;
@@ -7729,7 +7880,50 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "LIST_LEADER_AVAILABLE_FOLLOWERS" )
 		{
-			snprintf(buf, sizeof(buf), rawValue.c_str(), "  - TODO\n  - TODO\n  - TODO");
+			std::string outputList = "";
+			Monster playerRace = stats[playernum]->type;
+			std::map<Monster, std::vector<Monster>>* allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableBase;
+			for ( int i = 0; i < 2; ++i )
+			{
+				if ( i == 1 )
+				{
+					if ( skillCapstoneUnlocked(playernum, proficiency) )
+					{
+						allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableLegendary;
+					}
+					else
+					{
+						break;
+					}
+				}
+				if ( allyTable->find(playerRace) != allyTable->end() )
+				{
+					if ( !(*allyTable)[playerRace].empty() )
+					{
+						for ( auto& ally : (*allyTable)[playerRace] )
+						{
+							if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
+							std::string monsterName = "";
+							if ( ally < KOBOLD ) //Original monster count
+							{
+								monsterName = language[90 + ally];
+							}
+							else if ( ally >= KOBOLD ) //New monsters
+							{
+								monsterName = language[2000 + ally - KOBOLD];
+							}
+							capitalizeString(monsterName);
+							if ( outputList != "" )
+							{
+								outputList += '\n';
+							}
+							outputList += "\x1E " + monsterName;
+						}
+					}
+				}
+			}
+			if ( outputList == "" ) { outputList = "-"; }
+			snprintf(buf, sizeof(buf), rawValue.c_str(), outputList.c_str());
 		}
 		return buf;
 	}
@@ -7751,15 +7945,29 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "APPRAISE_GOLD_SPEED" )
 		{
-			val = (60.f / (stats[playernum]->PROFICIENCIES[proficiency] + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
-			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				snprintf(buf, sizeof(buf), "%s", language[4064]); // "instant"
+			}
+			else
+			{
+				val = (60.f / (stats[playernum]->PROFICIENCIES[proficiency] + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
+				snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+			}
 		}
 		else if ( tag == "APPRAISE_MAX_GOLD_VALUE" )
 		{
-			val = 10 * (stats[playernum]->PROFICIENCIES[proficiency] + (statGetPER(stats[playernum], player) * 5)); // max gold value can appraise
-			if ( val < 0.1 )
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
-				val = 9;
+				snprintf(buf, sizeof(buf), "%s", language[4065]); // "any"
+			}
+			else
+			{
+				val = 10 * (stats[playernum]->PROFICIENCIES[proficiency] + (statGetPER(stats[playernum], player) * 5)); // max gold value can appraise
+				if ( val < 0.1 )
+				{
+					val = 9;
+				}
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -7871,13 +8079,15 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		if ( tag == "ALCHEMY_POTION_EFFECT_DMG" )
 		{
 			int skillLVL = stats[playernum]->PROFICIENCIES[proficiency] / 20;
-			val = 100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+			// +0% baseline
+			val = 100 * (potionDamageSkillMultipliers[std::min(skillLVL, 5)] - potionDamageSkillMultipliers[0]);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "ALCHEMY_THROWN_IMPACT_DMG" )
 		{
 			int skillLVL = stats[playernum]->PROFICIENCIES[proficiency] / 20;
-			val = 100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+			// +0% baseline
+			val = 100 * (potionDamageSkillMultipliers[std::min(skillLVL, 5)] - potionDamageSkillMultipliers[0]);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "ALCHEMY_DUPLICATION_CHANCE" )
@@ -7913,6 +8123,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 							itemName.erase(pos, potionName.length());
 						}
 					}
+					capitalizeString(itemName);
 					if ( outputList != "" )
 					{
 						outputList += '\n';
@@ -7958,11 +8169,42 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "CASTING_MP_REGEN" )
 		{
+			val = 0.0;
 			if ( player )
 			{
 				val = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		else if ( tag == "CASTING_MP_REGEN_BONUS_SKILL" )
+		{
+			val = 0.0;
+			if ( player )
+			{
+				int skill = stats[playernum]->PROFICIENCIES[proficiency];
+				real_t normalValue = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				stats[playernum]->PROFICIENCIES[proficiency] = 0;
+				real_t zeroValue = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				stats[playernum]->PROFICIENCIES[proficiency] = skill;
+
+				val = (100 * zeroValue / normalValue) - 100;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		else if ( tag == "CASTING_MP_REGEN_BONUS_INT" )
+		{
+			val = 0.0;
+			if ( player )
+			{
+				int stat = stats[playernum]->INT;
+				real_t normalValue = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				stats[playernum]->INT = 0;
+				real_t zeroValue = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				stats[playernum]->INT = stat;
+
+				val = (100 * zeroValue / normalValue) - 100;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "CASTING_BEGINNER" )
 		{
@@ -8827,7 +9069,7 @@ void Player::SkillSheet_t::processSkillSheet()
 						}
 						else
 						{
-							if ( numEffectLines < numEffectValLines )
+							if ( numEffectLines <= numEffectValLines )
 							{
 								numEffectValLines += 1; // need more buffer area for the values as it is larger than title
 								effectFramePos.h = (fontHeight * numEffectValLines) + 8;

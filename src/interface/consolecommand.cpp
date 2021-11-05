@@ -3454,6 +3454,11 @@ void consoleCommand(char const * const command_str)
 			Player::SkillSheet_t::loadSkillSheetJSON();
 			messagePlayer(clientnum, "Reloaded skillsheet_entries.json");
 		}
+		else if ( !strncmp(command_str, "/printleaderlist", 16) )
+		{
+			Player::SkillSheet_t::generateFollowerTableForSkillsheet = true;
+			messagePlayer(clientnum, "On next human right click leader list will be generated.");
+		}
 		else if ( !strncmp(command_str, "/usepaperdollmovement", 21) )
 		{
 			restrictPaperDollMovement = !restrictPaperDollMovement;

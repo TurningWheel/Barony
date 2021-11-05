@@ -987,7 +987,7 @@ public:
 		static real_t windowHeightScaleY;
 		static real_t windowCompactHeightScaleX;
 		static real_t windowCompactHeightScaleY;
-
+		static bool generateFollowerTableForSkillsheet;
 		static struct SkillSheetData_t
 		{
 			Uint32 defaultTextColor = 0xFFFFFFFF;
@@ -1040,6 +1040,8 @@ public:
 			std::string highlightSkillImg_Right = "";
 			std::string selectSkillImg_Right = "";
 			std::vector<std::string> potionNamesToFilter;
+			std::map<Monster, std::vector<Monster>> leadershipAllyTableBase;
+			std::map<Monster, std::vector<Monster>> leadershipAllyTableLegendary;
 		} skillSheetData;
 
 		void selectSkill(int skill);
