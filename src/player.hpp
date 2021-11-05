@@ -1016,6 +1016,9 @@ public:
 					std::string title;
 					std::string rawValue;
 					std::string value;
+					int valueCustomWidthOffset = 0;
+					bool bAllowAutoResizeValue = false;
+					bool bAllowRealtimeUpdate = false;
 					real_t marquee = 0.0;
 					Uint32 marqueeTicks = 0;
 					bool marqueeCompleted = false;
@@ -1036,6 +1039,7 @@ public:
 			std::string selectSkillImg = "";
 			std::string highlightSkillImg_Right = "";
 			std::string selectSkillImg_Right = "";
+			std::vector<std::string> potionNamesToFilter;
 		} skillSheetData;
 
 		void selectSkill(int skill);

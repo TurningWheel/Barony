@@ -3281,6 +3281,27 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 								effect.tag = (*eff_itr)["tag"].GetString();
 								effect.title = (*eff_itr)["title"].GetString();
 								effect.rawValue = (*eff_itr)["value"].GetString();
+								effect.valueCustomWidthOffset = 0;
+								if ( (*eff_itr).HasMember("custom_value_width_offset") )
+								{
+									effect.valueCustomWidthOffset = (*eff_itr)["custom_value_width_offset"].GetInt();
+								}
+								if ( (*eff_itr).HasMember("auto_resize_value") )
+								{
+									effect.bAllowAutoResizeValue = (*eff_itr)["auto_resize_value"].GetBool();
+								}
+								else
+								{
+									effect.bAllowAutoResizeValue = false;
+								}
+								if ( (*eff_itr).HasMember("realtime_update") )
+								{
+									effect.bAllowRealtimeUpdate = (*eff_itr)["realtime_update"].GetBool();
+								}
+								else
+								{
+									effect.bAllowRealtimeUpdate = true;
+								}
 							}
 						}
 						if ( (*itr).HasMember("effects_position") )
@@ -3376,6 +3397,22 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 					if ( d["skill_background_icons"].HasMember("legend_selected") )
 					{
 						skillSheetData.iconBgSelectedPathLegend = d["skill_background_icons"]["legend_selected"].GetString();
+					}
+				}
+				if ( d.HasMember("alchemy_potion_names_to_filter") )
+				{
+					skillSheetData.potionNamesToFilter.clear();
+					if ( d["alchemy_potion_names_to_filter"].IsString() )
+					{
+						skillSheetData.potionNamesToFilter.push_back(d["alchemy_potion_names_to_filter"].GetString());
+					}
+					else if ( d["alchemy_potion_names_to_filter"].IsArray() )
+					{
+						for ( rapidjson::Value::ConstValueIterator pot_itr = d["alchemy_potion_names_to_filter"].Begin(); 
+							pot_itr != d["alchemy_potion_names_to_filter"].End(); ++pot_itr )
+						{
+							skillSheetData.potionNamesToFilter.push_back(pot_itr->GetString());
+						}
 					}
 				}
 				if ( d.HasMember("colors") )
@@ -7119,12 +7156,15 @@ void Player::SkillSheet_t::createSkillSheet()
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
 					color, "images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 
+				valBgImgFrame->addImage(
+					SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 },
+					makeColor(255, 255, 255, 128), "images/system/white.png", "tmp tmp");
 				imageSetWidthHeight9x9(valBgImgFrame, skillsheetEffectBackgroundImages);
 			}
 
 			auto effectTxtFrame = effectFrame->addFrame("effect txt frame");
 			effectTxtFrame->setSize(SDL_Rect{ 0, 0, effectFrame->getSize().w - effectXOffset - effectBackgroundXOffset, effectFrame->getSize().h - 4 });
-			auto effectTxt = effectTxtFrame->addField("effect txt", 128);
+			auto effectTxt = effectTxtFrame->addField("effect txt", 1024);
 			effectTxt->setFont(descFont);
 			effectTxt->setSize(SDL_Rect{0, 0, 1000, effectTxtFrame->getSize().h}); // large 1000px to handle large text length marquee
 			effectTxt->setVJustify(Field::justify_t::CENTER);
@@ -7133,7 +7173,7 @@ void Player::SkillSheet_t::createSkillSheet()
 
 			auto effectValFrame = effectFrame->addFrame("effect val frame");
 			effectValFrame->setSize(SDL_Rect{ valueX, 0, effectXOffset, effectFrame->getSize().h - 4 });
-			auto effectVal = effectValFrame->addField("effect val", 128);
+			auto effectVal = effectValFrame->addField("effect val", 1024);
 			effectVal->setFont(descFont);
 			effectVal->setSize(SDL_Rect{ 0, 0, 1000, effectValFrame->getSize().h }); // large 1000px to handle large text length marquee
 			effectVal->setVJustify(Field::justify_t::CENTER);
@@ -7236,6 +7276,7 @@ void Player::SkillSheet_t::resetSkillDisplay()
 		{
 			skillEffect.marqueeTicks = 0;
 			skillEffect.marquee = 0.0;
+			skillEffect.effectUpdatedAtSkillLevel = -1;
 		}
 	}
 }
@@ -7269,7 +7310,7 @@ void Player::SkillSheet_t::openSkillSheet()
 	{
 		selectSkill(0);
 	}
-	if ( ::inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+	if ( !::inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
 		highlightedSkill = selectedSkill;
 	}
@@ -7277,7 +7318,7 @@ void Player::SkillSheet_t::openSkillSheet()
 
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue)
 {
-	char buf[128] = "";
+	char buf[1024] = "";
 	if ( !players[playernum] ) { return ""; }
 	Entity* player = players[playernum]->entity;
 	real_t val = 0.0;
@@ -7854,9 +7895,62 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			val = 50.f + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 5;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
-		else if ( tag == "ALCHEMY_LEARNT_INGREDIENTS" )
+		else if ( tag == "ALCHEMY_LEARNT_INGREDIENTS_BASE" )
 		{
-			snprintf(buf, sizeof(buf), rawValue.c_str(), "  - TODO\n  - TODO\n  - TODO");
+			std::string outputList = "";
+			for ( auto it = clientLearnedAlchemyIngredients[playernum].begin(); 
+				it != clientLearnedAlchemyIngredients[playernum].end(); ++it )
+			{
+				auto alchemyEntry = *it;
+				if ( GenericGUI[playernum].isItemBaseIngredient(alchemyEntry) )
+				{
+					std::string itemName = items[alchemyEntry].name_identified;
+					size_t pos = std::string::npos;
+					for ( auto& potionName : Player::SkillSheet_t::skillSheetData.potionNamesToFilter )
+					{
+						if ( (pos = itemName.find(potionName)) != std::string::npos )
+						{
+							itemName.erase(pos, potionName.length());
+						}
+					}
+					if ( outputList != "" )
+					{
+						outputList += '\n';
+					}
+					outputList += "\x1E " + itemName;
+				}
+			}
+			if ( outputList == "" ) { outputList = "-"; }
+			snprintf(buf, sizeof(buf), rawValue.c_str(), outputList.c_str());
+		}
+		else if ( tag == "ALCHEMY_LEARNT_INGREDIENTS_SECONDARY" )
+		{
+			std::string outputList = "";
+			for ( auto it = clientLearnedAlchemyIngredients[playernum].begin();
+				it != clientLearnedAlchemyIngredients[playernum].end(); ++it )
+			{
+				auto alchemyEntry = *it;
+				if ( GenericGUI[playernum].isItemSecondaryIngredient(alchemyEntry)
+					&& !GenericGUI[playernum].isItemBaseIngredient(alchemyEntry) )
+				{
+					std::string itemName = items[alchemyEntry].name_identified;
+					size_t pos = std::string::npos;
+					for ( auto& potionName : Player::SkillSheet_t::skillSheetData.potionNamesToFilter )
+					{
+						if ( (pos = itemName.find(potionName)) != std::string::npos )
+						{
+							itemName.erase(pos, potionName.length());
+						}
+					}
+					if ( outputList != "" )
+					{
+						outputList += '\n';
+					}
+					outputList += "\x1E " + itemName;
+				}
+			}
+			if ( outputList == "" ) { outputList = "-"; }
+			snprintf(buf, sizeof(buf), rawValue.c_str(), outputList.c_str());
 		}
 		return buf;
 	}
@@ -7887,7 +7981,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			skillLVL /= 20;
 			std::string tierName = language[4061];
 			tierName += " ";
-			if ( skillLVL == 0 )
+			if ( skillLVL <= 0 )
 			{
 				tierName += "I";
 			}
@@ -7917,18 +8011,70 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	}
 	else if ( proficiency == PRO_MAGIC )
 	{
-		/*if ( tag == "CASTING_MP_REGEN" )
+		if ( tag == "MAGIC_CURRENT_TIER" )
 		{
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			std::string tierName = language[4061];
+			int skillLVL = std::min(stats[playernum]->PROFICIENCIES[proficiency] + statGetINT(stats[playernum], player), 100);
+			if ( skillLVL < 0 )
+			{
+				tierName = language[4057]; // none
+			}
+			else
+			{
+				skillLVL /= 20;
+				tierName += " ";
+				if ( skillLVL == 0 )
+				{
+					tierName += "I";
+				}
+				else if ( skillLVL == 1 )
+				{
+					tierName += "II";
+				}
+				else if ( skillLVL == 2 )
+				{
+					tierName += "III";
+				}
+				else if ( skillLVL == 3 )
+				{
+					tierName += "IV";
+				}
+				else if ( skillLVL == 4 )
+				{
+					tierName += "V";
+				}
+				else if ( skillLVL >= 5 )
+				{
+					tierName += "VI";
+				}
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), tierName.c_str());
 		}
-		else if ( tag == "CASTING_BEGINNER" )
+		else if ( tag == "MAGIC_CURRENT_TIER_SPELLS" )
 		{
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			int skillLVL = std::min(stats[playernum]->PROFICIENCIES[proficiency] + statGetINT(stats[playernum], player), 100);
+			if ( skillLVL >= 0 )
+			{
+				skillLVL /= 20;
+			}
+			std::string magics = "";
+			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+			{
+				auto spellEntry = *it;
+				if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
+				{
+					if ( magics != "" )
+					{
+						magics += '\n';
+					}
+					magics += "\x1E ";
+					magics += spellEntry->name;
+				}
+			}
+			if ( magics == "" ) { magics = "-"; }
+			snprintf(buf, sizeof(buf), rawValue.c_str(), magics.c_str());
 		}
-		else if ( tag == "CASTING_SPELLBOOK_FUMBLE" )
-		{
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}*/
+		return buf;
 	}
 	
 	return "";
@@ -8621,6 +8767,20 @@ void Player::SkillSheet_t::processSkillSheet()
 					auto effectValFrame = effectFrame->findFrame("effect val frame");
 					auto effectVal = effectValFrame->findField("effect val");
 					auto effectBgImgFrame = effectFrame->findFrame("effect val bg frame");
+
+					effectTxt->setText(effect_t.title.c_str());
+					if ( effect_t.bAllowRealtimeUpdate 
+						|| effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->PROFICIENCIES[proficiency]
+						|| effect_t.value == "" )
+					{
+						effect_t.effectUpdatedAtSkillLevel = stats[player.playernum]->PROFICIENCIES[proficiency];
+						effect_t.value = formatSkillSheetEffects(player.playernum, proficiency, effect_t.tag, effect_t.rawValue);
+					}
+					effectVal->setText(effect_t.value.c_str());
+					auto textGetValue = Text::get(effectVal->getLongestLine().c_str(), effectVal->getFont(),
+						effectVal->getTextColor(), effectVal->getOutlineColor());
+					const int valueWidth = textGetValue->getWidth();
+
 					{
 						// adjust position to match width of container
 						SDL_Rect effectTxtFramePos = effectTxtFrame->getSize();
@@ -8629,37 +8789,59 @@ void Player::SkillSheet_t::processSkillSheet()
 						const auto& effectStartOffsetX = skillSheetData.skillEntries[selectedSkill].effectStartOffsetX;
 						const auto& effectBackgroundOffsetX = skillSheetData.skillEntries[selectedSkill].effectBackgroundOffsetX;
 						const auto& effectBackgroundWidth = skillSheetData.skillEntries[selectedSkill].effectBackgroundWidth;
-						effectTxtFramePos.w = effectFrame->getSize().w - effectStartOffsetX - effectBackgroundOffsetX;
-						effectValFramePos.x = effectFrame->getSize().w - effectStartOffsetX;
-						effectValFramePos.w = effectStartOffsetX;
-						effectBgImgFramePos.x = effectFrame->getSize().w - effectStartOffsetX - effectBackgroundOffsetX;
-						effectBgImgFramePos.w = effectBackgroundWidth;
+						int valueCustomWidthOffset = effect_t.valueCustomWidthOffset;
+						effectBgImgFramePos.x = effectFrame->getSize().w - effectStartOffsetX - effectBackgroundOffsetX - valueCustomWidthOffset;
+						effectBgImgFramePos.w = effectBackgroundWidth + valueCustomWidthOffset;
+						effectTxtFramePos.w = effectFrame->getSize().w - effectStartOffsetX - effectBackgroundOffsetX - valueCustomWidthOffset;
+						effectValFramePos.x = effectFrame->getSize().w - effectStartOffsetX - valueCustomWidthOffset;
+						effectValFramePos.w = effectStartOffsetX + valueCustomWidthOffset;
+						if ( effect_t.bAllowAutoResizeValue 
+							&& valueWidth > (effectValFramePos.w - effectVal->getSize().x - effectBackgroundOffsetX) )
+						{
+							int diff = (valueWidth - (effectValFramePos.w - effectVal->getSize().x - effectBackgroundOffsetX));
+							effectBgImgFramePos.x -= diff;
+							effectBgImgFramePos.w += diff;
+							effectTxtFramePos.w -= diff;
+							effectValFramePos.x -= diff;
+							effectValFramePos.w += diff;
+						}
+
 						effectTxtFrame->setSize(effectTxtFramePos);
 						effectValFrame->setSize(effectValFramePos);
 						effectBgImgFrame->setSize(effectBgImgFramePos);
 					}
 
-					effectTxt->setText(effect_t.title.c_str());
-					if ( effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->PROFICIENCIES[proficiency]
-						|| effect_t.value == "" )
-					{
-						effect_t.effectUpdatedAtSkillLevel = stats[player.playernum]->PROFICIENCIES[proficiency];
-						effect_t.value = formatSkillSheetEffects(player.playernum, proficiency, effect_t.tag, effect_t.rawValue);
-					}
-					effectVal->setText(effect_t.value.c_str());
-
 					Font* effectTxtFont = Font::get(effectTxt->getFont());
 					int fontHeight;
 					effectTxtFont->sizeText("_", nullptr, &fontHeight);
 					int numEffectLines = effectTxt->getNumTextLines();
+					int numEffectValLines = effectVal->getNumTextLines();
+					int numEffectValBgLines = numEffectValLines;
 					effectFramePos = effectFrame->getSize();
-					if ( numEffectLines > 1 )
+					if ( numEffectLines > 1 || numEffectValLines > 1 )
 					{
-						effectFramePos.h = (fontHeight * numEffectLines) + 8;
+						if ( numEffectValLines <= 1 )
+						{
+							// single line value, only need lines of title
+							effectFramePos.h = (fontHeight * std::max(1, numEffectLines)) + 8;
+						}
+						else
+						{
+							if ( numEffectLines < numEffectValLines )
+							{
+								numEffectValLines += 1; // need more buffer area for the values as it is larger than title
+								effectFramePos.h = (fontHeight * numEffectValLines) + 8;
+							}
+							else
+							{
+								effectFramePos.h = (fontHeight * numEffectLines) + 8;
+							}
+						}
 					}
 					else
 					{
-						effectFramePos.h = fontHeight + 8;
+						// both title and value are 1 line, add .5 padding
+						effectFramePos.h = (fontHeight) * 1.5 + 8;
 					}
 					if ( eff > 0 )
 					{
@@ -8685,16 +8867,8 @@ void Player::SkillSheet_t::processSkillSheet()
 						effectValPos.h = containerHeight;
 						effectVal->setSize(effectValPos);
 
-						if ( numEffectLines > 1 )
-						{
-							effectBgImgFramePos.h = (fontHeight + 8) * effectVal->getNumTextLines();
-							effectBgImgFramePos.y = (containerHeight / 2 - effectBgImgFramePos.h / 2);
-						}
-						else
-						{
-							effectBgImgFramePos.y = 0;
-							effectBgImgFramePos.h = containerHeight;
-						}
+						effectBgImgFramePos.h = (fontHeight * numEffectValBgLines) + 8;
+						effectBgImgFramePos.y = (containerHeight / 2 - effectBgImgFramePos.h / 2);
 						effectBgImgFrame->setSize(effectBgImgFramePos);
 
 						auto effectFrameBgImg = effectFrame->findImage("effect frame bg highlight");
@@ -8708,6 +8882,9 @@ void Player::SkillSheet_t::processSkillSheet()
 						// adjust inner background image elements
 						imageResizeToContainer9x9(effectBgImgFrame, 
 							SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h }, skillsheetEffectBackgroundImages);
+						auto tmp = effectBgImgFrame->findImage("tmp tmp");
+						tmp->pos = SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h };
+						tmp->disabled = true;
 					}
 
 					lowestY = std::max(lowestY, effectFrame->getSize().y + effectFrame->getSize().h);
@@ -8721,9 +8898,6 @@ void Player::SkillSheet_t::processSkillSheet()
 							effectTxt->getTextColor(), effectTxt->getOutlineColor());
 						titleWidth = textGetTitle->getWidth();
 					}
-					auto textGetValue = Text::get(effectVal->getText(), effectVal->getFont(),
-						effectVal->getTextColor(), effectVal->getOutlineColor());
-					int valueWidth = textGetValue->getWidth();
 
 					// check marquee if needed
 					if ( ticks - openTick > TICKS_PER_SECOND * 2 )
@@ -8990,7 +9164,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		scrollArea->setSize(scrollAreaPos);
 	}
 
-	bool drawGlyphs = ::inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
+	bool drawGlyphs = !::inputs.getVirtualMouse(player.playernum)->draw_cursor;
 	if ( auto promptBack = skillFrame->findField("prompt back txt") )
 	{
 		promptBack->setDisabled(!drawGlyphs);
