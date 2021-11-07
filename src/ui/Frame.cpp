@@ -718,12 +718,10 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable) {
 		bool mwheeldown = false;
 		bool mwheelup = false;
-		if (mousestatus[SDL_BUTTON_WHEELDOWN]) {
-			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+		if (input.consumeBinaryToggle("MenuMouseWheelDown")) {
 			mwheeldown = true;
 		}
-		if (mousestatus[SDL_BUTTON_WHEELUP]) {
-			mousestatus[SDL_BUTTON_WHEELUP] = 0;
+		if (input.consumeBinaryToggle("MenuMouseWheelUp")) {
 			mwheelup = true;
 		}
 		if (allowScrolling && allowScrollBinds) {
@@ -950,6 +948,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				result.highlightTime = entry->highlightTime;
 				result.tooltip = entry->tooltip.c_str();
 				if (mousexrel || mouseyrel) {
+					select();
 					selection = i;
 				}
 				if (mousestatus[SDL_BUTTON_LEFT]) {
@@ -1016,6 +1015,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	if (rectContainsPoint(_size, omousex, omousey) && !hollow) {
+		if (clickable && usable) {
+			if (mousestatus[SDL_BUTTON_LEFT]) {
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				activate();
+			}
+		}
 		result.usable = usable = false;
 	}
 
@@ -1098,7 +1103,7 @@ Slider* Frame::addSlider(const char* name) {
 }
 
 Frame::entry_t* Frame::addEntry(const char* name, bool resizeFrame) {
-	entry_t* entry = new entry_t();
+	entry_t* entry = new entry_t(*this);
 	entry->name = name;
 	entry->color = 0xffffffff;
 	list.push_back(entry);
@@ -1452,6 +1457,10 @@ void Frame::deselect() {
 }
 
 void Frame::activate() {
+	select();
+	if (!list.size()) {
+		return;
+	}
 	activated = true;
 	if (selection < 0 || selection >= list.size()) {
 		selection = 0;
@@ -1652,9 +1661,6 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 			src.y = std::max(0.f, (_size.y - pos.y) * ((float)actualImage->getHeight() / image->pos.h));
 			src.w = ((float)dest.w / pos.w) * actualImage->getWidth();
 			src.h = ((float)dest.h / pos.h) * actualImage->getHeight();
-		}
-		if (src.w <= 0 || src.h <= 0) {
-			return;
 		}
 
 		if ( getOpacity() < 100.0 )

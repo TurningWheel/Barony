@@ -6975,6 +6975,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		"images/system/white.png", "")*/;
 
 	auto slider = skillDescriptionFrame->addSlider("skill slider");
+	slider->setBorder(24);
 	slider->setMinValue(0);
 	slider->setMaxValue(100);
 	slider->setValue(0);
@@ -6983,7 +6984,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
 	slider->setOrientation(Slider::SLIDER_VERTICAL);
 	//slider->setCallback(callback);
-	slider->setColor(makeColor(127, 127, 127, 255));
+	slider->setColor(makeColor(255, 255, 255, 255));
 	slider->setHighlightColor(makeColor(255, 255, 255, 255));
 	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
 	slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");

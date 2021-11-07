@@ -349,6 +349,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 				if (style == STYLE_RADIO) {
 					if (!reallyPressed) {
 						result.pressed = pressed = reallyPressed = true;
+						result.clicked = true;
 					}
 				} else {
 					result.pressed = pressed = (reallyPressed == false);

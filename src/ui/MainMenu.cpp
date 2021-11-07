@@ -3167,6 +3167,7 @@ namespace MainMenu {
 		card->setColor(0);
 		card->setBorder(0);
 		card->setOwner(index);
+		card->setClickable(true);
 
 		return card;
 	}
@@ -3818,6 +3819,7 @@ namespace MainMenu {
 		appearances->setListOffset(SDL_Rect{12, 8, 0, 0});
 		appearances->setScrollBarsEnabled(false);
 		appearances->setAllowScrollBinds(false);
+		appearances->setClickable(true);
 		appearances->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		appearances->addWidgetMovement("MenuListCancel", "appearances");
 		appearances->addWidgetMovement("MenuListConfirm", "appearances");
@@ -3842,11 +3844,20 @@ namespace MainMenu {
 			box->pos.y = frame->getActualSize().y;
 			backdrop->pos.y = frame->getActualSize().y + 4;
 			auto appearance_uparrow = card->findButton("appearance_uparrow");
-			appearance_uparrow->setDisabled(!frame->isActivated());
-			appearance_uparrow->setInvisible(!frame->isActivated());
 			auto appearance_downarrow = card->findButton("appearance_downarrow");
-			appearance_downarrow->setDisabled(!frame->isActivated());
-			appearance_downarrow->setInvisible(!frame->isActivated());
+			if (frame->isActivated()) {
+				appearance_uparrow->setDisabled(false);
+				appearance_uparrow->setInvisible(false);
+				appearance_downarrow->setDisabled(false);
+				appearance_downarrow->setInvisible(false);
+			} else if (!frame->isSelected() &&
+				!appearance_uparrow->isSelected() &&
+				!appearance_downarrow->isSelected()) {
+				appearance_uparrow->setDisabled(true);
+				appearance_uparrow->setInvisible(true);
+				appearance_downarrow->setDisabled(true);
+				appearance_downarrow->setInvisible(true);
+			}
 			});
 
 		auto appearance_backdrop = appearances->addImage(
@@ -3874,6 +3885,14 @@ namespace MainMenu {
 		appearance_uparrow->setColor(makeColor(223, 223, 223, 255));
 		appearance_uparrow->setDisabled(true);
 		appearance_uparrow->setInvisible(true);
+		appearance_uparrow->setCallback([](Button& button){
+			auto card = static_cast<Frame*>(button.getParent());
+			auto appearances = card->findFrame("appearances"); assert(appearances);
+			int selection = std::max(appearances->getSelection() - 1, 0);
+			appearances->setSelection(selection);
+			appearances->scrollToSelection();
+			appearances->activateSelection();
+			});
 
 		auto appearance_downarrow = card->addButton("appearance_downarrow");
 		appearance_downarrow->setSize(SDL_Rect{198, 114, 32, 20});
@@ -3882,6 +3901,15 @@ namespace MainMenu {
 		appearance_downarrow->setColor(makeColor(223, 223, 223, 255));
 		appearance_downarrow->setDisabled(true);
 		appearance_downarrow->setInvisible(true);
+		appearance_downarrow->setCallback([](Button& button){
+			auto card = static_cast<Frame*>(button.getParent());
+			auto appearances = card->findFrame("appearances"); assert(appearances);
+			int selection = std::min(appearances->getSelection() + 1,
+				(int)appearances->getEntries().size() - 1);
+			appearances->setSelection(selection);
+			appearances->scrollToSelection();
+			appearances->activateSelection();
+			});
 
 		static const char* appearance_names[] = {
 			"Landguard", "Northborn", "Firebrand", "Hardbred",
@@ -3906,10 +3934,14 @@ namespace MainMenu {
 			entry->color = makeColor(166, 123, 81, 255);
 			entry->text = name;
 			switch (index) {
-			case 0: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 0);}; break;
-			case 1: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 1);}; break;
-			case 2: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 2);}; break;
-			case 3: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 3);}; break;
+			case 0: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 0); entry.parent.activate();}; break;
+			case 1: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 1); entry.parent.activate();}; break;
+			case 2: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 2); entry.parent.activate();}; break;
+			case 3: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 3); entry.parent.activate();}; break;
+			}
+			if (stats[index]->appearance == c) {
+				appearances->setSelection(c);
+				appearances->scrollToSelection();
 			}
 		}
 
@@ -4050,7 +4082,7 @@ namespace MainMenu {
 		disable_abilities_text->setVJustify(Field::justify_t::CENTER);
 
 		auto disable_abilities = card->addButton("disable_abilities");
-		disable_abilities->setSize(SDL_Rect{198, 290, 32, 32});
+		disable_abilities->setSize(SDL_Rect{194, 284, 44, 44});
 		disable_abilities->setIcon("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Checked_00.png");
 		disable_abilities->setColor(0);
 		disable_abilities->setBorderColor(0);
