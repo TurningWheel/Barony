@@ -12331,7 +12331,6 @@ int getStatForProficiency(int skill)
 		case PRO_UNARMED:
 			statForProficiency = STAT_STR;
 			break;
-		case PRO_LOCKPICKING:	// base attribute: dex
 		case PRO_STEALTH:		// base attribute: dex
 		case PRO_RANGED:        // base attribute: dex
 			statForProficiency = STAT_DEX;
@@ -12345,6 +12344,7 @@ int getStatForProficiency(int skill)
 		case PRO_ALCHEMY:       // base attribute: int
 			statForProficiency = STAT_INT;
 			break;
+		case PRO_LOCKPICKING:	// base attribute: per
 		case PRO_APPRAISAL:		// base attribute: per
 			statForProficiency = STAT_PER;
 			break;
@@ -16389,7 +16389,7 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 int Entity::getBaseManaRegen(Stat& myStats)
 {
 	// reduced time from intelligence and spellcasting ability, 0-200 ticks of 300.
-	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 2 to 7
+	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
 	int statMultiplier = std::max(getINT(), 0); // get intelligence
 	if ( myStats.type == AUTOMATON )
 	{
@@ -16405,19 +16405,20 @@ int Entity::getBaseManaRegen(Stat& myStats)
 		multipliedTotal += amount;
 	}
 
-	if ( behavior == &actPlayer && myStats.playerRace == INSECTOID && myStats.appearance == 0 )
-	{
-		int base = MAGIC_REGEN_TIME / 3;
-		if ( myStats.HUNGER < 50 )
-		{
-			base = MAGIC_REGEN_TIME * 3;
-		}
-		else if ( myStats.HUNGER < 250 )
-		{
-			base = MAGIC_REGEN_TIME;
-		}
-		return (base - static_cast<int>(std::min(multipliedTotal, 100))); // return 100-33 ticks, 2-0.67 seconds.
-	}
+	// unused - this is never hit by insectoid mana regen, old code
+	//if ( behavior == &actPlayer && myStats.playerRace == RACE_INSECTOID && myStats.appearance == 0 )
+	//{
+	//	int base = MAGIC_REGEN_TIME / 3;
+	//	if ( myStats.HUNGER < 50 )
+	//	{
+	//		base = MAGIC_REGEN_TIME * 3;
+	//	}
+	//	else if ( myStats.HUNGER < 250 )
+	//	{
+	//		base = MAGIC_REGEN_TIME;
+	//	}
+	//	return (base - static_cast<int>(std::min(multipliedTotal, 100))); // return 100-33 ticks, 2-0.67 seconds.
+	//}
 
 	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(multipliedTotal, 200))); // return 300-100 ticks, 6-2 seconds.
 }
