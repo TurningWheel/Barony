@@ -7274,9 +7274,9 @@ void Player::SkillSheet_t::createSkillSheet()
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
 					color, "images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 
-				valBgImgFrame->addImage(
+				/*valBgImgFrame->addImage(
 					SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 },
-					makeColor(255, 255, 255, 128), "images/system/white.png", "tmp tmp");
+					makeColor(255, 255, 255, 128), "images/system/white.png", "tmp tmp");*/
 				imageSetWidthHeight9x9(valBgImgFrame, skillsheetEffectBackgroundImages);
 			}
 
@@ -7487,7 +7487,26 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "RANGED_DMG_RANGE" )
 		{
-			val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+			}
+			else
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "RANGED_DMG_EFFECTIVENESS" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			}
+			else
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "RANGED_DEGRADE_CHANCE" )
@@ -7509,7 +7528,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "RANGED_THROWN_DMG" )
 		{
@@ -7573,7 +7592,26 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "UNARMED_DMG_RANGE" )
 		{
-			val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+			}
+			else
+			{
+				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "UNARMED_DMG_EFFECTIVENESS" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			}
+			else
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "UNARMED_BONUS_DMG" )
@@ -7596,7 +7634,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "GLOVE_DEGRADE0_CHANCE" )
 		{
@@ -7613,7 +7651,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "UNARMED_KNOCKBACK_DIST" )
 		{
@@ -7636,6 +7674,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
+		else if ( tag == "SWORD_DMG_EFFECTIVENESS" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			}
+			else
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
 		else if ( tag == "SWORD_DEGRADE_CHANCE" )
 		{
 			val = 50 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
@@ -7652,7 +7702,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "SWORD_DEGRADE0_CHANCE" )
 		{
@@ -7670,7 +7720,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		return buf;
 	}
@@ -7685,6 +7735,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			else
 			{
 				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "POLEARM_DMG_EFFECTIVENESS" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			}
+			else
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -7704,7 +7766,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "POLEARM_DEGRADE0_CHANCE" )
 		{
@@ -7722,7 +7784,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		return buf;
 	}
@@ -7737,6 +7799,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			else
 			{
 				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "AXE_DMG_EFFECTIVENESS" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			}
+			else
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -7756,7 +7830,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "AXE_DEGRADE0_CHANCE" )
 		{
@@ -7774,7 +7848,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		return buf;
 	}
@@ -7789,6 +7863,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			else
 			{
 				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MACE_DMG_EFFECTIVENESS" )
+		{
+			if ( proficiency == PRO_POLEARM )
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+			}
+			else
+			{
+				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -7808,7 +7894,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "MACE_DEGRADE0_CHANCE" )
 		{
@@ -7826,7 +7912,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 100 / val;
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		return buf;
 	}
@@ -8053,17 +8139,33 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "TINKERING_KIT_REPAIR_ITEM" )
 		{
 			std::string canRepairItems = language[4057]; // none
+			char metalbuf[64] = "";
+			char magicbuf[64] = "";
 			if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
 			{
 				canRepairItems = language[4058]; // all
 			}
 			else if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
 			{
-				canRepairItems = language[4059]; // 2/0
+				// 2/0
+				snprintf(metalbuf, sizeof(metalbuf), language[4059], 2);
+				snprintf(magicbuf, sizeof(magicbuf), language[4060], 0);
+				canRepairItems = "\x1E ";
+				canRepairItems += metalbuf;
+				canRepairItems += '\n';
+				canRepairItems += "\x1E ";
+				canRepairItems += magicbuf;
 			}
 			else if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
 			{
-				canRepairItems = language[4060]; // 1/0
+				// 1/0
+				snprintf(metalbuf, sizeof(metalbuf), language[4059], 1);
+				snprintf(magicbuf, sizeof(magicbuf), language[4060], 0);
+				canRepairItems = "\x1E ";
+				canRepairItems += metalbuf;
+				canRepairItems += '\n';
+				canRepairItems += "\x1E ";
+				canRepairItems += magicbuf;
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), canRepairItems.c_str());
 		}
@@ -8169,24 +8271,63 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "CASTING_MP_REGEN" )
 		{
-			val = 0.0;
-			if ( player )
+			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->appearance == 0 )
 			{
-				val = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				return language[4066];
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+			else if ( (stats[playernum])->type == AUTOMATON )
+			{
+				return language[4067];
+			}
+			else
+			{
+				val = 0.0;
+				if ( player )
+				{
+					val = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				}
+				snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+			}
 		}
-		else if ( tag == "CASTING_MP_REGEN_BONUS_SKILL" )
+		else if ( tag == "CASTING_MP_REGEN_SKILL_MULTIPLIER" )
+		{
+			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->appearance == 0 )
+			{
+				return language[4066];
+			}
+			else if ( (stats[playernum])->type == AUTOMATON )
+			{
+				return language[4067];
+			}
+			else
+			{
+				val = 0.0;
+				if ( player )
+				{
+					int skill = stats[playernum]->PROFICIENCIES[proficiency];
+					int multiplier = (skill / 20) + 1;
+					val = multiplier;
+					//real_t normalValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+					//stats[playernum]->PROFICIENCIES[proficiency] = 0;
+					//real_t zeroValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+					//stats[playernum]->PROFICIENCIES[proficiency] = skill;
+					//
+					//val = (100 * zeroValue / normalValue) - 100;
+				}
+				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+			}
+		}
+		else if ( tag == "CASTING_MP_REGEN_SKILL_BONUS" )
 		{
 			val = 0.0;
 			if ( player )
 			{
 				int skill = stats[playernum]->PROFICIENCIES[proficiency];
-				real_t normalValue = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				real_t normalValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
 				stats[playernum]->PROFICIENCIES[proficiency] = 0;
-				real_t zeroValue = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				real_t zeroValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
 				stats[playernum]->PROFICIENCIES[proficiency] = skill;
-
+				
 				val = (100 * zeroValue / normalValue) - 100;
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
@@ -8197,9 +8338,9 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			if ( player )
 			{
 				int stat = stats[playernum]->INT;
-				real_t normalValue = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				real_t normalValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
 				stats[playernum]->INT = 0;
-				real_t zeroValue = player->getManaRegenInterval(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				real_t zeroValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
 				stats[playernum]->INT = stat;
 
 				val = (100 * zeroValue / normalValue) - 100;
@@ -8291,6 +8432,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				}
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), tierName.c_str());
+		}
+		else if ( tag == "MAGIC_SPELLPOWER" )
+		{
+			val = (getBonusFromCasterOfSpellElement(player, stats[playernum]) * 100.0);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "MAGIC_CURRENT_TIER_SPELLS" )
 		{
@@ -9124,9 +9270,6 @@ void Player::SkillSheet_t::processSkillSheet()
 						// adjust inner background image elements
 						imageResizeToContainer9x9(effectBgImgFrame, 
 							SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h }, skillsheetEffectBackgroundImages);
-						auto tmp = effectBgImgFrame->findImage("tmp tmp");
-						tmp->pos = SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h };
-						tmp->disabled = true;
 					}
 
 					lowestY = std::max(lowestY, effectFrame->getSize().y + effectFrame->getSize().h);
