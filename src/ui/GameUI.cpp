@@ -3567,6 +3567,51 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 						}
 					}
 				}
+				if ( d.HasMember("leadership_allies_unique_recruits") )
+				{
+					auto& allyTable = skillSheetData.leadershipAllyTableSpecialRecruitment;
+					allyTable.clear();
+					for ( rapidjson::Value::ConstMemberIterator itr = d["leadership_allies_unique_recruits"].MemberBegin();
+						itr != d["leadership_allies_unique_recruits"].MemberEnd(); ++itr )
+					{
+						std::string monsterName = itr->name.GetString();
+						int monsterType = -1;
+						for ( int i = 0; i < NUMMONSTERS; ++i )
+						{
+							if ( monsterName.compare(monstertypename[i]) == 0 )
+							{
+								monsterType = i;
+								break;
+							}
+						}
+						if ( monsterType < 0 ) { continue; }
+						if ( itr->value.IsArray() )
+						{
+							for ( rapidjson::Value::ConstValueIterator ally_itr = itr->value.Begin();
+								ally_itr != itr->value.End(); ++ally_itr )
+							{
+								for ( rapidjson::Value::ConstMemberIterator entry_itr = ally_itr->MemberBegin();
+									entry_itr != ally_itr->MemberEnd(); ++entry_itr )
+								{
+									std::string allyName = entry_itr->name.GetString();
+									int allyType = -1;
+									for ( int i = 0; i < NUMMONSTERS; ++i )
+									{
+										if ( allyName.compare(monstertypename[i]) == 0 )
+										{
+											allyType = i;
+											break;
+										}
+									}
+									if ( allyType >= 0 )
+									{
+										allyTable[(Monster)monsterType].push_back(std::make_pair((Monster)allyType, entry_itr->value.GetString()));
+									}
+								}
+							}
+						}
+					}
+				}
 				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 			}
 		}
@@ -7480,6 +7525,10 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				val = std::max(1, (static_cast<int>(val / 32.0))); // general visibility
 				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 			}
+			else
+			{
+				return "-";
+			}
 		}
 		return buf;
 	}
@@ -7539,11 +7588,8 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "RANGED_PIERCE_CHANCE" )
 		{
-			if ( player )
-			{
-				val = std::min(std::max(player->getPER() / 2, 0), 50);
-				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-			}
+			val = std::min(std::max(statGetPER(stats[playernum], player) / 2, 0), 50);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		return buf;
 	}
@@ -7969,9 +8015,16 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			std::string outputList = "";
 			Monster playerRace = stats[playernum]->type;
 			std::map<Monster, std::vector<Monster>>* allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableBase;
-			for ( int i = 0; i < 2; ++i )
+			enum TableOrder : int 
 			{
-				if ( i == 1 )
+				LEADER_BASE_TABLE,
+				LEADER_UNIQUE_TABLE,
+				LEADER_CAPSTONE_TABLE,
+				TABLE_MAX
+			};
+			for ( int i = LEADER_BASE_TABLE; i < TABLE_MAX; ++i )
+			{
+				if ( i == LEADER_CAPSTONE_TABLE )
 				{
 					if ( skillCapstoneUnlocked(playernum, proficiency) )
 					{
@@ -7979,31 +8032,65 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 					}
 					else
 					{
-						break;
+						continue;
 					}
 				}
-				if ( allyTable->find(playerRace) != allyTable->end() )
+				if ( i == LEADER_CAPSTONE_TABLE || i == LEADER_BASE_TABLE )
 				{
-					if ( !(*allyTable)[playerRace].empty() )
+					if ( allyTable->find(playerRace) != allyTable->end() )
 					{
-						for ( auto& ally : (*allyTable)[playerRace] )
+						if ( !(*allyTable)[playerRace].empty() )
 						{
-							if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
-							std::string monsterName = "";
-							if ( ally < KOBOLD ) //Original monster count
+							for ( auto& ally : (*allyTable)[playerRace] )
 							{
-								monsterName = language[90 + ally];
+								if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
+								std::string monsterName = "";
+								if ( ally < KOBOLD ) //Original monster count
+								{
+									monsterName = language[90 + ally];
+								}
+								else if ( ally >= KOBOLD ) //New monsters
+								{
+									monsterName = language[2000 + ally - KOBOLD];
+								}
+								capitalizeString(monsterName);
+								if ( outputList != "" )
+								{
+									outputList += '\n';
+								}
+								outputList += "\x1E " + monsterName;
 							}
-							else if ( ally >= KOBOLD ) //New monsters
+						}
+					}
+				}
+				else if ( i == LEADER_UNIQUE_TABLE )
+				{
+					auto* allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableSpecialRecruitment;
+					if ( allyTable->find(playerRace) != allyTable->end() )
+					{
+						if ( !(*allyTable)[playerRace].empty() )
+						{
+							for ( auto& allyPair : (*allyTable)[playerRace] )
 							{
-								monsterName = language[2000 + ally - KOBOLD];
+								auto& ally = allyPair.first;
+								if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
+								std::string monsterName = "";
+								if ( ally < KOBOLD ) //Original monster count
+								{
+									monsterName = language[90 + ally];
+								}
+								else if ( ally >= KOBOLD ) //New monsters
+								{
+									monsterName = language[2000 + ally - KOBOLD];
+								}
+								capitalizeString(monsterName);
+								if ( outputList != "" )
+								{
+									outputList += '\n';
+								}
+								outputList += "\x1E " + monsterName;
+								outputList += "\n" + allyPair.second;
 							}
-							capitalizeString(monsterName);
-							if ( outputList != "" )
-							{
-								outputList += '\n';
-							}
-							outputList += "\x1E " + monsterName;
 						}
 					}
 				}
@@ -8054,8 +8141,8 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				{
 					val = 9;
 				}
+				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "APPRAISE_WORTHLESS_GLASS" )
 		{

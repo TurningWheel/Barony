@@ -1042,6 +1042,7 @@ public:
 			std::vector<std::string> potionNamesToFilter;
 			std::map<Monster, std::vector<Monster>> leadershipAllyTableBase;
 			std::map<Monster, std::vector<Monster>> leadershipAllyTableLegendary;
+			std::map<Monster, std::vector<std::pair<Monster, std::string>>> leadershipAllyTableSpecialRecruitment;
 		} skillSheetData;
 
 		void selectSkill(int skill);

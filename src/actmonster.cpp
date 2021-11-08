@@ -1282,6 +1282,44 @@ void printFollowerTableForSkillsheet(int monsterclicked, Entity* my, Stat* mySta
 	stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] = originalLeadershipSkill;
 	stats[monsterclicked]->CHR = originalCHR;
 
+	// special exeptions here.
+	outputList += ",\"leadership_allies_unique_recruits\":{";
+	{
+		outputList += "\"";
+		outputList += monstertypename[SUCCUBUS];
+		outputList += "\":";
+		outputList += "[{";
+			outputList += "\"";
+			outputList += monstertypename[HUMAN];
+			outputList += "\":\"";
+			outputList += "   (Drunk)";
+			outputList += "\"";
+			outputList += "}";
+
+			outputList += ",{";
+			outputList += "\"";
+			outputList += monstertypename[HUMAN];
+			outputList += "\":\"";
+			outputList += "   (Confused)";
+			outputList += "\"";
+			outputList += "}";
+		outputList += "]";
+
+		outputList += ",";
+		outputList += "\"";
+		outputList += monstertypename[GOATMAN];
+		outputList += "\":";
+		outputList += "[{";
+			outputList += "\"";
+			outputList += monstertypename[HUMAN];
+			outputList += "\":\"";
+			outputList += "   (Throw Booze\\n   while drunk)";
+			outputList += "\"";
+			outputList += "}";
+		outputList += "]";
+	}
+	outputList += "}";
+
 	outputList += "}";
 
 	rapidjson::Document d;

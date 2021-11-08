@@ -3456,6 +3456,11 @@ void consoleCommand(char const * const command_str)
 		}
 		else if ( !strncmp(command_str, "/printleaderlist", 16) )
 		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
 			Player::SkillSheet_t::generateFollowerTableForSkillsheet = true;
 			messagePlayer(clientnum, "On next human right click leader list will be generated.");
 		}
