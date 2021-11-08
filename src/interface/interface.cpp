@@ -6335,6 +6335,30 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			default:
 				break;
 		}
+		int metalCraftCost = 0;
+		int magicCraftCost = 0;
+		tinkeringGetCraftingCost(item, &metalCraftCost, &magicCraftCost);
+		// prevent bonus scrap being more than the amount required to create.
+		if ( metalCraftCost > 0 )
+		{
+			if ( metal > 0 && bonusMetalScrap > 0 )
+			{
+				if ( (metal + bonusMetalScrap) > metalCraftCost )
+				{
+					bonusMetalScrap = std::max(0, (metalCraftCost - metal));
+				}
+			}
+		}
+		if ( magicCraftCost > 0 )
+		{
+			if ( magic > 0 && bonusMagicScrap > 0 )
+			{
+				if ( (magic + bonusMagicScrap) > magicCraftCost )
+				{
+					bonusMagicScrap = std::max(0, (magicCraftCost - magic));
+				}
+			}
+		}
 	}
 	if ( metal > 0 )
 	{
