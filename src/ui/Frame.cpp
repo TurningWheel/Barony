@@ -714,6 +714,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
+	const bool mouseActive = inputs.getVirtualMouse(owner)->draw_cursor || mousexrel || mouseyrel;
+
 	// scroll with mouse wheel
 	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable) {
 		bool mwheeldown = false;
@@ -732,30 +734,48 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				if (this->actualSize.w > size.w) {
 					if (this->actualSize.h <= size.h) {
 						if (mwheeldown) {
-							this->actualSize.x += std::min(entrySize, size.w);
+							scrollInertiaX += .15;
 						}
 						if (mwheelup) {
-							this->actualSize.x -= std::min(entrySize, size.w);
+							scrollInertiaX -= .15;
 						}
-						this->actualSize.x = std::min(std::max(0, this->actualSize.x),
-							std::max(0, this->actualSize.w - size.w));
 					}
 				}
 
 				// y scroll with mouse wheel
 				if (this->actualSize.h > size.h) {
 					if (mwheeldown) {
-						this->actualSize.y += std::min(entrySize, size.h);
+						scrollInertiaY += .15;
 					}
 					if (mwheelup) {
-						this->actualSize.y -= std::min(entrySize, size.h);
+						scrollInertiaY -= .15;
 					}
-					this->actualSize.y = std::min(std::max(0, this->actualSize.y),
-						std::max(0, this->actualSize.h - size.h));
 				}
 			}
 		}
 	}
+
+	this->actualSize.x += scrollInertiaX * entrySize * 2;
+	this->actualSize.y += scrollInertiaY * entrySize * 2;
+
+	if (fabs(scrollInertiaX) > 0.0) {
+		scrollInertiaX *= .9;
+		if (fabs(scrollInertiaX) < 0.01) {
+			scrollInertiaX = 0.0;
+		}
+	}
+
+	if (fabs(scrollInertiaY) > 0.0) {
+		scrollInertiaY *= .9;
+		if (fabs(scrollInertiaY) < 0.01) {
+			scrollInertiaY = 0.0;
+		}
+	}
+
+	this->actualSize.x = std::min(std::max(0, this->actualSize.x),
+		std::max(0, this->actualSize.w - size.w));
+	this->actualSize.y = std::min(std::max(0, this->actualSize.y),
+		std::max(0, this->actualSize.h - size.h));
 
 	// process (frame view) sliders
 	if (parent != nullptr && !hollow && usable && scrollbars) {
@@ -882,7 +902,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (usable && buttonResult.highlighted) {
 				result.highlightTime = buttonResult.highlightTime;
 				result.tooltip = buttonResult.tooltip;
-				if (mousexrel || mouseyrel) {
+				if (mouseActive) {
 					button->select();
 				}
 				if (buttonResult.clicked) {
@@ -912,7 +932,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (usable && sliderResult.highlighted) {
 				result.highlightTime = sliderResult.highlightTime;
 				result.tooltip = sliderResult.tooltip;
-				if (mousexrel || mouseyrel) {
+				if (mouseActive) {
 					slider->select();
 				}
 				if (sliderResult.clicked) {
@@ -947,7 +967,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (rectContainsPoint(_size, omousex, omousey) && rectContainsPoint(entryRect, omousex, omousey)) {
 				result.highlightTime = entry->highlightTime;
 				result.tooltip = entry->tooltip.c_str();
-				if (mousexrel || mouseyrel) {
+				if (mouseActive) {
 					select();
 					selection = i;
 				}
@@ -991,7 +1011,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			Field::result_t fieldResult = field->process(_size, actualSize, usable);
 			if (usable) {
 				if (fieldResult.highlighted) {
-					if (mousexrel || mouseyrel) {
+					if (mouseActive) {
 						field->select();
 					}
 					if (field->isSelected()) {
@@ -1010,6 +1030,35 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 			if (destWidget && field->isSelected()) {
 				field->deselect();
+			}
+		}
+	}
+
+	// scroll with arrows or left stick
+	if (usable && allowScrolling && allowScrollBinds) {
+		Input& input = Input::inputs[owner];
+
+		// x scroll
+		if (this->actualSize.w > size.w) {
+			if (input.binaryToggle("MenuRight")) {
+				scrollInertiaX += .15;
+				usable = result.usable = false;
+			}
+			else if (input.binaryToggle("MenuLeft")) {
+				scrollInertiaX -= .15;
+				usable = result.usable = false;
+			}
+		}
+
+		// y scroll
+		if (this->actualSize.h > size.h) {
+			if (input.binaryToggle("MenuDown")) {
+				scrollInertiaY += .15;
+				usable = result.usable = false;
+			}
+			else if (input.binaryToggle("MenuUp")) {
+				scrollInertiaY -= .15;
+				usable = result.usable = false;
 			}
 		}
 	}

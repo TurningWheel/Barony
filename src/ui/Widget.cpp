@@ -4,6 +4,7 @@
 #include "Widget.hpp"
 #include "Frame.hpp"
 #include "Image.hpp"
+#include "../player.hpp"
 #include "../input.hpp"
 #include "../engine/audio/sound.hpp"
 
@@ -73,11 +74,15 @@ Widget* Widget::handleInput() {
 
 		// move to another widget
 		for (auto& move : widgetMovements) {
-			if (input.consumeBinaryToggle(move.first.c_str())) {
-				if (!move.second.empty()) {
+			if (!move.second.empty()) {
+				if (input.consumeBinaryToggle(move.first.c_str())) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result && !result->disabled && !result->invisible) {
+						auto in = input.input(move.first.c_str());
+						if (in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON) {
+							inputs.getVirtualMouse(owner)->draw_cursor = false;
+						}
 						playSound(495, 64);
 						result->scrollParent();
 						return result;
@@ -88,11 +93,15 @@ Widget* Widget::handleInput() {
 
 		// move to another widget and activate it
 		for (auto& action : widgetActions) {
-			if (input.consumeBinaryToggle(action.first.c_str())) {
-				if (!action.second.empty()) {
+			if (!action.second.empty()) {
+				if (input.consumeBinaryToggle(action.first.c_str())) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(action.second.c_str(), true);
 					if (result && !result->disabled) {
+						auto in = input.input(action.first.c_str());
+						if (in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON) {
+							inputs.getVirtualMouse(owner)->draw_cursor = false;
+						}
 						result->activate();
 						return nullptr;
 					}

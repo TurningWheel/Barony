@@ -2,6 +2,7 @@
 
 #include "../main.hpp"
 #include "../draw.hpp"
+#include "../player.hpp"
 #include "Frame.hpp"
 #include "Button.hpp"
 #include "Image.hpp"
@@ -326,7 +327,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 #ifndef NINTENDO
-	if (rectContainsPoint(_size, omousex, omousey)) {
+	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(owner)->draw_cursor) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
 		result.tooltip = tooltip.c_str();

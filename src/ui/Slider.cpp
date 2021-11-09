@@ -184,7 +184,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
 #ifndef NINTENDO
-	if (rectContainsPoint(_size, omousex, omousey)) {
+	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(owner)->draw_cursor) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
 		result.tooltip = tooltip.c_str();

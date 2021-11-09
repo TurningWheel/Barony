@@ -13,6 +13,16 @@ namespace MainMenu {
 	extern bool arachnophobia_filter; // if true, all spiders are crabs
 	extern bool vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout
 
+	enum class FadeDestination : Uint8 {
+		None = 0,
+		RootMainMenu = 1,
+		IntroStoryScreen = 2,
+		HallOfTrials = 3,
+		GameStart = 4,
+	};
+
+	void beginFade(FadeDestination);
+
 	struct InventorySorting {
 		bool hotbarWeapons = true;
 		bool hotbarArmor = true;

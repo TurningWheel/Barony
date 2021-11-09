@@ -340,6 +340,8 @@ private:
 	bool inheritParentFrameOpacity = true;				//!< if true, uses parent frame opacity
 	justify_t justify = justify_t::LEFT;				//!< frame list horizontal justification
 	bool clickable = false;								//!< if true, you can activate the frame by clicking on it (used for lists)
+	real_t scrollInertiaX = 0.0;						//!< scroll inertia x
+	real_t scrollInertiaY = 0.0;						//!< scroll inertia y
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;

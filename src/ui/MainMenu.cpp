@@ -26,14 +26,6 @@ namespace MainMenu {
 	bool vertical_splitscreen = false;
 	float master_volume = 100.f;
 
-	enum class FadeDestination : Uint8 {
-		None = 0,
-		RootMainMenu = 1,
-		IntroStoryScreen = 2,
-		HallOfTrials = 3,
-		GameStart = 4,
-	};
-
 	static Frame* main_menu_frame = nullptr;
 	static int main_menu_buttons_height = 0;
 	static Uint32 main_menu_ticks = 0u;
@@ -41,6 +33,11 @@ namespace MainMenu {
 	static int main_menu_cursor_x = 0;
 	static int main_menu_cursor_y = 0;
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
+
+	void beginFade(FadeDestination fd) {
+		main_menu_fade_destination = fd;
+		fadeout = true;
+	}
 
 	static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
 	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
@@ -4939,7 +4936,7 @@ namespace MainMenu {
 		new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
 		new_button->setText(" \nNEW");
 		new_button->setFont(smallfont_outline);
-		new_button->setCallback(playNew);
+		new_button->setCallback([](Button& button){soundActivate(); playNew(button);});
 		new_button->setWidgetSearchParent(window->getName());
 		new_button->setWidgetLeft("continue");
 		new_button->setWidgetDown("hall_of_trials");
@@ -4956,9 +4953,157 @@ namespace MainMenu {
 		}
 	}
 
-	void playNew(Button& button) {
+	static void openLobbyBrowser(Button& button) {
 		soundActivate();
 
+		enum class BrowserMode {
+			Online,
+			Wireless,
+		};
+		static BrowserMode mode;
+		mode = BrowserMode::Online;
+
+		// remove "Local or Network" window
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame = static_cast<Frame*>(frame->getParent());
+		frame->removeSelf();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		// create lobby browser window
+		auto window = dimmer->addFrame("lobby_browser_window");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 524) / 2,
+			(Frame::virtualScreenY - 542) / 2,
+			524,
+			542});
+		window->setActualSize(SDL_Rect{0, 0, 524, 542});
+		window->setColor(0);
+		window->setBorder(0);
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window00.png",
+			"background"
+		);
+
+		auto banner_title = window->addField("banner", 64);
+		banner_title->setSize(SDL_Rect{160, 24, 204, 18});
+		banner_title->setText("ONLINE LOBBY BROWSER");
+		banner_title->setFont(smallfont_outline);
+		banner_title->setJustify(Field::justify_t::CENTER);
+
+		auto interior = window->addImage(
+			SDL_Rect{82, 70, 358, 364},
+			0xffffffff,
+			"images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online00.png",
+			"interior"
+		);
+
+		auto online_tab = window->addButton("online_tab");
+		online_tab->setSize(SDL_Rect{144, 70, 106, 36});
+		online_tab->setHighlightColor(0);
+		online_tab->setBorder(0);
+		online_tab->setColor(0);
+		online_tab->setText("ONLINE");
+		online_tab->setFont(smallfont_outline);
+		online_tab->setWidgetSearchParent(window->getName());
+		online_tab->addWidgetAction("MenuPageLeft", "online_tab");
+		online_tab->addWidgetAction("MenuPageRight", "wireless_tab");
+		online_tab->addWidgetAction("MenuStart", "enter_code");
+		online_tab->setWidgetBack("cancel");
+		online_tab->setCallback([](Button& button){
+			auto frame = static_cast<Frame*>(button.getParent());
+			auto interior = frame->findImage("interior");
+			interior->path = "images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online00.png";
+			});
+
+		auto wireless_tab = window->addButton("wireless_tab");
+		wireless_tab->setSize(SDL_Rect{254, 70, 128, 36});
+		wireless_tab->setHighlightColor(0);
+		wireless_tab->setBorder(0);
+		wireless_tab->setColor(0);
+		wireless_tab->setText("WIRELESS");
+		wireless_tab->setFont(smallfont_outline);
+		wireless_tab->setWidgetSearchParent(window->getName());
+		wireless_tab->addWidgetAction("MenuPageLeft", "online_tab");
+		wireless_tab->addWidgetAction("MenuPageRight", "wireless_tab");
+		wireless_tab->addWidgetAction("MenuStart", "enter_code");
+		wireless_tab->setWidgetBack("cancel");
+		wireless_tab->setCallback([](Button& button){
+			auto frame = static_cast<Frame*>(button.getParent());
+			auto interior = frame->findImage("interior");
+			interior->path = "images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless00.png";
+			});
+
+		auto friends_only = window->addButton("friends_only");
+		friends_only->setSize(SDL_Rect{132, 372, 44, 44});
+		friends_only->setIcon("images/ui/Main Menus/Play/LobbyBrowser/Fill_Checked_00.png");
+		friends_only->setStyle(Button::style_t::STYLE_CHECKBOX);
+		friends_only->setHighlightColor(0);
+		friends_only->setBorderColor(0);
+		friends_only->setBorder(0);
+		friends_only->setColor(0);
+
+		auto friends_only_label = window->addField("friends_only_label", 64);
+		friends_only_label->setSize(SDL_Rect{166, 372, 98, 48});
+		friends_only_label->setText("Friends\nOnly");
+		friends_only_label->setFont(smallfont_no_outline);
+		friends_only_label->setJustify(Field::justify_t::CENTER);
+		friends_only_label->setColor(makeColor(166, 123, 81, 255));
+
+		auto show_full = window->addButton("show_full");
+		show_full->setSize(SDL_Rect{258, 372, 44, 44});
+		show_full->setIcon("images/ui/Main Menus/Play/LobbyBrowser/Fill_Checked_00.png");
+		show_full->setStyle(Button::style_t::STYLE_CHECKBOX);
+		show_full->setHighlightColor(0);
+		show_full->setBorderColor(0);
+		show_full->setBorder(0);
+		show_full->setColor(0);
+
+		auto show_full_label = window->addField("show_full_label", 64);
+		show_full_label->setSize(SDL_Rect{294, 372, 98, 48});
+		show_full_label->setText("Show\nFull");
+		show_full_label->setFont(smallfont_no_outline);
+		show_full_label->setJustify(Field::justify_t::CENTER);
+		show_full_label->setColor(makeColor(166, 123, 81, 255));
+
+		auto cancel = window->addButton("cancel");
+		cancel->setSize(SDL_Rect{94, 440, 164, 62});
+		cancel->setBackground("images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setColor(makeColor(127, 127, 127, 255));
+		cancel->setText("Cancel");
+		cancel->setFont(smallfont_outline);
+		cancel->setWidgetSearchParent(window->getName());
+		cancel->addWidgetAction("MenuPageLeft", "online_tab");
+		cancel->addWidgetAction("MenuPageRight", "wireless_tab");
+		cancel->addWidgetAction("MenuStart", "enter_code");
+		cancel->setWidgetBack("cancel");
+		cancel->setWidgetRight("enter_code");
+		cancel->setCallback([](Button& button){soundCancel(); playNew(button);});
+
+		auto enter_code = window->addButton("enter_code");
+		enter_code->setSize(SDL_Rect{266, 440, 164, 62});
+		enter_code->setBackground("images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
+		enter_code->setHighlightColor(makeColor(255, 255, 255, 255));
+		enter_code->setColor(makeColor(127, 127, 127, 255));
+		enter_code->setText("Enter Lobby\nCode");
+		enter_code->setFont(smallfont_outline);
+		enter_code->setWidgetSearchParent(window->getName());
+		enter_code->addWidgetAction("MenuPageLeft", "online_tab");
+		enter_code->addWidgetAction("MenuPageRight", "wireless_tab");
+		enter_code->addWidgetAction("MenuStart", "enter_code");
+		enter_code->setWidgetBack("cancel");
+		enter_code->setWidgetLeft("cancel");
+	}
+
+	void playNew(Button& button) {
 		allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 		allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
 		allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
@@ -5024,6 +5169,7 @@ namespace MainMenu {
 		join_button->setWidgetBack("back_button");
 		join_button->setWidgetUp("local");
 		join_button->setWidgetLeft("host");
+		join_button->setCallback(openLobbyBrowser);
 
 		auto host_button = window->addButton("host");
 		host_button->setSize(SDL_Rect{52, 134, 164, 62});

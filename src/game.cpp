@@ -4100,7 +4100,7 @@ void ingameHud()
 
 			gui_clickdrag[player] = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
 
-			if ( capture_mouse )
+			if ( capture_mouse && !gamePaused )
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
