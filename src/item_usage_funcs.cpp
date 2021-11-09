@@ -3675,42 +3675,18 @@ void item_ScrollSummon(Item* item, int player)
 		{
 			if ( numCreatures <= 1 )
 			{
-				if ( creature < KOBOLD ) //Original monster count
-				{
-					messagePlayer(player, language[877], language[90 + creature]);
-
-				}
-				else if ( creature >= KOBOLD ) //New monsters
-				{
-					messagePlayer(player, language[877], language[2000 + (creature - KOBOLD)]);
-				}
+				messagePlayer(player, language[877], getMonsterLocalizedName((Monster)creature).c_str());
 			}
 			else
 			{
-				if ( creature < KOBOLD ) //Original monster count
-				{
-					messagePlayer(player, language[878], language[111 + creature]);
-
-				}
-				else if ( creature >= KOBOLD ) //New monsters
-				{
-					messagePlayer(player, language[878], language[2050 + (creature - KOBOLD)]);
-				}
+				messagePlayer(player, language[878], getMonsterLocalizedPlural((Monster)creature).c_str());
 			}
 		}
 		else
 		{
 			if ( numCreatures <= 1 )
 			{
-				if ( creature < KOBOLD ) //Original monster count
-				{
-					messagePlayer(player, language[879], language[90 + creature]);
-
-				}
-				else if ( creature >= KOBOLD ) //New monsters
-				{
-					messagePlayer(player, language[879], language[2000 + (creature - KOBOLD)]);
-				}
+				messagePlayer(player, language[879], getMonsterLocalizedName((Monster)creature).c_str());
 				if ( item->beatitude >= 2 )
 				{
 					messagePlayer(player, language[880]);
@@ -3718,15 +3694,7 @@ void item_ScrollSummon(Item* item, int player)
 			}
 			else
 			{
-				if ( creature < KOBOLD ) //Original monster count
-				{
-					messagePlayer(player, language[881], language[111 + creature]);
-
-				}
-				else if ( creature >= KOBOLD ) //New monsters
-				{
-					messagePlayer(player, language[881], language[2050 + (creature - KOBOLD)]);
-				}
+				messagePlayer(player, language[881], getMonsterLocalizedPlural((Monster)creature).c_str());
 				if ( item->beatitude >= 2 )
 				{
 					messagePlayer(player, language[882]);

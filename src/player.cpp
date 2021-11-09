@@ -1996,14 +1996,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			}
 			else
 			{
-				if ( monsterType < KOBOLD ) //Original monster count
-				{
-					name = language[90 + monsterType];
-				}
-				else if ( monsterType >= KOBOLD ) //New monsters
-				{
-					name = language[2000 + monsterType - KOBOLD];
-				}
+				name = getMonsterLocalizedName((Monster)monsterType).c_str();
 			}
 
 			if ( parent->monsterAllyGetPlayerLeader() 

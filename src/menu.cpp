@@ -7945,25 +7945,13 @@ void handleMainMenu(bool mode)
 					nokills = false;
 					if ( kills[x] > 1 )
 					{
-						if ( x < KOBOLD )
-						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[111 + x]);
-						}
-						else
-						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2050 + (x - KOBOLD)]);
-						}
+						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", 
+							kills[x], getMonsterLocalizedPlural((Monster)x).c_str());
 					}
 					else
 					{
-						if ( x < KOBOLD )
-						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[90 + x]);
-						}
-						else
-						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2000 + (x - KOBOLD)]);
-						}
+						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", 
+							kills[x], getMonsterLocalizedName((Monster)x).c_str());
 					}
 					y++;
 				}

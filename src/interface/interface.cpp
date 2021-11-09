@@ -2089,35 +2089,17 @@ void FollowerRadialMenu::drawFollowerMenu()
 					else if ( usingLastCmd )
 					{
 						// tell player current monster can't do what you asked (e.g using last command & swapping between monsters with different requirements)
-						if ( followerStats->type < KOBOLD ) // Original monster count
+						if ( disableOption < 0 )
 						{
-							if ( disableOption < 0 )
-							{
-								messagePlayer(gui_player, language[3640], language[90 + followerStats->type]);
-							}
-							else if ( tinkeringFollower )
-							{
-								messagePlayer(gui_player, language[3639], language[90 + followerStats->type]);
-							}
-							else
-							{
-								messagePlayer(gui_player, language[3638], language[90 + followerStats->type]);
-							}
+							messagePlayer(gui_player, language[3640], getMonsterLocalizedName(followerStats->type).c_str());
 						}
-						else if ( followerStats->type >= KOBOLD ) //New monsters
+						else if ( tinkeringFollower )
 						{
-							if ( disableOption < 0 )
-							{
-								messagePlayer(gui_player, language[3640], language[2000 + (followerStats->type - KOBOLD)]);
-							}
-							else if ( tinkeringFollower )
-							{
-								messagePlayer(gui_player, language[3639], language[2000 + (followerStats->type - KOBOLD)]);
-							}
-							else
-							{
-								messagePlayer(gui_player, language[3638], language[2000 + (followerStats->type - KOBOLD)]);
-							}
+							messagePlayer(gui_player, language[3639], getMonsterLocalizedName(followerStats->type).c_str());
+						}
+						else
+						{
+							messagePlayer(gui_player, language[3638], getMonsterLocalizedName(followerStats->type).c_str());
 						}
 					}
 
@@ -2634,33 +2616,20 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3103]) * TTF12_WIDTH + 8;
-				if ( followerStats->type < KOBOLD ) //Original monster count
-				{
-					tooltip.w += strlen(language[90 + followerStats->type]) * TTF12_WIDTH;
-					drawTooltip(&tooltip);
-					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-						uint32ColorOrange(*mainsurface), language[3103], language[90 + followerStats->type]);
-				}
-				else if ( followerStats->type >= KOBOLD ) //New monsters
-				{
-					tooltip.w += strlen(language[2000 + followerStats->type - KOBOLD]) * TTF12_WIDTH;
-					drawTooltip(&tooltip);
-					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
-						uint32ColorOrange(*mainsurface), language[3103], language[2000 + followerStats->type - KOBOLD]);
-				}
+				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
+				drawTooltip(&tooltip);
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+					uint32ColorOrange(*mainsurface), language[3103], getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3673]) * TTF12_WIDTH + 8;
 				drawTooltip(&tooltip);
-				if ( followerStats->type >= KOBOLD ) //New monsters
-				{
-					tooltip.w += strlen(language[2000 + followerStats->type - KOBOLD]) * TTF12_WIDTH;
-					drawTooltip(&tooltip);
-					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-						uint32ColorOrange(*mainsurface), language[3673], language[2000 + followerStats->type - KOBOLD]);
-				}
+				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
+				drawTooltip(&tooltip);
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+					uint32ColorOrange(*mainsurface), language[3673], getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else
 			{
@@ -3019,14 +2988,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 		{
 			strcpy(interactText, language[4043]); // "Attack "
 			int monsterType = selectedEntity.getMonsterTypeFromSprite();
-			if ( monsterType < KOBOLD ) //Original monster count
-			{
-				strcat(interactText, language[90 + monsterType]);
-			}
-			else if ( monsterType >= KOBOLD ) //New monsters
-			{
-				strcat(interactText, language[2000 + monsterType - KOBOLD]);
-			}
+			strcat(interactText, getMonsterLocalizedName((Monster)monsterType).c_str());
 		}
 	}
 	else
@@ -8612,7 +8574,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	}
 }
 
-void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority)
+void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, const char* name, bool isLowPriority)
 {
 	auto find = HPBars.find(uid);
 	EnemyHPDetails* details = nullptr;

@@ -380,14 +380,7 @@ void drawSustainedSpells(const int player)
 						int type = tagged->getMonsterTypeFromSprite();
 						if ( type != NOTHING )
 						{
-							if ( type >= KOBOLD )
-							{
-								snprintf(tempstr, 1023, language[3858], language[2000 + type - KOBOLD]);
-							}
-							else
-							{
-								snprintf(tempstr, 1023, language[3858], language[90 + type]);
-							}
+							snprintf(tempstr, 1023, language[3858], getMonsterLocalizedName((Monster)type).c_str());
 						}
 						else
 						{

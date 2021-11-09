@@ -270,15 +270,7 @@ void spell_summonFamiliar(int player)
 	{
 		if ( numCreatures <= 1 )
 		{
-			if ( creature < KOBOLD ) //Original monster count
-			{
-				messagePlayer(player, language[879], language[90 + creature]);
-
-			}
-			else if ( creature >= KOBOLD ) //New monsters
-			{
-				messagePlayer(player, language[879], language[2000 + (creature - KOBOLD)]);
-			}
+			messagePlayer(player, language[879], getMonsterLocalizedName(creature).c_str());
 			/*if ( item->beatitude >= 2 )
 			{
 				messagePlayer(player, language[880]);
@@ -286,15 +278,7 @@ void spell_summonFamiliar(int player)
 		}
 		else
 		{
-			if ( creature < KOBOLD ) //Original monster count
-			{
-				messagePlayer(player, language[881], language[111 + creature]);
-
-			}
-			else if ( creature >= KOBOLD ) //New monsters
-			{
-				messagePlayer(player, language[881], language[2050 + (creature - KOBOLD)]);
-			}
+			messagePlayer(player, language[881], getMonsterLocalizedPlural(creature).c_str());
 			//if ( item->beatitude >= 2 )
 			//{
 			//	messagePlayer(player, language[882]);
@@ -471,14 +455,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
-				if ( hitstats->type < KOBOLD ) //Original monster count
-				{
-					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-				}
-				else if ( hitstats->type >= KOBOLD ) //New monsters
-				{
-					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-				}
+				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 			}
 			else
 			{
@@ -608,14 +585,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
-				if ( hitstats->type < KOBOLD ) //Original monster count
-				{
-					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-				}
-				else if ( hitstats->type >= KOBOLD ) //New monsters
-				{
-					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-				}
+				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 			}
 			else
 			{
@@ -693,14 +663,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 				// update enemy bar for attacker
 				if ( !strcmp(hitstats->name, "") )
 				{
-					if ( hitstats->type < KOBOLD ) //Original monster count
-					{
-						updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-					}
-					else if ( hitstats->type >= KOBOLD ) //New monsters
-					{
-						updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-					}
+					updateEnemyBar(parent, target, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 				}
 				else
 				{
@@ -890,14 +853,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
-				if ( hitstats->type < KOBOLD ) //Original monster count
-				{
-					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-				}
-				else if ( hitstats->type >= KOBOLD ) //New monsters
-				{
-					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-				}
+				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 			}
 			else
 			{
@@ -1076,14 +1032,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
-				if ( hitstats->type < KOBOLD ) //Original monster count
-				{
-					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-				}
-				else if ( hitstats->type >= KOBOLD ) //New monsters
-				{
-					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-				}
+				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 			}
 			else
 			{
@@ -1431,14 +1380,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						// update enemy bar for attacker
 						if ( !strcmp(hitstats->name, "") )
 						{
-							if ( hitstats->type < KOBOLD ) //Original monster count
-							{
-								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-							}
-							else if ( hitstats->type >= KOBOLD ) //New monsters
-							{
-								updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-							}
+							updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 						}
 						else
 						{
@@ -1598,14 +1540,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						// update enemy bar for attacker
 						if ( !strcmp(hitstats->name, "") )
 						{
-							if ( hitstats->type < KOBOLD ) //Original monster count
-							{
-								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-							}
-							else if ( hitstats->type >= KOBOLD ) //New monsters
-							{
-								updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-							}
+							updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 						}
 						else
 						{
@@ -2164,39 +2099,11 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			// the %s polymorph into a %s!
 			if ( !strcmp((*targetStats).name, "") || namedMonsterAsGeneric )
 			{
-				if ( (*targetStats).type < KOBOLD ) //Original monster count
-				{
-					if ( summonedStats->type < KOBOLD )
-					{
-						messagePlayerColor(parent->skill[2], color, language[3187], language[90 + (*targetStats).type], language[90 + summonedStats->type]);
-					}
-					else
-					{
-						messagePlayerColor(parent->skill[2], color, language[3187], language[90 + (*targetStats).type], language[2000 + summonedStats->type - KOBOLD]);
-					}
-				}
-				else if ( (*targetStats).type >= KOBOLD ) //New monsters
-				{
-					if ( summonedStats->type < KOBOLD )
-					{
-						messagePlayerColor(parent->skill[2], color, language[3187], language[2000 + (*targetStats).type - KOBOLD], language[90 + summonedStats->type]);
-					}
-					else
-					{
-						messagePlayerColor(parent->skill[2], color, language[3187], language[2000 + (*targetStats).type - KOBOLD], language[2000 + summonedStats->type - KOBOLD]);
-					}
-				}
+				messagePlayerColor(parent->skill[2], color, language[3187], getMonsterLocalizedName((*targetStats).type).c_str(), getMonsterLocalizedName(summonedStats->type).c_str());
 			}
 			else
 			{
-				if ( summonedStats->type < KOBOLD )
-				{
-					messagePlayerColor(parent->skill[2], color, language[3188], (*targetStats).name, language[90 + summonedStats->type]);
-				}
-				else
-				{
-					messagePlayerColor(parent->skill[2], color, language[3188], (*targetStats).name, language[2000 + summonedStats->type - KOBOLD]);
-				}
+				messagePlayerColor(parent->skill[2], color, language[3188], (*targetStats).name, getMonsterLocalizedName(summonedStats->type).c_str());
 			}
 		}
 
@@ -2282,14 +2189,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			{
 				race = static_cast<Monster>(target->effectPolymorph);
 			}
-			if ( race < KOBOLD )
-			{
-				messagePlayerColor(target->skill[2], color, language[3186], language[90 + race]);
-			}
-			else
-			{
-				messagePlayerColor(target->skill[2], color, language[3186], language[2000 + race - KOBOLD]);
-			}
+			messagePlayerColor(target->skill[2], color, language[3186], getMonsterLocalizedName(race).c_str());
 
 			// change player's type here, don't like this.. will get auto reset in actPlayer() though
 			// otherwise the below aggro check will still assume previous race since actPlayer() hasn't run yet.
@@ -2524,14 +2424,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 				{
 					if ( !strcmp(hitstats->name, "") )
 					{
-						if ( hitstats->type < KOBOLD ) //Original monster count
-						{
-							updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-						}
-						else if ( hitstats->type >= KOBOLD ) //New monsters
-						{
-							updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-						}
+						updateEnemyBar(parent, target, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 					}
 					else
 					{
@@ -2617,14 +2510,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
-				if ( hitstats->type < KOBOLD ) //Original monster count
-				{
-					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-				}
-				else if ( hitstats->type >= KOBOLD ) //New monsters
-				{
-					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-				}
+				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 			}
 			else
 			{

@@ -391,7 +391,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				real_t yawDiff = entity.yawDifferenceFromPlayer(player);
 				if ( yawDiff < PI )
 				{
-					messagePlayer(player, language[2524], getName(), entity.getMonsterLangEntry());
+					messagePlayer(player, language[2524], getName(), getMonsterLocalizedName(myStats->type).c_str());
 					int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1;
 					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= 60 || (rand() % chance > 0) )
 					{
@@ -403,7 +403,7 @@ void Item::applyLockpick(int player, Entity& entity)
 						myStats->EFFECTS[EFF_PARALYZED] = true;
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
 						playSoundEntity(&entity, 76, 128);
-						messagePlayer(player, language[2527], entity.getMonsterLangEntry());
+						messagePlayer(player, language[2527], getMonsterLocalizedName(myStats->type).c_str());
 
 						if ( rand() % 3 == 0 )
 						{
@@ -437,7 +437,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 					else
 					{
-						messagePlayer(player, language[2526], entity.getMonsterLangEntry());
+						messagePlayer(player, language[2526], getMonsterLocalizedName(myStats->type).c_str());
 						myStats->EFFECTS[EFF_CONFUSED] = true;
 						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
 						myStats->EFFECTS[EFF_PARALYZED] = true;
@@ -484,7 +484,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				}
 				else
 				{
-					messagePlayer(player, language[2525], entity.getMonsterLangEntry());
+					messagePlayer(player, language[2525], getMonsterLocalizedName(myStats->type).c_str());
 				}
 			}
 		}

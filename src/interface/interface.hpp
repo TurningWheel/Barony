@@ -90,7 +90,7 @@ public:
 		real_t depletionAnimationPercent = 100.0;
 		float glWorldOffsetY = 0.0;
 		EnemyHPDetails() {};
-		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name, bool isLowPriority)
+		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, const char* name, bool isLowPriority)
 		{
 			if ( Entity* entity = uidToEntity(uid) )
 			{
@@ -140,7 +140,7 @@ public:
 
 	Uint32 enemy_bar_client_color = 0;
 	std::unordered_map<Uint32, EnemyHPDetails> HPBars;
-	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority);
+	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, const char* name, bool isLowPriority);
 	void displayCurrentHPBar(const int player);
 	void cullExpiredHPBars();
 	EnemyHPDetails* getMostRecentHPBar(int index = 0);
@@ -223,7 +223,7 @@ void updateChestInventory(const int player);
 void updateAppraisalItemBox(const int player);
 void updatePlayerInventory(const int player);
 void updateShopWindow(const int player);
-void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
+void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
 damageIndicator_t* newDamageIndicator(const int player, double x, double y);
 
 void selectItemMenuSlot(const int player, const Item& item, int entry);

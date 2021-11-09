@@ -1438,14 +1438,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				if ( caster->effectShapeshift < KOBOLD )
-				{
-					messagePlayerColor(caster->skill[2], color, language[3419], language[90 + caster->effectShapeshift]);
-				}
-				else
-				{
-					messagePlayerColor(caster->skill[2], color, language[3419], language[2000 + caster->effectShapeshift - KOBOLD]);
-				}
+				messagePlayerColor(caster->skill[2], color, language[3419], getMonsterLocalizedName((Monster)caster->effectShapeshift).c_str());
 			}
 			else
 			{

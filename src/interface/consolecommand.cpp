@@ -1512,25 +1512,12 @@ void consoleCommand(char const * const command_str)
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if ( i < KOBOLD ) //Search original monsters
+				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
 				{
-					if ( strstr(language[90 + i], name) )
-					{
-						creature = i;
-						found = true;
-						break;
-					}
+					creature = i;
+					found = true;
+					break;
 				}
-				else if ( i >= KOBOLD ) //Search additional monsters
-				{
-					if ( strstr(language[2000 + (i - KOBOLD)], name) )
-					{
-						creature = i;
-						found = true;
-						break;
-					}
-				}
-
 			}
 
 			if (found)
@@ -1565,23 +1552,11 @@ void consoleCommand(char const * const command_str)
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if ( i < KOBOLD ) //Search original monsters
+				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
 				{
-					if ( strstr(language[90 + i], name) )
-					{
-						creature = i;
-						found = true;
-						break;
-					}
-				}
-				else if ( i >= KOBOLD ) //Search additional monsters
-				{
-					if ( strstr(language[2000 + (i - KOBOLD)], name) )
-					{
-						creature = i;
-						found = true;
-						break;
-					}
+					creature = i;
+					found = true;
+					break;
 				}
 			}
 			if ( !found )
@@ -1592,14 +1567,7 @@ void consoleCommand(char const * const command_str)
 					Entity* monster = summonMonster(static_cast<Monster>(statEntry->type), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 					if ( monster )
 					{
-						if ( static_cast<Monster>(statEntry->type) < KOBOLD )
-						{
-							messagePlayer(clientnum, language[302], language[90 + static_cast<Monster>(statEntry->type)]);
-						}
-						else if ( static_cast<Monster>(statEntry->type) >= KOBOLD )
-						{
-							messagePlayer(clientnum, language[302], language[2000 + (static_cast<Monster>(statEntry->type) - 21)]);
-						}
+						messagePlayer(clientnum, language[302], getMonsterLocalizedName(static_cast<Monster>(statEntry->type)).c_str());
 						if ( monster->getStats() )
 						{
 							statEntry->setStatsAndEquipmentToMonster(monster->getStats());
@@ -1651,25 +1619,11 @@ void consoleCommand(char const * const command_str)
 				Entity* monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 				if (monster)
 				{
-					if ( i < KOBOLD )
-					{
-						messagePlayer(clientnum, language[302], language[90 + creature]);
-					}
-					else if ( i >= KOBOLD )
-					{
-						messagePlayer(clientnum, language[302], language[2000 + (creature-21)]);
-					}
+					messagePlayer(clientnum, language[302], getMonsterLocalizedName((Monster)creature).c_str());
 				}
 				else
 				{
-					if ( i < KOBOLD )
-					{
-						messagePlayer(clientnum, language[303], language[90 + creature]);
-					}
-					else if ( i >= KOBOLD )
-					{
-						messagePlayer(clientnum, language[303], language[2000 + (creature - KOBOLD)]);
-					}
+					messagePlayer(clientnum, language[303], getMonsterLocalizedName((Monster)creature).c_str());
 				}
 			}
 			else
@@ -2983,23 +2937,11 @@ void consoleCommand(char const * const command_str)
 
 			for ( int i = 1; i < NUMMONSTERS; ++i )   //Start at 1 because 0 is a nothing.
 			{
-				if ( i < KOBOLD ) //Search original monsters
+				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
 				{
-					if ( strstr(language[90 + i], name) )
-					{
-						creature = i;
-						break;
-					}
+					creature = i;
+					break;
 				}
-				else if ( i >= KOBOLD ) //Search additional monsters
-				{
-					if ( strstr(language[2000 + (i - KOBOLD)], name) )
-					{
-						creature = i;
-						break;
-					}
-				}
-
 			}
 
 			if ( creature != NOTHING )

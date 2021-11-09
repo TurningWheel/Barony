@@ -159,6 +159,44 @@ double sightranges[NUMMONSTERS] =
 int monsterGlobalAnimationMultiplier = 10;
 int monsterGlobalAttackTimeMultiplier = 1;
 
+std::string getMonsterLocalizedName(Monster creature)
+{
+	if ( creature < KOBOLD )
+	{
+		return language[90 + creature];
+	}
+	else
+	{
+		return language[2000 + creature - KOBOLD];
+	}
+	return "nothing";
+}
+
+std::string getMonsterLocalizedPlural(Monster creature)
+{
+	if ( creature < KOBOLD )
+	{
+		return language[111 + creature];
+	}
+	else
+	{
+		return language[2050 + creature - KOBOLD];
+	}
+	return "nothings";
+}
+std::string getMonsterLocalizedInjury(Monster creature)
+{
+	if ( creature < KOBOLD )
+	{
+		return language[132 + creature];
+	}
+	else
+	{
+		return language[2100 + creature - KOBOLD];
+	}
+	return "hit type";
+}
+
 /*-------------------------------------------------------------------------------
 
 	summonMonster
@@ -3162,14 +3200,7 @@ void actMonster(Entity* my)
 		{
 			snprintf(namesays, 63, language[1302], myStats->name);
 		}
-		else if ( myStats->type < KOBOLD ) //Original monster count
-		{
-			snprintf(namesays, 63, language[513], language[90 + myStats->type]);
-		}
-		else if ( myStats->type >= KOBOLD ) //New monsters
-		{
-			snprintf(namesays, 63, language[513], language[2000 + myStats->type - KOBOLD]);
-		}
+		snprintf(namesays, 63, language[513], getMonsterLocalizedName(myStats->type).c_str());
 	}
 	else
 	{
@@ -3213,16 +3244,8 @@ void actMonster(Entity* my)
 						{
 							if ( stats[monsterclicked]->type != HUMAN )
 							{
-								if ( stats[monsterclicked]->type < KOBOLD ) //Original monster count
-								{
-									messagePlayer(monsterclicked, language[3243], 
-										namesays, language[90 + stats[monsterclicked]->type]);
-								}
-								else if ( stats[monsterclicked]->type >= KOBOLD ) //New monsters
-								{
-									messagePlayer(monsterclicked, language[3243], namesays,
-										language[2000 + (stats[monsterclicked]->type - KOBOLD)]);
-								}
+								messagePlayer(monsterclicked, language[3243], 
+									namesays, getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
 							}
 							else
 							{
@@ -9839,14 +9862,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 	char namesays[32];
 	if ( !strcmp(myStats.name, "") )
 	{
-		if ( myStats.type < KOBOLD ) //Original monster count
-		{
-			snprintf(namesays, 31, language[513], language[90 + myStats.type]); // The %s says
-		}
-		else if ( myStats.type >= KOBOLD ) //New monsters
-		{
-			snprintf(namesays, 31, language[513], language[2000 + myStats.type - KOBOLD]); // The %s says
-		}
+		snprintf(namesays, 31, language[513], getMonsterLocalizedName(myStats.type).c_str()); // The %s says
 	}
 	else
 	{
