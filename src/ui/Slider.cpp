@@ -23,7 +23,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 
 	SDL_Rect _handleSize, _railSize;
 
-	bool focused = highlighted || selected;
+	bool focused = highlighted || (selected && !inputs.getVirtualMouse(owner)->draw_cursor);
 
 	auto white = Image::get("images/system/white.png");
 	const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};

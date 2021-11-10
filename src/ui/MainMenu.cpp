@@ -1189,7 +1189,8 @@ namespace MainMenu {
 		dropdown_list->setTickCallback([](Widget& widget){
 			Frame* dropdown_list = static_cast<Frame*>(&widget); assert(dropdown_list);
 			auto selection = dropdown_list->findImage("selection"); assert(selection);
-			if (dropdown_list->getSelection() >= 0 && dropdown_list->getSelection() < dropdown_list->getEntries().size()) {
+			bool inFrame = dropdown_list->capturesMouse() || !inputs.getVirtualMouse(0)->draw_cursor;
+			if (inFrame && dropdown_list->getSelection() >= 0 && dropdown_list->getSelection() < dropdown_list->getEntries().size()) {
 				selection->disabled = false;
 				int entrySize = 0;
 				Font* _font = Font::get(bigfont_outline);

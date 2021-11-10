@@ -72,7 +72,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 		return;
 	}
 
-	bool focused = highlighted || selected;
+	bool focused = highlighted || (selected && !inputs.getVirtualMouse(owner)->draw_cursor);
 
 	SDL_Rect scaledSize;
 	scaledSize.x = _size.x;

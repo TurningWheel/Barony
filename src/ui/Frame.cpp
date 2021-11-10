@@ -360,7 +360,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		drawImage(image, _size, scroll);
 	}
 
-	// render list entries
+	const bool mouseActive = inputs.getVirtualMouse(owner)->draw_cursor;
+
+	// draw list entries
 	if (list.size()) {
 		int listStart = std::min(std::max(0, scroll.y / entrySize), (int)list.size() - 1);
 		int i = listStart;
@@ -418,7 +420,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 				white->drawColor(nullptr, entryback, viewport, color);
 			} else if (entry.highlighted) {
 				white->drawColor(nullptr, entryback, viewport, color);
-			} else if (selection >= 0 && selection == i) {
+			} else if (!mouseActive && selection >= 0 && selection == i) {
 				white->drawColor(nullptr, entryback, viewport, color);
 			}
 
@@ -1091,13 +1093,13 @@ void Frame::postprocess() {
 	// TODO: which player owns the mouse
 	if (dropDown && owner == 0) {
 		if (!dropDownClicked) {
-			for (int c = 0; c < sizeof(mousestatus) / sizeof(mousestatus[0]); ++c) {
+			for (int c = 0; c < 3; ++c) {
 				if (mousestatus[c]) {
 					dropDownClicked |= 1 << c;
 				}
 			}
 		} else {
-			for (int c = 0; c < sizeof(mousestatus) / sizeof(mousestatus[0]); ++c) {
+			for (int c = 0; c < 3; ++c) {
 				if (!mousestatus[c]) {
 					dropDownClicked &= ~(1 << c);
 				}
@@ -1354,8 +1356,8 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 #ifdef NINTENDO
 	return false;
 #else
-	SDL_Rect newSize = SDL_Rect{0, 0, xres, yres};
-	SDL_Rect newActualSize = SDL_Rect{0, 0, xres, yres};
+	SDL_Rect newSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	SDL_Rect newActualSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 	SDL_Rect& _size = curSize ? *curSize : newSize;
 	SDL_Rect& _actualSize = curActualSize ? *curActualSize : newActualSize;
 
@@ -1364,12 +1366,12 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 		if (pframe->capturesMouse(&_size, &_actualSize)) {
 			_size.x += std::max(0, size.x - _actualSize.x);
 			_size.y += std::max(0, size.y - _actualSize.y);
-			if (size.h < actualSize.h && allowScrolling) {
+			if (size.h < actualSize.h && allowScrolling && scrollbars) {
 				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 			} else {
 				_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 			}
-			if (size.w < actualSize.w && allowScrolling) {
+			if (size.w < actualSize.w && allowScrolling && scrollbars) {
 				_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 			} else {
 				_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
@@ -1422,8 +1424,8 @@ SDL_Rect Frame::getAbsoluteSize() const
 }
 
 bool Frame::capturesMouseInRealtimeCoords(SDL_Rect* curSize, SDL_Rect* curActualSize) {
-	SDL_Rect newSize = SDL_Rect{ 0, 0, xres, yres };
-	SDL_Rect newActualSize = SDL_Rect{ 0, 0, xres, yres };
+	SDL_Rect newSize = SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+	SDL_Rect newActualSize = SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
 	SDL_Rect& _size = curSize ? *curSize : newSize;
 	SDL_Rect& _actualSize = curActualSize ? *curActualSize : newActualSize;
 
@@ -1432,13 +1434,13 @@ bool Frame::capturesMouseInRealtimeCoords(SDL_Rect* curSize, SDL_Rect* curActual
 		if ( pframe->capturesMouseInRealtimeCoords(&_size, &_actualSize) ) {
 			_size.x += std::max(0, size.x - _actualSize.x);
 			_size.y += std::max(0, size.y - _actualSize.y);
-			if ( size.h < actualSize.h && allowScrolling ) {
+			if ( size.h < actualSize.h && allowScrolling && scrollbars ) {
 				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 			}
 			else {
 				_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 			}
-			if ( size.w < actualSize.w && allowScrolling ) {
+			if ( size.w < actualSize.w && allowScrolling && scrollbars ) {
 				_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 			}
 			else {
