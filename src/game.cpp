@@ -5567,40 +5567,10 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								if (playercount == 1)
-								{
-									camera.winx = 0;
-									camera.winy = 0;
-									camera.winw = xres;
-									camera.winh = yres;
-								} 
-								else if (playercount == 2)
-								{
-									if ( players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL )
-									{
-										// divide screen vertically
-										camera.winx = c * xres / 2;
-										camera.winy = 0;
-										camera.winw = xres / 2;
-										camera.winh = yres;
-									}
-									else
-									{
-										// divide screen horizontally
-										camera.winx = 0;
-										camera.winy = c * yres / 2;
-										camera.winw = xres;
-										camera.winh = yres / 2;
-									}
-								} 
-								else if (playercount >= 3) 
-								{
-									// divide screen into quadrants
-									camera.winx = (c % 2) * xres / 2;
-									camera.winy = (c / 2) * yres / 2;
-									camera.winw = xres / 2;
-									camera.winh = yres / 2;
-								}
+								camera.winx = players[c]->camera().winx;
+								camera.winy = players[c]->camera().winy;
+								camera.winw = players[c]->camera().winw;
+								camera.winh = players[c]->camera().winh;
 							}
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{

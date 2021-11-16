@@ -3003,6 +3003,7 @@ namespace MainMenu {
 /******************************************************************************/
 
 	static LobbyType currentLobbyType;
+	static bool playersInLobby[4];
 
 	enum class DLC {
 		Base,
@@ -4360,9 +4361,9 @@ namespace MainMenu {
 
 			switch (index) {
 			case 0: button->setCallback([](Button& button){button_fn(button, 0);}); break;
-			case 1: button->setCallback([](Button& button){button_fn(button, 0);}); break;
-			case 2: button->setCallback([](Button& button){button_fn(button, 0);}); break;
-			case 3: button->setCallback([](Button& button){button_fn(button, 0);}); break;
+			case 1: button->setCallback([](Button& button){button_fn(button, 1);}); break;
+			case 2: button->setCallback([](Button& button){button_fn(button, 2);}); break;
+			case 3: button->setCallback([](Button& button){button_fn(button, 3);}); break;
 			}
 		}
 
@@ -4435,7 +4436,7 @@ namespace MainMenu {
 		auto name_field = card->addField("name", 128);
 		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
 		name_field->setFont(smallfont_outline);
-		name_field->setText(stats[0]->name);
+		name_field->setText(stats[index]->name);
 		name_field->setSize(SDL_Rect{90, 34, 146, 28});
 		name_field->setColor(makeColor(166, 123, 81, 255));
 		name_field->setHJustify(Field::justify_t::LEFT);
@@ -4611,7 +4612,8 @@ namespace MainMenu {
 		auto class_text = card->addField("class_text", 64);
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
 		static auto class_text_fn = [](Field& field, int index){
-			auto find = classes.find(classes_in_order[client_classes[index] + 1]);
+			int i = std::min(std::max(0, client_classes[index] + 1), num_classes);
+			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				field.setText(find->second.name);
 			}
@@ -4627,7 +4629,8 @@ namespace MainMenu {
 		(*class_text->getTickCallback())(*class_text);
 
 		static auto class_button_fn = [](Button& button, int index) {
-			auto find = classes.find(classes_in_order[client_classes[index] + 1]);
+			int i = std::min(std::max(0, client_classes[index] + 1), num_classes);
+			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				auto& class_info = find->second;
 				switch (class_info.dlc) {
@@ -4689,6 +4692,16 @@ namespace MainMenu {
 		ready_button->setWidgetUp("class");
 		ready_button->setCallback([](Button& button){
 			soundActivate();
+			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+			for (int c = 0; c < 4; ++c) {
+				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
+				auto backdrop = card->findImage("backdrop"); assert(backdrop);
+				if (backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+					playersInLobby[c] = true;
+				} else {
+					playersInLobby[c] = false;
+				}
+			}
 			destroyMainMenu();
 			createDummyMainMenu();
 			main_menu_fade_destination = FadeDestination::GameStart;
@@ -5860,13 +5873,10 @@ namespace MainMenu {
 			splitscreen = false;
 			return;
 		}
-		int playercount = 0;
 
-		auto lobby = main_menu_frame->findFrame("lobby");
+		int playercount = 0;
 		for (int c = 0; c < 4; ++c) {
-			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
-			auto backdrop = card->findImage("backdrop"); assert(backdrop);
-			if (backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+			if (playersInLobby[c]) {
 				players[c]->bSplitscreen = true;
 				client_disconnected[c] = false;
 				++playercount;
@@ -5878,7 +5888,12 @@ namespace MainMenu {
 		}
 		splitscreen = playercount > 1;
 
-		for (int c = 0; c < 4; ++c) {
+		int c, playerindex;
+		for (c = 0, playerindex = 0; c < 4; ++c, ++playerindex) {
+			if (client_disconnected[c]) {
+				--playerindex;
+				continue;
+			}
 			if (vertical_splitscreen) {
 				players[c]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
 			} else {
@@ -5899,21 +5914,21 @@ namespace MainMenu {
 				} else if (playercount == 2) {
 					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
 						// divide screen vertically
-						players[c]->camera().winx = c * xres / 2;
+						players[c]->camera().winx = playerindex * xres / 2;
 						players[c]->camera().winy = 0;
 						players[c]->camera().winw = xres / 2;
 						players[c]->camera().winh = yres;
 					} else {
 						// divide screen horizontally
 						players[c]->camera().winx = 0;
-						players[c]->camera().winy = c * yres / 2;
+						players[c]->camera().winy = playerindex * yres / 2;
 						players[c]->camera().winw = xres;
 						players[c]->camera().winh = yres / 2;
 					}
 				} else if (playercount >= 3) {
 					// divide screen into quadrants
-					players[c]->camera().winx = (c % 2) * xres / 2;
-					players[c]->camera().winy = (c / 2) * yres / 2;
+					players[c]->camera().winx = (playerindex % 2) * xres / 2;
+					players[c]->camera().winy = (playerindex / 2) * yres / 2;
 					players[c]->camera().winw = xres / 2;
 					players[c]->camera().winh = yres / 2;
 				}
@@ -5965,12 +5980,12 @@ namespace MainMenu {
 					doNewGame(false);
 				}
 				if (main_menu_fade_destination == FadeDestination::GameStart) {
-					destroyMainMenu();
 					multiplayer = SINGLE;
 					numplayers = 0;
 					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 					setupSplitscreen();
 					doNewGame(false);
+					destroyMainMenu();
 				}
 				fadeout = false;
 				main_menu_fade_destination = FadeDestination::None;
