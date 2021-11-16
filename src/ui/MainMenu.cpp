@@ -2376,8 +2376,8 @@ namespace MainMenu {
 			"Toggle the display of health and other status bars in game when the inventory is closed.",
 			allSettings.show_hud_enabled, [](Button& button){soundToggle(); allSettings.show_hud_enabled = button.isPressed();});
 #ifndef NINTENDO
-		y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Show IP Address",
-			"Hide the display of IP addresses and other location data for privacy purposes.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Streamer Mode",
+			"If you're a streamer and know what doxxing is, definitely press this button.",
 			allSettings.show_ip_address_enabled, [](Button& button){soundToggle(); allSettings.show_ip_address_enabled = button.isPressed();});
 #endif
 
@@ -5855,6 +5855,75 @@ namespace MainMenu {
 
 /******************************************************************************/
 
+	static void setupSplitscreen() {
+		if (multiplayer != SINGLE) {
+			splitscreen = false;
+			return;
+		}
+		int playercount = 0;
+
+		auto lobby = main_menu_frame->findFrame("lobby");
+		for (int c = 0; c < 4; ++c) {
+			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
+			auto backdrop = card->findImage("backdrop"); assert(backdrop);
+			if (backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+				players[c]->bSplitscreen = true;
+				client_disconnected[c] = false;
+				++playercount;
+			} else {
+				client_disconnected[c] = true;
+				players[c]->bSplitscreen = false;
+				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+			}
+		}
+		splitscreen = playercount > 1;
+
+		for (int c = 0; c < 4; ++c) {
+			if (vertical_splitscreen) {
+				players[c]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
+			} else {
+				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+			}
+
+			if (!splitscreen) {
+				players[c]->camera().winx = 0;
+				players[c]->camera().winy = 0;
+				players[c]->camera().winw = xres;
+				players[c]->camera().winh = yres;
+			} else {
+				if (playercount == 1) {
+					players[c]->camera().winx = 0;
+					players[c]->camera().winy = 0;
+					players[c]->camera().winw = xres;
+					players[c]->camera().winh = yres;
+				} else if (playercount == 2) {
+					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
+						// divide screen vertically
+						players[c]->camera().winx = c * xres / 2;
+						players[c]->camera().winy = 0;
+						players[c]->camera().winw = xres / 2;
+						players[c]->camera().winh = yres;
+					} else {
+						// divide screen horizontally
+						players[c]->camera().winx = 0;
+						players[c]->camera().winy = c * yres / 2;
+						players[c]->camera().winw = xres;
+						players[c]->camera().winh = yres / 2;
+					}
+				} else if (playercount >= 3) {
+					// divide screen into quadrants
+					players[c]->camera().winx = (c % 2) * xres / 2;
+					players[c]->camera().winy = (c / 2) * yres / 2;
+					players[c]->camera().winw = xres / 2;
+					players[c]->camera().winh = yres / 2;
+				}
+			}
+
+			inputs.getVirtualMouse(c)->x = players[c]->camera_x1() + players[c]->camera_width() / 2;
+			inputs.getVirtualMouse(c)->y = players[c]->camera_y1() + players[c]->camera_height() / 2;
+		}
+	}
+
 	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {
 			createMainMenu(ingame);
@@ -5900,6 +5969,7 @@ namespace MainMenu {
 					multiplayer = SINGLE;
 					numplayers = 0;
 					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+					setupSplitscreen();
 					doNewGame(false);
 				}
 				fadeout = false;
