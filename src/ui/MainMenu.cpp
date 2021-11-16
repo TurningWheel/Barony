@@ -4439,6 +4439,8 @@ namespace MainMenu {
 		name_field->setText(stats[index]->name);
 		name_field->setSize(SDL_Rect{90, 34, 146, 28});
 		name_field->setColor(makeColor(166, 123, 81, 255));
+		name_field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
+		name_field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		name_field->setHJustify(Field::justify_t::LEFT);
 		name_field->setVJustify(Field::justify_t::CENTER);
 		name_field->setEditable(true);
@@ -4454,10 +4456,32 @@ namespace MainMenu {
 			stats[index]->name[len] = '\0';
 		};
 		switch (index) {
-		case 0: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 0);}); break;
-		case 1: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 1);}); break;
-		case 2: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 2);}); break;
-		case 3: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 3);}); break;
+		case 0:
+			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 0);});
+			name_field->setTickCallback([](Widget& widget){
+				Field* field = static_cast<Field*>(&widget);
+				name_field_fn(field->getText(), 0);
+				});
+		case 1:
+			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 1);});
+			name_field->setTickCallback([](Widget& widget){
+				Field* field = static_cast<Field*>(&widget);
+				name_field_fn(field->getText(), 1);
+				});
+		case 2:
+			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 2);});
+			name_field->setTickCallback([](Widget& widget){
+				Field* field = static_cast<Field*>(&widget);
+				name_field_fn(field->getText(), 2);
+				});
+			break;
+		case 3:
+			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 3);});
+			name_field->setTickCallback([](Widget& widget){
+				Field* field = static_cast<Field*>(&widget);
+				name_field_fn(field->getText(), 3);
+				});
+			break;
 		}
 		name_field->select();
 
