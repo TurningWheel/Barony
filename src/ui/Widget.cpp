@@ -66,7 +66,7 @@ Frame* Widget::findSearchRoot() {
 }
 
 Widget* Widget::handleInput() {
-	if (selected) {
+	if (selected && !inputstr) {
 		Input& input = Input::inputs[owner];
 
 		// find search root

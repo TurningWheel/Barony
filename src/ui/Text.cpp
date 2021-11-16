@@ -136,18 +136,14 @@ void Text::render() {
 		glGenTextures(1, &texid);
 	}
 
-	width = 0;
+	width = surf->w;
+	height = surf->h;
+
+	// Fields break multi-lines anyway, and we're not using TTF_RenderUTF8_Blended_Wrapped()
+	// So calculating width/height ourselves is redundant and buggy (it doesn't factor trailing spaces)
+
+	/*width = 0;
 	height = 0;
-	
-	// this is the old check
-	//for (int y = 0; y < surf->h; ++y) {
-	//	for (int x = 0; x < surf->w; ++x) {
-	//		if (((Uint32 *)surf->pixels)[x + y * scan] != 0) { 
-	//			width = std::max(width, x);
-	//			height = std::max(height, y);
-	//		}
-	//	}
-	//}
 
 	int numLines = getNumTextLines(strToRender);
 	height = surf->h * numLines + std::max(0, numLines - 1) * (2 + 2 * outlineSize);
@@ -161,7 +157,7 @@ void Text::render() {
 			}
 		}
 	}
-	++width;
+	++width;*/
 
 	// translate the original surface to an RGBA surface
 	SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width * resolution_factor, height * resolution_factor,

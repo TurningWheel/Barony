@@ -42,6 +42,7 @@ Field::Field(Frame& _parent, const char* _text) : Field(_text) {
 
 Field::~Field() {
 	deselect();
+	deactivate();
 	if (text) {
 		if (inputstr == text) {
 			inputstr = nullptr;
@@ -72,9 +73,6 @@ void Field::activate() {
 }
 
 void Field::deselect() {
-	if (editable) {
-		deactivate();
-	}
 	Widget::deselect();
 }
 
@@ -193,7 +191,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
 
 		// fit text to window
-		if ((hjustify == LEFT || hjustify == TOP) && scroll && selected) {
+		if ((hjustify == LEFT || hjustify == TOP) && scroll && activated) {
 			src.x = std::max(src.x, textSizeW - rect.w);
 		}
 

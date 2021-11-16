@@ -322,16 +322,42 @@ namespace MainMenu {
 		return InventorySorting();
 	}
 
+	void InventorySorting::serialize(FileInterface* file) {
+		file->property("hotbarWeapons", hotbarWeapons);
+		file->property("hotbarArmor", hotbarArmor);
+		file->property("hotbarAmulets", hotbarAmulets);
+		file->property("hotbarBooks", hotbarBooks);
+		file->property("hotbarTools", hotbarTools);
+		file->property("hotbarThrown", hotbarThrown);
+		file->property("hotbarGems", hotbarGems);
+		file->property("hotbarPotions", hotbarPotions);
+		file->property("hotbarScrolls", hotbarScrolls);
+		file->property("hotbarStaves", hotbarStaves);
+		file->property("hotbarFood", hotbarFood);
+		file->property("hotbarSpells", hotbarSpells);
+		file->property("sortWeapons", sortWeapons);
+		file->property("sortArmor", sortArmor);
+		file->property("sortAmulets", sortAmulets);
+		file->property("sortBooks", sortBooks);
+		file->property("sortTools", sortTools);
+		file->property("sortThrown", sortThrown);
+		file->property("sortGems", sortGems);
+		file->property("sortPotions", sortPotions);
+		file->property("sortScrolls", sortScrolls);
+		file->property("sortStaves", sortStaves);
+		file->property("sortFood", sortFood);
+		file->property("sortEquipped", sortEquipped);
+	}
+
 /******************************************************************************/
 
 	inline void Bindings::save() {
-		FileHelper::writeObject("config/bindings.json", EFileFormat::Json, *this);
+		// TODO record these bindings to Input::inputs
 	}
 
 	inline Bindings Bindings::load() {
-		Bindings bindings;
-		bool result = FileHelper::readObject("config/bindings.json", bindings);
-		return result ? bindings : reset();
+		// TODO populate our variables with the values of some globally-accessed ones
+		return Bindings::reset();
 	}
 
 	inline Bindings Bindings::reset() {
@@ -388,6 +414,54 @@ namespace MainMenu {
 		return bindings;
 	}
 
+	void Bindings::serialize(FileInterface* file) {
+		Uint32 num_players = 4;
+		file->propertyName("players");
+		file->beginArray(num_players);
+		for (int c = 0; c < std::min(num_players, (Uint32)4); ++c) {
+			file->beginObject();
+			file->property("device", devices[c]);
+			for (int j = 0; j < 3; ++j) {
+				auto& bindings =
+					j == 0 ? kb_mouse_bindings[c]:
+					j == 1 ? gamepad_bindings[c]:
+					joystick_bindings[c];
+				file->propertyName(
+					j == 0 ? "kb_mouse_bindings":
+					j == 1 ? "gamepad_bindings":
+					"joystick_bindings");
+				if (file->isReading()) {
+					bindings.clear();
+				}
+				Uint32 count = bindings.size();
+				file->beginArray(count);
+				if (file->isReading()) {
+					for (Uint32 index = 0; index < count; ++index) {
+						file->beginObject();
+						std::string binding;
+						file->property("binding", binding);
+						std::string input;
+						file->property("input", input);
+						bindings.emplace(binding, input);
+						file->endObject();
+					}
+				} else {
+					for (auto& bind : bindings) {
+						file->beginObject();
+						std::string binding = bind.first;
+						file->property("binding", binding);
+						std::string input = bind.second;
+						file->property("input", input);
+						file->endObject();
+					}
+				}
+				file->endArray();
+			}
+			file->endObject();
+		}
+		file->endArray();
+	}
+
 /******************************************************************************/
 
 	inline void Minimap::save() {
@@ -410,20 +484,93 @@ namespace MainMenu {
 		return Minimap();
 	}
 
+	void Minimap::serialize(FileInterface* file) {
+		file->property("map_scale", map_scale);
+		file->property("icon_scale", icon_scale);
+		file->property("foreground_opacity", foreground_opacity);
+		file->property("background_opacity", background_opacity);
+	}
+
 /******************************************************************************/
 
 	inline void Messages::save() {
-		FileHelper::writeObject("config/messages.json", EFileFormat::Json, *this);
+		// TODO record these message settings to some globally-accessible variables.
 	}
 
 	inline Messages Messages::load() {
-		Messages messages;
-		bool result = FileHelper::readObject("config/messages.json", messages);
-		return result ? messages : reset();
+		// TODO populate our variables with the values of some globally-accessed ones
+		return Messages::reset();
 	}
 
 	inline Messages Messages::reset() {
 		return Messages();
+	}
+
+	void Messages::serialize(FileInterface* file) {
+		file->property("combat", combat);
+		file->property("status", status);
+		file->property("inventory", inventory);
+		file->property("equipment", equipment);
+		file->property("world", world);
+		file->property("chat", chat);
+		file->property("progression", progression);
+		file->property("interaction", interaction);
+		file->property("inspection", inspection);
+	}
+
+
+	/******************************************************************************/
+
+	static AllSettings allSettings;
+
+	void AllSettings::serialize(FileInterface* file) {
+		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
+		file->property("inventory_sorting", inventory_sorting);
+		file->property("use_on_release_enabled", use_on_release_enabled);
+		file->property("minimap", minimap);
+		file->property("show_messages_enabled", show_messages_enabled);
+		file->property("show_player_nametags_enabled", show_player_nametags_enabled);
+		file->property("show_hud_enabled", show_hud_enabled);
+		file->property("show_ip_address_enabled", show_ip_address_enabled);
+		file->property("content_control_enabled", content_control_enabled);
+		file->property("colorblind_mode_enabled", colorblind_mode_enabled);
+		file->property("arachnophobia_filter_enabled", arachnophobia_filter_enabled);
+		file->property("shaking_enabled", shaking_enabled);
+		file->property("bobbing_enabled", bobbing_enabled);
+		file->property("light_flicker_enabled", light_flicker_enabled);
+		file->property("window_mode", window_mode);
+		file->property("resolution_x", resolution_x);
+		file->property("resolution_y", resolution_y);
+		file->property("vsync_enabled", vsync_enabled);
+		file->property("vertical_split_enabled", vertical_split_enabled);
+		file->property("gamma", gamma);
+		file->property("fov", fov);
+		file->property("fps", fps);
+		file->property("master_volume", master_volume);
+		file->property("gameplay_volume", gameplay_volume);
+		file->property("ambient_volume", ambient_volume);
+		file->property("environment_volume", environment_volume);
+		file->property("music_volume", music_volume);
+		file->property("minimap_pings_enabled", minimap_pings_enabled);
+		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
+		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
+		file->property("bindings", bindings);
+		file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
+		file->property("mouse_sensitivity", mouse_sensitivity);
+		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
+		file->property("smooth_mouse_enabled", smooth_mouse_enabled);
+		file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
+		file->property("turn_sensitivity_x", turn_sensitivity_x);
+		file->property("turn_sensitivity_y", turn_sensitivity_y);
+		file->property("classic_mode_enabled", classic_mode_enabled);
+		file->property("hardcore_mode_enabled", hardcore_mode_enabled);
+		file->property("friendly_fire_enabled", friendly_fire_enabled);
+		file->property("keep_inventory_enabled", keep_inventory_enabled);
+		file->property("hunger_enabled", hunger_enabled);
+		file->property("minotaur_enabled", minotaur_enabled);
+		file->property("random_traps_enabled", random_traps_enabled);
+		file->property("extra_life_enabled", extra_life_enabled);
+		file->property("cheats_enabled", cheats_enabled);
 	}
 
 /******************************************************************************/
@@ -577,7 +724,6 @@ namespace MainMenu {
 /******************************************************************************/
 
 	static std::string settings_tab_name;
-	static AllSettings allSettings;
 
 	struct Setting {
 		enum class Type : Uint8 {
@@ -593,7 +739,7 @@ namespace MainMenu {
 		const char* name;
 	};
 
-	static void settingsSave() {
+	void settingsSave() {
 		auto_hotbar_new_items = allSettings.add_items_to_hotbar_enabled;
 		allSettings.inventory_sorting.save();
 		right_click_protect = !allSettings.use_on_release_enabled;
@@ -658,13 +804,15 @@ namespace MainMenu {
 		}
 		vidgamma = allSettings.gamma / 100.f;
 		verticalSync = allSettings.vsync_enabled;
-		if ( !changeVideoMode(allSettings.resolution_x, allSettings.resolution_y) ) {
-			printlog("critical error! Attempting to abort safely...\n");
-			mainloop = 0;
+		if (initialized) {
+			if (!changeVideoMode(allSettings.resolution_x, allSettings.resolution_y)) {
+				printlog("critical error! Attempting to abort safely...\n");
+				mainloop = 0;
+			}
 		}
 
 		// transmit server flags
-		if ( !intro && multiplayer == SERVER ) {
+		if ( initialized && !intro && multiplayer == SERVER ) {
 			strcpy((char*)net_packet->data, "SVFL");
 			SDLNet_Write32(svFlags, &net_packet->data[4]);
 			net_packet->len = 8;
@@ -681,29 +829,38 @@ namespace MainMenu {
 		}
 
 		// update volume for sound groups
+		if (initialized) {
 #ifdef USE_FMOD
-		music_group->setVolume(musvolume / 128.f);
-		sound_group->setVolume(sfxvolume / 128.f);
-		soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
-		soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
+			music_group->setVolume(musvolume / 128.f);
+			sound_group->setVolume(sfxvolume / 128.f);
+			soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
+			soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
 #elif defined USE_OPENAL
-		OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-		OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-		OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-		OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+			OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+			OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+			OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+			OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 #endif
+		}
 
 		// write config file
 		saveConfig("default.cfg");
+		FileHelper::writeObject("config/config.json", EFileFormat::Json, allSettings);
 	}
 
-	static void settingsReset() {
+	void settingsLoad() {
+		if (FileHelper::readObject("config/config.json", allSettings)) {
+			settingsSave();
+		}
+	}
+
+	void settingsReset() {
 		allSettings.add_items_to_hotbar_enabled = true;
 		allSettings.inventory_sorting = InventorySorting::reset();
 		allSettings.use_on_release_enabled = true;
-		allSettings.minimap.reset();
+		allSettings.minimap = Minimap::reset();
 		allSettings.show_messages_enabled = true;
-		allSettings.show_messages.reset();
+		allSettings.show_messages = Messages::reset();
 		allSettings.show_player_nametags_enabled = true;
 		allSettings.show_hud_enabled = true;
 		allSettings.show_ip_address_enabled = true;
@@ -729,7 +886,7 @@ namespace MainMenu {
 		allSettings.minimap_pings_enabled = true;
 		allSettings.player_monster_sounds_enabled = true;
 		allSettings.out_of_focus_audio_enabled = true;
-		allSettings.bindings.reset();
+		allSettings.bindings = Bindings::reset();
 		allSettings.numkeys_in_inventory_enabled = true;
 		allSettings.mouse_sensitivity = 32.f;
 		allSettings.reverse_mouse_enabled = false;
@@ -4434,6 +4591,7 @@ namespace MainMenu {
 		);
 
 		auto name_field = card->addField("name", 128);
+		name_field->setScroll(true);
 		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
 		name_field->setFont(smallfont_outline);
 		name_field->setText(stats[index]->name);
@@ -4462,12 +4620,14 @@ namespace MainMenu {
 				Field* field = static_cast<Field*>(&widget);
 				name_field_fn(field->getText(), 0);
 				});
+			break;
 		case 1:
 			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 1);});
 			name_field->setTickCallback([](Widget& widget){
 				Field* field = static_cast<Field*>(&widget);
 				name_field_fn(field->getText(), 1);
 				});
+			break;
 		case 2:
 			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 2);});
 			name_field->setTickCallback([](Widget& widget){
