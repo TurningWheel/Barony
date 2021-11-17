@@ -124,7 +124,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	}
 
 	// head
-	Entity* entity = newEntity(237, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(237, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -143,7 +143,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// chest
-	entity = newEntity(238, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(238, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -162,7 +162,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(243, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(243, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -181,7 +181,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(242, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(242, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -200,7 +200,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(241, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(241, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -219,7 +219,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(240, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(240, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();

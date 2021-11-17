@@ -156,7 +156,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(247, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(247, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -175,7 +175,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(251, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(251, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -194,7 +194,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(250, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(250, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -213,7 +213,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(249, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(249, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -232,7 +232,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(248, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(248, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();

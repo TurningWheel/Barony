@@ -107,7 +107,7 @@ void initLichIce(Entity* my, Stat* myStats)
 	}
 
 	// right arm
-	Entity* entity = newEntity(653, 0, map.entities, nullptr);
+	Entity* entity = newEntity(653, 1, map.entities, nullptr);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -126,7 +126,7 @@ void initLichIce(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(652, 0, map.entities, nullptr);
+	entity = newEntity(652, 1, map.entities, nullptr);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -145,7 +145,7 @@ void initLichIce(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// head
-	entity = newEntity(651, 0, map.entities, nullptr);
+	entity = newEntity(651, 1, map.entities, nullptr);
 	entity->yaw = my->yaw;
 	entity->sizex = 4;
 	entity->sizey = 4;
@@ -165,7 +165,7 @@ void initLichIce(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities, nullptr);
+	entity = newEntity(-1, 1, map.entities, nullptr);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();

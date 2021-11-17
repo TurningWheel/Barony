@@ -88,7 +88,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	int race = my->getMonsterTypeFromSprite();
 
 	// tripod
-	Entity* entity = newEntity(873, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(873, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -108,7 +108,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 1 left head
-	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(874, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -129,7 +129,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 1 right head
-	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(874, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -150,7 +150,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 1 left body
-	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(874, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -170,7 +170,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 1 right body
-	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(874, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -190,7 +190,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 2 middle
-	entity = newEntity(875, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(875, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -213,7 +213,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// loader
-	entity = newEntity(876, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(876, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -234,7 +234,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(167, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(167, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -312,7 +312,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	}
 
 	// rotor large
-	Entity* entity = newEntity(887, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(887, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -332,7 +332,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// rotor small
-	entity = newEntity(888, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(888, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -352,7 +352,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// bomb
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1549,7 +1549,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	}
 
 	// head
-	Entity* entity = newEntity(889, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(889, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1570,7 +1570,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// body
-	entity = newEntity(890, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(890, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1590,7 +1590,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(891, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(891, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1610,7 +1610,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// box
-	entity = newEntity(892, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(892, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1631,7 +1631,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// lid
-	entity = newEntity(893, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(893, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1655,7 +1655,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// crank
-	entity = newEntity(895, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(895, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->skill[2] = my->getUID();
