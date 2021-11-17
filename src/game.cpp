@@ -5943,6 +5943,11 @@ int main(int argc, char** argv)
 					TimerExperiments::renderCameras(camera, c);
 					camera.ang += cvars.shakex2;
 					camera.vang += cvars.shakey2 / 200.0;
+
+					for ( auto& HPBar : enemyHPDamageBarHandler[c].HPBars )
+					{
+						HPBar.second.updateWorldCoordinates(); // update enemy bar world coordinates before drawEntities3D called
+					}
 				}
 
 				if ( true )

@@ -8576,6 +8576,38 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	}
 }
 
+void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
+{
+	Entity* entity = uidToEntity(enemy_uid);
+	if ( entity )
+	{
+		if ( TimerExperiments::bUseTimerInterpolation && entity->bUseRenderInterpolation )
+		{
+			worldX = entity->lerpRenderState.x.position * 16.0;
+			worldY = entity->lerpRenderState.y.position * 16.0;
+			worldZ = entity->lerpRenderState.z.position + enemyBarSettings.getHeightOffset(entity);
+		}
+		else
+		{
+			worldX = entity->x;
+			worldY = entity->y;
+			worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
+		}
+		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
+		{
+			if ( entity->doorStartAng == 0 )
+			{
+				worldY -= 5;
+			}
+			else
+			{
+				worldX -= 5;
+			}
+		}
+		screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
+	}
+}
+
 void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, const char* name, bool isLowPriority)
 {
 	auto find = HPBars.find(uid);
@@ -8619,21 +8651,7 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 
 	if ( entity )
 	{
-		details->worldX = entity->x;
-		details->worldY = entity->y;
-		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
-		{
-			if ( entity->doorStartAng == 0 )
-			{
-				details->worldY -= 5;
-			}
-			else
-			{
-				details->worldX -= 5;
-			}
-		}
-		details->worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
-		details->screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
+		details->updateWorldCoordinates();
 	}
 	if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
 	{

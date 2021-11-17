@@ -5769,21 +5769,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	Entity* entity = uidToEntity(enemyDetails->enemy_uid);
 	if ( entity )
 	{
-		enemyDetails->worldX = entity->x;
-		enemyDetails->worldY = entity->y;
-		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
-		{
-			if ( entity->doorStartAng == 0 )
-			{
-				enemyDetails->worldY -= 5;
-			}
-			else
-			{
-				enemyDetails->worldX -= 5;
-			}
-		}
-		enemyDetails->worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
-		enemyDetails->screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
+		//enemyDetails->updateWorldCoordinates(); --moved to main loop before drawEntities3D
 	}
 	else
 	{

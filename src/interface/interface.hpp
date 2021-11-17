@@ -136,6 +136,7 @@ public:
 		SDL_Surface* worldSurfaceSprite = nullptr;
 		SDL_Surface* worldSurfaceSpriteStatusEffects = nullptr;
 		SDL_Surface* blitEnemyBarStatusEffects(const int player);
+		void updateWorldCoordinates();
 	};
 
 	Uint32 enemy_bar_client_color = 0;
