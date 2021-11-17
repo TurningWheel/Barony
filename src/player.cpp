@@ -833,7 +833,7 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 		{
 			currentElement = Player::CharacterSheet_t::SHEET_ENUM_END - 1;
 		}
-		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement);
+		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
 		dpad_moved = true;
 	}
 
@@ -848,7 +848,7 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 		{
 			currentElement = Player::CharacterSheet_t::SHEET_UNSELECTED + 1;
 		}
-		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement);
+		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
 		dpad_moved = true;
 	}
 
@@ -883,7 +883,7 @@ bool Player::GUI_t::handleInventoryMovement()
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 		{
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-			players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP);
+			players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
 			players[player]->GUI.warpControllerToModule(false);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )

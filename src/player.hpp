@@ -954,7 +954,7 @@ public:
 
 		Frame* sheetFrame = nullptr;
 		SheetElements selectedElement = SHEET_UNSELECTED;
-		void selectElement(SheetElements element, bool moveCursor = false);
+		void selectElement(SheetElements element, bool usingMouse, bool moveCursor = false);
 		void createCharacterSheet();
 		void processCharacterSheet();
 		void updateGameTimer();
@@ -983,6 +983,7 @@ public:
 		int skillSlideDirection = 0;
 		real_t skillSlideAmount = 0.0;
 		bool bUseCompactSkillsView = false;
+		bool bSlideWindowsOnly = false;
 		static real_t windowHeightScaleX;
 		static real_t windowHeightScaleY;
 		static real_t windowCompactHeightScaleX;

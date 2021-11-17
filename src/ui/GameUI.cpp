@@ -20,6 +20,7 @@
 #include "../input.hpp"
 #include "../collision.hpp"
 #include "../monster.hpp"
+#include "../classdescriptions.hpp"
 
 #include <assert.h>
 
@@ -42,6 +43,16 @@ struct CustomColors_t
 	Uint32 characterSheetRed = 0xFFFFFFFF;
 } hudColors;
 EnemyBarSettings_t enemyBarSettings;
+
+void capitalizeString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	char letter = str[0];
+	if ( letter >= 'a' && letter <= 'z' )
+	{
+		str[0] = toupper(letter);
+	}
+}
 
 std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 {
@@ -811,13 +822,13 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			fullscreenBg->setSize(SDL_Rect{ leftAlignX,
 				0, 208, Frame::virtualScreenY });
 			// if splitscreen 3/4 - disable the fullscreen background + title text.
-			fullscreenBg->addImage(SDL_Rect{ 0, 0, fullscreenBg->getSize().w, fullscreenBg->getSize().h },
-				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_00.png", "bg image");
+			fullscreenBg->addImage(SDL_Rect{ 0, 0, fullscreenBg->getSize().w, 360 },
+				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_01A_Top.png", "bg image");
 
 			const char* titleFont = "fonts/pixel_maz.ttf#32#2";
 			auto characterSheetTitleText = fullscreenBg->addField("character sheet title text", 32);
 			characterSheetTitleText->setFont(titleFont);
-			characterSheetTitleText->setSize(SDL_Rect{ 6, 120, 202, 32 });
+			characterSheetTitleText->setSize(SDL_Rect{ 6, 177, 202, 32 });
 			characterSheetTitleText->setText("CHARACTER SHEET");
 			characterSheetTitleText->setVJustify(Field::justify_t::CENTER);
 			characterSheetTitleText->setHJustify(Field::justify_t::CENTER);
@@ -872,11 +883,11 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		// skills button
 		{
 			const char* skillsFont = "fonts/pixel_maz.ttf#32#2";
-			Frame* skillsFrame = sheetFrame->addFrame("skills button");
-			skillsFrame->setSize(SDL_Rect{ leftAlignX + 14, 270, 186, 42 });
-			auto skillsImg = skillsFrame->addImage(SDL_Rect{0, 0, skillsFrame->getSize().w, skillsFrame->getSize().h},
+			Frame* skillsButtonFrame = sheetFrame->addFrame("skills button");
+			skillsButtonFrame->setSize(SDL_Rect{ leftAlignX + 14, 360 - 8 - 42, 186, 42 });
+			auto skillsImg = skillsButtonFrame->addImage(SDL_Rect{0, 0, skillsButtonFrame->getSize().w, skillsButtonFrame->getSize().h},
 				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png", "skills button img");
-			auto skillsText = skillsFrame->addField("skills text", 32);
+			auto skillsText = skillsButtonFrame->addField("skills text", 32);
 			skillsText->setFont(skillsFont);
 			skillsText->setSize(skillsImg->pos);
 			skillsText->setVJustify(Field::justify_t::CENTER);
@@ -886,79 +897,124 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 		Frame* characterFrame = sheetFrame->addFrame("character info");
 		const char* infoFont = "fonts/pixel_maz.ttf#32#2";
-		characterFrame->setSize(SDL_Rect{ leftAlignX, 150, bgWidth, 116});
-		const int infoTextHeight = 18;
+		characterFrame->setSize(SDL_Rect{ leftAlignX, 206, bgWidth, 116});
 		Uint32 infoTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
 		Uint32 classTextColor = SDL_MapRGBA(mainsurface->format, 74, 66, 207, 255);
+
+		Frame* characterInnerFrame = characterFrame->addFrame("character info inner frame");
+		characterInnerFrame->setSize(SDL_Rect{ 6, 0, 202, 104 });
 		{
-			SDL_Rect characterTextImgPos{ 16, 14, 182, 100 };
-			characterFrame->addImage(characterTextImgPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Text_Backing_00.png", "character info text img");
-			auto nameText = characterFrame->addField("character name text", 32);
+			characterInnerFrame->addImage(SDL_Rect{ 0, 0, characterInnerFrame->getSize().w, characterInnerFrame->getSize().h }, 0xFFFFFFFF,
+				"images/ui/CharSheet/HUD_CharSheet_Window_01A_TopTmp.png", "character info tmp img");
+
+			SDL_Rect characterTextPos{ 2, 0, 198, 24 };
+			auto nameText = characterInnerFrame->addField("character name text", 32);
 			nameText->setFont(infoFont);
-			nameText->setSize(SDL_Rect{ characterTextImgPos.x + 18, 
-				characterTextImgPos.y, 
-				146, 
-				infoTextHeight });
+			nameText->setSize(SDL_Rect{ characterTextPos.x,
+				characterTextPos.y,
+				characterTextPos.w,
+				characterTextPos.h });
 			nameText->setText("Slartibartfast");
 			nameText->setVJustify(Field::justify_t::CENTER);
 			nameText->setHJustify(Field::justify_t::CENTER);
 			nameText->setColor(infoTextColor);
 
-			auto levelText = characterFrame->addField("character level text", 32);
+			characterTextPos.x = 8;
+			characterTextPos.w = 190;
+			characterTextPos.y = 54;
+			characterTextPos.h = 22;
+			auto levelText = characterInnerFrame->addField("character level text", 32);
 			levelText->setFont(infoFont);
-			levelText->setSize(SDL_Rect{ characterTextImgPos.x + 4, 
-				characterTextImgPos.y + 26, 
-				174, 
-				infoTextHeight });
+			levelText->setSize(SDL_Rect{ characterTextPos.x,
+				characterTextPos.y,
+				characterTextPos.w,
+				characterTextPos.h });
 			levelText->setText("Level 237");
 			levelText->setVJustify(Field::justify_t::CENTER);
 			levelText->setColor(infoTextColor);
 
-			auto classText = characterFrame->addField("character class text", 32);
+			characterTextPos.x = 8;
+			characterTextPos.w = 190;
+			characterTextPos.y = 54;
+			characterTextPos.h = 22;
+			auto classText = characterInnerFrame->addField("character class text", 32);
 			classText->setFont(infoFont);
-			classText->setSize(SDL_Rect{ characterTextImgPos.x + 4,
-				characterTextImgPos.y + 26,
-				174,
-				infoTextHeight });
+			classText->setSize(SDL_Rect{ characterTextPos.x,
+				characterTextPos.y,
+				characterTextPos.w,
+				characterTextPos.h });
 			classText->setText("Barbarian");
 			classText->setVJustify(Field::justify_t::CENTER);
-			classText->setHJustify(Field::justify_t::RIGHT);
+			classText->setHJustify(Field::justify_t::LEFT);
 			classText->setColor(classTextColor);
 
-			auto floorText = characterFrame->addField("dungeon floor text", 32);
-			floorText->setFont(infoFont);
-			floorText->setSize(SDL_Rect{ characterTextImgPos.x + 18, 
-				characterTextImgPos.y + 52, 
-				146, 
-				infoTextHeight });
-			floorText->setText("Floor 27");
-			floorText->setVJustify(Field::justify_t::CENTER);
-			floorText->setHJustify(Field::justify_t::CENTER);
-			floorText->setColor(infoTextColor);
+			characterTextPos.x = 4;
+			characterTextPos.w = 194;
+			characterTextPos.y = 28;
+			characterTextPos.h = 22;
+			auto raceText = characterInnerFrame->addField("character race text", 32);
+			raceText->setFont(infoFont);
+			raceText->setSize(SDL_Rect{ characterTextPos.x,
+				characterTextPos.y,
+				characterTextPos.w,
+				characterTextPos.h });
+			raceText->setText("Human Gloomforge");
+			raceText->setVJustify(Field::justify_t::CENTER);
+			raceText->setHJustify(Field::justify_t::CENTER);
+			raceText->setColor(infoTextColor);
 
-			auto goldTitleText = characterFrame->addField("gold text title", 8);
+			auto sexImg = characterInnerFrame->addImage(
+				SDL_Rect{ characterTextPos.x + characterTextPos.w - 40, characterTextPos.y - 4, 16, 28}, 0xFFFFFFFF,
+				"images/ui/CharSheet/HUD_CharSheet_Sex_M_01.png", "character sex img");
+
+			{ // to move
+				auto floorText = characterInnerFrame->addField("dungeon floor text", 32);
+				floorText->setFont(infoFont);
+				floorText->setSize(SDL_Rect{ characterTextPos.x + 18,
+					characterTextPos.y + 52,
+					146, 
+					22 });
+				floorText->setText("Floor 27");
+				floorText->setVJustify(Field::justify_t::CENTER);
+				floorText->setHJustify(Field::justify_t::CENTER);
+				floorText->setColor(infoTextColor);
+				floorText->setDisabled(true);
+			}
+
+			characterTextPos.x = 4;
+			characterTextPos.w = 194;
+			characterTextPos.y = 80;
+			characterTextPos.h = 22;
+			auto goldTitleText = characterInnerFrame->addField("gold text title", 8);
 			goldTitleText->setFont(infoFont);
-			goldTitleText->setSize(SDL_Rect{ 58, 92, 52, 22 });
+			goldTitleText->setSize(SDL_Rect{ 48, characterTextPos.y, 52, characterTextPos.h });
 			goldTitleText->setText("GOLD");
 			goldTitleText->setVJustify(Field::justify_t::CENTER);
 			goldTitleText->setColor(infoTextColor);
 
-			auto goldText = characterFrame->addField("gold text", 32);
+			auto goldText = characterInnerFrame->addField("gold text", 32);
 			goldText->setFont(infoFont);
-			goldText->setSize(SDL_Rect{ 110, 92, 70, 22 });
+			goldText->setSize(SDL_Rect{ 92, characterTextPos.y, 88, characterTextPos.h });
 			goldText->setText("270000");
 			goldText->setVJustify(Field::justify_t::CENTER);
 			goldText->setHJustify(Field::justify_t::CENTER);
 			goldText->setColor(infoTextColor);
 
-			auto goldImg = characterFrame->addImage(SDL_Rect{ 26, 88, 20, 28 }, 
+			auto goldImg = characterInnerFrame->addImage(SDL_Rect{ 24, characterTextPos.y - 4, 20, 28 },
 				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonMoney_00.png", "gold img");
 		}
 
 		{
 			Frame* statsFrame = sheetFrame->addFrame("stats");
-			statsFrame->setSize(SDL_Rect{ leftAlignX, 344, bgWidth, 192 }); // y is 2px above the STR icon, 2px below CHR icon
-			SDL_Rect iconPos{ 20, 4, 24, 24 };
+			const int statsFrameHeight = 182;
+			statsFrame->setSize(SDL_Rect{ leftAlignX, 344, bgWidth, statsFrameHeight });
+			statsFrame->addImage(SDL_Rect{ 0, 0, statsFrame->getSize().w, statsFrame->getSize().h },
+				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_01B_BotA.png", "stats bg img");
+
+			Frame* statsInnerFrame = statsFrame->addFrame("stats inner frame");
+			statsInnerFrame->setSize(SDL_Rect{ 20, 0, statsFrame->getSize().w, statsFrame->getSize().h });
+
+			SDL_Rect iconPos{ 0, 8, 24, 24 };
 			const int headingLeftX = iconPos.x + iconPos.w + 10;
 			const int baseStatLeftX = headingLeftX + 32;
 			const int modifiedStatLeftX = baseStatLeftX + 64;
@@ -967,16 +1023,16 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			const char* statFont = "fonts/pixel_maz.ttf#32#2";
 			textPos.y = iconPos.y + 1;
-			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_STR_00.png", "str icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_STR_00.png", "str icon");
 			{
-				auto textBase = statsFrame->addField("str text title", 8);
+				auto textBase = statsInnerFrame->addField("str text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("STR");
 				textBase->setColor(statTextColor);
-				auto textStat = statsFrame->addField("str text stat", 32);
+				auto textStat = statsInnerFrame->addField("str text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(statFont);
@@ -984,7 +1040,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("-1");
 				textStat->setColor(statTextColor);
-				auto textStatModified = statsFrame->addField("str text modified", 32);
+				auto textStatModified = statsInnerFrame->addField("str text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
 				textStatModified->setHJustify(Field::justify_t::CENTER);
 				textStatModified->setFont(statFont);
@@ -993,19 +1049,19 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setText("342");
 				textStatModified->setColor(statTextColor);
 			}
-
-			iconPos.y += iconPos.h + 8;
+			const int rowSpacing = 4;
+			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_DEX_00.png", "dex icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_DEX_00.png", "dex icon");
 			{
-				auto textBase = statsFrame->addField("dex text title", 8);
+				auto textBase = statsInnerFrame->addField("dex text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("DEX");
 				textBase->setColor(statTextColor);
-				auto textStat = statsFrame->addField("dex text stat", 32);
+				auto textStat = statsInnerFrame->addField("dex text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(statFont);
@@ -1013,7 +1069,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("1");
 				textStat->setColor(statTextColor);
-				auto textStatModified = statsFrame->addField("dex text modified", 32);
+				auto textStatModified = statsInnerFrame->addField("dex text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
 				textStatModified->setHJustify(Field::justify_t::CENTER);
 				textStatModified->setFont(statFont);
@@ -1023,18 +1079,18 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setColor(statTextColor);
 			}
 
-			iconPos.y += iconPos.h + 8;
+			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CON_00.png", "con icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CON_00.png", "con icon");
 			{
-				auto textBase = statsFrame->addField("con text title", 8);
+				auto textBase = statsInnerFrame->addField("con text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("CON");
 				textBase->setColor(statTextColor);
-				auto textStat = statsFrame->addField("con text stat", 32);
+				auto textStat = statsInnerFrame->addField("con text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(statFont);
@@ -1042,7 +1098,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("0");
 				textStat->setColor(statTextColor);
-				auto textStatModified = statsFrame->addField("con text modified", 32);
+				auto textStatModified = statsInnerFrame->addField("con text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
 				textStatModified->setHJustify(Field::justify_t::CENTER);
 				textStatModified->setFont(statFont);
@@ -1052,18 +1108,18 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setColor(statTextColor);
 			}
 
-			iconPos.y += iconPos.h + 8;
+			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_INT_00.png", "int icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_INT_00.png", "int icon");
 			{
-				auto textBase = statsFrame->addField("int text title", 8);
+				auto textBase = statsInnerFrame->addField("int text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("INT");
 				textBase->setColor(statTextColor);
-				auto textStat = statsFrame->addField("int text stat", 32);
+				auto textStat = statsInnerFrame->addField("int text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(statFont);
@@ -1071,7 +1127,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("3");
 				textStat->setColor(statTextColor);
-				auto textStatModified = statsFrame->addField("int text modified", 32);
+				auto textStatModified = statsInnerFrame->addField("int text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
 				textStatModified->setHJustify(Field::justify_t::CENTER);
 				textStatModified->setFont(statFont);
@@ -1081,18 +1137,18 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setColor(statTextColor);
 			}
 
-			iconPos.y += iconPos.h + 8;
+			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_PER_00.png", "per icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_PER_00.png", "per icon");
 			{
-				auto textBase = statsFrame->addField("per text title", 8);
+				auto textBase = statsInnerFrame->addField("per text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("PER");
 				textBase->setColor(statTextColor);
-				auto textStat = statsFrame->addField("per text stat", 32);
+				auto textStat = statsInnerFrame->addField("per text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(statFont);
@@ -1100,7 +1156,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("-400");
 				textStat->setColor(statTextColor);
-				auto textStatModified = statsFrame->addField("per text modified", 32);
+				auto textStatModified = statsInnerFrame->addField("per text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
 				textStatModified->setHJustify(Field::justify_t::CENTER);
 				textStatModified->setFont(statFont);
@@ -1110,18 +1166,18 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setColor(statTextColor);
 			}
 
-			iconPos.y += iconPos.h + 8;
+			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CHA_00.png", "chr icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CHA_00.png", "chr icon");
 			{
-				auto textBase = statsFrame->addField("chr text title", 8);
+				auto textBase = statsInnerFrame->addField("chr text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("CHR");
 				textBase->setColor(statTextColor);
-				auto textStat = statsFrame->addField("chr text stat", 32);
+				auto textStat = statsInnerFrame->addField("chr text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(statFont);
@@ -1129,7 +1185,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("2");
 				textStat->setColor(statTextColor);
-				auto textStatModified = statsFrame->addField("chr text modified", 32);
+				auto textStatModified = statsInnerFrame->addField("chr text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
 				textStatModified->setHJustify(Field::justify_t::CENTER);
 				textStatModified->setFont(statFont);
@@ -1142,8 +1198,15 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 		{
 			Frame* attributesFrame = sheetFrame->addFrame("attributes");
-			attributesFrame->setSize(SDL_Rect{ leftAlignX, 550, bgWidth, 160 }); // y is 2px above the ATK icon, 2px below WGT icon
-			SDL_Rect iconPos{ 20, 4, 24, 24 };
+			attributesFrame->setSize(SDL_Rect{ leftAlignX, 550, bgWidth, 182 });
+
+			attributesFrame->addImage(SDL_Rect{ 0, 0, attributesFrame->getSize().w, attributesFrame->getSize().h },
+				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_01B_BotB.png", "attributes bg img");
+
+			Frame* attributesInnerFrame = attributesFrame->addFrame("attributes inner frame");
+			attributesInnerFrame->setSize(SDL_Rect{ 20, 0, attributesFrame->getSize().w, attributesFrame->getSize().h });
+
+			SDL_Rect iconPos{ 0, 8, 24, 24 };
 			const int headingLeftX = iconPos.x + iconPos.w + 10;
 			const int baseStatLeftX = headingLeftX + 44;
 			SDL_Rect textPos{ headingLeftX, iconPos.y, 80, iconPos.h };
@@ -1151,16 +1214,16 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			const char* attributeFont = "fonts/pixel_maz.ttf#32#2";
 			textPos.y = iconPos.y + 1;
-			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ATT_00.png", "atk icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ATT_00.png", "atk icon");
 			{
-				auto textBase = attributesFrame->addField("atk text title", 8);
+				auto textBase = attributesInnerFrame->addField("atk text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("ATK");
 				textBase->setColor(statTextColor);
-				auto textStat = attributesFrame->addField("atk text stat", 32);
+				auto textStat = attributesInnerFrame->addField("atk text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(attributeFont);
@@ -1170,18 +1233,19 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setColor(statTextColor);
 			}
 
-			iconPos.y += iconPos.h + 8;
+			const int rowSpacing = 4;
+			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_AC_00.png", "ac icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_AC_00.png", "ac icon");
 			{
-				auto textBase = attributesFrame->addField("ac text title", 8);
+				auto textBase = attributesInnerFrame->addField("ac text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("AC");
 				textBase->setColor(statTextColor);
-				auto textStat = attributesFrame->addField("ac text stat", 32);
+				auto textStat = attributesInnerFrame->addField("ac text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(attributeFont);
@@ -1191,18 +1255,39 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setColor(statTextColor);
 			}
 
-			iconPos.y += iconPos.h + 8;
+			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_RES_00.png", "res icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_SPWR_00.png", "pwr icon");
 			{
-				auto textBase = attributesFrame->addField("res text title", 8);
+				auto textBase = attributesInnerFrame->addField("pwr text title", 8);
+				textBase->setVJustify(Field::justify_t::CENTER);
+				textBase->setFont(attributeFont);
+				textPos.x = headingLeftX;
+				textBase->setSize(textPos);
+				textBase->setText("PWR");
+				textBase->setColor(statTextColor);
+				auto textStat = attributesInnerFrame->addField("pwr text stat", 32);
+				textStat->setVJustify(Field::justify_t::CENTER);
+				textStat->setHJustify(Field::justify_t::CENTER);
+				textStat->setFont(attributeFont);
+				textPos.x = baseStatLeftX;
+				textStat->setSize(textPos);
+				textStat->setText("115%");
+				textStat->setColor(statTextColor);
+			}
+
+			iconPos.y += iconPos.h + rowSpacing;
+			textPos.y = iconPos.y + 1;
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_RES_00.png", "res icon");
+			{
+				auto textBase = attributesInnerFrame->addField("res text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("RES");
 				textBase->setColor(statTextColor);
-				auto textStat = attributesFrame->addField("res text stat", 32);
+				auto textStat = attributesInnerFrame->addField("res text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(attributeFont);
@@ -1212,11 +1297,11 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setColor(statTextColor);
 			}
 
-			iconPos.y += iconPos.h + 8;
+			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_REGEN_00.png", "regen icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_REGEN_00.png", "regen icon");
 			{
-				auto textBase = attributesFrame->addField("regen text title", 8);
+				auto textBase = attributesInnerFrame->addField("regen text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
@@ -1224,7 +1309,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setText("RGN");
 				textBase->setColor(statTextColor);
 
-				auto textDiv = attributesFrame->addField("regen text divider", 4);
+				auto textDiv = attributesInnerFrame->addField("regen text divider", 4);
 				textDiv->setVJustify(Field::justify_t::CENTER);
 				textDiv->setHJustify(Field::justify_t::CENTER);
 				textDiv->setFont(attributeFont);
@@ -1235,7 +1320,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 				SDL_Rect hpmpTextPos = textPos;
 				const int middleX = (textPos.x + textPos.w / 2);
-				auto textRegenHP = attributesFrame->addField("regen text hp", 16);
+				auto textRegenHP = attributesInnerFrame->addField("regen text hp", 16);
 				textRegenHP->setVJustify(Field::justify_t::CENTER);
 				textRegenHP->setHJustify(Field::justify_t::RIGHT);
 				textRegenHP->setFont(attributeFont);
@@ -1244,7 +1329,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textRegenHP->setText("0.2");
 				textRegenHP->setColor(statTextColor);
 
-				auto textRegenMP = attributesFrame->addField("regen text mp", 16);
+				auto textRegenMP = attributesInnerFrame->addField("regen text mp", 16);
 				textRegenMP->setVJustify(Field::justify_t::CENTER);
 				textRegenMP->setHJustify(Field::justify_t::LEFT);
 				textRegenMP->setFont(attributeFont);
@@ -1254,18 +1339,18 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textRegenMP->setColor(statTextColor);
 			}
 
-			iconPos.y += iconPos.h + 8;
+			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			attributesFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_WGT_00.png", "weight icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_WGT_00.png", "weight icon");
 			{
-				auto textBase = attributesFrame->addField("weight text title", 8);
+				auto textBase = attributesInnerFrame->addField("weight text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
 				textBase->setText("WGT");
 				textBase->setColor(statTextColor);
-				auto textStat = attributesFrame->addField("weight text stat", 32);
+				auto textStat = attributesInnerFrame->addField("weight text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
 				textStat->setHJustify(Field::justify_t::CENTER);
 				textStat->setFont(attributeFont);
@@ -1306,7 +1391,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	updateCharacterInfo();
 }
 
-void Player::CharacterSheet_t::selectElement(SheetElements element, bool moveCursor)
+void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMouse, bool moveCursor)
 {
 	selectedElement = element;
 
@@ -1451,7 +1536,7 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool moveCur
 			pos = elementField->getAbsoluteSize();
 		}
 		player.hud.setCursorDisabled(false);
-		player.hud.updateCursorAnimation(pos.x, pos.y, pos.w, pos.h, false);
+		player.hud.updateCursorAnimation(pos.x, pos.y, pos.w, pos.h, usingMouse);
 	}
 }
 
@@ -1471,34 +1556,174 @@ void Player::CharacterSheet_t::updateGameTimer()
 void Player::CharacterSheet_t::updateCharacterInfo()
 {
 	auto characterInfoFrame = sheetFrame->findFrame("character info");
-	char buf[32];
-	if ( auto name = characterInfoFrame->findField("character name text") )
+	assert(characterInfoFrame);
+
+	if ( characterInfoFrame->capturesMouse() && inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		players[player.playernum]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+		selectElement(SheetElements::SHEET_CHAR_CLASS, true, true);
+		// players[player.playernum]->GUI.warpControllerToModule(false); - use this for controller input
+	}
+
+	//auto characterPos = characterInfoFrame->getSize();
+	//characterPos.x = player.camera_virtualWidth() - characterPos.w * 2;
+	//characterInfoFrame->setSize(characterPos);
+
+	auto characterInnerFrame = characterInfoFrame->findFrame("character info inner frame");
+	assert(characterInnerFrame);
+
+	char buf[32] = "";
+	if ( auto name = characterInnerFrame->findField("character name text") )
 	{
 		name->setText(stats[player.playernum]->name);
 	}
-	if ( auto className = characterInfoFrame->findField("character class text") )
+	Field* className = characterInnerFrame->findField("character class text");
+	int classNameWidth = 0;
+	if ( className )
 	{
 		std::string classname = playerClassLangEntry(client_classes[player.playernum], player.playernum);
 		if ( !classname.empty() )
 		{
-			if ( classname[0] >= 'a' && classname[0] <= 'z' )
-			{
-				classname[0] = toupper(classname[0]);
-			}
+			capitalizeString(classname);
 			className->setText(classname.c_str());
 		}
+		if ( auto textGet = Text::get(className->getText(), className->getFont(),
+			className->getTextColor(), className->getOutlineColor()) )
+		{
+			classNameWidth = textGet->getWidth();
+		}
 	}
-	if ( auto charLevel = characterInfoFrame->findField("character level text") )
+	Field* charLevel = characterInnerFrame->findField("character level text");
+	int charLevelWidth = 0;
+	if ( charLevel )
 	{
 		snprintf(buf, sizeof(buf), language[4051], stats[player.playernum]->LVL);
 		charLevel->setText(buf);
+		if ( auto textGet = Text::get(charLevel->getText(), charLevel->getFont(),
+			charLevel->getTextColor(), charLevel->getOutlineColor()) )
+		{
+			charLevelWidth = textGet->getWidth();
+		}
 	}
-	if ( auto floor = characterInfoFrame->findField("dungeon floor text") )
+	if ( className && charLevel )
+	{
+		SDL_Rect classNamePos = className->getSize();
+		SDL_Rect charLevelPos = charLevel->getSize();
+		const int padding = 24;
+		const int startX = 8;
+		const int fieldWidth = 190;
+		const int totalWidth = charLevelWidth + padding / 2 + classNameWidth;
+		charLevelPos.x = startX + fieldWidth / 2 - totalWidth / 2;
+		charLevelPos.w = charLevelWidth;
+		classNamePos.x = charLevelPos.x + charLevelPos.w + padding / 2 - 4; // -4 centres it nicely somehow, not sure why
+		classNamePos.w = classNameWidth;
+		charLevel->setSize(charLevelPos);
+		className->setSize(classNamePos);
+		//messagePlayer(0, "%d | %d", charLevelPos.x - startX, 198 - (classNamePos.x + classNamePos.w));
+	}
+	if ( auto raceText = characterInnerFrame->findField("character race text") )
+	{
+		Monster type = stats[player.playernum]->type;
+		std::string appearance = "";
+		bool aestheticOnly = false;
+		if ( player.entity )
+		{
+			if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
+			{
+				if ( stats[player.playernum]->appearance != 0 )
+				{
+					aestheticOnly = true;
+					appearance = language[4068];
+					type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
+				}
+			}
+		}
+		std::string race = getMonsterLocalizedName(type).c_str();
+		capitalizeString(race);
+		if ( type == HUMAN )
+		{
+			appearance = language[20 + stats[player.playernum]->appearance % NUMAPPEARANCES];
+			capitalizeString(appearance);
+		}
+		bool centerIconAndText = false;
+		if ( appearance != "" )
+		{
+			if ( aestheticOnly )
+			{
+				snprintf(buf, sizeof(buf), "%s %s", appearance.c_str(), race.c_str()); // 'guised skeleton'
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s %s", race.c_str(), appearance.c_str()); // 'human gloomforge'
+			}
+			centerIconAndText = true;
+		}
+		else
+		{
+			snprintf(buf, sizeof(buf), "%s", race.c_str());
+		}
+
+		raceText->setText(buf);
+		int width = 0;
+		if ( auto textGet = Text::get(raceText->getText(), raceText->getFont(),
+			raceText->getTextColor(), raceText->getOutlineColor()) )
+		{
+			width = textGet->getWidth();
+		}
+
+		if ( auto sexImg = characterInnerFrame->findImage("character sex img") )
+		{
+			if ( stats[player.playernum]->sex == sex_t::MALE )
+			{
+				if ( type == AUTOMATON )
+				{
+					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonM_00.png";
+				}
+				else
+				{
+					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_M_01.png";
+				}
+			}
+			else if ( stats[player.playernum]->sex == sex_t::FEMALE )
+			{
+				if ( type == AUTOMATON )
+				{
+					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonF_00.png";
+				}
+				else
+				{
+					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_F_01.png";
+				}
+			}
+			if ( auto imgGet = Image::get(sexImg->path.c_str()) )
+			{
+				sexImg->pos.w = imgGet->getWidth();
+				sexImg->pos.h = imgGet->getHeight();
+			}
+
+			SDL_Rect raceTextPos = raceText->getSize();
+			raceTextPos.x = 4;
+			if ( centerIconAndText )
+			{
+				raceTextPos.x = 4 + ((sexImg->pos.w + 4)) / 2;
+			}
+			raceText->setSize(raceTextPos);
+
+			sexImg->pos.x = 16;
+			if ( centerIconAndText )
+			{
+				sexImg->pos.x = raceText->getSize().x + raceText->getSize().w / 2 - width / 2;
+				sexImg->pos.x -= (sexImg->pos.w + 4);
+			}
+			sexImg->pos.y = raceText->getSize().y + raceText->getSize().h / 2 - sexImg->pos.h / 2;
+		}
+	}
+	if ( auto floor = characterInnerFrame->findField("dungeon floor text") )
 	{
 		snprintf(buf, sizeof(buf), language[4052], currentlevel);
 		floor->setText(buf);
 	}
-	if ( auto gold = characterInfoFrame->findField("gold text") )
+	if ( auto gold = characterInnerFrame->findField("gold text") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->GOLD);
 		gold->setText(buf);
@@ -1508,16 +1733,35 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 void Player::CharacterSheet_t::updateStats()
 {
 	auto statsFrame = sheetFrame->findFrame("stats");
-	char buf[32];
+	assert(statsFrame);
 
-	if ( auto field = statsFrame->findField("str text stat") )
+	auto statsPos = statsFrame->getSize();
+	statsPos.x = player.camera_virtualWidth() - statsPos.w * 2;
+	statsFrame->setSize(statsPos);
+
+	auto statsInnerFrame = statsFrame->findFrame("stats inner frame");
+	assert(statsInnerFrame);
+
+	const int rightAlignPosX = 20;
+	const int leftAlignPosX = 30;
+	auto statsInnerPos = statsInnerFrame->getSize();
+	statsInnerPos.x = rightAlignPosX;
+	if ( keystatus[SDL_SCANCODE_I] )
+	{
+		statsInnerPos.x = leftAlignPosX;
+	}
+	statsInnerFrame->setSize(statsInnerPos);
+
+	char buf[32] = "";
+
+	if ( auto field = statsInnerFrame->findField("str text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->STR);
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
-		if ( auto modifiedField = statsFrame->findField("str text modified") )
+		if ( auto modifiedField = statsInnerFrame->findField("str text modified") )
 		{
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
@@ -1535,14 +1779,14 @@ void Player::CharacterSheet_t::updateStats()
 			}
 		}
 	}
-	if ( auto field = statsFrame->findField("dex text stat") )
+	if ( auto field = statsInnerFrame->findField("dex text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->DEX);
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
-		if ( auto modifiedField = statsFrame->findField("dex text modified") )
+		if ( auto modifiedField = statsInnerFrame->findField("dex text modified") )
 		{
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
@@ -1560,14 +1804,14 @@ void Player::CharacterSheet_t::updateStats()
 			}
 		}
 	}
-	if ( auto field = statsFrame->findField("con text stat") )
+	if ( auto field = statsInnerFrame->findField("con text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CON);
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetCON(stats[player.playernum], players[player.playernum]->entity);
-		if ( auto modifiedField = statsFrame->findField("con text modified") )
+		if ( auto modifiedField = statsInnerFrame->findField("con text modified") )
 		{
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
@@ -1585,14 +1829,14 @@ void Player::CharacterSheet_t::updateStats()
 			}
 		}
 	}
-	if ( auto field = statsFrame->findField("int text stat") )
+	if ( auto field = statsInnerFrame->findField("int text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->INT);
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetINT(stats[player.playernum], players[player.playernum]->entity);
-		if ( auto modifiedField = statsFrame->findField("int text modified") )
+		if ( auto modifiedField = statsInnerFrame->findField("int text modified") )
 		{
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
@@ -1610,14 +1854,14 @@ void Player::CharacterSheet_t::updateStats()
 			}
 		}
 	}
-	if ( auto field = statsFrame->findField("per text stat") )
+	if ( auto field = statsInnerFrame->findField("per text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->PER);
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetPER(stats[player.playernum], players[player.playernum]->entity);
-		if ( auto modifiedField = statsFrame->findField("per text modified") )
+		if ( auto modifiedField = statsInnerFrame->findField("per text modified") )
 		{
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
@@ -1635,14 +1879,14 @@ void Player::CharacterSheet_t::updateStats()
 			}
 		}
 	}
-	if ( auto field = statsFrame->findField("chr text stat") )
+	if ( auto field = statsInnerFrame->findField("chr text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CHR);
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetCHR(stats[player.playernum], players[player.playernum]->entity);
-		if ( auto modifiedField = statsFrame->findField("chr text modified") )
+		if ( auto modifiedField = statsInnerFrame->findField("chr text modified") )
 		{
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
@@ -1665,9 +1909,28 @@ void Player::CharacterSheet_t::updateStats()
 void Player::CharacterSheet_t::updateAttributes()
 {
 	auto attributesFrame = sheetFrame->findFrame("attributes");
-	char buf[32];
+	assert(attributesFrame);
 
-	if ( auto field = attributesFrame->findField("atk text stat") )
+	auto attributesPos = attributesFrame->getSize();
+	attributesPos.x = player.camera_virtualWidth() - attributesPos.w * 3;
+	attributesFrame->setSize(attributesPos);
+
+	auto attributesInnerFrame = attributesFrame->findFrame("attributes inner frame");
+	assert(attributesInnerFrame);
+
+	const int rightAlignPosX = 20;
+	const int leftAlignPosX = 30;
+	auto attributesInnerPos = attributesInnerFrame->getSize();
+	attributesInnerPos.x = rightAlignPosX;
+	if ( keystatus[SDL_SCANCODE_I] )
+	{
+		attributesInnerPos.x = leftAlignPosX;
+	}
+	attributesInnerFrame->setSize(attributesInnerPos);
+
+	char buf[32] = "";
+
+	if ( auto field = attributesInnerFrame->findField("atk text stat") )
 	{
 		Sint32 dummy[6];
 		snprintf(buf, sizeof(buf), "%d", displayAttackPower(player.playernum, dummy));
@@ -1675,14 +1938,22 @@ void Player::CharacterSheet_t::updateAttributes()
 		field->setColor(hudColors.characterSheetNeutral);
 	}
 
-	if ( auto field = attributesFrame->findField("ac text stat") )
+	if ( auto field = attributesInnerFrame->findField("ac text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", AC(stats[player.playernum]));
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
 	}
 
-	if ( auto field = attributesFrame->findField("res text stat") )
+	if ( auto field = attributesInnerFrame->findField("pwr text stat") )
+	{
+		real_t spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum]) * 100.0) + 100.0;
+		snprintf(buf, sizeof(buf), "%.f%%", spellPower);
+		field->setText(buf);
+		field->setColor(hudColors.characterSheetNeutral);
+	}
+
+	if ( auto field = attributesInnerFrame->findField("res text stat") )
 	{
 		real_t resistance = 0.0;
 		if ( players[player.playernum]->entity )
@@ -1698,7 +1969,7 @@ void Player::CharacterSheet_t::updateAttributes()
 		}
 	}
 
-	if ( auto field = attributesFrame->findField("regen text hp") )
+	if ( auto field = attributesInnerFrame->findField("regen text hp") )
 	{
 		real_t regen = 0.0;
 		field->setColor(hudColors.characterSheetNeutral);
@@ -1739,11 +2010,11 @@ void Player::CharacterSheet_t::updateAttributes()
 			real_t nominalRegen = HEAL_TIME / TICKS_PER_SECOND;
 			regen = nominalRegen / regen;
 		}
-		snprintf(buf, sizeof(buf), "%.1f", regen);
+		snprintf(buf, sizeof(buf), "%.f%%", regen * 100.0);
 		field->setText(buf);
 	}
 
-	if ( auto field = attributesFrame->findField("regen text mp") )
+	if ( auto field = attributesInnerFrame->findField("regen text mp") )
 	{
 		real_t regen = 0.0;
 		field->setColor(hudColors.characterSheetNeutral);
@@ -1815,11 +2086,11 @@ void Player::CharacterSheet_t::updateAttributes()
 			real_t nominalRegen = MAGIC_REGEN_TIME / TICKS_PER_SECOND;
 			regen = nominalRegen / regen;
 		}
-		snprintf(buf, sizeof(buf), "%.1f", regen);
+		snprintf(buf, sizeof(buf), "%.f%%", regen * 100.0);
 		field->setText(buf);
 	}
 
-	if ( auto field = attributesFrame->findField("weight text stat") )
+	if ( auto field = attributesInnerFrame->findField("weight text stat") )
 	{
 		Sint32 weight = 0;
 		for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
@@ -3226,7 +3497,6 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 			buf[count] = '\0';
 			rapidjson::StringStream is(buf);
 			FileIO::close(fp);
-
 			rapidjson::Document d;
 			d.ParseStream(is);
 			if ( !d.HasMember("version") )
@@ -7479,16 +7749,6 @@ void Player::SkillSheet_t::openSkillSheet()
 	}
 }
 
-void capitalizeString(std::string& str)
-{
-	if ( str.size() < 1 ) { return; }
-	char letter = str[0];
-	if ( letter >= 'a' && letter <= 'z' )
-	{
-		str[0] = toupper(letter);
-	}
-}
-
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue)
 {
 	char buf[1024] = "";
@@ -8045,14 +8305,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 							{
 								if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
 								std::string monsterName = "";
-								if ( ally < KOBOLD ) //Original monster count
-								{
-									monsterName = language[90 + ally];
-								}
-								else if ( ally >= KOBOLD ) //New monsters
-								{
-									monsterName = language[2000 + ally - KOBOLD];
-								}
+								monsterName = getMonsterLocalizedName(ally);
 								capitalizeString(monsterName);
 								if ( outputList != "" )
 								{
@@ -8075,14 +8328,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 								auto& ally = allyPair.first;
 								if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
 								std::string monsterName = "";
-								if ( ally < KOBOLD ) //Original monster count
-								{
-									monsterName = language[90 + ally];
-								}
-								else if ( ally >= KOBOLD ) //New monsters
-								{
-									monsterName = language[2000 + ally - KOBOLD];
-								}
+								monsterName = getMonsterLocalizedName(ally);
 								capitalizeString(monsterName);
 								if ( outputList != "" )
 								{
@@ -8608,21 +8854,34 @@ void Player::SkillSheet_t::processSkillSheet()
 		players[player.playernum]->camera_virtualHeight() });
 
 	bool oldCompactViewVal = bUseCompactSkillsView;
-	if ( splitscreen && players[player.playernum]->camera_virtualHeight() < Frame::virtualScreenY * .8 )
+	bool oldSlideWindowsOnly = bSlideWindowsOnly;
+	if ( splitscreen && 
+		((players[player.playernum]->camera_virtualHeight() < Frame::virtualScreenY * .8)
+		|| (players[player.playernum]->camera_virtualWidth() < Frame::virtualScreenX * .8)) )
 	{
 		// use compact view.
-		bUseCompactSkillsView = true;
+		if ( (players[player.playernum]->camera_virtualWidth() < Frame::virtualScreenX * .8)
+			&& !(players[player.playernum]->camera_virtualHeight() < Frame::virtualScreenY * .8) )
+		{
+			bSlideWindowsOnly = true; // 2 player vertical splitscreen, slide but don't use compact view
+		}
+		else
+		{
+			bUseCompactSkillsView = true;
+		}
 	}
 	else
 	{
 		bUseCompactSkillsView = false;
+		bSlideWindowsOnly = false;
 	}
-	if ( oldCompactViewVal != bUseCompactSkillsView && bUseCompactSkillsView )
+	if ( (oldCompactViewVal != bUseCompactSkillsView && bUseCompactSkillsView)
+		|| (oldSlideWindowsOnly != bSlideWindowsOnly && bSlideWindowsOnly) )
 	{
 		skillSlideAmount = 1.0;
 		skillSlideDirection = 1;
 	}
-	if ( !bUseCompactSkillsView )
+	if ( !bUseCompactSkillsView && !bSlideWindowsOnly )
 	{
 		skillSlideAmount = 0.0;
 		skillSlideDirection = 0;
