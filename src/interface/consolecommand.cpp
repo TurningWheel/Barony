@@ -29,6 +29,7 @@
 #include "../collision.hpp"
 #include "../player.hpp"
 #include "../ui/GameUI.hpp"
+#include "../classdescriptions.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -3406,6 +3407,61 @@ void consoleCommand(char const * const command_str)
 			Player::SkillSheet_t::generateFollowerTableForSkillsheet = true;
 			messagePlayer(clientnum, "On next human right click leader list will be generated.");
 		}
+		else if ( !strncmp(command_str, "/poly", 5) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( players[clientnum]->entity )
+			{
+				spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 2);
+			}
+		}
+		else if ( !strncmp(command_str, "/sexchange", 10) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			stats[clientnum]->sex = stats[clientnum]->sex == sex_t::MALE ? sex_t::FEMALE : sex_t::MALE;
+		}
+		else if ( !strncmp(command_str, "/appearances", 12) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			++stats[clientnum]->appearance;
+			if ( stats[clientnum]->appearance >= NUMAPPEARANCES )
+			{
+				stats[clientnum]->appearance = 0;
+			}
+		}
+		else if ( !strncmp(command_str, "/classdebug", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			client_classes[clientnum] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
+		}
+		else if ( !strncmp(command_str, "/unpoly", 7) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( players[clientnum]->entity )
+			{
+				players[clientnum]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
+			}
+		}
 		else if ( !strncmp(command_str, "/usepaperdollmovement", 21) )
 		{
 			restrictPaperDollMovement = !restrictPaperDollMovement;
@@ -3419,6 +3475,11 @@ void consoleCommand(char const * const command_str)
 		{
 			int index = atoi(&command_str[14]);
 			StatueManager.readStatueFromFile(index);
+		}
+		else if ( !strncmp(command_str, "/timertests", 11) )
+		{
+			TimerExperiments::bUseTimerInterpolation = !TimerExperiments::bUseTimerInterpolation;
+			messagePlayer(clientnum, "Set bUseTimerInterpolation to %d", TimerExperiments::bUseTimerInterpolation);
 		}
 		else
 		{
