@@ -204,15 +204,56 @@ void actDeathCam(Entity* my)
 	my->removeLightField();
 	my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 128);
 
-	cameras[DEATHCAM_PLAYERNUM].x = my->x / 16.f;
-	cameras[DEATHCAM_PLAYERNUM].y = my->y / 16.f;
-	cameras[DEATHCAM_PLAYERNUM].z = my->z * 2.f;
-	cameras[DEATHCAM_PLAYERNUM].ang = my->yaw;
-	cameras[DEATHCAM_PLAYERNUM].vang = my->pitch;
+	real_t camx, camy, camz, camang, camvang;
+	camx = my->x / 16.f;
+	camy = my->y / 16.f;
+	camz = my->z * 2.f;
+	camang = my->yaw;
+	camvang = my->pitch;
 
-	cameras[DEATHCAM_PLAYERNUM].x -= cos(my->yaw) * cos(my->pitch) * 1.5;
-	cameras[DEATHCAM_PLAYERNUM].y -= sin(my->yaw) * cos(my->pitch) * 1.5;
-	cameras[DEATHCAM_PLAYERNUM].z -= sin(my->pitch) * 16;
+	camx -= cos(my->yaw) * cos(my->pitch) * 1.5;
+	camy -= sin(my->yaw) * cos(my->pitch) * 1.5;
+	camz -= sin(my->pitch) * 16;
+
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		cameras[DEATHCAM_PLAYERNUM].x = camx;
+		cameras[DEATHCAM_PLAYERNUM].y = camy;
+		cameras[DEATHCAM_PLAYERNUM].z = camz;
+		cameras[DEATHCAM_PLAYERNUM].ang = camang;
+		cameras[DEATHCAM_PLAYERNUM].vang = camvang;
+		return;
+	}
+	else
+	{
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].x.velocity = 
+			TimerExperiments::lerpFactor * (camx - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].x.position);
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].y.velocity = 
+			TimerExperiments::lerpFactor * (camy - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].y.position);
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].z.velocity = 
+			TimerExperiments::lerpFactor * (camz - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].z.position);
+
+		real_t diff = camang - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].yaw.position;
+		if ( diff > PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].yaw.velocity = diff * TimerExperiments::lerpFactor;
+		diff = camvang - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].pitch.position;
+		if ( diff >= PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].pitch.velocity = diff * TimerExperiments::lerpFactor;
+	}
 }
 
 #define PLAYER_INIT my->skill[0]
@@ -291,7 +332,7 @@ bool Player::PlayerMovement_t::handleQuickTurn(bool useRefreshRateDelta)
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
-		refreshRateDelta *= TICKS_PER_SECOND / fps;
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
 	}
 
 	if ( abs(quickTurnRotation) > 0.001 )
@@ -406,7 +447,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
-		refreshRateDelta *= TICKS_PER_SECOND / fps;
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
 	}
 	if ( players[playernum]->shootmode && !command )
 	{
@@ -626,6 +667,46 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	{
 		PLAYER_ROTY *= .5;
 	}
+
+	if ( TimerExperiments::bUseTimerInterpolation )
+	{
+		while ( TimerExperiments::cameraCurrentState[PLAYER_NUM].yaw.position >= PI * 2 )
+		{
+			TimerExperiments::cameraCurrentState[PLAYER_NUM].yaw.position -= PI * 2;
+		}
+		while ( TimerExperiments::cameraCurrentState[PLAYER_NUM].yaw.position < 0 )
+		{
+			TimerExperiments::cameraCurrentState[PLAYER_NUM].yaw.position += PI * 2;
+		}
+		real_t diff = my->yaw - TimerExperiments::cameraCurrentState[PLAYER_NUM].yaw.position;
+		if ( diff > PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[PLAYER_NUM].yaw.velocity = diff * TimerExperiments::lerpFactor;
+		while ( TimerExperiments::cameraCurrentState[PLAYER_NUM].pitch.position >= PI )
+		{
+			TimerExperiments::cameraCurrentState[PLAYER_NUM].pitch.position -= PI * 2;
+		}
+		while ( TimerExperiments::cameraCurrentState[PLAYER_NUM].pitch.position < -PI )
+		{
+			TimerExperiments::cameraCurrentState[PLAYER_NUM].pitch.position += PI * 2;
+		}
+		diff = my->pitch - TimerExperiments::cameraCurrentState[PLAYER_NUM].pitch.position;
+		if ( diff >= PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[PLAYER_NUM].pitch.velocity = diff * TimerExperiments::lerpFactor;
+	}
 }
 
 void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelta)
@@ -643,7 +724,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
-		refreshRateDelta *= TICKS_PER_SECOND / fps;
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
 	}
 
 	// camera bobbing
@@ -814,7 +895,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
-		refreshRateDelta *= TICKS_PER_SECOND / fps;
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
 	}
 
 	// calculate weight
@@ -1062,14 +1143,23 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
-		refreshRateDelta *= TICKS_PER_SECOND / fps;
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
 	}
 
 	// camera
 	if ( !PLAYER_DEBUGCAM && stats[PLAYER_NUM] && stats[PLAYER_NUM]->HP > 0 )
 	{
-		cameras[PLAYER_NUM].x = my->x / 16.0;
-		cameras[PLAYER_NUM].y = my->y / 16.0;
+		if ( !TimerExperiments::bUseTimerInterpolation )
+		{
+			cameras[PLAYER_NUM].x = my->x / 16.0;
+			cameras[PLAYER_NUM].y = my->y / 16.0;
+		}
+		else
+		{
+			TimerExperiments::cameraCurrentState[PLAYER_NUM].x.velocity = TimerExperiments::lerpFactor * (my->x / 16.0 - TimerExperiments::cameraCurrentState[PLAYER_NUM].x.position);
+			TimerExperiments::cameraCurrentState[PLAYER_NUM].y.velocity = TimerExperiments::lerpFactor * (my->y / 16.0 - TimerExperiments::cameraCurrentState[PLAYER_NUM].y.position);
+		}
+
 		real_t cameraSetpointZ = (my->z * 2) - 2.5 + (swimming ? 1 : 0);
 		if ( swimming && (playerRace == RAT || playerRace == SPIDER) )
 		{
@@ -1100,7 +1190,17 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 				PLAYER_CAMERAZ_ACCEL += -rateChange;
 				PLAYER_CAMERAZ_ACCEL = std::max(cameraSetpointZ, PLAYER_CAMERAZ_ACCEL);
 			}
-			cameras[PLAYER_NUM].z = PLAYER_CAMERAZ_ACCEL;
+
+			if ( !TimerExperiments::bUseTimerInterpolation )
+			{
+				cameras[PLAYER_NUM].z = PLAYER_CAMERAZ_ACCEL;
+			}
+			else
+			{
+				TimerExperiments::cameraCurrentState[PLAYER_NUM].z.velocity =
+					((PLAYER_CAMERAZ_ACCEL) - TimerExperiments::cameraCurrentState[PLAYER_NUM].z.position)
+					* TimerExperiments::lerpFactor;
+			}
 
 			// check updated value.
 			if ( abs(PLAYER_CAMERAZ_ACCEL - cameraSetpointZ) <= 0.01 )
@@ -1113,19 +1213,31 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 		else
 		{
 			PLAYER_CAMERAZ_ACCEL = cameraSetpointZ;
-			cameras[PLAYER_NUM].z = PLAYER_CAMERAZ_ACCEL + PLAYER_BOB;
+			if ( !TimerExperiments::bUseTimerInterpolation )
+			{
+				cameras[PLAYER_NUM].z = PLAYER_CAMERAZ_ACCEL + PLAYER_BOB;
+			}
+			else
+			{
+				TimerExperiments::cameraCurrentState[PLAYER_NUM].z.velocity = 
+					((PLAYER_CAMERAZ_ACCEL + PLAYER_BOB) - TimerExperiments::cameraCurrentState[PLAYER_NUM].z.position) 
+					* TimerExperiments::lerpFactor;
+			}
 		}
 
 		//messagePlayer(0, "Z: %.2f | %.2f | %.2f", my->z, PLAYER_CAMERAZ_ACCEL, cameraSetpointZ);
 
-		cameras[PLAYER_NUM].ang = my->yaw;
-		if ( softwaremode )
+		if ( !TimerExperiments::bUseTimerInterpolation )
 		{
-			cameras[PLAYER_NUM].vang = (my->pitch / (PI / 4)) * cameras[PLAYER_NUM].winh;
-		}
-		else
-		{
-			cameras[PLAYER_NUM].vang = my->pitch;
+			cameras[PLAYER_NUM].ang = my->yaw;
+			if ( softwaremode )
+			{
+				cameras[PLAYER_NUM].vang = (my->pitch / (PI / 4)) * cameras[PLAYER_NUM].winh;
+			}
+			else
+			{
+				cameras[PLAYER_NUM].vang = my->pitch;
+			}
 		}
 	}
 }

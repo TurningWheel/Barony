@@ -3481,6 +3481,11 @@ void consoleCommand(char const * const command_str)
 			TimerExperiments::bUseTimerInterpolation = !TimerExperiments::bUseTimerInterpolation;
 			messagePlayer(clientnum, "Set bUseTimerInterpolation to %d", TimerExperiments::bUseTimerInterpolation);
 		}
+		else if ( !strncmp(command_str, "/timertestsdebug", 16) )
+		{
+			TimerExperiments::bDebug = !TimerExperiments::bDebug;
+			messagePlayer(clientnum, "Set TimerExperiments::bDebug to %d", TimerExperiments::bDebug);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

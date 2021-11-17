@@ -394,6 +394,16 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	new_yaw = 0;
 	new_pitch = 0;
 	new_roll = 0;
+	lerpCurrentState.resetMovement();
+	lerpCurrentState.resetPosition();
+	lerpPreviousState.resetMovement();
+	lerpPreviousState.resetPosition();
+	lerpRenderState.resetMovement();
+	lerpRenderState.resetPosition();
+	bNeedsRenderPositionInit = true;
+	bUseRenderInterpolation = false;
+	lerp_ox = 0.0;
+	lerp_oy = 0.0;
 	sprite = in_sprite;
 	light = nullptr;
 	string = nullptr;
