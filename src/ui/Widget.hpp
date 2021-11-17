@@ -66,6 +66,7 @@ public:
     //! recursively locates the head widget for this widget
     //! @return the head widget, which may be this widget
     Widget* findHead();
+    const Widget* findHead() const;
 
     //! scroll the parent frame (if any) to be within our bounds
     virtual void scrollParent();
@@ -89,7 +90,7 @@ public:
     //! return true if this widget is the descendant of another widget
     //! @param widget the widget who is supposedly our ancestor
     //! @return true if it is, otherwise false
-    bool isChildOf(Widget& widget);
+    bool isChildOf(const Widget& widget) const;
 
     //! adopt a new widget as one of our children
     //! @param widget the widget to adopt
@@ -100,6 +101,7 @@ public:
     //! @param recursive true to search recursively or not
     //! @return the widget found, or nullptr if it was not found
     Widget* findWidget(const char* name, bool recursive);
+    const Widget* findWidget(const char* name, bool recursive) const;
 
     //! build a list of all the selected widgets amongst our children
     //! @param outResult a list containing all the selected widgets
@@ -138,6 +140,7 @@ protected:
     std::string widgetSearchParent;                 //!< widget to search from for actions and movements
 
     Frame* findSearchRoot();
+    const Frame* findSearchRoot() const;
 
     void drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const;
 };

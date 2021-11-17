@@ -1052,7 +1052,7 @@ namespace MainMenu {
 			button->setBackground("images/ui/Main Menus/Settings/AutoSort/Button_Basic00.png");
 			button->setText(options[c].name);
 			button->setFont(bigfont_outline);
-			button->setColor(makeColor(127, 127, 127, 255));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			if (c > 0) {
 				button->setWidgetLeft(options[c - 1].name);
@@ -1500,9 +1500,9 @@ namespace MainMenu {
 		button->setCallback(callback);
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->addWidgetAction("MenuAlt1", "restore_defaults");
@@ -1536,9 +1536,9 @@ namespace MainMenu {
 		button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_SwitchOn00.png");
 		button->setStyle(Button::style_t::STYLE_TOGGLE);
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -1572,9 +1572,9 @@ namespace MainMenu {
 		button->setCallback(customize_callback);
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetLeft((fullname + "_button").c_str());
 		button->setWidgetBack("discard_and_exit");
@@ -1615,9 +1615,9 @@ namespace MainMenu {
 		button->setCallback(callback);
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -1653,9 +1653,9 @@ namespace MainMenu {
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
 		button->setBackgroundHighlighted("images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -1727,7 +1727,7 @@ namespace MainMenu {
 		slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, _short ? 282 : 450, 24});
 		slider->setHandleSize(SDL_Rect{0, 0, 52, 42});
 		slider->setCallback(callback);
-		slider->setColor(makeColor(127,127,127,255));
+		slider->setColor(makeColor(255,255,255,255));
 		slider->setHighlightColor(makeColor(255,255,255,255));
 		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Slide00.png");
 		if (_short) {
@@ -2019,9 +2019,9 @@ namespace MainMenu {
 
 		auto defaults = window->addButton("restore_defaults");
 		defaults->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
-		defaults->setColor(makeColor(127, 127, 127, 255));
+		defaults->setColor(makeColor(255, 255, 255, 255));
 		defaults->setHighlightColor(makeColor(255, 255, 255, 255));
-		defaults->setTextColor(makeColor(127, 127, 127, 255));
+		defaults->setTextColor(makeColor(255, 255, 255, 255));
 		defaults->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		defaults->setSize(SDL_Rect{156, 630, 164, 62});
 		defaults->setText("Restore\nDefaults");
@@ -2035,9 +2035,9 @@ namespace MainMenu {
 
 		auto discard = window->addButton("discard_and_exit");
 		discard->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
-		discard->setColor(makeColor(127, 127, 127, 255));
+		discard->setColor(makeColor(255, 255, 255, 255));
 		discard->setHighlightColor(makeColor(255, 255, 255, 255));
-		discard->setTextColor(makeColor(127, 127, 127, 255));
+		discard->setTextColor(makeColor(255, 255, 255, 255));
 		discard->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		discard->setText("Discard\n& Exit");
 		discard->setFont(smallfont_outline);
@@ -2057,9 +2057,9 @@ namespace MainMenu {
 
 		auto confirm = window->addButton("confirm_and_exit");
 		confirm->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
-		confirm->setTextColor(makeColor(127, 127, 127, 255));
+		confirm->setTextColor(makeColor(255, 255, 255, 255));
 		confirm->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setText("Confirm\n& Exit");
 		confirm->setFont(smallfont_outline);
@@ -3133,7 +3133,7 @@ namespace MainMenu {
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
 			button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
-			button->setColor(makeColor(255, 255, 255, 127));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
 			button->setTextHighlightColor(makeColor(180, 133, 13, 255));
@@ -3224,7 +3224,14 @@ namespace MainMenu {
 	}
 
 	static auto male_button_fn = [](Button& button, int index) {
+		button.setColor(makeColor(255, 255, 255, 255));
+		button.setHighlightColor(makeColor(255, 255, 255, 255));
 		auto card = static_cast<Frame*>(button.getParent());
+		auto female = card->findButton("female");
+		if (female) {
+			female->setColor(makeColor(127, 127, 127, 255));
+			female->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		stats[index]->sex = MALE;
 		if (stats[index]->playerRace == RACE_SUCCUBUS) {
 			auto succubus = card->findButton("Succubus");
@@ -3267,7 +3274,14 @@ namespace MainMenu {
 	};
 
 	static auto female_button_fn = [](Button& button, int index) {
+		button.setColor(makeColor(255, 255, 255, 255));
+		button.setHighlightColor(makeColor(255, 255, 255, 255));
 		auto card = static_cast<Frame*>(button.getParent());
+		auto male = card->findButton("male");
+		if (male) {
+			male->setColor(makeColor(127, 127, 127, 255));
+			male->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		stats[index]->sex = FEMALE;
 		if (stats[index]->playerRace == RACE_INCUBUS) {
 			auto incubus = card->findButton("Incubus");
@@ -3325,6 +3339,7 @@ namespace MainMenu {
 		card->setBorder(0);
 		card->setOwner(index);
 		card->setClickable(true);
+		card->setHideGlyphs(true);
 
 		return card;
 	}
@@ -3484,7 +3499,7 @@ namespace MainMenu {
 		auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
 		confirm->setText("Confirm");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings/CustomDiff_ButtonConfirm_00.png");
 		confirm->setSize(SDL_Rect{62, 606, 202, 52});
@@ -3652,7 +3667,7 @@ namespace MainMenu {
 		}
 
 		auto custom_difficulty = card->addButton("custom_difficulty");
-		custom_difficulty->setColor(makeColor(127, 127, 127, 255));
+		custom_difficulty->setColor(makeColor(255, 255, 255, 255));
 		custom_difficulty->setHighlightColor(makeColor(255, 255, 255, 255));
 		custom_difficulty->setSize(SDL_Rect{84, 210, 114, 40});
 		custom_difficulty->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_GameSettings_Button_Custom_01.png");
@@ -3841,7 +3856,7 @@ namespace MainMenu {
 		auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
 		confirm->setText("Confirm");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings_ButtonConfirm_00.png");
 		confirm->setSize(SDL_Rect{62, 522, 202, 52});
@@ -4039,7 +4054,7 @@ namespace MainMenu {
 		appearance_uparrow->setSize(SDL_Rect{198, 58, 32, 20});
 		appearance_uparrow->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonUp_00.png");
 		appearance_uparrow->setHighlightColor(makeColor(255, 255, 255, 255));
-		appearance_uparrow->setColor(makeColor(223, 223, 223, 255));
+		appearance_uparrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setDisabled(true);
 		appearance_uparrow->setInvisible(true);
 		appearance_uparrow->setCallback([](Button& button){
@@ -4049,13 +4064,14 @@ namespace MainMenu {
 			appearances->setSelection(selection);
 			appearances->scrollToSelection();
 			appearances->activateSelection();
+			button.select();
 			});
 
 		auto appearance_downarrow = card->addButton("appearance_downarrow");
 		appearance_downarrow->setSize(SDL_Rect{198, 114, 32, 20});
 		appearance_downarrow->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDown_00.png");
 		appearance_downarrow->setHighlightColor(makeColor(255, 255, 255, 255));
-		appearance_downarrow->setColor(makeColor(223, 223, 223, 255));
+		appearance_downarrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setDisabled(true);
 		appearance_downarrow->setInvisible(true);
 		appearance_downarrow->setCallback([](Button& button){
@@ -4066,6 +4082,7 @@ namespace MainMenu {
 			appearances->setSelection(selection);
 			appearances->scrollToSelection();
 			appearances->activateSelection();
+			button.select();
 			});
 
 		static const char* appearance_names[] = {
@@ -4276,8 +4293,13 @@ namespace MainMenu {
 		}
 
 		auto male_button = card->addButton("male");
-		male_button->setColor(makeColor(127, 127, 127, 255));
-		male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		if (stats[index]->sex == MALE) {
+			male_button->setColor(makeColor(255, 255, 255, 255));
+			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			male_button->setColor(makeColor(127, 127, 127, 255));
+			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		male_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 		male_button->setSize(SDL_Rect{44, 344, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -4294,8 +4316,13 @@ namespace MainMenu {
 		}
 
 		auto female_button = card->addButton("female");
-		female_button->setColor(makeColor(127, 127, 127, 255));
-		female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		if (stats[index]->sex == FEMALE) {
+			female_button->setColor(makeColor(255, 255, 255, 255));
+			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			female_button->setColor(makeColor(127, 127, 127, 255));
+			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		female_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 		female_button->setSize(SDL_Rect{106, 344, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -4315,7 +4342,7 @@ namespace MainMenu {
 		auto show_race_info = card->addButton("show_race_info");
 		show_race_info->setFont(smallfont_outline);
 		show_race_info->setText("Show Race\nInfo");
-		show_race_info->setColor(makeColor(127, 127, 127, 255));
+		show_race_info->setColor(makeColor(255, 255, 255, 255));
 		show_race_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		show_race_info->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetails_00.png");
 		show_race_info->setSize(SDL_Rect{168, 344, 110, 52});
@@ -4329,7 +4356,7 @@ namespace MainMenu {
 		auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
 		confirm->setText("Confirm");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonConfirm_00.png");
 		confirm->setSize(SDL_Rect{62, 430, 202, 52});
@@ -4446,7 +4473,7 @@ namespace MainMenu {
 		}
 
 		auto class_info = card->addButton("class_info");
-		class_info->setColor(makeColor(127, 127, 127, 255));
+		class_info->setColor(makeColor(255, 255, 255, 255));
 		class_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		class_info->setSize(SDL_Rect{236, 110, 48, 48});
 		class_info->setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_MagnifyingGlass_00.png");
@@ -4469,7 +4496,7 @@ namespace MainMenu {
 			}
 			button->setIcon((prefix + full_class.image).c_str());
 			button->setSize(SDL_Rect{8 + (c % 4) * 54, 6 + (c / 4) * 54, 54, 54});
-			button->setColor(makeColor(127, 127, 127, 255));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			if (c > 0) {
@@ -4529,7 +4556,7 @@ namespace MainMenu {
 		first_button->select();
 
 		auto confirm = card->addButton("confirm");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
 		confirm->setSize(SDL_Rect{62, 430, 202, 52});
@@ -4647,7 +4674,7 @@ namespace MainMenu {
 		name_field->select();
 
 		auto randomize_name = card->addButton("randomize_name");
-		randomize_name->setColor(makeColor(127, 127, 127, 255));
+		randomize_name->setColor(makeColor(255, 255, 255, 255));
 		randomize_name->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_name->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
 		randomize_name->setSize(SDL_Rect{244, 26, 40, 44});
@@ -4674,7 +4701,7 @@ namespace MainMenu {
 		
 		auto game_settings = card->addButton("game_settings");
 		game_settings->setSize(SDL_Rect{62, 76, 202, 52});
-		game_settings->setColor(makeColor(127, 127, 127, 255));
+		game_settings->setColor(makeColor(255, 255, 255, 255));
 		game_settings->setHighlightColor(makeColor(255, 255, 255, 255));
 		game_settings->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
 		game_settings->setText("View Game Settings");
@@ -4692,8 +4719,13 @@ namespace MainMenu {
 		}
 
 		auto male_button = card->addButton("male");
-		male_button->setColor(makeColor(127, 127, 127, 255));
-		male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		if (stats[index]->sex == MALE) {
+			male_button->setColor(makeColor(255, 255, 255, 255));
+			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			male_button->setColor(makeColor(127, 127, 127, 255));
+			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		male_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Male_00.png");
 		male_button->setSize(SDL_Rect{42, 166, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -4710,8 +4742,13 @@ namespace MainMenu {
 		}
 
 		auto female_button = card->addButton("female");
-		female_button->setColor(makeColor(127, 127, 127, 255));
-		female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		if (stats[index]->sex == FEMALE) {
+			female_button->setColor(makeColor(255, 255, 255, 255));
+			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			female_button->setColor(makeColor(127, 127, 127, 255));
+			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		female_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Female_00.png");
 		female_button->setSize(SDL_Rect{104, 166, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -4729,7 +4766,7 @@ namespace MainMenu {
 		}
 
 		auto race_button = card->addButton("race");
-		race_button->setColor(makeColor(127, 127, 127, 255));
+		race_button->setColor(makeColor(255, 255, 255, 255));
 		race_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		race_button->setSize(SDL_Rect{166, 166, 108, 52});
 		switch (stats[index]->playerRace) {
@@ -4777,7 +4814,7 @@ namespace MainMenu {
 		};
 
 		auto randomize_class = card->addButton("randomize_class");
-		randomize_class->setColor(makeColor(127, 127, 127, 255));
+		randomize_class->setColor(makeColor(255, 255, 255, 255));
 		randomize_class->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_class->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
 		randomize_class->setSize(SDL_Rect{244, 230, 40, 44});
@@ -4834,7 +4871,7 @@ namespace MainMenu {
 		};
 
 		auto class_button = card->addButton("class");
-		class_button->setColor(makeColor(127, 127, 127, 255));
+		class_button->setColor(makeColor(255, 255, 255, 255));
 		class_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		class_button->setSize(SDL_Rect{46, 226, 52, 52});
 		class_button->setBorder(0);
@@ -4866,7 +4903,7 @@ namespace MainMenu {
 
 		auto ready_button = card->addButton("ready");
 		ready_button->setSize(SDL_Rect{62, 288, 202, 52});
-		ready_button->setColor(makeColor(127, 127, 127, 255));
+		ready_button->setColor(makeColor(255, 255, 255, 255));
 		ready_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		ready_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
 		ready_button->setFont(bigfont_outline);
@@ -5111,7 +5148,7 @@ namespace MainMenu {
 		hall_of_trials_button->setSize(SDL_Rect{134, 176, 168, 52});
 		hall_of_trials_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
 		hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		hall_of_trials_button->setColor(makeColor(127, 127, 127, 255));
+		hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
 		hall_of_trials_button->setText("HALL OF TRIALS");
 		hall_of_trials_button->setFont(smallfont_outline);
 		hall_of_trials_button->setWidgetSearchParent(window->getName());
@@ -5308,7 +5345,7 @@ namespace MainMenu {
 		cancel->setSize(SDL_Rect{94, 440, 164, 62});
 		cancel->setBackground("images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
 		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setColor(makeColor(127, 127, 127, 255));
+		cancel->setColor(makeColor(255, 255, 255, 255));
 		cancel->setText("Cancel");
 		cancel->setFont(smallfont_outline);
 		cancel->setWidgetSearchParent(window->getName());
@@ -5323,7 +5360,7 @@ namespace MainMenu {
 		enter_code->setSize(SDL_Rect{266, 440, 164, 62});
 		enter_code->setBackground("images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
 		enter_code->setHighlightColor(makeColor(255, 255, 255, 255));
-		enter_code->setColor(makeColor(127, 127, 127, 255));
+		enter_code->setColor(makeColor(255, 255, 255, 255));
 		enter_code->setText("Enter Lobby\nCode");
 		enter_code->setFont(smallfont_outline);
 		enter_code->setWidgetSearchParent(window->getName());
@@ -5393,7 +5430,7 @@ namespace MainMenu {
 		join_button->setSize(SDL_Rect{220, 134, 164, 62});
 		join_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
 		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		join_button->setColor(makeColor(127, 127, 127, 255));
+		join_button->setColor(makeColor(255, 255, 255, 255));
 		join_button->setText("Join Network\nParty");
 		join_button->setFont(smallfont_outline);
 		join_button->setWidgetSearchParent(window->getName());
@@ -5406,7 +5443,7 @@ namespace MainMenu {
 		host_button->setSize(SDL_Rect{52, 134, 164, 62});
 		host_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
 		host_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		host_button->setColor(makeColor(127, 127, 127, 255));
+		host_button->setColor(makeColor(255, 255, 255, 255));
 		host_button->setText("Host Network\nParty");
 		host_button->setFont(smallfont_outline);
 		host_button->setWidgetSearchParent(window->getName());
@@ -5419,7 +5456,7 @@ namespace MainMenu {
 		local_button->setSize(SDL_Rect{134, 68, 168, 62});
 		local_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_01.png");
 		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		local_button->setColor(makeColor(127, 127, 127, 255));
+		local_button->setColor(makeColor(255, 255, 255, 255));
 		local_button->setText("Local Adventure");
 		local_button->setFont(smallfont_outline);
 		local_button->setWidgetSearchParent(window->getName());
@@ -5517,7 +5554,7 @@ namespace MainMenu {
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
 			button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
-			button->setColor(makeColor(255, 255, 255, 127));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
 			button->setTextHighlightColor(makeColor(180, 133, 13, 255));
@@ -5683,7 +5720,7 @@ namespace MainMenu {
 			button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
 			button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
 			button->setSize(SDL_Rect{x + (x * c) - 184 / 2, 64, 184, 64});
-			button->setColor(makeColor(255, 255, 255, 191));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent("settings");
 			button->setWidgetPageLeft("tab_left");
@@ -5718,7 +5755,7 @@ namespace MainMenu {
 		auto tab_left = settings->addButton("tab_left");
 		tab_left->setBackground("images/ui/Main Menus/Settings/Settings_Button_L00.png");
 		tab_left->setSize(SDL_Rect{32, 68, 38, 58});
-		tab_left->setColor(makeColor(255, 255, 255, 191));
+		tab_left->setColor(makeColor(255, 255, 255, 255));
 		tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_left->setWidgetSearchParent("settings");
 		tab_left->setWidgetBack("discard_and_exit");
@@ -5758,7 +5795,7 @@ namespace MainMenu {
 		auto tab_right = settings->addButton("tab_right");
 		tab_right->setBackground("images/ui/Main Menus/Settings/Settings_Button_R00.png");
 		tab_right->setSize(SDL_Rect{1056, 68, 38, 58});
-		tab_right->setColor(makeColor(255, 255, 255, 191));
+		tab_right->setColor(makeColor(255, 255, 255, 255));
 		tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_right->setWidgetSearchParent("settings");
 		tab_right->setWidgetBack("discard_and_exit");
@@ -5806,7 +5843,7 @@ namespace MainMenu {
 		restore_defaults->setText("Restore\nDefaults");
 		restore_defaults->setJustify(Button::justify_t::CENTER);
 		restore_defaults->setFont(smallfont_outline);
-		restore_defaults->setColor(makeColor(255, 255, 255, 191));
+		restore_defaults->setColor(makeColor(255, 255, 255, 255));
 		restore_defaults->setHighlightColor(makeColor(255, 255, 255, 255));
 		restore_defaults->setWidgetSearchParent("settings");
 		restore_defaults->setWidgetBack("discard_and_exit");
@@ -5827,7 +5864,7 @@ namespace MainMenu {
 		discard_and_exit->setText("Discard\n& Exit");
 		discard_and_exit->setJustify(Button::justify_t::CENTER);
 		discard_and_exit->setFont(smallfont_outline);
-		discard_and_exit->setColor(makeColor(255, 255, 255, 191));
+		discard_and_exit->setColor(makeColor(255, 255, 255, 255));
 		discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		discard_and_exit->setCallback([](Button& button){
 			soundCancel();
@@ -5858,7 +5895,7 @@ namespace MainMenu {
 		confirm_and_exit->setText("Confirm\n& Exit");
 		confirm_and_exit->setJustify(Button::justify_t::CENTER);
 		confirm_and_exit->setFont(smallfont_outline);
-		confirm_and_exit->setColor(makeColor(255, 255, 255, 191));
+		confirm_and_exit->setColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setCallback([](Button& button){
 			soundActivate();
@@ -5924,9 +5961,9 @@ namespace MainMenu {
 		auto okay = frame->addButton("okay");
 		okay->setSize(SDL_Rect{58, 78, 130, 52});
 		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
-		okay->setColor(makeColor(127, 127, 127, 255));
+		okay->setColor(makeColor(255, 255, 255, 255));
 		okay->setHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setTextColor(makeColor(127, 127, 127, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
 		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		okay->setFont(smallfont_outline);
 		okay->setText(okay_text);
@@ -5938,9 +5975,9 @@ namespace MainMenu {
 		auto cancel = frame->addButton("cancel");
 		cancel->setSize(SDL_Rect{196, 78, 108, 52});
 		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
-		cancel->setColor(makeColor(127, 127, 127, 255));
+		cancel->setColor(makeColor(255, 255, 255, 255));
 		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setTextColor(makeColor(127, 127, 127, 255));
+		cancel->setTextColor(makeColor(255, 255, 255, 255));
 		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		cancel->setFont(smallfont_outline);
 		cancel->setText(cancel_text);
@@ -6305,7 +6342,7 @@ namespace MainMenu {
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
 			button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
-			button->setColor(makeColor(255, 255, 255, 127));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
 			button->setTextHighlightColor(makeColor(180, 133, 13, 255));

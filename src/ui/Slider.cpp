@@ -111,10 +111,10 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	}
 
 	SDL_Rect scaledHandle;
-	scaledHandle.x = _handleSize.x * (float)xres / (float)Frame::virtualScreenX;
-	scaledHandle.y = _handleSize.y * (float)yres / (float)Frame::virtualScreenY;
-	scaledHandle.w = _handleSize.w * (float)xres / (float)Frame::virtualScreenX;
-	scaledHandle.h = _handleSize.h * (float)yres / (float)Frame::virtualScreenY;
+	scaledHandle.x = _handleSize.x;
+	scaledHandle.y = _handleSize.y;
+	scaledHandle.w = _handleSize.w;
+	scaledHandle.h = _handleSize.h;
 	drawGlyphs(scaledHandle, selectedWidgets);
 }
 
